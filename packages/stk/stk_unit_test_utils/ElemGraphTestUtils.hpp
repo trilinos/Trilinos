@@ -146,7 +146,7 @@ inline void skin_part(stk::mesh::BulkData& bulkData, const stk::mesh::Part &part
 {
     stk::mesh::Selector sel = partToSkin;
     stk::mesh::Selector air = !partToSkin;
-    stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, putSkinInTheseParts, &air);
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, putSkinInTheseParts, air);
 }
 
 inline void test_num_faces_on_this_element(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId id, size_t gold_num_faces_this_elem)

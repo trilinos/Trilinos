@@ -43,29 +43,35 @@
 #ifndef   __Panzer_BlockedEpetraLinearObjFactory_impl_hpp__
 #define   __Panzer_BlockedEpetraLinearObjFactory_impl_hpp__
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
-#include "Panzer_HashUtils.hpp"
 
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
+// Epetra
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MpiComm.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 
-#include "EpetraExt_VectorOut.h"
+// EpetraExt
 #include "EpetraExt_VectorIn.h"
+#include "EpetraExt_VectorOut.h"
 
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_DefaultProductVectorSpace.hpp"
-#include "Thyra_DefaultProductVector.hpp"
-#include "Thyra_DefaultBlockedLinearOp.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_SpmdVectorBase.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-#include "Thyra_VectorStdOps.hpp"
-
-#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+// Panzer
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_BlockedVector_Write_GlobalEvaluationData.hpp"
+#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"
+#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_HashUtils.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
+
+// Thyra
+#include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 using Teuchos::RCP;
 
@@ -521,25 +527,23 @@ applyDirichletBCs(const LinearObjContainer & counter,
     TEUCHOS_ASSERT(count_array.size()==f_in_array.size());
     TEUCHOS_ASSERT(count_array.size()==f_out_array.size());
 
-    for(Teuchos::ArrayRCP<double>::size_type i=0;i<count_array.size();i++) {
-      if(count_array[i]!=0.0)
-        f_out_array[i] = f_in_array[i];
+    for(Teuchos::ArrayRCP<double>::size_type j=0;j<count_array.size();++j) {
+      if(count_array[j]!=0.0)
+        f_out_array[j] = f_in_array[j];
     }
   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  buildDomainContainer()
+//  buildReadOnlyDomainContainer()
 //
 ///////////////////////////////////////////////////////////////////////////////
 template<typename Traits, typename LocalOrdinalT>
 Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>
 BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
-buildDomainContainer() const
+buildReadOnlyDomainContainer() const
 {
-  using panzer::BlockedVector_ReadOnly_GlobalEvaluationData;
-  using panzer::EpetraVector_ReadOnly_GlobalEvaluationData;
   using std::vector;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -570,7 +574,49 @@ buildDomainContainer() const
   ged->initialize(getGhostedThyraDomainSpace2(), getThyraDomainSpace(),
     gedBlocks);
   return ged;
-} // end of buildDomainContainer()
+} // end of buildReadOnlyDomainContainer()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildWriteDomainContainer()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename LocalOrdinalT>
+Teuchos::RCP<WriteVector_GlobalEvaluationData>
+BlockedEpetraLinearObjFactory<Traits, LocalOrdinalT>::
+buildWriteDomainContainer() const
+{
+  using std::vector;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using BVWGED = panzer::BlockedVector_Write_GlobalEvaluationData;
+  using EVWGED = panzer::EpetraVector_Write_GlobalEvaluationData;
+  using WVGED  = panzer::WriteVector_GlobalEvaluationData;
+
+  // If a "single field" DOFManager is used, return a single
+  // EpetraVector_Write_GlobalEvaluationData.
+  if (not colDOFManagerContainer_->containsBlockedDOFManager())
+  {
+    auto ged = rcp(new EVWGED);
+    ged->initialize(getGhostedColExport2(0), getGhostedColMap2(0),
+      getColMap(0));
+    return ged;
+  } // end if a "single field" DOFManager is used
+
+  // Otherwise, return a BlockedVector_Write_GlobalEvaluationData.
+  vector<RCP<WVGED>> gedBlocks;
+  for (int i(0); i < getBlockColCount(); ++i)
+  {
+    auto vecGed = rcp(new EVWGED);
+    vecGed->initialize(getGhostedColExport2(i), getGhostedColMap2(i),
+      getColMap(i));
+    gedBlocks.push_back(vecGed);
+  } // end loop over the blocks
+  auto ged = rcp(new BVWGED);
+  ged->initialize(getGhostedThyraDomainSpace2(), getThyraDomainSpace(),
+    gedBlocks);
+  return ged;
+} // end of buildWriteDomainContainer()
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::MpiComm<int> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
@@ -1418,7 +1464,7 @@ getGhostedColExport2(
 {
   using Teuchos::rcp;
   if (not useColGidProviders_)
-    return getGhostedExport(i);
+    return getGhostedExport2(i);
   if (colExporters_[i].is_null())
     colExporters_[i] = rcp(new Epetra_Export(*getGhostedColMap2(i),
       *getColMap(i)));
@@ -1578,7 +1624,7 @@ buildGhostedGraph(int i,int j,bool optimizeStorage) const
    rowProvider->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
                                                      // same element blocks
                                                         
-   const Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > conn_mgr = colProvider->getConnManagerBase();
+   const Teuchos::RCP<const ConnManager> conn_mgr = colProvider->getConnManager();
    const bool han = conn_mgr.is_null() ? false : conn_mgr->hasAssociatedNeighbors();
 
    // graph information about the mesh
@@ -1648,18 +1694,18 @@ buildFilteredGhostedGraph(int i,int j) const
        // false implies that storage is not optimzied 
 
    // remove filtered column entries
-   for(int i=0;i<filteredGraph->NumMyRows();i++) {
+   for(int k=0;k<filteredGraph->NumMyRows();++k) {
      std::vector<int> removedIndices;
      int numIndices = 0;
      int * indices = 0;
-     TEUCHOS_ASSERT(filteredGraph->ExtractMyRowView(i,numIndices,indices)==0);
+     TEUCHOS_ASSERT(filteredGraph->ExtractMyRowView(k,numIndices,indices)==0);
 
-     for(int j=0;j<numIndices;j++) {
-       if(ghostedActive[indices[j]]==0)
-         removedIndices.push_back(indices[j]);
+     for(int m=0;m<numIndices;++m) {
+       if(ghostedActive[indices[m]]==0)
+         removedIndices.push_back(indices[m]);
      }
 
-     TEUCHOS_ASSERT(filteredGraph->RemoveMyIndices(i,Teuchos::as<int>(removedIndices.size()),&removedIndices[0])==0);
+     TEUCHOS_ASSERT(filteredGraph->RemoveMyIndices(k,Teuchos::as<int>(removedIndices.size()),&removedIndices[0])==0);
    }
 
    // finish filling the graph

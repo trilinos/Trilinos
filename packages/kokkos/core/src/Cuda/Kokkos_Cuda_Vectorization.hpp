@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -47,7 +47,7 @@
 #ifdef KOKKOS_ENABLE_CUDA
 
 #include <Kokkos_Cuda.hpp>
-
+#include <Cuda/Kokkos_Cuda_Version_9_8_Compatibility.hpp>
 namespace Kokkos {
 
 
@@ -87,34 +87,54 @@ namespace Impl {
 }
 
 #ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
+#if (__CUDA_ARCH__ >= 300)
 
     KOKKOS_INLINE_FUNCTION
     int shfl(const int &val, const int& srcLane, const int& width ) {
-      return __shfl(val,srcLane,width);
+      return KOKKOS_IMPL_CUDA_SHFL(val,srcLane,width);
     }
 
     KOKKOS_INLINE_FUNCTION
     float shfl(const float &val, const int& srcLane, const int& width ) {
-      return __shfl(val,srcLane,width);
+      return KOKKOS_IMPL_CUDA_SHFL(val,srcLane,width);
+    }
+
+// TODO: figure out why 64-bit shfl fails with Clang
+#if ( CUDA_VERSION >= 9000 ) && (!defined(KOKKOS_COMPILER_CLANG))
+
+    KOKKOS_INLINE_FUNCTION
+    long shfl(const long &val, const int& srcLane, const int& width ) {
+      return KOKKOS_IMPL_CUDA_SHFL(val,srcLane,width);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    long long shfl(const long long &val, const int& srcLane, const int& width ) {
+      return KOKKOS_IMPL_CUDA_SHFL(val,srcLane,width);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    double shfl(const double &val, const int& srcLane, const int& width ) {
+      return KOKKOS_IMPL_CUDA_SHFL(val,srcLane,width);
     }
 
     template<typename Scalar>
     KOKKOS_INLINE_FUNCTION
-    Scalar shfl(const Scalar &val, const int& srcLane, const typename Impl::enable_if< (sizeof(Scalar) == 4) , int >::type& width
+    Scalar shfl(const Scalar &val, const int& srcLane, const typename Impl::enable_if< (sizeof(Scalar) == 8) , int >::type& width
         ) {
       Scalar tmp1 = val;
-      float tmp = *reinterpret_cast<float*>(&tmp1);
-      tmp = __shfl(tmp,srcLane,width);
+      double tmp = *reinterpret_cast<double*>(&tmp1);
+      tmp = KOKKOS_IMPL_CUDA_SHFL(tmp,srcLane,width);
       return *reinterpret_cast<Scalar*>(&tmp);
     }
+
+#else // ( CUDA_VERSION < 9000 )
 
     KOKKOS_INLINE_FUNCTION
     double shfl(const double &val, const int& srcLane, const int& width) {
       int lo = __double2loint(val);
       int hi = __double2hiint(val);
-      lo = __shfl(lo,srcLane,width);
-      hi = __shfl(hi,srcLane,width);
+      lo = KOKKOS_IMPL_CUDA_SHFL(lo,srcLane,width);
+      hi = KOKKOS_IMPL_CUDA_SHFL(hi,srcLane,width);
       return __hiloint2double(hi,lo);
     }
 
@@ -123,10 +143,22 @@ namespace Impl {
     Scalar shfl(const Scalar &val, const int& srcLane, const typename Impl::enable_if< (sizeof(Scalar) == 8) ,int>::type& width) {
       int lo = __double2loint(*reinterpret_cast<const double*>(&val));
       int hi = __double2hiint(*reinterpret_cast<const double*>(&val));
-      lo = __shfl(lo,srcLane,width);
-      hi = __shfl(hi,srcLane,width);
+      lo = KOKKOS_IMPL_CUDA_SHFL(lo,srcLane,width);
+      hi = KOKKOS_IMPL_CUDA_SHFL(hi,srcLane,width);
       const double tmp = __hiloint2double(hi,lo);
       return *(reinterpret_cast<const Scalar*>(&tmp));
+    }
+
+#endif // ( CUDA_VERSION < 9000 )
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl(const Scalar &val, const int& srcLane, const typename Impl::enable_if< (sizeof(Scalar) == 4) , int >::type& width
+        ) {
+      Scalar tmp1 = val;
+      float tmp = *reinterpret_cast<float*>(&tmp1);
+      tmp = KOKKOS_IMPL_CUDA_SHFL(tmp,srcLane,width);
+      return *reinterpret_cast<Scalar*>(&tmp);
     }
 
     template<typename Scalar>
@@ -137,35 +169,55 @@ namespace Impl {
       s_val = val;
 
       for(int i = 0; i<s_val.n; i++)
-        r_val.fval[i] = __shfl(s_val.fval[i],srcLane,width);
+        r_val.fval[i] = KOKKOS_IMPL_CUDA_SHFL(s_val.fval[i],srcLane,width);
       return r_val.value();
     }
 
     KOKKOS_INLINE_FUNCTION
     int shfl_down(const int &val, const int& delta, const int& width) {
-      return __shfl_down(val,delta,width);
+      return KOKKOS_IMPL_CUDA_SHFL_DOWN(val,delta,width);
     }
 
     KOKKOS_INLINE_FUNCTION
     float shfl_down(const float &val, const int& delta, const int& width) {
-      return __shfl_down(val,delta,width);
+      return KOKKOS_IMPL_CUDA_SHFL_DOWN(val,delta,width);
+    }
+
+// TODO: figure out why 64-bit shfl fails with Clang
+#if ( CUDA_VERSION >= 9000 ) && (!defined(KOKKOS_COMPILER_CLANG))
+
+    KOKKOS_INLINE_FUNCTION
+    long shfl_down(const long &val, const int& delta, const int& width) {
+      return KOKKOS_IMPL_CUDA_SHFL_DOWN(val,delta,width);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    long long shfl_down(const long long &val, const int& delta, const int& width) {
+      return KOKKOS_IMPL_CUDA_SHFL_DOWN(val,delta,width);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    double shfl_down(const double &val, const int& delta, const int& width) {
+      return KOKKOS_IMPL_CUDA_SHFL_DOWN(val,delta,width);
     }
 
     template<typename Scalar>
     KOKKOS_INLINE_FUNCTION
-    Scalar shfl_down(const Scalar &val, const int& delta, const typename Impl::enable_if< (sizeof(Scalar) == 4) , int >::type & width) {
+    Scalar shfl_down(const Scalar &val, const int& delta, const typename Impl::enable_if< (sizeof(Scalar) == 8) , int >::type & width) {
       Scalar tmp1 = val;
-      float tmp = *reinterpret_cast<float*>(&tmp1);
-      tmp = __shfl_down(tmp,delta,width);
+      double tmp = *reinterpret_cast<double*>(&tmp1);
+      tmp = KOKKOS_IMPL_CUDA_SHFL_DOWN(tmp,delta,width);
       return *reinterpret_cast<Scalar*>(&tmp);
     }
+
+#else // ( CUDA_VERSION < 9000 )
 
     KOKKOS_INLINE_FUNCTION
     double shfl_down(const double &val, const int& delta, const int& width) {
       int lo = __double2loint(val);
       int hi = __double2hiint(val);
-      lo = __shfl_down(lo,delta,width);
-      hi = __shfl_down(hi,delta,width);
+      lo = KOKKOS_IMPL_CUDA_SHFL_DOWN(lo,delta,width);
+      hi = KOKKOS_IMPL_CUDA_SHFL_DOWN(hi,delta,width);
       return __hiloint2double(hi,lo);
     }
 
@@ -174,10 +226,21 @@ namespace Impl {
     Scalar shfl_down(const Scalar &val, const int& delta, const typename Impl::enable_if< (sizeof(Scalar) == 8) , int >::type & width) {
       int lo = __double2loint(*reinterpret_cast<const double*>(&val));
       int hi = __double2hiint(*reinterpret_cast<const double*>(&val));
-      lo = __shfl_down(lo,delta,width);
-      hi = __shfl_down(hi,delta,width);
+      lo = KOKKOS_IMPL_CUDA_SHFL_DOWN(lo,delta,width);
+      hi = KOKKOS_IMPL_CUDA_SHFL_DOWN(hi,delta,width);
       const double tmp = __hiloint2double(hi,lo);
       return *(reinterpret_cast<const Scalar*>(&tmp));
+    }
+
+#endif // ( CUDA_VERSION < 9000 )
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl_down(const Scalar &val, const int& delta, const typename Impl::enable_if< (sizeof(Scalar) == 4) , int >::type & width) {
+      Scalar tmp1 = val;
+      float tmp = *reinterpret_cast<float*>(&tmp1);
+      tmp = KOKKOS_IMPL_CUDA_SHFL_DOWN(tmp,delta,width);
+      return *reinterpret_cast<Scalar*>(&tmp);
     }
 
     template<typename Scalar>
@@ -188,35 +251,55 @@ namespace Impl {
       s_val = val;
 
       for(int i = 0; i<s_val.n; i++)
-        r_val.fval[i] = __shfl_down(s_val.fval[i],delta,width);
+        r_val.fval[i] = KOKKOS_IMPL_CUDA_SHFL_DOWN(s_val.fval[i],delta,width);
       return r_val.value();
     }
 
     KOKKOS_INLINE_FUNCTION
     int shfl_up(const int &val, const int& delta, const int& width ) {
-      return __shfl_up(val,delta,width);
+      return KOKKOS_IMPL_CUDA_SHFL_UP(val,delta,width);
     }
 
     KOKKOS_INLINE_FUNCTION
     float shfl_up(const float &val, const int& delta, const int& width ) {
-      return __shfl_up(val,delta,width);
+      return KOKKOS_IMPL_CUDA_SHFL_UP(val,delta,width);
+    }
+
+// TODO: figure out why 64-bit shfl fails with Clang
+#if ( CUDA_VERSION >= 9000 ) && (!defined(KOKKOS_COMPILER_CLANG))
+
+    KOKKOS_INLINE_FUNCTION
+    long shfl_up(const long &val, const int& delta, const int& width ) {
+      return KOKKOS_IMPL_CUDA_SHFL_UP(val,delta,width);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    long long shfl_up(const long long &val, const int& delta, const int& width ) {
+      return KOKKOS_IMPL_CUDA_SHFL_UP(val,delta,width);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    double shfl_up(const double &val, const int& delta, const int& width ) {
+      return KOKKOS_IMPL_CUDA_SHFL_UP(val,delta,width);
     }
 
     template<typename Scalar>
     KOKKOS_INLINE_FUNCTION
-    Scalar shfl_up(const Scalar &val, const int& delta, const typename Impl::enable_if< (sizeof(Scalar) == 4) , int >::type & width) {
+    Scalar shfl_up(const Scalar &val, const int& delta, const typename Impl::enable_if< (sizeof(Scalar) == 8) , int >::type & width) {
       Scalar tmp1 = val;
-      float tmp = *reinterpret_cast<float*>(&tmp1);
-      tmp = __shfl_up(tmp,delta,width);
+      double tmp = *reinterpret_cast<double*>(&tmp1);
+      tmp = KOKKOS_IMPL_CUDA_SHFL_UP(tmp,delta,width);
       return *reinterpret_cast<Scalar*>(&tmp);
     }
+
+#else // ( CUDA_VERSION < 9000 )
 
     KOKKOS_INLINE_FUNCTION
     double shfl_up(const double &val, const int& delta, const int& width ) {
       int lo = __double2loint(val);
       int hi = __double2hiint(val);
-      lo = __shfl_up(lo,delta,width);
-      hi = __shfl_up(hi,delta,width);
+      lo = KOKKOS_IMPL_CUDA_SHFL_UP(lo,delta,width);
+      hi = KOKKOS_IMPL_CUDA_SHFL_UP(hi,delta,width);
       return __hiloint2double(hi,lo);
     }
 
@@ -225,10 +308,21 @@ namespace Impl {
     Scalar shfl_up(const Scalar &val, const int& delta, const typename Impl::enable_if< (sizeof(Scalar) == 8) , int >::type & width) {
       int lo = __double2loint(*reinterpret_cast<const double*>(&val));
       int hi = __double2hiint(*reinterpret_cast<const double*>(&val));
-      lo = __shfl_up(lo,delta,width);
-      hi = __shfl_up(hi,delta,width);
+      lo = KOKKOS_IMPL_CUDA_SHFL_UP(lo,delta,width);
+      hi = KOKKOS_IMPL_CUDA_SHFL_UP(hi,delta,width);
       const double tmp = __hiloint2double(hi,lo);
       return *(reinterpret_cast<const Scalar*>(&tmp));
+    }
+
+#endif // ( CUDA_VERSION < 9000 )
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl_up(const Scalar &val, const int& delta, const typename Impl::enable_if< (sizeof(Scalar) == 4) , int >::type & width) {
+      Scalar tmp1 = val;
+      float tmp = *reinterpret_cast<float*>(&tmp1);
+      tmp = KOKKOS_IMPL_CUDA_SHFL_UP(tmp,delta,width);
+      return *reinterpret_cast<Scalar*>(&tmp);
     }
 
     template<typename Scalar>
@@ -239,11 +333,11 @@ namespace Impl {
       s_val = val;
 
       for(int i = 0; i<s_val.n; i++)
-        r_val.fval[i] = __shfl_up(s_val.fval[i],delta,width);
+        r_val.fval[i] = KOKKOS_IMPL_CUDA_SHFL_UP(s_val.fval[i],delta,width);
       return r_val.value();
     }
 
-  #else
+#else // (__CUDA_ARCH__ < 300)
     template<typename Scalar>
     KOKKOS_INLINE_FUNCTION
     Scalar shfl(const Scalar &val, const int& srcLane, const int& width) {
@@ -264,34 +358,32 @@ namespace Impl {
       if(width > 1) Kokkos::abort("Error: calling shfl_down from a device with CC<3.0.");
       return val;
     }
-  #endif
-#else
+#endif // (__CUDA_ARCH__ < 300)
+#else // !defined( __CUDA_ARCH__ )
     template<typename Scalar>
     inline
     Scalar shfl(const Scalar &val, const int& srcLane, const int& width) {
-      if(width > 1) Kokkos::abort("Error: calling shfl from a device with CC<3.0.");
+      if(width > 1) Kokkos::abort("Error: calling shfl outside __CUDA_ARCH__.");
       return val;
     }
 
     template<typename Scalar>
     inline
     Scalar shfl_down(const Scalar &val, const int& delta, const int& width) {
-      if(width > 1) Kokkos::abort("Error: calling shfl_down from a device with CC<3.0.");
+      if(width > 1) Kokkos::abort("Error: calling shfl_down outside __CUDA_ARCH__.");
       return val;
     }
 
     template<typename Scalar>
     inline
     Scalar shfl_up(const Scalar &val, const int& delta, const int& width) {
-      if(width > 1) Kokkos::abort("Error: calling shfl_down from a device with CC<3.0.");
+      if(width > 1) Kokkos::abort("Error: calling shfl_down outside __CUDA_ARCH__.");
       return val;
     }
-#endif
+#endif // !defined( __CUDA_ARCH__ )
 
+} // end namespace Kokkos
 
-
-}
-
-#endif // KOKKOS_ENABLE_CUDA
-#endif
+#endif // defined( KOKKOS_ENABLE_CUDA )
+#endif // !defined( KOKKOS_CUDA_VECTORIZATION_HPP )
 

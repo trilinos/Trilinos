@@ -50,7 +50,6 @@
 
 #include "ROL_TrustRegion.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_HelperFunctions.hpp"
 
 namespace ROL { 
 
@@ -58,18 +57,18 @@ template<class Real>
 class DogLeg : public TrustRegion<Real> {
 private:
 
-  Teuchos::RCP<CauchyPoint<Real> > cpt_;
+  ROL::Ptr<CauchyPoint<Real> > cpt_;
 
-  Teuchos::RCP<Vector<Real> > s_;
-  Teuchos::RCP<Vector<Real> > Hp_;
+  ROL::Ptr<Vector<Real> > s_;
+  ROL::Ptr<Vector<Real> > Hp_;
 
   Real pRed_;
 
 public:
 
   // Constructor
-  DogLeg( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
-    cpt_ = Teuchos::rcp(new CauchyPoint<Real>(parlist));
+  DogLeg( ROL::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
+    cpt_ = ROL::makePtr<CauchyPoint<Real>>(parlist);
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {

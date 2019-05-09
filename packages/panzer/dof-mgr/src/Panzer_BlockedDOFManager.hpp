@@ -44,6 +44,7 @@
 #define __Panzer_BlockedDOFManager_hpp__
 
 #include <map>
+#include <set>
 
 #ifdef HAVE_MPI
    #include <mpi.h>
@@ -80,7 +81,7 @@ public:
      * objects. This is equivalent to calling the default constructor and
      * then "setConnManager" routine.
      */
-   BlockedDOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
+   BlockedDOFManager(const Teuchos::RCP<ConnManager> & connMngr,MPI_Comm mpiComm);
 
    ////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,14 +112,14 @@ public:
    /** \brief Get the string name associated with a field number.
      *
      * Get the string used for access to this
-     * field. 
+     * field.
      *
      * \param[in] int A unique integer associated with the
      *                field.
-     * 
+     *
      * \returns Human readable name of the field
      *
-     * \note This method will throw if invalid field number is 
+     * \note This method will throw if invalid field number is
      *       passed in as an argument.
      */
    const std::string & getFieldString(int num) const;
@@ -128,7 +129,7 @@ public:
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
    { getConnManager()->getElementBlockIds(elementBlockIds); }
 
-   /** Is the specified field in the element block? 
+   /** Is the specified field in the element block?
      */
    virtual bool fieldInBlock(const std::string & field, const std::string & block) const; // ?
 
@@ -174,7 +175,7 @@ public:
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   virtual const std::pair<std::vector<int>,std::vector<int> > & 
+   virtual const std::pair<std::vector<int>,std::vector<int> > &
    getGIDFieldOffsets_closure(const std::string & blockId,int fieldNum,int subcellDim,int subcellId) const; // ?
 
    /**
@@ -238,16 +239,16 @@ public:
    //@}
    ////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////
- 
+
    /** \brief Use the FEI DOF manager internally, or the standard version.
-     */ 
+     */
    void setUseDOFManagerFEI(bool useFEI)
    { useDOFManagerFEI_ = useFEI; }
 
    /** \brief which DOF Manager is used internally?
-     */ 
+     */
    bool getUseDOFManagerFEI() const
-   { 
+   {
      return false;
    }
 
@@ -262,7 +263,7 @@ public:
      * \param[in] connMngr Connection manager to use.
      * \param[in] mpiComm  Communicator to use.
      */
-   void setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
+   void setConnManager(const Teuchos::RCP<ConnManager> & connMngr,MPI_Comm mpiComm);
 
 
    /** Get the FieldPattern describing the geometry used for this problem.
@@ -270,7 +271,7 @@ public:
      */
    Teuchos::RCP<const FieldPattern> getGeometricFieldPattern() const // ?
    { return geomPattern_; }
-   
+
    /** \brief Reset the indicies for this DOF manager.
      *
      * This method resets the indices and wipes out internal state. This method
@@ -279,7 +280,7 @@ public:
      *
      * \returns Old connection manager.
      */
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > resetIndices(); // ?
+   Teuchos::RCP<ConnManager> resetIndices(); // ?
 
    /** \brief Add a field to the DOF manager.
      *
@@ -290,7 +291,7 @@ public:
      * \param[in] str Human readable name of the field
      * \param[in] pattern Pattern defining the basis function to be used
      *
-     * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code> 
+     * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code>
      *       or <code>registerFields</code>.
      */
    void addField(const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern);
@@ -302,7 +303,7 @@ public:
      *
      * \param[in] fieldOrder Vector of field IDs order in the correct way
      *
-     * \note If no ordering is set then the default ordering is alphabetical on 
+     * \note If no ordering is set then the default ordering is alphabetical on
      *       the field names (as dictated by <code>std::map<std::string,*></code>).
      */
    void setFieldOrder(const std::vector<std::vector<std::string> > & fieldOrder);
@@ -332,10 +333,10 @@ public:
      *          otherwise <code>Teuchos::null</code> is returned.
      */
    Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, const std::string & fieldName) const; // ?
- 
+
    /** \brief How many fields are handled by this manager.
      *
-     * How many fields are handled by this manager. 
+     * How many fields are handled by this manager.
      *
      * \returns The number of fields used by this
      *          manager.
@@ -344,16 +345,13 @@ public:
 
    /**  Returns the connection manager current being used.
      */
-   Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() const 
-   { return connMngr_; } 
+   Teuchos::RCP<const ConnManager> getConnManager() const
+   { return connMngr_; }
 
    /**  Returns the connection manager current being used.
      */
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() 
-   { return connMngr_; } 
-
-   virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
-   { return getConnManager(); }
+   Teuchos::RCP<ConnManager> getConnManager()
+   { return connMngr_; }
 
    /** build the global unknown numberings
      *   1. this builds the pattens
@@ -361,7 +359,7 @@ public:
      *   3. initializes the connectivity
      *   4. calls initComplete
      */
-   virtual void buildGlobalUnknowns(); 
+   virtual void buildGlobalUnknowns();
 
    /** build the global unknown numberings
      *   1. this builds the pattens
@@ -379,7 +377,7 @@ public:
      *       to notify interested parties of possible changes to the unknown structure
      *       and CRS matrix graph.
      */
-   virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern); 
+   virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern);
 
    /** This method simply builds the global unknowns by using the passed in global indexers.
      * The internal connection manager must use the underlying connection manager for all
@@ -408,26 +406,26 @@ public:
    /** This builds all numbers for the fields as well as
      * constructing a default field orderand validating the user specified field order.
      */
-   void registerFields(bool buildSubUGIs); 
+   void registerFields(bool buildSubUGIs);
 
    /** Has the method <code>registerFields</code> been called?
      */
-   bool fieldsRegistered() const 
+   bool fieldsRegistered() const
    { return fieldsRegistered_; }
 
    /** Extract the field DOFManagers used underneath to define the
      * global unknowns.
-     */ 
+     */
    const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > &
    getFieldDOFManagers() const
    { return fieldBlockManagers_; }
 
    /** Return the maximum field number returned by any sub DOFManager.
      * Mostly exposed for testing purposes.
-     */ 
+     */
    inline int getMaxSubFieldNumber() const
    { return maxSubFieldNum_; }
- 
+
    /** Get field block associated with this field number.
      *
      * \note No bounds checking is performed in this method
@@ -440,8 +438,8 @@ public:
      * \note No bounds checking is performed in this method
      */
    int getBlockGIDOffset(const std::string & elementBlock,int fieldBlock) const
-   { 
-      std::map<std::pair<std::string,int>,int>::const_iterator itr = 
+   {
+      std::map<std::pair<std::string,int>,int>::const_iterator itr =
             blockGIDOffset_.find(std::make_pair(elementBlock,fieldBlock));
 
       if(itr==blockGIDOffset_.end())
@@ -457,12 +455,12 @@ public:
 
    /** Enable computation of the orientations.
      */
-   void setOrientationsRequired(bool ro) 
+   void setOrientationsRequired(bool ro)
    { requireOrientations_ = ro; }
 
    /** Enable TieBreak in sub dofmanger
      */
-   void enableTieBreak(bool useTieBreak) 
+   void enableTieBreak(bool useTieBreak)
    { useTieBreak_ = useTieBreak; }
 
    /** \brief How any GIDs are associate with a particular element block
@@ -480,10 +478,10 @@ public:
    virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const;
 
 protected:
-   
+
    /** Build a new indexer. The concrete type is specified internally by this object (FEI version standard)
      */
-   Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > buildNewIndexer(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connManager,
+   Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > buildNewIndexer(const Teuchos::RCP<ConnManager> & connManager,
                                                                                     MPI_Comm mpiComm) const;
 
    /** Do appropriate casting below and set orientations for a particular indexer. (handles FEI versus standard DOFManager)
@@ -513,7 +511,7 @@ protected:
      */
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
                                      UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
-  
+
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
      *
@@ -524,10 +522,10 @@ protected:
 
 
    // computes connectivity
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_; 
-   
+   Teuchos::RCP<ConnManager> connMngr_;
+
    //! \defgroup MapFunctions Mapping objects
-   //@{ 
+   //@{
    //! field string ==> field number
    std::map<std::string,int> fieldStrToNum_;
 
@@ -566,7 +564,7 @@ protected:
    MPI_Comm mpiComm_;
    int maxSubFieldNum_;
 
-   /** Maps: elem block ids ==> (fieldNum ==> gidFieldOffsets vector) 
+   /** Maps: elem block ids ==> (fieldNum ==> gidFieldOffsets vector)
      * This uses lazy evaluation for construction.
      */
    mutable std::map<std::string,std::map<int,std::vector<int> > > gidFieldOffsets_;
@@ -581,7 +579,7 @@ protected:
    mutable std::map<std::string,TupleToVectorPairMap> gidFieldOffsets_closure_;
 
    bool requireOrientations_;
-   
+
    bool useDOFManagerFEI_;
    bool useTieBreak_;
 };

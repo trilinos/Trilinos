@@ -105,9 +105,11 @@ namespace MueLu {
     RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
+
     RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A);
     RCP<BlockedCrsMatrix> bP = rcp_dynamic_cast<BlockedCrsMatrix>(P);
     TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null() || bP.is_null(), Exceptions::BadCast, "Matrices A and P must be of type BlockedCrsMatrix.");
+
 
     RCP<BlockedCrsMatrix> bAP;
     RCP<BlockedCrsMatrix> bAc;
@@ -216,7 +218,7 @@ namespace MueLu {
       }
 
       Aout->insertGlobalValues(grid, indout.view(0, indout.size()), valout.view(0, valout.size()));
-      if (diagVal[row] == 0.0 && repairZeroDiagonals) {
+      if (diagVal[row] == Teuchos::ScalarTraits<SC>::zero() && repairZeroDiagonals) {
         // always overwrite diagonal entry
         Aout->insertGlobalValues(grid, Teuchos::tuple<GO>(grid), Teuchos::tuple<SC>(1.0));
       }

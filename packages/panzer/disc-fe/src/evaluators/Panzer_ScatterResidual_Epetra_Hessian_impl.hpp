@@ -124,7 +124,7 @@ ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
 template<typename TRAITS,typename LO,typename GO> 
 void panzer::ScatterResidual_Epetra<panzer::Traits::Hessian, TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -132,9 +132,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
   }
 }
 
@@ -144,11 +141,11 @@ void panzer::ScatterResidual_Epetra<panzer::Traits::Hessian, TRAITS,LO,GO>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
-  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc->getDataObject(globalDataKey_));
  
   if(epetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
     epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
   }
 }
@@ -157,8 +154,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
 template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Hessian, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
-   std::vector<int> cLIDs, rLIDs;
+{
+  using Kokkos::View;
+  using PHX::Device;
+  using std::vector;
+
    std::vector<double> jacRow;
 
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
@@ -182,12 +182,16 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-      cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
+      auto rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+      auto initial_cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
+      vector<int> cLIDs;
+      for (int i(0); i < static_cast<int>(initial_cLIDs.extent(0)); ++i)
+        cLIDs.push_back(initial_cLIDs(i));
       if (Teuchos::nonnull(workset.other)) {
         const std::size_t other_cellLocalId = workset.other->cell_local_ids[worksetCellIndex];
-        const std::vector<int> other_cLIDs = colGlobalIndexer->getElementLIDs(other_cellLocalId);
-        cLIDs.insert(cLIDs.end(), other_cLIDs.begin(), other_cLIDs.end());
+	auto other_cLIDs = colGlobalIndexer->getElementLIDs(other_cellLocalId);
+        for (int i(0); i < static_cast<int>(other_cLIDs.extent(0)); ++i)
+          cLIDs.push_back(other_cLIDs(i));
       }
 
       // loop over each field to be scattered

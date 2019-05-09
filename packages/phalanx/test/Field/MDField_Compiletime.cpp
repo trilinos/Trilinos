@@ -161,6 +161,21 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     MDField<MyTraits::FadType,Cell,Point,Dim> f;
     cout << "passed!" << endl;
 
+    // Test create, set and get for RCP<FieldTag>
+    {
+      RCP<PHX::FieldTag> t1 = rcp(new PHX::Tag<double>("test",node_scalar));
+      MDField<double,Cell,Node> f1(t1); // rcp(tag) ctor
+      MDField<double,Cell,Node> f2; 
+      f2.setFieldTag(t1); // set rcp(tag)
+      auto t2 = f1.fieldTagPtr(); // accessor
+      auto t3 = f2.fieldTagPtr();
+      TEST_ASSERT(nonnull(t1));
+      TEST_ASSERT(nonnull(t2));
+      TEST_ASSERT(nonnull(t3));
+      TEST_EQUALITY(*t1,*t2);
+      TEST_EQUALITY(*t2,*t3);
+    }
+
     // MDField ctor interoperability between const and non-const tags
     {
       Tag<double> nonconst_tag("non-const tag", node_scalar);

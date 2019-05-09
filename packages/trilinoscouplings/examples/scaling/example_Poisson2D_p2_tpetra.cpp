@@ -478,6 +478,7 @@ int main(int argc, char *argv[]) {
   TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
   string msg("Poisson: ");
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Mesh queries")));
 
   // Get mesh size info
@@ -610,6 +611,7 @@ int main(int argc, char *argv[]) {
     delete [] elem_cmap_elem_cnts;
   }
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global Node Nums")));
 
 
@@ -627,6 +629,7 @@ int main(int argc, char *argv[]) {
                        rank);
 
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Boundary Conds")));
 
   // Container indicating whether a node is on the boundary (1-yes 0-no)
@@ -657,6 +660,7 @@ int main(int argc, char *argv[]) {
   }
   delete [] sideSetIds;
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature")));
 
 
@@ -727,6 +731,7 @@ int main(int argc, char *argv[]) {
 
   myCub->getCubature(cubPoints, cubWeights);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting basis")));
 
 
@@ -745,6 +750,7 @@ int main(int argc, char *argv[]) {
   myHGradBasis.getValues(HGBValues, cubPoints, OPERATOR_VALUE);
   myHGradBasis.getValues(HGBGrads, cubPoints, OPERATOR_GRAD);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Build global maps")));
 
 
@@ -868,6 +874,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /************************** DIRICHLET BC SETUP ************************************/
   /**********************************************************************************/
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Get Dirichlet boundary values")));
 
   int numBCNodes = 0;
@@ -901,6 +908,7 @@ int main(int argc, char *argv[]) {
   }
 
     
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global assembly")));
 
   /**********************************************************************************/
@@ -944,6 +952,7 @@ int main(int argc, char *argv[]) {
   //writer_type::writeSparseFile("A0_p2_tpetra.m", rcpFromRef(StiffMatrix));
   //writer_type::writeDenseFile("rhs_tpetra.m", rhsVector);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature for auxiliary P1 mesh")));
 
   /////////////////////////////////////////////////////////////////////
@@ -963,6 +972,7 @@ int main(int argc, char *argv[]) {
   FieldContainer<double> cubWeights_aux(numCubPoints_aux);
   myCub_aux->getCubature(cubPoints_aux, cubWeights_aux);
   
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting basis for auxiliary P1 mesh")));
 
   //Basis
@@ -977,6 +987,7 @@ int main(int argc, char *argv[]) {
   myHGradBasis_aux.getValues(HGBValues_aux, cubPoints_aux, OPERATOR_VALUE);
   myHGradBasis_aux.getValues(HGBGrads_aux, cubPoints_aux, OPERATOR_GRAD);
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global assembly (auxiliary system)")));
 
   crs_matrix_type StiffMatrix_aux(globalMapG, 20*numFieldsG_aux);
@@ -1007,6 +1018,7 @@ int main(int argc, char *argv[]) {
   StiffMatrix_aux.fillComplete();
   //writer_type::writeSparseFile("A1_p1_aux_tpetra.m", rcpFromRef(StiffMatrix_aux));
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Adjust global matrix and rhs due to BCs")));
 
   // Generate P2-to-P1 identity coarsening (base mesh to auxiliary mesh).
@@ -1139,6 +1151,7 @@ int main(int argc, char *argv[]) {
   /**************************** CALCULATE ERROR *************************************/
   /**********************************************************************************/
 
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Calculate error")));
 
   double L2err = 0.0;

@@ -47,6 +47,7 @@
 /// \author Mark Hoemmen
 ///
 #include "Tpetra_Map.hpp"
+#include <numeric>
 
 // Macro that marks a function as "possibly unused," in order to
 // suppress build warnings.
@@ -302,7 +303,7 @@ namespace Tpetra {
         const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid ();
         gatherMap = rcp (new MapType (INVALID, allElts,
                                       oneToOneMap->getIndexBase (),
-                                      comm, map->getNode ()));
+                                      comm));
       }
       if (! err.is_null ()) {
         err->popTab ();

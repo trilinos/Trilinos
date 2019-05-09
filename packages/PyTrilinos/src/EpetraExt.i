@@ -47,7 +47,7 @@
 PyTrilinos.EpetraExt is the python interface to the Trilinos linear
 algebra services extension package EpetraExt:
 
-    http://trilinos.sandia.gov/packages/epetraext
+    https://trilinos.org/docs/dev/packages/epetraext/doc/html/index.html
 
 The purpose of EpetraExt is to provide various extensions to Epetra
 that were not considered appropriate for the Epetra package.  These
@@ -91,10 +91,10 @@ example subdirectory of the PyTrilinos package:
 	docstring = %epetraext_docstring) EpetraExt
 
 %{
-// System includes
+// System include files
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
@@ -103,48 +103,22 @@ example subdirectory of the PyTrilinos package:
 #undef HAVE_STDINT_H
 #endif
 
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_PythonException.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "Teuchos_XMLObject.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// Epetra python includes
+// Epetra python include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
 
-// EpetraExt includes
-#include "EpetraExt_config.h"
-#include "EpetraExt_Version.h"
-#include "EpetraExt_Exception.h"
-#include "EpetraExt_MapColoring.h"
-#include "EpetraExt_MapColoringIndex.h"
-#include "EpetraExt_BlockMapOut.h"
-#include "EpetraExt_VectorOut.h"
-#include "EpetraExt_MultiVectorOut.h"
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_BlockMapIn.h"
-#include "EpetraExt_VectorIn.h"
-#include "EpetraExt_MultiVectorIn.h"
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_MatrixMatrix.h"
-#include "EpetraExt_HDF5.h"
-#include "EpetraExt_XMLReader.h"
-#include "EpetraExt_XMLWriter.h"
-#include "EpetraExt_SubCopy_CrsMatrix.h"
-#include "EpetraExt_ModelEvaluator.h"
-#include "PyTrilinos_EpetraExt_Util.hpp"
+// EpetraExt include files
+#include "PyTrilinos_EpetraExt_Headers.hpp"
 %}
 
 // PyTrilinos configuration
@@ -363,7 +337,7 @@ Return a CrsMatrix read from an open HDF5 file with group name 'name'.
 %apply double& NORM {double& NormOne,
                      double& NormInf};
 
-#ifdef HAVE_EPETRAEXT_HDF5
+#ifdef HAVE_PYTRILINOS_EPETRAEXT_HDF5
 namespace EpetraExt
 {
 %extend HDF5
@@ -656,6 +630,7 @@ EpetraExt::Multiply;
   }
 %}
 
+#ifdef HAVE_PYTRILINOS_EPETRAEXT_MODEL_EVALUATOR
 ///////////////////////////////////////////
 // EpetraExt ModelEvaluator support code //
 ///////////////////////////////////////////
@@ -1079,6 +1054,8 @@ public:
 //   dictionaries
 // * Add documentation to Epetra_ModelEvaluator.h (based upon Thyra
 //   ModelEvaluator documentation)
+
+#endif
 
 // Turn off the exception handling
 %exception;

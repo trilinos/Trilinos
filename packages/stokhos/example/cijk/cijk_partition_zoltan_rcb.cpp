@@ -44,6 +44,9 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_toString.hpp"
 
+#include <fstream>
+#include <iostream>
+
 extern "C" {
 #include "zoltan.h"
 }
@@ -343,7 +346,7 @@ int main(int argc, char **argv)
     // for (int part=0; part<num_parts; ++part) {
     //   double xmin, ymin, zmin, xmax, ymax, zmax;
     //   int ndim;
-    //   rc = Zoltan_RCB_Box(zz, part, &ndim, &xmin, &ymin, &zmin, 
+    //   rc = Zoltan_RCB_Box(zz, part, &ndim, &xmin, &ymin, &zmin,
     //                       &xmax, &ymax, &zmax);
     //   TEUCHOS_ASSERT(rc == 0);
     //   double delta_x = xmax - xmin;

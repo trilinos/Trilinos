@@ -147,7 +147,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
 
   localRowMap_ =
     rcp (new map_type (numRows, indexBase, localComm,
-                       Tpetra::GloballyDistributed, A_->getNode ()));
+                       Tpetra::GloballyDistributed));
   // If the original matrix's range Map is not fitted to its row Map,
   // we'll have to do an Export when applying the matrix.
   localRangeMap_ = localRowMap_;
@@ -163,7 +163,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
     const size_t numCols = A_->getDomainMap()->getNodeNumElements ();
     localDomainMap_ =
       rcp (new map_type (numCols, indexBase, localComm,
-                         Tpetra::GloballyDistributed, A_->getNode ()));
+                         Tpetra::GloballyDistributed));
   }
 
   // NodeNumEntries_ will contain the actual number of nonzeros for
@@ -235,12 +235,15 @@ LocalFilter<MatrixType>::getComm () const
 }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
+TPETRA_DEPRECATED
 Teuchos::RCP<typename MatrixType::node_type>
 LocalFilter<MatrixType>::getNode () const
 {
-  return A_->getNode ();
+  return Teuchos::null;
 }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class MatrixType>
@@ -389,20 +392,6 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
 
 
 template<class MatrixType>
-global_size_t LocalFilter<MatrixType>::getGlobalNumDiags () const
-{
-  return A_->getGlobalNumDiags ();
-}
-
-
-template<class MatrixType>
-size_t LocalFilter<MatrixType>::getNodeNumDiags () const
-{
-  return A_->getNodeNumDiags ();
-}
-
-
-template<class MatrixType>
 size_t LocalFilter<MatrixType>::getGlobalMaxNumRowEntries () const
 {
   return MaxNumEntries_;
@@ -420,20 +409,6 @@ template<class MatrixType>
 bool LocalFilter<MatrixType>::hasColMap () const
 {
   return true;
-}
-
-
-template<class MatrixType>
-bool LocalFilter<MatrixType>::isLowerTriangular () const
-{
-  return A_->isLowerTriangular();
-}
-
-
-template<class MatrixType>
-bool LocalFilter<MatrixType>::isUpperTriangular () const
-{
-  return A_->isUpperTriangular();
 }
 
 
@@ -611,9 +586,9 @@ getLocalRowCopy (local_ordinal_type LocalRow,
 template<class MatrixType>
 void
 LocalFilter<MatrixType>::
-getGlobalRowView (global_ordinal_type GlobalRow,
-                  Teuchos::ArrayView<const global_ordinal_type> &indices,
-                  Teuchos::ArrayView<const scalar_type> &values) const
+getGlobalRowView (global_ordinal_type /* GlobalRow */,
+                  Teuchos::ArrayView<const global_ordinal_type> &/* indices */,
+                  Teuchos::ArrayView<const scalar_type> &/* values */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "Ifpack2::LocalFilter does not implement getGlobalRowView.");
@@ -623,9 +598,9 @@ getGlobalRowView (global_ordinal_type GlobalRow,
 template<class MatrixType>
 void
 LocalFilter<MatrixType>::
-getLocalRowView (local_ordinal_type LocalRow,
-                 Teuchos::ArrayView<const local_ordinal_type> &indices,
-                 Teuchos::ArrayView<const scalar_type> &values) const
+getLocalRowView (local_ordinal_type /* LocalRow */,
+                 Teuchos::ArrayView<const local_ordinal_type> &/* indices */,
+                 Teuchos::ArrayView<const scalar_type> &/* values */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "Ifpack2::LocalFilter does not implement getLocalRowView.");
@@ -650,7 +625,7 @@ getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_t
 template<class MatrixType>
 void
 LocalFilter<MatrixType>::
-leftScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
+leftScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& /* x */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "Ifpack2::LocalFilter does not implement leftScale.");
@@ -660,7 +635,7 @@ leftScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_
 template<class MatrixType>
 void
 LocalFilter<MatrixType>::
-rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
+rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& /* x */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "Ifpack2::LocalFilter does not implement rightScale.");

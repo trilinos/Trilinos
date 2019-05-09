@@ -38,7 +38,7 @@
 //
 // ***********************************************************************
 // @HEADER
-//  This example tests TraceMin-Davidson on the problem of finding the Fiedler 
+//  This example tests TraceMin-Davidson on the problem of finding the Fiedler
 //  vector of graph Laplacian (input from a matrix market file)
 
 // Include autoconfigured header
@@ -55,16 +55,16 @@
 #include "AnasaziOperator.hpp"
 
 // Include header for Tpetra compressed-row storage matrix
-#include "Tpetra_CrsMatrix.hpp" 
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Version.hpp"        
-#include "Tpetra_Map.hpp"            
-#include "Tpetra_MultiVector.hpp" 
-#include "Tpetra_Operator.hpp"   
-#include "Tpetra_Vector.hpp" 
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Version.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Operator.hpp"
+#include "Tpetra_Vector.hpp"
 
 // Include headers for reading and writing matrix-market files
-#include <MatrixMarket_Tpetra.hpp>           
+#include <MatrixMarket_Tpetra.hpp>
 
 // Include header for sparse matrix operations
 #include <TpetraExt_MatrixMatrix_def.hpp>
@@ -87,17 +87,14 @@
 
   //
   // Specify types used in this example
-  //                                   
-  typedef double                                                  Scalar;
-  typedef int                                                     Ordinal;  
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform; 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;     
-  typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>          CrsMatrix;
-  typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>             Vector;
-  typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node>        TMV;
-  typedef Tpetra::Operator<Scalar,Ordinal,Ordinal,Node>           TOP;
-  typedef Anasazi::MultiVecTraits<Scalar, TMV>                     TMVT;
-  typedef Anasazi::OperatorTraits<Scalar, TMV, TOP>                 TOPT;
+  //
+  using Scalar = double;
+  using CrsMatrix = Tpetra::CrsMatrix<Scalar>;
+  using Vector = Tpetra::Vector<Scalar>;
+  using TMV = Tpetra::MultiVector<Scalar>;
+  using TOP = Tpetra::Operator<Scalar>;
+  using TMVT = Anasazi::MultiVecTraits<Scalar, TMV>;
+  using TOPT = Anasazi::OperatorTraits<Scalar, TMV, TOP>;
 
 void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const bool normalized, RCP<CrsMatrix>& L, RCP<Vector>& auxVec);
 
@@ -105,20 +102,17 @@ int main(int argc, char *argv[]) {
   //
   // Initialize the MPI session
   //
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
-  // 
-  // Get the default communicator and node
-  //                                      
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();          
-  RCP<Node>                      node = platform.getNode();          
-  const int myRank = comm->getRank();  
+  //
+  // Get the default communicator
+  //
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  const int myRank = comm->getRank();
 
   //
   // Get parameters from command-line processor
-  // 
+  //
   std::string inputFilename("/home/amklinv/matrices/mesh1em6_Laplacian.mtx");
   std::string outputFilename("/home/amklinv/matrices/mesh1em6_Fiedler.mtx");
   Scalar tol = 1e-6;
@@ -129,7 +123,7 @@ int main(int argc, char *argv[]) {
   bool useWeightedLaplacian = false;
   bool verbose = true;
   std::string whenToShift = "Always";
-  Teuchos::CommandLineProcessor cmdp(false,true); 
+  Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("fin",&inputFilename, "Filename for Matrix-Market test matrix.");
   cmdp.setOption("fout",&outputFilename, "Filename for Fiedler vector.");
   cmdp.setOption("tolerance",&tol, "Relative residual used for solver.");
@@ -147,8 +141,9 @@ int main(int argc, char *argv[]) {
   //
   // Read the matrix from a file
   //
-  RCP<const CrsMatrix> fileMat = Tpetra::MatrixMarket::Reader<CrsMatrix>::readSparseFile(inputFilename, comm, node);
-  
+  RCP<const CrsMatrix> fileMat =
+    Tpetra::MatrixMarket::Reader<CrsMatrix>::readSparseFile(inputFilename, comm);
+
   //
   // Form the graph Laplacian and get a const pointer to the data
   //
@@ -161,7 +156,7 @@ int main(int argc, char *argv[]) {
   // Compute the norm of the matrix
   //
   Scalar mat_norm = K->getFrobeniusNorm();
-  
+
   //
   // ************************************
   // Start the block Arnoldi iteration
@@ -191,7 +186,7 @@ int main(int argc, char *argv[]) {
   MyPL.set("Num Blocks", numBlocks);                   // Maximum number of blocks in the subspace
   MyPL.set("When To Shift", whenToShift);
   MyPL.set("Saddle Solver Type", "Block Diagonal Preconditioned Minres");
-  
+
   //
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
@@ -202,20 +197,20 @@ int main(int argc, char *argv[]) {
   //
   // Create the eigenproblem
   //
-  RCP<Anasazi::BasicEigenproblem<Scalar,TMV,TOP> > MyProblem = 
+  RCP<Anasazi::BasicEigenproblem<Scalar,TMV,TOP> > MyProblem =
       Teuchos::rcp( new Anasazi::BasicEigenproblem<Scalar,TMV,TOP>(K, ivec) );
-  
+
   //
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
   //
   MyProblem->setHermitian(true);
-  
+
   //
-  // Set the number of eigenvalues requested 
+  // Set the number of eigenvalues requested
   //
   MyProblem->setNEV( nev );
 
-  if(usePrec) 
+  if(usePrec)
   {
     #ifdef HAVE_ANASAZI_IFPACK2
     //
@@ -225,7 +220,7 @@ int main(int argc, char *argv[]) {
     const std::string precType = "RELAXATION";
     Teuchos::ParameterList PrecPL;
     PrecPL.set( "relaxation: type", "Jacobi");
-    RCP<Ifpack2::Preconditioner<double,int,int> > Prec = factory.create(precType, K);
+    RCP<Ifpack2::Preconditioner<Scalar> > Prec = factory.create(precType, K);
     assert(Prec != Teuchos::null);
     Prec->setParameters(PrecPL);
     Prec->initialize();
@@ -246,7 +241,7 @@ int main(int argc, char *argv[]) {
   // Since we are computing the Fiedler vector, we want it to be orthogonal to the null space of the laplacian
   //
   MyProblem->setAuxVecs(auxVec);
-  
+
   //
   // Inform the eigenproblem that you are finished passing it information
   //
@@ -262,7 +257,7 @@ int main(int argc, char *argv[]) {
   // Initialize the TraceMin-Davidson solver
   //
   Anasazi::Experimental::TraceMinDavidsonSolMgr<Scalar, TMV, TOP> MySolverMgr(MyProblem, MyPL);
- 
+
   //
   // Solve the problem to the specified tolerances
   //
@@ -272,7 +267,7 @@ int main(int argc, char *argv[]) {
   }
   else if (myRank == 0)
     cout << "Anasazi::EigensolverMgr::solve() returned converged." << std::endl;
-  
+
   //
   // Get the eigenvalues and eigenvectors from the eigenproblem
   //
@@ -280,22 +275,22 @@ int main(int argc, char *argv[]) {
   std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
   RCP<TMV> evecs = sol.Evecs;
   int numev = sol.numVecs;
-  
+
   //
   // Compute the residual, just as a precaution
   //
   if (numev > 0) {
-    
+
     Teuchos::SerialDenseMatrix<int,Scalar> T(numev,numev);
     TMV tempvec(K->getRowMap(), TMVT::GetNumberVecs( *evecs ));
     std::vector<Scalar> normR(sol.numVecs);
     TMV Kvec( K->getRowMap(), TMVT::GetNumberVecs( *evecs ) );
 
-    TOPT::Apply( *K, *evecs, Kvec ); 
+    TOPT::Apply( *K, *evecs, Kvec );
     TMVT::MvTransMv( 1.0, Kvec, *evecs, T );
     TMVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, Kvec );
     TMVT::MvNorm( Kvec, normR );
-  
+
     if (myRank == 0) {
       cout.setf(std::ios_base::right, std::ios_base::adjustfield);
       cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<std::endl;
@@ -317,7 +312,7 @@ int main(int argc, char *argv[]) {
   //
   if (numev > 0) {
     Tpetra::MatrixMarket::Writer<CrsMatrix>::writeDenseFile(outputFilename,evecs,"","Fiedler vector of "+inputFilename);
-  }  
+  }
 
   return 0;
 }
@@ -354,19 +349,23 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
   //
   // Set a few convenient constants
   //
-  typedef Teuchos::ScalarTraits<Scalar>                           SCT;
+  using SCT = Teuchos::ScalarTraits<Scalar>;
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
   Scalar ONE = SCT::one();
   Scalar ZERO = SCT::zero();
 
-  std::vector<Ordinal> diagIndex(1);
+  std::vector<GO> diagIndex(static_cast<GO>(1));
+  std::vector<LO> diagIndexLcl(static_cast<LO>(1));
   std::vector<Scalar> value(1,ONE);
-  Teuchos::ArrayView<const Ordinal> cols(diagIndex);
+  Teuchos::ArrayView<const GO> cols(diagIndex);
+  Teuchos::ArrayView<const LO> colsLcl(diagIndexLcl);
   Teuchos::ArrayView<const Scalar> vals(value);
 
   //
   // Get the number of rows of A
   //
-  int n = A->getGlobalNumRows();
+  const GO n = A->getGlobalNumRows();
 
   //
   // Construct the unweighted Laplacian
@@ -377,7 +376,7 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
   // L = A + A'
   //
   L = Tpetra::MatrixMatrix::add(ONE,false,*A,ONE,true,*A);
-  RCP<const Tpetra::Map<Ordinal,Ordinal,Node> > rowMap = L->getRowMap();
+  RCP<const Tpetra::Map<> > rowMap = L->getRowMap();
 
   // This line tells L that we are going to modify its entries
   L->resumeFill();
@@ -386,9 +385,9 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
   {
     // These vectors hold the actual data
     // The ArrayView objects just point to them
-    std::vector<Ordinal> colIndices;
+    std::vector<GO> colIndices;
     std::vector<Scalar> values;
-    Teuchos::ArrayView<Ordinal> colIndicesView;
+    Teuchos::ArrayView<GO> colIndicesView;
     Teuchos::ArrayView<Scalar> valuesView;
 
     // This vector holds the diagonal
@@ -399,7 +398,7 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
     // Also delete diagonal entries
     // Also compute the sum of off-diagonal entries
     //
-    for(Ordinal i=0; i<n; i++)
+    for(GO i=0; i<n; i++)
     {
       // If this process does not own that row of the matrix, do nothing
       // Each process handles its own rows
@@ -437,21 +436,18 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
 
     // Get a view of the LOCAL diagonal
     Teuchos::ArrayRCP<const Scalar> diagView = diagonal->getData();
+    using size_type = Teuchos::ArrayRCP<const Scalar>::size_type;
 
     // Create the auxiliary vector and set its values
     auxVec = Teuchos::rcp(new Vector(rowMap,false));
-    if(normalized)
-    {
+    if (normalized) {
       // auxVec[i] = sqrt(L(i,i))
-      for(Ordinal i=0; i<diagView.size(); i++)
-      {
-        auxVec->replaceLocalValue(i,sqrt(diagView[i]));
+      for (size_type i = 0; i < diagView.size (); ++i) {
+        auxVec->replaceLocalValue (static_cast<LO> (i), sqrt (diagView[i]));
       }
     }
-    else
-    {
-      // auxVec[i] = ONE
-      auxVec->putScalar(ONE);
+    else {
+      auxVec->putScalar(ONE); // auxVec[i] = ONE for all i
     }
 
     // Compute the norm of the vector
@@ -461,13 +457,12 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
     auxVec->scale(ONE/vecNorm);
 
     // Finish computing the Laplacian
-    if(normalized)
-    {
+    if (normalized) {
       // Compute D^{-1/2}
-      RCP<Vector> scaleVec = Teuchos::rcp( new Vector(rowMap,false) );
-      for(Ordinal i=0; i<diagView.size(); i++)
+      Vector scaleVec (rowMap, false);
+      for(size_type i=0; i<diagView.size(); i++)
       {
-        scaleVec->replaceLocalValue(i,ONE/sqrt(diagView[i]));
+        scaleVec.replaceLocalValue(static_cast<LO>(i),ONE/sqrt(diagView[i]));
       }
 
       // Must be called before scaling
@@ -475,14 +470,14 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
       L->fillComplete();
 
       // Premultiply L by D^{-1/2}
-      L->leftScale(*scaleVec);
+      L->leftScale(scaleVec);
 
       // Postmultiply L by D^{-1/2}
-      L->rightScale(*scaleVec);
+      L->rightScale(scaleVec);
       L->resumeFill();
 
       // Set diagonal entries to 1
-      for(Ordinal i=0; i<n; i++)
+      for(GO i=0; i<n; i++)
       {
         diagIndex[0] = i;
         if(rowMap->isNodeGlobalElement(i)) L->replaceGlobalValues(i,cols,vals);
@@ -491,28 +486,28 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
     else
     {
       // Set diagonal entries
-      for(Ordinal i=0; i<diagView.size(); i++)
+      for(size_type i=0; i<diagView.size(); i++)
       {
         diagIndex[0] = rowMap->getGlobalElement(i);
         value[0] = diagView[i];
-        L->replaceLocalValues(i,cols,vals);
+        L->replaceLocalValues(i,colsLcl,vals);
       }
     }
 
     // Tell the matrix we're done modifying its entries
     L->fillComplete();
   }
-  else
-  {
+  else {
     //
     // Construct the adjacency matrix by removing the diagonal and setting all off-diagonal entries to 1
     //
 
     // Here, we ensure that space is reserved for the diagonal entries
-    for(Ordinal i=0; i<n; i++)
-    {
+    for (GO i = 0; i < n; ++i) {
       diagIndex[0] = i;
-      if(rowMap->isNodeGlobalElement(i)) L->replaceGlobalValues(i,cols,vals);
+      if(rowMap->isNodeGlobalElement(i)) {
+        L->replaceGlobalValues(i,cols,vals);
+      }
     }
 
     // Set all entries of the matrix to -1
@@ -522,21 +517,18 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
     L->fillComplete();
 
     // Create the auxiliary vector and set its values
-    auxVec = Teuchos::rcp( new Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>(rowMap,false) );
-    if(normalized)
-    {
-      // Computes the degree of each vertex of the graph
-      for(Ordinal i=0; i<n; i++)
-      {
+    auxVec = Teuchos::rcp( new Vector (rowMap,false) );
+    if (normalized) {
+      // Compute the degree of each vertex of the graph
+      for (GO i = 0; i < n; ++i) {
         // If this process does not own that row of the matrix, do nothing
         // Each process handles its own rows
-        if(rowMap->isNodeGlobalElement(i)) 
-        {
+        if (rowMap->isNodeGlobalElement(i)) {
           Scalar temp;
 
-          // Because we insisted on having a diagonal, the degree is really 1 less than 
+          // Because we insisted on having a diagonal, the degree is really 1 less than
           // the number of entries in the row
-          size_t nnzInRow = L->getNumEntriesInGlobalRow(i)-1;
+          size_t nnzInRow = L->getNumEntriesInGlobalRow(i) - static_cast<size_t> (1);
           temp = sqrt(nnzInRow);
 
           // auxVec[i] = sqrt(degree of node i)
@@ -544,12 +536,10 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
         }
       }
     }
-    else
-    {
-      // auxVec[i] = 1
-      auxVec->putScalar(ONE);
+    else {
+      auxVec->putScalar(ONE); // auxVec[i] = 1 for all i
     }
-      
+
     // Compute the norm of the vector
     Scalar vecNorm = auxVec->norm2();
 
@@ -557,22 +547,19 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
     auxVec->scale(ONE/vecNorm);
 
     // Finish computing the Laplacian
-    if(normalized)
-    {
+    if (normalized) {
       // Compute the degree of each node so we can normalize the Laplacian
       // normalizedL = D^{-1/2} L D^{-1/2}
-      Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> scalars(rowMap,false);
-      for(Ordinal i=0; i<n; i++)
-      {
+      Vector scalars(rowMap,false);
+      for (GO i = 0; i < n; ++i) {
         // If this process does not own that row of the matrix, do nothing
         // Each process handles its own rows
-        if(rowMap->isNodeGlobalElement(i)) 
-        {
+        if(rowMap->isNodeGlobalElement(i)) {
           Scalar temp;
 
-          // Because we insisted on having a diagonal, the degree is really 1 less than 
+          // Because we insisted on having a diagonal, the degree is really 1 less than
           // the number of entries in the row
-          size_t nnzInRow = L->getNumEntriesInGlobalRow(i)-1;
+          size_t nnzInRow = L->getNumEntriesInGlobalRow(i) - static_cast<size_t> (1);
           temp = ONE/sqrt(nnzInRow);
 
           // scalars[i] = 1/sqrt(degree of node i)
@@ -588,24 +575,20 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
       L->resumeFill();
 
       // Set diagonal entries to 1
-      for(Ordinal i=0; i<n; i++)
-      {
+      for (GO i = 0; i < n; ++i) {
         diagIndex[0] = i;
         if(rowMap->isNodeGlobalElement(i)) L->replaceGlobalValues(i,cols,vals);
       }
     }
-    else
-    {
+    else {
       L->resumeFill();
-      for(Ordinal i=0; i<n; i++)
-      {
+      for (GO i = 0; i < n; ++i) {
         // If this process does not own that row of the matrix, do nothing
         // Each process handles its own rows
-        if(rowMap->isNodeGlobalElement(i)) 
-        {
-          // Because we insisted on having a diagonal, the degree is really 1 less than 
+        if(rowMap->isNodeGlobalElement(i)) {
+          // Because we insisted on having a diagonal, the degree is really 1 less than
           // the number of entries in the row
-          size_t nnzInRow = L->getNumEntriesInGlobalRow(i)-1;
+          size_t nnzInRow = L->getNumEntriesInGlobalRow(i) - static_cast<size_t> (1);
 
           // L[i,i] = degree of node i
           diagIndex[0] = i;

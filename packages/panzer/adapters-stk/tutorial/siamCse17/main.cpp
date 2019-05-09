@@ -59,7 +59,7 @@
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_NodeType.hpp"
 #include "Panzer_PauseToAttach.hpp"
@@ -172,7 +172,7 @@ main(
   using   panzer::ConnManager;
   using   panzer::createGlobalData;
   using   panzer::DOFManagerFactory;
-  using   panzer::EpetraLinearObjFactory;
+  using   panzer::BlockedEpetraLinearObjFactory;
   using   panzer::GlobalData;
   using   panzer::LinearObjFactory;
   using   panzer::PhysicsBlock;
@@ -340,8 +340,8 @@ main(
     } // end loop over physicsBlocks
 
     // Build the connection manager, which is an abstraction of the mesh.
-    const RCP<ConnManager<int, int>> connManager =
-      rcp(new STKConnManager<int>(mesh));
+    const RCP<ConnManager> connManager =
+      rcp(new STKConnManager(mesh));
 
     // Build the degree of freedom manager and the linear object factory, which
     // creates the linear algebra objects (vectors/matrices) for the problem.
@@ -352,15 +352,16 @@ main(
       dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(
         opaqueWrapper(MPI_COMM_WORLD), physicsBlocks, connManager);
       linObjFactory =
-        rcp(new EpetraLinearObjFactory<Traits, int>(comm, dofManager));
+        rcp(new BlockedEpetraLinearObjFactory<Traits, int>(comm, dofManager));
     }
 
     // Build the STK workset factory and attach it to a workset container.
     RCP<WorksetFactory> wkstFactory = rcp(new WorksetFactory(mesh));
     RCP<WorksetContainer> wkstContainer = rcp(new WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++) 
-      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
+    for (size_t i(0); i < physicsBlocks.size(); ++i) 
+      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),
+        physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(worksetSize);
     wkstContainer->setGlobalIndexer(dofManager);
 

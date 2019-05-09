@@ -388,9 +388,9 @@ struct Perm_traits<Epetra_MultiVector> {
 
   /** clone implementation */
   static Epetra_MultiVector* clone(Epetra_MultiVector* example,
-				   Epetra_DataAccess CV,
+				   Epetra_DataAccess /* CV */,
 				   const Epetra_BlockMap& map,
-				   int numVectors)
+				   int /* numVectors */)
   {
     return( new Epetra_MultiVector(map, example->NumVectors()) );
   }
@@ -403,8 +403,8 @@ struct Perm_traits<Epetra_MultiVector> {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   /** permute column-indices within a specified row, if applicable*/
   static Epetra_MultiVector*
-  produceColumnPermutation(Permutation<Epetra_MultiVector>* perm,
-			   Epetra_MultiVector* srcObj)
+  produceColumnPermutation(Permutation<Epetra_MultiVector>* /* perm */,
+			   Epetra_MultiVector* /* srcObj */)
   {
     std::cerr << "col-permutation not implemented for Epetra_MultiVector"<<std::endl;
     return(NULL);
@@ -413,8 +413,8 @@ struct Perm_traits<Epetra_MultiVector> {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   /** permute column-indices within a specified row, if applicable*/
   static Epetra_MultiVector*
-  produceColumnPermutation(Permutation64<Epetra_MultiVector>* perm,
-			   Epetra_MultiVector* srcObj)
+  produceColumnPermutation(Permutation64<Epetra_MultiVector>* /* perm */,
+			   Epetra_MultiVector* /* srcObj */)
   {
     std::cerr << "col-permutation not implemented for Epetra_MultiVector"<<std::endl;
     return(NULL);

@@ -1,0 +1,17 @@
+The tests in this directory compare the output of several MueLu runs
+with reference log files ("gold files"). This means that when the
+output changes, because a parameter was added, some of these test will
+fail. In order to update the gold files to account for the changes:
+
+1) Run the tests.
+2) In your $BUILD_DIR/packages/muelu/test/interface run "make rebase"
+3) Reconfigure and run tests again to check that everything passes
+   now.
+
+This needs to be repeated for different combinations of
+instantiations. Currently, there are 4 sets of gold files:
+
+1) kokkos + scalar==complex
+2) kokkos + scalar!=complex
+3) no kokkos + scalar==complex
+3) no kokkos + scalar!=complex

@@ -111,7 +111,7 @@ private:
      *
      */
     LineMaskStack() {
-      push_back(std::pair<int, PrintMask>(0, LOG_ALWAYS));
+      emplace_back(0, LOG_ALWAYS);
     }
 
     /**
@@ -121,7 +121,7 @@ private:
      * @return      a <b>LineMaskStack</b> reference to the depth stack.
      */
     LineMaskStack &pushDepth() {
-      push_back(std::make_pair(back().first + 1, back().second));
+      emplace_back(back().first + 1, back().second);
       return *this;
     }
 
@@ -134,7 +134,7 @@ private:
      * @return      a <b>LineMaskStack</b> reference to the depth stack.
      */
     LineMaskStack &push(PrintMask line_mask) {
-      push_back(std::make_pair(back().first, line_mask));
+      emplace_back(back().first, line_mask);
       return *this;
     }
 
@@ -249,15 +249,6 @@ public:
     return *this;
   }
 
-  /**
-   * @brief Member function <b>getFlags</b> returns the flags bitmask.
-   *
-   * @return      an <b>int</b> of the flags bitmask.
-   */
-  int getFlags() {
-    return m_flags;
-  }
-
   int getDepth() const {
     return m_lineMaskStack.getDepth();
   }
@@ -283,17 +274,6 @@ public:
   }
 
   /**
-   * @brief Member function <b>setPrintMask</b> sets the print output mask.
-   *
-   * @param mask_string    an <b>PrintMask</b> value of the new print
-   *        mask.
-   *
-   * @return      a <b>Writer</b> reference to this diagnostic
-   *        writer.
-   */
-  //Writer &setPrintMask(const char *mask_string);
-
-  /**
    * @brief Member function <b>setLineMask</b> sets the line mask of this line.
    *
    * @param line_mask    an <b>PrintMask</b> of the mask for this
@@ -304,7 +284,6 @@ public:
    */
   Writer &setLineMask(PrintMask line_mask) {
     m_lineMaskStack.push(line_mask);
-
     return *this;
   }
 
@@ -517,11 +496,11 @@ public:
   }
 
 private:
-  Flags        m_flags;    ///< Describes the output and line prefix information to be printed.
-  PrintMask      m_printMask;    ///< Print mask that the line mask must the match to print
-  LineMaskStack      m_lineMaskStack;  ///< Stack of pushed line masks
-  int        m_traceDepth;    ///< Trace depth
-  std::ostream                  m_writerStream;
+  Flags          m_flags;          ///< Describes the output and line prefix information to be printed.
+  PrintMask      m_printMask;      ///< Print mask that the line mask must the match to print
+  LineMaskStack  m_lineMaskStack;  ///< Stack of pushed line masks
+  int            m_traceDepth;     ///< Trace depth
+  std::ostream   m_writerStream;
 };
 
 /**
@@ -823,6 +802,14 @@ using stk::diag::c_ptr;
 using stk::diag::c_ptr_func;
 using stk::diag::c_ptr_func_;
 
+}
+
+template<typename T>
+std::ostream& operator<<(std::ostream& out, const std::vector<T>& vec) {
+  for (const auto& v : vec) {
+    out << v << " ";
+  }
+  return out;
 }
 
 } // namespace sierra

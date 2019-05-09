@@ -46,6 +46,8 @@
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
+#include <sstream>
 
 //===========================================================================
 //===========================================================================
@@ -62,7 +64,7 @@ AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 //===========================================================================
 template <typename EvalT>
 void panzer::AssemblyEngine<EvalT>::
-evaluate(const panzer::AssemblyEngineInArgs& in)
+evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
 {
   typedef LinearObjContainer LOC;
 
@@ -70,8 +72,9 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   in.ghostedContainer_->setRequiresDirichletAdjustment(true);
 
   GlobalEvaluationDataContainer gedc;
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_gather("+PHX::typeAsString<EvalT>()+")");
+
+  if ( flags.getValue() & EvaluationFlags::Initialize ) {
+    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_gather("+PHX::typeAsString<EvalT>()+")", eval_gather);
 
     in.fillGlobalEvaluationDataContainer(gedc);
     gedc.initialize(); // make sure all ghosted data is ready to go
@@ -85,8 +88,8 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // *********************
   // Volumetric fill
   // *********************
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_volume("+PHX::typeAsString<EvalT>()+")");
+  if ( flags.getValue() & EvaluationFlags::VolumetricFill) {
+    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_volume("+PHX::typeAsString<EvalT>()+")", eval_vol);
     this->evaluateVolume(in);
   }
 
@@ -97,24 +100,26 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // bcs overwrite equations where neumann sum into equations.  Make
   // sure all neumann are done before dirichlet.
 
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")");
-    this->evaluateNeumannBCs(in);
+  if ( flags.getValue() & EvaluationFlags::BoundaryFill) {
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")",eval_neumannbcs);
+      this->evaluateNeumannBCs(in);
+    }
+
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::typeAsString<EvalT>()+")",eval_interfacebcs);
+      this->evaluateInterfaceBCs(in);
+    }
+
+    // Dirchlet conditions require a global matrix
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")",eval_dirichletbcs);
+      this->evaluateDirichletBCs(in);
+    }
   }
 
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::typeAsString<EvalT>()+")");
-    this->evaluateInterfaceBCs(in);
-  }
-
-  // Dirchlet conditions require a global matrix
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")");
-    this->evaluateDirichletBCs(in);
-  }
-
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_scatter("+PHX::typeAsString<EvalT>()+")");
+  if ( flags.getValue() & EvaluationFlags::Scatter) {
+    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_scatter("+PHX::typeAsString<EvalT>()+")",eval_scatter);
     m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
     m_lin_obj_factory->beginFill(*in.container_);
@@ -173,12 +178,12 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
   Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
 
-  panzer::Traits::PreEvalData ped;
-  ped.gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
-  ped.gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  panzer::Traits::PED ped;
+  ped.gedc->addDataObject("Solution Gather Container",in.ghostedContainer_);
+  ped.gedc->addDataObject("Residual Scatter Container",in.ghostedContainer_);
   ped.first_sensitivities_name  = in.first_sensitivities_name;
   ped.second_sensitivities_name = in.second_sensitivities_name;
-  in.fillGlobalEvaluationDataContainer(ped.gedc);
+  in.fillGlobalEvaluationDataContainer(*(ped.gedc));
 
   // Loop over volume field managers
   for (std::size_t block = 0; block < volume_field_managers.size(); ++block) {
@@ -304,13 +309,13 @@ evaluateBCs(const panzer::BCType bc_type,
 {
   Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
 
-  panzer::Traits::PreEvalData ped;
-  ped.gedc.addDataObject("Dirichlet Counter",preEval_loc);
-  ped.gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
-  ped.gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  panzer::Traits::PED ped;
+  ped.gedc->addDataObject("Dirichlet Counter",preEval_loc);
+  ped.gedc->addDataObject("Solution Gather Container",in.ghostedContainer_);
+  ped.gedc->addDataObject("Residual Scatter Container",in.ghostedContainer_);
   ped.first_sensitivities_name  = in.first_sensitivities_name;
   ped.second_sensitivities_name = in.second_sensitivities_name;
-  in.fillGlobalEvaluationDataContainer(ped.gedc);
+  in.fillGlobalEvaluationDataContainer(*(ped.gedc));
 
   // this helps work around issues when constructing a mass
   // matrix using an evaluation of only the transient terms.
@@ -349,9 +354,15 @@ evaluateBCs(const panzer::BCType bc_type,
 
       // Only process bcs of the appropriate type (neumann or dirichlet)
       if (bc.bcType() == bc_type) {
+        std::ostringstream timerName;
+        timerName << "panzer::AssemblyEngine::evaluateBCs: " << bc.identifier();
+        PANZER_FUNC_TIME_MONITOR_DIFF(timerName.str(),eval_BCs);
 
         // Loop over local faces
         for (std::map<unsigned,PHX::FieldManager<panzer::Traits> >::const_iterator side = bc_fm.begin(); side != bc_fm.end(); ++side) {
+          std::ostringstream timerSideName;
+          timerSideName << "panzer::AssemblyEngine::evaluateBCs: " << bc.identifier() << ", side=" << side->first;
+          PANZER_FUNC_TIME_MONITOR_DIFF(timerSideName.str(),Side);
 
           // extract field manager for this side  
           unsigned local_side_index = side->first;

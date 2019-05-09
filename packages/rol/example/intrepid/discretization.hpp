@@ -73,7 +73,7 @@ class Discretization {
   typedef Intrepid::DefaultCubatureFactory<Real>       CubatureFactory;
   typedef Intrepid::Basis_HGRAD_LINE_C1_FEM<Real,FC>   LineBasis;
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
+  template <typename T> using ROL::Ptr = ROL::Ptr<T>;
 
   private:
 
@@ -87,21 +87,21 @@ class Discretization {
 
     shards::CellTopology cellType_; // Cell Topology
     
-    RCP<FC> cubPts_;                // Reference cell cubature points
-    RCP<FC> cubWts_;                // Reference cell cubature weights
-    RCP<FC> cellNodes_;             // Physical cell vertices
-    RCP<FC> jacobian_;              // Jacobians of physical cells
-    RCP<FC> jacInv_;                // Inverses of Jacobians
-    RCP<FC> jacDet_;                // Determinants of Jacobians
-    RCP<FC> wtdMeasure_;            // Weighted measure
-    RCP<FC> valsCubPts_;            // Values at cubature points on reference cell
-    RCP<FC> gradCubPts_;            // Gradient at cubature points on reference cell
-    RCP<FC> tranValsCubPts_;        // Transformed values at cubature points 
-    RCP<FC> tranGradCubPts_;        // Transformed gradient at cubature points
-    RCP<FC> wtdTranValsCubPts_;     // Weighted transformed values at cubature points   
-    RCP<FC> wtdTranGradCubPts_;     // Weighted transformed gradient at cubature points 
-    RCP<FC> physCubPts_;            // Locations of cubature points in physical cells
-    RCP<FC> massMatrices_;          // Mass matrices for each cells
+    ROL::Ptr<FC> cubPts_;                // Reference cell cubature points
+    ROL::Ptr<FC> cubWts_;                // Reference cell cubature weights
+    ROL::Ptr<FC> cellNodes_;             // Physical cell vertices
+    ROL::Ptr<FC> jacobian_;              // Jacobians of physical cells
+    ROL::Ptr<FC> jacInv_;                // Inverses of Jacobians
+    ROL::Ptr<FC> jacDet_;                // Determinants of Jacobians
+    ROL::Ptr<FC> wtdMeasure_;            // Weighted measure
+    ROL::Ptr<FC> valsCubPts_;            // Values at cubature points on reference cell
+    ROL::Ptr<FC> gradCubPts_;            // Gradient at cubature points on reference cell
+    ROL::Ptr<FC> tranValsCubPts_;        // Transformed values at cubature points 
+    ROL::Ptr<FC> tranGradCubPts_;        // Transformed gradient at cubature points
+    ROL::Ptr<FC> wtdTranValsCubPts_;     // Weighted transformed values at cubature points   
+    ROL::Ptr<FC> wtdTranGradCubPts_;     // Weighted transformed gradient at cubature points 
+    ROL::Ptr<FC> physCubPts_;            // Locations of cubature points in physical cells
+    ROL::Ptr<FC> massMatrices_;          // Mass matrices for each cells
 
   public:    
 
@@ -110,7 +110,7 @@ class Discretization {
       cubDegree_(cubDegree), 
       domainLength_(domainLength) {
 
-      using Teuchos::rcp;     
+           
  
       // Set the cell topology (intervals) 
       cellType_ = shards::getCellTopologyData<shards::Line<2> >();
@@ -121,7 +121,7 @@ class Discretization {
       CubatureFactory cubFactory; 
  
       // Get the reference cell cubature       
-      RCP<Cubature> cellCub = cubFactory.create(cellType_,cubDegree_);
+      ROL::Ptr<Cubature> cellCub = cubFactory.create(cellType_,cubDegree_);
 
       // Get number of cubature points
       numCubPts_ = cellCub->getNumPoints();
@@ -131,21 +131,21 @@ class Discretization {
       numFields_ = lineBasis.getCardinality();
 
       // Instantiate field containers
-      cubPts_            = rcp( new FC(numCubPts_,spaceDim_) );
-      cubWts_            = rcp( new FC(numCubPts_) );        
-      cellNodes_         = rcp( new FC(numCells_,numNodes_,spaceDim_) );
-      jacobian_          = rcp( new FC(numCells_,numCubPts_,spaceDim_,spaceDim_) );
-      jacInv_            = rcp( new FC(numCells_,numCubPts_,spaceDim_,spaceDim_) );
-      jacDet_            = rcp( new FC(numCells_,numCubPts_) );
-      wtdMeasure_        = rcp( new FC(numCells_,numCubPts_) );
-      valsCubPts_        = rcp( new FC(numFields_,numCubPts_) );
-      gradCubPts_        = rcp( new FC(numFields_,numCubPts_,spaceDim_) );
-      tranValsCubPts_    = rcp( new FC(numCells_, numFields_, numCubPts_) );
-      tranGradCubPts_    = rcp( new FC(numCells_, numFields_, numCubPts_, spaceDim_) );
-      wtdTranValsCubPts_ = rcp( new FC(numCells_, numFields_, numCubPts_) );
-      wtdTranGradCubPts_ = rcp( new FC(numCells_, numFields_, numCubPts_, spaceDim_) );
-      physCubPts_        = rcp( new FC(numCells_, numCubPts_, spaceDim_) );
-      massMatrices_      = rcp( new FC(numCells_, numFields_, numFields_) );
+      cubPts_            = ROL::makePtr<FC>(numCubPts_,spaceDim_);
+      cubWts_            = ROL::makePtr<FC>(numCubPts_);        
+      cellNodes_         = ROL::makePtr<FC>(numCells_,numNodes_,spaceDim_);
+      jacobian_          = ROL::makePtr<FC>(numCells_,numCubPts_,spaceDim_,spaceDim_);
+      jacInv_            = ROL::makePtr<FC>(numCells_,numCubPts_,spaceDim_,spaceDim_);
+      jacDet_            = ROL::makePtr<FC>(numCells_,numCubPts_);
+      wtdMeasure_        = ROL::makePtr<FC>(numCells_,numCubPts_);
+      valsCubPts_        = ROL::makePtr<FC>(numFields_,numCubPts_);
+      gradCubPts_        = ROL::makePtr<FC>(numFields_,numCubPts_,spaceDim_);
+      tranValsCubPts_    = ROL::makePtr<FC>(numCells_, numFields_, numCubPts_);
+      tranGradCubPts_    = ROL::makePtr<FC>(numCells_, numFields_, numCubPts_, spaceDim_);
+      wtdTranValsCubPts_ = ROL::makePtr<FC>(numCells_, numFields_, numCubPts_);
+      wtdTranGradCubPts_ = ROL::makePtr<FC>(numCells_, numFields_, numCubPts_, spaceDim_);
+      physCubPts_        = ROL::makePtr<FC>(numCells_, numCubPts_, spaceDim_);
+      massMatrices_      = ROL::makePtr<FC>(numCells_, numFields_, numFields_);
 
       Real cellLength = domainLength_/numCells_;
 
@@ -201,27 +201,27 @@ class Discretization {
       return numCubPts_;
     }
     
-    RCP<FC> getPhysCubPts() {
+    ROL::Ptr<FC> getPhysCubPts() {
       return physCubPts_;
     }
 
-    RCP<FC> getTransformedVals() {
+    ROL::Ptr<FC> getTransformedVals() {
       return tranValsCubPts_;  
     } 
      
-    RCP<FC> getTransformedGrad() {
+    ROL::Ptr<FC> getTransformedGrad() {
       return tranGradCubPts_;
     }
 
-    RCP<FC> getWeightedTransformedVals() {
+    ROL::Ptr<FC> getWeightedTransformedVals() {
       return wtdTranValsCubPts_;  
     } 
      
-    RCP<FC> getWeightedTransformedGrad() {
+    ROL::Ptr<FC> getWeightedTransformedGrad() {
       return wtdTranGradCubPts_;
     }
 
-    RCP<FC> getMassMatrices() {
+    ROL::Ptr<FC> getMassMatrices() {
       return massMatrices_;
     }
 

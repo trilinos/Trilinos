@@ -44,6 +44,7 @@
 #define PANZER_BLOCKED_DOF_MANAGER_IMPL_HPP
 
 #include <map>
+#include <numeric>
 
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
@@ -64,7 +65,7 @@ BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager()
 { }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
+BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager(const Teuchos::RCP<ConnManager> & connMngr,MPI_Comm mpiComm)
    : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false), useDOFManagerFEI_(true), useTieBreak_(false)
 {
    setConnManager(connMngr,mpiComm);
@@ -478,7 +479,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::ve
   * \param[in] mpiComm  Communicator to use.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager> & connMngr,MPI_Comm mpiComm)
 {
    communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
 
@@ -499,9 +500,9 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuch
   * \returns Old connection manager.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::resetIndices()
+Teuchos::RCP<ConnManager> BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::resetIndices()
 {
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_;
+   Teuchos::RCP<ConnManager> connMngr = connMngr_;
 
    connMngr_ = Teuchos::null;
    ownedGIDHashTable_.clear(); 
@@ -675,7 +676,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildS
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > 
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
-buildNewIndexer(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connManager,MPI_Comm mpiComm) const
+buildNewIndexer(const Teuchos::RCP<ConnManager> & connManager,MPI_Comm mpiComm) const
 {
   Teuchos::RCP<panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = Teuchos::rcp(new panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT>);
   dofManager->enableTieBreak(useTieBreak_);
@@ -895,7 +896,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
   using Teuchos::rcp_dynamic_cast;
 
   RCP<const FieldPattern> refGeomPattern;
-  RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > refConnManager = getConnManager();
+  RCP<ConnManager> refConnManager = getConnManager();
 
   // verify the pre-conditions:
   //   1. all the UGIs are of type DOFManager
@@ -913,7 +914,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
                                "panzer::BlockedDOFManager::buildGlobalUnknowns: UGI at index " << 0 <<
                                " is not of DOFManager type!");
 
-    RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > connManager = refDofManager->getConnManager();
+    RCP<const ConnManager> connManager = refDofManager->getConnManager();
     TEUCHOS_TEST_FOR_EXCEPTION(refConnManager!=connManager,std::runtime_error,
                                "panzer::BlockedDOFManager::buildGlobalUnknowns: connection manager for UGI " << 0 <<
                                " does not match the reference connection manager");
@@ -929,12 +930,12 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
                                  " is not of DOFManager type!");
 
       RCP<const FieldPattern> geomPattern = dofManager->getGeometricFieldPattern();
-      RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > connManager = dofManager->getConnManager();
+      RCP<const ConnManager> testConnManager = dofManager->getConnManager();
 
       TEUCHOS_TEST_FOR_EXCEPTION(!refGeomPattern->equals(*geomPattern),std::runtime_error,
                                  "panzer::BlockedDOFManager::buildGlobalUnknowns: geometric pattern for UGI " << i <<
                                  " does not match the reference pattern (from UGI 0)");
-      TEUCHOS_TEST_FOR_EXCEPTION(refConnManager!=connManager,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(refConnManager!=testConnManager,std::runtime_error,
                                  "panzer::BlockedDOFManager::buildGlobalUnknowns: connection manager for UGI " << i <<
                                  " does not match the reference connection manager (from UGI 0)");
     }
@@ -1037,16 +1038,17 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
       registerFields(true);
 
    // build the pattern for the ID layout on the mesh
-   std::vector<RCP<const FieldPattern> > patVector;
+   // NOTE: hard coded to CG-only for now since this class is deprecated
+   std::vector<std::pair<FieldType,RCP<const FieldPattern>>> patVector;
    std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> >::iterator f2p_itr;
    for(f2p_itr=fieldStringToPattern_.begin();f2p_itr!=fieldStringToPattern_.end();f2p_itr++)
-      patVector.push_back(f2p_itr->second);
+     patVector.push_back(std::make_pair(FieldType::CG,f2p_itr->second));
 
    // if orientations are required, add the nodal field pattern to make it possible to compute them
    if(requireOrientations_) 
-     patVector.push_back(Teuchos::rcp(new NodalFieldPattern(patVector[0]->getCellTopology())));
+     patVector.push_back(std::make_pair(FieldType::CG,Teuchos::rcp(new NodalFieldPattern(patVector[0].second->getCellTopology()))));
 
-   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);;
+   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);
    aggFieldPattern->buildPattern(patVector);
 
    // setup connectivity mesh

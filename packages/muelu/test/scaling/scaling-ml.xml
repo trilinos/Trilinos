@@ -1,0 +1,36 @@
+<ParameterList name="MueLu">
+
+  <!--
+    For a generic symmetric scalar problem, these are the recommended settings for ML (via the MueLu driver)
+  -->
+  <!-- ===========  GENERAL ================ -->
+    <Parameter        name="use external multigrid package"       type="string" value="ml"/>
+    <Parameter        name="ML output"                            type="int"    value="10"/>
+    <Parameter        name="coarse: max size"                     type="int"      value="1000"/>
+
+    <!-- start of default values for general options (can be omitted) -->
+    <Parameter        name="max levels"                  	  type="int"      value="10"/>
+    <Parameter        name="PDE equations"                        type="int"      value="1"/>
+    <!-- end of default values -->
+
+  <!-- ===========  AGGREGATION  =========== -->
+    <Parameter        name="aggregation: type"                    type="string"   value="Uncoupled"/>
+    <!-- Uncomment the next line to enable dropping of weak connections, which can help AMG convergence
+         for anisotropic problems.  The exact value is problem dependent. -->
+    <!-- <Parameter        name="aggregation: threshold"                type="double"   value="0.02"/> -->
+
+  <!-- ===========  SMOOTHING  =========== -->
+    <Parameter        name="smoother: type"                       type="string"   value="Chebyshev"/>
+    <Parameter        name="smoother: sweeps"                     type="int"      value="2"/>
+    <Parameter        name="smoother: Chebyshev alpha"            type="double"   value="7"/>
+    <Parameter        name="coarse: type"                         type="string"   value="Amesos-KLU"/>
+
+  <!-- ===========  REPARTITIONING  =========== -->
+    <Parameter        name="repartition: enable"                  type="int"      value="1"/>
+    <Parameter        name="repartition: partitioner"             type="string"   value="Zoltan"/>
+    <Parameter        name="repartition: start level"             type="int"      value="2"/>
+    <Parameter        name="repartition: min per proc"            type="int"      value="800"/>
+    <Parameter        name="repartition: max min ratio"           type="double"   value="1.1"/>
+    <!-- end of default values -->
+
+</ParameterList>

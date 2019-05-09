@@ -273,7 +273,7 @@ namespace Belos {
 
 	  const int info = 
 	    const_cast<Epetra_Operator &>(Op_).SetUseTranspose (originalTransposeFlag_);
-	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
+	  TEUCHOS_TEST_FOR_TERMINATION(info != 0,
 			     "Resetting the original "
 			     "transpose flag value of the Epetra_Operator failed, "
 			     "returning a nonzero error code of " << info << ".  "
@@ -301,8 +301,7 @@ namespace Belos {
 	// have the right value on the second call.  This would make the
 	// resulting exception message confusing.
 	const bool finalTransposeFlag = Op_.UseTranspose ();
-	TEUCHOS_TEST_FOR_EXCEPTION(originalTransposeFlag_ != finalTransposeFlag,
-			   std::logic_error,
+	TEUCHOS_TEST_FOR_TERMINATION(originalTransposeFlag_ != finalTransposeFlag,
 			   "Belos::OperatorTraits::Apply: The value of the "
 			   "Epetra_Operator's transpose flag changed unexpectedly!"
 			   "  The original value at the top of this method was "

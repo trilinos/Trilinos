@@ -5,7 +5,7 @@
 
 namespace Teuchos {
 
-template class Table<Action>;
+template struct Table<Action>;
 
 Parser::Parser(GrammarPtr g, int nstates_reserve):
   grammar(g),

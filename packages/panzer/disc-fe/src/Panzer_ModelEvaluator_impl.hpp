@@ -90,6 +90,8 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                double t_init)
   : t_init_(t_init)
   , num_me_parameters_(0)
+  , do_fd_dfdp_(false)
+  , fd_perturb_size_(1e-7)
   , require_in_args_refresh_(true)
   , require_out_args_refresh_(true)
   , responseLibrary_(rLibrary)
@@ -141,6 +143,8 @@ ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>
                bool build_transient_support,double t_init)
   : t_init_(t_init)
   , num_me_parameters_(0)
+  , do_fd_dfdp_(false)
+  , fd_perturb_size_(1e-7)
   , require_in_args_refresh_(true)
   , require_out_args_refresh_(true)
   , global_data_(global_data)
@@ -452,9 +456,9 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
     is_transient = !Teuchos::is_null(inArgs.get_x_dot());
 
   if(Teuchos::is_null(xContainer_))
-    xContainer_    = lof_->buildDomainContainer();
+    xContainer_    = lof_->buildReadOnlyDomainContainer();
   if(Teuchos::is_null(xdotContainer_) && is_transient)
-    xdotContainer_ = lof_->buildDomainContainer();
+    xdotContainer_ = lof_->buildReadOnlyDomainContainer();
 
   const RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
   RCP<const Thyra::VectorBase<Scalar> > x_dot; // possibly empty, but otherwise uses x_dot
@@ -576,7 +580,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
         int numParams(parameters_[i]->scalar_value.size());
         for (int j(0); j < numParams; ++j)
         {
-          RCP<ROVGED> dxdpContainer = lof_->buildDomainContainer();
+          RCP<ROVGED> dxdpContainer = lof_->buildReadOnlyDomainContainer();
           dxdpContainer->setOwnedVector(dxdpBlock->getNonconstVectorBlock(j));
           string name("X TANGENT GATHER CONTAINER: " +
             (*parameters_[i]->names)[j]);
@@ -596,7 +600,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
           int numParams(parameters_[i]->scalar_value.size());
           for (int j(0); j < numParams; ++j)
           {
-            RCP<ROVGED> dxdotdpContainer = lof_->buildDomainContainer();
+            RCP<ROVGED> dxdotdpContainer = lof_->buildReadOnlyDomainContainer();
             dxdotdpContainer->setOwnedVector(
               dxdotdpBlock->getNonconstVectorBlock(j));
             string name("DXDT TANGENT GATHER CONTAINER: " +
@@ -786,6 +790,7 @@ addParameter(const Teuchos::Array<std::string> & names,
 
   require_in_args_refresh_ = true;
   require_out_args_refresh_ = true;
+  this->resetDefaultBase();
 
   return parameter_index;
 }
@@ -806,6 +811,7 @@ addDistributedParameter(const std::string & key,
 
   require_in_args_refresh_ = true;
   require_out_args_refresh_ = true;
+  this->resetDefaultBase();
 
   return parameter_index;
 }
@@ -937,7 +943,7 @@ evalModel_D2gDx2(int respIndex,
 
   ae_inargs.beta = 1.0;
 
-  auto deltaXContainer = lof_->buildDomainContainer();
+  auto deltaXContainer = lof_->buildReadOnlyDomainContainer();
   deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
@@ -948,6 +954,10 @@ evalModel_D2gDx2(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2gDx2;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -982,7 +992,7 @@ evalModel_D2gDxDp(int respIndex,
   ae_inargs.beta = 1.0;
   ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
 
-  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
+  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildReadOnlyDomainContainer();
   deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
@@ -993,6 +1003,11 @@ evalModel_D2gDxDp(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2gDxDp;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1031,7 +1046,7 @@ evalModel_D2gDp2(int respIndex,
   ae_inargs.first_sensitivities_name  = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
   ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
 
-  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
+  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildReadOnlyDomainContainer();
   deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
@@ -1042,6 +1057,11 @@ evalModel_D2gDp2(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2gDp2;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1080,7 +1100,7 @@ evalModel_D2gDpDx(int respIndex,
   ae_inargs.first_sensitivities_name  = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
   ae_inargs.second_sensitivities_name  = "";
 
-  auto deltaXContainer = lof_->buildDomainContainer();
+  auto deltaXContainer = lof_->buildReadOnlyDomainContainer();
   deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
@@ -1091,6 +1111,11 @@ evalModel_D2gDpDx(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2gDpDx;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1133,7 +1158,7 @@ evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   panzer::AssemblyEngineInArgs ae_inargs;
   setupAssemblyInArgs(inArgs,ae_inargs);
 
-  auto deltaXContainer = lof_->buildDomainContainer();
+  auto deltaXContainer = lof_->buildReadOnlyDomainContainer();
   deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
@@ -1188,6 +1213,9 @@ evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2fDx2;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1233,7 +1261,7 @@ evalModel_D2fDxDp(int pIndex,
 
   ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
 
-  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
+  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildReadOnlyDomainContainer();
   deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
@@ -1288,6 +1316,10 @@ evalModel_D2fDxDp(int pIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2fDxDp;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1323,7 +1355,7 @@ evalModel_D2fDpDx(int pIndex,
   panzer::AssemblyEngineInArgs ae_inargs;
   setupAssemblyInArgs(inArgs,ae_inargs);
 
-  auto deltaXContainer = lof_->buildDomainContainer();
+  auto deltaXContainer = lof_->buildReadOnlyDomainContainer();
   deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
@@ -1335,6 +1367,10 @@ evalModel_D2fDpDx(int pIndex,
   rLibrary.addResponsesToInArgs<Traits::Hessian>(ae_inargs);
   rLibrary.evaluate<Traits::Hessian>(ae_inargs);
 #else
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2fDpDx;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1370,7 +1406,7 @@ evalModel_D2fDp2(int pIndex,
   panzer::AssemblyEngineInArgs ae_inargs;
   setupAssemblyInArgs(inArgs,ae_inargs);
 
-  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
+  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildReadOnlyDomainContainer();
   deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
@@ -1382,6 +1418,10 @@ evalModel_D2fDp2(int pIndex,
   rLibrary.addResponsesToInArgs<Traits::Hessian>(ae_inargs);
   rLibrary.evaluate<Traits::Hessian>(ae_inargs);
 #else
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2fDp2;
   TEUCHOS_ASSERT(false);
 #endif
 }

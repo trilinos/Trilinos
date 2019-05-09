@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,12 +44,14 @@
 #include "elb_err.h"    // for Gen_Error, error_lev
 #include "elb_format.h" // for ST_ZU
 #include "elb_inp.h"
-#include "elb_util.h"     // for strip_string, token_compare, etc
-#include "getopt.h"       // for getopt
-#include "md_getsubopt.h" // for md_getsubopt
+#include "elb_util.h" // for strip_string, token_compare, etc
+#include "getopt.h"   // for getopt
 #include "scopeguard.h"
-#include <cstddef>    // for size_t
-#include <cstdio>     // for nullptr, sprintf, printf, etc
+#include <cstddef> // for size_t
+#include <cstdio>  // for nullptr, sprintf, printf, etc
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
+#endif
 #include <cstdlib>    // for malloc, exit, free
 #include <cstring>    // for strcmp, strstr, strchr, etc
 #include <exodusII.h> // for ex_close, EX_READ, etc
@@ -95,11 +97,11 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
                        Problem_Description *    prob,   /* Structure for various problem params */
                        Solver_Description *     solver, /* Structure for eigen solver params */
                        Weight_Description<INT> *weight  /* Structure for weighting graph */
-                       )
+)
 {
   int   opt_let, iret, el_blk, wgt, max_dim = 0, i;
   char *sub_opt = nullptr, *value = nullptr, *cptr = nullptr, *cptr2 = nullptr;
-  char  ctemp[1024];
+  char  ctemp[2048];
 
   extern char *optarg;
   extern int   optind;
@@ -134,12 +136,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     /* case over the option letter */
     switch (opt_let) {
     case 'v':
-      /* Should an ouput visualization file be output */
+      /* Should an output visualization file be output */
       prob->vis_out = 1;
       break;
 
     case 'y':
-      /* Should an ouput visualization file be output */
+      /* Should an output visualization file be output */
       prob->vis_out = 2;
       break;
 
@@ -173,6 +175,14 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       prob->face_adj = 1;
       break;
 
+    case 'C':
+      /*
+       * detect vertical columns of elements and ensure that
+       * elements of a columns are all in one partition
+       */
+      prob->fix_columns = 1;
+      break;
+
     case 'p':
       /*
        * use the partial method to determine adjacencies:
@@ -185,7 +195,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       /* Weighting options */
       sub_opt = optarg;
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (md_getsubopt(&sub_opt, weight_subopts, &value)) {
+        switch (::getsubopt(&sub_opt, (char *const *)weight_subopts, &value)) {
         case READ_EXO:
           if (value == nullptr) {
             sprintf(ctemp, "FATAL: must specify a file name with %s", weight_subopts[READ_EXO]);
@@ -329,7 +339,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           Gen_Error(0, ctemp);
           return 0;
 
-        } /* End "switch(md_getsubopt(&sub_opt, weight_subopts, &value))" */
+        } /* End "switch(::getsubopt(&sub_opt, weight_subopts, &value))" */
 
       } /* End "while(*sub_opt != '\0')" */
 
@@ -376,14 +386,14 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       while (sub_opt != nullptr && *sub_opt != '\0') {
 
         /* Switch over the machine description */
-        switch (md_getsubopt(&sub_opt, mach_subopts, &value)) {
+        switch (::getsubopt(&sub_opt, (char *const *)mach_subopts, &value)) {
         case HCUBE:
         case HYPERCUBE:
           if (machine->type < 0) {
             machine->type = HCUBE;
             max_dim       = 1;
           }
-        /* fall thru */
+          /* fall through */
 
         case MESH:
           if (machine->type < 0) {
@@ -393,7 +403,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
           cptr = value; /* want to set this for both mesh and hcube */
 
-        /* fall thru */
+          /* fall through */
 
         case CLUSTER:
           if (machine->type < 0) /* so, get the number of boxes */
@@ -463,7 +473,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         default: Gen_Error(0, "FATAL: unknown machine type"); return 0;
 
-        } /* End "switch(md_getsubopt(&sub_opt, mach_subopts, &value))" */
+        } /* End "switch(::getsubopt(&sub_opt, mach_subopts, &value))" */
 
       } /* End "while(*sub_opt != '\0')" */
 
@@ -476,7 +486,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
         string_to_lower(sub_opt, '\0');
       }
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (md_getsubopt(&sub_opt, lb_subopts, &value)) {
+        switch (::getsubopt(&sub_opt, (char *const *)lb_subopts, &value)) {
         case MULTIKL: lb->type = MULTIKL; break;
 
         case SPECTRAL: lb->type = SPECTRAL; break;
@@ -505,7 +515,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             return 0;
           }
           char tmpstr[2048];
-          iret     = sscanf(value, "%s", tmpstr);
+          iret     = sscanf(value, "%2047s", tmpstr);
           lb->file = tmpstr;
           if (iret != 1) {
             Gen_Error(0, "FATAL: invalid value associated with file");
@@ -539,7 +549,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             Gen_Error(0, "FATAL: need to specify a value with outfile");
             return 0;
           }
-          iret     = sscanf(value, "%s", tmpstr);
+          iret     = sscanf(value, "%2047s", tmpstr);
           lb->file = tmpstr;
           if (iret != 1) {
             Gen_Error(0, "FATAL: invalid value associated with outfile");
@@ -553,7 +563,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           Gen_Error(0, ctemp);
           return 0;
 
-        } /* End "switch(md_getsubopt(&sup_opt, mach_subopts, &value))" */
+        } /* End "switch(::getsubopt(&sup_opt, mach_subopts, &value))" */
 
       } /* End "while(*sup_opt != '\0')" */
 
@@ -568,7 +578,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
         string_to_lower(sub_opt, '\0');
       }
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (md_getsubopt(&sub_opt, solve_subopts, &value)) {
+        switch (::getsubopt(&sub_opt, (char *const *)solve_subopts, &value)) {
         case TOLER:
           if (value == nullptr) {
             fprintf(stderr, "FATAL: tolerance specification requires \
@@ -608,7 +618,7 @@ value\n");
 
         default: fprintf(stderr, "FATAL: unknown solver option\n"); return 0;
 
-        } /* End "switch(md_getsubopt(&sub_opt, solve_subopts, &value))" */
+        } /* End "switch(::getsubopt(&sub_opt, solve_subopts, &value))" */
 
       } /* End "while(sub_opt != '\0')" */
 
@@ -678,7 +688,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                   Weight_Description<INT> *weight)
 {
   FILE *inp_fd;
-  char  ctemp[1024], inp_line[MAX_INP_LINE];
+  char  ctemp[2048], inp_line[MAX_INP_LINE];
   char  inp_copy[MAX_INP_LINE];
   char *cptr, *cptr2;
 
@@ -815,7 +825,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 }
 
                 cptr2++;
-                iret     = sscanf(cptr2, "%s", tmpstr);
+                iret     = sscanf(cptr2, "%2047s", tmpstr);
                 lb->file = tmpstr;
                 if (iret != 1) {
                   Gen_Error(0, "FATAL: invalid value for infile");
@@ -867,7 +877,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 }
 
                 cptr2++;
-                iret     = sscanf(cptr2, "%s", tmpstr);
+                iret     = sscanf(cptr2, "%2047s", tmpstr);
                 lb->file = tmpstr;
                 if (iret != 1) {
                   Gen_Error(0, "FATAL: invalid value for outfile");
@@ -876,8 +886,9 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               }
             }
             else {
-              sprintf(ctemp, "FATAL: unknown LB method \"%s\" specified in command"
-                             " file",
+              sprintf(ctemp,
+                      "FATAL: unknown LB method \"%s\" specified in command"
+                      " file",
                       cptr);
               Gen_Error(0, ctemp);
               return 0;
@@ -1236,6 +1247,11 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               problem->face_adj = 1;
             }
           }
+          /* Check if element columns are to be detected and fixed so
+           * that all elements of a column are in the same partition */
+          else if (strstr(cptr, "fix_columns")) {
+            problem->fix_columns = 1;
+          }
           /* Check to see if looking for global mechanisms */
           else if (strstr(cptr, "global_mech")) {
             if (problem->global_mech < 0) {
@@ -1303,8 +1319,9 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
         /* Generate an error, but continue reading for an unknown key */
         strip_string(inp_copy, " #\t");
         if (strlen(inp_copy) > 5) {
-          sprintf(ctemp, "WARNING: don't know how to process line: \n%s\nin command"
-                         " file, ignored",
+          sprintf(ctemp,
+                  "WARNING: don't know how to process line: \n%s\nin command"
+                  " file, ignored",
                   inp_copy);
           Gen_Error(1, ctemp);
         }
@@ -1433,6 +1450,17 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     Gen_Error(1, "WARNING: adjacency with elemental decomposition");
     Gen_Error(1, "WARNING: face definition turned off");
     prob->face_adj = 0;
+  }
+
+  /*
+   * Detecting columns and fixing their partitioning only makes sense
+   * with an elemental decomposition
+   */
+  if (prob->type != ELEMENTAL && prob->fix_columns) {
+    Gen_Error(1, "WARNING: can only use fix columns options");
+    Gen_Error(1, "WARNING: with elemental decomposition");
+    Gen_Error(1, "WARNING: fix columns option turned off");
+    prob->fix_columns = 0;
   }
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -1677,21 +1705,19 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     }
 
     /* Free up memory */
-    if (nvars > 0) {
-      for (cnt = 0; cnt < nvars; cnt++) {
-        free(var_names[cnt]);
-      }
-
-      free(var_names);
+    for (cnt = 0; cnt < nvars; cnt++) {
+      free(var_names[cnt]);
     }
+    free(var_names);
 
     /*
      * If there is still no valid index then the variable name does
      * not exist in the specified file.
      */
     if (weight->exo_vindx <= 0) {
-      sprintf(ctemp, "FATAL: requested weighting variable %s not found in ExodusII"
-                     " file",
+      sprintf(ctemp,
+              "FATAL: requested weighting variable %s not found in ExodusII"
+              " file",
               weight->exo_varname.c_str());
       Gen_Error(0, ctemp);
       return 0;
@@ -1703,12 +1729,6 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       return 0;
     }
 
-    if (weight->exo_vindx <= 0) {
-      sprintf(ctemp, "FATAL: variable index must be in the range [1,%d]", nvars);
-      Gen_Error(0, ctemp);
-      return 0;
-    }
-
     ex_close(exoid);
 
   } /* End "if(strlen(weight->exo_filename) > 0)" */
@@ -1716,7 +1736,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   if ((weight->type & EL_BLK) && (weight->ow_read)) {
     if (weight->elemblk.size() > 1) {
       /* start by sorting the two arrays by the element block number */
-      sort2(weight->elemblk.size(), TOPTR(weight->elemblk), TOPTR(weight->elemblk_wgt));
+      sort2(weight->elemblk.size(), weight->elemblk.data(), weight->elemblk_wgt.data());
 
       /* now loop through, and make sure that we don't have multiple values */
       for (cnt = 1; cnt < (int)weight->elemblk.size(); cnt++) {
@@ -1755,6 +1775,8 @@ namespace {
     printf(" -f\t\tuse face definition of adjacency\n");
     printf(" -p\t\tuse partial definition of adjacency: \n");
     printf("   \t\trequire only 3 matching quad face nodes\n");
+    printf(" -C\tavoid splitting vertical element columns\n");
+    printf("   \t\tacross partitions\n");
     printf(" -h\t\tusage information\n");
     printf(" -a ascii file\tget info from ascii input file name\n");
   }

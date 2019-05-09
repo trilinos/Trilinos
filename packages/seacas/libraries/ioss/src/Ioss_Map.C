@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,48 +32,31 @@
 
 #include <Ioss_Field.h> // for Field, etc
 #include <Ioss_Map.h>
+#include <Ioss_SmartAssert.h>
 #include <Ioss_Sort.h>
 #include <Ioss_Utils.h> // for IOSS_ERROR
 #include <algorithm>    // for adjacent_find, lower_bound, etc
-#include <cassert>      // for assert
 #include <cstddef>      // for size_t
 #include <iterator>     // for insert_iterator, inserter
-#include <sstream>      // for operator<<, basic_ostream, etc
-#include <string>       // for char_traits, operator<<, etc
-#include <sys/types.h>  // for ssize_t
-#include <utility>      // for pair, make_pair
-#include <vector>       // for vector, vector<>::iterator, etc
+#include <numeric>
+#include <sstream>     // for operator<<, basic_ostream, etc
+#include <string>      // for char_traits, operator<<, etc
+#include <sys/types.h> // for ssize_t
+#include <utility>     // for pair, make_pair
+#include <vector>      // for vector, vector<>::iterator, etc
 
 namespace {
-  // Determines whether the input map is sequential (m_map[i] == i)
-  bool is_sequential(const Ioss::MapContainer &the_map)
+  template <typename INT> bool is_one2one(INT *ids, size_t num_to_get, size_t offset)
   {
-    // Assumes the_map runs from [1..size) Slot zero will contain -1 if the
-    // vector is sequential; 1 if not sequential, and 0 if it has not
-    // yet been determined...
-    // Once the the_map has been determined to be sequential/not-sequential,
-    // slot zero is set appropriately.
-    // 'sequential' is defined here to mean i==the_map[i] for all
-    // 0<i<the_map.size()
-
-    // Check slot zero...
-    if (the_map[0] == -1) {
-      return true;
-    }
-    if (the_map[0] == 1) {
-      return false;
-    }
-
-    Ioss::MapContainer &new_map = const_cast<Ioss::MapContainer &>(the_map);
-    size_t              size    = the_map.size();
-    for (size_t i = 1; i < size; i++) {
-      if (the_map[i] != static_cast<int64_t>(i)) {
-        new_map[0] = 1;
-        return false;
+    bool one2one    = true;
+    INT  map_offset = num_to_get > 0 ? ids[0] - 1 - offset : 0;
+    for (size_t i = 0; i < num_to_get; i++) {
+      if ((size_t)ids[i] != i + offset + 1 + map_offset) {
+        one2one = false;
+        break;
       }
     }
-    new_map[0] = -1;
-    return true;
+    return one2one;
   }
 
   // map global to local ids
@@ -119,24 +102,6 @@ namespace {
 
   using RMapI = std::vector<Ioss::IdPair>::const_iterator;
 
-  template <typename INT>
-  void map_implicit_data_internal(INT *ids, size_t count, const Ioss::MapContainer &map,
-                                  size_t offset)
-  {
-    // Map the "local" ids (offset+1..offset+count) to the global ids. The local
-    // ids are implicit
-    if (is_sequential(map)) {
-      for (size_t i = 0; i < count; i++) {
-        ids[i] = offset + 1 + i;
-      }
-    }
-    else {
-      for (size_t i = 0; i < count; i++) {
-        ids[i] = map[offset + 1 + i];
-      }
-    }
-  }
-
 } // namespace
 
 void Ioss::Map::release_memory()
@@ -147,14 +112,58 @@ void Ioss::Map::release_memory()
   ReverseMapContainer().swap(m_reverse);
 }
 
-void Ioss::Map::build_reverse_map()
+// Determines whether the input map is sequential (m_map[i] == i)
+bool Ioss::Map::is_sequential(bool check_all) const
 {
-  if (m_map[0] == 1) {
-    build_reverse_map(m_map.size() - 1, 0);
+  // Assumes the_map runs from [1..size) Slot zero will contain -1 if the
+  // vector is sequential; 1 if not sequential, and 0 if it has not
+  // yet been determined...
+  // Once the the_map has been determined to be sequential/not-sequential,
+  // slot zero is set appropriately.
+  // 'sequential' is defined here to mean i==the_map[i] for all
+  // 0<i<the_map.size()
+
+  if (!check_all) {
+    // Check slot zero...
+    if (m_map[0] == -1) {
+      return true;
+    }
+    if (m_map[0] == 1) {
+      return false;
+    }
+  }
+
+  IOSS_FUNC_ENTER(m_);
+  Ioss::MapContainer &new_map  = const_cast<Ioss::MapContainer &>(m_map);
+  size_t              map_size = m_map.size();
+  for (int64_t i = 1; i < (int64_t)map_size; i++) {
+    if (m_map[i] != i + m_offset) {
+      new_map[0] = 1;
+      return false;
+    }
+  }
+  new_map[0] = -1;
+  return true;
+}
+
+void Ioss::Map::set_size(size_t entity_count)
+{
+  IOSS_FUNC_ENTER(m_);
+  if (m_map.empty()) {
+    m_map.resize(entity_count + 1);
+    set_is_sequential(true);
   }
 }
 
+void Ioss::Map::build_reverse_map() { build_reverse_map(m_map.size() - 1, 0); }
+void Ioss::Map::build_reverse_map_no_lock() { build_reverse_map__(m_map.size() - 1, 0); }
 void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset)
+{
+  IOSS_FUNC_ENTER(m_);
+  build_reverse_map__(num_to_get, offset);
+}
+
+void Ioss::Map::build_reverse_map__(int64_t num_to_get, int64_t offset)
 {
   // Stored as a sorted vector of <global_id, local_id> pairs...
   // To build incrementally:
@@ -166,40 +175,63 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset)
   // 5. Check for duplicate global_ids...
 
   // Build a vector containing the current ids...
-  IOSS_FUNC_ENTER(m_);
-  ReverseMapContainer new_ids(num_to_get);
-  for (int64_t i = 0; i < num_to_get; i++) {
-    int64_t local_id = offset + i + 1;
-    new_ids[i]       = std::make_pair(m_map[local_id], local_id);
+  if (is_sequential()) {
+    return;
+  }
 
-    if (m_map[local_id] <= 0) {
-      std::ostringstream errmsg;
-      errmsg << "\nERROR: " << m_entityType << " map detected non-positive global id "
-             << m_map[local_id] << " for " << m_entityType << " with local id " << local_id
-             << " on processor " << m_myProcessor << ".\n";
-      IOSS_ERROR(errmsg);
+  ReverseMapContainer new_ids;
+  if (m_reverse.empty()) {
+    // This is first time that the m_reverse map is being built..
+    // m_map is no longer  1-to-1.
+    // Just iterate m_map and add all values that are non-zero
+    new_ids.reserve(m_map.size() - 1);
+
+    for (size_t i = 1; i < m_map.size(); i++) {
+      if (m_map[i] != 0) {
+        new_ids.emplace_back(m_map[i], i);
+      }
+    }
+  }
+  else {
+    new_ids.reserve(num_to_get);
+    for (int64_t i = 0; i < num_to_get; i++) {
+      int64_t local_id = offset + i + 1;
+      new_ids.emplace_back(m_map[local_id], local_id);
+
+      if (m_map[local_id] <= 0) {
+        std::ostringstream errmsg;
+        errmsg << "\nERROR: " << m_entityType << " map detected non-positive global id "
+               << m_map[local_id] << " for " << m_entityType << " with local id " << local_id
+               << " on processor " << m_myProcessor << ".\n";
+        IOSS_ERROR(errmsg);
+      }
     }
   }
 
-  // Sort that vector...
+  // new_ids is a vector of pairs <global_id, local_id>
   Ioss::qsort(new_ids);
 
   int64_t new_id_min = new_ids.empty() ? 0 : new_ids.front().first;
   int64_t old_id_max = m_reverse.empty() ? 0 : m_reverse.back().first;
-  if (new_id_min > old_id_max) {
+  if (new_ids.size() + 1 == m_map.size()) {
+    SMART_ASSERT(m_reverse.empty() || m_reverse.size() + 1 == m_map.size());
+    new_ids.swap(m_reverse);
+  }
+  else if (new_id_min > old_id_max) {
     m_reverse.insert(m_reverse.end(), new_ids.begin(), new_ids.end());
   }
   else {
     // Copy reverseElementMap to old_ids, empty reverseElementMap.
     ReverseMapContainer old_ids;
     old_ids.swap(m_reverse);
-    assert(m_reverse.empty());
+    SMART_ASSERT(m_reverse.empty());
 
     // Merge old_ids and new_ids to reverseElementMap.
     m_reverse.reserve(old_ids.size() + new_ids.size());
     std::merge(old_ids.begin(), old_ids.end(), new_ids.begin(), new_ids.end(),
                std::inserter(m_reverse, m_reverse.begin()), IdPairCompare());
   }
+
 // Check for duplicate ids...
 #ifndef NDEBUG
   verify_no_duplicate_ids(m_reverse);
@@ -222,17 +254,57 @@ void Ioss::Map::verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map)
   }
 }
 
-template void Ioss::Map::set_map(int *ids, size_t count, size_t offset);
-template void Ioss::Map::set_map(int64_t *ids, size_t count, size_t offset);
+template bool Ioss::Map::set_map(int *ids, size_t count, size_t offset, bool in_define_mode);
+template bool Ioss::Map::set_map(int64_t *ids, size_t count, size_t offset, bool in_define_mode);
 
-template <typename INT> void Ioss::Map::set_map(INT *ids, size_t count, size_t offset)
+template <typename INT>
+bool Ioss::Map::set_map(INT *ids, size_t count, size_t offset, bool in_define_mode)
 {
   IOSS_FUNC_ENTER(m_);
+  if (in_define_mode && is_sequential()) {
+    // If the current map is one-to-one, check whether it will be one-to-one
+    // after adding these ids...
+    bool one2one = is_one2one(ids, count, offset);
+    if (one2one) {
+      // Further checks on how ids fit into previously set m_map entries (if any)
+      if (count > 0) {
+        INT tmp_offset = ids[0] - 1 - offset;
+        if (tmp_offset < 0 || (m_offset >= 0 && tmp_offset != m_offset)) {
+          one2one = false;
+        }
+      }
+    }
+
+    if (!one2one) {
+      // Up to this point, the id map has been one-to-one.  Once we
+      // apply these `ids` to `m_map`, the map will no
+      // longer be one-to-one. The main consequence of this is that we
+      // now need an explicit reverseMap.  The reverseMap is built
+      // incrementally with the current range of 'ids', but before
+      // that can be done, need to build a reverseMap of the current
+      // one-to-one data...
+      set_is_sequential(false);
+      build_reverse_map__(m_map.size() - 1, 0);
+      m_offset = 0;
+    }
+    else {
+      // Map is sequential beginning at ids[0]
+      if (count > 0) {
+        m_offset = ids[0] - 1 - offset;
+      }
+    }
+  }
+
+  bool changed = false; // True if redefining an entry
   for (size_t i = 0; i < count; i++) {
-    ssize_t local_id = offset + i + 1;
-    m_map[local_id]  = ids[i];
-    if (local_id != ids[i]) {
-      m_map[0] = 1;
+    int64_t local_id = offset + i + 1;
+    SMART_ASSERT((size_t)local_id < m_map.size())(local_id)(m_map.size());
+    if (m_map[local_id] > 0 && m_map[local_id] != ids[i]) {
+      changed = true;
+    }
+    m_map[local_id] = ids[i];
+    if (local_id != ids[i] - m_offset) {
+      set_is_sequential(false);
     }
     if (ids[i] <= 0) {
       std::ostringstream errmsg;
@@ -242,45 +314,109 @@ template <typename INT> void Ioss::Map::set_map(INT *ids, size_t count, size_t o
       IOSS_ERROR(errmsg);
     }
   }
+
+  if (in_define_mode) {
+    build_reverse_map__(count, offset);
+  }
+  else if (changed) {
+    // Build the reorderEntityMap which does a direct mapping from
+    // the current topologies local order to the local order
+    // stored in the database if these two orders are different, that
+    // is if the ids order was redefined after the STATE_MODEL
+    // phase... This is 0-based and used for
+    // remapping output and input TRANSIENT fields.
+    build_reorder_map__(offset, count);
+  }
+  return changed;
+}
+
+void Ioss::Map::set_default(size_t count, size_t offset)
+{
+  IOSS_FUNC_ENTER(m_);
+  m_map.resize(count + 1);
+  for (size_t i = 1; i <= count; i++) {
+    m_map[i] = i + offset;
+  }
+  set_is_sequential(true);
+}
+
+template void Ioss::Map::reverse_map_data(int *data, size_t count) const;
+template void Ioss::Map::reverse_map_data(int64_t *data, size_t count) const;
+
+template <typename INT> void Ioss::Map::reverse_map_data(INT *data, size_t count) const
+{
+  IOSS_FUNC_ENTER(m_);
+  if (!is_sequential()) {
+    for (size_t i = 0; i < count; i++) {
+      INT global_id = data[i];
+      data[i]       = global_to_local__(global_id, true);
+    }
+  }
+  else if (m_offset != 0) {
+    for (size_t i = 0; i < count; i++) {
+      data[i] -= m_offset;
+    }
+  }
 }
 
 void Ioss::Map::reverse_map_data(void *data, const Ioss::Field &field, size_t count) const
 {
+  if (field.get_type() == Ioss::Field::INTEGER) {
+    int *connect = static_cast<int *>(data);
+    reverse_map_data(connect, count);
+  }
+  else {
+    int64_t *connect = static_cast<int64_t *>(data);
+    reverse_map_data(connect, count);
+  }
+}
+
+template void Ioss::Map::map_data(int *data, size_t count) const;
+template void Ioss::Map::map_data(int64_t *data, size_t count) const;
+
+template <typename INT> void Ioss::Map::map_data(INT *data, size_t count) const
+{
   IOSS_FUNC_ENTER(m_);
-  assert(!m_map.empty());
-  if (!is_sequential(m_map)) {
-    if (field.get_type() == Ioss::Field::INTEGER) {
-      int *connect = static_cast<int *>(data);
-      for (size_t i = 0; i < count; i++) {
-        int global_id = connect[i];
-        connect[i]    = global_to_local__(global_id, true);
-      }
+  if (!is_sequential()) {
+    for (size_t i = 0; i < count; i++) {
+      data[i] = m_map[data[i]];
     }
-    else {
-      int64_t *connect = static_cast<int64_t *>(data);
-      for (size_t i = 0; i < count; i++) {
-        int64_t global_id = connect[i];
-        connect[i]        = global_to_local__(global_id, true);
-      }
+  }
+  else if (m_offset != 0) {
+    for (size_t i = 0; i < count; i++) {
+      data[i] += m_offset;
     }
   }
 }
 
 void Ioss::Map::map_data(void *data, const Ioss::Field &field, size_t count) const
 {
-  IOSS_FUNC_ENTER(m_);
-  if (!is_sequential(m_map)) {
-    if (field.get_type() == Ioss::Field::INTEGER) {
-      int *datum = static_cast<int *>(data);
-      for (size_t i = 0; i < count; i++) {
-        datum[i] = m_map[datum[i]];
-      }
+  if (field.get_type() == Ioss::Field::INTEGER) {
+    int *datum = static_cast<int *>(data);
+    map_data(datum, count);
+  }
+  else {
+    int64_t *datum = static_cast<int64_t *>(data);
+    map_data(datum, count);
+  }
+}
+
+template void Ioss::Map::map_implicit_data(int *data, size_t count, size_t offset) const;
+template void Ioss::Map::map_implicit_data(int64_t *data, size_t count, size_t offset) const;
+
+template <typename INT>
+void Ioss::Map::map_implicit_data(INT *ids, size_t count, size_t offset) const
+{
+  // Map the "local" ids (offset+1..offset+count) to the global ids. The local
+  // ids are implicit
+  if (is_sequential()) {
+    for (size_t i = 0; i < count; i++) {
+      ids[i] = m_offset + offset + 1 + i;
     }
-    else {
-      int64_t *datum = static_cast<int64_t *>(data);
-      for (size_t i = 0; i < count; i++) {
-        datum[i] = m_map[datum[i]];
-      }
+  }
+  else {
+    for (size_t i = 0; i < count; i++) {
+      ids[i] = m_map[offset + 1 + i];
     }
   }
 }
@@ -290,10 +426,10 @@ void Ioss::Map::map_implicit_data(void *data, const Ioss::Field &field, size_t c
 {
   IOSS_FUNC_ENTER(m_);
   if (field.get_type() == Ioss::Field::INTEGER) {
-    map_implicit_data_internal(static_cast<int *>(data), count, m_map, offset);
+    map_implicit_data(static_cast<int *>(data), count, offset);
   }
   else {
-    map_implicit_data_internal(static_cast<int64_t *>(data), count, m_map, offset);
+    map_implicit_data(static_cast<int64_t *>(data), count, offset);
   }
 }
 
@@ -322,7 +458,7 @@ size_t Ioss::Map::map_field_to_db_scalar_order(T *variables, std::vector<double>
       // Map to storage location.
       ssize_t where = m_reorder[k++] - offset;
       if (where >= 0) {
-        assert(where < (ssize_t)count);
+        SMART_ASSERT(where < (ssize_t)count)(where)(count);
         db_var[where] = variables[j];
         num_out++;
       }
@@ -339,7 +475,7 @@ size_t Ioss::Map::map_field_to_db_scalar_order(T *variables, std::vector<double>
   return num_out;
 }
 
-void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
+void Ioss::Map::build_reorder_map__(int64_t start, int64_t count)
 {
   // This routine builds a map that relates the current node id order
   // to the original node ordering in affect at the time the file was
@@ -348,7 +484,7 @@ void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
   // application level, we build the node reorder map to map the
   // current order into the original order.  An added complication is
   // that this is more than just a reordering... It may be that the
-  // application has 'ghosted' nodes that it doesnt want put out on
+  // application has 'ghosted' nodes that it doesn't want to put out on
   // the database, so the reorder map must handle a node that is not
   // in the original mesh and map that to an invalid value (currently
   // using -1 as invalid value...)
@@ -359,7 +495,6 @@ void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
   //
   // start is based on a 0-based array -- start of the reorderMap to build.
 
-  IOSS_FUNC_ENTER(m_);
   if (m_reorder.empty()) {
     // See if actually need a reorder map first...
     bool    need_reorder_map = false;
@@ -370,7 +505,7 @@ void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
 
       // The reordering should only be a permutation of the original
       // ordering within this entity block...
-      assert(orig_local_id >= start && orig_local_id <= my_end);
+      SMART_ASSERT(orig_local_id >= start && orig_local_id <= my_end)(orig_local_id)(start)(my_end);
       if (i != orig_local_id) {
         need_reorder_map = true;
         break;
@@ -382,11 +517,7 @@ void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
       // If building a partial reorder map, assume all entries
       // are a direct 1-1 and then let the partial fills overwrite
       // if needed.
-      if (start > 0 || my_end < map_size) {
-        for (size_t i = 0; i < m_reorder.size(); i++) {
-          m_reorder[i] = i;
-        }
-      }
+      std::iota(m_reorder.begin(), m_reorder.end(), 0);
     }
     else {
       return;
@@ -400,7 +531,7 @@ void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
 
     // The reordering should only be a permutation of the original
     // ordering within this entity block...
-    assert(orig_local_id >= start && orig_local_id <= my_end);
+    SMART_ASSERT(orig_local_id >= start && orig_local_id <= my_end)(orig_local_id)(start)(my_end);
     m_reorder[i] = orig_local_id;
   }
 }
@@ -419,7 +550,11 @@ int64_t Ioss::Map::global_to_local(int64_t global, bool must_exist) const
 int64_t Ioss::Map::global_to_local__(int64_t global, bool must_exist) const
 {
   int64_t local = global;
-  if (m_map[0] == 1) {
+  if (!is_sequential() && !m_reverse.empty()) {
+    // Possible for !is_sequential() which means non-one-to-one, but
+    // reverseMap is empty (which implied one-to-one) if the ORIGINAL mapping defined
+    // during dbState == STATE_MODEL was one-to-one, but there is a
+    // reordering which is due to new id ordering defined after STATE_MODEL...
     auto iter = std::lower_bound(m_reverse.begin(), m_reverse.end(), global, IdPairCompare());
     if (iter != m_reverse.end() && iter->first == global) {
       local = iter->second;
@@ -430,6 +565,9 @@ int64_t Ioss::Map::global_to_local__(int64_t global, bool must_exist) const
   }
   else if (!must_exist && global > static_cast<int64_t>(m_map.size()) - 1) {
     local = 0;
+  }
+  else {
+    local = global - m_offset;
   }
   if (local > static_cast<int64_t>(m_map.size()) - 1 || (local <= 0 && must_exist)) {
     std::ostringstream errmsg;

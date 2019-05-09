@@ -43,7 +43,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_Tuple.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 
 using Teuchos::RCP;
@@ -56,8 +56,7 @@ TEUCHOS_UNIT_TEST( Map, ProblematicLookup )
   using std::cerr;
   using std::endl;
 
-  Teuchos::oblackholestream blackhole;
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   /**********************************************************************************/
   // Map in question:

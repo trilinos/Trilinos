@@ -49,7 +49,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-
+#include <vector>
 
 namespace Teuchos {
   namespace MatrixMarket {

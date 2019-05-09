@@ -284,6 +284,7 @@ Derp {          // one derivative-propagation operation
 #if RAD_REINIT > 0
         const Double a;
         inline void *operator new(size_t, Derp *x) { return x; }
+        inline void operator delete(void*, Derp *) {}
 #else
         static Derp *LastDerp;
         Derp *next;
@@ -1465,7 +1466,6 @@ template<typename Double> void ADcontext<Double>::do_init()
 
 template<typename Double> void ADcontext<Double>::free_all()
 {
-        typedef ADvari<Double> ADVari;
         typedef ConstADvari<Double> ConstADVari;
         ADMemblock *mb, *mb1;
 
@@ -1504,7 +1504,6 @@ template<typename Double> void ADcontext<Double>::free_all()
 
 template<typename Double> void ADcontext<Double>::re_init()
 {
-        typedef ADvari<Double> ADVari;
         typedef ConstADvari<Double> ConstADVari;
 
         if (ConstADVari::cadc.Busy || ADVari::adc.Busy || ADVari::adc.Free
@@ -1590,7 +1589,8 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 #ifdef RAD_AUTO_AD_Const // {
                 *ADVari::Last_ADvari = 0;
                 ADVari::Last_ADvari = &ADVari::First_ADvari;
-                if ((a = ADVari::First_ADvari)) {
+                a = ADVari::First_ADvari;
+                if (a) {
                         do {
                                 anext = a->Next;
                                 if ((v = (IndepADvar<Double> *)a->padv)) {

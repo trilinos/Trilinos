@@ -164,7 +164,7 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
       stk::mesh::Part & skin_part =
         fixture.m_meta.declare_part("skin_part");
 
-//      stk::mesh::put_field( fixture.m_coord_field,
+//      stk::mesh::put_field_on_mesh( fixture.m_coord_field,
 //                            particle_rank,
 //                            fixture.m_meta.universal_part(),
 //                            3 );

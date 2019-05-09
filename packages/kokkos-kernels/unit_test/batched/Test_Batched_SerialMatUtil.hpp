@@ -50,7 +50,7 @@ namespace Test {
     void operator()(const NaiveTag &, const int k) const {
       //MD Note: changing because of the error with -werror
       auto A = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
-      const int m = A.dimension_0(), n = A.dimension_1();
+      const int m = A.extent(0), n = A.extent(1);
       switch (TestID) {
       case BatchedSet: {
         for (int i=0;i<m;++i) 
@@ -69,11 +69,22 @@ namespace Test {
 
     inline
     int run() {
-      Kokkos::RangePolicy<DeviceType,AlgoTagType> policy(0, _a.dimension_0());
-      Kokkos::parallel_for(policy, *this);
+      typedef typename ViewType::value_type value_type;
+      std::string name_region("KokkosBatched::Test::SerialMatUtil");
+      std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
+                                      std::is_same<value_type,double>::value ? "::Double" :
+                                      std::is_same<value_type,Kokkos::complex<float> >::value ? "::ComplexFloat" :
+                                      std::is_same<value_type,Kokkos::complex<double> >::value ? "::ComplexDouble" : "::UnknownValueType" );                               
+      std::string name_work_tag = ( std::is_same<AlgoTagType,KokkosKernelTag>::value ? "::KokkosBatched" :
+                                    std::is_same<AlgoTagType,NaiveTag>::value ? "::Naive" : "::UnknownWorkTag");
+      std::string name_test_id = ( TestID == BatchedSet ? "Set" : 
+                                   TestID == BatchedScale ? "Scale" : "UnknownTest");
+      std::string name = name_region + name_value_type + name_work_tag + name_test_id;
+      Kokkos::Profiling::pushRegion( name.c_str() );
+      Kokkos::RangePolicy<DeviceType,AlgoTagType> policy(0, _a.extent(0));
+      Kokkos::parallel_for(name.c_str(), policy, *this);
+      Kokkos::Profiling::popRegion();
       return 0; 
-      //MD 08/2017 NOTE: compilation was failing with werror.
-      //I added dummy return.
     }      
   };
 
@@ -94,11 +105,16 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
     Kokkos::fill_random(a, random, value_type(1.0));
+
+    Kokkos::fence();
+
     Kokkos::deep_copy(b, a);
 
     /// test body
     Functor_TestBatchedSerialMatUtil<DeviceType,ViewType,ScalarType,NaiveTag,       TestID>(alpha, a).run();
     Functor_TestBatchedSerialMatUtil<DeviceType,ViewType,ScalarType,KokkosKernelTag,TestID>(alpha, b).run();
+
+    Kokkos::fence();
 
     /// for comparison send it to host
     typename ViewType::HostMirror a_host = Kokkos::create_mirror_view(a);

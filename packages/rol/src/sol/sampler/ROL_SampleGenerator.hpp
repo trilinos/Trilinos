@@ -44,17 +44,17 @@
 #ifndef ROL_SAMPLEGENERATOR_HPP
 #define ROL_SAMPLEGENERATOR_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_Vector.hpp"
+#include <fstream>
 
 namespace ROL {
 
-template<class Real> 
+template<class Real>
 class SampleGenerator {
 private:
   int begin_;
-  Teuchos::RCP<BatchManager<Real> > bman_;
+  ROL::Ptr<BatchManager<Real> > bman_;
   std::vector<std::vector<Real> > points_;
   std::vector<Real> weights_;
 
@@ -70,15 +70,15 @@ protected:
 
 public:
   virtual ~SampleGenerator() {}
-  SampleGenerator(const Teuchos::RCP<BatchManager<Real> > &bman)
+  SampleGenerator(const ROL::Ptr<BatchManager<Real> > &bman)
     : begin_(0), bman_(bman) {}
-  SampleGenerator(const SampleGenerator<Real> &sampler) 
+  SampleGenerator(const SampleGenerator<Real> &sampler)
     : begin_(sampler.begin_), bman_(sampler.bman_),
       points_(sampler.points_), weights_(sampler.weights_) {}
 
   virtual void update(const Vector<Real> &x) {
     begin_ = 0;
-  } 
+  }
 
   virtual int start(void) {
     return begin_;
@@ -88,7 +88,7 @@ public:
     return 0.0;
   }
 
-  virtual Real computeError(std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x) {
+  virtual Real computeError(std::vector<ROL::Ptr<Vector<Real> > > &vals, const Vector<Real> &x) {
     return 0.0;
   }
 
@@ -98,13 +98,17 @@ public:
 
   virtual void setSamples(bool inConstructor = false) {}
 
+  virtual int numGlobalSamples(void) const {
+    return weights_.size();
+  }
+
   virtual int numMySamples(void) const {
     return weights_.size();
   }
 
   virtual std::vector<Real> getMyPoint(const int i) const {
     return points_[i];
-  }  
+  }
 
   virtual Real getMyWeight(const int i) const {
     return weights_[i];
@@ -134,7 +138,7 @@ public:
     bman_->barrier();
   }
 
-  const Teuchos::RCP<BatchManager<Real> > getBatchManager(void) const {
+  const ROL::Ptr<BatchManager<Real> > getBatchManager(void) const {
     return bman_;
   }
 
@@ -157,7 +161,7 @@ public:
       file.close();
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> (ROL::SampleGenerator::print): Unable to open file!");
     }
   }

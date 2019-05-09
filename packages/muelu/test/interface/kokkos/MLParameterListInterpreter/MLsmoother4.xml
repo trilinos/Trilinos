@@ -1,0 +1,3 @@
+<ParameterList name="MueLu">
+  <Parameter name="smoother: type" type="string" value="Chebyshev"/>
+</ParameterList>

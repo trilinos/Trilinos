@@ -97,6 +97,7 @@ namespace MueLu {
     validParamList->getEntry("aggregation: ordering").setValidator(
       rcp(new validatorType(Teuchos::tuple<std::string>("natural", "graph", "random"), "aggregation: ordering")));
     SET_VALID_ENTRY("aggregation: enable phase 1");
+    SET_VALID_ENTRY("aggregation: phase 1 algorithm");
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");

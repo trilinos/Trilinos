@@ -56,12 +56,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -72,44 +72,44 @@ int main(int argc, char *argv[]) {
     int nx      = 80;    // Set spatial discretization.
     int nt      = 80;    // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
-    RealT alpha = 0.05;  // Set penalty parameter.
-    RealT nu    = 1.e-2; // Set viscosity parameter.
+    RealT alpha = 5e-2;  // Set penalty parameter.
+    RealT nu    = 1e-2;  // Set viscosity parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx,nt,T);
     // Initialize equality constraints
     Constraint_BurgersControl<RealT> con(nx, nt, T, nu);
     // Initialize iteration vectors.
-    Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT> ((nx+2)*(nt+1), 1.0) );
-    Teuchos::RCP<std::vector<RealT> > gz_rcp = Teuchos::rcp( new std::vector<RealT> ((nx+2)*(nt+1), 1.0) );
-    Teuchos::RCP<std::vector<RealT> > yz_rcp = Teuchos::rcp( new std::vector<RealT> ((nx+2)*(nt+1), 1.0) );
+    ROL::Ptr<std::vector<RealT> > z_ptr  = ROL::makePtr<std::vector<RealT>>((nx+2)*(nt+1), 1.0);
+    ROL::Ptr<std::vector<RealT> > gz_ptr = ROL::makePtr<std::vector<RealT>>((nx+2)*(nt+1), 1.0);
+    ROL::Ptr<std::vector<RealT> > yz_ptr = ROL::makePtr<std::vector<RealT>>((nx+2)*(nt+1), 1.0);
     for (int i=0; i<(nx+2)*(nt+1); i++) {
-      (*z_rcp)[i]  = (RealT)rand()/(RealT)RAND_MAX;
-      (*yz_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*z_ptr)[i]  = (RealT)rand()/(RealT)RAND_MAX;
+      (*yz_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
-    ROL::StdVector<RealT> z(z_rcp);
-    ROL::StdVector<RealT> gz(gz_rcp);
-    ROL::StdVector<RealT> yz(yz_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > zp  = Teuchos::rcp(&z,false);
-    Teuchos::RCP<ROL::Vector<RealT> > gzp = Teuchos::rcp(&gz,false);
-    Teuchos::RCP<ROL::Vector<RealT> > yzp = Teuchos::rcp(&yz,false);
+    ROL::StdVector<RealT> z(z_ptr);
+    ROL::StdVector<RealT> gz(gz_ptr);
+    ROL::StdVector<RealT> yz(yz_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > zp  = ROL::makePtrFromRef(z);
+    ROL::Ptr<ROL::Vector<RealT> > gzp = ROL::makePtrFromRef(gz);
+    ROL::Ptr<ROL::Vector<RealT> > yzp = ROL::makePtrFromRef(yz);
 
-    Teuchos::RCP<std::vector<RealT> > u_rcp  = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > gu_rcp = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > yu_rcp = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
+    ROL::Ptr<std::vector<RealT> > u_ptr  = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::Ptr<std::vector<RealT> > gu_ptr = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::Ptr<std::vector<RealT> > yu_ptr = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
     for (int i=0; i<nx*nt; i++) {
-      (*u_rcp)[i]  = (RealT)rand()/(RealT)RAND_MAX;
-      (*yu_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*u_ptr)[i]  = (RealT)rand()/(RealT)RAND_MAX;
+      (*yu_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
-    ROL::StdVector<RealT> u(u_rcp);
-    ROL::StdVector<RealT> gu(gu_rcp);
-    ROL::StdVector<RealT> yu(yu_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > up  = Teuchos::rcp(&u,false);
-    Teuchos::RCP<ROL::Vector<RealT> > gup = Teuchos::rcp(&gu,false);
-    Teuchos::RCP<ROL::Vector<RealT> > yup = Teuchos::rcp(&yu,false);
+    ROL::StdVector<RealT> u(u_ptr);
+    ROL::StdVector<RealT> gu(gu_ptr);
+    ROL::StdVector<RealT> yu(yu_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > up  = ROL::makePtrFromRef(u);
+    ROL::Ptr<ROL::Vector<RealT> > gup = ROL::makePtrFromRef(gu);
+    ROL::Ptr<ROL::Vector<RealT> > yup = ROL::makePtrFromRef(yu);
 
-    Teuchos::RCP<std::vector<RealT> > c_rcp = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > l_rcp = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
-    ROL::StdVector<RealT> c(c_rcp);
-    ROL::StdVector<RealT> l(l_rcp);
+    ROL::Ptr<std::vector<RealT> > c_ptr = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::Ptr<std::vector<RealT> > l_ptr = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::StdVector<RealT> c(c_ptr);
+    ROL::StdVector<RealT> l(l_ptr);
 
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> g(gup,gzp);
@@ -129,48 +129,52 @@ int main(int argc, char *argv[]) {
     con.checkInverseAdjointJacobian_1(yu,c,u,z,true,*outStream);
 
     // Initialize reduced objective function.
-    Teuchos::RCP<std::vector<RealT> > p_rcp  = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
-    ROL::StdVector<RealT> p(p_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > pp  = Teuchos::rcp(&p,false);
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
+    ROL::Ptr<std::vector<RealT> > p_ptr  = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::StdVector<RealT> p(p_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > pp              = ROL::makePtrFromRef(p);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > pobj  = ROL::makePtrFromRef(obj);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pcon = ROL::makePtrFromRef(con);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,zp,pp);
     // Check derivatives.
     robj.checkGradient(z,z,yz,true,*outStream);
     robj.checkHessVec(z,z,yz,true,*outStream);
     // Get input parameter list.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-10);
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-10);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Build Algorithm pointer.
-    Teuchos::RCP<ROL::Algorithm<RealT> > algo;
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;
 
     // Solve using trust regions.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
     z.zero();
     std::clock_t timer_tr = std::clock();
     algo->run(z,robj,true,*outStream);
     *outStream << "Trust-Region Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
-    Teuchos::RCP<ROL::Vector<RealT> > zTR = z.clone();
+    ROL::Ptr<ROL::Vector<RealT> > zTR = z.clone();
     zTR->set(z);
 
     // Solve using a composite step method.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
     x.zero();
+    ROL::Elementwise::Fill<RealT> setFunc(0.25);
+    x.applyUnary(setFunc);
     std::clock_t timer_cs = std::clock();
     algo->run(x,g,l,c,obj,con,true,*outStream);
     *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
 
     // Compute error between solutions
-    Teuchos::RCP<ROL::Vector<RealT> > err = z.clone();
+    ROL::Ptr<ROL::Vector<RealT> > err = z.clone();
     err->set(*zTR); err->axpy(-1.,z);
     errorFlag += (err->norm() > 1.e-4) ? 1 : 0;
+    if (errorFlag) {
+      *outStream << "\n\nControl error = " << err->norm() << "\n";
+    }
 
 //    std::ofstream control;
 //    control.open("control.txt");
@@ -178,7 +182,7 @@ int main(int argc, char *argv[]) {
 //      for (int n = 0; n < nx+2; n++) {
 //        control << (RealT)t/(RealT)nt       << "  " 
 //                << (RealT)n/((RealT)(nx+1)) << "  " 
-//                << (*z_rcp)[t*(nx+2)+n]     << "\n";
+//                << (*z_ptr)[t*(nx+2)+n]     << "\n";
 //      }
 //    } 
 //    control.close();
@@ -189,7 +193,7 @@ int main(int argc, char *argv[]) {
 //      for (int n = 0; n < nx; n++) {
 //        state << (RealT)(t+1)/(RealT)nt       << "  " 
 //              << (RealT)(n+1)/((RealT)(nx+1)) << "  " 
-//              << (*u_rcp)[t*nx+n]             << "\n";
+//              << (*u_ptr)[t*nx+n]             << "\n";
 //      }
 //    } 
 //    state.close();

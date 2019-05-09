@@ -52,13 +52,36 @@
 
 namespace panzer {
     
-PANZER_EVALUATOR_CLASS(CoordinatesEvaluator)
+template<typename EvalT, typename Traits>
+class CoordinatesEvaluator
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    CoordinatesEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   int dimension;
   
   PHX::MDField<ScalarT,Cell,BASIS> coordinate;
   
-PANZER_EVALUATOR_CLASS_END
+}; // end of class CoordinatesEvaluator
+
 
 }
 

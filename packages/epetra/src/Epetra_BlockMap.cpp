@@ -1442,13 +1442,14 @@ void Epetra_BlockMap::Print(std::ostream & os) const
   for (int iproc = 0; iproc < NumProc; iproc++) {
     if (MyPID == iproc) {
       if (MyPID == 0) {
-  os <<  "\nNumber of Global Elements  = "; os << NumGlobalElements64(); os << std::endl;
-  os <<    "Number of Global Points    = "; os << NumGlobalPoints64(); os << std::endl;
-  os <<    "Maximum of all GIDs        = "; os << MaxAllGID64(); os << std::endl;
-  os <<    "Minimum of all GIDs        = "; os << MinAllGID64(); os << std::endl;
-  os <<    "Index Base                 = "; os << IndexBase64(); os << std::endl;
-  if (ConstantElementSize())
-    os <<  "Constant Element Size      = "; os << ElementSize(); os << std::endl;
+        os <<  "\nNumber of Global Elements  = "; os << NumGlobalElements64(); os << std::endl;
+        os <<    "Number of Global Points    = "; os << NumGlobalPoints64(); os << std::endl;
+        os <<    "Maximum of all GIDs        = "; os << MaxAllGID64(); os << std::endl;
+        os <<    "Minimum of all GIDs        = "; os << MinAllGID64(); os << std::endl;
+        os <<    "Index Base                 = "; os << IndexBase64(); os << std::endl;
+        if (ConstantElementSize()) {
+          os <<  "Constant Element Size      = "; os << ElementSize(); os << std::endl;
+        }
       }
       os << std::endl;
 
@@ -1465,46 +1466,46 @@ void Epetra_BlockMap::Print(std::ostream & os) const
       os.width(14);
       os <<  "      Global Index "; os << " ";
       if (!ConstantElementSize()) {
-  os.width(14);
-  os <<" FirstPointInElement "; os << " ";
-  os.width(14);
-  os <<"   ElementSize "; os << " ";
+        os.width(14);
+        os <<" FirstPointInElement "; os << " ";
+        os.width(14);
+        os <<"   ElementSize "; os << " ";
       }
       os << std::endl;
 
       for (int i = 0; i < NumMyElements(); i++) {
-  os.width(14);
-  os <<  MyPID; os << "    ";
-  os.width(14);
-  os <<  i; os << "    ";
-  os.width(14);
+        os.width(14);
+        os <<  MyPID; os << "    ";
+        os.width(14);
+        os <<  i; os << "    ";
+        os.width(14);
 
-  if(BlockMapData_->GlobalIndicesLongLong_)
-  {
+        if(BlockMapData_->GlobalIndicesLongLong_)
+        {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    long long * MyGlobalElements1 = MyGlobalElements64();
-    os <<  MyGlobalElements1[i]; os << "    ";
+          long long * MyGlobalElements1 = MyGlobalElements64();
+          os <<  MyGlobalElements1[i]; os << "    ";
 #else
-    throw ReportError("Epetra_BlockMap::Print: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+          throw ReportError("Epetra_BlockMap::Print: ERROR, GlobalIndicesLongLong but no API for it.",-1);
 #endif
-  }
-  else if(BlockMapData_->GlobalIndicesInt_)
-  {
+        }
+        else if(BlockMapData_->GlobalIndicesInt_)
+        {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-    int * MyGlobalElements1 = MyGlobalElements();
-    os <<  MyGlobalElements1[i]; os << "    ";
+          int * MyGlobalElements1 = MyGlobalElements();
+          os <<  MyGlobalElements1[i]; os << "    ";
 #else
-    throw ReportError("Epetra_BlockMap::Print: ERROR, no GlobalIndicesLongLong but no API for it.",-1);
+          throw ReportError("Epetra_BlockMap::Print: ERROR, no GlobalIndicesLongLong but no API for it.",-1);
 #endif
-  }
+        }
 
-  if (!ConstantElementSize()) {
-    os.width(14);
-    os << FirstPointInElementList1[i]; os << "    ";
-    os.width(14);
-    os << ElementSizeList1[i]; os << "    ";
-  }
-  os << std::endl;
+        if (!ConstantElementSize()) {
+          os.width(14);
+          os << FirstPointInElementList1[i]; os << "    ";
+          os.width(14);
+          os << ElementSizeList1[i]; os << "    ";
+        }
+        os << std::endl;
       }
 
       os << std::flush;

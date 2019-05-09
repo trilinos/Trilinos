@@ -78,9 +78,9 @@ namespace Belos {
   /// \note This enum is useful to you only if you are specializing
   ///   OperatorTraits, implementing Operator, or implementing a Belos
   ///   solver.
-  enum ETrans     {	NOTRANS = 0,  /*!< The operator should not be transposed during this application. */
-			TRANS = 1,    /*!< Apply the transpose of the operator. */
-			CONJTRANS = 2 /*!< Apply the conjugate transpose of the operator. */
+  enum ETrans     {     NOTRANS = 0,  /*!< The operator should not be transposed during this application. */
+                        TRANS = 1,    /*!< Apply the transpose of the operator. */
+                        CONJTRANS = 2 /*!< Apply the conjugate transpose of the operator. */
   };
 
   /// \enum NormType
@@ -95,8 +95,9 @@ namespace Belos {
   ///   MultiVecTraits, implementing MultiVec, or implementing a Belos
   ///   solver.
   enum NormType {   OneNorm,       /*!< Compute the one-norm \f$\sum_{i=1}^{n}(|x_i w_i|)\f$ for each vector. */
-		    TwoNorm,       /*!< Compute the two-norm \f$\sqrt(\sum_{i=1}^{n}((x_i w_i)^2))\f$ for each vector. */
-		    InfNorm        /*!< Compute the infinity-norm \f$\max_{i=1}^{n}\{|x_i w_i|\}\f$ for each vector. */
+                    TwoNorm,       /*!< Compute the two-norm \f$\sqrt(\sum_{i=1}^{n}((x_i w_i)^2))\f$ for each vector. */
+                    InfNorm,       /*!< Compute the infinity-norm \f$\max_{i=1}^{n}\{|x_i w_i|\}\f$ for each vector. */
+                    PreconditionerNorm /*!< Compute the infinity-norm \f$\max_{i=1}^{n}\{|x_i w_i|\}\f$ for each vector. */
   };
 
   /// \enum ScaleType
@@ -222,6 +223,10 @@ namespace Belos {
   StatusType
   convertStringToStatusType (const std::string& status);
 
+  //! Convert the given string to its \c NormType enum value.
+  NormType
+  convertStringToNormType (const std::string& normType);
+
   //! Convert the given string to its \c ScaleType enum value.
   ScaleType
   convertStringToScaleType (const std::string& scaleType);
@@ -277,6 +282,37 @@ namespace Belos {
   /// for debugging.
   std::string
   convertMsgTypeToString (const MsgType msgType);
+
+  /// \brief Default parameters common to most Belos solvers
+  ///
+  /// Both Belos solvers and users may override these defaults.  Real
+  /// floating-point values are deliberately double, in order to avoid
+  /// issues with constexpr construction of certain MagnitudeTypes.
+  struct DefaultSolverParameters {
+    /// \brief Default convergence tolerance
+    ///
+    /// This assumes that implicit conversion from double to
+    /// Teuchos::ScalarTraits<Scalar>::magnitudeType always works, but
+    /// Belos already assumed that.  See discussion starting here:
+    ///
+    /// https://github.com/trilinos/Trilinos/pull/2677#issuecomment-395453521
+    ///
+    /// Initialization of values moved to BelosTypes.cpp to fix ODR-used issues
+    static const double convTol;
+
+    //! Relative residual tolerance for matrix polynomial construction
+    static const double polyTol;
+
+    //! DGKS orthogonalization constant
+    static const double orthoKappa;
+
+    //! User-defined residual scaling factor
+    static const double resScaleFactor;
+
+    //! "Implicit Tolerance Scale Factor"
+    static const double impTolScale;
+  };
+
 
 } // end Belos namespace
 

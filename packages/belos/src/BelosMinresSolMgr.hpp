@@ -185,18 +185,23 @@ namespace Belos {
 
     //! Destructor.
     virtual ~MinresSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+      return Teuchos::rcp(new MinresSolMgr<ScalarType,MV,OP>);
+    }
     //@}
 
     //! @name Accessor methods
     //@{
 
     //! Return the linear problem to be solved.
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
       return *problem_;
     }
 
     //! Return the list of default parameters for this object.
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override {
       if (defaultParams_.is_null()) {
         defaultParams_ = defaultParameters ();
       }
@@ -204,7 +209,7 @@ namespace Belos {
     }
 
     //! Return the list of current parameters for this object.
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override {
       return params_;
     }
 
@@ -226,12 +231,12 @@ namespace Belos {
     /// This is the maximum over all right-hand sides' achieved
     /// convergence tolerances, and is set whether or not the solve
     /// actually managed to achieve the desired convergence tolerance.
-    MagnitudeType achievedTol() const {
+    MagnitudeType achievedTol() const override {
       return achievedTol_;
     }
 
     //! Get the iteration count for the most recent call to \c solve().
-    int getNumIters() const {
+    int getNumIters() const override {
       return numIters_;
     }
 
@@ -240,7 +245,7 @@ namespace Belos {
     /// \warning This implementation of MINRES does not currently
     ///   attempt to detect a loss of accuracy in the solver; thus we
     ///   always return false (for now).
-    bool isLOADetected() const { return false; }
+    bool isLOADetected() const override { return false; }
 
     //@}
 
@@ -248,13 +253,13 @@ namespace Belos {
     //@{
 
     void
-    setProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> > &problem)
+    setProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> > &problem) override
     {
       problem_ = problem;
     }
 
     void
-    setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params);
+    setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) override;
 
     //@}
 
@@ -262,7 +267,7 @@ namespace Belos {
     //@{
 
     void
-    reset (const ResetType type)
+    reset (const ResetType type) override
     {
       if ((type & Belos::Problem) && ! problem_.is_null()) {
         problem_->setProblem ();
@@ -290,14 +295,14 @@ namespace Belos {
     /// - global convergence has been met. In this case, the current
     ///   solutions to the linear system will be placed in the linear
     ///   problem and the solver manager will return ::Converged.
-    ReturnType solve();
+    ReturnType solve() override;
 
     //@}
 
     /** \name Overridden from Teuchos::Describable */
     //@{
 
-    std::string description() const;
+    std::string description() const override;
 
     //@}
 

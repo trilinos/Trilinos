@@ -52,7 +52,6 @@ if [[ $DEBUGMODE == 1 ]]; then
 else
   RECIPIENTS=(
     "muelu-regression@software.sandia.gov"
-    "nvrober@sandia.gov"
   )
 fi
 #suffix for all the log files
@@ -146,7 +145,7 @@ BEGIN {
       dashBoardSummary[dashboardName] = "passed"
     else
       dashBoardSummary[dashboardName] = "FAILED"
-    match(thisLine,"[0-9]*\.[0-9]* sec$")
+    match(thisLine,"[0-9]*\\.[0-9]* sec$")
     timeSummary[dashboardName] = substr(thisLine,RSTART,RLENGTH)
     #done with this dashboard, reset error flag
     dashboardErrors=0

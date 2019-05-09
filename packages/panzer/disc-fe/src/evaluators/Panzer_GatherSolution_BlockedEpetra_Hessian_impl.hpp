@@ -189,16 +189,16 @@ preEvaluate(
   // First try the refactored ReadOnly container.
   RCP<GlobalEvaluationData> ged;
   string post(useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X");
-  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  if (d.gedc->containsDataObject(globalDataKey_ + post))
   {
-    ged       = d.gedc.getDataObject(globalDataKey_ + post);
+    ged       = d.gedc->getDataObject(globalDataKey_ + post);
     xBvRoGed_ = rcp_dynamic_cast<BVROGED>(ged, true);
   }
 
   // Otherwise, try the old path.
-  else if (d.gedc.containsDataObject(globalDataKey_))
+  else if (d.gedc->containsDataObject(globalDataKey_))
   {
-    ged = d.gedc.getDataObject(globalDataKey_);
+    ged = d.gedc->getDataObject(globalDataKey_);
 
     // Try to extract the linear object container.
     auto roGed            = rcp_dynamic_cast<const BVROGED>(ged);
@@ -224,11 +224,11 @@ preEvaluate(
     return;
 
   // Now parse the second derivative direction.
-  if (d.gedc.containsDataObject(sensitivities2ndPrefix_ + globalDataKey_))
+  if (d.gedc->containsDataObject(sensitivities2ndPrefix_ + globalDataKey_))
   {
-    ged = d.gedc.getDataObject(sensitivities2ndPrefix_ + globalDataKey_);
+    ged = d.gedc->getDataObject(sensitivities2ndPrefix_ + globalDataKey_);
     dxBvRoGed_ = rcp_dynamic_cast<BVROGED>(ged, true);
-  } // end if (d.gedc.containsDataObject(...))
+  } // end if (d.gedc->containsDataObject(...))
 
   // Ensure that we actually have something.
   TEUCHOS_TEST_FOR_EXCEPTION(dxBvRoGed_.is_null(), logic_error,
@@ -304,7 +304,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         size_t cellLocalId(localCellIds[cell]);
-        const vector<int>& LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+        auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)
@@ -337,7 +337,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         size_t cellLocalId(localCellIds[cell]);
-        const vector<int>& LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+        auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)
@@ -398,7 +398,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         size_t cellLocalId(localCellIds[cell]);
-        const vector<int>& LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+        auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)

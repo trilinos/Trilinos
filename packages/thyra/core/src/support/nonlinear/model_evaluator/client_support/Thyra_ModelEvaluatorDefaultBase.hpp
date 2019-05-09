@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -231,6 +231,12 @@ protected:
    */
   void initializeDefaultBase();
 
+  /** \brief Sets the the DefaultBase to an uninitialized state, forcing lazy initialization when needed.
+   *
+   *  This is used when a derived class changes state and requires lazy initialization.
+   */
+  void resetDefaultBase();
+
   //@}
 
 private:
@@ -249,7 +255,7 @@ private:
 
   /** \brief . */
   virtual RCP<LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
-  
+
   //@}
 
   /** \name Private pure virtual functions that must be overridden by subclasses */
@@ -272,7 +278,7 @@ protected:
   ModelEvaluatorDefaultBase();
 
 private:
-  
+
   // //////////////////////////////
   // Private tpyes
 
@@ -284,7 +290,7 @@ private:
 
   typedef ModelEvaluatorDefaultBaseTypes::MultiVectorAdjointPair<Scalar>
   MultiVectorAdjointPair;
-  
+
   // //////////////////////////////
   // Private data members
 
@@ -351,7 +357,7 @@ private:
     const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
     const DefaultDerivMvAdjointSupport &defaultMvAdjointSupport
     );
-  
+
 };
 
 
@@ -518,8 +524,8 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
 #ifdef TEUCHOS_DEBUG
   assertInArgsEvalObjects(*this,inArgs);
   assertOutArgsEvalObjects(*this,outArgs,&inArgs);
-#endif  
-  
+#endif
+
   //
   // B) Setup the OutArgs object for the underlying implementation's
   // evalModelImpl(...) function
@@ -612,7 +618,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
           && !is_null(DgDp_j_l.getMultiVector())
           )
         {
-          const RCP<MultiVectorBase<Scalar> > DgDp_j_l_mv = 
+          const RCP<MultiVectorBase<Scalar> > DgDp_j_l_mv =
             DgDp_j_l.getMultiVector();
           if (
             defaultMvAdjointSupport.mvAdjointCopyOrientation()
@@ -675,7 +681,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
         outArgsImpl.set_W_op(W_op);
       }
     }
-    
+
   }
 
   //
@@ -695,7 +701,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
       DgDp_temp_adjoint_copies[adj_copy_i];
     doExplicitMultiVectorAdjoint( *adjPair.mvImplAdjoint, &*adjPair.mvOuter );
   }
-  
+
   // Update W given W_op and W_factory
   {
     RCP<LinearOpWithSolveBase<Scalar> > W;
@@ -707,7 +713,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
       initializeOp<Scalar>(*W_factory, outArgsImpl.get_W_op().getConst(), W.ptr());
     }
   }
-  
+
 }
 
 
@@ -729,7 +735,7 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
   //
   // A) Get the InArgs and OutArgs from the subclass
   //
-  
+
   const MEB::InArgs<Scalar> inArgs = this->createInArgs();
   const MEB::OutArgs<Scalar> outArgsImpl = this->createOutArgsImpl();
 
@@ -824,7 +830,7 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
           )
         );
       // MultiVectorBase
-      const DefaultDerivMvAdjointSupport DgDp_j_l_mv_support = 
+      const DefaultDerivMvAdjointSupport DgDp_j_l_mv_support =
         determineDefaultDerivMvAdjointSupport(
           DgDp_j_l_impl_support, *this->get_g_space(j), *this->get_p_space(l)
           );
@@ -840,7 +846,7 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
   }
   // 2007/09/09: rabart: ToDo: Move the above code into a private helper
   // function!
-  
+
   // W (given W_op and W_factory)
   default_W_support_ = false;
   if ( outArgsImpl.supports(MEB::OUT_ARG_W_op) && !is_null(this->get_W_factory())
@@ -850,7 +856,7 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
     outArgs.setSupports(MEB::OUT_ARG_W);
     outArgs.set_W_properties(outArgsImpl.get_W_properties());
   }
-  
+
   //
   // D) All done!
   //
@@ -860,6 +866,11 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
 
 }
 
+template<class Scalar>
+void ModelEvaluatorDefaultBase<Scalar>::resetDefaultBase()
+{
+  isInitialized_ = false;
+}
 
 // Private functions with default implementaton to be overridden by subclasses
 
@@ -876,7 +887,7 @@ ModelEvaluatorDefaultBase<Scalar>::create_DfDp_op_impl(int l) const
     "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
     " supports the LinearOpBase form of DfDp("<<l<<") (as determined from its"
     " OutArgs object created by createOutArgsImpl())"
-    " but this function create_DfDp_op_impl(...) has not been overriden"
+    " but this function create_DfDp_op_impl(...) has not been overridden"
     " to create such an object!"
     );
   return Teuchos::null;
@@ -895,7 +906,7 @@ ModelEvaluatorDefaultBase<Scalar>::create_DgDx_dot_op_impl(int j) const
     "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
     " supports the LinearOpBase form of DgDx_dot("<<j<<") (as determined from"
     " its OutArgs object created by createOutArgsImpl())"
-    " but this function create_DgDx_dot_op_impl(...) has not been overriden"
+    " but this function create_DgDx_dot_op_impl(...) has not been overridden"
     " to create such an object!"
     );
   return Teuchos::null;
@@ -914,7 +925,7 @@ ModelEvaluatorDefaultBase<Scalar>::create_DgDx_op_impl(int j) const
     "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
     " supports the LinearOpBase form of DgDx("<<j<<") (as determined from"
     " its OutArgs object created by createOutArgsImpl())"
-    " but this function create_DgDx_op_impl(...) has not been overriden"
+    " but this function create_DgDx_op_impl(...) has not been overridden"
     " to create such an object!"
     );
   return Teuchos::null;
@@ -933,7 +944,7 @@ ModelEvaluatorDefaultBase<Scalar>::create_DgDp_op_impl(int j, int l) const
     "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
     " supports the LinearOpBase form of DgDp("<<j<<","<<l<<")"
     " (as determined from its OutArgs object created by createOutArgsImpl())"
-    " but this function create_DgDp_op_impl(...) has not been overriden"
+    " but this function create_DgDp_op_impl(...) has not been overridden"
     " to create such an object!"
     );
   return Teuchos::null;

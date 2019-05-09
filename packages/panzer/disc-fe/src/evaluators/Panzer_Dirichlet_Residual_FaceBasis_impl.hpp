@@ -54,7 +54,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
+template<typename EvalT, typename Traits>
+DirichletResidual_FaceBasis<EvalT, Traits>::
+DirichletResidual_FaceBasis(
+  const Teuchos::ParameterList& p)
 {
   std::string residual_name = p.get<std::string>("Residual Name");
 
@@ -71,19 +74,19 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
 
   // some sanity checks
   TEUCHOS_ASSERT(basis->isVectorBasis());
-  TEUCHOS_ASSERT(basis_layout->dimension(0)==vector_layout_dof->dimension(0));
-  TEUCHOS_ASSERT(basis_layout->dimension(1)==vector_layout_dof->dimension(1));
+  TEUCHOS_ASSERT(basis_layout->extent(0)==vector_layout_dof->extent(0));
+  TEUCHOS_ASSERT(basis_layout->extent(1)==vector_layout_dof->extent(1));
   TEUCHOS_ASSERT(basis->dimension()==vector_layout_dof->extent_int(2));
-  TEUCHOS_ASSERT(vector_layout_vector->dimension(0)==vector_layout_dof->dimension(0));
-  TEUCHOS_ASSERT(vector_layout_vector->dimension(1)==vector_layout_dof->dimension(1));
-  TEUCHOS_ASSERT(vector_layout_vector->dimension(2)==vector_layout_dof->dimension(2));
+  TEUCHOS_ASSERT(vector_layout_vector->extent(0)==vector_layout_dof->extent(0));
+  TEUCHOS_ASSERT(vector_layout_vector->extent(1)==vector_layout_dof->extent(1));
+  TEUCHOS_ASSERT(vector_layout_vector->extent(2)==vector_layout_dof->extent(2));
 
   residual = PHX::MDField<ScalarT,Cell,BASIS>(residual_name, basis_layout);
   dof      = PHX::MDField<const ScalarT,Cell,Point,Dim>(dof_name, vector_layout_dof);
   value    = PHX::MDField<const ScalarT,Cell,Point,Dim>(value_name, vector_layout_vector);
 
   // setup all fields to be evaluated and constructed
-  pointValues = PointValues2<ScalarT> (pointRule->getName()+"_",false);
+  pointValues = PointValues2<double> (pointRule->getName()+"_",false);
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
@@ -93,7 +96,6 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
   
   this->addEvaluatedField(residual);
   this->addDependentField(dof);
-  // this->addDependentField(dof_orientation);
   this->addDependentField(value);
  
   std::string n = "Dirichlet Residual Face Basis Evaluator";
@@ -101,106 +103,67 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DirichletResidual_FaceBasis, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+DirichletResidual_FaceBasis<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(dof,fm);
-  // this->utils.setFieldData(dof_orientation,fm);
-  this->utils.setFieldData(value,fm);
+  orientations = sd.orientations_;
   this->utils.setFieldData(pointValues.jac,fm);
-
-  faceNormal = Kokkos::createDynRankView(residual.get_static_view(),"faceNormal",dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  faceNormal = Kokkos::createDynRankView(residual.get_static_view(),"faceNormal",dof.extent(0),dof.extent(1),dof.extent(2));
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
+template<typename EvalT, typename Traits>
+void
+DirichletResidual_FaceBasis<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
+  // basic cell topology data
+  const shards::CellTopology & parentCell = *basis->getCellTopology();
+  const int cellDim = parentCell.getDimension();
+
+  // face only, subcellOrd does not include edge count
+  const int subcellDim = 2;
+  const int subcellOrd = this->wda(workset).subcell_index;
+
+  const int numFaces = parentCell.getSubcellCount(subcellDim);  
+  const int numFaceDofs = dof.extent_int(1);
+
+  TEUCHOS_ASSERT(cellDim == dof.extent_int(2));
+
   if(workset.num_cells<=0)
     return;
   else {
     Intrepid2::CellTools<PHX::exec_space>::getPhysicalFaceNormals(faceNormal,
                                                                   pointValues.jac.get_view(),
-                                                                  this->wda(workset).subcell_index, 
-                                                                  *basis->getCellTopology());
-  
+                                                                  subcellOrd,
+                                                                  parentCell);
+
+    const auto subcellTopo = shards::CellTopology(parentCell.getBaseCellTopologyData(subcellDim, subcellOrd));
+    TEUCHOS_ASSERT(subcellTopo.getBaseKey() == shards::Triangle<>::key ||
+                   subcellTopo.getBaseKey() == shards::Quadrilateral<>::key);
+
+    const WorksetDetails & details = workset;
+
+    int faceOrts[6] = {};
     for(index_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<dof.extent_int(1);b++) {
+      const auto ort = orientations->at(details.cell_local_ids[c]);
+      ort.getFaceOrientation(faceOrts, numFaces); 
+
+      // vertex count represent rotation count before it flips
+      const double ortVal = faceOrts[subcellOrd] < static_cast<int>(subcellTopo.getVertexCount()) ? 1.0 : -1.0;
+      for(int b=0;b<numFaceDofs;b++) {
         residual(c,b) = ScalarT(0.0);
-        for(int d=0;d<dof.extent_int(2);d++)
+        for(int d=0;d<cellDim;d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceNormal(c,b,d);
+        residual(c,b) *= ortVal;
       } 
     }
   }
-/*
-  if(workset.subcell_dim==1) {
-    Intrepid2::CellTools<ScalarT>::getPhysicalFaceNormals(faceNormal,
-                                            pointValues.jac,
-                                            this->wda(workset).subcell_index, 
-                                           *basis->getCellTopology());
-  
-    for(index_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<dof.extent_int(1);b++) {
-        residual(c,b) = ScalarT(0.0);
-        for(int d=0;d<dof.extent_int(2);d++)
-          residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceNormal(c,b,d);
-      } 
-    }
-  }
-  else if(workset.subcell_dim==2) {
-    // we need to compute the tangents on each edge for each cell.
-    // how do we do this????
-    const shards::CellTopology & parentCell = *basis->getCellTopology();
-    int cellDim = parentCell.getDimension();
-    int numFaces = dof.extent_int(1);
-
-    refFaceNormal = Kokkos::createDynRankView(residual.get_static_view(),"refFaceNormal",numFaces,cellDim);
-
-    for(int i=0;i<numFaces;i++) {
-      Kokkos::DynRankView<double,PHX::Device> refFaceNormal_local(cellDim);
-      Intrepid2::CellTools<double>::getReferenceFaceNormal(refFaceNormal_local, i, parentCell);
-
-      for(int d=0;d<cellDim;d++) 
-        refFaceNormal(i,d) = refFaceNormal_local(d);
-    }
-
-    // Loop over workset faces and edge points
-    for(index_t c=0;c<workset.num_cells;c++) {
-      for(int pt = 0; pt < numFaces; pt++) {
-
-        // Apply parent cell Jacobian to ref. edge tangent
-        for(int i = 0; i < cellDim; i++) {
-          faceNormal(c, pt, i) = 0.0;
-          for(int j = 0; j < cellDim; j++){
-            faceNormal(c, pt, i) +=  pointValues.jac(c, pt, i, j)*refFaceNormal(pt,j);
-          }// for j
-        }// for i
-      }// for pt
-    }// for pCell
-
-    for(index_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<dof.extent_int(1);b++) {
-        residual(c,b) = ScalarT(0.0);
-        for(int d=0;d<dof.extent_int(2);d++)
-          residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceNormal(c,b,d);
-      } 
-    }
-
-  }
-  else {
-    // don't know what to do 
-    TEUCHOS_ASSERT(false);
-  }
-*/
-/*
-  // loop over residuals scaling by orientation. This gurantees
-  // everything is oriented in the "positive" direction, this allows
-  // sums acrossed processor to be oriented in the same way (right?)
-  for(index_t c=0;c<workset.num_cells;c++) {
-    for(int b=0;b<dof.extent_int(1);b++) {
-      residual(c,b) *= dof_orientation(c,b);
-    }
-  }
-*/
 }
 
 //**********************************************************************

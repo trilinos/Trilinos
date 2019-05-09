@@ -65,25 +65,25 @@ class BlockOperator2 : public LinearOperator<Real> {
 
 private:
 
-  Teuchos::RCP<OP> bkop_;
-  Teuchos::RCP<std::vector<Teuchos::RCP<OP> > > ops_;
+  ROL::Ptr<OP> bkop_;
+  ROL::Ptr<std::vector<ROL::Ptr<OP> > > ops_;
 
 public:   
 
-  BlockOperator2( Teuchos::RCP<OP> &a11, Teuchos::RCP<OP> &a12,
-                  Teuchos::RCP<OP> &a21, Teuchos::RCP<OP> &a22 ) {
+  BlockOperator2( ROL::Ptr<OP> &a11, ROL::Ptr<OP> &a12,
+                  ROL::Ptr<OP> &a21, ROL::Ptr<OP> &a22 ) {
 
     using std::vector;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
+    
+    
 
-    ops_ = rcp( new vector<RCP<OP> > );
+    ops_ = ROL::makePtr<vector<ROL::Ptr<OP> >>();
     ops_->push_back(a11);
     ops_->push_back(a12);
     ops_->push_back(a21);
     ops_->push_back(a22);
             
-    bkop_ = rcp( new BlockOperator<Real>(ops_) );
+    bkop_ = ROL::makePtr<BlockOperator<Real>>(ops_);
  
   }
 
@@ -95,19 +95,19 @@ public:
 
   void applyInverse( V &Hv, const V &v, Real &tol ) const {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( true , std::logic_error, 
+    ROL_TEST_FOR_EXCEPTION( true , std::logic_error, 
                                 ">>> ERROR (ROL_BlockOperator2, applyInverse): "
                                 "Not implemented."); 
 
   } 
 
-  Teuchos::RCP<LinearOperator<Real> > getOperator( int row, int col ) const {
+  ROL::Ptr<LinearOperator<Real> > getOperator( int row, int col ) const {
     int dex = 2*row+col;
     if( 0<=dex && dex<=3 ) {
       return (*ops_)[dex];
     } 
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+      ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                                   ">>> ERROR (ROL_BlockOperator2, getOperator): "
                                   "invalid block indices."); 
     }

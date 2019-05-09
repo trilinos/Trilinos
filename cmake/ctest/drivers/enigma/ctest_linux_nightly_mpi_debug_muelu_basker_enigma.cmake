@@ -60,9 +60,15 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.enigma.gcc.cmake")
 # Set the options specific to this build case
 #
 
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME OPENMPI_1.6.4_DEBUG_DEV_MueLu_Basker)
+#SET(BUILD_DIR_NAME ${UC_MPI_NAME}_$ENV{SEMS_MPI_VERSION}_${BUILD_TYPE}_DEV_MueLu_Basker)
+SET(BUILD_NAME_DETAILS NO-SUPERLU_BASKER)
+
+
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(Trilinos_TRACK  Specialized)      # Set the CDash Track
@@ -75,6 +81,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
   "-DTPL_ENABLE_SuperLU=OFF"
   "-DAmesos2_ENABLE_Basker=ON"
+  "-DAmesos2_ENABLE_KLU2:BOOL=OFF"
 )
 
 #

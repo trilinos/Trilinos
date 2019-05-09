@@ -194,6 +194,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
   static Epetra_BlockMap Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 						  bool high_rank_proc_owns_shared=false);
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    //! Epetra_Util Create_OneToOne_Map function for long long ordinals
+    /*! Function to create a new Epetra_Map object with 1-to-1 ownership of
+      entries from an existing map which may have entries that appear on
+      multiple processors.
+    */
+  static Epetra_BlockMap Create_OneToOne_BlockMap64(const Epetra_BlockMap& usermap,
+                                                    bool high_rank_proc_owns_shared=false);
+#endif
 
 
   //! Epetra_Util SortCrsEntries function
@@ -201,10 +210,20 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
   static int SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals);
 
+  //! Epetra_Util SortCrsEntries function
+  // For each row, sort column entries from smallest to largest.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  static int SortCrsEntries(int NumRows, const size_t *CRS_rowptr, int *CRS_colind, double *CRS_vals);
+
   //! Epetra_Util SortAndMergeCrsEntries function
   // For each row, sort column entries from smallest to largest, merging column ids that are identical by adding values.
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
   static int SortAndMergeCrsEntries(int NumRows, int *CRS_rowptr, int *CRS_colind, double *CRS_vals);
+
+  //! Epetra_Util SortAndMergeCrsEntries function
+  // For each row, sort column entries from smallest to largest, merging column ids that are identical by adding values.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  static int SortAndMergeCrsEntries(int NumRows, size_t *CRS_rowptr, int *CRS_colind, double *CRS_vals);
 
   //! Epetra_Util GetPidGidPairs function
   /*!  For each GID in the TargetMap, find who owns the GID in the SourceMap.
@@ -391,6 +410,36 @@ int Epetra_Util_insert(T item, int offset, T*& list,
   list[offset] = item;
 
   return(0);
+}
+
+/** Function that returns either a pointer to the first entry in the vector
+    or, if the vector is empty, the NULL pointer.
+
+    @param vec vector argument (may be empty)
+    @return Either NULL or a pointer to the first entry in @p vec
+ */
+template<class T>
+T* Epetra_Util_data_ptr(std::vector<T> &vec)
+{
+  if (!vec.empty()) {
+    return &vec.front();
+  }
+  return NULL;
+}
+
+/** Function that returns either a pointer to the first entry in the
+    vector or, if the vector is empty, the NULL pointer.
+
+    @param vec constant vector argument (may be empty)
+    @return Either NULL or a pointer to the first entry in @p vec
+ */
+template<class T>
+const T* Epetra_Util_data_ptr(const std::vector<T> &vec)
+{
+  if (!vec.empty()) {
+    return &vec.front();
+  }
+  return NULL;
 }
 
 //! Harwell-Boeing data extraction routine

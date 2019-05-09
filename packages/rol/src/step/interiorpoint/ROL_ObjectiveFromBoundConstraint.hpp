@@ -38,7 +38,7 @@
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -108,10 +108,10 @@ class ObjectiveFromBoundConstraint : public Objective<Real> {
   }
 
 private:
-  const Teuchos::RCP<const V> lo_;
-  const Teuchos::RCP<const V> up_;
-  Teuchos::RCP<V> a_;     // scratch vector
-  Teuchos::RCP<V> b_;     // scratch vector
+  const ROL::Ptr<const V> lo_;
+  const ROL::Ptr<const V> up_;
+  ROL::Ptr<V> a_;     // scratch vector
+  ROL::Ptr<V> b_;     // scratch vector
   EBarrierType    btype_;
   bool isLowerActivated_;
   bool isUpperActivated_;
@@ -119,7 +119,7 @@ private:
 public:
  
   ObjectiveFromBoundConstraint( const BoundConstraint<Real> &bc,
-                                Teuchos::ParameterList &parlist ) :
+                                ROL::ParameterList &parlist ) :
     lo_( bc.getLowerBound() ),
     up_( bc.getUpperBound() ) {
 
@@ -149,7 +149,7 @@ public:
   Real value( const Vector<Real> &x, Real &tol ) {
     const Real zero(0), one(1), two(2);
 
-    Teuchos::RCP<UnaryFunction> func;
+    ROL::Ptr<UnaryFunction> func;
 
     a_->zero(); b_->zero();
     switch(btype_) {
@@ -217,7 +217,7 @@ public:
         break;
 
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::value): Undefined barrier function type!");
 
         break;
@@ -300,7 +300,7 @@ public:
         break;
 
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::gradient): Undefined barrier function type!");
 
         break;
@@ -384,7 +384,7 @@ public:
         break;
 
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::hessVec): Undefined barrier function type!");
 
         break;
@@ -396,7 +396,7 @@ public:
   }
 
   // For testing purposes
-  Teuchos::RCP<Vector<Real> > getBarrierVector(void) {
+  ROL::Ptr<Vector<Real> > getBarrierVector(void) {
     return b_;
   }
 

@@ -54,7 +54,7 @@ TEST(BucketRepositoryTest, createBuckets)
     size_t spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim, stk::mesh::entity_rank_names());
 
-    stk::mesh::OrdinalVector parts;
+    stk::mesh::OrdinalVector parts, scratch;
     parts.push_back(stkMeshMetaData.universal_part().mesh_meta_data_ordinal());
     parts.push_back(stkMeshMetaData.locally_owned_part().mesh_meta_data_ordinal());
     parts.push_back(stkMeshMetaData.declare_part("part1").mesh_meta_data_ordinal());
@@ -62,20 +62,21 @@ TEST(BucketRepositoryTest, createBuckets)
     stkMeshMetaData.commit();
 
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
-    stk::mesh::impl::EntityRepository entityRepository(stkMeshBulkData);
+    stk::mesh::impl::EntityRepository entityRepository;
 
     stk::mesh::impl::BucketRepository &bucketRepository = stkMeshBulkData.my_get_bucket_repository();
-    stk::mesh::impl::Partition* partition = bucketRepository.get_or_create_partition(stk::topology::NODE_RANK, parts);
+    stk::mesh::impl::Partition* partition = bucketRepository.get_or_create_partition(stk::topology::NODE_RANK, parts, scratch);
 
     size_t numNodes = 1024;
     for(size_t i=0; i<numNodes; i++)
     {
         stk::mesh::EntityId nodeID = i+1;
         stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeID);
-        std::pair<stk::mesh::Entity,bool> createResult = entityRepository.internal_create_entity(nodeKey);
-        stk::mesh::Entity node = createResult.first;
+        std::pair<stk::mesh::entity_iterator,bool> createResult = entityRepository.internal_create_entity(nodeKey);
         bool aNewEntityWasCreated = createResult.second;
         EXPECT_TRUE(aNewEntityWasCreated);
+        stk::mesh::Entity node = stkMeshBulkData.my_generate_new_entity();
+        stkMeshBulkData.my_set_entity_key(node, nodeKey);
         partition->add(node);
     }
 
@@ -91,10 +92,11 @@ TEST(BucketRepositoryTest, createBuckets)
 
     stk::mesh::EntityId nodeID = numNodes+1;
     stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeID);
-    std::pair<stk::mesh::Entity,bool> createResult = entityRepository.internal_create_entity(nodeKey);
-    stk::mesh::Entity node = createResult.first;
+    std::pair<stk::mesh::entity_iterator,bool> createResult = entityRepository.internal_create_entity(nodeKey);
     bool aNewEntityWasCreated = createResult.second;
     EXPECT_TRUE(aNewEntityWasCreated);
+    stk::mesh::Entity node = stkMeshBulkData.my_generate_new_entity();
+    stkMeshBulkData.my_set_entity_key(node, nodeKey);
     partition->add(node);
 
     expectedNumBuckets = 3;

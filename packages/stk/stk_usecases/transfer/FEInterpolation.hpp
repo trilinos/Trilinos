@@ -37,7 +37,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 
 namespace stk {

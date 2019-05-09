@@ -71,14 +71,11 @@
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Xpetra_EpetraCrsMatrix.hpp"
 #include "Xpetra_MapFactory.hpp"
+#include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_VectorFactory.hpp"
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #include "Kokkos_DynRankView.hpp"
-#else
-#include "Intrepid2_FieldContainer.hpp"
-#endif
 
 
 namespace MueLu
@@ -124,6 +121,7 @@ typedef Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_map;
 typedef Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_ordinal_vector;
 typedef Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_double;
 typedef Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_complex;
+typedef Xpetra::CrsGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_CrsGraph;
 typedef Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_double;
 typedef Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_complex;
 typedef MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_double;
@@ -133,11 +131,7 @@ typedef MueLu::AmalgamationInfo<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAmalInfo;
 typedef MueLu::GraphBase<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MGraph;
 
 #ifdef HAVE_MUELU_INTREPID2
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
   typedef Kokkos::DynRankView<mm_LocalOrd,typename mm_node_t::device_type> FieldContainer_ordinal;
-#else
-  typedef Intrepid2::FieldContainer<mm_LocalOrd> FieldContainer_ordinal;
-#endif
 #endif
 
 class MuemexArg

@@ -41,10 +41,10 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_Details_gathervPrint.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include <sstream>
 
 namespace {
@@ -71,7 +71,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST( TpetraUtils, gathervPrint )
   {
-    using Teuchos::Comm;
     using Teuchos::outArg;
     using Teuchos::RCP;
     using Teuchos::REDUCE_MIN;
@@ -82,7 +81,7 @@ namespace {
     int lclSuccess = 1;
     int gblSuccess = 1;
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    auto comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 

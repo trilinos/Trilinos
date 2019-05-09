@@ -53,16 +53,16 @@
 
 namespace PHX {
 
-/** \brief Utility that allows for unit testing of single evalautor. */
+/** \brief Utility that allows for unit testing of single evaluator. */
 template<typename EvalType, typename Traits>
-class EvalautorUnitTester {
+class EvaluatorUnitTester {
 
   PHX::FieldManager<Traits> field_manager_;
 
 public:
 
   //! Register the evaluator that will be unit tested.
-  void setEvalautorToTest(const Teuchos::RCP<PHX::Evaluator<Traits>>& e)
+  void setEvaluatorToTest(const Teuchos::RCP<PHX::Evaluator<Traits>>& e)
   {
     field_manager_.template registerEvaluator<EvalType>(e);
 
@@ -77,9 +77,9 @@ public:
 
   /** \brief Register an extra evaluator that is not tested but is
   used to provide intermediate quantities for testing a separate
-  evalautor.
+  evaluator.
   */
-  void addAuxiliaryEvalautor(const Teuchos::RCP<PHX::Evaluator<Traits>>& e)
+  void addAuxiliaryEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits>>& e)
   { field_manager_.template registerEvaluator<EvalType>(e); }
 
   //! Set an unmanaged MDField that provides dependent field values for the evaluator to be tested against.
@@ -113,7 +113,7 @@ public:
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
-    field_manager_.template getFieldData<typename FieldType::value_type,EvalType>(field);
+    field_manager_.template getFieldData<EvalType>(field);
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       TEST_FLOATING_EQUALITY(field(i),gold_field(i),tolerance);
   }
@@ -126,7 +126,7 @@ public:
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
-    field_manager_.template getFieldData<typename FieldType::value_type,EvalType>(field);
+    field_manager_.template getFieldData<EvalType>(field);
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       for (int j=0; j < static_cast<int>(field.extent(1)); ++j)
         TEST_FLOATING_EQUALITY(field(i,j),gold_field(i,j),tolerance);
@@ -140,7 +140,7 @@ public:
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
-    field_manager_.template getFieldData<typename FieldType::value_type,EvalType>(field);
+    field_manager_.template getFieldData<EvalType>(field);
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       for (int j=0; j < static_cast<int>(field.extent(1)); ++j)
         for (int k=0; k < static_cast<int>(field.extent(2)); ++k)
@@ -155,7 +155,7 @@ public:
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
-    field_manager_.template getFieldData<typename FieldType::value_type,EvalType>(field);
+    field_manager_.template getFieldData<EvalType>(field);
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       for (int j=0; j < static_cast<int>(field.extent(1)); ++j)
         for (int k=0; k < static_cast<int>(field.extent(2)); ++k)
@@ -171,7 +171,7 @@ public:
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
-    field_manager_.template getFieldData<typename FieldType::value_type,EvalType>(field);
+    field_manager_.template getFieldData<EvalType>(field);
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       for (int j=0; j < static_cast<int>(field.extent(1)); ++j)
         for (int k=0; k < static_cast<int>(field.extent(2)); ++k)
@@ -188,7 +188,7 @@ public:
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
-    field_manager_.template getFieldData<typename FieldType::value_type,EvalType>(field);
+    field_manager_.template getFieldData<EvalType>(field);
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       for (int j=0; j < static_cast<int>(field.extent(1)); ++j)
         for (int k=0; k < static_cast<int>(field.extent(2)); ++k)

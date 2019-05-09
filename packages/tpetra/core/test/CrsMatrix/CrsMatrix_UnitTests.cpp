@@ -44,6 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Details_getNumDiags.hpp"
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -147,7 +148,6 @@ namespace { // (anonymous)
       MV mvbad(badmap,1);
 #ifdef HAVE_TPETRA_DEBUG
       const Scalar ONE = ST::one(), ZERO = ST::zero();
-      // tests in localSolve() and localMultiply() are only done in a debug build
       MV mvcol(zero->getColMap(),1);
       MV mvrow(zero->getRowMap(),1);
       TEST_THROW(zero->template localMultiply<Scalar>(mvcol,mvbad,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad output map
@@ -197,8 +197,8 @@ namespace { // (anonymous)
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
     TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
     TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
-    TEST_EQUALITY(eye->getGlobalNumDiags() , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumDiags()     , numLocal);
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
     TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
@@ -277,8 +277,8 @@ namespace { // (anonymous)
     TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
     TEST_EQUALITY_CONST(A.getNodeNumRows()     , ONE);
     TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
-    TEST_EQUALITY(A.getGlobalNumDiags()  , static_cast<size_t>(numImages));
-    TEST_EQUALITY_CONST(A.getNodeNumDiags(), ONE);
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (A), static_cast<GO> (numImages));
+    TEST_EQUALITY_CONST( Tpetra::Details::getLocalNumDiags (A), static_cast<LO> (ONE) );
     TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , (numImages > 2 ? 3 : 2));
     TEST_EQUALITY(A.getNodeMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);

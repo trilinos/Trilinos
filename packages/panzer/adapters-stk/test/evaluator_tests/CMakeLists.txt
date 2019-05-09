@@ -6,12 +6,12 @@ INCLUDE_DIRECTORIES(${PARENT_PACKAGE_SOURCE_DIR}/disc-fe/test/equation_set)
 SET(UNIT_TEST_DRIVER
   ${PANZER_UNIT_TEST_MAIN})
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tGatherOrientation
-  SOURCES gather_orientation.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  tGatherOrientation
+#  SOURCES gather_orientation.cpp ${UNIT_TEST_DRIVER}
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tGatherSolution
@@ -46,4 +46,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES point_basis_values_evaluator.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tDomainInterface
+  SOURCES domain_interface.cpp ${UNIT_TEST_DRIVER}
+  COMM mpi
+  NUM_MPI_PROCS 2
   )

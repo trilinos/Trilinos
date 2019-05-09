@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,12 +60,7 @@ double *mkvec_ret(int nl, int nh)
 }
 
 /* Free a double vector with range [nl..nh]. */
-void frvec(double *v, int nl)
-{
-
-  sfree((v + nl));
-  v = NULL;
-}
+void frvec(double *v, int nl) { sfree((v + nl)); }
 
 /* Allocates a float vector with range [nl..nh]. Dies. */
 float *mkvec_float(int nl, int nh)
@@ -91,9 +86,4 @@ float *mkvec_ret_float(int nl, int nh)
 }
 
 /* Free a float vector with range [nl..nh]. */
-void frvec_float(float *v, int nl)
-{
-
-  sfree((v + nl));
-  v = NULL;
-}
+void frvec_float(float *v, int nl) { sfree((v + nl)); }

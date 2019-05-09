@@ -47,7 +47,7 @@
 PyTrilinos.Galeri is the python interface to the Trilinos example
 matrix package Galeri:
 
-    http://trilinos.sandia.gov/packages/galeri
+    https://trilinos.org/docs/dev/packages/galeri/doc/html/index.html
 
 The purpose of Galeri is to provide a set of example matrices
 distributed across a set of common processor decompositions for
@@ -80,20 +80,14 @@ example subdirectory of the PyTrilinos package:
 	docstring = %galeri_docstring) Galeri
 
 %{
-// System includes
+// System include files
 #include <sstream>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -101,22 +95,11 @@ example subdirectory of the PyTrilinos package:
 #include "numpy_include.hpp"
 #endif
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Galeri includes
-#include "Galeri_Version.h"
-#include "Galeri_Utils.h"
-#include "Galeri_Maps.h"
-#include "Galeri_CrsMatrices.h"
-#include "Galeri_VbrMatrices.h"
-#include "Galeri_ReadHB.h"
+// Galeri include files
+#include "PyTrilinos_Galeri_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration
@@ -136,7 +119,7 @@ example subdirectory of the PyTrilinos package:
 
 // Trilinos package imports
 %import "Teuchos.i"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %import "Epetra.i"
 #endif
 
@@ -202,7 +185,7 @@ __version__ = Galeri_Version().split()[2]
 ///////////////////////////
 // Galeri_ReadHB support //
 ///////////////////////////
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %feature("autodoc",
 "ReadHB(str filename, Epetra.Comm comm) -> (Epetra.Map map, Epetra.CrsMatrix A,
                                            Epetra.Vector x, Epetra.Vector b,

@@ -58,7 +58,7 @@
 #include "Panzer_ParameterLibrary.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ResponseMESupportBase.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 
 #include "Thyra_VectorBase.hpp"
 
@@ -84,7 +84,7 @@ namespace panzer {
     
     ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                           const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
-			  const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
+			  const Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >& lof,
 			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
 			  const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
 			  const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -223,7 +223,7 @@ namespace panzer {
       *
       * \note Requires lof_ to be set.
       */
-    void initializeEpetraObjs(panzer::EpetraLinearObjFactory<panzer::Traits,int> & lof);
+    void initializeEpetraObjs(panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> & lof);
 
     /** Initialize the parameter vector object */
     void initializeParameterVector(const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,

@@ -18,6 +18,3 @@
 
 /* Define if want to build with sacado enabled */
 #cmakedefine HAVE_INTREPID_SACADO
-
-/* *Define for Kokkos support */
-#cmakedefine HAVE_INTREPID_KOKKOSCORE

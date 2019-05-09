@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -134,9 +134,29 @@ T atomic_fetch_and( volatile T * const dest , const T val )
   return retval;
 }
 
+#elif defined( KOKKOS_ENABLE_SERIAL_ATOMICS )
+
+template< typename T >
+T atomic_fetch_and( volatile T * const dest_v , const T val )
+{
+  T* dest = const_cast<T*>(dest_v);
+  T retval = *dest;
+  *dest &= val;
+  return retval;
+}
+
 #endif
 #endif
 //----------------------------------------------------------------------------
+
+// dummy for non-CUDA Kokkos headers being processed by NVCC
+#if defined(__CUDA_ARCH__) && !defined(KOKKOS_ENABLE_CUDA)
+template< typename T >
+__inline__ __device__
+T atomic_fetch_and(volatile T* const, Kokkos::Impl::identity_t<T>) {
+  return T();
+}
+#endif
 
 // Simpler version of atomic_fetch_and without the fetch
 template <typename T>

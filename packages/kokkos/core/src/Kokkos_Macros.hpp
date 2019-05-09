@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -102,6 +102,12 @@
   #define KOKKOS_INTERNAL_ENABLE_NON_CUDA_BACKEND
 #endif
 
+#if !defined(KOKKOS_ENABLE_THREADS) && !defined(KOKKOS_ENABLE_CUDA) && \
+    !defined(KOKKOS_ENABLE_OPENMP) && !defined(KOKKOS_ENABLE_QTHREADS) && \
+    !defined(KOKKOS_ENABLE_ROCM) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+  #define KOKKOS_INTERNAL_NOT_PARALLEL
+#endif
+
 #define KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA
 
 #if defined( KOKKOS_ENABLE_CUDA ) && defined( __CUDACC__ )
@@ -147,7 +153,7 @@
     #else
       #define KOKKOS_LAMBDA [=]__host__ __device__
 
-      #if defined( KOKKOS_ENABLE_CXX1Z )
+      #if defined( KOKKOS_ENABLE_CXX17 ) || defined( KOKKOS_ENABLE_CXX20 )
         #define KOKKOS_CLASS_LAMBDA        [=,*this] __host__ __device__
       #endif
     #endif
@@ -158,6 +164,16 @@
   #else // !defined(KOKKOS_ENABLE_CUDA_LAMBDA)
     #undef KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA
   #endif // !defined(KOKKOS_ENABLE_CUDA_LAMBDA)
+
+  #if ( 9000 <= CUDA_VERSION ) && ( CUDA_VERSION < 10000 )
+    // CUDA 9 introduced an incorrect warning,
+    // see https://github.com/kokkos/kokkos/issues/1470
+    #define KOKKOS_CUDA_9_DEFAULTED_BUG_WORKAROUND
+  #endif
+
+  #if ( 10000 > CUDA_VERSION )
+    #define KOKKOS_ENABLE_PRE_CUDA_10_DEPRECATION_API
+  #endif
 #endif // #if defined( KOKKOS_ENABLE_CUDA ) && defined( __CUDACC__ )
 
 //----------------------------------------------------------------------------
@@ -169,9 +185,6 @@
   #define KOKKOS_FORCEINLINE_FUNCTION  __device__  __host__  __forceinline__
   #define KOKKOS_INLINE_FUNCTION       __device__  __host__  inline
   #define KOKKOS_FUNCTION              __device__  __host__
-  #ifdef KOKKOS_COMPILER_CLANG
-  #define KOKKOS_FUNCTION_DEFAULTED KOKKOS_FUNCTION
-  #endif
 #endif // #if defined( __CUDA_ARCH__ )
 
 #if defined( KOKKOS_ENABLE_ROCM ) && defined( __HCC__ )
@@ -180,7 +193,6 @@
   #define KOKKOS_INLINE_FUNCTION       __attribute__((amp,cpu)) inline
   #define KOKKOS_FUNCTION              __attribute__((amp,cpu))
   #define KOKKOS_LAMBDA                [=] __attribute__((amp,cpu))
-  #define KOKKOS_FUNCTION_DEFAULTED    KOKKOS_FUNCTION
 #endif
 
 #if defined( _OPENMP )
@@ -205,7 +217,7 @@
   #define KOKKOS_LAMBDA [=]
 #endif
 
-#if defined( KOKKOS_ENABLE_CXX1Z ) && !defined( KOKKOS_CLASS_LAMBDA )
+#if (defined( KOKKOS_ENABLE_CXX17 ) || defined( KOKKOS_ENABLE_CXX20) )&& !defined( KOKKOS_CLASS_LAMBDA )
   #define KOKKOS_CLASS_LAMBDA [=,*this]
 #endif
 
@@ -251,7 +263,7 @@
   #endif
 #endif
 
-#if defined( __PGIC__ ) && !defined( __GNUC__ )
+#if defined( __PGIC__ ) 
   #define KOKKOS_COMPILER_PGI __PGIC__*100+__PGIC_MINOR__*10+__PGIC_PATCHLEVEL__
 
   #if ( 1540 > KOKKOS_COMPILER_PGI )
@@ -268,24 +280,22 @@
   #define KOKKOS_ENABLE_PRAGMA_UNROLL 1
   #define KOKKOS_ENABLE_PRAGMA_LOOPCOUNT 1
   #define KOKKOS_ENABLE_PRAGMA_VECTOR 1
-  #define KOKKOS_ENABLE_PRAGMA_SIMD 1
+  #if ( 1800 > KOKKOS_COMPILER_INTEL )
+    #define KOKKOS_ENABLE_PRAGMA_SIMD 1
+  #endif
 
   #if ( __INTEL_COMPILER > 1400 )
     #define KOKKOS_ENABLE_PRAGMA_IVDEP 1
   #endif
 
+  #if ! defined( KOKKOS_MEMORY_ALIGNMENT )
+    #define KOKKOS_MEMORY_ALIGNMENT 64
+  #endif
+
   #define KOKKOS_RESTRICT __restrict__
 
-  #ifndef KOKKOS_ALIGN
-    #define KOKKOS_ALIGN(size) __attribute__((aligned(size)))
-  #endif
-
-  #ifndef KOKKOS_ALIGN_PTR
-    #define KOKKOS_ALIGN_PTR(size) __attribute__((align_value(size)))
-  #endif
-
-  #ifndef KOKKOS_ALIGN_SIZE
-    #define KOKKOS_ALIGN_SIZE 64
+  #ifndef KOKKOS_IMPL_ALIGN_PTR
+    #define KOKKOS_IMPL_ALIGN_PTR(size) __attribute__((align_value(size)))
   #endif
 
   #if ( 1400 > KOKKOS_COMPILER_INTEL )
@@ -351,6 +361,11 @@
   #if !defined( KOKKOS_FORCEINLINE_FUNCTION )
     #define KOKKOS_FORCEINLINE_FUNCTION  inline __attribute__((always_inline))
   #endif
+
+  #if !defined( KOKKOS_IMPL_ALIGN_PTR )
+    #define KOKKOS_IMPL_ALIGN_PTR(size) __attribute__((aligned(size)))
+  #endif
+
 #endif
 
 //----------------------------------------------------------------------------
@@ -412,10 +427,6 @@
   #define KOKKOS_FUNCTION /**/
 #endif
 
-#if !defined( KOKKOS_FUNCTION_DEFAULTED )
-  #define KOKKOS_FUNCTION_DEFAULTED /**/
-#endif
-
 //----------------------------------------------------------------------------
 // Define empty macro for restrict if necessary:
 
@@ -426,16 +437,16 @@
 //----------------------------------------------------------------------------
 // Define Macro for alignment:
 
-#if !defined KOKKOS_ALIGN_SIZE
-  #define KOKKOS_ALIGN_SIZE 16
+#if ! defined( KOKKOS_MEMORY_ALIGNMENT )
+  #define KOKKOS_MEMORY_ALIGNMENT 64
 #endif
 
-#if !defined( KOKKOS_ALIGN )
-  #define KOKKOS_ALIGN(size) __attribute__((aligned(size)))
+#if ! defined( KOKKOS_MEMORY_ALIGNMENT_THRESHOLD )
+  #define KOKKOS_MEMORY_ALIGNMENT_THRESHOLD 1
 #endif
 
-#if !defined( KOKKOS_ALIGN_PTR )
-  #define KOKKOS_ALIGN_PTR(size) __attribute__((aligned(size)))
+#if !defined( KOKKOS_IMPL_ALIGN_PTR )
+  #define KOKKOS_IMPL_ALIGN_PTR(size) /* */
 #endif
 
 //----------------------------------------------------------------------------
@@ -509,6 +520,26 @@
 #else
   #define KOKKOS_ENABLE_TASKDAG
 #endif
+
+
+#if defined ( KOKKOS_ENABLE_CUDA )
+  #if ( 9000 <= CUDA_VERSION )
+  #define KOKKOS_IMPL_CUDA_VERSION_9_WORKAROUND
+  #if ( __CUDA_ARCH__ )
+    #define KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
+  #endif
+  #endif
+#endif
+
+#define KOKKOS_INVALID_INDEX (~std::size_t(0))
+
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+  #define KOKKOS_IMPL_CTOR_DEFAULT_ARG 0
+#else
+  #define KOKKOS_IMPL_CTOR_DEFAULT_ARG KOKKOS_INVALID_INDEX
+#endif
+
+
 
 #endif // #ifndef KOKKOS_MACROS_HPP
 

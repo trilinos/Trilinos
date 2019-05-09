@@ -61,7 +61,6 @@
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -168,7 +167,7 @@ namespace panzer {
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
     Teuchos::RCP<panzer::DOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
     dofManager->addField(fieldName1_q1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
@@ -188,8 +187,8 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    Teuchos::RCP<EpetraLinearObjFactory<panzer::Traits,int> > e_lof 
-       = Teuchos::rcp(new EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > e_lof 
+       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = e_lof;
     Teuchos::RCP<LinearObjContainer> loc = e_lof->buildGhostedLinearObjContainer();
     e_lof->initializeGhostedContainer(LinearObjContainer::X,*loc);
@@ -211,7 +210,7 @@ namespace panzer {
       using ROVGED  = panzer::ReadOnlyVector_GlobalEvaluationData;
       for (int i(0); i < num_tangent; ++i)
       {
-        RCP<ROVGED> tangentContainer = e_lof->buildDomainContainer();
+        RCP<ROVGED> tangentContainer = e_lof->buildReadOnlyDomainContainer();
         auto tanContainerEpetra = rcp_dynamic_cast<EVROGED>(tangentContainer);
         RCP<VectorBase<double>> tanVecOwned =
           tanContainerEpetra->getOwnedVector()->clone_v();
@@ -445,18 +444,18 @@ namespace panzer {
       }
     }
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Solution Gather Container", loc);
+    panzer::Traits::PED ped;
+    ped.gedc->addDataObject("Solution Gather Container", loc);
     if (enable_tangents)
     {
       for (int i(0); i < num_tangent; ++i)
       {
         std::stringstream ss;
         ss << "Tangent Container " << i;
-        ped.gedc.addDataObject(ss.str(), tangentContainers[i]);
+        ped.gedc->addDataObject(ss.str(), tangentContainers[i]);
       }
     }
 
@@ -484,36 +483,36 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData1_q1);
-       fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData2_q1);
+       fm.getFieldData<panzer::Traits::Residual>(fieldData1_q1);
+       fm.getFieldData<panzer::Traits::Residual>(fieldData2_q1);
 
-       TEST_EQUALITY(fieldData1_q1.dimension(0),Teuchos::as<unsigned int>(4/numProcs));
-       TEST_EQUALITY(fieldData1_q1.dimension(1),4);
-       TEST_EQUALITY(fieldData2_q1.dimension(0),Teuchos::as<unsigned int>(4/numProcs));
-       TEST_EQUALITY(fieldData2_q1.dimension(1),4);
+       TEST_EQUALITY(fieldData1_q1.extent(0),Teuchos::as<unsigned int>(4/numProcs));
+       TEST_EQUALITY(fieldData1_q1.extent(1),4);
+       TEST_EQUALITY(fieldData2_q1.extent(0),Teuchos::as<unsigned int>(4/numProcs));
+       TEST_EQUALITY(fieldData2_q1.extent(1),4);
        TEST_EQUALITY(fieldData1_q1.size(),Teuchos::as<unsigned int>(4*4/numProcs));
        TEST_EQUALITY(fieldData2_q1.size(),Teuchos::as<unsigned int>(4*4/numProcs));
    
-       for(unsigned int i=0;i<fieldData1_q1.dimension(0);i++) 
-          for(unsigned int j=0;j<fieldData1_q1.dimension(1);j++) 
+       for(unsigned int i=0;i<fieldData1_q1.extent(0);i++) 
+          for(unsigned int j=0;j<fieldData1_q1.extent(1);j++) 
              TEST_EQUALITY(fieldData1_q1(i,j),123.0+myRank);
 
-       for(unsigned int i=0;i<fieldData2_q1.dimension(0);i++) 
-          for(unsigned int j=0;j<fieldData2_q1.dimension(1);j++) 
+       for(unsigned int i=0;i<fieldData2_q1.extent(0);i++) 
+          for(unsigned int j=0;j<fieldData2_q1.extent(1);j++) 
              TEST_EQUALITY(fieldData2_q1(i,j),123.0+myRank);
     }
     {
        PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_qedge1);
+       fm.getFieldData<panzer::Traits::Residual>(fieldData_qedge1);
  
-       TEST_EQUALITY(fieldData_qedge1.dimension(0),Teuchos::as<unsigned int>(4/numProcs));
-       TEST_EQUALITY(fieldData_qedge1.dimension(1),4);
+       TEST_EQUALITY(fieldData_qedge1.extent(0),Teuchos::as<unsigned int>(4/numProcs));
+       TEST_EQUALITY(fieldData_qedge1.extent(1),4);
        TEST_EQUALITY(fieldData_qedge1.size(),Teuchos::as<unsigned int>(4*4/numProcs));
    
-       for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell) 
-        for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();pt++) 
+       for(unsigned int cell=0;cell<fieldData_qedge1.extent(0);++cell) 
+        for(unsigned int pt=0;pt<fieldData_qedge1.extent(1);pt++) 
           TEST_EQUALITY(fieldData_qedge1(cell,pt),123.0+myRank);
     }
 
@@ -524,17 +523,17 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
    
-       fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData1_q1);
-       fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData2_q1);
+       fm.getFieldData<panzer::Traits::Jacobian>(fieldData1_q1);
+       fm.getFieldData<panzer::Traits::Jacobian>(fieldData2_q1);
    
-       for(unsigned int cell=0;cell<fieldData1_q1.dimension_0();++cell) { 
-        for(unsigned int pt=0;pt<fieldData1_q1.dimension_1();pt++) {
+       for(unsigned int cell=0;cell<fieldData1_q1.extent(0);++cell) { 
+        for(unsigned int pt=0;pt<fieldData1_q1.extent(1);pt++) {
           TEST_EQUALITY(fieldData1_q1(cell,pt),123.0+myRank);
           TEST_EQUALITY(fieldData1_q1(cell,pt).availableSize(),12);
         }
        }
-       for(unsigned int cell=0;cell<fieldData2_q1.dimension_0();++cell) { 
-        for(unsigned int pt=0;pt<fieldData2_q1.dimension_1();pt++) {
+       for(unsigned int cell=0;cell<fieldData2_q1.extent(0);++cell) { 
+        for(unsigned int pt=0;pt<fieldData2_q1.extent(1);pt++) {
           TEST_EQUALITY(fieldData2_q1(cell,pt),123.0+myRank);
           TEST_EQUALITY(fieldData2_q1(cell,pt).availableSize(),12);
         }
@@ -544,10 +543,10 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
    
-       fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData_qedge1);
+       fm.getFieldData<panzer::Traits::Jacobian>(fieldData_qedge1);
    
-       for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell) {
-        for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();++pt) {
+       for(unsigned int cell=0;cell<fieldData_qedge1.extent(0);++cell) {
+        for(unsigned int pt=0;pt<fieldData_qedge1.extent(1);++pt) {
           TEST_EQUALITY(fieldData_qedge1(cell,pt),123.0+myRank);
           TEST_EQUALITY(fieldData_qedge1(cell,pt).availableSize(),12);
         }
@@ -561,11 +560,11 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Tangent::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData1_q1);
-       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData2_q1);
+       fm.getFieldData<panzer::Traits::Tangent>(fieldData1_q1);
+       fm.getFieldData<panzer::Traits::Tangent>(fieldData2_q1);
 
-       for(unsigned int cell=0;cell<fieldData1_q1.dimension_0();++cell) {
-        for(unsigned int pt=0;pt<fieldData1_q1.dimension_1();pt++) {
+       for(unsigned int cell=0;cell<fieldData1_q1.extent(0);++cell) {
+        for(unsigned int pt=0;pt<fieldData1_q1.extent(1);pt++) {
           if (enable_tangents) {
             TEST_EQUALITY(fieldData1_q1(cell,pt).val(),123.0+myRank);
             TEST_EQUALITY(fieldData1_q1(cell,pt).availableSize(),num_tangent);
@@ -578,8 +577,8 @@ namespace panzer {
           }
         }
        }
-       for(unsigned int cell=0;cell<fieldData2_q1.dimension_0();++cell) {
-        for(unsigned int pt=0;pt<fieldData2_q1.dimension_1();pt++) {
+       for(unsigned int cell=0;cell<fieldData2_q1.extent(0);++cell) {
+        for(unsigned int pt=0;pt<fieldData2_q1.extent(1);pt++) {
           if (enable_tangents) {
             TEST_EQUALITY(fieldData2_q1(cell,pt).val(),123.0+myRank);
             TEST_EQUALITY(fieldData2_q1(cell,pt).availableSize(),num_tangent);
@@ -599,10 +598,10 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Tangent::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData_qedge1);
+       fm.getFieldData<panzer::Traits::Tangent>(fieldData_qedge1);
 
-       for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell) {
-        for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();++pt) {
+       for(unsigned int cell=0;cell<fieldData_qedge1.extent(0);++cell) {
+        for(unsigned int pt=0;pt<fieldData_qedge1.extent(1);++pt) {
           if (enable_tangents) {
             TEST_EQUALITY(fieldData_qedge1(cell,pt).val(),123.0+myRank);
             TEST_EQUALITY(fieldData_qedge1(cell,pt).availableSize(),num_tangent);

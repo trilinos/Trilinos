@@ -104,7 +104,7 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -114,7 +114,7 @@
 
 
 int main(int argc, char *argv[]) {
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  Tpetra::ScopeGuard mpiSession(&argc,&argv);
 
   typedef Tpetra::MultiVector<> MV;
   typedef MV::scalar_type Scalar;
@@ -131,9 +131,7 @@ int main(int argc, char *argv[]) {
   std::ostream &out = std::cout;
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcpFromRef(out));
 
-  RCP<const Teuchos::Comm<int> > comm
-    = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   size_t myRank = comm->getRank();
 
   out << "Amesos2 stand-alone test" << endl << endl;

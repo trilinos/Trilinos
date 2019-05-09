@@ -1,0 +1,22 @@
+
+SET(TPL_ENABLE_AMD "ON" CACHE BOOL )
+SET(AMD_LIBRARY_NAMES "amd" CACHE STRING )
+
+SET(AMD_INCLUDE_DIRS CACHE PATH
+      "$ENV{WORKSPACE}/SuiteSparse/AMD/Include"
+      "$ENV{WORKSPACE}/SuiteSparse/UFconfig" )
+SET(AMD_LIBRARY_DIRS
+      "$ENV{WORKSPACE}/SuiteSparse/AMD/Lib" )
+
+SET(TPL_ENABLE_UMFPACK "ON" CACHE BOOL )
+SET(UMFPACK_LIBRARY_NAMES
+      "umfpack" "amd"
+      CACHE STRING)
+
+SET(UMFPACK_INCLUDE_DIRS
+      "$ENV{WORKSPACE}/SuiteSparse/UMFPACK/Include"
+      "$ENV{WORKSPACE}/SuiteSparse/AMD/Include"
+      "$ENV{WORKSPACE}/SuiteSparse/UFconfig" )
+SET(UMFPACK_LIBRARY_DIRS
+      "$ENV{WORKSPACE}/SuiteSparse/UMFPACK/Lib"
+      "$ENV{WORKSPACE}/SuiteSparse/AMD/Lib" )

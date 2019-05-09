@@ -54,6 +54,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Phalanx_config.hpp"
 #include "Phalanx_Print_Utilities.hpp"
+#include "Phalanx_Print_Utilities.hpp"
 
 //**********************************************************************
 //**********************************************************************
@@ -64,33 +65,40 @@
 //**********************************************************************
 template<typename DataT>
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
-MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
-  m_tag(name,t)
+MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl)
 #ifdef PHX_DEBUG
-  , m_tag_set(true),
-  m_data_set(false)
+  : m_data_set(false)
+#endif
+{
+  m_tag = Teuchos::rcp(new PHX::Tag<DataT>(name,dl));
+}
+
+//**********************************************************************
+template<typename DataT>
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+MDField(const PHX::FieldTag& t) :
+  m_tag(t.clone())
+#ifdef PHX_DEBUG
+  ,m_data_set(false)
 #endif
 { }
 
 //**********************************************************************
 template<typename DataT>
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
-MDField(const PHX::Tag<DataT>& v) :
-  m_tag(v)
+MDField(const Teuchos::RCP<const PHX::FieldTag>& t) :
+  m_tag(t)
 #ifdef PHX_DEBUG
-  ,m_tag_set(true),
-  m_data_set(false)
+  ,m_data_set(false)
 #endif
 { }
 
 //**********************************************************************
 template<typename DataT>
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
-MDField() :
-  m_tag("???", Teuchos::null)
+MDField()
 #ifdef PHX_DEBUG
-  ,m_tag_set(false),
-  m_data_set(false)
+  : m_data_set(false)
 #endif
 { }
 
@@ -105,8 +113,7 @@ MDField(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source) :
   m_tag(source.m_tag),
   m_field_data(source.m_field_data)
 #ifdef PHX_DEBUG
-  ,m_tag_set(source.m_tag_set),
-  m_data_set(source.m_data_set)
+  ,m_data_set(source.m_data_set)
 #endif  
 {
 #ifdef PHX_DEBUG
@@ -133,7 +140,20 @@ PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 fieldTag() const
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
+#endif
+  return *m_tag;
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+Teuchos::RCP<const PHX::FieldTag>
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+fieldTagPtr() const
+{ 
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
 #endif
   return m_tag;
 }
@@ -151,7 +171,6 @@ operator=(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source)
   m_tag = source.m_tag;
   m_field_data = source.m_field_data;
 #ifdef PHX_DEBUG
-  m_tag_set = source.m_tag_set;
   m_data_set = source.m_data_set;
   // Don't enforce rank for DynRank MDField. Since rank is dynamic,
   // changing the rank at runtime by assignment is allowed!
@@ -197,9 +216,9 @@ operator()(iType0 index0, iType1 index1, iType2 index2,
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.dataLayout().rank() != 7,std::logic_error,"Error: The MDField \"" << m_tag.name() << "\" is of rank " << m_tag.dataLayout().rank() << " but was accessed with the rank 7 operator().");
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 7,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 7 operator().");
 #endif
-  return m_field_data(index0,index1,index2,index3,index4,index5,index6);
+  return m_field_data.access(index0,index1,index2,index3,index4,index5,index6);
 }
 
 //**********************************************************************
@@ -214,9 +233,9 @@ operator()(iType0 index0, iType1 index1, iType2 index2,
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.dataLayout().rank() != 6,std::logic_error,"Error: The MDField \"" << m_tag.name() << "\" is of rank " << m_tag.dataLayout().rank() << " but was accessed with the rank 6 operator().");
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 6,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 6 operator().");
 #endif
-  return m_field_data(index0,index1,index2,index3,index4,index5);
+  return m_field_data.access(index0,index1,index2,index3,index4,index5);
 }
 
 //**********************************************************************
@@ -231,9 +250,9 @@ operator()(iType0 index0, iType1 index1, iType2 index2,
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.dataLayout().rank() != 5,std::logic_error,"Error: The MDField \"" << m_tag.name() << "\" is of rank " << m_tag.dataLayout().rank() << " but was accessed with the rank 5 operator().");
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 5,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 5 operator().");
 #endif
-  return m_field_data(index0,index1,index2,index3,index4);
+  return m_field_data.access(index0,index1,index2,index3,index4);
 }
 
 //**********************************************************************
@@ -247,9 +266,9 @@ operator()(iType0 index0, iType1 index1, iType2 index2,
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.dataLayout().rank() != 4,std::logic_error,"Error: The MDField \"" << m_tag.name() << "\" is of rank " << m_tag.dataLayout().rank() << " but was accessed with the rank 4 operator().");
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 4,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 4 operator().");
 #endif
-  return m_field_data(index0,index1,index2,index3);
+  return m_field_data.access(index0,index1,index2,index3);
 }
 
 //**********************************************************************
@@ -262,9 +281,9 @@ operator()(iType0 index0, iType1 index1, iType2 index2) const
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) 
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.dataLayout().rank() != 3,std::logic_error,"Error: The MDField \"" << m_tag.name() << "\" is of rank " << m_tag.dataLayout().rank() << " but was accessed with the rank 3 operator().");
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 3,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 3 operator().");
 #endif
-  return m_field_data(index0,index1,index2);
+  return m_field_data.access(index0,index1,index2);
 }
 
 //**********************************************************************
@@ -277,9 +296,9 @@ operator()(iType0 index0, iType1 index1) const
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.dataLayout().rank() != 2,std::logic_error,"Error: The MDField \"" << m_tag.name() << "\" is of rank " << m_tag.dataLayout().rank() << " but was accessed with the rank 2 operator().");
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 2,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 2 operator().");
 #endif
-  return m_field_data(index0,index1);
+  return m_field_data.access(index0,index1);
 }
 
 //**********************************************************************
@@ -292,9 +311,9 @@ operator()(iType0 index0) const
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
-  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.dataLayout().rank() != 1,std::logic_error,"Error: The MDField \"" << m_tag.name() << "\" is of rank " << m_tag.dataLayout().rank() << " but was accessed with the rank 1 operator().");
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 1,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 1 operator().");
 #endif
-  return m_field_data(index0);
+  return m_field_data.access(index0);
 }
 
 //**********************************************************************
@@ -339,12 +358,12 @@ void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 dimensions(std::vector<iType>& dims)
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   
-  dims.resize(m_tag.dataLayout().rank());
-  for ( size_type i = 0 ; i <  m_tag.dataLayout().rank(); ++i ) 
+  dims.resize(m_tag->dataLayout().rank());
+  for ( size_type i = 0 ; i <  m_tag->dataLayout().rank(); ++i ) 
     dims[i] = static_cast<iType>(m_field_data.extent(i)); // dangerous
 }
 
@@ -363,12 +382,17 @@ PHX::MDField<DataT,void,void,void,void,void,void,void,void>::size() const
 //**********************************************************************
 template<typename DataT>
 void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
-setFieldTag(const PHX::Tag<DataT>& v)
+setFieldTag(const PHX::FieldTag& t)
 {  
-#ifdef PHX_DEBUG
-  m_tag_set = true;
-#endif
-  m_tag = v;
+  m_tag = t.clone();
+}
+
+//**********************************************************************
+template<typename DataT>
+void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+setFieldTag(const Teuchos::RCP<const PHX::FieldTag>& t)
+{  
+  m_tag = t;
 }
 
 //**********************************************************************
@@ -384,7 +408,7 @@ void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 setFieldData(const PHX::any& a)
 { 
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
   m_data_set = true;
 #endif
 
@@ -393,25 +417,25 @@ setFieldData(const PHX::any& a)
   using NonConstDataT = typename std::remove_const<DataT>::type;
 
   try {
-    if (m_tag.dataLayout().rank() == 1)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*,PHX::Device>>(a);
-    else if (m_tag.dataLayout().rank() == 2)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT**,PHX::Device>>(a);
-    else if (m_tag.dataLayout().rank() == 3)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT***,PHX::Device>>(a);
-    else if (m_tag.dataLayout().rank() == 4)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT****,PHX::Device>>(a);
-    else if (m_tag.dataLayout().rank() == 5)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*****,PHX::Device>>(a);
-    else if (m_tag.dataLayout().rank() == 6)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT******,PHX::Device>>(a);
-    else if (m_tag.dataLayout().rank() == 7)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*******,PHX::Device>>(a);
+    if (m_tag->dataLayout().rank() == 1)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+    else if (m_tag->dataLayout().rank() == 2)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT**,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+    else if (m_tag->dataLayout().rank() == 3)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT***,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+    else if (m_tag->dataLayout().rank() == 4)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT****,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+    else if (m_tag->dataLayout().rank() == 5)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*****,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+    else if (m_tag->dataLayout().rank() == 6)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT******,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+    else if (m_tag->dataLayout().rank() == 7)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*******,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
     else {
       throw std::runtime_error("ERROR - PHX::MDField::setFieldData (DynRank) - Invalid rank!");
     }
   }
-  catch (std::exception& e) {
+  catch (std::exception& ) {
     
     //std::string type_cast_name = Teuchos::demangleName(typeid(non_const_view).name());
     std::string type_cast_name = "???";
@@ -433,14 +457,15 @@ print(std::ostream& os,	bool printValues) const
 {
 
   os << "MDField(";
-  for (size_type i=0; i < m_tag.dataLayout().rank(); ++i) {
+  for (size_type i=0; i < m_tag->dataLayout().rank(); ++i) {
     if (i > 0)
       os << ",";
-    os << m_tag.dataLayout().dimension(i);
+    os << m_tag->dataLayout().dimension(i);
   }
   os << "): ";
   
-  os << m_tag;
+  if (nonnull(m_tag))
+    os << *m_tag;
 
   if (printValues)
     os << "Error - MDField no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please disconstinue the use of this call!" << std::endl;  
@@ -467,46 +492,46 @@ V_MultiplyFunctor<MDFieldTypeA, MDFieldTypeB, RANK>::operator() (const PHX::inde
   using idx_t = PHX::index_t;
 
   if (RANK == 1){
-    base_.m_field_data(ind1) = base_.m_field_data(ind1)*source_(ind1);
+    base_.m_field_data.access(ind1) = base_.m_field_data.access(ind1)*source_(ind1);
   }
   else if (RANK == 2){
-    for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-      base_.m_field_data(ind1,ind2) = base_.m_field_data(ind1,ind2)*source_(ind1,ind2);
+    for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+      base_.m_field_data.access(ind1,ind2) = base_.m_field_data.access(ind1,ind2)*source_(ind1,ind2);
   }
    else if (RANK == 3){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         base_.m_field_data(ind1,ind2,ind3) = base_.m_field_data(ind1,ind2,ind3)*source_(ind1,ind2,ind3);
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.extent(2)); ind3++)
+         base_.m_field_data.access(ind1,ind2,ind3) = base_.m_field_data.access(ind1,ind2,ind3)*source_(ind1,ind2,ind3);
    }
    else if (RANK == 4){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           base_.m_field_data(ind1,ind2,ind3,ind4) = base_.m_field_data(ind1,ind2,ind3,ind4)*source_(ind1,ind2,ind3,ind4);
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.extent(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.extent(3)); ind4++)
+           base_.m_field_data.access(ind1,ind2,ind3,ind4) = base_.m_field_data.access(ind1,ind2,ind3,ind4)*source_(ind1,ind2,ind3,ind4);
    }
    else if (RANK == 5){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
-             base_.m_field_data(ind1,ind2,ind3,ind4,ind5) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5)*source_(ind1,ind2,ind3,ind4,ind5);
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.extent(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.extent(3)); ind4++)
+           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.extent(4)); ind5++)
+             base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5) = base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5)*source_(ind1,ind2,ind3,ind4,ind5);
    }
    else if (RANK == 6){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
-             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.dimension(5)); ind6++)
-               base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6)*source_(ind1,ind2,ind3,ind4,ind5,ind6);
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.extent(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.extent(3)); ind4++)
+           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.extent(4)); ind5++)
+             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.extent(5)); ind6++)
+               base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5,ind6) = base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5,ind6)*source_(ind1,ind2,ind3,ind4,ind5,ind6);
    }
    else if (RANK == 7){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
-             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.dimension(5)); ind6++)
-               for (idx_t ind7=0; ind7 < static_cast<idx_t>(base_.m_field_data.dimension(6)); ind7++)
-                 base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source_(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.extent(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.extent(3)); ind4++)
+           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.extent(4)); ind5++)
+             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.extent(5)); ind6++)
+               for (idx_t ind7=0; ind7 < static_cast<idx_t>(base_.m_field_data.extent(6)); ind7++)
+                 base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source_(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
    }
  }
 
@@ -518,26 +543,26 @@ PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 V_Multiply(const MDFieldType& source)
 {
   typedef PHX::MDField<DataT,void,void,void,void,void,void,void,void> ThisType;
-  const auto length = m_tag.dataLayout().dimension(0);
-  if (m_tag.dataLayout().rank() == 1){
+  const auto length = m_tag->dataLayout().extent(0);
+  if (m_tag->dataLayout().rank() == 1){
     Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 1>(*this, source) );
   }
-  else if (m_tag.dataLayout().rank() == 2){
+  else if (m_tag->dataLayout().rank() == 2){
     Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 2>(*this, source) );
  }
-  else if (m_tag.dataLayout().rank() == 3){
+  else if (m_tag->dataLayout().rank() == 3){
     Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 3>(*this, source) );
   }
-  else if (m_tag.dataLayout().rank() == 4){
+  else if (m_tag->dataLayout().rank() == 4){
     Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 4>(*this, source) );
   }
-  else if (m_tag.dataLayout().rank() == 5){
+  else if (m_tag->dataLayout().rank() == 5){
     Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 5>(*this, source) );
   }
-  else if (m_tag.dataLayout().rank() == 6){
+  else if (m_tag->dataLayout().rank() == 6){
     Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 6>(*this, source) );
   }
-  else if (m_tag.dataLayout().rank() == 7){
+  else if (m_tag->dataLayout().rank() == 7){
     Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 7>(*this, source) );
   }
 }

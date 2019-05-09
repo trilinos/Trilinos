@@ -54,6 +54,7 @@
 #include "NOX_StatusTest_Generic.H" // base class
 #include "NOX_Common.H"            // class data element (vector)
 #include "NOX_Utils.H"              // class data element
+#include <vector>
 
 namespace NOX {
 

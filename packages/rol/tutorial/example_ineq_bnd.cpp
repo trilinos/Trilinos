@@ -54,7 +54,7 @@
 #include "ROL_StdConstraint.hpp"
 #include "ROL_Bounds.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 
@@ -131,51 +131,51 @@ public:
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
 
   typedef double RealT;
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
 
   int errorFlag   = 0;
 
   try {
  
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     parlist.sublist("Step").set("Type","Augmented Lagrangian");
     
 
-    RCP<std::vector<RealT> > l_rcp = rcp( new std::vector<RealT>(5,-100.0) );
-    RCP<std::vector<RealT> > u_rcp = rcp( new std::vector<RealT>(5, 100.0) );
+    ROL::Ptr<std::vector<RealT> > l_ptr = ROL::makePtr<std::vector<RealT>>(5,-100.0);
+    ROL::Ptr<std::vector<RealT> > u_ptr = ROL::makePtr<std::vector<RealT>>(5, 100.0);
 
-    RCP<ROL::Vector<RealT> > lower = rcp( new ROL::StdVector<RealT>( l_rcp ) );
-    RCP<ROL::Vector<RealT> > upper = rcp( new ROL::StdVector<RealT>( u_rcp ) ); 
+    ROL::Ptr<ROL::Vector<RealT> > lower = ROL::makePtr<ROL::StdVector<RealT>>( l_ptr );
+    ROL::Ptr<ROL::Vector<RealT> > upper = ROL::makePtr<ROL::StdVector<RealT>>( u_ptr ); 
 
-    RCP<std::vector<RealT> > x_rcp  = rcp( new std::vector<RealT>(5,1.0) );
-    RCP<std::vector<RealT> > li_rcp = rcp( new std::vector<RealT>(1,0.0) );
-    RCP<std::vector<RealT> > ll_rcp = rcp( new std::vector<RealT>(1,0.0) );
-    RCP<std::vector<RealT> > lu_rcp = rcp( new std::vector<RealT>(1,ROL::ROL_INF<RealT>()) );
+    ROL::Ptr<std::vector<RealT> > x_ptr  = ROL::makePtr<std::vector<RealT>>(5,1.0);
+    ROL::Ptr<std::vector<RealT> > li_ptr = ROL::makePtr<std::vector<RealT>>(1,0.0);
+    ROL::Ptr<std::vector<RealT> > ll_ptr = ROL::makePtr<std::vector<RealT>>(1,0.0);
+    ROL::Ptr<std::vector<RealT> > lu_ptr = ROL::makePtr<std::vector<RealT>>(1,ROL::ROL_INF<RealT>());
 
-    RCP<ROL::Vector<RealT> > x  = rcp( new ROL::StdVector<RealT>(x_rcp) );
-    RCP<ROL::Vector<RealT> > li = rcp( new ROL::StdVector<RealT>(li_rcp) );
-    RCP<ROL::Vector<RealT> > ll = rcp( new ROL::StdVector<RealT>(ll_rcp) );
-    RCP<ROL::Vector<RealT> > lu = rcp( new ROL::StdVector<RealT>(lu_rcp) );
+    ROL::Ptr<ROL::Vector<RealT> > x  = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > li = ROL::makePtr<ROL::StdVector<RealT>>(li_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > ll = ROL::makePtr<ROL::StdVector<RealT>>(ll_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > lu = ROL::makePtr<ROL::StdVector<RealT>>(lu_ptr);
 
-    RCP<ROL::Objective<RealT> >             obj  = rcp( new ObjectiveQL<RealT>() );
-    RCP<ROL::BoundConstraint<RealT> >       bnd  = rcp( new ROL::Bounds<RealT>(lower,upper) );
-    RCP<ROL::Constraint<RealT> >            ineq = rcp( new InequalityQL<RealT>() );
-    RCP<ROL::BoundConstraint<RealT> >       ibnd = rcp( new ROL::Bounds<RealT>(ll,lu) );
+    ROL::Ptr<ROL::Objective<RealT> >             obj  = ROL::makePtr<ObjectiveQL<RealT>>();
+    ROL::Ptr<ROL::BoundConstraint<RealT> >       bnd  = ROL::makePtr<ROL::Bounds<RealT>>(lower,upper);
+    ROL::Ptr<ROL::Constraint<RealT> >            ineq = ROL::makePtr<InequalityQL<RealT>>();
+    ROL::Ptr<ROL::BoundConstraint<RealT> >       ibnd = ROL::makePtr<ROL::Bounds<RealT>>(ll,lu);
 
     ROL::OptimizationProblem<RealT> problem( obj, x, bnd, ineq, li, ibnd);    
 
     /* checkAdjointJacobianConsistency fails for the OptimizationProblem if we don't do this first... why? */
-    RCP<ROL::Vector<RealT> > u = x->clone(); 
+    ROL::Ptr<ROL::Vector<RealT> > u = x->clone(); 
     RandomizeVector(*u);
     ineq->checkAdjointConsistencyJacobian(*li,*x,*u,true,*outStream);
     /*******************************************************************************************************/
@@ -193,9 +193,9 @@ int main(int argc, char *argv[]) {
 
     *outStream << "x_opt = [";
     for(int i=0;i<4;++i) {
-      *outStream << (*x_rcp)[i] << ", " ;
+      *outStream << (*x_ptr)[i] << ", " ;
     } 
-    *outStream << (*x_rcp)[4] << "]" << std::endl;
+    *outStream << (*x_ptr)[4] << "]" << std::endl;
     
 
   }

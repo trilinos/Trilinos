@@ -77,7 +77,7 @@ SET(Trilinos_TRACK  $ENV{JENKINS_JOB_TYPE})
 SET(CTEST_TEST_TIMEOUT 900)
 # SET(CTEST_DO_SUBMIT FALSE)
 
-SET(Trilinos_PACKAGES Amesos Amesos2 Anasazi AztecOO Belos Claps Epetra EpetraExt FEI Ifpack Ifpack2 Intrepid Kokkos ML MueLu NOX Pamgen RTOp Sacado Shards Teuchos Thyra Tpetra TrilinosSS Triutils Xpetra Zoltan Zoltan2)
+SET(Trilinos_PACKAGES Amesos Amesos2 Anasazi AztecOO Belos Epetra EpetraExt FEI Ifpack Ifpack2 Intrepid Kokkos ML MueLu NOX Pamgen RTOp Sacado Shards Teuchos Thyra Tpetra TrilinosSS Triutils Xpetra Zoltan Zoltan2)
 
 SET(EXTRA_EXCLUDE_PACKAGES Galeri Intrepid2 Isorropia Stratimikos Teko SEACAS STK)
 
@@ -92,6 +92,9 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_CUDA:STRING=$ENV{JENKINS_DO_CUDA}"
   
   "-DFEI_AZTECOO:BOOL=ON"
+  "-DTrilinos_ENABLE_AztecOO:BOOL=ON"
+
+  "-DTrilinos_ENABLE_EpetraExt:BOOL=ON"
 
   "-DKokkos_ENABLE_Pthread:BOOL=$ENV{JENKINS_DO_PTHREAD}"
   "-DKokkos_ENABLE_Cuda_UVM:BOOL=$ENV{JENKINS_DO_CUDA}"
@@ -107,22 +110,31 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_INST_OPENMP:BOOL=$ENV{JENKINS_DO_OPENMP}"
   "-DTpetra_INST_PTHREAD:BOOL=$ENV{JENKINS_DO_PTHREAD}"
   "-DTpetra_INST_CUDA:BOOL=$ENV{JENKINS_DO_CUDA}"
-  "-DTpetra_INST_COMPLEX_DOUBLE:BOOL=$ENV{JENKINS_DO_COMPLEX}"
+  "-DTrilinos_ENABLE_COMPLEX_DOUBLE:BOOL=$ENV{JENKINS_DO_COMPLEX}"
   "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
-  "-DTpetra_INST_INT_INT:BOOL=OFF"
+  "-DTpetra_INST_INT_INT:BOOL=ON"
   "-DTpetra_INST_INT_LONG:BOOL=ON"
   "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF"
   "-DTpetra_INST_FLOAT:BOOL=OFF"
   "-DTpetra_INST_DOUBLE:BOOL=ON"
   "-DTpetraCore_ENABLE_TSQR:BOOL=ON"
+  "-DTpetra_HIDE_DEPRECATED_CODE:BOOL=ON" 
+  "-DTrilinos_ENABLE_TpetraTSQR:BOOL=ON" 
+  "-DTrilinos_ENABLE_Tpetra:BOOL=ON" 
+  -"DKokkos_ENABLE_Cuda_Lambda:BOOL=$ENV{JENKINS_DO_COMPLEX}"
 
   "-DMueLu_ENABLE_Epetra=OFF"
   "-DMueLu_ENABLE_Tpetra=ON"
+
   "-DAmesos2_ENABLE_Epetra=OFF"
+  "-DAmesos2_CONFIGURE_OPTIONS_FILE:FILEPATH=cmake/ctest/drivers/parameterized/UMFPACK_Settings.cmake"
 
   "-DCMAKE_CXX_FLAGS:STRING=$ENV{JENKINS_CXX_FLAGS}"
   "-DCMAKE_C_FLAGS:STRING=$ENV{JENKINS_C_FLAGS}"
   "-DCMAKE_Fortran_FLAGS=$ENV{JENKINS_Fortran_FLAGS}"
+
+  "-DTrilinos_C_Standard=gnu11"
+
 )
 
 IF (DEFINED ENV{JENKINS_BLAS_LIBRARY_DIRS})

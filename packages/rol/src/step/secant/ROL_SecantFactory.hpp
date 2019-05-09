@@ -46,8 +46,8 @@
 
 #include "ROL_Types.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_ParameterList.hpp"
+#include "ROL_Ptr.hpp"
 
 #include "ROL_Secant.hpp"
 #include "ROL_lBFGS.hpp"
@@ -57,28 +57,28 @@
 
 namespace ROL {
   template<class Real>
-  inline Teuchos::RCP<Secant<Real> > getSecant( ESecant esec = SECANT_LBFGS, int L = 10, int BBtype = 1 ) {
+  inline ROL::Ptr<Secant<Real> > getSecant( ESecant esec = SECANT_LBFGS, int L = 10, int BBtype = 1 ) {
     switch (esec) {
-      case SECANT_LBFGS:           return Teuchos::rcp( new lBFGS<Real>(L) );
-      case SECANT_LDFP:            return Teuchos::rcp( new lDFP<Real>(L) );
-      case SECANT_LSR1:            return Teuchos::rcp( new lSR1<Real>(L) );
-      case SECANT_BARZILAIBORWEIN: return Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
-      default:                     return Teuchos::null; 
+      case SECANT_LBFGS:           return ROL::makePtr<lBFGS<Real>>(L);
+      case SECANT_LDFP:            return ROL::makePtr<lDFP<Real>>(L);
+      case SECANT_LSR1:            return ROL::makePtr<lSR1<Real>>(L);
+      case SECANT_BARZILAIBORWEIN: return ROL::makePtr<BarzilaiBorwein<Real>>(BBtype);
+      default:                     return ROL::nullPtr; 
     }
   }
 
   template<class Real>
-  inline Teuchos::RCP<Secant<Real> > SecantFactory( Teuchos::ParameterList &parlist ) {
+  inline ROL::Ptr<Secant<Real> > SecantFactory( ROL::ParameterList &parlist ) {
     ESecant esec = StringToESecant(
              parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS") );
     int L  = parlist.sublist("General").sublist("Secant").get("Maximum Storage",10);
     int BB = parlist.sublist("General").sublist("Secant").get("Barzilai-Borwein",1);
     switch (esec) {
-      case SECANT_LBFGS:           return Teuchos::rcp( new lBFGS<Real>(L) );
-      case SECANT_LDFP:            return Teuchos::rcp( new lDFP<Real>(L) );
-      case SECANT_LSR1:            return Teuchos::rcp( new lSR1<Real>(L) );
-      case SECANT_BARZILAIBORWEIN: return Teuchos::rcp( new BarzilaiBorwein<Real>(BB) );
-      default:                     return Teuchos::null;
+      case SECANT_LBFGS:           return ROL::makePtr<lBFGS<Real>>(L);
+      case SECANT_LDFP:            return ROL::makePtr<lDFP<Real>>(L);
+      case SECANT_LSR1:            return ROL::makePtr<lSR1<Real>>(L);
+      case SECANT_BARZILAIBORWEIN: return ROL::makePtr<BarzilaiBorwein<Real>>(BB);
+      default:                     return ROL::nullPtr;
     }
   }
 }

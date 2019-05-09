@@ -46,11 +46,11 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
 #include <iostream>
@@ -68,6 +68,8 @@
 #include "obj_thermal-fluids_ex03.hpp"
 #include "mesh_thermal-fluids.hpp"
 
+#include "ROL_OptimizationSolver.hpp"
+
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
@@ -75,19 +77,19 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm
-    = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm
+    = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -100,65 +102,65 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    Teuchos::RCP<MeshManager<RealT> > meshMgr
-      = Teuchos::rcp(new MeshManager_ThermalFluids<RealT>(*parlist));
+    ROL::Ptr<MeshManager<RealT> > meshMgr
+      = ROL::makePtr<MeshManager_ThermalFluids<RealT>>(*parlist);
     // Initialize PDE describing Navier-Stokes equations.
-    Teuchos::RCP<PDE_ThermalFluids_ex03<RealT> > pde
-      = Teuchos::rcp(new PDE_ThermalFluids_ex03<RealT>(*parlist));
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
-      = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
+    ROL::Ptr<PDE_ThermalFluids_ex03<RealT> > pde
+      = ROL::makePtr<PDE_ThermalFluids_ex03<RealT>>(*parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+      = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
     // Cast the constraint and get the assembler.
-    Teuchos::RCP<PDE_Constraint<RealT> > pdecon
-      = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
-    Teuchos::RCP<Assembler<RealT> > assembler = pdecon->getAssembler();
+    ROL::Ptr<PDE_Constraint<RealT> > pdecon
+      = ROL::dynamicPtrCast<PDE_Constraint<RealT> >(con);
+    ROL::Ptr<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
     pdecon->outputTpetraData();
 
     // Create state vector and set to zeroes
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp, p_rcp, du_rcp, r_rcp, z_rcp, dz_rcp;
-    u_rcp  = assembler->createStateVector();     u_rcp->randomize();
-    p_rcp  = assembler->createStateVector();     p_rcp->randomize();
-    du_rcp = assembler->createStateVector();     du_rcp->randomize();
-    r_rcp  = assembler->createResidualVector();  r_rcp->randomize();
-    z_rcp  = assembler->createControlVector();   z_rcp->randomize();
-    dz_rcp = assembler->createControlVector();   dz_rcp->randomize();
-    Teuchos::RCP<ROL::Vector<RealT> > up, pp, dup, rp, zp, dzp;
-    up  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
-    pp  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
-    dup = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
-    rp  = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler));
-    zp  = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
-    dzp = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr, p_ptr, du_ptr, r_ptr, z_ptr, dz_ptr;
+    u_ptr  = assembler->createStateVector();     u_ptr->randomize();
+    p_ptr  = assembler->createStateVector();     p_ptr->randomize();
+    du_ptr = assembler->createStateVector();     du_ptr->randomize();
+    r_ptr  = assembler->createResidualVector();  r_ptr->randomize();
+    z_ptr  = assembler->createControlVector();   z_ptr->randomize();
+    dz_ptr = assembler->createControlVector();   dz_ptr->randomize();
+    ROL::Ptr<ROL::Vector<RealT> > up, pp, dup, rp, zp, dzp;
+    up  = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
+    pp  = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler);
+    dup = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler);
+    rp  = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler);
+    zp  = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler);
+    dzp = ROL::makePtr<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,assembler);
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     // Initialize objective function.
-    std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
-    qoi_vec[0] = Teuchos::rcp(new QoI_State_ThermalFluids<RealT>(*parlist,
+    std::vector<ROL::Ptr<QoI<RealT> > > qoi_vec(2,ROL::nullPtr);
+    qoi_vec[0] = ROL::makePtr<QoI_State_ThermalFluids<RealT>>(*parlist,
                                                                  pde->getVelocityFE(),
                                                                  pde->getPressureFE(),
                                                                  pde->getThermalFE(),
-                                                                 pde->getFieldHelper()));
-    qoi_vec[1] = Teuchos::rcp(new QoI_L2Penalty_ThermalFluids<RealT>(pde->getVelocityFE(),
+                                                                 pde->getFieldHelper());
+    qoi_vec[1] = ROL::makePtr<QoI_L2Penalty_ThermalFluids<RealT>>(pde->getVelocityFE(),
                                                                      pde->getPressureFE(),
                                                                      pde->getThermalFE(),
                                                                      pde->getThermalBdryFE(),
                                                                      pde->getBdryCellLocIds(),
-                                                                     pde->getFieldHelper()));
-    Teuchos::RCP<StdObjective_ThermalFluids<RealT> > std_obj
-      = Teuchos::rcp(new StdObjective_ThermalFluids<RealT>(*parlist));
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
-      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
-    Teuchos::RCP<ROL::SimController<RealT> > stateStore
-      = Teuchos::rcp(new ROL::SimController<RealT>());
-    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, stateStore, up, zp, pp, true, false));
+                                                                     pde->getFieldHelper());
+    ROL::Ptr<StdObjective_ThermalFluids<RealT> > std_obj
+      = ROL::makePtr<StdObjective_ThermalFluids<RealT>>(*parlist);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj
+      = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,std_obj,assembler);
+    ROL::Ptr<ROL::SimController<RealT> > stateStore
+      = ROL::makePtr<ROL::SimController<RealT>>();
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > robj
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, stateStore, up, zp, pp, true, false);
 
     //up->zero();
     //zp->zero();
-    //z_rcp->putScalar(1.e0);
-    //dz_rcp->putScalar(0);
+    //z_ptr->putScalar(1.e0);
+    //dz_ptr->putScalar(0);
 
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
@@ -210,17 +212,34 @@ int main(int argc, char *argv[]) {
     bool initSolve = parlist->sublist("Problem").get("Solve state for full space",true);
     if (initSolve) {
       con->solve(*rp,*up,*zp,tol);
-      pdecon->outputTpetraVector(u_rcp,"state_uncontrolled.txt");
+      pdecon->outputTpetraVector(u_ptr,"state_uncontrolled.txt");
     }
 
-    bool useCompositeStep = parlist->sublist("Problem").get("Full space",false);
-    Teuchos::RCP<ROL::Algorithm<RealT> > algo;
-    if ( useCompositeStep ) {
-      algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
-      algo->run(x,*rp,*obj,*con,true,*outStream);
+    bool useFullSpace = parlist->sublist("Problem").get("Full space",false);
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;
+    if ( useFullSpace ) {
+      std::string step = parlist->sublist("Step").get("Type", "Composite Step");
+      ROL::EStep els = ROL::StringToEStep(step);
+      switch( els ) {
+        case ROL::STEP_COMPOSITESTEP: {
+          algo = ROL::makePtr<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
+          algo->run(x,*rp,*obj,*con,true,*outStream);
+          break; 
+        }
+        case ROL::STEP_FLETCHER: {
+          ROL::OptimizationProblem<RealT> optProb(obj, makePtrFromRef(x), con, rp);
+          ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);
+          optSolver.solve(*outStream);
+          break;
+        }
+        default: {
+          *outStream << "ERROR: Unsupported step." << std::endl;      
+          errorFlag = 1; 
+        }
+      }
     }
     else {
-      algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
+      algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
       algo->run(*zp,*robj,true,*outStream);
       std::vector<RealT> param;
       stateStore->get(*up,param);
@@ -230,16 +249,16 @@ int main(int argc, char *argv[]) {
     assembler->printMeshData(*outStream);
     Teuchos::Array<RealT> res(1,0);
     //con->solve(*rp,*up,*zp,tol);
-    pdecon->outputTpetraVector(u_rcp,"state.txt");
-    pdecon->outputTpetraVector(z_rcp,"control.txt");
+    pdecon->outputTpetraVector(u_ptr,"state.txt");
+    pdecon->outputTpetraVector(z_ptr,"control.txt");
     con->value(*rp,*up,*zp,tol);
-    r_rcp->norm2(res.view(0,1));
+    r_ptr->norm2(res.view(0,1));
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
     pdecon->outputTpetraData();
 
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj0
-      = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[0],assembler));
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj0
+      = ROL::makePtr<IntegralObjective<RealT>>(qoi_vec[0],assembler);
     RealT val = obj0->value(*up,*zp,tol);
     *outStream << "Vorticity Value: " << val << std::endl;
 

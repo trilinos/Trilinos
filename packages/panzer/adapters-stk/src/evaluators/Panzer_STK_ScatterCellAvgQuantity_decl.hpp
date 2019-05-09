@@ -70,7 +70,29 @@ namespace panzer_stk {
   * "IR" of type <code>Teuchos::RCP<panzer::IntegrationRule></code> and
   * "Mesh" of type <code>Teuchos::RCP<const panzer_stk::STK_Interface></code>.
   */
-PANZER_EVALUATOR_CLASS(ScatterCellAvgQuantity)
+template<typename EvalT, typename Traits>
+class ScatterCellAvgQuantity
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    ScatterCellAvgQuantity(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   typedef panzer_stk::STK_Interface::SolutionFieldType VariableField; // this is weird, but the correct thing
 
   std::size_t numValues_;
@@ -80,7 +102,8 @@ PANZER_EVALUATOR_CLASS(ScatterCellAvgQuantity)
 
   std::vector<VariableField*> stkFields_;
  
-PANZER_EVALUATOR_CLASS_END
+}; // end of class ScatterCellAvgQuantity
+
 
 }
 

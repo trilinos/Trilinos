@@ -66,6 +66,7 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_TpetraMultiVector.hpp>
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
@@ -74,15 +75,10 @@
 #include "MueLu_Monitor.hpp"
 
 #ifdef HAVE_MUELU_INTREPID2
-  #include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
-  #include "MueLu_IntrepidPCoarsenFactory_def.hpp"
-  #include "Intrepid2_Basis.hpp"
-
-  #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-    #include "Kokkos_DynRankView.hpp"
-  #else
-    #include "Intrepid2_FieldContainer.hpp"
-  #endif
+#include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
+#include "MueLu_IntrepidPCoarsenFactory_def.hpp"
+#include "Intrepid2_Basis.hpp"
+#include "Kokkos_DynRankView.hpp"
 #endif
 
 // #define IFPACK2_HAS_PROPER_REUSE
@@ -123,14 +119,42 @@ namespace MueLu {
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     this->Input(currentLevel, "A");
 
-    if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
-        type_ == "LINESMOOTHING_BANDED RELAXATION" ||
-        type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
-        type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
-        type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+    if (type_ == "LINESMOOTHING_TRIDI_RELAXATION"        ||
+        type_ == "LINESMOOTHING_TRIDI RELAXATION"        ||
+        type_ == "LINESMOOTHING_TRIDIRELAXATION"         ||
+        type_ == "LINESMOOTHING_TRIDIAGONAL_RELAXATION"  ||
+        type_ == "LINESMOOTHING_TRIDIAGONAL RELAXATION"  ||
+        type_ == "LINESMOOTHING_TRIDIAGONALRELAXATION"   ||
+        type_ == "LINESMOOTHING_BANDED_RELAXATION"       ||
+        type_ == "LINESMOOTHING_BANDED RELAXATION"       ||
+        type_ == "LINESMOOTHING_BANDEDRELAXATION"        ||
+        type_ == "LINESMOOTHING_BLOCK_RELAXATION"        ||
+        type_ == "LINESMOOTHING_BLOCK RELAXATION"        ||
         type_ == "LINESMOOTHING_BLOCKRELAXATION") {
       this->Input(currentLevel, "CoarseNumZLayers");            // necessary for fallback criterion
       this->Input(currentLevel, "LineDetection_VertLineIds");   // necessary to feed block smoother
+    }
+    else if (type_ == "BLOCK RELAXATION" ||
+             type_ == "BLOCK_RELAXATION" ||
+             type_ == "BLOCKRELAXATION" ||
+             // Banded
+             type_ == "BANDED_RELAXATION" ||
+             type_ == "BANDED RELAXATION" ||
+             type_ == "BANDEDRELAXATION" ||
+             // Tridiagonal
+             type_ == "TRIDI_RELAXATION" ||
+             type_ == "TRIDI RELAXATION" ||
+             type_ == "TRIDIRELAXATION" ||
+             type_ == "TRIDIAGONAL_RELAXATION" ||
+             type_ == "TRIDIAGONAL RELAXATION" ||
+             type_ == "TRIDIAGONALRELAXATION")
+    {
+      //We need to check for the "partitioner type" = "line"
+      ParameterList precList = this->GetParameterList();
+      if(precList.isParameter("partitioner: type") &&
+         precList.get<std::string>("partitioner: type") == "line") {
+        this->Input(currentLevel, "Coordinates");
+      }
     }
     else if (type_ == "TOPOLOGICAL")
     {
@@ -148,13 +172,35 @@ namespace MueLu {
     if      (type_ == "SCHWARZ")
       SetupSchwarz(currentLevel);
 
-    else if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
-             type_ == "LINESMOOTHING_BANDED RELAXATION" ||
-             type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
-             type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
-             type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+    else if (type_ == "LINESMOOTHING_TRIDI_RELAXATION"       ||
+             type_ == "LINESMOOTHING_TRIDI RELAXATION"       ||
+             type_ == "LINESMOOTHING_TRIDIRELAXATION"        ||
+             type_ == "LINESMOOTHING_TRIDIAGONAL_RELAXATION" ||
+             type_ == "LINESMOOTHING_TRIDIAGONAL RELAXATION" ||
+             type_ == "LINESMOOTHING_TRIDIAGONALRELAXATION"  ||
+             type_ == "LINESMOOTHING_BANDED_RELAXATION"      ||
+             type_ == "LINESMOOTHING_BANDED RELAXATION"      ||
+             type_ == "LINESMOOTHING_BANDEDRELAXATION"       ||
+             type_ == "LINESMOOTHING_BLOCK_RELAXATION"       ||
+             type_ == "LINESMOOTHING_BLOCK RELAXATION"       ||
              type_ == "LINESMOOTHING_BLOCKRELAXATION")
       SetupLineSmoothing(currentLevel);
+
+    else if (type_ == "BLOCK_RELAXATION" ||
+             type_ == "BLOCK RELAXATION" ||
+             type_ == "BLOCKRELAXATION" ||
+             // Banded
+             type_ == "BANDED_RELAXATION" ||
+             type_ == "BANDED RELAXATION" ||
+             type_ == "BANDEDRELAXATION" ||
+             // Tridiagonal
+             type_ == "TRIDI_RELAXATION" ||
+             type_ == "TRIDI RELAXATION" ||
+             type_ == "TRIDIRELAXATION" ||
+             type_ == "TRIDIAGONAL_RELAXATION" ||
+             type_ == "TRIDIAGONAL RELAXATION" ||
+             type_ == "TRIDIAGONALRELAXATION") 
+      SetupBlockRelaxation(currentLevel);
 
     else if (type_ == "CHEBYSHEV")
       SetupChebyshev(currentLevel);
@@ -178,7 +224,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupSchwarz(Level& currentLevel) {
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupSchwarz(Level& /* currentLevel */) {
     typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
 
     bool reusePreconditioner = false;
@@ -310,11 +356,7 @@ namespace MueLu {
     
     typedef typename Node::device_type::execution_space ES;
     
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
-    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO; // "Field Container" for ordinals
-#else
-    typedef Intrepid2::FieldContainer<LocalOrdinal> FCO;
-#endif
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO; //
     
     LocalOrdinal  lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
     
@@ -328,11 +370,7 @@ namespace MueLu {
     // of stuff in the guts of Intrepid2 that doesn't play well with Stokhos as of yet.  Here, we only
     // care about the assignment of basis ordinals to topological entities, so this code is actually
     // independent of the Scalar type--hard-coding double here won't hurt us.
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     auto basis = MueLuIntrepid::BasisFactory<double,ES>(basisString, degree);
-#else
-    auto basis = MueLuIntrepid::BasisFactory<double>(basisString, degree);
-#endif
     
     string topologyTypeString = paramList.get<string>("smoother: neighborhood type");
     int dimension;
@@ -422,6 +460,13 @@ namespace MueLu {
           type_ == "LINESMOOTHING_BANDED RELAXATION" ||
           type_ == "LINESMOOTHING_BANDEDRELAXATION")
         type_ = "BANDEDRELAXATION";
+      else if (type_ == "LINESMOOTHING_TRIDI_RELAXATION"       ||
+               type_ == "LINESMOOTHING_TRIDI RELAXATION"       ||
+               type_ == "LINESMOOTHING_TRIDIRELAXATION"        ||
+               type_ == "LINESMOOTHING_TRIDIAGONAL_RELAXATION" ||
+               type_ == "LINESMOOTHING_TRIDIAGONAL RELAXATION" ||
+               type_ == "LINESMOOTHING_TRIDIAGONALRELAXATION")
+        type_ = "TRIDIAGONALRELAXATION";
       else
         type_ = "BLOCKRELAXATION";
     } else {
@@ -438,6 +483,58 @@ namespace MueLu {
     prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
     SetPrecParameters();
     prec_->initialize();
+    prec_->compute();
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupBlockRelaxation(Level& currentLevel) {
+    typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
+
+    RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if (!bA.is_null())
+      A_ = bA->Merge();
+
+    RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+
+    bool reusePreconditioner = false;
+    if (this->IsSetup() == true) {
+      // Reuse the constructed preconditioner
+      this->GetOStream(Runtime1) << "MueLu::Ifpack2Smoother::SetupBlockRelaxation(): Setup() has already been called, assuming reuse" << std::endl;
+
+      RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
+      if (!prec.is_null()) {
+#ifdef IFPACK2_HAS_PROPER_REUSE
+        prec->resetMatrix(tA);
+        reusePreconditioner = true;
+#else
+        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
+#endif
+
+      } else {
+        this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupBlockRelaxation(): reuse of this type is not available (failed cast to CanChangeMatrix), "
+            "reverting to full construction" << std::endl;
+      }
+    }
+
+    if (!reusePreconditioner) {
+      ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
+      myparamList.print();
+      if(myparamList.isParameter("partitioner: type") &&
+         myparamList.get<std::string>("partitioner: type") == "line") {
+        Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > xCoordinates =
+          Factory::Get<Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > >(currentLevel, "Coordinates");
+        Teuchos::RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates = Teuchos::rcpFromRef(Xpetra::toTpetra<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>(*xCoordinates));
+
+        size_t numDofsPerNode = A_->getNodeNumRows() / xCoordinates->getMap()->getNodeNumElements();
+        myparamList.set("partitioner: coordinates", coordinates);
+        myparamList.set("partitioner: PDE equations", (int) numDofsPerNode);
+      }
+
+      prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
+      SetPrecParameters();
+      prec_->initialize();
+    }
+
     prec_->compute();
   }
 
@@ -529,7 +626,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Level& currentLevel) {
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Level& /* currentLevel */) {
     typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
 
     RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
@@ -553,7 +650,7 @@ namespace MueLu {
 #endif
 
       } else {
-        this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupSchwarz(): reuse of this type is not available (failed cast to CanChangeMatrix), "
+        this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupGeneric(): reuse of this type is not available (failed cast to CanChangeMatrix), "
             "reverting to full construction" << std::endl;
       }
     }
@@ -693,6 +790,9 @@ namespace MueLu {
 
     RCP<Ifpack2::ILUT<MatrixType> > pi            = rcp_dynamic_cast<Ifpack2::ILUT<MatrixType> >(prec_);
     if(!pi.is_null()) return pi->getNodeSmootherComplexity();
+
+    RCP<Ifpack2::RILUK<MatrixType> > pk            = rcp_dynamic_cast<Ifpack2::RILUK<MatrixType> >(prec_);
+    if(!pk.is_null()) return pk->getNodeSmootherComplexity();
 
 
     return Teuchos::OrdinalTraits<size_t>::invalid();

@@ -53,6 +53,8 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_SerialSymDenseMatrix.hpp"
 
+#include <utility>
+
 /*!     \class Teuchos::SerialDenseMatrix
         \brief This class creates and provides basic support for dense rectangular matrix of templated type.
 */
@@ -64,7 +66,7 @@
 namespace Teuchos {
 
 template<typename OrdinalType, typename ScalarType>
-class SerialDenseMatrix : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>
+class SerialDenseMatrix : public CompObject, public BLAS<OrdinalType, ScalarType>
 {
 public:
 
@@ -202,6 +204,12 @@ public:
     \return Integer error code, set to 0 if successful.
   */
   int putScalar( const ScalarType value = Teuchos::ScalarTraits<ScalarType>::zero() );
+
+  //! Swap values between this matrix and incoming matrix.
+  /*!
+    Swaps pointers and associated state without copying the matrix data.
+  */
+  void swap (SerialDenseMatrix<OrdinalType, ScalarType> &B);
 
   //! Set all values in the matrix to be random numbers.
   int random();
@@ -375,7 +383,7 @@ public:
 
   //! @name I/O methods.
   //@{
-  //! Print method.  Defines the behavior of the std::ostream << operator inherited from the Object class.
+  //! Print method.  Defines the behavior of the std::ostream << operator
   virtual void print(std::ostream& os) const;
 
   //@}
@@ -400,14 +408,14 @@ protected:
 
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix()
-  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(false), values_(0)
+  : CompObject(), BLAS<OrdinalType,ScalarType>(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(false), values_(0)
 {}
 
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   OrdinalType numRows_in, OrdinalType numCols_in, bool zeroOut
   )
-  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), numRows_(numRows_in), numCols_(numCols_in), stride_(numRows_in)
+  : CompObject(), BLAS<OrdinalType,ScalarType>(), numRows_(numRows_in), numCols_(numCols_in), stride_(numRows_in)
 {
   values_ = new ScalarType[stride_*numCols_];
   valuesCopied_ = true;
@@ -420,7 +428,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   DataAccess CV, ScalarType* values_in, OrdinalType stride_in, OrdinalType numRows_in,
   OrdinalType numCols_in
   )
-  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), numRows_(numRows_in), numCols_(numCols_in), stride_(stride_in),
+  : CompObject(), BLAS<OrdinalType,ScalarType>(), numRows_(numRows_in), numCols_(numCols_in), stride_(stride_in),
     valuesCopied_(false), values_(values_in)
 {
   if(CV == Copy)
@@ -434,7 +442,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
 
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans) 
-  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(true), values_(0)
+  : CompObject(),BLAS<OrdinalType,ScalarType>(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(true), values_(0)
 {
   if ( trans == Teuchos::NO_TRANS )
   {
@@ -610,6 +618,31 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::putScalar( const ScalarType valu
           }
   }
   return 0;
+}
+
+template<typename OrdinalType, typename ScalarType> void
+SerialDenseMatrix<OrdinalType, ScalarType>::swap(
+  SerialDenseMatrix<OrdinalType, ScalarType> &B)
+{
+  // Notes:
+  // > DefaultBLASImpl::SWAP() uses a deep copy. This fn uses a pointer swap.
+  // > this fn covers both Vector and Matrix, such that some care must be
+  //   employed to not swap across types (creating a Vector with non-unitary
+  //   numCols_)
+  // > Inherited data that is not currently swapped (since inactive/deprecated):
+  //   >> Teuchos::CompObject:
+  //        Flops *flopCounter_ [Note: all SerialDenseMatrix ctors initialize a
+  //        NULL flop-counter using CompObject(), such that any flop increments
+  //        that are computed are not accumulated.]
+  //   >> Teuchos::Object: (now removed from inheritance list)
+  //        static int tracebackMode (no swap for statics)
+  //        std::string label_ (has been reported as a cause of memory overhead)
+
+  std::swap(values_ ,      B.values_);
+  std::swap(numRows_,      B.numRows_);
+  std::swap(numCols_,      B.numCols_);
+  std::swap(stride_,       B.stride_);
+  std::swap(valuesCopied_, B.valuesCopied_);
 }
 
 template<typename OrdinalType, typename ScalarType>
@@ -791,7 +824,8 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, 
             anorm = absSum;
           }
   }
-  updateFlops(numRows_ * numCols_);
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) updateFlops(numRows_ * numCols_);
   return(anorm);
 }
 
@@ -808,7 +842,8 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, 
     }
     anorm = TEUCHOS_MAX( anorm, sum );
   }
-  updateFlops(numRows_ * numCols_);
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) updateFlops(numRows_ * numCols_);
   return(anorm);
 }
 
@@ -823,7 +858,8 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, 
     }
   }
   anorm = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::squareroot(anorm));
-  updateFlops(numRows_ * numCols_);
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) updateFlops(numRows_ * numCols_);
   return(anorm);
 }
 
@@ -883,7 +919,8 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::scale( const ScalarType alpha )
     ptr = values_ + j*stride_;
     for (i=0; i<numRows_; i++) { *ptr = alpha * (*ptr); ptr++; }
   }
-  updateFlops( numRows_*numCols_ );
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) updateFlops( numRows_*numCols_ );
   return(0);
 }
 
@@ -902,7 +939,8 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::scale( const SerialDenseMatrix<O
     ptr = values_ + j*stride_;
     for (i=0; i<numRows_; i++) { *ptr = A(i,j) * (*ptr); ptr++; }
   }
-  updateFlops( numRows_*numCols_ );
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) updateFlops( numRows_*numCols_ );
   return(0);
 }
 
@@ -920,10 +958,14 @@ int  SerialDenseMatrix<OrdinalType, ScalarType>::multiply(ETransp transa, ETrans
   }
   // Call GEMM function
   this->GEMM(transa, transb, numRows_, numCols_, A_ncols, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
-  double nflops = 2 * numRows_;
-  nflops *= numCols_;
-  nflops *= A_ncols;
-  updateFlops(nflops);
+
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) {
+    double nflops = 2 * numRows_;
+    nflops *= numCols_;
+    nflops *= A_ncols;
+    updateFlops(nflops);
+  }
   return(0);
 }
 
@@ -947,10 +989,14 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::multiply (ESide sideA, ScalarTyp
   // Call SYMM function
   EUplo uplo = (A.upper() ? Teuchos::UPPER_TRI : Teuchos::LOWER_TRI);
   this->SYMM(sideA, uplo, numRows_, numCols_, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
-  double nflops = 2 * numRows_;
-  nflops *= numCols_;
-  nflops *= A_ncols;
-  updateFlops(nflops);
+
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) {
+    double nflops = 2 * numRows_;
+    nflops *= numCols_;
+    nflops *= A_ncols;
+    updateFlops(nflops);
+  }
   return(0);
 }
 
@@ -1028,6 +1074,16 @@ void SerialDenseMatrix<OrdinalType, ScalarType>::copyMat(
     }
   }
 }
+
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
+/// \brief Print the given SerialDenseMatrix to the given output stream.
+template<typename OrdinalType, typename ScalarType>
+std::ostream& operator<< (std::ostream& os, const Teuchos::SerialDenseMatrix<OrdinalType, ScalarType>& obj)
+{
+  obj.print (os);
+  return os;
+}
+#endif
 
 } // namespace Teuchos
 

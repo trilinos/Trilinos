@@ -79,38 +79,38 @@ class SchurComplement {
    
 private:
 
-  Teuchos::RCP<OP> A_, B_, C_, D_;
+  ROL::Ptr<OP> A_, B_, C_, D_;
 
-  Teuchos::RCP<OP> L_,U_;   
-  Teuchos::RCP<V>  scratch1_;
+  ROL::Ptr<OP> L_,U_;   
+  ROL::Ptr<V>  scratch1_;
 
   
 
 public:
 
-  SchurComplement( Teuchos::RCP<OP> &A, Teuchos::RCP<OP> &B,  
-                   Teuchos::RCP<OP> &C, Teuchos::RCP<OP> &D, 
-                   Teuchos::RCP<V> &scratch1 ) : 
+  SchurComplement( ROL::Ptr<OP> &A, ROL::Ptr<OP> &B,  
+                   ROL::Ptr<OP> &C, ROL::Ptr<OP> &D, 
+                   ROL::Ptr<V> &scratch1 ) : 
                      A_(A), B_(B), C_(C), D_(D), scratch1_(scratch1) {
 
-    U_ = rcp( new UPPER(B_) );
-    L_ = rcp( new LOWER(C_) );
+    U_ = ROL::makePtr<UPPER>(B_);
+    L_ = ROL::makePtr<LOWER>(C_);
 
   }
 
 
-  SchurComplement( BlockOperator2<Real> &op, Teuchos::RCP<Vector<Real> > &scratch1 ) :
+  SchurComplement( BlockOperator2<Real> &op, ROL::Ptr<Vector<Real> > &scratch1 ) :
     scratch1_(scratch1) {}
 
-  using Teuchos::rcp;
+  
 
   A_ = op.getOperator(0,0);
   B_ = op.getOperator(0,1);
   C_ = op.getOperator(1,0);
   D_ = op.getOperator(1,1);
 
-  U_ = rcp( new UPPER(B_) );
-  L_ = rcp( new LOWER(C_) );
+  U_ = ROL::makePtr<UPPER>(B_);
+  L_ = ROL::makePtr<LOWER>(C_);
 
   void applyLower( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) { 
     L_->apply(Hv,v,tol);
@@ -128,8 +128,8 @@ public:
     U_->applyInverse(Hv,v,tol);
   }
 
-  Teuchos::RCP<OP> getS11( void ) { 
-    return Teuchos::rcp(new BlockOperator2Determinant<Real>(A_,B_,C_,D_,scratch1_) );
+  ROL::Ptr<OP> getS11( void ) { 
+    return ROL::makePtr<BlockOperator2Determinant<Real>>(A_,B_,C_,D_,scratch1_);
   }
 
   void solve2( Vector<Real> &Hv2, const Vector<Real> &v2, Real &tol ) {

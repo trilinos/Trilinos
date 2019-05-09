@@ -52,7 +52,6 @@
 #define _ZOLTAN2_MESHADAPTER_HPP_
 
 #include <Zoltan2_Adapter.hpp>
-#include "Tpetra_DefaultPlatform.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 
 namespace Zoltan2 {

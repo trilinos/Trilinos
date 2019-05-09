@@ -1,0 +1,15 @@
+
+TRIBITS_ADD_EXECUTABLE(
+  Rocket-SimOpt
+  SOURCES Rocket.cpp
+  ADD_DIR_TO_NAME
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  RocketDataCopy
+  SOURCE_FILES
+    Rocket.xml
+    RocketPlot.py
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+)

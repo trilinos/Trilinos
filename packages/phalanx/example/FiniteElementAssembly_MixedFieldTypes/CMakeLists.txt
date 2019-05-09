@@ -15,6 +15,9 @@ SET(example_fem_SOURCES
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/WorksetBuilder.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Mesh.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Mesh.cpp
+    ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/LinearObjectFactory.hpp
+    ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/CommandLineParser.hpp
+    ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/PrintValues.hpp
     evaluators/Constant.hpp
     evaluators/Constant_Def.hpp
     evaluators/Constant.cpp
@@ -42,8 +45,8 @@ SET(example_fem_SOURCES
     )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  example_finite_element_assembly_no_tags
-  SOURCES FiniteElementAssembly.cpp ${example_fem_SOURCES}
+  example_finite_element_assembly_mixed_field_types
+  SOURCES FiniteElementAssembly_MixedFieldTypes.cpp ${example_fem_SOURCES}
   COMM serial mpi
   NUM_MPI_PROCS 1
   )

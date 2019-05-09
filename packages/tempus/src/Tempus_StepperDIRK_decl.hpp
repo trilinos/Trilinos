@@ -78,42 +78,59 @@ namespace Tempus {
  *       - \f$\dot{X}_i \leftarrow \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
  *   - end for
  *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
- *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
+ *
+ *  The First-Step-As-Last (FSAL) principle is not needed with DIRK, but
+ *  maybe useful if the first stage is explicit (i.e, EDIRK).
+ *  The default is to set useFSAL=false.
  */
 template<class Scalar>
 class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-  /// Constructor
+   /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperDIRK();
+
+  /// Constructor to specialize Stepper parameters.
   StepperDIRK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor to use default Stepper parameters.
+  StepperDIRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType = "SDIRK 2 Stage 2nd order");
+
+  /// Constructor for StepperFactory.
+  StepperDIRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return wrapperModel_->getAppModel();}
-
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL = Teuchos::null);
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
     virtual void setObserver(
-      Teuchos::RCP<StepperDIRKObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    void setTableau(
-      Teuchos::RCP<Teuchos::ParameterList> pList,
-      std::string stepperType = "");
+    virtual void setTableau(std::string stepperType);
+
+    virtual void setTableau(
+      Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+
+    virtual void setTableau(
+      Teuchos::RCP<const RKButcherTableau<Scalar> > DIRK_ButcherTableau);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -121,10 +138,35 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >getDefaultStepperState();
-    virtual Scalar getOrder() const{return DIRK_ButcherTableau_->order();}
+    virtual Scalar getOrder()    const{return DIRK_ButcherTableau_->order();}
     virtual Scalar getOrderMin() const{return DIRK_ButcherTableau_->orderMin();}
     virtual Scalar getOrderMax() const{return DIRK_ButcherTableau_->orderMax();}
+
+    virtual bool isExplicit() const
+    {
+      const int numStages = DIRK_ButcherTableau_->numStages();
+      Teuchos::SerialDenseMatrix<int,Scalar> A = DIRK_ButcherTableau_->A();
+      bool isExplicit = false;
+      for (int i=0; i<numStages; ++i) if (A(i,i) == 0.0) isExplicit = true;
+      return isExplicit;
+    }
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
+
+  /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const
+  {
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A=DIRK_ButcherTableau_->A();
+    return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
+  }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
   /// \name ParameterList methods
   //@{
@@ -142,17 +184,7 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-private:
-
-  /// Default Constructor -- not allowed
-  StepperDIRK();
-
 protected:
-
-  std::string                                            description_;
-  Teuchos::RCP<Teuchos::ParameterList>                   stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluator<Scalar> >           wrapperModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >      solver_;
 
   Teuchos::RCP<const RKButcherTableau<Scalar> >          DIRK_ButcherTableau_;
 
@@ -163,6 +195,12 @@ protected:
   Teuchos::RCP<StepperDIRKObserver<Scalar> >             stepperDIRKObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
+
+  // For Embedded RK
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
+
 };
 
 
@@ -174,7 +212,7 @@ protected:
  *  \f]
  *  compute the DIRK stage time-derivative,
  *  \f[
- *    \dot{X}_i = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
+ *    \dot{X}_i = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}
  *  \f]
  *  \f$\ddot{x}\f$ is not used and set to null.
  */

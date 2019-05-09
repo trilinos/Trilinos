@@ -68,8 +68,8 @@ public:
   virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
+    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
+      dynamic_cast<const ROL::Vector<Real>&>(x));
     this->update(*(xs.get_1()),*(xs.get_2()),flag,iter);
   }
 
@@ -79,8 +79,8 @@ public:
   virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
+    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
+      dynamic_cast<const ROL::Vector<Real>&>(x));
     return this->value(*(xs.get_1()),*(xs.get_2()),tol);
   }
 
@@ -93,7 +93,7 @@ public:
     this->update(u,z);
     Real v     = this->value(u,z,ftol);
     Real deriv = 0.0;
-    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
     g.zero();
     for (int i = 0; i < g.dimension(); i++) {
       h = u.dot(*u.basis(i))*tol;
@@ -113,7 +113,7 @@ public:
     this->update(u,z);
     Real v     = this->value(u,z,ftol);
     Real deriv = 0.0;
-    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
     g.zero();
     for (int i = 0; i < g.dimension(); i++) {
       h = z.dot(*z.basis(i))*tol;
@@ -127,12 +127,12 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    ROL::Vector_SimOpt<Real> &gs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(g));
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    Teuchos::RCP<Vector<Real> > g1 = gs.get_1()->clone();
-    Teuchos::RCP<Vector<Real> > g2 = gs.get_2()->clone();
+    ROL::Vector_SimOpt<Real> &gs = dynamic_cast<ROL::Vector_SimOpt<Real>&>(
+      dynamic_cast<ROL::Vector<Real>&>(g));
+    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
+      dynamic_cast<const ROL::Vector<Real>&>(x));
+    ROL::Ptr<Vector<Real> > g1 = gs.get_1()->clone();
+    ROL::Ptr<Vector<Real> > g2 = gs.get_2()->clone();
     this->gradient_1(*g1,*(xs.get_1()),*(xs.get_2()),tol);
     this->gradient_2(*g2,*(xs.get_1()),*(xs.get_2()),tol);
     gs.set_1(*g1);
@@ -151,14 +151,14 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u+hv,z)
-    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
     this->update(*unew,z);
     hv.zero();
     this->gradient_1(hv,*unew,z,gtol);
     // Evaluate gradient of first component at (u,z)
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_1(*g,u,z,gtol);
     // Compute Newton quotient
@@ -175,14 +175,14 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u,z+hv)
-    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
     this->update(u,*znew);
     hv.zero();
     this->gradient_1(hv,u,*znew,gtol);
     // Evaluate gradient of first component at (u,z)
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_1(*g,u,z,gtol);
     // Compute Newton quotient
@@ -199,14 +199,14 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u+hv,z)
-    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
     this->update(*unew,z);
     hv.zero();
     this->gradient_2(hv,*unew,z,gtol);
     // Evaluate gradient of first component at (u,z)
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_2(*g,u,z,gtol);
     // Compute Newton quotient
@@ -223,14 +223,14 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u,z+hv)
-    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
     this->update(u,*znew);
     hv.zero();
     this->gradient_2(hv,u,*znew,gtol);
     // Evaluate gradient of first component at (u,z)
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_2(*g,u,z,gtol);
     // Compute Newton quotient
@@ -239,19 +239,19 @@ public:
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    ROL::Vector_SimOpt<Real> &hvs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(hv));
-    const ROL::Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(v));
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    Teuchos::RCP<Vector<Real> > h11 = (hvs.get_1())->clone();
+    ROL::Vector_SimOpt<Real> &hvs = dynamic_cast<ROL::Vector_SimOpt<Real>&>(
+      dynamic_cast<ROL::Vector<Real>&>(hv));
+    const ROL::Vector_SimOpt<Real> &vs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
+      dynamic_cast<const ROL::Vector<Real>&>(v));
+    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
+      dynamic_cast<const ROL::Vector<Real>&>(x));
+    ROL::Ptr<Vector<Real> > h11 = (hvs.get_1())->clone();
     this->hessVec_11(*h11,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
-    Teuchos::RCP<Vector<Real> > h12 = (hvs.get_1())->clone();
+    ROL::Ptr<Vector<Real> > h12 = (hvs.get_1())->clone();
     this->hessVec_12(*h12,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
-    Teuchos::RCP<Vector<Real> > h21 = (hvs.get_2())->clone();
+    ROL::Ptr<Vector<Real> > h21 = (hvs.get_2())->clone();
     this->hessVec_21(*h21,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
-    Teuchos::RCP<Vector<Real> > h22 = (hvs.get_2())->clone();
+    ROL::Ptr<Vector<Real> > h22 = (hvs.get_2())->clone();
     this->hessVec_22(*h22,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
     h11->plus(*h12);
     hvs.set_1(*h11);
@@ -293,7 +293,7 @@ public:
                                                    const bool printToStream,
                                                    std::ostream & outStream,
                                                    const int order ) {
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -307,7 +307,7 @@ public:
     std::vector<std::vector<Real> > gCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Evaluate objective value at x.
@@ -315,12 +315,12 @@ public:
     Real val = this->value(u,z,tol);
   
     // Compute gradient at x.
-    Teuchos::RCP<Vector<Real> > gtmp = g.clone();
+    ROL::Ptr<Vector<Real> > gtmp = g.clone();
     this->gradient_1(*gtmp, u, z, tol);
     Real dtg = d.dot(gtmp->dual());
   
     // Temporary vectors.
-    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
   
     for (int i=0; i<numSteps; i++) {
   
@@ -413,7 +413,7 @@ public:
                                                    const bool printToStream,
                                                    std::ostream & outStream,
                                                    const int order ) {
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -427,7 +427,7 @@ public:
     std::vector<std::vector<Real> > gCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Evaluate objective value at x.
@@ -435,12 +435,12 @@ public:
     Real val = this->value(u,z,tol);
   
     // Compute gradient at x.
-    Teuchos::RCP<Vector<Real> > gtmp = g.clone();
+    ROL::Ptr<Vector<Real> > gtmp = g.clone();
     this->gradient_2(*gtmp, u, z, tol);
     Real dtg = d.dot(gtmp->dual());
   
     // Temporary vectors.
-    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
   
     for (int i=0; i<numSteps; i++) {
   
@@ -549,7 +549,7 @@ public:
                                                    std::ostream & outStream,
                                                    const int order ) {
   
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -564,23 +564,23 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_1(*g, u, z, tol);
   
     // Compute (Hessian at x) times (vector v).
-    Teuchos::RCP<Vector<Real> > Hv = hv.clone();
+    ROL::Ptr<Vector<Real> > Hv = hv.clone();
     this->hessVec_11(*Hv, v, u, z, tol);
     Real normHv = Hv->norm();
   
     // Temporary vectors.
-    Teuchos::RCP<Vector<Real> > gdif = hv.clone();
-    Teuchos::RCP<Vector<Real> > gnew = hv.clone();
-    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > gdif = hv.clone();
+    ROL::Ptr<Vector<Real> > gnew = hv.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
   
     for (int i=0; i<numSteps; i++) {
   
@@ -693,7 +693,7 @@ public:
                                                    std::ostream & outStream,
                                                    const int order ) {
   
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -708,23 +708,23 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_1(*g, u, z, tol);
   
     // Compute (Hessian at x) times (vector v).
-    Teuchos::RCP<Vector<Real> > Hv = hv.clone();
+    ROL::Ptr<Vector<Real> > Hv = hv.clone();
     this->hessVec_12(*Hv, v, u, z, tol);
     Real normHv = Hv->norm();
   
     // Temporary vectors.
-    Teuchos::RCP<Vector<Real> > gdif = hv.clone();
-    Teuchos::RCP<Vector<Real> > gnew = hv.clone();
-    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > gdif = hv.clone();
+    ROL::Ptr<Vector<Real> > gnew = hv.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
   
     for (int i=0; i<numSteps; i++) {
   
@@ -840,7 +840,7 @@ public:
                                                    std::ostream & outStream,
                                                    const int order ) {
   
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -855,23 +855,23 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_2(*g, u, z, tol);
   
     // Compute (Hessian at x) times (vector v).
-    Teuchos::RCP<Vector<Real> > Hv = hv.clone();
+    ROL::Ptr<Vector<Real> > Hv = hv.clone();
     this->hessVec_21(*Hv, v, u, z, tol);
     Real normHv = Hv->norm();
   
     // Temporary vectors.
-    Teuchos::RCP<Vector<Real> > gdif = hv.clone();
-    Teuchos::RCP<Vector<Real> > gnew = hv.clone();
-    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > gdif = hv.clone();
+    ROL::Ptr<Vector<Real> > gnew = hv.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
   
     for (int i=0; i<numSteps; i++) {
   
@@ -987,7 +987,7 @@ public:
                                                    std::ostream & outStream,
                                                    const int order ) {
   
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -1002,23 +1002,23 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_2(*g, u, z, tol);
   
     // Compute (Hessian at x) times (vector v).
-    Teuchos::RCP<Vector<Real> > Hv = hv.clone();
+    ROL::Ptr<Vector<Real> > Hv = hv.clone();
     this->hessVec_22(*Hv, v, u, z, tol);
     Real normHv = Hv->norm();
   
     // Temporary vectors.
-    Teuchos::RCP<Vector<Real> > gdif = hv.clone();
-    Teuchos::RCP<Vector<Real> > gnew = hv.clone();
-    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > gdif = hv.clone();
+    ROL::Ptr<Vector<Real> > gnew = hv.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
   
     for (int i=0; i<numSteps; i++) {
   

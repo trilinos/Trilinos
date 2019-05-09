@@ -56,31 +56,31 @@ enum ExecSpaceType{Exec_SERIAL, Exec_OMP, Exec_PTHREADS, Exec_QTHREADS, Exec_CUD
 template <typename ExecutionSpace>
 inline ExecSpaceType kk_get_exec_space_type(){
   ExecSpaceType exec_space = Exec_SERIAL;
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
   if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
     exec_space = Exec_SERIAL;
   }
 #endif
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
   if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
     exec_space =  Exec_PTHREADS;
   }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
   if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
     exec_space = Exec_OMP;
   }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
     exec_space = Exec_CUDA;
   }
 #endif
 
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
   if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
     exec_space = Exec_QTHREADS;
   }

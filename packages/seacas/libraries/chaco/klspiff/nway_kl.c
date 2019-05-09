@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,18 +60,18 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
             int               maxdval,     /* maximum d-value for a vertex */
             int               nsets,       /* number of sets divided into */
             double *          goal,        /* desired set sizes */
-            float *           term_wgts[], /* weights for terminal propogation */
+            float *           term_wgts[], /* weights for terminal propagation */
             int (*hops)[MAXSETS],          /* cost of set transitions */
             int     max_dev,               /* largest allowed deviation from balance */
             int     using_ewgts,           /* are edge weights being used? */
             int **  bndy_list,             /* list of vertices on boundary (0 ends) */
             double *startweight            /* sum of vweights in each set (in and out) */
-            )
+)
 
 /* Suaris and Kedem algorithm for quadrisection, generalized to an */
 /* arbitrary number of sets, with intra-set cost function specified by hops. */
 /* Note: this is for a single divide step. */
-/* Also, sets contains an intial (possibly crummy) partitioning. */
+/* Also, sets contains an initial (possibly crummy) partitioning. */
 
 {
   extern double   kl_bucket_time;             /* time spent in KL bucketsort */
@@ -453,7 +453,7 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
           if (dvals[neighbor][0] >= 3 * maxdval) {
             /* New vertex, not yet in buckets. */
             /* Can't be neighbor of moved vtx, so compute */
-            /* inital dvals and buckets, then update. */
+            /* initial dvals and buckets, then update. */
             bucketsort1(graph, neighbor, buckets, listspace, dvals, sets, term_wgts, maxdval, nsets,
                         hops, using_ewgts);
           }

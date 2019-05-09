@@ -75,17 +75,16 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &/* fineLevel */, Level &coarseLevel) const {
     Input(coarseLevel, "A");
     Input(coarseLevel, "Importer");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &/* fineLevel */, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
-
+    
     RCP<Matrix> originalAc = Get< RCP<Matrix> >(coarseLevel, "A");
-
     RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
     if (rebalanceImporter != Teuchos::null) {
@@ -103,21 +102,21 @@ namespace MueLu {
         }
         // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
         XpetraList.set("Timer Label","MueLu::RebalanceAc-" + Teuchos::toString(coarseLevel.GetLevelID()));
-        rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
+	rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
 
-        if (!rebalancedAc.is_null())
+        if (!rebalancedAc.is_null()) {
           rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
-
+          std::ostringstream oss; oss << "A_" << coarseLevel.GetLevelID(); rebalancedAc->setObjectLabel(oss.str());
+        }
         Set(coarseLevel, "A", rebalancedAc);
       }
-
-      if (!rebalancedAc.is_null() && IsPrint(Statistics1)) {
+      if (!rebalancedAc.is_null() && IsPrint(Statistics2)) {
         int oldRank = SetProcRankVerbose(rebalancedAc->getRowMap()->getComm()->getRank());
 
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
-        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
+        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
 
         SetProcRankVerbose(oldRank);
       }

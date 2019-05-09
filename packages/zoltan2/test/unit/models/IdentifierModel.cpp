@@ -62,11 +62,9 @@
 
 #include <Tpetra_CrsMatrix.hpp>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 
 void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
   const RCP<const Comm<int> > &comm)
@@ -119,10 +117,10 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
     fail = 1;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail)
-    printFailureCode(comm, fail);
+    printFailureCode(*comm, fail);
   
   // Test the IdentifierModel interface
 
@@ -140,10 +138,10 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
     fail = 3;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail)
-    printFailureCode(comm, fail);
+    printFailureCode(*comm, fail);
   
   ArrayView<const zgno_t> gids;
   ArrayView<input_t> wgts;
@@ -173,20 +171,19 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
     }
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail)
-    printFailureCode(comm, fail);
+    printFailureCode(*comm, fail);
 
   delete model;
   delete uinput;
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
 

@@ -81,10 +81,11 @@ void makeArrays(int wdim, int *lens, zzpart_t **ids, zscalar_t **sizes,
   sizeList = arcp(sizeArrays, 0, wdim, true);
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int nprocs = comm->getSize();
   int rank = comm->getRank();
   int fail=0, gfail=0;
@@ -200,9 +201,9 @@ int main(int argc, char *argv[])
 
   delete [] normalizedPartSizes;
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
   if (gfail){
-    printFailureCode(comm, fail);   // exits after printing "FAIL"
+    printFailureCode(*comm, fail);   // exits after printing "FAIL"
   }
 
   // Test the Solution set method that is called by algorithms
@@ -220,9 +221,9 @@ int main(int argc, char *argv[])
     fail=10;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
   if (gfail){
-    printFailureCode(comm, fail);   // exits after printing "FAIL"
+    printFailureCode(*comm, fail);   // exits after printing "FAIL"
   }
 
   // Test the Solution get methods that may be called by users 
@@ -236,9 +237,9 @@ int main(int argc, char *argv[])
     }
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
   if (gfail){
-    printFailureCode(comm, fail);   // exits after printing "FAIL"
+    printFailureCode(*comm, fail);   // exits after printing "FAIL"
   }
 
   if (rank==0)

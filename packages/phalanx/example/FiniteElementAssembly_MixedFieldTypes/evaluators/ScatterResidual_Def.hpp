@@ -76,7 +76,7 @@ evaluateFields(typename Traits::EvalData workset)
 {
   gids = workset.gids_;
   cell_global_offset_index = workset.first_cell_global_index_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 // **********************************************************************
@@ -84,11 +84,13 @@ template<typename Traits>
 void ScatterResidual<PHX::MyTraits::Residual,Traits>::
 operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
-  const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,residual_contribution.extent(1)), [=] (const int& node) {
-      global_residual_atomic(gids(cell_global_offset_index+cell,node) * num_equations + equation_index) +=
-        residual_contribution(cell,node);
-  });
+  const int local_cell = team.league_rank();
+  if (team.team_rank() == 0) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,residual_contribution.extent(1)), [&] (const int& node) {
+      const int residual_index = gids(cell_global_offset_index+local_cell,node) * num_equations + equation_index;
+      global_residual_atomic(residual_index) += residual_contribution(local_cell,node);
+    });
+  }
 }
 
 // **********************************************************************
@@ -103,10 +105,10 @@ ScatterResidual(const Teuchos::RCP<PHX::FieldTag>& in_scatter_tag,
                 const int& in_equation_index,
                 const int& in_num_equations,
                 const Kokkos::View<double*,PHX::Device>& in_global_residual,
-                const Kokkos::View<double**,PHX::Device>& in_global_jacobian) :
+                const KokkosSparse::CrsMatrix<double,int,PHX::Device>& in_global_jacobian) :
   scatter_tag(in_scatter_tag),
   residual_contribution(residual_name,residual_layout),
-  global_residual(in_global_residual),
+  global_residual_atomic(in_global_residual),
   global_jacobian(in_global_jacobian),
   equation_index(in_equation_index),
   num_equations(in_num_equations)
@@ -121,6 +123,77 @@ template<typename Traits>
 void ScatterResidual<PHX::MyTraits::Jacobian, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
+  gids = workset.gids_;
+  cell_global_offset_index = workset.first_cell_global_index_;
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
+}
+
+// **********************************************************************
+template<typename Traits>
+void ScatterResidual<PHX::MyTraits::Jacobian,Traits>::
+operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+{
+  const int cell = team.league_rank();
+  const int num_nodes = residual_contribution.extent(1);
+
+  if (team.team_rank() == 0) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_nodes), [&] (const int& node) {
+      const int global_row_index = gids(cell_global_offset_index+cell,node) * num_equations + equation_index;
+      global_residual_atomic(global_row_index) += residual_contribution(cell,node).val();
+    });
+  }
+
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_nodes), [&] (const int& node) {
+
+    const int global_row_index = gids(cell_global_offset_index+cell,node) * num_equations + equation_index;
+
+    // loop over nodes
+    for (int col_node=0; col_node < num_nodes; ++col_node) {
+
+      // Bug in gcc 5 and 6 for nested lambdas breaks clean implementation
+      // of scatter. This is a very ugly hack to support those compilers.
+#if (__GNUC__ == 5) || (__GNUC__ == 6)
+      struct Gcc5_6_Hack {
+	KOKKOS_INLINE_FUNCTION
+	static void hack(const int cell,
+			 const int node,
+			 const int num_nodes,
+			 const int global_row_index,
+			 const int col_node,
+			 const int cell_global_offset_index,
+			 const int num_equations,
+			 const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team,
+			 const Kokkos::View<const int**,PHX::Device>& gids,
+			 const PHX::MDField<const ScalarT,CELL,BASIS>& residual_contribution,
+			 KokkosSparse::CrsMatrix<double,int,PHX::Device>& global_jacobian) {
+	  // loop over equations
+	  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_equations),[&] (const int& col_eq) {
+	    const int global_col_index = gids(cell_global_offset_index+cell,col_node) * num_equations + col_eq;
+	    const int derivative_index = col_node * num_equations + col_eq;
+	    global_jacobian.sumIntoValues(global_row_index,&global_col_index,1,
+					  &(residual_contribution(cell,node).fastAccessDx(derivative_index)),
+					  false,true);
+	  });
+	}
+      };
+      Gcc5_6_Hack::hack(cell,node,num_nodes,global_row_index,col_node,cell_global_offset_index,num_equations,
+			team,gids,residual_contribution,
+			const_cast<KokkosSparse::CrsMatrix<double,int,PHX::Device>&>(global_jacobian));
+#else
+      // loop over equations
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_equations),[&] (const int& col_eq) {
+        const int global_col_index = gids(cell_global_offset_index+cell,col_node) * num_equations + col_eq;
+        const int derivative_index = col_node * num_equations + col_eq;
+        global_jacobian.sumIntoValues(global_row_index,&global_col_index,1,
+                                      &(residual_contribution(cell,node).fastAccessDx(derivative_index)),
+                                      false,true);
+      });
+#endif
+
+    } 
+  });
+}
+
   /*
   std::size_t cell = 0;
   for (; element != workset.end; ++element,++cell) {
@@ -173,7 +246,6 @@ evaluateFields(typename Traits::EvalData workset)
 
   } // element
   */
-}
 
 // **********************************************************************
 // Specialization: Jv

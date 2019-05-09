@@ -232,9 +232,8 @@ namespace Amesos2 {
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
 		         EDistribution distribution,
 				     EStorage_Ordering ordering,
-				     has_special_impl hsi) const
+				     has_special_impl) const
   {
-    hsi.set = false;
     static_cast<const adapter_t*>(this)->getCrs_spec(nzval, colind, rowptr,
 						     nnz, rowmap, ordering);
   }
@@ -278,7 +277,7 @@ namespace Amesos2 {
     ((void) ra);
 
     RCP<const type> get_mat;
-    if( *rowmap == *this->row_map_ ){
+    if( *rowmap == *this->row_map_ && distribution != CONTIGUOUS_AND_ROOTED ){
       // No need to redistribute
       get_mat = rcp(this,false); // non-owning
     } else {
@@ -364,7 +363,7 @@ namespace Amesos2 {
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 		         EDistribution distribution,
 				     EStorage_Ordering ordering,
-				     has_special_impl hsi) const
+				     has_special_impl) const
   {
     static_cast<const adapter_t*>(this)->getCcs_spec(nzval, rowind, colptr,
 						     nnz, colmap, ordering);
@@ -429,7 +428,7 @@ namespace Amesos2 {
     using Teuchos::OrdinalTraits;
     
     RCP<const type> get_mat;
-    if( *colmap == *this->col_map_ ){
+    if( *colmap == *this->col_map_ && distribution != CONTIGUOUS_AND_ROOTED ){
       // No need to redistribute
       get_mat = rcp(this,false); // non-owning
     } else {

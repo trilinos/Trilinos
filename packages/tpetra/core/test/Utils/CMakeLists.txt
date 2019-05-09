@@ -65,9 +65,48 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   copyConvert
   SOURCES
     copyConvert
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial mpi
   NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Behavior
+  SOURCES
+    behavior
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CombineMode
+  SOURCES
+    CombineMode
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+# This test comes with its own main() function.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  StaticView
+  SOURCES
+    StaticView
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraUtils_crsUtils
+  SOURCES
+    TpetraUtils_crsUtils
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
   STANDARD_PASS_OUTPUT
   )

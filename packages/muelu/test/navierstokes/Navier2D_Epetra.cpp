@@ -316,6 +316,7 @@ int main(int argc, char *argv[]) {
     RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("Graph", dropFact);
     //M.SetFactory("UnAmalgamationInfo", amalgFact);
     M.SetFactory("Aggregates", CoupledAggFact);

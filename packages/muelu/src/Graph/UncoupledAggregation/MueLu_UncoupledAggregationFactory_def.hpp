@@ -55,6 +55,7 @@
 
 #include "MueLu_UncoupledAggregationFactory_decl.hpp"
 
+#include "MueLu_InterfaceAggregationAlgorithm.hpp"
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
@@ -100,7 +101,9 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 3");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
+    SET_VALID_ENTRY("aggregation: use interface aggregation");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
+    SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
 #undef  SET_VALID_ENTRY
 
     // general variables needed in AggregationFactory
@@ -111,6 +114,12 @@ namespace MueLu {
     validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
     validParamList->set< std::string >           ("OnePt aggregate map factory",      "", "Generating factory of (DOF) map for single node aggregates.");
     //validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    NoFactory::getRCP(), "Generating factory of (DOF) map for single node aggregates.");
+
+    // InterfaceAggregation parameters
+    //validParamList->set< bool >                  ("aggregation: use interface aggregation", "false", "Flag to trigger aggregation along an interface using specified aggregate seeds.");
+    validParamList->set< std::string >           ("Interface aggregate map name",                "", "Name of input map for interface aggregates. (default='')");
+    validParamList->set< std::string >           ("Interface aggregate map factory",             "", "Generating factory of (DOF) map for interface aggregates.");
+    validParamList->set<RCP<const FactoryBase> > ("nodeOnInterface", Teuchos::null, "Array specifying whether or not a node is on the interface (1 or 0).");
 
     return validParamList;
   }
@@ -133,6 +142,21 @@ namespace MueLu {
         currentLevel.DeclareInput(mapOnePtName, mapOnePtFact.get());
       }
     }
+
+    // request special data necessary for InterfaceAggregation  
+    if (pL.get<bool>("aggregation: use interface aggregation")       == true){   
+      if(currentLevel.GetLevelID() == 0) {
+        if(currentLevel.IsAvailable("nodeOnInterface", NoFactory::get())) {
+          currentLevel.DeclareInput("nodeOnInterface", NoFactory::get(), this);
+        } else {
+          TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("nodeOnInterface", NoFactory::get()),
+                                       Exceptions::RuntimeError,
+                                       "nodeOnInterface was not provided by the user on level0!");
+        }
+      } else {
+        Input(currentLevel, "nodeOnInterface");
+      }
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -151,6 +175,7 @@ namespace MueLu {
     // TODO Can we keep different aggregation algorithms over more Build calls?
     algos_.clear();
     algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm(graphFact)));
+    if (pL.get<bool>("aggregation: use interface aggregation")       == true)   algos_.push_back(rcp(new InterfaceAggregationAlgorithm         (graphFact)));
     if (pL.get<bool>("aggregation: allow user-specified singletons") == true)   algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
     if (pL.get<bool>("aggregation: enable phase 1" )                 == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
     if (pL.get<bool>("aggregation: enable phase 2a")                 == true)   algos_.push_back(rcp(new AggregationPhase2aAlgorithm           (graphFact)));
@@ -175,6 +200,10 @@ namespace MueLu {
       }
     }
 
+    // Set map for interface aggregates
+    std::string mapInterfaceName = pL.get<std::string>("Interface aggregate map name");
+    RCP<Map> InterfaceMap = Teuchos::null;
+
     RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
 
     // Build
@@ -185,6 +214,15 @@ namespace MueLu {
 
     // construct aggStat information
     std::vector<unsigned> aggStat(numRows, READY);
+
+    // interface 
+    if (pL.get<bool>("aggregation: use interface aggregation")       == true){   
+      Teuchos::Array<LO> nodeOnInterface = Get<Array<LO>>(currentLevel,"nodeOnInterface");
+      for (LO i = 0; i < numRows; i++) {
+        if (nodeOnInterface[i])
+          aggStat[i] = INTERFACE;
+      }
+    }
 
     ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
     if (dirichletBoundaryMap != Teuchos::null)
@@ -204,6 +242,7 @@ namespace MueLu {
             aggStat[i] = ONEPT;
       }
     }
+
 
 
     const RCP<const Teuchos::Comm<int> > comm = graph->GetComm();

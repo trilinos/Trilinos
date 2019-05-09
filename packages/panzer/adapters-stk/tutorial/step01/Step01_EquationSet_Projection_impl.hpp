@@ -167,7 +167,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     residual_operator_names.push_back(residual_projection_src_term);
 
     // build a sum evaluator
-    this->buildAndRegisterResidualSummationEvalautor(fm,dof_name_,residual_operator_names);
+    this->buildAndRegisterResidualSummationEvaluator(fm,dof_name_,residual_operator_names);
   }
 
 }

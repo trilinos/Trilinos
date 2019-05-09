@@ -312,8 +312,8 @@ template<typename Scalar>
 void
 Piro::InvertMassMatrixDecorator<Scalar>::reportFinalPoint(
 #endif
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint,
-    const bool wasSolved)
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& /* finalPoint */,
+    const bool /* wasSolved */)
 {
   // TODO
   TEUCHOS_TEST_FOR_EXCEPTION(true,
@@ -344,7 +344,9 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::createInArgsImpl() const
 #endif
 {
-  return model->createInArgs();
+  Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> result = model->createInArgs();
+  result.setModelEvalDescription(this->description());
+  return result; 
 }
 
 #ifdef ALBANY_BUILD
@@ -357,7 +359,9 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::createOutArgsImpl() const
 #endif
 {
-  return model->createOutArgs();
+  Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> result = model->createOutArgs();
+  result.setModelEvalDescription(this->description());
+  return result; 
 }
 
 #ifdef ALBANY_BUILD

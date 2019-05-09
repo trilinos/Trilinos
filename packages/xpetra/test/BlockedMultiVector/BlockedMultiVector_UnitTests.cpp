@@ -64,6 +64,7 @@
 #include <Xpetra_ReorderedBlockedMultiVector.hpp>
 #include <Xpetra_Exceptions.hpp>
 
+#include <set>
 
 namespace XpetraBlockMatrixTests {
 

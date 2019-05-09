@@ -128,29 +128,29 @@ class PrimalDualInteriorPointStep : public Step<Real> {
 
 private:
 
-  Teuchos::RCP<KRYLOV> krylov_;      // Krylov solver for the Primal Dual system 
-  Teuchos::RCP<LINOP>  precond_;     // Preconditioner for the Primal Dual system
+  ROL::Ptr<KRYLOV> krylov_;      // Krylov solver for the Primal Dual system 
+  ROL::Ptr<LINOP>  precond_;     // Preconditioner for the Primal Dual system
 
-  Teuchos::RCP<BND> pbnd_;           // bound constraint for projecting x sufficiently away from the given bounds
+  ROL::Ptr<BND> pbnd_;           // bound constraint for projecting x sufficiently away from the given bounds
 
-  Teuchos::RCP<V> x_;                // Optimization vector
-  Teuchos::RCP<V> g_;                // Gradient of the Lagrangian
-  Teuchos::RCP<V> l_;                // Lagrange multiplier
+  ROL::Ptr<V> x_;                // Optimization vector
+  ROL::Ptr<V> g_;                // Gradient of the Lagrangian
+  ROL::Ptr<V> l_;                // Lagrange multiplier
 
-  Teuchos::RCP<V> xl_;               // Lower bound vector
-  Teuchos::RCP<V> xu_;               // Upper bound vector
+  ROL::Ptr<V> xl_;               // Lower bound vector
+  ROL::Ptr<V> xu_;               // Upper bound vector
 
-  Teuchos::RCP<V> zl_;               // Lagrange multiplier for lower bound
-  Teuchos::RCP<V> zu_;               // Lagrange multiplier for upper bound
+  ROL::Ptr<V> zl_;               // Lagrange multiplier for lower bound
+  ROL::Ptr<V> zu_;               // Lagrange multiplier for upper bound
 
-  Teuchos::RCP<V> xscratch_;         // Scratch vector (size of x)
-  Teuchos::RCP<V> lscratch_;         // Scratch vector (size of l)
+  ROL::Ptr<V> xscratch_;         // Scratch vector (size of x)
+  ROL::Ptr<V> lscratch_;         // Scratch vector (size of l)
 
-  Teuchos::RCP<V> zlscratch_;        // Scratch vector (size of x)
-  Teuchos::RCP<V> zuscratch_;        // Scratch vector (size of x)
+  ROL::Ptr<V> zlscratch_;        // Scratch vector (size of x)
+  ROL::Ptr<V> zuscratch_;        // Scratch vector (size of x)
 
-  Teuchos::RCP<V> maskL_;            // Elements are 1 when xl>-INF, zero for xl = -INF
-  Teuchos::RCP<V> maskU_;            // Elements are 1 when xu< INF, zero for xu =  INF
+  ROL::Ptr<V> maskL_;            // Elements are 1 when xl>-INF, zero for xl = -INF
+  ROL::Ptr<V> maskU_;            // Elements are 1 when xu< INF, zero for xu =  INF
 
   int iterKrylov_;
   int flagKrylov_;       
@@ -189,7 +189,7 @@ private:
                     EQCON &con, BND &bnd, ALGO &algo_state ) {
   
     Real tol = std::sqrt(ROL_EPSILON<Real>());
-    Teuchos::RCP<STATE> state = Step<Real>::getState();
+    ROL::Ptr<STATE> state = Step<Real>::getState();
 
     obj.update(x,true,algo_state.iter);
     con.update(x,true,algo_state.iter);
@@ -265,12 +265,12 @@ public:
   using Step<Real>::compute;
   using Step<Real>::update;
 
-  PrimalDualInteriorPointStep( Teuchos::ParameterList &parlist, 
-                               const Teuchos::RCP<Krylov<Real> > &krylov = Teuchos::null,
-                               const Teuchos::RCP<LinearOperator<Real> > &precond = Teuchos::null ) : 
+  PrimalDualInteriorPointStep( ROL::ParameterList &parlist, 
+                               const ROL::Ptr<Krylov<Real> > &krylov = ROL::nullPtr,
+                               const ROL::Ptr<LinearOperator<Real> > &precond = ROL::nullPtr ) : 
     Step<Real>(), krylov_(krylov), precond_(precond), iterKrylov_(0), flagKrylov_(0) {
 
-    typedef Teuchos::ParameterList PL;
+    typedef ROL::ParameterList PL;
 
     PL &iplist = parlist.sublist("Step").sublist("Primal Dual Interior Point");
 
@@ -286,11 +286,11 @@ public:
 
     PL &filter  = iplist.sublist("Filter Parameters");
 
-    if(krylov_ == Teuchos::null) {
+    if(krylov_ == ROL::nullPtr) {
       krylov_ = KrylovFactory<Real>(parlist);
     }
 
-    if( precond_ == Teuchos::null) {
+    if( precond_ == ROL::nullPtr) {
       class IdentityOperator : public LINOP {
       public: 
         apply( V& Hv, const V &v, Real tol ) const {
@@ -298,7 +298,7 @@ public:
         }
       }; // class IdentityOperator
 
-      precond_ = Teuchos::rcp( new IdentityOperator<Real>() );
+      precond_ = ROL::makePtr<IdentityOperator<Real>>();
     }
 
   } 
@@ -312,13 +312,13 @@ public:
                    Objective<Real> &obj, Constraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
 
-    using Teuchos::RCP; using Teuchos::rcp;
+     
     using Elementwise::ValueSet;   
 
-    RCP<PENALTY> &ipPen = Teuchos::dyn_cast<PENALTY>(obj);
+    ROL::Ptr<PENALTY> &ipPen = dynamic_cast<PENALTY&>(obj);
 
     // Initialize step state
-    RCP<STATE> state = Step<Real>::getState();    
+    ROL::Ptr<STATE> state = Step<Real>::getState();    
     state->descentVec   = x.clone();
     state->gradientVec  = g.clone();
     state->constaintVec = c.clone();
@@ -363,7 +363,7 @@ public:
     /* Create a new bound constraint with perturbed bounds                                     */
     /*******************************************************************************************/
     
-    Teuchos::RCP<V> xdiff = xu_->clone();
+    ROL::Ptr<V> xdiff = xu_->clone();
     xdiff->set(*xu_); 
     xdiff->axpy(-1.0,*xl_);
     xdiff->scale(kappa2_);    
@@ -380,14 +380,14 @@ public:
     Elementwise::Min                 min;
 
     // Lower perturbation vector
-    Teuchos::RCP<V> pl = xl_->clone();
+    ROL::Ptr<V> pl = xl_->clone();
     pl->applyUnary(absval);
     pl->applyUnary(max1x);               // pl_i = max(1,|xl_i|)
     pl->scale(kappa1_);
     pl->applyBinary(min,xdiff);          // pl_i = min(kappa1*max(1,|xl_i|),kappa2*(xu_i-xl_i))
 
     // Upper perturbation vector
-    Teuchos::RCP<V> pu = xu_->clone();
+    ROL::Ptr<V> pu = xu_->clone();
     pu->applyUnary(absval);
     pu->applyUnary(max1x);              // pu_i = max(1,|xu_i|)
     pu->scale(kappa_1); 
@@ -398,7 +398,7 @@ public:
     pu->scale(-1.0);
     pu->plus(*xu_);
 
-    pbnd_ = Teuchos::rcp( new BoundConstraint<Real>(pl,pu) )
+    pbnd_ = ROL::makePtr<BoundConstraint<Real>>(pl,pu)
 
     // Project the initial guess onto the perturbed bounds
     pbnd_->project(x);
@@ -439,17 +439,17 @@ public:
                 BoundConstraint<Real> &bnd, AlgorithmState<Real> &algo_state ) {
 
 
-    using Teuchos::RCP; using Teuchos::rcp; 
+      
 
     Elementwise::Fill<Real>     minus_mu(-mu_); 
     Elementwise::Divide<Real>   div;
     Elementwise::Multiply<Real> mult;
 
-    RCP<STATE> state = Step<Real>::getState();    
+    ROL::Ptr<STATE> state = Step<Real>::getState();    
 
-    RCP<OBJ>   obj_ptr = Teuchos::rcpFromRef(obj);
-    RCP<EQCON> con_ptr = Teuchos::rcpFromRef(con); 
-    RCP<BND>   bnd_ptr = Teuchos::rcpFromRef(bnd);
+    ROL::Ptr<OBJ>   obj_ptr = ROL::makePtrFromRef(obj);
+    ROL::Ptr<EQCON> con_ptr = ROL::makePtrFromRef(con); 
+    ROL::Ptr<BND>   bnd_ptr = ROL::makePtrFromRef(bnd);
 
 
     /*******************************************************************************************/
@@ -457,19 +457,19 @@ public:
     /*******************************************************************************************/
     
           
-    RCP<V> rhs = CreatePartitionedVector(state->gradientVec,
+    ROL::Ptr<V> rhs = CreatePartitionedVector(state->gradientVec,
                                          state->constraintVec,
                                          resL_,
                                          resU_);
     
-    RCP<V> sysvec = CreatePartitionedVector( x_, l_, zl_, zu_ );
+    ROL::Ptr<V> sysvec = CreatePartitionedVector( x_, l_, zl_, zu_ );
 
 
-    RCP<RESIDUAL> residual = rcp( new RESIDUAL(obj,con,bnd,*sol,maskL_,maskU_,w_,mu_,symmetrize_) ); 
+    ROL::Ptr<RESIDUAL> residual = ROL::makePtr<RESIDUAL>(obj,con,bnd,*sol,maskL_,maskU_,w_,mu_,symmetrize_); 
 
     residual->value(*rhs,*sysvec,tol);
 
-    RCP<V> sol = CreatePartitionedVector( xscratch_, lscratch_, zlscratch_, zuscratch_ );
+    ROL::Ptr<V> sol = CreatePartitionedVector( xscratch_, lscratch_, zlscratch_, zuscratch_ );
 
     LOPEC jacobian( sysvec, residual ); 
 

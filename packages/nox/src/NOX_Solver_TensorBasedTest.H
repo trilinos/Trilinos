@@ -56,7 +56,6 @@
 #ifdef WITH_PRERELEASE
 
 #include "NOX_Solver_Generic.H"        // base class
-#include "NOX_Solver_PrePostOperator.H"     // class data element
 #include "NOX_Direction_Tensor.H"   // class data element
 #include "Teuchos_ParameterList.hpp"        // class data element
 #include "NOX_LineSearch_Tensor.H"  // class data element
@@ -64,6 +63,7 @@
 // Forward declarations
 namespace NOX {
   class GlobalData;
+  class Observer;
 }
 
 namespace NOX {
@@ -148,18 +148,20 @@ public:
   virtual ~TensorBasedTest();
 
   virtual void reset(const NOX::Abstract::Vector& initialGuess,
-             const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+                     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
-  virtual NOX::StatusTest::StatusType getStatus();
+  virtual void reset();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
+  virtual NOX::StatusTest::StatusType getStatus() const;
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
   virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const;
   virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
   virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
+  virtual Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const;
 
   //!  Return the direction object
   virtual const NOX::Direction::Tensor& getDirection() const;
@@ -213,8 +215,8 @@ protected:
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 
 };
 } // namespace Solver

@@ -1,6 +1,6 @@
 <ParameterList name="BackwardEuler_SinCos">
   <ParameterList name="SinCosModel">
-    <Parameter name="Accept model parameters"    type="bool" value="false"/>
+    <Parameter name="Accept model parameters"    type="bool" value="true"/>
     <Parameter name="Provide nominal values"     type="bool" value="true"/>
     <Parameter name="Coeff a" type="double" value="0.0"/>
     <Parameter name="Coeff f" type="double" value="1.0"/>
@@ -47,6 +47,10 @@
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="Backward Euler"/>
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
       <Parameter name="Predictor Name" type="string" value="Default Predictor"/>
 

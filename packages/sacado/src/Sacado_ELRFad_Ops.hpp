@@ -93,6 +93,9 @@ namespace Sacado {                                                      \
       bool updateValue() const { return expr.updateValue(); }           \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
         return VALUE;                                                   \
       }                                                                 \
@@ -403,6 +406,9 @@ namespace Sacado {                                                      \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
         return VALUE;                                                   \
       }                                                                 \
@@ -528,6 +534,9 @@ namespace Sacado {                                                      \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
         return VALUE;                                                   \
       }                                                                 \
@@ -639,6 +648,9 @@ namespace Sacado {                                                      \
       bool updateValue() const {                                        \
         return expr2.updateValue();                                     \
       }                                                                 \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
@@ -883,9 +895,9 @@ FAD_BINARYOP_MACRO(pow,
                    expr1.val() == value_type(0) ? value_type(0) : value_type((expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
                    expr1.val() == value_type(0) ? value_type(0.0) : value_type((expr2.fastAccessDx(i)*std::log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
                    expr1.val() == value_type(0) ? value_type(0) : value_type(expr2.dx(i)*std::log(expr1.val())*std::pow(expr1.val(),expr2.val())),
-                   expr1.val() == value_type(0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),expr2.val())),
+                   expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),expr2.val())),
                    expr1.val() == value_type(0) ? value_type(0) : value_type(expr2.fastAccessDx(i)*std::log(expr1.val())*std::pow(expr1.val(),expr2.val())),
-                   expr1.val() == value_type(0) ? value_type(0.0) : value_type(expr2.val()*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),expr2.val())))
+                   expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),expr2.val())))
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    expr1.val() >= expr2.val() ? expr1.val() : expr2.val(),
@@ -1067,6 +1079,5 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
-
 
 #endif // SACADO_FAD_OPS_HPP

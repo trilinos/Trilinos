@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,30 +33,30 @@
  *
  */
 /*****************************************************************************
-*
-* expvtt - ex_put_elem_var_tab
-*
-* environment - UNIX
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     num_elem_blk            number of element blocks
-*       int     num_elem_var            number of element variables
-*       int*    elem_var_tab            element variable truth table array
-*
-* exit conditions -
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * expvtt - ex_put_elem_var_tab
+ *
+ * environment - UNIX
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     num_elem_blk            number of element blocks
+ *       int     num_elem_var            number of element variables
+ *       int*    elem_var_tab            element variable truth table array
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
-#include "exodusII.h" // for ex_put_truth_table, etc
+#include "exodusII.h"
 
 /*!
-\deprecated Use ex_put_truth_table()(exoid, EX_ELEM_BLOCK, num_elem_blk,
-num_elem_var, elem_var_tab)
+ * \deprecated Use ex_put_truth_table()(exoid, EX_ELEM_BLOCK, num_elem_blk,
+ * num_elem_var, elem_var_tab)
 
 The function ex_put_elem_var_tab() writes the exodus element variable
 truth table to the database. The element variable truth table
@@ -69,8 +69,7 @@ will be output.
 Although writing the element variable truth table is optional, it is
 encouraged because it creates at one time all the necessary
 ~~~{.c}{NetCDF} variables in which to hold the exodus element variable
-values. This results in significant time savings. See
-Section #Efficiency for a discussion of efficiency issues.
+values. This results in significant time savings.
 
 The function ex_put_variable_param() must be called before this
 routine in order to define the number of element variables.

@@ -11,6 +11,7 @@
     </ParameterList>
     <ParameterList name="Demo Stepper">
       <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
+      <Parameter name="Use FSAL"       type="bool" value="true"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>

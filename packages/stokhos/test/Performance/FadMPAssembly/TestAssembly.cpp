@@ -51,7 +51,7 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #include "cuda_runtime_api.h"
 #endif
 
@@ -134,19 +134,19 @@ int main(int argc, char *argv[])
     CLP.setOption("threads_per_vector", &threads_per_vector,
                   "Number of threads to use within each vector");
     CLP.setOption("check", "no-check", &check, "Check correctness");
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     bool serial = true;
     CLP.setOption("serial", "no-serial", &serial, "Enable Serial device");
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     bool threads = true;
     CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     bool openmp = true;
     CLP.setOption("openmp", "no-openmp", &openmp, "Enable OpenMP device");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = true;
     CLP.setOption("cuda", "no-cuda", &cuda, "Enable Cuda device");
     int cuda_threads_per_vector = 16;
@@ -175,12 +175,14 @@ int main(int argc, char *argv[])
     // const Kokkos::Example::FENL::AssemblyMethod Method =
     //   Kokkos::Example::FENL::Analytic;
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     if (serial) {
       typedef Kokkos::Serial Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::Serial::initialize();
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::initialize( init_args );
 
       if (comm->getRank() == 0)
         std::cout << std::endl
@@ -192,16 +194,18 @@ int main(int argc, char *argv[])
       mainHost<Storage,Method>(comm, print, nIter, use_nodes, check,
                                dev_config);
 
-      Kokkos::Serial::finalize();
+      Kokkos::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       typedef Kokkos::Threads Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::Threads::initialize(num_cores*num_hyper_threads);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::initialize( init_args );
 
       if (comm->getRank() == 0)
         std::cout << std::endl
@@ -216,16 +220,18 @@ int main(int argc, char *argv[])
       mainHost<Storage,Method>(comm, print, nIter, use_nodes, check,
                                dev_config);
 
-      Kokkos::Threads::finalize();
+      Kokkos::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
       typedef Kokkos::OpenMP Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::OpenMP::initialize(num_cores*num_hyper_threads);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::initialize( init_args );
 
       if (comm->getRank() == 0)
         std::cout << std::endl
@@ -240,11 +246,11 @@ int main(int argc, char *argv[])
       mainHost<Storage,Method>(comm, print, nIter, use_nodes, check,
                                dev_config);
 
-      Kokkos::OpenMP::finalize();
+      Kokkos::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       typedef Kokkos::Cuda Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
@@ -268,8 +274,9 @@ int main(int argc, char *argv[])
           " to run with too many GPUs per node");
       }
 
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
+      Kokkos::InitArguments init_args;
+      init_args.device_id = device_id;
+      Kokkos::initialize( init_args );
 
       cudaDeviceProp deviceProp;
       cudaGetDeviceProperties(&deviceProp, device_id);
@@ -288,8 +295,7 @@ int main(int argc, char *argv[])
       mainCuda<Storage,Method>(comm, print, nIter, use_nodes, check,
                                dev_config);
 
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
+      Kokkos::finalize();
     }
 #endif
 

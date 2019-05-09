@@ -111,8 +111,16 @@ namespace Xpetra {
     //! Scale the current values of a matrix, this = alpha*this.
     virtual void scale(const Scalar &alpha)= 0;
 
-    //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
-    //** \warning This is an expert-only routine and should not be called from user code. */
+    /*!
+    \brief Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+
+    \param numNonZeros Number of non-zeros
+    \param rowptr Pointer to row array of Crs data
+    \param colind Pointer to colInd array of Crs data
+    \param values Pointer to value array of Crs data
+
+    \warning This is an expert-only routine and should not be called from user code.
+    */
     virtual void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values)=0;
 
     //! Sets the 1D pointer arrays of the graph.
@@ -176,12 +184,6 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    virtual global_size_t getGlobalNumDiags() const = 0;
-
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    virtual size_t getNodeNumDiags() const = 0;
-
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
@@ -224,6 +226,9 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
     virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const = 0;
 
+    //! Replace the diagonal entries of the matrix
+    virtual void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) = 0;
+
     //! Left scale matrix using the given vector entries
     virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
@@ -240,7 +245,18 @@ namespace Xpetra {
     //! @name Methods implementing Operator
     //@{
 
-    //! Computes the sparse matrix-multivector multiplication.
+    /*! \brief Computes the sparse matrix-multivector multiplication.
+     *
+     * This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
+     * where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the transpose),
+     * or \f$A^H\f$ (the conjugate transpose).
+     *
+     * @param[in] X Input vector
+     * @param[in,out] Y Result vector
+     * @param[in] mode Transpose mode
+     * @param[in] alpha Scaling factor
+     * @param[in] beta Scaling factor
+     */
     virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const = 0;
 
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
@@ -262,6 +278,11 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    virtual void setObjectLabel( const std::string &objectLabel ) =0;
+    //@}
+
     //! @name Xpetra-specific routines
     //@{
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
@@ -281,6 +302,10 @@ namespace Xpetra {
 
     /// \brief Access the underlying local KokkosSparse::CrsMatrix object
     virtual local_matrix_type getLocalMatrix () const = 0;
+
+    virtual void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                               const typename local_graph_type::entries_type::non_const_type& ind,
+                               const typename local_matrix_type::values_type& val)=0;
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."

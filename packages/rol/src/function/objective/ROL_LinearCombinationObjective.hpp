@@ -45,32 +45,32 @@
 #define ROL_LINEARCOMBINATIONOBJECTIVE_H
 
 #include "ROL_Objective.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 
 namespace ROL {
 
 template <class Real>
 class LinearCombinationObjective : public Objective<Real> {
 private:
-  const std::vector<Teuchos::RCP<Objective<Real> > > obj_;
+  const std::vector<ROL::Ptr<Objective<Real> > > obj_;
   std::vector<Real> weights_;
   size_t size_;
 
-  Teuchos::RCP<Vector<Real> > xdual_;
+  ROL::Ptr<Vector<Real> > xdual_;
   bool initialized_;
 
 public:
-  LinearCombinationObjective(const std::vector<Teuchos::RCP<Objective<Real> > > &obj)
+  LinearCombinationObjective(const std::vector<ROL::Ptr<Objective<Real> > > &obj)
     : Objective<Real>(), obj_(obj),
-      xdual_(Teuchos::null), initialized_(false) {
+      xdual_(ROL::nullPtr), initialized_(false) {
     size_ = obj_.size();
     weights_.clear(); weights_.assign(size_,static_cast<Real>(1));
   }
 
   LinearCombinationObjective(const std::vector<Real> &weights,
-                             const std::vector<Teuchos::RCP<Objective<Real> > > &obj)
+                             const std::vector<ROL::Ptr<Objective<Real> > > &obj)
     : Objective<Real>(), obj_(obj), weights_(weights), size_(weights.size()),
-      xdual_(Teuchos::null), initialized_(false) {}
+      xdual_(ROL::nullPtr), initialized_(false) {}
 
   void update(const Vector<Real> &x, bool flag = true, int iter = -1) {
     for (size_t i=0; i<size_; ++i) {

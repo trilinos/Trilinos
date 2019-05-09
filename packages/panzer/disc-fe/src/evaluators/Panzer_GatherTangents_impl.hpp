@@ -46,6 +46,10 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
+#include "Intrepid2_Kernels.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_OrientationTools.hpp"
+
 #include "Panzer_PureBasis.hpp"
 #include "Kokkos_ViewFactory.hpp"
 
@@ -73,14 +77,11 @@ GatherTangents(
 
   // setup the orientation field
   std::string orientationFieldName = basis->name() + " Orientation";
-  dof_orientation = PHX::MDField<const ScalarT,Cell,NODE>(orientationFieldName, basis_layout);
-
   // setup all fields to be evaluated and constructed
-  pointValues = panzer::PointValues2<ScalarT> (pointRule->getName()+"_",false);
+  pointValues = panzer::PointValues2<double> (pointRule->getName()+"_",false);
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
-  this->addDependentField(dof_orientation);
   constJac_ = pointValues.jac;
   this->addDependentField(constJac_);
 
@@ -93,15 +94,11 @@ GatherTangents(
 // **********************************************************************
 template<typename EvalT,typename Traits>
 void panzer::GatherTangents<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData /* d */, 
+postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
-  // setup the field data object
-  this->utils.setFieldData(gatherFieldTangents,fm);
-  this->utils.setFieldData(dof_orientation,fm);
+  orientations = d.orientations_;
   this->utils.setFieldData(pointValues.jac,fm);
-
-  edgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"edgeTan",gatherFieldTangents.dimension(0),gatherFieldTangents.dimension(1),gatherFieldTangents.dimension(2));
 }
 
 // **********************************************************************
@@ -115,40 +112,36 @@ evaluateFields(typename Traits::EvalData workset)
   else {
     const shards::CellTopology & parentCell = *basis->getCellTopology();
     int cellDim = parentCell.getDimension();
-    int numEdges = gatherFieldTangents.dimension(1);
+    int numEdges = gatherFieldTangents.extent(1);
 
-    refEdgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"refEdgeTan",numEdges,cellDim);
+    auto workspace = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"workspace", 4, cellDim);
 
-    for(int i=0;i<numEdges;i++) {
-      Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);
-      Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
+    const WorksetDetails & details = workset;
 
-      for(int d=0;d<cellDim;d++)
-        refEdgeTan(i,d) = refEdgeTan_local(d);
-    }
+    const auto worksetJacobians = pointValues.jac.get_view();
 
     // Loop over workset faces and edge points
     for(index_t c=0;c<workset.num_cells;c++) {
+
+      int edgeOrts[12] = {};
+      orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
+
       for(int pt = 0; pt < numEdges; pt++) {
+        auto phyEdgeTan = Kokkos::subview(gatherFieldTangents.get_static_view(), c, pt, Kokkos::ALL());
+        auto ortEdgeTan = Kokkos::subview(workspace, 1, Kokkos::ALL());
 
         // Apply parent cell Jacobian to ref. edge tangent
-        for(int i = 0; i < cellDim; i++) {
-          edgeTan(c, pt, i) = 0.0;
-          for(int j = 0; j < cellDim; j++){
-            edgeTan(c, pt, i) +=  pointValues.jac(c, pt, i, j)*refEdgeTan(pt,j);
-          }// for j
-        }// for i
+        Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
+                                                        pt,
+                                                        parentCell,
+                                                        edgeOrts[pt]);
+        
+        auto J = Kokkos::subview(worksetJacobians, c, pt, Kokkos::ALL(), Kokkos::ALL());
+        Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);            
+
       }// for pt
     }// for pCell
 
-    // Multiply tangent by orientation
-    for(index_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<gatherFieldTangents.extent_int(1);b++) {
-        for(int d=0;d<gatherFieldTangents.extent_int(2);d++) {
-          gatherFieldTangents(c,b,d) = edgeTan(c,b,d)*dof_orientation(c,b); 
-        }
-      }
-    }
   }
 
 }

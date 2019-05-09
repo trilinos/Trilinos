@@ -254,7 +254,7 @@ namespace
         EXPECT_EQ(goldValuesHexEdgeNodesFromCreateEdges[i][0], bulkData.identifier(edgeNodes[0]));
         EXPECT_EQ(goldValuesHexEdgeNodesFromCreateEdges[i][1], bulkData.identifier(edgeNodes[1]));
 
-        hex.edge_nodes(globalIdsHex, i, edgeNodeIds);
+        hex.edge_nodes((stk::mesh::EntityId*)globalIdsHex, i, (unsigned*)edgeNodeIds);
         EXPECT_EQ(goldValuesHexEdgeNodesFromStkTopology[i][0], edgeNodeIds[0]);
         EXPECT_EQ(goldValuesHexEdgeNodesFromStkTopology[i][1], edgeNodeIds[1]);
     }
@@ -269,7 +269,7 @@ namespace
         EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][2], bulkData.identifier(faceNodes[2])) << "failed for face " << i << std::endl;
         EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][3], bulkData.identifier(faceNodes[3])) << "failed for face " << i << std::endl;
 
-        hex.face_nodes(globalIdsHex, i, faceNodeIds);
+        hex.face_nodes((stk::mesh::EntityId*)globalIdsHex, i, (unsigned*)faceNodeIds);
         EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][0], faceNodeIds[0]);
         EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][1], faceNodeIds[1]);
         EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][2], faceNodeIds[2]);

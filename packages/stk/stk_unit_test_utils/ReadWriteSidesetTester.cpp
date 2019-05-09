@@ -1,13 +1,29 @@
-#include <gtest/gtest.h>
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include "stk_unit_test_utils/ReadWriteSidesetTester.hpp"
+#include <gtest/gtest.h>                   // for AssertHelper, EXPECT_EQ, etc
+#include <unistd.h>                        // for unlink
+#include <ostream>                         // for operator<<
+#include <string>                          // for string, operator<<
+#include <vector>                          // for vector
+#include "gtest/gtest-message.h"           // for Message
+#include "stk_io/DatabasePurpose.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"      // for StkMeshIoBroker
+#include "stk_mesh/base/BulkData.hpp"      // for BulkData
+#include "stk_mesh/base/MetaData.hpp"      // for MetaData
+#include "stk_mesh/base/SideSetEntry.hpp"  // for SideSet, SideSetEntry
+#include "stk_mesh/base/Types.hpp"         // for EntityId, operator<<
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk{ namespace unit_test_util{ namespace sideset{
 
 stk::mesh::SideSet get_stk_side_set(stk::mesh::BulkData &bulk, const ElemIdSideVector &ss)
 {
-    stk::mesh::SideSet sideSet(ss.size());
+    stk::mesh::SideSet sideSet;
     for(size_t i=0; i<ss.size(); i++)
-        sideSet[i] = stk::mesh::SideSetEntry(bulk.get_entity(stk::topology::ELEM_RANK, ss[i].elem_id), ss[i].side_ordinal);
+        sideSet.add(stk::mesh::SideSetEntry(bulk.get_entity(stk::topology::ELEM_RANK, ss[i].elem_id), ss[i].side_ordinal));
 
     return sideSet;
 }
@@ -28,13 +44,14 @@ void compare_sidesets(const std::string& inputFileName,
                       stk::mesh::BulkData &bulk,
                       const SideSetIdAndElemIdSidesVector &expected)
 {
-    std::vector<int> ids = bulk.get_sideset_ids();
-    ASSERT_EQ(expected.size(), ids.size()) << "for file: " << inputFileName;
-    for(size_t ss=0; ss<ids.size(); ++ss)
+    ASSERT_EQ(expected.size(), bulk.get_number_of_sidesets()) << "for file: " << inputFileName;
+    for(size_t ss=0; ss<bulk.get_number_of_sidesets(); ++ss)
     {
-        const stk::mesh::SideSet& sideSet = bulk.get_sideset(ids[ss]);
+        stk::mesh::Part *surface_part = get_surface_part_with_id(bulk.mesh_meta_data(), expected[ss].id);
+        ThrowRequire(surface_part != nullptr);
+        const stk::mesh::SideSet& sideSet = bulk.get_sideset(*surface_part);
         const std::vector<ElemIdSide>& expectedSideSet = expected[ss].sideSet;
-        EXPECT_EQ(expected[ss].id, ids[ss]);
+        EXPECT_EQ(expected[ss].id, surface_part->id());
         ASSERT_EQ(expectedSideSet.size(), sideSet.size()) << "for file: " << inputFileName;
 
         for(size_t i=0;i<sideSet.size();++i)
@@ -80,15 +97,15 @@ void compare_sidesets(const std::string& input_file_name,
                       BulkDataTester &bulk1,
                       BulkDataTester &bulk2)
 {
-    std::vector<int> ids1 = bulk1.get_sideset_ids();
-    std::vector<int> ids2 = bulk2.get_sideset_ids();
+    stk::mesh::SideSetVector ss1 = bulk1.get_sidesets();
+    stk::mesh::SideSetVector ss2 = bulk2.get_sidesets();
 
-    ASSERT_EQ(ids1.size(), ids2.size()) << "for file: " << input_file_name;
-    for(size_t ss=0; ss<ids1.size(); ++ss)
+    ASSERT_EQ(ss1.size(), ss2.size()) << "for file: " << input_file_name;
+    for(size_t ss=0; ss<ss1.size(); ++ss)
     {
-        const stk::mesh::SideSet& sideSet1 = bulk1.get_sideset(ids1[ss]);
-        const stk::mesh::SideSet& sideSet2 = bulk2.get_sideset(ids2[ss]);
-        EXPECT_EQ(ids1[ss], ids2[ss]);
+        const stk::mesh::SideSet& sideSet1 = *(ss1[ss]);
+        const stk::mesh::SideSet& sideSet2 = *(ss2[ss]);
+
         ASSERT_EQ(sideSet1.size(), sideSet2.size()) << "for file: " << input_file_name;
 
         for(size_t i=0;i<sideSet1.size();++i)

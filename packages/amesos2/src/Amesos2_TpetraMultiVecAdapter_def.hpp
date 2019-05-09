@@ -53,6 +53,7 @@
 #ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 #define AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 
+#include <type_traits>
 #include "Amesos2_TpetraMultiVecAdapter_decl.hpp"
 
 
@@ -159,17 +160,12 @@ namespace Amesos2 {
       if (exporter_.is_null () ||
           ! exporter_->getSourceMap ()->isSameAs (* (this->getMap ())) ||
           ! exporter_->getTargetMap ()->isSameAs (* distribution_map)) {
-
         // Since we're caching the Export object, and since the Export
         // needs to keep the distribution Map, we have to make a copy of
         // the latter in order to ensure that it will stick around past
         // the scope of this function call.  (Ptr is not reference
-        // counted.)  Map's clone() method suffices, even though it only
-        // makes a shallow copy of some of Map's data, because Map is
-        // immutable and those data are reference-counted (e.g.,
-        // ArrayRCP or RCP).
-        distMap = distribution_map->template clone<Node> (distribution_map->getNode ());
-
+        // counted.)  
+        distMap = rcp(new map_type(*distribution_map));
         // (Re)create the Export object.
         exporter_ = rcp (new export_type (this->getMap (), distMap));
       }
@@ -211,23 +207,14 @@ namespace Amesos2 {
           const size_t lclNumRows = redist_mv.getLocalLength();
           for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
             auto av_j = av(lda*j, lclNumRows);
-            auto X_j = redist_mv.getVector(j);
             auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
             auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
-            for ( size_t i = 0; i < lclNumRows; ++i ) {
-              av_j[i] = X_lcl_j_1d(i);
-            }
+
+            using val_type = typename decltype( X_lcl_j_1d )::value_type;
+            Kokkos::View<val_type*, Kokkos::HostSpace> umavj ( const_cast< val_type* > ( reinterpret_cast<const val_type*> ( av_j.getRawPtr () ) ), av_j.size () );
+            Kokkos::deep_copy (umavj, X_lcl_j_1d);
           }
         }
-
-        auto global_contiguous_size = distMap->getGlobalNumElements(); //maybe use getGlobalLength() from the mv
-        auto local_contiguous_size = (distMap->getComm()->getRank() == 0) ? global_contiguous_size : 0;
-        RCP<const map_type> contigMap = rcp( new map_type(global_contiguous_size, local_contiguous_size, 0, distMap->getComm() ));
-
-        typedef Tpetra::Export<local_ordinal_t, global_ordinal_t, node_t> contiguous_export_t;
-        RCP<contiguous_export_t> contig_exporter = rcp( new contiguous_export_t(redist_mv.getMap(), contigMap) );
-        multivec_t contig_mv( contigMap, num_vecs);
-        contig_mv.doExport(redist_mv, *contig_exporter, Tpetra::INSERT);
       }
     }
   }
@@ -335,7 +322,7 @@ namespace Amesos2 {
       // num_vecs = 1; stride does not matter
       auto mv_view_to_modify_2d = mv_->template getLocalView<host_execution_space>();
       for ( size_t i = 0; i < lda; ++i ) {
-        mv_view_to_modify_2d(i,0) = new_data[i];
+        mv_view_to_modify_2d(i,0) = new_data[i]; // Only one vector
       }
     }
     else {
@@ -352,17 +339,12 @@ namespace Amesos2 {
         // needs to keep the source Map, we have to make a copy of the
         // latter in order to ensure that it will stick around past the
         // scope of this function call.  (Ptr is not reference counted.)
-        // Map's clone() method suffices, even though it only makes a
-        // shallow copy of some of Map's data, because Map is immutable
-        // and those data are reference-counted (e.g., ArrayRCP or RCP).
-        srcMap = source_map->template clone<Node> (source_map->getNode ());
+        srcMap = rcp(new map_type(*source_map));
         importer_ = rcp (new import_type (srcMap, this->getMap ()));
       }
       else {
         srcMap = importer_->getSourceMap ();
       }
-
-      multivec_t redist_mv (srcMap, num_vecs);
 
       if ( distribution != CONTIGUOUS_AND_ROOTED ) {
         // Do this if GIDs contiguous - existing functionality
@@ -371,6 +353,7 @@ namespace Amesos2 {
         mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
       }
       else {
+        multivec_t redist_mv (srcMap, num_vecs); // unused for ROOTED case
         typedef typename multivec_t::dual_view_type dual_view_type;
         typedef typename dual_view_type::host_mirror_space host_execution_space;
         redist_mv.template modify< host_execution_space > ();
@@ -392,12 +375,12 @@ namespace Amesos2 {
           const size_t lclNumRows = redist_mv.getLocalLength();
           for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
             auto av_j = new_data(lda*j, lclNumRows);
-            auto X_j = redist_mv.getVector(j);
             auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
             auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
-            for ( size_t i = 0; i < lclNumRows; ++i ) {
-              X_lcl_j_1d(i) = av_j[i];
-            }
+
+            using val_type = typename decltype( X_lcl_j_1d )::value_type;
+            Kokkos::View<val_type*, Kokkos::HostSpace> umavj ( const_cast< val_type* > ( reinterpret_cast<const val_type*> ( av_j.getRawPtr () ) ), av_j.size () );
+            Kokkos::deep_copy (umavj, X_lcl_j_1d);
           }
         }
 

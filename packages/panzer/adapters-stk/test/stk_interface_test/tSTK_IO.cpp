@@ -227,6 +227,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
    out << "write to exodus: 4.5" << std::endl;
    mesh->writeToExodus(4.5);
    TEST_EQUALITY(mesh->getCurrentStateTime(),4.5); 
+   // Data can be buffered in writeToExodus() call. Flush to file by closing.
+   mesh = Teuchos::null;
+
 
    STK_ExodusReaderFactory factory("transient.exo",2);
    RCP<STK_Interface> mesh_read = factory.buildMesh(MPI_COMM_WORLD);
@@ -306,11 +309,11 @@ void buildLocalIds(const STK_Interface & mesh,
 
 void assignBlock(FieldContainer & block,FieldContainer & vertices, double val)
 {
-   TEUCHOS_ASSERT(block.dimension(0)==vertices.dimension(0));
-   TEUCHOS_ASSERT(block.dimension(1)==vertices.dimension(1));
+   TEUCHOS_ASSERT(block.extent(0)==vertices.extent(0));
+   TEUCHOS_ASSERT(block.extent(1)==vertices.extent(1));
 
-   std::size_t cellCnt = block.dimension(0); 
-   std::size_t nodeCnt = block.dimension(1); 
+   std::size_t cellCnt = block.extent(0); 
+   std::size_t nodeCnt = block.extent(1); 
 
    for(std::size_t cell=0;cell<cellCnt;cell++) {
       for(std::size_t node=0;node<nodeCnt;node++) {
@@ -321,11 +324,11 @@ void assignBlock(FieldContainer & block,FieldContainer & vertices, double val)
 
 void assignBlock(FieldContainer & block,FieldContainer & vertices, double (* func)(double,double))
 {
-   TEUCHOS_ASSERT(block.dimension(0)==vertices.dimension(0));
-   TEUCHOS_ASSERT(block.dimension(1)==vertices.dimension(1));
+   TEUCHOS_ASSERT(block.extent(0)==vertices.extent(0));
+   TEUCHOS_ASSERT(block.extent(1)==vertices.extent(1));
 
-   std::size_t cellCnt = block.dimension(0); 
-   std::size_t nodeCnt = block.dimension(1); 
+   std::size_t cellCnt = block.extent(0); 
+   std::size_t nodeCnt = block.extent(1); 
 
    for(std::size_t cell=0;cell<cellCnt;cell++) {
       for(std::size_t node=0;node<nodeCnt;node++) {

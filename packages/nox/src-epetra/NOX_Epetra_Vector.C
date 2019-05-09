@@ -259,7 +259,7 @@ NOX::Epetra::Vector::createMultiVector(
 {
   if (numVecs < 0) {
     std::cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector"
-     << " must have postive number of columns!" << std::endl;
+     << " must have positive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
@@ -290,7 +290,7 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 {
   if (numVecs <= 0) {
     std::cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector"
-     << " must have postive number of columns!" << std::endl;
+     << " must have positive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
@@ -326,7 +326,7 @@ double NOX::Epetra::Vector::norm(const NOX::Abstract::Vector& weights) const
   return norm(dynamic_cast<const NOX::Epetra::Vector&>(weights));
 }
 
-double NOX::Epetra::Vector::norm(const NOX::Epetra::Vector& weights) const
+double NOX::Epetra::Vector::norm(const NOX::Epetra::Vector& /* weights */) const
 {
     std::cerr << "NOX::Epetra::Vector - Weighted norm not supported" << std::endl;
     throw "NOX-Epetra Error";

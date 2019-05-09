@@ -38,6 +38,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TOpEleWiseDivide_UnitTests.cpp
     TOpEleWiseProdUpdate_UnitTests.cpp
     TOpEleWiseProd_UnitTests.cpp
+    TOpPairWiseMax_UnitTests.cpp
+    TOpPairWiseMaxUpdate_UnitTests.cpp
     TOpEleWiseScale_UnitTests.cpp
     TOpLinearCombination_UnitTests.cpp
     TOpRandomize_UnitTests.cpp

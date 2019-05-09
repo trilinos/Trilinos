@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,8 +39,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Iovs_IOFactory_h
-#define SIERRA_Iovs_IOFactory_h
+#ifndef IOSS_Iovs_IOFactory_h
+#define IOSS_Iovs_IOFactory_h
 
 #include "Ioss_DatabaseIO.h" // for DatabaseIO
 #include <Ioss_CodeTypes.h>
@@ -70,4 +70,4 @@ namespace Iovs {
     void register_library_versions() const;
   };
 } // namespace Iovs
-#endif // SIERRA_Iovs_IOFactory_h
+#endif // IOSS_Iovs_IOFactory_h

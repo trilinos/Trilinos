@@ -72,13 +72,42 @@ inline void seconds_initialize() {
 
 #endif // defined(__INTEL_COMPILER) && defined(_WIN32)
 
+#ifdef HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+#include <valgrind.h>
+#include <algorithm>
+#include <unistd.h>
+#endif
+
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+namespace Kokkos {
+namespace Profiling {
+extern void pushRegion (const std::string&);
+extern void popRegion ();
+} // namespace Profiling
+} // namespace Kokkos
+#endif
+
 namespace Teuchos {
+
+#ifdef HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+  void removeIllegalChars(std::string& s){
+    std::string illegalChars = "\\/:?\"<>|";
+    for (auto it = s.begin() ; it < s.end() ; ++it){
+      bool found = illegalChars.find(*it) != std::string::npos;
+      if(found)
+        *it = ' ';
+    }
+  }
+#endif
 
 //=============================================================================
 Time::Time(const std::string& name_in, bool start_in)
   : startTime_(0), totalTime_(0), isRunning_(false), enabled_ (true), name_(name_in), numCalls_(0)
 {
   if(start_in) this->start();
+#ifdef HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+  numCallsMassifSnapshots_ = 0;
+#endif
 }
 
 void Time::start(bool reset_in)
@@ -86,7 +115,19 @@ void Time::start(bool reset_in)
   if (enabled_) {
     isRunning_ = true;
     if (reset_in) totalTime_ = 0;
+#ifdef HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+    if (numCallsMassifSnapshots_ < 100) {
+      std::string filename = "massif.out." + std::to_string(::getpid()) + "." + name_ + "." + std::to_string(numCallsMassifSnapshots_) + ".start.out";
+      removeIllegalChars(filename);
+      std::replace(filename.begin(), filename.end(), ' ', '_');
+      std::string cmd = "snapshot " + filename;
+      VALGRIND_MONITOR_COMMAND(cmd.data());
+    }
+#endif
     startTime_ = wallTime();
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+    ::Kokkos::Profiling::pushRegion (name_);
+#endif
   }
 }
 
@@ -97,6 +138,19 @@ double Time::stop()
       totalTime_ += ( wallTime() - startTime_ );
       isRunning_ = false;
       startTime_ = 0;
+#ifdef HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+      if (numCallsMassifSnapshots_ < 100) {
+        std::string filename = "massif.out." + std::to_string(::getpid()) + "." + name_ + "." + std::to_string(numCallsMassifSnapshots_) + ".stop.out";
+        removeIllegalChars(filename);
+        std::replace(filename.begin(), filename.end(), ' ', '_');
+        std::string cmd = "snapshot " + filename;
+        VALGRIND_MONITOR_COMMAND(cmd.data());
+        numCallsMassifSnapshots_++;
+      }
+#endif
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+      ::Kokkos::Profiling::popRegion ();
+#endif
     }
   }
   return totalTime_;

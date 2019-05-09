@@ -52,10 +52,10 @@
 #include "ROL_CompositeStep.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_BoundConstraint.hpp"
+#include "ROL_ParameterList.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -69,12 +69,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -83,8 +83,7 @@ int main(int argc, char *argv[]) {
   try {
     
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     RealT V_th      = parlist->get("Thermal Voltage", 0.02585);
     RealT lo_Vsrc   = parlist->get("Source Voltage Lower Bound", 0.0);
@@ -120,41 +119,41 @@ int main(int argc, char *argv[]) {
     Objective_DiodeCircuit<RealT> obj(alpha,ns,nz);
     
     // Initialize iteration vectors.
-    Teuchos::RCP<std::vector<RealT> > z_rcp    = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > yz_rcp   = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > soln_rcp = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
-    (*z_rcp)[0]     = init_Is;
-    (*z_rcp)[1]     = init_Rs;
-    (*yz_rcp)[0]    = init_Is;
-    (*yz_rcp)[1]    = init_Rs;
-    (*soln_rcp)[0]  = true_Is;
-    (*soln_rcp)[1]  = true_Rs;
-    ROL::StdVector<RealT> z(z_rcp);
-    ROL::StdVector<RealT> yz(yz_rcp);
-    ROL::StdVector<RealT> soln(soln_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > zp  = Teuchos::rcp(&z,false);
-    Teuchos::RCP<ROL::Vector<RealT> > yzp = Teuchos::rcp(&yz,false);
+    ROL::Ptr<std::vector<RealT> > z_ptr    = ROL::makePtr<std::vector<RealT>>(nz, 0.0);
+    ROL::Ptr<std::vector<RealT> > yz_ptr   = ROL::makePtr<std::vector<RealT>>(nz, 0.0);
+    ROL::Ptr<std::vector<RealT> > soln_ptr = ROL::makePtr<std::vector<RealT>>(nz, 0.0);
+    (*z_ptr)[0]     = init_Is;
+    (*z_ptr)[1]     = init_Rs;
+    (*yz_ptr)[0]    = init_Is;
+    (*yz_ptr)[1]    = init_Rs;
+    (*soln_ptr)[0]  = true_Is;
+    (*soln_ptr)[1]  = true_Rs;
+    ROL::StdVector<RealT> z(z_ptr);
+    ROL::StdVector<RealT> yz(yz_ptr);
+    ROL::StdVector<RealT> soln(soln_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > zp  = ROL::makePtrFromRef(z);
+    ROL::Ptr<ROL::Vector<RealT> > yzp = ROL::makePtrFromRef(yz);
 
-    Teuchos::RCP<std::vector<RealT> > u_rcp  = Teuchos::rcp( new std::vector<RealT> (ns, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > yu_rcp = Teuchos::rcp( new std::vector<RealT> (ns, 0.0) );
+    ROL::Ptr<std::vector<RealT> > u_ptr  = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
+    ROL::Ptr<std::vector<RealT> > yu_ptr = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
     std::ifstream input_file("measurements.dat");
     RealT temp, temp_scale;
     for (int i=0; i<ns; i++) {
       input_file >> temp;
       input_file >> temp;
       temp_scale = pow(10,int(log10(temp)));
-      (*u_rcp)[i] = temp_scale*(RealT)rand()/(RealT)RAND_MAX;
-      (*yu_rcp)[i] = temp_scale*(RealT)rand()/(RealT)RAND_MAX;
+      (*u_ptr)[i] = temp_scale*(RealT)rand()/(RealT)RAND_MAX;
+      (*yu_ptr)[i] = temp_scale*(RealT)rand()/(RealT)RAND_MAX;
     }
     input_file.close();
-    ROL::StdVector<RealT> u(u_rcp);
-    ROL::StdVector<RealT> yu(yu_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > up  = Teuchos::rcp(&u,false);
-    Teuchos::RCP<ROL::Vector<RealT> > yup = Teuchos::rcp(&yu,false);
+    ROL::StdVector<RealT> u(u_ptr);
+    ROL::StdVector<RealT> yu(yu_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > up  = ROL::makePtrFromRef(u);
+    ROL::Ptr<ROL::Vector<RealT> > yup = ROL::makePtrFromRef(yu);
 
-    Teuchos::RCP<std::vector<RealT> > jv_rcp  = Teuchos::rcp( new std::vector<RealT> (ns, 1.0) );
-    ROL::StdVector<RealT> jv(jv_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > jvp = Teuchos::rcp(&jv,false);
+    ROL::Ptr<std::vector<RealT> > jv_ptr  = ROL::makePtr<std::vector<RealT>>(ns, 1.0);
+    ROL::StdVector<RealT> jv(jv_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > jvp = ROL::makePtrFromRef(jv);
 
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
@@ -175,11 +174,11 @@ int main(int argc, char *argv[]) {
     con.checkInverseAdjointJacobian_1(yu,jv,u,z,true,*outStream);
 
     // Initialize reduced objective function.
-    Teuchos::RCP<std::vector<RealT> > p_rcp  = Teuchos::rcp( new std::vector<RealT> (ns, 0.0) );
-    ROL::StdVector<RealT> p(p_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > pp  = Teuchos::rcp(&p,false);
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
+    ROL::Ptr<std::vector<RealT> > p_ptr  = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
+    ROL::StdVector<RealT> p(p_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > pp  = ROL::makePtrFromRef(p);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > pobj  = ROL::makePtrFromRef(obj);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pcon = ROL::makePtrFromRef(con);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,zp,pp);
     // Check derivatives.
     *outStream << "Derivatives of reduced objective" << std::endl;
@@ -188,10 +187,10 @@ int main(int argc, char *argv[]) {
     
     // Bound constraints
     RealT tol = 1.e-12;
-    Teuchos::RCP<std::vector<RealT> > g0_rcp = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );;
-    ROL::StdVector<RealT> g0p(g0_rcp);
+    ROL::Ptr<std::vector<RealT> > g0_ptr = ROL::makePtr<std::vector<RealT>>(nz, 0.0);;
+    ROL::StdVector<RealT> g0p(g0_ptr);
     robj.gradient(g0p,z,tol);
-    *outStream << std::scientific <<  "Initial gradient = " << (*g0_rcp)[0] << " " << (*g0_rcp)[1] << "\n";
+    *outStream << std::scientific <<  "Initial gradient = " << (*g0_ptr)[0] << " " << (*g0_ptr)[1] << "\n";
     *outStream << std::scientific << "Norm of Gradient = " << g0p.norm() << "\n";
 
     // Define scaling for epsilon-active sets (used in inequality constraints)
@@ -205,37 +204,37 @@ int main(int argc, char *argv[]) {
     //bcon.deactivate();
     
     // Optimization 
-    *outStream << "\n Initial guess " << (*z_rcp)[0] << " " << (*z_rcp)[1] << std::endl;
+    *outStream << "\n Initial guess " << (*z_ptr)[0] << " " << (*z_ptr)[1] << std::endl;
       
     if (!use_sqp){    
       // Trust Region
       ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist);
       std::clock_t timer_tr = std::clock();
       algo_tr.run(z,robj,bcon,true,*outStream);
-      *outStream << "\n Solution " << (*z_rcp)[0] << " " << (*z_rcp)[1] << "\n" << std::endl;
+      *outStream << "\n Solution " << (*z_ptr)[0] << " " << (*z_ptr)[1] << "\n" << std::endl;
       *outStream << "Trust-Region required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC
                  << " seconds.\n";
     }
     else{
       // SQP.
-      //Teuchos::RCP<std::vector<RealT> > gz_rcp = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
-      //ROL::StdVector<RealT> gz(gz_rcp);
-      //Teuchos::RCP<ROL::Vector<RealT> > gzp = Teuchos::rcp(&gz,false);
-      Teuchos::RCP<std::vector<RealT> > gu_rcp = Teuchos::rcp( new std::vector<RealT> (ns, 0.0) );
-      ROL::StdVector<RealT> gu(gu_rcp);
-      Teuchos::RCP<ROL::Vector<RealT> > gup = Teuchos::rcp(&gu,false);
+      //ROL::Ptr<std::vector<RealT> > gz_ptr = ROL::makePtr<std::vector<RealT>>(nz, 0.0);
+      //ROL::StdVector<RealT> gz(gz_ptr);
+      //ROL::Ptr<ROL::Vector<RealT> > gzp = &gz,false;
+      ROL::Ptr<std::vector<RealT> > gu_ptr = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
+      ROL::StdVector<RealT> gu(gu_ptr);
+      ROL::Ptr<ROL::Vector<RealT> > gup = ROL::makePtrFromRef(gu);
       //ROL::Vector_SimOpt<RealT> g(gup,gzp);
       ROL::Vector_SimOpt<RealT> g(gup,zp);
-      Teuchos::RCP<std::vector<RealT> > c_rcp = Teuchos::rcp( new std::vector<RealT> (ns, 0.0) );
-      Teuchos::RCP<std::vector<RealT> > l_rcp = Teuchos::rcp( new std::vector<RealT> (ns, 0.0) );
-      ROL::StdVector<RealT> c(c_rcp);
-      ROL::StdVector<RealT> l(l_rcp);
+      ROL::Ptr<std::vector<RealT> > c_ptr = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
+      ROL::Ptr<std::vector<RealT> > l_ptr = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
+      ROL::StdVector<RealT> c(c_ptr);
+      ROL::StdVector<RealT> l(l_ptr);
       
       ROL::Algorithm<RealT> algo_cs("Composite Step",*parlist);
       //x.zero();
       std::clock_t timer_cs = std::clock();
       algo_cs.run(x,g,l,c,obj,con,true,*outStream);
-      *outStream << "\n Solution " << (*z_rcp)[0] << " " << (*z_rcp)[1] << "\n" << std::endl;
+      *outStream << "\n Solution " << (*z_ptr)[0] << " " << (*z_ptr)[1] << "\n" << std::endl;
       *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC
 		 << " seconds.\n";
     }

@@ -175,9 +175,9 @@ const char* FiniteDifference::Label () const
   return label.c_str();
 }
 
-int FiniteDifference::SetUseTranspose(bool UseTranspose)
+int FiniteDifference::SetUseTranspose(bool use_transpose)
 {
-  return jacobian->SetUseTranspose(UseTranspose);
+  return jacobian->SetUseTranspose(use_transpose);
 }
 
 int FiniteDifference::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
@@ -408,10 +408,17 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
 
   double eta = 0.0;  // Value to perturb the solution vector
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int min = map.MinAllGID();  // Minimum Global ID value
   int max = map.MaxAllGID();  // Maximum Global ID value
   int myMin = map.MinMyGID(); // Minimum Local ID value
   int myMax = map.MaxMyGID(); // Maximum Local ID value
+#else
+  long long min = map.MinAllGID64();  // Minimum Global ID value
+  long long max = map.MaxAllGID64();  // Maximum Global ID value
+  long long myMin = map.MinMyGID64(); // Minimum Local ID value
+  long long myMax = map.MaxMyGID64(); // Maximum Local ID value
+#endif
 
   // Compute the RHS at the initial solution
   computeF(x, fo, NOX::Epetra::Interface::Required::FD_Res);
@@ -419,7 +426,12 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
   x_perturb = x;
 
   // loop over each global unknown
-  for (int k = min; k < max+1; k++) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+int k;
+#else
+  long long k;
+#endif
+  for (k = min; k < max+1; k++) {
 
     // Perturb the solution vector via local IDs only if it is owned by
     // this processor
@@ -461,11 +473,16 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
     }
 
     // Insert nonzero column entries into the jacobian
-    for (int j = myMin; j < myMax+1; j++) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    int j;
+#else
+    long long j;
+#endif
+    for (j = myMin; j < myMax+1; j++) { 
       if (!map.MyGID(j))
         continue;
       if (Jc[map.LID(j)] != 0.0) {
-    jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&k);
+        jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&k);
       }
     }
 
@@ -480,24 +497,31 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
 }
 
 bool FiniteDifference::computePreconditioner(const Epetra_Vector& x,
-                         Epetra_Operator& Prec,
-                         Teuchos::ParameterList* precParams)
+                         Epetra_Operator& /* Prec */,
+                         Teuchos::ParameterList* /* precParams */)
 {
   return computeJacobian(x, *this);
 }
 
 Teuchos::RCP<Epetra_CrsMatrix> FiniteDifference::
-createGraphAndJacobian(Interface::Required& i, const Epetra_Vector& x)
+createGraphAndJacobian(Interface::Required& /* i */, const Epetra_Vector& x)
 {
 
   const Epetra_BlockMap& map = fo.Map();
 
   double eta = 0.0;  // Value to perturb the solution vector
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int min = map.MinAllGID();  // Minimum Global ID value
   int max = map.MaxAllGID();  // Maximum Global ID value
   int myMin = map.MinMyGID(); // Minimum Local ID value
   int myMax = map.MaxMyGID(); // Maximum Local ID value
+#else
+  long long min = map.MinAllGID64();  // Minimum Global ID value
+  long long max = map.MaxAllGID64();  // Maximum Global ID value
+  long long myMin = map.MinMyGID64(); // Minimum Local ID value
+  long long myMax = map.MaxMyGID64(); // Maximum Local ID value
+#endif
 
   // Create the graph
   graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,map,10));
@@ -506,7 +530,12 @@ createGraphAndJacobian(Interface::Required& i, const Epetra_Vector& x)
   computeF(x, fo, NOX::Epetra::Interface::Required::FD_Res);
 
   // loop over each global unknown
-  for (int k = min; k < max+1; k++) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int k;
+#else
+  long long k;
+#endif
+  for (k = min; k < max+1; k++) {
 
     // Perturb the solution vector via local IDs only if it is owned by
     // this processor
@@ -528,12 +557,17 @@ createGraphAndJacobian(Interface::Required& i, const Epetra_Vector& x)
     //Jc.Scale(1.0/eta);
 
     // Insert column entries into the graph
-    for (int j = myMin; j < myMax+1; j++) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    int j;
+#else
+    long long j;
+#endif
+    for (j = myMin; j < myMax+1; j++) { 
       // Allow for the possibility that rows j from myMin to myMax are not necessarily contigous
       if (!map.MyGID(j))
         continue;
       if (Jc[map.LID(j)] != 0.0) {
-    graph->InsertGlobalIndices(j,1,&k);
+        graph->InsertGlobalIndices(j,1,&k);
       }
     }
 

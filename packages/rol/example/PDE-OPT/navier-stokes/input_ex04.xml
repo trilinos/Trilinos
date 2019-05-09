@@ -6,7 +6,7 @@
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Number of samples"           type="int"     value="4"           />
     <Parameter name="Number of output samples"    type="int"     value="4"           />
-    <Parameter name="BPOE Thresholds"             type="string"  value="{0.3, 0.31, 0.32, 0.33}" />
+    <Parameter name="bPOE Thresholds"             type="string"  value="{0.3, 0.31, 0.32, 0.33}" />
     <!-- PROBLEM INFORMATION -->
     <Parameter name="Objective type"              type="string"  value="Vorticity"   />
     <Parameter name="Control penalty parameter"   type="double"  value="1e-1"        />

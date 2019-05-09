@@ -1,0 +1,742 @@
+\documentclass[11pt]{article}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+
+\usepackage[usenames,svgnames,table]{xcolor}
+\usepackage{algorithm}
+% \usepackage{algorithmicx}
+% \usepackage{algpseudocode}
+
+\usepackage{listings}
+\definecolor{hellgelb} {rgb}{1.0,1.0,0.8}
+\definecolor{darkgreen}{rgb}{0.0,0.2,0.13}
+\lstset{%
+  backgroundcolor=\color{hellgelb},
+  basicstyle=\bf\ttfamily\small,
+  breakautoindent=true,
+  breaklines=true,
+  captionpos=b,
+  commentstyle=\color{orange},
+  escapechar=|,
+  extendedchars=true,
+  float=hbp,
+  frame=single,
+  identifierstyle=\color{black},
+  keywordstyle=\color{blue},
+  numbers=left,
+  numberstyle=\tiny,
+  showspaces=false,
+  showstringspaces=false,
+  stringstyle=\color{purple},
+  tabsize=2,
+}
+
+\oddsidemargin    0.1in
+\evensidemargin   0.1in
+\textwidth        6.5in
+\newcommand{\REMOVE}[1]{}
+\def\optionbox#1#2{\noindent$\hphantom{hix}${\parbox[t]{2.10in}{\sf
+#1}}{\parbox[t]{3.9in}{#2}} \\[1.1em]}
+
+
+\title{Using Trilinos Capabilities for Composite-To-Regional Transitions}
+\author{Matthias Mayr, Luc Berger-Vergiat, Raymond S. Tuminaro}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{DOFs vs. GIDs for region problems}
+\label{sec:ProblemDescription}
+
+We assume that an application has a standard Trilinos-style matrix without any
+notion of regions and shared interfaces within the CRS data structure. However,
+the matrix does correspond to something regional. That is, the underlying
+mesh used to create the matrix can be viewed as a union of structured matrices.
+There are two cases that we want to address.
+\newline
+\vskip -.08in
+\indent $\bullet$ {\sf RegionsSpanProcs}
+\begin{quote}
+       No processor owns more than one region. However, processors may own only
+       a piece of a region (i.e., regions may be distributed across processors).
+       An example is given below.
+\end{quote}
+\vspace{-.15in}
+\begin{verbatim}
+Composite
+Owning   0  0  0  0  1  1  1  1  2  2  2  2  2  2  2  2  3  3  3  4  4  5  5  6
+Proc
+
+composite
+GID      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+         |--------------------|-----------------------|-----------------------|
+                   region 0             region 1               region 2
+
+         no proc has more than 1 region, but region 0 and region 2 cross procs
+\end{verbatim}
+\vspace{-.1in}
+\begin{quote}
+Notice that though composite GID 7 is owned by proc 1, proc 2
+will completely own region 1 and will not own anything associated with region 0
+during regional computations. Thus, proc 2 will have a replicated copy of GID 7.
+\end{quote}
+\indent $\bullet$ {\sf MultipleRegionsPerProc}
+\begin{quote}
+       A processor may own more than one region, but no region can span across
+       multiple processors. An example follows.
+\end{quote}
+\vspace{-.15in}
+\begin{verbatim}
+Composite
+Owning   0  0  0  0  1  1  1  1  2  2  2  2  2  2  2  2  3  3  3  4  4  4  4  4
+Proc
+
+composite
+GID      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+         |-----|-----|--------|-----|--------|--------|----|---|-----|--|-----|
+            r0    r1     r2      r3     r4       r5     r6   r7   r8  r9   r10
+
+         no regions cross procs, procs 0 & 3 have 2 regions
+                                 procs 2 & 4 have 3 regions
+                                 proc  1 has 1 region
+\end{verbatim}
+Note: I'm not completely sure that I have all the proc owners perfectly right for shared interfaces (e.g., whether GID 7 is owned by proc 1 or 2). I think most are right, but I'm not totally sure.
+Though the two cases are fairly different, we are hoping that they can share code.  It is further assumed that applications can provide three additional pieces of information for each processor:
+\begin{itemize}
+\item an array {\sf myRegions} that gives all regions that {\sf myRank} owns (either fully or partially).
+\item a multivector {\sf regionsPerGID} such that {\sf regionsPerGID[~j~][~i~]} gives the $j^{th}$ region that shares {\sf myRank}'s $i^{th}$ owned composite GID.  Here, $i$ is the local ID on {\sf myRank}.  The number of vectors within the multivector is equal to {\sf maxRegionsPerGID}, which is also given by the application. Minus ones are used when the number of regions sharing an owned
+composite GID is less than {\sf maxRegionsPerGID}.
+\item a function {\sf LIDregion(ptr,myLID,myRegionLID)} that returns the local regional ID on {\sf myRank} associated with {\sf myRegions[myRegionLID]}. This function must be defined for myLIDs associated with both owned and ghost nodes.
+If a myLID is not part of {\sf myRegions[myRegionLID]}, then the function returns a minus one. {\sf ptr} is an application supplied void pointer that can be used by application to implement the function.
+\end{itemize}
+
+In the above two examples, {\sf maxRegionsPerGID}=2.
+In our {\sf MultipleRegionsPerProc} example, proc 0's version of
+{\sf regionsPerGID} would be
+\vspace{-.1in}
+\begin{verbatim}
+                0  -1
+                0  -1
+                0   1
+                1  -1
+\end{verbatim}
+\vspace{-.1in}
+\noindent
+The $3^{rd}$ line or row indicates that the $3^{rd}$ owned composite GID (= 2) belongs to region 0 and region 1. If a composite GID is shared by fewer than {\sf maxRegionsPerGID}, then it will have a series of -1's at the end of its corresponding {\sf regionsPerGID} row. In our {\sf RegionsSpanProcs} example, proc 2's version of  {\sf LIDregion(ptr,myLID,0)} would return $GID(myLID)-7$
+for myLIDs associated with GIDs from 7 to 15. Proc 2 also has a ghostLID
+associated with GID 16 where this function would return a minus one.
+
+The main nasty task that we would like to handle via Epetra or Tpetra's Import() is the
+extracting and replicating of rows/columns associated with regional matrices. This is
+somewhat similar to overlapping Schwarz, though there are some differences. To accomplish
+this task via Import() for both cases ({\sf RegionsSpanProcs } and
+{\sf MultipleRegionsPerProc}), we introduce the  {\sf regionGroup} concept
+to handle the {\sf MultipleRegionsPerProc}
+situation. The basic idea is that even if processors own more than one region, they
+will only have one region per {\sf regionGroup}. That is, the number of {\sf regionGroup}'s is equal to
+{\sf maxRegionsPerProc}. The $i^{th}$ {\sf regionGroup} on proc k would be
+{\sf myRegions[~i~]} if
+i $<$ {\sf myRegions.size()}. Otherwise, the $i^{th}$ {\sf regionGroup} would be empty.
+The {\sf regionGroup} idea allows us to perform an Import() in a way that replicates rows
+associated with shared nodes and also breaks connections between nodes associated
+with different regions. This is because within a {\sf regionGroup} each proc has only one
+region. This means that any rows that need to be replicated within a {\sf regionGroup} will be on different processors as no proc can extract/build
+multiple regional matrices (at the same time) that might require replication
+of shared nodes.
+Further, all $a_{ij}$ entries that must be discarded (to break connections between
+matrix rows associated with different regions) correspond to cases where $i$
+and $j$ reside within different processor portions of the rowMaps.
+While there are inefficiency concerns with the {\sf regionGroup} idea we note
+\begin{itemize}
+   \item all processors have just one region in most situations
+   \item we can often arrange things so that all processors have the
+         same number of regions when multiple regions per proc are desired.
+   \item it may be possible to cleverly re-arrange maps so that we can just do
+      one communication instead of {\sf maxRegionsPerProc} communications when
+      updating region vectors.
+   \item we cannot do one Import() per region as this does not scale. Even if we have sub-communicators for regions, the composite matrix is owned by MPI\_Comm\_World and so each Import() must be done on all procs.
+\end{itemize}
+There are two main task to employ the proposed scheme
+\begin{itemize}
+   \item compute row/col maps to perform an Import() that extracts
+      the desired regional sub-matrices
+
+   \item compute  domain/range maps so matvec's work properly on newly
+      extracted sub-matrices.
+\end{itemize}
+
+Understanding the second task requires more knowledge on the distinction
+between range/domain maps and row/col maps. Here is my view ... (Matthias: I think that is correct).
+\begin{itemize}
+   \item when doing $y = A u$, the domain map determines what elements of u are
+      stored on each processor while the range map determines the owned elements for y.
+
+   \item the row/col map determine the $a_{ij}$'s owned by each processor. That is,
+      a proc owns all $a_{ij}$'s associated with i's in its rowMap and all j's
+      in its colMap.
+\end{itemize}
+
+So in extracting proper regional sub-matrices, we must pick row and column maps
+that are a subset of the original composite column maps.
+If we want to do matvecs, we need to operate on the regional vectors, which
+will have domain/range maps that are bigger than the composite vector
+domain/range maps. This means that we
+need to make new domain/range maps where distinct GIDs are given to
+the same shared node that is associated with different regions. This also
+means that we need to change the row/col map after performing the extraction
+so that they are consistent with the reworked domain/range map.
+The proposed strategy is then to extract sub-matrices by specifying
+row/col maps, and basically not worry about having the wrong range/domain
+maps. Then, compute new maps with new GIDs and use the expertStaticFillComplete()
+function in conjunction with the underlying raw CRS arrays from the extracted
+matrices. Scary, but could work. Note that the new range map will be identical
+to the new domain map and the new row map.  The new row/col map will have
+the same GIDs as the old row/col map for any non-shared nodes. It will also
+have the same GIDs as the old row/col map for the lowest numbered region
+in any shared nodes.  For the other regions, a new id will be assigned according
+to the following algorithm ...
+\begin{quote}
+$\bullet$ each proc goes through its owned version of {\sf regionsPerGID}
+filling an array {\sf firstNewGID}
+\end{quote}
+\vspace{-.2in}
+\begin{verbatim}
+       firstNewGID[0]=0
+       firstNewGID[1]=[#of regions (non -1s) for GID( 0 )]-1 + firstNewGID[0]
+       firstNewGID[2]=[#of regions (non -1s) for GID( 1 )]-1 + firstNewGID[1]
+       firstNewGID[k]=[#of regions (non -1s) for GID(k-1)]-1 + firstNewGID[k-1]
+\end{verbatim}
+\vspace{-.2in}
+\begin{quote}
+where $ 1 \le k < ${\sf nRows}. Then, define
+\end{quote}
+\vspace{-.2in}
+\begin{verbatim}
+       upperBndNumNewGIDs = firstNewGID[nRows-1]+maxRegPerGID-1
+\end{verbatim}
+\vspace{-.2in}
+\begin{quote}
+So {\sf firstNewGID[~k~]} gives the number of already reserved new GIDs
+     (due to sharing within the first k-1 GIDs) and {\sf upperBndNumNewGIDs}
+     is an upper bound on the total number of new GIDs that this proc creates.
+     It is an upper bound because we assumed that the last composite node
+     adds maxRegPerGID-1 new GIDs.
+\end{quote}
+\vspace{-.2in}
+\begin{quote}
+$\bullet$ {\sf upperBndNumNewGIDsAllProcs = max(upperBndNumNewGIDs)}
+\end{quote}
+\vspace{-.2in}
+\begin{quote}
+$\bullet$ an offset is added to {\sf firstNewGID} so that it now actually
+corresponds to the first NewGID associated with each row of {\sf regionsPerGID}.
+This offset is given by {\sf upperBndNewNewGIDsAllProc*myRank+nTotalCompIds}.
+\end{quote}
+\vspace{-.2in}
+\begin{quote}
+$\bullet$ procs communicate so that everyone has
+ghosted version of {\sf firstNewGID} and {\sf regionsPerGID} .
+\end{quote}
+\vspace{-.2in}
+\begin{quote}
+$\bullet$ Let {\sf curRegion} (= {\sf myRegions[~k~]} where k is between 0
+and {\sf maxRegPerProc}-1) denote the current region that this processor is
+working on. The {\it basic} idea in assigning new GIDs to the extended
+form of all maps (e.g., domain, range, row, col) is to
+repeat the following for each owned or ghosted GID of
+{\sf myRank}:
+\begin{enumerate}
+\item determine the position where curRegion resides within
+      the list of regions shared by this GID.
+\item when position == 0, take newGID = oldGID.
+\item when position $> 0$,
+\newline
+       newGID = {\sf firstNewGID[~j~]}+position-1
+when working on the $j^{th}$ GID.
+\end{enumerate}
+However, there are a couple of additional wrinkles. In particular,
+we must put the maps in the proper order and we must distinguish
+between entries that only go in the extended domain/range/row map and the
+additional entries that go in the extended col map. To do this, we use the
+function {\sf LIDregion()}. Specifically, only {\sf LIDregion()} queries that
+do not return a minus one can go in the extended domain/range/row map
+while those that do return a minus one (and are shared by {\sf curRegion})
+will be appended to the end of the domain/range/row map lists to construct
+the col map. Further, the results of {\sf LIDregion()} are stored and
+sorted so that the domain/range/row maps will list GIDs in the right order.
+\end{quote}
+
+To build the row maps needed for extraction we basically do something like
+\begin{verbatim}
+   for (int i = 0; i < Nowned+Nghost; i++) tempRegIDs[i]=LIDregion(ptr,i,k);
+
+   [sortedTemp,index] = sort(tempRegIDs);
+   count = 0;
+   for (int i = 0; i < Nowned+Nghost; i++) {
+      if (sortedTemp[i] != -1) rowMap[count++] = compositeGID[index[i]];
+   }
+\end{verbatim}
+Here, Matlab notation is used for the sort and k is the index into
+{\sf myRegions[k]}.
+
+\REMOVE{
+in the {\sf MultipleRegionsPerProc}
+case, we basically need to include any GID that is shared by the region that
+we are working on in {\sf RegionGroup}. Notice that when two procs each
+include a GID in their version of the new row map, this GID is associated
+with two different regions (and so it needs to be replicated). This is
+because the  {\sf MultipleRegionsPerProc} case excludes the possibility
+that two procs are working on the same region.  The {\sf RegionsSpanProcs}
+case is similar, except that two procs might own the same region. Thus,
+we only want to add the same GID to two different processor's version
+of the new row map when this GID corresponds to two different regions.
+This is because the matrix row needs to be replicated whenever it corresponds
+to a shared node residing in multiple regions. However, when a node
+is not shared but belongs to the composite col map of multiple procs, we
+do not want it replicated. We only want one proc to have this GID in its
+row map. To do this, we start by taking all GIDs in {\sf myRank}'s
+composite row map and adding this to the new row map. Notice that {\sf myRank}
+owns only one region and so anything GID that it owns must be part of this
+one region.  Next, {\sf myRank} looks in the ghost entries of its composite
+col map and includes GIDs into the new map if this GID is an interface and
+it belongs to my one and only region. If it is
+
+
+                   proc bc
+                     |
+           region    |  region b
+             a       o
+                     |
+
+
+
+. Notice that when two procs each
+adding to the new row map all GIDs
+adds any GID associated with my composite row map as I own only one region
+and so all composite row map entries must be part of this region.
+
+
+
+
+but is not owned by
+and that I own
+That is, add GID(k) if there is a $j$ such that {\sf regionsPerGID[~k~][~j~]}
+corresponds to the region that we are working on.
+}
+\REMOVE{
+For some reason,
+I wrote a clever version of this for the {\sf RegionsSpanProcs} case.
+This code builds a vector corresponding to composite col map with all -1's.
+
+It
+additionally adds any GID that is in col map but not in row map
+    \begin{enumerate}
+    \item  look at remaining -1's and change them to +1 if they
+           correspond to a point with multiple regions (that includes my region)
+           as this region interface must be included in my new row map.
+    \end{enumerate}
+    That is, a point is not a region interface if not associated with multiple
+    regions. If this point is also a ghost GID, then it must not be interior
+    to a region that {\sf myRank} owns. Thus, this GID does not need to be
+    included in {\sf myRank}'s new row map. Further, there is a chance that
+    some region interface GIDs among {\sf myRank}'s ghost GIDs are not actually
+    associated with {\sf myRank}'s regions as
+           ghost GIDs might extend into a neighboring region.
+\end{quote}
+\indent $\bullet$ {\sf MultipleRegionsPerProc}
+\begin{quote}
+    b) case 2: regions do not cross procs but a proc owns more than one region
+         - compute the maximum # of regions that any proc has
+         - set numRounds = maxNumRegPerProc
+         - for i=1:numRounds
+              curRegion = lowestRegOwnedByProc
+              rowMap(round) = anyone in my compositeColMap that belongs to curRegion
+           end
+\end{quote}
+}
+
+To build the col maps needed for extraction, we first note that
+the col map is equal to the row map when in the {\sf MultipleRegionsPerProc}
+case. This is because a region is entirely owned by a processor so that
+no ghosting is necessary (or its column map equalls its row map). In the
+{\sf RegionsSpanProcs} case, the new col map is first initialized to the
+new row map. Additional entries are appended corresponding to
+i's where {\sf myRegionalLID(i,0)} returns a minus one and there is a $j$ such that
+that {\sf regionsPerGID[~j~][~i~]=myRegions[~0~]}. That is, {\sf myRank}
+has a ghost GID that associated with the one region that it owns but
+this ghost GID does not have a {\sf myRegionalLID()} because it is owned
+by another processor (that also owns my one region).
+
+\section{Algorithmic building blocks and implementation}
+
+\subsection{Splitting of the composite matrix into region matrices}
+
+To enable a non-invasive solver that exploits the partial structure of the grid
+we start from the composite matrix, i.e. a matrix that has been fully assembled
+by the application code. However, decomposing this matrix into region submatrices
+that correspond to the structured portions of the grid is not a unique operation.
+We'd like to design a software interface that
+\begin{itemize}
+\item provides generic decomposition strategies
+\item allows the user to provide additional information and strategies
+\end{itemize}
+
+\subsubsection{A generic splitting scheme: edge-based splitting}
+
+We utilize two interpretations of matrix entries:
+\begin{itemize}
+\item off-diagonal entries~$a_{ij}$ for~$i \neq j$:
+A matrix contribution~$a_{ij}$ for~$i \neq j$ can be viewed as an edge between node~$i$ and node~$j$.
+Although $a_{ij}$ really comes about as a sum of element contributions from neighboring elements,
+our hope is that we don't have to worry about element information and so this simple edge view is sufficient.
+\item diagonal entries~$a_{ii}$:
+A matrix contribution at~$a_{ii}$ should \emph{not} be viewed as an edge between node~$i$ and node~$i$.
+Instead, the value of~$a_{ii}$ is really some kind of sum of contributions from all the $(i,j)$ edges
+and, thus, this is how it should be treated in any splitting code. We aim at choosing the diagonal values
+such that the nullspace of each region submatrix is preserved in comparison to the composite matrix.
+\end{itemize}
+We process off-diagonal entries and diagonal entries differently.
+
+For any edge, it is known, to which regions its nodes~$i$ and~$j$ belong to, namely:
+\begin{itemize}
+\item If nodes~$i$ and~$j$ belong to one and the same region, this is an interior edge.
+\item If nodes~$i$ and~$j$ belong to the same two regions, this is an interface edge.
+\end{itemize}
+
+The generic edge-based splitting algorithm consists of two steps:
+\begin{enumerate}
+\item Process off-diagonals: Interior edges don't need to be changed.
+Interface edges are shared by $n$ regions and, thus, need to be splitted (divided by $n$).
+We denote the resulting matrix by~$\tilde{A}$.
+\item Process diagonal entries: Diagonal entries need to be chosen to preserve
+nullspace properties for region matrices. Assuming~$v \in nsp(A)$, we compute~$z = Av$.
+Per definition of the nullspace, values~$z_i = 0$ for nodes that are not on the Dirichlet boundary.
+On the Dirichlet boundary, values~$z_i \neq 0$.
+We want the regional matrices to preserve~$z$ in a regional layout.
+
+The composite experssion~$Av = z$ is represented in region layout as~$A^{(k)}v^{(k)} = z^{(k)}$,
+where~$z^{(k)}$ is obtained by moving it to the regional layout \emph{and}
+dividing each entry~$z^{(k)}_i$ by the number of regions that node~$i$ belongs to.
+The matrix can be decomposed into~$\tilde{A}^{(k)} + D^{(k)}$ with~$\tilde{A}^{(k)}$ being
+the result of processing the off-diagonal entries and~$D^{(k)}$ being an yet to be determined
+correction to the diagonal entries, yielding~$[\tilde{A}^{(k)} + D^{(k)}]v^{(k)} = z^{(k)}$.
+This can be rearranged to~$D^{(k)}v^{(k)} = z^{(k)} - \tilde{A}^{(k)}v^{(k)}$
+and be used to fix the diagonal values.
+
+\end{enumerate}
+
+\subsection{Groups}
+The notion of a group is introduced primarily to handle the case when
+processors are assigned multiple regions (and so no region spans
+across multiple processors). In particular, the number of groups is
+equal to the maximum number of regions that can be assigned to
+any processor. Only one region per processor is assigned to a group.
+In this way, both cases ({\sf regionsSpanProcs} and
+{\sf multipleRegionsPerProc}) correspond to a processor owning (perhaps only
+partially) at most one region within a group.
+Generally, this simplifies the implementation because the required
+replication of any region interface node must occur across processors.
+That is, each version of a replicated node will lie on different
+processors within a group. This appears to be a key assumption to employ various
+Trilinos {\sf Import()}/{\sf Export()} capabilities as these have
+some `one-to-one' (or non-overlappng) restrictions that we
+do not completely understand.
+Specifically, the replication of matrix rows/columns more closely
+resembles what occurs in overlapping Schwarz. Each processor
+receives rows from neighbors associated with some of its ghost
+unknowns. The main difference between the {\sf regionsSpanProcs} and
+{\sf multipleRegionsPerProc} cases is in the regional column maps.
+When each processor owns an entire region (as must always
+be true for the {\sf multipleRegionsPerProc} case and is sometimes
+true in the {\sf regionsSpanProcs} case), the regional column map is equal
+to the regional row map as there is no communication across regions, implying
+no communication between processors. When processors own a piece of
+a region, then communication must occur within a region and so
+the regional column map should include the ghost nodes that correspond
+to the same region.
+
+\subsection{Data layouts}
+\label{sec:DataLayouts}
+
+Employing Trilinos {\sf Import()}/{\sf Export()} capabilities is extremely convenient
+in minimizing the coding effort. However, there are some tricky aspects
+of working with overlapping maps. With an overlapping map, some GIDs
+might appear more than once within the map (though any repeated GIDs
+will appear on different processors). When performing regional
+operations, however, we often need a replicated node to act as
+a set of distinct degrees-of-freedom (e.g., different vector values within
+different regions for the same node during most multigrid operations).
+For this reason, we will need to introduce new GID numbers to handle
+this case. A scheme to insert these new GIDs has been outlined in section~\ref{sec:ProblemDescription}
+
+We use three data layouts which can be transferred from one into each other.
+\begin{itemize}
+\item {\bf composite layout:} In this layout, every DOF has been assigned a unique GID and is represented in the global system of equations only once.
+It is usually used by the application and the matrix as well as the right-hand side and initial guess are provided using this layout.
+The outer Krylov solver operates on this layout. Hence, this layout is passed to the preconditioner and needs to be returned from the preconditioner
+to the Krylov solver despite the layout used internally by the preconditioner.
+\item {\bf regional layout:} In this layout, every region is represented by a unique set of GIDs.
+This required duplicated, but unique DOFs at interfaces between regions.
+\item {\bf quasiRegional layout:} This auxiliary layout uses duplicated DOFs at region interfaces,
+but still only the original GIDs of the composite layout.
+It is never used for computations, just as an intermediate step to transfer matrices and vectors from the composite to the regional layout.
+Specifically, the quasiRegional form refers to matrices and vectors
+where the local representation of the data is correct for
+regional computations, but the maps are not correct in terms of
+representing shared nodes distinctly. That is, data is replicated properly
+to represent a regional matrix, but the GIDs in the maps still refer to the composite form of the data,
+implying that the maps are not correct.
+\end{itemize}
+
+\subsection{Transferring data between data layouts}
+\label{sec:TransferDataLayouts}
+
+The conversion of vectors or matrices from the
+composite representation to the regional representation can be viewed as
+first as a conversion from composite to quasiRegional  followed by
+a second conversion from quasiRegional to regional.
+\begin{enumerate}
+ \item {\bf composite to quasiRegional:} This conversion uses an {\sf Import()} operation
+ to extract the regional data from composite matrix/vector objects, but uses quasi maps
+ for the regional objects. These quasi maps have the same GIDs
+ as the composite map. The quasi row map is similar to the composite
+ map with the exception that some interface entries are replicated.
+ \item {\bf quasiRegional to regional:} This conversion from quasiRegional to regional corresponds
+ only to changing the maps and not making any changes to the data layout and the data itself.
+ It keeps the data from the quasiRegional objects,
+ but forms objects based on true regional maps.
+ The true regional map, however, has new GIDs to represent replicated values.
+\end{enumerate}
+We also need to transform vectors from the regional layout back to the composite layout. Therefore, we just reverse the aforementioned process, i.e. we
+\begin{enumerate}
+ \item replace the vector's map with the quasiRegional map, but keep its data.
+ \item perform an {\sf Export()} operation to the composite map layout using the {\sf CombineMode = Epetra\_AddLocalAlso}.
+\end{enumerate}
+
+\subsection{Jacobi for region layouts}
+\label{sec:RegionJacobi}
+
+Applying a Jacobi smoother in region layout exhibits two major difficulties, namely
+\begin{itemize}
+\item the recovery of true diagonal matrix entries (c.f. Section~\ref{sec:RecoveryTrueDiagonal})
+\item the residual calculation in region layout (c.f. Section~\ref{sec:CalcRegionalResidual})
+\end{itemize}
+
+\subsubsection{Recovery of true diagonal matrix entries}
+\label{sec:RecoveryTrueDiagonal}
+
+At region interfaces, matrix entries associated with nodes on the interface
+have been obtained by some form of splitting operation. This is especially true for the diagonal element~$a^{reg}_{ii}$ of interface nodes.
+To recover mathematical equivalence of a region-wise Jacobi method with one applied in a composite layout,
+the true diagonal values (as in the composite problem) needs to be recovered.
+
+For general cases, true diagonal values need to be recovered by summation of the diagonal entries of all duplicated rows
+that are associated with a particular node in the composite layout.
+This might require communication if the region interface coincides with a processor interface
+and, thus, duplicated GIDs reside on different processors.
+
+In case of the basic splitting, i.e. dividing matrix entries by the number~$n_{reg}$ of adjacent regions to this node, it is guaranteed
+that the diagonal element in each duplicated row has the same value~$a^{reg}_{ii} = \frac{1}{n_{reg}}a^{comp}_{ii}$.
+The true diagonal value can then be recovered via multiplication with~$n_{reg}$.
+Implementation-wise, this can be realized by tracking the necessary scaling factors in a region vector {\sf regScaling},
+which is obtained as follows:
+\begin{enumerate}
+\item Create vector {\sf regScaling} in region layout and populate with~$1.0$ in every entry.
+\item Transfer {\sf regScaling} back to the composite layout and use an appropriate {\sf Add} operation as combine mode in the {\sf Export()} operation.
+This will not affect region-interior nodes, but will result in entries of value~$n_{reg}$ for every DOF on the region interface.
+\item Transfer the result from the composite layout back to the region layout. This will not change the vector's values,
+but will copy the interface-related entries into the interface-related DOFs in the region layout.
+\end{enumerate}
+The true diagonal values can now be recovered an element-wise multiplication of the diagonal with {\sf regScaling}.
+
+\subsubsection{Residual evaluation in region layout}
+\label{sec:CalcRegionalResidual}
+
+The matrix-vector multiplication in the residual calculation is performed region-wise.
+Hence, the interface DOFs are multiplied with the 'splitted' values only, i.e. the true residual value needs to be recovered
+by exchanging these values between the duplicated DOFs and adding them into each of them.
+
+There are multiple ways to do that:
+\begin{itemize}
+\item {\bf Using {\sf Export()} to composite layout:}
+\begin{enumerate}
+ \item The matrix vector product {\sf vectorAX = matrixA $\cdot$ vectorX} is computed in the region layout.
+ \item The vector~{\sf vectorAX} is transferred to the composite layout. This includes an {\sf Export()} operation with a {\sf combineMode}
+ that adds interface values. To allow for the scneario {\sf MultipleRegionsPerProc}, the {\sf combineMode} has to be chosen
+ as {\sf Epetra\_AddLocalAlso} such that the values of the duplicated interface nodes, that reside in the interior of a processor's subdomain,
+ are also summed.
+ \item Moving back to the region layout transfers the summed values into the interface entries, yielding the 'true' residual.
+\end{enumerate}
+
+The major drawback of this approach is copying the full region vector to the composite layout and back,
+although operations are only necessary on the interface entries.
+Details on transferring data back and forth between regional and composite layouts are given in section~\ref{sec:TransferDataLayouts}.
+\item {\bf Using a data manager:} Using a data manager, that keeps track of interface and non-interface nodes as well as the duplication of interface nodes,
+could enable a targeted exchange of information, reducing the communication to only those values necessary.
+\end{itemize}
+
+\subsubsection{An exemplary implementation of Jacobi in a region layout}
+
+\begin{lstlisting}[language=c++]
+	Xpetra::Vector regScaling = ... // scaling factors per DOF that are
+	                                // required to recover the true diagonal
+
+  function RegionJacobi(regA, regB, regU, regScaling, omega, maxIters) {
+    // We assume that the initial solution is zero
+    // and that the initial composite residual is known
+
+    Xpetra::Vector regInvDiag = regA->getDiag(); // Extract diagonal
+    for(int dof = 0; dof < regInvDiag.size() ++dof) {
+      // Invert and rescale diagonal
+      regInvDiag[dof] = 1.0 / (regInvDiag[dof]*regScaling[dof]);
+    }
+
+    // Create work vectors
+    Xpetra::Vector regRes(regB);
+    Xpetra::Vector regAU(regB);
+    Xpetra::Vector regUIncrement(regB);
+    for(int iter = 0; iter < maxIters; ++iter) { // Iteration loop
+
+      // Compute A*U
+      regAU->setScalar(0.0);  // Reset A*U vector
+      regA->apply(regU, regAU); // Multiply regA with regU
+      regAU->synchronize(); // Synchronize regAU to update interface
+
+      // Compute residual
+      regRes->add(1.0, regB, -1.0, regAU);
+
+      // Compute solution increment
+      for(int dof = 0; dof < regInvDiag.size() ++dof) {
+        regUIncrement[dof] = regInvDiag[dof]*regRes[dof];
+      }
+
+      // Update solution
+      regU->add(omega, regUIncrement, 1.0, regU);
+    }
+  }
+\end{lstlisting}
+
+\subsection{Multigrid for region layouts}
+
+\subsubsection{Setup of the hierarchy}
+
+We want to use multigrid V-cycles as preconditioners in an outer Krylov method. Starting from the composite matrix,
+we first generate region matrices by the {\em basic splitting} approach.
+This duplicates all interface DOFs and assigns unique GIDs.
+Then, the multigrid hierarchy is constructed in a region-oriented fashion, i.e. by computing transfer operators for each region.
+We exploit the fact that a region-wise~$RAP$ is mathematically equivalent to the composite~$RAP$
+if the transfer operators match on the region interfaces.
+
+\subsubsection{V-cycle algorithm}
+
+The V-cycle algorithm is the usual with only one exception:
+During the restriction of the fine grid residual one needs to account for duplicated nodes due to the region layout.
+
+We assume the existence of region-wise restriction operator~$R^{(r)}$ and a fine-grid vector~$v^{(r)}_f$ in region layout.
+We refer to the result of the restriction as~$v^{(r)}_c$ being a coarse-grid vector in region-layout.
+Restriction operations are performed as follows:
+\begin{enumerate}
+\item In anticipation of the duplication of interface values, scale all vector entries~$v^{(r)}_{f,\Gamma}$
+associated with region-interface nodes by $1/n_r$ with $n_r$ being the number of regions that share this particular node.
+\item Perform restriction~$v^{(r)}_c = R^{(r)} v^{(r)}_f$ separately for each region.
+\item Exchange and add region-interface entries~$v^{(r)}_{c,\Gamma}$. Note: Use a {\sf combineMode} that also sums local values to account for cases where region interfaces reside in the interior of processor subdomains, i.e. the scenario {\sf MultipleRegionsPerProc}.
+\end{enumerate}
+
+Note that the prolongation of a vector uses a region-wise prolongation operator~$P^{(r)}$
+and is performed without any special interface treatments, i.e. $v^{(r)}_f = P^{(r)}v^{(r)}_c$.
+
+Level smoothers as well as residual calculations require special techniques due to the region layout, cf. section~\ref{sec:RegionJacobi}.
+
+\section{Aspects related to domain decomposition}
+
+\subsection{Direct solve on coarse level}
+
+The composite matrix as provided by the application is well-posed since Dirichlet boundary conditions have been applied to it.
+When extracting regional matrices, only those sub-matrices associated with Dirichlet boundary conditions are non-singular
+in the region layout. In particular, matrices from the interior of the domain are very likely to be free-floating and singular.
+This prevents a direct solver on the coarse level. Possible remedies are:
+\begin{itemize}
+\item Merge coarse level region matrices into a composite matrix and apply direct solver to the composite matrix.
+Drawback: merging into composite layout is expensive and requires a dual setup of the hierarchy,
+i.e. also composite maps need to be provided on coarse levels.
+\item Use ILU on region matrices
+\item Use relaxation-based smoothers on coarse level
+\end{itemize}
+So far, no clear strategy to use a direct solver on the coarse level came to mind.
+We maybe can use projection methods to deal with rigid body modes.
+
+\section{Future Direction Thoughts}
+Basically, the tasks that have to happen next include
+\begin{itemize}
+%% Done. 12/18/17 mayr.mt
+%\item Add the four main functions needed to perform a regional matvec:
+%     {\sf composite2Regional()}, {\sf regional2Composite()}, {\sf quasiRegional2Regional()},
+%     and {\sf scaleMatrixInterfaceEntries()}. One great thing about doing this
+%     first is that we can easily test code correctness by comparing regional
+%     matvecs with composite matvecs. {\sf quasiRegional2Regional()} would
+%     employ the {\sf expertStaticFillComplete()} with the proper revised
+%     row and column maps that are currently being computed.  I believe the
+%     {\sf composite2Regional()} should be a pretty trivial piece of code
+%     as it correspond to the vector version of the matrix conversion
+%     between composite and regional. Here, we employ an import with
+%     the quasi-regional maps to get the proper data but the regional
+%     maps are stuffed into the resulting vector. {\sf regional2Composite()}
+%     is probably similar, but might use {\sf Export()}  and might have some
+%     other minor differences. {\sf scaleMatrixInterfaceEntries()} should
+%     be pretty easy in the 1D case (basically dividing some entries
+%     by two). This could perhaps be generalized using the {\sf regionsPerGID}
+%     data. The main thing here is that the sum of the regional matrices
+%     must add up to the original composite matrix.
+\item Make a 2D example and test/debug/update code for this case. Theoretically,
+      most of the code should be the same, but there might be debugging
+      as 2D will stress some code aspects.
+\item Convert existing code from non-RCP/Epetra pointers to something
+      more consistent with current needs (RCP/Tpetra).
+%% Done. 12/18/17 mayr.mt
+%\item Make a regional Jacobi and compare this to a composite form of Jacobi.
+\item Apply separate {\sf MueLu} invocations for each group and perhaps
+      for each region? on the 1D problem to make a 2 level solver. Not sure
+      if we should try to use
+      Luc's geometric or SA or if we should write our own simple 1D interpolator
+      to test the idea. There might be issues using Luc's code with one
+      invocation that contains multiple disconnected matrices? We should
+      probably discuss this with him.
+\item Try to do some simple two level MG with {\sf MueLu} where basically we are
+      not using MueLu's V cycle but are instead doing our own. This avoids
+      worrying about things like blocked operators at this point.
+\end{itemize}
+
+\section{Random Thoughts}
+Overall, I'm leaning towards requiring that applications either supply
+the regional form of the matrix ... or ... we are allowed to modify
+their matrix to change entries to perform the simple splitting. There
+is a chance that we could scale the matrix back after we are finished
+so that it appears to the application as unmodified. It might also be
+nice if we could optionally remove the application composite matrix once
+we have formed the regional matrices (to save on space). Thus, we would
+need to use the regional matvec in conjunction with {\sf region2Composite()}
+and {\sf composite2Region()} when performing matvecs within the Krylov solver.
+
+\appendix
+
+\section{Matlab interaction}
+
+As of May 22, 2018, the Matlab interface has been redesigned.
+The last commit with the old interface is \texttt{commit 657d5544cee8dbb8bf8bfed5a8e93fb64a51eff3}.
+
+To run the region code, two steps are required:
+\begin{enumerate}
+ \item Run the Matlab script {\sf createInput.m} to create the problem and write it to the disk.
+ \item Run the executable {\sf /packages/muelu/research/mmayr/composite\_to\_regions/src/MueLu\_composite\_to\_region\_driver.exe} from the source directory.
+\end{enumerate}
+
+The Matlab program creates a series of {\sf my*\_k} files where $ 0 \le k < nProcs$.
+These files contain various input information about the problem, the region layout, etc.
+
+The executable reads these files, creates matrices and a MueLu hierarchy and runs a V-cycle. The MueLu configuration is passed in as command line argument \texttt{--xml=PATH/XML\_FILE\_NAME}.
+
+\end{document}
+
+
+

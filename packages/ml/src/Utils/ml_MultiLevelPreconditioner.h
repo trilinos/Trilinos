@@ -438,7 +438,7 @@ public:
   //@{ \name Mathematical functions.
 
   //! Apply the inverse of the preconditioner to an Epetra_MultiVector (NOT AVAILABLE)
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  int Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const {
     return(-1);}
 
   //! Apply the preconditioner to an Epetra_MultiVector X, puts the result in Y
@@ -497,7 +497,7 @@ public:
   int SetOwnership(bool ownership){ ownership_ = ownership; return(-1);};
 
   //! Sets use transpose (not implemented).
-  int SetUseTranspose(bool useTranspose){return(-1);}
+  int SetUseTranspose(bool /* useTranspose */){return(-1);}
 
   //! Returns the infinity norm (not implemented).
   double NormInf() const {return(0.0);};
@@ -645,11 +645,11 @@ public:
 private:
 
   //! Copy constructor (NOT DEFINED)
-  MultiLevelPreconditioner(const MultiLevelPreconditioner & rhs)
+  MultiLevelPreconditioner(const MultiLevelPreconditioner & /* rhs */)
   {};
 
   //! operator = (NOT DEFINED)
-  MultiLevelPreconditioner & operator = (const MultiLevelPreconditioner & rhs)
+  MultiLevelPreconditioner & operator = (const MultiLevelPreconditioner & /* rhs */)
   {
     return *this;
   };
@@ -1051,7 +1051,7 @@ template <class T> void MLVec<T>::wrap(T *start, T *end, bool okToChangePtr,
 
 template <class T> MLVec<T>::~MLVec()              { 
    if (data_ != NULL) {
-      TEUCHOS_TEST_FOR_EXCEPTION(size_ == 0,std::logic_error,
+      TEUCHOS_TEST_FOR_TERMINATION(size_ == 0,
       "MLVec error, data pointer should be null for 0 length vectors\n");
       if (okToChangePtr_ && (freeType_ == useFree))   ML_free(data_); 
       if (okToChangePtr_ && (freeType_ == useDelete)) delete data_;

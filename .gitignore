@@ -24,7 +24,6 @@ doxygen_objdb_*.tmp
 /TerminalApplication/
 /DataTransferKit/
 /TeuchosWrappersExt
-/tempus/
 /packages/CTrilinos/
 /packages/ForTrilinos/
 /packages/Sundance/
@@ -38,6 +37,9 @@ doxygen_objdb_*.tmp
 
 # Allow github Kokkos to be cloned under Trilinos
 /kokkos/
+
+# Allow github kokkos-kernels under Trilinos
+/kokkos-kernels/
 
 # RPI SCOREC extra repos
 /SCOREC
@@ -123,7 +125,6 @@ packages/muelu/doc/UsersGuide/mueluguide.lot
 packages/muelu/doc/UsersGuide/mueluguide.pdf
 
 rsync.*
-.project
 
 # Ignore files that get created by checkin-test.py to allow checkin-test.py to
 # be run in source dir.
@@ -148,3 +149,7 @@ rsync.*
 
 # VIM YCM
 .ycm_extra_conf.py
+
+# Eclipse IDE
+.project
+.settings/

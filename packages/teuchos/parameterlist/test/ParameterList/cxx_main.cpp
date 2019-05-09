@@ -51,6 +51,7 @@
 
 #ifdef HAVE_TEUCHOS_EXTENDED
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
+#include <fstream>
 #endif
 
 #ifdef HAVE_MPI
@@ -549,7 +550,7 @@ int main( int argc, char *argv[] )
     if (PT2) { if (verbose) cout<< "yes" << std::endl; FailedTests++; }
     else { if (verbose) cout<< "no (as expected)" << std::endl; }
     if (verbose) {
-    	cout<< "  Is the 'Interpolation Type' of type 'std::string' ... ";
+        cout<< "  Is the 'Interpolation Type' of type 'std::string' ... ";
     }
     if (PT3) { if (verbose) cout<< "yes" << std::endl; }
     else { if (verbose) cout<< "no" << std::endl; FailedTests++; }

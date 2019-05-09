@@ -83,9 +83,6 @@ using Teuchos::ArrayRCP;
 using Teuchos::XMLObject;
 using namespace Zoltan2_TestingFramework;
 
-using std::cout;
-using std::cerr;
-using std::endl;
 using std::string;
 using std::map;
 using std::pair;
@@ -93,9 +90,9 @@ using std::exception;
 using std::ostringstream;
 using std::queue;
 
-#define ERRMSG(msg) if (rank == 0){ cerr << "FAIL: " << msg << endl; }
+#define ERRMSG(msg) if (rank == 0){ std::cerr << "FAIL: " << msg << std::endl; }
 #define EXC_ERRMSG(msg, e) \
-if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
+if (rank==0){ std::cerr << "FAIL: " << msg << std::endl << e.what() << std::endl;}
 
 void xmlToModelPList(const Teuchos::XMLObject &xml,
   Teuchos::ParameterList & plist)
@@ -130,7 +127,7 @@ bool getParameterLists(const string &inputFileName,
   // and a parameter list for solution comparisons
   Teuchos::FileInputSource inputSource(inputFileName);
   if(rank == 0) {
-    cout << "Input file source: " << inputFileName << endl;
+    std::cout << "Input file source: " << inputFileName << std::endl;
   }
   XMLObject xmlInput;
   
@@ -259,7 +256,7 @@ bool run(const UserInputForTests &uinput,
   }
 
   if(rank == 0) {
-    cout << "\n\nRunning test: " << problem_parameters.name() << endl;
+    std::cout << "\n\nRunning test: " << problem_parameters.name() << std::endl;
   }
 
   ////////////////////////////////////////////////////////////
@@ -296,7 +293,7 @@ bool run(const UserInputForTests &uinput,
   ParameterList zoltan2_parameters = 
    const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
   if(rank == 0) {
-    cout << endl;
+    std::cout << std::endl;
   }
 
   comparison_source->timers["problem construction time"]->start();
@@ -329,7 +326,7 @@ bool run(const UserInputForTests &uinput,
 
   comparison_source->timers["solve time"]->stop();
   if (rank == 0) {
-    cout << problem_kind + " problem solved." << endl;
+    std::cout << problem_kind + " problem solved." << std::endl;
   }
  
 #undef KDDKDD
@@ -394,7 +391,7 @@ bool run(const UserInputForTests &uinput,
 
     evaluateFactory->getEvaluateClass()->printMetrics(msgSummary);
     if(rank == 0) {
-      cout << msgSummary.str();
+      std::cout << msgSummary.str();
     }
 
     std::ostringstream msgResults;
@@ -404,7 +401,7 @@ bool run(const UserInputForTests &uinput,
                 << "returned false and the test is FAILED." << std::endl;
     }
     if(rank == 0) {
-      cout << msgResults.str();
+      std::cout << msgResults.str();
     }
 
 //#define BDD
@@ -461,7 +458,7 @@ bool run(const UserInputForTests &uinput,
   return bSuccess;
 }
 
-bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm) 
+bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm) 
 {
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment and timer
@@ -473,12 +470,12 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   // the input file defines tests to be run
   ////////////////////////////////////////////////////////////
   string inputFileName(""); 
-  if(argc > 1)
-    inputFileName = argv[1]; // user has provided an input file
+  if(narg > 1)
+    inputFileName = arg[1]; // user has provided an input file
   else{
     if(rank == 0){
       std::cout << "\nFAILED to specify xml input file!" << std::endl;
-      ostringstream msg;
+      std::ostringstream msg;
       msg << "\nStandard use of test_driver.cpp:\n";
       msg << "mpiexec -n <procs> ./Zoltan2_test_driver.exe <input_file.xml>\n";
       std::cout << msg.str() << std::endl;
@@ -503,7 +500,7 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   if(inputParameters.name() != "InputParameters")
   {
     if(rank == 0)
-      cout << "InputParameters not defined. Testing FAILED." << endl;
+      std::cout << "InputParameters not defined. Testing FAILED." << std::endl;
     return false;
   }
   
@@ -550,8 +547,8 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   }
   else {
     if(rank == 0) {
-      cout << "\nFAILED to load input data source. Skipping "
-        "all tests." << endl;
+      std::cout << "\nFAILED to load input data source. Skipping "
+        "all tests." << std::endl;
       return false;
     }
   }
@@ -559,15 +556,15 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   return bPass;
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv); 
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int result = 0;
   int rank = comm->getRank();
   try {
-    result = mainExecute(argc, argv, comm) ? 0 : 1; // code 0 is ok,
+    result = mainExecute(narg, arg, comm) ? 0 : 1; // code 0 is ok,
                                                     // 1 is a failed test
   }
   catch(std::logic_error &e) { 

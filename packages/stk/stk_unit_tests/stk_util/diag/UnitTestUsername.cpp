@@ -71,3 +71,15 @@ TEST(StkEnv, getenv)
   delete [] env_user_value;
 }
 
+TEST(StkEnv, HostName)
+{
+  std::string host_name = sierra::Env::hostname();
+  EXPECT_TRUE( !host_name.empty() );
+}
+
+TEST(StkEnv, DomainName)
+{
+  std::string host_name = sierra::Env::domainname();
+  EXPECT_TRUE( !host_name.empty() );
+}
+

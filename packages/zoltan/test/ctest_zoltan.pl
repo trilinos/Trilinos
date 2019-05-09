@@ -60,6 +60,16 @@ unless (-x $zdrive) {
   $zdrive = "../../src/driver/$ENV{TEST_CONFIG}/zdrive.exe";
 }
 
+### Assign the tee option based on platform
+### Windoze does not have tee
+if ($^O eq "MSWin32") {
+  $tee = "Powershell.exe -Command \"tee\" -filepath"
+}
+else {
+  $tee = "tee"
+}
+
+
 ### Get user-supplied parameter values.
 GetOptions('np=i' => \$np,
            'pkg=s' => \$package,
@@ -227,16 +237,16 @@ TEST:  foreach $file (@inpfiles) {
   $zouterrfile = sprintf("%s.%s.%s.outerr", $dirname, $testname, $loop_np);
   if ($np > 1) {  # Test on $np because we want to know is the binary needs mpiexec
     if ($shorthost eq 'glory') {
-      $cmd = sprintf("$mpiexec --npernode %d $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | tee %s\n", 
+      $cmd = sprintf("$mpiexec --npernode %d $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | $tee %s\n", 
                       $loop_np, $loop_np, $zdrive, $file, $zouterrfile);
     }
     else {
-      $cmd = sprintf("$mpiexec $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | tee %s\n", 
+      $cmd = sprintf("$mpiexec $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | $tee %s\n", 
                       $loop_np, $zdrive, $file, $zouterrfile);
     }
   }
   else {
-    $cmd = sprintf("%s %s 2>&1 | tee %s\n", $zdrive, $file, $zouterrfile);
+    $cmd = sprintf("%s %s 2>&1 | $tee %s\n", $zdrive, $file, $zouterrfile);
   }
   if ($debug) {print "DEBUG Executing now:  $cmd\n";}
   $result = system($cmd);

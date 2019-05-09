@@ -86,7 +86,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
      RCP<IntegrationRule> ir = rcp(new IntegrationRule(cubatureDegree_,physicsBlock.cellData()));
 
      Teuchos::ParameterList pl;
-     pl.set("Integral Name",field);
+     pl.set("Integral Name", field);
      pl.set("Integrand Name",field);
      pl.set("IR",ir);
 

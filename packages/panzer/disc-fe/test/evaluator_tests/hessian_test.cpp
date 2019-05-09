@@ -95,7 +95,24 @@ inline panzer::Traits::HessianType seed_second_deriv(int num_vars, int index, do
 }
 
 //**********************************************************************
-PHX_EVALUATOR_CLASS(InputConditionsEvaluator)
+template<typename EvalT, typename Traits>
+class InputConditionsEvaluator
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    InputConditionsEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
 public:
   PHX::MDField<ScalarT,panzer::IP> x;
@@ -103,10 +120,14 @@ public:
   PHX::MDField<ScalarT,panzer::IP> dx;
   PHX::MDField<ScalarT,panzer::IP> dy;
 
-PHX_EVALUATOR_CLASS_END
+}; // end of class InputConditionsEvaluator
+
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(InputConditionsEvaluator, /* p */)
+template<typename EvalT, typename Traits>
+InputConditionsEvaluator<EvalT, Traits>::
+InputConditionsEvaluator(
+  const Teuchos::ParameterList&  /* p */)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -133,17 +154,11 @@ PHX_EVALUATOR_CTOR(InputConditionsEvaluator, /* p */)
 }
 
 //**********************************************************************
-
-PHX_POST_REGISTRATION_SETUP(InputConditionsEvaluator, /* sd */, fm)
-{
-  this->utils.setFieldData(x,fm);
-  this->utils.setFieldData(y,fm);
-  this->utils.setFieldData(dx,fm);
-  this->utils.setFieldData(dy,fm);
-}
-
-//**********************************************************************
-PHX_EVALUATE_FIELDS(InputConditionsEvaluator, /* workset */)
+template<typename EvalT, typename Traits>
+void
+InputConditionsEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 { 
   double x_val = 0.25;
   double y_val = 0.5;
@@ -159,17 +174,38 @@ PHX_EVALUATE_FIELDS(InputConditionsEvaluator, /* workset */)
 }
 
 //**********************************************************************
-PHX_EVALUATOR_CLASS(HessianTestEvaluator)
+template<typename EvalT, typename Traits>
+class HessianTestEvaluator
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    HessianTestEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
 public:
   PHX::MDField<const ScalarT,panzer::IP> x;
   PHX::MDField<const ScalarT,panzer::IP> y;
   PHX::MDField<ScalarT,panzer::IP> result;
 
-PHX_EVALUATOR_CLASS_END
+}; // end of class HessianTestEvaluator
+
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(HessianTestEvaluator, /* p */)
+template<typename EvalT, typename Traits>
+HessianTestEvaluator<EvalT, Traits>::
+HessianTestEvaluator(
+  const Teuchos::ParameterList&  /* p */)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -195,16 +231,11 @@ PHX_EVALUATOR_CTOR(HessianTestEvaluator, /* p */)
 }
 
 //**********************************************************************
-
-PHX_POST_REGISTRATION_SETUP(HessianTestEvaluator, /* sd */, fm)
-{
-  this->utils.setFieldData(x,fm);
-  this->utils.setFieldData(y,fm);
-  this->utils.setFieldData(result,fm);
-}
-
-//**********************************************************************
-PHX_EVALUATE_FIELDS(HessianTestEvaluator, /* workset */)
+template<typename EvalT, typename Traits>
+void
+HessianTestEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 { 
   // Grad = y * std::cos(x*y)
   //      = x * std::cos(x*y)-0.25*std::sin(y)
@@ -212,7 +243,7 @@ PHX_EVALUATE_FIELDS(HessianTestEvaluator, /* workset */)
   // Hess*v = dy * std::cos(x*y) - y * ( dx * sin(x*y) + dy * sin(x*y))
   //        = dx * std::cos(x*y) - x * ( dx * sin(x*y) + dy * sin(x*y)) - 0.25 * dy * std::cos(y)
   //
-  for(int ip=0;ip<Teuchos::as<int>(result.dimension_0());++ip)
+  for(int ip=0;ip<Teuchos::as<int>(result.extent(0));++ip)
     result(ip) = std::sin(x(ip)*y(ip))+0.25*std::cos(y(ip));
 }
 
@@ -258,11 +289,11 @@ TEUCHOS_UNIT_TEST(hessian_test,correctness)
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(derivative_dimensions);
 
-  panzer::Traits::SetupData setupData;
+  panzer::Traits::SD setupData;
   fm->postRegistrationSetup(setupData);
 
   panzer::Workset workset;
-  panzer::Traits::PreEvalData preEvalData;
+  panzer::Traits::PED preEvalData;
 
   fm->preEvaluate<panzer::Traits::Hessian>(preEvalData);
   fm->evaluateFields<panzer::Traits::Hessian>(workset);

@@ -92,6 +92,8 @@ private:
 
   PHX::MDField<const ScalarT,Cell,NODE> dof_orientation;
   PHX::MDField<ScalarT,Cell,NODE,Dim> gatherFieldTangents;
+
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 };
 
 }

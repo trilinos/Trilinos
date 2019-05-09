@@ -59,7 +59,7 @@ Quadrature<Real>::Quadrature(const int degree,
                              const EQuadrature rule,
                              const bool isNormalized) 
   : dimension_(1) {
-  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0),std::out_of_range,
+  ROL_TEST_FOR_EXCEPTION((degree < 0),std::out_of_range,
     ">>> ERROR (Quadrature): No rule implemented for desired polynomial degree.");
   accuracy_.clear(); 
   accuracy_.push_back(degree);
@@ -133,7 +133,7 @@ Quadrature<Real>::Quadrature(const int degree,
     case QUAD_LAGUERRE: // Gauss-Laguerre
       webbur::laguerre_compute(numPoints,&points[0],&weights[0]); break;
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::out_of_range,
+      ROL_TEST_FOR_EXCEPTION(true,std::out_of_range,
         ">>> ERROR (Quadrature): No such 1D quadrature rule."); break;
   }
 
@@ -166,7 +166,7 @@ Quadrature<Real>::Quadrature(const EQuadrature rule,
                              const int numPoints,
                              const bool isNormalized)
   : dimension_(1) {
-  TEUCHOS_TEST_FOR_EXCEPTION((numPoints < 0),std::out_of_range, 
+  ROL_TEST_FOR_EXCEPTION((numPoints < 0),std::out_of_range, 
      ">>> ERROR (Quadrature): No rule implemented for desired number of points.");
 
   accuracy_.clear();
@@ -200,7 +200,7 @@ Quadrature<Real>::Quadrature(const EQuadrature rule,
 	break;
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION((correctNumPoints==false),std::out_of_range,
+    ROL_TEST_FOR_EXCEPTION((correctNumPoints==false),std::out_of_range,
 	">>> ERROR (Quadrature): Number of points must be numPoints = 1, 3, 7, 15, 31, 63, 127, 255.");
     Real degree = 1.5*(double)numPoints+0.5;
     accuracy_.push_back((int)degree);
@@ -239,7 +239,7 @@ Quadrature<Real>::Quadrature(const EQuadrature rule,
 	break;
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION((correctNumPoints==false),std::out_of_range,
+    ROL_TEST_FOR_EXCEPTION((correctNumPoints==false),std::out_of_range,
        ">>> ERROR (Quadrature): Number of points must be numPoints = 1, 3, 9, 35, 37, 41, 43.");
     Real degree = 1.5*(double)numPoints+0.5;
     accuracy_.push_back((int)degree);
@@ -279,7 +279,7 @@ Quadrature<Real>::Quadrature(const std::vector<Real> &points,
                              const std::vector<Real> &weights) 
   : dimension_(1) {
   int size = (int)weights.size();
-  TEUCHOS_TEST_FOR_EXCEPTION(((int)points.size()!=size),std::out_of_range,
+  ROL_TEST_FOR_EXCEPTION(((int)points.size()!=size),std::out_of_range,
 	     ">>> ERROR (Quadrature): Input dimension mismatch.");
   std::vector<Real> point(1);
   for (int i=0; i<size; i++) {

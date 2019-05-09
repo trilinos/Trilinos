@@ -62,14 +62,14 @@ namespace ROL {
 template <class Real>
 class LinearOperatorFromConstraint : public LinearOperator<Real> {
 private:
-  const Teuchos::RCP<const Vector<Real> > x_;
-  Teuchos::RCP<Constraint<Real> > con_;
+  const ROL::Ptr<const Vector<Real> > x_;
+  ROL::Ptr<Constraint<Real> > con_;
  
 
 public:
 
-  LinearOperatorFromConstraint( const Teuchos::RCP<const Vector<Real> > &x, 
-                                        const Teuchos::RCP<Constraint<Real> > &con ) : 
+  LinearOperatorFromConstraint( const ROL::Ptr<const Vector<Real> > &x, 
+                                        const ROL::Ptr<Constraint<Real> > &con ) : 
                                         x_(x), con_(con) {
   }
 

@@ -117,7 +117,7 @@ template<typename TRAITS,typename LO,typename GO>
 void
 ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm) 
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -126,15 +126,10 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-
-    if (checkApplyBC_)
-      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].dimension(1);
+  num_nodes = scatterFields_[0].extent(1);
   num_eq = scatterFields_.size();
 }
 
@@ -144,18 +139,18 @@ ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 preEvaluate(typename TRAITS::PreEvalData d) 
 {
   // extract linear object container
-  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc->getDataObject(globalDataKey_));
  
   if(epetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
     epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc,true);
 
     dirichletCounter_ = Teuchos::null;
   }
   else {
     // extract dirichlet counter from container
-    Teuchos::RCP<GlobalEvaluationData> dataContainer = d.gedc.getDataObject("Dirichlet Counter");
+    Teuchos::RCP<GlobalEvaluationData> dataContainer = d.gedc->getDataObject("Dirichlet Counter");
     Teuchos::RCP<EpetraLinearObjContainer> epetraContainer = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(dataContainer,true);
 
     dirichletCounter_ = epetraContainer->get_f();
@@ -168,10 +163,13 @@ void
 ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset) 
 {
+  using panzer::ptrFromStlVector;
+  using std::vector;
+
    // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
    //                           "ScatterDirichletResidual_Epetra<Hessian> is not yet implemented"); // just in case
 
-   std::vector<int> cLIDs, rLIDs;
+  Kokkos::View<const int*, Kokkos::LayoutRight, PHX::Device> cLIDs, rLIDs;
    std::vector<double> jacRow;
 
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
@@ -254,8 +252,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     
             if(!preserveDiagonal_) {
               int err = Jac->ReplaceMyValues(row, cLIDs.size(), 
-                                             panzer::ptrFromStlVector(jacRow),
-                                             panzer::ptrFromStlVector(cLIDs));
+                ptrFromStlVector(jacRow), &cLIDs[0]);
               TEUCHOS_ASSERT(err==0); 
             }
          }

@@ -34,8 +34,13 @@
 #ifndef STK_MESH_FIXTURES_TRI_MESH_FIXTURE_HPP
 #define STK_MESH_FIXTURES_TRI_MESH_FIXTURE_HPP
 
-#include <stddef.h>                     // for size_t, NULL
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 #include <map>                          // for multimap, etc
+#include <memory>
+#include <stddef.h>                     // for size_t, NULL
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>      // for Field
@@ -44,10 +49,6 @@
 #include <stk_unit_tests/stk_mesh_fixtures/CoordinateMapping.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <vector>                       // for vector
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 
@@ -62,7 +63,9 @@ namespace fixtures {
  * A coordinate field will be added to all nodes, a coordinate-gather field
  * will be added to all elements.
  */
-class TriFixture
+namespace impl {
+template <int DIM>
+class TriFixtureImpl
 {
  public:
   typedef double                     Scalar ;
@@ -72,13 +75,16 @@ class TriFixture
    * Set up meta data to support this fixture. Meta data is left uncommitted
    * to allow additional modifications by the client.
    */
-  TriFixture(   stk::ParallelMachine pm
+  // The nz argument is ignored, only here to allow use in templated functions that also operate on 3D fixtures
+  TriFixtureImpl( MetaData& meta, BulkData& bulk, size_t nx, size_t ny, size_t nz, size_t nid_start, size_t eid_start);
+
+  TriFixtureImpl(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
               , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
               , ConnectivityMap const* connectivity_map = NULL
             );
-  TriFixture(   stk::ParallelMachine pm
+  TriFixtureImpl(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
               , const std::string& coordsName
@@ -87,21 +93,36 @@ class TriFixture
             );
 
   const int         m_spatial_dimension;
+ private:
+  std::unique_ptr<MetaData> m_meta_p;
+  std::unique_ptr<BulkData> m_bulk_p;
+ public:
   const size_t      m_nx;
   const size_t      m_ny;
-  MetaData          m_meta;
-  BulkData          m_bulk_data;
+  MetaData &        m_meta;
+  BulkData &        m_bulk_data;
   PartVector        m_elem_parts;
   PartVector        m_node_parts;
   CoordFieldType &  m_coord_field ;
+  const size_t      m_node_id_start = 1;
+  const size_t      m_elem_id_start = 1;
+  stk::topology     m_elem_topology;
+  stk::topology     m_face_topology;
 
+  size_t num_nodes() const {
+    return (m_nx+1)*(m_ny+1);
+  }
+
+  size_t num_elements() const {
+    return 2*(m_nx)*(m_ny);
+  }
 
   /**
    * Thinking in terms of a 3D grid of nodes, get the id of the node in
    * the (x, y, z) position.
    */
   EntityId node_id( size_t x , size_t y ) const  {
-    return 1 + x + ( m_nx + 1 ) * y;
+    return m_node_id_start + x + ( m_nx + 1 ) * y;
   }
 
   /**
@@ -127,9 +148,9 @@ class TriFixture
   /**
    * Create the mesh (into m_bulk_data).
    */
-  void generate_mesh();
+  void generate_mesh(const CoordinateMapping & coordMap = CartesianCoordinateMapping());
 
-  void generate_mesh( std::vector<size_t> & element_ids_on_this_processor);
+  void generate_mesh( std::vector<size_t> & element_ids_on_this_processor, const CoordinateMapping & coordMap = CartesianCoordinateMapping());
 
  private:
 
@@ -137,13 +158,16 @@ class TriFixture
 
   NodeToProcsMMap m_nodes_to_procs;
 
-  TriFixture();
-  TriFixture( const TriFixture &);
-  TriFixture & operator = (const TriFixture &);
+  TriFixtureImpl();
+  TriFixtureImpl( const TriFixtureImpl &);
+  TriFixtureImpl & operator = (const TriFixtureImpl &);
 
   void fill_node_map( int proc_rank);
 };
+} // impl
 
+using TriFixture = impl::TriFixtureImpl<2>;
+using TriShellFixture = impl::TriFixtureImpl<3>;
 
 } // fixtures
 } // mesh

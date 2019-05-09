@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Homotopy is the python interface to namespace Homotopy
 of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Homotopy is to provide groups that allow for
 Homotopy to be applied.  The python version of LOCA.Homotopy supports
@@ -64,47 +64,42 @@ the following classes:
         docstring = %loca_homotopy_docstring) Homotopy
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// NOX-Epetra includes
-#ifdef HAVE_NOX_EPETRA
+// NOX-Epetra include files
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
 //#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
 #endif
 
-// NOX-PETSc includes
+// NOX-PETSc include files
 #include "NOX_Abstract_Vector.H"
-#ifdef HAVE_NOX_PETSC
+#ifdef HAVE_PYTRILINOS_NOX_PETSC
 #include "NOX_Petsc_Vector.H"
 #endif
 
-// LOCA includes
-#include "LOCA.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
 
 // PETSc4Py support
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_PETSC
+#ifdef HAVE_PYTRILINOS_NOX_PETSC
 %include "petsc4py/petsc4py.i"
 #endif
 

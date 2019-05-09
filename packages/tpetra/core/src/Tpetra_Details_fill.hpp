@@ -170,6 +170,7 @@ private:
   IndexType numCols_;
 };
 
+#if defined(KOKKOS_ENABLE_SERIAL)
 /// \brief Specialization for ExecutionSpace = Kokkos::Serial
 ///   and rank = 1.
 template<class ViewType,
@@ -209,7 +210,9 @@ struct Fill<ViewType,
     }
   }
 };
+#endif // defined(KOKKOS_ENABLE_SERIAL)
 
+#if defined(KOKKOS_ENABLE_SERIAL)
 /// \brief Specialization for ExecutionSpace = Kokkos::Serial
 ///   and rank = 2.
 template<class ViewType,
@@ -225,7 +228,7 @@ struct Fill<ViewType,
   fill (const Kokkos::Serial& /* execSpace */,
         const ViewType& X,
         const ValueType& alpha,
-        const IndexType numRows,
+        const IndexType /* numRows */,
         const IndexType numCols)
   {
     static_assert (ViewType::Rank == 2,
@@ -249,7 +252,7 @@ struct Fill<ViewType,
         for (IndexType j = 0; j < numCols; ++j) {
           auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
           memsetWrapper (X_j.data (), 0,
-                         X_j.dimension_0 () * sizeof (view_value_type));
+                         X_j.extent (0) * sizeof (view_value_type));
         }
       }
       else {
@@ -261,6 +264,7 @@ struct Fill<ViewType,
     }
   }
 };
+#endif // defined(KOKKOS_ENABLE_SERIAL)
 
 } // namespace Impl
 

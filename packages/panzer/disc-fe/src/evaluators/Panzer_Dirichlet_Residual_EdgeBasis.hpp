@@ -64,25 +64,45 @@ namespace panzer {
   * at a set of points defined by a point rule. Note that this assumes
   * a vector basis is used.
   */
-PANZER_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
+template<typename EvalT, typename Traits>
+class DirichletResidual_EdgeBasis
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    DirichletResidual_EdgeBasis(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
   PHX::MDField<const ScalarT,Cell,Point,Dim> dof;
   PHX::MDField<const ScalarT,Cell,Point,Dim> value;
-  PHX::MDField<const ScalarT,Cell,BASIS> dof_orientation; // will scale residual
-                                                    // by orientation to ensure
-                                                    // parallel consistency
 
   Teuchos::RCP<const panzer::PureBasis> basis; 
   Teuchos::RCP<const panzer::PointRule> pointRule; 
-  Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
-  Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
 
-  PointValues2<ScalarT> pointValues;
-  PHX::MDField<const ScalarT, Cell, IP, Dim, Dim, void, void, void, void>
+  PointValues2<double> pointValues;
+  PHX::MDField<const double, Cell, IP, Dim, Dim, void, void, void, void>
     constJac_;
 
-PANZER_EVALUATOR_CLASS_END
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
+
+}; // end of class DirichletResidual_EdgeBasis
+
 
 }
 

@@ -201,14 +201,14 @@ namespace LOCA {
       /*!
        * Empty default definition.
        */
-      virtual void printSolution(const double conParam) const {};
+      virtual void printSolution(const double /* conParam */) const {};
 
       //! Function to print out a vector and parameter after successful step
       /*!
        * Empty default definition.
        */
-      virtual void printSolution(const NOX::Abstract::Vector& x_,
-                                 const double conParam) const  {}
+      virtual void printSolution(const NOX::Abstract::Vector& /* x_ */,
+                                 const double /* conParam */) const  {}
 
       //! Scales a vector using scaling vector
       /*!

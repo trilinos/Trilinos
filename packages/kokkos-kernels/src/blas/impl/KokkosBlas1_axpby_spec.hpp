@@ -179,7 +179,7 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "X and Y must have the same rank.");
     static_assert (YMV::Rank == 2, "KokkosBlas::Impl::Axpby<rank-2>::axpby: "
                    "X and Y must have rank 2.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::axpby<> ETI specialization for < %s , %s , %s , %s >\n",typeid(AV).name(),typeid(XMV).name(),typeid(BV).name(),typeid(YMV).name());
@@ -188,13 +188,13 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
     }
     #endif
 
-    const size_type numRows = X.dimension_0 ();
-    const size_type numCols = X.dimension_1 ();
+    const size_type numRows = X.extent(0);
+    const size_type numCols = X.extent(1);
     int a = 2, b = 2;
-    if (av.dimension_0 () == 0) {
+    if (av.extent(0) == 0) {
       a = 0;
     }
-    if (bv.dimension_0 () == 0) {
+    if (bv.extent(0) == 0) {
       b = 0;
     }
 
@@ -213,6 +213,7 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
         Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type Axpby_MV_Invoke_Layout;
       Axpby_MV_Invoke_Layout::run(av, X, bv, Y, a, b);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -247,7 +248,7 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
                    "X and Y must have the same rank.");
     static_assert (YMV::Rank == 2, "KokkosBlas::Impl::Axpby::axpby (MV): "
                    "X and Y must have rank 2.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -257,8 +258,8 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
     }
     #endif
 
-    const size_type numRows = X.dimension_0 ();
-    const size_type numCols = X.dimension_1 ();
+    const size_type numRows = X.extent(0);
+    const size_type numCols = X.extent(1);
     int a, b;
     if (alpha == ATA::zero ()) {
       a = 0;
@@ -307,6 +308,7 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
       Axpby_MV_Invoke_Layout::run(alpha, X,
                                                           beta, Y, a, b);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -339,6 +341,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
     static_assert (YV::Rank == 1, "KokkosBlas::Impl::Axpby<rank-1>::axpby: "
                    "X and Y must have rank 1.");
 
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::axpby<> ETI specialization for < %s , %s , %s , %s >\n",typeid(AV).name(),typeid(XV).name(),typeid(BV).name(),typeid(YV).name());
@@ -347,7 +350,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
     }
     #endif
 
-    const size_type numRows = X.dimension_0 ();
+    const size_type numRows = X.extent(0);
     int a = 2;
     if (alpha == ATA::zero ()) {
       a = 0;
@@ -386,6 +389,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
         typename YV::non_const_value_type, YV,
         index_type> (alpha, X, beta, Y, 0, a, b);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif //!defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY

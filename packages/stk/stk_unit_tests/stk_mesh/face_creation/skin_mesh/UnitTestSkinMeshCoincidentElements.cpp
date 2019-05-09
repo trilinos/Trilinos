@@ -51,13 +51,6 @@ protected:
         for(size_t i=0; i<faces.size(); i++)
             EXPECT_EQ(goldNumConnectedElems[i], get_bulk().num_elements(faces[i])) << i;
     }
-    void expect_face_ids(const stk::mesh::EntityIdVector &goldFaceIds)
-    {
-        stk::mesh::EntityVector faces = get_all_faces();
-        ASSERT_EQ(goldFaceIds.size(), faces.size());
-        for(size_t i=0; i<faces.size(); i++)
-            EXPECT_EQ(goldFaceIds[i], get_bulk().identifier(faces[i])) << i;
-    }
     stk::mesh::EntityVector get_all_faces()
     {
         stk::mesh::EntityVector faces;
@@ -238,7 +231,7 @@ class CoincidentHex8sWithAdjacentAirHex : public CoincidentHex8sWithAdjacentHex
     {
         create_coincident_hex8s_with_adjacent_hex(auraOption);
         stk::mesh::Selector air = *block2;
-        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block1, {}, &air);
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block1, {}, air);
 
         expect_faces_connected_to_num_elements_locally({2, 2, 2, 2, 2, 3});
     }
@@ -255,7 +248,7 @@ class Hex8WithAdjacentCoincidentAirHex8s : public CoincidentHex8sWithAdjacentHex
         create_coincident_hex8s_with_adjacent_hex(auraOption);
 
         stk::mesh::Selector air = *block1;
-        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block2, {}, &air);
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block2, {}, air);
         expect_faces_connected_to_num_elements_locally({3, 1, 1, 1, 1, 1});
     }
 };
@@ -307,16 +300,9 @@ protected:
         else
             expect_faces_connected_to_num_elements_locally(goldNumConnectedElemsProc1);
     }
-    void expect_face_ids_per_proc(const stk::mesh::EntityIdVector &goldFaceIdsProc0, const stk::mesh::EntityIdVector &goldFaceIdsProc1)
-    {
-        if(get_bulk().parallel_rank() == 0)
-            expect_face_ids(goldFaceIdsProc0);
-        else
-            expect_face_ids(goldFaceIdsProc1);
-    }
     void skin_part_with_part2_as_air(stk::mesh::Selector partToSkin, stk::mesh::Selector partToConsiderAsAir)
     {
-        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), partToSkin, {}, &partToConsiderAsAir);
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), partToSkin, {}, partToConsiderAsAir);
     }
     stk::mesh::Part *block2;
 };

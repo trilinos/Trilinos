@@ -45,6 +45,7 @@
 #include "TpetraCore_config.h"
 #include "Tpetra_CombineMode.hpp"
 #include "Kokkos_DualView.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_DistObject_decl.hpp"
 
 /// \file Tpetra_Details_unpackCrsMatrixAndCombine_decl.hpp
@@ -82,9 +83,6 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Forward declaration of Distributor
 class Distributor;
-// Forward declaration of CrsMatrix
-template<class ST, class LO, class GO, class NT, const bool classic>
-class CrsMatrix;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 //
@@ -134,7 +132,7 @@ namespace Details {
 /// of data, this procedure could be bypassed.
 template<typename ST, typename LO, typename GO, typename NT>
 void
-unpackCrsMatrixAndCombine (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
+unpackCrsMatrixAndCombine (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                            const Teuchos::ArrayView<const char>& imports,
                            const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
                            const Teuchos::ArrayView<const LO>& importLIDs,
@@ -145,10 +143,13 @@ unpackCrsMatrixAndCombine (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
-unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
-                              const Kokkos::DualView<const char*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& imports,
-                              const Kokkos::DualView<const size_t*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& numPacketsPerLID,
-                              const Kokkos::DualView<const LO*, typename NT::device_type>& importLIDs,
+unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                              const Kokkos::DualView<const char*,
+                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& imports,
+                              const Kokkos::DualView<const size_t*,
+                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
+                              const Kokkos::DualView<const LO*,
+                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
                               const size_t constantNumPackets,
                               Distributor & distor,
                               const CombineMode combineMode,
@@ -212,7 +213,7 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatr
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 size_t
 unpackAndCombineWithOwningPIDsCount (
-    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> & sourceMatrix,
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
     const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
     const Teuchos::ArrayView<const char> &imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
@@ -240,7 +241,7 @@ unpackAndCombineWithOwningPIDsCount (
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
 unpackAndCombineIntoCrsArrays (
-    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> & sourceMatrix,
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
     const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
     const Teuchos::ArrayView<const char>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
@@ -255,7 +256,7 @@ unpackAndCombineIntoCrsArrays (
     const int MyTargetPID,
     const Teuchos::ArrayView<size_t>& CRS_rowptr,
     const Teuchos::ArrayView<GlobalOrdinal>& CRS_colind,
-    const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::impl_scalar_type>& CRS_vals,
+    const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type>& CRS_vals,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids);
 

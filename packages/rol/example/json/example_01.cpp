@@ -65,7 +65,7 @@
 
 #include "example_01.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -77,12 +77,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -92,34 +92,34 @@ int main(int argc, char *argv[]) {
 
     int dim = 10;
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
 
     std::string jsonFileName("parameters.json");
     parlist.setName("Imported from " + jsonFileName);
     
-    // Load json parameters into a Teuchos::ParameterList  
+    // Load json parameters into a ROL::ParameterList  
     ROL::JSON_Parameters(jsonFileName,parlist);
     std::string stepname = "Trust Region"; // can we obtain this from parlist?  or jsonFile?
 
     ROL::StepFactory<RealT> stepFactory;
-    Teuchos::RCP<ROL::Step<RealT> > step = stepFactory.getStep(stepname, parlist);
+    ROL::Ptr<ROL::Step<RealT> > step = stepFactory.getStep(stepname, parlist);
 
     // Define Status Test
     RealT gtol  = parlist.get("Gradient Tolerance",1e-12); 
     RealT stol  = parlist.get("Step Tolerance",1e-14);  
     int   maxit = parlist.get("Maximum Number of Iterations",100); 
-    Teuchos::RCP<ROL::StatusTest<RealT> > status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol, stol, maxit));           
+    ROL::Ptr<ROL::StatusTest<RealT> > status = ROL::makePtr<ROL::StatusTest<RealT>>(gtol, stol, maxit);           
 
     ROL::Algorithm<RealT> algo(step,status,false);
 
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp(new std::vector<RealT> (dim, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > k_rcp = Teuchos::rcp(new std::vector<RealT> (dim, 0.0) );
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 1.0);
+    ROL::Ptr<std::vector<RealT> > k_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
 
-    ROL::StdVector<RealT> x(x_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > k = Teuchos::rcp(new ROL::StdVector<RealT>(k_rcp) );
+    ROL::StdVector<RealT> x(x_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > k = ROL::makePtr<ROL::StdVector<RealT>>(k_ptr);
 
     for(int i=0;i<dim;++i) {
-        (*k_rcp)[i] = i+1.0;
+        (*k_ptr)[i] = i+1.0;
     }
  
     ROL::ZOO::Objective_Zakharov<RealT> obj(k);
@@ -128,8 +128,8 @@ int main(int argc, char *argv[]) {
     algo.run(x, obj, true, *outStream);
 
     // Get True Solution
-    Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    ROL::StdVector<RealT> xtrue(xtrue_rcp);
+    ROL::Ptr<std::vector<RealT> > xtrue_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::StdVector<RealT> xtrue(xtrue_ptr);
 
     // Compute Error
     x.axpy(-1.0, xtrue);

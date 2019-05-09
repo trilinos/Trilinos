@@ -58,7 +58,29 @@ namespace panzer {
       int(n \cdot flux * phi) + int(\sigma (u-g) * phi)
       
   */
-PANZER_EVALUATOR_CLASS(WeakDirichletResidual)
+template<typename EvalT, typename Traits>
+class WeakDirichletResidual
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    WeakDirichletResidual(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT> residual;
   PHX::MDField<ScalarT> normal_dot_flux_plus_pen;
@@ -73,7 +95,8 @@ PANZER_EVALUATOR_CLASS(WeakDirichletResidual)
   std::size_t num_ip;
   std::size_t num_dim;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class WeakDirichletResidual
+
 
 }
 

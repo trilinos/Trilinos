@@ -126,9 +126,9 @@ TEST_F(TOSDTWD, birds)
            double init_status = 1;
            std::vector<double> init_vec = {0,0,0};
 
-           stk::mesh::put_field(field, stkIo.meta_data().universal_part(), init_vec.data());
-           stk::mesh::put_field(velocity, stkIo.meta_data().universal_part(), init_vec.data());
-           stk::mesh::put_field(active_status, stkIo.meta_data().universal_part(), &init_status);
+           stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), init_vec.data());
+           stk::mesh::put_field_on_mesh(velocity, stkIo.meta_data().universal_part(), init_vec.data());
+           stk::mesh::put_field_on_mesh(active_status, stkIo.meta_data().universal_part(), &init_status);
 
            stkIo.populate_bulk_data();
 
@@ -316,7 +316,7 @@ TEST_F(TOSDTWD, expand_mesh)
 
         typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
         CoordFieldType& dispField = stkIo.meta_data().declare_field<CoordFieldType>(stk::topology::NODE_RANK, "disp");
-        stk::mesh::put_field(dispField, stkIo.meta_data().universal_part());
+        stk::mesh::put_field_on_mesh(dispField, stkIo.meta_data().universal_part(), nullptr);
 
         stkIo.populate_bulk_data();
 
@@ -576,9 +576,10 @@ void disconnectMesh(     stk::mesh::MetaData &oldMeta,
         }
     }
 
+    std::vector<size_t> num_nodes_needed_per_proc_local(oldBulkData.parallel_size(),0);
+    num_nodes_needed_per_proc_local[oldBulkData.parallel_rank()] = num_nodes_needed;
     std::vector<size_t> num_nodes_needed_per_proc(oldBulkData.parallel_size(),0);
-    num_nodes_needed_per_proc[oldBulkData.parallel_rank()] = num_nodes_needed;
-    stk::all_reduce_sum(oldBulkData.parallel(), num_nodes_needed_per_proc.data(), num_nodes_needed_per_proc.data(), num_nodes_needed_per_proc.size());
+    stk::all_reduce_sum(oldBulkData.parallel(), num_nodes_needed_per_proc_local.data(), num_nodes_needed_per_proc.data(), num_nodes_needed_per_proc.size());
 
     size_t offset_this_proc = 0;
     for(int i=0;i<oldBulkData.parallel_rank();++i)

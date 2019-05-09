@@ -6,6 +6,12 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES KokkosGraph_color.cpp       
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  graph_color_d2
+  SOURCES KokkosGraph_color_d2.cpp       
+  )
+
+
 #Below will probably fail on GPUs.
 #TRIBITS_ADD_EXECUTABLE(
 #  graph_triangle

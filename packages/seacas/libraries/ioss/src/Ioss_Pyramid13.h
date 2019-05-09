@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr auto name = "pyramid13";
+    static constexpr const char *name = "pyramid13";
 
     static void factory();
     ~Pyramid13() override;
@@ -78,7 +78,7 @@ namespace Ioss {
     Pyramid13();
 
   private:
-    Pyramid13(const Pyramid13 &); // Do not implement
+    Pyramid13(const Pyramid13 &) = delete;
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_Pyramid13_h

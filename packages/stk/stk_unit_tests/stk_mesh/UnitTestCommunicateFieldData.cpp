@@ -66,7 +66,7 @@ namespace stk { namespace mesh { class Ghosting; } }
 //  stk::mesh::MetaData meta(spatialDim);
 //  
 //  stk::mesh::Field<double>& field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
-//  stk::mesh::put_field(field, meta.universal_part());
+//  stk::mesh::put_field_on_mesh(field, meta.universal_part());
 //
 //  stk::mesh::BulkData bulk(meta, communicator);
 //
@@ -142,7 +142,8 @@ TEST(CommunicateFieldData, communicate)
   stk::mesh::MetaData meta(spatialDim);
 
   stk::mesh::Field<double>& field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
-  stk::mesh::put_field(field, meta.universal_part());
+  stk::mesh::put_field_on_mesh(field, meta.universal_part(),
+                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
   stk::mesh::BulkData bulk(meta, communicator);
 
@@ -196,7 +197,8 @@ TEST(CommunicateFieldData, communicateMultipleGhostings)
   stk::mesh::MetaData meta(spatialDim);
 
   stk::mesh::Field<double>& field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
-  stk::mesh::put_field(field, meta.universal_part());
+  stk::mesh::put_field_on_mesh(field, meta.universal_part(),
+                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
   stk::mesh::BulkData bulk(meta, communicator);
 

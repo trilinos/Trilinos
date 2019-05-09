@@ -63,7 +63,7 @@ class DiagonalOperator : public LinearOperator<Real> {
 
 private:
  
-  Teuchos::RCP<Vector<Real> >             diag_;
+  ROL::Ptr<Vector<Real> >             diag_;
 
   const Elementwise::Multiply<Real>       mult_;
   const Elementwise::Divide<Real>         div_;   

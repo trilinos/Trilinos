@@ -55,6 +55,7 @@ namespace panzer_stk {
 class CoordMatcher {
    double error_;
    int index_;
+   bool relative_; // compute error relative to length of domain
    char labels_[3];
 
    void buildLabels()
@@ -62,29 +63,39 @@ class CoordMatcher {
 
    void parseParams(const std::vector<std::string> & params) 
    { 
-      std::string errStr = "CoordMatcher \"" + std::string(1,labels_[index_]) + "-coord\" takes at most one parameter <tol>";
-      TEUCHOS_TEST_FOR_EXCEPTION(params.size()>1,std::logic_error,errStr);
+      std::string errStr = "CoordMatcher \"" + std::string(1,labels_[index_]) + "-coord\" takes at most two parameters <tol, relative>";
+      TEUCHOS_TEST_FOR_EXCEPTION(params.size()>2,std::logic_error,errStr);
  
       // read in string, get double
-      if(params.size()==1) {
+      if(params.size()>0) {
          std::stringstream ss;
          ss << params[0];
-         ss >> error_; 
+         ss >> error_;
+         if(params.size()==2){
+           std::string errStr2 = params[1] + " is not a valid periodic option (try \"relative\")";
+           TEUCHOS_TEST_FOR_EXCEPTION(params[1]!="relative",std::logic_error,errStr2);
+           relative_ = true;
+         }
       }
       // else use default value for error
    }
 
 public:
-   CoordMatcher(int index) : error_(1e-8),index_(index) { buildLabels(); }
-   CoordMatcher(int index,double error) : error_(error),index_(index) { buildLabels(); }
-   CoordMatcher(int index,const std::vector<std::string> & params) : error_(1e-8),index_(index) 
+   CoordMatcher(int index) : error_(1e-8),index_(index),relative_(false) { buildLabels(); }
+   CoordMatcher(int index,double error) : error_(error),index_(index),relative_(false) { buildLabels(); }
+   CoordMatcher(int index,const std::vector<std::string> & params) : error_(1e-8),index_(index),relative_(false)
    { buildLabels(); parseParams(params); }
 
-   CoordMatcher(const CoordMatcher & cm) : error_(cm.error_),index_(cm.index_) { buildLabels(); }
+   CoordMatcher(const CoordMatcher & cm) : error_(cm.error_),index_(cm.index_),relative_(cm.relative_) { buildLabels(); }
 
    bool operator()(const Teuchos::Tuple<double,3> & a,
                    const Teuchos::Tuple<double,3> & b) const
-   { return std::fabs(a[index_]-b[index_])<error_; /* I'm being lazy here! */ }
+   {
+     double error = error_;
+     if(relative_) // scale error by length of domain
+       error*=std::fabs(a[1-index_]-b[1-index_]);
+     return std::fabs(a[index_]-b[index_])<error; /* I'm being lazy here! */
+   }
 
    std::string getString() const 
    { 
@@ -99,6 +110,7 @@ public:
 class PlaneMatcher {
    double error_;
    int index0_, index1_;
+   bool relative_; // compute error relative to length of domain
    char labels_[3];
   
    void buildLabels()
@@ -107,36 +119,46 @@ class PlaneMatcher {
    void parseParams(const std::vector<std::string> & params) 
    { 
       std::string errStr = "PlaneMatcher \"" + std::string(1,labels_[index0_])+std::string(1,labels_[index1_]) 
-                         + "-coord\" takes only one parameter <tol>";
-      TEUCHOS_TEST_FOR_EXCEPTION(params.size()>1,std::logic_error,errStr);
+                         + "-coord\" takes at most two parameter <tol, relative>";
+      TEUCHOS_TEST_FOR_EXCEPTION(params.size()>2,std::logic_error,errStr);
  
       // read in string, get double
       if(params.size()==1) {
          std::stringstream ss;
          ss << params[0];
          ss >> error_; 
+         if(params.size()==2){
+           std::string errStr2 = params[1] + " is not a valid periodic option (try \"relative\")";
+           TEUCHOS_TEST_FOR_EXCEPTION(params[1]!="relative",std::logic_error,errStr2);
+           relative_ = true;
+         }
       }
       // else use default value for error
    }
 
 public:
-   PlaneMatcher(int index0,int index1) : error_(1e-8),index0_(index0), index1_(index1) 
+   PlaneMatcher(int index0,int index1) : error_(1e-8),index0_(index0), index1_(index1), relative_(false)
    { TEUCHOS_ASSERT(index0!=index1); buildLabels(); }
 
-   PlaneMatcher(int index0,int index1,double error) : error_(error),index0_(index0), index1_(index1) 
+   PlaneMatcher(int index0,int index1,double error) : error_(error),index0_(index0), index1_(index1), relative_(false)
    { TEUCHOS_ASSERT(index0!=index1); buildLabels(); }
 
    PlaneMatcher(int index0,int index1,const std::vector<std::string> & params) 
-      : error_(1e-8), index0_(index0), index1_(index1) 
+      : error_(1e-8), index0_(index0), index1_(index1), relative_(false)
    { TEUCHOS_ASSERT(index0!=index1); buildLabels(); parseParams(params); }
 
-   PlaneMatcher(const PlaneMatcher & cm) : error_(cm.error_),index0_(cm.index0_), index1_(cm.index1_) 
+   PlaneMatcher(const PlaneMatcher & cm) : error_(cm.error_),index0_(cm.index0_), index1_(cm.index1_), relative_(cm.relative_)
    { buildLabels(); }
 
    bool operator()(const Teuchos::Tuple<double,3> & a,
                    const Teuchos::Tuple<double,3> & b) const
-   { return (std::fabs(a[index0_]-b[index0_])<error_) 
-         && (std::fabs(a[index1_]-b[index1_])<error_) ; /* I'm being lazy here! */ }
+   {
+     double error = error_;
+     if(relative_) // scale error by length of domain in normal direction
+       error*=std::fabs(a[3-index0_-index1_]-b[3-index0_-index1_]);
+     return (std::fabs(a[index0_]-b[index0_])<error_) 
+         && (std::fabs(a[index1_]-b[index1_])<error_) ; /* I'm being lazy here! */
+   }
 
    std::string getString() const 
    { 

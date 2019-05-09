@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -45,7 +45,7 @@
 #define KOKKOS_HOST_EXP_ITERATE_TILE_HPP
 
 #include <Kokkos_Macros.hpp>
-#if defined(KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION) && defined(KOKKOS_HAVE_PRAGMA_IVDEP) && !defined(__CUDA_ARCH__)
+#if defined(KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION) && defined(KOKKOS_ENABLE_PRAGMA_IVDEP) && !defined(__CUDA_ARCH__)
 #define KOKKOS_MDRANGE_IVDEP
 #endif
 
@@ -59,7 +59,7 @@
 #include <algorithm>
 #include <cstdio>
 
-namespace Kokkos { namespace Experimental { namespace Impl {
+namespace Kokkos { namespace Impl {
 
 // Temporary, for testing new loop macros
 #define KOKKOS_ENABLE_NEW_LOOP_MACROS 1
@@ -1274,7 +1274,7 @@ struct Tile_Loop_Type<8, IsLeft, IType, Tagged, typename std::enable_if< !std::i
 
 
 template <typename T>
-using is_void = std::is_same< T , void >;
+using is_void_type = std::is_same< T , void >;
 
 template <typename T>
 struct is_type_array : std::false_type 
@@ -1303,7 +1303,7 @@ template < typename RP
          , typename Tag
          , typename ValueType
          >
-struct HostIterateTile < RP , Functor , Tag , ValueType , typename std::enable_if< is_void<ValueType >::value >::type >
+struct HostIterateTile < RP , Functor , Tag , ValueType , typename std::enable_if< is_void_type<ValueType >::value >::type >
 {
   using index_type = typename RP::index_type;
   using point_type = typename RP::point_type;
@@ -1781,7 +1781,7 @@ template < typename RP
          , typename Tag
          , typename ValueType
          >
-struct HostIterateTile < RP , Functor , Tag , ValueType , typename std::enable_if< !is_void<ValueType >::value && !is_type_array<ValueType>::value >::type >
+struct HostIterateTile < RP , Functor , Tag , ValueType , typename std::enable_if< !is_void_type<ValueType >::value && !is_type_array<ValueType>::value >::type >
 {
   using index_type = typename RP::index_type;
   using point_type = typename RP::point_type;
@@ -2268,7 +2268,7 @@ template < typename RP
          , typename Tag
          , typename ValueType
          >
-struct HostIterateTile < RP , Functor , Tag , ValueType , typename std::enable_if< !is_void<ValueType >::value && is_type_array<ValueType>::value >::type >
+struct HostIterateTile < RP , Functor , Tag , ValueType , typename std::enable_if< !is_void_type<ValueType >::value && is_type_array<ValueType>::value >::type >
 {
   using index_type = typename RP::index_type;
   using point_type = typename RP::point_type;
@@ -2745,10 +2745,13 @@ struct HostIterateTile < RP , Functor , Tag , ValueType , typename std::enable_i
 
 // ------------------------------------------------------------------ //
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 // MDFunctor - wraps the range_policy and functor to pass to IterateTile
 // Used for md_parallel_{for,reduce} with Serial, Threads, OpenMP
 // Cuda uses DeviceIterateTile directly within md_parallel_for
 // TODO Once md_parallel_{for,reduce} removed, this can be removed
+
+namespace Experimental { 
 
 // ParallelReduce - scalar reductions
 template < typename MDRange, typename Functor, typename ValueType = void >
@@ -2759,11 +2762,11 @@ struct MDFunctor
   using value_type   = ValueType;
   using work_tag     = typename range_policy::work_tag;
   using index_type   = typename range_policy::index_type;
-  using iterate_type = typename Kokkos::Experimental::Impl::HostIterateTile< MDRange
-                                                                           , Functor
-                                                                           , work_tag
-                                                                           , value_type
-                                                                           >;
+  using iterate_type = typename Kokkos::Impl::HostIterateTile< MDRange
+                                                             , Functor
+                                                             , work_tag
+                                                             , value_type
+                                                             >;
 
 
   inline
@@ -2804,11 +2807,11 @@ struct MDFunctor< MDRange, Functor, ValueType[] >
   using value_type   = ValueType[];
   using work_tag     = typename range_policy::work_tag;
   using index_type   = typename range_policy::index_type;
-  using iterate_type = typename Kokkos::Experimental::Impl::HostIterateTile< MDRange
-                                                                           , Functor
-                                                                           , work_tag
-                                                                           , value_type
-                                                                           >;
+  using iterate_type = typename Kokkos::Impl::HostIterateTile< MDRange
+                                                             , Functor
+                                                             , work_tag
+                                                             , value_type
+                                                             >;
 
 
   inline
@@ -2852,11 +2855,11 @@ struct MDFunctor< MDRange, Functor, void >
   using functor_type = Functor;
   using work_tag     = typename range_policy::work_tag;
   using index_type   = typename range_policy::index_type;
-  using iterate_type = typename Kokkos::Experimental::Impl::HostIterateTile< MDRange
-                                                                           , Functor
-                                                                           , work_tag
-                                                                           , void
-                                                                           >;
+  using iterate_type = typename Kokkos::Impl::HostIterateTile< MDRange
+                                                             , Functor
+                                                             , work_tag
+                                                             , void
+                                                             >;
 
 
   inline
@@ -2887,8 +2890,10 @@ struct MDFunctor< MDRange, Functor, void >
   Functor m_func;
 };
 
+} // end namespace Experimental
+#endif
 #undef KOKKOS_ENABLE_NEW_LOOP_MACROS
 
-} } } //end namespace Kokkos::Experimental::Impl
+} } //end namespace Kokkos::Impl
 
 #endif

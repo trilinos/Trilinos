@@ -40,203 +40,469 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_GRADBASISCROSSVECTOR_IMPL_HPP
-#define PANZER_EVALUATOR_GRADBASISCROSSVECTOR_IMPL_HPP
+#ifndef   PANZER_EVALUATOR_GRADBASISCROSSVECTOR_IMPL_HPP
+#define   PANZER_EVALUATOR_GRADBASISCROSSVECTOR_IMPL_HPP
 
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Include Files
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Intrepid2
 #include "Intrepid2_FunctionSpaceTools.hpp"
-#include "Panzer_IntegrationRule.hpp"
-#include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_Workset_Utilities.hpp"
+
+// Kokkos
 #include "Kokkos_ViewFactory.hpp"
 
-namespace panzer {
+// Panzer
+#include "Panzer_BasisIRLayout.hpp"
+#include "Panzer_IntegrationRule.hpp"
+#include "Panzer_Workset_Utilities.hpp"
 
-//**********************************************************************
-PHX_EVALUATOR_CTOR(Integrator_GradBasisCrossVector,p):
-  _num_basis_nodes(0),
-  _num_quadrature_points(0),
-  _basis_index(-1)
+namespace panzer
 {
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  Constructor
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  Integrator_GradBasisCrossVector<EvalT, Traits>::
+  Integrator_GradBasisCrossVector(
+    const panzer::EvaluatorStyle&        evalStyle,
+    const std::vector<std::string>&      resNames,
+    const std::string&                   vecName,
+    const panzer::BasisIRLayout&         basis,
+    const panzer::IntegrationRule&       ir,
+    const double&                        multiplier, /* = 1 */
+    const std::vector<std::string>&      fmNames,    /* =
+      std::vector<std::string>() */
+    const Teuchos::RCP<PHX::DataLayout>& vecDL       /* = Teuchos::null */)
+    :
+    evalStyle_(evalStyle),
+    multiplier_(multiplier),
+    numDims_(resNames.size()),
+    numGradDims_(ir.dl_vector->extent(2)),
+    basisName_(basis.name())
+  {
+    using Kokkos::View;
+    using panzer::BASIS;
+    using panzer::Cell;
+    using panzer::EvaluatorStyle;
+    using panzer::IP;
+    using PHX::DataLayout;
+    using PHX::Device;
+    using PHX::DevLayout;
+    using PHX::MDField;
+    using std::invalid_argument;
+    using std::logic_error;
+    using std::size_t;
+    using std::string;
+    using Teuchos::RCP;
 
-  // TODO: Get all of the panzer modules to read in const integration rules and basisIRlayouts
-  Teuchos::RCP<const BasisIRLayout> basis_layout = p.get< Teuchos::RCP<BasisIRLayout> >("Basis").getConst();
-  Teuchos::RCP<const panzer::IntegrationRule> ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR").getConst();
-  Teuchos::RCP<PHX::DataLayout> vector_dl = p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout Vector");
+    // Ensure the input makes sense.
+    TEUCHOS_TEST_FOR_EXCEPTION(numDims_ != 3, invalid_argument, "Error:  "    \
+      "Integrator_GradBasisCrossVector called with the number of residual "   \
+      "names not equal to three.")
+    for (const auto& name : resNames)
+      TEUCHOS_TEST_FOR_EXCEPTION(name == "", invalid_argument, "Error:  "     \
+        "Integrator_GradBasisCrossVector called with an empty residual name.")
+    TEUCHOS_TEST_FOR_EXCEPTION(vecName == "", invalid_argument, "Error:  "    \
+      "Integrator_GradBasisCrossVector called with an empty vector name.")
+    RCP<const PureBasis> tmpBasis = basis.getBasis();
+    TEUCHOS_TEST_FOR_EXCEPTION(not tmpBasis->supportsGrad(), logic_error,
+      "Error:  Integrator_GradBasisCrossVector:  Basis of type \""
+      << tmpBasis->name() << "\" does not support the gradient operator.")
+    RCP<DataLayout> tmpVecDL = ir.dl_vector;
+    if (not vecDL.is_null())
+    {
+      tmpVecDL = vecDL;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        tmpVecDL->extent(2) < ir.dl_vector->extent(2), logic_error,
+        "Error:  Integrator_GradBasisCrossVector:  Dimension of space "       \
+        "exceeds dimension of Vector Data Layout.")
+      TEUCHOS_TEST_FOR_EXCEPTION(numDims_ !=
+        static_cast<int>(vecDL->extent(2)), logic_error, "Error:  "           \
+        "Integrator_GradBasisCrossVector:  The vector must be the same "      \
+        "length as the number of residuals.")
+    } // end if (not vecDL.is_null())
+    TEUCHOS_TEST_FOR_EXCEPTION(numGradDims_ > numDims_, logic_error,
+      "Error:  Integrator_GradBasisCrossVector:  The vector must have at "    \
+      "least as many components as there are dimensions in the mesh.")
 
-  Teuchos::RCP<const PureBasis> basis = basis_layout->getBasis();
-  _basis_name = basis_layout->name();
+    // Create the field for the vector-valued function we're integrating.
+    vector_ = MDField<const ScalarT, Cell, IP, Dim>(vecName, tmpVecDL);
+    this->addDependentField(vector_);
 
-  // Verify that this basis supports the gradient operation
-  TEUCHOS_TEST_FOR_EXCEPTION(!basis->supportsGrad(),std::logic_error,"Integrator_GradBasisCrossVector: Basis of type \"" << basis->name() << "\" does not support GRAD");
+    // Create the fields that we're either contributing to or evaluating
+    // (storing).
+    fields_.clear();
+    for (const auto& name : resNames)
+    {
+      MDField<ScalarT, Cell, BASIS> res(name, basis.functional);
+      fields_.push_back(res);
+    } // end loop over resNames
+    for (const auto& field : fields_)
+      if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
+        this->addContributedField(field);
+      else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
+        this->addEvaluatedField(field);
 
-  // Setup residuals
-  _residuals.clear();
-  if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Residual Names")){
-    const std::vector<std::string> & names = *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Residual Names"));
-    for(const auto & name : names){
-      PHX::MDField<ScalarT,Cell,BASIS> res(name, basis_layout->functional);
-      _residuals.push_back(res);
-    }
-  }
-  _num_dims = _residuals.size();
+    // Add the dependent field multipliers, if there are any.
+    int i = 0;
+    fieldMults_.resize(fmNames.size());
+    kokkosFieldMults_ = View<View<const ScalarT**,
+      typename DevLayout<ScalarT>::type, Device>*>(
+      "GradBasisCrossVector::KokkosFieldMultipliers", fmNames.size());
+    for (const auto& name : fmNames)
+    {
+      fieldMults_[i++] = MDField<const ScalarT, Cell, IP>(name, ir.dl_scalar);
+      this->addDependentField(fieldMults_[i - 1]);
+    } // end loop over the field multipliers
 
-  // Currently we only allow for vectors of length 3
-  TEUCHOS_TEST_FOR_EXCEPTION(_num_dims != vector_dl->dimension(2),std::logic_error,"Vector must be same length as number of residuals.");
+    // Set the name of this object.
+    string n("Integrator_GradBasisCrossVector (");
+    if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
+      n += "CONTRIBUTES";
+    else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
+      n += "EVALUATES";
+    n += "):  {";
+    for (size_t j=0; j < fields_.size() - 1; ++j)
+      n += fields_[j].fieldTag().name() + ", ";
+    n += fields_.back().fieldTag().name() + "}";
+    this->setName(n);
+  } // end of Constructor
 
-  // Setup vector
-  _vector = PHX::MDField<const ScalarT,Cell,IP,Dim>(p.get<std::string>("Vector Name"), vector_dl);
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  ParameterList Constructor
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  Integrator_GradBasisCrossVector<EvalT, Traits>::
+  Integrator_GradBasisCrossVector(
+    const Teuchos::ParameterList& p)
+    :
+    Integrator_GradBasisCrossVector(
+      panzer::EvaluatorStyle::EVALUATES,
+      p.get<const std::vector<std::string>>("Residual Names"),
+      p.get<std::string>("Vector Name"),
+      (*p.get<Teuchos::RCP<panzer::BasisIRLayout>>("Basis")),
+      (*p.get<Teuchos::RCP<panzer::IntegrationRule>>("IR")),
+      p.get<double>("Multiplier"),
+      p.isType<Teuchos::RCP<const std::vector<std::string>>>
+        ("Field Multipliers") ?
+        (*p.get<Teuchos::RCP<const std::vector<std::string>>>
+        ("Field Multipliers")) : std::vector<std::string>(),
+      p.isType<Teuchos::RCP<PHX::DataLayout>>("Data Layout Vector") ?
+        p.get<Teuchos::RCP<PHX::DataLayout>>("Data Layout Vector") :
+        Teuchos::null)
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
 
-  // TODO: I'm assuming that the gradient is held in the same number of dimensions as ir->dl_vector (dl_vector is initialized from mesh dimensions)
-  _num_grad_dims = ir->dl_vector->dimension(2);
+    // Ensure that the input ParameterList didn't contain any bogus entries.
+    RCP<ParameterList> validParams = this->getValidParameters();
+    p.validateParameters(*validParams);
+  } // end of ParameterList Constructor
 
-  // Vector must be at least the same dimension as the GRAD operation
-  TEUCHOS_TEST_FOR_EXCEPTION(_num_grad_dims > _num_dims,std::logic_error,"Vector size must have at least as many components as there are dimensions in the mesh.");
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  postRegistrationSetup()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  void
+  Integrator_GradBasisCrossVector<EvalT, Traits>::
+  postRegistrationSetup(
+    typename Traits::SetupData sd,
+    PHX::FieldManager<Traits>& /* fm */)
+  {
+    using Kokkos::createDynRankView;
+    using panzer::getBasisIndex;
+    using PHX::Device;
 
-  // Read the scalar multiplier
-  _multiplier = ScalarT(p.get<double>("Multiplier"));
+    // Get the Kokkos::Views of the field multipliers.
+    for (size_t i(0); i < fieldMults_.size(); ++i)
+      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
+    Device::fence();
 
-  // Setup field multipliers
-  if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")){
-    const std::vector<std::string> & field_multiplier_names = *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
-    for (const std::string & name : field_multiplier_names){
-      _field_multipliers.push_back(PHX::MDField<const ScalarT,Cell,IP>(name, ir->dl_scalar));
-    }
-  }
+    // Determine the index in the Workset bases for our particular basis name.
+    basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
+  } // end of postRegistrationSetup()
 
-  // Register evaluated fields
-  for (auto & residual : _residuals){
-    this->addEvaluatedField(residual);
-  }
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  operator()()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  template<int NUM_FIELD_MULT>
+  KOKKOS_INLINE_FUNCTION
+  void
+  Integrator_GradBasisCrossVector<EvalT, Traits>::
+  operator()(
+    const FieldMultTag<NUM_FIELD_MULT>& /* tag */,
+    const size_t&                       cell) const
+  {
+    using panzer::EvaluatorStyle;
 
-  // Register dependent fields
-  this->addDependentField(_vector);
-  for (auto & field : _field_multipliers){
-    this->addDependentField(field);
-  }
+    // Initialize the evaluated fields.
+    const int numBases(fields_[0].extent(1)), numQP(vector_.extent(1));
+    if (evalStyle_ == EvaluatorStyle::EVALUATES)
+      for (int dim(0); dim < numDims_; ++dim)
+        for (int basis(0); basis < numBases; ++basis)
+          fields_[dim](cell, basis) = 0.0;
 
-  // Name the module
-  this->setName("Integrator_GradBasisCrossVector: " + _vector.fieldTag().name());
-}
-
-//**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisCrossVector,sd,fm)
-{
-
-  for (auto & residual : _residuals){
-    this->utils.setFieldData(residual,fm);
-  }
-
-  this->utils.setFieldData(_vector,fm);
-
-  for (auto & field : _field_multipliers){
-    this->utils.setFieldData(field,fm);
-  }
-
-  _num_basis_nodes = _residuals[0].dimension(1);
-  _num_quadrature_points = _vector.dimension(1);
-
-  _basis_index = panzer::getBasisIndex(_basis_name, (*sd.worksets_)[0], this->wda);
-
-  // TODO: figure out a clean way of cloning _vector
-  _tmp = Kokkos::createDynRankView(_residuals[0].get_static_view(),"tmp",_vector.dimension(0), _num_quadrature_points, _num_dims);
-}
-
-//**********************************************************************
-PHX_EVALUATE_FIELDS(Integrator_GradBasisCrossVector,workset)
-{ 
-
-  // Zero the residuals
-  for (int i(0); i < static_cast<int>(_num_dims); ++i)
-    Kokkos::deep_copy(_residuals[i].get_static_view(), ScalarT(0.0));
-
-  // The curl operation will only do something if _num_dims == 3
-  if(_num_dims != 3){
-    return;
-  }
-
-  // do a scaled copy to initialize _tmp
-  for (int i=0; i < _vector.extent_int(0); ++i)
-    for (int j=0; j < _vector.extent_int(1); ++j)
-      for (int k=0; k < _vector.extent_int(2); ++k)
-        _tmp(i,j,k) = _multiplier * _vector(i,j,k);
-
-  // Apply the field multipliers
-  for(auto & field_data : _field_multipliers){
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-      for (std::size_t qp = 0; qp < _num_quadrature_points; ++qp) {
-        const ScalarT & tmpVar = field_data(cell,qp);
-        for (std::size_t dim = 0; dim < _num_dims; ++dim){
-          _tmp(cell,qp,dim) *= tmpVar;
-        }
+    // The following if-block is for the sake of optimization depending on the
+    // number of field multipliers.
+    ScalarT tmp[3];
+    const int X(0), Y(1), Z(2);
+    if (NUM_FIELD_MULT == 0)
+    {
+      if (numGradDims_ == 1)
+      {
+        for (int qp(0); qp < numQP; ++qp)
+        {
+          tmp[Y] = multiplier_ * vector_(cell, qp, Y);
+          tmp[Z] = multiplier_ * vector_(cell, qp, Z);
+          for (int basis(0); basis < numBases; ++basis)
+          {
+            fields_[Y](cell, basis) +=  tmp[Z] * basis_(cell, basis, qp, X);
+            fields_[Z](cell, basis) += -tmp[Y] * basis_(cell, basis, qp, X);
+          } // end loop over the bases
+        } // end loop over the quadrature points
       }
-    }
-  }
-
-  // const Kokkos::DynRankView<double,PHX::Device> & weighted_grad_basis = this->wda(workset).bases[basis_index]->weighted_grad_basis;
-  const BasisValues2<double> & bv = *this->wda(workset).bases[_basis_index];
-
-  ScalarT r_0,r_1,r_2;
-
-  // this part gets annoying since dimensionality of the weighted_grad_basis is defined by the mesh
-  // There might be a fix, but for now we will just make it ugly.
-  if(_num_grad_dims == 1){
-
-    // Curl only exists if the vector is three dimensional
-    if(_num_dims == 3){
-      for (index_t cell = 0; cell < workset.num_cells; ++cell){
-        for (std::size_t basis = 0; basis < _num_basis_nodes; ++basis){
-          r_1=r_2=0;
-          for (std::size_t qp = 0; qp < _num_quadrature_points; ++qp){
-            r_1 += _tmp(cell,qp,2)*bv.weighted_grad_basis(cell,basis,qp,0);
-            r_2 += - _tmp(cell,qp,1)*bv.weighted_grad_basis(cell,basis,qp,0);
-          }
-          _residuals[1](cell,basis) += r_1;
-          _residuals[2](cell,basis) += r_2;
-        }
+      else if (numGradDims_ == 2)
+      {
+        for (int qp(0); qp < numQP; ++qp)
+        {
+          tmp[X] = multiplier_ * vector_(cell, qp, X);
+          tmp[Y] = multiplier_ * vector_(cell, qp, Y);
+          tmp[Z] = multiplier_ * vector_(cell, qp, Z);
+          for (int basis(0); basis < numBases; ++basis)
+          {
+            fields_[X](cell, basis) += -tmp[Z] * basis_(cell, basis, qp, Y);
+            fields_[Y](cell, basis) +=  tmp[Z] * basis_(cell, basis, qp, X);
+            fields_[Z](cell, basis) +=  tmp[X] * basis_(cell, basis, qp, Y) -
+                                        tmp[Y] * basis_(cell, basis, qp, X);
+          } // end loop over the bases
+        } // end loop over the quadrature points
       }
+      else if (numGradDims_ == 3)
+      {
+        for (int qp(0); qp < numQP; ++qp)
+        {
+          tmp[X] = multiplier_ * vector_(cell, qp, X);
+          tmp[Y] = multiplier_ * vector_(cell, qp, Y);
+          tmp[Z] = multiplier_ * vector_(cell, qp, Z);
+          for (int basis(0); basis < numBases; ++basis)
+          {
+            fields_[X](cell, basis) += tmp[Y] * basis_(cell, basis, qp, Z) -
+                                       tmp[Z] * basis_(cell, basis, qp, Y);
+            fields_[Y](cell, basis) += tmp[Z] * basis_(cell, basis, qp, X) -
+                                       tmp[X] * basis_(cell, basis, qp, Z);
+            fields_[Z](cell, basis) += tmp[X] * basis_(cell, basis, qp, Y) -
+                                       tmp[Y] * basis_(cell, basis, qp, X);
+          } // end loop over the bases
+        } // end loop over the quadrature points
+      } // end if (numGradDims_ == something)
     }
-
-  } else if (_num_grad_dims == 2){
-
-    // Curl only exists if the vector is three dimensional
-    if(_num_dims == 3){
-      for (index_t cell = 0; cell < workset.num_cells; ++cell){
-        for (std::size_t basis = 0; basis < _num_basis_nodes; ++basis){
-          r_0=r_1=r_2=0;
-          for (std::size_t qp = 0; qp < _num_quadrature_points; ++qp){
-            r_0 += - _tmp(cell,qp,2)*bv.weighted_grad_basis(cell,basis,qp,1);
-            r_1 += _tmp(cell,qp,2)*bv.weighted_grad_basis(cell,basis,qp,0);
-            r_2 += _tmp(cell,qp,0)*bv.weighted_grad_basis(cell,basis,qp,1) - _tmp(cell,qp,1)*bv.weighted_grad_basis(cell,basis,qp,0);
-          }
-          _residuals[0](cell,basis) += r_0;
-          _residuals[1](cell,basis) += r_1;
-          _residuals[2](cell,basis) += r_2;
-        }
+    else if (NUM_FIELD_MULT == 1)
+    {
+      if (numGradDims_ == 1)
+      {
+        for (int qp(0); qp < numQP; ++qp)
+        {
+          tmp[Y] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
+            vector_(cell, qp, Y);
+          tmp[Z] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
+            vector_(cell, qp, Z);
+          for (int basis(0); basis < numBases; ++basis)
+          {
+            fields_[Y](cell, basis) +=  tmp[Z] * basis_(cell, basis, qp, X);
+            fields_[Z](cell, basis) += -tmp[Y] * basis_(cell, basis, qp, X);
+          } // end loop over the bases
+        } // end loop over the quadrature points
       }
-    }
-
-  } else if (_num_grad_dims == 3){
-
-    // Will have thrown an error if _num_grad_dims != _num_dims != 3
-    for (index_t cell = 0; cell < workset.num_cells; ++cell){
-      for (std::size_t basis = 0; basis < _num_basis_nodes; ++basis){
-        r_0=r_1=r_2=0;
-        for (std::size_t qp = 0; qp < _num_quadrature_points; ++qp){
-          r_0 += _tmp(cell,qp,1)*bv.weighted_grad_basis(cell,basis,qp,2) - _tmp(cell,qp,2)*bv.weighted_grad_basis(cell,basis,qp,1);
-          r_1 += _tmp(cell,qp,2)*bv.weighted_grad_basis(cell,basis,qp,0) - _tmp(cell,qp,0)*bv.weighted_grad_basis(cell,basis,qp,2);
-          r_2 += _tmp(cell,qp,0)*bv.weighted_grad_basis(cell,basis,qp,1) - _tmp(cell,qp,1)*bv.weighted_grad_basis(cell,basis,qp,0);
-        }
-        _residuals[0](cell,basis) += r_0;
-        _residuals[1](cell,basis) += r_1;
-        _residuals[2](cell,basis) += r_2;
+      else if (numGradDims_ == 2)
+      {
+        for (int qp(0); qp < numQP; ++qp)
+        {
+          tmp[X] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
+            vector_(cell, qp, X);
+          tmp[Y] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
+            vector_(cell, qp, Y);
+          tmp[Z] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
+            vector_(cell, qp, Z);
+          for (int basis(0); basis < numBases; ++basis)
+          {
+            fields_[X](cell, basis) += -tmp[Z] * basis_(cell, basis, qp, Y);
+            fields_[Y](cell, basis) +=  tmp[Z] * basis_(cell, basis, qp, X);
+            fields_[Z](cell, basis) +=  tmp[X] * basis_(cell, basis, qp, Y) -
+                                        tmp[Y] * basis_(cell, basis, qp, X);
+          } // end loop over the bases
+        } // end loop over the quadrature points
       }
+      else if (numGradDims_ == 3)
+      {
+        for (int qp(0); qp < numQP; ++qp)
+        {
+          tmp[X] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
+            vector_(cell, qp, X);
+          tmp[Y] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
+            vector_(cell, qp, Y);
+          tmp[Z] = multiplier_ * kokkosFieldMults_(0)(cell, qp) *
+            vector_(cell, qp, Z);
+          for (int basis(0); basis < numBases; ++basis)
+          {
+            fields_[X](cell, basis) += tmp[Y] * basis_(cell, basis, qp, Z) -
+                                       tmp[Z] * basis_(cell, basis, qp, Y);
+            fields_[Y](cell, basis) += tmp[Z] * basis_(cell, basis, qp, X) -
+                                       tmp[X] * basis_(cell, basis, qp, Z);
+            fields_[Z](cell, basis) += tmp[X] * basis_(cell, basis, qp, Y) -
+                                       tmp[Y] * basis_(cell, basis, qp, X);
+          } // end loop over the bases
+        } // end loop over the quadrature points
+      } // end if (numGradDims_ == something)
     }
-  }
+    else
+    {
+      const int numFieldMults(kokkosFieldMults_.extent(0));
+      if (numGradDims_ == 1)
+      {
+        for (int qp(0); qp < numQP; ++qp)
+        {
+          tmp[Y] = multiplier_ * vector_(cell, qp, Y);
+          tmp[Z] = multiplier_ * vector_(cell, qp, Z);
+          for (int fm(0); fm < numFieldMults; ++fm)
+          {
+            tmp[Y] *= kokkosFieldMults_(fm)(cell, qp);
+            tmp[Z] *= kokkosFieldMults_(fm)(cell, qp);
+          } // end loop over the field multipliers
+          for (int basis(0); basis < numBases; ++basis)
+          {
+            fields_[Y](cell, basis) +=  tmp[Z] * basis_(cell, basis, qp, X);
+            fields_[Z](cell, basis) += -tmp[Y] * basis_(cell, basis, qp, X);
+          } // end loop over the bases
+        } // end loop over the quadrature points
+      }
+      else if (numGradDims_ == 2)
+      {
+        for (int qp(0); qp < numQP; ++qp)
+        {
+          tmp[X] = multiplier_ * vector_(cell, qp, X);
+          tmp[Y] = multiplier_ * vector_(cell, qp, Y);
+          tmp[Z] = multiplier_ * vector_(cell, qp, Z);
+          for (int fm(0); fm < numFieldMults; ++fm)
+          {
+            tmp[X] *= kokkosFieldMults_(fm)(cell, qp);
+            tmp[Y] *= kokkosFieldMults_(fm)(cell, qp);
+            tmp[Z] *= kokkosFieldMults_(fm)(cell, qp);
+          } // end loop over the field multipliers
+          for (int basis(0); basis < numBases; ++basis)
+          {
+            fields_[X](cell, basis) += -tmp[Z] * basis_(cell, basis, qp, Y);
+            fields_[Y](cell, basis) +=  tmp[Z] * basis_(cell, basis, qp, X);
+            fields_[Z](cell, basis) +=  tmp[X] * basis_(cell, basis, qp, Y) -
+                                        tmp[Y] * basis_(cell, basis, qp, X);
+          } // end loop over the bases
+        } // end loop over the quadrature points
+      }
+      else if (numGradDims_ == 3)
+      {
+        for (int qp(0); qp < numQP; ++qp)
+        {
+          tmp[X] = multiplier_ * vector_(cell, qp, X);
+          tmp[Y] = multiplier_ * vector_(cell, qp, Y);
+          tmp[Z] = multiplier_ * vector_(cell, qp, Z);
+          for (int fm(0); fm < numFieldMults; ++fm)
+          {
+            tmp[X] *= kokkosFieldMults_(fm)(cell, qp);
+            tmp[Y] *= kokkosFieldMults_(fm)(cell, qp);
+            tmp[Z] *= kokkosFieldMults_(fm)(cell, qp);
+          } // end loop over the field multipliers
+          for (int basis(0); basis < numBases; ++basis)
+          {
+            fields_[X](cell, basis) += tmp[Y] * basis_(cell, basis, qp, Z) -
+                                       tmp[Z] * basis_(cell, basis, qp, Y);
+            fields_[Y](cell, basis) += tmp[Z] * basis_(cell, basis, qp, X) -
+                                       tmp[X] * basis_(cell, basis, qp, Z);
+            fields_[Z](cell, basis) += tmp[X] * basis_(cell, basis, qp, Y) -
+                                       tmp[Y] * basis_(cell, basis, qp, X);
+          } // end loop over the bases
+        } // end loop over the quadrature points
+      } // end if (numGradDims_ == something)
+    } // end if (NUM_FIELD_MULT == something)
+  } // end of operator()()
 
-}
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  evaluateFields()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  void
+  Integrator_GradBasisCrossVector<EvalT, Traits>::
+  evaluateFields(
+    typename Traits::EvalData workset)
+  {
+    using Kokkos::parallel_for;
+    using Kokkos::RangePolicy;
 
-//**********************************************************************
+    // Grab the basis information.
+    basis_ = this->wda(workset).bases[basisIndex_]->weighted_grad_basis;
 
-}
+    // The following if-block is for the sake of optimization depending on the
+    // number of field multipliers.  The parallel_fors will loop over the cells
+    // in the Workset and execute operator()() above.
+    if (fieldMults_.size() == 0)
+      parallel_for(RangePolicy<FieldMultTag<0>>(0, workset.num_cells), *this);
+    else if (fieldMults_.size() == 1)
+      parallel_for(RangePolicy<FieldMultTag<1>>(0, workset.num_cells), *this);
+    else
+      parallel_for(RangePolicy<FieldMultTag<-1>>(0, workset.num_cells), *this);
+  } // end of evaluateFields()
 
-#endif
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  getValidParameters()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename TRAITS>
+  Teuchos::RCP<Teuchos::ParameterList>
+  Integrator_GradBasisCrossVector<EvalT, TRAITS>::
+  getValidParameters() const
+  {
+    using panzer::BasisIRLayout;
+    using panzer::IntegrationRule;
+    using PHX::DataLayout;
+    using std::string;
+    using std::vector;
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    // Create a ParameterList with all the valid keys we support.
+    RCP<ParameterList> p = rcp(new ParameterList);
+
+    RCP<const vector<string>> resNames;
+    p->set("Residual Names", resNames);
+    p->set<string>("Vector Name", "?");
+    RCP<BasisIRLayout> basis;
+    p->set("Basis", basis);
+    RCP<IntegrationRule> ir;
+    p->set("IR", ir);
+    p->set<double>("Multiplier", 1.0);
+    RCP<const vector<string>> fms;
+    p->set("Field Multipliers", fms);
+    RCP<DataLayout> vecDL;
+    p->set("Data Layout Vector", vecDL);
+
+    return p;
+  } // end of getValidParameters()
+
+} // end of namespace panzer
+
+#endif // PANZER_EVALUATOR_GRADBASISCROSSVECTOR_IMPL_HPP

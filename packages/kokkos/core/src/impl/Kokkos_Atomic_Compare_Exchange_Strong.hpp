@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -48,6 +48,10 @@
 #include <Kokkos_Macros.hpp>
 #if defined( KOKKOS_ATOMIC_HPP ) && ! defined( KOKKOS_ATOMIC_COMPARE_EXCHANGE_STRONG_HPP )
 #define KOKKOS_ATOMIC_COMPARE_EXCHANGE_STRONG_HPP
+
+#if defined(KOKKOS_ENABLE_CUDA)
+#include<Cuda/Kokkos_Cuda_Version_9_8_Compatibility.hpp>
+#endif
 
 namespace Kokkos {
 
@@ -103,7 +107,12 @@ T atomic_compare_exchange( volatile T * const dest , const T & compare ,
   T return_val;
   // This is a way to (hopefully) avoid dead lock in a warp
   int done = 0;
-  unsigned int active = __ballot(1);
+#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
+  unsigned int mask = KOKKOS_IMPL_CUDA_ACTIVEMASK;
+  unsigned int active = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask,1);
+#else
+  unsigned int active = KOKKOS_IMPL_CUDA_BALLOT(1);
+#endif
   unsigned int done_active = 0;
   while (active!=done_active) {
     if(!done) {
@@ -115,7 +124,11 @@ T atomic_compare_exchange( volatile T * const dest , const T & compare ,
         done = 1;
       }
     }
-    done_active = __ballot(done);
+#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
+    done_active = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask,done);
+#else
+    done_active = KOKKOS_IMPL_CUDA_BALLOT(done);
+#endif
   }
   return return_val;
 }
@@ -279,9 +292,31 @@ T atomic_compare_exchange( volatile T * const dest, const T compare, const T val
   return retval;
 }
 
+#elif defined( KOKKOS_ENABLE_SERIAL_ATOMICS )
+
+template< typename T >
+KOKKOS_INLINE_FUNCTION
+T atomic_compare_exchange( volatile T * const dest_v, const T compare, const T val )
+{
+  T* dest = const_cast<T*>(dest_v);
+  T retval = *dest;
+  if (retval == compare) *dest = val;
+  return retval;
+}
+
 #endif
 #endif
 #endif // !defined ROCM_ATOMICS
+
+// dummy for non-CUDA Kokkos headers being processed by NVCC
+#if defined(__CUDA_ARCH__) && !defined(KOKKOS_ENABLE_CUDA)
+template <typename T>
+__inline__ __device__
+T atomic_compare_exchange(volatile T * const, const Kokkos::Impl::identity_t<T>, const Kokkos::Impl::identity_t<T>)
+{
+  return T();
+}
+#endif
 
 template <typename T>
 KOKKOS_INLINE_FUNCTION

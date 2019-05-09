@@ -55,6 +55,7 @@
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_Details_MpiTypeTraits.hpp>
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
@@ -74,6 +75,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
 
 namespace MueLu {
 
@@ -85,6 +87,8 @@ namespace MueLu {
     SET_VALID_ENTRY("repartition: print partition distribution");
     SET_VALID_ENTRY("repartition: remap parts");
     SET_VALID_ENTRY("repartition: remap num values");
+    SET_VALID_ENTRY("repartition: remap accept partition");
+    SET_VALID_ENTRY("repartition: node repartition level");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
@@ -101,13 +105,6 @@ namespace MueLu {
     Input(currentLevel, "Partition");
   }
 
-  template<class T> class MpiTypeTraits            { public: static MPI_Datatype getType(); };
-  template<>        class MpiTypeTraits<long>      { public: static MPI_Datatype getType() { return MPI_LONG;      } };
-  template<>        class MpiTypeTraits<int>       { public: static MPI_Datatype getType() { return MPI_INT;       } };
-  template<>        class MpiTypeTraits<short>     { public: static MPI_Datatype getType() { return MPI_SHORT;     } };
-  template<>        class MpiTypeTraits<unsigned>  { public: static MPI_Datatype getType() { return MPI_UNSIGNED;  } };
-  template<>        class MpiTypeTraits<long long> { public: static MPI_Datatype getType() { return MPI_LONG_LONG; } };
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
@@ -123,11 +120,8 @@ namespace MueLu {
     GO                     indexBase = rowMap->getIndexBase();
     Xpetra::UnderlyingLib  lib       = rowMap->lib();
 
-    // NOTE: Teuchos::MPIComm::duplicate() calls MPI_Bcast inside, so this is
-    // a synchronization point. However, as we do MueLu_sumAll afterwards anyway, it
-    // does not matter.
     RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
-    RCP<const Teuchos::Comm<int> > comm     = origComm->duplicate();
+    RCP<const Teuchos::Comm<int> > comm     = origComm;
 
     int myRank   = comm->getRank();
     int numProcs = comm->getSize();
@@ -164,6 +158,16 @@ namespace MueLu {
       GetOStream(Warnings0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;
+    }
+
+    // If we're doing node away, we need to be sure to get the mapping to the NodeComm's rank 0.
+    const int    nodeRepartLevel      = pL.get<int>   ("repartition: node repartition level");
+    if(currentLevel.GetLevelID() == nodeRepartLevel) {
+      // NodePartitionInterface returns the *ranks* of the guy who gets the info, not the *partition number*
+      // In a sense, we've already done remap here.
+
+      // FIXME: We need a low-comm import construction
+      remapPartitions = false;
     }
 
     // ======================================================================================================
@@ -206,7 +210,24 @@ namespace MueLu {
     if (remapPartitions) {
       SubFactoryMonitor m1(*this, "DeterminePartitionPlacement", currentLevel);
 
-      DeterminePartitionPlacement(*A, *decomposition, numPartitions);
+      bool acceptPartition = pL.get<bool>("repartition: remap accept partition");
+      bool allSubdomainsAcceptPartitions;
+      int localNumAcceptPartition = acceptPartition;
+      int globalNumAcceptPartition;
+      MueLu_sumAll(comm, localNumAcceptPartition, globalNumAcceptPartition);
+      GetOStream(Statistics2) << "Number of ranks that accept partitions: " << globalNumAcceptPartition << std::endl;
+      if (globalNumAcceptPartition < numPartitions) {
+        GetOStream(Warnings0) << "Not enough ranks are willing to accept a partition, allowing partitions on all ranks." << std::endl;
+        acceptPartition = true;
+        allSubdomainsAcceptPartitions = true;
+      } else if (numPartitions > numProcs) {
+        // We are trying to repartition to a larger communicator.
+        allSubdomainsAcceptPartitions = true;
+      } else {
+        allSubdomainsAcceptPartitions = false;
+      }
+
+      DeterminePartitionPlacement(*A, *decomposition, numPartitions, acceptPartition, allSubdomainsAcceptPartitions);
     }
 
     // ======================================================================================================
@@ -289,7 +310,7 @@ namespace MueLu {
     numRecv = (numPartsIRecv->getData(0))[0];
 
     // Step 2: Get my GIDs from everybody else
-    MPI_Datatype MpiType = MpiTypeTraits<GO>::getType();
+    MPI_Datatype MpiType = Teuchos::Details::MpiTypeTraits<GO>::getType();
     int msgTag = 12345;  // TODO: use Comm::dup for all internal messaging
 
     // Post sends
@@ -336,16 +357,48 @@ namespace MueLu {
     // Step 3: Construct importer
     RCP<Map>          newRowMap      = MapFactory   ::Build(lib, rowMap->getGlobalNumElements(), myGIDs(), indexBase, origComm);
     RCP<const Import> rowMapImporter;
+
+    RCP<const BlockedMap> blockedRowMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rowMap);
+
     {
       SubFactoryMonitor m1(*this, "Import construction", currentLevel);
-      rowMapImporter = ImportFactory::Build(rowMap, newRowMap);
+      // Generate a nonblocked rowmap if we need one
+      if(blockedRowMap.is_null())
+	rowMapImporter = ImportFactory::Build(rowMap, newRowMap);
+      else {
+	rowMapImporter = ImportFactory::Build(blockedRowMap->getMap(), newRowMap);
+      }
     }
+
+    // If we're running BlockedCrs we should chop up the newRowMap into a newBlockedRowMap here (and do likewise for importers)
+    if(!blockedRowMap.is_null()) {
+      SubFactoryMonitor m1(*this, "Blocking newRowMap and Importer", currentLevel);
+      RCP<const BlockedMap> blockedTargetMap = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GeneratedBlockedTargetMap(*blockedRowMap,*rowMapImporter);
+
+      // NOTE: This code qualifies as "correct but not particularly performant"  If this needs to be sped up, we can probably read data from the existing importer to 
+      // build sub-importers rather than generating new ones ex nihilo
+      size_t numBlocks = blockedRowMap->getNumMaps();
+      std::vector<RCP<const Import> > subImports(numBlocks);
+
+      for(size_t i=0; i<numBlocks; i++) {
+	RCP<const Map> source = blockedRowMap->getMap(i);
+	RCP<const Map> target = blockedTargetMap->getMap(i);
+	subImports[i] = ImportFactory::Build(source,target);
+      }
+      Set(currentLevel,"SubImporters",subImports);	
+    }
+
 
     Set(currentLevel, "Importer", rowMapImporter);
 
     // ======================================================================================================
     // Print some data
     // ======================================================================================================
+    if (!rowMapImporter.is_null() && IsPrint(Statistics2)) {
+      // int oldRank = SetProcRankVerbose(rebalancedAc->getRowMap()->getComm()->getRank());
+      GetOStream(Statistics2) << PerfUtils::PrintImporterInfo(rowMapImporter, "Importer for rebalancing");
+      // SetProcRankVerbose(oldRank);
+    }
     if (pL.get<bool>("repartition: print partition distribution") && IsPrint(Statistics2)) {
       // Print the grid of processors
       GetOStream(Statistics2) << "Partition distribution over cores (ownership is indicated by '+')" << std::endl;
@@ -381,7 +434,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions) const {
+  DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions, bool willAcceptPartition, bool allSubdomainsAcceptPartitions) const {
     RCP<const Map> rowMap = A.getRowMap();
 
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm()->duplicate();
@@ -415,8 +468,9 @@ namespace MueLu {
     // We use two maps, original which maps a partition id of an edge to the corresponding weight,
     // and a reverse one, which is necessary to sort by edges.
     std::map<GO,GO> lEdges;
-    for (LO i = 0; i < decompEntries.size(); i++)
-      lEdges[decompEntries[i]] += A.getNumEntriesInLocalRow(i);
+    if (willAcceptPartition)
+      for (LO i = 0; i < decompEntries.size(); i++)
+        lEdges[decompEntries[i]] += A.getNumEntriesInLocalRow(i);
 
     // Reverse map, so that edges are sorted by weight.
     // This results in multimap, as we may have edges with the same weight
@@ -437,21 +491,24 @@ namespace MueLu {
 
     // Step 2: Gather most edges
     // Each processors contributes maxLocal edges by providing maxLocal pairs <part id, weight>, which is of size dataSize
-    MPI_Datatype MpiType = MpiTypeTraits<GO>::getType();
+    MPI_Datatype MpiType = Teuchos::Details::MpiTypeTraits<GO>::getType();
     MPI_Allgather(static_cast<void*>(lData.getRawPtr()), dataSize, MpiType, static_cast<void*>(gData.getRawPtr()), dataSize, MpiType, *rawMpiComm);
 
     // Step 3: Construct mapping
 
     // Construct the set of triplets
-    std::vector<Triplet<int,int> > gEdges(numProcs * maxLocal);
+    Teuchos::Array<Triplet<int,int> > gEdges(numProcs * maxLocal);
+    Teuchos::Array<bool> procWillAcceptPartition(numProcs, allSubdomainsAcceptPartitions);
     size_t k = 0;
     for (LO i = 0; i < gData.size(); i += 2) {
+      int procNo = i/dataSize;              // determine the processor by its offset (since every processor sends the same amount)
       GO part   = gData[i+0];
       GO weight = gData[i+1];
       if (part != -1) {                     // skip nonexistent edges
-        gEdges[k].i = i/dataSize;           // determine the processor by its offset (since every processor sends the same amount)
+        gEdges[k].i = procNo;
         gEdges[k].j = part;
         gEdges[k].v = weight;
+        procWillAcceptPartition[procNo] = true;
         k++;
       }
     }
@@ -463,9 +520,9 @@ namespace MueLu {
 
     // Do matching
     std::map<int,int> match;
-    std::vector<char> matchedRanks(numProcs, 0), matchedParts(numProcs, 0);
+    Teuchos::Array<char> matchedRanks(numProcs, 0), matchedParts(numPartitions, 0);
     int numMatched = 0;
-    for (typename std::vector<Triplet<int,int> >::const_iterator it = gEdges.begin(); it != gEdges.end(); it++) {
+    for (typename Teuchos::Array<Triplet<int,int> >::const_iterator it = gEdges.begin(); it != gEdges.end(); it++) {
       GO rank = it->i;
       GO part = it->j;
       if (matchedRanks[rank] == 0 && matchedParts[part] == 0) {
@@ -478,21 +535,27 @@ namespace MueLu {
     GetOStream(Statistics1) << "Number of unassigned partitions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
 
     // Step 4: Assign unassigned partitions if necessary.
-    // We do that through random matching for remaining partitions. Not all part numbers are valid, but valid parts are a
-    // subset of [0, numProcs).  The reason it is done this way is that we don't need any extra communication, as we don't
+    // We do that through desperate matching for remaining partitions:
+    // We select the lowest rank that can still take a partition.
+    // The reason it is done this way is that we don't need any extra communication, as we don't
     // need to know which parts are valid.
-    // TODO The cost of this loop is numprocs*log(numprocs), as match is a std::set().  Can this cost be reduced?
     if (numPartitions - numMatched > 0) {
-      for (int part = 0, matcher = 0; part < numProcs; part++) {
-        if (match.count(part) == 0) {
-          // Find first non-matched rank
-          while (matchedRanks[matcher])
+      Teuchos::Array<char> partitionCounts(numPartitions, 0);
+      for (typename std::map<int,int>::const_iterator it = match.begin(); it != match.end(); it++)
+        partitionCounts[it->first] += 1;
+      for (int part = 0, matcher = 0; part < numPartitions; part++) {
+        if (partitionCounts[part] == 0) {
+          // Find first non-matched rank that accepts partitions
+          while (matchedRanks[matcher] || !procWillAcceptPartition[matcher])
             matcher++;
 
           match[part] = matcher++;
+          numMatched++;
         }
       }
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(numMatched != numPartitions, Exceptions::RuntimeError, "MueLu::RepartitionFactory::DeterminePartitionPlacement: Only " << numMatched << " partitions out of " << numPartitions << " got assigned to ranks.");
 
     // Step 5: Permute entries in the decomposition vector
     for (LO i = 0; i < decompEntries.size(); i++)

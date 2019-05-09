@@ -55,7 +55,7 @@
 #include "ROL_OptimizationSolver.hpp"
 
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
 
   using Obj     = ROL::Objective<RealT>;
   using Con     = ROL::Constraint<RealT>;
@@ -76,15 +76,15 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
   int errorFlag  = 0;
@@ -99,58 +99,62 @@ int main(int argc, char *argv[]) {
     int cdim = 3;
     
     // Optimization vector
-    RCP<V> x  = rcp( new StdV( rcp( new std::vector<RealT>(xdim) ) ) );
-    RCP<V> c  = rcp( new StdV( rcp( new std::vector<RealT>(cdim) ) ) );
-    RCP<V> e0 = c->basis(0);
-    RCP<V> e1 = c->basis(1);
-    RCP<V> e2 = c->basis(2);
+    ROL::Ptr<V> x  = ROL::makePtr<StdV>( ROL::makePtr<std::vector<RealT>>(xdim) );
+    ROL::Ptr<V> c  = ROL::makePtr<StdV>( ROL::makePtr<std::vector<RealT>>(cdim));
+    ROL::Ptr<V> e0 = c->basis(0);
+    ROL::Ptr<V> e1 = c->basis(1);
+    ROL::Ptr<V> e2 = c->basis(2);
  
     // Exact solution
-    RCP<V> sol   = x->clone();   
-    RCP<V> error = x->clone();
+    ROL::Ptr<V> sol   = x->clone();   
+    ROL::Ptr<V> error = x->clone();
 
-    RCP<Obj> obj = Teuchos::null; 
-    RCP<Con> con = Teuchos::null;
+    ROL::Ptr<Obj> obj = ROL::nullPtr; 
+    ROL::Ptr<Con> con = ROL::nullPtr;
     
-    ROL::ZOO::getSimpleEqConstrained<RealT,StdV,StdV,StdV,StdV>( obj, con, *x, *sol );
+    ROL::ZOO::getSimpleEqConstrained<RealT> SEC;
+    obj = SEC.getObjective();
+    con = SEC.getEqualityConstraint();
+    x   = SEC.getInitialGuess();
+    sol = SEC.getSolution();
 
     error->set(*sol);
 
     // Extract constraint components to make objectives
-    RCP<Obj> obj_0 = rcp( new ROL::ObjectiveFromConstraint<RealT>( con, *e0 ) );
-    RCP<Obj> obj_1 = rcp( new ROL::ObjectiveFromConstraint<RealT>( con, *e1 ) );
-    RCP<Obj> obj_2 = rcp( new ROL::ObjectiveFromConstraint<RealT>( con, *e2 ) );
+    ROL::Ptr<Obj> obj_0 = ROL::makePtr<ROL::ObjectiveFromConstraint<RealT>>( con, *e0 );
+    ROL::Ptr<Obj> obj_1 = ROL::makePtr<ROL::ObjectiveFromConstraint<RealT>>( con, *e1 );
+    ROL::Ptr<Obj> obj_2 = ROL::makePtr<ROL::ObjectiveFromConstraint<RealT>>( con, *e2 );
 
     // Create separate constraints from the objectives
-    RCP<Con> con_0 = rcp( new ROL::ConstraintFromObjective<RealT>( obj_0 ) );
-    RCP<Con> con_1 = rcp( new ROL::ConstraintFromObjective<RealT>( obj_1 ) );
-    RCP<Con> con_2 = rcp( new ROL::ConstraintFromObjective<RealT>( obj_2 ) );
+    ROL::Ptr<Con> con_0 = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>( obj_0 );
+    ROL::Ptr<Con> con_1 = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>( obj_1 );
+    ROL::Ptr<Con> con_2 = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>( obj_2 );
     
-    std::vector<RCP<Con> > con_array;
+    std::vector<ROL::Ptr<Con>> con_array;
     con_array.push_back(con_0);
     con_array.push_back(con_1);
     con_array.push_back(con_2);
 
     // Lagrange multipliers
-    RCP<V> l0 = rcp( new ScalarV(0) );
-    RCP<V> l1 = rcp( new ScalarV(0) );
-    RCP<V> l2 = rcp( new ScalarV(0) );
+    ROL::Ptr<V> l0 = ROL::makePtr<ScalarV>(0);
+    ROL::Ptr<V> l1 = ROL::makePtr<ScalarV>(0);
+    ROL::Ptr<V> l2 = ROL::makePtr<ScalarV>(0);
   
-    std::vector<RCP<V> > l_array;
+    std::vector<ROL::Ptr<V>> l_array;
     l_array.push_back(l0);
     l_array.push_back(l1);
     l_array.push_back(l2);
    
     ROL::OptimizationProblem<RealT> opt( obj,             // Objective
                                          x,               // Optimization vector
-                                         Teuchos::null,   // No bound constraint
+                                         ROL::nullPtr,   // No bound constraint
                                          con_array,       // Array of scalar equality constraints
                                          l_array);        // Array of scalar lagrange multipliers
  
     opt.check(*outStream);
 
     // Define algorithm.
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     std::string stepname = "Composite Step";
     parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Nominal Relative Tolerance",1.e-4);
     parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Fix Tolerance",true);

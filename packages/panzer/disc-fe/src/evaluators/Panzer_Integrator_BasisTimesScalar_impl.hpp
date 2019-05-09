@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef   __Panzer_Integrator_BasisTimesScalar_impl_hpp__
-#define   __Panzer_Integrator_BasisTimesScalar_impl_hpp__
+#ifndef   PANZER_INTEGRATOR_BASISTIMESSCALAR_IMPL_HPP
+#define   PANZER_INTEGRATOR_BASISTIMESSCALAR_IMPL_HPP
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -84,7 +84,6 @@ namespace panzer
     using panzer::IP;
     using panzer::PureBasis;
     using PHX::MDField;
-    using PHX::typeAsString;
     using std::invalid_argument;
     using std::logic_error;
     using std::string;
@@ -116,7 +115,7 @@ namespace panzer
     int i(0);
     fieldMults_.resize(fmNames.size());
     kokkosFieldMults_ =
-      View<View<const ScalarT**>*>("BasisTimesScalar::KokkosFieldMultipliers",
+      View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>("BasisTimesScalar::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -127,10 +126,10 @@ namespace panzer
     // Set the name of this object.
     string n("Integrator_BasisTimesScalar (");
     if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
-      n += "Cont";
+      n += "CONTRIBUTES";
     else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
-      n += "Eval";
-    n += ", " + typeAsString<EvalT>() + "):  " + field_.fieldTag().name();
+      n += "EVALUATES";
+    n += "):  " + field_.fieldTag().name();
     this->setName(n);
   } // end of Main Constructor
 
@@ -183,9 +182,6 @@ namespace panzer
     for (size_t i(0); i < fieldMults_.size(); ++i)
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
 
-    // Determine the number of nodes and quadrature points.
-    numQP_ = scalar_.extent(1);
-
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
   } // end of postRegistrationSetup()
@@ -207,7 +203,7 @@ namespace panzer
     using panzer::EvaluatorStyle;
 
     // Initialize the evaluated field.
-    const int numBases(basis_.extent(1));
+    const int numQP(scalar_.extent(1)), numBases(basis_.extent(1));
     if (evalStyle_ == EvaluatorStyle::EVALUATES)
       for (int basis(0); basis < numBases; ++basis)
         field_(cell, basis) = 0.0;
@@ -220,7 +216,7 @@ namespace panzer
       // Loop over the quadrature points, scale the integrand by the
       // multiplier, and then perform the actual integration, looping over the
       // bases.
-      for (int qp(0); qp < numQP_; ++qp)
+      for (int qp(0); qp < numQP; ++qp)
       {
         tmp = multiplier_ * scalar_(cell, qp);
         for (int basis(0); basis < numBases; ++basis)
@@ -232,7 +228,7 @@ namespace panzer
       // Loop over the quadrature points, scale the integrand by the multiplier
       // and the single field multiplier, and then perform the actual
       // integration, looping over the bases.
-      for (int qp(0); qp < numQP_; ++qp)
+      for (int qp(0); qp < numQP; ++qp)
       {
         tmp = multiplier_ * scalar_(cell, qp) * kokkosFieldMults_(0)(cell, qp);
         for (int basis(0); basis < numBases; ++basis)
@@ -246,7 +242,7 @@ namespace panzer
       // the combination of the field multipliers, and then perform the actual
       // integration, looping over the bases.
       const int numFieldMults(kokkosFieldMults_.extent(0));
-      for (int qp(0); qp < numQP_; ++qp)
+      for (int qp(0); qp < numQP; ++qp)
       {
         ScalarT fieldMultsTotal(1);
         for (int fm(0); fm < numFieldMults; ++fm)
@@ -320,4 +316,4 @@ namespace panzer
 
 } // end of namespace panzer
 
-#endif // __Panzer_Integrator_BasisTimesScalar_impl_hpp__
+#endif // PANZER_INTEGRATOR_BASISTIMESSCALAR_IMPL_HPP

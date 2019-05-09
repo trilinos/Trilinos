@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -37,6 +37,7 @@
 /*          ExodusII command file.                                          */
 /*--------------------------------------------------------------------------*/
 
+#include "copy_string_cpp.h"
 #include "nem_spread.h"
 #include "ps_pario_const.h" // for PIO_Info, Parallel_IO, etc
 #include "rf_allo.h"        // for array_alloc
@@ -76,8 +77,7 @@ int read_mesh_file_name(const char *filename)
         if (strlen(ExoFile) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          strncpy(ExoFile, cptr, MAX_FNL);
-          ExoFile[MAX_FNL - 1] = '\0';
+          copy_string(ExoFile, cptr);
           break;
         }
       }
@@ -129,8 +129,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
         if (strlen(ExoFile) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          strncpy(ExoFile, cptr, MAX_FNL);
-          ExoFile[MAX_FNL - 1] = '\0';
+          copy_string(ExoFile, cptr);
         }
       }
       /****** The input NemesisI load balance file name ******/
@@ -138,8 +137,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
         if (strlen(Exo_LB_File) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          strncpy(Exo_LB_File, cptr, MAX_FNL);
-          Exo_LB_File[MAX_FNL - 1] = '\0';
+          copy_string(Exo_LB_File, cptr);
         }
       }
       /****** The scalar results ExodusII file name ******/
@@ -147,8 +145,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
         if (strlen(Exo_Res_File) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          strncpy(Exo_Res_File, cptr, MAX_FNL);
-          Exo_Res_File[MAX_FNL - 1] = '\0';
+          copy_string(Exo_Res_File, cptr);
         }
       }
       /****** The parallel results ExodusII file name ******/
@@ -156,8 +153,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
         if (strlen(Output_File_Base_Name) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          strncpy(Output_File_Base_Name, cptr, MAX_FNL);
-          Output_File_Base_Name[MAX_FNL - 1] = '\0';
+          copy_string(Output_File_Base_Name, cptr);
         }
       }
       /****** The Number of Processors ******/
@@ -166,8 +162,9 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           if (sscanf(cptr, "%d", &(spreader.Proc_Info[0])) != 1) {
-            fprintf(stderr, "%s: ERROR, can\'t interpret int for number of"
-                            " Processors.\n",
+            fprintf(stderr,
+                    "%s: ERROR, can\'t interpret int for number of"
+                    " Processors.\n",
                     yo);
             exit(1);
           }
@@ -177,8 +174,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
       else if (token_compare(cptr, "file extension for spread files")) {
         cptr = strtok(nullptr, "\t=");
         strip_string(cptr, " \t\n");
-        strncpy(PIO_Info.Exo_Extension, cptr, MAX_FNL);
-        PIO_Info.Exo_Extension[MAX_FNL - 1] = '\0';
+        copy_string(PIO_Info.Exo_Extension, cptr);
       }
 
       /****** Is There a Scalar Mesh File to Use ******/
@@ -521,7 +517,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
                               " \"root\"");
               return 0;
             }
-            strncpy(PIO_Info.Par_Dsk_Root, cptr2, MAX_FNL);
+            copy_string(PIO_Info.Par_Dsk_Root, cptr2);
             PIO_Info.Par_Dsk_Root[MAX_FNL - 1] = '\0';
           }
           if (strstr(cptr, "subdir")) {
@@ -536,7 +532,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
                               " \"subdir\"");
               return 0;
             }
-            strncpy(PIO_Info.Par_Dsk_SubDirec, cptr2, MAX_FNL);
+            copy_string(PIO_Info.Par_Dsk_SubDirec, cptr2);
             PIO_Info.Par_Dsk_SubDirec[MAX_FNL - 1] = '\0';
             if (PIO_Info.Par_Dsk_SubDirec[strlen(PIO_Info.Par_Dsk_SubDirec) - 1] != '/') {
               strcat(PIO_Info.Par_Dsk_SubDirec, "/");
@@ -553,8 +549,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
   if (strlen(Output_File_Base_Name) == 0 && strlen(Exo_LB_File) != 0) {
     // User did not specify a base name.  Use the basenmae of the
     // Exo_LB_File instead.
-    strncpy(Output_File_Base_Name, Exo_LB_File, MAX_FNL);
-    Output_File_Base_Name[MAX_FNL - 1] = '\0';
+    copy_string(Output_File_Base_Name, Exo_LB_File);
 
     // If there is an extension, strip it off...
     char *cPtr = strrchr(Output_File_Base_Name, '.');

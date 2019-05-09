@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,7 +37,16 @@
 #include <array>
 #include <cassert>
 #include <cstddef> // for size_t
+
+#define USE_ROBIN
+#if defined USE_STD
 #include <unordered_set>
+#elif defined USE_HOPSCOTCH
+#include <hash/hopscotch_set.h>
+#elif defined USE_ROBIN
+#include <hash/robin_set.h>
+#endif
+
 #include <utility>
 
 namespace Ioss {
@@ -58,10 +67,10 @@ namespace Ioss {
       element[elementCount_++] = element_id;
     }
 
-    size_t         id_;
-    mutable size_t element[2]{};
-    mutable int    elementCount_; // Should be max of 2 solid elements...
-    mutable int    sharedWithProc_;
+    size_t                id_;
+    mutable size_t        element[2]{};
+    mutable int           elementCount_; // Should be max of 2 solid elements...
+    mutable int           sharedWithProc_;
     std::array<size_t, 4> connectivity_{};
   };
 
@@ -80,8 +89,8 @@ namespace Ioss {
       // Hash (id_) is equal
       // Check whether same vertices (can be in different order)
       for (auto lvert : left.connectivity_) {
-        if (std::find(right.connectivity_.begin(), right.connectivity_.end(), lvert) ==
-            right.connectivity_.end()) {
+        if (std::find(right.connectivity_.cbegin(), right.connectivity_.cend(), lvert) ==
+            right.connectivity_.cend()) {
           // Not found, therefore not the same.
           return false;
         }
@@ -90,7 +99,15 @@ namespace Ioss {
     }
   };
 
+#if defined USE_STD
   using FaceUnorderedSet = std::unordered_set<Face, FaceHash, FaceEqual>;
+#elif defined USE_HOPSCOTCH
+  using FaceUnorderedSet = tsl::hopscotch_set<Face, FaceHash, FaceEqual>;
+  // using FaceUnorderedSet = tsl::hopscotch_pg_set<Face, FaceHash, FaceEqual>;
+#elif defined USE_ROBIN
+  using FaceUnorderedSet = tsl::robin_set<Face, FaceHash, FaceEqual>;
+  // using FaceUnorderedSet = tsl::robin_pg_set<Face, FaceHash, FaceEqual>;
+#endif
   class FaceGenerator
   {
   public:
@@ -98,6 +115,7 @@ namespace Ioss {
 
     template <typename INT> void generate_faces(INT /*dummy*/);
     FaceUnorderedSet &           faces() { return faces_; }
+
   private:
     Ioss::Region &   region_;
     FaceUnorderedSet faces_;

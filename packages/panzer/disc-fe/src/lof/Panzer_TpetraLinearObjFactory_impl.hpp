@@ -40,19 +40,23 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_TPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
-#define PANZER_TPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
+#ifndef   __Panzer_TpetraLinearObjFactory_impl_hpp__
+#define   __Panzer_TpetraLinearObjFactory_impl_hpp__
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+// Panzer
 #include "Panzer_ConnManager.hpp"
+#include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.                 
+#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 
+// Thyra
+#include "Thyra_TpetraVectorSpace.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+
+// Tpetra
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-
-#include "Thyra_TpetraVectorSpace.hpp"
-#include "Thyra_TpetraLinearOp.hpp"
 
 namespace panzer {
 
@@ -298,20 +302,43 @@ applyDirichletBCs(const LinearObjContainer & /* counter */,
   TEUCHOS_ASSERT(false); // not yet implemented
 }
 
-template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildReadOnlyDomainContainer()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename ScalarT, typename LocalOrdinalT,
+  typename GlobalOrdinalT, typename NodeT>
 Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>
-TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-buildDomainContainer() const
+TpetraLinearObjFactory<Traits, ScalarT, LocalOrdinalT, GlobalOrdinalT, NodeT>::
+buildReadOnlyDomainContainer() const
 {
-  // TEUCHOS_ASSERT(false);
-  //return Teuchos::null;
-  Teuchos::RCP<TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > vec_ged
-    = Teuchos::rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>);
-  vec_ged->initialize(getGhostedImport(),getGhostedColMap(),getColMap());
+  using Teuchos::rcp;
+  using TVROGED = TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,
+    LocalOrdinalT, GlobalOrdinalT, NodeT>;
+  auto ged = rcp(new TVROGED);
+  ged->initialize(getGhostedImport(), getGhostedColMap(), getColMap());
+  return ged;
+} // end of buildReadOnlyDomainContainer()
 
-  return vec_ged;
-}
-
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildWriteDomainContainer()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename ScalarT, typename LocalOrdinalT,
+  typename GlobalOrdinalT, typename NodeT>
+Teuchos::RCP<WriteVector_GlobalEvaluationData>
+TpetraLinearObjFactory<Traits, ScalarT, LocalOrdinalT, GlobalOrdinalT, NodeT>::
+buildWriteDomainContainer() const
+{
+  using std::logic_error;
+  using Teuchos::rcp;
+  using EVWGED = panzer::EpetraVector_Write_GlobalEvaluationData;
+  auto ged = rcp(new EVWGED);
+  TEUCHOS_TEST_FOR_EXCEPTION(true, logic_error, "NOT IMPLEMENTED YET")
+  return ged;
+} // end of buildWriteDomainContainer()
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::MpiComm<int> TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
@@ -644,7 +671,7 @@ buildGhostedGraph() const
 
    const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> >
      colGidProvider = hasColProvider_ ? colGidProvider_ : gidProvider_;
-   const Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > conn_mgr = colGidProvider->getConnManagerBase();
+   const Teuchos::RCP<const ConnManager> conn_mgr = colGidProvider->getConnManager();
    const bool han = conn_mgr.is_null() ? false : conn_mgr->hasAssociatedNeighbors();
 
    // graph information about the mesh
@@ -775,4 +802,4 @@ endFill(LinearObjContainer & loc) const
 
 }
 
-#endif
+#endif // __Panzer_TpetraLinearObjFactory_impl_hpp__

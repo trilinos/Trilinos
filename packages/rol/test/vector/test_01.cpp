@@ -48,7 +48,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
@@ -62,12 +62,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -78,32 +78,32 @@ int main(int argc, char *argv[]) {
   try {
 
     int dim = 100;
-    Teuchos::RCP<std::vector<ElementT> > x_rcp = Teuchos::rcp( new std::vector<ElementT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<ElementT> > y_rcp = Teuchos::rcp( new std::vector<ElementT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<ElementT> > z_rcp = Teuchos::rcp( new std::vector<ElementT> (dim, 0.0) );
-    ROL::StdVector<RealT, ElementT> x(x_rcp);
-    ROL::StdVector<RealT, ElementT> y(y_rcp);
-    ROL::StdVector<RealT, ElementT> z(z_rcp);
+    ROL::Ptr<std::vector<ElementT> > x_ptr = ROL::makePtr<std::vector<ElementT>>(dim, 0.0);
+    ROL::Ptr<std::vector<ElementT> > y_ptr = ROL::makePtr<std::vector<ElementT>>(dim, 0.0);
+    ROL::Ptr<std::vector<ElementT> > z_ptr = ROL::makePtr<std::vector<ElementT>>(dim, 0.0);
+    ROL::StdVector<RealT, ElementT> x(x_ptr);
+    ROL::StdVector<RealT, ElementT> y(y_ptr);
+    ROL::StdVector<RealT, ElementT> z(z_ptr);
 
     RealT left = -1e0, right = 1e0;
 
     // set x,y,z
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*y_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*z_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*x_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*y_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*z_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
-    ROL::StdVector<RealT, ElementT> checkvec(Teuchos::rcp(&consistency, false));
+    ROL::StdVector<RealT, ElementT> checkvec( ROL::makePtrFromRef(consistency) );
     if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }
 
     // Basis tests.
     // set x to first basis vector
-    Teuchos::RCP<ROL::Vector<RealT> > zp = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > zp = x.clone();
     zp = x.basis(0);
     RealT znorm = zp->norm();
     *outStream << "Norm of ROL::Vector z (first basis vector): " << znorm << "\n";

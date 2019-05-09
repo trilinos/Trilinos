@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -104,7 +104,7 @@ public:
   ///   imaginary part to zero.
   template<class InputRealType>
   KOKKOS_INLINE_FUNCTION complex (const InputRealType& val) :
-    re_ (val), im_ (0.0)
+    re_ (val), im_ (static_cast<InputRealType>(0.0))
   {}
 
   // BUG HCC WORKAROUND
@@ -499,6 +499,7 @@ public:
   
 };
 
+
 //! Binary + operator for complex complex.
 template<class RealType1, class RealType2>
 KOKKOS_INLINE_FUNCTION
@@ -666,11 +667,14 @@ complex<RealType> exp (const complex<RealType>& x) {
   return std::exp(x.real()) * complex<RealType> (std::cos (x.imag()),  std::sin(x.imag()));
 }
 
-//! Exponential of a complex number.
+/// This function cannot be called in a CUDA device function,
+/// because std::complex's methods and nonmember functions are not
+/// marked as CUDA device functions.
 template<class RealType>
-KOKKOS_INLINE_FUNCTION
-complex<RealType> pow (const complex<RealType>& x) {
-  return std::exp(x.real()) * complex<RealType> (std::cos (x.imag()),  std::sin(x.imag()));
+inline
+complex<RealType>
+exp (const std::complex<RealType>& c) {
+  return complex<RealType>( std::exp( c.real() )*std::cos( c.imag() ), std::exp( c.real() )*std::sin( c.imag() ) );
 }
 
 //! Binary operator / for complex and real numbers

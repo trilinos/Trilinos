@@ -1056,8 +1056,6 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
     std::vector<long>  elem_cmap_elem_cnts;
 
     Mesh_Specification * ms = this;
-    int nfound = 0;
-    int efound = 0;
     int node_offset = 0;
     int element_offset = 0;
     while(ms){

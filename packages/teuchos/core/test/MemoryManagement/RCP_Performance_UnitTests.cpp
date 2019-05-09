@@ -44,6 +44,9 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TabularOutputter.hpp"
+#ifdef HAVE_TEUCHOSCORE_CXX11
+#  include <memory>
+#endif // HAVE_TEUCHOSCORE_CXX11
 
 namespace {
 

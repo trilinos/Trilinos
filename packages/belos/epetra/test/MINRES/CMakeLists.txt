@@ -14,7 +14,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     minres_hb
-    SOURCES test_minres_hb.cpp createEpetraProblem.cpp
+    SOURCES test_minres_hb.cpp 
     COMM serial mpi
     ARGS
       "--verbose --filename=bcsstk14.hb --tol=1e-5"

@@ -45,7 +45,8 @@
 #define KOKKOSSPARSE_IMPL_SPMV_DEF_HPP_
 
 #include "Kokkos_InnerProductSpaceTraits.hpp"
-#include "KokkosBlas.hpp"
+#include "KokkosBlas1_scal.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv_impl_omp.hpp"
 
 namespace KokkosSparse {
@@ -184,6 +185,8 @@ struct SPMV_Functor {
   KOKKOS_INLINE_FUNCTION
   void operator() (const team_member& dev) const
   {
+    typedef typename YVector::non_const_value_type y_value_type;
+
     Kokkos::parallel_for(Kokkos::TeamThreadRange(dev,0,rows_per_team), [&] (const ordinal_type& loop) {
 
       const ordinal_type iRow = static_cast<ordinal_type> ( dev.league_rank() ) * rows_per_team + loop;
@@ -192,9 +195,9 @@ struct SPMV_Functor {
       }
       const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
       const ordinal_type row_length = static_cast<ordinal_type> (row.length);
-      value_type sum = 0;
+      y_value_type sum = 0;
 
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev,row_length), [&] (const ordinal_type& iEntry, value_type& lsum) {
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev,row_length), [&] (const ordinal_type& iEntry, y_value_type& lsum) {
         const value_type val = conjugate ?
                 ATV::conj (row.value(iEntry)) :
                 row.value(iEntry);
@@ -229,7 +232,7 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
 
   // Determine rows per thread
   if(rows_per_thread < 1) {
-    #ifdef KOKKOS_HAVE_CUDA
+    #ifdef KOKKOS_ENABLE_CUDA
     if(std::is_same<Kokkos::Cuda,execution_space>::value)
       rows_per_thread = 1;
     else
@@ -242,9 +245,13 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
     }
   }
 
-  #ifdef KOKKOS_HAVE_CUDA
-  if(team_size < 1)
-    team_size = 256/vector_length;
+  #ifdef KOKKOS_ENABLE_CUDA
+  if(team_size < 1) {
+    if(std::is_same<Kokkos::Cuda,execution_space>::value)
+    { team_size = 256/vector_length; }
+    else
+    { team_size = 1; }
+  }
   #endif
 
   rows_per_team = rows_per_thread * team_size;
@@ -284,7 +291,7 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
      (std::is_same<typename std::remove_cv<typename AMatrix::value_type>::type,double>::value) &&
      (std::is_same<typename XVector::non_const_value_type,double>::value) &&
      (std::is_same<typename YVector::non_const_value_type,double>::value) &&
-     ((int) A.graph.row_block_offsets.dimension_0() == (int) omp_get_max_threads()+1) &&
+     ((int) A.graph.row_block_offsets.extent(0) == (int) omp_get_max_threads()+1) &&
      (((uintptr_t)(const void*)(x.data())%64)==0) && (((uintptr_t)(const void*)(y.data())%64)==0)
      ) {
     spmv_raw_openmp_no_transpose<AMatrix,XVector,YVector>(alpha,A,x,beta,y);
@@ -296,7 +303,7 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
   int64_t rows_per_thread = -1;
 
   int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
-  int64_t worksets = (y.dimension_0()+rows_per_team-1)/rows_per_team;
+  int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
   SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func (alpha,A,x,beta,y,rows_per_team);
 
@@ -306,14 +313,14 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);
     else
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length);
-    Kokkos::parallel_for(policy,func);
+    Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Dynamic>",policy,func);
   } else {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> > policy(1,1);
     if(team_size<0)
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
     else
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
-    Kokkos::parallel_for(policy,func);
+    Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>",policy,func);
   }
 }
 
@@ -358,10 +365,14 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
   OpType op (alpha, A, x, beta, y, RowsPerThread<typename AMatrix::execution_space> (NNZPerRow));
 
   const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space > (NNZPerRow);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>::team_size_recommended (op, vector_length);
+#else
+  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+#endif
   const int rows_per_team = rows_per_thread * team_size;
   const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-  Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+  Kokkos::parallel_for("KokkosSparse::spmv<Transpose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
      ( nteams , team_size , vector_length ) , op );
 
 }
@@ -434,7 +445,7 @@ struct SPMV_MV_Transpose_Functor {
                              const YVector& m_y_,
                              const ordinal_type rows_per_thread_) :
     alpha (alpha_),
-    m_A (m_A_), m_x (m_x_), beta (beta_), m_y (m_y_), n (m_x_.dimension_1()),
+    m_A (m_A_), m_x (m_x_), beta (beta_), m_y (m_y_), n (m_x_.extent(1)),
     rows_per_thread (rows_per_thread_)
   {}
 
@@ -470,7 +481,7 @@ struct SPMV_MV_Transpose_Functor {
         const ordinal_type ind = row.colidx(iEntry);
 
         if (doalpha != 1) {
-          #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+          #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
           #pragma unroll
           #endif
           for (ordinal_type k = 0; k < n; ++k) {
@@ -478,7 +489,7 @@ struct SPMV_MV_Transpose_Functor {
                                 static_cast<y_value_type> (alpha * val * m_x(iRow, k)));
           }
         } else {
-          #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+          #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
           #pragma unroll
           #endif
           for (ordinal_type k = 0; k < n; ++k) {
@@ -522,7 +533,7 @@ struct SPMV_MV_LayoutLeft_Functor {
                               const YVector& m_y_,
                               const ordinal_type rows_per_thread_) :
     alpha (alpha_),
-    m_A (m_A_), m_x (m_x_), beta (beta_), m_y (m_y_), n (m_x_.dimension_1()),
+    m_A (m_A_), m_x (m_x_), beta (beta_), m_y (m_y_), n (m_x_.extent(1)),
     rows_per_thread (rows_per_thread_)
   {}
 
@@ -532,10 +543,10 @@ struct SPMV_MV_LayoutLeft_Functor {
   {
     y_value_type sum[UNROLL];
 
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
@@ -549,13 +560,13 @@ struct SPMV_MV_LayoutLeft_Functor {
     // assume either that rows have no duplicate entries, or that rows
     // never have enough duplicate entries to overflow ordinal_type.
 
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#ifdef KOKKOS_ENABLE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
 #endif
 #ifdef __CUDA_ARCH__
@@ -573,7 +584,7 @@ struct SPMV_MV_LayoutLeft_Functor {
         row.value(iEntry);
       const ordinal_type ind = row.colidx(iEntry);
 
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -584,7 +595,7 @@ struct SPMV_MV_LayoutLeft_Functor {
     if (doalpha == -1) {
       for (int ii=0; ii < UNROLL; ++ii) {
         y_value_type sumt = sum[ii];
-#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
         if (blockDim.x > 1)
           sumt += Kokkos::shfl_down(sumt, 1,blockDim.x);
         if (blockDim.x > 2)
@@ -595,14 +606,14 @@ struct SPMV_MV_LayoutLeft_Functor {
           sumt += Kokkos::shfl_down(sumt, 8,blockDim.x);
         if (blockDim.x > 16)
           sumt += Kokkos::shfl_down(sumt, 16,blockDim.x);
-#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
         sum[ii] = -sumt;
       }
     }
     else {
       for (int ii=0; ii < UNROLL; ++ii) {
         y_value_type sumt = sum[ii];
-#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
         if (blockDim.x > 1)
           sumt += Kokkos::shfl_down(sumt, 1,blockDim.x);
         if (blockDim.x > 2)
@@ -613,22 +624,22 @@ struct SPMV_MV_LayoutLeft_Functor {
           sumt += Kokkos::shfl_down(sumt, 8,blockDim.x);
         if (blockDim.x > 16)
           sumt += Kokkos::shfl_down(sumt, 16,blockDim.x);
-#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
         sum[ii] = sumt;
       }
     }
 
-#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
     if (threadIdx.x==0)
 #else
     if (true)
-#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
     {
       if (doalpha * doalpha != 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
         for (int k = 0; k < UNROLL; ++k) {
@@ -637,40 +648,40 @@ struct SPMV_MV_LayoutLeft_Functor {
       }
 
       if (dobeta == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
         for (int k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = sum[k];
         }
       } else if (dobeta == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
         for (int k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) += sum[k];
         }
       } else if (dobeta == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
         for (int k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = -m_y(iRow, kk + k) +  sum[k];
         }
       } else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
         for (int k = 0; k < UNROLL; ++k) {
@@ -692,13 +703,13 @@ struct SPMV_MV_LayoutLeft_Functor {
     // assume either that rows have no duplicate entries, or that rows
     // never have enough duplicate entries to overflow ordinal_type.
 
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#ifdef KOKKOS_ENABLE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
 #endif
 #ifdef __CUDA_ARCH__
@@ -716,7 +727,7 @@ struct SPMV_MV_LayoutLeft_Functor {
           row.value(iEntry);
       sum += val * m_x(row.colidx(iEntry),0);
     }
-#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
     if (blockDim.x > 1)
       sum += Kokkos::shfl_down(sum, 1,blockDim.x);
     if (blockDim.x > 2)
@@ -727,13 +738,13 @@ struct SPMV_MV_LayoutLeft_Functor {
       sum += Kokkos::shfl_down(sum, 8,blockDim.x);
     if (blockDim.x > 16)
       sum += Kokkos::shfl_down(sum, 16,blockDim.x);
-#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
 
-#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
     if (threadIdx.x==0)
 #else
     if (true)
-#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
     {
       if (doalpha == -1) {
         sum = -sum;
@@ -916,10 +927,14 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
     // team_size is a hardware resource thing so it might legitimately
     // be int.
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
+#else
+  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+#endif
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
 #else // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for alpha/beta
@@ -937,10 +952,14 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
     // team_size is a hardware resource thing so it might legitimately
     // be int.
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
+#else
+  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+#endif
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
@@ -997,10 +1016,14 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
     // team_size is a hardware resource thing so it might legitimately
     // be int.
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
+#else
+  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+#endif
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for ( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for ("KokkosSparse::spmv<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
 #else // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for alpha/beta
@@ -1018,10 +1041,14 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
     // team_size is a hardware resource thing so it might legitimately
     // be int.
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
+#else
+  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+#endif
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for("KokkosSparse::spmv<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
 #endif // KOKKOS_FAST_COMPILE

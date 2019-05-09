@@ -54,8 +54,8 @@
 
 // Panzer
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_GlobalEvaluationData.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
@@ -172,9 +172,9 @@ preEvaluate(
   using Thyra::ProductVectorBase;
   using BVROGED = BlockedVector_ReadOnly_GlobalEvaluationData;
   using GED     = GlobalEvaluationData;
-  if (d.gedc.containsDataObject(globalDataKey_))
+  if (d.gedc->containsDataObject(globalDataKey_))
   {
-    RCP<GED> ged = d.gedc.getDataObject(globalDataKey_);
+    RCP<GED> ged = d.gedc->getDataObject(globalDataKey_);
     xBvRoGed_    = rcp_dynamic_cast<BVROGED>(ged, true);
   } // end if (d.gedc.containsDataObject(globalDataKey_))
 } // end of preEvaluate()
@@ -229,7 +229,7 @@ evaluateFields(
     for (int cell(0); cell < numCells; ++cell)
     {
       LO cellLocalId = localCellIds[cell];
-      const vector<int>& LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+      auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
       // Loop over the basis functions and fill the fields.
       for (int basis(0); basis < numBases; ++basis)

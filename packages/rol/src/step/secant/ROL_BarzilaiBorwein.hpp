@@ -64,7 +64,7 @@ public:
   // Apply lBFGS Approximate Inverse Hessian
   void applyH( Vector<Real> &Hv, const Vector<Real> &v ) const {
     // Get Generic Secant State
-    const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    const ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
 
     Hv.set(v.dual());
     if ( state->iter != 0 && state->current != -1 ) {
@@ -82,7 +82,7 @@ public:
   // Apply lBFGS Approximate Hessian
   void applyB( Vector<Real> &Bv, const Vector<Real> &v ) const {
     // Get Generic Secant State
-    const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    const ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
 
     Bv.set(v.dual());
     if ( state->iter != 0 && state->current != -1 ) {

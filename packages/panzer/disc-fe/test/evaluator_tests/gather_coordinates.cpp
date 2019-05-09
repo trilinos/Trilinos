@@ -186,9 +186,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
 
   PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::BASIS,panzer::Dim> & fmCoords = *fmCoordsPtr;
 
-  panzer::Traits::SetupData setupData;
-  setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
-  setupData.worksets_->push_back(*workset);
+  panzer::Traits::SD setupData;
+  {
+    auto worksets = rcp(new std::vector<panzer::Workset>);
+    worksets->push_back(*workset);
+    setupData.worksets_ = worksets;
+  }
+
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
@@ -197,20 +201,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
 #endif
   fm->postRegistrationSetup(setupData);
 
-  panzer::Traits::PreEvalData preEvalData;
+  panzer::Traits::PED preEvalData;
 
   fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(fmCoords);
+  fm->getFieldData<EvalType>(fmCoords);
 
   fmCoords.print(out,true);
 
   for(int cell=0;cell<fmCoords.extent_int(0);++cell)
     for(int pt=0;pt<fmCoords.extent_int(1);++pt)
-      for(int dim=0;dim<fmCoords.extent_int(2);++dim)
-	TEST_EQUALITY(ScalarValue::eval(fmCoords(cell,pt,dim)),coords(cell,pt,dim));
+      for(int d=0;d<fmCoords.extent_int(2);++d)
+	TEST_EQUALITY(ScalarValue::eval(fmCoords(cell,pt,d)),coords(cell,pt,d));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
@@ -321,9 +325,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
 
   PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point,panzer::Dim> & fmCoords = *fmCoordsPtr;
 
-  panzer::Traits::SetupData setupData;
-  setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
-  setupData.worksets_->push_back(*workset);
+  panzer::Traits::SD setupData;
+  {
+    auto worksets = rcp(new std::vector<panzer::Workset>);
+    worksets->push_back(*workset);
+    setupData.worksets_ = worksets;
+  }
+
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
@@ -332,20 +340,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
 #endif
   fm->postRegistrationSetup(setupData);
 
-  panzer::Traits::PreEvalData preEvalData;
+  panzer::Traits::PED preEvalData;
 
   fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(fmCoords);
+  fm->getFieldData<EvalType>(fmCoords);
 
   fmCoords.print(out,true);
 
   for(int cell=0;cell<fmCoords.extent_int(0);++cell)
     for(int pt=0;pt<fmCoords.extent_int(1);++pt)
-      for(int dim=0;dim<fmCoords.extent_int(2);++dim)
-	TEST_EQUALITY(ScalarValue::eval(fmCoords(cell,pt,dim)),quadValues->ip_coordinates(cell,pt,dim));
+      for(int d=0;d<fmCoords.extent_int(2);++d)
+	TEST_EQUALITY(ScalarValue::eval(fmCoords(cell,pt,d)),quadValues->ip_coordinates(cell,pt,d));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

@@ -47,6 +47,32 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_getNumDiags.hpp"
+#include "Tpetra_Details_determineLocalTriangularStructure.hpp"
+
+namespace { // (anonymous)
+  template<class LO, class GO, class NT>
+  Tpetra::Details::LocalTriangularStructureResult<LO>
+  getLocalTriangularStructure (const Tpetra::RowGraph<LO, GO, NT>& G)
+  {
+    using Tpetra::Details::determineLocalTriangularStructure;
+    using crs_graph_type = Tpetra::CrsGraph<LO, GO, NT>;
+
+    const crs_graph_type& G_crs = dynamic_cast<const crs_graph_type&> (G);
+
+    auto G_lcl = G_crs.getLocalGraph ();
+    auto lclRowMap = G.getRowMap ()->getLocalMap ();
+    auto lclColMap = G.getColMap ()->getLocalMap ();
+    return determineLocalTriangularStructure (G_lcl, lclRowMap, lclColMap, true);
+  }
+
+  template<class SC, class LO, class GO, class NT>
+  Tpetra::Details::LocalTriangularStructureResult<LO>
+  getLocalTriangularStructure (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
+  {
+    return getLocalTriangularStructure (* (A.getGraph ()));
+  }
+} // namespace (anonymous)
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -104,6 +130,7 @@ namespace Test {
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
   using Teuchos::REDUCE_MIN;
+  using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
   using Teuchos::outArg;
   using Teuchos::ScalarTraits;
@@ -292,9 +319,13 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
       out << "Call fillComplete on the CrsMatrix" << endl;
       matrix.fillComplete();
-
-      TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
-      TEST_EQUALITY( matrix.getGlobalNumDiags(), numImages*numLocal );
+      {
+        auto lclTri = getLocalTriangularStructure (matrix);
+        TEST_EQUALITY( lclTri.diagCount, static_cast<LO> (numLocal) );
+        GO gblDiagCount = 0;
+        reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
+        TEST_EQUALITY( gblDiagCount, static_cast<GO> (numImages*numLocal) );
+      }
       TEST_EQUALITY( matrix.getGlobalNumEntries(), 3*numImages*numLocal - 2 );
 
       out << "Check the diagonal entries of the CrsMatrix, using getLocalDiagCopy" << endl;
@@ -343,13 +374,34 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       out << "Call setAllToScalar on the CrsMatrix; it should not throw" << endl;
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
     }
+    TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success);
+    if (!success) {
+      out << "Test FAILED; no sense in continuing" << endl;
+      return;
+    }
 
-    // Make sure that all processes finished and were successful.
-    lclSuccess = success ? 1 : 0;
-    gblSuccess = 0;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST( gblSuccess, 1 );
-    if (gblSuccess != 1) {
+
+    {
+      out << "Create a diagonal CrsGraph" << endl;
+      GRPH diaggraph (map, 1, Tpetra::StaticProfile);
+      for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
+        diaggraph.insertGlobalIndices(r,tuple(r));
+      }
+
+      out << "Call fillComplete on the CrsGraph" << endl;
+      diaggraph.fillComplete(params);
+
+
+      out << "Create a CrsMatrix with the diagonal CrsGraph and Kokkos view" << endl;
+      size_t numEnt = diaggraph.getLocalGraph().entries.extent(0);
+      typename MAT::local_matrix_type::values_type val ("Tpetra::CrsMatrix::val", numEnt);
+      MAT matrix(rcpFromRef(diaggraph),val);
+
+      out << "Call setAllToScalar on the CrsMatrix; it should not throw" << endl;
+      TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
+    }
+    TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success);
+    if (!success) {
       out << "Test FAILED; no sense in continuing" << endl;
       return;
     }
@@ -366,14 +418,16 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
       TEST_EQUALITY_CONST( diaggraph.isFillComplete(), true );
       TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), true );
-      TEST_EQUALITY_CONST( diaggraph.isUpperTriangular(), true );
-      TEST_EQUALITY_CONST( diaggraph.isLowerTriangular(), true );
+      {
+        auto lclTri = getLocalTriangularStructure (diaggraph);
+        TEST_ASSERT( lclTri.couldBeLowerTriangular );
+        TEST_ASSERT( lclTri.couldBeUpperTriangular );
+      }
 
-      // Bug verification:
-      // Tpetra::CrsMatrix constructed with a Optimized, Fill-Complete graph will not call fillLocalMatrix()
-      // in optimizeStorage(), because it returns early due to picking up the storage optimized bool from the graph.
-      // As a result, the local mat-vec and mat-solve operations are never initialized, and localMultiply() and localSolve()
-      // fail with a complaint regarding the initialization of these objects.
+      // Make sure that if you create a CrsMatrix with an optimized,
+      // fillComplete CrsGraph, that the resulting CrsMatrix is
+      // fillComplete, has optimized storage, and has a correctly
+      // initialized local sparse matrix-vector multiply.
 
       out << "Create a CrsMatrix with the diagonal CrsGraph" << endl;
       MAT matrix(rcpFromRef(diaggraph));
@@ -386,8 +440,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
       TEST_EQUALITY_CONST( matrix.isStorageOptimized(), true );
-      TEST_EQUALITY_CONST( matrix.isUpperTriangular(), true );
-      TEST_EQUALITY_CONST( matrix.isLowerTriangular(), true );
+      {
+        auto lclTri = getLocalTriangularStructure (matrix);
+        TEST_ASSERT( lclTri.couldBeLowerTriangular );
+        TEST_ASSERT( lclTri.couldBeUpperTriangular );
+      }
       // init x to ones(); multiply into y, solve in-situ in y, check result
       V x(map,false), y(map,false);
       x.putScalar(SONE);
@@ -395,10 +452,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       out << "Call localMultiply (local mat-vec) on the CrsMatrix; "
         "it should not throw" << endl;
       TEST_NOTHROW( matrix.localMultiply(x,y,Teuchos::NO_TRANS,SONE,SZERO) );
-
-      out << "Call localSolve (local triangular solve) on the CrsMatrix; "
-        "it should not throw" << endl;
-      TEST_NOTHROW( matrix.localSolve(y,y,Teuchos::NO_TRANS) );
 
       ArrayRCP<const Scalar> x_view = x.get1dView();
       ArrayRCP<const Scalar> y_view = y.get1dView();
@@ -431,8 +484,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
       TEST_EQUALITY_CONST( diaggraph->isFillComplete(), true );
       TEST_EQUALITY_CONST( diaggraph->isStorageOptimized(), true );
-      TEST_EQUALITY_CONST( diaggraph->isUpperTriangular(), true );
-      TEST_EQUALITY_CONST( diaggraph->isLowerTriangular(), true );
+      {
+        auto lclTri = getLocalTriangularStructure (*diaggraph);
+        TEST_ASSERT( lclTri.couldBeLowerTriangular );
+        TEST_ASSERT( lclTri.couldBeUpperTriangular );
+      }
 
       out << "Construct a CrsMatrix with the diagonal CrsGraph" << endl;
       MAT matrix1(diaggraph);
@@ -523,9 +579,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // Second test: use an array to bound from above the number of
     // entries in each row, and insert using local indices.
     {
-      ArrayRCP<size_t> nnzperrow = Teuchos::arcp<size_t> (numLocal);
+      Teuchos::Array<size_t> nnzperrow (numLocal);
       std::fill(nnzperrow.begin(), nnzperrow.end(), 3);
-      MAT bdmat (rmap, cmap, nnzperrow, Tpetra::StaticProfile);
+      MAT bdmat (rmap, cmap, nnzperrow (), Tpetra::StaticProfile);
       TEST_EQUALITY(bdmat.getRowMap(), rmap);
       TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
       TEST_EQUALITY(bdmat.getColMap(), cmap);
@@ -739,8 +795,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     out << "Call fillComplete on the CrsMatrix" << endl;
     matrix.fillComplete();
 
-    TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
-    TEST_EQUALITY( matrix.getGlobalNumDiags(), numImages*numLocal );
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (matrix), static_cast<LO> (numLocal) );
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (matrix), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( matrix.getGlobalNumEntries(), 3*numImages*numLocal - 2 );
 
     // Make sure that all processes finished and were successful.
@@ -845,7 +901,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // always room for non-locals
       GO r = map->getMaxGlobalIndex() + 1;
       if (r > map->getMaxAllGlobalIndex()) r = map->getMinAllGlobalIndex();
-      TEST_NOTHROW( matrix.insertGlobalValues( r, tuple(r), tuple(ST::one()) ) );
+      TEST_NOTHROW( matrix.insertGlobalValues( r, tuple(r+1), tuple(ST::one()) ) );
       // after communicating non-locals, failure trying to add them
       TEST_THROW( matrix.globalAssemble(), std::runtime_error );
     }
@@ -871,5 +927,3 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 } // namespace Tpetra
 
 #endif // TPETRA_TEST_CRSMATRIX_WITHGRAPH_HPP
-
-

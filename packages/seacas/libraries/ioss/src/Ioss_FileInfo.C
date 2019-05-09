@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,7 +37,7 @@
 #include <sys/select.h>
 #include <sys/unistd.h>
 
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
 #include <numeric>
 #endif
 
@@ -52,17 +52,15 @@ namespace {
 
 namespace Ioss {
 
-  FileInfo::FileInfo() : filename_(""), exists_(false), readable_(false) {}
+  FileInfo::FileInfo() = default;
 
-  FileInfo::FileInfo(std::string my_filename)
-      : filename_(std::move(my_filename)), exists_(false), readable_(false)
+  FileInfo::FileInfo(std::string my_filename) : filename_(std::move(my_filename))
   {
     readable_ = internal_access(filename_, R_OK);
     exists_   = readable_ || internal_access(filename_, F_OK);
   }
 
-  FileInfo::FileInfo(const char *my_filename)
-      : filename_(std::string(my_filename)), exists_(false), readable_(false)
+  FileInfo::FileInfo(const char *my_filename) : filename_(std::string(my_filename))
   {
     readable_ = internal_access(filename_, R_OK);
     exists_   = readable_ || internal_access(filename_, F_OK);
@@ -70,7 +68,7 @@ namespace Ioss {
 
   FileInfo::FileInfo(const FileInfo &copy_from) = default;
 
-  FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename) : filename_("")
+  FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename)
   {
     static std::string SLASH("/");
 
@@ -92,7 +90,7 @@ namespace Ioss {
 
   int FileInfo::parallel_exists(MPI_Comm communicator, std::string &where) const
   {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
     int my_rank = 0;
     int my_size = 1;
     if (communicator != MPI_COMM_NULL) {
@@ -103,7 +101,7 @@ namespace Ioss {
 #endif
       return exists_ ? 1 : 0;
 
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
     // Now handle the parallel case
     std::vector<int> result(my_size);
     int              my_val = exists_ ? 1 : 0;

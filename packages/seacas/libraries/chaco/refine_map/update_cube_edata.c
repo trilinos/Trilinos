@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -48,7 +48,7 @@ void update_cube_edata(int                   vertex,     /* graph vertex being w
                        double *              best_desire, /* best desire seen */
                        int                   imax,        /* offset in desire_ptr array */
                        struct refine_edata **desire_ptr   /* buckets for desire values */
-                       )
+)
 {
   struct refine_edata *eguy;       /* data for desired edge */
   float                old_desire; /* original desire for edge to flip */

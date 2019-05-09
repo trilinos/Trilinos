@@ -52,8 +52,8 @@ namespace ROL {
 template<class Real>
 class SparseGridGenerator : public SampleGenerator<Real> {
 private:
-  Teuchos::RCP<Quadrature<Real> > grid_;
-  Teuchos::RCP<SparseGridIndexSet<Real> > indices_;
+  ROL::Ptr<Quadrature<Real> > grid_;
+  ROL::Ptr<SparseGridIndexSet<Real> > indices_;
   bool adaptive_;
   QuadratureInfo info_;
   Real error_;
@@ -62,7 +62,7 @@ private:
   std::vector<int> search_index_;
   int direction_;
 
-  Teuchos::RCP<Vector<Real> > mydiff_, diff_;
+  ROL::Ptr<Vector<Real> > mydiff_, diff_;
   bool isVectorInit_;
 
   void buildDiffRule(Quadrature<Real> &outRule, const std::vector<int> &index) const;
@@ -70,21 +70,24 @@ private:
   void updateSamples(Quadrature<Real> &grid);
 
 public:
-  SparseGridGenerator(const Teuchos::RCP<BatchManager<Real> > &bman,
+  SparseGridGenerator(const ROL::Ptr<BatchManager<Real> > &bman,
                       const QuadratureInfo &info,
                       const bool adaptive = false);
 
-  SparseGridGenerator(const Teuchos::RCP<BatchManager<Real> > &bman,
+  SparseGridGenerator(const ROL::Ptr<BatchManager<Real> > &bman,
                       const char* SGinfo,
                       const char* SGdata,
                       const bool isNormalized = true);
 
   void update(const Vector<Real> &x);
   Real computeError(std::vector<Real> &vals);
-  Real computeError(std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x);
+  Real computeError(std::vector<ROL::Ptr<Vector<Real> > > &vals, const Vector<Real> &x);
   void refine(void);
   void setSamples(bool inConstructor = false);
   void printIndexSet(void) const;
+  int numGlobalSamples(void) const {
+    return npts_;
+  }
 }; // class SparseGridGenerator
 
 } // namespace ROL

@@ -53,6 +53,8 @@
 #include "Domi_Utils.hpp"
 #include "Domi_MDVector.hpp"
 
+typedef long long long_long_type;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace
@@ -79,7 +81,7 @@ bool   verbose    = false;
 
 ////////////////////////////////////////////////////////////////////////
 
-size_type convertLocalIndexToResult(const Domi::MDMap<> mdMap,
+size_type convertLocalIndexToResult(const Domi::MDMap mdMap,
                                     int i)
 {
   size_type result;
@@ -117,7 +119,7 @@ size_type convertLocalIndexToResult(const Domi::MDMap<> mdMap,
 
 ////////////////////////////////////////////////////////////////////////
 
-size_type convertLocalIndexToResult(const Domi::MDMap<> mdMap,
+size_type convertLocalIndexToResult(const Domi::MDMap mdMap,
                                  int i,
                                  int j)
 {
@@ -159,7 +161,7 @@ size_type convertLocalIndexToResult(const Domi::MDMap<> mdMap,
 
 ////////////////////////////////////////////////////////////////////////
 
-size_type convertLocalIndexToResult(const Domi::MDMap<> mdMap,
+size_type convertLocalIndexToResult(const Domi::MDMap mdMap,
                                  int i,
                                  int j,
                                  int k)
@@ -297,7 +299,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   // Construct the MDVector and extract the MDArrayView and MDMap
   Domi::MDVector< Sca >    mdVector(comm, plist);
   Domi::MDArrayView< Sca > mdArray = mdVector.getDataNonConst();
-  Teuchos::RCP< const Domi::MDMap<> > mdMap = mdVector.getMDMap();
+  Teuchos::RCP< const Domi::MDMap > mdMap = mdVector.getMDMap();
 
   // Reconstruct the periodicity flags so that we can legally check
   // periodicity along each axis
@@ -437,8 +439,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
 UNIT_TEST_GROUP(int)
 
 #if 1
-UNIT_TEST_GROUP(long)
-UNIT_TEST_GROUP(float)
+UNIT_TEST_GROUP(long_long_type)
 UNIT_TEST_GROUP(double)
 #endif
 

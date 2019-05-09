@@ -42,8 +42,6 @@
 #ifndef TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP
 #define TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP
 
-#include "Tpetra_Experimental_BlockVector_decl.hpp"
-
 namespace Tpetra {
 namespace Experimental {
 
@@ -73,6 +71,14 @@ namespace Experimental {
       "Tpetra::Experimental::BlockVector: Input MultiVector has "
       << X_mv.getNumVectors () << " != 1 columns.");
   }
+
+  template<class Scalar, class LO, class GO, class Node>
+  BlockVector<Scalar, LO, GO, Node>::
+  BlockVector (const vec_type& X_vec,
+               const map_type& meshMap,
+               const LO blockSize) :
+    base_type (X_vec, meshMap, blockSize)
+  {}
 
   template<class Scalar, class LO, class GO, class Node>
   BlockVector<Scalar, LO, GO, Node>::
@@ -180,6 +186,8 @@ namespace Experimental {
 // Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKVECTOR_INSTANT(S,LO,GO,NODE) \
-  template class Experimental::BlockVector< S, LO, GO, NODE >;
+  namespace Experimental { \
+    template class BlockVector< S, LO, GO, NODE >; \
+  }
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP

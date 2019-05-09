@@ -47,15 +47,18 @@
 */
 
 #include "Teuchos_ConfigDefs.hpp"
+#ifndef TFLOP
+#  include <map>
+#endif // NOT TFLOP
 
-/*! \class Teuchosstd::map
+/*! \class Teuchos::map
     \brief This class creates a basic std::map object for platforms where the std::map is
-	deficient, otherwise the std::map is injected into the Teuchos namespace.
-	
+        deficient, otherwise the std::map is injected into the Teuchos namespace.
+
     \note
     <ol>
-	<li> The std::map is an integral part of Teuchos::ParameterList and Teuchos::CommandLineProcessor.
-	<li> Currently the basic std::map class is only used on ASCI Red (Janus).
+        <li> The std::map is an integral part of Teuchos::ParameterList and Teuchos::CommandLineProcessor.
+        <li> Currently the basic std::map class is only used on ASCI Red (Janus).
     </ol>
 */
 
@@ -103,8 +106,8 @@ public:
 
     //! Return a reference to the mapped value that belongs to the key \c k.
     /*! \param k - The key for which data should be retrieved.
-	If this key doesn't exist then the key is inserted into the std::map and a
-	reference to the mapped value is returned.
+        If this key doesn't exist then the key is inserted into the std::map and a
+        reference to the mapped value is returned.
     */
     mapped_type& operator[]( const key_type& k )
     {
@@ -120,8 +123,8 @@ public:
 
     //! Locate element in the std::map with key_type \c k.
     /*! \param k - The key for which an iterator should be returned.
-	\return An iterator that points to the element with key_type \c k, else
-	return end().
+        \return An iterator that points to the element with key_type \c k, else
+        return end().
     */
     iterator find(const key_type& k)
     {
@@ -135,8 +138,8 @@ public:
 
     //! Locate element in the std::map with key_type \c k.
     /*! \param k - The key for which a constant iterator should be returned.
-	\return A constant iterator that points to the element with key_type \c k, else
-	return end().
+        \return A constant iterator that points to the element with key_type \c k, else
+        return end().
     */
     const_iterator find(const key_type& k) const
     {

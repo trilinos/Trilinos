@@ -5,7 +5,7 @@ be worthwhile to browse the scripts for these locations. Alternatively, you coul
 and install the software wherever you want - just be sure to copy and update the build scripts
 with the correct locations.
 
-**[CMake][1]** - required to setup the build configuration. (Tested using version 3.8.1)
+**[CMake][1]** - required to setup the build configuration. (Tested using version 3.8.1, later upgraded to 3.12.0)
 
 **[Ninja][2]** - required to parallelize the build on Windows. (Tested using version 1.7.2)
 

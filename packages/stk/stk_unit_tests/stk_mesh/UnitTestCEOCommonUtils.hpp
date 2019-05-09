@@ -14,7 +14,6 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
-namespace stk { namespace mesh { class Part; } }
 
 namespace CEOUtils
 {
@@ -98,117 +97,6 @@ bool check_relns(const stk::mesh::BulkData & mesh, const EntityKey & entityKey, 
                         EntityId id8 = EntityKey::MIN_ID, EntityId id9 = EntityKey::MIN_ID,
                         EntityId id10 = EntityKey::MIN_ID, EntityId id11 = EntityKey::MIN_ID);
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////  Mesh Creation Functions With Tests              /////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////// 2Elem2ProcMove //////////////////////////////////////
-void fillMeshfor2Elem2ProcMoveAndTest(stk::unit_test_util::BulkDataTester& bulk, stk::mesh::MetaData &meta, std::vector<stk::mesh::Entity>& elems);
-
-void checkStatesAfterCEO_2Elem2ProcMove(stk::unit_test_util::BulkDataTester &bulk);
-
-// valid vs not valid, owned.... shared vs not shared, ghosted_from vs not ghosted_from
-// ghosted_to vs not_ghosted_to
-
-void checkStatesAfterCEOME_2Elem2ProcMove(stk::unit_test_util::BulkDataTester &bulk);
-
-//////////////////////////////////// 2Elem2ProcFlip //////////////////////////////////////
-
-void fillMeshfor2Elem2ProcFlipAndTest(stk::unit_test_util::BulkDataTester& mesh, stk::mesh::MetaData &meta);
-
-void checkStatesAfterCEOME_2Elem2ProcFlip(stk::unit_test_util::BulkDataTester& mesh);
-
-void checkStatesAfterCEO_2Elem2ProcFlip(stk::unit_test_util::BulkDataTester& mesh);
-
-//////////////////////////////////// 3Elem2ProcMoveRight //////////////////////////////////////
-
-void fillMeshfor3Elem2ProcMoveRightAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector& elements);
-
-void checkStatesAfterCEO_3Elem2ProcMoveRight(stk::unit_test_util::BulkDataTester &mesh);
-
-void checkStatesAfterCEOME_3Elem2ProcMoveRight(stk::unit_test_util::BulkDataTester &mesh);
-
-//////////////////////////////////// 3Elem2ProcMoveLeft //////////////////////////////////////
-
-void fillMeshfor3Elem2ProcMoveLeftAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector &elements);
-
-void checkStatesAfterCEO_3Elem2ProcMoveLeft(stk::unit_test_util::BulkDataTester &mesh);
-
-void checkStatesAfterCEOME_3Elem2ProcMoveLeft(stk::unit_test_util::BulkDataTester &mesh);
-
-//////////////////////////////////// 4Elem4ProcEdge //////////////////////////////////////
-
-void fillMeshfor4Elem4ProcEdgeAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta_data,
-        EntityKey &elem_key_chg_own);
-
-void checkStatesAfterCEO_4Elem4ProcEdge(stk::unit_test_util::BulkDataTester &mesh);
-
-void checkStatesAfterCEOME_4Elem4ProcEdge(stk::unit_test_util::BulkDataTester &mesh);
-
-//////////////////////////////////// 8Elem4ProcMoveTop //////////////////////////////////////
-
-void fillMeshfor8Elem4ProcMoveTopAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta);
-
-void checkStatesAfterCEO_8Elem4ProcMoveTop(stk::unit_test_util::BulkDataTester &mesh);
-
-void checkStatesAfterCEOME_8Elem4ProcMoveTop(stk::unit_test_util::BulkDataTester &mesh);
-
-//////////////////////////////////// 4Elem4ProcRotate //////////////////////////////////////
-
-void fillMeshfor4Elem4ProcRotateAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta);
-
-void checkStatesAfterCEO_4Elem4ProcRotate(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta);
-
-void checkStatesAfterCEOME_4Elem4ProcRotate(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta);
-
-//////////////////////////////////// 3Elem4Proc1Edge3D //////////////////////////////////////
-
-void fillMeshfor3Elem4Proc1Edge3DAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta);
-
-void checkStatesAfterCEO_3Elem4Proc1Edge3D(stk::unit_test_util::BulkDataTester &mesh);
-
-void checkStatesAfterCEOME_3Elem4Proc1Edge3D(stk::unit_test_util::BulkDataTester &mesh);
-
-//these tests are for turning regenerate_aura off in various places
-
-void checkStatesAfterCEOME_2Elem2ProcMove_no_ghost(stk::unit_test_util::BulkDataTester &bulk);
-
-void fillMeshfor2Elem2ProcFlipAndTest_no_ghost(stk::unit_test_util::BulkDataTester& mesh, stk::mesh::MetaData &meta);
-
-void checkStatesAfterCEOME_2Elem2ProcFlip_no_ghost(stk::unit_test_util::BulkDataTester& mesh);
-
-} //namespace CEOUtils
-
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
- // Redistribution and use in source and binary forms, with or without
- // modification, are permitted provided that the following conditions are
- // met:
- // 
- //     * Redistributions of source code must retain the above copyright
- //       notice, this list of conditions and the following disclaimer.
- // 
- //     * Redistributions in binary form must reproduce the above
- //       copyright notice, this list of conditions and the following
- //       disclaimer in the documentation and/or other materials provided
- //       with the distribution.
- // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
- // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+}
 
 #endif

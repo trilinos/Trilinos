@@ -62,7 +62,11 @@ class Epetra_Map;
 class Epetra_MapColoring;
 class Epetra_Import;
 class Epetra_Vector;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 class Epetra_IntVector;
+#else
+class Epetra_LongLongVector;
+#endif
 class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 
@@ -162,7 +166,11 @@ class FiniteDifferenceColoring : public FiniteDifference {
       const Teuchos::RCP<Interface::Required>& i,
       const NOX::Epetra::Vector& initialGuess,
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns,
+#else
+      const Teuchos::RCP<std::vector<Epetra_LongLongVector> >& columns,
+#endif
       bool parallelColoring = false,
       bool distance1 = false,
       double beta = 1.0e-6, double alpha = 1.0e-4);
@@ -174,7 +182,11 @@ class FiniteDifferenceColoring : public FiniteDifference {
       const NOX::Epetra::Vector& initialGuess,
       const Teuchos::RCP<Epetra_CrsGraph>& rawGraph,
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
-      const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns,
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+     const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns,
+#else
+     const Teuchos::RCP<std::vector<Epetra_LongLongVector> >& columns,
+#endif
       bool parallelColoring = false,
       bool distance1 = false,
       double beta = 1.0e-6, double alpha = 1.0e-4);
@@ -206,7 +218,11 @@ protected:
   Teuchos::RCP<const Epetra_MapColoring> colorMap;
 
   //! vector of Epetra_IntVectors containing columns corresponding to a given row and color
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Teuchos::RCP<std::vector<Epetra_IntVector> > columns;
+#else
+  Teuchos::RCP<std::vector<Epetra_LongLongVector> > columns;
+#endif
 
   //! Number of colors in Color Map
   int numColors;

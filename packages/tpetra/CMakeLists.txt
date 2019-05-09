@@ -5,7 +5,7 @@
 # NOTE: If the TBB (Intel's Threading Building Blocks) TPL is enabled,
 # it's probably not possible to build Tpetra with shadowing warnings.
 #TRIBITS_PACKAGE( Tpetra ENABLE_SHADOWING_WARNINGS CLEANED )
-TRIBITS_PACKAGE( Tpetra CLEANED )
+TRIBITS_PACKAGE_DECL( Tpetra CLEANED )
 
 TRIBITS_ADD_DEBUG_OPTION()
 
@@ -13,30 +13,89 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
+SET (Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT ON)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_DEPRECATED_CODE
+  TPETRA_ENABLE_DEPRECATED_CODE
+  "Whether Tpetra enables deprecated code (that is, anything marked with the TPETRA_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled).  If OFF, then deprecated code does not exist."
+  ${Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT}
+)
+
+ASSERT_DEFINED (Tpetra_ENABLE_DEPRECATED_CODE)
+IF (Tpetra_ENABLE_DEPRECATED_CODE)
+  MESSAGE(STATUS "Tpetra: Enabling deprecated code")
+ELSE ()
+  MESSAGE(STATUS "Tpetra: Disabling deprecated code")
+ENDIF ()
+
+# mfh 06 Nov 2017: Do users want to build Tpetra with CUDA enabled?
+# This doesn't meant that users actually want to instantiate Tpetra
+# objects for CUDA.  See Trilinos GitHub issue #1939.
+
+ASSERT_DEFINED(TPL_ENABLE_CUDA)
+ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
+
+IF (TPL_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+  SET (Tpetra_ENABLE_CUDA_DEFAULT ON)
+ELSE ()
+  SET (Tpetra_ENABLE_CUDA_DEFAULT OFF)
+ENDIF ()
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA_DEFAULT)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_CUDA
+  TPETRA_ENABLE_CUDA
+  "Enable use of CUDA in Tpetra.  This requires TPL_ENABLE_CUDA AND Kokkos_ENABLE_Cuda.  That is, you must build with CUDA enabled, and let Kokkos use CUDA.  (The latter should be ON by default, if building with CUDA enabled.)  If both of those are ON, then Tpetra_ENABLE_CUDA is ON by default.  You may set Tpetra_ENABLE_CUDA:BOOL=OFF explicitly if you do not wish Tpetra or downstream packages to use CUDA."
+  ${Tpetra_ENABLE_CUDA_DEFAULT})
+
+# It's possible for users to _disable_ CUDA in Tpetra.  However,
+# _enabling_ CUDA in Tpetra requires the CUDA TPL, and that Kokkos
+# enable CUDA.
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA AND (NOT TPL_ENABLE_CUDA))
+  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but TPL_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_Cuda must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
+ENDIF ()
+IF (Tpetra_ENABLE_CUDA AND (NOT Kokkos_ENABLE_Cuda))
+  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but Kokkos_ENABLE_Cuda is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_Cuda must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
+ENDIF ()
+
 # Kokkos and Tpetra require C++11 as of the 12.0 release.
 #
 # I left a special case for CUDA because I'm not sure whether TriBITS
 # counts C++11 as enabled in that case; please feel free to revise if
 # you know better.
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
-ASSERT_DEFINED(TPL_ENABLE_CUDA)
-IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
+IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_CUDA)
   MESSAGE(FATAL_ERROR "As of Trilinos 12.0, C++11 is REQUIRED when building Kokkos and its downstream packages, which include Tpetra.  You MUST enable C++11 when building these packages.  Trilinos should enable this by default, if your C++11 compiler supports C++11 (that is, if it's not too old).  If you set ${PROJECT_NAME}_ENABLE_CXX11=OFF, then you are disabling C++11.  DON'T DO THAT if you want to build Kokkos or its downstream packages, including Tpetra.  If you aren't happy about that, then you need to disable Kokkos explicitly, by setting ${PROJECT_NAME}_ENABLE_Kokkos=OFF.  This WILL disable Tpetra and its downstream packages.")
 ENDIF ()
 
 # Checks that only matter if building with CUDA enabled.
-ASSERT_DEFINED(TPL_ENABLE_CUDA)
-IF (TPL_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA)
   # As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
-  IF (DEFINED CUDA_VERSION)
-    # Don't check a variable's value unless we know it is defined.
-    IF (CUDA_VERSION VERSION_LESS "7.5")
-       MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra requires at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
-    ENDIF ()
+  IF (DEFINED CUDA_VERSION AND (CUDA_VERSION VERSION_LESS "7.5"))
+    MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
+  ENDIF ()
+
+  # mfh 30 Sep 2017: Make sure that either Trilinos_CXX_FLAGS
+  # or CMAKE_CXX_FLAGS includes the "--expt-extended-lambda"
+  # or "-expt-extended-lambda" (either is valid; see #1797
+  # discussion) flag.
+  SET (TpetraCore_FOUND_CUDA_LAMBDA_FLAG OFF)
+  IF (DEFINED Trilinos_CXX_FLAGS AND Trilinos_CXX_FLAGS MATCHES "-expt-extended-lambda")
+    # mfh 30 Sep 2017: Even if you put the flag in Trilinos_CXX_FLAGS,
+    # Trilinos seems to move that flag into CMAKE_CXX_FLAGS for some
+    # reason.  Nevertheless, it doesn't hurt to check both.
+    SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
+  ELSEIF (DEFINED CMAKE_CXX_FLAGS AND CMAKE_CXX_FLAGS MATCHES "-expt-extended-lambda")
+    SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
+  ENDIF ()
+  IF (NOT TpetraCore_FOUND_CUDA_LAMBDA_FLAG)
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require, at least with CUDA_VERSION >= 7.5 and <= 9.0, that you add \"--expt-extended-lambda\" to either Trilinos_CXX11_FLAGS or CMAKE_CXX_FLAGS.  You must also set Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.")
   ENDIF ()
 
   IF (NOT DEFINED Kokkos_ENABLE_Cuda_Lambda OR NOT Kokkos_ENABLE_Cuda_Lambda)
-    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra requires that you set Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You should also make sure, at least with CUDA_VERSION 7.5 or 8.0, to add \"--expt-extended-lambda\" to CMAKE_CXX_FLAGS.")
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require that you set the CMake option Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You must also add \"--expt-extended-lambda\" to either Trilinos_CXX11_FLAGS or CMAKE_CXX_FLAGS, at least with CUDA_VERSION >= 7.5 and <= 9.0.")
   ENDIF ()
 ENDIF ()
 
@@ -63,13 +122,12 @@ ENDIF ()
 
 SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
 
-ASSERT_DEFINED (TPL_ENABLE_CUDA)
 ASSERT_DEFINED (TPL_ENABLE_MPI)
-
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
 MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is CUDA aware:")
 
-IF (NOT TPL_ENABLE_CUDA)
-  MESSAGE (STATUS "  - TPL_ENABLE_CUDA is OFF, so we assume that MPI is not CUDA aware.")
+IF (NOT Tpetra_ENABLE_CUDA)
+  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA is OFF, so Tpetra will assume that MPI is not CUDA aware.")
   SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
 ELSEIF (NOT TPL_ENABLE_MPI)
   # Even if CUDA is enabled but MPI is not, Teuchos::SerialComm may
@@ -77,14 +135,14 @@ ELSEIF (NOT TPL_ENABLE_MPI)
   # Teuchos::reduceAll on a SerialComm may copy input into output on
   # host).  Thus, it's safer to assume that "MPI" (rather,
   # Teuchos::SerialComm, a kind of MPI stub) can't access CUDA memory.
-  MESSAGE (STATUS "  - TPL_ENABLE_CUDA is ON but TPL_ENABLE_MPI is OFF, so we assume that (nonexistent) MPI is not CUDA aware.")
+  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA is ON but TPL_ENABLE_MPI is OFF, so we assume that (nonexistent) MPI is not CUDA aware.")
   SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
 ELSEIF (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI)
   # The user set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
   # Just use that value as the default.
   #
   # It may seem a little strange to set a default value for a
-  # variable that the user explicitly set.  However, it ensures 
+  # variable that the user explicitly set.  However, it ensures
   # consistency over all cases and can help debugging.
 
   IF (Tpetra_ASSUME_CUDA_AWARE_MPI)
@@ -116,10 +174,25 @@ ELSE ()
 
     IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_USE_COMPILER_WRAPPERS) AND MPI_USE_COMPILER_WRAPPERS AND (DEFINED MPI_CXX_COMPILER))
       # Paths are returned with (forward) slashes, and no trailing slash:
-      # 
+      #
       # https://cmake.org/cmake/help/v2.8.12/cmake.html#command%3aget_filename_component
       #
       GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_ABS_PATH "${MPI_CXX_COMPILER}" ABSOLUTE)
+      # In the command below, PATH is a "legacy alias" for DIRECTORY; it
+      # works with CMake <= 2.8.11.  DIRECTORY requires CMake >= 2.8.12.
+      GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_PARENT_DIR "${Tpetra_MPI_CXX_COMPILER_ABS_PATH}" PATH)
+      FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" ${Tpetra_MPI_CXX_COMPILER_PARENT_DIR} NO_DEFAULT_PATH)
+      IF (Tpetra_OMPI_INFO_EXECUTABLE)
+        SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
+      ENDIF ()
+    ENDIF ()
+
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_USE_COMPILER_WRAPPERS) AND MPI_USE_COMPILER_WRAPPERS AND (DEFINED CMAKE_CXX_COMPILER))
+      # Paths are returned with (forward) slashes, and no trailing slash:
+      #
+      # https://cmake.org/cmake/help/v2.8.12/cmake.html#command%3aget_filename_component
+      #
+      GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_ABS_PATH "${CMAKE_CXX_COMPILER}" ABSOLUTE)
       # In the command below, PATH is a "legacy alias" for DIRECTORY; it
       # works with CMake <= 2.8.11.  DIRECTORY requires CMake >= 2.8.12.
       GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_PARENT_DIR "${Tpetra_MPI_CXX_COMPILER_ABS_PATH}" PATH)
@@ -185,10 +258,10 @@ IF (NOT (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT))
   MESSAGE (FATAL_ERROR "Failed to set Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT!")
 ENDIF ()
 
-IF (NOT TPL_ENABLE_CUDA AND Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT)
+IF (NOT Tpetra_ENABLE_CUDA AND Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT)
   MESSAGE (FATAL_ERROR "Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT is ON, but CUDA is not enabled!")
 ENDIF ()
-  
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ASSUME_CUDA_AWARE_MPI
   TPETRA_ASSUME_CUDA_AWARE_MPI
@@ -292,19 +365,30 @@ SET(${PACKAGE_NAME}_ETI_NODES "")
 
 GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
-GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
-GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
+GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)
+GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)
 
-IF (Kokkos_ENABLE_Cuda) 
+ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
+ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
+ASSERT_DEFINED(Kokkos_ENABLE_Serial)
+
+# We already have a separate Tpetra_ENABLE_CUDA option that we defined
+# above, so we don't have to check Kokkos_ENABLE_Cuda here.
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA)
   # If you bothered to build with CUDA enabled, then we assume you
   # only want CUDA.
-  GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)  
+  GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)
 ELSE()
-  IF (Kokkos_ENABLE_OpenMP) 
+  IF (Kokkos_ENABLE_OpenMP)
     # It takes effort (setting a nondefault compiler flag) to turn
     # on OpenMP, so we assume that if OpenMP is ON, then you must
     # want it as the Node type.
-    GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT ON)  
+    #
+    # mfh 06 Nov 2017: However, see GitHub issue #1939, for the
+    # analogous situation with CUDA.
+    GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT ON)
   ELSE()
     IF (Kokkos_ENABLE_Serial)
       GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT ON)
@@ -316,7 +400,7 @@ ELSE()
       ENDIF()  # Kokkos_ENABLE_Pthread
     ENDIF() # Kokkos_ENABLE_Serial
   ENDIF() # Kokkos_ENABLE_OpenMP
-ENDIF() # Kokkos_ENABLE_Cuda
+ENDIF() # Tpetra_ENABLE_CUDA
 
 # Don't turn on both Serial and Threads by default.  Prefer Serial,
 # because Threads is a last resort.  Of course, users may still
@@ -400,7 +484,7 @@ IF (Tpetra_INST_PTHREAD)
     MESSAGE(WARNING "We do NOT recommend enabling both the Kokkos::Serial and Kokkos::Threads Node types in Tpetra in the same build!  The threads that the Kokkos::Threads execution space creates will interfere with OpenMP's threads, causing performance problems.  You are seeing this warning because both CMake options Tpetra_INST_OPENMP and Tpetra_INST_PTHREAD are ON, which is not the default.")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_PTHREAD
-  IF (HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE) 
+  IF (HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
     MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosThreadsWrapperNode is disabled (since Tpetra_INST_PTHREAD=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_Pthread:BOOL=ON and Tpetra_INST_PTHREAD:BOOL=ON.  (Yes, it is 'Pthread', not 'Pthreads'.  Sorry, that wasn't my idea.)")
   ENDIF()
   IF (Kokkos_ENABLE_Pthread)
@@ -421,7 +505,7 @@ IF (Tpetra_INST_CUDA)
     MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Cuda execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_CUDA=ON.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, you must enable the Kokkos::Cuda execution space by setting Kokkos_ENABLE_Cuda=ON.")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_CUDA
-  IF (HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE) 
+  IF (HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
     MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosCudaWrapperNode is disabled (since Tpetra_INST_CUDA=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_Cuda:BOOL=ON and Tpetra_INST_CUDA:BOOL=ON.  If you are building with a CUDA-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable CUDA support by default in that case.")
   ENDIF()
   IF (Kokkos_ENABLE_Cuda)
@@ -430,21 +514,30 @@ ELSE () # NOT Tpetra_INST_CUDA
 ENDIF () # Tpetra_INST_CUDA
 
 #
+# Check that users did not attempt to enable both the OpenMP and
+# Pthreads back-ends.
+#
+
+IF (Tpetra_INST_OPENMP AND TPETRA_INST_PTHREAD)
+  MESSAGE (FATAL_ERROR "You set both Tpetra_INST_OPENMP=ON and Tpetra_INST_PTHREAD=ON.  This is not allowed, because Kokkos (as of Dec 2017) forbids users from enabling both the OpenMP and Pthreads back-ends.")
+ENDIF ()
+
+#
 # Construct the list of enabled Device and Node types.
 #
-IF(Tpetra_INST_SERIAL) 
+IF(Tpetra_INST_SERIAL)
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
 ENDIF()
-IF(Tpetra_INST_PTHREAD) 
+IF(Tpetra_INST_PTHREAD)
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosThreadsWrapperNode")
 ENDIF()
-IF(Tpetra_INST_OPENMP) 
+IF(Tpetra_INST_OPENMP)
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosOpenMPWrapperNode")
 ENDIF()
-IF(Tpetra_INST_CUDA) 
+IF(Tpetra_INST_CUDA)
   # TpetraCore currently requires UVM, so it doesn't make sense to
   # instantiate over Kokkos::CudaSpace as well as
   # Kokkos::CudaUVMSpace.
@@ -482,7 +575,7 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # Decide what GlobalOrdinal types to enable by default.  If ETI is ON,
 # "enabling a GlobalOrdinal type" means that Tpetra objects with
 # GlobalOrdinal as a template parameter will
-# 
+#
 #   1. get instantiated explicitly for that GlobalOrdinal type, and
 #   2. get tested for that GlobalOrdinal type, if their test is also
 #      templated on GlobalOrdinal type.
@@ -510,60 +603,87 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # than global_size_t (e.g., using the wrong
 # Teuchos::OrdinalTraits<>::invalid().
 
-# GO = int is enabled by default, but only because of Bug 6358.
-GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
-
-# GO = long long is enabled by default.  However, if the user enabled
-# GO = long EXPLICITLY, we disable GO = long long by default, because
-# we don't want to enable multiple "long" GO types by default.
-
-# Tpetra currently needs Teuchos to support long long.
-# This may change in the future, though.
-IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
-  IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
-    MESSAGE(WARNING "Do NOT set Teuchos_ENABLE_LONG_LONG_INT=OFF !  The default is ON.  We will VERY SOON require that this option be ON.  Don't set it explicitly!  Just use the default value.  See #1184: https://github.com/trilinos/Trilinos/issues/1184 and see also #1183: https://github.com/trilinos/Trilinos/issues/1183")
-  ENDIF ()
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
-ELSE ()
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
-ENDIF ()
-
-IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
-  IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
-    # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn
-    # off GO = long long by default.  We have to go through the
-    # two-level IF statement because the Tpetra_INST_INT_LONG option
-    # doesn't exist yet; we have not yet encountered the
-    # TRIBITS_ADD_OPTION_AND_DEFINE statement (below) that defines it
-    # and gives it a default value.  (Note the circular dependency
-    # between the default value of Tpetra_INST_INT_LONG and
-    # Tpetra_INST_INT_LONG_LONG.  This is deliberate.  The point is
-    # that only one of them is defined by default at a time.
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-  ENDIF ()
-ENDIF ()
-
-# If GO = long long is OFF by default, turn ON GO = long by default.
-# If GO = long long is ON by default, turn OFF GO = long by default.
-# The point is to have EXACTLY one potentially 64-bit GO type enabled
-# by default.  I say "potentially" because the C++ standard only
-# guarantees long to be at least 32 bits.
-IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
-ELSE ()
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
-ENDIF ()
+# Enable Tpetra Global Ordinals LONG LONG default:
+GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG_LONG is enabled by default.")
 
 # GO = unsigned is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_UNSIGNED is disabled by default.")
+
 # GO = unsigned long is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_UNSIGNED_LONG is disabled by default.")
+
+IF(Tpetra_ENABLE_DEPRECATED_CODE)
+
+    # GO = int is enabled by default, but only because of Bug 6358.
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_INT is enabled by default.")
+
+
+    IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
+      IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
+        # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn
+        # off GO = long long by default.  We have to go through the
+        # two-level IF statement because the Tpetra_INST_INT_LONG option
+        # doesn't exist yet; we have not yet encountered the
+        # TRIBITS_ADD_OPTION_AND_DEFINE statement (below) that defines it
+        # and gives it a default value.  (Note the circular dependency
+        # between the default value of Tpetra_INST_INT_LONG and
+        # Tpetra_INST_INT_LONG_LONG.  This is deliberate.  The point is
+        # that only one of them is defined by default at a time.
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+        MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG_LONG is disabled because Tpetra_INST_INT_LONG was enabled by user option.")
+      ENDIF ()
+    ENDIF ()
+
+    # If GO = long long is OFF by default, turn ON GO = long by default.
+    # If GO = long long is ON by default, turn OFF GO = long by default.
+    # The point is to have EXACTLY one potentially 64-bit GO type enabled
+    # by default.  I say "potentially" because the C++ standard only
+    # guarantees long to be at least 32 bits.
+    IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
+      GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+      MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is disabled.")
+    ELSE ()
+      GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
+      MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is enabled.")
+    ENDIF ()
+
+ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
+
+    # GO = int is disabled by default.
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT OFF)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_INT is disabled by default.")
+
+    # Enable Tpetra Global Ordinals LONG default:
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is disabled by default.")
+
+    #
+    # Discover what parameters were enabled by the user so we can differentiate what is ON via USER vs. DEFAULTS later.
+    #
+
+    # IF anything other than long long is defined and enabled, and long long isn't defined then we disable long long
+    IF( (    (    DEFINED Tpetra_INST_INT_INT           AND Tpetra_INST_INT_INT)
+         OR  (    DEFINED Tpetra_INST_INT_LONG          AND Tpetra_INST_INT_UNSIGNED_LONG)
+         OR  (    DEFINED Tpetra_INST_INT_UNSIGNED      AND Tpetra_INST_INT_UNSIGNED)
+         OR  (    DEFINED Tpetra_INST_INT_UNSIGNED_LONG AND Tpetra_INST_INT_UNSIGNED_LONG))
+         AND (NOT DEFINED Tpetra_INST_INT_LONG_LONG) )
+
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+        MESSAGE(STATUS "Tpetra: Disable Tpetra_INST_INT_LONG_LONG default value because "
+                       "another Global Ordinal type is user-specified.")
+
+    ENDIF()
+ENDIF(Tpetra_ENABLE_DEPRECATED_CODE)
+
 
 #
 # Define options for enabling various GlobalOrdinal types
 #
-
-TRIBITS_ADD_OPTION_AND_DEFINE(  
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_INT
   HAVE_TPETRA_INST_INT_INT
   "Enable GlobalOrdinal = int in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
@@ -575,30 +695,26 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default.  Please don't set this option.  We only maintain it for backwards compatibility."
   ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT}
   )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG_LONG
   HAVE_TPETRA_INST_INT_LONG_LONG
   "Enable GlobalOrdinal = long long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT} by default."
   ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT}
-  ) 
+  )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG
   HAVE_TPETRA_INST_INT_LONG
   "Enable GlobalOrdinal = long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_LONG_DEFAULT} by default."
   ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
   )
-TRIBITS_ADD_OPTION_AND_DEFINE(
+  TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_UNSIGNED_LONG
   HAVE_TPETRA_INST_INT_UNSIGNED_LONG
   "Enable GlobalOrdinal = unsigned long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT} by default.  We do NOT recommend using this type.  We are NOT responsible for ensuring that it builds or passes tests.  If you want a 64-bit type, we prefer that you use long long (Tpetra_INST_INT_LONG_LONG=ON), or long (Tpetra_INST_INT_LONG=ON) if you know that it is 64 bits.  If you are interested in using unsigned long, Roger Pawlowski is the responsible party; please contact him."
   ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT}
   )
-
-IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
-  IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
-    MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")
-  ENDIF ()
-ENDIF ()
 
 # Warn on use of options that we don't like.
 IF (Tpetra_INST_INT_UNSIGNED)
@@ -621,9 +737,9 @@ ELSE()
   # mfh 16 May 2016: This branch could only conceivably be useful
   # for users who want a GlobalOrdinal type other than the types
   # that Tpetra explicitly supports (see above list).  This branch
-  # would only take effect if such users explicitly disable all 
+  # would only take effect if such users explicitly disable all
   # the explicitly supported GlobalOrdinal types.  In that case,
-  # the users would be responsible for setting their special 
+  # the users would be responsible for setting their special
   # GlobalOrdinal type through TriBITS' ETI support.  Tpetra's
   # CMakeLists.txt files get processed before its ETI logic, so the
   # code here would not see the GlobalOrdinal type that such users
@@ -631,7 +747,6 @@ ELSE()
   # above options are ON.  However, we still print a STATUS message,
   # to help with debugging in case users do this by accident.
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL OFF)
-  MESSAGE (STATUS "Tpetra: NOTE: No GlobalOrdinal type is enabled.  This means that you, the user, explicitly disabled all GlobalOrdinal types that Tpetra enables by default.  If you know what you are doing, this might be OK.  If you don't know what you are doing, please don't do this.")
 ENDIF()
 
 #
@@ -639,36 +754,37 @@ ENDIF()
 # to the list of Scalar types as well, since Tpetra needs Scalar =
 # GlobalOrdinal for some communication routines.
 #
-IF(Tpetra_INST_INT_INT) 
+IF(Tpetra_INST_INT_INT)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "int")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "int")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "int")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "int")
 ENDIF()
-IF(Tpetra_INST_INT_LONG) 
+IF(Tpetra_INST_INT_LONG)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "long")
 ENDIF()
-IF(Tpetra_INST_INT_LONG_LONG) 
+IF(Tpetra_INST_INT_LONG_LONG)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "long long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "long long")
 ENDIF()
-IF(Tpetra_INST_INT_UNSIGNED) 
+IF(Tpetra_INST_INT_UNSIGNED)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "unsigned")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "unsigned")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "unsigned")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned")
 ENDIF()
-IF(Tpetra_INST_INT_UNSIGNED_LONG) 
+IF(Tpetra_INST_INT_UNSIGNED_LONG)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "unsigned long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "unsigned long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "unsigned long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned long")
 ENDIF()
+
 
 # ============================================================
 # Scalar types
@@ -692,17 +808,6 @@ IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_quadmath)
   ENDIF ()
 ENDIF ()
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_quadmath)
-
-IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_CUDA)
-  IF (DEFINED TpetraCore_ENABLE_CUDA)
-    SET (${PACKAGE_NAME}_ENABLE_CUDA "${TpetraCore_ENABLE_CUDA}")
-  ELSEIF (DEFINED TPL_ENABLE_CUDA)
-    SET (${PACKAGE_NAME}_ENABLE_CUDA "${TPL_ENABLE_CUDA}")
-  ELSE ()
-    SET (${PACKAGE_NAME}_ENABLE_CUDA OFF)
-  ENDIF ()
-ENDIF ()
-ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_CUDA)
 
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_QD)
   IF (DEFINED TpetraCore_ENABLE_QD)
@@ -758,6 +863,7 @@ GLOBAL_SET(HAVE_TPETRA_FLOAT ${Tpetra_INST_FLOAT})
 # linking when ETI is ON, with downstream packages like Thyra, which
 # get used in surprising places, e.g., in Ifpack2).
 IF (Tpetra_INST_FLOAT)
+
   IF (NOT DEFINED Teuchos_ENABLE_FLOAT)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but Teuchos_ENABLE_FLOAT is not defined.  Tpetra needs Teuchos to support float.  Please set Teuchos_ENABLE_FLOAT:BOOL=ON, reconfigure, and rebuild.")
   ELSEIF (NOT Teuchos_ENABLE_FLOAT)
@@ -769,6 +875,7 @@ IF (Tpetra_INST_FLOAT)
   ELSEIF (NOT HAVE_TEUCHOS_BLASFLOAT)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but HAVE_TEUCHOS_BLASFLOAT is OFF.  This means that you are linking with a BLAS library that lacks float (S) support.  Tpetra needs a BLAS implementation that supports float.")
   ENDIF ()
+
 ENDIF ()
 
 # Decide whether to instantiate / test Scalar = std::complex<float> and/or
@@ -782,7 +889,7 @@ ENDIF ()
 # HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
 # Thanks to Andrew Bradley for pointing this out.
 IF (DEFINED HAVE_COMPLEX_BLAS  AND  HAVE_COMPLEX_BLAS)
-  IF (Tpetra_INST_DOUBLE AND Trilinos_ENABLE_COMPLEX_DOUBLE) 
+  IF (Tpetra_INST_DOUBLE AND Trilinos_ENABLE_COMPLEX_DOUBLE)
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ON)
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
@@ -813,7 +920,7 @@ IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT Trilinos_ENABLE_COMPLEX_DOUBLE)
 ENDIF ()
 
 # Enabling Scalar = std::complex<T> requires that the corresponding
-# Scalar=T instantiation be enabled as well.  
+# Scalar=T instantiation be enabled as well.
 #
 # FIXME (mfh 17 Aug 2015) It's not clear to me why this must be the
 # case.
@@ -843,6 +950,12 @@ IF (Tpetra_INST_COMPLEX_DOUBLE)
   ELSEIF (NOT HAVE_COMPLEX_BLAS)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
   ENDIF ()
+ELSE () # Tpetra_INST_COMPLEX_DOUBLE is OFF
+
+  IF (DEFINED Teuchos_ENABLE_COMPLEX AND Teuchos_ENABLE_COMPLEX)
+    MESSAGE(WARNING "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is OFF (meaning that you want to disable explicit instantiation and/or tests of Tpetra with Scalar = std::complex<double>), but Teuchos_ENABLE_COMPLEX is ON.  This will cause downstream link errors, likely in Thyra or Stratimikos.  See GitHub Issue 4080 for details.  Best practice: Do NOT set Tpetra_INST_COMPLEX_DOUBLE OR Teuchos_ENABLE_COMPLEX explicitly.  Instead, set Trilinos_ENABLE_COMPLEX_DOUBLE explicitly.  That will set defaults for Teuchos and Tpetra correctly.")
+  ENDIF ()
+
 ENDIF ()
 
 # Set up the Tpetra_INST_COMPLEX_FLOAT option: whether to instantiate
@@ -882,7 +995,9 @@ IF (Tpetra_INST_COMPLEX_FLOAT)
   ELSEIF (NOT HAVE_COMPLEX_BLAS)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
   ENDIF ()
+
 ENDIF ()
+
 
 # Optionally enable explicit template instantiation (ETI) and tests
 # for Scalar = __float128.  __float128 is a GCC-specific C++ language
@@ -906,7 +1021,7 @@ ELSE ()
 ENDIF ()
 
 # Set up the Tpetra_INST_FLOAT128 option: whether to instantiate /
-# test Scalar = std::complex<float>.  It is OFF by default.  Users may
+# test Scalar = __float128.  It is OFF by default.  Users may
 # shut this off explicitly by setting Tpetra_INST_FLOAT128=OFF.
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_FLOAT128
@@ -939,7 +1054,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_QD_REAL
   HAVE_TPETRA_INST_QD_REAL
   "Instantiate and/or test Tpetra classes over Scalar = qd_real (requries TPL QD).  This option is ${HAVE_TPETRA_INST_QD_REAL_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_QD_REAL_DEFAULT}  
+  ${HAVE_TPETRA_INST_QD_REAL_DEFAULT}
   )
 ASSERT_DEFINED (Tpetra_INST_QD_REAL)
 GLOBAL_SET (HAVE_TPETRA_QD_REAL ${Tpetra_INST_QD_REAL})
@@ -965,7 +1080,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_DD_REAL
   HAVE_TPETRA_INST_DD_REAL
   "Instantiate and/or test Tpetra classes over Scalar = dd_real (requries TPL QD).  This option is ${HAVE_TPETRA_INST_DD_REAL_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_DD_REAL_DEFAULT}  
+  ${HAVE_TPETRA_INST_DD_REAL_DEFAULT}
   )
 ASSERT_DEFINED (Tpetra_INST_DD_REAL)
 GLOBAL_SET (HAVE_TPETRA_DD_REAL ${Tpetra_INST_DD_REAL})
@@ -977,35 +1092,35 @@ ENDIF ()
 #
 # Build list of Scalar types over which to instantiate / test.
 #
-IF(Tpetra_INST_FLOAT) 
+IF(Tpetra_INST_FLOAT)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "float")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "float")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "float")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "float")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
-IF(Tpetra_INST_DOUBLE) 
+IF(Tpetra_INST_DOUBLE)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "double")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
-IF(Tpetra_INST_COMPLEX_FLOAT) 
+IF(Tpetra_INST_COMPLEX_FLOAT)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "std::complex<float>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::complex<float>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "std::complex<float>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::complex<float>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
-IF(Tpetra_INST_COMPLEX_DOUBLE) 
+IF(Tpetra_INST_COMPLEX_DOUBLE)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "std::complex<double>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::complex<double>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "std::complex<double>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::complex<double>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
-IF(Tpetra_INST_FLOAT128) 
+IF(Tpetra_INST_FLOAT128)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "__float128")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "__float128")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "__float128")
@@ -1013,7 +1128,7 @@ IF(Tpetra_INST_FLOAT128)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "__float128")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
-IF(Tpetra_INST_QD_REAL) 
+IF(Tpetra_INST_QD_REAL)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "qd_real")
   # NOTE (mfh 11 Oct 2016) qd_real does not currently work with
   # Kokkos, or even with Tpetra!  We just put this here for future
@@ -1023,7 +1138,7 @@ IF(Tpetra_INST_QD_REAL)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "qd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
-IF(Tpetra_INST_DD_REAL) 
+IF(Tpetra_INST_DD_REAL)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "dd_real")
   # NOTE (mfh 11 Oct 2016) dd_real does not currently work with
   # Kokkos, or even with Tpetra!  We just put this here for future
@@ -1052,6 +1167,67 @@ GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_DEVICES ${${PACKAGE_NAME}_ETI_DEVICES})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_NODES   ${${PACKAGE_NAME}_ETI_NODES})
+
+#
+# Verify that a valid GORDS configuration is set.
+#
+MESSAGE(STATUS "")
+MESSAGE(STATUS "Tpetra: Validate global ordinal setting ...")
+SET(lenTpetraCore_ETI_GORDS 0 INTERNAL)
+LIST(LENGTH ${PACKAGE_NAME}_ETI_GORDS lenTpetraCore_ETI_GORDS)
+
+IF(Tpetra_ENABLE_DEPRECATED_CODE)
+    IF(lenTpetraCore_ETI_GORDS EQUAL 0)
+        MESSAGE(STATUS "Tpetra: ERROR Tpetra requires a GlobalOrdinal type, but none were specified.")
+        MESSAGE(STATUS "This can happens when the default is overridden by user options without enabling")
+        MESSAGE(STATUS "another GlobalOrdinal type in its place. Please check your configuration to ensure")
+        MESSAGE(STATUS "that the default is not being specifically disabled without enabling one of the others:")
+        MESSAGE(STATUS "   Tpetra_INST_INT_INT")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG_LONG (Default, but was overridden)")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED_LONG")
+        MESSAGE(FATAL_ERROR "Tpetra: Tpetra requires a global ordinal type, but none were specified."
+                            " See above message for options.")
+    ELSEIF(lenTpetraCore_ETI_GORDS GREATER 1)
+        MESSAGE(WARNING "Tpetra requires only one global ordinal, but more than one are set: {${${PACKAGE_NAME}_ETI_GORDS}}. "
+                        "Building with more than one global ordinal type in Tpetra is deprecated.")
+    ELSEIF(lenTpetraCore_ETI_GORDS EQUAL 1)
+        MESSAGE(STATUS "Tpetra: global ordinal setting is OK")
+    ELSE()
+        MESSAGE(FATAL_ERROR "Tpetra: global ordinal setting has a problem setting: {${${PACKAGE_NAME}_ETI_GORDS}}.")
+    ENDIF()
+ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
+    IF(lenTpetraCore_ETI_GORDS EQUAL 0)
+        MESSAGE(STATUS "Tpetra: ERROR Tpetra requires a GlobalOrdinal type, but none were specified.")
+        MESSAGE(STATUS "This can happens when the default is overridden by user options without enabling")
+        MESSAGE(STATUS "another GlobalOrdinal type in its place. Please check your configuration to ensure")
+        MESSAGE(STATUS "that the default is not being specifically disabled without enabling one of the others:")
+        MESSAGE(STATUS "   Tpetra_INST_INT_INT")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG_LONG (Default, but was overridden)")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED_LONG")
+        MESSAGE(FATAL_ERROR "Tpetra: Tpetra requires a global ordinal type, but none were specified."
+                            " See above message for options.")
+    ELSEIF(lenTpetraCore_ETI_GORDS GREATER 1)
+        MESSAGE(FATAL_ERROR "Tpetra requires only one global ordinal, but more than one are set: {${${PACKAGE_NAME}_ETI_GORDS}}.")
+    ELSEIF(lenTpetraCore_ETI_GORDS EQUAL 1)
+        MESSAGE(STATUS "Tpetra: global ordinal setting is OK")
+    ELSE()
+        MESSAGE(FATAL_ERROR "Tpetra: global ordinal setting has a problem setting: {${${PACKAGE_NAME}_ETI_GORDS}}.")
+    ENDIF()
+ENDIF()
+MESSAGE(STATUS "")
+
+
+# Experimental Code
+# Enable experimental code
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_${PACKAGE_NAME_UC}_EXPERIMENTAL
+  "Enable experimental code."
+  NO)
 
 
 ############################################################

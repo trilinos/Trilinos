@@ -285,7 +285,7 @@ if (inmat.opts.speed != MATRIX_NO_REDIST) {
 
   wgtarray = (float*) ZOLTAN_MALLOC((outmat->mtx.nPins+outmat->mtx.nY)*outmat->mtx.pinwgtdim*sizeof(float));
 
-  if (outmat->mtx.nPins*outmat->mtx.pinwgtdim && !wgtarray) MEMORY_ERROR;
+  if (outmat->mtx.nPins && outmat->mtx.pinwgtdim && !wgtarray) MEMORY_ERROR;
 
   yGNO = outmat->mtx.yGNO;
   pinGNO = outmat->mtx.pinGNO;

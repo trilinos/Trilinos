@@ -50,6 +50,7 @@
 #ifndef _ZOLTAN2_ADAPTER_HPP_
 #define _ZOLTAN2_ADAPTER_HPP_
 
+#include <Kokkos_Core.hpp>
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -67,7 +68,6 @@ enum BaseAdapterType {
   GraphAdapterType,       /*!< \brief graph data */
   MeshAdapterType         /*!< \brief mesh data */
 };
-
 
 /*! \brief BaseAdapter defines methods required by all Adapters
 
@@ -109,7 +109,7 @@ public:
 
   /*! \brief Returns the type of adapter.
    */
-  virtual enum BaseAdapterType adapterType()const = 0;
+  virtual enum BaseAdapterType adapterType() const = 0;
 
   /*! \brief Destructor
    */
@@ -117,23 +117,50 @@ public:
 
   /*! \brief Provide a pointer to this process' identifiers.
 
-      \param Ids will on return point to the list of the global Ids for 
+      \param ids will on return point to the list of the global Ids for 
         this process.
    */
-  virtual void getIDsView(const gno_t *&Ids) const = 0;
+  virtual void getIDsView(const gno_t *&ids) const {
+    Kokkos::View<gno_t *> kokkosIds;
+    getIDsKokkosView(kokkosIds);
+    ids = kokkosIds.data();
+  }
 
-  /*! \brief Provide pointer to a weight array with stride.
-   *    \param wgt on return a pointer to the weights for this idx
-   *    \param stride on return, the value such that
-   *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
-   *    \param idx  the weight index, zero or greater
-   *   This function must be implemented in derived adapter if
-   *   getNumWeightsPerID > 0.
-   *   This function should not be called if getNumWeightsPerID is zero.
-   */ 
+  /*! \brief Provide a pointer to this process' identifiers.
+
+      \param ids will on return point to the list of the global Ids for 
+        this process.
+   */
+  virtual void getIDsKokkosView(Kokkos::View<gno_t *> &/* ids */) const {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  ///*! \brief Provide pointer to a weight array with stride.
+  // *    \param wgt on return a pointer to the weights for this idx
+  // *    \param stride on return, the value such that
+  // *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
+  // *    \param idx  the weight index, zero or greater
+  // *   This function must be implemented in derived adapter if
+  // *   getNumWeightsPerID > 0.
+  // *   This function should not be called if getNumWeightsPerID is zero.
+  // */ 
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
-                              int idx = 0) const 
-  {
+                              int idx = 0) const {
+    Kokkos::View<scalar_t *> tempWeightsView;
+    getWeightsKokkosView(tempWeightsView, idx);
+    wgt = tempWeightsView.data();
+    stride = 1;
+  }
+
+  ///*! \brief Provide pointer to a weight View.
+  // *    \param wgt on return a pointer to the weights for this idx
+  // *    \param idx  the weight index, zero or greater
+  // *   This function must be implemented in derived adapter if
+  // *   getNumWeightsPerID > 0.
+  // *   This function should not be called if getNumWeightsPerID is zero.
+  // */ 
+  virtual void getWeightsKokkosView(Kokkos::View<scalar_t *> &/* wgt */, 
+                              int /* idx */ = 0) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -146,8 +173,7 @@ public:
    *         the rank 
    *    \param inputPart on return a pointer to input part numbers
    */ 
-  void getPartsView(const part_t *&inputPart) const
-  {
+  void getPartsView(const part_t *&inputPart) const {
     // Default behavior:  return NULL for inputPart array;
     // assume input part == rank
     inputPart = NULL;
@@ -170,16 +196,132 @@ public:
    *      user data.
    *  \return   Returns the number of local Ids in the new partition.
    */
-
   template <typename Adapter>
     void applyPartitioningSolution(const User &in, User *&out,
-      const PartitioningSolution<Adapter> &solution) const
-  {
+      const PartitioningSolution<Adapter> &solution) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
+protected:
+
+  // Write Chaco-formatted graph and assign files echoing adapter input
+  // This routine is serial and may be slow; use it only for debugging
+  // This function does not write edge info to the graph file, as the
+  // BaseAdapter does not know about edge info; it writes
+  // only the Chaco header and vertex weights (if applicable).
+  void generateWeightFileOnly(const char* fileprefix, 
+                              const Teuchos::Comm<int> &comm) const;
+
 };
+
+template <typename User>
+void BaseAdapter<User>::generateWeightFileOnly(
+  const char *fileprefix,
+  const Teuchos::Comm<int> &comm
+) const
+{
+  int np = comm.getSize();
+  int me = comm.getRank();
+
+  size_t nLocalIDs = this->getLocalNumIDs();
+
+  // Write .graph file:  header and weights only (no edges)
+  // Adapters with edges have to implement their own generateFiles function
+  // to provide edge info.
+  {
+    // append suffix to filename
+    std::string filenamestr = fileprefix;
+    filenamestr = filenamestr + ".graph";
+    const char *filename = filenamestr.c_str();
+
+    size_t nGlobalIDs;
+    Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &nLocalIDs, &nGlobalIDs);
+
+    int nWgts = this->getNumWeightsPerID();
+
+    for (int p = 0; p < np; p++) {
+
+      // Is it this processor's turn to write to files?
+      if (me == p) {
+
+        std::ofstream fp;
+
+        if (me == 0) {
+          // open file for writing
+          fp.open(filename, std::ios::out);
+          // write Chaco header info
+          // this function assumes no edges
+          fp << nGlobalIDs << " " << 0 << " " 
+             << (nWgts ? "010" : "000") << " "
+             << (nWgts > 1 ? std::to_string(nWgts) : " ") << std::endl;
+        }
+        else {
+          // open file for appending
+          fp.open(filename, std::ios::app);
+        }
+
+        if (nWgts) {
+
+          // get weight data
+          const scalar_t **wgts = new const scalar_t *[nWgts];
+          int *strides = new int[nWgts];
+          for (int n = 0; n < nWgts; n++)
+            getWeightsView(wgts[n], strides[n], n);
   
+          // write weights to file
+          for (size_t i = 0; i < nLocalIDs; i++) {
+            for (int n = 0; n < nWgts; n++)
+              fp << wgts[n][i*strides[n]] << " ";
+            fp << "\n";
+          }
+  
+          delete [] strides;
+          delete [] wgts;
+        }
+  
+        fp.close();
+      }
+  
+      comm.barrier();
+    }
+  }
+
+  // write assignments file
+  {
+    std::string filenamestr = fileprefix;
+    filenamestr = filenamestr + ".assign";
+    const char *filename = filenamestr.c_str();
+
+    for (int p = 0; p < np; p++) {
+
+      // Is it this processor's turn to write to files?
+      if (me == p) {
+  
+        std::ofstream fp;
+  
+        if (me == 0) {
+          // open file for writing
+          fp.open(filename, std::ios::out);
+        }
+        else {
+          // open file for appending
+          fp.open(filename, std::ios::app);
+        }
+  
+        const part_t *parts;
+        this->getPartsView(parts);
+       
+        for (size_t i = 0; i < nLocalIDs; i++) {
+          fp << (parts != NULL ? parts[i] : me) << "\n";
+        }
+        fp.close();
+      }
+  
+      comm.barrier();
+    }
+  }
+}
+
 }  //namespace Zoltan2
   
 #endif

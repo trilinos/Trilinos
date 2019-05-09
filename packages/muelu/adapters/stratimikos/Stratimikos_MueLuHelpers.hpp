@@ -50,6 +50,7 @@
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include "Thyra_MueLuPreconditionerFactory.hpp"
+#include "Thyra_MueLuRefMaxwellPreconditionerFactory.hpp"
 
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 #include "Thyra_MueLuTpetraQ2Q1PreconditionerFactory.hpp"
@@ -77,6 +78,23 @@ namespace Stratimikos {
 
     typedef Thyra::PreconditionerFactoryBase<double>                                     Base;
     typedef Thyra::MueLuPreconditionerFactory<double, LocalOrdinal, GlobalOrdinal, Node> Impl;
+
+    builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
+  }
+
+  // Dynamically register MueLu RefMaxwell adapters in Stratimikos
+  // Note: No Scalar template argument is available because Stratimikos
+  // does not support types beyond double
+  template <typename LocalOrdinal = int, typename GlobalOrdinal = int, typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  void enableMueLuRefMaxwell(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLuRefMaxwell")
+  {
+    const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
+                               "Stratimikos::enableMueLuRefMaxwell cannot add \"" + stratName +"\" because it is already included in builder!");
+
+    typedef Thyra::PreconditionerFactoryBase<double>                                     Base;
+    typedef Thyra::MueLuRefMaxwellPreconditionerFactory<double, LocalOrdinal, GlobalOrdinal, Node> Impl;
 
     builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
   }

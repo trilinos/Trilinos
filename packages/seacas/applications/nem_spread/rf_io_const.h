@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -59,7 +59,7 @@ template <typename T> struct Restart_Description
   int Flag; /* Indicates whether restart info is to be processed */
 
   int              Num_Times; /* The number of time indices to spread */
-  std::vector<int> Time_Idx;  /* Time indicies to read, need to keep track of all */
+  std::vector<int> Time_Idx;  /* Time indices to read, need to keep track of all */
   T                Time;      /* time value */
 
   int NVar_Glob; /* Number of global variables read */
@@ -96,15 +96,15 @@ template <typename T> struct Restart_Description
 
 /**Extern statements for parameters in rf_io.h */
 
-extern char ExoFile[]; /* Exodus II File containing problem definition.   */
-                       /* This name is the root name.                     */
-extern char
-    Output_File_Base_Name[]; /* Base name of output file. If it has a suffix, it will be stripped */
+extern char ExoFile[MAX_FNL];               /* Exodus II File containing problem definition.   */
+                                            /* This name is the root name.                     */
+extern char Output_File_Base_Name[MAX_FNL]; /* Base name of output file. If it has a suffix, it will
+                                               be stripped */
 
-extern char Exo_LB_File[];
+extern char Exo_LB_File[MAX_FNL];
 /* Exodus II file containing the mesh load-balance */
 /* information                                     */
-extern char Exo_Res_File[];
+extern char Exo_Res_File[MAX_FNL];
 /* Exodus II file containing the mesh result       */
 /* information                                     */
 extern int Debug_Flag; /* Flag to specify debug info is to be printed out.

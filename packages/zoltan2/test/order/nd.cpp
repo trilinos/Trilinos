@@ -53,12 +53,10 @@
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 using Teuchos::RCP;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // Eventually want to use Teuchos unit tests to vary z2TestLO and
@@ -73,7 +71,6 @@ typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix_t;
 typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> Vector;
 typedef Vector::node_type Node;
 
-//typedef Tpetra::MultiVector<z2TestScalar, z2TestLO, z2TestGO, znode_t> tMVector_t;
 typedef Tpetra::MultiVector<z2TestScalar, z2TestLO, z2TestGO,znode_t> tMVector_t;
 
 
@@ -82,30 +79,28 @@ typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix_t,tMVector_t> SparseMatrixA
 
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> MultiVectorAdapter_t;
 
-
-
-
 #define epsilon 0.00000001
 
+int testNDwithRCB(RCP<SparseMatrix_t> &origMatrix,RCP<tMVector_t> &coords, int numParts, int me);
+int testNDwithPHG(RCP<SparseMatrix_t> &origMatrix,int numParts, int me);
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int main(int argc, char** argv)
+int main(int narg, char** arg)
 {
+  //////////////////////////////////////////////////////////////////////
+  ////// Establish session.
+  //////////////////////////////////////////////////////////////////////
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  //////////////////////////////////////////////////////////////////////
+
   std::string inputFile = "";        // Matrix Market or Zoltan file to read
   std::string inputPath = testDataFilePath;  // Directory with input file
   bool distributeInput = true;
   int success = 0;
   int numParts = 2;
-
-
-  //////////////////////////////////////////////////////////////////////
-  ////// Establish session.
-  //////////////////////////////////////////////////////////////////////
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  int me = comm->getRank();
-  //////////////////////////////////////////////////////////////////////
 
   //////////////////////////////////////////////////////////////////////
   // Read run-time options.
@@ -125,7 +120,7 @@ int main(int argc, char** argv)
                  "Global number of parts;");
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn
-    parseReturn= cmdp.parse( argc, argv );
+    parseReturn= cmdp.parse( narg, arg );
 
   if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED )
   {
@@ -153,10 +148,10 @@ int main(int argc, char** argv)
 
   if (me == 0)
   {
-    cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
-         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl
-         << "NumParts = " << numParts << endl;
+    std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
+         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
+         << "NumProcs = " << comm->getSize() << std::endl
+         << "NumParts = " << numParts << std::endl;
   }
 
   if (origMatrix->getGlobalNumRows() < 40)
@@ -182,7 +177,29 @@ int main(int argc, char** argv)
   }
   //////////////////////////////////////////////////////////////////////
 
-  //MMW add weights later
+  //////////////////////////////////////////////////////////////////////
+  // Test ND ordering with RCB to compute the separator
+  //////////////////////////////////////////////////////////////////////
+  testNDwithRCB(origMatrix,coords,numParts,me);
+  //////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////
+  // Test ND ordering with PHG to compute the separator
+  //////////////////////////////////////////////////////////////////////
+  testNDwithPHG(origMatrix,numParts,me);
+  //////////////////////////////////////////////////////////////////////
+
+
+
+  return success;
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+int testNDwithRCB(RCP<SparseMatrix_t> &origMatrix,RCP<tMVector_t> &coords, int numParts, int me)
+{
+  int success=0;
 
   //////////////////////////////////////////////////////////////////////
   ////// Specify problem parameters
@@ -190,10 +207,9 @@ int main(int argc, char** argv)
   Teuchos::ParameterList params;
 
   params.set("num_global_parts", numParts);
-  //  params.set("partitioning_approach", "partition");
   params.set("order_method", "nd");
+  params.set("edge_separator_method", "rcb");
   //////////////////////////////////////////////////////////////////////
-
 
   //////////////////////////////////////////////////////////////////////
   ////// Create an input adapter for the Tpetra matrix.
@@ -224,40 +240,40 @@ int main(int argc, char** argv)
 
   try
   {
-    if (me == 0) cout << "Calling solve() " << endl;
+    if (me == 0) std::cout << "Calling solve() " << std::endl;
     problem.solve();
-    if (me == 0) cout << "Done solve() " << endl;
+    if (me == 0) std::cout << "Done solve() " << std::endl;
   }
   catch (std::runtime_error &e)
   {
-    cout << "Runtime exception returned from solve(): " << e.what();
+    std::cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {
       // Catching build errors as exceptions is OK in the tests
-      cout << " PASS" << endl;
+      std::cout << " PASS" << std::endl;
       return 0;
     }
     else {
       // All other runtime_errors are failures
-      cout << " FAIL" << endl;
+      std::cout << " FAIL" << std::endl;
       return -1;
     }
   }
   catch (std::logic_error &e)
   {
-    cout << "Logic exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Logic exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::bad_alloc &e)
   {
-    cout << "Bad_alloc exception returned from solve(): " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Bad_alloc exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
   catch (std::exception &e)
   {
-    cout << "Unknown exception returned from solve(). " << e.what()
-         << " FAIL" << endl;
+    std::cout << "Unknown exception returned from solve(). " << e.what()
+         << " FAIL" << std::endl;
     return -1;
   }
 
@@ -271,3 +287,76 @@ int main(int argc, char** argv)
 }
 ////////////////////////////////////////////////////////////////////////////////
 
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+int testNDwithPHG(RCP<SparseMatrix_t> &origMatrix,int numParts, int me)
+{
+  int success=0;
+
+  //////////////////////////////////////////////////////////////////////
+  ////// Specify problem parameters
+  //////////////////////////////////////////////////////////////////////
+  Teuchos::ParameterList params;
+
+  params.set("num_global_parts", numParts);
+  params.set("order_method", "nd");
+  params.set("edge_separator_method", "phg");
+  //////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////
+  ////// Create an input adapter for the Tpetra matrix.
+  //////////////////////////////////////////////////////////////////////
+  SparseMatrixAdapter_t matAdapter(origMatrix);
+  //////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////
+  ////// Create and solve partitioning problem
+  //////////////////////////////////////////////////////////////////////
+  Zoltan2::OrderingProblem<SparseMatrixAdapter_t> problem(&matAdapter, &params);
+
+
+  try
+  {
+    if (me == 0) std::cout << "Calling solve() " << std::endl;
+    problem.solve();
+    if (me == 0) std::cout << "Done solve() " << std::endl;
+  }
+  catch (std::runtime_error &e)
+  {
+    std::cout << "Runtime exception returned from solve(): " << e.what();
+    if (!strncmp(e.what(), "BUILD ERROR", 11)) {
+      // Catching build errors as exceptions is OK in the tests
+      std::cout << " PASS" << std::endl;
+      return 0;
+    }
+    else {
+      // All other runtime_errors are failures
+      std::cout << " FAIL" << std::endl;
+      return -1;
+    }
+  }
+  catch (std::logic_error &e)
+  {
+    std::cout << "Logic exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
+    return -1;
+  }
+  catch (std::bad_alloc &e)
+  {
+    std::cout << "Bad_alloc exception returned from solve(): " << e.what()
+         << " FAIL" << std::endl;
+    return -1;
+  }
+  catch (std::exception &e)
+  {
+    std::cout << "Unknown exception returned from solve(). " << e.what()
+         << " FAIL" << std::endl;
+    return -1;
+  }
+  //////////////////////////////////////////////////////////////////////
+
+  std::cout << "PASS" << std::endl;
+  return success;
+}
+////////////////////////////////////////////////////////////////////////////////

@@ -55,15 +55,12 @@
 // Pamgen includes
 #include "create_inline_mesh.h"
 
-using namespace std;
 using Teuchos::RCP;
 
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-//Tpetra typedefs
-typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-typedef Zoltan2::BasicUserTypes<double>          basic_user_t;
+typedef Zoltan2::BasicUserTypes<double> basic_user_t;
 
 
 
@@ -73,9 +70,8 @@ typedef Zoltan2::BasicUserTypes<double>          basic_user_t;
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
   int me = CommT->getRank();
   int numProcs = CommT->getSize();
@@ -98,18 +94,18 @@ int main(int narg, char *arg[]) {
 
   if(xmlMeshInFileName.length()) {
     if (me == 0) {
-      cout << "\nReading parameter list from the XML file \""
+      std::cout << "\nReading parameter list from the XML file \""
                 <<xmlMeshInFileName<<"\" ...\n\n";
     }
     Teuchos::updateParametersFromXmlFile(xmlMeshInFileName,
                                          Teuchos::inoutArg(inputMeshList));
     if (me == 0) {
-      inputMeshList.print(cout,2,true,true);
-      cout << "\n";
+      inputMeshList.print(std::cout,2,true,true);
+      std::cout << "\n";
     }
   }
   else {
-    cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
+    std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
     return 5;
   }
 
@@ -128,14 +124,14 @@ int main(int narg, char *arg[]) {
   /***************************** GENERATE MESH *******************************/
   /***************************************************************************/
 
-  if (me == 0) cout << "Generating mesh ... \n\n";
+  if (me == 0) std::cout << "Generating mesh ... \n\n";
 
   // Generate mesh with Pamgen
   long long maxInt = std::numeric_limits<long long>::max();
   Create_Pamgen_Mesh(meshInput.c_str(), dim, me, numProcs, maxInt);
 
   // Creating mesh adapter
-  if (me == 0) cout << "Creating mesh adapter ... \n\n";
+  if (me == 0) std::cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<basic_user_t> inputAdapter_t;
   typedef inputAdapter_t::base_adapter_t base_adapter_t;
@@ -270,7 +266,7 @@ int main(int narg, char *arg[]) {
   }
 
   // delete mesh
-  if (me == 0) cout << "Deleting the mesh ... \n\n";
+  if (me == 0) std::cout << "Deleting the mesh ... \n\n";
 
   Delete_Pamgen_Mesh();
 

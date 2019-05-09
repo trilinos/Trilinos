@@ -51,9 +51,10 @@
 #include "Amesos2_FunctionMap.hpp"
 #include "Amesos2_Umfpack_TypeMap.hpp"
 
-namespace UMFPACK {
+extern "C"
+{
   #include "umfpack.h"
-} // end namespace UMFPACK
+}
 
 namespace Amesos2 {
 
@@ -82,7 +83,7 @@ namespace Amesos2 {
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
     {
-      return UMFPACK::umfpack_di_solve(sys, Ap, Ai, Ax, X, B, Numeric, Control, Info);
+      return ::umfpack_di_solve(sys, Ap, Ai, Ax, X, B, Numeric, Control, Info);
     }
 
     static int umfpack_numeric(
@@ -94,7 +95,7 @@ namespace Amesos2 {
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
     {
-      return UMFPACK::umfpack_di_numeric(Ap, Ai, Ax, Symbolic, Numeric, Control, Info);
+      return ::umfpack_di_numeric(Ap, Ai, Ax, Symbolic, Numeric, Control, Info);
     }
 
     static int umfpack_symbolic(
@@ -107,23 +108,23 @@ namespace Amesos2 {
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
     {
-      return UMFPACK::umfpack_di_symbolic(n_row, n_col, Ap, Ai, Ax, Symbolic, Control, Info);
+      return ::umfpack_di_symbolic(n_row, n_col, Ap, Ai, Ax, Symbolic, Control, Info);
     }
 
     static void umfpack_defaults(
     double Control [UMFPACK_CONTROL])
     {
-      UMFPACK::umfpack_di_defaults(Control);
+      ::umfpack_di_defaults(Control);
     }
 
     static void umfpack_free_numeric(void **Numeric)
     {
-      return UMFPACK::umfpack_di_free_numeric(Numeric);
+      return ::umfpack_di_free_numeric(Numeric);
     }
 
     static void umfpack_free_symbolic(void **Symbolic)
     {
-      return UMFPACK::umfpack_di_free_symbolic(Symbolic);
+      return ::umfpack_di_free_symbolic(Symbolic);
     }
   };
 
@@ -156,7 +157,7 @@ namespace Amesos2 {
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
     {
-      return UMFPACK::umfpack_zi_solve(sys, Ap, Ai,
+      return ::umfpack_zi_solve(sys, Ap, Ai,
         stdComplexToUmfpackDoubleConversion(Ax), NULL,
         stdComplexToUmfpackDoubleConversion(X), NULL,
         stdComplexToUmfpackDoubleConversion(B), NULL,
@@ -172,7 +173,7 @@ namespace Amesos2 {
     const double Control[UMFPACK_CONTROL],
     double Info[UMFPACK_INFO])
     {
-      return UMFPACK::umfpack_zi_numeric(Ap, Ai, stdComplexToUmfpackDoubleConversion(Ax), NULL, Symbolic, Numeric, Control, Info);
+      return ::umfpack_zi_numeric(Ap, Ai, stdComplexToUmfpackDoubleConversion(Ax), NULL, Symbolic, Numeric, Control, Info);
     }
 
     static int umfpack_symbolic(
@@ -185,22 +186,22 @@ namespace Amesos2 {
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
     {
-      return UMFPACK::umfpack_zi_symbolic(n_row, n_col, Ap, Ai, stdComplexToUmfpackDoubleConversion(Ax), NULL, Symbolic, Control, Info);
+      return ::umfpack_zi_symbolic(n_row, n_col, Ap, Ai, stdComplexToUmfpackDoubleConversion(Ax), NULL, Symbolic, Control, Info);
     }
 
     static void umfpack_defaults(double Control [UMFPACK_CONTROL])
     {
-      UMFPACK::umfpack_zi_defaults(Control);
+      ::umfpack_zi_defaults(Control);
     }
 
     static void umfpack_free_numeric(void **Numeric)
     {
-      UMFPACK::umfpack_zi_free_numeric(Numeric);
+      ::umfpack_zi_free_numeric(Numeric);
     }
 
     static void umfpack_free_symbolic(void **Symbolic)
     {
-      UMFPACK::umfpack_zi_free_symbolic(Symbolic);
+      ::umfpack_zi_free_symbolic(Symbolic);
     }
   };
 

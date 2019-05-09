@@ -40,18 +40,16 @@
 // ************************************************************************
 // @HEADER
 */
-#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_MatrixIO.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
-#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
@@ -105,7 +103,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_AddProfiling, sorted, SC, LO, GO, NT)
 {
   typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::Map<LO, GO, NT> map_type;
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   if(comm->getRank() == 0)
     std::cout << "Running sorted add test on " << comm->getSize() << " MPI ranks.\n";
   RCP<map_type> rowMap = rcp(new map_type(NUM_ROWS, 0, comm));
@@ -124,7 +122,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_AddProfiling, different_col_maps, SC, L
 {
   typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::Map<LO, GO, NT> map_type;
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   if(comm->getRank() == 0)
     std::cout << "Running \"different col maps\" add test on " << comm->getSize() << " MPI ranks.\n";
   RCP<map_type> rowMap = rcp(new map_type(NUM_ROWS, 0, comm));

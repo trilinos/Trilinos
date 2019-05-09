@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -56,6 +56,8 @@
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <impl/Kokkos_SharedAlloc.hpp>
+
+#include "impl/Kokkos_HostSpace_deepcopy.hpp"
 
 /*--------------------------------------------------------------------------*/
 
@@ -222,8 +224,10 @@ private:
 
   static void deallocate( RecordBase * );
 
+#ifdef KOKKOS_DEBUG
   /**\brief  Root record for tracked allocations from this HostSpace instance */
   static RecordBase s_root_record;
+#endif
 
   const Kokkos::HostSpace m_space;
 
@@ -289,17 +293,17 @@ namespace Kokkos {
 
 namespace Impl {
 
-template< class DstSpace, class SrcSpace, class ExecutionSpace = typename DstSpace::execution_space > struct DeepCopy;
+#define PAR_DEEP_COPY_USE_MEMCPY
 
 template< class ExecutionSpace >
 struct DeepCopy< HostSpace, HostSpace, ExecutionSpace > {
   DeepCopy( void * dst, const void * src, size_t n ) {
-    memcpy( dst, src, n );
+    hostspace_parallel_deepcopy(dst,src,n);
   }
 
   DeepCopy( const ExecutionSpace& exec, void * dst, const void * src, size_t n ) {
     exec.fence();
-    memcpy( dst, src, n );
+    hostspace_parallel_deepcopy(dst,src,n);
   }
 };
 

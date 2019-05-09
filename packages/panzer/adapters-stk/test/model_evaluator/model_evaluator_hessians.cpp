@@ -66,7 +66,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
@@ -1210,8 +1210,8 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> 
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     // build the state dof manager and LOF
     {
@@ -1221,7 +1221,7 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
+        = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
       ap.lof = linObjFactory;
     }
 
@@ -1239,8 +1239,8 @@ namespace panzer {
       dofManager->buildGlobalUnknowns();
 
       // build a nonsquare LOF for the parameter vector
-      Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > linObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,ap.dofManager,dofManager));
+      Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > linObjFactory
+          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,ap.dofManager,dofManager));
 
       Teuchos::RCP<Epetra_Map> ownedMap = linObjFactory->getColMap(0);
       Teuchos::RCP<Epetra_Map> ghostedMap = linObjFactory->getGhostedColMap(0);

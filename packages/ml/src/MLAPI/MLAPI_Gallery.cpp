@@ -4,6 +4,7 @@
 /* ******************************************************************** */
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
+#include <fstream>
 #include <iostream>
 #include "ml_include.h"
 #include "Teuchos_ParameterList.hpp"
@@ -17,6 +18,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #endif
+
 
 namespace MLAPI {
 
@@ -39,6 +41,8 @@ Operator Gallery(const std::string ProblemType,
 
   return (A);
 #else
+  (void)ProblemType;
+  (void)MySpace;
   ML_THROW("Configure with --enable-galeri", -1);
 #endif
 
@@ -206,7 +210,7 @@ Operator GetRecirc2D(const int NX, const int NY, const double conv,
                      const double diff)
 {
   double LX = 1.0;    // length of the X-axis
-  double LY = 1.0;    // lenght of the Y-axis
+  double LY = 1.0;    // length of the Y-axis
 
   Space FineSpace(NX * NY);
 

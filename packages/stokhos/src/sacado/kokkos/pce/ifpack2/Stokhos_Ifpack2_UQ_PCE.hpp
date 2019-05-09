@@ -123,7 +123,7 @@ struct LocalReciprocalThreshold<
     }
     else {
       V_ReciprocalThresholdSelfFunctor<XV, SizeType> op (X, minVal);
-      Kokkos::parallel_for( X.dimension_0(), op );
+      Kokkos::parallel_for( X.extent(0), op );
     }
   }
 };

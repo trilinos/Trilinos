@@ -51,8 +51,8 @@
 #ifndef LOCA_EIGENSOLVER_ABSTRACTSTRATEGY_H
 #define LOCA_EIGENSOLVER_ABSTRACTSTRATEGY_H
 
+#include <vector>
 #include "Teuchos_RCP.hpp"
-
 #include "NOX_Abstract_Group.H" // for ReturnType
 
 namespace LOCA {

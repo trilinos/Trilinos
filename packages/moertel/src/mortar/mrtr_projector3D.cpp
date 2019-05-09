@@ -106,7 +106,7 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
   Nxeta2[0] = Nxeta2[1] = Nxeta2[2] = 0.0;
   for (int i=0; i<nmnode; ++i)
   {
-    const double* X = mnodes[i]->X();
+    const double* X = mnodes[i]->XCoords();
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
     Nx[2] += val[i]*X[2];
@@ -118,8 +118,8 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
     Nxeta2[2] += deriv[2*i+1]*X[2];
   }
 
-  const double* X = node.X();
-  const double* n = node.N();
+  const double* X = node.XCoords();
+  const double* n = node.Normal();
 
   // eval the function
   for (int i=0; i<3; ++i)
@@ -207,7 +207,7 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal(
   Nneta2[0] = Nneta2[1] = Nneta2[2] = 0.0;
   for (int i=0; i<nsnode; ++i)
   {
-    const double* X = snodes[i]->X();
+    const double* X = snodes[i]->XCoords();
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
     Nx[2] += val[i]*X[2];
@@ -218,7 +218,7 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal(
     Nxeta2[1] += deriv[2*i+1]*X[1];
     Nxeta2[2] += deriv[2*i+1]*X[2];
     
-    const double* n = snodes[i]->N();
+    const double* n = snodes[i]->Normal();
     Nn[0] += val[i]*n[0];
     Nn[1] += val[i]*n[1];
     Nn[2] += val[i]*n[2];
@@ -230,7 +230,7 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal(
     Nneta2[2] += deriv[2*i+1]*n[2];
   }
 
-  const double* X = node.X();
+  const double* X = node.XCoords();
 
   // eval the function
   for (int i=0; i<3; ++i)

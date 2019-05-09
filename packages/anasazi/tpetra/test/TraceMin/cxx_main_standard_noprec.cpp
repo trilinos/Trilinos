@@ -57,7 +57,7 @@
 #include "AnasaziOperator.hpp"
 
 // Include headers for Tpetra
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -286,14 +286,12 @@ int main(int argc, char *argv[]) {
   //
   // Initialize the MPI session
   //
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   //
   // Get the default communicator
   //
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
 
   //

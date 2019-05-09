@@ -137,12 +137,12 @@ public:
 
   /** \brief  Number of k entries. */
   KOKKOS_INLINE_FUNCTION
-  size_type num_k() const { return m_j_row_map.dimension_0() - 1 ; }
+  size_type num_k() const { return m_j_row_map.extent(0) - 1 ; }
 
   /** \brief  Number of sparse entries. */
   KOKKOS_INLINE_FUNCTION
   size_type entry_count() const
-  { return m_i_coord.dimension_0(); }
+  { return m_i_coord.extent(0); }
 
   /** \brief  Begin j entries with a coordinate 'k' */
   KOKKOS_INLINE_FUNCTION

@@ -216,12 +216,10 @@ class AlgSerialGreedy : public Algorithm<Adapter>
           // Pick least used available color.
           // Simple linear algorithm; could maintain a priority queue but not sure any faster?
           int leastUsedColor = 1;
-          lno_t leastUsedNumber = numVerticesWithColor[1];
           for (int c=1; c <= maxColor; c++){
             if (forbidden[c] != v){
               if (numVerticesWithColor[c] < leastUsedColor){
                 leastUsedColor = c;
-                leastUsedNumber = numVerticesWithColor[c];
               }
             }
           }

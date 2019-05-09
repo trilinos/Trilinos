@@ -14,8 +14,6 @@
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <string>                       // for string
-#include <Ioss_IOFactory.h>             // for IOFactory
-#include <Ioss_Region.h>                // for Region
 #include <init/Ionit_Initializer.h>     // for Initializer
 #include "stk_io/DatabasePurpose.hpp"
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker

@@ -76,7 +76,7 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
-    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) {
+    Graph(const RCP<const CrsGraph> & graph, const std::string & /* objectLabel */="") : graph_(graph) {
       minLocalIndex_ = graph_->getDomainMap()->getMinLocalIndex();
       maxLocalIndex_ = graph_->getDomainMap()->getMaxLocalIndex();
     }

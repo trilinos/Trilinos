@@ -379,7 +379,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector, bool doFillComplete, bool doOptimizeStorage) {
+  void Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& /* Op */, const Teuchos::ArrayRCP<Scalar>& /* scalingVector */, bool /* doFillComplete */, bool /* doOptimizeStorage */) {
     throw Exceptions::RuntimeError("MyOldScaleMatrix_Epetra: Epetra needs SC=double and LO=GO=int.");
   }
 
@@ -467,7 +467,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  Transpose (Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, bool optimizeTranspose,const std::string & label,const Teuchos::RCP<Teuchos::ParameterList> &params) {
+  Transpose (Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, bool /* optimizeTranspose */,const std::string & label,const Teuchos::RCP<Teuchos::ParameterList> &params) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     std::string TorE = "epetra";
 #else
@@ -518,11 +518,36 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >
+  RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > X) {
+    RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xscalar;
+#if defined(HAVE_XPETRA_TPETRA) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType real_type;
+      // Need to cast the real-valued multivector to Scalar=complex
+    if ((typeid(Scalar).name() == typeid(std::complex<double>).name()) ||
+        (typeid(Scalar).name() == typeid(std::complex<float>).name())) {
+        Xscalar = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),X->getNumVectors());
+        size_t numVecs = X->getNumVectors();
+        for (size_t j=0;j<numVecs;j++) {
+          Teuchos::ArrayRCP<const real_type> XVec = X->getData(j);
+          Teuchos::ArrayRCP<Scalar> XVecScalar = Xscalar->getDataNonConst(j);
+          for(size_t i = 0; i < static_cast<size_t>(XVec.size()); ++i)
+            XVecScalar[i]=XVec[i];
+        }
+      } else
+#endif
+        Xscalar = rcp_dynamic_cast<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(X);
+      return Xscalar;
+  }
+  
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> >
   Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   ExtractCoordinatesFromParameterList (ParameterList& paramList) {
 
-    RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > coordinates = Teuchos::null;
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > coordinates = Teuchos::null;
 
     // check whether coordinates are contained in parameter list
     if(paramList.isParameter ("Coordinates") == false)
@@ -543,7 +568,7 @@ namespace MueLu {
     // * ETI is turned off, since then the compiler will instantiate it automatically OR
     // * Tpetra is instantiated on Scalar=double
 #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_DOUBLE)
-    typedef Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> tdMV;
+    typedef Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> tdMV;
     RCP<tdMV> doubleCoords = Teuchos::null;
     if (paramList.isType<RCP<tdMV> >("Coordinates")) {
       // Coordinates are stored as a double vector
@@ -562,7 +587,7 @@ namespace MueLu {
     // We have the coordinates in a Tpetra double vector
     if(doubleCoords != Teuchos::null) {
       //rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Vtpetra));
-      coordinates = Teuchos::rcp_dynamic_cast<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >(MueLu::TpetraMultiVector_To_XpetraMultiVector<double,LocalOrdinal,GlobalOrdinal,Node>(doubleCoords));
+      coordinates = Teuchos::rcp_dynamic_cast<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> >(MueLu::TpetraMultiVector_To_XpetraMultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node>(doubleCoords));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
       TEUCHOS_TEST_FOR_EXCEPT(doubleCoords->getNumVectors() != coordinates->getNumVectors());
     }

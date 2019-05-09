@@ -43,6 +43,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
+#include "Stokhos_Ensemble_Sizes.hpp"
 #include "Kokkos_CrsMatrix_MP_Vector.hpp"
 #include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
 
@@ -143,8 +144,8 @@ bool compare_rank_2_views(const array_type& y,
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
-  size_type num_rows = y.dimension_0();
-  size_type num_cols = y.dimension_1();
+  size_type num_rows = y.extent(0);
+  size_type num_cols = y.extent(1);
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
@@ -344,8 +345,7 @@ struct AddDiagonalValuesAtomicKernel {
   }
 };
 
-const unsigned VectorSize = 16;  // Currently must be a multiple of 8 based on
-                                 // alignment assumptions for SFS
+const unsigned VectorSize = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_MP, ReplaceValues, MatrixScalar )
@@ -403,6 +403,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   // Check the result
   success = kernel::check(matrix, out);
 }
+
+
+// Some Stokhos unit tests use View types with a static rank
+// In this case, dimensions should only be passed for the dynamic rank(s)
+// These routines are specialized to select the appropriate View ctor
+template < class ViewType, class OrdinalType, size_t I >
+struct RankTypeSelector {
+  static ViewType create_view( const std::string & name, const OrdinalType & fem_length, const OrdinalType & stoch_length ) {
+    return ViewType(name, fem_length, stoch_length);
+  }
+};
+
+template <class ViewType, class OrdinalType>
+struct RankTypeSelector <ViewType,OrdinalType,1> {
+  static ViewType create_view( const std::string & name, const OrdinalType & fem_length, const OrdinalType & stoch_length ) {
+    (void) stoch_length; // unused if dyn_rank == 1; cast to void to silence compiler warnings
+    return ViewType(name, fem_length);
+  }
+};
+
+template <class ViewType, class OrdinalType>
+struct RankTypeSelector <ViewType,OrdinalType,0> {
+  static ViewType create_view( const std::string & name, const OrdinalType & fem_length, const OrdinalType & stoch_length ) {
+    (void) stoch_length; // unused if dyn_rank == 1; cast to void to silence compiler warnings
+    (void) fem_length; // unused if dyn_rank == 1; cast to void to silence compiler warnings
+    return ViewType(name);
+  }
+};
+
 
 template <typename VectorType, typename Multiply>
 bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
@@ -512,8 +541,13 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   // generate correct answer
 
   typedef typename block_vector_type::array_type array_type;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   array_type ay_expected =
     array_type("ay_expected", fem_length, stoch_length);
+#else
+  array_type ay_expected =
+    RankTypeSelector<array_type, ordinal_type, array_type::traits::rank_dynamic>::create_view("ay_expected", fem_length, stoch_length);
+#endif
   typename array_type::HostMirror hay_expected =
     Kokkos::create_mirror_view(ay_expected);
   for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {

@@ -55,7 +55,7 @@ NOX::MultiVector::MultiVector(int numVecs) :
 {
   if (numVecs <= 0) {
     std::cerr << "NOX::MultiVector:  Error!  Multivector"
-     << " must have postive number of columns!" << std::endl;
+     << " must have positive number of columns!" << std::endl;
     throw "NOX Error";
   }
 }
@@ -66,7 +66,7 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector& v, int numVecs,
 {
   if (numVecs <= 0) {
     std::cerr << "NOX::MultiVector:  Error!  Multivector"
-     << " must have postive number of columns!" << std::endl;
+     << " must have positive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
@@ -82,7 +82,7 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector* const* vs,
 {
   if (numVecs <= 0) {
     std::cerr << "NOX::MultiVector:  Error!  Multivector"
-     << " must have postive number of columns!" << std::endl;
+     << " must have positive number of columns!" << std::endl;
     throw "NOX Error";
   }
 

@@ -1,6 +1,7 @@
 ADD_SUBDIRECTORY(square_mesh)
 ADD_SUBDIRECTORY(PoissonExample)
 ADD_SUBDIRECTORY(CurlLaplacianExample)
+ADD_SUBDIRECTORY(MixedCurlLaplacianExample)
 ADD_SUBDIRECTORY(MixedPoissonExample)
 ADD_SUBDIRECTORY(PoissonInterfaceExample)
 ADD_SUBDIRECTORY(assembly_engine)

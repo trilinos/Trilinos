@@ -60,6 +60,7 @@ APPEND_SET(HEADERS
   BelosMultiVecTraits.hpp
   BelosMVOPTester.hpp
   BelosOperator.hpp
+  BelosOperatorT.hpp
   BelosOperatorTraits.hpp
   BelosOrthoManagerFactory.hpp
   BelosOrthoManager.hpp
@@ -78,6 +79,9 @@ APPEND_SET(HEADERS
   BelosSimpleOrthoManager.hpp
   BelosSolverManager.hpp
   BelosSolverFactory.hpp
+  BelosSolverFactory_Belos.hpp
+  BelosSolverFactory_Generic.hpp
+  BelosCustomSolverFactory.hpp
   BelosStatusTestCombo.hpp
   BelosStatusTestFactory.hpp
   BelosStatusTestGeneralOutput.hpp
@@ -102,6 +106,7 @@ APPEND_SET(HEADERS
   Belos_Details_LinearSolver.hpp
   Belos_Details_LinearSolverFactory.hpp
   Belos_Details_registerLinearSolverFactory.hpp
+  Belos_Details_registerSolverFactory.hpp
   BelosUtils.hpp
   )
 
@@ -111,6 +116,8 @@ APPEND_SET(SOURCES
   BelosTypes.cpp
   BelosVersion.cpp
   Belos_Details_registerLinearSolverFactory.cpp
+  BelosSolverFactory.cpp
+  Belos_Details_registerSolverFactory.cpp
   )
 
 # COMP_H

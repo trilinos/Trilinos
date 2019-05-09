@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr auto name = "quad9";
+    static constexpr const char *name = "quad9";
 
     static void factory();
     ~Quad9() override;
@@ -76,7 +76,7 @@ namespace Ioss {
   private:
     static Quad9 instance_;
 
-    Quad9(const Quad9 &); // Do not implement
+    Quad9(const Quad9 &) = delete;
   };
 } // namespace Ioss
 #endif

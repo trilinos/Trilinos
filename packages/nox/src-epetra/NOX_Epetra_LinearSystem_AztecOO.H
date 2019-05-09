@@ -124,7 +124,7 @@ NOX::Epetra::Interface::Preconditioner is used for updating a user supplied prec
 
 <B>"Linear Solver" sublist parameters</B>
 
-A Teuchos::ParameterList called linearSolverParams is required in the various constructors and during some method calls such as applyJacobianInverse() and applyRightPreconditioning().  Typically, this list is the "Linear Solver" sublist found in the nox parameter list.  The following parameters can be set in the linear solver sublist and are vaild for the NOX::Epetra::LinearSolverAztecOO object:<ul>
+A Teuchos::ParameterList called linearSolverParams is required in the various constructors and during some method calls such as applyJacobianInverse() and applyRightPreconditioning().  Typically, this list is the "Linear Solver" sublist found in the nox parameter list.  The following parameters can be set in the linear solver sublist and are valid for the NOX::Epetra::LinearSolverAztecOO object:<ul>
 
 <li> "Aztec Solver" - Determine the iterative technique used in the solve.  The following options are valid:
 

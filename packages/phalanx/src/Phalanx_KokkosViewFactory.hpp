@@ -30,47 +30,47 @@ namespace PHX {
     const PHX::DataLayout& dl = t.dataLayout();
 
     if (dl.rank() == 1)
-      a = Kokkos::View<ScalarT*,Device>(t.identifier(),
-					dl.dimension(0));
+      a = PHX::View<ScalarT*>(t.identifier(),
+			      dl.dimension(0));
     else if (dl.rank() == 2)
-      a = Kokkos::View<ScalarT**,Device>(t.identifier(),
-					 dl.dimension(0),
-					 dl.dimension(1));
+      a = PHX::View<ScalarT**>(t.identifier(),
+			       dl.dimension(0),
+			       dl.dimension(1));
     else if (dl.rank() == 3)
-      a = Kokkos::View<ScalarT***,Device>(t.identifier(),
-					  dl.dimension(0),
-					  dl.dimension(1),
-					  dl.dimension(2));
+      a = PHX::View<ScalarT***>(t.identifier(),
+				dl.dimension(0),
+				dl.dimension(1),
+				dl.dimension(2));
     else if (dl.rank() == 4)
-      a = Kokkos::View<ScalarT****,Device>(t.identifier(),
-					   dl.dimension(0),
-					   dl.dimension(1),
-					   dl.dimension(2),
-					   dl.dimension(3));
+      a = PHX::View<ScalarT****>(t.identifier(),
+				 dl.dimension(0),
+				 dl.dimension(1),
+				 dl.dimension(2),
+				 dl.dimension(3));
     else if (dl.rank() == 5)
-      a = Kokkos::View<ScalarT*****,Device>(t.identifier(),
-					    dl.dimension(0),
-					    dl.dimension(1),
-					    dl.dimension(2),
-					    dl.dimension(3),
-					    dl.dimension(4));
+      a = PHX::View<ScalarT*****>(t.identifier(),
+				  dl.dimension(0),
+				  dl.dimension(1),
+				  dl.dimension(2),
+				  dl.dimension(3),
+				  dl.dimension(4));
     else if (dl.rank() == 6)
-      a = Kokkos::View<ScalarT******,Device>(t.identifier(),
-					     dl.dimension(0),
-					     dl.dimension(1),
-					     dl.dimension(2),
-					     dl.dimension(3),
-					     dl.dimension(4),
-					     dl.dimension(5));
+      a = PHX::View<ScalarT******>(t.identifier(),
+				   dl.dimension(0),
+				   dl.dimension(1),
+				   dl.dimension(2),
+				   dl.dimension(3),
+				   dl.dimension(4),
+				   dl.dimension(5));
     else if (dl.rank() == 7)
-      a = Kokkos::View<ScalarT*******,Device>(t.identifier(),
-					      dl.dimension(0),
-					      dl.dimension(1),
-					      dl.dimension(2),
-					      dl.dimension(3),
-					      dl.dimension(4),
-					      dl.dimension(5),
-					      dl.dimension(6));
+      a = PHX::View<ScalarT*******>(t.identifier(),
+				    dl.dimension(0),
+				    dl.dimension(1),
+				    dl.dimension(2),
+				    dl.dimension(3),
+				    dl.dimension(4),
+				    dl.dimension(5),
+				    dl.dimension(6));
     return a;
   }
   
@@ -96,54 +96,54 @@ namespace PHX {
       const PHX::index_size_type hDim = derivative_dimensions[0] + 1;
       
       if (dl.rank() == 1)
-	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>*,Device>(t.identifier(),
-							      dl.dimension(0),
-							      hDim);
+	a = PHX::View<Sacado::Fad::DFad<ScalarT>*>(t.identifier(),
+						   dl.dimension(0),
+						   hDim);
       else if (dl.rank() == 2)
-	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>**,Device>(t.identifier(),
-							       dl.dimension(0),
-							       dl.dimension(1),
-							       hDim);
+	a = PHX::View<Sacado::Fad::DFad<ScalarT>**>(t.identifier(),
+						    dl.dimension(0),
+						    dl.dimension(1),
+						    hDim);
       else if (dl.rank() == 3)
-	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>***,Device>(t.identifier(),
-								dl.dimension(0),
-								dl.dimension(1),
-								dl.dimension(2),
-								hDim);
+	a = PHX::View<Sacado::Fad::DFad<ScalarT>***>(t.identifier(),
+						     dl.dimension(0),
+						     dl.dimension(1),
+						     dl.dimension(2),
+						     hDim);
       else if (dl.rank() == 4)
-	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>****,Device>(t.identifier(),
-								 dl.dimension(0),
-								 dl.dimension(1),
-								 dl.dimension(2),
-								 dl.dimension(3),
-								 hDim);
+	a = PHX::View<Sacado::Fad::DFad<ScalarT>****>(t.identifier(),
+						      dl.dimension(0),
+						      dl.dimension(1),
+						      dl.dimension(2),
+						      dl.dimension(3),
+						      hDim);
       else if (dl.rank() == 5)
-	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>*****,Device>(t.identifier(),
-								  dl.dimension(0),
-								  dl.dimension(1),
-								  dl.dimension(2),
-								  dl.dimension(3),
-								  dl.dimension(4),
-								  hDim);
+	a = PHX::View<Sacado::Fad::DFad<ScalarT>*****>(t.identifier(),
+						       dl.dimension(0),
+						       dl.dimension(1),
+						       dl.dimension(2),
+						       dl.dimension(3),
+						       dl.dimension(4),
+						       hDim);
       else if (dl.rank() == 6)
-	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>******,Device>(t.identifier(),
-								   dl.dimension(0),
-								   dl.dimension(1),
-								   dl.dimension(2),
-								   dl.dimension(3),
-								   dl.dimension(4),
-								   dl.dimension(5),
-								   hDim);
+	a = PHX::View<Sacado::Fad::DFad<ScalarT>******>(t.identifier(),
+							dl.dimension(0),
+							dl.dimension(1),
+							dl.dimension(2),
+							dl.dimension(3),
+							dl.dimension(4),
+							dl.dimension(5),
+							hDim);
       else if (dl.rank() == 7)
-      	a = Kokkos::View<Sacado::Fad::DFad<ScalarT>*******,Device>(t.identifier(),
-								   dl.dimension(0),
-								   dl.dimension(1),
-								   dl.dimension(2),
-								   dl.dimension(3),
-								   dl.dimension(4),
-								   dl.dimension(5),
-								   dl.dimension(6),
-								   hDim);
+      	a = PHX::View<Sacado::Fad::DFad<ScalarT>*******>(t.identifier(),
+							 dl.dimension(0),
+							 dl.dimension(1),
+							 dl.dimension(2),
+							 dl.dimension(3),
+							 dl.dimension(4),
+							 dl.dimension(5),
+							 dl.dimension(6),
+							 hDim);
       
       
       return a;
@@ -172,54 +172,54 @@ namespace PHX {
       const PHX::index_size_type hDim = derivative_dimensions[0] + 1;
       
       if (dl.rank() == 1)
-	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>*,Device>(t.identifier(),
-								     dl.dimension(0),
-								     hDim);
+	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>*>(t.identifier(),
+							   dl.dimension(0),
+							   hDim);
       else if (dl.rank() == 2)
-	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>**,Device>(t.identifier(),
-								      dl.dimension(0),
-								      dl.dimension(1),
-								      hDim);
+	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>**>(t.identifier(),
+							    dl.dimension(0),
+							    dl.dimension(1),
+							    hDim);
       else if (dl.rank() == 3)
-	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>***,Device>(t.identifier(),
-								       dl.dimension(0),
-								       dl.dimension(1),
-								       dl.dimension(2),
-								       hDim);
+	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>***>(t.identifier(),
+							     dl.dimension(0),
+							     dl.dimension(1),
+							     dl.dimension(2),
+							     hDim);
       else if (dl.rank() == 4)
-	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>****,Device>(t.identifier(),
-									dl.dimension(0),
-									dl.dimension(1),
-									dl.dimension(2),
-									dl.dimension(3),
-									hDim);
+	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>****>(t.identifier(),
+							      dl.dimension(0),
+							      dl.dimension(1),
+							      dl.dimension(2),
+							      dl.dimension(3),
+							      hDim);
       else if (dl.rank() == 5)
-	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>*****,Device>(t.identifier(),
-									 dl.dimension(0),
-									 dl.dimension(1),
-									 dl.dimension(2),
-									 dl.dimension(3),
-									 dl.dimension(4),
-									 hDim);
+	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>*****>(t.identifier(),
+							       dl.dimension(0),
+							       dl.dimension(1),
+							       dl.dimension(2),
+							       dl.dimension(3),
+							       dl.dimension(4),
+							       hDim);
       else if (dl.rank() == 6)
-	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>******,Device>(t.identifier(),
-									  dl.dimension(0),
-									  dl.dimension(1),
-									  dl.dimension(2),
-									  dl.dimension(3),
-									  dl.dimension(4),
-									  dl.dimension(5),
-									  hDim);
+	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>******>(t.identifier(),
+								dl.dimension(0),
+								dl.dimension(1),
+								dl.dimension(2),
+								dl.dimension(3),
+								dl.dimension(4),
+								dl.dimension(5),
+								hDim);
       else if (dl.rank() == 7)
-      	a = Kokkos::View<Sacado::ELRCacheFad::DFad<ScalarT>*******,Device>(t.identifier(),
-									   dl.dimension(0),
-									   dl.dimension(1),
-									   dl.dimension(2),
-									   dl.dimension(3),
-									   dl.dimension(4),
-									   dl.dimension(5),
-									   dl.dimension(6),
-									   hDim);
+      	a = PHX::View<Sacado::ELRCacheFad::DFad<ScalarT>*******>(t.identifier(),
+								 dl.dimension(0),
+								 dl.dimension(1),
+								 dl.dimension(2),
+								 dl.dimension(3),
+								 dl.dimension(4),
+								 dl.dimension(5),
+								 dl.dimension(6),
+								 hDim);
       
       
       return a;
@@ -255,54 +255,54 @@ namespace PHX {
 				 << derivative_dimensions[0] << ", is larger.");
       
       if (dl.rank() == 1)
-	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>*,Device>(t.identifier(),
-							      dl.dimension(0),
-							      hDim);
+	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>*>(t.identifier(),
+						      dl.dimension(0),
+						      hDim);
       else if (dl.rank() == 2)
-	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>**,Device>(t.identifier(),
-							       dl.dimension(0),
-							       dl.dimension(1),
-							       hDim);
+	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>**>(t.identifier(),
+						       dl.dimension(0),
+						       dl.dimension(1),
+						       hDim);
       else if (dl.rank() == 3)
-	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>***,Device>(t.identifier(),
-								dl.dimension(0),
-								dl.dimension(1),
-								dl.dimension(2),
-								hDim);
+	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>***>(t.identifier(),
+							dl.dimension(0),
+							dl.dimension(1),
+							dl.dimension(2),
+							hDim);
       else if (dl.rank() == 4)
-	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>****,Device>(t.identifier(),
-								 dl.dimension(0),
-								 dl.dimension(1),
-								 dl.dimension(2),
-								 dl.dimension(3),
-								 hDim);
+	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>****>(t.identifier(),
+							 dl.dimension(0),
+							 dl.dimension(1),
+							 dl.dimension(2),
+							 dl.dimension(3),
+							 hDim);
       else if (dl.rank() == 5)
-	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>*****,Device>(t.identifier(),
-								  dl.dimension(0),
-								  dl.dimension(1),
-								  dl.dimension(2),
-								  dl.dimension(3),
-								  dl.dimension(4),
-								  hDim);
+	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>*****>(t.identifier(),
+							  dl.dimension(0),
+							  dl.dimension(1),
+							  dl.dimension(2),
+							  dl.dimension(3),
+							  dl.dimension(4),
+							  hDim);
       else if (dl.rank() == 6)
-	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>******,Device>(t.identifier(),
-								   dl.dimension(0),
-								   dl.dimension(1),
-								   dl.dimension(2),
-								   dl.dimension(3),
-								   dl.dimension(4),
-								   dl.dimension(5),
-								   hDim);
+	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>******>(t.identifier(),
+							   dl.dimension(0),
+							   dl.dimension(1),
+							   dl.dimension(2),
+							   dl.dimension(3),
+							   dl.dimension(4),
+							   dl.dimension(5),
+							   hDim);
       else if (dl.rank() == 7)
-      	a = Kokkos::View<Sacado::Fad::SLFad<ScalarT,N>*******,Device>(t.identifier(),
-								   dl.dimension(0),
-								   dl.dimension(1),
-								   dl.dimension(2),
-								   dl.dimension(3),
-								   dl.dimension(4),
-								   dl.dimension(5),
-								   dl.dimension(6),
-								   hDim);
+      	a = PHX::View<Sacado::Fad::SLFad<ScalarT,N>*******>(t.identifier(),
+							    dl.dimension(0),
+							    dl.dimension(1),
+							    dl.dimension(2),
+							    dl.dimension(3),
+							    dl.dimension(4),
+							    dl.dimension(5),
+							    dl.dimension(6),
+							    hDim);
       
       
       return a;

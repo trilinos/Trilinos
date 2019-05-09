@@ -52,7 +52,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Integrator_TransientBasisTimesScalar,p) :
+template<typename EvalT, typename Traits>
+Integrator_TransientBasisTimesScalar<EvalT, Traits>::
+Integrator_TransientBasisTimesScalar(
+  const Teuchos::ParameterList& p) :
   residual( p.get<std::string>("Residual Name"), 
 	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   scalar( p.get<std::string>("Value Name"), 
@@ -97,25 +100,30 @@ PHX_EVALUATOR_CTOR(Integrator_TransientBasisTimesScalar,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
+template<typename EvalT, typename Traits>
+void
+Integrator_TransientBasisTimesScalar<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(scalar,fm);
   
-  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->utils.setFieldData(*field,fm);
-
-  num_nodes = residual.dimension(1);
-  num_qp = scalar.dimension(1);
+  num_nodes = residual.extent(1);
+  num_qp = scalar.extent(1);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.extent(0), num_qp); 
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
+template<typename EvalT, typename Traits>
+void
+Integrator_TransientBasisTimesScalar<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   if (workset.evaluate_transient_terms) {
     

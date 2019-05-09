@@ -36,7 +36,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-ASSERT_DEFINED (TPL_ENABLE_CUDA)
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
 ASSERT_DEFINED (Tpetra_INST_CUDA)
 
 # mfh 21 Aug 2017: The "CUDA-aware MPI" test still builds and runs if
@@ -47,12 +47,22 @@ ASSERT_DEFINED (Tpetra_INST_CUDA)
 # and other situations where the MPI implementation's CUDA-awareness
 # cannot be known until run time.
 
-IF (TPL_ENABLE_CUDA AND Tpetra_INST_CUDA)
+IF (Tpetra_ENABLE_CUDA AND Tpetra_INST_CUDA)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     cudaAwareMpi
     SOURCES
       cudaAwareMpi
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    NUM_MPI_PROCS 2
+    COMM mpi
+    )
+ENDIF ()
+
+IF (Tpetra_ENABLE_CUDA AND Tpetra_INST_CUDA AND Tpetra_ASSUME_CUDA_AWARE_MPI)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    cudaMpi_CanaryTest
+    SOURCES
+      cudaMpi_CanaryTest
     NUM_MPI_PROCS 2
     COMM mpi
     )

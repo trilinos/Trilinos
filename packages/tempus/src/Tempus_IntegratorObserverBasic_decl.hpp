@@ -10,6 +10,8 @@
 #define Tempus_IntegratorObserverBasic_decl_hpp
 
 #include "Tempus_IntegratorObserver.hpp"
+#include "Tempus_Integrator.hpp"
+#include "Teuchos_Time.hpp"
 
 namespace Tempus {
 
@@ -46,8 +48,11 @@ public:
     /// Observe after Stepper takes step.
     virtual void observeAfterTakeStep(const Integrator<Scalar>& integrator) override;
 
-    /// Observe after accepting time step.
-    virtual void observeAcceptedTimeStep(const Integrator<Scalar>& integrator) override;
+    /// Observe after checking time step.  Observer can still fail the time step here.
+    virtual void observeAfterCheckTimeStep(const Integrator<Scalar>& integrator) override;
+
+    /// Observe the end of the time step loop.
+    virtual void observeEndTimeStep(const Integrator<Scalar>& integrator) override;
 
     /// Observe the end of the time integrator.
     virtual void observeEndIntegrator(const Integrator<Scalar>& integrator) override;

@@ -56,9 +56,18 @@ namespace Test {
     
     inline
     void run() {
-      const int league_size = _c.dimension_0();
+      typedef typename ViewType::value_type value_type;
+      std::string name_region("KokkosBatched::Test::SerialGemm");
+      std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
+                                      std::is_same<value_type,double>::value ? "::Double" :
+                                      std::is_same<value_type,Kokkos::complex<float> >::value ? "::ComplexFloat" :
+                                      std::is_same<value_type,Kokkos::complex<double> >::value ? "::ComplexDouble" : "::UnknownValueType" );                               
+      std::string name = name_region + name_value_type;
+      Kokkos::Profiling::pushRegion( name.c_str() );
+      const int league_size = _c.extent(0);
       Kokkos::TeamPolicy<DeviceType,ParamTagType> policy(league_size, Kokkos::AUTO);
-      Kokkos::parallel_for(policy, *this);            
+      Kokkos::parallel_for(name.c_str(), policy, *this);          
+      Kokkos::Profiling::popRegion();   
     }
   };
     
@@ -84,6 +93,8 @@ namespace Test {
     Kokkos::fill_random(b0, random, value_type(1.0));
     Kokkos::fill_random(c0, random, value_type(1.0));
 
+    Kokkos::fence();
+
     Kokkos::deep_copy(a1, a0);
     Kokkos::deep_copy(b1, b0);
     Kokkos::deep_copy(c1, c0);
@@ -93,6 +104,8 @@ namespace Test {
       ParamTagType,Algo::Gemv::Unblocked>(alpha, a0, b0, beta, c0).run();
     Functor_TestBatchedTeamGemv<DeviceType,ViewType,ScalarType,
       ParamTagType,AlgoTagType>(alpha, a1, b1, beta, c1).run();
+
+    Kokkos::fence();
 
     /// for comparison send it to host
     typename ViewType::HostMirror c0_host = Kokkos::create_mirror_view(c0);
@@ -127,7 +140,7 @@ int test_batched_gemv() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
     Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutLeft,  Blksize %d\n", i); 
+      //printf("Testing: LayoutLeft,  Blksize %d\n", i); 
       Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }
@@ -137,7 +150,7 @@ int test_batched_gemv() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
     Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutRight, Blksize %d\n", i); 
+      //printf("Testing: LayoutRight, Blksize %d\n", i); 
       Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }

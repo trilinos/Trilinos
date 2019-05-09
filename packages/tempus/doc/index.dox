@@ -19,14 +19,17 @@
   differential equations (ODEs), partial differential equations
   (PDEs), and differential-algebraic equations (DAEs).  Examples
   of time-integration methods available are
-  - Forward Euler
-  - Backward Euler
-  - Explicit Runge-Kutta
-  - Diagonally Implicit Runge-Kutta methods
-  - \f$\beta\f$-Newmark
-  - HHT-\f$\alpha\f$
-  - Implicit/Explicit Runge-Kutta (IMEX-RK) methods
-  - Partitioned IMEX-RK methods
+  - \ref Tempus::StepperForwardEuler "Forward Euler"
+  - \ref Tempus::StepperBackwardEuler "Backward Euler"
+  - \ref Tempus::StepperExplicitRK "Explicit Runge-Kutta"
+  - \ref Tempus::StepperDIRK "Diagonally Implicit Runge-Kutta methods"
+  - Newmark-&beta;
+    - \ref Tempus::StepperNewmarkExplicitAForm "Explicit A-form"
+    - \ref Tempus::StepperNewmarkImplicitAForm "Implicit A-form"
+    - \ref Tempus::StepperNewmarkImplicitDForm "Implicit D-form"
+  - \ref Tempus::StepperHHTAlpha "Hilber-Hughes-Taylor (HHT-&alpha;)"
+  - \ref Tempus::StepperIMEX_RK "Implicit/Explicit Runge-Kutta (IMEX-RK) methods"
+  - \ref Tempus::StepperIMEX_RK_Partition "Partitioned IMEX-RK methods"
 
   Tempus provides a general infrastructure for the time evolution
   of solutions to ODEs, PDEs, and DAEs, through a variety of general

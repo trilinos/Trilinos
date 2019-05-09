@@ -79,7 +79,7 @@ buildClosureModels(const std::string& model_id,
   if(!blockIdEvaluated_[block_id]) {
      typedef std::map<std::string,std::vector<std::string> > BlockIdToFields;
 
-     int worksetsize = ir->dl_scalar->dimension(0);
+     int worksetsize = ir->dl_scalar->extent(0);
 
      // if a requested field is found then add in cell avg quantity evaluator
      BlockIdToFields::const_iterator cellAvgItr = blockIdToCellAvgFields_.find(block_id);

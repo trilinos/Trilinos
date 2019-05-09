@@ -94,8 +94,8 @@ namespace MueLu {
     Teuchos::RCP< const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
     Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
 
-    typedef Xpetra::MultiVector<double,LO,GO,NO> dxMV;
-    RCP<dxMV> Coords = Get< RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(currentLevel, "Coordinates");
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> dxMV;
+    RCP<dxMV> Coords = Get< RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > >(currentLevel, "Coordinates");
 
     int maxDofPerNode = pL.get<int>("maxDofPerNode");
     Scalar dirDropTol = Teuchos::as<Scalar>(pL.get<double>("Advanced Dirichlet: threshold")); // "ML advnaced Dirichlet: threshold"
@@ -242,7 +242,7 @@ namespace MueLu {
       }
       for (size_t j = rowptr[i]; j < rowptr[i+1]; j++) {
         if(doNotDrop == true ||
-            ( STS::magnitude(values[j] / sqrt(STS::magnitude(diagVecData[i]) * STS::magnitude(diagVecData[colind[j]]))   ) >= STS::magnitude(amalgDropTol) )) {
+           ( STS::magnitude(values[j] / STS::magnitude(sqrt(STS::magnitude(diagVecData[i]) * STS::magnitude(diagVecData[colind[j]])))   ) >= STS::magnitude(amalgDropTol) )) {
           blockColumn = myLocalNodeIds[colind[j]];
           if(isNonZero[blockColumn] == false) {
             isNonZero[blockColumn] = true;
@@ -320,7 +320,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<Scalar> amalgVals;
     this->squeezeOutNnzs(amalgRowPtr,amalgCols,amalgVals,keep);
 
-    typedef Xpetra::MultiVectorFactory<double,LO,GO,NO> dxMVf;
+    typedef Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> dxMVf;
     RCP<dxMV> ghostedCoords = dxMVf::Build(amalgColMap,Coords->getNumVectors());
 
     TEUCHOS_TEST_FOR_EXCEPTION(amalgRowMap->getNodeNumElements() != Coords->getMap()->getNodeNumElements(), MueLu::Exceptions::RuntimeError, "MueLu::VariableDofLaplacianFactory: the number of Coordinates and amalgamated nodes is inconsistent.");
@@ -377,12 +377,12 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildLaplacian(const Teuchos::ArrayRCP<size_t>& rowPtr, const Teuchos::ArrayRCP<LocalOrdinal>& cols, Teuchos::ArrayRCP<Scalar>& vals,const size_t& numdim, const RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > & ghostedCoords) const {
+  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildLaplacian(const Teuchos::ArrayRCP<size_t>& rowPtr, const Teuchos::ArrayRCP<LocalOrdinal>& cols, Teuchos::ArrayRCP<Scalar>& vals,const size_t& numdim, const RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > & ghostedCoords) const {
     TEUCHOS_TEST_FOR_EXCEPTION(numdim != 2 && numdim !=3, MueLu::Exceptions::RuntimeError,"buildLaplacian only works for 2d or 3d examples. numdim = " << numdim);
 
     if(numdim == 2) { // 2d
-      Teuchos::ArrayRCP< const double > x = ghostedCoords->getData(0);
-      Teuchos::ArrayRCP< const double > y = ghostedCoords->getData(1);
+      Teuchos::ArrayRCP< const typename Teuchos::ScalarTraits<Scalar>::magnitudeType > x = ghostedCoords->getData(0);
+      Teuchos::ArrayRCP< const typename Teuchos::ScalarTraits<Scalar>::magnitudeType > y = ghostedCoords->getData(1);
 
       for(decltype(rowPtr.size()) i = 0; i < rowPtr.size() - 1; i++) {
         Scalar sum = Teuchos::ScalarTraits<Scalar>::zero();
@@ -392,7 +392,7 @@ namespace MueLu {
             vals[j] = std::sqrt( (x[i]-x[cols[j]]) * (x[i]-x[cols[j]]) +
                                  (y[i]-y[cols[j]]) * (y[i]-y[cols[j]]) );
             TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == Teuchos::ScalarTraits<Scalar>::zero(), MueLu::Exceptions::RuntimeError, "buildLaplacian: error, " << i << " and " << cols[j] << " have same coordinates: " << x[i] << " and " << y[i]);
-            vals[j] = -1./vals[j];
+            vals[j] = -Teuchos::ScalarTraits<SC>::one()/vals[j];
             sum = sum - vals[j];
           }
           else diag = j;
@@ -403,9 +403,9 @@ namespace MueLu {
         vals[diag] = sum;
       }
     } else { // 3d
-      Teuchos::ArrayRCP< const double > x = ghostedCoords->getData(0);
-      Teuchos::ArrayRCP< const double > y = ghostedCoords->getData(1);
-      Teuchos::ArrayRCP< const double > z = ghostedCoords->getData(2);
+      Teuchos::ArrayRCP< const typename Teuchos::ScalarTraits<Scalar>::magnitudeType > x = ghostedCoords->getData(0);
+      Teuchos::ArrayRCP< const typename Teuchos::ScalarTraits<Scalar>::magnitudeType > y = ghostedCoords->getData(1);
+      Teuchos::ArrayRCP< const typename Teuchos::ScalarTraits<Scalar>::magnitudeType > z = ghostedCoords->getData(2);
 
       for(decltype(rowPtr.size()) i = 0; i < rowPtr.size() - 1; i++) {
         Scalar sum = Teuchos::ScalarTraits<Scalar>::zero();
@@ -418,7 +418,7 @@ namespace MueLu {
 
             TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == Teuchos::ScalarTraits<Scalar>::zero(), MueLu::Exceptions::RuntimeError, "buildLaplacian: error, " << i << " and " << cols[j] << " have same coordinates: " << x[i] << " and " << y[i] << " and " << z[i]);
 
-            vals[j] = -1./vals[j];
+            vals[j] = -Teuchos::ScalarTraits<SC>::one()/vals[j];
             sum = sum - vals[j];
           }
           else diag = j;

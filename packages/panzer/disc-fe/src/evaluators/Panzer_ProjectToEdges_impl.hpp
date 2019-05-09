@@ -49,6 +49,8 @@
 #include "Intrepid2_Cubature.hpp"
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_OrientationTools.hpp"
+
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Kokkos_ViewFactory.hpp"
@@ -117,25 +119,16 @@ ProjectToEdges(
 // **********************************************************************
 template<typename EvalT,typename Traits>
 void panzer::ProjectToEdges<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData /* d */, 
-		      PHX::FieldManager<Traits>& fm)
+postRegistrationSetup(typename Traits::SetupData  d, 
+		      PHX::FieldManager<Traits>& /* fm */)
 {
-  // setup the field data object
-  this->utils.setFieldData(result,fm);
-  for(unsigned qp = 0; qp < vector_values.size(); ++qp)
-    this->utils.setFieldData(vector_values[qp],fm);
-  this->utils.setFieldData(tangents,fm);
+  orientations = d.orientations_;
 
-  if(quad_degree > 0){
-    this->utils.setFieldData(dof_orientation,fm);
-    this->utils.setFieldData(gatherFieldTangents,fm);
-  }
+  num_pts = vector_values[0].extent(1);
+  num_dim = vector_values[0].extent(2);
 
-  num_pts = vector_values[0].dimension(1);
-  num_dim = vector_values[0].dimension(2);
-
-  TEUCHOS_ASSERT(vector_values[0].dimension(1) == tangents.dimension(1));
-  TEUCHOS_ASSERT(vector_values[0].dimension(2) == tangents.dimension(2));
+  TEUCHOS_ASSERT(vector_values[0].extent(1) == tangents.extent(1));
+  TEUCHOS_ASSERT(vector_values[0].extent(2) == tangents.extent(2));
 }
 
 // **********************************************************************
@@ -152,17 +145,34 @@ evaluateFields(typename Traits::EvalData workset)
   // One point quadrature if higher order quadrature not requested
   if (quad_degree == 0){
 
-    // Collect the reference edge information. For now, do nothing with the quadPts.
+    // this should be edge cubature and collecting weights are always 2.
+    // // Collect the reference edge information. For now, do nothing with the quadPts.
+    // const unsigned num_edges = parentCell.getEdgeCount();
+    // std::vector<double> refEdgeWt(num_edges, 0.0);
+    // for (unsigned e=0; e<num_edges; e++) {
+    //   edgeQuad = quadFactory.create<PHX::exec_space,double,double>(parentCell.getCellTopologyData(1,e), intDegree);
+    //   const int numQPoints = edgeQuad->getNumPoints();
+    //   Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",numQPoints);
+    //   Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",numQPoints,num_dim);
+    //   edgeQuad->getCubature(quadPts,quadWts);
+    //   for (int q=0; q<numQPoints; q++)
+    //     refEdgeWt[e] += quadWts(q);
+    // }
+
+    Kokkos::DynRankView<double,PHX::Device> v0("v0", num_dim), v1("v1", num_dim);
     const unsigned num_edges = parentCell.getEdgeCount();
     std::vector<double> refEdgeWt(num_edges, 0.0);
     for (unsigned e=0; e<num_edges; e++) {
-      edgeQuad = quadFactory.create<PHX::exec_space,double,double>(parentCell.getCellTopologyData(1,e), intDegree);
-      const int numQPoints = edgeQuad->getNumPoints();
-      Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",numQPoints);
-      Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",numQPoints,num_dim);
-      edgeQuad->getCubature(quadPts,quadWts);
-      for (int q=0; q<numQPoints; q++)
-        refEdgeWt[e] += quadWts(q);
+      const auto v0_id = parentCell.getNodeMap(1, e, 0);
+      const auto v1_id = parentCell.getNodeMap(1, e, 1);
+      Intrepid2::CellTools<PHX::exec_space>::getReferenceVertex(v0, parentCell, v0_id);
+      Intrepid2::CellTools<PHX::exec_space>::getReferenceVertex(v1, parentCell, v1_id);
+      
+      double norm = 0.0;
+      for (int d=0;d<num_dim;++d)
+        norm += (v0(d) - v1(d))*(v0(d) - v1(d));
+      
+      refEdgeWt[e] = sqrt(norm);
     }
 
     // Loop over the edges of the workset cells.
@@ -176,14 +186,17 @@ evaluateFields(typename Traits::EvalData workset)
     }
 
   } else {
+
+    TEUCHOS_ASSERT(false); // this doesn't work since we modified the way orientations are handled
+
     PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = workset.cell_vertex_coordinates;
     int subcell_dim = 1;
 
     // to compute tangents at qps (copied from GatherTangents)
-    int numEdges = gatherFieldTangents.dimension(1);
-    Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"refEdgeTan",numEdges,num_dim);
+    int numEdges = gatherFieldTangents.extent(1);
+    Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refEdgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"refEdgeTan",numEdges,num_dim);
     for(int i=0;i<numEdges;i++) {
-      Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",num_dim);
+      Kokkos::DynRankView<double,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refEdgeTan_local("refEdgeTan_local",num_dim);
       Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
 
       for(int d=0;d<num_dim;d++)
@@ -194,7 +207,7 @@ evaluateFields(typename Traits::EvalData workset)
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
       // get nodal coordinates for this cell 
-      Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.dimension(1),num_dim);
+      Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.extent(1),num_dim);
       for (int point(0); point < vertex_coords.extent_int(1); ++point)
       {
         for (int ict(0); ict < num_dim; ict++)

@@ -304,6 +304,11 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(VECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Vector" "VECTOR" "${MultiVector_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${VECTOR_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::FEMultiVector.
+  # Use the same set of Scalar types as with MultiVector.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(FEMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "FEMultiVector" "FEMULTIVECTOR" "${MultiVector_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${FEMULTIVECTOR_OUTPUT_FILES})
+
   # Zoltan2 wants Scalar = int for CrsMatrix (Bug 6298), and thus
   # indirectly for RowMatrix as well.
   SET (CrsMatrix_ETI_SCALARS ${MultiVector_ETI_SCALARS})
@@ -311,6 +316,10 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Generate ETI .cpp files for Tpetra::CrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "CrsMatrix" "CRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${CRSMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::FECrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(FECRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "FECrsMatrix" "FECRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${FECRSMATRIX_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::RowMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(ROWMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "RowMatrix" "ROWMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
@@ -323,6 +332,10 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Generate ETI .cpp files for Tpetra::Experimental::BlockCrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Experimental_BlockCrsMatrix" "EXPERIMENTAL_BLOCKCRSMATRIX" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${BLOCKCRSMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Experimental::BlockMultiVector.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Experimental_BlockMultiVector" "EXPERIMENTAL_BLOCKMULTIVECTOR" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${BLOCKMULTIVECTOR_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::Experimental::BlockCrsMatrix helpers.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_HELPER_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl"
@@ -360,6 +373,22 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(DISTOBJECT_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "DistObject" "DISTOBJECT" "${DistObject_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${DISTOBJECT_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::leftAndOrRightScaleCrsMatrix.
+  # Do this only for non-integer Scalar types, since we really only
+  # need this function for linear solvers.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(LEFTANDORRIGHTSCALECRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "leftAndOrRightScaleCrsMatrix" "LEFTANDORRIGHTSCALECRSMATRIX" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${LEFTANDORRIGHTSCALECRSMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::computeRowAndColumnOneNorms.
+  # Do this only for non-integer Scalar types, since we really only
+  # need this function for linear solvers.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(COMPUTEROWANDCOLUMNONENORMS_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "computeRowAndColumnOneNorms" "COMPUTEROWANDCOLUMNONENORMS" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${COMPUTEROWANDCOLUMNONENORMS_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::replaceDiagonalCrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "replaceDiagonalCrsMatrix" "REPLACEDIAGONALCRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES})
+
   #MESSAGE(STATUS "SOURCES = ${SOURCES}")
 ENDIF()
 
@@ -381,9 +410,9 @@ SET_PROPERTY(
   )
 
 #
-# Make a trivial change to this comment if you add / remove a file
-# either to / from this directory, or to / from the 'impl'
-# subdirectory.  That ensures that running "make" will also rerun
-# CMake in order to regenerate Makefiles.  Here is another such
-# change.
+# Make a trivial change to this comment if you add / remove a file either to
+# / from this directory, or to / from the 'impl' subdirectory.  That ensures
+# that running "make" will also rerun CMake in order to regenerate Makefiles.
+#
+# Here is another such change.  Verily, I make yet another change.  Another!
 #

@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 KOKKOS_DEVICES=""
 
 KOKKOS_DO_EXAMPLES="1"
 
-KOKKOSKERNELS_OPTIONS="eti-only"
+KOKKOSKERNELS_OPTIONS="eti-only,blas-mangle_"
 KOKKOSKERNELS_ENABLE_TPLS=""
 
 while [[ $# > 0 ]]
@@ -66,6 +66,7 @@ do
       HWLOC_PATH="${key#*=}"
       ;;
     --with-memkind*)
+      KOKKOSKERNELS_SPACES="HBWSpace,${KOKKOSKERNELS_SPACES}"
       MEMKIND_PATH="${key#*=}"
       ;;
     --arch*)
@@ -73,6 +74,9 @@ do
       ;;
     --cxxflags*)
       CXXFLAGS="${key#*=}"
+      ;;
+    --cxxstandard*)
+      KOKKOS_CXX_STANDARD="${key#*=}"
       ;;
     --ldflags*)
       LDFLAGS="${key#*=}"
@@ -113,11 +117,17 @@ do
     --with-offsets*)
       KOKKOSKERNELS_OFFSETS="${key#*=}"
       ;;
+    --with-layouts*)
+      KOKKOSKERNELS_LAYOUTS="${key#*=}"
+      ;;
     --with-options*)
       KOKKOSKERNELS_OPTIONS="${key#*=}"
       ;;
     --with-tpls*)
       KOKKOSKERNELS_ENABLE_TPLS="${key#*=}"
+      ;;
+    --with-spaces*)
+      KOKKOSKERNELS_SPACES="${key#*=}"
       ;;
     --with-kokkos-options*)
       KOKKOS_OPT="${key#*=}"
@@ -128,9 +138,15 @@ do
       echo "--with-scalars=[SCALARS]:             Set scalars to be instantiated."
       echo "--with-ordinals=[ORDINALS]:           Set ordinals to be instantiated."
       echo "--with-offsets=[OFFSETS]:             Set offsets to be instantiated."
+      echo "--with-layouts=[LAYOUTS]:             Set layouts to be instantiated (LayoutLeft,LayoutRight)."
       echo "--prefix=/Install/Path:               Path to install the Kokkos library."
       echo "--with-options=[OPT]:                 Set KokkosKernels Options:"
-      echo "                                        eti_only: only allow ETI types to be enabled [default]"
+      echo "                                        eti-only: only allow ETI types to be enabled [default]"
+      echo "                                        manual overriding for fortran blas mangling:"
+      echo "                                          blas-mangle, blas-mangle_[default], blas-mangle__"
+      echo "                                        manual overriding for blas complex interface"
+      echo "                                          blas-return-complex: e.g., ret = zdotc(&N, a, &inc_a, b, &inc_b)"
+      echo "                                          otherwise, the interface would search zdotc(&ret, &N, a, &inc_a, b, &inc_b)"
       echo "--with-tpls=[OPT]:                    Set KokkosKernels TPLs:"
       echo "                                        mkl,blas,cublas,cusparse"
       echo ""
@@ -176,30 +192,34 @@ do
       echo "                 Maxwell53      = NVIDIA Maxwell generation CC 5.3"
       echo "                 Pascal60       = NVIDIA Pascal generation CC 6.0"
       echo "                 Pascal61       = NVIDIA Pascal generation CC 6.1"
+      echo "                 Volta70        = NVIDIA Volta generation CC 7.0"
+      echo "                 Volta72        = NVIDIA Volta generation CC 7.2"
       echo ""
-      echo "--compiler=/Path/To/Compiler  Set the compiler."
-      echo "--debug,-dbg:                 Enable Debugging."
-      echo "--cxxflags=[FLAGS]            Overwrite CXXFLAGS for library build and test"
-      echo "                                build.  This will still set certain required"
-      echo "                                flags via KOKKOS_CXXFLAGS (such as -fopenmp,"
-      echo "                                --std=c++11, etc.)."
-      echo "--ldflags=[FLAGS]             Overwrite LDFLAGS for library build and test"
-      echo "                                build. This will still set certain required"
-      echo "                                flags via KOKKOS_LDFLAGS (such as -fopenmp,"
-      echo "                                -lpthread, etc.)."
-      echo "--with-gtest=/Path/To/Gtest:  Set path to gtest.  (Used in unit and performance"
-      echo "                                tests.)"
-      echo "--with-hwloc=/Path/To/Hwloc:  Set path to hwloc library."
-      echo "--with-memkind=/Path/To/MemKind:  Set path to memkind library."
-      echo "--with-kokkos-options=[OPT]:         Additional options to Kokkos:"
-      echo "                                compiler_warnings"
-      echo "                                aggressive_vectorization = add ivdep on loops"
-      echo "                                disable_profiling = do not compile with profiling hooks"
-      echo "                                "
-      echo "--with-cuda-options=[OPT]:    Additional options to CUDA:"
-      echo "                                force_uvm, use_ldg, enable_lambda, rdc"
-      echo "--make-j=[NUM]:               DEPRECATED: call make with appropriate"
-      echo "                                -j flag"
+      echo "--compiler=/Path/To/Compiler          Set the compiler."
+      echo "--debug,-dbg:                         Enable Debugging."
+      echo "--cxxflags=[FLAGS]                    Overwrite CXXFLAGS for library build and test"
+      echo "                                        build.  This will still set certain required"
+      echo "                                        flags via KOKKOS_CXXFLAGS (such as -fopenmp,"
+      echo "                                        --std=c++11, etc.)."
+      echo "--cxxstandard=[FLAGS]         Overwrite KOKKOS_CXX_STANDARD for library build and test"
+      echo "                                c++11 (default), c++14, c++17, c++1y, c++1z, c++2a"
+      echo "--ldflags=[FLAGS]                     Overwrite LDFLAGS for library build and test"
+      echo "                                        build. This will still set certain required"
+      echo "                                        flags via KOKKOS_LDFLAGS (such as -fopenmp,"
+      echo "                                        -lpthread, etc.)."
+      echo "--with-gtest=/Path/To/Gtest:          Set path to gtest.  (Used in unit and performance"
+      echo "                                        tests.)"
+      echo "--with-hwloc=/Path/To/Hwloc:          Set path to hwloc library."
+      echo "--with-memkind=/Path/To/MemKind:      Set path to memkind library."
+      echo "--with-kokkos-options=[OPT]:          Additional options to Kokkos:"
+      echo "                                        compiler_warnings"
+      echo "                                        aggressive_vectorization = add ivdep on loops"
+      echo "                                        disable_profiling = do not compile with profiling hooks"
+      echo "                                        "
+      echo "--with-cuda-options=[OPT]:            Additional options to CUDA:"
+      echo "                                        force_uvm, use_ldg, enable_lambda, rdc"
+      echo "--make-j=[NUM]:                       DEPRECATED: call make with appropriate"
+      echo "                                        -j flag"
       exit 0
       ;;
     *)
@@ -212,6 +232,12 @@ done
 
 # Remove leading ',' from KOKKOS_DEVICES.
 KOKKOS_DEVICES=$(echo $KOKKOS_DEVICES | sed 's/^,//')
+
+# If only Cuda is specified, add Serial to prevent certain linker errors.
+# See KokkosKernels Issue #257 for provenance.
+if [[ "${KOKKOS_DEVICES}" == "Cuda" ]]; then
+  KOKKOS_DEVICES="Serial,Cuda"
+fi
 
 # If KOKKOS_PATH undefined, assume parent dir of this script is the KOKKOS_PATH.
 if [ -z "$KOKKOSKERNELS_PATH" ]; then
@@ -262,6 +288,10 @@ if [ ${#CXXFLAGS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} CXXFLAGS=\"${CXXFLAGS}\""
 fi
 
+if [ ${#KOKKOS_CXX_STANDARD} -gt 0 ]; then
+  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOS_CXX_STANDARD=\"${KOKKOS_CXX_STANDARD}\""
+fi
+
 if [ ${#LDFLAGS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} LDFLAGS=\"${LDFLAGS}\""
 fi
@@ -297,6 +327,14 @@ fi
 
 if [ ${#KOKKOS_CUDA_OPT} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOS_CUDA_OPTIONS=${KOKKOS_CUDA_OPT}"
+  if [[ "${KOKKOS_CUDA_OPT}" =~ "force_uvm" ]]; then
+    KOKKOSKERNELS_SPACES="CudaUVMSpace,${KOKKOSKERNELS_SPACES}"
+  fi
+fi
+
+if [ ${#KOKKOSKERNELS_SPACES} -gt 0 ]; then 
+  KOKKOSKERNELS_SPACES="${KOKKOSKERNELS_SPACES},${KOKKOS_DEVICES}"
+  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_SPACES=${KOKKOSKERNELS_SPACES}"  
 fi
 
 if [ ${#KOKKOSKERNELS_SCALARS} -gt 0 ]; then
@@ -309,10 +347,6 @@ fi
 
 if [ ${#KOKKOSKERNELS_OFFSETS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_OFFSETS=${KOKKOSKERNELS_OFFSETS}"
-fi
-
-if [ ${#KOKKOSKERNELS_SPACES} -gt 0 ]; then
-  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_SPACES=${KOKKOSKERNELS_SPACES}"
 fi
 
 if [ ${#KOKKOSKERNELS_LAYOUTS} -gt 0 ]; then
@@ -337,13 +371,19 @@ else
 fi
 
 mkdir -p install
-echo "#Makefile to satisfy existens of target kokkos-clean before installing the library" > install/Makefile.kokkos
+echo "#Makefile to satisfy existence of target kokkos-clean before installing the library" > install/Makefile.kokkos
 echo "kokkos-clean:" >> install/Makefile.kokkos
 echo "" >> install/Makefile.kokkos
+echo "#Makefile to satisfy existence of target kokkos-clean and kokkoskernels-clean before installing the library" > install/Makefile.kokkos-kernels
+echo "kokkoskernels-clean:" >> install/Makefile.kokkos-kernels
+echo "" >> install/Makefile.kokkos-kernels
+echo "kokkos-clean:" >> install/Makefile.kokkos-kernels
+echo "" >> install/Makefile.kokkos-kernels
 mkdir -p kokkos
 mkdir -p src
 mkdir -p unit_test
 mkdir -p perf_test
+mkdir -p example
 
 KOKKOS_INSTALL_PATH=${PWD}/kokkos/install
 KOKKOS_SETTINGS="${KOKKOS_SETTINGS_NO_KOKKOS_PATH} KOKKOS_PATH=${KOKKOS_PATH} PREFIX=${KOKKOS_INSTALL_PATH}"
@@ -352,7 +392,7 @@ echo "" >> kokkos/Makefile
 echo "build:" >> kokkos/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOS_PATH}/core/src/Makefile ${KOKKOS_SETTINGS}" >> kokkos/Makefile
 echo "" >> kokkos/Makefile
-echo "install:" >> kokkos/Makefile
+echo "install-lib:" >> kokkos/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOS_PATH}/core/src/Makefile ${KOKKOS_SETTINGS} install" >> kokkos/Makefile
 echo "" >> kokkos/Makefile
 echo "clean:" >> kokkos/Makefile
@@ -365,7 +405,7 @@ echo "" >> src/Makefile
 echo "build:" >> src/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/src/Makefile ${KOKKOS_SETTINGS}" >> src/Makefile
 echo "" >> src/Makefile
-echo "install:" >> src/Makefile
+echo "install-lib:" >> src/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/src/Makefile ${KOKKOS_SETTINGS} install" >> src/Makefile
 echo "" >> src/Makefile
 echo "clean:" >> src/Makefile
@@ -394,29 +434,51 @@ echo "" >> perf_test/Makefile
 echo "clean:" >> perf_test/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/perf_test/Makefile ${KOKKOS_SETTINGS} clean" >> perf_test/Makefile
 
+
+subdir=example
+echo "# KOKKOS_SETTINGS='${KOKKOS_SETTINGS}'" > ${subdir}/Makefile
+echo "" >> ${subdir}/Makefile
+echo "build:" >> ${subdir}/Makefile
+echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/${subdir}/Makefile ${KOKKOS_SETTINGS} build" >> ${subdir}/Makefile
+echo "" >> ${subdir}/Makefile
+echo "test: build" >> ${subdir}/Makefile
+echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/${subdir}/Makefile ${KOKKOS_SETTINGS} test" >> ${subdir}/Makefile
+echo "" >> ${subdir}/Makefile
+echo "clean:" >> ${subdir}/Makefile
+echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/${subdir}/Makefile ${KOKKOS_SETTINGS} clean" >> ${subdir}/Makefile
+
+
 KOKKOS_SETTINGS="${KOKKOS_SETTINGS_NO_KOKKOS_PATH} KOKKOSKERNELS_PATH=${KOKKOSKERNELS_TEST_INSTALL_PATH}"
 
 KOKKOS_SETTINGS="${KOKKOS_SETTINGS_NO_KOKKOS_PATH} KOKKOS_PATH=${KOKKOS_PATH} KOKKOSKERNELS_PATH=${KOKKOSKERNELS_PATH}"
 
+# Strip trailing whitespace from KOKKOS_SETTINGS
+KOKKOS_SETTINGS="${KOKKOS_SETTINGS%"${KOKKOS_SETTINGS##*[![:space:]]}"}"
+
+#
 # Generate top level directory makefile.
+#
 echo "Generating Makefiles with options " ${KOKKOS_SETTINGS}
 echo "KOKKOS_SETTINGS=${KOKKOS_SETTINGS}" > Makefile
 
 echo "" >> Makefile
 echo "kokkos-lib:" >> Makefile
-echo -e "\t\$(MAKE) -C kokkos install" >> Makefile
+echo -e "\tcd kokkos && \$(MAKE) install-lib" >> Makefile
 echo "" >> Makefile
 
-echo "" >> Makefile
 echo "kokkoskernels-lib: kokkos-lib" >> Makefile
-echo -e "\t\$(MAKE) -C src build" >> Makefile
+echo -e "\tcd src && \$(MAKE) build" >> Makefile
 echo "" >> Makefile
 
-echo "install: kokkoskernels-lib" >> Makefile
-echo -e "\t\$(MAKE) -C src install" >> Makefile
+echo "install-lib: kokkoskernels-lib" >> Makefile
+echo -e "\tcd src && \$(MAKE) install-lib" >> Makefile
 echo "" >> Makefile
 
-echo "build-test: install" >> Makefile
+echo "build-example: install-lib" >> Makefile
+echo -e "\t\$(MAKE) -C example" >> Makefile
+echo "" >> Makefile
+
+echo "build-test: install-lib" >> Makefile
 echo -e "\t\$(MAKE) -C unit_test" >> Makefile
 echo -e "\t\$(MAKE) -C perf_test" >> Makefile
 echo "" >> Makefile
@@ -424,11 +486,17 @@ echo "" >> Makefile
 echo "test: build-test" >> Makefile
 echo -e "\t\$(MAKE) -C unit_test test" >> Makefile
 #echo -e "\t\$(MAKE) -C perf_test test" >> Makefile
+#echo -e "\t\$(MAKE) -C example   test" >> Makefile
 echo "" >> Makefile
 
 echo "clean:" >> Makefile
 echo -e "\t\$(MAKE) -C unit_test clean" >> Makefile
 echo -e "\t\$(MAKE) -C perf_test clean" >> Makefile
+echo -e "\t\$(MAKE) -C example   clean" >> Makefile
 echo -e "\tcd src; \\" >> Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/src/Makefile ${KOKKOS_SETTINGS} clean" >> Makefile
+echo "" >> Makefile
+
+echo "build-all: build-test build-example" >> Makefile
+echo "" >> Makefile
 

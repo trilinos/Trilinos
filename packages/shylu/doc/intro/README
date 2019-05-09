@@ -1,0 +1,4 @@
+This repository contains the current working draft of the ShyLU
+Introduction to Capabilities.  The Guide is written in LaTeX.  
+In order to build a PDF of the Guide, compilation may need to be
+done three times. 

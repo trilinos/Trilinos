@@ -135,29 +135,33 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				      const panzer::FieldLibrary& /* fl */,
 				      const Teuchos::ParameterList& /* user_data */) const
 {
+  using panzer::BasisIRLayout;
+  using panzer::EvaluatorStyle;
+  using panzer::IntegrationRule;
+  using panzer::Integrator_BasisTimesScalar;
+  using panzer::Integrator_GradBasisDotVector;
+  using panzer::Traits;
+  using PHX::Evaluator;
+  using std::string;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
   
-  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF("TEMPERATURE");
-  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF("TEMPERATURE"); 
+  RCP<IntegrationRule> ir = this->getIntRuleForDOF("TEMPERATURE");
+  RCP<BasisIRLayout> basis = this->getBasisIRLayoutForDOF("TEMPERATURE"); 
 
   // ********************
   // Energy Equation
   // ********************
 
   // Transient Operator: Assembles \int \dot{T} v
-  if (this->buildTransientSupport()) {
-    ParameterList p("Transient Residual");
-    p.set("Residual Name", "RESIDUAL_TEMPERATURE_TRANSIENT_OP"); // we are defining the name of this operator
-    p.set("Value Name", "DXDT_TEMPERATURE"); // this field is constructed by the panzer library
-    p.set("Basis", basis);
-    p.set("IR", ir);
-    p.set("Multiplier", 1.0);
-
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+  if (this->buildTransientSupport())
+  {
+    string resName("RESIDUAL_TEMPERATURE"), valName("DXDT_TEMPERATURE");
+    double multiplier(1);
+    RCP<Evaluator<Traits>> op = rcp(new
+      Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::CONTRIBUTES,
+      resName, valName, *basis, *ir, multiplier));
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
@@ -166,47 +170,28 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     double thermal_conductivity = 1.0;
 
     ParameterList p("Diffusion Residual");
-    p.set("Residual Name", "RESIDUAL_TEMPERATURE_DIFFUSION_OP");
+    p.set("Residual Name", "RESIDUAL_TEMPERATURE");
     p.set("Flux Name", "GRAD_TEMPERATURE"); // this field is constructed by the panzer library
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", thermal_conductivity);
     
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_GradBasisDotVector<EvalT,panzer::Traits>(p));
+    RCP<Evaluator<Traits>> op = rcp(new
+      Integrator_GradBasisDotVector<EvalT, Traits>(p));
 
     this->template registerEvaluator<EvalT>(fm, op);
   }
   
   // Source Operator
   {   
-    ParameterList p("Source Residual");
-    p.set("Residual Name", "RESIDUAL_TEMPERATURE_SOURCE_OP");
-    p.set("Value Name", "SOURCE_TEMPERATURE"); // this field must be provided by the closure model factory
-                                               // and specified by the user
-    p.set("Basis", basis);
-    p.set("IR", ir);
-    p.set("Multiplier", -1.0);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+    string resName("RESIDUAL_TEMPERATURE"),
+           valName("SOURCE_TEMPERATURE");
+    double multiplier(-1);
+    RCP<Evaluator<Traits>> op = rcp(new
+      Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::CONTRIBUTES,
+      resName, valName, *basis, *ir, multiplier));
     this->template registerEvaluator<EvalT>(fm, op);
   }
-
-  // Use a sum operator to form the overall residual for the equation
-  {
-    std::vector<std::string> sum_names;
-
-    // these are the names of the residual values to sum together
-    sum_names.push_back("RESIDUAL_TEMPERATURE_DIFFUSION_OP");
-    sum_names.push_back("RESIDUAL_TEMPERATURE_SOURCE_OP");
-    if (this->buildTransientSupport())
-      sum_names.push_back("RESIDUAL_TEMPERATURE_TRANSIENT_OP");
-
-    this->buildAndRegisterResidualSummationEvalautor(fm,"TEMPERATURE",sum_names);
-  }
-
 }
 
 // ***********************************************************************

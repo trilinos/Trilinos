@@ -69,10 +69,10 @@
 
 #include <iostream>
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "ROL_ParameterList.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"
@@ -105,16 +105,16 @@ private:
   Real dx_;     
         
   /*! \var ptr Vp_ Pointer to potential vector  */ 
-  Teuchos::RCP<const vector> Vp_;    
+  ROL::Ptr<const vector> Vp_;    
 
-  Teuchos::RCP<const vector> getVector( const V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<const SV>(x).getVector();
+  ROL::Ptr<const vector> getVector( const V& x ) {
+    
+    return dynamic_cast<const SV&>(x).getVector();
   }
 
-  Teuchos::RCP<vector> getVector( V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<SV>(x).getVector();
+  ROL::Ptr<vector> getVector( V& x ) {
+    
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 
@@ -127,10 +127,10 @@ private:
     using namespace Teuchos;
 
     // Pointer to direction vector 
-    RCP<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> vp = getVector(v);
 
     // Pointer to action of Hessian on direction vector 
-    RCP<vector> kvp = getVector(kv);
+    ROL::Ptr<vector> kvp = getVector(kv);
 
     Real dx2 = dx_*dx_;
 
@@ -158,14 +158,14 @@ private:
           the derivative is approximated using finite differences */
   Real value( const Vector<Real> &psi, Real &tol ) {
 
-    using Teuchos::RCP;    
+        
     
     // Pointer to opt vector 
-    RCP<const vector> psip = getVector(psi);
+    ROL::Ptr<const vector> psip = getVector(psi);
 
     // Pointer to K applied to opt vector 
-    RCP<V> kpsi = psi.clone();
-    RCP<vector> kpsip = getVector(*kpsi);
+    ROL::Ptr<V> kpsi = psi.clone();
+    ROL::Ptr<vector> kpsip = getVector(*kpsi);
 
     Real J = 0;
 
@@ -185,17 +185,17 @@ private:
   /*! \f[ \nabla J[\psi] = -\psi'' + V(x)\psi+2g|\psi|^3 \f] */
   void gradient( Vector<Real> &g, const Vector<Real> &psi, Real &tol ) {
 
-    using Teuchos::RCP;
+    
 
     // Pointer to opt vector 
-    RCP<const vector> psip = getVector(psi);
+    ROL::Ptr<const vector> psip = getVector(psi);
 
     // Pointer to gradient vector 
-    RCP<vector> gp = getVector(g);
+    ROL::Ptr<vector> gp = getVector(g);
 
     // Pointer to K applied to opt vector 
-    RCP<V> kpsi = psi.clone();
-    RCP<vector> kpsip = getVector(*kpsi);
+    ROL::Ptr<V> kpsi = psi.clone();
+    ROL::Ptr<vector> kpsip = getVector(*kpsi);
 
     applyK(psi,*kpsi);
 
@@ -211,16 +211,16 @@ private:
   /*! \f[ \nabla^2 J[\psi]v = -v'' + V(x)v+6g|\psi|^2 v \f] */
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &psi, Real &tol ) {
 
-    using Teuchos::RCP;
+    
 
     // Pointer to opt vector 
-    RCP<const vector> psip = getVector(psi);
+    ROL::Ptr<const vector> psip = getVector(psi);
 
     // Pointer to direction vector 
-    RCP<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> vp = getVector(v);
 
     // Pointer to action of Hessian on direction vector 
-    RCP<vector> hvp = getVector(hv);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     applyK(v,hv);
  
@@ -247,14 +247,14 @@ private:
   uint nx_;
   Real dx_;
 
-  Teuchos::RCP<const vector> getVector( const V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<const SV>(x).getVector();
+  ROL::Ptr<const vector> getVector( const V& x ) {
+    
+    return dynamic_cast<const SV&>(x).getVector();
   }
 
-  Teuchos::RCP<vector> getVector( V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<SV>(x).getVector();
+  ROL::Ptr<vector> getVector( V& x ) {
+    
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
@@ -267,13 +267,13 @@ public:
       This constraint is a scalar */
   void value(Vector<Real> &c, const Vector<Real> &psi, Real &tol){
 
-    using Teuchos::RCP;
+    
 
     // Pointer to constraint vector (only one element)
-    RCP<vector> cp = getVector(c);
+    ROL::Ptr<vector> cp = getVector(c);
 
     // Pointer to optimization vector     
-    RCP<const vector> psip = getVector(psi);
+    ROL::Ptr<const vector> psip = getVector(psi);
 
     (*cp)[0] = -1.0;
     for(uint i=0;i<nx_;++i) {
@@ -286,16 +286,16 @@ public:
       The action of the Jacobian on a vector produces a scalar */
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &psi, Real &tol){
 
-    using Teuchos::RCP;
+    
 
     // Pointer to action of Jacobian of constraint on direction vector (yields scalar)
-    RCP<vector> jvp = getVector(jv);
+    ROL::Ptr<vector> jvp = getVector(jv);
 
     // Pointer to direction vector     
-    RCP<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> vp = getVector(v);
 
     // Pointer to optimization vector     
-    RCP<const vector> psip = getVector(psi);
+    ROL::Ptr<const vector> psip = getVector(psi);
       
         (*jvp)[0] = 0;
         for(uint i=0;i<nx_;++i) {
@@ -308,16 +308,16 @@ public:
        The action of the Jacobian adjoint on a scalar produces a vector */
   void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &psi, Real &tol){
 
-    using Teuchos::RCP; 
+     
 
     // Pointer to action of adjoint of Jacobian of constraint on direction vector (yields vector)
-    RCP<vector> ajvp = getVector(ajv);
+    ROL::Ptr<vector> ajvp = getVector(ajv);
 
     // Pointer to direction vector     
-    RCP<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> vp = getVector(v);
 
     // Pointer to optimization vector     
-    RCP<const vector> psip = getVector(psi);
+    ROL::Ptr<const vector> psip = getVector(psi);
 
     for(uint i=0;i<nx_;++i) {
       (*ajvp)[i] = 2.0*dx_*(*psip)[i]*(*vp)[0];
@@ -331,19 +331,19 @@ public:
   void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, 
                            const Vector<Real> &psi, Real &tol){
 
-    using Teuchos::RCP;
+    
 
     // The pointer to action of constraint Hessian in u,v inner product
-    RCP<vector> ahuvp = getVector(ahuv);
+    ROL::Ptr<vector> ahuvp = getVector(ahuv);
 
     // Pointer to direction vector u     
-    RCP<const vector> up = getVector(u);
+    ROL::Ptr<const vector> up = getVector(u);
 
     // Pointer to direction vector v     
-    RCP<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> vp = getVector(v);
 
     // Pointer to optimization vector     
-    RCP<const vector> psip = getVector(psi);
+    ROL::Ptr<const vector> psip = getVector(psi);
 
     for(uint i=0;i<nx_;++i) {
       (*ahuvp)[i] = 2.0*dx_*(*vp)[i]*(*up)[0];        

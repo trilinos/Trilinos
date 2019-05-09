@@ -55,9 +55,9 @@
     <Parameter name = "Store Sampled Value and Gradient" type="bool"   value="true"         />
 
     <ParameterList name="Risk Measure">
-      <Parameter name="Name" type="string" value="Super Quantile Quadrangle" />
+      <Parameter name="Name" type="string" value="Second Order CVaR" />
       <!-- ===========  SUPER QUANTILE QUADRANGLE SUBLIST  =========== -->
-      <ParameterList name="Super Quantile Quadrangle">
+      <ParameterList name="Second Order CVaR">
         <Parameter name="Confidence Level"              type="double" value="0.95"  />
         <Parameter name="Number of Quadrature Points"   type="int"    value="10"    />
         <Parameter name="Use Gauss-Legendre Quadrature" type="bool"   value="false" />

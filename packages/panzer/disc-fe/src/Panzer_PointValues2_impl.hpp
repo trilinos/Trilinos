@@ -84,20 +84,27 @@ namespace panzer {
 
   template <typename Scalar>
   void PointValues2<Scalar>::
-  evaluateValues()
+  evaluateValues(const int in_num_cells)
   {
     if (point_rule->isSide()) {
        TEUCHOS_ASSERT(false); // not implemented!!!!
     }
     
+    const int num_cells = in_num_cells < 0 ? (int) jac.extent(0) : in_num_cells;
+    const auto cell_range = std::pair<int,int>(0,num_cells);
+    auto s_jac = Kokkos::subview(jac.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_jac_det = Kokkos::subview(jac_det.get_view(),cell_range,Kokkos::ALL());
+    auto s_jac_inv = Kokkos::subview(jac_inv.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_node_coordinates = Kokkos::subview(node_coordinates.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto s_point_coords = Kokkos::subview(point_coords.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
     Intrepid2::CellTools<PHX::exec_space> cell_tools;
     
-    cell_tools.setJacobian(jac.get_view(), coords_ref.get_view(), node_coordinates.get_view(), *(point_rule->topology));
-    cell_tools.setJacobianInv(jac_inv.get_view(), jac.get_view());
-    cell_tools.setJacobianDet(jac_det.get_view(), jac.get_view());
+    cell_tools.setJacobian(s_jac, coords_ref.get_view(), s_node_coordinates, *(point_rule->topology));
+    cell_tools.setJacobianInv(s_jac_inv, s_jac);
+    cell_tools.setJacobianDet(s_jac_det, s_jac);
     
     // IP coordinates
-    cell_tools.mapToPhysicalFrame(point_coords.get_view(), coords_ref.get_view(), node_coordinates.get_view(), *(point_rule->topology));
+    cell_tools.mapToPhysicalFrame(s_point_coords, coords_ref.get_view(), s_node_coordinates, *(point_rule->topology));
   }
 
   template <typename Scalar>
@@ -107,9 +114,9 @@ namespace panzer {
   {
     // copy cell node coordinates
     {
-      size_type num_cells = in_node_coords.dimension(0);
-      size_type num_nodes = in_node_coords.dimension(1);
-      size_type num_dims = in_node_coords.dimension(2);
+      size_type num_cells = in_node_coords.extent(0);
+      size_type num_nodes = in_node_coords.extent(1);
+      size_type num_dims = in_node_coords.extent(2);
      
       for (size_type cell = 0; cell < num_cells;  ++cell)
 	for (size_type node = 0; node < num_nodes; ++node)
@@ -125,8 +132,8 @@ namespace panzer {
   {
     // copy reference point values
     {
-      size_type num_points = in_point_coords.dimension(0);
-      size_type num_dims = in_point_coords.dimension(1);
+      size_type num_points = in_point_coords.extent(0);
+      size_type num_dims = in_point_coords.extent(1);
      
       for (size_type point = 0; point < num_points; ++point)
         for (size_type dim = 0; dim < num_dims; ++dim)

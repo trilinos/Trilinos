@@ -85,7 +85,7 @@ DiagonalEpetraLinearOpWithSolveFactory::createOp() const
 void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   const RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
   ,LinearOpWithSolveBase<double>                                   *Op
-  ,const ESupportSolveUse                                          supportSolveUse
+  ,const ESupportSolveUse                                          /* supportSolveUse */
   ) const
 {
   using Teuchos::outArg;
@@ -126,7 +126,7 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
   ,RCP<const LinearOpSourceBase<double> >    *fwdOpSrc
   ,RCP<const PreconditionerBase<double> >    *prec
   ,RCP<const LinearOpSourceBase<double> >    *approxFwdOpSrc
-  ,ESupportSolveUse                                           *supportSolveUse
+  ,ESupportSolveUse                                           * /* supportSolveUse */
   ) const
 {
   using Teuchos::get_extra_data;
@@ -155,7 +155,7 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
 
 
 void DiagonalEpetraLinearOpWithSolveFactory::setParameterList(
-  RCP<Teuchos::ParameterList> const& paramList
+  RCP<Teuchos::ParameterList> const& /* paramList */
   )
 {}
 

@@ -41,25 +41,23 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
+#include "TpetraCore_config.h"
 #ifndef HAVE_TPETRA_EPETRA
 #  error "HAVE_TPETRA_EPETRA is undefined, but Tpetra is nevertheless building this file.  This probably means that Tpetra's CMake build system has a bug.  Please report this bug to the Tpetra developers."
 #else
 
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_VerboseObject.hpp>
-#include <Teuchos_oblackholestream.hpp>
-#include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_as.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_Tuple.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_EpetraRowMatrix.hpp"
+#include "Tpetra_Details_getNumDiags.hpp"
 
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
@@ -68,107 +66,27 @@
 #endif
 
 
-namespace Teuchos {
-  template <>
-    ScalarTraits<int>::magnitudeType
-    relErr( const int &s1, const int &s2 )
-    {
-      typedef ScalarTraits<int> ST;
-      return ST::magnitude(s1-s2);
-    }
-
-  template <>
-    ScalarTraits<char>::magnitudeType
-    relErr( const char &s1, const char &s2 )
-    {
-      typedef ScalarTraits<char> ST;
-      return ST::magnitude(s1-s2);
-    }
-}
-
 namespace {
-
-  using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
-  using Teuchos::rcp;
-  using Teuchos::arcpClone;
-  using Tpetra::Map;
-  using Tpetra::OptimizeOption;
-  using Tpetra::DoOptimizeStorage;
-  using Tpetra::DoNotOptimizeStorage;
-  using Tpetra::DefaultPlatform;
-  using Tpetra::global_size_t;
-  using std::sort;
-  using Teuchos::arrayView;
-  using Teuchos::broadcast;
-  using Teuchos::OrdinalTraits;
-  using Teuchos::ScalarTraits;
-  using Teuchos::Comm;
-  using Tpetra::MultiVector;
-  using Tpetra::Vector;
-  using std::endl;
-  using std::swap;
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Tpetra::Operator;
-  using Tpetra::CrsMatrix;
-  using Tpetra::CrsGraph;
-  using Tpetra::RowMatrix;
-  using Tpetra::INSERT;
-  using Tpetra::Import;
-  using std::string;
-  using Teuchos::tuple;
-  using Teuchos::VERB_NONE;
-  using Teuchos::VERB_LOW;
-  using Teuchos::VERB_MEDIUM;
-  using Teuchos::VERB_HIGH;
-  using Teuchos::VERB_EXTREME;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
-  using Teuchos::ETransp;
-  using Teuchos::NO_TRANS;
-  using Teuchos::TRANS;
-  using Teuchos::CONJ_TRANS;
-  using Teuchos::EDiag;
-  using Teuchos::UNIT_DIAG;
-  using Teuchos::NON_UNIT_DIAG;
-  using Teuchos::EUplo;
-  using Teuchos::UPPER_TRI;
-  using Teuchos::LOWER_TRI;
-  using Tpetra::LocallyReplicated;
-  using Tpetra::GloballyDistributed;
-
-  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
-
   bool testMpi = true;
-  double errorTolSlack = 1e+1;
-  string filedir;
-
 
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
-    clp.setOption(
-        "filedir",&filedir,"Directory of expected matrix files.");
     clp.addOutputSetupOptions(true);
     clp.setOption(
         "test-mpi", "test-serial", &testMpi,
         "Test MPI (if available) or force test of serial.  In a serial build,"
         " this option is ignored and a serial comm is always used." );
-    clp.setOption(
-        "error-tol-slack", &errorTolSlack,
-        "Slack off of machine epsilon used to check test results" );
   }
 
-  RCP<const Comm<int> > getDefaultComm()
+  Teuchos::RCP<const Teuchos::Comm<int> > getDefaultComm()
   {
-    RCP<const Comm<int> > ret;
+    Teuchos::RCP<const Teuchos::Comm<int> > ret;
     if (testMpi) {
-      ret = DefaultPlatform::getDefaultPlatform().getComm();
+      ret = Tpetra::getDefaultComm();
     }
     else {
-      ret = rcp(new Teuchos::SerialComm<int>());
+      ret = Teuchos::rcp(new Teuchos::SerialComm<int>());
     }
     return ret;
   }
@@ -178,22 +96,29 @@ namespace {
   //
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( EpetraRowMatrix, BasicFunctionality, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( EpetraRowMatrix, BasicFunctionality, LO, GO )
   {
+    using Teuchos::RCP;
+    using Teuchos::tuple;
+    //using std::endl;
+    typedef Tpetra::global_size_t GST;
+    // The Epetra wrapper only works for Scalar=double.
+    typedef double Scalar;
+
     // generate a tridiagonal matrix
-    typedef ScalarTraits<Scalar> ST;
-    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
+    typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
     typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    typedef Teuchos::ScalarTraits<Mag> MT;
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = size(*comm);
     // create a Map
     const size_t numLocal = 10;
     const size_t numVecs = 5;
-    RCP<const Map<LO,GO> > map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
+    RCP<const Tpetra::Map<LO,GO> > map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
     // create a matrix, modeled closely on Chris' CrsMatrix unit-tests.
     RCP<MAT> matrix(new MAT(map, 3));
     for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
@@ -212,8 +137,8 @@ namespace {
       matrix->sumIntoGlobalValues(r, tuple(r), tuple(ST::one()) );
     }
     matrix->fillComplete();
-    TEST_EQUALITY( matrix->getNodeNumDiags(), numLocal );
-    TEST_EQUALITY( matrix->getGlobalNumDiags(), numImages*numLocal );
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*matrix), static_cast<LO> (numLocal) );
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*matrix), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( matrix->getGlobalNumEntries(), 3*numImages*numLocal - 2 );
 
 #ifdef HAVE_MPI
@@ -250,10 +175,10 @@ namespace {
     emv2.PutScalar(0.0);
     erowmat.Multiply(false, emv1, emv2);
 
-    ArrayView<Scalar> vals(emv2.Values(),numLocal*numVecs);
+    Teuchos::ArrayView<Scalar> vals(emv2.Values(),numLocal*numVecs);
     MV tmvres(map,vals,numLocal,numVecs);
     tmvres.update(-ST::one(),tmv2,ST::one());
-    Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
+    Teuchos::Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     tmvres.norm2(norms());
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
@@ -263,37 +188,12 @@ namespace {
   // INSTANTIATIONS
   //
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( EpetraRowMatrix, BasicFunctionality     , LO, GO, SCALAR )
+#define UNIT_TEST_GROUP( LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( EpetraRowMatrix, BasicFunctionality, LO, GO )
 
-#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-    UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
-
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double)
-     UNIT_TEST_GROUP_ORDINAL(int)
-
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, float)  \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, double)
-
-     UNIT_TEST_GROUP_ORDINAL(int)
-
-     typedef long int LongInt;
-     UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
-#    ifdef HAVE_TPETRA_INT_LONG_LONG
-        typedef long long int LongLongInt;
-        UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongLongInt )
-#    endif
-
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP )
 
 }
 

@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+
+# Clean up the mess from previous configurations.
+/bin/rm -r cmake* CMake* CPack* CTest* OUTPUT* Dart* Trilinos* Testing Makefile Users include lib install* *last*
+
+module purge
+module load devpack/latest/openmpi/2.1.2/intel/18.1.163
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING="DEBUG" \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
+\
+-D TPL_LAPACK_LIBRARIES="/home/projects/x86-64-skylake/openblas/0.2.20/gcc/7.2.0/lib/liblapack.a;/home/projects/x86-64-skylake/openblas/0.2.20/gcc/7.2.0/lib/liblapack.so" \
+-D TPL_BLAS_LIBRARIES="/home/projects/x86-64-skylake/openblas/0.2.20/gcc/7.2.0/lib/libblas.a;/home/projects/x86-64-skylake/openblas/0.2.20/gcc/7.2.0/lib/libblas.so" \
+-D MPI_BIN_DIR:FILEPATH="$SEMS_OPENMPI_ROOT/bin" \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D MPI_EXEC_MAX_NUMPROCS:STRING=11 \
+\
+-D TPL_ENABLE_BinUtils:BOOL=OFF \
+-D TPL_ENABLE_Pthread:BOOL=OFF \
+\
+-D CMAKE_C_FLAGS:STRING="-fopenmp -g -Wall -Wmissing-field-initializers  -Wsign-compare  -Wtype-limits   -Wuninitialized -Winit-self -fstrict-aliasing " \
+-D CMAKE_CXX_FLAGS:STRING="-fopenmp -g -Wall -Wmissing-field-initializers  -Wsign-compare  -Wtype-limits   -Wuninitialized -Winit-self -fstrict-aliasing " \
+-D CMAKE_Fortran_FLAGS:STRING="-g " \
+\
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_TESTS:BOOL=OFF \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
+\
+-D Trilinos_CXX11_FLAGS="-std=c++11" \
+-D Trilinos_ENABLE_Epetra:BOOL=ON \
+-D Trilinos_ENABLE_Pamgen:BOOL=ON \
+-D Trilinos_ENABLE_Galeri:BOOL=ON \
+\
+-D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+-D Zoltan2_ENABLE_TESTS:BOOL=ON \
+-D Zoltan2_ENABLE_EXAMPLES:BOOL=ON \
+-D Zoltan2_ENABLE_Experimental:BOOL=ON \
+-D Zoltan2_ENABLE_UseZoltanComm:BOOL=ON \
+\
+-D Teuchos_ENABLE_STACKTRACE=OFF \
+.. |& tee OUTPUT.CMAKE
+
+make -j 16 |& tee OUTPUT.MAKE
+

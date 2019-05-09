@@ -59,7 +59,7 @@ IdentityPreconditionerFactory::IdentityPreconditionerFactory()
   : scaling_(1.0)
 { }
 
-LinearOp IdentityPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,PreconditionerState & state) const
+LinearOp IdentityPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,PreconditionerState & /* state */) const
 {
    return Thyra::scale(scaling_,Thyra::identity(rangeSpace(lo)));
 }

@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
 
   long double analyticInt = compExactInt();
   long double abstol      = std::sqrt(INTREPID_TOL);
-  long double absdiff     = fabs(analyticInt-(*integralValue)[0]);
+  long double absdiff     = std::abs(analyticInt-(*integralValue)[0]);
   try { 
     *outStream << "Adaptive Sparse Grid exited with global error " 
 	       << std::scientific << std::setprecision(16) << eta << "\n"

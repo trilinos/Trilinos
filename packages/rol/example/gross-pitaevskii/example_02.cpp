@@ -93,24 +93,23 @@ int main(int argc, char **argv) {
 
     // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
     int iprint     = argc - 1;
-    Teuchos::RCP<std::ostream> outStream;
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::Ptr<std::ostream> outStream;
+    ROL::nullstream bhs; // outputs nothing
     if (iprint > 0)
-        outStream = Teuchos::rcp(&std::cout, false);
+        outStream = ROL::makePtrFromRef(std::cout);
     else
-        outStream = Teuchos::rcp(&bhs, false);
+        outStream = ROL::makePtrFromRef(bhs);
 
     int errorFlag = 0;
  
 
-    Teuchos::ParameterList parlist;
-    Teuchos::ParameterList gplist;
+    ROL::ParameterList parlist;
     std::string paramfile = "parameters.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&gplist));
+    auto gplist = ROL::getParametersFromXmlFile( paramfile );
        
-    int    nx         = gplist.get("Interior Grid Points",100);
-    RealT gnl         = gplist.get("Nonlinearity Coefficient g",50.0);
-    bool   exactsolve = gplist.get("Solve Exact Augmented System",false);
+    int    nx         = gplist->get("Interior Grid Points",100);
+    RealT gnl         = gplist->get("Nonlinearity Coefficient g",50.0);
+    bool   exactsolve = gplist->get("Solve Exact Augmented System",false);
 
     // Command line option to override parameters.xml for solving the exact augmented system
     if(argc > 1) {
@@ -126,46 +125,46 @@ int main(int argc, char **argv) {
     RealT dx = 1.0/(nx+1);
 
     // Finite difference class
-    Teuchos::RCP<FiniteDifference<RealT> > fd = Teuchos::rcp(new FiniteDifference<RealT>(nx,dx));
+    ROL::Ptr<FiniteDifference<RealT> > fd = ROL::makePtr<FiniteDifference<RealT>>(nx,dx);
 
     // Pointer to linspace type vector \f$x_i = \frac{i+1}{n_x+1}\f$ where \f$i=0,\hdots,n_x\f$
-    Teuchos::RCP<std::vector<RealT> > xi_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 0.0) );
+    ROL::Ptr<std::vector<RealT> > xi_ptr = ROL::makePtr<std::vector<RealT>>(nx, 0.0);
     
     for(int i=0; i<nx; ++i) {
-        (*xi_rcp)[i] = RealT(i+1)/(nx+1);
+        (*xi_ptr)[i] = RealT(i+1)/(nx+1);
     }
     
     // Pointer to potential vector (quadratic centered at x=0.5)
-    Teuchos::RCP<std::vector<RealT> > V_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 0.0) );
+    ROL::Ptr<std::vector<RealT> > V_ptr = ROL::makePtr<std::vector<RealT>>(nx, 0.0);
     for(int i=0; i<nx; ++i) {
-       (*V_rcp)[i] = 100.0*pow((*xi_rcp)[i]-0.5,2);
+       (*V_ptr)[i] = 100.0*pow((*xi_ptr)[i]-0.5,2);
     }
 
-    StdVector<RealT> V(V_rcp);
+    StdVector<RealT> V(V_ptr);
         
     // Iteration Vector (pointer to optimzation vector)
-    Teuchos::RCP<std::vector<RealT> > psi_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 0.0) );
-    OptStdVector<RealT> psi(psi_rcp,fd);
+    ROL::Ptr<std::vector<RealT> > psi_ptr = ROL::makePtr<std::vector<RealT>>(nx, 0.0);
+    OptStdVector<RealT> psi(psi_ptr,fd);
        
     // Set Initial Guess (normalized)
     RealT sqrt30 = sqrt(30);
 
     for (int i=0; i<nx; i++) {
-        (*psi_rcp)[i]   = sqrt30*(*xi_rcp)[i]*(1.0-(*xi_rcp)[i]);
+        (*psi_ptr)[i]   = sqrt30*(*xi_ptr)[i]*(1.0-(*xi_ptr)[i]);
     }
 
 
     // Constraint value (scalar)  
-    Teuchos::RCP<std::vector<RealT> > c_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
-    ConStdVector<RealT> c(c_rcp);
+    ROL::Ptr<std::vector<RealT> > c_ptr = ROL::makePtr<std::vector<RealT>>(1, 0.0);
+    ConStdVector<RealT> c(c_ptr);
 
     // Lagrange multiplier value (scalar)   
-    Teuchos::RCP<std::vector<RealT> > lam_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
-    ConDualStdVector<RealT> lam(lam_rcp);
+    ROL::Ptr<std::vector<RealT> > lam_ptr = ROL::makePtr<std::vector<RealT>>(1, 0.0);
+    ConDualStdVector<RealT> lam(lam_ptr);
 
     // Gradient   
-    Teuchos::RCP<std::vector<RealT> > g_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 0.0) );
-    OptDualStdVector<RealT> g(g_rcp,fd);
+    ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(nx, 0.0);
+    OptDualStdVector<RealT> g(g_ptr,fd);
 
     // Instantiate objective function  
     Objective_GrossPitaevskii<RealT,OptStdVector<RealT>,OptDualStdVector<RealT> > obj(gnl,V,fd);

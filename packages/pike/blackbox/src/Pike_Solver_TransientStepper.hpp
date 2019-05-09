@@ -5,12 +5,13 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
+#include <list>
 
 namespace pike {
 
   class TransientStepper : public pike::Solver,
-			   public Teuchos::ParameterListAcceptorDefaultBase {
-    
+                           public Teuchos::ParameterListAcceptorDefaultBase {
+
   public:
 
     TransientStepper();

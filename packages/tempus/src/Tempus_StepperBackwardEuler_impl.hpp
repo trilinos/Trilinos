@@ -22,113 +22,28 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 
-// StepperBackwardEuler definitions:
+template<class Scalar>
+StepperBackwardEuler<Scalar>::StepperBackwardEuler()
+{
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
+}
+
+
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
-}
 
-
-template<class Scalar>
-void StepperBackwardEuler<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->validImplicitODE_DAE(appModel);
-  if (wrapperModel_ != Teuchos::null) wrapperModel_ = Teuchos::null;
-  wrapperModel_ =
-    Teuchos::rcp(new WrapperModelEvaluatorBasic<Scalar>(appModel));
-}
-
-
-template<class Scalar>
-void StepperBackwardEuler<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->setModel(appModel);
-}
-
-
-/** \brief Set the solver to a pre-defined solver in the ParameterList.
- *  The solver is set to solverName sublist in the Stepper's ParameterList.
- *  The solverName sublist should already be defined in the Stepper's
- *  ParameterList.  Otherwise it will fail.
- */
-template<class Scalar>
-void StepperBackwardEuler<Scalar>::setSolver(std::string solverName)
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  RCP<ParameterList> solverPL = Teuchos::sublist(stepperPL_, solverName, true);
-  stepperPL_->set("Solver Name", solverName);
-  solver_ = rcp(new Thyra::NOXNonlinearSolver());
-  RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-  solver_->setParameterList(noxPL);
-}
-
-
-/** \brief Set the solver to the supplied Parameter sublist.
- *  This adds a new solver Parameter sublist to the Stepper's ParameterList.
- *  If the solver sublist is null, the solver is set to the solver name
- *  in the Stepper's ParameterList.
- */
-template<class Scalar>
-void StepperBackwardEuler<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> solverPL)
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  std::string solverName = stepperPL_->get<std::string>("Solver Name");
-  if (is_null(solverPL)) {
-    // Create default solver, otherwise keep current solver.
-    if (solver_ == Teuchos::null) {
-      solverPL = Teuchos::sublist(stepperPL_, solverName, true);
-      solver_ = rcp(new Thyra::NOXNonlinearSolver());
-      RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-      solver_->setParameterList(noxPL);
-    }
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION( solverName == solverPL->name(),
-      std::logic_error,
-         "Error - Trying to add a solver that is already in ParameterList!\n"
-      << "  Stepper Type = "<< stepperPL_->get<std::string>("Stepper Type")
-      << "\n" << "  Solver Name  = "<<solverName<<"\n");
-    solverName = solverPL->name();
-    stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, solverPL);      // Add sublist
-    solver_ = rcp(new Thyra::NOXNonlinearSolver());
-    RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-    solver_->setParameterList(noxPL);
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
   }
-}
-
-
-/** \brief Set the solver.
- *  This sets the solver to supplied solver and adds solver's ParameterList
- *  to the Stepper ParameterList.
- */
-template<class Scalar>
-void StepperBackwardEuler<Scalar>::setSolver(
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  RCP<ParameterList> solverPL = solver->getNonconstParameterList();
-  std::string solverName = solverPL->name();
-  stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, solverPL);      // Add sublist
-  solver_ = solver;
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -143,8 +58,9 @@ void StepperBackwardEuler<Scalar>::setPredictor(std::string predictorName)
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
-  RCP<ParameterList> predPL = Teuchos::sublist(stepperPL_, predictorName, true);
-  stepperPL_->set("Predictor Name", predictorName);
+  RCP<ParameterList> predPL =
+    Teuchos::sublist(this->stepperPL_, predictorName, true);
+  this->stepperPL_->set("Predictor Name", predictorName);
   if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
 }
@@ -162,47 +78,52 @@ void StepperBackwardEuler<Scalar>::setPredictor(
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
+  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
   std::string predictorName =
-    stepperPL_->get<std::string>("Predictor Name","None");
+    stepperPL->get<std::string>("Predictor Name","None");
   if (is_null(predPL)) {
     if (predictorName != "None") {
-      RCP<ParameterList> predPL =
-        Teuchos::sublist(stepperPL_, predictorName, true);
+      predPL = Teuchos::sublist(stepperPL, predictorName, true);
       RCP<StepperFactory<Scalar> > sf =
         Teuchos::rcp(new StepperFactory<Scalar>());
       predictorStepper_ =
-        sf->createStepper(wrapperModel_->getAppModel(), predPL);
+        sf->createStepper(predPL, this->wrapperModel_->getAppModel());
     }
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( predictorName == predPL->name(),
       std::logic_error,
          "Error - Trying to add a predictor that is already in ParameterList!\n"
-      << "  Stepper Type = "<< stepperPL_->get<std::string>("Stepper Type")
+      << "  Stepper Type = " << stepperPL->get<std::string>("Stepper Type")
       << "\n" << "  Predictor Name  = "<<predictorName<<"\n");
     predictorName = predPL->name();
-    stepperPL_->set("Predictor Name", predictorName);
-    stepperPL_->set(predictorName, predPL);           // Add sublist
+    stepperPL->set("Predictor Name", predictorName);
+    stepperPL->set(predictorName, *predPL);           // Add sublist
     if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
     RCP<StepperFactory<Scalar> > sf =
       Teuchos::rcp(new StepperFactory<Scalar>());
     predictorStepper_ =
-      sf->createStepper(wrapperModel_->getAppModel(), predPL);
+      sf->createStepper(predPL, this->wrapperModel_->getAppModel());
   }
 }
 
 
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::setObserver(
-  Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperBEObserver_ == Teuchos::null) {
+    if (this->stepperObserver_ == Teuchos::null) {
       stepperBEObserver_ =
         Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>());
+      this->stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperBEObserver_);
     }
   } else {
-    stepperBEObserver_ = obs;
+    this->stepperObserver_ = obs;
+    stepperBEObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperBackwardEulerObserver<Scalar> >
+        (this->stepperObserver_);
   }
 }
 
@@ -210,9 +131,40 @@ void StepperBackwardEuler<Scalar>::setObserver(
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->wrapperModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperBackwardEuler::initialize()\n");
+
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
   this->setPredictor();
   this->setObserver();
+}
+
+
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::setInitialConditions(
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+{
+  using Teuchos::RCP;
+
+  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
+
+  // Check if we need Stepper storage for xDot
+  if (initialState->getXDot() == Teuchos::null)
+    this->setStepperXDot(initialState->getX()->clone_v());
+
+  StepperImplicit<Scalar>::setInitialConditions(solutionHistory);
+
+  if (this->getUseFSAL()) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperBackwardEuler::setInitialConditions()");
+    *out << "\nWarning -- The First-Step-As-Last (FSAL) principle is not "
+         << "needed with Backward Euler.  The default is to set useFSAL=false, "
+         << "however useFSAL=true will also work but have no affect "
+         << "(i.e., no-op).\n" << std::endl;
+  }
 }
 
 
@@ -222,18 +174,27 @@ void StepperBackwardEuler<Scalar>::takeStep(
 {
   using Teuchos::RCP;
 
-  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackardEuler::takeStep()");
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackwardEuler::takeStep()");
   {
-    stepperBEObserver_->observeBeginTakeStep(solutionHistory, *this);
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperBackwardEuler<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for Backward Euler.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
     RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
     RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
-    RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
+
+    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot(workingState);
 
     computePredictor(solutionHistory);
-    if (workingState->getStepperState()->stepperStatus_ == Status::FAILED)
+    if (workingState->getSolutionStatus() == Status::FAILED)
       return;
 
     const Scalar time = workingState->getTime();
@@ -241,36 +202,30 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
     // Setup TimeDerivative
     Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
-      Teuchos::rcp(new StepperBackwardEulerTimeDerivative<Scalar>(1.0/dt,xOld));
+      Teuchos::rcp(new StepperBackwardEulerTimeDerivative<Scalar>(
+        Scalar(1.0)/dt,xOld));
 
-    // Setup InArgs and OutArgs
-    typedef Thyra::ModelEvaluatorBase MEB;
-    MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
-    MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
-    inArgs.set_x(x);
-    if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
-    if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time+dt);
-    if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
-    if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (1.0/dt);
-    if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
+    const Scalar alpha = Scalar(1.0)/dt;
+    const Scalar beta  = Scalar(1.0);
+    Teuchos::RCP<ImplicitODEParameters<Scalar> > p =
+      Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
+                                                     SOLVE_FOR_X));
 
-    wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
+    if (!Teuchos::is_null(stepperBEObserver_))
+      stepperBEObserver_->observeBeforeSolve(solutionHistory, *this);
 
-    stepperBEObserver_->observeBeforeSolve(solutionHistory, *this);
+    const Thyra::SolveStatus<Scalar> sStatus =
+      this->solveImplicitODE(x, xDot, time, p);
 
-    const Thyra::SolveStatus<double> sStatus =
-      this->solveNonLinear(wrapperModel_, *solver_, x);
+    if (!Teuchos::is_null(stepperBEObserver_))
+      stepperBEObserver_->observeAfterSolve(solutionHistory, *this);
 
-    stepperBEObserver_->observeAfterSolve(solutionHistory, *this);
+    if (workingState->getXDot() != Teuchos::null)
+      timeDer->compute(x, xDot);
 
-    timeDer->compute(x, xDot);
-
-    if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-    else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+    workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
-    stepperBEObserver_->observeEndTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -282,16 +237,13 @@ void StepperBackwardEuler<Scalar>::computePredictor(
   if (predictorStepper_ == Teuchos::null) return;
   predictorStepper_->takeStep(solutionHistory);
 
-  Status & stepperStatus =
-    solutionHistory->getWorkingState()->getStepperState()->stepperStatus_;
-
-  if (stepperStatus == Status::FAILED) {
+  if (solutionHistory->getWorkingState()->getSolutionStatus()==Status::FAILED) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"StepperBackwardEuler::computePredictor");
     *out << "Warning - predictorStepper has failed." << std::endl;
   } else {
     // Reset status to WORKING since this is the predictor
-    stepperStatus = Status::WORKING;
+    solutionHistory->getWorkingState()->setSolutionStatus(Status::WORKING);
   }
 }
 
@@ -324,10 +276,10 @@ std::string StepperBackwardEuler<Scalar>::description() const
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl
-      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
+      << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
 }
 
 
@@ -335,16 +287,29 @@ template <class Scalar>
 void StepperBackwardEuler<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
-  else stepperPL_ = pList;
+  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL == Teuchos::null) stepperPL = this->getDefaultParameters();
+  } else {
+    stepperPL = pList;
+  }
+  if (!(stepperPL->isParameter("Solver Name"))) {
+    stepperPL->set<std::string>("Solver Name", "Default Solver");
+    Teuchos::RCP<Teuchos::ParameterList> solverPL =
+      this->defaultSolverParameters();
+    stepperPL->set("Default Solver", *solverPL);
+  }
   // Can not validate because of optional Parameters (e.g., Solver Name).
-  //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+  // stepperPL->validateParametersAndSetDefaults(*this->getValidParameters());
 
-  std::string stepperType = stepperPL_->get<std::string>("Stepper Type");
+  std::string stepperType = stepperPL->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Backward Euler",
     std::logic_error,
        "Error - Stepper Type is not 'Backward Euler'!\n"
-    << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
+    << "  Stepper Type = "<<stepperPL->get<std::string>("Stepper Type")<<"\n");
+
+  this->stepperPL_ = stepperPL;
 }
 
 
@@ -354,8 +319,10 @@ StepperBackwardEuler<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
-  pl->set("Stepper Type", this->description());
-  pl->set("Solver Name", "",
+  pl->set<std::string>("Stepper Type", this->description());
+  this->getValidParametersBasic(pl);
+  pl->set<bool>       ("Zero Initial Guess", false);
+  pl->set<std::string>("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");
 
   return pl;
@@ -368,12 +335,12 @@ StepperBackwardEuler<Scalar>::getDefaultParameters() const
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
+  using Teuchos::rcp_const_cast;
 
-  RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", this->description());
+  RCP<ParameterList> pl =
+    rcp_const_cast<ParameterList>(this->getValidParameters());
+
   pl->set<std::string>("Solver Name", "Default Solver");
-
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 
@@ -385,7 +352,7 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperBackwardEuler<Scalar>::getNonconstParameterList()
 {
-  return(stepperPL_);
+  return(this->stepperPL_);
 }
 
 
@@ -393,11 +360,133 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperBackwardEuler<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
-  stepperPL_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
+  this->stepperPL_ = Teuchos::null;
   return(temp_plist);
 }
 
+
+template <class Scalar>
+int
+StepperBackwardEuler<Scalar>::stencilLength() const
+{
+  return 2;
+}
+
+
+template <class Scalar>
+void
+StepperBackwardEuler<Scalar>::computeStepResidual(
+  Thyra::VectorBase<Scalar>& residual,
+  const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+  const Teuchos::Array<Scalar>& t,
+  const Thyra::VectorBase<Scalar>& p,
+  const int param_index) const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+  outArgs.set_f(Teuchos::rcpFromRef(residual));
+  computeStepResidDerivImpl(outArgs, x, t, p, param_index);
+}
+
+template <class Scalar>
+void
+StepperBackwardEuler<Scalar>::computeStepJacobian(
+  Thyra::LinearOpBase<Scalar>& jacobian,
+  const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+  const Teuchos::Array<Scalar>& t,
+  const Thyra::VectorBase<Scalar>& p,
+  const int param_index,
+  const int deriv_index) const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+  TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_W_op));
+  outArgs.set_W_op(Teuchos::rcpFromRef(jacobian));
+  computeStepResidDerivImpl(outArgs, x, t, p, param_index, deriv_index);
+}
+
+template <class Scalar>
+void
+StepperBackwardEuler<Scalar>::computeStepParamDeriv(
+  Thyra::LinearOpBase<Scalar>& deriv,
+  const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+  const Teuchos::Array<Scalar>& t,
+  const Thyra::VectorBase<Scalar>& p,
+  const int param_index) const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+  TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_DfDp, param_index).supports(MEB::DERIV_LINEAR_OP));
+  outArgs.set_DfDp(param_index,
+                   MEB::Derivative<Scalar>(Teuchos::rcpFromRef(deriv)));
+  computeStepResidDerivImpl(outArgs, x, t, p, param_index);
+}
+
+template <class Scalar>
+void
+StepperBackwardEuler<Scalar>::computeStepSolver(
+  Thyra::LinearOpWithSolveBase<Scalar>& jacobian_solver,
+  const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+  const Teuchos::Array<Scalar>& t,
+  const Thyra::VectorBase<Scalar>& p,
+  const int param_index) const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+  TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_W));
+  outArgs.set_W(Teuchos::rcpFromRef(jacobian_solver));
+  computeStepResidDerivImpl(outArgs, x, t, p, param_index, 0);
+}
+
+template <class Scalar>
+void
+StepperBackwardEuler<Scalar>::computeStepResidDerivImpl(
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
+  const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+  const Teuchos::Array<Scalar>& t,
+  const Thyra::VectorBase<Scalar>& p,
+  const int param_index,
+  const int deriv_index) const
+{
+  using Teuchos::RCP;
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  TEUCHOS_ASSERT(x.size() == 2);
+  TEUCHOS_ASSERT(t.size() == 2);
+  RCP<const Thyra::VectorBase<Scalar> > xn = x[0];
+  RCP<const Thyra::VectorBase<Scalar> > xo = x[1];
+  const Scalar tn = t[0];
+  const Scalar to = t[1];
+  const Scalar dt = tn-to;
+
+  // compute x_dot
+  RCP<Thyra::VectorBase<Scalar> > x_dot = xn->clone_v();
+  Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
+    Teuchos::rcp(new StepperBackwardEulerTimeDerivative<Scalar>(Scalar(1.0)/dt,xo));
+  timeDer->compute(xn, x_dot);
+
+  // evaluate model
+  MEB::InArgs<Scalar> inArgs = this->wrapperModel_->getInArgs();
+  inArgs.set_x(xn);
+  if (inArgs.supports(MEB::IN_ARG_x_dot         )) inArgs.set_x_dot    (x_dot);
+  if (inArgs.supports(MEB::IN_ARG_t             )) inArgs.set_t        (tn);
+  if (inArgs.supports(MEB::IN_ARG_step_size     )) inArgs.set_step_size(dt);
+  inArgs.set_p(param_index, Teuchos::rcpFromRef(p));
+  TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_alpha));
+  TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_beta));
+  if (deriv_index == 0) {
+    // df/dx_n = df/dx_dot * dx_dot/dx_n + df/dx_n = 1/dt*df/dx_dot + df/dx_n
+    inArgs.set_alpha(Scalar(1.0)/dt);
+    inArgs.set_beta(Scalar(1.0));
+  }
+  else if (deriv_index == 1) {
+    // df/dx_{n-1} = df/dx_dot * dx_dot/dx_{n-1} = -1/dt*df/dx_dot
+    inArgs.set_alpha(Scalar(-1.0)/dt);
+    inArgs.set_beta(Scalar(0.0));
+  }
+  this->wrapperModel_->getAppModel()->evalModel(inArgs, outArgs);
+}
 
 } // namespace Tempus
 #endif // Tempus_StepperBackwardEuler_impl_hpp

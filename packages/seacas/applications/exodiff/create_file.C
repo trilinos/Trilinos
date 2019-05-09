@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,12 +37,12 @@
 #include "exodusII.h"
 #include "smart_assert.h" // for SMART_ASSERT
 #include "stringx.h"      // for find_string, etc
-#include "util.h"         // for TOPTR
-#include <cstddef>        // for size_t
-#include <cstdio>         // for sprintf, nullptr
-#include <iostream>       // for operator<<, basic_ostream, etc
-#include <string>         // for string, char_traits, etc
-#include <vector>         // for vector
+#include "util.h"
+#include <cstddef>  // for size_t
+#include <cstdio>   // for sprintf, nullptr
+#include <iostream> // for operator<<, basic_ostream, etc
+#include <string>   // for string, char_traits, etc
+#include <vector>   // for vector
 template <typename INT> class ExoII_Read;
 
 namespace {
@@ -110,10 +110,10 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
 {
   // Multiple modes:
   // summary_flag == true   --> Single file, output summary and variable names, return
-  // diffile_name == ""     --> Dual file, output summary, variable names, check compatability,
+  // diffile_name == ""     --> Dual file, output summary, variable names, check compatibility,
   // diffile_name != ""     --> Three files (2 in, 1 out)
   //                            create output file which is diff of input.
-  //                            output summary, variable names, check compatability
+  //                            output summary, variable names, check compatibility
   // quiet_flag == true     --> don't output summary information
 
   SMART_ASSERT(!interface.summary_flag);
@@ -166,7 +166,9 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
     }
     else { // The files are to be compared .. echo additional info.
       if (Tolerance::use_old_floor) {
-        std::cout << "WARNING: Using old definition of floor tolerance. |a-b|<floor.\n\n";
+        std::ostringstream info;
+        info << "INFO: Using old definition of floor tolerance. |a-b|<floor.\n\n";
+        DIFF_OUT(info, trmclr::yellow);
       }
       if (interface.coord_tol.type != IGNORE) {
         sprintf(buf, "\nNodal coordinates will be compared .. tol: %8g (%s), floor: %8g",
@@ -175,7 +177,9 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
         std::cout << buf << '\n';
       }
       else {
-        std::cout << "\nNodal coordinates will not be compared.\n";
+        std::ostringstream info;
+        info << "\nNodal coordinates will not be compared.\n";
+        DIFF_OUT(info, trmclr::yellow);
       }
 
       if (interface.time_tol.type != IGNORE) {
@@ -184,7 +188,9 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
         std::cout << buf << '\n';
       }
       else {
-        std::cout << "Time step time values will not be compared.\n";
+        std::ostringstream info;
+        info << "Time step time values will not be compared.\n";
+        DIFF_OUT(info, trmclr::yellow);
       }
 
       output_compare_names("Global", interface.glob_var_names, interface.glob_var,
@@ -213,7 +219,9 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
       }
       else {
         if (interface.ignore_sideset_df || interface.ss_df_tol.type == IGNORE) {
-          std::cout << "Sideset Distribution Factors will not be compared.\n";
+          std::ostringstream info;
+          info << "Sideset Distribution Factors will not be compared.\n";
+          DIFF_OUT(info, trmclr::yellow);
         }
         else {
           std::cout << "No Sideset Distribution Factors on either file.\n";
@@ -242,8 +250,8 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
   if (out_file_id >= 0) {
     ex_put_all_var_param(out_file_id, interface.glob_var_names.size(),
                          interface.node_var_names.size(), interface.elmt_var_names.size(),
-                         TOPTR(truth_tab), interface.ns_var_names.size(), TOPTR(ns_truth_tab),
-                         interface.ss_var_names.size(), TOPTR(ss_truth_tab));
+                         truth_tab.data(), interface.ns_var_names.size(), ns_truth_tab.data(),
+                         interface.ss_var_names.size(), ss_truth_tab.data());
 
     output_exodus_names(out_file_id, EX_GLOBAL, interface.glob_var_names);
     output_exodus_names(out_file_id, EX_NODAL, interface.node_var_names);
@@ -263,7 +271,7 @@ namespace {
         vars[i] = const_cast<char *>(names[i].c_str());
         SMART_ASSERT(vars[i] != nullptr);
       }
-      ex_put_variable_names(file_id, type, names.size(), TOPTR(vars));
+      ex_put_variable_names(file_id, type, names.size(), vars.data());
     }
   }
 
@@ -333,8 +341,10 @@ namespace {
             else {
               *diff_found = true;
               if (!interface.quiet_flag) {
-                std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
-                          << "\" is in the first file but not the second.\n";
+                std::ostringstream diff;
+                diff << "exodiff: DIFFERENCE .. The " << type << " variable \"" << name
+                     << "\" is in the first file but not the second.\n";
+                DIFF_OUT(diff);
               }
               continue;
             }
@@ -357,8 +367,10 @@ namespace {
             if (find_string(x_list, name, interface.nocase_var_names) < 0) {
               *diff_found = true;
               if (!interface.quiet_flag) {
-                std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
-                          << "\" is in the second file but not the first.\n";
+                std::ostringstream diff;
+                diff << "exodiff: DIFFERENCE .. The " << type << " variable \"" << name
+                     << "\" is in the second file but not the first.\n";
+                DIFF_OUT(diff);
               }
               continue;
             }
@@ -387,16 +399,20 @@ namespace {
         else {
           *diff_found = true;
           if (!interface.quiet_flag) {
-            std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
-                      << "\" is not in the second file.\n";
+            std::ostringstream diff;
+            diff << "exodiff: DIFFERENCE .. The " << type << " variable \"" << name
+                 << "\" is not in the second file.\n";
+            DIFF_OUT(diff);
           }
         }
       }
       else {
         *diff_found = true;
         if (!interface.quiet_flag) {
-          std::cout << "exodiff: WARNING .. Specified " << type << " variable \"" << name
-                    << "\" is not in the first file.\n";
+          std::ostringstream diff;
+          diff << "exodiff: DIFFERENCE .. Specified " << type << " variable \"" << name
+               << "\" is not in the first file.\n";
+          DIFF_OUT(diff);
         }
       }
     }
@@ -429,9 +445,13 @@ namespace {
         }
 
         if (set2 == nullptr) {
-          *diff_found = true;
-          std::cout << "exodiff: WARNING " << label << " id " << set1->Id()
-                    << " exists in first file but not the second...\n";
+          if (interface.map_flag != PARTIAL) {
+            *diff_found = true;
+            std::ostringstream diff;
+            diff << "exodiff: DIFFERENCE " << label << " id " << set1->Id()
+                 << " exists in first file but not the second...\n";
+            DIFF_OUT(diff);
+          }
           continue;
         }
 
@@ -449,19 +469,21 @@ namespace {
               truth_tab[b * num_vars + out_idx] = 1;
             }
             else if (!quiet_flag) {
-              std::cerr << "exodiff: WARNING " << label << " variable \"" << name
-                        << "\" is not saved for " << label << " id " << set1->Id()
-                        << " in the second file but is "
-                        << "in the first (by virtue of the truth tables).  "
-                        << "This variable won't be considered for this " << label << ".\n";
+              std::ostringstream diff;
+              diff << "exodiff: INFO " << label << " variable \"" << name << "\" is not saved for "
+                   << label << " id " << set1->Id() << " in the second file but is "
+                   << "in the first (by virtue of the truth tables).  "
+                   << "This variable won't be considered for this " << label << ".\n";
+              DIFF_OUT(diff, trmclr::yellow);
             }
           }
           else if (set2->is_valid_var(idx2) && !quiet_flag) {
-            std::cerr << "exodiff: WARNING " << label << " variable \"" << name
-                      << "\" is not saved for " << label << " id " << set1->Id()
-                      << " in the first file but is "
-                      << "in the second (by virtue of the truth tables).  "
-                      << "This variable won't be considered for this " << label << ".\n";
+            std::ostringstream diff;
+            diff << "exodiff: INFO " << label << " variable \"" << name << "\" is not saved for "
+                 << label << " id " << set1->Id() << " in the first file but is "
+                 << "in the second (by virtue of the truth tables).  "
+                 << "This variable won't be considered for this " << label << ".\n";
+            DIFF_OUT(diff, trmclr::yellow);
           }
         }
       }
@@ -469,12 +491,12 @@ namespace {
   }
 } // End of namespace
 
-template int Create_File(ExoII_Read<int> &file1, ExoII_Read<int> &file2,
-                         const std::string &diffile_name, bool *diff_found);
+template int  Create_File(ExoII_Read<int> &file1, ExoII_Read<int> &file2,
+                          const std::string &diffile_name, bool *diff_found);
 template void Build_Variable_Names(ExoII_Read<int> &file1, ExoII_Read<int> &file2,
                                    bool *diff_found);
 
-template int Create_File(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
-                         const std::string &diffile_name, bool *diff_found);
+template int  Create_File(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
+                          const std::string &diffile_name, bool *diff_found);
 template void Build_Variable_Names(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
                                    bool *diff_found);

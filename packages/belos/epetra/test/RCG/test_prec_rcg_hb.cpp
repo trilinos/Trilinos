@@ -49,7 +49,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosRCGSolMgr.hpp"
-#include "createEpetraProblem.hpp"
+#include "BelosEpetraUtils.h"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     int MyPID;
     RCP<Epetra_CrsMatrix> A;
     RCP<Epetra_MultiVector> B, X;
-    int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
+    int return_val =Belos::Util::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
     if(return_val != 0) return return_val;
     proc_verbose = ( verbose && (MyPID==0) );
     //

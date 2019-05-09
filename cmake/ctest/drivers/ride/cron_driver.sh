@@ -22,7 +22,7 @@ export TDD_CTEST_TEST_TYPE=${JENKINS_JOB_TYPE}
 # Machine specific environment
 #
 module load python/2.7.12
-module load cmake/3.6.2
+export PATH=/home/rabartl/install/white-ride/cmake-3.11.2/bin:$PATH
 module load git/2.10.1
 
 export TRIBITS_TDD_USE_SYSTEM_CTEST=1

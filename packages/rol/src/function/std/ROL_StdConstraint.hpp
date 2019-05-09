@@ -64,7 +64,7 @@ public:
 
   using Constraint<Real>::update;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     update(*(xs.getVector()),flag,true);
   }
 
@@ -73,8 +73,8 @@ public:
 
   using Constraint<Real>::value;
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    StdVector<Real> cs = Teuchos::dyn_cast<StdVector<Real> >(c);
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    StdVector<Real> cs = dynamic_cast<StdVector<Real>&>(c);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     value(*(cs.getVector()),*(xs.getVector()),tol);
   }
 
@@ -86,9 +86,9 @@ public:
   using Constraint<Real>::applyJacobian;
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, 
                              const Vector<Real> &x, Real &tol) {
-    StdVector<Real> jvs = Teuchos::dyn_cast<StdVector<Real> >(jv);
-    const StdVector<Real> vs = Teuchos::dyn_cast<const StdVector<Real> >(v);
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    StdVector<Real> jvs = dynamic_cast<StdVector<Real>&>(jv);
+    const StdVector<Real> vs = dynamic_cast<const StdVector<Real>&>(v);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     try {
       applyJacobian(*(jvs.getVector()),*(vs.getVector()),*(xs.getVector()),tol);      
     } 
@@ -99,7 +99,7 @@ public:
 
   virtual void applyJacobian( std::vector<Real> &jv, const std::vector<Real> &v, 
                               const std::vector<Real> &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::StdConstraint): applyJacobian not implemented!");
   }
 
@@ -108,9 +108,9 @@ public:
   using Constraint<Real>::applyAdjointJacobian;
   void applyAdjointJacobian(Vector<Real> &ajv,     const Vector<Real> &v,
                                     const Vector<Real> &x, Real &tol) {
-    StdVector<Real> ajvs = Teuchos::dyn_cast<StdVector<Real> >(ajv);
-    const StdVector<Real> vs = Teuchos::dyn_cast<const StdVector<Real> >(v);
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    StdVector<Real> ajvs = dynamic_cast<StdVector<Real>&>(ajv);
+    const StdVector<Real> vs = dynamic_cast<const StdVector<Real>&>(v);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     try {
        applyAdjointJacobian(*(ajvs.getVector()),*(vs.getVector()),*(xs.getVector()),tol);      
     } 
@@ -121,7 +121,7 @@ public:
 
    virtual void applyAdjointJacobian( std::vector<Real> &ajv, const std::vector<Real> &v, 
                                       const std::vector<Real> &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::StdConstraint): applyAdjointJacobian not implemented!");
   }
 
@@ -130,10 +130,10 @@ public:
   using Constraint<Real>::applyAdjointHessian;
   void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v,
                            const Vector<Real> &x, Real &tol) {
-    StdVector<Real> ahuvs = Teuchos::dyn_cast<StdVector<Real> >(ahuv);
-    const StdVector<Real> us = Teuchos::dyn_cast<const StdVector<Real> >(u);
-    const StdVector<Real> vs = Teuchos::dyn_cast<const StdVector<Real> >(v);
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    StdVector<Real> ahuvs = dynamic_cast<StdVector<Real>&>(ahuv);
+    const StdVector<Real> us = dynamic_cast<const StdVector<Real>&>(u);
+    const StdVector<Real> vs = dynamic_cast<const StdVector<Real>&>(v);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     try {
       applyAdjointHessian( *(ahuvs.getVector()), *(us.getVector()), *(vs.getVector()), 
                            *(xs.getVector()), tol );
@@ -147,7 +147,7 @@ public:
   virtual void applyAdjointHessian( std::vector<Real> &ahuv, const std::vector<Real> &u,
                                     const std::vector<Real> &v, const std::vector<Real> &x,
                                     Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
       ">>> ERROR (ROL::StdConstraint) : applyAdjointHessian not implemented!");
   }
 
@@ -158,11 +158,11 @@ public:
   std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
                                          const Vector<Real> &b1, const Vector<Real> &b2,
                                          const Vector<Real> &x, Real &tol) {
-    StdVector<Real> v1s = Teuchos::dyn_cast<StdVector<Real> >(v1);
-    StdVector<Real> v2s = Teuchos::dyn_cast<StdVector<Real> >(v2);
-    const StdVector<Real> b1s = Teuchos::dyn_cast<const StdVector<Real> >(b1);
-    const StdVector<Real> b2s = Teuchos::dyn_cast<const StdVector<Real> >(b2);
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    StdVector<Real> v1s = dynamic_cast<StdVector<Real>&>(v1);
+    StdVector<Real> v2s = dynamic_cast<StdVector<Real>&>(v2);
+    const StdVector<Real> b1s = dynamic_cast<const StdVector<Real>&>(b1);
+    const StdVector<Real> b2s = dynamic_cast<const StdVector<Real>&>(b2);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     try {
       return solveAugmentedSystem( *(v1s.getVector()), *(v2s.getVector()), *(b1s.getVector()),
                             *(b2s.getVector()), *(xs.getVector()), tol );
@@ -175,7 +175,7 @@ public:
   virtual std::vector<Real> solveAugmentedSystem( std::vector<Real> &v1, std::vector<Real> &v2,
                                                   const std::vector<Real> &b1, const std::vector<Real> &b2,
                                                   const std::vector<Real> &x, Real tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
       ">>> ERROR (ROL::StdConstraint) : solveAugmentedSystem not implemented!");
     return std::vector<Real>();
   }
@@ -184,10 +184,10 @@ public:
   using Constraint<Real>::applyPreconditioner;
   void applyPreconditioner(Vector<Real> &pv, const Vector<Real> &v, const Vector<Real> &x,
                            const Vector<Real> &g, Real &tol) {
-    StdVector<Real> pvs = Teuchos::dyn_cast<StdVector<Real> >(pv);
-    const StdVector<Real> vs = Teuchos::dyn_cast<const StdVector<Real> >(v);
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
-    const StdVector<Real> gs = Teuchos::dyn_cast<const StdVector<Real> >(g);
+    StdVector<Real> pvs = dynamic_cast<StdVector<Real>&>(pv);
+    const StdVector<Real> vs = dynamic_cast<const StdVector<Real>&>(v);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
+    const StdVector<Real> gs = dynamic_cast<const StdVector<Real>&>(g);
     try {
       applyPreconditioner( *(pvs.getVector()), *(vs.getVector()), *(xs.getVector()),
                            *(gs.getVector()), tol );
@@ -199,7 +199,7 @@ public:
 
   virtual void applyPreconditioner( std::vector<Real> &pv, const std::vector<Real> &v,
                                     const std::vector<Real> &x, const std::vector<Real> &g, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
       ">>> ERROR (ROL::StdConstraint) : applyPreconditioner not implemented!");
   }
 

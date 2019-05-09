@@ -215,14 +215,14 @@ contains basic, general-purpose utilities.
 
   <ul>
 
-  <li> <em>Testing for Exceptions</em>: The TEUCHOS_TEST_FOR_EXCEPTION() macro accepts
-  a logical test, an exception handler, and a message.  It then throws
-  an "intelligent" exception informing the user of the file, line, and
-  message where the exception was thrown.  The macro
-  TEUCHOS_TEST_FOR_EXCEPT() is a shorter macro that just accepts a
-  logic test and is therefore easier to write.  Please use
-  TEUCHOS_TEST_FOR_EXCEPT(!test) as a safer, more informative
-  alternative to assert(test).</li>
+  <li> <em>Testing for Exceptions</em>: The TEUCHOS_TEST_FOR_EXCEPTION() macro
+  accepts a logical test, an exception handler, and a message.  It then throws
+  an "intelligent" exception informing the user of the file, line, and message
+  where the exception was thrown.  The macro TEUCHOS_TEST_FOR_EXCEPT() is a
+  shorter macro that just accepts a logic test and is therefore easier to
+  write.  Please use TEUCHOS_TEST_FOR_EXCEPT(!test) as a safer, more
+  informative alternative to assert(test).  For related error handling
+  utilties, see \ref TestForException_grp</li>
 
   <li> <em>Stack Tracing</em>: When a debug build is enabled
   (CMAKE_BUILD_TYPE=DEBUG OR Trilinos_ENABLE_DEBUG=ON) and when using GCC and
@@ -242,7 +242,7 @@ contains basic, general-purpose utilities.
   turned on and off at runtime using the function
   Teuchos::TestForException_setEnableStacktrace().  The configure variable
   Teuchos_ENABLE_DEFAULT_STACKTRACE determines if stack tracing is on or off
-  by defualt at runtime.
+  by default at runtime.
 
   NOTE: Stacktracing is always off by default in any build type except
   CMAKE_BUILD_TYPE=DEBUG and/or Trilinos_ENABLE_DEBUG=ON.  Therefore,
@@ -367,7 +367,12 @@ for SPMD parallel programs and useful utilities that depend on these.
     This may be used either by itself, or in combination with
     Teuchos::TimeMonitor for tracking global timer statistics over
     processes.
-  
+    If Teuchos is configured with <tt>TPL_ENABLE_Valgrind=ON</tt> and
+    <tt>Teuchos_TIME_MASSIF_SNAPSHOTS=ON</tt> Valgrind Massif snapshots are
+    taken before and after each Teuchos::Time invocation.
+    The resulting memory profile can be plotted using the script
+    <tt>core/utils/plotMassifMemoryUsage.py</tt>.
+
   <li> Teuchos::TimeMonitor: A class that automates (and makes
     exception safe) the process of starting and stopping timers, lets
     users create timers that are automatically registered and tracked,

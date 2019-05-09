@@ -43,7 +43,7 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <stk_io/IossBridge.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_io/WriteMesh.hpp>
 
@@ -142,8 +142,7 @@ void expect_equal_entity_connectivity(const stk::mesh::BulkData &oldBulk,
     for(unsigned oldConIndex = 0; oldConIndex < oldConnectivity.numConnected; oldConIndex++)
     {
         EXPECT_EQ(oldBulk.identifier(oldConnectivity.connected[oldConIndex]), newBulk.identifier(newConnectivity.connected[newConIndex])) << "rank: "<<rank<<", relation_rank: "<<oldConnectivity.relationRank;
-        EXPECT_EQ(oldConnectivity.ords[oldConIndex], newConnectivity.ords[newConIndex])
-                << "oldConIndex: "<<oldConIndex<<", newConIndex: "<<newConIndex
+        EXPECT_EQ(oldConnectivity.ords[oldConIndex], newConnectivity.ords[newConIndex]) << "oldConIndex: "<<oldConIndex<<", newConIndex: "<<newConIndex
                 <<", rank: " << rank << " relation_rank: " << oldConnectivity.relationRank;
         if(!oldConnectivity.perms.empty() && !newConnectivity.perms.empty())
             EXPECT_EQ(oldConnectivity.perms[oldConIndex], newConnectivity.perms[newConIndex]) << "rank: " << rank << " relation_rank: " << oldConnectivity.relationRank;
@@ -490,7 +489,7 @@ TEST(BulkDataSize, sizeChanges_needToUpdateCopyMesh)
 #if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-    EXPECT_EQ(1200u, sizeof(bulk)) << "Size of BulkData changed.  Does mesh copying capability need to be updated?";
+    EXPECT_TRUE(1176u >= sizeof(bulk)) << "Size of BulkData changed.  Does mesh copying capability need to be updated?";
 #endif
 }
 

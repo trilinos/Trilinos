@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,7 @@ void *array_alloc_2D_ret(size_t dim1, size_t dim2, size_t size)
 /* size of array elements */
 {
   size_t total;       /* Total size of the array */
-  size_t aligned_dim; /* dim1 or dim1+1 to ensure data alignement */
+  size_t aligned_dim; /* dim1 or dim1+1 to ensure data alignment */
   size_t offset;      /* offset of array elements */
   char * field;       /* The multi-dimensional array */
   char **ptr;         /* Pointer offset */

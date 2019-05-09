@@ -294,10 +294,10 @@ bool check_residuals(const ScalarViewType& scalar_residual,
   Kokkos::deep_copy( host_scalar_residual, scalar_residual );
   Kokkos::deep_copy( host_ensemble_residual, ensemble_residual );
 
-  TEUCHOS_TEST_EQUALITY( host_scalar_residual.dimension_0(),
-                         host_ensemble_residual.dimension_0(), fbuf, success );
+  TEUCHOS_TEST_EQUALITY( host_scalar_residual.extent(0),
+                         host_ensemble_residual.extent(0), fbuf, success );
 
-  const size_t num_node = host_scalar_residual.dimension_0();
+  const size_t num_node = host_scalar_residual.extent(0);
   const size_t num_ensemble = Kokkos::dimension_scalar(host_ensemble_residual);
   for (size_t i=0; i<num_node; ++i) {
     for (size_t j=0; j<num_ensemble; ++j) {
@@ -358,7 +358,7 @@ struct PerformanceDriverOp {
 
     ensemble_vector_type ensemble_residual;
     Kokkos::Example::FENL::DeviceConfig ensemble_dev_config = dev_config;
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     const bool is_cuda = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
 #else
     const bool is_cuda = false ;

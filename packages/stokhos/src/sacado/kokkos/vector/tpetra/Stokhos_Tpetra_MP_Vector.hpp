@@ -72,6 +72,7 @@
 #include "Kokkos_TeuchosCommAdapters_MP_Vector.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels_MP_Vector.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy_MP_Vector.hpp"
+#include "Tpetra_Details_fill_MP_Vector.hpp"
 #include "Kokkos_Random_MP_Vector.hpp"
 #endif
 
@@ -85,7 +86,7 @@ namespace Stokhos {
 /// space corresponding to the given (classic) Kokkos \c Node type.
 template <typename Node>
 struct DeviceForNode {
-#if defined(KOKKOS_HAVE_SERIAL)
+#if defined(KOKKOS_ENABLE_SERIAL)
   // Prefer the Kokkos::Serial execution space if it exists.
   typedef Kokkos::Serial type;
 #else
@@ -94,7 +95,7 @@ struct DeviceForNode {
   // space) always exists, and it always has an execution_space
   // typedef, which corresponds to the default host execution space.
   typedef Kokkos::HostSpace::execution_space type;
-#endif // defined(KOKKOS_HAVE_SERIAL)
+#endif // defined(KOKKOS_ENABLE_SERIAL)
 };
 
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)

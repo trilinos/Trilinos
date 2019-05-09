@@ -52,6 +52,7 @@
 
 #if defined( HAVE_STOKHOS_BELOS )
 #include "Belos_TpetraAdapter_MP_Vector.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #endif
 
 #if defined( HAVE_STOKHOS_MUELU )
@@ -97,7 +98,7 @@ struct EnsembleTraits< Sacado::MP::Vector<S> > {
   }
 };
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 
 template <typename ViewType>
 struct LocalViewTraits<
@@ -143,45 +144,7 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
 
 } /* namespace FENL */
 
-#if defined(HAVE_TRILINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
-  //! Get mean values matrix for mean-based preconditioning
-  /*! Specialization for Sacado::MP::Vector
-   */
-  template <class Storage, class ... P>
-  class GetMeanValsFunc< Kokkos::View< Sacado::MP::Vector<Storage>*,
-                                       P... > > {
-  public:
-    typedef Sacado::MP::Vector<Storage> Scalar;
-    typedef Kokkos::View< Scalar*, P... > ViewType;
-    typedef ViewType MeanViewType;
-    typedef typename ViewType::execution_space execution_space;
-    typedef typename ViewType::size_type size_type;
-
-    GetMeanValsFunc(const ViewType& vals_) :
-      vals(vals_), vec_size(Kokkos::dimension_scalar(vals))
-    {
-      const size_type nnz = vals.dimension_0();
-      mean_vals = ViewType("mean-values", nnz, 1);
-      Kokkos::parallel_for( nnz, *this );
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator() (const size_type i) const
-    {
-      typename Scalar::value_type s = 0.0;
-      for (size_type j=0; j<vec_size; ++j)
-        s += vals(i).fastAccessCoeff(j);
-      mean_vals(i) = s;
-    }
-
-    MeanViewType getMeanValues() const { return mean_vals; }
-
-  private:
-    MeanViewType mean_vals;
-    ViewType vals;
-    const size_type vec_size;
-  };
-
+#if defined(HAVE_TRILINOSCOUPLINGS_BELOS)
 template <typename S, typename V, typename O>
 struct ExtractEnsembleIts;
 

@@ -101,7 +101,7 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createMembers(int num
     weakSelfPtr_.create_strong().getConst(),
     tpetraVectorSpace<Scalar>(
       Tpetra::createLocalMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(
-        numMembers, tpetraMap_->getComm(), tpetraMap_->getNode()
+        numMembers, tpetraMap_->getComm()
         )
       ),
     Teuchos::rcp(
@@ -136,6 +136,12 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone() const
   return tpetraVectorSpace<Scalar>(tpetraMap_);
 }
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetraMap() const
+{
+  return tpetraMap_;
+}
 
 // Overridden from SpmdVectorSpaceDefaultBase
 

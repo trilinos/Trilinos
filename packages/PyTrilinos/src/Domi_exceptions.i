@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
 %define SWIG_CATCH_DOMIEXCEPT
 
 catch (Domi::InvalidArgument & e) {

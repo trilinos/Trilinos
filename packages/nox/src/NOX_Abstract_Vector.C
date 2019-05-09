@@ -53,7 +53,7 @@
 // Included multivector declarations
 #include "NOX_MultiVector.H"
 
-void NOX::Abstract::Vector::print(std::ostream& stream) const
+void NOX::Abstract::Vector::print(std::ostream& /* stream */) const
 {
   return;
 }
@@ -65,7 +65,7 @@ NOX::Abstract::Vector::createMultiVector(
 {
   if (numVecs < 0) {
     std::cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector"
-     << " must have postive number of columns!" << std::endl;
+     << " must have positive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
@@ -89,7 +89,7 @@ NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 {
   if (numVecs <= 0) {
     std::cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector"
-     << " must have postive number of columns!" << std::endl;
+     << " must have positive number of columns!" << std::endl;
     throw "NOX Error";
   }
 

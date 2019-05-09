@@ -54,8 +54,7 @@ KOKKOS_INLINE_FUNCTION
 T
 length(Vector<T, N> const & p0, Vector<T, N> const & p1)
 {
-  Vector<T, N> const v = p1 - p0;
-  return norm(v);
+  return norm(p1 - p0);
 }
 
 //
@@ -70,28 +69,33 @@ area(Vector<T, N> const & p0, Vector<T, N> const & p1,
   Vector<T, N> const u = p1 - p0;
   Vector<T, N> const v = p2 - p0;
 
-  T const base = norm(u);
-
-  Vector<T, N> const i = u / base;
-  Vector<T, N> const n = v - dot(v, i) * i;
-
-  T const height = norm(n);
-  T const area = 0.5 * base * height;
+  T const area = 0.5 * norm(cross(u, v));
 
   return area;
 }
 
 //
-// Area of a quadrilateral, assumed planar. If not planar, returns
-// the sum of the areas of the two triangles p0,p1,p2 and p0,p2,p3
+// Area of a quadrilateral.
+// Taken from:
+// Calculation of the volume of a general hexahedron for flow predictions
+// Davies, D. E.; Salmond, D. J.
+// AIAA Journal (ISSN 0001-1452), vol. 23, June 1985, p. 954-956.
+// Their vertex naming convention: ABCD
+// Our convention:                 0123
 //
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T
-area(Vector<T, N> const & p0, Vector<T, N> const & p1,
+area(
+    Vector<T, N> const & p0, Vector<T, N> const & p1,
     Vector<T, N> const & p2, Vector<T, N> const & p3)
 {
-  return area(p0, p1, p2) + area(p0, p2, p3);
+  Vector<T, N> const v31 = p1 - p3;
+  Vector<T, N> const v02 = p2 - p0;
+
+  T const area = 0.5 * norm(cross(v31, v02));
+
+  return area;
 }
 
 //
@@ -103,86 +107,67 @@ T
 volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
     Vector<T, N> const & p2, Vector<T, N> const & p3)
 {
-  // Area of base triangle
-  T const
-  base = area(p0, p1, p2);
-
-  // Height
   Vector<T, N> const u = p1 - p0;
   Vector<T, N> const v = p2 - p0;
   Vector<T, N> const w = p3 - p0;
 
-  Vector<T, N> const i = u / norm(u);
-  Vector<T, N> const j = v / norm(v);
-
-  Vector<T, N> const n = w - dot(w, i) * i - dot(w, j) * j;
-
-  T const height = norm(n);
-
-  // Volume
-  T const volume = base * height / 3.0;
-
-  return volume;
-}
-
-//
-// Volume of pyramid of quadrilateral base
-// Base is assumed planar
-// Base is p0,p1,p2,p3
-// Apex is p4
-//
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-T
-volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
-    Vector<T, N> const & p2, Vector<T, N> const & p3,
-    Vector<T, N> const & p4)
-{
-  // Area of base quadrilateral
-  T const
-  base = area(p0, p1, p2, p3);
-
-  // Height
-  Vector<T, N> const u = p1 - p0;
-  Vector<T, N> const v = p2 - p0;
-  Vector<T, N> const w = p4 - p0;
-
-  Vector<T, N> const i = u / norm(u);
-  Vector<T, N> const j = v / norm(v);
-
-  Vector<T, N> const n = w - dot(w, i) * i - dot(w, j) * j;
-
-  T const height = norm(n);
-
-  // Volume
-  T const volume = base * height / 3.0;
+  T const volume =  std::abs(dot(u, cross(v, w)))/ 6.0;
 
   return volume;
 }
 
 //
 // Volume of hexahedron
-// Assumption: all faces are planar
-// Decompose into 3 pyramids
+// Taken from:
+// Calculation of the volume of a general hexahedron for flow predictions
+// Davies, D. E.; Salmond, D. J.
+// AIAA Journal (ISSN 0001-1452), vol. 23, June 1985, p. 954-956.
+// Their vertex naming convention: ABCDEFGH
+// Our convention:                 45670123
 //
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T
-volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
+volume(
+    Vector<T, N> const & p0, Vector<T, N> const & p1,
     Vector<T, N> const & p2, Vector<T, N> const & p3,
     Vector<T, N> const & p4, Vector<T, N> const & p5,
     Vector<T, N> const & p6, Vector<T, N> const & p7)
 {
-  // 1st pyramid
-  T const V1 = volume(p4, p7, p6, p5, p0);
+  Vector<T, N> const v24 = p4 - p2;
+  Vector<T, N> const v25 = p5 - p2;
+  Vector<T, N> const v20 = p0 - p2;
+  Vector<T, N> const v27 = p7 - p2;
 
-  // 2nd pyramid
-  T const V2 = volume(p3, p2, p6, p7, p0);
+  Vector<T, N> const v75 = p5 - p7;
+  Vector<T, N> const v46 = p6 - p4;
+  Vector<T, N> const v50 = p0 - p5;
+  Vector<T, N> const v41 = p1 - p4;
+  Vector<T, N> const v07 = p7 - p0;
+  Vector<T, N> const v43 = p3 - p4;
 
-  // 3rd pyramid
-  T const V3 = volume(p1, p5, p6, p2, p0);
+  Vector<T, N> const v26 = p6 - p2;
+  Vector<T, N> const v16 = p6 - p1;
+  Vector<T, N> const v21 = p1 - p2;
+  Vector<T, N> const v31 = p1 - p3;
+  Vector<T, N> const v23 = p3 - p2;
+  Vector<T, N> const v63 = p3 - p6;
 
-  return V1 + V2 + V3;
+  Vector<T, N> const v7546 = cross(v75, v46);
+  Vector<T, N> const v5041 = cross(v50, v41);
+  Vector<T, N> const v0743 = cross(v07, v43);
+  Vector<T, N> const v2616 = cross(v26, v16);
+  Vector<T, N> const v2131 = cross(v21, v31);
+  Vector<T, N> const v2363 = cross(v23, v63);
+
+  T const V1 = dot(v24, v7546 + v5041 + v0743);
+  T const V2 = dot(v25, v7546 + v2616);
+  T const V3 = dot(v20, v5041 + v2131);
+  T const V4 = dot(v27, v0743 + v2363);
+
+  T const volume = (V1 + V2 + V3 + V4) / 12.0;
+
+  return volume;
 }
 
 //
@@ -372,23 +357,10 @@ in_tetrahedron(
     Vector<T, N> const & p3,
     T const tolerance)
 {
-  if (in_normal_side(p, p0, p1, p2, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p0, p3, p1, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p1, p3, p2, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p2, p3, p0, tolerance) == false) {
-
-    return false;
-
-  }
+  if (in_normal_side(p, p0, p1, p2, tolerance) == false) return false;
+  if (in_normal_side(p, p0, p3, p1, tolerance) == false) return false;
+  if (in_normal_side(p, p1, p3, p2, tolerance) == false) return false;
+  if (in_normal_side(p, p2, p3, p0, tolerance) == false) return false;
 
   return true;
 }
@@ -413,31 +385,12 @@ in_hexahedron(
     Vector<T, N> const & p7,
     T const tolerance)
 {
-  if (in_normal_side(p, p0, p1, p2, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p0, p4, p5, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p1, p5, p6, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p2, p6, p7, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p3, p7, p4, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p4, p7, p6, tolerance) == false) {
-
-    return false;
-
-  }
+  if (in_normal_side(p, p0, p1, p2, tolerance) == false) return false;
+  if (in_normal_side(p, p0, p4, p5, tolerance) == false) return false;
+  if (in_normal_side(p, p1, p5, p6, tolerance) == false) return false;
+  if (in_normal_side(p, p2, p6, p7, tolerance) == false) return false;
+  if (in_normal_side(p, p3, p7, p4, tolerance) == false) return false;
+  if (in_normal_side(p, p4, p7, p6, tolerance) == false) return false;
 
   return true;
 }

@@ -203,7 +203,14 @@ class Reader {
     std::size_t end_length;
     IndentStackEntry(std::size_t l, std::size_t s, std::size_t e);
   };
+  // this is the stack that shows, for the current leading indentation
+  // characters, which subset of them came from each nested increase
+  // in indentation
   std::vector<IndentStackEntry> indent_stack;
+  // this stack notes, for each symbol in the pushdown automaton
+  // stack, how many characters indent the line that that symbol
+  // starts on
+  std::vector<std::size_t> symbol_indentation_stack;
 
  private: // helper methods
 

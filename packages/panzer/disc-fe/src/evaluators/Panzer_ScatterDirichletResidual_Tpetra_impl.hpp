@@ -53,6 +53,7 @@
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_ParameterList_GlobalEvaluationData.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -123,7 +124,7 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 template<typename TRAITS,typename LO,typename GO,typename NodeT> 
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */, 
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -132,16 +133,10 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-
-    if (checkApplyBC_)
-      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].dimension(1);
+  num_nodes = scatterFields_[0].extent(1);
 }
 
 // **********************************************************************
@@ -150,11 +145,11 @@ void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO
 preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
-  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
 
   if(tpetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
     tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -162,7 +157,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<LOC> tpetraContainer 
-          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
+          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject("Dirichlet Counter"),true);
 
     dirichletCounter_ = tpetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
@@ -320,7 +315,7 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 template<typename TRAITS,typename LO,typename GO,typename NodeT> 
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */, 
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -329,16 +324,10 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-
-    if (checkApplyBC_)
-      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].dimension(1);
+  num_nodes = scatterFields_[0].extent(1);
 }
 
 // **********************************************************************
@@ -347,11 +336,11 @@ void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,
 preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
-  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
 
   if(tpetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
     tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -359,7 +348,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<LOC> tpetraContainer 
-          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
+          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject("Dirichlet Counter"),true);
 
     dirichletCounter_ = tpetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
@@ -370,14 +359,14 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
   // this is the list of parameters and their names that this scatter has to account for
   std::vector<std::string> activeParameters =
-    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
+    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc->getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
   // ETP 02/03/16:  This code needs to be updated to properly handle scatterIC_
   TEUCHOS_ASSERT(!scatterIC_);
   dfdp_vectors_.clear();
   for(std::size_t i=0;i<activeParameters.size();i++) {
     RCP<typename LOC::VectorType> vec =
-      rcp_dynamic_cast<LOC>(d.gedc.getDataObject(activeParameters[i]),true)->get_f();
+      rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f();
     Teuchos::ArrayRCP<double> vec_array = vec->get1dViewNonConst();
     dfdp_vectors_.push_back(vec_array);
   }
@@ -548,7 +537,7 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 template<typename TRAITS,typename LO,typename GO,typename NodeT> 
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -556,16 +545,10 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-
-    if (checkApplyBC_)
-      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].dimension(1);
+  num_nodes = scatterFields_[0].extent(1);
   num_eq = scatterFields_.size();
 }
 
@@ -575,11 +558,11 @@ void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO
 preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
-  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
 
   if(tpetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
     tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -587,7 +570,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<LOC> tpetraContainer 
-          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
+          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject("Dirichlet Counter"),true);
 
     dirichletCounter_ = tpetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
@@ -621,7 +604,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
       globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-      const std::vector<LO> & LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {

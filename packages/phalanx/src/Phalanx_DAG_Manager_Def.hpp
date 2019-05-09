@@ -73,10 +73,11 @@ DagManager(const std::string& evaluation_type_name) :
   evaluation_type_name_(evaluation_type_name),
   sorting_called_(false),
 #ifdef PHX_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD
-  allow_multiple_evaluators_for_same_field_(true)
+  allow_multiple_evaluators_for_same_field_(true),
 #else
-  allow_multiple_evaluators_for_same_field_(false)
+  allow_multiple_evaluators_for_same_field_(false),
 #endif
+  build_device_dag_(false)
 { }
 
 //=======================================================================
@@ -106,7 +107,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
   // Add counter to name so that all timers have unique names
   static int count=0;
   std::stringstream uniqueName;
-  uniqueName << "Phalanx: Evaluator " << count++ <<": ";
+  uniqueName << "Phalanx: Evaluator " << count++ <<": [" << evaluation_type_name_ << "] ";
   evalTimers.push_back(
      Teuchos::TimeMonitor::getNewTimer(uniqueName.str() + p->getName()));
 #endif
@@ -166,7 +167,7 @@ void PHX::DagManager<Traits>::
 sortAndOrderEvaluators()
 {
 #ifdef PHX_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Phalanx::SortAndOrderEvaluatorsNew"));
+  Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Phalanx::SortAndOrderEvaluators"));
 #endif
   
   // *************************
@@ -179,8 +180,8 @@ sortAndOrderEvaluators()
 
   // *************************
   // Insert contributed fields into the field_to_node_index_ if there
-  // is no evalautor already assigned. Here we support two cases - (1)
-  // there is an evalautor that "evalautes" the field and is already
+  // is no evaluator already assigned. Here we support two cases - (1)
+  // there is an evaluator that "evalautes" the field and is already
   // assigned but other evaluators declared as "contributor" for the
   // same field are present and (2) there no evaluators that
   // "evaluate" the field, only "contributors". In the second case, we
@@ -258,8 +259,7 @@ sortAndOrderEvaluators()
     }
   }
 
-
-  this->createEvalautorBindingFieldMap();
+  this->createEvaluatorBindingFieldMap();
 
   sorting_called_ = true;
 }
@@ -327,11 +327,11 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
       }
     }
     
-    // For "contributed" fields, if an evalautor exists that also
-    // "evalautes" this field, then we assume that the evalautor that
+    // For "contributed" fields, if an evaluator exists that also
+    // "evalautes" this field, then we assume that the evaluator that
     // "evalautes" the field performs the initialization of the field
     // for the contributions. So the contributed fields must have a
-    // dependency on the evalauted field evalautor.
+    // dependency on the evalauted field evaluator.
     const auto& contrib_fields = node.get()->contributedFields(); 
     for (const auto& cfield : contrib_fields) {
       const auto& evaluated_field_search = field_to_node_index_.find(cfield->identifier());
@@ -410,11 +410,19 @@ printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const
 template<typename Traits>
 void PHX::DagManager<Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& vm)
+		      PHX::FieldManager<Traits>& vm,
+                      const bool& buildDeviceDAG)
 {
   // Call each evaluators' post registration setup
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
     nodes_[topoSortEvalIndex[n]].getNonConst()->postRegistrationSetup(d,vm);
+
+  build_device_dag_ = buildDeviceDAG;
+  if (build_device_dag_) {
+    device_evaluators_ = Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device>("device_evaluators_",topoSortEvalIndex.size());
+    for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
+      device_evaluators_(n).ptr = nodes_[topoSortEvalIndex[n]].getNonConst()->createDeviceEvaluator();
+  }
 }
 
 //=======================================================================
@@ -423,18 +431,91 @@ void PHX::DagManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
-
+    
 #ifdef PHX_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor Time(*evalTimers[topoSortEvalIndex[n]]);
 #endif
 
+#ifdef PHX_DEBUG
+    if (nonnull(start_stop_debug_ostream_)) {
+      *start_stop_debug_ostream_ << "Phalanx::DagManager: Starting node: "
+                                 << nodes_[topoSortEvalIndex[n]].getNonConst()->getName()
+                                 << std::endl;
+    }
+#endif
+    
     using clock = std::chrono::steady_clock;
     std::chrono::time_point<clock> start = clock::now();
-
+      
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
-
+    
     nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);
+
+#ifdef PHX_DEBUG
+    if (nonnull(start_stop_debug_ostream_)) {
+      *start_stop_debug_ostream_ << "Phalanx::DagManager: Completed node: "
+                                 << nodes_[topoSortEvalIndex[n]].getNonConst()->getName()
+                                 << std::endl;
+    }
+#endif
+
   }
+}
+
+//=======================================================================
+// Functor for Device DAG support
+namespace PHX {
+
+  template<typename Traits>
+  struct RunDeviceDag {
+
+    Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device> evaluators_;
+
+    // The EvalData may be pass by reference. Remove the reference so
+    // that we copy by value to device.
+    const typename std::remove_reference<typename Traits::EvalData>::type data_;
+    
+    RunDeviceDag(const Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device>& evaluators,
+                 typename Traits::EvalData data) :
+      evaluators_(evaluators),
+      data_(data) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    {
+      const int num_evaluators = static_cast<int>(evaluators_.extent(0));
+      for (int e=0; e < num_evaluators; ++e) {
+        evaluators_(e).ptr->prepareForRecompute(team,data_);
+        evaluators_(e).ptr->evaluate(team,data_);
+	team.team_barrier();
+      }
+    }
+   
+  };
+  
+}
+
+//=======================================================================
+template<typename Traits>
+void PHX::DagManager<Traits>::
+evaluateFieldsDeviceDag(const int& work_size,
+			const int& team_size,
+			const int& vector_size,
+                        typename Traits::EvalData d)
+{
+  TEUCHOS_ASSERT(build_device_dag_);
+  //! The parallel_for kernel launch below will not compile on CUDA
+  //! unless relocatable device code (RDC) is enabled for the nvcc
+  //! compiler. We also want to build and run phalanx without Device
+  //! DAG support on CUDA (i.e. RDC off), so this ifdef will hide the
+  //! RDC required code.
+#if defined(PHX_ENABLE_DEVICE_DAG)
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(work_size,team_size,vector_size),
+                       PHX::RunDeviceDag<Traits>(device_evaluators_,d));
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+    "ERROR: PHX::DagManger::evalauteFieldsDeviceDAG() is experimental and must be enabled at configure time with Phalanx_ENABLE_DEVICE_DAG=ON.");
+#endif
 }
 
 //=======================================================================
@@ -623,11 +704,11 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
       }
     }
 
-    // For "contributed" fields, if an evalautor exists that also
-    // "evalautes" this field, then we assume that the evalautor that
+    // For "contributed" fields, if an evaluator exists that also
+    // "evalautes" this field, then we assume that the evaluator that
     // "evalautes" the field performs the initialization of the field
     // for the contributions. So the contributed fields must have a
-    // dependency on the evalauted field evalautor.
+    // dependency on the evalauted field evaluator.
     const auto& contrib_fields = node.get()->contributedFields(); 
     for (const auto& cfield : contrib_fields) {
       const auto& evaluated_field_search = field_to_node_index_.find(cfield->identifier());
@@ -800,7 +881,16 @@ PHX::DagManager<Traits>::getEvaluatorsBindingField(const PHX::FieldTag& ft)
 
 //=======================================================================
 template<typename Traits>
-void PHX::DagManager<Traits>::createEvalautorBindingFieldMap()
+void
+PHX::DagManager<Traits>::
+printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
+{
+  start_stop_debug_ostream_ = ostr;
+}
+
+//=======================================================================
+template<typename Traits>
+void PHX::DagManager<Traits>::createEvaluatorBindingFieldMap()
 {
   field_to_evaluators_binding_.clear();
   

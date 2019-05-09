@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2008 National Technology & Engineering Solutions
+ * Copyright(C) 2008-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -37,36 +37,36 @@
  */
 
 /*
-*     DESCRIPTION:
-*     This routine defines various operating environment parameters. A
-*     character ID is supplied for both the processor hardware type and
-*     the operating system. The job processing mode, batch or
-*     interactive, is identified; for this purpose an interactive job
-*     is defined as one where the standard input device is attended by
-*     the user who can respond to unforseen events. The number of
-*     character storage units and the number of numeric storage units
-*     in the smallest block of storage which contains an integral
-*     number of each are defined here. This routine further defines
-*     whether the record length of a direct access unformatted file is
-*     counted in character or numeric storage units.
-*
-*     This skeleton version returns blank strings for hardware and
-*     software IDs, zero to indicate batch mode, and unity for all
-*     other values.
-*
-*     FORMAL PARAMETERS:
-*     HARD      CHARACTER       System Hardware ID
-*     SOFT      CHARACTER       System Software ID
-*     MODE      INTEGER         Job Mode ( 0=batch , 1=interactive )
-*     KCSU      INTEGER         Number of Character Storage Units
-*     KNSU      INTEGER         Number of Numeric Storage Units
-*     IDAU      INTEGER         Unformatted Direct Access Units:
-*                                  0 = Character Storage Units
-*                                  1 = Numeric Storage Units
-*
-************************************************************************
-*
-*/
+ *     DESCRIPTION:
+ *     This routine defines various operating environment parameters. A
+ *     character ID is supplied for both the processor hardware type and
+ *     the operating system. The job processing mode, batch or
+ *     interactive, is identified; for this purpose an interactive job
+ *     is defined as one where the standard input device is attended by
+ *     the user who can respond to unforseen events. The number of
+ *     character storage units and the number of numeric storage units
+ *     in the smallest block of storage which contains an integral
+ *     number of each are defined here. This routine further defines
+ *     whether the record length of a direct access unformatted file is
+ *     counted in character or numeric storage units.
+ *
+ *     This skeleton version returns blank strings for hardware and
+ *     software IDs, zero to indicate batch mode, and unity for all
+ *     other values.
+ *
+ *     FORMAL PARAMETERS:
+ *     HARD      CHARACTER       System Hardware ID
+ *     SOFT      CHARACTER       System Software ID
+ *     MODE      INTEGER         Job Mode ( 0=batch , 1=interactive )
+ *     KCSU      INTEGER         Number of Character Storage Units
+ *     KNSU      INTEGER         Number of Numeric Storage Units
+ *     IDAU      INTEGER         Unformatted Direct Access Units:
+ *                                  0 = Character Storage Units
+ *                                  1 = Numeric Storage Units
+ *
+ ************************************************************************
+ *
+ */
 
 #include "fortranc.h"
 #include <string.h>
@@ -78,9 +78,19 @@
 #endif
 #include <stdio.h> /* sprintf */
 
+static char *copy_string(char *dest, char const *source, long int elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
+}
+
 #define MAXCHAR 80
 #define WORDLEN 8 /* Note that we *FORCE* the Fortran string */
-                  /* length be 8 for the strings hard and soft. */
+                  /* length be 8 plus 1 for trailing null for the strings hard and soft. */
 #if defined(ADDC_)
 void exparm_(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FTNINT *idau,
              FTNINT hlen, FTNINT slen)
@@ -104,8 +114,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "SGI-%.4s", SysInfo.machine);
   sprintf(softname, "%.8s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif /* Silicon Graphics */
 /********************************************************************/
@@ -124,8 +134,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "IBM %.4s", SysInfo.machine);
   sprintf(softname, "%03s %.4s", SysInfo.sysname, SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif /* IBM */
 /********************************************************************/
@@ -144,8 +154,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "HP  %.4s", SysInfo.machine);
   sprintf(softname, "HP-UX%.3s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif /* HPUX */
 /********************************************************************/
@@ -164,16 +174,15 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "i860 GP ");
   sprintf(softname, "OSF %.2s.%.1s", SysInfo.version, SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif
 /********************************************************************/
 #if defined(pumagon) || defined(p6)
 
-  struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char hardname[MAXCHAR];
+  char softname[MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* 860 has 32 bit words */
@@ -182,16 +191,15 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "i860 GP ");
   sprintf(softname, "SUNMOS  ");
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif
 /********************************************************************/
 #if defined(p6)
 
-  struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char hardname[MAXCHAR];
+  char softname[MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* P6 has 32 bit words */
@@ -200,15 +208,14 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "P6      ");
   sprintf(softname, "Solari  ");
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 #endif
 /********************************************************************/
 #if defined(cougar)
 
-  struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char hardname[MAXCHAR];
+  char softname[MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* p6 has 32 bit words */
@@ -217,8 +224,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "PentPro ");
   sprintf(softname, "COUGAR  ");
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif
 /********************************************************************/
@@ -237,8 +244,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "%.8s", SysInfo.machine);
   sprintf(softname, "%.4s%.4s", SysInfo.sysname, SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif
 /********************************************************************/
@@ -258,12 +265,11 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "%.8s", SysInfo.machine);
   sprintf(softname, "SunOS%.3s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #else
 
-  char  hardname[MAXCHAR];
   char  softname[MAXCHAR];
   char *darg;
   FILE *pipe;
@@ -273,9 +279,9 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   *knsu = 1; /* Ditto */
 
 #if defined(sparc)
-  strncpy(hard, "Sun4", strlen("Sun4"));
+  copy_string(hard, "Sun4", strlen("Sun4"));
 #else  /* Then assume it's a SUN 3 */
-  strncpy(hard, "Sun3", strlen("Sun3"));
+  copy_string(hard, "Sun3", strlen("Sun3"));
 #endif /* sparc */
 
   if ((darg = (char *)fgets(
@@ -305,7 +311,7 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 #endif /* SYSV || SVR4 (Solaris 2.X) */
 #endif
 
-/********************************************************************/
+  /********************************************************************/
 
 #if defined(__NO_CYGWIN_OPTION__)
   SYSTEM_INFO   SysInfo;
@@ -332,8 +338,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   else {
     sprintf(softname, "Unknown OS");
   }
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 /* cygwin native */
 /********************************************************************/
@@ -351,8 +357,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "%.8s", SysInfo.machine);
   sprintf(softname, "CW%.6s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif
 /********************************************************************/
@@ -370,8 +376,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "%.8s", SysInfo.machine);
   sprintf(softname, "OSX%.5s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif /* Darwin (Power Macintosh)*/
 
@@ -390,8 +396,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "%.8s", SysInfo.machine);
   sprintf(softname, "Lx%.6s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif /* Linux, Interix */
   /********************************************************************/

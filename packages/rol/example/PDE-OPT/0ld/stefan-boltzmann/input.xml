@@ -11,8 +11,8 @@
   <ParameterList name="SOL">
     <Parameter name="Stochastic Component Type" type="string" value="Risk Averse" />
     <ParameterList name="Risk Measure">
-      <Parameter name="Name" type="string" value="Mixed-Quantile Quadrangle" />
-      <ParameterList name="Mixed-Quantile Quadrangle">
+      <Parameter name="Name" type="string" value="Mixed CVaR" />
+      <ParameterList name="Mixed CVaR">
         <Parameter name="Probability Array"   type="string" value="{ 0.1, 0.5, 0.9 }" />
         <Parameter name="Coefficient Array"   type="string" value="{ 0.2, 0.3, 0.5 }" />
         <Parameter name="Smoothing Parameter" type="double" value="1.e-2" />

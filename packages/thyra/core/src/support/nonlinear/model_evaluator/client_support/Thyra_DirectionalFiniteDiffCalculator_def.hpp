@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -94,7 +94,7 @@ public:
     const SelectedDerivatives &fdDerivatives
     )
     {
-      
+
       typedef ModelEvaluatorBase MEB;
 
       const MEB::OutArgs<Scalar> wrappedOutArgs = model.createOutArgs();
@@ -128,7 +128,7 @@ public:
       }
 
       // Add support for finite difference DgDp(j,l) if asked
-      
+
       const SelectedDerivatives::supports_DgDp_t
         &supports_DgDp = fdDerivatives.supports_DgDp_;
       for(
@@ -160,6 +160,9 @@ private:
         << ", the space p_space("<<l<<") must be in-core so that they can"
         " act as the domain space for the multi-vector derivative!"
         );
+#else
+      (void)model;
+      (void)l;
 #endif
     }
 
@@ -188,8 +191,8 @@ const RCP<
 >&
 DirectionalFiniteDiffCalculator<Scalar>::fdMethodValidator()
 {
-  static RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDMethodType> > 
-    loc_fdMethodValidator 
+  static RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDMethodType> >
+    loc_fdMethodValidator
     = Teuchos::rcp(
       new Teuchos::StringToIntegralParameterEntryValidator<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDMethodType>(
         Teuchos::tuple<std::string>(
@@ -423,7 +426,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   THYRA_FUNC_TIME_MONITOR(
     string("Thyra::DirectionalFiniteDiffCalculator<")+ST::name()+">::calcVariations(...)"
     );
-  
+
   using std::setw;
   using std::endl;
   using std::right;
@@ -431,7 +434,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   typedef ModelEvaluatorBase MEB;
   namespace DFDCT = DirectionalFiniteDiffCalculatorTypes;
   typedef RCP<VectorBase<Scalar> > VectorPtr;
-  
+
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool trace = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM));
@@ -453,29 +456,29 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
     "Error, all of the variations can not be null!"
     );
 #endif
-  
+
   //
   // To illustrate the theory behind this implementation consider
   // the generic multi-variable function h(z) <: R^n -> R.  Now let's
   // consider we have the base point zo and the vector v to
   // perturb h(z) along.  First form the function h(zo+a*v) and then
   // let's compute d(h)/d(a) at a = 0:
-  // 
+  //
   // (1) d(h(zo+a*v))/d(a) at a = 0
   //         = sum( d(h)/d(x(i)) * d(x(i))/d(a), i = 1...n)
   //         = sum( d(h)/d(x(i)) * v(i), i = 1...n)
   //         = d(h)/d(a) * v
   //
   // Now we can approximate (1) using, for example, central differences as:
-  // 
+  //
   // (2) d(h(zo+a*v))/d(a) at a = 0
   //          \approx ( h(zo+h*v) - h(zo+h*v) ) / (2*h)
   //
   // If we equate (1) and (2) we have the approximation:
-  // 
+  //
   // (3) d(h)/d(a) * v \approx ( h(zo+h*v) - g(zo+h*v) ) / (2*h)
-  // 
-  // 
+  //
+  //
 
   // /////////////////////////////////////////
   // Validate the input
@@ -524,7 +527,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   ScalarMag
     bp_norm = SMT::zero();
   // ToDo above: compute a reasonable norm somehow based on the base-point vector(s)!
-  
+
   ScalarMag
     uh_opt = 0.0;
   switch(this->fd_method_type()) {
@@ -572,7 +575,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   //
   // ToDo: Consider cramped bounds and method order.
   //
-  
+
   DFDCT::EFDMethodType l_fd_method_type = this->fd_method_type();
   switch(l_fd_method_type) {
     case DFDCT::FD_ORDER_TWO_AUTO:
@@ -595,7 +598,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   // Compute the directional derivatives
 
   const int Np = var.Np(), Ng = var.Ng();
-  
+
   // Setup storage for perturbed variables
   VectorPtr per_x, per_x_dot, per_x_dot_dot;
   std::vector<VectorPtr> per_p(Np);
@@ -627,9 +630,9 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   }
   if(out.get() && trace)
     *out
-      << "\nperturbedPoint after initial setup (with some unintialized vectors) =\n"
+      << "\nperturbedPoint after initial setup (with some uninitialized vectors) =\n"
       << describe(pp,verbLevel);
-  
+
   // Setup storage for perturbed functions
   bool all_funcs_at_base_computed = true;
   MEB::OutArgs<Scalar> pfunc = model.createOutArgs();
@@ -651,17 +654,17 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   }
   if(out.get() && trace)
     *out
-      << "\nperturbedFunctions after initial setup (with some unintialized vectors) =\n"
+      << "\nperturbedFunctions after initial setup (with some uninitialized vectors) =\n"
       << describe(pfunc,verbLevel);
-  
+
   const int dbl_p = 15;
   if(out.get())
     *out << std::setprecision(dbl_p);
-    
+
   //
   // Compute the weighted sum of the terms
   //
-    
+
   int num_evals = 0;
   ScalarMag dwgt = SMT::zero();
   switch(l_fd_method_type) {
@@ -793,7 +796,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
     if(out.get() && trace)
       *out << "\neval_i="<<eval_i<<", uh_i="<<uh_i<<", wgt_i="<<wgt_i<<"\n";
     Teuchos::OSTab tab2(out);
-    
+
     // Compute the weighted term and add it to the sum
     if(uh_i == ST::zero()) {
       MEB::OutArgs<Scalar> bfuncall;
@@ -874,7 +877,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   //
   // Multiply by the scaling factor!
   //
-  
+
   {
     // var_h *= 1.0/(dwgt*uh)
     const Scalar alpha = ST::one()/(dwgt*uh);
@@ -893,13 +896,13 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
     if(out.get() && trace)
       *out << "\nFinal variations=\n" << describe(var,verbLevel);
   }
-  
+
   if(out.get())
     *out << std::setprecision(p_saved);
 
   if(out.get() && trace)
     *out << "\nLeaving DirectionalFiniteDiffCalculator<Scalar>::calcVariations(...)\n";
-  
+
 }
 
 
@@ -936,7 +939,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
       << "\nbasePoint=\n" << describe(bp,verbLevel)
       << "\nbaseFunctionValues=\n" << describe(bfunc,verbLevel)
       << "\nderivatives=\n" << describe(deriv,Teuchos::VERB_LOW);
-  
+
   //
   // We will only compute finite differences w.r.t. p(l) for now
   //
@@ -1024,11 +1027,11 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
       dir.set_p(l,Teuchos::null);
     }
   }
-    
+
   if(out.get() && trace)
     *out
       << "\nderivatives=\n" << describe(deriv,verbLevel);
-  
+
   if(out.get() && trace)
     *out << "\nLeaving DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(...)\n";
 

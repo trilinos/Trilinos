@@ -45,7 +45,7 @@
 
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
@@ -78,7 +78,6 @@
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType, GlobalOrdinalType, ScalarType, NodeType )
 {
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createNonContigMapWithNode;
   using Tpetra::global_size_t;
   using Tpetra::Map;
   using Teuchos::Array;
@@ -135,7 +134,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
   const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
 
   // Get the default communicator.
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int numProcs = comm->getSize ();
   const int myRank = comm->getRank ();
 

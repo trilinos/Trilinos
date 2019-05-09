@@ -45,7 +45,7 @@
 #define ROL_DIRAC_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -57,7 +57,7 @@ private:
 public: 
   Dirac(const Real data = 0.) : data_(data) {}
 
-  Dirac(Teuchos::ParameterList &parlist) {
+  Dirac(ROL::ParameterList &parlist) {
     data_ = parlist.sublist("SOL").sublist("Distribution").sublist("Dirac").get("Location",0.);
   }
 

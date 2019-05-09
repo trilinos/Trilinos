@@ -1,0 +1,25 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="small_sym_sing.mtx"/>
+  <Parameter name="rhs_mm_file" type="string" value="consist_rhs.vec"/>
+  <Parameter name="nullMvec_mm_file" type="string" value="small_null.vec"/>
+
+  <Parameter name="solver_type" type="string" value="BlockCG"/>
+  <ParameterList name="Belos">
+    <Parameter name="Block Size" type="int" value="1"/>
+    <Parameter name="Convergence Tolerance" type="double" value=".0001"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Maximum Iterations" type="int" value="4"/>
+    <Parameter name="Orthogonalization" type="string" value="ICGS"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="FAST_ILU"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="level" type="int" value="1"/>
+    <Parameter name="damping factor" type="double" value="0.9"/>
+    <Parameter name="triangular solve iterations" type="int" value="5"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="4"/>
+</ParameterList>

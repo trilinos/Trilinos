@@ -192,3 +192,15 @@ TEUCHOS_UNIT_TEST(FieldTag,ConstCorrectness)
   // warning message
   //Tag<int> d(nonconst_a); // create int tag from double
 }
+
+TEUCHOS_UNIT_TEST(FieldTag,EmptyCtor)
+{
+  using namespace PHX;
+
+  Tag<double> empty_tag;
+  TEST_THROW(empty_tag.dataLayout(),std::logic_error);
+  TEST_EQUALITY(empty_tag.name(),std::string("TAG_NAME_NOT_SET"));
+
+  const Tag<double> const_empty_tag;
+  TEST_THROW(const_empty_tag.dataLayout(),std::logic_error);
+}

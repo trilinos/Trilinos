@@ -53,16 +53,16 @@ namespace ROL {
 template <class Real>
 class SimulatedConstraint : public Constraint<Real> {
 private:
-  const Teuchos::RCP<SampleGenerator<Real> > sampler_;
-  const Teuchos::RCP<Constraint_SimOpt<Real> > pcon_;
+  const ROL::Ptr<SampleGenerator<Real> > sampler_;
+  const ROL::Ptr<Constraint_SimOpt<Real> > pcon_;
   const bool useWeights_;
 
 public:
 
   virtual ~SimulatedConstraint() {}
 
-  SimulatedConstraint(const Teuchos::RCP<SampleGenerator<Real> > & sampler,
-                              const Teuchos::RCP<Constraint_SimOpt<Real> > & pcon,
+  SimulatedConstraint(const ROL::Ptr<SampleGenerator<Real> > & sampler,
+                              const ROL::Ptr<Constraint_SimOpt<Real> > & pcon,
                               const bool useWeights = true)
     : sampler_(sampler), pcon_(pcon), useWeights_(useWeights) {}
 
@@ -72,16 +72,16 @@ public:
              const Vector<Real> &x,
              Real &tol) {
     c.zero();
-    SimulatedVector<Real> &pc = Teuchos::dyn_cast<SimulatedVector<Real> >(c);
-    const Vector_SimOpt<Real> &uz = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(x);
-    Teuchos::RCP<const Vector<Real> > uptr = uz.get_1();
-    Teuchos::RCP<const Vector<Real> > zptr = uz.get_2();
+    SimulatedVector<Real> &pc = dynamic_cast<SimulatedVector<Real>&>(c);
+    const Vector_SimOpt<Real> &uz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    ROL::Ptr<const Vector<Real> > uptr = uz.get_1();
+    ROL::Ptr<const Vector<Real> > zptr = uz.get_2();
     try {
-      const RiskVector<Real> &rz = Teuchos::dyn_cast<const RiskVector<Real> >(*zptr);
+      const RiskVector<Real> &rz = dynamic_cast<const RiskVector<Real>&>(*zptr);
       zptr = rz.getVector();
     }
     catch (const std::bad_cast &e) {}
-    const SimulatedVector<Real> &pu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*uptr);
+    const SimulatedVector<Real> &pu = dynamic_cast<const SimulatedVector<Real>&>(*uptr);
 
     std::vector<Real> param;
     Real weight(0), one(1);
@@ -104,27 +104,27 @@ public:
                              Real &tol) {
     jv.zero();
     // cast jv
-    SimulatedVector<Real> &pjv = Teuchos::dyn_cast<SimulatedVector<Real> >(jv);
+    SimulatedVector<Real> &pjv = dynamic_cast<SimulatedVector<Real>&>(jv);
     // split x
-    const Vector_SimOpt<Real> &xuz = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(x);
-    Teuchos::RCP<const Vector<Real> > xuptr = xuz.get_1();
-    Teuchos::RCP<const Vector<Real> > xzptr = xuz.get_2();
+    const Vector_SimOpt<Real> &xuz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    ROL::Ptr<const Vector<Real> > xuptr = xuz.get_1();
+    ROL::Ptr<const Vector<Real> > xzptr = xuz.get_2();
     try {
-      const RiskVector<Real> &rxz = Teuchos::dyn_cast<const RiskVector<Real> >(*xzptr);
+      const RiskVector<Real> &rxz = dynamic_cast<const RiskVector<Real>&>(*xzptr);
       xzptr = rxz.getVector();
     }
     catch (const std::bad_cast &e) {}
-    const SimulatedVector<Real> &pxu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*xuptr);
+    const SimulatedVector<Real> &pxu = dynamic_cast<const SimulatedVector<Real>&>(*xuptr);
     // split v
-    const Vector_SimOpt<Real> &vuz = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(v);
-    Teuchos::RCP<const Vector<Real> > vuptr = vuz.get_1();
-    Teuchos::RCP<const Vector<Real> > vzptr = vuz.get_2();
+    const Vector_SimOpt<Real> &vuz = dynamic_cast<const Vector_SimOpt<Real>&>(v);
+    ROL::Ptr<const Vector<Real> > vuptr = vuz.get_1();
+    ROL::Ptr<const Vector<Real> > vzptr = vuz.get_2();
     try {
-      const RiskVector<Real> &rvz = Teuchos::dyn_cast<const RiskVector<Real> >(*vzptr);
+      const RiskVector<Real> &rvz = dynamic_cast<const RiskVector<Real>&>(*vzptr);
       vzptr = rvz.getVector();
     }
     catch (const std::bad_cast &e) {}
-    const SimulatedVector<Real> &pvu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*vuptr);
+    const SimulatedVector<Real> &pvu = dynamic_cast<const SimulatedVector<Real>&>(*vuptr);
 
     std::vector<Real> param;
     Real weight(0), one(1);
@@ -132,8 +132,8 @@ public:
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pcon_->setParameter(param);
-      Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
-      Vector_SimOpt<Real> vi(Teuchos::rcp_const_cast<Vector<Real> >(pvu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(vzptr));
+      Vector_SimOpt<Real> xi(ROL::constPtrCast<Vector<Real> >(pxu.get(i)), ROL::constPtrCast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> vi(ROL::constPtrCast<Vector<Real> >(pvu.get(i)), ROL::constPtrCast<Vector<Real> >(vzptr));
       pcon_->update(xi);
       pcon_->applyJacobian(*(pjv.get(i)), vi, xi, tol);
       weight = (useWeights_) ? weight : one;
@@ -148,37 +148,37 @@ public:
                                     Real &tol) {
     ajv.zero();
     // split ajv
-    Vector_SimOpt<Real> &ajvuz = Teuchos::dyn_cast<Vector_SimOpt<Real> >(ajv);
-    Teuchos::RCP<Vector<Real> > ajvuptr = ajvuz.get_1();
-    Teuchos::RCP<Vector<Real> > ajvzptr = ajvuz.get_2();
+    Vector_SimOpt<Real> &ajvuz = dynamic_cast<Vector_SimOpt<Real>&>(ajv);
+    ROL::Ptr<Vector<Real> > ajvuptr = ajvuz.get_1();
+    ROL::Ptr<Vector<Real> > ajvzptr = ajvuz.get_2();
     try {
-      RiskVector<Real> &rajvz = Teuchos::dyn_cast<RiskVector<Real> >(*ajvzptr);
+      RiskVector<Real> &rajvz = dynamic_cast<RiskVector<Real>&>(*ajvzptr);
       ajvzptr = rajvz.getVector();
     }
     catch (const std::bad_cast &e) {}
-    SimulatedVector<Real> &pajvu = Teuchos::dyn_cast<SimulatedVector<Real> >(*ajvuptr);
+    SimulatedVector<Real> &pajvu = dynamic_cast<SimulatedVector<Real>&>(*ajvuptr);
     // split x
-    const Vector_SimOpt<Real> &xuz = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(x);
-    Teuchos::RCP<const Vector<Real> > xuptr = xuz.get_1();
-    Teuchos::RCP<const Vector<Real> > xzptr = xuz.get_2();
+    const Vector_SimOpt<Real> &xuz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    ROL::Ptr<const Vector<Real> > xuptr = xuz.get_1();
+    ROL::Ptr<const Vector<Real> > xzptr = xuz.get_2();
     try {
-      const RiskVector<Real> &rxz = Teuchos::dyn_cast<const RiskVector<Real> >(*xzptr);
+      const RiskVector<Real> &rxz = dynamic_cast<const RiskVector<Real>&>(*xzptr);
       xzptr = rxz.getVector();
     }
     catch (const std::bad_cast &e) {}
-    const SimulatedVector<Real> &pxu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*xuptr);
+    const SimulatedVector<Real> &pxu = dynamic_cast<const SimulatedVector<Real>&>(*xuptr);
     // cast v
-    const SimulatedVector<Real> &pv = Teuchos::dyn_cast<const SimulatedVector<Real> >(v);
+    const SimulatedVector<Real> &pv = dynamic_cast<const SimulatedVector<Real>&>(v);
 
     std::vector<Real> param;
     Real weight(0), one(1);
-    Teuchos::RCP<Vector<Real> > tmp1 = ajvzptr->clone();
-    Teuchos::RCP<Vector<Real> > tmp2 = ajvzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp1 = ajvzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp2 = ajvzptr->clone();
     for (typename std::vector<SimulatedVector<Real> >::size_type i=0; i<pv.numVectors(); ++i) {
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pcon_->setParameter(param);
-      Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> xi(ROL::constPtrCast<Vector<Real> >(pxu.get(i)), ROL::constPtrCast<Vector<Real> >(xzptr));
       Vector_SimOpt<Real> ajvi(pajvu.get(i), tmp1);
       pcon_->update(xi);
       pcon_->applyAdjointJacobian(ajvi, *(pv.get(i)), xi, tol);
@@ -198,48 +198,48 @@ public:
                                    Real &tol) {
     ahuv.zero();
     // split ahuv
-    Vector_SimOpt<Real> &ahuvuz = Teuchos::dyn_cast<Vector_SimOpt<Real> >(ahuv);
-    Teuchos::RCP<Vector<Real> > ahuvuptr = ahuvuz.get_1();
-    Teuchos::RCP<Vector<Real> > ahuvzptr = ahuvuz.get_2();
+    Vector_SimOpt<Real> &ahuvuz = dynamic_cast<Vector_SimOpt<Real>&>(ahuv);
+    ROL::Ptr<Vector<Real> > ahuvuptr = ahuvuz.get_1();
+    ROL::Ptr<Vector<Real> > ahuvzptr = ahuvuz.get_2();
     try {
-      RiskVector<Real> &rahuvz = Teuchos::dyn_cast<RiskVector<Real> >(*ahuvzptr);
+      RiskVector<Real> &rahuvz = dynamic_cast<RiskVector<Real>&>(*ahuvzptr);
       ahuvzptr = rahuvz.getVector();
     }
     catch (const std::bad_cast &e) {}
-    SimulatedVector<Real> &pahuvu = Teuchos::dyn_cast<SimulatedVector<Real> >(*ahuvuptr);
+    SimulatedVector<Real> &pahuvu = dynamic_cast<SimulatedVector<Real>&>(*ahuvuptr);
     // cast u
-    const SimulatedVector<Real> &pu = Teuchos::dyn_cast<const SimulatedVector<Real> >(u);
+    const SimulatedVector<Real> &pu = dynamic_cast<const SimulatedVector<Real>&>(u);
     // split v
-    const Vector_SimOpt<Real> &vuz = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(v);
-    Teuchos::RCP<const Vector<Real> > vuptr = vuz.get_1();
-    Teuchos::RCP<const Vector<Real> > vzptr = vuz.get_2();
+    const Vector_SimOpt<Real> &vuz = dynamic_cast<const Vector_SimOpt<Real>&>(v);
+    ROL::Ptr<const Vector<Real> > vuptr = vuz.get_1();
+    ROL::Ptr<const Vector<Real> > vzptr = vuz.get_2();
     try {
-      const RiskVector<Real> &rvz = Teuchos::dyn_cast<const RiskVector<Real> >(*vzptr);
+      const RiskVector<Real> &rvz = dynamic_cast<const RiskVector<Real>&>(*vzptr);
       vzptr = rvz.getVector();
     }
     catch (const std::bad_cast &e) {}
-    const SimulatedVector<Real> &pvu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*vuptr);
+    const SimulatedVector<Real> &pvu = dynamic_cast<const SimulatedVector<Real>&>(*vuptr);
     // split x
-    const Vector_SimOpt<Real> &xuz = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(x);
-    Teuchos::RCP<const Vector<Real> > xuptr = xuz.get_1();
-    Teuchos::RCP<const Vector<Real> > xzptr = xuz.get_2();
+    const Vector_SimOpt<Real> &xuz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    ROL::Ptr<const Vector<Real> > xuptr = xuz.get_1();
+    ROL::Ptr<const Vector<Real> > xzptr = xuz.get_2();
     try {
-      const RiskVector<Real> &rxz = Teuchos::dyn_cast<const RiskVector<Real> >(*xzptr);
+      const RiskVector<Real> &rxz = dynamic_cast<const RiskVector<Real>&>(*xzptr);
       xzptr = rxz.getVector();
     }
     catch (const std::bad_cast &e) {}
-    const SimulatedVector<Real> &pxu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*xuptr);
+    const SimulatedVector<Real> &pxu = dynamic_cast<const SimulatedVector<Real>&>(*xuptr);
 
     std::vector<Real> param;
     Real weight(0), one(1);
-    Teuchos::RCP<Vector<Real> > tmp1 = ahuvzptr->clone();
-    Teuchos::RCP<Vector<Real> > tmp2 = ahuvzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp1 = ahuvzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp2 = ahuvzptr->clone();
     for (typename std::vector<SimulatedVector<Real> >::size_type i=0; i<pxu.numVectors(); ++i) {
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pcon_->setParameter(param);
-      Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
-      Vector_SimOpt<Real> vi(Teuchos::rcp_const_cast<Vector<Real> >(pvu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(vzptr));
+      Vector_SimOpt<Real> xi(ROL::constPtrCast<Vector<Real> >(pxu.get(i)), ROL::constPtrCast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> vi(ROL::constPtrCast<Vector<Real> >(pvu.get(i)), ROL::constPtrCast<Vector<Real> >(vzptr));
       Vector_SimOpt<Real> ahuvi(pahuvu.get(i), tmp1);
       pcon_->update(xi);
       pcon_->applyAdjointHessian(ahuvi, *(pu.get(i)), vi, xi, tol);
@@ -258,29 +258,29 @@ public:
                                    Real &tol) {
     Pv.zero();
     // cast Pv
-    SimulatedVector<Real> &ppv = Teuchos::dyn_cast<SimulatedVector<Real> >(Pv);
+    SimulatedVector<Real> &ppv = dynamic_cast<SimulatedVector<Real>&>(Pv);
     // split x
-    const Vector_SimOpt<Real> &xuz = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(x);
-    Teuchos::RCP<const Vector<Real> > xuptr = xuz.get_1();
-    Teuchos::RCP<const Vector<Real> > xzptr = xuz.get_2();
+    const Vector_SimOpt<Real> &xuz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    ROL::Ptr<const Vector<Real> > xuptr = xuz.get_1();
+    ROL::Ptr<const Vector<Real> > xzptr = xuz.get_2();
     try {
-      const RiskVector<Real> &rxz = Teuchos::dyn_cast<const RiskVector<Real> >(*xzptr);
+      const RiskVector<Real> &rxz = dynamic_cast<const RiskVector<Real>&>(*xzptr);
       xzptr = rxz.getVector();
     }
     catch (const std::bad_cast &e) {}
-    const SimulatedVector<Real> &pxu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*xuptr);
+    const SimulatedVector<Real> &pxu = dynamic_cast<const SimulatedVector<Real>&>(*xuptr);
     // split g
-    const Vector_SimOpt<Real> &guz = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(g);
-    Teuchos::RCP<const Vector<Real> > guptr = guz.get_1();
-    Teuchos::RCP<const Vector<Real> > gzptr = guz.get_2();
+    const Vector_SimOpt<Real> &guz = dynamic_cast<const Vector_SimOpt<Real>&>(g);
+    ROL::Ptr<const Vector<Real> > guptr = guz.get_1();
+    ROL::Ptr<const Vector<Real> > gzptr = guz.get_2();
     try {
-      const RiskVector<Real> &rgz = Teuchos::dyn_cast<const RiskVector<Real> >(*gzptr);
+      const RiskVector<Real> &rgz = dynamic_cast<const RiskVector<Real>&>(*gzptr);
       gzptr = rgz.getVector();
     }
     catch (const std::bad_cast &e) {}
-    const SimulatedVector<Real> &pgu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*guptr);
+    const SimulatedVector<Real> &pgu = dynamic_cast<const SimulatedVector<Real>&>(*guptr);
     // cast v
-    const SimulatedVector<Real> &pv = Teuchos::dyn_cast<const SimulatedVector<Real> >(v);
+    const SimulatedVector<Real> &pv = dynamic_cast<const SimulatedVector<Real>&>(v);
 
     std::vector<Real> param;
     Real weight(0), one(1);
@@ -288,8 +288,8 @@ public:
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pcon_->setParameter(param);
-      Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
-      Vector_SimOpt<Real> gi(Teuchos::rcp_const_cast<Vector<Real> >(pgu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(gzptr));
+      Vector_SimOpt<Real> xi(ROL::constPtrCast<Vector<Real> >(pxu.get(i)), ROL::constPtrCast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> gi(ROL::constPtrCast<Vector<Real> >(pgu.get(i)), ROL::constPtrCast<Vector<Real> >(gzptr));
       pcon_->update(xi);
       pcon_->applyPreconditioner(*(ppv.get(i)), *(pv.get(i)), xi, gi, tol);
       weight = (useWeights_) ? weight : one;

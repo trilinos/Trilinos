@@ -1,0 +1,24 @@
+<ParameterList name="MueLu">
+
+  <ParameterList name="Factories">
+
+    <ParameterList name="myDirectSolver">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="RELAXATION"/>
+    </ParameterList>
+
+  </ParameterList>
+
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"                            type="int"      value="1"/>
+
+    <ParameterList name="All">
+      <Parameter name="startLevel"                          type="int"      value="0"/>
+
+      <Parameter name="CoarseSolver"                        type="string"   value="myDirectSolver"/>
+    </ParameterList>
+
+  </ParameterList>
+
+</ParameterList>

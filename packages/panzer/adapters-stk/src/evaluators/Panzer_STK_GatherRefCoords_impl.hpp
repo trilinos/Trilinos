@@ -74,16 +74,6 @@ GatherRefCoords(const Teuchos::RCP<const STK_Interface> & mesh,
 // **********************************************************************
 template<typename EvalT, typename Traits> 
 void panzer_stk::GatherRefCoords<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData /* d */, 
-		      PHX::FieldManager<Traits>& fm)
-{
-  // setup the field data object
-  this->utils.setFieldData(coordField_,fm);
-}
-
-// **********************************************************************
-template<typename EvalT, typename Traits> 
-void panzer_stk::GatherRefCoords<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    const std::vector<stk::mesh::Entity> & localElements = *mesh_->getElementsOrderedByLID();

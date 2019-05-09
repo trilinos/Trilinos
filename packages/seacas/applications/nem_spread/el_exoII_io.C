@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,6 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include "copy_string_cpp.h"
 #include "el_check_monot.h"    // for check_monot
 #include "el_elm.h"            // for HEXSHELL, NN_SIDE, etc
 #include "exodusII.h"          // for ex_inquire_int, etc
@@ -50,17 +51,11 @@
 #include <cstddef>             // for size_t
 #include <cstdio>              // for printf, fprintf, stderr
 #include <cstdlib>             // for exit, free
-#include <cstring>             // for strncpy, strrchr, strlen
+#include <cstring>             // for strrchr, strlen
 #include <iostream>            // for operator<<, cerr, ostream, etc
 #include <string>              // for string
 #include <vector>              // for vector
 template <typename T, typename INT> class Globals;
-
-#if __cplusplus > 199711L
-#define TOPTR(x) x.data()
-#else
-#define TOPTR(x) (x.empty() ? nullptr : &x[0])
-#endif
 
 #ifndef TRUE
 #define TRUE 1
@@ -288,14 +283,16 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   /* Check for a problem which has too many processors for a given mesh */
 
   if (globals.Num_Node / Proc_Info[0] < 1) {
-    fprintf(stderr, "%sERROR: Problem divided among too many "
-                    "processors.\n",
+    fprintf(stderr,
+            "%sERROR: Problem divided among too many "
+            "processors.\n",
             yo);
     exit(1);
   }
   else if (globals.Num_Elem / Proc_Info[0] < 1) {
-    fprintf(stderr, "%sERROR: Problem divided among too many "
-                    "processors.\n",
+    fprintf(stderr,
+            "%sERROR: Problem divided among too many "
+            "processors.\n",
             yo);
     exit(1);
   }
@@ -413,7 +410,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     Elem_Blk_Ids       = Num_Attr_Per_Elem + globals.Num_Elem_Blk;
     Elem_Blk_Types     = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
                                           MAX_STR_LENGTH + 1, sizeof(char));
-    Elem_Blk_Names = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
+    Elem_Blk_Names     = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
                                           max_name_length + 1, sizeof(char));
     Elem_Blk_Attr_Names =
         (char ***)array_alloc(__FILE__, __LINE__, 1, globals.Num_Elem_Blk, sizeof(char **));
@@ -508,7 +505,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
    *
    *        The following information is defined as the mesh information:
    *
-   *            1 - Coodinate values of global nodes
+   *            1 - Coordinate values of global nodes
    *            2 - Element connectivity graph
    *            3 - Attributes of the elements
    *            4 - Composition of Node Sets
@@ -567,14 +564,12 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     /* There is a path separator.  Get the portion after the
      * separator
      */
-    strncpy(cTemp, strrchr(Output_File_Base_Name, '/') + 1, 511);
-    cTemp[511] = '\0';
+    copy_string(cTemp, strrchr(Output_File_Base_Name, '/') + 1);
   }
   else {
 
     /* No separator; this is already just the basename... */
-    strncpy(cTemp, Output_File_Base_Name, 511);
-    cTemp[511] = '\0';
+    copy_string(cTemp, Output_File_Base_Name);
   }
 
   if (strlen(PIO_Info.Exo_Extension) == 0) {
@@ -1072,9 +1067,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
 
   for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
-    proc_elem_blk = (INT *)array_alloc(__FILE__, __LINE__, 1, globals.Num_Internal_Elems[iproc] +
-                                                                  globals.Num_Border_Elems[iproc],
-                                       sizeof(INT));
+    proc_elem_blk = (INT *)array_alloc(
+        __FILE__, __LINE__, 1, globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc],
+        sizeof(INT));
 
     /* Find out which element block each element in this processor belongs to.
      * Fill this information into the temporary vector, proc_elem_blk.  Also,
@@ -1213,7 +1208,6 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
   size_t ielem_count;
 #endif
   INT *  elem_blk             = nullptr, ipos;
-  int    error_flag           = 0;
   size_t num_elem_per_message = 0, num_attr_per_message = 0, num_attr_left_over = 0;
   size_t num_elem_messages = 0, num_attr_messages = 0, num_elem_left_over = 0;
 
@@ -1259,7 +1253,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
         (INT *)array_alloc(__FILE__, __LINE__, 1, iconnect_length, sizeof(INT));
 
 #ifdef DEBUG
-    for (size_t i                         = 0; i < iconnect_length; i++)
+    for (size_t i = 0; i < iconnect_length; i++)
       globals.Proc_Elem_Connect[iproc][i] = -1111111;
 #endif
 
@@ -1509,46 +1503,6 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
     }
     safe_free((void **)&global_ids);
   }
-#ifdef DEBUG
-  if (Debug_Flag > 6) {
-
-    for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
-      ipos = ielem_count = 0;
-      printf("\n\n\n");
-      print_line("=", 79);
-      printf("Printout of Element connectivity lists for proc %d\n", Proc_Ids[iproc]);
-      printf("\t Number of element blocks on the current processor = %d\n",
-             globals.Proc_Num_Elem_Blk[iproc]);
-      printf("\t\tLocal_block_ID globals.Proc_Num_Elem_In_Blk Nodes_Per_Elem_In_Blk\n");
-      printf("\t\t----------------------------------------------------\n");
-      for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++)
-        printf("\t\t\t %d   \t   %d \t\t   %d\n", i, globals.Proc_Num_Elem_In_Blk[iproc][i],
-               globals.Proc_Nodes_Per_Elem[iproc][i]);
-      printf("\t\t----------------------------------------------------\n");
-      print_line("-", 79);
-      for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++) {
-        printf("\n\n\tOutput of local Element block %d\n", i);
-        print_line("-", 79);
-        for (size_t j = 0; j < globals.Proc_Num_Elem_In_Blk[iproc][i]; j++) {
-          printf("\t elem: %d (%d), nodes:", ielem_count, globals.GElems[iproc][ielem_count]);
-          ielem_count++;
-          for (int k = 0; k < globals.Proc_Nodes_Per_Elem[iproc][i]; k++)
-            printf(" %d", globals.Proc_Elem_Connect[iproc][ipos++]);
-          printf("\n");
-        }
-        print_line("-", 79);
-      }
-      print_line("=", 79);
-    }
-  }
-#endif
-
-  if (error_flag != 0) {
-    fprintf(stderr, "read_elem_blk FAILURE: error flag was "
-                    "set in routine\n");
-    exit(1);
-  }
-
 } /* read_elem_blk */
 
 /*****************************************************************************/
@@ -1852,16 +1806,16 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
    *                              (Global int vector of length globals.Num_Elem_Blk)
    */
 
-  /* Boolean vector of length globals.Num_Elem_Blk If the ith
-     element block exists on the current processor, the ith entry
+  /* Boolean vector of length globals.Num_Elem_Blk If the i'th
+     element block exists on the current processor, the i'th entry
      is set to TRUE  */
   std::vector<int> elem_in_blk(globals.Num_Elem_Blk);
 
   /* Vector of integer offsets into the vector globals.GElems.
-     It has a length of globals.Num_Elem_Blk+1.  The ith entry
+     It has a length of globals.Num_Elem_Blk+1.  The i'th entry
      points to the beginning of of the element map information
-     for the first element in the ith element block.  The
-     (i+1)th entry points to the last element for the ith block
+     for the first element in the i'th element block.  The
+     (i+1)th entry points to the last element for the i'th block
      in the vector globals.GElem. */
   std::vector<INT> elem_blk_point(globals.Num_Elem_Blk + 1);
 
@@ -1906,8 +1860,9 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
       }
       if (!found) {
         fprintf(stderr, "find_elem_block: Error!:\n");
-        fprintf(stderr, "\tElement " ST_ZU " not found in any element "
-                        "block.\n",
+        fprintf(stderr,
+                "\tElement " ST_ZU " not found in any element "
+                "block.\n",
                 (size_t)i);
         exit(1);
       }
@@ -1943,8 +1898,9 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
       }
       if (!found) {
         fprintf(stderr, "find_elem_block: Error!:\n");
-        fprintf(stderr, "\tElement " ST_ZU " not found in any element "
-                        "block.\n",
+        fprintf(stderr,
+                "\tElement " ST_ZU " not found in any element "
+                "block.\n",
                 (size_t)i);
         exit(1);
       }
@@ -2036,7 +1992,6 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
   std::vector<INT> list_length(Proc_Info[2]);
   std::vector<INT> proc_num_ns(Proc_Info[2]);
   std::vector<INT> ns_cntr(Proc_Info[2]);
-  std::vector<INT> first_message(Proc_Info[2]);
   std::vector<INT> ns_on_proc(Proc_Info[2]);
 
   /* pointers into the concatenated node set list which locate the start of the node sets     */
@@ -2124,10 +2079,9 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
     if (num_nodes_in_node_set[i] > 0) {
 
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
-        first_message[iproc] = TRUE;
-        proc_num_ns[iproc]   = 0;
-        ns_cntr[iproc]       = 0;
-        ns_on_proc[iproc]    = FALSE;
+        proc_num_ns[iproc] = 0;
+        ns_cntr[iproc]     = 0;
+        ns_on_proc[iproc]  = FALSE;
       }
 
       size_t iss_size = sizeof(INT);
@@ -2172,13 +2126,13 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
 
         /* Read in the part of the node set that will fit in the message */
         check_exodus_error(ex_get_partial_set(exoid, EX_NODE_SET, Node_Set_Ids[i], (istart_ns + 1),
-                                              num_node_per_message, TOPTR(node_set), nullptr),
+                                              num_node_per_message, node_set.data(), nullptr),
                            "ex_get_partial_set");
 
         if (num_df_in_nsets[i] > 0) {
           check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_NODE_SET, Node_Set_Ids[i],
                                                           (istart_ns + 1), num_node_per_message,
-                                                          TOPTR(node_set_df)),
+                                                          node_set_df.data()),
                              "ex_get_partial_node_set_df");
         }
 
@@ -2345,54 +2299,6 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
     }
   } /* End "for(iproc=0; iproc <Proc_Info[2]; iproc++)" */
 
-/*
- * Print Out a Table Showing the Distribution of Node Sets Across the
- * Processors
- */
-#ifdef DEBUG
-  if ((Debug_Flag >= 4) && (globals.Num_Node_Set > 0)) {
-    printf("\n\tPRINT OUT OF THE DISTRIBUTION OF NODE SETS ACROSS THE "
-           "PROCESSORS\n");
-    printf("\n\n");
-    for (iproc = 0; iproc < Proc_Info[2]; iproc++) {
-      if (globals.Proc_Num_Node_Sets[iproc] > 0) {
-        printf("\nNode Sets Defined for Proc %d:\n\n", Proc_Ids[iproc]);
-        printf("%s%s\n  ", " Loc_Node_# Glob_Node_# NS_ID  Ptr_Val Loc_Num_in_NS",
-               " Glob_Num_in_NS");
-        print_line("-", 76);
-        for (i = 0; i < globals.Proc_Num_Node_Sets[iproc]; i++) {
-          printf(" %4d %11d %9d %9d %9d %14d\n", i, globals.GNode_Sets[iproc][i],
-                 globals.S_Ids[iproc][i], globals.S_Pointers[iproc][i], globals.S_Count[iproc][i],
-                 num_nodes_in_node_set[globals.GNode_Sets[iproc][i]]);
-        }
-        printf("  ");
-        print_line("-", 76);
-        printf("\n");
-      }
-      if ((Debug_Flag >= 5) && (globals.Proc_Num_Node_Sets[iproc] > 0)) {
-        printf("\tDump of Node_Set Nodes for Proc %d:\n\n", Proc_Ids[iproc]);
-        for (i = 0; i < globals.Proc_Num_Node_Sets[iproc]; i++) {
-          printf("\t\tLoc_NS_# = %5d, Glob_NS_# = %5d, NS_ID = %5d:\n\n", i,
-                 globals.GNode_Sets[iproc][i], globals.S_Ids[iproc][i]);
-          printf("\t Nodes_In_Node_Set\t| Distribution factor\n\t");
-          print_line("-", 70);
-          for (j = 0; j < globals.S_Count[iproc][i]; j++) {
-            printf("\t %7d\t\t|     ", globals.NS_List[iproc][globals.S_Pointers[iproc][i] + j]);
-
-            if (globals.S_DF_Count[iproc][i] > 0) {
-              printf("%7.5f\n", globals.S_Dist_Fact[iproc][globals.S_Pointers[iproc][i] + j]);
-            }
-            else
-              printf("none\n");
-          }
-          printf("\t");
-          print_line("-", 70);
-          printf("\n");
-        }
-      }
-    }
-  }
-#endif
 } /* END of routine read_node_sets () ****************************************/
 
 /*****************************************************************************/
@@ -2471,7 +2377,6 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
                                                       current processor                           */
   std::vector<INT> proc_num_sides_ss(Proc_Info[2]); /* Number of sides in the current side set that
                                                        exist for the current processor */
-  std::vector<INT> first_message(Proc_Info[2]);
   std::vector<INT> ntotal(Proc_Info[2]);
   std::vector<INT> ss_num(Proc_Info[2]);
 
@@ -2529,7 +2434,6 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
         ss_on_proc[iproc]        = FALSE;
         proc_num_sides_ss[iproc] = 0;
-        first_message[iproc]     = TRUE;
         ss_elem_cntr[iproc]      = 0;
       }
 
@@ -2573,8 +2477,8 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
         /* Read in the part of the side set that will fit in the message. */
 
         check_exodus_error(ex_get_partial_set(exoid, EX_SIDE_SET, Side_Set_Ids[i], (istart_ss + 1),
-                                              num_elem_per_message, TOPTR(ss_elem_list),
-                                              TOPTR(ss_side_list)),
+                                              num_elem_per_message, ss_elem_list.data(),
+                                              ss_side_list.data()),
                            "ex_get_partial_set");
 
         /* Fill in the distribution factor pointer vector */
@@ -2750,7 +2654,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
           /* Read in the part of the side set df's that will fit in the msg. */
           check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_SIDE_SET, Side_Set_Ids[i],
                                                           (istart_ss + 1), num_elem_per_message,
-                                                          TOPTR(ss_dist_fact)),
+                                                          ss_dist_fact.data()),
                              "ex_get_partial_set_dist_fact");
 
           /*
@@ -2921,10 +2825,11 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
        * globals.Proc_Num_Side_Sets[] due to the fact that nullptr entities are
        * stored on processors not having a particular side set.
        */
-      globals.Proc_SS_Ids[iproc] = (INT *)array_alloc(
-          __FILE__, __LINE__, 1, (3 * globals.Num_Side_Set + 3 * globals.Proc_Num_Side_Sets[iproc] +
-                                  2 * elem_list_length[iproc] + 1),
-          sizeof(INT));
+      globals.Proc_SS_Ids[iproc] =
+          (INT *)array_alloc(__FILE__, __LINE__, 1,
+                             (3 * globals.Num_Side_Set + 3 * globals.Proc_Num_Side_Sets[iproc] +
+                              2 * elem_list_length[iproc] + 1),
+                             sizeof(INT));
       globals.Proc_SS_Elem_Count[iproc] = globals.Proc_SS_Ids[iproc] + globals.Num_Side_Set;
       globals.Proc_SS_Elem_Pointers[iproc] =
           globals.Proc_SS_Elem_Count[iproc] + globals.Num_Side_Set;
@@ -2990,103 +2895,4 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
       }
     }
   } /* End "for(iproc)" */
-
-/*
- * Print Out a Table Showing the Distribution of Side Sets Across the
- * Processors
- */
-#ifdef DEBUG
-  if (Debug_Flag > 3 && (globals.Num_Side_Set > 0)) {
-
-    /*
-     * Sync the processors, printing out a long line, because this will be a
-     * long print-out.
-     */
-    printf("\n  PRINT OUT OF THE DISTRIBUTION OF SIDE SETS ACROSS THE "
-           "PROCESSORS\n\n\n");
-    for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
-      if (globals.Proc_Num_Side_Sets[iproc] > 0) {
-        printf("\nSide Sets Defined for Proc %d:\n\n", Proc_Ids[iproc]);
-        printf("%s%s\n ", " Loc_SS# Glb_SS# SS_ID Elem_Ptr ", "Loc_#Sides Loc_#DF Glob_#Sides");
-        print_line("-", 76);
-        for (int i = 0; i < globals.Proc_Num_Side_Sets[iproc]; i++) {
-          printf("%6d %6d %7d %6d %9d %9d %9d\n", i, globals.GSide_Sets[iproc][i],
-                 globals.S_Ids[iproc][i], globals.Proc_SS_Elem_Pointers[iproc][i],
-                 globals.Proc_SS_Elem_Count[iproc][i], globals.Proc_SS_DF_Count[iproc][i],
-                 num_elem_in_ssets[globals.GSide_Sets[iproc][i]]);
-        }
-        printf(" ");
-        print_line("-", 76);
-        printf("\n");
-
-        /*
-         * If Debug_Flag is large enough, dump out a complete listing of the
-         * definition of the side set on the current processor
-         */
-        if ((Debug_Flag > 4) && (globals.Proc_Num_Side_Sets[iproc] > 0)) {
-          printf("  Dump of Side_Set Sides for Proc %d:\n\n", Proc_Ids[iproc]);
-          indx = 0;
-          for (int i = 0; i < globals.Proc_Num_Side_Sets[iproc]; i++) {
-            printf("\tLoc_SS_# = %5d, Glob_SS_# = %5d, SS_ID = %5d:\n\n", i,
-                   globals.GSide_Sets[iproc][i], globals.Proc_SS_Ids[iproc][i]);
-            printf("\t\tLoc_Elem_Num |    Glob_Elem_Num  |  Side Ids  | "
-                   "Dist. Factors\n\t\t");
-            print_line("-", 60);
-            for (size_t j = 0; j < globals.Proc_SS_Elem_Count[iproc][i]; j++) {
-
-              int elem_num =
-                  globals.Proc_SS_Elem_List[iproc][globals.Proc_SS_Elem_Pointers[iproc][i] + j];
-
-              /* Find the local element ID */
-              for (size_t loc_elem = 0;
-                   loc_elem < globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc];
-                   loc_elem++) {
-                if (globals.GElems[iproc][loc_elem] == elem_num)
-                  break;
-              }
-
-              loc_side =
-                  globals.Proc_SS_Side_List[iproc][globals.Proc_SS_Elem_Pointers[iproc][i] + j];
-
-              printf("\t\t %6d      | ", loc_elem);
-
-              printf("    %6d        | ", elem_num + 1);
-
-              printf("%6d     | ",
-                     globals.Proc_SS_Side_List[iproc][globals.Proc_SS_Elem_Pointers[iproc][i] + j]);
-
-              if (globals.Proc_SS_DF_Count[iproc][i] > 0) {
-                if (num_elem_in_ssets[i] == num_df_in_ssets[i]) {
-                  imess = 1;
-                }
-                else {
-                  imess = elem_info(NN_SIDE, globals.Elem_Type[iproc][loc_elem], loc_side);
-
-                  /*
-                   * kludge for HEXSHELL's
-                   * where distribution factors are concerned, only count
-                   * 4 nodes on the 6 node faces (they are just like HEX's)
-                   */
-                  if (globals.Elem_Type[iproc][loc_elem] == HEXSHELL)
-                    imess = 4;
-                }
-                printf(" ");
-                for (int k = 0; k < imess - 1; k++) {
-                  printf("%5.2f ", globals.Proc_SS_Dist_Fact[iproc][indx++]);
-                }
-                printf("%5.2f\n", globals.Proc_SS_Dist_Fact[iproc][indx++]);
-              }
-              else
-                printf("none\n");
-            }
-            printf("\t\t");
-            print_line("-", 60);
-            printf("\n");
-          }
-          printf("\n");
-        }
-      }
-    }
-  }
-#endif
 } /*      END of routine read_side_sets                                      */

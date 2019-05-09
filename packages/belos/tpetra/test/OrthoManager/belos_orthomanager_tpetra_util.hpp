@@ -45,9 +45,8 @@
 #include <BelosOrthoManagerFactory.hpp>
 #include <BelosOrthoManagerTest.hpp>
 #include <BelosTpetraAdapter.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
 // I/O for Harwell-Boeing files
 #include <Trilinos_Util_iohb.h>
@@ -98,16 +97,6 @@ namespace Belos {
     makeOutputManager (const bool verbose, const bool debug)
     {
       return Teuchos::rcp (new Belos::OutputManager<Scalar> (selectVerbosity (verbose, debug)));
-    }
-
-    /// \fn getNode
-    /// \brief Return an RCP to a Kokkos Node
-    ///
-    template<class NodeType>
-    Teuchos::RCP<NodeType>
-    getNode() {
-      Teuchos::ParameterList defaultParams;
-      return Teuchos::rcp (new NodeType (defaultParams));
     }
 
     /// \fn loadSparseMatrix
@@ -235,8 +224,7 @@ namespace Belos {
           // Create Tpetra::Map to represent multivectors in the range of
           // the sparse matrix.
           pMap = rcp (new map_type (numRows, 0, pComm,
-                                    Tpetra::GloballyDistributed,
-                                    getNode<node_type>()));
+                                    Tpetra::GloballyDistributed));
           // Second argument: max number of nonzero entries per row.
           pMatrix = rcp (new sparse_matrix_type (pMap, rnnzmax));
 
@@ -295,8 +283,7 @@ namespace Belos {
           // Let M remain null, and allocate map using the number of rows
           // (numRows) specified on the command line.
           pMap = rcp (new map_type (numRows, 0, pComm,
-                                    Tpetra::GloballyDistributed,
-                                    getNode<node_type>()));
+                                    Tpetra::GloballyDistributed));
         }
       return std::make_pair (pMap, pMatrix);
     }

@@ -37,7 +37,7 @@
 #include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 
 namespace stk {
 namespace mesh {

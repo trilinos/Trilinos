@@ -59,7 +59,7 @@
 #include "Xpetra_Utils.hpp"
 
 namespace Xpetra {
-
+ 
   template <class Scalar        = Operator<>::scalar_type,
             class LocalOrdinal  = typename Operator<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
@@ -145,12 +145,12 @@ namespace Xpetra {
     //@{
 
     //! The Map associated with the domain of this operator, which must be compatible with X.getMap().
-    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
+    virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
       return Teuchos::null;
     }
 
     //! The Map associated with the range of this operator, which must be compatible with Y.getMap().
-    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
+    virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
       return Teuchos::null;
     }
 
@@ -161,8 +161,8 @@ namespace Xpetra {
         - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
      */
     virtual void
-    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-           MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+    apply (const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+           Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
            Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const {  }
@@ -209,12 +209,12 @@ namespace Xpetra {
     //@{
 
     //! The Map associated with the domain of this operator, which must be compatible with X.getMap().
-    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
+    virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
       return Teuchos::null;
     }
 
     //! The Map associated with the range of this operator, which must be compatible with Y.getMap().
-    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
+    virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
       return Teuchos::null;
     }
 
@@ -225,8 +225,8 @@ namespace Xpetra {
         - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
      */
     virtual void
-    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-           MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+    apply (const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+           Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
            Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const {  }
@@ -257,6 +257,7 @@ namespace Xpetra {
 
   }; // TpetraOperator class
 #endif
+  
 
 } // Xpetra namespace
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,21 +33,21 @@
  *
  */
 /*****************************************************************************
-*
-* exgnm - ex_get_node_map
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     map_id                  node map id
-*
-* exit conditions -
-*       int*    node_map                node map
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exgnm - ex_get_node_map
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     map_id                  node map id
+ *
+ * exit conditions -
+ *       int*    node_map                node map
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h" // for ex_get_num_map, etc
 

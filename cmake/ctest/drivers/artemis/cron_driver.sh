@@ -26,7 +26,7 @@ module load sems-env
 module load kokkos-env
 
 module load sems-python/2.7.9
-module load sems-cmake/2.8.12
+module load sems-cmake/3.10.3
 module load sems-git/2.1.3
 module load sems-${COMPILER_SUFFIX}
 
@@ -53,7 +53,7 @@ fi
 
 module load sems-${BOOST_SUFFIX}/base
 module load sems-${HDF5_SUFFIX}/parallel
-module load sems-${NETCDF_SUFFIX}/parallel
+module load sems-${NETCDF_SUFFIX}/exo_parallel
 module load sems-${ZLIB_SUFFIX}/base
 
 module list

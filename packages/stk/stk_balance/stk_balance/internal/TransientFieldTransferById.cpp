@@ -1,9 +1,11 @@
+#include <stk_util/registry/ProductRegistry.hpp>
 #include "TransientFieldTransferById.hpp"
 #include "stk_mesh/base/FieldParallel.hpp"
 #include "stk_mesh/base/Field.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_io/StkIoUtils.hpp"
+#include "internal/privateDeclarations.hpp"
 
 namespace stk {
 namespace balance {
@@ -64,6 +66,12 @@ TransientFieldTransferById::TransientFieldTransferById(stk::io::StkMeshIoBroker 
     }
 
     initialize(entityRanks);
+
+    int dbIntSize = mBrokerA.check_integer_size_requirements();
+    if(dbIntSize > 4) {
+        mBrokerB.property_add(Ioss::Property("INTEGER_SIZE_API" , dbIntSize));
+        mBrokerB.property_add(Ioss::Property("INTEGER_SIZE_DB" , dbIntSize));
+    }
 }
 
 TransientFieldTransferById::TransientFieldTransferById(stk::io::StkMeshIoBroker &brokerA,
@@ -85,7 +93,14 @@ TransientFieldTransferById::~TransientFieldTransferById()
 
 size_t TransientFieldTransferById::transfer_and_write_transient_fields(const std::string &parallelOutputMeshName)
 {
+    internal::logMessage(mBrokerA.bulk_data().parallel(), "Writing output mesh");
     size_t outputFileIndex = setup_output_transient_fields(parallelOutputMeshName);
+
+    std::vector<stk::io::QaRecord> qaRecords = mBrokerA.get_qa_records();
+    mBrokerB.add_qa_records(outputFileIndex, qaRecords);
+    mBrokerB.set_name_and_version_for_qa_record(outputFileIndex, "stk_balance", stk::ProductRegistry::version());
+
+    mBrokerB.add_info_records(outputFileIndex, mBrokerA.get_info_records());
 
     stk::mesh::FieldVector fieldVector = stk::io::get_transient_fields(mBrokerB.meta_data());
 
@@ -99,8 +114,14 @@ size_t TransientFieldTransferById::transfer_and_write_transient_fields(const std
         mBrokerB.add_global(outputFileIndex, globalVariableName, length, Ioss::Field::DOUBLE);
     }
 
+    if(fieldVector.empty())
+    {
+        mBrokerB.write_output_mesh(outputFileIndex);
+    }
+
     for(int iStep = 0; iStep < mBrokerA.get_num_time_steps(); iStep++)
     {
+        internal::logMessage(mBrokerA.bulk_data().parallel(), "Appending transient data for time step " + std::to_string(iStep));
         double readTime = mBrokerA.read_defined_input_fields_at_step(iStep + 1, nullptr);
 
         do_transfer();
@@ -130,18 +151,12 @@ void TransientFieldTransferById::do_transfer()
 size_t TransientFieldTransferById::setup_output_transient_fields(const std::string &parallelOutputMeshName)
 {
     size_t outputFileIndex = mBrokerB.create_output_mesh(parallelOutputMeshName, stk::io::WRITE_RESULTS);
+    mBrokerB.set_reference_input_region(outputFileIndex, mBrokerA);
 
     stk::mesh::FieldVector allTransientFieldsB = stk::io::get_transient_fields(mBrokerB.meta_data());
 
-    if(allTransientFieldsB.empty())
-    {
-        mBrokerB.write_output_mesh(outputFileIndex);
-    }
-    else
-    {
-        for(stk::mesh::FieldBase* field : allTransientFieldsB)
-            mBrokerB.add_field(outputFileIndex, *field);
-    }
+    for(stk::mesh::FieldBase* field : allTransientFieldsB)
+        mBrokerB.add_field(outputFileIndex, *field);
 
     return outputFileIndex;
 }

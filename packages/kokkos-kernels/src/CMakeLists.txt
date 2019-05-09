@@ -23,6 +23,12 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/blas/impl)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
+#Blas host wrapper
+IF (KOKKOSKERNELS_ENABLE_TPL_BLAS OR KOKKOSKERNELS_ENABLE_TPL_MKL)
+  APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/impl/tpls/KokkosBlas_Host_tpl.hpp)
+  APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/impl/tpls/KokkosBlas_Host_tpl.cpp)
+ENDIF()
+
 #Include Sparse
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/sparse)
@@ -97,6 +103,7 @@ IF (KokkosKernels_INST_EXECSPACE_OPENMP)
 ENDIF()
 
 IF (KokkosKernels_INST_EXECSPACE_CUDA)
+  APPEND_GLOB(SOURCES ${DIR}/tpls/*_Cuda_*.cpp)
   IF (KokkosKernels_INST_DOUBLE)
     APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_double_*_Cuda_*.cpp)
   ENDIF()

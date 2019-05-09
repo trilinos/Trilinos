@@ -8,15 +8,16 @@ TRIBITS_ADD_EXECUTABLE(
 
 ##### KLU2 Tests #####
 
+##IF (${PACKAGE_NAME}_ENABLE_KLU2 AND NOT ${PROJECT_NAME}_ENABLE_DEBUG AND NOT KOKKOS_ENABLE_DEBUG)
 IF (${PACKAGE_NAME}_ENABLE_KLU2)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
     KLU2_UnitTests
+#    EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_DEBUG
     SOURCES
       KLU2_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     NUM_MPI_PROCS 2
-    CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT
     )
 ENDIF()
@@ -42,16 +43,18 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
     )
 
 
+IF (NOT ${PROJECT_NAME}_ENABLE_DEBUG)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Superlu_UnitTests
+#    EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_DEBUG
     SOURCES
       Superlu_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     NUM_MPI_PROCS 2
-    CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT
     )
+ENDIF()
 
 ENDIF()
 
@@ -61,23 +64,52 @@ ENDIF()
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_UMFPACK)
 IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
 
+  IF (HAVE_UMFPACK_VERSION_5)
+    SET(umpack_test_name "Umfpack_Solver_Test")
+    SET(umfpack_test_xml_file "umfpack_test.xml")
+  ELSE()
+    MESSAGE(STATUS "Disabling Amesos2 Umfpack Complex Test because Umfpack version is not >= 5. This Umfpack does not support Real-Im as a single array which is currently used in the wrapper.")
+    SET(umpack_test_name "Umfpack_Solver_Test_No_Complex")
+    SET(umfpack_test_xml_file "umfpack_test_no_complex.xml")
+  ENDIF()
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyUmfpackFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    SOURCE_FILES umfpack_test.xml
+    SOURCE_FILES ${umfpack_test_xml_file}
     EXEDEPS Solver_Test
     )
 
-
   TRIBITS_ADD_TEST(
     Solver_Test
-    NAME Umfpack_Solver_Test
-    ARGS "--xml-params=umfpack_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    NAME ${umpack_test_name}
+    ARGS "--xml-params=${umfpack_test_xml_file} --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
     STANDARD_PASS_OUTPUT
     COMM serial mpi
     )
 
 ENDIF()
 
+##### Tacho Tests #####
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
+IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyTachoFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES tacho_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test
+    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1 # Need to determine if we want more MPI when not running OpenMP with threads
+    COMM serial mpi
+    )
+
+ENDIF()
 
 ##### SuperLU_MT Tests #####
 
@@ -157,12 +189,26 @@ ENDIF()
 
 
 ####   BASKER Tests ####
+## IF (${PACKAGE_NAME}_ENABLE_Basker AND NOT ${PROJECT_NAME}_ENABLE_DEBUG)
 IF (${PACKAGE_NAME}_ENABLE_Basker)
-
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Basker_UnitTests
     SOURCES
       Basker_UnitTests
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+    )
+    
+ENDIF()
+
+####   SHYLUBASKER Tests ####
+IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeBasker)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ShyLUBasker_UnitTests
+    SOURCES
+      ShyLUBasker_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     NUM_MPI_PROCS 2

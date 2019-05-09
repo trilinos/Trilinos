@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -87,10 +87,10 @@ struct localsum {
   KOKKOS_INLINE_FUNCTION
   void operator() (const int i) const {
     double tmp = 0.0;
-    for (int j = 0; j < (int) idx.dimension_1 (); ++j) {
+    for (int j = 0; j < (int) idx.extent(1); ++j) {
       // This is an indirect access on src
       const double val = src(idx(i,j));
-      tmp += val*val + 0.5*(idx.dimension_0()*val -idx.dimension_1()*val);
+      tmp += val*val + 0.5*(idx.extent(0)*val -idx.extent(1)*val);
     }
     dest(i) = tmp;
   }
@@ -99,42 +99,44 @@ struct localsum {
 int main(int narg, char* arg[]) {
   Kokkos::initialize (narg, arg);
 
-  int size = 1000000;
+  {
+    int size = 1000000;
 
-  idx_type idx("Idx",size,64);
-  idx_type_host h_idx = Kokkos::create_mirror_view (idx);
+    idx_type idx("Idx",size,64);
+    idx_type_host h_idx = Kokkos::create_mirror_view (idx);
 
-  view_type dest ("Dest", size);
-  view_type src ("Src", size);
+    view_type dest ("Dest", size);
+    view_type src ("Src", size);
 
-  srand(134231);
+    srand(134231);
 
-  for (int i = 0; i < size; i++) {
-    for (view_type::size_type j = 0; j < h_idx.dimension_1 (); ++j) {
-      h_idx(i,j) = (size + i + (rand () % 500 - 250)) % size;
+    for (int i = 0; i < size; i++) {
+      for (view_type::size_type j = 0; j < h_idx.extent(1); ++j) {
+        h_idx(i,j) = (size + i + (rand () % 500 - 250)) % size;
+      }
     }
+
+    // Deep copy the initial data to the device
+    Kokkos::deep_copy(idx,h_idx);
+    // Run the first kernel to warmup caches
+    Kokkos::parallel_for(size,localsum<view_type,view_type_rnd>(idx,dest,src));
+    Kokkos::fence();
+
+    // Run the localsum functor using the RandomAccess trait. On CPUs there should
+    // not be any different in performance to not using the RandomAccess trait.
+    // On GPUs where can be a dramatic difference
+    Kokkos::Timer time1;
+    Kokkos::parallel_for(size,localsum<view_type,view_type_rnd>(idx,dest,src));
+    Kokkos::fence();
+    double sec1 = time1.seconds();
+
+    Kokkos::Timer time2;
+    Kokkos::parallel_for(size,localsum<view_type,view_type>(idx,dest,src));
+    Kokkos::fence();
+    double sec2 = time2.seconds();
+
+    printf("Time with Trait RandomAccess: %f with Plain: %f \n",sec1,sec2);
   }
-
-  // Deep copy the initial data to the device
-  Kokkos::deep_copy(idx,h_idx);
-  // Run the first kernel to warmup caches
-  Kokkos::parallel_for(size,localsum<view_type,view_type_rnd>(idx,dest,src));
-  Kokkos::fence();
-
-  // Run the localsum functor using the RandomAccess trait. On CPUs there should
-  // not be any different in performance to not using the RandomAccess trait.
-  // On GPUs where can be a dramatic difference
-  Kokkos::Timer time1;
-  Kokkos::parallel_for(size,localsum<view_type,view_type_rnd>(idx,dest,src));
-  Kokkos::fence();
-  double sec1 = time1.seconds();
-
-  Kokkos::Timer time2;
-  Kokkos::parallel_for(size,localsum<view_type,view_type>(idx,dest,src));
-  Kokkos::fence();
-  double sec2 = time2.seconds();
-
-  printf("Time with Trait RandomAccess: %f with Plain: %f \n",sec1,sec2);
 
   Kokkos::finalize();
 }

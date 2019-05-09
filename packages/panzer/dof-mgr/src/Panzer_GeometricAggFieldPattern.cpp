@@ -50,19 +50,20 @@ GeometricAggFieldPattern::GeometricAggFieldPattern()
    : patternBuilt_(false), dimension_(0)
 {}
 
-GeometricAggFieldPattern::GeometricAggFieldPattern(std::vector<Teuchos::RCP<const FieldPattern> > & patterns) 
+  GeometricAggFieldPattern::GeometricAggFieldPattern(std::vector<std::pair<FieldType,Teuchos::RCP<const FieldPattern>>> & patterns) 
    : patternBuilt_(false), dimension_(0)
 { 
    buildPattern(patterns); 
 }
 
-GeometricAggFieldPattern::GeometricAggFieldPattern(const Teuchos::RCP<const FieldPattern> & pattern) 
+GeometricAggFieldPattern::GeometricAggFieldPattern(const FieldType& fieldType,
+                                                   const Teuchos::RCP<const FieldPattern> & pattern) 
    : patternBuilt_(false), dimension_(0)
 { 
-   buildPattern(pattern); 
+  buildPattern(fieldType,pattern);
 }
 
-void GeometricAggFieldPattern::buildPattern(const std::vector<Teuchos::RCP<const FieldPattern> > & patterns)
+void GeometricAggFieldPattern::buildPattern(const std::vector<std::pair<FieldType,Teuchos::RCP<const FieldPattern>>> & patterns)
 {
    std::size_t numPat = patterns.size();
 
@@ -76,54 +77,77 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<Teuchos::RCP<const
 
    bool sameGeometry=true;
    for(std::size_t i=1;i<patterns.size();i++)
-      sameGeometry &= patterns[0]->sameGeometry(*patterns[i]);       
+     sameGeometry &= patterns[0].second->sameGeometry(*(patterns[i].second));       
    TEUCHOS_TEST_FOR_EXCEPTION(not sameGeometry,std::logic_error,
              "GeometricAggFieldPattern::buildPattern(): Patterns must "
              "have the same geometry!");
 
    // copy cell topology
-   cellTopo_ = patterns[0]->getCellTopology();
+   cellTopo_ = patterns[0].second->getCellTopology();
 
    // grab the dimension
-   dimension_ = patterns[0]->getDimension();
+   dimension_ = patterns[0].second->getDimension();
    patternData_.resize(dimension_+1);
 
    // build space for subcells
    std::vector<int> subcellCount(dimension_+1);
    for(std::size_t d=0;d<dimension_+1;d++) {
-      subcellCount[d] = patterns[0]->getSubcellCount(d);
+      subcellCount[d] = patterns[0].second->getSubcellCount(d);
       patternData_[d].resize(subcellCount[d]);
    }
 
-   // build geometric pattern: increment it logically
-   // over all the subcells.
+   // Build geometric pattern: increment it logically over all the
+   // subcells. Start with CG fields first. Then all DG fields. This
+   // is done so that we can use individual field pattern offsets when
+   // mapping DOFs to subcells.
    int counter = 0;
    for(std::size_t d=0;d<dimension_+1;d++) {
       for(int s=0;s<subcellCount[d];s++) {
          std::vector<int> & current = patternData_[d][s];
          for(std::size_t p=0;p<patterns.size();p++) {
-            RCP<const FieldPattern> field = patterns[p];
-
-            // if dofs exist, we have a geometric entity 
-            const std::size_t num = ( (field->getSubcellIndices(d,s).size() > 0) ? 1 : 0 );
-
-            if(current.size()<num) { 
-               for(int i=num-current.size();i>0;i--,counter++) 
+           if ( (patterns[p].first) == FieldType::CG) {
+              RCP<const FieldPattern> field = (patterns[p]).second;
+              // if dofs exist, we have a geometric entity 
+              const std::size_t num = ( (field->getSubcellIndices(d,s).size() > 0) ? 1 : 0 );
+              if(current.size()<num) { 
+                for(int i=num-current.size();i>0;i--,counter++) 
                   current.push_back(counter);
+              }
             }
          } 
       }
    }
 
+   // Add DG fields. These fields are considered internal "cell"
+   // fields for DOF numbering.
+   const int cellDim = dimension_;
+   for(std::size_t d=0;d<dimension_+1;d++) {
+      for(int s=0;s<subcellCount[d];s++) {
+         std::vector<int> & current = patternData_[cellDim][0];
+         for(std::size_t p=0;p<patterns.size();p++) {
+           if ( (patterns[p].first) == FieldType::DG) {
+              RCP<const FieldPattern> field = (patterns[p]).second;
+              // if dofs exist, we have a geometric entity
+              const std::size_t num = ( (field->getSubcellIndices(d,s).size() > 0) ? 1 : 0 );
+              if(current.size()<num) { 
+                for(int i=num-current.size();i>0;i--,counter++) 
+                  current.push_back(counter);
+              }
+            }
+         } 
+      }
+   }
+   
    // record that the pattern has been built
    patternBuilt_ = true;
 }
 
-void GeometricAggFieldPattern::buildPattern(const Teuchos::RCP<const FieldPattern> & pattern)
+void GeometricAggFieldPattern::buildPattern(const FieldType& fieldType,
+                                            const Teuchos::RCP<const FieldPattern> & pattern)
 {
-   std::vector<Teuchos::RCP<const FieldPattern> > patterns;
-   patterns.push_back(pattern);
-   buildPattern(patterns);
+  std::vector<std::pair<FieldType,Teuchos::RCP<const FieldPattern>>> patterns;
+  patterns.push_back(std::make_pair(fieldType,pattern));
+  buildPattern(patterns);
 }
 
 int GeometricAggFieldPattern::getSubcellCount(int dim) const

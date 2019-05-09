@@ -130,7 +130,7 @@ int launch_parameters(int numRows, int nnz, int rows_per_thread, int& team_size,
 
   // Determine rows per thread
   if(rows_per_thread < 1) {
-    #ifdef KOKKOS_HAVE_CUDA
+    #ifdef KOKKOS_ENABLE_CUDA
     if(std::is_same<Kokkos::Cuda,execution_space>::value)
       rows_per_thread = 1;
     else
@@ -143,7 +143,7 @@ int launch_parameters(int numRows, int nnz, int rows_per_thread, int& team_size,
     }
   }
 
-  #ifdef KOKKOS_HAVE_CUDA
+  #ifdef KOKKOS_ENABLE_CUDA
   if(team_size < 1)
     team_size = 256/vector_length;
   #endif
@@ -177,7 +177,7 @@ void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, in
   double s_b = 0.0;
   SPMV_Functor<matrix_type,x_type,y_type,0,false> func (s_a,A,x,s_b,y,rows_per_team);
 
-  int worksets = (y.dimension_0()+rows_per_team-1)/rows_per_team;
+  int worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
   Kokkos::TeamPolicy<Kokkos::Schedule<ScheduleType> > policy(1,1);
 
@@ -186,7 +186,7 @@ void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, in
   else
     policy = Kokkos::TeamPolicy<Kokkos::Schedule<ScheduleType> >(worksets,Kokkos::AUTO,vector_length);
 
-  Kokkos::parallel_for(policy,func);
+  Kokkos::parallel_for("KokkosSparse::PerfTest::SpMV", policy,func);
 }
 
 

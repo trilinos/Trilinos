@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -43,14 +43,11 @@ void mm_out(struct vtx_data **graph,       /* graph data structure */
             int               using_ewgts, /* Are edges weighted? */
             char *            tag,         /* message to include */
             char *            file_name    /* output file name if not null */
-            )
+)
 {
   FILE *file;   /* output file */
   int   nedges; /* number of edges in graph */
   int   i, j;   /* loop counter */
-  int   DIAG;
-
-  DIAG = TRUE;
 
   if (file_name != NULL) {
     file = fopen(file_name, "w");
@@ -64,22 +61,18 @@ void mm_out(struct vtx_data **graph,       /* graph data structure */
   for (i = 1; i <= nvtxs; i++) {
     nedges += graph[i]->nedges - 1;
   }
-  if (DIAG) {
-    nedges += nvtxs;
-  }
+  nedges += nvtxs;
 
   if (tag != NULL) {
     fprintf(file, "%% graph_out: %s\n", tag);
   }
   fprintf(file, " %d %d %d\n", nvtxs, nvtxs, nedges);
   for (i = 1; i <= nvtxs; i++) {
-    if (DIAG) {
-      if (!using_ewgts) {
-        fprintf(file, "%d %d\n", i, i);
-      }
-      else {
-        fprintf(file, "%d %d %.9f\n", i, i, 1.0);
-      }
+    if (!using_ewgts) {
+      fprintf(file, "%d %d\n", i, i);
+    }
+    else {
+      fprintf(file, "%d %d %.9f\n", i, i, 1.0);
     }
     for (j = 1; j < graph[i]->nedges; j++) {
       if (!using_ewgts) {

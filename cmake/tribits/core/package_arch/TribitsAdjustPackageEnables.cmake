@@ -250,7 +250,7 @@ FUNCTION(TRIBITS_APPEND_FORWARD_DEP_PACKAGES PACKAGE_NAME LIST_TYPE)
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE(
             "\n***"
-            "\n*** WARNING: The package ${DEP_PKG} has forward dependent package"
+            "\n*** NOTE: The package ${DEP_PKG} has forward dependent package"
               " ${PACKAGE_NAME}, but that dependency is being ignored because the package"
               " ${DEP_PKG} is missing!"
             "\n***\n" )
@@ -302,7 +302,7 @@ ENDMACRO()
 #      [LIB_OPTIONAL_TPLS <tpl1> <tpl2> ...]
 #      [TEST_REQUIRED_TPLS <tpl1> <tpl2> ...]
 #      [TEST_OPTIONAL_TPLS <tpl1> <tpl2> ...]
-#      [REGRESSION_EMAIL_LIST  <regression-email-address>
+#      [REGRESSION_EMAIL_LIST  <regression-email-address>]
 #      [SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
 #        <spkg1_name>  <spkg1_dir>  <spkg1_classifications>  <spkg1_optreq>
 #        <spkg2_name>  <spkg2_dir>  <spkg2_classifications>  <spkg2_optreq>
@@ -692,6 +692,7 @@ ENDMACRO()
 # Macro that reads in a single subpackage dependencies file and sets up
 # the dependency structure for it.
 #
+
 MACRO(TRIBITS_READ_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR
   SUBPACKAGE_NAME  SUBPACKAGE_DIR)
 
@@ -1085,7 +1086,7 @@ FUNCTION(TRIBITS_PRIVATE_PRINT_DISABLE
     IF (${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES)
       MESSAGE(
         " ***\n"
-        " *** WARNING: Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
+        " *** NOTE: Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
         " which was '${${ENABLE_BEING_DISABLED_VAR_NAME}}' because"
         " ${PACKAGE_WITH_SOMETHING_BEING_DISABLED} has"
         " a required ${DEP_TYPE_STR} dependence on disabled"
@@ -1639,7 +1640,7 @@ MACRO(TRIBITS_PRIVATE_POSTPROCESS_OPTIONAL_TPL_ENABLE PACKAGE_NAME OPTIONAL_DEP_
     )
     MESSAGE(
       "\n***"
-      "\n*** WARNING: Setting ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL}=OFF"
+      "\n*** NOTE: Setting ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL}=OFF"
       " which was ON since TPL_ENABLE_${OPTIONAL_DEP_TPL}=OFF"
       "\n***\n"
       )

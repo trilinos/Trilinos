@@ -45,8 +45,6 @@ namespace KokkosBatched {
            const ValueType *__restrict__ x, const int xs0,
            const ScalarType beta,
            /**/  ValueType *__restrict__ y, const int ys0) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "SerialGemvInternal:: not valid template types");
 
       const ScalarType one(1.0), zero(0.0);
 
@@ -63,7 +61,9 @@ namespace KokkosBatched {
           ValueType t(0);
           const ValueType *__restrict__ tA = (A + i*as0);
 
-              
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif               
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -87,8 +87,6 @@ namespace KokkosBatched {
            const ValueType *__restrict__ x, const int xs0,
            const ScalarType beta,
            /**/  ValueType *__restrict__ y, const int ys0) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "SerialGemvInternal:: not valid template types");
 
       const ScalarType one(1.0), zero(0.0);
 

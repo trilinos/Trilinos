@@ -47,6 +47,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 #include "Tpetra_TieBreak.hpp"
+#include "Tpetra_Map_fwd.hpp"
 
 //
 // mfh 13-15 May 2013: HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX governs
@@ -66,15 +67,16 @@
 
 #include <Tpetra_Details_FixedHashTable_decl.hpp>
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+// Forward declaration of Teuchos::Comm
+namespace Teuchos {
+  template<class OrdinalType>
+  class Comm;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
-  // Forward declaration.
-  template <class LocalOrdinal, class GlobalOrdinal, class Node> class Map;
-
   namespace Details {
-    // Forward declaration.
-    template <class LocalOrdinal, class GlobalOrdinal> class TieBreak;
-
     /// \class Directory
     /// \brief Computes the local ID and process ID corresponding to given global IDs.
     ///
@@ -173,13 +175,15 @@ namespace Tpetra {
 
       virtual bool isOneToOne (const Teuchos::Comm<int>& comm) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
+      Directory<LocalOrdinal,GlobalOrdinal,Node2>*       TPETRA_DEPRECATED
       clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef ReplicatedDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
         return new Dir2 (cloneMap);
       }
+#endif
 
       //! @name Implementation of Teuchos::Describable.
       //@{
@@ -231,13 +235,15 @@ namespace Tpetra {
         return true;
       }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
+      Directory<LocalOrdinal,GlobalOrdinal,Node2>*       TPETRA_DEPRECATED
       clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef ContiguousUniformDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
         return new Dir2 (cloneMap);
       }
+#endif
 
       //! @name Implementation of Teuchos::Describable.
       //@{
@@ -279,8 +285,9 @@ namespace Tpetra {
         return true;
       }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
+      Directory<LocalOrdinal,GlobalOrdinal,Node2>*       TPETRA_DEPRECATED
       clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef DistributedContiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
@@ -293,6 +300,7 @@ namespace Tpetra {
         }
         return dir;
       }
+#endif
 
       //! @name Implementation of Teuchos::Describable.
       //@{
@@ -361,8 +369,9 @@ namespace Tpetra {
 
       virtual bool isOneToOne (const Teuchos::Comm<int>& comm) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
+      Directory<LocalOrdinal,GlobalOrdinal,Node2>* TPETRA_DEPRECATED
       clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         using Teuchos::RCP;
@@ -390,6 +399,7 @@ namespace Tpetra {
         dir->useHashTables_ = useHashTables_;
         return dir;
       }
+#endif
 
       //! @name Implementation of Teuchos::Describable.
       //@{

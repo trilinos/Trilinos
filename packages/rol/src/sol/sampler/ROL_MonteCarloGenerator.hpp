@@ -65,21 +65,25 @@ private:
   Real sum_ng2_;
   
   const bool useDist_;
-  const std::vector<Teuchos::RCP<ROL::Distribution<Real> > > dist_;
+  const std::vector<ROL::Ptr<Distribution<Real> > > dist_;
+
+  const int seed_;
 
   Real ierf(Real input) const {
     std::vector<Real> coeff;
-    Real c   = 1.0;
-    Real tmp = c * (std::sqrt(Teuchos::ScalarTraits<Real>::pi())/2.0 * input);
+    Real pi = ROL::ScalarTraits<Real>::pi(), zero(0), one(1), two(2), tol(1e-4);
+    Real c(1);
+    Real tmp = c * (std::sqrt(pi)/two * input);
     Real val = tmp;
     coeff.push_back(c);
     int  cnt = 1;
-    while (std::abs(tmp) > 1.e-4*std::abs(val)) {
-      c = 0.0;
+    while (std::abs(tmp) > tol*std::abs(val)) {
+      c = zero;
       for ( unsigned i = 0; i < coeff.size(); i++ ) {
         c += coeff[i]*coeff[coeff.size()-1-i]/((i+1)*(2*i+1));
       }
-      tmp  = c/(2.0*(Real)cnt+1.0) * std::pow(std::sqrt(Teuchos::ScalarTraits<Real>::pi())/2.0 * input,2.0*(Real)cnt+1.0);
+      Real ind = static_cast<Real>(cnt);
+      tmp  = c/(two*ind+one) * std::pow(std::sqrt(pi)/two*input, two*ind+one);
       val += tmp;
       coeff.push_back(c);
       cnt++;
@@ -92,7 +96,7 @@ private:
   }
 
   std::vector<std::vector<Real> > sample(int nSamp, bool store = true) {
-    srand(123454321);
+    srand(seed_);
     const Real zero(0), one(1), two(2), tol(0.1);
     int rank = SampleGenerator<Real>::batchID();
     const int dim = (!useDist_ ? data_.size() : dist_.size());
@@ -113,7 +117,7 @@ private:
         else {
           for (int j = 0; j < dim; ++j) {
             pts[j + i*dim] = (dist_[j])->invertCDF(random());
-            while (std::abs(pts[j + i*dim]) > tol*ROL::ROL_OVERFLOW<Real>()) {
+            while (std::abs(pts[j + i*dim]) > tol*ROL_INF<Real>()) {
               pts[j + i*dim] = (dist_[j])->invertCDF(random());
             }
           }
@@ -153,52 +157,56 @@ private:
 
 public:
   MonteCarloGenerator(const int nSamp,
-                      const std::vector<Teuchos::RCP<Distribution<Real> > > &dist, 
-                      const Teuchos::RCP<BatchManager<Real> > &bman, 
+                      const std::vector<ROL::Ptr<Distribution<Real> > > &dist, 
+                      const ROL::Ptr<BatchManager<Real> > &bman, 
                       const bool use_SA = false,
                       const bool adaptive = false,
-                      const int numNewSamps = 0)
+                      const int numNewSamps = 0,
+                      const int seed = 123454321)
     : SampleGenerator<Real>(bman),
       nSamp_(nSamp),
       use_normal_(false),
       use_SA_(use_SA),
       adaptive_(adaptive), 
       numNewSamps_(numNewSamps),
-      sum_val_(0.0),
-      sum_val2_(0.0),
-      sum_ng_(0.0),
-      sum_ng2_(0.0), 
+      sum_val_(0),
+      sum_val2_(0),
+      sum_ng_(0),
+      sum_ng2_(0), 
       useDist_(true),
-      dist_(dist) {
+      dist_(dist),
+      seed_(seed) {
     int nProc = SampleGenerator<Real>::numBatches();
-    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     sample();
   }
 
   MonteCarloGenerator(const int nSamp,
                             std::vector<std::vector<Real> > &bounds, 
-                      const Teuchos::RCP<BatchManager<Real> > &bman,  
+                      const ROL::Ptr<BatchManager<Real> > &bman,  
                       const bool use_SA = false,
                       const bool adaptive = false,
-                      const int numNewSamps = 0)
+                      const int numNewSamps = 0,
+                      const int seed = 123454321)
     : SampleGenerator<Real>(bman),
       nSamp_(nSamp),
       use_normal_(false),
       use_SA_(use_SA),
       adaptive_(adaptive),
       numNewSamps_(numNewSamps),
-      sum_val_(0.0),
-      sum_val2_(0.0),
-      sum_ng_(0.0),
-      sum_ng2_(0.0),
-      useDist_(false) {
+      sum_val_(0),
+      sum_val2_(0),
+      sum_ng_(0),
+      sum_ng2_(0),
+      useDist_(false),
+      seed_(seed) {
     int nProc = SampleGenerator<Real>::numBatches();
-    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     unsigned dim = bounds.size();
     data_.clear();
-    Real tmp = 0.0;
+    Real tmp(0);
     for ( unsigned j = 0; j < dim; j++ ) {
       if ( (bounds[j])[0] > (bounds[j])[1] ) {
         tmp = (bounds[j])[0];
@@ -214,27 +222,29 @@ public:
   MonteCarloGenerator(const int nSamp,
                       const std::vector<Real> &mean,
                       const std::vector<Real> &std, 
-                      const Teuchos::RCP<BatchManager<Real> > &bman,
+                      const ROL::Ptr<BatchManager<Real> > &bman,
                       const bool use_SA = false,
                       const bool adaptive = false,
-                      const int numNewSamps = 0 )
+                      const int numNewSamps = 0,
+                      const int seed = 123454321)
     : SampleGenerator<Real>(bman),
       nSamp_(nSamp),
       use_normal_(true),
       use_SA_(use_SA),
       adaptive_(adaptive),
       numNewSamps_(numNewSamps),
-      sum_val_(0.0),
-      sum_val2_(0.0),
-      sum_ng_(0.0),
-      sum_ng2_(0.0), 
-      useDist_(false) {
+      sum_val_(0),
+      sum_val2_(0),
+      sum_ng_(0),
+      sum_ng2_(0), 
+      useDist_(false),
+      seed_(seed) {
     int nProc = SampleGenerator<Real>::numBatches();
-    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     unsigned dim = mean.size();
     data_.clear();
-    std::vector<Real> tmp(2,0.0);
+    std::vector<Real> tmp(2,static_cast<Real>(0));
     for ( unsigned j = 0; j < dim; j++ ) {
       tmp[0] = mean[j];
       tmp[1] = std[j];
@@ -245,10 +255,11 @@ public:
 
   void update( const Vector<Real> &x ) {
     SampleGenerator<Real>::update(x);
-    sum_val_  = 0.0;
-    sum_val2_ = 0.0;
-    sum_ng_   = 0.0;
-    sum_ng_   = 0.0;
+    Real zero(0);
+    sum_val_  = zero;
+    sum_val2_ = zero;
+    sum_ng_   = zero;
+    sum_ng_   = zero;
     if ( use_SA_ ) {
       sample();
     }
@@ -256,6 +267,7 @@ public:
 
   Real computeError( std::vector<Real> &vals ) {
     if ( adaptive_ && !use_SA_ ) {
+      Real zero(0), one(1), tol(1e-8);
       // Compute unbiased sample variance
       int cnt = 0;
       for ( int i = SampleGenerator<Real>::start(); i < SampleGenerator<Real>::numMySamples(); i++ ) {
@@ -264,27 +276,28 @@ public:
         cnt++;
       }
       Real mymean = sum_val_ / nSamp_;
-      Real mean   = 0.0;
+      Real mean   = zero;
       SampleGenerator<Real>::sumAll(&mymean,&mean,1);
 
-      Real myvar  = (sum_val2_ - mean*mean)/(nSamp_-1.0);
-      Real var    = 0.0;
+      Real myvar  = (sum_val2_ - mean*mean)/(nSamp_-one);
+      Real var    = zero;
       SampleGenerator<Real>::sumAll(&myvar,&var,1);
       // Return Monte Carlo error
       vals.clear();
-      return std::sqrt(var/(nSamp_))*1.e-8;
+      return std::sqrt(var/(nSamp_))*tol;
     }
     else {
       vals.clear();
-      return 0.0;
+      return static_cast<Real>(0);
     }
   }
 
-  Real computeError( std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x ) {
+  Real computeError( std::vector<ROL::Ptr<Vector<Real> > > &vals, const Vector<Real> &x ) {
     if ( adaptive_ && !use_SA_ ) {
+      Real zero(0), one(1), tol(1e-4);
       // Compute unbiased sample variance
       int cnt = 0;
-      Real ng = 0.0;
+      Real ng = zero;
       for ( int i = SampleGenerator<Real>::start(); i < SampleGenerator<Real>::numMySamples(); i++ ) {
         ng = (vals[cnt])->norm();
         sum_ng_  += ng;
@@ -292,26 +305,27 @@ public:
         cnt++;
       }
       Real mymean = sum_ng_ / nSamp_;
-      Real mean   = 0.0;
+      Real mean   = zero;
       SampleGenerator<Real>::sumAll(&mymean,&mean,1);
 
-      Real myvar  = (sum_ng2_ - mean*mean)/(nSamp_-1.0);
-      Real var    = 0.0;
+      Real myvar  = (sum_ng2_ - mean*mean)/(nSamp_-one);
+      Real var    = zero;
       SampleGenerator<Real>::sumAll(&myvar,&var,1);
       // Return Monte Carlo error
       vals.clear();
-      return std::sqrt(var/(nSamp_))*1.e-4;
+      return std::sqrt(var/(nSamp_))*tol;
     }
     else {
       vals.clear();
-      return 0.0;
+      return static_cast<Real>(0);
     }
   }
 
   void refine(void) {
     if ( adaptive_ && !use_SA_ ) {
+      Real zero(0), one(1);
       std::vector<std::vector<Real> > pts;
-      std::vector<Real> pt(data_.size(),0.0);
+      std::vector<Real> pt(data_.size(),zero);
       for ( int i = 0; i < SampleGenerator<Real>::numMySamples(); i++ ) {
         pt = SampleGenerator<Real>::getMyPoint(i);
         pts.push_back(pt);
@@ -319,11 +333,15 @@ public:
       std::vector<std::vector<Real> > pts_new = sample(numNewSamps_,false);
       pts.insert(pts.end(),pts_new.begin(),pts_new.end());
       nSamp_ += numNewSamps_;
-      std::vector<Real> wts(pts.size(),1.0/((Real)nSamp_));
+      std::vector<Real> wts(pts.size(),one/((Real)nSamp_));
       SampleGenerator<Real>::refine();
       SampleGenerator<Real>::setPoints(pts);
       SampleGenerator<Real>::setWeights(wts);
     }
+  }
+
+  int numGlobalSamples(void) const {
+    return nSamp_;
   }
 
 };

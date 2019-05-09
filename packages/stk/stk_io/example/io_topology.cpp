@@ -34,7 +34,7 @@
 #include <Ioss_ConcreteVariableType.h>  // for StorageInitializer
 #include <Ioss_ElementTopology.h>       // for ElementTopology
 #include <Ioss_Initializer.h>           // for Initializer
-#include <stdlib.h>                     // for NULL, EXIT_FAILURE, etc
+#include <stdlib.h>                     // for EXIT_FAILURE, etc
 #include <iomanip>                      // for operator<<, setw
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_io/IossBridge.hpp>        // for map_ioss_topology_to_stk
@@ -102,7 +102,7 @@ int convert_ioss_to_stk_topology()
 
     // Convert back to Ioss::Topology and see if we get the same type...
     Ioss::ElementTopology *new_topo = Ioss::ElementTopology::factory(stk_topo.name(), true);
-    if (new_topo == NULL) {
+    if (new_topo == nullptr) {
       OUTPUT << "ERROR: STK Topology '" << stk_topo.name() << "', created from IOSS topology '" << topologies[i]
              << "' could not be converted back to IOSS topology.\n";
       err_count++;
@@ -131,7 +131,7 @@ int convert_stk_to_ioss_topology()
     OUTPUT << "Testing stk topology: " << std::setw(20) << topo.name() << "\n";
 
     Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(topo.name(), true);
-    if (ioss_topo == NULL) {
+    if (ioss_topo == nullptr) {
       OUTPUT << "ERROR: STK Topology '" << topo.name() << "' could not be converted to IOSS topology.\n";
       err_count++;
       continue;

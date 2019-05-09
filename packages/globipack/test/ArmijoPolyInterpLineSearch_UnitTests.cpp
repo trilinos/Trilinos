@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    GlobiPack: Collection of Scalar 1D globalizaton utilities
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -177,12 +177,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArmijoPolyInterpLineSearch, quadExact, Scalar
   typedef typename ST::magnitudeType ScalarMag;
 
   const RCP<TestLagrPolyMeritFunc1D<Scalar> > phi = quadPhi<Scalar>();
-  
+
   RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
     armijoQuadraticLineSearch<Scalar>();
 
   linesearch->setOStream(rcpFromRef(out));
- 
+
   const PointEval1D<Scalar> point_k = computePoint(*phi, ST::zero(), true, true);
   PointEval1D<Scalar> point_kp1 = computePoint(*phi, as<Scalar>(5.0));
 
@@ -209,10 +209,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArmijoPolyInterpLineSearch, noEval, Scalar )
 {
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
+  //typedef typename ST::magnitudeType ScalarMag; // unused
 
   const RCP<TestLagrPolyMeritFunc1D<Scalar> > phi = quadPhi<Scalar>();
-  
+
   RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
     armijoQuadraticLineSearch<Scalar>();
 
@@ -247,7 +247,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArmijoPolyInterpLineSearch, minIters, Scalar 
   typedef typename ST::magnitudeType ScalarMag;
 
   const RCP<TestLagrPolyMeritFunc1D<Scalar> > phi = quadPhi<Scalar>();
-  
+
   RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
     armijoQuadraticLineSearch<Scalar>();
 

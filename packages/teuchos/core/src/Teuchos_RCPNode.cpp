@@ -42,6 +42,7 @@
 #include "Teuchos_RCPNode.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Exceptions.hpp"
+#include <vector>
 
 #ifdef TEUCHOS_DEBUG
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -69,7 +70,7 @@ namespace {
 
 
 struct RCPNodeInfo {
-  RCPNodeInfo() : nodePtr(0) {}
+  RCPNodeInfo() = delete;
   RCPNodeInfo(const std::string &info_in, Teuchos::RCPNode* nodePtr_in)
     : info(info_in), nodePtr(nodePtr_in)
     {}
@@ -82,22 +83,6 @@ typedef std::pair<const void*, RCPNodeInfo> VoidPtrNodeRCPInfoPair_t;
 
 
 typedef std::multimap<const void*, RCPNodeInfo> rcp_node_list_t;
-
-
-class RCPNodeInfoListPred {
-public:
-  bool operator()(const rcp_node_list_t::value_type &v1,
-    const rcp_node_list_t::value_type &v2
-    ) const
-    {
-#ifdef TEUCHOS_DEBUG
-      return v1.second.nodePtr->insertion_number() < v2.second.nodePtr->insertion_number();
-#else
-      return v1.first < v2.first;
-#endif
-    }
-};
-
 
 //
 // Local static functions returning references to local static objects to
@@ -233,6 +218,7 @@ void RCPNode::set_extra_data(
   ,bool force_unique
   )
 {
+  (void)force_unique;
   if(extra_data_map_==NULL) {
     extra_data_map_ = new extra_data_map_t;
   }
@@ -329,7 +315,7 @@ int RCPNodeTracer::numActiveRCPNodes()
 {
   // This list always exists, no matter debug or not so just access it.
   TEUCHOS_TEST_FOR_EXCEPT(0==rcp_node_list());
-  return rcp_node_list()->size();
+  return static_cast<int>(rcp_node_list()->size());
 }
 
 
@@ -395,7 +381,16 @@ void RCPNodeTracer::printActiveRCPNodes(std::ostream &out)
       // debug-mode build.
       typedef std::vector<VoidPtrNodeRCPInfoPair_t> rcp_node_vec_t;
       rcp_node_vec_t rcp_node_vec(rcp_node_list()->begin(), rcp_node_list()->end());
-      std::sort(rcp_node_vec.begin(), rcp_node_vec.end(), RCPNodeInfoListPred());
+      std::sort(rcp_node_vec.begin(), rcp_node_vec.end(),
+          [] (const rcp_node_list_t::value_type &v1, const rcp_node_list_t::value_type &v2)
+          {
+#ifdef TEUCHOS_DEBUG
+            return v1.second.nodePtr->insertion_number() < v2.second.nodePtr->insertion_number();
+#else
+            return v1.first < v2.first;
+#endif
+          }
+      );
       // Print the RCPNode objects sorted by insertion number
       typedef rcp_node_vec_t::const_iterator itr_t;
       int i = 0;
@@ -493,7 +488,7 @@ void RCPNodeTracer::addNewRCPNode( RCPNode* rcp_node, const std::string &info )
     // creates an owning RCP to an object already owned by another RCPNode.
 
     // Add the new RCP node keyed as described above.
-    (*rcp_node_list()).insert(
+    (*rcp_node_list()).emplace_hint(
       itr_itr.second,
       std::make_pair(map_key_void_ptr, RCPNodeInfo(info, rcp_node))
       );
@@ -690,7 +685,7 @@ ActiveRCPNodesSetup::~ActiveRCPNodesSetup()
     std::cerr << "\nPrint active nodes!\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
     std::cout << std::flush;
-    TEUCHOS_TEST_FOR_EXCEPT(0==rcp_node_list());
+    TEUCHOS_TEST_FOR_TERMINATION(nullptr==rcp_node_list(), "rcp_node_list() is null in ~ActiveRCPNodesSetup");
     RCPNodeTracer::RCPNodeStatistics rcpNodeStatistics =
       RCPNodeTracer::getRCPNodeStatistics();
     if (rcpNodeStatistics.maxNumRCPNodes

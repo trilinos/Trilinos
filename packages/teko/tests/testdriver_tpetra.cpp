@@ -92,7 +92,7 @@
 #include "src/Tpetra/tBlockedTpetraOperator.hpp"
 #include "src/Tpetra/tTpetraThyraConverter.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 void gdbIn()
 {
@@ -121,7 +121,7 @@ int main(int argc,char * argv[])
      #else
         Epetra_SerialComm Comm_epetra;
      #endif
-     Teuchos::RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+     Teuchos::RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm ();
   
      Teko::Test::UnitTest::SetComm(Teuchos::rcpFromRef(Comm_epetra));
      Teko::Test::UnitTest::SetComm_tpetra(Comm);

@@ -39,6 +39,7 @@
 
 INCLUDE(AppendSet)
 INCLUDE(AssertDefined)
+INCLUDE(MessageWrapper)
 INCLUDE(TribitsSortListAccordingToMasterList)
 
 
@@ -102,9 +103,7 @@ FUNCTION( TRIBITS_APPEND_INCLUDE_AND_LINK_DIRS  TPL_OR_PACKAGE  PREFIX
       "  '${PREFIX}'  '${LIST}'  '${EXTRA_DEP_LIBS_INOUT}'")
   ENDIF()
   SET(EXTRA_DEP_LIBS_INOUT_TMP ${${EXTRA_DEP_LIBS_INOUT}})
-  IF (NOT CMAKE_VERSION VERSION_LESS "3.1.0.0")
-    CMAKE_POLICY(SET CMP0054 NEW)
-  ENDIF()
+  CMAKE_POLICY(SET CMP0054 NEW)
   IF (
     "${TPL_OR_PACKAGE}"  STREQUAL "TPL"
     AND
@@ -287,4 +286,35 @@ MACRO(TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS)
       )
   ENDIF()
 
+ENDMACRO()
+
+#
+# Check that a parase argument has at least one value
+#
+
+MACRO(TRIBITS_ASSERT_PARSE_ARG_ONE_OR_MORE_VALUES  PREFIX  ARGNAME)
+  SET(PREFIX_ARGNAME "${PREFIX}_${ARGNAME}")
+  LIST( LENGTH ${PREFIX_ARGNAME} ARG_NUM_VALS )
+  IF (ARG_NUM_VALS LESS 1)
+    MESSAGE_WRAPPER(FATAL_ERROR
+      "ERROR: ${ARGNAME} must have at least one value!" )
+    RETURN()
+    # NOTE: The return is needed in unit testing mode
+  ENDIF()
+ENDMACRO()
+#
+# Check that a parase argument has zero or one value
+#
+
+MACRO(TRIBITS_ASSERT_PARSE_ARG_ZERO_OR_ONE_VALUE  PREFIX  ARGNAME)
+  SET(PREFIX_ARGNAME "${PREFIX}_${ARGNAME}")
+  IF (NOT "${${PREFIX_ARGNAME}}" STREQUAL "")
+    LIST( LENGTH ${PREFIX_ARGNAME} ARG_NUM_VALS )
+    IF (ARG_NUM_VALS GREATER 1)
+      MESSAGE_WRAPPER(FATAL_ERROR
+        "ERROR: ${ARGNAME}='${${PREFIX_ARGNAME}}' can not have more than one value!" )
+      RETURN()
+      # NOTE: The return is needed in unit testing mode
+    ENDIF()
+  ENDIF()
 ENDMACRO()

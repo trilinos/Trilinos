@@ -3,7 +3,7 @@
 #define BUILDSAMPLERHPP
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -21,13 +21,13 @@
 template<class Real>
 class BuildSampler {
 private:
-  Teuchos::RCP<ROL::BatchManager<Real> > bman_;
-  Teuchos::RCP<ROL::SampleGenerator<Real> > sampler_;
-  std::vector<Teuchos::RCP<ROL::Distribution<Real> > > distVec_;
+  ROL::Ptr<ROL::BatchManager<Real> > bman_;
+  ROL::Ptr<ROL::SampleGenerator<Real> > sampler_;
+  std::vector<ROL::Ptr<ROL::Distribution<Real> > > distVec_;
 
 public:
   virtual ~BuildSampler() {};
-  BuildSampler(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+  BuildSampler(const ROL::Ptr<const Teuchos::Comm<int> > &comm,
                      Teuchos::ParameterList &Slist,
                      Teuchos::ParameterList &Elist) {
     /*** Build stochastic functionality. ***/
@@ -92,22 +92,22 @@ public:
          !pStochMag && !pStochAng ) {
       nsamp = 1;
     }
-    bman_ = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<Real>(comm));
+    bman_ = ROL::makePtr<ROL::TpetraTeuchosBatchManager<Real>>(comm);
     bool useOBS = Slist.sublist("Problem").get("Use Optimization-Based Sampling",false);
     if ( useOBS ) {
       Slist.sublist("SOL").sublist("Sample Generator").sublist("SROM").set("Number of Samples",nsamp);
-      sampler_ = Teuchos::rcp(new ROL::SROMGenerator<Real>(Slist,bman_,distVec_));
+      sampler_ = ROL::makePtr<ROL::SROMGenerator<Real>>(Slist,bman_,distVec_);
     }
     else {
-      sampler_ = Teuchos::rcp(new ROL::MonteCarloGenerator<Real>(nsamp,distVec_,bman_,false,false,0));
+      sampler_ = ROL::makePtr<ROL::MonteCarloGenerator<Real>>(nsamp,distVec_,bman_,false,false,0);
     }
   }
 
-  Teuchos::RCP<ROL::SampleGenerator<Real> >& get(void) {
+  ROL::Ptr<ROL::SampleGenerator<Real> >& get(void) {
     return sampler_;
   }
 
-  Teuchos::RCP<ROL::BatchManager<Real> >& getBatchManager(void) {
+  ROL::Ptr<ROL::BatchManager<Real> >& getBatchManager(void) {
     return bman_;
   }
 

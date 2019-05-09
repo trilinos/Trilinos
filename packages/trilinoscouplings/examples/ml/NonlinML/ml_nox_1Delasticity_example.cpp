@@ -96,8 +96,6 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[])
 {
-  int ierr = EXIT_SUCCESS;
-
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);

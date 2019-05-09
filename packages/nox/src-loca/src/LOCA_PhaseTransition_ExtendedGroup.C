@@ -281,8 +281,8 @@ LOCA::PhaseTransition::ExtendedGroup::applyJacobian(const NOX::Abstract::Vector&
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::PhaseTransition::ExtendedGroup::applyJacobian(const LOCA::PhaseTransition::ExtendedVector& input,
-                                          LOCA::PhaseTransition::ExtendedVector& result) const
+LOCA::PhaseTransition::ExtendedGroup::applyJacobian(const LOCA::PhaseTransition::ExtendedVector& /* input */,
+                                          LOCA::PhaseTransition::ExtendedVector& /* result */) const
 {
   std::cout << "ERROR:  Apply Jacobian not implemented for ExtendedGroup !!!!" << std::endl;
 
@@ -519,9 +519,9 @@ LOCA::PhaseTransition::ExtendedGroup::setParamsMulti(
 
 NOX::Abstract::Group::ReturnType
 LOCA::PhaseTransition::ExtendedGroup::computeDfDpMulti(
-                                            const std::vector<int>& paramIDs,
-                                            NOX::Abstract::MultiVector& dfdp,
-                                            bool isValid_F)
+                                            const std::vector<int>& /* paramIDs */,
+                                            NOX::Abstract::MultiVector& /* dfdp */,
+                                            bool /* isValid_F */)
 {
    std::string callingFunction =
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti()";

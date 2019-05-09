@@ -680,7 +680,7 @@ public:
    * less than or equal to zero, the dependent is not shown. If showIf is set
    * to valse then these visibility results will be reversed. If no
    * fuction is specified, the direct value of the dependee will be used
-   * to determine the dependents visibility in a similar fashion (postive
+   * to determine the dependents visibility in a similar fashion (positive
    * numbers causing the dependent to be displayed and 0 or
    * negative numbers causing the dependent to be hidden).
    */
@@ -706,7 +706,7 @@ public:
    * less than or equal to zero, the dependent is not shown. If showIf is set
    * to false, then these visibility results will be reversed. If no
    * fuction is specified, the direct value of the dependee will be used
-   * to determine the dependents visibility in a similar fashion (postive
+   * to determine the dependents visibility in a similar fashion (positive
    * numbers causing the dependent to be displayed and 0 or
    * negative numbers causing the dependent to be hidden).
    */
@@ -1745,9 +1745,11 @@ void RangeValidatorDependency<T>::validateDep() const{
   typename RangeToValidatorMap::const_iterator it =
     rangesAndValidators_.begin();
   RCP<const ParameterEntryValidator> firstValidator = it->second;
+  // getting the raw pointer avoids a Clang warning about side effects in typeid
+  const ParameterEntryValidator* rawValidatorPtr = firstValidator.get();
   ++it;
   for(; it!=rangesAndValidators_.end(); ++it){
-    TEUCHOS_TEST_FOR_EXCEPTION( typeid(*firstValidator) != typeid(*(it->second)),
+    TEUCHOS_TEST_FOR_EXCEPTION( typeid(*rawValidatorPtr) != typeid(*(it->second)),
       InvalidDependencyException,
       "Ay no! All of the validators in a RangeValidatorDependency "
       "must have the same type.");
@@ -1762,7 +1764,7 @@ void RangeValidatorDependency<T>::validateDep() const{
   TEUCHOS_TEST_FOR_EXCEPTION(
     nonnull(defaultValidator_)
     &&
-    typeid(*firstValidator) != typeid(*defaultValidator_),
+    typeid(*rawValidatorPtr) != typeid(*defaultValidator_),
     InvalidDependencyException,
     "Ay no! The default validator of a RangeValidatorDependency "
     "must have the same type as the validators in rangesAndValidators map."
@@ -2198,7 +2200,7 @@ TwoDColDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage
     "cols in TwoDArray(s) to a negative number. Silly. You can't have "
     "a TwoDArray with a negative number of cols!" << std::endl << std::endl <<
     "Error:" << std::endl <<
-    "An attempt was made to set the number of colums  of a TwoDArrayArray to a negative "
+    "An attempt was made to set the number of columns of a TwoDArrayArray to a negative "
     "number by a TwoDColDependency" << std::endl << std::endl;
   return os.str();
 }

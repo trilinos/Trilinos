@@ -44,6 +44,9 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
+#include <fstream>
+#include <iostream>
+
 // Growth policies
 const int num_growth_types = 2;
 const Stokhos::GrowthPolicy growth_type_values[] = {

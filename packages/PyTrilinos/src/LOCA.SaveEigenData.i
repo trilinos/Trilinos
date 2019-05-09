@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.SaveEigenData is the python interface to namespace
 SaveEigenData of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.SaveEigenData is to provide the capability to save
 eigenvectors and eigenvalues.  The python version of
@@ -64,19 +64,13 @@ LOCA.SaveEigenData supports the following classes:
         docstring = %loca_saveeigendata_docstring) SaveEigenData
 
 %{
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// LOCA includes
-#include "LOCA.H"
-#include "LOCA_SaveEigenData_DefaultStrategy.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 

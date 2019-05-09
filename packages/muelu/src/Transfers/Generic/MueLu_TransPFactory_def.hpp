@@ -76,12 +76,12 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& /* fineLevel */, Level& coarseLevel) const {
     Input(coarseLevel, "P");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
+  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& /* fineLevel */, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Transpose P", coarseLevel);
     std::string label = "MueLu::TransP-" + Teuchos::toString(coarseLevel.GetLevelID());
 
@@ -101,11 +101,12 @@ namespace MueLu {
 
     RCP<Matrix> R = Utilities::Transpose(*P, true,label,Tparams);
 
-    RCP<ParameterList> params = rcp(new ParameterList());;
-    params->set("printLoadBalancingInfo", true);
-    params->set("printCommInfo",          true);
-    if (IsPrint(Statistics1))
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
+    if (IsPrint(Statistics2)) {
+      RCP<ParameterList> params = rcp(new ParameterList());
+      params->set("printLoadBalancingInfo", true);
+      params->set("printCommInfo",          true);
+      GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*R, "R", params);
+    }
 
     Set(coarseLevel, "R", R);
 

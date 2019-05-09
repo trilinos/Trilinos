@@ -55,6 +55,10 @@
 
 #include "exodusII.h"
 
+#define log_ex_err(o, s) o << "Line No: " << __LINE__ << \
+                   " Function: " << __FUNCTION__ << \
+                   " Error: " << s // note I leave ; out
+
 class ExodusInterface
 {
 
@@ -89,8 +93,10 @@ public:
 	   num_nodes, num_elem, num_elem_blk, 
 	   num_node_sets, num_side_sets);
 
-    vector<double> coord(3);
-    vector<int>    vertices(data.NumVerticesPerElement());
+    if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
+
+    std::vector<double> coord(3);
+    std::vector<int>    vertices(data.NumVerticesPerElement());
 
     const Epetra_Map& RowMap = data.RowMap();
 //    const Epetra_Map& VertexMap = data.VertexMap();
@@ -123,13 +129,17 @@ public:
       case 2:{
 	       const char* coord_names[] = {"x", "y"};
 	       ex_err = ex_put_coord_names(ex_id, (char**)coord_names);
+           if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 	       ex_err = ex_put_coord(ex_id, &x[0], &y[0], NULL);
+           if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 	     }
         break;
       case 3: {
 	       const char* coord_names[] = {"x", "y", "z"};
 	       ex_err = ex_put_coord_names(ex_id, (char**)coord_names);
+           if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 	       ex_err = ex_put_coord(ex_id, &x[0], &y[0], &z[0]);
+           if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 	      }
         break;
       default:
@@ -148,19 +158,23 @@ public:
 
           if (type == "GALERI_TRIANGLE"){
 		       const char * elem_type = "TRIANGLE";
-		       ex_err = ex_put_elem_block(ex_id, 1, (char *)elem_type, data.NumGlobalElements(), 3, 0);
+		       ex_err = ex_put_block(ex_id, EX_ELEM_BLOCK, 1, (char *)elem_type, data.NumGlobalElements(), 3, 0, 0, 0);
+               if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 	  }
           else if (type == "GALERI_QUAD"){
 		       const char * elem_type = "QUAD4";
-		       ex_err = ex_put_elem_block(ex_id, 1, (char *)elem_type, data.NumGlobalElements(), 4, 0);
+		       ex_err = ex_put_block(ex_id, EX_ELEM_BLOCK, 1, (char *)elem_type, data.NumGlobalElements(), 4, 0, 0, 0);
+               if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 	  }
           else if (type == "GALERI_TET"){
 		       const char * elem_type = "TETRA";
-		       ex_err = ex_put_elem_block(ex_id, 1, (char *)elem_type, data.NumGlobalElements(), 4, 0);
+		       ex_err = ex_put_block(ex_id, EX_ELEM_BLOCK, 1, (char *)elem_type, data.NumGlobalElements(), 4, 0, 0, 0);
+               if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 	  }
           else if (type == "GALERI_HEX"){
 		       const char * elem_type = "HEX";
-		       ex_err = ex_put_elem_block(ex_id, 1, (char *)elem_type, data.NumGlobalElements(), 8, 0);
+		       ex_err = ex_put_block(ex_id, EX_ELEM_BLOCK, 1, (char *)elem_type, data.NumGlobalElements(), 8, 0, 0, 0);
+               if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 	  }
           else
           {
@@ -178,37 +192,30 @@ public:
 		  connect_tmp[cnt++] = data.VertexMap().GID(vertices[j]) + 1;
         }
 
-	    ex_err = ex_put_elem_conn(ex_id, 1, &connect_tmp[0]);
+	    ex_err = ex_put_conn(ex_id, EX_ELEM_BLOCK, 1, &connect_tmp[0], 0, 0);
+        if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 	
 
       }
 
- 	/* Write the field data out
-	
-		ex_err = ex_put_nodal_var(int exodus_file_id, int time_step, 
-		 int nodal_var_index, // which field set is being written
-		 int num_nodes, // number of nodes worth of data
-		 void *nodal_var_vals  // the data
-		);
-	*/
-
-
 	  int num_nodal_fields = 1;
       std::vector<double> field(data.NumMyVertices());
 
-	  ex_err = ex_put_var_param (ex_id, "N", num_nodal_fields);
+	  ex_err = ex_put_variable_param (ex_id, EX_NODAL, num_nodal_fields);
+      if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 
 	  const char* var_names[] = {"u"};
-      ex_err = ex_put_var_names (ex_id, "N", num_nodal_fields, (char**)var_names);
+      ex_err = ex_put_variable_names (ex_id, EX_NODAL, num_nodal_fields, (char**)var_names);
+      if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 
-//	  for(int i = 0; i < data.NumMyVertices(); i++)
-//			  field[i] = SingleProcField[0][i];
 	  for(int i = 0; i < data.NumMyVertices(); i++)
 			  field[i] = Field[0][i];
 
-	  ex_err = ex_put_nodal_var (ex_id, 1, 1, data.NumMyVertices(), &field[0]);
+	  ex_err = ex_put_var (ex_id, 1, EX_NODAL, 1, 1, data.NumMyVertices(), &field[0]);
+      if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 
 	  ex_err = ex_close(ex_id);
+      if(ex_err) log_ex_err(std::cout, "ex_error is non-zero");
 
       Comm().Barrier();
 

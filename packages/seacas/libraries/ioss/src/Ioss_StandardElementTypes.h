@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,10 +33,11 @@
  */
 #ifndef Ioss_STANDARD_ELEMENT_TYPES_H
 #define Ioss_STANDARD_ELEMENT_TYPES_H
-#include <Ioss_Bar2.h>
-#include <Ioss_Bar3.h>
+#include <Ioss_Beam2.h>
+#include <Ioss_Beam3.h>
 #include <Ioss_Edge2.h>
 #include <Ioss_Edge3.h>
+#include <Ioss_Hex16.h>
 #include <Ioss_Hex20.h>
 #include <Ioss_Hex27.h>
 #include <Ioss_Hex8.h>
@@ -48,6 +49,7 @@
 #include <Ioss_Pyramid19.h>
 #include <Ioss_Pyramid5.h>
 #include <Ioss_Quad4.h>
+#include <Ioss_Quad6.h>
 #include <Ioss_Quad8.h>
 #include <Ioss_Quad9.h>
 #include <Ioss_Shell4.h>
@@ -56,6 +58,8 @@
 #include <Ioss_ShellLine2D2.h>
 #include <Ioss_ShellLine2D3.h>
 #include <Ioss_Sphere.h>
+#include <Ioss_Spring2.h>
+#include <Ioss_Spring3.h>
 #include <Ioss_Super.h>
 #include <Ioss_Tet10.h>
 #include <Ioss_Tet11.h>
@@ -72,6 +76,7 @@
 #include <Ioss_TriShell6.h>
 #include <Ioss_TriShell7.h>
 #include <Ioss_Unknown.h>
+#include <Ioss_Wedge12.h>
 #include <Ioss_Wedge15.h>
 #include <Ioss_Wedge16.h>
 #include <Ioss_Wedge18.h>

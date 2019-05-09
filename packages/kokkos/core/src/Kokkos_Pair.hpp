@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -79,7 +79,11 @@ struct pair
   /// compile if those default constructors are not defined and
   /// public.
   KOKKOS_FORCEINLINE_FUNCTION constexpr
-  pair() = default ;
+#ifdef KOKKOS_CUDA_9_DEFAULTED_BUG_WORKAROUND
+  pair() : first(), second() {}
+#else
+  pair() = default;
+#endif
 
   /// \brief Constructor that takes both elements of the pair.
   ///
@@ -459,7 +463,11 @@ struct pair<T1,void>
   enum { second = 0 };
 
   KOKKOS_FORCEINLINE_FUNCTION constexpr
-  pair() = default ;
+#ifdef KOKKOS_CUDA_9_DEFAULTED_BUG_WORKAROUND
+  pair() : first() {}
+#else
+  pair() = default;
+#endif
 
   KOKKOS_FORCEINLINE_FUNCTION constexpr
   pair(const first_type & f)

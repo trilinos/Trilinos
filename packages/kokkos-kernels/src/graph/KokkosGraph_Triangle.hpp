@@ -48,7 +48,7 @@
 namespace KokkosGraph{
 
 namespace Experimental{
-
+/*
 template <typename KernelHandle,
 typename alno_row_view_t_,
 typename alno_nnz_view_t_,
@@ -168,6 +168,7 @@ void triangle_enumerate(
   break;
   }
 }
+*/
 
 template <typename KernelHandle,
 typename alno_row_view_t_,
@@ -426,8 +427,8 @@ void triangle_generic(
 
     KokkosSparse::Impl::KokkosSPGEMM
     <KernelHandle,
-    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t,
-    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t>
+    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
+    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t>
     kspgemm (handle,m,m,m,
         lower_triangular_matrix_rowmap, lower_triangular_matrix_entries,
         false,
@@ -441,8 +442,8 @@ void triangle_generic(
 
     KokkosSparse::Impl::KokkosSPGEMM
     <KernelHandle,
-    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t,
-    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t>
+    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
+    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t>
     kspgemm (handle,m,m,m,
         lower_triangular_matrix_rowmap, lower_triangular_matrix_entries,
         false,
@@ -456,9 +457,9 @@ void triangle_generic(
     if (create_lower_triangular){
       KokkosSparse::Impl::KokkosSPGEMM
       <KernelHandle,
-      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t,
-      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t>
-      kspgemm (handle,m,m,incidence_entries.dimension_0() / 2,
+      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
+      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t>
+      kspgemm (handle,m,m,incidence_entries.extent(0) / 2,
           lower_triangular_matrix_rowmap, lower_triangular_matrix_entries,
           false, //transpose ignore.
           incidence_rowmap, incidence_entries,
@@ -468,9 +469,9 @@ void triangle_generic(
     else {
       KokkosSparse::Impl::KokkosSPGEMM
       <KernelHandle,
-      alno_row_view_t_, alno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
-      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t>
-      kspgemm (handle,m,m,incidence_entries.dimension_0() / 2,
+      alno_row_view_t_, alno_nnz_view_t_, nnz_lno_persistent_work_view_t,
+      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t>
+      kspgemm (handle,m,m,incidence_entries.extent(0) / 2,
           row_mapA, entriesA,
           false, //transpose ignore.
           incidence_rowmap, incidence_entries,
@@ -486,10 +487,10 @@ void triangle_generic(
     if (create_lower_triangular){
       KokkosSparse::Impl::KokkosSPGEMM
       <KernelHandle,
-      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t,
-      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t>
+      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
+      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t>
       kspgemm (handle,
-          incidence_transpose_rowmap.dimension_0() - 1,m,m,
+          incidence_transpose_rowmap.extent(0) - 1,m,m,
           incidence_transpose_rowmap, incidence_transpose_entries,
           false, //transpose ignore.
           lower_triangular_matrix_rowmap, lower_triangular_matrix_entries,
@@ -499,10 +500,10 @@ void triangle_generic(
     else {
       KokkosSparse::Impl::KokkosSPGEMM
       <KernelHandle,
-      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t,
-      alno_row_view_t_, alno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t>
+      row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
+      alno_row_view_t_, alno_nnz_view_t_, nnz_lno_persistent_work_view_t>
       kspgemm (handle,
-          incidence_transpose_rowmap.dimension_0() - 1,m,m,
+          incidence_transpose_rowmap.extent(0) - 1,m,m,
           incidence_transpose_rowmap, incidence_transpose_entries,
           false, //transpose ignore.
           row_mapA, entriesA,

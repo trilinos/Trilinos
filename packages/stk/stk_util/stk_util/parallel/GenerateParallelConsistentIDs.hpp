@@ -93,7 +93,7 @@ namespace stk {
     //  Extract global max existing id.  For basic use case just start generating ids starting
     //  at the previous max_id + 1.  
 
-    uint64_t localMaxId   = 0;
+    uint64_t localMaxId = 0;
     uint64_t globalMaxId;    
     for(uint64_t i=0; i<existingIds.size(); ++i) {
       if(existingIds[i] > localMaxId) {
@@ -101,11 +101,9 @@ namespace stk {
       }
     }
 
-    int mpiResult = MPI_SUCCESS ;  
-    mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED_LONG, MPI_MAX, comm);
+    int mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED_LONG, MPI_MAX, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
-      return newIds;
     }
     //
     //  Communicate the entire ordering function to every single other processor.
@@ -125,10 +123,8 @@ namespace stk {
     for(uint64_t i=0; i<globalNumIdsRequested-1; ++i) {
       if(globalOrderArray[i] == globalOrderArray[i+1]) {
         std::ostringstream msg;
-        msg << "In generate_parallel_consistent_ids, an ordering array with non unique keys provided \n";
-        msg << "This is not allowed.  \n";
+        msg << "In generate_parallel_consistent_ids, an ordering array with non unique keys provided.\nThis is not allowed.\n";
         throw std::runtime_error(msg.str());
-        return newIds;
       }
     }
 
@@ -178,12 +174,6 @@ namespace stk {
         newIds.push_back(globalMaxId+1+offset);
       }
     }
-
-
-
-
-
-
 
     return newIds;
   }

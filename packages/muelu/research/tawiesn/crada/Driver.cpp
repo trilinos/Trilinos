@@ -199,7 +199,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     int    amgAsPrecond     = 1;                 clp.setOption("precond",               &amgAsPrecond,     "apply multigrid as preconditioner");
     int    amgAsSolver      = 0;                 clp.setOption("fixPoint",              &amgAsSolver,      "apply multigrid as solver");
     bool   printTimings     = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
-    int    blockedSystem    = 0;                 clp.setOption("split",                 &blockedSystem,    "split system matrix into 2x2 system (default=0)");
+    int    blockedSystem    = 1;                 clp.setOption("split",                 &blockedSystem,    "split system matrix into 2x2 system (default=0)");
     int    useThyraGIDs     = 0;                 clp.setOption("thyra",                 &useThyraGIDs,     "use Thyra style numbering of GIDs.");
     int    writeMatricesOPT = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
     double tol              = 1e-6;             clp.setOption("tol",                   &tol,              "solver convergence tolerance");
@@ -212,7 +212,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     std::string cooFileName = "crada1/crada_coordinates.mm"; clp.setOption("coordinatesfile",&cooFileName,      "matrix market file containing fine level coordinates");
     std::string spcFileName = "crada1/crada_special.mm"; clp.setOption("specialfile",        &spcFileName,      "matrix market file containing fine level special dofs");
     int nPDE = 3; clp.setOption("numpdes",           &nPDE,   "number of PDE equations");
-    int nNspVectors = 3; clp.setOption("numnsp", &nNspVectors, "number of nullspace vectors. Only used if null space is read from file. Must be smaller or equal than the number of null space vectors read in from file.");
+    int nNspVectors = 6; clp.setOption("numnsp", &nNspVectors, "number of nullspace vectors. Only used if null space is read from file. Must be smaller or equal than the number of null space vectors read in from file.");
     std::string convType = "r0"; clp.setOption("convtype",       &convType,         "convergence type (r0 or none)");
     std::string strOutputFilename = ""; clp.setOption("output",  &strOutputFilename,"filename prefix for output file name. If empty, no output is written.");
 
@@ -266,7 +266,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     if (nspFileName != "") {
       fancyout << "Read null space from file " << nspFileName << std::endl;
+
+
       nullspace = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(nspFileName), A->getRowMap());
+            //nullspace = MultiVectorFactory::Build(A->getRowMap(),6);//haq
       fancyout << "Found " << nullspace->getNumVectors() << " null space vectors" << std::endl;
       if (nNspVectors > Teuchos::as<int>(nullspace->getNumVectors())) {
         fancyout << "Set number of null space vectors from " << nNspVectors << " to " << nullspace->getNumVectors() << " as only " << nullspace->getNumVectors() << " are provided by " << nspFileName << std::endl;
@@ -447,7 +450,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // We have the following different formulations:
     // - split the linear system in a 2x2 multiphysics problem using Xpetra style gids
     // - split the linear system in a 2x2 multiphysics problem using Thyra style gids
-    // - solve the problem as a monolithik linear system
+    // - solve the problem as a monolithic linear system
     if(blockedSystem == 1) {
       // split matrix and vectors
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,7 +38,7 @@ void makev2cv(
     int *mflag, /* flag indicating vtx selected or not */
     int  nvtxs, /* number of vtxs in original graph */
     int *v2cv   /* mapping from vtxs to coarsened vtxs */
-    )
+)
 {
   int i, j; /* loop counters */
 

@@ -232,7 +232,7 @@ public:
 
   Real apply( const Real &x ) const {
     // To avoid circular dependency
-    Real NINF = -0.1*std::abs(Teuchos::ScalarTraits<Real>::rmax()); 
+    Real NINF = -0.1*std::abs(ROL::ScalarTraits<Real>::rmax()); 
     return (x>0) ? std::log(x) : NINF;
   }
 
@@ -266,12 +266,12 @@ class UnaryComposition : public UnaryFunction<Real> {
 
 private:
   
-  Teuchos::RCP<UnaryFunction<Real> > f_;
-  Teuchos::RCP<UnaryFunction<Real> > g_; 
+  ROL::Ptr<UnaryFunction<Real> > f_;
+  ROL::Ptr<UnaryFunction<Real> > g_; 
   
 public:
-  UnaryComposition( Teuchos::RCP<UnaryFunction<Real> > &f,
-                    Teuchos::RCP<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
+  UnaryComposition( ROL::Ptr<UnaryFunction<Real> > &f,
+                    ROL::Ptr<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
   Real apply( const Real &x ) const {
     return g_->apply(f_->apply(x));
   }

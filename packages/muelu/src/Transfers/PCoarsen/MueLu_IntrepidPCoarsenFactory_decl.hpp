@@ -62,11 +62,7 @@
 
 #include "Intrepid2_Basis.hpp"
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #include "Kokkos_DynRankView.hpp"
-#else
-#include "Intrepid2_FieldContainer.hpp"
-#endif
 
 #include <Xpetra_Import.hpp>
 
@@ -118,15 +114,10 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> LOFieldContainer;
     typedef Kokkos::DynRankView<double,typename Node::device_type> SCFieldContainer;
     typedef Intrepid2::Basis<typename Node::device_type::execution_space,double,double> Basis; // Hardwired on purpose
-#else
-    typedef Intrepid2::FieldContainer<LocalOrdinal> LOFieldContainer;
-    typedef Intrepid2::FieldContainer<double> SCFieldContainer;
-    typedef Intrepid2::Basis<double,SCFieldContainer>
-#endif
+
     //! @name Constructors/Destructors.
     //@{
 
@@ -197,28 +188,14 @@ namespace MueLu {
   /* Utility functions for use with Intrepid */
   namespace MueLuIntrepid {
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     template<class Scalar,class KokkosExecutionSpace>
     Teuchos::RCP<Intrepid2::Basis<KokkosExecutionSpace,Scalar,Scalar> >  BasisFactory(const std::string & name, int & degree);
-#else
-    // NOTE: This function will not work with Stokhos scalar types, due to deficiencies upstream.
-    template<class Scalar>
-    Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  BasisFactory(const std::string & name, int & degree);
-#endif
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     template<class Scalar,class KokkosDeviceType>
     void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> > &hi_basis,
                                const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> > &lo_basis,
                                std::vector<size_t> & lo_node_in_hi,
                                Kokkos::DynRankView<Scalar,KokkosDeviceType> & hi_DofCoords);
-#else
-    template <class Scalar, class ArrayScalar>
-    void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &hi_basis,
-                               const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &lo_basis,
-                               std::vector<size_t> & lo_node_in_hi,
-                               ArrayScalar & hi_DofCoords);
-#endif
 
     template<class LocalOrdinal, class GlobalOrdinal, class Node, class LOFieldContainer>
     void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candidates,const LOFieldContainer & hi_elemToNode,
@@ -266,4 +243,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define  MUELU_INTREPIDPCOARSENFACTORY_SHORT
-#endif // MUELU_IPCFACTORY_DECL_HPP
+#endif // MUELU_INTREPIDPCOARSENFACTORY_DECL_HPP

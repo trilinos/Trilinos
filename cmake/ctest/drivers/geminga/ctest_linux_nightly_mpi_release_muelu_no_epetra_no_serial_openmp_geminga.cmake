@@ -61,9 +61,13 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc.cmake")
 # Set the options specific to this build case
 #
 
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_EPETRA_NO_SERIAL_OPENMP)
+SET(BUILD_NAME_DETAILS NO-EPETRA_NO-SERIAL_OPENMP_EXPERIMENTAL)
+
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(Trilinos_TRACK  Specialized)    # Set the CDash track
@@ -74,7 +78,6 @@ SET(Trilinos_PACKAGES MueLu Xpetra)
 SET(EXTRA_CONFIGURE_OPTIONS
   ### ETI ###
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-    "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=ON"
     "-DTpetra_INST_INT_LONG:BOOL=OFF"
     "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
     "-DTrilinos_ENABLE_OpenMP=ON"
@@ -85,16 +88,13 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   ### TPLS ###
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
-      "-DSuperLU_INCLUDE_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/include"
-      "-DSuperLU_LIBRARY_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/lib"
-      "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
   "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
   "-DTPL_ENABLE_HWLOC:BOOL=OFF"
 
   ### PACKAGES CONFIGURATION ###
   "-DMueLu_ENABLE_Experimental:BOOL=ON"
   "-DXpetra_ENABLE_Experimental:BOOL=ON"
-  "-DMueLu_ENABLE_Epetra:BOOL=OFF"
+  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
 
 )
 

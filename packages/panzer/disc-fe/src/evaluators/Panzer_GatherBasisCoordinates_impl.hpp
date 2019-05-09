@@ -79,10 +79,8 @@ GatherBasisCoordinates(const panzer::PureBasis & basis)
 template<typename EvalT,typename TRAITS>
 void panzer::GatherBasisCoordinates<EvalT, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData sd, 
-		      PHX::FieldManager<TRAITS>& fm)
+		      PHX::FieldManager<TRAITS>& /* fm */)
 {
-  this->utils.setFieldData(basisCoordinates_,fm);
-
   basisIndex_ = panzer::getPureBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
 }
 

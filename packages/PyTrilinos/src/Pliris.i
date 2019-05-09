@@ -47,7 +47,7 @@
 PyTrilinos.Pliris is the python interface to the Trilinos package
 Pliris, an LU solver for dense matrices:
 
-    http://trilinos.sandia.gov/packages/pliris
+    https://trilinos.org/docs/dev/packages/pliris/doc/html/index.html
 
 The purpose of Pliris is to provide an object-oriented interface to an
 LU solver for dense matrices on parallel platforms. These matrices are
@@ -58,30 +58,34 @@ python version of the Pliris package supports the following class:
 "
 %enddef
 
-%module(package   = "PyTrilinos",
-	autodoc   = "1",
-	docstring = %pliris_docstring) Pliris
+%define %pliris_importcode
+"
+from . import _Pliris
+"
+%enddef
+
+%module(package      = "PyTrilinos",
+        moduleimport = %pliris_importcode,
+	autodoc      = "1",
+	docstring    = %pliris_docstring) Pliris
 
 %{
-// Configuration includes
+// PyTrilinos configuration
 #include "PyTrilinos_config.h"
 
-// Epetra includes
-#ifdef HAVE_EPETRA
-#undef HAVE_INTTYPES_H
-#undef HAVE_STDINT_H
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
+// #undef HAVE_INTTYPES_H
+// #undef HAVE_STDINT_H
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// NumPy includes
+// NumPy include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// Pliris includes
-#include "PlirisVersion.h"
-#include "Pliris.h"
-
+// Pliris include files
+#include "PyTrilinos_Pliris_Headers.hpp"
 #endif
-
 %}
 
 // Auto-documentation feature
@@ -99,7 +103,7 @@ using std::string;
 // %include "Pliris_dox.i"
 
 // External Trilinos modules
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %ignore Epetra_Version();
 %import "Epetra.i"
 #endif

@@ -1,0 +1,2 @@
+#include "Thyra_MueLuRefMaxwellPreconditionerFactory_decl.hpp"
+#include "Thyra_MueLuRefMaxwellPreconditionerFactory_def.hpp"

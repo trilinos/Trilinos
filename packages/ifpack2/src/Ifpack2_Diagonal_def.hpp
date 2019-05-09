@@ -184,7 +184,7 @@ void Diagonal<MatrixType>::initialize ()
     }
     else {
       const size_t lclNumRows = A_crs->getNodeNumRows ();
-      if (offsets_.dimension_0 () < lclNumRows) {
+      if (offsets_.extent (0) < lclNumRows) {
         offsets_ = offsets_type (); // clear first to save memory
         offsets_ = offsets_type ("offsets", lclNumRows);
       }

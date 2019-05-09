@@ -44,6 +44,8 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include <algorithm>
+#include <fstream>
+#include <iostream>
 
 // sparsity_example
 //

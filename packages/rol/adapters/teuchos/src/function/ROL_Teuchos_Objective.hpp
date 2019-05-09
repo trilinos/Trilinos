@@ -48,9 +48,9 @@
 #include "ROL_TeuchosVector.hpp"
 
 /** @ingroup func_group
-    \class ROL::TeuchosObjective
-    \brief Specializes the ROL::Objective interface for objective functions
-    that operate on ROL::TeuchosVector
+    \class TeuchosObjective
+    \brief Specializes the Objective interface for objective functions
+    that operate on TeuchosVector
 */
 
 
@@ -59,38 +59,47 @@ namespace ROL {
 template <class Ordinal,  class Real>
 class TeuchosObjective : public Objective<Real> {
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
+  template<class T> using RCP = Teuchos::RCP<T>;
 
-  typedef Teuchos::SerialDenseVector<Ordinal,Real> SDV;
-  typedef TeuchosVector<Ordinal,Real>              TV;
+  using SerialDenseVector = Teuchos::SerialDenseVector<Ordinal,Real>;
+
+  RCP<const SerialDenseVector> getVector( const Vector<Real>& x ) {
+    return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(x).getVector();
+  }
+    
+  RCP<SerialDenseVector> getVector( Vector<Real>& x ) {
+    return dynamic_cast<TeuchosVector<Ordinal,Real>&>(x).getVector();
+  }
 
 public:
 
-  virtual void update( const SDV &x, bool flag = true, int iter = -1 ) {}
+  virtual ~TeuchosObjective() {}
+
+  virtual void update( const SerialDenseVector &x, bool flag = true, int iter = -1 ) {}
 
   using Objective<Real>::update;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    RCP<const SDV> xp = Teuchos::dyn_cast<const TV>(x).getVector();
+    auto xp = getVector(x);
     update(*xp,flag,true);
   }
 
-  virtual Real value( const SDV &x, Real &tol ) = 0;
+  virtual Real value( const SerialDenseVector &x, Real &tol ) = 0;
 
   using Objective<Real>::value;
   Real value( const Vector<Real> &x, Real &tol ) {
-    RCP<const SDV> xp = Teuchos::dyn_cast<const TV>(x).getVector();
+    auto xp = getVector(x);
     return value(*xp,tol);
   }
 
-  virtual void gradient( SDV &g, const SDV &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-      ">>> ERROR (ROL::TeuchosObjective): gradient not implemented!");
+  virtual void gradient( SerialDenseVector &g, const SerialDenseVector &x, Real &tol ) {
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ">>> ERROR (TeuchosObjective): gradient not implemented!");
   }
 
   using Objective<Real>::gradient;
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    RCP<SDV> gp = Teuchos::dyn_cast<TV>(g).getVector();
-    RCP<const SDV> xp = Teuchos::dyn_cast<const TV>(x).getVector();
+    auto gp = getVector(g);
+    auto xp = getVector(x);
 
     try {
       gradient(*gp,*xp,tol);
@@ -100,16 +109,16 @@ public:
     }
   }
 
-  virtual Real dirDeriv( const SDV &x, const SDV &d, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-      ">>> ERROR (ROL::TeuchosObjective): dirDeriv not implemented!");
+  virtual Real dirDeriv( const SerialDenseVector &x, const SerialDenseVector &d, Real &tol ) {
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ">>> ERROR (TeuchosObjective): dirDeriv not implemented!");
   }
 
   using Objective<Real>::dirDeriv;
   Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) {
-    RCP<const SDV> xp = Teuchos::dyn_cast<const TV>(x).getVector();
-    RCP<const SDV> dp = Teuchos::dyn_cast<const TV>(d).getVector();
-   try {
+    auto xp = getVector(x);
+    auto dp = getVector(d);
+    try {
       return dirDeriv(*xp,*dp,tol);
     }
     catch (std::exception &e) {
@@ -117,16 +126,17 @@ public:
     }
   }
 
-  virtual void hessVec( SDV &hv, const SDV &v, const SDV &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-      ">>> ERROR (ROL::TeuchosObjective): hessVec not implemented!");
+  virtual void hessVec( SerialDenseVector &hv, const SerialDenseVector &v, 
+                        const SerialDenseVector &x, Real &tol ) {
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ">>> ERROR (TeuchosObjective): hessVec not implemented!");
   }
 
   using Objective<Real>::hessVec;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    RCP<SDV> hvp = Teuchos::dyn_cast<TV>(hv).getVector();
-    RCP<const SDV> vp = Teuchos::dyn_cast<const TV>(v).getVector();
-    RCP<const SDV> xp = Teuchos::dyn_cast<const TV>(x).getVector();
+    auto hvp = getVector(hv);
+    auto vp  = getVector(v);
+    auto xp  = getVector(x);
     try {
       hessVec(*hvp,*vp,*xp,tol);
     }
@@ -135,29 +145,33 @@ public:
     }
   }
 
-  virtual void invHessVec( SDV &hv, const SDV &v, const SDV &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-      ">>> ERROR (ROL::TeuchosObjective): invHessVec not implemented!");
+  virtual void invHessVec( SerialDenseVector &hv, const SerialDenseVector &v, 
+                           const SerialDenseVector &x, Real &tol ) {
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ">>> ERROR (TeuchosObjective): invHessVec not implemented!");
   }
 
   using Objective<Real>::invHessVec;
-  void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    RCP<SDV> hvp = Teuchos::dyn_cast<TV>(hv).getVector();
-    RCP<const SDV> vp = Teuchos::dyn_cast<const TV>(v).getVector();
-    RCP<const SDV> xp = Teuchos::dyn_cast<const TV>(x).getVector();
+  void invHessVec( Vector<Real> &hv, const Vector<Real> &v, 
+                   const Vector<Real> &x, Real &tol ) {
+    auto hvp = getVector(hv);
+    auto vp  = getVector(v);
+    auto xp  = getVector(x);
     invHessVec(*hvp,*vp,*xp,tol);
   }
 
-  virtual void precond( SDV &Pv, const SDV &v, const SDV &x, Real &tol ) {
-    Pv.assign(v.begin(),v.end());
+  virtual void precond( SerialDenseVector &Pv, const SerialDenseVector &v, 
+                        const SerialDenseVector &x, Real &tol ) {
+    Pv.assign(v);
   }
 
   using Objective<Real>::precond;
-  void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    RCP<SDV> Pvp = Teuchos::dyn_cast<TV>(Pv).getVector();
-    RCP<const SDV> vp = Teuchos::dyn_cast<const TV>(v).getVector();
-    RCP<const SDV> xp = Teuchos::dyn_cast<const TV>(x).getVector();
-
+  void precond( Vector<Real> &Pv, const Vector<Real> &v, 
+                const Vector<Real> &x, Real &tol ) {
+    auto Pvp = getVector(Pv);
+    auto vp  = getVector(v);
+    auto xp  = getVector(x);
+   
     precond(*Pvp,*vp,*xp,tol);
   }
 }; // class TeuchosObjective

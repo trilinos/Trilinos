@@ -44,8 +44,6 @@
 #ifndef ROL_ELEMENTWISE_FUNCTION_H
 #define ROL_ELEMENTWISE_FUNCTION_H
 
-#include "Teuchos_CommHelpers.hpp"
-
 namespace ROL {
 
 template<class Real>

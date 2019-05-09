@@ -404,7 +404,7 @@ def getExtraReposTable(extraRepoDictList):
     ]
   #print("extraReposTableDictList =", extraReposTableDictList)
   
-  extraReposTable = gitdist.createAsciiTable(extraReposTableDictList)
+  extraReposTable = gitdist.createTable(extraReposTableDictList)
 
   # Return the table
   return extraReposTable

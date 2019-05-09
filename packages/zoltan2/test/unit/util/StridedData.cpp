@@ -62,14 +62,14 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
-using namespace std;
 
 void StridedDataTest(const Teuchos::SerialComm<int> &comm)
 {
   // StridedData template arguments
 
-  typedef zlno_t     index_t;
-  typedef zscalar_t  value_t;
+  typedef int     index_t;
+  typedef double  value_t;
+  typedef float   different_value_t;
 
   typedef StridedData<index_t, value_t> stridedInput_t;
   bool aok = true;
@@ -113,6 +113,14 @@ void StridedDataTest(const Teuchos::SerialComm<int> &comm)
     std::cout << s1Copy[i] << " ";
   std::cout << std::endl;
 
+  // test a different type
+  ArrayRCP<const different_value_t> fromS1too;
+  s1->getInputArray(fromS1too);
+  std::cout << "getInputArray test -- different type: ";
+  for (int i=0; i < 12; i++)
+    std::cout << fromS1too[i] << " ";
+  std::cout << std::endl;
+
   /*! \test strided input with stride 3
    */
 
@@ -151,13 +159,20 @@ void StridedDataTest(const Teuchos::SerialComm<int> &comm)
   for (int i=0; i < 4; i++)
     std::cout << s2Copy[i] << " ";
   std::cout << std::endl;
+
+  // test a different type
+  ArrayRCP<const different_value_t> fromS2too;
+  s1->getInputArray(fromS2too);
+  std::cout << "getInputArray test -- different type: ";
+  for (int i=0; i < 4; i++)
+    std::cout << fromS2too[i] << " ";
+  std::cout << std::endl;
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = 
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = Tpetra::getDefaultComm();
 
   // Run the test on only one rank. 
   // There's no parallelism involved in StridedData, 

@@ -107,11 +107,10 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
       fm.requireField<MyTraits::Residual>(tag_c);
     }
     
-    using namespace Kokkos;
-    View<double**,PHX::Device> unmanaged_a("a",dl->extent(0),dl->extent(1));
-    View<double**,PHX::Device> unmanaged_b("b",dl->extent(0),dl->extent(1));
-    View<double**,PHX::Device> unmanaged_c("c",dl->extent(0),dl->extent(1));
-    View<double**,PHX::Device> unmanaged_d("d",dl->extent(0),dl->extent(1));
+    Kokkos::View<double**,typename PHX::DevLayout<double>::type,PHX::Device> unmanaged_a("a",dl->extent(0),dl->extent(1));
+    Kokkos::View<double**,typename PHX::DevLayout<double>::type,PHX::Device> unmanaged_b("b",dl->extent(0),dl->extent(1));
+    Kokkos::View<double**,typename PHX::DevLayout<double>::type,PHX::Device> unmanaged_c("c",dl->extent(0),dl->extent(1));
+    Kokkos::View<double**,typename PHX::DevLayout<double>::type,PHX::Device> unmanaged_d("d",dl->extent(0),dl->extent(1));
     Kokkos::deep_copy(unmanaged_a,0.0);
     Kokkos::deep_copy(unmanaged_b,5.0);
     Kokkos::deep_copy(unmanaged_c,0.0);
@@ -151,10 +150,10 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
   // Once outside unmanaged_view scope, grab the views again and make
   // sure the internally stored views in the field manager are
   // pointing to the same memory.
-  Kokkos::View<double**,PHX::Device> a;
-  Kokkos::View<double**,PHX::Device> b;
-  Kokkos::View<const double**,PHX::Device> c; // test const accessors
-  Kokkos::View<const double**,PHX::Device> d; // test const accessors
+  PHX::View<double**> a;
+  PHX::View<double**> b;
+  PHX::View<const double**> c; // test const accessors
+  PHX::View<const double**> d; // test const accessors
 
   fm.getFieldData<MyTraits::Residual>(tag_a,a);
   fm.getFieldData<MyTraits::Residual>(tag_b,b);

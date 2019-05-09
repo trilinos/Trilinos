@@ -57,7 +57,8 @@
 // *************************************************************************
 template <typename EvalT, typename Traits>
 PHX::EvaluationContainer<EvalT, Traits>::EvaluationContainer() :
-  post_registration_setup_called_(false)
+  post_registration_setup_called_(false),
+  build_device_dag_(false)
 {
   this->dag_manager_.setEvaluationTypeName( PHX::typeAsString<EvalT>() );
 }
@@ -118,7 +119,8 @@ aliasField(const PHX::FieldTag& aliasedField,
 template <typename EvalT, typename Traits> 
 void PHX::EvaluationContainer<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& fm)
+		      PHX::FieldManager<Traits>& fm,
+                      const bool& buildDeviceDAG)
 {
   // Figure out all evaluator dependencies
   if ( !(this->dag_manager_.sortingCalled()) )
@@ -163,12 +165,19 @@ postRegistrationSetup(typename Traits::SetupData d,
   // is called (e.g query for kokkos extended data type dimensions).
   post_registration_setup_called_ = true;
 
+  build_device_dag_ = buildDeviceDAG;  
+  // Make sure that device support has been enabled.
+#ifndef PHX_ENABLE_DEVICE_DAG
+  TEUCHOS_TEST_FOR_EXCEPTION(buildDeviceDAG, std::runtime_error,
+                             "ERROR: useDeviceDAG was set to true in call to postRegistrationSetup(), but this feature was not been enabled during configure. Please rebuild with Phalanx_ENABLE_DEVICE_DAG=ON to use this feature.");
+#endif
+  
   // Allow users to perform special setup. This used to include
   // manually binding memory for all fields in the evaluators via
   // setFieldData(). NOTE: users should not have to bind memory
   // anymore in the postRegistrationSetup() as we now do it for them
   // above.
-  this->dag_manager_.postRegistrationSetup(d,fm);
+  this->dag_manager_.postRegistrationSetup(d,fm,build_device_dag_);
 }
 
 // *************************************************************************
@@ -178,10 +187,26 @@ evaluateFields(typename Traits::EvalData d)
 {
 #ifdef PHX_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
-		      "You must call post registration setup for each evaluation type before calling the evaluateFields() method for that type!");
+		      "You must call postRegistrationSetup() for each evaluation type before calling the evaluateFields() method for that type!");
 #endif
 
   this->dag_manager_.evaluateFields(d);
+}
+
+// *************************************************************************
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
+evaluateFieldsDeviceDag(const int& work_size,
+			const int& team_size,
+			const int& vector_size,
+			typename Traits::EvalData d)
+{
+#ifdef PHX_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
+		      "You must call postRegistrationSetup() for each evaluation type before calling the evaluateFields() method for that type!");
+#endif
+
+  this->dag_manager_.evaluateFieldsDeviceDag(work_size,team_size,vector_size,d);
 }
 
 // *************************************************************************
@@ -267,13 +292,20 @@ setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a)
   // An unmanaged field is a MDField where the user has manually
   // allocated the underlying memory for the field. If setup was
   // already called, we need to reassign the memory and rebind all
-  // the evalautors that use the unmanaged field. If setup has not
+  // the evaluators that use the unmanaged field. If setup has not
   // been called, then we can store off the memory and assign normally
   // as part of the postRegistrationSetup() process.
   if (this->setupCalled())
     this->bindField(f,a);
   else
     unmanaged_fields_[f.identifier()] = a;
+
+#ifdef PHX_ENABLE_DEVICE_DAG
+  if (build_device_dag_) {
+    TEUCHOS_ASSERT(false); // need to rebuild device dag
+  }
+#endif
+
 }
 
 // *************************************************************************
@@ -296,7 +328,7 @@ bindField(const PHX::FieldTag& f, const PHX::any& a)
   // Set the new memory
   fields_[f.identifier()] = a;
 
-  // Loop through evalautors and rebind the field
+  // Loop through evaluators and rebind the field
   auto& evaluators = this->dag_manager_.getEvaluatorsBindingField(f);
   for (auto& e : evaluators)
     e->bindField(f,a);
@@ -360,6 +392,15 @@ const std::vector<Teuchos::RCP<PHX::FieldTag>>&
 PHX::EvaluationContainer<EvalT, Traits>::getFieldTags()
 {
   return this->dag_manager_.getFieldTags();
+}
+
+// *************************************************************************
+template <typename EvalT, typename Traits>
+void
+PHX::EvaluationContainer<EvalT, Traits>::
+printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
+{
+  this->dag_manager_.printEvaluatorStartStopMessage(ostr);
 }
 
 // *************************************************************************

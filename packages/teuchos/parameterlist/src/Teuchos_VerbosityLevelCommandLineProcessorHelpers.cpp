@@ -92,7 +92,7 @@ void Teuchos::setVerbosityLevelOption(
   const bool required
   )
 {
-  const int numVerbLevels = verbosityLevelValues.size();
+  const int numVerbLevels = implicit_cast<int>(verbosityLevelValues.size());
 
   if ( !verbosityLevelNames.size() ) {
     verbosityLevelNames = tuple<const char*>(

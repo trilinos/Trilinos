@@ -145,7 +145,7 @@ namespace Sacado {
        * we zero out components when it is resized to zero above.
        */
       KOKKOS_INLINE_FUNCTION
-      void resizeAndZero(int sz) {}
+      void resizeAndZero(int /* sz */) {}
 
       //! Expand derivative array to size sz
       KOKKOS_INLINE_FUNCTION
@@ -172,19 +172,19 @@ namespace Sacado {
       //! Returns derivative component \c i with bounds checking
       KOKKOS_INLINE_FUNCTION
       T dx(int i) const {
-        return sz_.value ? dx_[ stride_one ? i : i * stride_.value ] : T(0.);
+        return unsigned(sz_.value) > 0 ? dx_[ unsigned(stride_one) == 1 ? i : i * stride_.value ] : T(0.);
       }
 
       //! Returns derivative component \c i without bounds checking
       KOKKOS_INLINE_FUNCTION
       T& fastAccessDx(int i) {
-        return dx_[ stride_one ? i : i * stride_.value ];
+        return dx_[ unsigned(stride_one) == 1 ? i : i * stride_.value ];
       }
 
       //! Returns derivative component \c i without bounds checking
       KOKKOS_INLINE_FUNCTION
       const T& fastAccessDx(int i) const {
-        return dx_[ stride_one ? i : i * stride_.value ];
+        return dx_[ unsigned(stride_one) == 1 ? i : i * stride_.value ];
       }
 
     protected:

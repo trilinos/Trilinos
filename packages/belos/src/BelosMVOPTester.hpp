@@ -60,7 +60,8 @@
 #include "BelosOutputManager.hpp"
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_MatrixMarket_SetScientific.hpp"
+#include "Teuchos_SetScientific.hpp"
+#include "Teuchos_SerialDenseHelpers.hpp"
 
 namespace Belos {
 
@@ -85,7 +86,7 @@ namespace Belos {
   TestMultiVecTraits (const Teuchos::RCP<OutputManager<ScalarType> > &om,
                       const Teuchos::RCP<const MV> &A)
   {
-    using Teuchos::MatrixMarket::details::SetScientific;
+    using Teuchos::SetScientific;
     using std::endl;
     typedef MultiVecTraits<ScalarType, MV>    MVT;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
@@ -965,8 +966,12 @@ namespace Belos {
       std::vector<MagType> normsB1(p), normsB2(p),
                            normsC1(p), normsC2(p),
                            normsD1(p), normsD2(p);
-      ScalarType alpha = STS::random(),
-                  beta = STS::random();
+
+      Teuchos::SerialDenseMatrix<int,ScalarType> Alpha(1,1), Beta(1,1);
+      Teuchos::randomSyncedMatrix( Alpha );
+      Teuchos::randomSyncedMatrix( Beta );
+      ScalarType alpha = Alpha(0,0),
+                  beta = Beta(0,0);
 
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,p);
@@ -1166,7 +1171,7 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.random();
+      Teuchos::randomSyncedMatrix(SDM);
       MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1192,7 +1197,7 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.random();
+      Teuchos::randomSyncedMatrix(SDM);
       MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1302,7 +1307,7 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.random();
+      Teuchos::randomSyncedMatrix(SDM);
       MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1328,7 +1333,7 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.random();
+      Teuchos::randomSyncedMatrix(SDM);
       MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1450,7 +1455,7 @@ namespace Belos {
                       const Teuchos::RCP<const MV> &A,
                       const Teuchos::RCP<const OP> &M)
   {
-    using Teuchos::MatrixMarket::details::SetScientific;
+    using Teuchos::SetScientific;
     using std::endl;
     typedef MultiVecTraits<ScalarType, MV>    MVT;
     typedef Teuchos::ScalarTraits<ScalarType> STS;

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -88,7 +88,7 @@ namespace { // Internal helper functions
   }
 
   int64_t get_id(const Ioss::GroupingEntity *entity, Iovs::EntityIdSet *idset);
-  bool set_id(const Ioss::GroupingEntity *entity, Iovs::EntityIdSet *idset);
+  bool    set_id(const Ioss::GroupingEntity *entity, Iovs::EntityIdSet *idset);
   int64_t extract_id(const std::string &name_id);
 
   void build_catalyst_plugin_paths(std::string &      plugin_library_path,
@@ -102,8 +102,8 @@ namespace Iovs {
   void *      globalCatalystIossDlHandle = nullptr;
   int         DatabaseIO::useCount       = 0;
   std::string DatabaseIO::paraview_script_filename;
-  int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
-                    const std::string &inout);
+  int         field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
+                            const std::string &inout);
 
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
@@ -112,7 +112,7 @@ namespace Iovs {
                          communicator, props),
         isInput(false), singleProcOnly(false), doLogging(false), enableLogging(0), debugLevel(0),
         underscoreVectors(0), applyDisplacements(0), createSideSets(0), createNodeSets(0),
-        nodeCount(0), elementCount(0), nodeBlockCount(0), elementBlockCount(0)
+        nodeBlockCount(0), elementBlockCount(0)
   {
 
     std::ostringstream errmsg;
@@ -226,12 +226,6 @@ namespace Iovs {
     }
     catch (...) {
     }
-  }
-
-  void DatabaseIO::release_memory__()
-  {
-    nodeMap.release_memory();
-    elemMap.release_memory();
   }
 
   std::string DatabaseIO::create_output_file_path(const std::string &          input_deck_name,
@@ -354,7 +348,6 @@ namespace Iovs {
     }
 
     {
-      Ioss::SerializeIO serializeIO__(this);
       dbState = Ioss::STATE_UNKNOWN;
     }
 
@@ -363,7 +356,7 @@ namespace Iovs {
 
   // Default versions do nothing at this time...
   // Will be used for global variables...
-  bool DatabaseIO::begin_state__(Ioss::Region *region, int state, double time)
+  bool DatabaseIO::begin_state__(int state, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -378,7 +371,7 @@ namespace Iovs {
     return true;
   }
 
-  bool DatabaseIO::end_state__(Ioss::Region * /*region*/, int state, double time)
+  bool DatabaseIO::end_state__(int state, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -430,7 +423,7 @@ namespace Iovs {
 
   void DatabaseIO::create_global_node_and_element_ids() const
   {
-    Ioss::ElementBlockContainer element_blocks = this->get_region()->get_element_blocks();
+    const Ioss::ElementBlockContainer &element_blocks = this->get_region()->get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator I;
     std::vector<std::string>                    component_names;
     component_names.emplace_back("GlobalElementId");
@@ -556,7 +549,7 @@ namespace Iovs {
           new_this->handle_node_ids(data, num_to_get);
         }
         else if (field.get_name() == "connectivity") {
-          // Do nothing, just handles an idiosyncracy of the GroupingEntity
+          // Do nothing, just handles an idiosyncrasy of the GroupingEntity
         }
         else {
           return field_warning(nb, field, "mesh output");
@@ -630,7 +623,7 @@ namespace Iovs {
 
       // Get the element block id and element count
 
-      int64_t               element_count = eb->get_property("entity_count").get_int();
+      int64_t               element_count = eb->entity_count();
       Ioss::Field::RoleType role          = field.get_role();
 
       if (role == Ioss::Field::MESH) {
@@ -748,15 +741,15 @@ namespace Iovs {
     // Node Blocks --
     {
       // std::cerr << "DatabaseIO::write_meta_data node blocks\n";
-      Ioss::NodeBlockContainer node_blocks = region->get_node_blocks();
+      const Ioss::NodeBlockContainer &node_blocks = region->get_node_blocks();
       assert(node_blocks.size() == 1);
-      nodeCount = node_blocks[0]->get_property("entity_count").get_int();
+      nodeCount = node_blocks[0]->entity_count();
       // std::cerr << "DatabaseIO::write_meta_data nodeCount:" << nodeCount << "\n";
     }
 
-    // Nodesets ...
+    // NodeSets ...
     {
-      Ioss::NodeSetContainer                 nodesets = region->get_nodesets();
+      const Ioss::NodeSetContainer &         nodesets = region->get_nodesets();
       Ioss::NodeSetContainer::const_iterator I;
       for (I = nodesets.begin(); I != nodesets.end(); ++I) {
         set_id(*I, &ids_);
@@ -765,7 +758,7 @@ namespace Iovs {
 
     // SideSets ...
     {
-      Ioss::SideSetContainer                 ssets = region->get_sidesets();
+      const Ioss::SideSetContainer &         ssets = region->get_sidesets();
       Ioss::SideSetContainer::const_iterator I;
 
       for (I = ssets.begin(); I != ssets.end(); ++I) {
@@ -775,7 +768,7 @@ namespace Iovs {
 
     // Element Blocks --
     {
-      Ioss::ElementBlockContainer                 element_blocks = region->get_element_blocks();
+      const Ioss::ElementBlockContainer &         element_blocks = region->get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator I;
       // Set ids of all entities that have "id" property...
       for (I = element_blocks.begin(); I != element_blocks.end(); ++I) {
@@ -788,9 +781,9 @@ namespace Iovs {
       // "\n";
       for (I = element_blocks.begin(); I != element_blocks.end(); ++I) {
         elementBlockCount++;
-        elementCount += (*I)->get_property("entity_count").get_int();
+        elementCount += (*I)->entity_count();
         // std::cerr << "DatabaseIO::write_meta_data element num in block " << elementBlockCount <<
-        // ": " << (*I)->get_property("entity_count").get_int() << "\n";
+        // ": " << (*I)->entity_count() << "\n";
       }
       // std::cerr << "DatabaseIO::write_meta_data elementCount:" << elementCount << "\n";
     }
@@ -835,38 +828,25 @@ namespace Iovs {
      * -- In both cases, update the reorderNodeMap
      *
      * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
-     *       should be in the orginal order...
+     *       should be in the original order...
      */
     assert(num_to_get == nodeCount);
 
-    if (dbState == Ioss::STATE_MODEL) {
-      if (nodeMap.map().empty()) {
-        // std::cerr << "DatabaseIO::handle_node_ids nodeMap was empty, resizing and tagging
-        // serial\n";
-        nodeMap.map().resize(nodeCount + 1);
-        nodeMap.map()[0] = -1;
-      }
+    nodeMap.set_size(nodeCount);
 
-      if (nodeMap.map()[0] == -1) {
-        // std::cerr << "DatabaseIO::handle_node_ids nodeMap tagged serial, doing mapping\n";
-        if (int_byte_size_api() == 4) {
-          nodeMap.set_map(static_cast<int *>(ids), num_to_get, 0);
-        }
-        else {
-          nodeMap.set_map(static_cast<int64_t *>(ids), num_to_get, 0);
-        }
-      }
-
-      nodeMap.build_reverse_map();
-
-      // Only a single nodeblock and all set
-      if (num_to_get == nodeCount) {
-        assert(nodeMap.map()[0] == -1 || nodeMap.reverse().size() == (size_t)nodeCount);
-      }
-      assert(get_region()->get_property("node_block_count").get_int() == 1);
+    // std::cerr << "DatabaseIO::handle_node_ids nodeMap tagged serial, doing mapping\n";
+    bool in_define = (dbState == Ioss::STATE_MODEL) || (dbState == Ioss::STATE_DEFINE_MODEL);
+    if (int_byte_size_api() == 4) {
+      nodeMap.set_map(static_cast<int *>(ids), num_to_get, 0, in_define);
+    }
+    else {
+      nodeMap.set_map(static_cast<int64_t *>(ids), num_to_get, 0, in_define);
     }
 
-    nodeMap.build_reorder_map(0, num_to_get);
+    if (in_define) {
+      // Only a single nodeblock and all set
+      assert(get_region()->get_property("node_block_count").get_int() == 1);
+    }
     return num_to_get;
   }
 
@@ -924,7 +904,7 @@ namespace Iovs {
      *
      * NOTE: the maps are built an element block at a time...
      * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
-     *       should be in the orginal order...
+     *       should be in the original order...
      */
 
     // Overwrite this portion of the 'elementMap', but keep other
@@ -935,36 +915,20 @@ namespace Iovs {
 
     int64_t eb_offset = eb->get_offset();
 
+    bool in_define = (db_state == Ioss::STATE_MODEL) || (db_state == Ioss::STATE_DEFINE_MODEL);
     if (int_byte_size == 4) {
-      entity_map.set_map(static_cast<int *>(ids), num_to_get, eb_offset);
+      entity_map.set_map(static_cast<int *>(ids), num_to_get, eb_offset, in_define);
     }
     else {
-      entity_map.set_map(static_cast<int64_t *>(ids), num_to_get, eb_offset);
+      entity_map.set_map(static_cast<int64_t *>(ids), num_to_get, eb_offset, in_define);
     }
-
-    // Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
-    if (db_state == Ioss::STATE_MODEL) {
-      entity_map.build_reverse_map(num_to_get, eb_offset);
-    }
-
-    // Build the reorderEntityMap which does a direct mapping from
-    // the current topologies local order to the local order
-    // stored in the database...  This is 0-based and used for
-    // remapping output and input TRANSIENT fields.
-    entity_map.build_reorder_map(eb_offset, num_to_get);
-    // std::cerr << "DatabaseIO::handle_block_ids returning\n";
     return num_to_get;
   }
 
   int64_t DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb, void *ids, size_t num_to_get)
   {
     // std::cerr << "DatabaseIO::handle_element_ids executing num_to_get: " << num_to_get << "\n";
-    if (elemMap.map().empty()) {
-      // std::cerr << "DatabaseIO::handle_element_ids elementMap was empty; allocating and marking
-      // as sequential\nelmenetCount: " << elementCount << "\n";
-      elemMap.map().resize(elementCount + 1);
-      elemMap.map()[0] = -1;
-    }
+    elemMap.set_size(elementCount);
     // std::cerr << "DatabaseIO::handle_element_ids elementMap size: " << elementMap.size() << "\n";
     return handle_block_ids(eb, dbState, elemMap, ids, int_byte_size_api(), num_to_get,
                             /*get_file_pointer(),*/ myProcessor);
@@ -978,14 +942,12 @@ namespace Iovs {
     if (nodeMap.map().empty()) {
       // std::cerr << "DatabaseIO::get_node_map  nodeMap was empty, resizing and tagging
       // sequential\n";
-      nodeMap.map().resize(nodeCount + 1);
+      nodeMap.set_size(nodeCount);
 
       // Output database; nodeMap not set yet... Build a default map.
       for (int64_t i = 1; i < nodeCount + 1; i++) {
         nodeMap.map()[i] = i;
       }
-      // Sequential map
-      nodeMap.map()[0] = -1;
     }
     return nodeMap;
   }
@@ -994,17 +956,15 @@ namespace Iovs {
   const Ioss::Map &DatabaseIO::get_element_map() const
   {
     // std::cercercerrn new nathan Iovs DatabaseIO::get_element_map\n";
-    // Allocate space for elemente number map and read it in...
+    // Allocate space for element number map and read it in...
     // Can be called multiple times, allocate 1 time only
     if (elemMap.map().empty()) {
-      elemMap.map().resize(elementCount + 1);
+      elemMap.set_size(elementCount);
 
       // Output database; elementMap not set yet... Build a default map.
       for (int64_t i = 1; i < elementCount + 1; i++) {
         elemMap.map()[i] = i;
       }
-      // Sequential map
-      elemMap.map()[0] = -1;
     }
     return elemMap;
   }
@@ -1123,7 +1083,7 @@ namespace Iovs {
            extractblock.  It may become necessary at a later date to
            pass in both ebowner->name() AND eb->name(), but for now we
            are just passing in ebowner->name() to give us correct
-           functionality while not chaning the function interface*/
+           functionality while not changing the function interface*/
           this->pvcsa->CreateSideSet(/*eb->name().c_str(),*/
                                      ebowner->name().c_str(), id, num_to_get, &element[0], &side[0],
                                      this->DBFilename.c_str());
@@ -1179,7 +1139,7 @@ namespace Iovs {
            extractblock.  It may become necessary at a later date to
            pass in both ebowner->name() AND eb->name(), but for now we
            are just passing in ebowner->name() to give us correct
-           functionality while not chaning the function interface*/
+           functionality while not changing the function interface*/
           this->pvcsa->CreateSideSet(/*eb->name().c_str(),*/
                                      ebowner->name().c_str(), id, num_to_get, &element[0], &side[0],
                                      this->DBFilename.c_str());

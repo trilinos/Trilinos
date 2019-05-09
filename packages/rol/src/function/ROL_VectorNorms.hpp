@@ -51,7 +51,7 @@ namespace ROL {
 template<class Real>
 Real normL1( const Vector<Real> &x ) {
  
-  Teuchos::RCP<Vector<Real> > xabs = x.clone();
+  ROL::Ptr<Vector<Real> > xabs = x.clone();
   xabs->set(x);
 
   xabs->applyUnary(Elementwise::AbsoluteValue<Real>());
@@ -61,7 +61,7 @@ Real normL1( const Vector<Real> &x ) {
 template<class Real, class Exponent>
 Real normLp( const Vector<Real> &x, Exponent p ) {
 
-  Teuchos::RCP<Vector<Real> > xabsp = x.clone();
+  ROL::Ptr<Vector<Real> > xabsp = x.clone();
   xabsp->set(x);
   xabsp->applyUnary(Elementwise::AbsoluteValue<Real>());
   xabsp->applyUnary(Elementwise::Power<Real>(p)); 
@@ -72,7 +72,7 @@ Real normLp( const Vector<Real> &x, Exponent p ) {
 template<class Real>
 Real normLinf( const Vector<Real> &x ) {
  
-  Teuchos::RCP<Vector<Real> > xabs = x.clone();
+  ROL::Ptr<Vector<Real> > xabs = x.clone();
   xabs->set(x);
 
   xabs->applyUnary(Elementwise::AbsoluteValue<Real>());

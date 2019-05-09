@@ -45,15 +45,13 @@
 
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
-#  include "Amesos2_KLU2_def.hpp"
-#  include "Amesos2_ExplicitInstantiationHelpers.hpp"
+#include "Amesos2_KLU2_def.hpp"
+#include "Amesos2_ExplicitInstantiationHelpers.hpp"
 
 namespace Amesos2 {
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
   AMESOS2_SOLVER_EPETRA_INST(KLU2);
-#endif
 #endif
 
 }
@@ -109,6 +107,23 @@ namespace Amesos2 {
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<double>,int,long);
+#endif
+}
+#endif
+
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED_LONG
+namespace Amesos2 {
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,float,int,unsigned long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,double,int,unsigned long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<float>,int,unsigned long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<double>,int,unsigned long);
 #endif
 }
 #endif

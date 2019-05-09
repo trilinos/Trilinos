@@ -57,7 +57,7 @@ namespace ROL {
 template <class Real>
 class CombinedStatusTest : public StatusTest<Real> {
 private:
-  std::vector<Teuchos::RCP<StatusTest<Real> > > status_;
+  std::vector<ROL::Ptr<StatusTest<Real> > > status_;
 
 public:
   CombinedStatusTest(void) {
@@ -68,7 +68,7 @@ public:
     status_.clear();
   }
 
-  void add(const Teuchos::RCP<StatusTest<Real> > &status) {
+  void add(const ROL::Ptr<StatusTest<Real> > &status) {
     status_.push_back(status);
   }
 

@@ -42,7 +42,7 @@
 */
 
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_as.hpp"
@@ -91,7 +91,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      return Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+      return Tpetra::getDefaultComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }

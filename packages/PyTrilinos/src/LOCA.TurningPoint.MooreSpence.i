@@ -48,7 +48,7 @@ PyTrilinos.LOCA.TurningPoint.MooreSpence is the python interface to
 namespace TurningPoint::MooreSpence of the Trilinos continuation
 algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.TurningPoint.MooreSpence is to provide groups and
 vectors for locating turning point bifurcations using the Moore-
@@ -67,32 +67,41 @@ LOCA.TurningPoint.MooreSpence supports the following classes:
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.TurningPoint",
-        directors = "1",
-        docstring = %loca_turningpoint_moorespence_docstring) MooreSpence
+%define %loca_turningpoint_moorespence_importcode
+"
+if not __package__:
+    __package__ = 'PyTrilinos.LOCA.TurningPoint'
+from . import _MooreSpence
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from   PyTrilinos.LOCA import MultiContinuation
+import PyTrilinos.LOCA.Parameter
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA.TurningPoint",
+        directors    = "1",
+        moduleimport = %loca_turningpoint_moorespence_importcode,
+        docstring    = %loca_turningpoint_moorespence_docstring) MooreSpence
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// LOCA includes
-#include "LOCA.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
@@ -118,7 +127,7 @@ LOCA.TurningPoint.MooreSpence supports the following classes:
 %teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
 %teuchos_rcp(LOCA::TurningPoint::MooreSpence::SolverFactory)
 
-// Base class support
+// Allow importing from parent directory
 %pythoncode
 %{
 import sys, os.path as op
@@ -126,6 +135,8 @@ parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
+
+// Base class support
 %import "NOX.Abstract.i"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_FiniteDifferenceGroup.H"

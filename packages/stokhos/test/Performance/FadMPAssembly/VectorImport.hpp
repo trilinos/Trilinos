@@ -63,7 +63,7 @@ class VectorImport ;
 } // namespace Example
 } // namespace Kokkos
 
-#if ! defined( KOKKOS_HAVE_MPI )
+#if ! defined( KOKKOS_ENABLE_MPI )
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -100,7 +100,7 @@ struct VectorImport {
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#else /* defined( KOKKOS_HAVE_MPI ) */
+#else /* defined( KOKKOS_ENABLE_MPI ) */
 
 #include <Teuchos_DefaultMpiComm.hpp>
 
@@ -157,7 +157,7 @@ public:
       , source( arg_source )
       , buffer( arg_buffer )
     {
-      Kokkos::parallel_for( index.dimension_0() , *this );
+      Kokkos::parallel_for( index.extent(0) , *this );
       execution_space::fence();
     }
   };
@@ -189,7 +189,7 @@ public:
       }
 
       unsigned send_count = 0 ;
-      for ( unsigned i = 0 ; i < send_msg.dimension_0() ; ++i ) { send_count += host_send_msg(i,1); }
+      for ( unsigned i = 0 ; i < send_msg.extent(0) ; ++i ) { send_count += host_send_msg(i,1); }
       send_buffer      = VectorType("send_buffer",send_count);
       host_send_buffer = Kokkos::create_mirror_view( send_buffer );
     }
@@ -205,19 +205,19 @@ public:
     MPI_Comm mpi_comm = * teuchos_mpi_comm.getRawMpiComm();
 
     const int mpi_tag = 42 ;
-    const unsigned chunk = v.dimension_1();
+    const unsigned chunk = v.extent(1);
 
     // Subvector for receives
     const std::pair<unsigned,unsigned> recv_range( count_owned , count_owned + count_receive );
     const VectorType recv_vector = Kokkos::subview( v , recv_range );
 
-    std::vector< MPI_Request > recv_request( recv_msg.dimension_0() , MPI_REQUEST_NULL );
+    std::vector< MPI_Request > recv_request( recv_msg.extent(0) , MPI_REQUEST_NULL );
 
     // Post receives
     if (ReceiveInPlace) {
-      scalar_type * ptr = recv_vector.ptr_on_device();
+      scalar_type * ptr = recv_vector.data();
 
-      for ( size_t i = 0 ; i < recv_msg.dimension_0() ; ++i ) {
+      for ( size_t i = 0 ; i < recv_msg.extent(0) ; ++i ) {
         const int proc  = host_recv_msg(i,0);
         const int count = host_recv_msg(i,1) * chunk ;
 
@@ -228,9 +228,9 @@ public:
       }
     }
     else {
-      host_scalar_type * ptr = host_recv_buffer.ptr_on_device();
+      host_scalar_type * ptr = host_recv_buffer.data();
 
-      for ( size_t i = 0 ; i < recv_msg.dimension_0() ; ++i ) {
+      for ( size_t i = 0 ; i < recv_msg.extent(0) ; ++i ) {
         const int proc  = host_recv_msg(i,0);
         const int count = host_recv_msg(i,1) * chunk ;
 
@@ -249,9 +249,9 @@ public:
 
       Kokkos::deep_copy( host_send_buffer , send_buffer );
 
-      host_scalar_type * ptr = host_send_buffer.ptr_on_device();
+      host_scalar_type * ptr = host_send_buffer.data();
 
-      for ( size_t i = 0 ; i < send_msg.dimension_0() ; ++i ) {
+      for ( size_t i = 0 ; i < send_msg.extent(0) ; ++i ) {
         const int proc  = host_send_msg(i,0);
         const int count = host_send_msg(i,1) * chunk ;
 
@@ -272,12 +272,12 @@ public:
 
     // Wait for receives and verify:
 
-    for ( size_t i = 0 ; i < recv_msg.dimension_0() ; ++i ) {
+    for ( size_t i = 0 ; i < recv_msg.extent(0) ; ++i ) {
       MPI_Status recv_status ;
       int recv_which = 0 ;
       int recv_size  = 0 ;
 
-      MPI_Waitany( recv_msg.dimension_0() , & recv_request[0] , & recv_which , & recv_status );
+      MPI_Waitany( recv_msg.extent(0) , & recv_request[0] , & recv_which , & recv_status );
 
       const int recv_proc = recv_status.MPI_SOURCE ;
 

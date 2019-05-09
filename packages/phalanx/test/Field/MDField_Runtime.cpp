@@ -164,6 +164,21 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     MDField<MyTraits::FadType> f;
     out << "passed!" << endl;
 
+    // Test create, set and get for RCP<FieldTag>
+    {
+      RCP<PHX::FieldTag> t1 = rcp(new PHX::Tag<double>("test",node_scalar));
+      MDField<double> f1(t1); // rcp(tag) ctor
+      MDField<double> f2; 
+      f2.setFieldTag(t1); // set rcp(tag)
+      auto t2 = f1.fieldTagPtr(); // accessor
+      auto t3 = f2.fieldTagPtr();
+      TEST_ASSERT(nonnull(t1));
+      TEST_ASSERT(nonnull(t2));
+      TEST_ASSERT(nonnull(t3));
+      TEST_EQUALITY(*t1,*t2);
+      TEST_EQUALITY(*t2,*t3);
+    }
+
     // MDField ctor interoperability between const and non-const tags
     {
       Tag<double> nonconst_tag("non-const tag", node_scalar);
@@ -183,7 +198,7 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     }
 
     // Copy constructor from const/non-const MDFields. NOTE: this
-    // tests for assignment from both Compitletime and DynRank
+    // tests for assignment from both Compiletime and DynRank
     // MDFields.
     {
       RCP<DataLayout> ctor_dl_p  = rcp(new MDALayout<Cell,Point>(10,4));

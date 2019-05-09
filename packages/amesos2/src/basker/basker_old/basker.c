@@ -91,7 +91,7 @@ void BASKER(dfs_iter)
        }
        else
        {
-           ASSERT (color[j] == 1) ; /* color cannot be 2 when we are here */
+           BASKERASSERT (color[j] == 1) ; /* color cannot be 2 when we are here */
            start = store[j];
        }
        done = 1;
@@ -200,16 +200,16 @@ Int BASKER(basker)
         ucnt = 0;
 
 #ifdef DEBUG
-        ASSERT( top == ancol ) ;
+        BASKERASSERT( top == ancol ) ;
 
         for ( i = 0 ; i < anrow ;i++)
         {
-          ASSERT( X[i] == 0 ) ;
+          BASKERASSERT( X[i] == 0 ) ;
         }
 
         for ( i = 0 ; i < ancol ;i++)
         {
-          ASSERT ( color[i] == 0 ) ;
+          BASKERASSERT ( color[i] == 0 ) ;
         }
 #endif
 
@@ -229,7 +229,7 @@ Int BASKER(basker)
 
 
         xnnz = ancol - top ;
-        ASSERT ( xnnz <= anrow ) ;
+        BASKERASSERT ( xnnz <= anrow ) ;
 
         /* Lx = b where x will be the column k in in L and U */
         top1 = top ;
@@ -294,13 +294,13 @@ Int BASKER(basker)
              * the loop. */
              newsize = llnnz * 1.1 + 2 * anrow + 1;
              PRINT(("Reallocating L oldsize=%d, newsize=%d\n", llnnz, newsize));
-             Li = REALLOC(Li, newsize * sizeof(Int));
+             Li = BASKERREALLOC(Li, newsize * sizeof(Int));
              if (!Li)
              {
                  printf("Cannot allocate memory\n");
                  return 1;
              }
-             Lx = REALLOC(Lx, newsize * sizeof(double));
+             Lx = BASKERREALLOC(Lx, newsize * sizeof(double));
              if (!Lx)
              {
                  printf("Cannot allocate memory\n");
@@ -314,13 +314,13 @@ Int BASKER(basker)
             /* reallocate space for U */
              newsize = uunnz * 1.1 + 2 * anrow + 1;
              PRINT(("Reallocating L oldsize=%d, newsize=%d\n", uunnz, newsize));
-             Ui = REALLOC(Ui, newsize * sizeof(Int));
+             Ui = BASKERREALLOC(Ui, newsize * sizeof(Int));
              if (!Ui)
              {
                  printf("Cannot allocate memory\n");
                  return 1;
              }
-             Ux = REALLOC(Ux, newsize * sizeof(double));
+             Ux = BASKERREALLOC(Ux, newsize * sizeof(double));
              if (!Ux)
              {
                  printf("Cannot allocate memory\n");
@@ -330,7 +330,7 @@ Int BASKER(basker)
         }
 
         /* L(k,k) = 1 */
-        ASSERT(lnnz < llnnz);
+        BASKERASSERT(lnnz < llnnz);
         Li[lnnz] = maxindex ;
         Lx[lnnz] = 1.0 ;
         lnnz++;
@@ -350,7 +350,7 @@ Int BASKER(basker)
                         printf ("basker : Insufficient memory for U %d %d \n", unnz, uunnz); 
                         return 1;
                     }
-                    /* ASSERT(unnz < uunnz ) ; */
+                    /* BASKERASSERT(unnz < uunnz ) ; */
                     Ui[unnz] = pinv[j] ;
                     Ux[unnz] = X[j] ;
                     unnz++ ;
@@ -362,7 +362,7 @@ Int BASKER(basker)
                         printf ("basker : Insufficient memory for L \n"); 
                         return 1;
                     }
-                    ASSERT(lnnz < llnnz ) ;
+                    BASKERASSERT(lnnz < llnnz ) ;
             /*printf("I am assigning Li[%d]=%d  Lx[%d]=%g t=%d, j =%d\n", lnnz, j, lnnz, X[j]/pivot, t, j) ;*/
                     Li[lnnz] = j ;
                     Lx[lnnz] = X[j]/pivot ;

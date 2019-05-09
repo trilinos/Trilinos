@@ -68,7 +68,7 @@ public:
   virtual ~Ifpack_LinearPartitioner() {};
 
   //! Sets all the parameters for the partitioner (none for linear partioning).
-  int SetPartitionParameters(Teuchos::ParameterList& List)
+  int SetPartitionParameters(Teuchos::ParameterList& /* List */)
   {
     return(0);
   }

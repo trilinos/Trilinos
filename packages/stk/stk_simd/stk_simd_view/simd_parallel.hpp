@@ -43,10 +43,11 @@ namespace stk {
 namespace simd {
 
 template <typename Func>
-inline constexpr bool is_gpu() {
+STK_INLINE
+constexpr bool is_gpu() {
   typedef typename
     Kokkos::Impl::FunctorPolicyExecutionSpace<Func, void>::execution_space execution_space;
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   return std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   return false;
@@ -61,7 +62,7 @@ int get_simd_loop_size(int N) {
 }
 
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 
 template <typename T=double, typename Func, typename PolicyTag>
 inline void

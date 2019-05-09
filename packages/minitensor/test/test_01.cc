@@ -1291,6 +1291,73 @@ TEST(MiniTensor, KroneckerProduct)
   ASSERT_LE(error, machine_epsilon<Real>());
 }
 
+TEST(MiniTensor, SegmentLength)
+{
+  Vector<Real, 3> const u(0.0, 0.0, 0.0);
+  Vector<Real, 3> const v(1.0, 2.0, 3.0);
+
+  Real const l = length(u, v);
+  Real const n = norm(v);
+  Real const error = std::abs(l - n);
+
+  ASSERT_LE(error, machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, TriangleArea)
+{
+  Vector<Real, 3> const a(0.0, 0.0, 0.0);
+  Vector<Real, 3> const b(1.0, 0.0, 0.0);
+  Vector<Real, 3> const c(0.0, 1.0, 0.0);
+
+  Real const A = area(a, b, c);
+  Real const error = std::abs(A - 0.5);
+
+  ASSERT_LE(error, machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, QuadArea)
+{
+  Vector<Real, 3> const a(1.0, 0.0, 0.0);
+  Vector<Real, 3> const b(2.0, 1.0, 0.0);
+  Vector<Real, 3> const c(1.0, 2.0, 0.0);
+  Vector<Real, 3> const d(0.0, 1.0, 0.0);
+
+  Real const A = area(a, b, c, d);
+  Real const error = std::abs(A - 2.0);
+
+  ASSERT_LE(error, machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, TetVolume)
+{
+  Vector<Real, 3> const a(0.0, 0.0, 0.0);
+  Vector<Real, 3> const b(1.0, 0.0, 0.0);
+  Vector<Real, 3> const c(0.0, 1.0, 0.0);
+  Vector<Real, 3> const d(0.0, 0.0, 1.0);
+
+  Real const V = volume(a, b, c, d);
+  Real const error = std::abs(V - 1.0 / 6.0);
+
+  ASSERT_LE(error, machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, HexVolume)
+{
+  Vector<Real, 3> const a(0.0, 0.0, 0.0);
+  Vector<Real, 3> const b(1.0, 0.0, 0.0);
+  Vector<Real, 3> const c(1.0, 1.0, 0.0);
+  Vector<Real, 3> const d(0.0, 1.0, 0.0);
+  Vector<Real, 3> const e(0.0, 0.0, 1.0);
+  Vector<Real, 3> const f(1.0, 0.0, 1.0);
+  Vector<Real, 3> const g(1.0, 1.0, 1.0);
+  Vector<Real, 3> const h(0.0, 1.0, 1.0);
+
+  Real const V = volume(a, b, c, d, e, f, g, h);
+  Real const error = std::abs(V - 1.0);
+
+  ASSERT_LE(error, machine_epsilon<Real>());
+}
+
 TEST(MiniTensor, TemplateMetaProgramming)
 {
   {
@@ -1408,7 +1475,7 @@ TEST(MiniTensor, TemplateMetaProgramming)
     ASSERT_EQ(is_equal, true);
   }
 
-#if !defined(KOKKOS_HAVE_CUDA)
+#if !defined(KOKKOS_ENABLE_CUDA)
   {
     //
     // use double explicitly
@@ -1456,7 +1523,7 @@ TEST(MiniTensor, TemplateMetaProgramming)
 
     ASSERT_EQ(type_string, fad_string);
   }
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
 }
 

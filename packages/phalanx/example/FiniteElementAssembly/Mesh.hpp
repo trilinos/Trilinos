@@ -62,7 +62,6 @@ class Mesh {
   const double lx_;
   const double ly_;
   const double lz_;
-  Kokkos::View<int[1]> neq_;
   
   // Cell global indices <cell,node>
   Kokkos::View<int**,PHX::Device> gids_;
@@ -123,10 +122,10 @@ public:
        const int num_elements_z,
        const double length_x,
        const double length_y,
-       const double length_z,
-       const int num_equations);
+       const double length_z);
 
-  const Kokkos::View<int[1],PHX::Device> getNumEquations() const; 
+  int getNumElements() const;
+  int getNumNodes() const; 
   const Kokkos::View<int**,PHX::Device>& getGlobalIndices() const;
   const Kokkos::View<double***,PHX::Device>& getCoordinates() const;
   const Kokkos::View<double***,PHX::Device>& getQPCoordinates() const;

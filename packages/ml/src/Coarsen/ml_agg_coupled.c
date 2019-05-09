@@ -175,7 +175,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
   /* send the remote node index back to remote processors, with    */
   /* added information on which remote nodes have been aggregated  */
   /* by the local aggregates (and also the aggregate numbers).     */
-  /* (in aggr_index[0:Nrows-1], a postive integer means this node  */
+  /* (in aggr_index[0:Nrows-1], a positive integer means this node */
   /* has been aggregated locally; while a negative integer (-1XX)  */
   /* means it has been aggregated by remote processors.  As to     */
   /* aggr_index[Nrows:exp_Nrows-1], a positive integer means the   */

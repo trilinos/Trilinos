@@ -1,6 +1,6 @@
 <ParameterList name="IMEX_RK_VanDerPol">
   <ParameterList name="VanDerPolModel">
-    <Parameter name="Accept model parameters"    type="bool" value="false"/>
+    <Parameter name="Accept model parameters"    type="bool" value="true"/>
     <Parameter name="Provide nominal values"     type="bool" value="true"/>
     <Parameter name="Coeff epsilon" type="double" value="0.1"/>
     <Parameter name="IC x0"   type="double" value="2.0"/>
@@ -21,7 +21,7 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Final Time"             type="double" value="3.0"/>
+        <Parameter name="Final Time"             type="double" value="0.3"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="500000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
@@ -32,19 +32,33 @@
         <Parameter name="Maximum Order"          type="int"    value="0"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
-        <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
         <Parameter name="Output Time List"       type="string" value=""/>
         <Parameter name="Output Index List"      type="string" value=""/>
         <Parameter name="Output Time Interval"   type="double" value="1.0"/>
         <Parameter name="Output Index Interval"  type="int"    value="100000"/>
         <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
+        <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
+        <ParameterList name="Time Step Control Strategy">
+            <Parameter name="Time Step Control Strategy List"  type="string" value="basic_vs"/>
+            <ParameterList name="basic_vs">
+                <Parameter name="Name" type="string" value="Basic VS"/>
+                <Parameter name="Reduction Factor" type="double" value="0.5"/>
+                <Parameter name="Amplification Factor" type="double" value="1.75"/>
+                <Parameter name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
+                <Parameter name="Maximum Value Monitoring Function" type="double" value="5.0e0"/>
+            </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="fill-in"/>
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
 
       <ParameterList name="Default Solver">
@@ -94,6 +108,103 @@
               <Parameter name="Maximum Iterations" type="int" value="10"/>
             </ParameterList>
           </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+    </ParameterList>
+
+    <ParameterList name="General IMEX RK">
+
+      <Parameter name="Stepper Type" type="string" value="General IMEX RK"/>
+      <Parameter name="overall order" type="int" value="2"/>
+      <ParameterList name ="IMEX-RK Explicit Stepper">
+          <Parameter name="Stepper Type" type="string" value="General ERK"/>
+          <Parameter name="Use FSAL"       type="bool" value="false"/>
+          <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+          <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
+          <ParameterList name="Tableau">
+              <Parameter name="A" type="string"  
+                  value="0.000000000000000 0.000000000000000 0.000000000000000;
+                  0.833333333333333 0.000000000000000 0.000000000000000;
+                  0.458333333333333 0.458333333333333 0.000000000000000"/>
+              <Parameter name="b" type="string"                
+                  value="0.436363636363636 0.200000000000000 0.363636363636364"/>
+              <Parameter name="c" type="string"  
+                  value="0.000000000000000 0.833333333333333 0.916666666666667"/>
+              <Parameter name="order" type="int" value="2"/>
+          </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="IMEX-RK Implicit Stepper">
+          <Parameter name="Stepper Type" type="string" value="General DIRK"/>
+          <Parameter name="Use FSAL"       type="bool" value="false"/>
+          <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+          <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
+          <ParameterList name="Tableau">
+              <Parameter name="A" type="string"  
+                  value="0.181818181818182 0.000000000000000 0.000000000000000;
+                  0.443722943722944 0.181818181818182 0.000000000000000;
+                  0.440043290043290 0.190909090909091 0.181818181818182"/>
+              <Parameter name="b" type="string" 
+                  value="0.436363636363636 0.200000000000000 0.363636363636364"/>
+              <Parameter name="c" type="string"  
+                  value="0.181818181818182 0.625541125541126 0.812770562770563"/>
+              <Parameter name="order" type="int" value="2"/>
+          </ParameterList>
+      </ParameterList>
+
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
+      <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+      <ParameterList name="Default Solver">
+        <ParameterList name="NOX">
+            <ParameterList name="Direction">
+                <Parameter name="Method" type="string" value="Newton"/>
+                <ParameterList name="Newton">
+                    <Parameter name="Forcing Term Method" type="string" value="Constant"/>
+                    <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+                </ParameterList>
+            </ParameterList>
+            <ParameterList name="Line Search">
+                <ParameterList name="Full Step">
+                    <Parameter name="Full Step" type="double" value="1"/>
+                </ParameterList>
+                <Parameter name="Method" type="string" value="Full Step"/>
+            </ParameterList>
+            <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+            <ParameterList name="Printing">
+                <Parameter name="Output Precision" type="int" value="3"/>
+                <Parameter name="Output Processor" type="int" value="0"/>
+                <ParameterList name="Output Information">
+                    <Parameter name="Error" type="bool" value="1"/>
+                    <Parameter name="Warning" type="bool" value="1"/>
+                    <Parameter name="Outer Iteration" type="bool" value="0"/>
+                    <Parameter name="Parameters" type="bool" value="0"/>
+                    <Parameter name="Details" type="bool" value="0"/>
+                    <Parameter name="Linear Solver Details" type="bool" value="1"/>
+                    <Parameter name="Stepper Iteration" type="bool" value="1"/>
+                    <Parameter name="Stepper Details" type="bool" value="1"/>
+                    <Parameter name="Stepper Parameters" type="bool" value="1"/>
+                </ParameterList>
+            </ParameterList>
+            <ParameterList name="Solver Options">
+                <Parameter name="Status Test Check Type" type="string" value="Minimal"/>
+            </ParameterList>
+            <ParameterList name="Status Tests">
+                <Parameter name="Test Type" type="string" value="Combo"/>
+                <Parameter name="Combo Type" type="string" value="OR"/>
+                <Parameter name="Number of Tests" type="int" value="2"/>
+                <ParameterList name="Test 0">
+                    <Parameter name="Test Type" type="string" value="NormF"/>
+                    <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+                </ParameterList>
+                <ParameterList name="Test 1">
+                    <Parameter name="Test Type" type="string" value="MaxIters"/>
+                    <Parameter name="Maximum Iterations" type="int" value="10"/>
+                </ParameterList>
+            </ParameterList>
         </ParameterList>
       </ParameterList>
 

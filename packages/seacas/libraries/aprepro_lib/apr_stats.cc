@@ -1,4 +1,4 @@
-// Copyright (c) 2014 National Technology & Engineering Solutions
+// Copyright (c) 2014-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -44,8 +44,6 @@
 #include <cmath>
 
 namespace SEAMS {
-  Stats::Stats() : Numnums(0), Mean(0.0), StdDev(0.0) {}
-
   void Stats::newsample(int n)
   {
     double TMean;

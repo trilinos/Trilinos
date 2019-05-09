@@ -66,6 +66,7 @@
 
 #ifdef PANZER_HAVE_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
+#include <Thyra_MueLuRefMaxwellPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Xpetra_MapFactory.hpp"
@@ -163,7 +164,7 @@ namespace {
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer_stk::STKConnManager<GO> > & stkConn_manager,
+                   const Teuchos::RCP<panzer_stk::STKConnManager> & stkConn_manager,
                    int spatialDim,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                    const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
@@ -190,7 +191,9 @@ namespace {
     {
       // TAW: the following is probably not optimal but it corresponds to what have been there before...
       Stratimikos::enableMueLu(linearSolverBuilder,"MueLu");
+      Stratimikos::enableMueLuRefMaxwell(linearSolverBuilder,"MueLuRefMaxwell");
       Stratimikos::enableMueLu<int,panzer::Ordinal64,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+      Stratimikos::enableMueLuRefMaxwell<int,panzer::Ordinal64,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell-Tpetra");
     }
     #endif // MUELU
     #ifdef PANZER_HAVE_IFPACK2
@@ -300,9 +303,11 @@ namespace {
              case 3:
                 vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("zcoords.mm",*vec);
+                // Intentional fall-through.
              case 2:
                 vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("ycoords.mm",*vec);
+                // Intentional fall-through.
              case 1:
                 vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("xcoords.mm",*vec);
@@ -388,7 +393,6 @@ namespace {
           const std::vector<RCP<panzer::UniqueGlobalIndexer<int,GO> > > & dofVec
              = blkDofs->getFieldDOFManagers();
           for(std::size_t i=0;i<dofVec.size();i++) {
-            std::string fieldName;
 
             // add in the coordinate parameter list callback handler
             TEUCHOS_ASSERT(determineCoordinateField(*dofVec[i],fieldName));
@@ -414,9 +418,11 @@ namespace {
             case 3:
                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_zcoords.mm").c_str(),*vec);
+               // Intentional fall-through.
             case 2:
                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_ycoords.mm").c_str(),*vec);
+               // Intentional fall-through.
             case 1:
                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_xcoords.mm").c_str(),*vec);
@@ -451,10 +457,10 @@ namespace {
 
                 // fill appropriate coords vector
                 Teuchos::ArrayRCP<double> dest = coords->getDataNonConst(d);
-                for(std::size_t i=0;i<coords->getLocalLength();i++) {
-                  if (d == 0) dest[i] = xcoords[i];
-                  if (d == 1) dest[i] = ycoords[i];
-                  if (d == 2) dest[i] = zcoords[i];
+                for(std::size_t j=0;j<coords->getLocalLength();++j) {
+                  if (d == 0) dest[j] = xcoords[j];
+                  if (d == 1) dest[j] = ycoords[j];
+                  if (d == 2) dest[j] = zcoords[j];
                 }
               }
 

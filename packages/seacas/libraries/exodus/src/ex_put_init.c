@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -34,8 +34,9 @@
  */
 
 #include "exodusII.h" // for ex_init_params, etc
-#include <stdint.h>   // for int64_t
-#include <string.h>   // for strncpy
+#include "exodusII_int.h"
+#include <stdint.h> // for int64_t
+#include <string.h> // for ex_copy_string
 
 /*!
 
@@ -82,7 +83,7 @@ int ex_put_init(int exoid, const char *title, int64_t num_dim, int64_t num_nodes
 {
   ex_init_params par;
 
-  strncpy(par.title, title, 80);
+  ex_copy_string(par.title, title, MAX_LINE_LENGTH + 1);
   par.title[80] = '\0';
 
   par.num_dim       = num_dim;

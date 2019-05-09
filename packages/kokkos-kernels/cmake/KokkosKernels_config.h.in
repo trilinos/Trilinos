@@ -1,6 +1,15 @@
 #ifndef KOKKOSKERNELS_CONFIG_H
 #define KOKKOSKERNELS_CONFIG_H
 
+
+/* Define Fortran mangle from Trilinos macro definition */
+#ifndef F77_BLAS_MANGLE                                                                                       
+# define F77_BLAS_MANGLE@F77_BLAS_MANGLE@                                                                     
+#endif 
+
+/* Define if fortran blas 1 function can return complex type */
+#cmakedefine KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX
+
 /* Define if building in debug mode */
 #cmakedefine HAVE_KOKKOSKERNELS_DEBUG
 
@@ -65,6 +74,26 @@
 #cmakedefine KOKKOSKERNELS_INST_OFFSET_INT
 /* Whether to build kernels for offset type size_t */
 #cmakedefine KOKKOSKERNELS_INST_OFFSET_SIZE_T
+
+/*
+ * Third Party Libraries
+ */
+
+/* BLAS library */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_BLAS
+/* MKL library */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_MKL
+/* CUSPARSE */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+/* CUBLAS */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+
+/* if MKL, BLAS is also defined */
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) 
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+#define KOKKOSKERNELS_ENABLE_TPL_BLAS
+#endif
+#endif
 
 
 /*

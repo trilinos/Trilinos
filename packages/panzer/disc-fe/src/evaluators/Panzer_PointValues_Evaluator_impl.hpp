@@ -51,7 +51,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(PointValues_Evaluator,p)
+template<typename EvalT, typename Traits>
+PointValues_Evaluator<EvalT, Traits>::
+PointValues_Evaluator(
+  const Teuchos::ParameterList& p)
 {
   basis_index = 0;
 
@@ -117,7 +120,7 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
     TEUCHOS_ASSERT(userArray->rank()==2);
     MDFieldArrayFactory md_af("refPointArray",true);
 
-    refPointArray = md_af.buildStaticArray<double,NODE,Dim>("refPointArray",userArray->dimension(0),userArray->dimension(1));
+    refPointArray = md_af.buildStaticArray<double,NODE,Dim>("refPointArray",userArray->extent(0),userArray->extent(1));
     // TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
     for(int i=0;i<userArray->extent_int(0);i++)
       for(int j=0;j<userArray->extent_int(1);j++)
@@ -125,7 +128,7 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
   }
 
   // setup all fields to be evaluated and constructed
-  pointValues = PointValues2<ScalarT>(pointRule->getName()+"_",false);
+  pointValues = PointValues2<double>(pointRule->getName()+"_",false);
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
@@ -141,7 +144,12 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(PointValues_Evaluator,sd,fm)
+template<typename EvalT, typename Traits>
+void
+PointValues_Evaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   // setup the pointers for evaluation
   this->utils.setFieldData(pointValues.coords_ref,fm);
@@ -161,18 +169,24 @@ PHX_POST_REGISTRATION_SETUP(PointValues_Evaluator,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(PointValues_Evaluator,workset)
+template<typename EvalT, typename Traits>
+void
+PointValues_Evaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   if(useBasisValuesRefArray) {
     panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 
     // evaluate the point values (construct jacobians etc...)
     pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,
-                               basisValues.basis_coordinates_ref);
+                               basisValues.basis_coordinates_ref,
+                               workset.num_cells);
   }
   else {
     // evaluate the point values (construct jacobians etc...)
-    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,refPointArray);
+    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,refPointArray,
+                               workset.num_cells);
   }
 }
 

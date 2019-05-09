@@ -49,6 +49,8 @@
 #include "Epetra_Time.h"
 #include "Epetra_Util.h"
 
+#include <fstream>
+
 #if defined(__PGI)
 #include <sstream>
 #endif

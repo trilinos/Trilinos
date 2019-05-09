@@ -57,6 +57,8 @@
 #ifndef MOERTEL_NODE_H
 #define MOERTEL_NODE_H
 
+#include "Moertel_config.h"
+
 #include <ctime>
 #include <iostream>
 #include <iomanip>
@@ -82,6 +84,16 @@ Use at least the following lines in the configure of Trilinos:<br>
 \endcode
 
 */
+#ifdef HAVE_MOERTEL_TPETRA
+namespace MoertelT
+{
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+class InterfaceT;
+}
+#endif
 namespace MOERTEL
 {
 
@@ -186,7 +198,7 @@ public:
   \brief Returns the view (a vector of length 3) to the current coordinates of this node
   
   */
-  inline const double* X() const { return x_; }
+  inline const double* XCoords() const { return x_; }
   
   /*!
   \brief Update the coordinates of this Node
@@ -200,7 +212,7 @@ public:
   \brief Return pointer to vector of length 3 of normal of this node
   
   */
-  inline const double* N() const { return n_; }
+  inline const double* Normal() const { return n_; }
   
   /*!
   \brief Store a normal in this node
@@ -323,6 +335,13 @@ public:
 
   */
   bool GetPtrstoSegments(MOERTEL::Interface& interface);
+#ifdef HAVE_MOERTEL_TPETRA
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+  bool GetPtrstoSegments(MoertelT::InterfaceT<ST, LO, GO, N>& interface);
+#endif
   
   /*!
   \brief Store a pointer to a projected node

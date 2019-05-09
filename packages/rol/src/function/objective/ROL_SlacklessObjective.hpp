@@ -58,19 +58,19 @@ namespace ROL {
 template<class Real> 
 class SlacklessObjective : public Objective<Real> {
 private: 
-  Teuchos::RCP<Objective<Real> > obj_;
+  ROL::Ptr<Objective<Real> > obj_;
 
-  Teuchos::RCP<Vector<Real> > getOpt( Vector<Real> &xs ) {
-    return Teuchos::dyn_cast<PartitionedVector<Real> >(xs).get(0);
+  ROL::Ptr<Vector<Real> > getOpt( Vector<Real> &xs ) {
+    return dynamic_cast<PartitionedVector<Real>&>(xs).get(0);
   }
 
-  Teuchos::RCP<const Vector<Real> > getOpt( const Vector<Real> &xs ) {
-    return Teuchos::dyn_cast<const PartitionedVector<Real> >(xs).get(0);
+  ROL::Ptr<const Vector<Real> > getOpt( const Vector<Real> &xs ) {
+    return dynamic_cast<const PartitionedVector<Real>&>(xs).get(0);
   }
 
   void zeroSlack( Vector<Real> &x ) {
     PartitionedVector<Real> &xpv
-      = Teuchos::dyn_cast<PartitionedVector<Real> >(x);
+      = dynamic_cast<PartitionedVector<Real>&>(x);
     const int nvec = static_cast<int>(xpv.numVectors());
     for (int i = 1; i < nvec; ++i) {
       xpv.get(i)->zero();
@@ -78,7 +78,7 @@ private:
   } 
 
 public:
-  SlacklessObjective( const Teuchos::RCP<Objective<Real> > &obj ) : obj_(obj) {}
+  SlacklessObjective( const ROL::Ptr<Objective<Real> > &obj ) : obj_(obj) {}
   ~SlacklessObjective() {}
  
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {

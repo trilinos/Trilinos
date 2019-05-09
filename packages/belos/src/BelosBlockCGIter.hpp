@@ -147,6 +147,11 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
+  void setDoCondEst(bool val){
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
+  }
+
+
 private:
   void setStateSize() {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
@@ -260,7 +265,7 @@ public:
 
   //! Get the norms of the residuals native to the solver.
   //! \return A std::vector of length blockSize containing the native residuals.
-  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
+  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> * /* norms */ ) const { return R_; }
 
   //! Get the current update to the linear system.
   /*! \note This method returns a null pointer because the linear problem is current.
@@ -284,6 +289,20 @@ public:
   //! States whether the solver has been initialized or not.
   bool isInitialized() { return initialized_; }
 
+  //! Sets whether or not to store the diagonal for condition estimation
+  void setDoCondEst(bool /* val */){/*ignored*/}
+
+  //! Gets the diagonal for condition estimation (NOT_IMPLEMENTED)
+  Teuchos::ArrayView<MagnitudeType> getDiag() { 
+    Teuchos::ArrayView<MagnitudeType> temp;
+    return temp;
+  }
+
+  //! Gets the off-diagonal for condition estimation (NOT_IMPLEMENTED)
+  Teuchos::ArrayView<MagnitudeType> getOffDiag() {
+    Teuchos::ArrayView<MagnitudeType> temp;
+    return temp;
+  }
   //@}
 
   private:

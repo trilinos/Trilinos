@@ -51,6 +51,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -96,7 +97,7 @@ GatherTangent_BlockedTpetra(
 template <typename EvalT,typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherTangent_BlockedTpetra<EvalT, TRAITS,S,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
@@ -106,9 +107,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
     // get field ID from DOF manager
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
-
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
   }
 
   indexerNames_ = Teuchos::null;  // Don't need this anymore
@@ -120,8 +118,8 @@ void panzer::GatherTangent_BlockedTpetra<EvalT, TRAITS,S,LO,GO,NodeT>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
   // try to extract linear object container
-  if (d.gedc.containsDataObject(globalDataKey_)) {
-    blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
+  if (d.gedc->containsDataObject(globalDataKey_)) {
+    blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_),true);
   }
 }
 

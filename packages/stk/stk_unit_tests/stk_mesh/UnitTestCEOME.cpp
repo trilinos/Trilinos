@@ -71,6 +71,11 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "UnitTestCEOCommonUtils.hpp"
+#include "UnitTestCEO2Elem.hpp"
+#include "UnitTestCEO3Elem.hpp"
+#include "UnitTestCEO4ElemEdge.hpp"
+#include "UnitTestCEO4ElemRotate.hpp"
+#include "UnitTestCEO8Elem.hpp"
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 
@@ -390,7 +395,7 @@ TEST(CEOME, TwoElemGiveAllEntitiesToOneProcAndCheckParts)
         stk::mesh::Part * owned_part     = &meta.locally_owned_part();
         stk::mesh::Part * aura_part      = &meta.aura_part();
         stk::mesh::Part * elem_part = meta.get_part("elem_part");
-        stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+        stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
         if(p_rank == 0)
         {
             EXPECT_TRUE(CEOUtils::check_parts(mesh, stk::mesh::EntityKey(stk::topology::ELEMENT_RANK, 2), universal_part, aura_part, elem_part, topo_part));

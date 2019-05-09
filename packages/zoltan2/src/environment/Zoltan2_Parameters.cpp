@@ -76,7 +76,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // The dummy adapter is arbitrary
   // It allows us to keep the getValidParameters method in the class
   // However currently that has no template dependence
-  typedef Zoltan2::BasicUserTypes<int, int, int> dummyTypes;
+  typedef Zoltan2::BasicUserTypes<> dummyTypes;
   typedef Zoltan2::BasicIdentifierAdapter< dummyTypes > dummyAdapter;
 
   // environment has some of it's own parameters to provide

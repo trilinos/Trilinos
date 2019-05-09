@@ -4,15 +4,19 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT
 
 ADD_SUBDIRECTORIES(
   BasicPerfTest
+  Behavior
   Blas
   Block
   BugTests
   Comm
+  Core  
   CrsGraph
   CrsMatrix
   Directory
   Distributor
-  Environment
+  FECrsGraph
+  FECrsMatrix
+  FEMultiVector
   HashTable
   ImportExport
   ImportExport2
@@ -24,7 +28,6 @@ ADD_SUBDIRECTORIES(
   MultiVectorFiller
   Node
   PerformanceCGSolve
-  Platform
   Sort
   Utils
   RowMatrixTransposer

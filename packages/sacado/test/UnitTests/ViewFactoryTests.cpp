@@ -51,7 +51,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 	// Test constructing a View pod using Kokkos::view_alloc with deduce_value_type
 	{
 		// Typedef View
-		typedef View<double**, Kokkos::DefaultHostExecutionSpace> view_type;
+		typedef View<double**, Kokkos::DefaultExecutionSpace> view_type;
 
 		// Create two rank 2 Views that will be used for deducing types and Fad dims
 		view_type v1("v1", 10, 4);
@@ -59,6 +59,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 
 		// Get common type of the Views
 		using CommonValueType = typename decltype( Kokkos::common_view_alloc_prop( v1, v2 ) )::value_type;
+		using ScalarArrayType = typename decltype( Kokkos::common_view_alloc_prop( v1, v2 ) )::scalar_array_type;
 		// Create an instance of this returned type to pass to ViewCtorProp via view_alloc function
 		auto cvt_for_ctorprop = Kokkos::common_view_alloc_prop(v1, v2);
 
@@ -70,11 +71,15 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 		TEST_EQUALITY(vct1.extent(1), v1.extent(1));
 		TEST_EQUALITY(vct1.extent(2), v1.extent(2));
 		TEST_EQUALITY( Kokkos::dimension_scalar(vct1), 0);
+    bool check_eq_kokkos_type = std::is_same < CommonValueType, ScalarArrayType >::value;
+    bool check_eq_scalar_double = std::is_same < double, ScalarArrayType >::value;
+    TEST_EQUALITY(check_eq_kokkos_type, true);
+    TEST_EQUALITY(check_eq_scalar_double, true);
 	}
 	// Test constructing a View of Fad using Kokkos::view_alloc with deduce_value_type
 	{
 		// Typedef View
-		typedef View<FadType**, Kokkos::DefaultHostExecutionSpace> view_type;
+		typedef View<FadType**, Kokkos::DefaultExecutionSpace> view_type;
 
 		// Create two rank 2 Views that will be used for deducing types and Fad dims
 		view_type v1("v1", 10, 4, derivative_dim_plus_one );
@@ -82,6 +87,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 
 		// Get common type of the Views
 		using CommonValueType = typename decltype( Kokkos::common_view_alloc_prop( v1, v2 ) )::value_type;
+		using ScalarArrayType = typename decltype( Kokkos::common_view_alloc_prop( v1, v2 ) )::scalar_array_type;
 		// Create an instance of this returned type to pass to ViewCtorProp via view_alloc function
 		auto cvt_for_ctorprop = Kokkos::common_view_alloc_prop(v1, v2);
 
@@ -93,12 +99,18 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 		TEST_EQUALITY(vct1.extent(0), v1.extent(0));
 		TEST_EQUALITY(vct1.extent(1), v1.extent(1));
 		TEST_EQUALITY(vct1.extent(2), v1.extent(2));
+    bool check_neq_kokkos_type = std::is_same < CommonValueType, ScalarArrayType >::value;
+    bool check_eq_fad_type = std::is_same < CommonValueType, FadType >::value;
+    bool check_eq_scalar_double = std::is_same < double, ScalarArrayType >::value;
+    TEST_EQUALITY(check_neq_kokkos_type, false);
+    TEST_EQUALITY(check_eq_fad_type, true);
+    TEST_EQUALITY(check_eq_scalar_double, true);
 	}
 	// Test constructing a View from mix of View and Viewof Fads using Kokkos::view_alloc with deduce_value_type
 	{
 		// Typedef View
-		typedef View<FadType**, Kokkos::DefaultHostExecutionSpace> view_of_fad_type;
-		typedef View<double**, Kokkos::DefaultHostExecutionSpace> view_of_pod_type;
+		typedef View<FadType**, Kokkos::DefaultExecutionSpace> view_of_fad_type;
+		typedef View<double**, Kokkos::DefaultExecutionSpace> view_of_pod_type;
 
 		// Create two rank 2 Views that will be used for deducing types and Fad dims
 		view_of_fad_type v1("v1", 10, 4, derivative_dim_plus_one );
@@ -106,6 +118,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 
 		// Get common type of the Views
 		using CommonValueType = typename decltype( Kokkos::common_view_alloc_prop( v1, v2 ) )::value_type;
+		using ScalarArrayType = typename decltype( Kokkos::common_view_alloc_prop( v1, v2 ) )::scalar_array_type;
 		// Create an instance of this returned type to pass to ViewCtorProp via view_alloc function
 		auto cvt_for_ctorprop = Kokkos::common_view_alloc_prop(v1, v2);
 
@@ -117,11 +130,17 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 		TEST_EQUALITY(vct1.extent(0), v1.extent(0));
 		TEST_EQUALITY(vct1.extent(1), v1.extent(1));
 		TEST_EQUALITY(vct1.extent(2), v1.extent(2));
+    bool check_neq_kokkos_type = std::is_same < CommonValueType, ScalarArrayType >::value;
+    bool check_eq_fad_type = std::is_same < CommonValueType, FadType >::value;
+    bool check_eq_scalar_double = std::is_same < double, ScalarArrayType >::value;
+    TEST_EQUALITY(check_neq_kokkos_type, false);
+    TEST_EQUALITY(check_eq_fad_type, true);
+    TEST_EQUALITY(check_eq_scalar_double, true);
 	}
 	// Test constructing a DynRankView using Kokkos::view_alloc with deduce_value_type
 	{
 		// Typedef View
-		typedef DynRankView<FadType, Kokkos::DefaultHostExecutionSpace> view_type;
+		typedef DynRankView<FadType, Kokkos::DefaultExecutionSpace> view_type;
 
 		// Create two rank 2 Views that will be used for deducing types and Fad dims
 		view_type v1("v1", 10, 4, derivative_dim_plus_one );
@@ -129,6 +148,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 
 		// Get common type of the Views
 		using CommonValueType = typename decltype( Kokkos::common_view_alloc_prop( v1, v2 ) )::value_type;
+		using ScalarArrayType = typename decltype( Kokkos::common_view_alloc_prop( v1, v2 ) )::scalar_array_type;
 		// Create an instance of this returned type to pass to ViewCtorProp via view_alloc function
 		auto cvt_for_ctorprop = Kokkos::common_view_alloc_prop(v1, v2);
 
@@ -140,13 +160,19 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 		TEST_EQUALITY(vct1.extent(0), v1.extent(0));
 		TEST_EQUALITY(vct1.extent(1), v1.extent(1));
 		TEST_EQUALITY(vct1.extent(2), v1.extent(2));
-		TEST_EQUALITY(Kokkos::Experimental::rank(vct1), 2);
+		TEST_EQUALITY(Kokkos::rank(vct1), 2);
+    bool check_neq_kokkos_type = std::is_same < CommonValueType, ScalarArrayType >::value;
+    bool check_eq_fad_type = std::is_same < CommonValueType, FadType >::value;
+    bool check_eq_scalar_double = std::is_same < double, ScalarArrayType >::value;
+    TEST_EQUALITY(check_neq_kokkos_type, false);
+    TEST_EQUALITY(check_eq_fad_type, true);
+    TEST_EQUALITY(check_eq_scalar_double, true);
 	}
 	// Test constructing a DynRankView from mix of DynRankView and DynRankView of Fads using Kokkos::view_alloc with deduce_value_type
 	{
 		// Typedef View
-		typedef DynRankView<FadType, Kokkos::DefaultHostExecutionSpace> view_of_fad_type;
-		typedef DynRankView<double, Kokkos::DefaultHostExecutionSpace> view_of_pod_type;
+		typedef DynRankView<FadType, Kokkos::DefaultExecutionSpace> view_of_fad_type;
+		typedef DynRankView<double, Kokkos::DefaultExecutionSpace> view_of_pod_type;
 
 		// Create two rank 2 Views that will be used for deducing types and Fad dims
 		view_of_fad_type v1("v1", 10, 4, derivative_dim_plus_one );
@@ -154,6 +180,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 
 		// Get common type of the Views
 		using CommonValueType = typename decltype( Kokkos::common_view_alloc_prop( v1, v2 ) )::value_type;
+		using ScalarArrayType = typename decltype( Kokkos::common_view_alloc_prop( v1, v2 ) )::scalar_array_type;
 		// Create an instance of this returned type to pass to ViewCtorProp via view_alloc function
 		auto cvt_for_ctorprop = Kokkos::common_view_alloc_prop(v1, v2);
 
@@ -165,7 +192,13 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 		TEST_EQUALITY(vct1.extent(0), v1.extent(0));
 		TEST_EQUALITY(vct1.extent(1), v1.extent(1));
 		TEST_EQUALITY(vct1.extent(2), v1.extent(2));
-		TEST_EQUALITY(Kokkos::Experimental::rank(vct1), 2);
+		TEST_EQUALITY(Kokkos::rank(vct1), 2);
+    bool check_neq_kokkos_type = std::is_same < CommonValueType, ScalarArrayType >::value;
+    bool check_eq_fad_type = std::is_same < CommonValueType, FadType >::value;
+    bool check_eq_scalar_double = std::is_same < double, ScalarArrayType >::value;
+    TEST_EQUALITY(check_neq_kokkos_type, false);
+    TEST_EQUALITY(check_eq_fad_type, true);
+    TEST_EQUALITY(check_eq_scalar_double, true);
 	}
 
 
@@ -295,8 +328,8 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     Kokkos::View<double*> a("a",5*3);
     using b_type = Kokkos::View<double**,Kokkos::MemoryUnmanaged>;
     b_type b = createViewWithType<b_type>(a,a.data(),5,3);
-    TEST_EQUALITY(b.dimension_0(),5);
-    TEST_EQUALITY(b.dimension_1(),3);
+    TEST_EQUALITY(b.extent(0),5);
+    TEST_EQUALITY(b.extent(1),3);
     TEST_EQUALITY(dimension_scalar(b),0);
   }
 
@@ -305,8 +338,8 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     Kokkos::View<FadType*> a("a",5*3,derivative_dim_plus_one);
     using b_type = Kokkos::View<FadType**,Kokkos::MemoryUnmanaged>;
     b_type b = createViewWithType<b_type>(a,a.data(),5,3);
-    TEST_EQUALITY(b.dimension_0(),5);
-    TEST_EQUALITY(b.dimension_1(),3);
+    TEST_EQUALITY(b.extent(0),5);
+    TEST_EQUALITY(b.extent(1),3);
     TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
   }
 
@@ -327,8 +360,8 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     TEST_EQUALITY(is_b_layout_stride,true);
     TEST_EQUALITY(is_c_default_layout,true);
     TEST_EQUALITY(c.rank(),2);
-    TEST_EQUALITY(c.dimension_0(),5);
-    TEST_EQUALITY(c.dimension_1(),3);
+    TEST_EQUALITY(c.extent(0),5);
+    TEST_EQUALITY(c.extent(1),3);
     TEST_EQUALITY(dimension_scalar(b),0);
   }
 
@@ -349,8 +382,8 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     TEST_EQUALITY(is_b_layout_stride,true);
     TEST_EQUALITY(is_c_default_layout,true);
     TEST_EQUALITY(c.rank(),2);
-    TEST_EQUALITY(c.dimension_0(),5);
-    TEST_EQUALITY(c.dimension_1(),3);
+    TEST_EQUALITY(c.extent(0),5);
+    TEST_EQUALITY(c.extent(1),3);
     TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
   }
 

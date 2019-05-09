@@ -54,7 +54,10 @@
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_HelperFunctions.hpp"
+#include "ROL_Stream.hpp"
+
+
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
@@ -85,14 +88,14 @@ private:
   bool useCorrection_;
   Teuchos::SerialDenseMatrix<int, Real> H_;
 
-  Teuchos::RCP<const vector> getVector( const V& x ) {
-    using Teuchos::dyn_cast; 
-    return dyn_cast<const SV>(x).getVector();
+  ROL::Ptr<const vector> getVector( const V& x ) {
+     
+    return dynamic_cast<const SV&>(x).getVector();
   }
 
-  Teuchos::RCP<vector> getVector( V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<SV>(x).getVector();
+  ROL::Ptr<vector> getVector( V& x ) {
+    
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
@@ -276,13 +279,13 @@ public:
 
   void update(const ROL::Vector<Real> &z, bool flag, int iter) {
 
-    using Teuchos::RCP;
+    
 
     if ( flag && useCorrection_ ) {
       Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());
       H_.shape(nz_,nz_); 
-      RCP<V> e = z.clone();
-      RCP<V> h = z.clone();
+      ROL::Ptr<V> e = z.clone();
+      ROL::Ptr<V> h = z.clone();
       for ( uint i = 0; i < nz_; i++ ) {
         e = z.basis(i);
         hessVec_true(*h,*e,z,tol);
@@ -317,8 +320,8 @@ public:
   /* OBJECTIVE FUNCTION DEFINITIONS */
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> zp = getVector(z); 
+    
+    ROL::Ptr<const vector> zp = getVector(z); 
 
     // SOLVE STATE EQUATION
     vector u(nu_,0.0);
@@ -357,10 +360,10 @@ public:
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {
  
-    using Teuchos::RCP;
+    
 
-    RCP<const vector> zp = getVector(z);
-    RCP<vector> gp = getVector(g);
+    ROL::Ptr<const vector> zp = getVector(z);
+    ROL::Ptr<vector> gp = getVector(g);
 
     // SOLVE STATE EQUATION
     vector u(nu_,0.0);
@@ -397,11 +400,11 @@ public:
 
   void hessVec_true( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::RCP;
+    
 
-    RCP<const vector> vp = getVector(v);
-    RCP<const vector> zp = getVector(z);
-    RCP<vector> hvp = getVector(hv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> zp = getVector(z);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     // SOLVE STATE EQUATION
     vector u(nu_,0.0);
@@ -435,13 +438,13 @@ public:
 
   void hessVec_inertia( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::RCP; 
-    using Teuchos::rcp_const_cast;
+     
+    using ROL::constPtrCast;
 
-    RCP<vector> hvp = getVector(hv);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     
-    RCP<vector> vp  = rcp_const_cast<vector>(getVector(v));
+    ROL::Ptr<vector> vp  = ROL::constPtrCast<vector>(getVector(v));
 
     Teuchos::SerialDenseVector<int, Real> hv_teuchos(Teuchos::View, &((*hvp)[0]), static_cast<int>(nz_));
     Teuchos::SerialDenseVector<int, Real>  v_teuchos(Teuchos::View, &(( *vp)[0]), static_cast<int>(nz_));
@@ -462,18 +465,18 @@ int main(int argc, char *argv[]) {
   
   typedef typename vector::size_type uint;
 
-  using Teuchos::RCP;  using Teuchos::rcp;
+    
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -486,30 +489,30 @@ int main(int argc, char *argv[]) {
     Objective_PoissonInversion<RealT> obj(dim, alpha);
 
     // Iteration vector.
-    RCP<vector> x_rcp = rcp( new vector(dim, 0.0) );
-    RCP<vector> y_rcp = rcp( new vector(dim, 0.0) );
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(dim, 0.0);
 
     // Set initial guess.
     for (uint i=0; i<dim; i++) {
-      (*x_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX + 1.e2;
-      (*y_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX + 1.e2;
+      (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX + 1.e2;
+      (*y_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX + 1.e2;
     }
 
-    SV x(x_rcp);
-    SV y(y_rcp);
+    SV x(x_ptr);
+    SV y(y_ptr);
 
     obj.checkGradient(x,y,true);
     obj.checkHessVec(x,y,true);
 
-    RCP<vector> l_rcp = rcp( new vector(dim,1.0) );
-    RCP<vector> u_rcp = rcp( new vector(dim,10.0) );
+    ROL::Ptr<vector> l_ptr = ROL::makePtr<vector>(dim,1.0);
+    ROL::Ptr<vector> u_ptr = ROL::makePtr<vector>(dim,10.0);
 
-    RCP<V> lo = rcp( new SV(l_rcp) );
-    RCP<V> up = rcp( new SV(u_rcp) );
+    ROL::Ptr<V> lo = ROL::makePtr<SV>(l_ptr);
+    ROL::Ptr<V> up = ROL::makePtr<SV>(u_ptr);
 
     ROL::Bounds<RealT> icon(lo,up);
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
 
     // Krylov parameters.
     parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-8);
@@ -537,7 +540,7 @@ int main(int argc, char *argv[]) {
     std::ofstream file;
     file.open("control_PDAS.txt");
     for ( uint i = 0; i < dim; i++ ) {
-      file << (*x_rcp)[i] << "\n";
+      file << (*x_ptr)[i] << "\n";
     }
     file.close();
 
@@ -556,12 +559,12 @@ int main(int argc, char *argv[]) {
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
     for ( uint i = 0; i < dim; i++ ) {
-      file_tr << (*y_rcp)[i] << "\n";
+      file_tr << (*y_ptr)[i] << "\n";
     }
     file_tr.close();
 
     std::vector<RealT> u;
-    obj.solve_state_equation(u,*y_rcp);
+    obj.solve_state_equation(u,*y_ptr);
     std::ofstream file_u;
     file_u.open("state.txt");
     for ( uint i = 0; i < (dim-1); i++ ) {
@@ -569,7 +572,7 @@ int main(int argc, char *argv[]) {
     }
     file_u.close();
    
-    RCP<V> diff = x.clone();
+    ROL::Ptr<V> diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);
     RealT error = diff->norm()/std::sqrt((RealT)dim-1.0);

@@ -359,6 +359,7 @@ int main(int argc, char *argv[]) {
     M11->SetFactory("A", A11Fact);
     M11->SetFactory("P", P11Fact);
     M11->SetFactory("R", R11Fact);
+    M11->SetFactory("Graph", dropFact11);
     M11->SetFactory("Aggregates", CoupledAggFact11);
     M11->SetFactory("UnAmalgamationInfo", amalgFact11);
     M11->SetFactory("Nullspace", nspFact11);

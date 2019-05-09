@@ -4,6 +4,7 @@
     <Parameter name="Number of Subproblems" type="int" value="3" />
     <Parameter name="Number of Homogenization Problems" type="int" value="2" />
     <Parameter name="Verbose Output" type="bool" value="1" />
+    <Parameter name="Mesh Filename" type="string" value="../meshes/cube.exo" />
 
     <ParameterList name="Objective Aggregator">
       <Parameter name="Output Value Name" type="string" value="F" />

@@ -88,12 +88,15 @@ OverlappingRowGraph<GraphType>::getComm () const
 }
   
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class GraphType>
+TPETRA_DEPRECATED
 Teuchos::RCP<typename GraphType::node_type> 
 OverlappingRowGraph<GraphType>::getNode () const
 {
-  return nonoverlappingGraph_->getNode();
+  return Teuchos::null;
 }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   
 
 template<class GraphType>
@@ -226,20 +229,6 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
   
 
 template<class GraphType>
-global_size_t OverlappingRowGraph<GraphType>::getGlobalNumDiags () const
-{
-  throw std::runtime_error("Ifpack2::OverlappingRowGraph::getGlobalNumDiags() not supported.");
-}
-  
-
-template<class GraphType>
-size_t OverlappingRowGraph<GraphType>::getNodeNumDiags() const
-{
-  return nonoverlappingGraph_->getNodeNumDiags();
-}
-  
-
-template<class GraphType>
 size_t OverlappingRowGraph<GraphType>::getGlobalMaxNumRowEntries () const
 {
   throw std::runtime_error("Ifpack2::OverlappingRowGraph::getGlobalMaxNumRowEntries() not supported.");
@@ -259,20 +248,6 @@ bool OverlappingRowGraph<GraphType>::hasColMap () const
   return true;
 }
   
-
-template<class GraphType>
-bool OverlappingRowGraph<GraphType>::isLowerTriangular () const
-{
-  return nonoverlappingGraph_->isLowerTriangular ();
-}
-  
-
-template<class GraphType>
-bool OverlappingRowGraph<GraphType>::isUpperTriangular() const
-{
-  return nonoverlappingGraph_->isUpperTriangular ();
-} 
-
 
 template<class GraphType>
 bool OverlappingRowGraph<GraphType>::isLocallyIndexed () const

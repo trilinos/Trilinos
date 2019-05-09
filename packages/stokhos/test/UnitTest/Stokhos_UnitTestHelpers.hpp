@@ -555,7 +555,7 @@ namespace Stokhos {
     out << "Discrete orthogonality error = " << x.normInf() << std::endl;
 
     // Compare PCE coefficients
-    bool success = Stokhos::compareSDM(x, "x", z, "zero", 1e-14, 1e-14, out);
+    bool success = Stokhos::compareSDM(x, "x", z, "zero", rel_tol, abs_tol, out);
 
     return success;
   }

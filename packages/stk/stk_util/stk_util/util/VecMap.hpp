@@ -181,8 +181,6 @@ public:
   const_reverse_iterator rend() const     { return pub().rend(); }
   bool                   empty() const    { return Storage.empty(); }
   size_type              size() const     { return Storage.size(); }
-  size_type              max_size() const { return Storage.max_size(); }
-
 
   typename std::vector<value_type_unconst_key>::iterator lower_bound_private_comp_( const key_type & k ) {
     typename std::vector<value_type_unconst_key>::iterator __first = Storage.begin();
@@ -368,17 +366,6 @@ public:
   size_type count( const key_type & k ) const {
     const const_iterator i = lower_bound(k);
     return end() == i || KeyComp( k , i->first ) ? 0 : 1 ;
-  }
-
-  //--------------------------------------------------------------------
-  // Is ok to get constant versions of the underlyingstorage
-
-  operator const std::vector<value_type> & () const {
-    return * reinterpret_cast<const std::vector<value_type>*>( &Storage );
-  }
-
-  operator const std::vector< std::pair<key_type,mapped_type> > & () const {
-    return Storage ;
   }
 
   void reserve( size_type n ) {

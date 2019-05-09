@@ -44,10 +44,18 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+#include "Moertel_ExplicitTemplateInstantiation.hpp"
+
 #include "mrtr_node.H"
 #include "mrtr_interface.H"
 #include "mrtr_pnode.H"
 #include "mrtr_utils.H"
+
+#ifdef HAVE_MOERTEL_TPETRA
+#include "Moertel_InterfaceT.hpp"
+#endif
+
+
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
@@ -406,6 +414,37 @@ bool MOERTEL::Node::GetPtrstoSegments(MOERTEL::Interface& interface)
   return true;
 }
 
+#ifdef HAVE_MOERTEL_TPETRA
+template <class ScalarType,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class NodeType >
+bool MOERTEL::Node::GetPtrstoSegments(MoertelT::InterfaceT<ScalarType, LocalOrdinal, GlobalOrdinal, NodeType>& iface)
+{ 
+
+  if (!iface.IsComplete()) return false;
+  if (iface.lComm() == Teuchos::null) return true;
+  if (!seg_.size()) return false;
+  
+  // vector segptr_ might already exist, build new
+  segptr_.resize(seg_.size());
+  
+  for (int i=0; i<(int)seg_.size(); ++i)
+  {
+    segptr_[i] = iface.GetSegmentView(seg_[i]).get();
+    if (!segptr_[i])
+    {
+	  std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Node::GetPtrstoSegments:\n"
+           << "***ERR*** Interface " << iface.Id() << ": GetSegmentView failed\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+		throw ReportError(oss);
+    }
+  }
+  return true;
+}
+#endif
+
 /*----------------------------------------------------------------------*
  |  build nodal normal                                       mwgee 07/05|
  *----------------------------------------------------------------------*/
@@ -544,3 +583,17 @@ void MOERTEL::Node::AddMmodValue(int row, double val, int col)
 
   return;
 }
+
+// ETI
+#ifdef HAVE_MOERTEL_TPETRA
+#ifdef HAVE_MOERTEL_INST_DOUBLE_INT_INT
+template
+bool MOERTEL::Node::GetPtrstoSegments<double, int, int, KokkosNode>
+      (MoertelT::InterfaceT<double, int, int, KokkosNode>& interface);
+#endif
+#ifdef HAVE_MOERTEL_INST_DOUBLE_INT_LONGLONGINT
+template
+bool MOERTEL::Node::GetPtrstoSegments<double, int, long long, KokkosNode>
+      (MoertelT::InterfaceT<double, int, long long, KokkosNode>& interface);
+#endif
+#endif

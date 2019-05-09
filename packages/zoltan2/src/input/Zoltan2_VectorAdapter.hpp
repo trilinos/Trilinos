@@ -96,8 +96,6 @@ namespace Zoltan2 {
 
 template <typename User>
   class VectorAdapter : public BaseAdapter<User> {
-private:
-
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -127,7 +125,7 @@ public:
   // The user must implement these methods in his VectorAdapter
   ///////////////////////////////////////////////////////////////
 
-  /*! \brief Return the number of vectors (typically one).
+  /*! \brief Return the number of vectors.
    */
   virtual int getNumEntriesPerID() const = 0;
 
@@ -136,12 +134,32 @@ public:
       \param elements will on return point to the vector values
         corresponding to the global Ids.
       \param stride the k'th element is located at elements[stride*k]
-      \param idx ranges from zero to one less than getNumVectors(), and
+      \param idx ranges from zero to one less than getNumEntriesPerID(), and
          represents the vector for which data is being requested.
    */
 
   virtual void getEntriesView(const scalar_t *&elements, int &stride,
                               int idx = 0) const = 0;
+
+  /*! \brief Write files that can be used as input to Zoltan or Zoltan2 driver
+   *  Creates chaco-formatted input files for coordinates and weights that
+   *  can be used as input for Zoltan or Zoltan2 drivers.
+   *  This routine is SERIAL and can be quite slow.
+   *  It is meant as a debugging tool only, to allow Zoltan developers to 
+   *  replicate performance that applications are seeing using the applicatios'
+   *  input.
+   */
+  void generateFiles(
+    const char *fileprefix, 
+    const Teuchos::Comm<int> &comm
+  ) const 
+  {
+    // Generate the graph file with weights using the base adapter method
+    this->generateWeightFileOnly(fileprefix, comm);
+
+    //  Generate the coords file with local method
+    this->generateCoordsFileOnly(fileprefix, comm);
+  }
 
   ////////////////////////////////////////////////////////////////
   // Handy pseudonyms, since vectors are often used as coordinates
@@ -155,7 +173,72 @@ public:
   {
     getEntriesView(elements, stride, idx);
   }
+
+private:
+
+  void generateCoordsFileOnly(
+    const char* fileprefix, 
+    const Teuchos::Comm<int> &comm) const;
+
 };
+
+template <typename User>
+void VectorAdapter<User>::generateCoordsFileOnly(
+  const char *fileprefix, 
+  const Teuchos::Comm<int> &comm
+) const
+{
+  // Writes a chaco-formatted coordinates file
+  // This function is SERIAL and can be quite slow.  Use it for debugging only.
+
+  int np = comm.getSize();
+  int me = comm.getRank();
+
+  // append suffix to filename
+  
+  std::string filenamestr = fileprefix;
+  filenamestr = filenamestr + ".coords";
+  const char *filename = filenamestr.c_str();
+
+  for (int p = 0; p < np; p++) {
+
+    // Is it this processor's turn to write to files?
+    if (me == p) {
+
+      std::ofstream fp;
+      if (me == 0) {
+        // open file for writing
+        fp.open(filename, std::ios::out);
+      }
+      else {
+        // open file for appending
+        fp.open(filename, std::ios::app);
+      }
+    
+      // Get the vector entries
+      size_t len = this->getLocalNumIDs();
+      int nvec = this->getNumEntriesPerID();
+      const scalar_t **values = new const scalar_t *[nvec];
+      int *strides = new int[nvec];
+      for (int n = 0; n < nvec; n++)
+        getEntriesView(values[n], strides[n], n);
+
+      // write vector entries to coordinates file
+
+      for (size_t i = 0; i < len; i++) {
+        for (int n = 0; n < nvec; n++)
+          fp << values[n][i*strides[n]] << " ";
+        fp << "\n";
+      }
+
+      // clean up and close the file
+      delete [] strides;
+      delete [] values;
+      fp.close();
+    }
+    comm.barrier();
+  }
+}
 
 
 }  //namespace Zoltan2

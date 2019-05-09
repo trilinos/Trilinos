@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -46,9 +46,10 @@
 #include <vector>
 
 #include <Kokkos_StaticCrsGraph.hpp>
+#include <Kokkos_Core.hpp>
 
 /*--------------------------------------------------------------------------*/
-
+namespace Test {
 namespace TestStaticCrsGraph {
 
 template< class Space >
@@ -71,9 +72,9 @@ void run_test_graph()
   }
 
   dx = Kokkos::create_staticcrsgraph<dView>( "dx" , graph );
-    hx = Kokkos::create_mirror( dx );
+  hx = Kokkos::create_mirror( dx );
 
-  ASSERT_EQ( hx.row_map.dimension_0() - 1 , LENGTH );
+  ASSERT_EQ( hx.row_map.extent(0) - 1 , LENGTH );
 
   for ( size_t i = 0 ; i < LENGTH ; ++i ) {
     const size_t begin = hx.row_map[i];
@@ -81,6 +82,16 @@ void run_test_graph()
     ASSERT_EQ( n , graph[i].size() );
     for ( size_t j = 0 ; j < n ; ++j ) {
       ASSERT_EQ( (int) hx.entries( j + begin ) , graph[i][j] );
+    }
+  }
+
+  // Test row view access
+  for ( size_t i = 0 ; i < LENGTH ; ++i ) {
+    auto rowView = hx.rowConst(i);
+    ASSERT_EQ( rowView.length, graph[i].size() );
+    for ( size_t j = 0 ; j < rowView.length ; ++j ) {
+      ASSERT_EQ( rowView.colidx( j ) , graph[i][j] );
+      ASSERT_EQ( rowView( j )        , graph[i][j] );
     }
   }
 }
@@ -105,17 +116,17 @@ void run_test_graph2()
   hView hx = Kokkos::create_mirror( dx );
   hView mx = Kokkos::create_mirror( dx );
 
-  ASSERT_EQ( (size_t) dx.row_map.dimension_0() , (size_t) LENGTH + 1 );
-  ASSERT_EQ( (size_t) hx.row_map.dimension_0() , (size_t) LENGTH + 1 );
-  ASSERT_EQ( (size_t) mx.row_map.dimension_0() , (size_t) LENGTH + 1 );
+  ASSERT_EQ( (size_t) dx.row_map.extent(0) , (size_t) LENGTH + 1 );
+  ASSERT_EQ( (size_t) hx.row_map.extent(0) , (size_t) LENGTH + 1 );
+  ASSERT_EQ( (size_t) mx.row_map.extent(0) , (size_t) LENGTH + 1 );
 
-  ASSERT_EQ( (size_t) dx.entries.dimension_0() , (size_t) total_length );
-  ASSERT_EQ( (size_t) hx.entries.dimension_0() , (size_t) total_length );
-  ASSERT_EQ( (size_t) mx.entries.dimension_0() , (size_t) total_length );
+  ASSERT_EQ( (size_t) dx.entries.extent(0) , (size_t) total_length );
+  ASSERT_EQ( (size_t) hx.entries.extent(0) , (size_t) total_length );
+  ASSERT_EQ( (size_t) mx.entries.extent(0) , (size_t) total_length );
 
-  ASSERT_EQ( (size_t) dx.entries.dimension_1() , (size_t) 3 );
-  ASSERT_EQ( (size_t) hx.entries.dimension_1() , (size_t) 3 );
-  ASSERT_EQ( (size_t) mx.entries.dimension_1() , (size_t) 3 );
+  ASSERT_EQ( (size_t) dx.entries.extent(1) , (size_t) 3 );
+  ASSERT_EQ( (size_t) hx.entries.extent(1) , (size_t) 3 );
+  ASSERT_EQ( (size_t) mx.entries.extent(1) , (size_t) 3 );
 
   for ( size_t i = 0 ; i < LENGTH ; ++i ) {
     const size_t entry_begin = hx.row_map[i];
@@ -130,7 +141,7 @@ void run_test_graph2()
   Kokkos::deep_copy( dx.entries , hx.entries );
   Kokkos::deep_copy( mx.entries , dx.entries );
 
-  ASSERT_EQ( mx.row_map.dimension_0() , (size_t) LENGTH + 1 );
+  ASSERT_EQ( mx.row_map.extent(0) , (size_t) LENGTH + 1 );
 
   for ( size_t i = 0 ; i < LENGTH ; ++i ) {
     const size_t entry_begin = mx.row_map[i];
@@ -182,5 +193,92 @@ void run_test_graph3(size_t B, size_t N)
     ASSERT_FALSE((ne>2*((hx.row_map(hx.numRows())+C*hx.numRows())/B))&&(hx.row_block_offsets(i+1)>hx.row_block_offsets(i)+1));
   }
 }
+
+template< class Space >
+void run_test_graph4()
+{
+  typedef unsigned ordinal_type;
+  typedef Kokkos::LayoutRight layout_type;
+  typedef Space space_type;
+  typedef Kokkos::MemoryUnmanaged memory_traits_type;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+  typedef Kokkos::StaticCrsGraph< ordinal_type , layout_type , space_type , ordinal_type , memory_traits_type > dView ;
+#else
+  typedef Kokkos::StaticCrsGraph< ordinal_type , layout_type , space_type , memory_traits_type > dView ;
+#endif
+  typedef typename dView::HostMirror hView ;
+
+  dView dx ;
+
+  // StaticCrsGraph with Unmanaged trait will contain row_map and entries members
+  // with the Unmanaged memory trait.
+  // Use of such a StaticCrsGraph requires an allocaton of memory for the unmanaged views
+  // to wrap.
+  //
+  // In this test, a graph (via raw arrays) resides on the host.
+  // The pointers are wrapped by unmanaged Views. 
+  // To make use of this on the device, managed device Views are created (allocation required),
+  // and data from the unmanaged host views is deep copied to the device Views
+  // Unmanaged views of the appropriate type wrap the device data and are assigned to
+  // their corresponding unmanaged view members of the unmanaged StaticCrsGraph
+
+  // Data types for raw pointers storing StaticCrsGraph info
+  typedef typename dView::size_type ptr_row_map_type;
+  typedef typename dView::data_type ptr_entries_type;
+
+  const ordinal_type numRows = 8;
+  const ordinal_type nnz = 24;
+  ptr_row_map_type ptrRaw[] = {0, 4, 8, 10, 12, 14, 16, 20, 24};
+  ptr_entries_type indRaw[] = {0, 1, 4, 5, 0, 1, 4, 5, 2, 3, 2, 3, 4, 5, 4, 5, 2, 3, 6, 7, 2, 3, 6, 7};
+
+  // Wrap pointers in unmanaged host views
+  typedef typename hView::row_map_type local_row_map_type ;
+  typedef typename hView::entries_type local_entries_type ;
+  local_row_map_type unman_row_map( &(ptrRaw[0]) , numRows+1 );
+  local_entries_type unman_entries( &(indRaw[0]) , nnz );
+
+  hView hx ;
+  hx = hView( unman_entries, unman_row_map );
+
+  // Create the device Views for copying the host arrays into
+  // An allocation is needed on the device for the unmanaged StaticCrsGraph to wrap the pointer
+  typedef typename Kokkos::View< ptr_row_map_type*, layout_type, space_type > d_row_map_view_type;
+  typedef typename Kokkos::View< ptr_entries_type*, layout_type, space_type > d_entries_view_type;
+
+  d_row_map_view_type tmp_row_map( "tmp_row_map", numRows+1 );
+  d_entries_view_type tmp_entries( "tmp_entries", nnz );
+
+  Kokkos::deep_copy (tmp_row_map, unman_row_map);
+  Kokkos::deep_copy (tmp_entries, unman_entries);
+
+  // Wrap the pointer in unmanaged View and assign to the corresponding StaticCrsGraph member
+  dx.row_map = typename dView::row_map_type(tmp_row_map.data(), numRows+1);
+  dx.entries = typename dView::entries_type(tmp_entries.data(), nnz);
+
+  ASSERT_TRUE((std::is_same< typename dView::row_map_type::memory_traits , Kokkos::MemoryUnmanaged >::value));
+  ASSERT_TRUE((std::is_same< typename dView::entries_type::memory_traits , Kokkos::MemoryUnmanaged >::value));
+  ASSERT_TRUE((std::is_same< typename hView::row_map_type::memory_traits , Kokkos::MemoryUnmanaged >::value));
+  ASSERT_TRUE((std::is_same< typename hView::entries_type::memory_traits , Kokkos::MemoryUnmanaged >::value));
+}
+
 } /* namespace TestStaticCrsGraph */
 
+TEST_F( TEST_CATEGORY , staticcrsgraph )
+{
+  TestStaticCrsGraph::run_test_graph< TEST_EXECSPACE >();
+  TestStaticCrsGraph::run_test_graph2< TEST_EXECSPACE >();
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(1, 0);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(1, 1000);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(1, 10000);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(1, 100000);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(3, 0);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(3, 1000);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(3, 10000);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(3, 100000);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(75, 0);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(75, 1000);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(75, 10000);
+  TestStaticCrsGraph::run_test_graph3< TEST_EXECSPACE >(75, 100000);
+  TestStaticCrsGraph::run_test_graph4< TEST_EXECSPACE >();
+}
+}

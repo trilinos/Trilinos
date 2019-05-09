@@ -46,11 +46,11 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
 #include <iostream>
@@ -93,16 +93,16 @@ Real evaluateUpperBound(const std::vector<Real> & coord) {
 
 
 template <class Real>
-void computeUpperBound(const Teuchos::RCP<Tpetra::MultiVector<> > & ubVec,
-                       const Teuchos::RCP<const FE<Real> > & fe,
-                       const Teuchos::RCP<Intrepid::FieldContainer<Real> > & cellNodes,
-                       const Teuchos::RCP<Intrepid::FieldContainer<int> > & cellDofs,
+void computeUpperBound(const ROL::Ptr<Tpetra::MultiVector<> > & ubVec,
+                       const ROL::Ptr<const FE<Real> > & fe,
+                       const ROL::Ptr<Intrepid::FieldContainer<Real> > & cellNodes,
+                       const ROL::Ptr<Intrepid::FieldContainer<int> > & cellDofs,
                        const Teuchos::Array<int> & cellIds) {
   int c = fe->gradN()->dimension(0);
   int f = fe->gradN()->dimension(1);
   int d = fe->gradN()->dimension(3);
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPoints =
-    Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,f,d));
+  ROL::Ptr<Intrepid::FieldContainer<Real> > dofPoints =
+    ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,d);
   fe->computeDofCoords(dofPoints, cellNodes);
   
   std::vector<Real> coord(d);
@@ -125,19 +125,19 @@ void computeUpperBound(const Teuchos::RCP<Tpetra::MultiVector<> > & ubVec,
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm
-    = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm
+    = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout); 
   }
   else {
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -150,45 +150,45 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize PDE describing the obstacle problem ***/
-    Teuchos::RCP<MeshManager<RealT> > meshMgr
-      = Teuchos::rcp(new MeshManager_Rectangle<RealT>(*parlist));
-    Teuchos::RCP<PDE_Obstacle<RealT> > pde
-      = Teuchos::rcp(new PDE_Obstacle<RealT>(*parlist));
-    Teuchos::RCP<EnergyObjective<RealT> > obj
-      = Teuchos::rcp(new EnergyObjective<RealT>(pde,meshMgr,comm,*parlist,*outStream));
-    Teuchos::RCP<Assembler<RealT> > assembler = obj->getAssembler();
+    ROL::Ptr<MeshManager<RealT> > meshMgr
+      = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
+    ROL::Ptr<PDE_Obstacle<RealT> > pde
+      = ROL::makePtr<PDE_Obstacle<RealT>>(*parlist);
+    ROL::Ptr<EnergyObjective<RealT> > obj
+      = ROL::makePtr<EnergyObjective<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
+    ROL::Ptr<Assembler<RealT> > assembler = obj->getAssembler();
 
     // Create state vector and set to zeroes
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
-    u_rcp->randomize();
-    Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr = assembler->createStateVector();
+    u_ptr->randomize();
+    ROL::Ptr<ROL::Vector<RealT> > up
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
     // Create state direction vector and set to random
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = assembler->createStateVector();
-    du_rcp->randomize();
-    Teuchos::RCP<ROL::Vector<RealT> > dup
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
+    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = assembler->createStateVector();
+    du_ptr->randomize();
+    ROL::Ptr<ROL::Vector<RealT> > dup
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler);
 
     // Build bound constraints
-    Teuchos::RCP<Tpetra::MultiVector<> > lo_rcp = assembler->createStateVector();
-    Teuchos::RCP<Tpetra::MultiVector<> > hi_rcp = assembler->createStateVector();
-    lo_rcp->putScalar(0.0); hi_rcp->putScalar(1.0);
-    computeUpperBound<RealT>(hi_rcp,pde->getFE(),
+    ROL::Ptr<Tpetra::MultiVector<> > lo_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> > hi_ptr = assembler->createStateVector();
+    lo_ptr->putScalar(0.0); hi_ptr->putScalar(1.0);
+    computeUpperBound<RealT>(hi_ptr,pde->getFE(),
                              pde->getCellNodes(),
                              assembler->getDofManager()->getCellDofs(),
                              assembler->getCellIds());
-    Teuchos::RCP<ROL::Vector<RealT> > lop
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(lo_rcp,pde,assembler));
-    Teuchos::RCP<ROL::Vector<RealT> > hip
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(hi_rcp,pde,assembler));
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
+    ROL::Ptr<ROL::Vector<RealT> > lop
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(lo_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > hip
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(hi_ptr,pde,assembler);
+    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
+      = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
 
     // Run derivative checks
     obj->checkGradient(*up,*dup,true,*outStream);
     obj->checkHessVec(*up,*dup,true,*outStream);
 
-    du_rcp->putScalar(0.4);
+    du_ptr->putScalar(0.4);
     up->set(*dup);
     ROL::Algorithm<RealT> algoTR("Trust Region",*parlist,false);
     std::clock_t timerTR = std::clock();
@@ -207,8 +207,8 @@ int main(int argc, char *argv[]) {
 
     // Output.
     assembler->printMeshData(*outStream);
-    assembler->outputTpetraVector(u_rcp,"state.txt");
-    assembler->outputTpetraVector(hi_rcp,"upperBound.txt");
+    assembler->outputTpetraVector(u_ptr,"state.txt");
+    assembler->outputTpetraVector(hi_ptr,"upperBound.txt");
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();

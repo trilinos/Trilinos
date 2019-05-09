@@ -44,6 +44,9 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_toString.hpp"
 
+#include <fstream>
+#include <iostream>
+
 extern "C" {
 #include "zoltan.h"
 }
@@ -93,7 +96,7 @@ struct TensorData {
 // Functions implementing hypergraph for 3-D decomposition
 // For this hypergraph model
 //   * the nnz vertices are the Cijk non-zeros
-//   * the 3*n hyperedges are the i, j, and k values 
+//   * the 3*n hyperedges are the i, j, and k values
 //       each Cijk non-zero belongs to 3 hyperedges:  i, j, and k
 namespace HG_3D {
 
@@ -164,12 +167,12 @@ namespace HG_3D {
     int pin_idx = 0;
     TensorData::Cijk_type::k_iterator k_begin = td->Cijk->k_begin();
     TensorData::Cijk_type::k_iterator k_end =   td->Cijk->k_end();
-    for (TensorData::Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; 
+    for (TensorData::Cijk_type::k_iterator k_it=k_begin; k_it!=k_end;
          ++k_it) {
       int k = index(k_it);
        TensorData::Cijk_type::kj_iterator j_begin = td->Cijk->j_begin(k_it);
        TensorData::Cijk_type::kj_iterator j_end =   td->Cijk->j_end(k_it);
-       for (TensorData::Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; 
+       for (TensorData::Cijk_type::kj_iterator j_it = j_begin; j_it != j_end;
             ++j_it) {
          int j = index(j_it);
          TensorData::Cijk_type::kji_iterator i_begin = td->Cijk->i_begin(j_it);

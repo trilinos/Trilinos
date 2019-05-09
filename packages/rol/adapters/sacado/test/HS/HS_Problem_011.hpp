@@ -76,7 +76,7 @@ public:
 template<class Real> 
 class Problem_011 : public ROL::NonlinearProgram<Real> {
 
-  template<typename T> using RCP = Teuchos::RCP<T>;
+  
 
   typedef ROL::Vector<Real>               V;
   typedef ROL::Objective<Real>            OBJ;
@@ -93,16 +93,15 @@ public:
   int dimension_x()  { return 2; }
   int dimension_ci() { return 1; }
 
-  const RCP<OBJ> getObjective() { 
-    return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_011::Obj> );
+  const ROL::Ptr<OBJ> getObjective() { 
+    return ROL::makePtr<ROL::Sacado_StdObjective<Real,HS_011::Obj>>();
   }
 
-  const RCP<CON> getInequalityConstraint() {
-    return Teuchos::rcp( 
-      new ROL::Sacado_StdConstraint<Real,HS_011::InCon>);
+  const ROL::Ptr<CON> getInequalityConstraint() {
+    return ROL::makePtr<ROL::Sacado_StdConstraint<Real,HS_011::InCon>>();
   }
 
-  const RCP<const V> getInitialGuess() {
+  const ROL::Ptr<const V> getInitialGuess() {
     Real x[] = {4.9,0.1};
     return NP::createOptVector(x);
   };
@@ -117,7 +116,7 @@ public:
     return Real(-8.498464223);
   }
 
-  RCP<const V> getSolutionSet() {
+  ROL::Ptr<const V> getSolutionSet() {
     Real a = 7.5*std::sqrt(6) + std::sqrt(338.5);
     Real x[] = {(a-1/a)/std::sqrt(6),
                 (a*a-2+1/(a*a))/6.0};

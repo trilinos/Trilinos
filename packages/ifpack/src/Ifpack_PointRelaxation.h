@@ -387,11 +387,11 @@ private:
   virtual void SetLabel();
 
   //! Copy constructor (PRIVATE, should not be used)
-  Ifpack_PointRelaxation(const Ifpack_PointRelaxation& rhs)
+  Ifpack_PointRelaxation(const Ifpack_PointRelaxation& /* rhs */)
   {}
 
   //! operator = (PRIVATE, should not be used)
-  Ifpack_PointRelaxation& operator=(const Ifpack_PointRelaxation& rhs)
+  Ifpack_PointRelaxation& operator=(const Ifpack_PointRelaxation& /* rhs */)
   {
     return(*this);
   }

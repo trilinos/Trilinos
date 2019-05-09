@@ -417,7 +417,7 @@ void
 Chebyshev<MatrixType>::
 applyImpl (const MV& X,
            MV& Y,
-           Teuchos::ETransp mode,
+           Teuchos::ETransp /* mode */,
            scalar_type alpha,
            scalar_type beta) const
 {
@@ -462,9 +462,14 @@ applyImpl (const MV& X,
   RCP<const MV> X_copy;
   bool copiedInput = false;
   {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
     auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-    if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+#else
+    auto X_lcl_host = X.getLocalViewHost ();
+    auto Y_lcl_host = Y.getLocalViewHost ();
+#endif
+    if (X_lcl_host.data () == Y_lcl_host.data ()) {
       X_copy = rcp (new MV (X, Teuchos::Copy));
       copiedInput = true;
     } else {

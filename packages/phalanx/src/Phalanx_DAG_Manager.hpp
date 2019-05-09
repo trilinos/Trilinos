@@ -59,6 +59,8 @@
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_DAG_Node.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Kokkos_View.hpp"
+#include "Phalanx_DeviceEvaluator.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
 #include "Kokkos_TaskScheduler.hpp"
@@ -104,10 +106,17 @@ namespace PHX {
     /*! Calls post registration setup on all evaluators.
     */
     void postRegistrationSetup(typename Traits::SetupData d,
-			       PHX::FieldManager<Traits>& vm);
+			       PHX::FieldManager<Traits>& vm,
+                               const bool& buildDeviceDAG);
     
-    //! Evaluate the required fields using data parallel evalaution on topological sort of tasks.
+    //! Evaluate the required fields using data parallel evaluation on topological sort of tasks. Calls parallel_for for each node in DAG.
     void evaluateFields(typename Traits::EvalData d);
+
+    //! Evaluate the required fields using data parallel evaluation on topological sort of tasks. Uses Device DAG support, calling a single parallel_for for the entire DAG. This could be faster than the call to evaluateFields, but all nodes in the DAG are restricted to the same work_size. This is intended for CUDA builds where kernel launch overhead can be significant.
+    void evaluateFieldsDeviceDag(const int& work_size,
+				 const int& team_size,
+				 const int& vector_size,
+				 typename Traits::EvalData d);
     
 #ifdef PHX_ENABLE_KOKKOS_AMT
     /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
@@ -139,7 +148,6 @@ namespace PHX {
     void postEvaluate(typename Traits::PostEvalData d);
     
     void setEvaluationTypeName(const std::string& evaluation_type_name);
-    
 
     /*! Returns the FieldTags for all fields involved in the
         evaluation. Will return an empty vector unless the user has
@@ -181,16 +189,24 @@ namespace PHX {
      */
     void analyzeGraph(double& speedup, double& parallelizability) const;
 
-    /** \brief Returns all evalautors that either evaluate or require
+    /** \brief Returns all evaluators that either evaluate or require
         the given field. This is used to bind memory for unmanaged
         views.
 
         CAUTION: The returned vector is non-const to rebind memory for
-        fields in evalautors. Be careful not to corrupt the actual
+        fields in evaluators. Be careful not to corrupt the actual
         vector.
      */
     std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& 
     getEvaluatorsBindingField(const PHX::FieldTag& ft);
+
+    /** \brief Print to user specified ostream when each evaluator
+        starts and stops. Useful for debugging. Enabled only in debug
+        builds.
+
+        @param [in] ostr RCP to output stream. If set to null, this disables printing.
+    */
+    void printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr);
 
   protected:
 
@@ -207,7 +223,7 @@ namespace PHX {
     //! Helper function.
     void printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const;
 
-    void createEvalautorBindingFieldMap();
+    void createEvaluatorBindingFieldMap();
     
   protected:
 
@@ -259,8 +275,17 @@ namespace PHX {
     //std::vector<Kokkos::Experimental::Future<void,PHX::exec_space>> node_futures_;
 #endif
 
-    //! A map that returns all evalautors that bind the memory of a particular field. Key is unique field identifier.  
+    //! A map that returns all evaluators that bind the memory of a particular field. Key is unique field identifier.  
     std::unordered_map<std::string,std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>> field_to_evaluators_binding_;
+
+    //! If set to true, allocated DeviceEvaluators for Device DAG for evaluation
+    bool build_device_dag_;
+    
+    //! Contians pointers to DeviceEvaluators for Device DAG support.
+    Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device> device_evaluators_;
+
+    //! If non-null, in debug builds, the DAG manager will print when an evaluator starts and stops.
+    Teuchos::RCP<std::ostream> start_stop_debug_ostream_;
   };
   
   template<typename Traits>

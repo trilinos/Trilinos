@@ -65,8 +65,8 @@ Array<std::string> StrUtils::splitIntoLines(const std::string& input)
 {
   int begin = 0;
   Array<std::string> rtn;
-  const unsigned int len = input.length();
-  for (unsigned int p=0; p<len; ++p) {
+  const size_t len = input.length();
+  for (size_t p=0; p<len; ++p) {
     const bool isEnd = p==len-1;
     if( input[p]=='\n' || input[p]=='\0' || input[p]=='\r' || isEnd )
     {
@@ -224,7 +224,7 @@ int StrUtils::findNextWhitespace(const std::string& str, int offset)
       return i+offset;
     }
   }
-  return str.length();
+  return static_cast<int>(str.length());
 }
 
 
@@ -237,7 +237,7 @@ int StrUtils::findNextNonWhitespace(const std::string& str, int offset)
       return i+offset;
     }
   }
-  return str.length();
+  return static_cast<int>(str.length());
 }
 
 
@@ -264,7 +264,7 @@ std::string StrUtils::varSubstitute(const std::string& rawLine,
 {
   std::string line = rawLine;
 
-  // iterate because there might be more than one occurance on this line
+  // iterate because there might be more than one occurrence on this line
   while (find(line, varName) >= 0)
   {
     std::string b = before(line, varName);
@@ -291,7 +291,7 @@ std::string StrUtils::before(const std::string& str, const std::string& sub)
 
   char* p = std::strstr((char*) str.c_str(), (char*) sub.c_str());
   if (p==0) return str;
-  int subLen = p-str.c_str();
+  int subLen = static_cast<int>(p-str.c_str());
   std::string rtn(str.c_str(), subLen);
   return rtn;
 }
@@ -316,7 +316,7 @@ int StrUtils::find(const std::string& str, const std::string& sub)
 {
   char* p = std::strstr((char*) str.c_str(), (char*) sub.c_str());
   if (p==0) return -1;
-  return p-str.c_str();
+  return static_cast<int>(p-str.c_str());
 }
 
 
@@ -369,7 +369,7 @@ std::string StrUtils::subString(const std::string& str, int begin, int end)
 }
 
 
-std::string StrUtils::readFromStream(std::istream& is)
+std::string StrUtils::readFromStream(std::istream& /* is */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "StrUtils::readFromStream isn't implemented yet");

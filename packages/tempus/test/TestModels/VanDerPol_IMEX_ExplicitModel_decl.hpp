@@ -120,6 +120,7 @@ class VanDerPol_IMEX_ExplicitModel
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
@@ -146,6 +147,7 @@ private:
     ) const;
   //@}
 
+  bool useProductVector_;
   int dim_;         ///< Number of state unknowns (2)
   int Np_;          ///< Number of parameter vectors (1)
   int np_;          ///< Number of parameters in this vector (1)
@@ -153,13 +155,16 @@ private:
   int ng_;          ///< Number of elements in this observation function (0)
   bool haveIC_;     ///< false => no nominal values are provided (default=true)
   bool acceptModelParams_; ///< Changes inArgs to require parameters
+  bool useDfDpAsTangent_; ///< Treat DfDp OutArg as tangent (df/dx*dx/dp+df/dp)
   mutable bool isInitialized_;
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > xSpace_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > dxdp_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
 
   // Parameters for the model:

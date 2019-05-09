@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -50,7 +50,7 @@ namespace Iotr {
 
   Ioss::Transform *Scale_Factory::make(const std::string & /*unused*/) const { return new Scale(); }
 
-  Scale::Scale() : intMultiplier(1), realMultiplier(1.0) {}
+  Scale::Scale() {}
 
   void Scale::set_property(const std::string & /*name*/, int value) { intMultiplier = value; }
 

@@ -110,9 +110,6 @@ public:
     const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> >& indexer,
     const Teuchos::RCP<ProbeScatterBase> & probeScatter);
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
   void evaluateFields(typename Traits::EvalData d);
 
   void preEvaluate(typename Traits::PreEvalData d);
@@ -199,7 +196,7 @@ void ProbeScatter<LO,GO>::scatterDerivative(
 {
 
   if (has_probe) {
-    std::vector<LO> LIDs = globalIndexer_->getElementLIDs(cell_index);
+    Kokkos::View<const LO*, PHX::Device> LIDs = globalIndexer_->getElementLIDs(cell_index);
 
     // loop over basis functions
     for(std::size_t i=0; i<LIDs.size(); ++i) {

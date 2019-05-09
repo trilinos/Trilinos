@@ -83,6 +83,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  high_order_example
+  SOURCES high_order_example.cpp
+  ARGS -v
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   dfad_taylor_example
   SOURCES dfad_taylor_example.cpp
   ARGS -v
@@ -123,7 +131,7 @@ IF (Sacado_ENABLE_CXX11)
     )
 ENDIF()
 
-IF(Sacado_ENABLE_Teuchos)
+IF(Sacado_ENABLE_TeuchosNumerics)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     blas_example
@@ -141,24 +149,24 @@ IF(Sacado_ENABLE_Teuchos)
     NUM_MPI_PROCS 1
     )
 
-  IF (Sacado_ENABLE_KokkosCore)
+ENDIF()
+
+IF (Sacado_ENABLE_KokkosCore)
+
+  IF (Sacado_ENABLE_TeuchosCore)
     TRIBITS_ADD_EXECUTABLE(
       view_factory_example
       SOURCES view_factory_example.cpp
       COMM serial mpi
       )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      dfad_view_handle_example
-      SOURCES dfad_view_handle_example.cpp
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      )
   ENDIF()
 
-ENDIF()
-
-IF (Sacado_ENABLE_KokkosCore)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    dfad_view_handle_example
+    SOURCES dfad_view_handle_example.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     view_example

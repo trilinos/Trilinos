@@ -98,10 +98,11 @@ namespace MueLuTests {
       typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 5.773502691896257e-01;
       switch (comm->getSize()) {
         case 1:
         case 4:
-          TEST_FLOATING_EQUALITY(residualNorms,5.773502691896257e-01,1e-12);
+          TEST_FLOATING_EQUALITY(residualNorms,expectedNorm,1e-12);
           break;
         default:
           out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
@@ -134,12 +135,14 @@ namespace MueLuTests {
       typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm1 = 8.326553652741774e-02;
+      const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm4 = 8.326553653078517e-02;
       switch (comm->getSize()) {
         case 1:
-          TEST_FLOATING_EQUALITY(residualNorms, 8.326553652741774e-02, 1e-12);
+          TEST_FLOATING_EQUALITY(residualNorms, expectedNorm1, 1e-12);
           break;
         case 4:
-          TEST_FLOATING_EQUALITY(residualNorms, 8.326553653078517e-02, 1e-12);
+          TEST_FLOATING_EQUALITY(residualNorms, expectedNorm4, 1e-12);
           break;
         default:
           out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
@@ -171,8 +174,8 @@ namespace MueLuTests {
       Ifpack2Smoother smoother("CHEBYSHEV",paramList);
 
       typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
-
-      TEST_FLOATING_EQUALITY(residualNorms, 5.269156e-01, 1e-7);  // Compare to residual reported by ML
+      const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 5.269156e-01;
+      TEST_FLOATING_EQUALITY(residualNorms, expectedNorm, 1e-7);  // Compare to residual reported by ML
 
     }
   } // Chebyshev
@@ -276,13 +279,160 @@ namespace MueLuTests {
     }
   } // ILU
 
+  // Make sure Ifpack2's Banded relaxation actually gets called
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, BandedRelaxation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+
+      Teuchos::ParameterList paramList;
+      paramList.set("partitioner: PDE equations",5);// Warning: This number has to be compatible with the problem size
+      Ifpack2Smoother smoother("BANDED RELAXATION",paramList);
+
+      //I don't use the testApply infrastructure because it has no provision for an initial guess.
+      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(125);
+      Level level; TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+      smoother.Setup(level);
+
+      RCP<MultiVector> X   = MultiVectorFactory::Build(A->getDomainMap(),1);
+      RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRangeMap(),1);
+
+      // Random X
+      X->setSeed(846930886);
+      X->randomize();
+
+      // Normalize X
+      Array<magnitude_type> norms(1); X->norm2(norms);
+      X->scale(1/norms[0]);
+
+      // Compute RHS corresponding to X
+      A->apply(*X,*RHS, Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+      // Reset X to 0
+      X->putScalar((SC) 0.0);
+
+      RHS->norm2(norms);
+      out << "||RHS|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+
+      out << "solve with zero initial guess" << std::endl;
+      Teuchos::Array<magnitude_type> initialNorms(1); X->norm2(initialNorms);
+      out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
+
+      smoother.Apply(*X, *RHS, true);  //zero initial guess
+
+      Teuchos::Array<magnitude_type> finalNorms(1); X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm1 = Utilities::ResidualNorm(*A, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      out << "solve with random initial guess" << std::endl;
+      X->randomize();
+      X->norm2(initialNorms);
+      out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
+
+      smoother.Apply(*X, *RHS, false); //nonzero initial guess
+
+      X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm2 = Utilities::ResidualNorm(*A, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      if (comm->getSize() == 1) {
+        //TEST_EQUALITY(residualNorms < 1e-10, true);
+        TEST_EQUALITY(residualNorm1[0] != residualNorm2[0], true);
+      } else {
+        out << "Pass/Fail is only checked in serial." << std::endl;
+      }
+
+    }
+  } // banded
+
+  // Make sure Ifpack2's Banded relaxation actually gets called
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, TriDiRelaxation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+
+      Teuchos::ParameterList paramList;
+      Ifpack2Smoother smoother("TRIDI RELAXATION",paramList);
+
+      //I don't use the testApply infrastructure because it has no provision for an initial guess.
+      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(125);
+      Level level; TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+      smoother.Setup(level);
+
+      RCP<MultiVector> X   = MultiVectorFactory::Build(A->getDomainMap(),1);
+      RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRangeMap(),1);
+
+      // Random X
+      X->setSeed(846930886);
+      X->randomize();
+
+      // Normalize X
+      Array<magnitude_type> norms(1); X->norm2(norms);
+      X->scale(1/norms[0]);
+
+      // Compute RHS corresponding to X
+      A->apply(*X,*RHS, Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+      // Reset X to 0
+      X->putScalar((SC) 0.0);
+
+      RHS->norm2(norms);
+      out << "||RHS|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+
+      out << "solve with zero initial guess" << std::endl;
+      Teuchos::Array<magnitude_type> initialNorms(1); X->norm2(initialNorms);
+      out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
+
+      smoother.Apply(*X, *RHS, true);  //zero initial guess
+
+      Teuchos::Array<magnitude_type> finalNorms(1); X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm1 = Utilities::ResidualNorm(*A, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      out << "solve with random initial guess" << std::endl;
+      X->randomize();
+      X->norm2(initialNorms);
+      out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
+
+      smoother.Apply(*X, *RHS, false); //nonzero initial guess
+
+      X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm2 = Utilities::ResidualNorm(*A, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      if (comm->getSize() == 1) {
+        //TEST_EQUALITY(residualNorms < 1e-10, true);
+        TEST_EQUALITY(residualNorm1[0] != residualNorm2[0], true);
+      } else {
+        out << "Pass/Fail is only checked in serial." << std::endl;
+      }
+
+    }
+  } // tridi
+
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,NotSetup,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_GaussSeidel,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_GaussSeidel2,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_Chebyshev,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_ILU,SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,ILU_TwoSweeps,SC,LO,GO,NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,ILU_TwoSweeps,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BandedRelaxation,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,TriDiRelaxation,SC,LO,GO,NO)
 
 #include <MueLu_ETI_4arg.hpp>
 

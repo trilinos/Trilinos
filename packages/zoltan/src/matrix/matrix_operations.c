@@ -409,7 +409,7 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 			       outmat->nPins*outmat->pinwgtdim*sizeof(float));
 
   if ((outmat->nPins && !outmat->pinGNO) ||
-      (outmat->nPins*outmat->pinwgtdim && !outmat->pinwgt)){
+      (outmat->nPins && outmat->pinwgtdim && !outmat->pinwgt)){
     MEMORY_ERROR;
   }
 

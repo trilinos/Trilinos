@@ -41,12 +41,9 @@
 // @HEADER
 
 #include "PanzerDiscFE_config.hpp"
-
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
-
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#include "Panzer_Sum_decl.hpp"
+#include "Panzer_Sum.hpp"
 #include "Panzer_Sum_impl.hpp"
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::Sum)
@@ -54,5 +51,3 @@ PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::Sum)
 PANZER_INSTANTIATE_TEMPLATE_CLASS_THREE_T(panzer::SumStatic,panzer::Cell)
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::SumStatic,panzer::Cell,panzer::IP)
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::SumStatic,panzer::Cell,panzer::BASIS)
-
-#endif

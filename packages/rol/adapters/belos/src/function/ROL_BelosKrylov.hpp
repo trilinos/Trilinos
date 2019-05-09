@@ -53,8 +53,10 @@
 #ifndef ROL_BELOS_KRYLOV_HPP
 #define ROL_BELOS_KRYLOV_HPP
 
-#include "BelosSolverFactory.hpp"   
-#include "BelosSolverManager.hpp"   
+// The GenericSolverFactory will register managers for any types.
+// To be used when the types are not part of the standard set.
+// You must explicitly use GenericSolverFactory instead of SolverFactory.
+#include "BelosSolverFactory_Generic.hpp"
 
 #include "ROL_Krylov.hpp"
 #include "ROL_BelosMultiVector.hpp"
@@ -77,7 +79,7 @@ namespace ROL {
 
         private:
 
-            Belos::SolverFactory<ST,MV,OP> factory_;
+            Belos::GenericSolverFactory<ST,MV,OP> factory_;
             Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver_;
             Teuchos::RCP<Belos::LinearProblem<ST,MV,OP> > problem_;  
 
@@ -85,9 +87,9 @@ namespace ROL {
            
             /// \brief Create a Belos solver 
             BelosKrylov(Teuchos::ParameterList &parlist) : 
-                problem_(Teuchos::rcp(new Belos::LinearProblem<ST,MV,OP>)) {
+                problem_(ROL::makePtr<Belos::LinearProblem<ST,MV,OP>>()) {
 
-                Teuchos::RCP<Teuchos::ParameterList> solverParams = Teuchos::rcp(new Teuchos::ParameterList());
+                Teuchos::RCP<Teuchos::ParameterList> solverParams = Teuchos::rcp( new Teuchos::ParameterList() );
 
                 // Options likely to be of interest include CG, MINRES, GMRES, and RCG
                 int blockSize          = 1; // Only support single solution & single RHS for now 
@@ -107,26 +109,26 @@ namespace ROL {
 
 
             /// \brief Compute solution vector
-            void run( V &x, OP& A, const V &b, OP &M, int &iter, int &flag )  {
+            Real run( V &x, OP& A, const V &b, OP &M, int &iter, int &flag )  {
 
-                using Teuchos::RCP;
-                using Teuchos::rcp;
-                using Teuchos::rcpFromRef;
+                
+                
+                ;
 
 
                 // Get pointers to ROL::Vectors
-                RCP<V>        xp = Teuchos::rcpFromRef(x);
+                Teuchos::RCP<V>        xp = Teuchos::rcpFromRef(x);
 
                 // Wasteful, but have not yet implemented const case for MV
-                RCP<V>        bp = b.clone();
+                Teuchos::RCP<V>        bp = b.clone();
                 bp->set(b);
 
                 // Make ROL::MultiVectors from the pointers to ROL::Vectors
-                RCP<MV> xmvp = rcp(new MultiVectorDefault<Real>(xp));
-                RCP<MV> bmvp = rcp(new MultiVectorDefault<Real>(bp));
+                Teuchos::RCP<MV> xmvp = Teuchos::rcp( new MultiVectorDefault<Real>(xp) );
+                Teuchos::RCP<MV> bmvp = Teuchos::rcp( new MultiVectorDefault<Real>(bp) );
 
-                RCP<OP> Ap = Teuchos::rcpFromRef(A);
-                RCP<OP> Mp = Teuchos::rcpFromRef(M);
+                Teuchos::RCP<OP> Ap = Teuchos::rcpFromRef(A);
+                Teuchos::RCP<OP> Mp = Teuchos::rcpFromRef(M);
 
                 // Wrap x and b in ROL::MultiVector objects 
                 MVD xmv(xp);
@@ -141,6 +143,8 @@ namespace ROL {
                 flag = static_cast<int>(solver_->solve());
 
                 iter = solver_->getNumIters();
+
+                return solver_->achievedTol();
             }
     };
 }

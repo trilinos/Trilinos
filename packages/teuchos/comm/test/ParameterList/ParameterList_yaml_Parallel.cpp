@@ -56,8 +56,9 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include <sstream>
+#include <fstream>
 #include <iomanip>
+#include <sstream>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -78,7 +79,7 @@ namespace TeuchosTests
     Teuchos::updateParametersFromXmlFileAndBroadcast(n1, xmlList.ptr(), *comm, true);
     const std::string n2("Match1.yaml");
     Teuchos::updateParametersFromYamlFileAndBroadcast(n2, yamlList.ptr(), *comm, true);
-    TEST_EQUALITY(Teuchos::haveSameValuesUnordered(*xmlList, *yamlList, true), true);
+    TEST_EQUALITY(Teuchos::haveSameValues(*xmlList, *yamlList), true);
   }
   TEUCHOS_UNIT_TEST(YAML, ConvertFromXML)
   {
@@ -87,11 +88,17 @@ namespace TeuchosTests
     RCP<const Teuchos::Comm<int> > comm = DefaultComm<int>::getComm ();
 
     //This list can contain any valid XML param lists in the unit_tests/yaml/
-    std::vector<string> xmlFiles = {"Match1.xml", "Match2.xml", "Match3.xml", "Match4.xml", "input_restingHydrostatic_RK4.xml", "plasma_oscillation_rtc.xml"};
+    std::vector<string> xmlFiles;
+    xmlFiles.push_back("Match1.xml");
+    xmlFiles.push_back("Match2.xml");
+    xmlFiles.push_back("Match3.xml");
+    xmlFiles.push_back("Match4.xml");
+    xmlFiles.push_back("input_restingHydrostatic_RK4.xml");
+    xmlFiles.push_back("plasma_oscillation_rtc.xml");
     for(size_t i = 0; i < xmlFiles.size(); i++)
     {
       //reading from XML
-      std::ifstream xmlStream(xmlFiles[i]);
+      std::ifstream xmlStream(xmlFiles[i].c_str());
       //emitting converted YAML
       std::ostringstream yamlStream;
       yamlStream << std::setprecision(17) << std::scientific;
@@ -99,8 +106,14 @@ namespace TeuchosTests
       //now read back both formats to compare
       RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile(xmlFiles[i]);
       string yamlText = yamlStream.str();
-      RCP<ParameterList> yamlList = Teuchos::YAMLParameterList::parseYamlText(yamlText);
-      TEST_EQUALITY(Teuchos::haveSameValuesUnordered(*xmlList, *yamlList, true), true);
+      string debugYamlFileName = xmlFiles[i] + ".yaml";
+      {
+      std::ofstream debugYamlFileStream(debugYamlFileName.c_str());
+      debugYamlFileStream << yamlText;
+      }
+      RCP<ParameterList> yamlList = Teuchos::YAMLParameterList::parseYamlText(yamlText,
+          debugYamlFileName);
+      TEST_EQUALITY(Teuchos::haveSameValues(*xmlList, *yamlList, true), true);
     }
   }
 

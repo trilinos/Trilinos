@@ -44,11 +44,12 @@
 */
 
 #include "AnasaziConfigDefs.hpp"
+#include "Trilinos_version.h"
 
 namespace Anasazi {
 
    std::string Anasazi_Version() { 
-		return("Anasazi Version 12.12d"); 
+		return("Anasazi in Trilinos " TRILINOS_VERSION_STRING); 
 	}
 
 } // namespace Anasazi

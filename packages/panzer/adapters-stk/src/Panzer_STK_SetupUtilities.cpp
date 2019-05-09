@@ -572,7 +572,7 @@ void getSubcellEntities(const panzer_stk::STK_Interface & mesh,
     // sanity check, enforcing that there is only one rank
     TEUCHOS_ASSERT(bulkData.entity_rank(entity)==master_rank);
 
-    for(int i=0; i<master_rank; i++) {
+    for(int i=0; i<static_cast<int>(master_rank); i++) {
       stk::mesh::EntityRank const to_rank = static_cast<stk::mesh::EntityRank>(i);
       if (bulkData.connectivity_map().valid(master_rank, to_rank)) {
         const size_t num_rels = bulkData.num_connectivity(entity, to_rank);

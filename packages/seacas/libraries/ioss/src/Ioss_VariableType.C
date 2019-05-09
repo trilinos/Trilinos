@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -213,9 +213,7 @@ const Ioss::VariableType *Ioss::VariableType::factory(const std::vector<Ioss::Su
     // This indicates a "component" variable type that is
     // constructed "on-the-fly" for use in Sierra
     //
-    // Maximum suffix size is 3.  If changed, then code in
-    // src/framewk/Frio_RestartUtils::variable_name_kluge must also
-    // be changed.
+    // Maximum suffix size is currently 5.
 
     char digits[6]; // Include trailing null
     assert(size < 100000);
@@ -223,19 +221,19 @@ const Ioss::VariableType *Ioss::VariableType::factory(const std::vector<Ioss::Su
     // Create a format for our use...
     char format[5];
     if (size < 10) {
-      std::strcpy(format, "%01d");
+      Ioss::Utils::copy_string(format, "%01d");
     }
     else if (size < 100) {
-      std::strcpy(format, "%02d");
+      Ioss::Utils::copy_string(format, "%02d");
     }
     else if (size < 1000) {
-      std::strcpy(format, "%03d");
+      Ioss::Utils::copy_string(format, "%03d");
     }
     else if (size < 10000) {
-      std::strcpy(format, "%04d");
+      Ioss::Utils::copy_string(format, "%04d");
     }
     else {
-      std::strcpy(format, "%05d");
+      Ioss::Utils::copy_string(format, "%05d");
     }
 
     for (size_t i = 0; i < size; i++) {
@@ -316,7 +314,7 @@ bool Ioss::VariableType::build_variable_type(const std::string &raw_type)
   // valid integer.
   size_t len      = type.length() + 1;
   auto   typecopy = new char[len];
-  std::strcpy(typecopy, typestr);
+  Ioss::Utils::copy_string(typecopy, typestr, len);
 
   char *base = std::strtok(typecopy, "[]");
   assert(base != nullptr);
@@ -348,19 +346,19 @@ std::string Ioss::VariableType::numeric_label(int which, int ncomp, const std::s
   // Create a format for our use...
   char format[5];
   if (ncomp < 10) {
-    std::strcpy(format, "%01d");
+    Ioss::Utils::copy_string(format, "%01d");
   }
   else if (ncomp < 100) {
-    std::strcpy(format, "%02d");
+    Ioss::Utils::copy_string(format, "%02d");
   }
   else if (ncomp < 1000) {
-    std::strcpy(format, "%03d");
+    Ioss::Utils::copy_string(format, "%03d");
   }
   else if (ncomp < 10000) {
-    std::strcpy(format, "%04d");
+    Ioss::Utils::copy_string(format, "%04d");
   }
   else if (ncomp < 100000) {
-    std::strcpy(format, "%05d");
+    Ioss::Utils::copy_string(format, "%05d");
   }
   else {
     std::ostringstream errmsg;

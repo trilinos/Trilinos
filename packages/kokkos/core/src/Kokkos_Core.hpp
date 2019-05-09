@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -78,6 +78,7 @@
 #include <Kokkos_ROCm.hpp>
 #endif
 
+#include <Kokkos_AnonymousSpace.hpp>
 #include <Kokkos_Pair.hpp>
 #include <Kokkos_MemoryPool.hpp>
 #include <Kokkos_Array.hpp>
@@ -89,6 +90,8 @@
 
 #include <Kokkos_Complex.hpp>
 
+#include <Kokkos_CopyViews.hpp>
+#include <functional>
 #include <iosfwd>
 
 //----------------------------------------------------------------------------
@@ -99,13 +102,21 @@ struct InitArguments {
   int num_threads;
   int num_numa;
   int device_id;
+  int ndevices;
+  int skip_device;
+  bool disable_warnings;
 
   InitArguments( int nt = -1
                , int nn = -1
-               , int dv = -1)
-    : num_threads( nt )
-    , num_numa( nn )
-    , device_id( dv )
+               , int dv = -1
+               , bool dw = false
+               )
+    : num_threads{ nt }
+    , num_numa{ nn }
+    , device_id{ dv }
+    , ndevices{ -1 }
+    , skip_device{ 9999 }
+    , disable_warnings{ dw }
   {}
 };
 
@@ -113,8 +124,34 @@ void initialize(int& narg, char* arg[]);
 
 void initialize(const InitArguments& args = InitArguments());
 
+bool is_initialized() noexcept;
+
+bool show_warnings() noexcept;
+
 /** \brief  Finalize the spaces that were initialized via Kokkos::initialize */
 void finalize();
+
+/**
+ * \brief Push a user-defined function to be called in
+ *   Kokkos::finalize, before any Kokkos state is finalized.
+ *
+ * \warning Only call this after Kokkos::initialize, but before
+ *   Kokkos::finalize.
+ *
+ * This function is the Kokkos analog to std::atexit.  If you call
+ * this with a function f, then your function will get called when
+ * Kokkos::finalize is called.  Specifically, it will be called BEFORE
+ * Kokkos does any finalization.  This means that all execution
+ * spaces, memory spaces, etc. that were initialized will still be
+ * initialized when your function is called.
+ *
+ * Just like std::atexit, if you call push_finalize_hook in sequence
+ * with multiple functions (f, g, h), Kokkos::finalize will call them
+ * in reverse order (h, g, f), as if popping a stack.  Furthermore,
+ * just like std::atexit, if any of your functions throws but does not
+ * catch an exception, Kokkos::finalize will call std::terminate.
+ */
+void push_finalize_hook(std::function<void()> f);
 
 /** \brief  Finalize all known execution spaces */
 void finalize_all();
@@ -171,6 +208,54 @@ void * kokkos_realloc( void * arg_alloc , const size_t arg_alloc_size )
   return Impl::SharedAllocationRecord< MemorySpace >::
     reallocate_tracked( arg_alloc , arg_alloc_size );
 }
+
+} // namespace Kokkos
+
+namespace Kokkos {
+
+/** \brief  ScopeGuard
+ *  Some user scope issues have been identified with some Kokkos::finalize calls;
+ *  ScopeGuard aims to correct these issues.
+ *
+ *  Two requirements for ScopeGuard: 
+ *     if Kokkos::is_initialized() in the constructor, don't call Kokkos::initialize or Kokkos::finalize
+ *     it is not copyable or assignable
+ */
+
+class ScopeGuard {
+public:
+  ScopeGuard ( int& narg, char* arg[] )
+  {
+    sg_init = false; 
+    if ( ! Kokkos::is_initialized() ) { 
+      initialize( narg, arg );
+      sg_init = true;
+    }
+  }
+
+  ScopeGuard ( const InitArguments& args = InitArguments() )
+  {
+    sg_init = false; 
+    if ( ! Kokkos::is_initialized() ) { 
+      initialize( args );
+      sg_init = true;
+    }
+  }
+
+  ~ScopeGuard( )
+  {
+    if ( Kokkos::is_initialized() && sg_init) { 
+      finalize(); 
+    }
+  }
+
+//private:
+  bool sg_init;    
+
+  ScopeGuard& operator=( const ScopeGuard& ) = delete;
+  ScopeGuard( const ScopeGuard& ) = delete;
+
+};
 
 } // namespace Kokkos
 

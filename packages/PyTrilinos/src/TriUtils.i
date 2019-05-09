@@ -47,7 +47,7 @@
 PyTrilinos.TriUtils is the python interface to the Trilinos utilities
 package TriUtils:
 
-    http://trilinos.sandia.gov/packages/triutils
+    https://trilinos.org/docs/dev/packages/triutils/doc/html/index.html
 
 The purpose of TriUtils is to provide some utilities typically needed
 when testing Trilinos software.
@@ -73,12 +73,12 @@ example subdirectory of the PyTrilinos package:
 	docstring = %triutils_docstring) TriUtils
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
@@ -87,12 +87,11 @@ example subdirectory of the PyTrilinos package:
 #undef HAVE_STDINT_H
 #endif
 
-// Trilinos includes
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_DefaultComm.hpp"
+// Trilinos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -100,9 +99,8 @@ example subdirectory of the PyTrilinos package:
 #include "numpy_include.hpp"
 #endif
 
-// Trilinos utility includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
-#include "Trilinos_Util_Version.h"
+// Trilinos utility include files
+#include "PyTrilinos_TriUtils_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration
@@ -121,8 +119,8 @@ example subdirectory of the PyTrilinos package:
 #pragma SWIG nowarn=503
 %ignore *::operator<< ;
 
-// Epetra interface includes
-#ifdef HAVE_EPETRA
+// Epetra interface include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 %import "Epetra.i"
 #endif
 
@@ -166,7 +164,7 @@ __version__ = TriUtils_Version().split()[3]
 ///////////////////////////
 // Trilinos_Util support //
 ///////////////////////////
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %ignore Trilinos_Util_read_hb;
 %ignore Trilinos_Util_read_coo;
 %rename (ReadHB) Trilinos_Util_ReadHb2Epetra;

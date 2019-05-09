@@ -36,11 +36,11 @@
 
 #include <Kokkos_Core.hpp>
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 void call_kokkos_saxpy_cuda(size_t N, Kokkos::View<float*,Kokkos::Cuda> y, float alpha, Kokkos::View<float*,Kokkos::Cuda> x);
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 void call_kokkos_saxpy_openmp(size_t N, Kokkos::View<float*,Kokkos::OpenMP> y, float alpha, Kokkos::View<float*,Kokkos::OpenMP> x);
 #endif
 

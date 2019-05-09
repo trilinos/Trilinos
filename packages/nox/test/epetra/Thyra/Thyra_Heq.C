@@ -70,6 +70,8 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_TestingHelpers.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -84,6 +86,8 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  const Teuchos::RCP<Teuchos::FancyOStream> out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -94,7 +98,7 @@ int main(int argc, char *argv[])
 
   bool success = false;
   bool verbose = false;
-  int StorageDepth = 10;
+  int StorageDepth = 2;
   double ParamC = 0.999;
   std::string LineSearch = "Full Step";
   int Reorthogonalize = 0;
@@ -117,11 +121,9 @@ int main(int argc, char *argv[])
       return parse_return;
 
     if (verbose)
-      std::cout << "Verbosity Activated" << std::endl;
+      *out << "Verbosity Activated" << std::endl;
     else
-      std::cout << "Verbosity Disabled" << std::endl;
-
-    int status = 0;
+      *out << "Verbosity Disabled" << std::endl;
 
     const int num_elements = 400;
 
@@ -234,24 +236,30 @@ int main(int argc, char *argv[])
       }
     }
 
+    *out << "\nCheck for test pass/fail:\n";
+
+    bool loc_success = true;
+ 
     // 1. Convergence
-    if (solvStatus != NOX::StatusTest::Converged)
-      status = 1;
+    TEUCHOS_TEST_EQUALITY_CONST(solvStatus, NOX::StatusTest::Converged, *out, loc_success);
     // 2. Number of iterations
-    if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 18)
-      status = 2;
+    int numIterations = 0;
+    const int *numItersPtr = nullptr;
+    if ( nullptr != (numItersPtr = Teuchos::getParameterPtr<int>(
+                        solver->getList().sublist("Output"), "Nonlinear Iterations")) ) 
+    {
+      numIterations = *numItersPtr;
+    } 
+    TEUCHOS_TEST_EQUALITY_CONST(numIterations, 11, *out, loc_success);
     // 3. Same reset solution
-    if (diff->norm() >= 1.0e-14)
-      status = 3;
+    TEUCHOS_TEST_COMPARE_CONST(diff->norm(), <=, 1.0e-14, *out, loc_success);
 
-    success = status==0;
+    success = loc_success;
 
-    if (Comm.MyPID() == 0) {
-      if (success)
-        std::cout << "Test passed!" << std::endl;
-      else
-        std::cout << "Test failed!" << std::endl;
-    }
+    if (success)
+      *out << "\nTest passed!" << std::endl;
+    else
+      *out << "\nTest failed!" << std::endl;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

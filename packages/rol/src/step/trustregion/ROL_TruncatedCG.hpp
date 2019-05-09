@@ -50,20 +50,19 @@
 
 #include "ROL_TrustRegion.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_HelperFunctions.hpp"
 
 namespace ROL { 
 
 template<class Real>
 class TruncatedCG : public TrustRegion<Real> {
 private:
-  Teuchos::RCP<Vector<Real> > primalVector_;
+  ROL::Ptr<Vector<Real> > primalVector_;
 
-  Teuchos::RCP<Vector<Real> > s_;
-  Teuchos::RCP<Vector<Real> > g_;
-  Teuchos::RCP<Vector<Real> > v_;
-  Teuchos::RCP<Vector<Real> > p_;
-  Teuchos::RCP<Vector<Real> > Hp_;
+  ROL::Ptr<Vector<Real> > s_;
+  ROL::Ptr<Vector<Real> > g_;
+  ROL::Ptr<Vector<Real> > v_;
+  ROL::Ptr<Vector<Real> > p_;
+  ROL::Ptr<Vector<Real> > Hp_;
 
   int maxit_;
   Real tol1_;
@@ -74,7 +73,7 @@ private:
 public:
 
   // Constructor
-  TruncatedCG( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
+  TruncatedCG( ROL::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
     // Unravel Parameter List
     Real em4(1e-4), em2(1e-2);
     maxit_ = parlist.sublist("General").sublist("Krylov").get("Iteration Limit",20);
@@ -198,9 +197,9 @@ public:
 
     // Compute Cauchy Point
     Real scnorm = 0.0;
-    Teuchos::RCP<Vector<Real> > sc = x.clone();
+    ROL::Ptr<Vector<Real> > sc = x.clone();
     cauchypoint(*sc,scnorm,del,iflag,iter,x,grad,gnorm,pObj);
-    Teuchos::RCP<Vector<Real> > xc = x.clone();
+    ROL::Ptr<Vector<Real> > xc = x.clone();
     xc->set(x);
     xc->plus(*sc);
 
@@ -208,30 +207,30 @@ public:
     s.set(*sc); 
     snorm = s.norm();
     Real snorm2  = snorm*snorm;
-    Teuchos::RCP<Vector<Real> > s1 = x.clone();
+    ROL::Ptr<Vector<Real> > s1 = x.clone();
     s1->zero();
     Real s1norm2 = 0.0;
 
     // Gradient Vector
-    Teuchos::RCP<Vector<Real> > g = x.clone(); 
+    ROL::Ptr<Vector<Real> > g = x.clone(); 
     g->set(grad);
-    Teuchos::RCP<Vector<Real> > Hs = x.clone();
+    ROL::Ptr<Vector<Real> > Hs = x.clone();
     pObj.reducedHessVec(*Hs,s,*xc,x,tol);
     g->plus(*Hs);
     Real normg = g->norm();
 
     // Preconditioned Gradient Vector
-    Teuchos::RCP<Vector<Real> > v  = x.clone();
+    ROL::Ptr<Vector<Real> > v  = x.clone();
     pObj.reducedPrecond(*v,*g,*xc,x,tol);
 
     // Basis Vector
-    Teuchos::RCP<Vector<Real> > p = x.clone(); 
+    ROL::Ptr<Vector<Real> > p = x.clone(); 
     p->set(*v); 
     p->scale(-1.0);
     Real pnorm2 = v->dot(*g);
 
     // Hessian Times Basis Vector
-    Teuchos::RCP<Vector<Real> > Hp = x.clone();
+    ROL::Ptr<Vector<Real> > Hp = x.clone();
 
     iter        = 0; 
     iflag       = 0; 

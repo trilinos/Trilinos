@@ -12,18 +12,23 @@ KOKKOSKERNELS_SPACES ?= $(KOKKOS_DEVICES),HostSpace
 KOKKOSKERNELS_ORDINALS ?= int,int64_t
 KOKKOSKERNELS_OFFSETS ?= int,size_t
 
-# mkl, blas
+# mkl, blas, yaml
 KOKKOSKERNELS_ENABLE_TPLS ?= ""
+
 # eti-only
 KOKKOSKERNELS_OPTIONS ?= ""
 
+KOKKOSKERNELS_INTERNAL_ENABLE_YAML := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "yaml" | wc -l))
 KOKKOSKERNELS_INTERNAL_ENABLE_BLAS := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "blas" | wc -l))
 KOKKOSKERNELS_INTERNAL_ENABLE_MKL := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "mkl" | wc -l))
 KOKKOSKERNELS_INTERNAL_ENABLE_CUSPARSE := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "cusparse" | wc -l))
 KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "cublas" | wc -l))
 
+YAML_PATH ?= ${HOME}/yaml-cpp/install
+YAML_LIBS ?= -L${YAML_PATH}/lib -lyaml-cpp
+
 BLAS_PATH ?= /usr
-BLAS_LIBS ?= -L${BLAS_PATH}/lib64 -lblas
+BLAS_LIBS ?= -L${BLAS_PATH}/lib64 $(BLAS_LIBRARIES) -lgfortran -lgomp
 
 MKL_PATH ?= ${SEMS_INTEL_ROOT}/mkl
 MKL_LIBS ?= -L${MKL_PATH}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl -L${MKL_PATH}/../compiler/lib/intel64
@@ -65,6 +70,40 @@ tmp := $(shell date >> KokkosKernels_config.tmp)
 tmp := $(shell echo "----------------------------------------------*/" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "\#ifndef KOKKOSKERNELS_CONFIG_H_" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "\#define KOKKOSKERNELS_CONFIG_H_" >> KokkosKernels_config.tmp)
+
+
+#==== User-settable options for Fortran mangling macros  =================
+#With Makefile build, we rely on users' input
+
+# default mangling scheme with a single under score
+KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#_
+KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_DOUBLE_UNDERSCORES := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle__" | wc -l))
+ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_DOUBLE_UNDERSCORES), 1)
+  KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#__
+else
+  KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_SINGLE_UNDERSCORE := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle_" | wc -l))
+  ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_SINGLE_UNDERSCORE), 1)
+    KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#_
+  else 
+    KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_NO_UNDERSCORE := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle" | wc -l))
+    ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_NO_UNDERSCORE), 1)
+      KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#
+    endif
+  endif
+endif
+
+tmp := $(shell echo "" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "/* ---------------------------------------------" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "Fortran BLAS mangling:" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "   ---------------------------------------------*/" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "\#if !defined(F77_BLAS_MANGLE)" >> KokkosKernels_config.tmp )
+tmp := $(shell echo "\#define F77_BLAS_MANGLE(name,NAME) $(KOKKOSKERNELS_FORTRAN_GLOBAL)" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "\#endif" >> KokkosKernels_config.tmp )
+
+KOKKOSKERNELS_INTERNAL_TPL_BLAS_RETURN_COMPLEX := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-return-complex" | wc -l))
+ifeq ($(KOKKOSKERNELS_INTERNAL_TPL_BLAS_RETURN_COMPLEX), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX" >> KokkosKernels_config.tmp )
+endif
 
 #==== ETI Macros Scalars =================================================
 KOKKOSKERNELS_INTERNAL_INST_SCALARS =
@@ -189,6 +228,7 @@ KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_HOSTSPACE=$(strip $(shell echo $(KOKKOSKERN
 KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_HBWSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "HBWSpace" | wc -l))
 KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDASPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaSpace" | wc -l))
 KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAUVMSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaUVMSpace" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAHOSTPINNEDSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaHostPinnedSpace" | wc -l))
 
 tmp := $(shell echo "" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "/* ---------------------------------------------" >> KokkosKernels_config.tmp)
@@ -207,6 +247,10 @@ endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAUVMSPACE), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE" >> KokkosKernels_config.tmp )
 endif
+ifeq ($(KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAHOSTPINNEDSPACE), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE" >> KokkosKernels_config.tmp )
+endif
+
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDASPACE), 0)
     ifeq ($(KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAUVMSPACE), 0)
@@ -223,6 +267,12 @@ tmp := $(shell echo "" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "/* ---------------------------------------------" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "Third Party Libraries:" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "   ---------------------------------------------*/" >> KokkosKernels_config.tmp)
+
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_YAML}, 1)
+  KOKKOSKERNELS_CPPFLAGS += -I${YAML_PATH}/include
+  KOKKOSKERNELS_LIBS += ${YAML_LIBS}
+  tmp := $(shell echo "\#define KOKKOSKERNELS_ENABLE_TPL_YAML" >> KokkosKernels_config.tmp )
+endif
 
 ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_BLAS}, 1)
   KOKKOSKERNELS_LIBS += ${BLAS_LIBS}
@@ -381,11 +431,28 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
   endif
 endif
 
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS}, 1)
+  KOKKOSKERNELS_INTERNAL_SRC_BLAS += ${KOKKOSKERNELS_PATH}/src/impl/tpls/KokkosBlas_Cuda_tpl.cpp
+endif
+
+KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS=0
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_BLAS}, 1)
+  KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS=1
+endif
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MKL}, 1)
+  KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS=1
+endif
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS}, 1)
+  KOKKOSKERNELS_INTERNAL_SRC_BLAS += ${KOKKOSKERNELS_PATH}/src/impl/tpls/KokkosBlas_Host_tpl.cpp
+endif
+
 KOKKOSKERNELS_INTERNAL_HEADERS = $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/*.hpp)
 KOKKOSKERNELS_INTERNAL_HEADERS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_hpp/*/*eti_spec*.hpp)
 
+ifdef KOKKOSKERNELS_INTERNAL_SRC_SPARSE
 vpath %.cpp $(sort $(dir $(KOKKOSKERNELS_INTERNAL_SRC_SPARSE)))
 vpath %.cpp $(sort $(dir $(KOKKOSKERNELS_INTERNAL_SRC_BLAS)))
+endif
 
 DEPFLAGS = -M
 

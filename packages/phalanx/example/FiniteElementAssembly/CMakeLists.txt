@@ -13,6 +13,9 @@ SET(example_fem_SOURCES
     WorksetBuilder.hpp
     Mesh.hpp
     Mesh.cpp
+    LinearObjectFactory.hpp
+    CommandLineParser.hpp
+    PrintValues.hpp
     evaluators/Constant.hpp
     evaluators/Constant_Def.hpp
     evaluators/Constant.cpp
@@ -75,6 +78,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_workset_aux_test
   SOURCES     auxiliary_tests/Example_FEM_Workset_AuxTest.cpp ${example_element_linear_2D_SOURCES} ${PHALANX_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  example_lof_aux_test
+  SOURCES     auxiliary_tests/Example_FEM_LinearObjectFactory_AuxTest.cpp ${example_element_linear_2D_SOURCES} ${PHALANX_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   )

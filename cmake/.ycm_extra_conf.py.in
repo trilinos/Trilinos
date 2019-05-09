@@ -30,6 +30,7 @@
 
 import os
 import ycm_core
+import re
 
 # These are the compilation flags that will be used in case there's no
 # compilation database set (by default, one is not set).

@@ -48,12 +48,12 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 
 namespace panzer {
- 
-FieldAggPattern::FieldAggPattern() 
+
+FieldAggPattern::FieldAggPattern()
 {
 }
 
-FieldAggPattern::FieldAggPattern(std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns,
+FieldAggPattern::FieldAggPattern(std::vector<std::tuple<int,panzer::FieldType,Teuchos::RCP<const FieldPattern> > > & patterns,
                                  const Teuchos::RCP<const FieldPattern> & geomAggPattern)
 {
    buildPattern(patterns,geomAggPattern);
@@ -64,19 +64,19 @@ Teuchos::RCP<const FieldPattern> FieldAggPattern::getGeometricAggFieldPattern() 
    return geomAggPattern_;
 }
 
-void FieldAggPattern::buildPattern(const std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns,
+void FieldAggPattern::buildPattern(const std::vector<std::tuple<int,panzer::FieldType,Teuchos::RCP<const FieldPattern> > > & patterns,
                                    const Teuchos::RCP<const FieldPattern> & geomAggPattern)
 {
    TEUCHOS_ASSERT(patterns.size()>0);
 
    // build geometric information
    if(geomAggPattern==Teuchos::null) {
-      std::vector<FPPtr> patternVec;
+      std::vector<std::pair<FieldType,FPPtr>> patternVec;
 
       // convert map into vector
-      std::vector<std::pair<int,FPPtr> >::const_iterator itr;
-      for(itr=patterns.begin();itr!=patterns.end();++itr)
-         patternVec.push_back(itr->second);
+      auto itr = patterns.cbegin();
+      for(;itr!=patterns.cend();++itr)
+        patternVec.push_back(std::make_pair(std::get<1>(*itr),std::get<2>(*itr)));
 
       // build geometric aggregate field pattern
       geomAggPattern_ = rcp(new GeometricAggFieldPattern(patternVec));
@@ -88,7 +88,7 @@ void FieldAggPattern::buildPattern(const std::vector<std::pair<int,Teuchos::RCP<
 
    buildFieldIdToPatternIdx(); // builds look up from fieldId to index into patterns_ vector
    buildFieldIdsVector();      // meat of matter: build field pattern information
-   buildFieldPatternData();    // this hanldes the "getSubcell*" information
+   buildFieldPatternData();    // this handles the "getSubcell*" information
 }
 
 int FieldAggPattern::getDimension() const
@@ -119,10 +119,10 @@ const std::vector<int> & FieldAggPattern::getSubcellIndices(int dimension, int s
    return patternData_[dimension][subcell];
 }
 
-void FieldAggPattern::getSubcellClosureIndices(int, int, std::vector<int> &) const 
-{ 
+void FieldAggPattern::getSubcellClosureIndices(int, int, std::vector<int> &) const
+{
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                      "FieldAggPattern::getSubcellClosureIndices should not be called"); 
+                      "FieldAggPattern::getSubcellClosureIndices should not be called");
 }
 
 void FieldAggPattern::print(std::ostream & os) const
@@ -135,12 +135,12 @@ void FieldAggPattern::print(std::ostream & os) const
    int total=0;
    for(std::size_t i=0;i<numFields_.size();i++)  {
       os << numFields_[i] << " ";
-      total += numFields_[i]; 
+      total += numFields_[i];
    }
    os << "]" << std::endl;
    os << "FieldPattern:    |fieldIds| = " << fieldIds_.size() << " (" << total << ")" << std::endl;
    os << "FieldPattern:    fieldIds = [ ";
-   for(std::size_t i=0;i<fieldIds_.size();i++) 
+   for(std::size_t i=0;i<fieldIds_.size();i++)
       os << fieldIds_[i] << " ";
    os << "]" << std::endl;
    os << "FieldPattern:    local offsets\n";
@@ -162,16 +162,25 @@ Teuchos::RCP<const FieldPattern> FieldAggPattern::getFieldPattern(int fieldId) c
    TEUCHOS_TEST_FOR_EXCEPTION(idxIter==fieldIdToPatternIdx_.end(),std::logic_error,
                      "FieldID = " << fieldId << " not defined in this pattern");
 
-   return patterns_[idxIter->second].second;
+   return std::get<2>(patterns_[idxIter->second]);
+}
+
+FieldType FieldAggPattern::getFieldType(int fieldId) const
+{
+   std::map<int,int>::const_iterator idxIter = fieldIdToPatternIdx_.find(fieldId);
+   TEUCHOS_TEST_FOR_EXCEPTION(idxIter==fieldIdToPatternIdx_.end(),std::logic_error,
+                     "FieldID = " << fieldId << " not defined in this pattern");
+
+   return std::get<1>(patterns_[idxIter->second]);
 }
 
 void FieldAggPattern::buildFieldIdToPatternIdx()
 {
    // convert map into vector
    int index = 0;
-   std::vector<std::pair<int,FPPtr> >::const_iterator itr;
-   for(itr=patterns_.begin();itr!=patterns_.end();++itr,++index)
-      fieldIdToPatternIdx_[itr->first] = index;
+   auto itr = patterns_.cbegin();
+   for(;itr!=patterns_.cend();++itr,++index)
+     fieldIdToPatternIdx_[std::get<0>(*itr)] = index;
 }
 
 void FieldAggPattern::buildFieldIdsVector()
@@ -180,45 +189,60 @@ void FieldAggPattern::buildFieldIdsVector()
 
    // numFields_: stores number of fields per geometric ID
    // fieldIds_:  stores field IDs for each entry field indicated by numFields_
-   numFields_.resize(geomAggPattern->numberIds());
+   numFields_.resize(geomAggPattern->numberIds(),0);
    fieldIds_.clear();
 
    // build numFields_ and fieldIds_ vectors
-   for(int dim=0;dim<getDimension()+1;dim++) {
-      int numSubcell = geomAggPattern->getSubcellCount(dim);
-      for(int sc=0;sc<numSubcell;sc++) {
-         // merge the field patterns for multiple fields
-         // on a specific dimension and subcell
-         mergeFieldPatterns(dim,sc);
-      }
-   }
+
+   // Merge the field patterns for multiple fields for each dimension
+   // and subcell. We do all the CG first, then all DG. This allows us
+   // to use one offset for mapping DOFs to subcells later on.
+   this->mergeFieldPatterns(FieldType::CG);
+   this->mergeFieldPatterns(FieldType::DG);
 }
 
-void FieldAggPattern::mergeFieldPatterns(int dim,int subcell)
+void FieldAggPattern::mergeFieldPatterns(const FieldType& fieldType)
 {
-   // make sure that the geometric IDs count is equal to the maxDOFs
-   const std::vector<int> & geomIndices = getGeometricAggFieldPattern()->getSubcellIndices(dim,subcell);
+  auto geomAggPattern = getGeometricAggFieldPattern();
 
-   // a single geometric entity is assigned
-   // indices size should be either 1 or 0.
-   TEUCHOS_ASSERT(geomIndices.size()<=1);
+  // For DG, all DOFs are added to the internal cell
+  const int cellDim = this->getDimension();
+  const int numDimensions = getDimension()+1;
 
-   if (geomIndices.size() > 0) {
-     const int geomIndex = geomIndices[0];
-     
-     numFields_[geomIndex] = 0; // no fields initially      
+  for(int dim=0;dim<numDimensions;dim++) {
+    int numSubcell = geomAggPattern->getSubcellCount(dim);
+    for(int subcell=0;subcell<numSubcell;subcell++) {
 
-     std::vector<std::pair<int,FPPtr> >::const_iterator itr;
-     for(itr=patterns_.begin();itr!=patterns_.end();++itr) {
-       std::size_t fieldSize = itr->second->getSubcellIndices(dim,subcell).size();
-       
-       // add field ID if their are enough in current pattern 
-       for (std::size_t i=0;i<fieldSize;++i)
-         fieldIds_.push_back(itr->first);
-       numFields_[geomIndex]+=fieldSize;
-     }
-     TEUCHOS_ASSERT(numFields_[geomIndex]>=0);
-   }
+      // Get the geometric index to add the DOF indices to. CG adds to
+      // the subcell we are iterating over, (dim,subcel), while DG
+      // adds to the internal cell (cellDim,0)
+      const std::vector<int> * geomIndices = nullptr;
+      if (fieldType == FieldType::CG)
+        geomIndices = &(getGeometricAggFieldPattern()->getSubcellIndices(dim,subcell));
+      else
+        geomIndices = &(getGeometricAggFieldPattern()->getSubcellIndices(cellDim,0));
+
+      if (geomIndices->size() > 0) {
+        const int geomIndex = (*geomIndices)[0];
+
+        auto itr = patterns_.cbegin();
+        for(;itr!=patterns_.cend();++itr) {
+          // Only merge in if pattern matches the FieldType.
+          if (std::get<1>(*itr) == fieldType) {
+            const std::size_t fieldSize = std::get<2>(*itr)->getSubcellIndices(dim,subcell).size();
+
+            // add field ID if there are enough in current pattern
+            for (std::size_t i=0;i<fieldSize;++i)
+              fieldIds_.push_back(std::get<0>(*itr));
+            numFields_[geomIndex]+=fieldSize;
+          }
+        }
+        TEUCHOS_ASSERT(numFields_[geomIndex]>=0);
+      }
+
+    }
+  }
+
 }
 
 void FieldAggPattern::buildFieldPatternData()
@@ -236,14 +260,14 @@ void FieldAggPattern::buildFieldPatternData()
 
       // loop through sub cells
       for(int sc=0;sc<numSubcell;sc++) {
-         // a single geometric entity is assigned to field pattern 
-        // geomIds size should be either 0 or 1.
+         // a single geometric entity is assigned to field pattern
+         // geomIds size should be either 0 or 1.
          const std::vector<int> & geomIds = geomIdsPattern->getSubcellIndices(d,sc);
          TEUCHOS_ASSERT(geomIds.size()<=1);
          if (geomIds.size() > 0) {
            const int geomId = geomIds[0];
            const int numFields = numFields_[geomId];
-           for(int k=0;k<numFields;k++,nextIndex++) 
+           for(int k=0;k<numFields;k++,nextIndex++)
              patternData_[d][sc].push_back(nextIndex);
          }
       }
@@ -258,20 +282,39 @@ const std::vector<int> & FieldAggPattern::localOffsets(int fieldId) const
       return itr->second;
 
    std::vector<int> & offsets = fieldOffsets_[fieldId];
-   localOffsets_build(fieldId,offsets); 
+   localOffsets_build(fieldId,offsets);
    return offsets;
 }
 
-bool FieldAggPattern::LessThan::operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const 
+const Kokkos::View<const int*,PHX::Device> FieldAggPattern::localOffsetsKokkos(int fieldId) const
+{
+   // lazy evaluation
+   std::map<int,Kokkos::View<int*,PHX::Device> >::const_iterator itr = fieldOffsetsKokkos_.find(fieldId);
+   if(itr!=fieldOffsetsKokkos_.end())
+      return itr->second;
+
+   const auto hostOffsetsStdVector = this->localOffsets(fieldId);
+   Kokkos::View<int*,PHX::Device> offsets("panzer::FieldAggPattern::localOffsetsKokkos",hostOffsetsStdVector.size());
+   auto hostOffsets = Kokkos::create_mirror_view(offsets);
+   for (size_t i=0; i < hostOffsetsStdVector.size(); ++i)
+     hostOffsets(i) = hostOffsetsStdVector[i];
+   Kokkos::deep_copy(offsets,hostOffsets);
+   PHX::Device::fence();
+
+   fieldOffsetsKokkos_[fieldId] = offsets;
+   return offsets;
+}
+
+bool FieldAggPattern::LessThan::operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const
 {
    if(a[0] < b[0]) return true;
    if(a[0] > b[0]) return false;
 
-   // a[0]==b[0]  
+   // a[0]==b[0]
    if(a[1] < b[1]) return true;
    if(a[1] > b[1]) return false;
 
-   // a[1]==b[1] && a[0]==b[0] 
+   // a[1]==b[1] && a[0]==b[0]
    if(a[2] < b[2]) return true;
    if(a[2] > b[2]) return false;
 
@@ -279,7 +322,7 @@ bool FieldAggPattern::LessThan::operator()(const Teuchos::Tuple<int,3> & a,const
    return false; // these are equal to, but not less than!
 }
 
-//const std::vector<int> & 
+//const std::vector<int> &
 const std::pair<std::vector<int>,std::vector<int> > &
 FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) const
 {
@@ -294,21 +337,19 @@ FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) 
       return itr->second;
    }
 
-   TEUCHOS_TEST_FOR_EXCEPTION(subcellDim>=getDimension(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(subcellDim >= getDimension(),std::logic_error,
                          "FieldAggPattern::localOffsets_closure precondition subcellDim<getDimension() failed");
-   TEUCHOS_TEST_FOR_EXCEPTION(subcellId<0,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(subcellId < 0,std::logic_error,
                          "FieldAggPattern::localOffsets_closure precondition subcellId>=0 failed");
    TEUCHOS_TEST_FOR_EXCEPTION(subcellId>=getSubcellCount(subcellDim),std::logic_error,
                          "FieldAggPattern::localOffsets_closure precondition subcellId<getSubcellCount(subcellDim) failed");
 
    // build vector for sub cell closure indices
    ///////////////////////////////////////////////
-  
-   // grab field offsets
    const std::vector<int> & fieldOffsets = localOffsets(fieldId);
 
    // get offsets into field offsets for the closure indices (from field pattern)
-   std::vector<int> closureOffsets; 
+   std::vector<int> closureOffsets;
    FPPtr fieldPattern = getFieldPattern(fieldId);
    fieldPattern->getSubcellClosureIndices(subcellDim,subcellId,closureOffsets);
 
@@ -318,7 +359,7 @@ FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) 
 
    std::vector<int> & closureIndices = indicesPair.first;
    for(std::size_t i=0;i<closureOffsets.size();i++)
-      closureIndices.push_back(fieldOffsets[closureOffsets[i]]);
+     closureIndices.push_back(fieldOffsets[closureOffsets[i]]);
 
    std::vector<int> & basisIndices = indicesPair.second;
    basisIndices.assign(closureOffsets.begin(),closureOffsets.end());
@@ -339,35 +380,37 @@ void FieldAggPattern::localOffsets_build(int fieldId,std::vector<int> & offsets)
    // a node or "volume" sub cell.
 
    FPPtr fieldPattern = getFieldPattern(fieldId);
+   FieldType fieldType = getFieldType(fieldId);
 
    offsets.clear();
-   offsets.resize(fieldPattern->numberIds(),-111111); // fill with some negative number
-                                                     // for testing
+   offsets.resize(fieldPattern->numberIds(),-111111); // fill with negative number for testing
 
    // this will offsets for all IDs associated with the field
    // but using a geometric ordering
    std::vector<int> fieldIdsGeomOrder;
    for(std::size_t i=0;i<fieldIds_.size();++i) {
-      if(fieldIds_[i]==fieldId) 
+      if(fieldIds_[i]==fieldId)
          fieldIdsGeomOrder.push_back(i);
    }
+
+   // Check that number of DOFs line up
    TEUCHOS_ASSERT((int) fieldIdsGeomOrder.size()==fieldPattern->numberIds());
 
-   // built geometric ordering for this pattern: will index into fieldIdsGeomOrder
-   GeometricAggFieldPattern geomPattern(fieldPattern);
+   // Build geometric ordering for this pattern: will index into fieldIdsGeomOrder
+   GeometricAggFieldPattern geomPattern(fieldType,fieldPattern);
    int cnt = 0;
    for(int dim=0;dim<geomPattern.getDimension()+1;dim++) {
        for(int sc=0;sc<geomPattern.getSubcellCount(dim);sc++) {
           const std::vector<int> & fIndices = fieldPattern->getSubcellIndices(dim,sc);
 
-          for(std::size_t i=0;i<fIndices.size();i++) 
+          for(std::size_t i=0;i<fIndices.size();i++)
             offsets[fIndices[i]] = fieldIdsGeomOrder[cnt++];
        }
    }
 
    // check for failure/bug
    for(std::size_t i=0;i<offsets.size();i++) {
-      TEUCHOS_ASSERT(offsets[i]>=0);
+     TEUCHOS_ASSERT(offsets[i]>=0);
    }
 }
 

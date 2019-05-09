@@ -301,7 +301,7 @@ reducedQuadrature_Q_Squared_CPQR(
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2t(Q2, Teuchos::TRANS);
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> Z, R;
   Teuchos::Array<ordinal_type> piv;
-  CPQR_Householder(Q2t, Z, R, piv);
+  CPQR_Householder3(Q2t, Z, R, piv);
   ordinal_type r = computeRank(R, reduction_tol);
   R.reshape(r, R.numCols());
   Z.reshape(Z.numRows(), r);
@@ -668,7 +668,7 @@ reducedQuadrature_Q2_CPQR(
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2t(Q2, Teuchos::TRANS);
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> Z, R;
   Teuchos::Array<ordinal_type> piv;
-  CPQR_Householder(Q2t, Z, R, piv);
+  CPQR_Householder3(Q2t, Z, R, piv);
   ordinal_type r = computeRank(R, reduction_tol);
   R.reshape(r, R.numCols());
   Z.reshape(Z.numRows(), r);

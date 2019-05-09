@@ -61,13 +61,31 @@ namespace panzer {
     </ParameterList>
     \endverbatim
   */
-PANZER_EVALUATOR_CLASS(Product)
+template<typename EvalT, typename Traits>
+class Product
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    Product(
+      const Teuchos::ParameterList& p);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   double scaling;
   PHX::MDField<ScalarT> product;
   std::vector< PHX::MDField<const ScalarT> > values;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class Product
+
 
 }
 

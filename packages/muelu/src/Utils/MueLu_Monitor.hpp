@@ -61,6 +61,17 @@
 
 namespace MueLu {
 
+  struct FormattingHelper {
+    //! Helper function for object label
+    static std::string getColonLabel(const std::string& label) {
+      if (label != "")
+        return label + ": ";
+      else
+        return "";
+    }
+  };
+
+
   /*! @class PrintMonitor
     Manages indentation of output using Teuchos::OSTab and verbosity level
   */
@@ -69,17 +80,8 @@ namespace MueLu {
   public:
 
     //! Constructor
-    PrintMonitor(const BaseClass& object, const std::string& msg, MsgType msgLevel = Runtime0) : object_(object) {
-      tabbed = false;
-      if (object_.IsPrint(msgLevel)) {
-        // Print description and new indent
-        object_.GetOStream(msgLevel, 0) << msg << std::endl;
-        object_.getOStream()->pushTab();
-        tabbed = true;
-      }
-    }
-
-    ~PrintMonitor() { if (tabbed) object_.getOStream()->popTab(); }
+    PrintMonitor(const BaseClass& object, const std::string& msg, MsgType msgLevel = Runtime0);
+    ~PrintMonitor();
 
   private:
     PrintMonitor();
@@ -111,10 +113,19 @@ namespace MueLu {
         @param[in] msgLevel    Governs whether information should be printed.
         @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
     */
-    Monitor(const BaseClass& object, const std::string & msg, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0)
-      : printMonitor_(object, msg + " (" + object.description() + ")", msgLevel),
-        timerMonitor_(object, object.ShortClassName() + ": " + msg + " (total)",    timerLevel)
-    { }
+    Monitor(const BaseClass& object, const std::string & msg, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0);
+
+    /*! @brief Constructor.
+
+        @param[in] object      Reference to the class instance that is creating this Monitor.
+        @param[in] msg         String that indicates what the Monitor is monitoring, e.g., "Build"
+        @param[in] msgLevel    Governs whether information should be printed.
+        @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
+        @param[in] label       An optional prefix label.
+    */
+    Monitor(const BaseClass& object, const std::string & msg, const std::string & label, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0);
+
+    virtual ~Monitor() = default;
     
   private:
     //! Manages printing.
@@ -150,10 +161,17 @@ namespace MueLu {
         @param[in] msgLevel    Governs whether information should be printed.
         @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
     */
-    SubMonitor(const BaseClass& object, const std::string & msg, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1)
-      : printMonitor_(object, msg, msgLevel),
-        timerMonitor_(object, object.ShortClassName() + ": " + msg + " (sub, total)", timerLevel)
-    { }
+    SubMonitor(const BaseClass& object, const std::string & msg, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1);
+
+    /*! @brief Constructor.
+
+        @param[in] object      Reference to the class instance that is creating this SubMonitor.
+        @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build"
+        @param[in] label       An optional prefix label.
+        @param[in] msgLevel    Governs whether information should be printed.
+        @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
+    */
+    SubMonitor(const BaseClass& object, const std::string & msg, const std::string & label, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1);
 
   private:
     PrintMonitor printMonitor_;
@@ -201,17 +219,7 @@ namespace MueLu {
         @param[in] msgLevel    Governs whether information should be printed.
         @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
     */
-    FactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = static_cast<MsgType>(Test | Runtime0), MsgType timerLevel = Timings0)
-      : Monitor(object, msg, msgLevel, timerLevel),
-        timerMonitorExclusive_(object, object.ShortClassName() + ": " + msg, timerLevel)
-    {
-      if (object.IsPrint(TimingsByLevel)) {
-        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg +
-            " (total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
-        levelTimeMonitorExclusive_ = rcp(new MutuallyExclusiveTimeMonitor<Level>(object, object.ShortClassName() +
-            MUELU_TIMER_AS_STRING + ": " + msg + " (level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
-      }
-    }
+    FactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = static_cast<MsgType>(Test | Runtime0), MsgType timerLevel = Timings0);
 
     /*! @brief Constructor
 
@@ -223,17 +231,7 @@ namespace MueLu {
 
       TODO: code factorization
     */
-    FactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = static_cast<MsgType>(Test | Runtime0), MsgType timerLevel = Timings0)
-      : Monitor(object, msg, msgLevel, timerLevel),
-      timerMonitorExclusive_(object, object.ShortClassName() + ": " + msg, timerLevel)
-    {
-      if (object.IsPrint(TimingsByLevel)) {
-        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " +  msg +
-            " (total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
-        levelTimeMonitorExclusive_ = rcp(new MutuallyExclusiveTimeMonitor<Level>(object, object.ShortClassName() +
-            MUELU_TIMER_AS_STRING + ": " + msg + " (level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
-      }
-    }
+    FactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = static_cast<MsgType>(Test | Runtime0), MsgType timerLevel = Timings0);
 
   private:
     //! Total time spent on this level in this object and all its children.
@@ -271,13 +269,7 @@ namespace MueLu {
         @param[in] msgLevel    Governs whether information should be printed.
         @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
     */
-    SubFactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1)
-      : SubMonitor(object, msg, msgLevel, timerLevel)
-    {
-      if (object.IsPrint(TimingsByLevel))
-        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg +
-                                                " (sub, total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
-    }
+    SubFactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1);
 
     /*! @brief Constructor
 
@@ -287,13 +279,8 @@ namespace MueLu {
         @param[in] msgLevel    Governs whether information should be printed.
         @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
     */
-    SubFactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1)
-      : SubMonitor(object, msg, msgLevel, timerLevel)
-    {
-      if (object.IsPrint(TimingsByLevel))
-        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " +  msg +
-                                                " (sub, total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
-    }
+    SubFactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1);
+
   private:
     //! Total time spent on this level in this object and all children.
     RCP<TimeMonitor> levelTimeMonitor_;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -48,7 +48,7 @@ void assign(struct vtx_data **graph,        /* data structure with vtx weights *
             int               mediantype,   /* which partitioning strategy to use */
             double *          goal,         /* desired set sizes */
             int               vwgt_max      /* largest vertex weight */
-            )
+)
 {
   extern int DEBUG_TRACE;       /* trace execution path of code */
   extern int DEBUG_ASSIGN;      /* turn on debugging in assignment */

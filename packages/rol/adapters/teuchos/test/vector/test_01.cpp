@@ -49,66 +49,63 @@
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_TeuchosVector.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
 
-
 int main(int argc, char *argv[]) {
 
-  using namespace ROL;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
-  typedef int                           OrdinalT;
-  typedef double                        RealT;
-  typedef Vector<RealT>                 V;
-  typedef StdVector<RealT,RealT>        StdV;
-  typedef TeuchosVector<OrdinalT,RealT> TV;
-  
-
+  using OrdinalT      = int;
+  using RealT         = double;
+  using Vector        = ROL::Vector<RealT>;
+  using StdVector     = ROL::StdVector<RealT>;
+  using TeuchosVector = ROL::TeuchosVector<OrdinalT,RealT>;
+   
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
-  RealT errtol = ROL_THRESHOLD<RealT>();
+  RealT errtol = ROL::ROL_THRESHOLD<RealT>();
 
   // *** Test body.
 
   try {
-
     OrdinalT dim = 10;
 
-    TV x(dim,true);
-    TV y(dim,true);
-    TV z(dim,true); 
+    TeuchosVector x(dim);
+    TeuchosVector y(dim);
+    TeuchosVector z(dim);
+
+    *outStream << x.dimension() << std::endl;
 
     RealT left = -1e0, right = 1e0;
 
-    RandomizeVector(x, left, right );
-    RandomizeVector(y, left, right );
-    RandomizeVector(z, left, right );
+    ROL::RandomizeVector(x, left, right );
+    ROL::RandomizeVector(y, left, right );
+    ROL::RandomizeVector(z, left, right );
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
-    StdV checkvec(Teuchos::rcp(&consistency, false));
+    StdVector checkvec( ROL::makePtrFromRef(consistency) );
     if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
+
       errorFlag++;
     }
 
     // Basis tests.
     // set x to first basis vector
-    RCP<V> zp = x.basis(0);
+    ROL::Ptr<Vector> zp = x.basis(0);
     RealT znorm = zp->norm();
     *outStream << "Norm of ROL::Vector z (first basis vector): " << znorm << "\n";
     if ( std::abs(znorm-1.0) > errtol ) {
@@ -138,7 +135,6 @@ int main(int argc, char *argv[]) {
     if (checkvec.norm() > 0.0) {
       errorFlag++;
     }
-
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
@@ -149,7 +145,6 @@ int main(int argc, char *argv[]) {
     std::cout << "End Result: TEST FAILED\n";
   else
     std::cout << "End Result: TEST PASSED\n";
-
   return 0;
 
 }

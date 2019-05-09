@@ -84,7 +84,7 @@ LOCA::StepSize::Adaptive::computeStepSize(
              const NOX::Solver::Generic& solver,
              const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 //             const LOCA::Stepper& stepper,
-             const LOCA::Abstract::Iterator& stepper,
+             const LOCA::Abstract::Iterator& /* stepper */,
              double& stepSize)
 {
   // If this is the first step, set step size to initial value

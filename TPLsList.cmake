@@ -76,6 +76,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   OVIS            "cmake/TPLs/"    ST
   gpcd            "cmake/TPLs/"    ST
   METIS           "cmake/TPLs/"    TS
+  MTMETIS         "cmake/TPLs/"    EX
   ParMETIS        "cmake/TPLs/"    PT
   PuLP            "cmake/TPLs/"    EX
   TopoManager     "cmake/TPLs/"    EX
@@ -94,6 +95,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   CGNS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
   Pnetcdf         "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
   Netcdf          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
+  ADIOS2          "packages/seacas/cmake/tpls/"    EX
   y12m            "cmake/TPLs/"    ST
   SuperLUDist     "cmake/TPLs/"    ST
   SuperLUMT	  "cmake/TPLs/"	   ST
@@ -156,6 +158,12 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   SimParasolid    "SCOREC/cmake/TPLs/"    EX
   SimAcis         "SCOREC/cmake/TPLs/"    EX
   SimField        "SCOREC/cmake/TPLs/"    EX
+  Valgrind        "cmake/TPLs/"    EX
+  QUO             "cmake/TPLs/"    EX
+  ViennaCL        "cmake/TPLs/"    EX
+  Avatar          "cmake/TPLs/"    EX
+  pebbl           "cmake/TPLs/"    EX
+  MAGMASparse     "cmake/TPLs/"    EX
   )
 
 # NOTES:

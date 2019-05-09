@@ -106,6 +106,9 @@ values:
 <li> "DENSE" or "LAPACK": returns an instance of Details::DenseSolver </li>
 <li> "DENSE BLOCK RELAXATION": returns an instance of BlockRelaxation with dense blocks </li>
 <li> "DIAGONAL": returns an instance of Diagonal </li>
+<li> "FIC": returns an instance of Details::Fic (requires ShyLU FastILU) </li>
+<li> "FILDL": returns an instance of Details::Fildl (requires ShyLU FastILU) </li>
+<li> "FILU": returns an instance of Details::Filu (requires ShyLU FastILU) </li>
 <li> "ILUT": returns an instance of ILUT </li>
 <li> "LOCAL SPARSE TRIDIAGONAL SOLVER": returns an instance of LocalSparseTridiagonalSolver </li>
 <li> "RBILUK": returns an instance of RBILUK (ILK(k) preconditioner for BlockCrsMatrix) </li>

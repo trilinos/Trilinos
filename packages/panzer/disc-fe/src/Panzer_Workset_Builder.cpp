@@ -97,6 +97,14 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & 
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  // check to see if the number of owned, ghosted and virtual cells are needed
+  // this is required for backwards compatibility
+  ///////////////////////////////////////////////////////////////////////////////
+  if(details.numOwnedCells()==-1)
+    details.setNumberOfCells(num_cells,0,0);
+  if(other_details!=Teuchos::null and other_details->numOwnedCells()==-1)
+    other_details->setNumberOfCells(num_cells,0,0);
+
   panzer::MDFieldArrayFactory mdArrayFactory("",true);
 
   // setup the integration rules and bases
@@ -130,9 +138,9 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & 
         rcp(new panzer::IntegrationValues2<double>("",true));
     iv2->setupArrays(int_rules[i]);
     if (Teuchos::nonnull(other_details))
-      iv2->evaluateValues(details.cell_vertex_coordinates, other_details->int_rules[i]->ip_coordinates);
+      iv2->evaluateValues(details.cell_vertex_coordinates, other_details->int_rules[i]->ip_coordinates,num_cells);
     else
-      iv2->evaluateValues(details.cell_vertex_coordinates);
+      iv2->evaluateValues(details.cell_vertex_coordinates,num_cells);
       
     details.int_rules.push_back(iv2);
       
@@ -149,11 +157,13 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & 
           rcp(new panzer::BasisValues2<double>("",true,true));
       bv2->setupArrays(b_layout);
       bv2->evaluateValues(details.int_rules[int_degree_index]->cub_points,
-                         details.int_rules[int_degree_index]->jac,
-                         details.int_rules[int_degree_index]->jac_det,
-                         details.int_rules[int_degree_index]->jac_inv,
-                         details.int_rules[int_degree_index]->weighted_measure,
-                         details.cell_vertex_coordinates);
+                          details.int_rules[int_degree_index]->jac,
+                          details.int_rules[int_degree_index]->jac_det,
+                          details.int_rules[int_degree_index]->jac_inv,
+                          details.int_rules[int_degree_index]->weighted_measure,
+                          details.cell_vertex_coordinates,
+                          true,
+                          num_cells);
 
       details.bases.push_back(bv2);
     }

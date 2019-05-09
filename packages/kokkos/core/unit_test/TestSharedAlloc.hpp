@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -107,13 +107,17 @@ void test_shared_alloc()
       ASSERT_EQ( r[i], RecordMemS::get_record( r[i]->data() ) );
     });
 
+#ifdef KOKKOS_DEBUG
     // Sanity check for the whole set of allocation records to which this record belongs.
     RecordBase::is_sane( r[0] );
     // RecordMemS::print_records( std::cout, s, true );
+#endif
 
     Kokkos::parallel_for( range, [=] ( size_t i ) {
       while ( 0 != ( r[i] = static_cast< RecordMemS * >( RecordBase::decrement( r[i] ) ) ) ) {
+#ifdef KOKKOS_DEBUG
         if ( r[i]->use_count() == 1 ) RecordBase::is_sane( r[i] );
+#endif
       }
     });
   }
@@ -141,11 +145,15 @@ void test_shared_alloc()
       ASSERT_EQ( r[i], RecordMemS::get_record( r[i]->data() ) );
     });
 
+#ifdef KOKKOS_DEBUG
     RecordBase::is_sane( r[0] );
+#endif
 
     Kokkos::parallel_for( range, [=] ( size_t i ) {
       while ( 0 != ( r[i] = static_cast< RecordMemS * >( RecordBase::decrement( r[i] ) ) ) ) {
+#ifdef KOKKOS_DEBUG
         if ( r[i]->use_count() == 1 ) RecordBase::is_sane( r[i] );
+#endif
       }
     });
 

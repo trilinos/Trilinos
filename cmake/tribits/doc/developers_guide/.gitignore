@@ -27,6 +27,12 @@
 /clone_extra_repos-help.txt.tmp
 /is_checkin_tested_commit.txt
 /is_checkin_tested_commit.txt.tmp
+/filter-packages-list.txt
+/filter-packages-list.txt.tmp
+/get-tribits-packages-from-files-list.txt
+/get-tribits-packages-from-files-list.txt.tmp
+/get-tribits-packages-from-last-tests-failed.txt
+/get-tribits-packages-from-last-tests-failed.txt.tmp
 /install_devtools-help.txt
 /install_devtools-help.txt.tmp
 

@@ -58,6 +58,8 @@
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Epetra.H"
+#include "NOX_SolverStats.hpp"
+#include "Teuchos_TestingHelpers.hpp"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -358,6 +360,26 @@ int main(int argc, char *argv[])
       status = 6;
 
     success = status==0;
+
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->numNonlinearSolves,1,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->numNonlinearIterations,17,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->numTotalNonlinearIterations,17,std::cout,success);
+
+    TEUCHOS_TEST_ASSERT(solver->getSolverStatistics()->linearSolve.lastLinearSolve_Converged,std::cout,success);
+    if (NumProc == 1) {
+      // linear solve iterations changes with processor count, only check for serial
+      TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.lastLinearSolve_NumIterations,1,std::cout,success);
+      TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.lastNonlinearSolve_NumLinearIterations,14,std::cout,success);
+      TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.allNonlinearSolves_NumLinearIterations,14,std::cout,success);
+    }
+    TEUCHOS_TEST_ASSERT(solver->getSolverStatistics()->linearSolve.lastLinearSolve_AchievedTolerance < 1.0e-4,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.lastNonlinearSolve_NumLinearSolves,14,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.allNonlinearSolves_NumLinearSolves,14,std::cout,success);
+
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->trustRegion.numCauchySteps,3,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->trustRegion.numNewtonSteps,14,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->trustRegion.numDoglegSteps,0,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->trustRegion.numTrustRegionInnerIterations,17,std::cout,success);
 
     // Summarize test results
     if (success)

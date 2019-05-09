@@ -22,6 +22,7 @@ namespace Tempus {
 // Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
 template<class Scalar> class StepperFactory;
 
+
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::
 predictVelocity(Thyra::VectorBase<Scalar>& vPred,
@@ -126,7 +127,19 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 }
 
 
-// StepperHHTAlpha definitions:
+template<class Scalar>
+StepperHHTAlpha<Scalar>::StepperHHTAlpha() :
+  out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+{
+#ifdef VERBOSE_DEBUG_OUTPUT
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
+
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
+}
+
+
 template<class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -136,13 +149,16 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
 
-  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -154,111 +170,25 @@ void StepperHHTAlpha<Scalar>::setModel(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   this->validSecondOrderODE_DAE(appModel);
-  if (wrapperModel_ != Teuchos::null) wrapperModel_ = Teuchos::null;
-  wrapperModel_ =
+  Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel =
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                                       "HHT-Alpha"));
-}
-
-
-template<class Scalar>
-void StepperHHTAlpha<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  this->setModel(appModel);
-}
-
-
-/** \brief Set the solver to a pre-defined solver in the ParameterList.
- *  The solver is set to solverName sublist in the Stepper's ParameterList.
- *  The solverName sublist should already be defined in the Stepper's
- *  ParameterList.  Otherwise it will fail.
- */
-template<class Scalar>
-void StepperHHTAlpha<Scalar>::setSolver(std::string solverName)
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  RCP<ParameterList> solverPL = Teuchos::sublist(stepperPL_, solverName, true);
-  stepperPL_->set("Solver Name", solverName);
-  solver_ = rcp(new Thyra::NOXNonlinearSolver());
-  RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-  solver_->setParameterList(noxPL);
-}
-
-
-/** \brief Set the solver to the supplied Parameter sublist.
- *  This adds a new solver Parameter sublist to the Stepper's ParameterList.
- *  If the solver sublist is null, the solver is set to the solver name
- *  in the Stepper's ParameterList.
- */
-template<class Scalar>
-void StepperHHTAlpha<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> solverPL)
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  std::string solverName = stepperPL_->get<std::string>("Solver Name");
-  if (is_null(solverPL)) {
-    // Create default solver, otherwise keep current solver.
-    if (solver_ == Teuchos::null) {
-      solverPL = Teuchos::sublist(stepperPL_, solverName, true);
-      solver_ = rcp(new Thyra::NOXNonlinearSolver());
-      RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-      solver_->setParameterList(noxPL);
-    }
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION( solverName == solverPL->name(),
-      std::logic_error,
-         "Error - Trying to add a solver that is already in ParameterList!\n"
-      << "  Stepper Type = "<< stepperPL_->get<std::string>("Stepper Type")
-      << "\n" << "  Solver Name  = "<<solverName<<"\n");
-    solverName = solverPL->name();
-    stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, solverPL);      // Add sublist
-    solver_ = rcp(new Thyra::NOXNonlinearSolver());
-    RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-    solver_->setParameterList(noxPL);
-  }
-}
-
-
-/** \brief Set the solver.
- *  This sets the solver to supplied solver and adds solver's ParameterList
- *  to the Stepper ParameterList.
- */
-template<class Scalar>
-void StepperHHTAlpha<Scalar>::setSolver(
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  RCP<ParameterList> solverPL = solver->getNonconstParameterList();
-  std::string solverName = solverPL->name();
-  stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, solverPL);      // Add sublist
-  solver_ = solver;
+  this->wrapperModel_ = wrapperModel;
 }
 
 
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
+    std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperHHTAlpha::initialize()\n");
+
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
 }
 
@@ -272,10 +202,22 @@ void StepperHHTAlpha<Scalar>::takeStep(
 #endif
   using Teuchos::RCP;
 
-  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackardEuler::takeStep()");
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperHHTAlpha::takeStep()");
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperHHTAlpha<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for HHTAlpha.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
+
+    Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel =
+      Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorSecondOrder<Scalar> >(
+        this->wrapperModel_);
 
     //Get values of d, v and a from previous step
     RCP<const Thyra::VectorBase<Scalar> > d_old = currentState->getX();
@@ -296,7 +238,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > a_new = workingState->getXDotDot();
 
     //Get time and dt
-    const Scalar time = workingState->getTime();
+    const Scalar time = currentState->getTime();
     const Scalar dt   = workingState->getTimeStep();
     //Update time
     Scalar t = time+dt;
@@ -309,14 +251,22 @@ void StepperHHTAlpha<Scalar>::takeStep(
       RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
-      Thyra::put_scalar(0.0, a_init.ptr());
-      wrapperModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
-      const Thyra::SolveStatus<double> sStatus =
-        this->solveNonLinear(wrapperModel_, *solver_, a_init);
-      if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-        workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-      else
-        workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+      if (this->initial_guess_ != Teuchos::null) { //set initial guess for Newton, if provided
+        //Throw an exception if initial_guess is not compatible with solution
+        bool is_compatible = (a_init->space())->isCompatible(*this->initial_guess_->space());
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            is_compatible != true, std::logic_error,
+              "Error in Tempus::NemwarkImplicitAForm takeStep(): user-provided initial guess'!\n"
+              << "for Newton is not compatible with solution vector!\n");
+        Thyra::copy(*this->initial_guess_, a_init.ptr());
+      }
+      else { //if no initial_guess_ provide, set 0 initial guess
+        Thyra::put_scalar(0.0, a_init.ptr());
+      }
+      wrapperModel->initializeNewmark(v_init,d_init,0.0,time,beta_,gamma_);
+      const Thyra::SolveStatus<Scalar> sStatus=this->solveImplicitODE(a_init);
+
+      workingState->setSolutionStatus(sStatus);  // Converged --> pass.
       Thyra::copy(*a_init, a_old.ptr());
     }
 #ifdef DEBUG_OUTPUT
@@ -337,12 +287,11 @@ void StepperHHTAlpha<Scalar>::takeStep(
     predictDisplacement_alpha_f(*d_pred, *d_old);
     predictVelocity_alpha_f(*v_pred, *v_old);
 
-    //inject d_pred, v_pred, a and other relevant data into wrapperModel_
-    wrapperModel_->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    //inject d_pred, v_pred, a and other relevant data into wrapperModel
+    wrapperModel->initializeNewmark(v_pred,d_pred,dt,t,beta_,gamma_);
 
     //Solve for new acceleration
-    const Thyra::SolveStatus<double> sStatus =
-      this->solveNonLinear(wrapperModel_, *solver_, a_new);
+    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
 
     //correct acceleration (function of alpha_m)
     correctAcceleration(*a_new, *a_old);
@@ -351,10 +300,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     correctVelocity(*v_new, *v_pred, *a_new, dt);
     correctDisplacement(*d_new, *d_pred, *a_new, dt);
 
-    if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-    else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+    workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
   }
   return;
@@ -388,7 +334,7 @@ std::string StepperHHTAlpha<Scalar>::description() const
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  std::string name = "HHTAlpha ";
+  std::string name = "HHT-Alpha";
   return(name);
 }
 
@@ -396,13 +342,13 @@ std::string StepperHHTAlpha<Scalar>::description() const
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   out << description() << "::describe:" << std::endl
-      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
+      << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
 }
 
 
@@ -413,58 +359,72 @@ void StepperHHTAlpha<Scalar>::setParameterList(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
-  else stepperPL_ = pList;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (this->stepperPL_ == Teuchos::null) this->stepperPL_ = this->getDefaultParameters();
+  } else {
+    this->stepperPL_ = pList;
+  }
   // Can not validate because of optional Parameters.
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
   //Get beta and gamma from parameter list
   //IKT, FIXME: does parameter list get validated somewhere?  validateParameters above is commented out...
 
-  std::string stepperType = stepperPL_->get<std::string>("Stepper Type");
+  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
+  std::string stepperType = stepperPL->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "HHT-Alpha",
     std::logic_error,
-       "\nError - Stepper Type is not 'HHT-Alpha'!\n"
-    << "Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
+       "\nError - Stepper Type is not 'HHT-Alpha'!\n" << "Stepper Type = "
+       << stepperPL->get<std::string>("Stepper Type") << "\n");
   beta_ = 0.25; //default value
   gamma_ = 0.5; //default value
   //IKT, FIXME: test this scheme for alpha_f and alpha_m != 0.0.
-  //Once that is done, logic should be changed to allow user to select these options from
-  //the parameter list.
+  //Once that is done, logic should be changed to allow user to select
+  //these options from the parameter list.
   alpha_f_ = 0.0; //default value.  Hard-coded for Newmark-Beta for now.
   alpha_m_ = 0.0; //default value.  Hard-coded for Newmark-Beta for now.
   Teuchos::RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
-  if (stepperPL_->isSublist("HHT-Alpha Parameters")) {
+  if (this->stepperPL_->isSublist("HHT-Alpha Parameters")) {
     Teuchos::ParameterList &HHTalphaPL =
-      stepperPL_->sublist("HHT-Alpha Parameters", true);
+      this->stepperPL_->sublist("HHT-Alpha Parameters", true);
     std::string scheme_name = HHTalphaPL.get("Scheme Name", "Not Specified");
     alpha_m_ = HHTalphaPL.get("Alpha_m", 0.0);
     alpha_f_ = HHTalphaPL.get("Alpha_f", 0.0);
     TEUCHOS_TEST_FOR_EXCEPTION( (alpha_m_ >= 1.0) || (alpha_m_ < 0.0),
       std::logic_error,
-         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_m = " << alpha_m_ << ".  Please select Alpha_m >= 0 and < 1. \n");
+         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_m = "
+         << alpha_m_ << ".  Please select Alpha_m >= 0 and < 1. \n");
     TEUCHOS_TEST_FOR_EXCEPTION( (alpha_f_ > 1.0) || (alpha_f_ < 0.0),
       std::logic_error,
-         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_f = " << alpha_f_ << ".  Please select Alpha_f >= 0 and <= 1. \n");
+         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_f = "
+         << alpha_f_ << ".  Please select Alpha_f >= 0 and <= 1. \n");
     TEUCHOS_TEST_FOR_EXCEPTION( (alpha_m_ != 0.0) || (alpha_f_ != 0.0),
       std::logic_error,
-         "\nError - 'HHT-Alpha' stepper has not been verified yet for Alpha_m, Alpha_f != 0! \n"
-          << "You have specified Alpha_m = " << alpha_m_ << ", Alpha_f = " << alpha_f_ <<".\n");
+         "\nError - 'HHT-Alpha' stepper has not been verified yet for "
+         "Alpha_m, Alpha_f != 0! \n" << "You have specified Alpha_m = "
+         << alpha_m_ << ", Alpha_f = " << alpha_f_ <<".\n");
     if (scheme_name == "Newmark Beta") {
       beta_ = HHTalphaPL.get("Beta", 0.25);
       gamma_ = HHTalphaPL.get("Gamma", 0.5);
       TEUCHOS_TEST_FOR_EXCEPTION( (beta_ > 1.0) || (beta_ < 0.0),
         std::logic_error,
-           "\nError in 'HHT-Alpha' stepper: invalid value of Beta = " << beta_ << ".  Please select Beta >= 0 and <= 1. \n");
+           "\nError in 'HHT-Alpha' stepper: invalid value of Beta = "
+           << beta_ << ".  Please select Beta >= 0 and <= 1. \n");
       TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
         std::logic_error,
-           "\nError in 'HHT-Alpha' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
-      *out << "\n \nScheme Name = Newmark Beta.  Setting Alpha_f = Alpha_m = 0. Setting \n"
-           << "Beta = " << beta_ << " and Gamma = " << gamma_ << " from HHT-Alpha Parameters in input file.\n\n";
+           "\nError in 'HHT-Alpha' stepper: invalid value of Gamma = "
+           <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
+      *out << "\n \nScheme Name = Newmark Beta.  Setting Alpha_f = "
+           << "Alpha_m = 0. Setting \n" << "Beta = " << beta_
+           << " and Gamma = " << gamma_
+           << " from HHT-Alpha Parameters in input file.\n\n";
     }
     else {
-      *out << "\n \nScheme Name = " << scheme_name << ".  Using values of Alpha_m, Alpha_f, \n"
-           << "Beta and Gamma for this scheme (ignoring values of Alpha_m, Alpha_f, Beta and Gamma \n"
+      *out << "\n \nScheme Name = " << scheme_name
+           << ".  Using values of Alpha_m, Alpha_f, \n"
+           << "Beta and Gamma for this scheme (ignoring values of "
+           << "Alpha_m, Alpha_f, Beta and Gamma \n"
            << "in input file, if provided).\n";
        if (scheme_name == "Newmark Beta Average Acceleration") {
          beta_ = 0.25; gamma_ = 0.5;
@@ -478,20 +438,25 @@ void StepperHHTAlpha<Scalar>::setParameterList(
        else {
          TEUCHOS_TEST_FOR_EXCEPTION(true,
             std::logic_error,
-            "\nError in Tempus::StepperHHTAlpha!  Invalid Scheme Name = " << scheme_name <<".  \n"
-            <<"Valid Scheme Names are: 'Newmark Beta', 'Newmark Beta Average Acceleration', \n"
-            <<"'Newmark Beta Linear Acceleration', and 'Newmark Beta Central Difference'.\n");
+            "\nError in Tempus::StepperHHTAlpha!  Invalid Scheme Name = "
+            << scheme_name <<".  \n"
+            <<"Valid Scheme Names are: 'Newmark Beta', 'Newmark Beta "
+            <<"Average Acceleration', \n"
+            <<"'Newmark Beta Linear Acceleration', and 'Newmark Beta "
+            <<"Central Difference'.\n");
        }
-       *out << "===> Alpha_m = " << alpha_m_ << ", Alpha_f = " << alpha_f_ << ", Beta = " << beta_ << ", Gamma = " << gamma_ << "\n";
+       *out << "===> Alpha_m = " << alpha_m_ << ", Alpha_f = " << alpha_f_
+            << ", Beta = " << beta_ << ", Gamma = " << gamma_ << "\n";
     }
     if (beta_ == 0.0) {
       *out << "\n \nRunning  HHT-Alpha Stepper with Beta = 0.0, which \n"
-           << "specifies an explicit scheme.  WARNING: code has not been optimized \n"
-           << "yet for this case (no mass lumping)\n";
+           << "specifies an explicit scheme.  WARNING: code has not been "
+           << "optimized \nyet for this case (no mass lumping)\n";
     }
   }
   else {
-    *out << "\n  \nNo HHT-Alpha Parameters sublist found in input file; using default values of Beta = "
+    *out << "\n  \nNo HHT-Alpha Parameters sublist found in input file; "
+         << "using default values of Beta = "
          << beta_ << " and Gamma = " << gamma_ << ".\n\n";
   }
 }
@@ -506,9 +471,11 @@ StepperHHTAlpha<Scalar>::getValidParameters() const
 #endif
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
-  pl->set("Stepper Type", this->description());
-  pl->set("Solver Name", "",
-          "Name of ParameterList containing the solver specifications.");
+  pl->set<std::string>("Stepper Type", this->description());
+  this->getValidParametersBasic(pl);
+  pl->set<bool>       ("Zero Initial Guess", false);
+  pl->set<std::string>("Solver Name", "",
+    "Name of ParameterList containing the solver specifications.");
 
   return pl;
 }
@@ -521,12 +488,12 @@ StepperHHTAlpha<Scalar>::getDefaultParameters() const
 #endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
+  using Teuchos::rcp_const_cast;
 
-  RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", this->description());
+  RCP<ParameterList> pl =
+    rcp_const_cast<ParameterList>(this->getValidParameters());
+
   pl->set<std::string>("Solver Name", "Default Solver");
-
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 
@@ -541,7 +508,7 @@ StepperHHTAlpha<Scalar>::getNonconstParameterList()
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  return(stepperPL_);
+  return(this->stepperPL_);
 }
 
 
@@ -552,8 +519,8 @@ StepperHHTAlpha<Scalar>::unsetParameterList()
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
-  stepperPL_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
+  this->stepperPL_ = Teuchos::null;
   return(temp_plist);
 }
 

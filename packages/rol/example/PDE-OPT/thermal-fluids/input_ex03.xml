@@ -123,6 +123,7 @@
 
   <!-- ===========  STEP SUBLIST  =========== -->
   <ParameterList name="Step">
+    <Parameter name="Type" type="string" value="Fletcher"/>    
     <!-- ===========  LINE SEARCH  =========== -->
     <ParameterList name="Line Search">
       <Parameter name="Function Evaluation Limit"      type="int"    value="20"    />
@@ -249,6 +250,16 @@
         <Parameter name="Print History"                 type="bool"   value="true"  />
         <Parameter name="Iteration Limit"               type="int"    value="200"   />
       </ParameterList>
+    </ParameterList>
+
+    <!-- ============= FLETCHER PENALTY  =========== -->
+    <ParameterList name="Fletcher">
+	    <Parameter name="Penalty Parameter" type="double" value="1e1" />
+	    <Parameter name="Modify Penalty Parameter" type="bool" value="false" />
+	    <Parameter name="Max Penalty Parameter" type="double" value="1e6" />
+	    <Parameter name="Min Penalty Parameter" type="double" value="1e-6" />
+	    <Parameter name="Regularization Parameter" type="double" value="0." />
+	    <Parameter name="Min Regularization Parameter" type="double" value="1e-6" />
     </ParameterList>
 
     <!-- ===========  BUNDLE METHOD  =========== -->

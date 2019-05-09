@@ -83,7 +83,7 @@ int main( int argc, char **argv )
   factory.setParameterList(pl);
   RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
   if(mesh->isWritable())
-     mesh->writeToExodus("blocked_mesh.exo");
+     mesh->writeToExodus("blocked_mesh_bc.exo");
   unsigned dim = mesh->getDimension();
 
   std::vector<std::string> sideSets; 

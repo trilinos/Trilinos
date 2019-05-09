@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -58,6 +58,7 @@
 #include "elb_groups.h" // for get_group_info
 #include "elb_loadbal.h"
 #include "elb_util.h" // for find_inter, etc
+#include "fix_column_partitions.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327
@@ -70,40 +71,11 @@
 #include <mpi.h>          // for MPI_Finalize, etc
 #endif
 
-int is_hex(E_Type etype)
-{
-  return static_cast<int>(etype == HEX8 || etype == HEX27 || etype == HEX20 || etype == HEXSHELL);
-}
-
-int is_tet(E_Type etype)
-{
-  return static_cast<int>(etype == TET4 || etype == TET10 || etype == TET8 || etype == TET14 ||
-                          etype == TET15);
-}
-
-int is_wedge(E_Type etype)
-{
-  return static_cast<int>(etype == WEDGE6 || etype == WEDGE15 || etype == WEDGE16 ||
-                          etype == WEDGE20 || etype == WEDGE21);
-}
-
-int is_pyramid(E_Type etype)
-{
-  return static_cast<int>(etype == PYRAMID5 || etype == PYRAMID13 || etype == PYRAMID14 ||
-                          etype == PYRAMID18 || etype == PYRAMID19);
-}
-
-int is_3d_element(E_Type etype)
-{
-  return static_cast<int>((is_hex(etype) != 0) || (is_tet(etype) != 0) || (is_wedge(etype) != 0) ||
-                          (is_pyramid(etype) != 0));
-}
-
 int ilog2i(size_t n)
 {
   size_t       i  = 0;
   unsigned int n1 = n;
-  while (n1 >>= 1 != 0u) {
+  while ((n1 >>= 1) != 0u) {
     ++i;
   }
 
@@ -291,8 +263,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       size_t cnt = 0;
       for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
 
-        if (mesh->elem_type[ecnt] != SPHERE ||
-            (mesh->elem_type[ecnt] == SPHERE && problem->no_sph == 1)) {
+        if (mesh->elem_type[ecnt] != SPHERE || problem->no_sph == 1) {
           /*
            * for our purposes, the coordinate of the element will
            * be the average of the coordinates of the nodes that make
@@ -313,9 +284,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       } /* End "for (cnt=0; cnt < mesh->num_elem; cnt++)" */
 
       /* and use different pointers for Chaco */
-      x_ptr = TOPTR(x_elem_ptr);
-      y_ptr = TOPTR(y_elem_ptr);
-      z_ptr = TOPTR(z_elem_ptr);
+      x_ptr = x_elem_ptr.data();
+      y_ptr = y_elem_ptr.data();
+      z_ptr = z_elem_ptr.data();
 
     } /* End "if (problem->num_vertices > 0)" */
   }   /* End "if ((problem->type == ELEMENTAL) &&
@@ -366,7 +337,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   }
 
   switch (lb->type) {
-  case MULTIKL: glob_method  = 1; break;
+  case MULTIKL: glob_method = 1; break;
   case SPECTRAL: glob_method = 2; break;
   case INERTIAL: glob_method = 3; break;
   case ZPINCH:
@@ -377,10 +348,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     glob_method = 999; /* Chaco methods don't apply to ZPINCH, BRICK
                           ZOLTAN_RCB, ZOLTAN_RIB, ZOLTAN_HSFC */
     break;
-  case LINEAR: glob_method    = 4; break;
-  case RANDOM: glob_method    = 5; break;
+  case LINEAR: glob_method = 4; break;
+  case RANDOM: glob_method = 5; break;
   case SCATTERED: glob_method = 6; break;
-  case INFILE: glob_method    = 7; break;
+  case INFILE: glob_method = 7; break;
   }
 
   /* check if Chaco is supposed to make sure that the domains are connected */
@@ -404,8 +375,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     nprocg.resize(problem->num_groups);
     nelemg.resize(problem->num_groups);
 
-    if (!get_group_info(machine, problem, mesh, graph, lb->vertex2proc, TOPTR(nprocg),
-                        TOPTR(nelemg), &max_vtx, &max_adj)) {
+    if (!get_group_info(machine, problem, mesh, graph, lb->vertex2proc, nprocg.data(),
+                        nelemg.data(), &max_vtx, &max_adj)) {
       Gen_Error(0, "fatal: Error obtaining group information.");
       goto cleanup;
     }
@@ -420,7 +391,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     nadjg.resize(machine->num_boxes);
 
     /*
-     * Call Chaco to get the initial breakdown of the verticies
+     * Call Chaco to get the initial breakdown of the vertices
      * onto the boxes. The vertex2proc array can then be used
      * to assign elements to groups that can be used in the
      * Chaco calls below.
@@ -444,8 +415,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       exit(-1);
     }
     else {
-      flag = interface(problem->num_vertices, (int *)TOPTR(graph->start), (int *)TOPTR(graph->adj),
-                       TOPTR(weight->vertices), TOPTR(weight->edges), x_ptr, y_ptr, z_ptr,
+      flag = interface(problem->num_vertices, (int *)graph->start.data(), (int *)graph->adj.data(),
+                       weight->vertices.data(), weight->edges.data(), x_ptr, y_ptr, z_ptr,
                        const_cast<char *>(assignfile), (char *)nullptr, lb->vertex2proc, tmp_arch,
                        tmp_lev, dim, goal, glob_method, refine, solve->rqi_flag, solve->vmax,
                        lb->num_sects, solve->tolerance, seed);
@@ -651,7 +622,6 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
             tmpdim[0] = nprocg[iloop];
             tmpdim[1] = 1;
             tmpdim[2] = 1;
-            totalproc = nprocg[iloop];
           }
           else {
             num_level = nprocg[iloop];
@@ -794,9 +764,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   /* Free up coordinates if used */
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
-    case 1:
-      free(y_node_ptr);
-      y_node_ptr                         = nullptr; /* fall through */
+    case 1: free(y_node_ptr); y_node_ptr = nullptr; /* fall through */
     case 2: free(z_node_ptr); z_node_ptr = nullptr;
     }
   }
@@ -827,7 +795,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       free(tmp_z);
     }
     free(problem->group_no);
-    free(mesh->eb_cnts);
+    vec_free(mesh->eb_cnts);
     /* since Chaco didn't free the graph, need to do it here */
     vec_free(graph->start);
     vec_free(graph->adj);
@@ -948,6 +916,18 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       printf("============================================================\n");
       printf("\n");
     }
+
+    // If requested, try to discover vertical columnar structures in
+    // the mesh and tweak the partitioning so that elements of a
+    // column are not on multiple processors
+    if (problem->fix_columns) {
+      Gen_Error(1, "INFO: Attempting to discover columns and fix their partitioning");
+      int  nmoved = fix_column_partitions(lb, mesh, graph);
+      char mesg[256];
+      sprintf(mesg, "INFO: Reassigned partitions of %d elements", nmoved);
+      Gen_Error(1, mesg);
+    }
+
   } // problem->type == ELEMENTAL
 
   /* since Chaco didn't free the graph, need to do it here */
@@ -1003,7 +983,7 @@ cleanup:
       free(tmp_z);
     }
     free(problem->group_no);
-    free(mesh->eb_cnts);
+    vec_free(mesh->eb_cnts);
     /* since Chaco didn't free the graph, need to do it here */
     vec_free(graph->start);
     vec_free(graph->adj);
@@ -1086,8 +1066,6 @@ namespace {
     size_t           count;
     size_t           num_found = 0;
 
-    int nhold2, nsides2;
-
     std::vector<int> list_ptr;
     int              end;
 
@@ -1122,7 +1100,7 @@ namespace {
         }
 
         size_t components =
-            extract_connected_lists(nrow, TOPTR(columns), TOPTR(rows), TOPTR(list), list_ptr);
+            extract_connected_lists(nrow, columns.data(), rows.data(), list.data(), list_ptr);
 
         if (components) {
           printf("There are " ST_ZU " connected components.\n", components);
@@ -1215,7 +1193,7 @@ namespace {
             }
 
             int components =
-                extract_connected_lists(nrow, TOPTR(columns), TOPTR(rows), TOPTR(list), list_ptr);
+                extract_connected_lists(nrow, columns.data(), rows.data(), list.data(), list_ptr);
 
             if (components > 0) {
               printf("For Processor %d there are %d connected components.\n", pcnt, components);
@@ -1334,25 +1312,26 @@ namespace {
                      * diagonals due to triangular shells
                      */
 
-                    nsides2 = get_elem_info(NSIDES, etype2);
+                    int nsides2 = get_elem_info(NSIDES, etype2);
 
                     count = 0;
                     for (int cnt = 0; cnt < nsides2; cnt++) {
 
                       ss_to_node_list(etype2, mesh->connect[el2], (cnt + 1), side_nodes2);
 
-                      nhold2 = find_inter(TOPTR(graph->sur_elem[side_nodes2[0]]),
-                                          TOPTR(graph->sur_elem[side_nodes2[1]]),
-                                          graph->sur_elem[side_nodes2[0]].size(),
-                                          graph->sur_elem[side_nodes2[1]].size(), TOPTR(pt_list));
+                      int nhold2 =
+                          find_inter(graph->sur_elem[side_nodes2[0]].data(),
+                                     graph->sur_elem[side_nodes2[1]].data(),
+                                     graph->sur_elem[side_nodes2[0]].size(),
+                                     graph->sur_elem[side_nodes2[1]].size(), pt_list.data());
 
                       for (int i = 0; i < nhold2; i++) {
                         hold_elem[i] = graph->sur_elem[side_nodes2[0]][pt_list[i]];
                       }
 
-                      nelem = find_inter(TOPTR(hold_elem), TOPTR(graph->sur_elem[side_nodes2[2]]),
+                      nelem = find_inter(hold_elem.data(), graph->sur_elem[side_nodes2[2]].data(),
                                          nhold2, graph->sur_elem[side_nodes2[2]].size(),
-                                         TOPTR(pt_list));
+                                         pt_list.data());
 
                       if (nelem >= 1) {
                         count++;
@@ -1360,10 +1339,11 @@ namespace {
                       }
                     }
 
-                    /* at this point, a shell was connnect to this volume element.
-                     * if count, then the shell has a element connect to one of
-                     * its faces and thus this is not a mechanism.  If !count,
-                     * then this is a mechanism.
+                    /* at this point, a shell was connected to this
+                     * volume element.  if count, then the shell has a
+                     * element connect to one of its faces and thus
+                     * this is not a mechanism.  If !count, then this
+                     * is a mechanism.
                      */
 
                     if (!count) {
@@ -1550,7 +1530,7 @@ namespace {
     lb->e_cmap_procs.resize(machine->num_procs);
     lb->e_cmap_neigh.resize(machine->num_procs);
 
-    /* allocate space to hold info about surounding elements */
+    /* allocate space to hold info about surrounding elements */
     std::vector<INT> pt_list(graph->max_nsur);
     std::vector<INT> hold_elem(graph->max_nsur);
 
@@ -1614,10 +1594,10 @@ namespace {
             }
 
             for (int ncnt = 0; ncnt < nnodes; ncnt++) {
-              /* Find elements connnected to both node '0' and node 'ncnt+1' */
+              /* Find elements connected to both node '0' and node 'ncnt+1' */
               nelem =
-                  find_inter(TOPTR(hold_elem), TOPTR(graph->sur_elem[side_nodes[(ncnt + 1)]]),
-                             nhold, graph->sur_elem[side_nodes[(ncnt + 1)]].size(), TOPTR(pt_list));
+                  find_inter(hold_elem.data(), graph->sur_elem[side_nodes[(ncnt + 1)]].data(),
+                             nhold, graph->sur_elem[side_nodes[(ncnt + 1)]].size(), pt_list.data());
 
               if (nelem < 2) {
                 break;
@@ -1679,11 +1659,11 @@ namespace {
             int    node  = 2;
             size_t nhold = 0;
             for (int ncnt = 0; ncnt < nnodes; ncnt++) {
-              /* Find elements connnected to both node 'inode' and node 'node' */
-              nelem = find_inter(TOPTR(graph->sur_elem[side_nodes[inode]]),
-                                 TOPTR(graph->sur_elem[side_nodes[node]]),
+              /* Find elements connected to both node 'inode' and node 'node' */
+              nelem = find_inter(graph->sur_elem[side_nodes[inode]].data(),
+                                 graph->sur_elem[side_nodes[node]].data(),
                                  graph->sur_elem[side_nodes[inode]].size(),
-                                 graph->sur_elem[side_nodes[node]].size(), TOPTR(pt_list));
+                                 graph->sur_elem[side_nodes[node]].size(), pt_list.data());
 
               if (nelem > 1) {
                 if (ncnt == 0) {
@@ -1746,8 +1726,9 @@ namespace {
                   }
                   nelem = ncnt3;
                   if (!dflag && nelem > 2) {
-                    fprintf(stderr, "Possible corrupted mesh detected at element " ST_ZU
-                                    ", strange connectivity.\n",
+                    fprintf(stderr,
+                            "Possible corrupted mesh detected at element " ST_ZU
+                            ", strange connectivity.\n",
                             ecnt);
                   }
                 }
@@ -2288,7 +2269,7 @@ namespace {
                     float *              y,    /* y-coordinates */
                     float *              z,    /* z-coordinates */
                     int *                part  /* Output:  partition assignments for each element */
-                    )
+  )
   {
     /* Routine to generate a partition of a cylinder.
      * Assumptions:
@@ -2421,16 +2402,15 @@ namespace {
   }
 
   /*****************************************************************************/
-  void
-  BRICK_slices(int                  nslices_d, /* # of subdomains in this dimension */
-               int                  ndot,      /* # of dots */
-               float *              d,         /* Array of ndot coordinates in this dimension */
-               float *              dmin,      /* Output:  Smallest value in d[] */
-               float *              dmax,      /* Output:  Largest value in d[] */
-               double *             delta,     /* Output:  dmax - dmin */
-               std::vector<double> &slices_d /* Output:  maximum d for each slice in dimension using
-                                    uniform partition of dmax - dmin */
-               )
+  void BRICK_slices(int                  nslices_d, /* # of subdomains in this dimension */
+                    int                  ndot,      /* # of dots */
+                    float *              d,       /* Array of ndot coordinates in this dimension */
+                    float *              dmin,    /* Output:  Smallest value in d[] */
+                    float *              dmax,    /* Output:  Largest value in d[] */
+                    double *             delta,   /* Output:  dmax - dmin */
+                    std::vector<double> &slices_d /* Output:  maximum d for each slice in dimension
+                                         using uniform partition of dmax - dmin */
+  )
   {
     /* Compute the min, max, delta and slices values for a single dimension. */
     /* KDDKDD Note:  This routine could also be used by ZPINCH in the z-direction,
@@ -2467,7 +2447,7 @@ namespace {
                         double               delta,     /* dmax - dmin */
                         std::vector<double> &slices_d /* Maximum d for each slice in dimension using
                                             uniform partition of dmax - dmin */
-                        )
+  )
   {
     /* Function returning in which slice a coordinate d lies. */
     /* KDDKDD Note:  This routine could also be used by ZPINCH in the z-direction,
@@ -2502,7 +2482,7 @@ namespace {
                    float *              y,    /* y-coordinates */
                    float *              z,    /* z-coordinates */
                    int *                part  /* Output:  partition assignments for each element */
-                   )
+  )
   {
     /* Routine to generate a partition of an axis-aligned hexahedral domain.
      * Assumptions:
@@ -2666,7 +2646,7 @@ namespace {
                     int *       part,      /* Output:  partition assignments for each element */
                     int         argc,      /* Fields needed by MPI_Init */
                     char *      argv[]     /* Fields needed by MPI_Init */
-                    )
+  )
   {
     /* Function to allow Zoltan to compute decomposition using RCB.
      * Assuming running Zoltan in serial (as nem_slice is serial).
@@ -2803,7 +2783,7 @@ namespace {
                      int *                wgt,  /* element weights; can be nullptr if no weights  */
                      size_t               ndot, /* Length of x, y, z, and part (== # of elements) */
                      int *                part  /* Partition assignments for each element */
-                     )
+  )
   {
     /* Routine to print some info about the ZPINCH, BRICK or ZOLTAN_RCB
        decompositions */

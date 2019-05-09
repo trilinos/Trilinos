@@ -9,8 +9,8 @@
 using namespace std;
 using namespace Intrepid;
  
- int main(){
-	 Teuchos::GlobalMPISession mpiSession();
+ int main(int argc, char* argv[]){
+	 Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 	typedef ArrayTools art; 
 	typedef RealSpaceTools<double> rst;
 	    const int c=50, p=90, f=70, d1=7, d2=13;

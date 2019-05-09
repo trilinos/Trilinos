@@ -447,76 +447,76 @@ CFunctionMap::CFunctionMap()
 {
   /// These random number functions support calls to
   /// the ANSI C random number generator.
-  (*this).insert(std::make_pair("rand",         new CFunction0(real_rand)));
-  (*this).insert(std::make_pair("srand",        new CFunction1(real_srand)));
+  (*this).emplace("rand",         new CFunction0(real_rand));
+  (*this).emplace("srand",        new CFunction1(real_srand));
 
   /// These random number functions support a platform
   /// independent random number function.
-  (*this).insert(std::make_pair("random",          new CFunction0(random0)));
-  (*this).insert(std::make_pair("random",          new CFunction1(random1)));
-  (*this).insert(std::make_pair("time",            new CFunction0(current_time)));
+  (*this).emplace("random",          new CFunction0(random0));
+  (*this).emplace("random",          new CFunction1(random1));
+  (*this).emplace("time",            new CFunction0(current_time));
 
-  (*this).insert(std::make_pair("exp",             new CFunction1(std::exp)));
-  (*this).insert(std::make_pair("ln",              new CFunction1(std::log)));
-  (*this).insert(std::make_pair("log",             new CFunction1(std::log)));
-  (*this).insert(std::make_pair("log10",           new CFunction1(std::log10)));
-  (*this).insert(std::make_pair("pow",             new CFunction2(std::pow)));
-  (*this).insert(std::make_pair("sqrt",            new CFunction1(std::sqrt)));
-  (*this).insert(std::make_pair("erfc",            new CFunction1(erfc)));
-  (*this).insert(std::make_pair("erf",             new CFunction1(erf)));
+  (*this).emplace("exp",             new CFunction1(std::exp));
+  (*this).emplace("ln",              new CFunction1(std::log));
+  (*this).emplace("log",             new CFunction1(std::log));
+  (*this).emplace("log10",           new CFunction1(std::log10));
+  (*this).emplace("pow",             new CFunction2(std::pow));
+  (*this).emplace("sqrt",            new CFunction1(std::sqrt));
+  (*this).emplace("erfc",            new CFunction1(erfc));
+  (*this).emplace("erf",             new CFunction1(erf));
 
-  (*this).insert(std::make_pair("acos",            new CFunction1(std::acos)));
-  (*this).insert(std::make_pair("asin",            new CFunction1(std::asin)));
-  (*this).insert(std::make_pair("asinh",           new CFunction1(std::asinh)));
-  (*this).insert(std::make_pair("atan",            new CFunction1(std::atan)));
-  (*this).insert(std::make_pair("atan2",           new CFunction2(std::atan2)));
-  (*this).insert(std::make_pair("atanh",           new CFunction1(std::atanh)));
-  (*this).insert(std::make_pair("ceil",            new CFunction1(std::ceil)));
-  (*this).insert(std::make_pair("cos",             new CFunction1(std::cos)));
-  (*this).insert(std::make_pair("cosh",            new CFunction1(std::cosh)));
-  (*this).insert(std::make_pair("acosh",           new CFunction1(std::acosh)));
-  (*this).insert(std::make_pair("floor",           new CFunction1(std::floor)));
-  (*this).insert(std::make_pair("sin",             new CFunction1(std::sin)));
-  (*this).insert(std::make_pair("sinh",            new CFunction1(std::sinh)));
-  (*this).insert(std::make_pair("tan",             new CFunction1(std::tan)));
-  (*this).insert(std::make_pair("tanh",            new CFunction1(std::tanh)));
+  (*this).emplace("acos",            new CFunction1(std::acos));
+  (*this).emplace("asin",            new CFunction1(std::asin));
+  (*this).emplace("asinh",           new CFunction1(std::asinh));
+  (*this).emplace("atan",            new CFunction1(std::atan));
+  (*this).emplace("atan2",           new CFunction2(std::atan2));
+  (*this).emplace("atanh",           new CFunction1(std::atanh));
+  (*this).emplace("ceil",            new CFunction1(std::ceil));
+  (*this).emplace("cos",             new CFunction1(std::cos));
+  (*this).emplace("cosh",            new CFunction1(std::cosh));
+  (*this).emplace("acosh",           new CFunction1(std::acosh));
+  (*this).emplace("floor",           new CFunction1(std::floor));
+  (*this).emplace("sin",             new CFunction1(std::sin));
+  (*this).emplace("sinh",            new CFunction1(std::sinh));
+  (*this).emplace("tan",             new CFunction1(std::tan));
+  (*this).emplace("tanh",            new CFunction1(std::tanh));
 
-  (*this).insert(std::make_pair("abs",             new CFunction1(std::fabs)));
-  (*this).insert(std::make_pair("fabs",            new CFunction1(std::fabs)));
-  (*this).insert(std::make_pair("deg",             new CFunction1(deg)));
-  (*this).insert(std::make_pair("mod",             new CFunction2(std::fmod)));
-  (*this).insert(std::make_pair("fmod",            new CFunction2(std::fmod)));
-  (*this).insert(std::make_pair("ipart",           new CFunction1(ipart)));
-  (*this).insert(std::make_pair("fpart",           new CFunction1(fpart)));
-  (*this).insert(std::make_pair("max",             new CFunction2(max_2)));
-  (*this).insert(std::make_pair("max",             new CFunction3(max_3)));
-  (*this).insert(std::make_pair("max",             new CFunction4(max_4)));
-  (*this).insert(std::make_pair("min",             new CFunction2(min_2)));
-  (*this).insert(std::make_pair("min",             new CFunction3(min_3)));
-  (*this).insert(std::make_pair("min",             new CFunction4(min_4)));
-  (*this).insert(std::make_pair("poltorectx",      new CFunction2(poltorectx)));
-  (*this).insert(std::make_pair("poltorecty",      new CFunction2(poltorecty)));
-  (*this).insert(std::make_pair("rad",             new CFunction1(rad)));
-  (*this).insert(std::make_pair("recttopola",      new CFunction2(recttopola)));
-  (*this).insert(std::make_pair("recttopolr",      new CFunction2(recttopolr)));
+  (*this).emplace("abs",             new CFunction1(std::fabs));
+  (*this).emplace("fabs",            new CFunction1(std::fabs));
+  (*this).emplace("deg",             new CFunction1(deg));
+  (*this).emplace("mod",             new CFunction2(std::fmod));
+  (*this).emplace("fmod",            new CFunction2(std::fmod));
+  (*this).emplace("ipart",           new CFunction1(ipart));
+  (*this).emplace("fpart",           new CFunction1(fpart));
+  (*this).emplace("max",             new CFunction2(max_2));
+  (*this).emplace("max",             new CFunction3(max_3));
+  (*this).emplace("max",             new CFunction4(max_4));
+  (*this).emplace("min",             new CFunction2(min_2));
+  (*this).emplace("min",             new CFunction3(min_3));
+  (*this).emplace("min",             new CFunction4(min_4));
+  (*this).emplace("poltorectx",      new CFunction2(poltorectx));
+  (*this).emplace("poltorecty",      new CFunction2(poltorecty));
+  (*this).emplace("rad",             new CFunction1(rad));
+  (*this).emplace("recttopola",      new CFunction2(recttopola));
+  (*this).emplace("recttopolr",      new CFunction2(recttopolr));
 
-  (*this).insert(std::make_pair("cos_ramp",        new CFunction1(cosine_ramp1)));
-  (*this).insert(std::make_pair("cos_ramp",        new CFunction2(cosine_ramp2)));
-  (*this).insert(std::make_pair("cos_ramp",        new CFunction3(cosine_ramp3)));
-  (*this).insert(std::make_pair("cosine_ramp",     new CFunction1(cosine_ramp1)));
-  (*this).insert(std::make_pair("cosine_ramp",     new CFunction2(cosine_ramp2)));
-  (*this).insert(std::make_pair("cosine_ramp",     new CFunction3(cosine_ramp3)));
-  (*this).insert(std::make_pair("haversine_pulse", new CFunction3(haversine_pulse)));
-  (*this).insert(std::make_pair("cycloidal_ramp",  new CFunction3(cycloidal_ramp)));
+  (*this).emplace("cos_ramp",        new CFunction1(cosine_ramp1));
+  (*this).emplace("cos_ramp",        new CFunction2(cosine_ramp2));
+  (*this).emplace("cos_ramp",        new CFunction3(cosine_ramp3));
+  (*this).emplace("cosine_ramp",     new CFunction1(cosine_ramp1));
+  (*this).emplace("cosine_ramp",     new CFunction2(cosine_ramp2));
+  (*this).emplace("cosine_ramp",     new CFunction3(cosine_ramp3));
+  (*this).emplace("haversine_pulse", new CFunction3(haversine_pulse));
+  (*this).emplace("cycloidal_ramp",  new CFunction3(cycloidal_ramp));
 
-  (*this).insert(std::make_pair("sign",            new CFunction1(sign)));
-  (*this).insert(std::make_pair("unit_step",       new CFunction3(unit_step3)));
+  (*this).emplace("sign",            new CFunction1(sign));
+  (*this).emplace("unit_step",       new CFunction3(unit_step3));
 
-  (*this).insert(std::make_pair("weibull_pdf",     new CFunction3(weibull_pdf)));
-  (*this).insert(std::make_pair("normal_pdf",      new CFunction3(normal_pdf)));
-  (*this).insert(std::make_pair("gamma_pdf",       new CFunction3(gamma_pdf)));
-  (*this).insert(std::make_pair("log_uniform_pdf", new CFunction3(log_uniform_pdf)));
-  (*this).insert(std::make_pair("exponential_pdf", new CFunction2(exponential_pdf)));
+  (*this).emplace("weibull_pdf",     new CFunction3(weibull_pdf));
+  (*this).emplace("normal_pdf",      new CFunction3(normal_pdf));
+  (*this).emplace("gamma_pdf",       new CFunction3(gamma_pdf));
+  (*this).emplace("log_uniform_pdf", new CFunction3(log_uniform_pdf));
+  (*this).emplace("exponential_pdf", new CFunction2(exponential_pdf));
 }
 
 CFunctionMap::~CFunctionMap()

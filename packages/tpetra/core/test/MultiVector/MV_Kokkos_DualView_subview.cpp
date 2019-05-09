@@ -70,7 +70,6 @@ namespace { // (anonymous)
     using std::endl;
     typedef Tpetra::MultiVector<S, LO, GO, NODE> MV;
     typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::execution_space execution_space;
     typedef typename dual_view_type::size_type size_type;
 
     Teuchos::OSTab tab0 (out);
@@ -84,8 +83,8 @@ namespace { // (anonymous)
     // finalization automatically.
     Tpetra::Map<> map (comm->getSize (), 1, 0, comm);
 
-    TEST_ASSERT( execution_space::is_initialized () );
-    if (! execution_space::is_initialized ()) {
+    TEST_ASSERT( Kokkos::is_initialized () );
+    if (! Kokkos::is_initialized ()) {
       return; // avoid crashes if initialization failed
     }
     out << "Successfully initialized execution space, if necessary" << endl;
@@ -105,12 +104,12 @@ namespace { // (anonymous)
     out << "Create a " << numRows << " x " << numCols << " DualView" << endl;
     dual_view_type X ("X", numRows, numCols);
 
-    TEST_EQUALITY_CONST( X.dimension_0 (), numRows );
-    TEST_EQUALITY_CONST( X.dimension_1 (), numCols );
-    TEST_EQUALITY_CONST( X.d_view.dimension_0 (), numRows );
-    TEST_EQUALITY_CONST( X.d_view.dimension_1 (), numCols );
-    TEST_EQUALITY_CONST( X.h_view.dimension_0 (), numRows );
-    TEST_EQUALITY_CONST( X.h_view.dimension_1 (), numCols );
+    TEST_EQUALITY_CONST( X.extent (0), numRows );
+    TEST_EQUALITY_CONST( X.extent (1), numCols );
+    TEST_EQUALITY_CONST( X.d_view.extent (0), numRows );
+    TEST_EQUALITY_CONST( X.d_view.extent (1), numCols );
+    TEST_EQUALITY_CONST( X.h_view.extent (0), numRows );
+    TEST_EQUALITY_CONST( X.h_view.extent (1), numCols );
     out << endl;
 
     newNumRows = numRows;
@@ -121,15 +120,15 @@ namespace { // (anonymous)
         << "," << colRng.second << "))" << endl;
     X_sub = subview (X, ALL (), colRng);
 
-    out << "X_sub claims to be " << X_sub.dimension_0 () << " x "
-        << X_sub.dimension_1 () << endl;
+    out << "X_sub claims to be " << X_sub.extent (0) << " x "
+        << X_sub.extent (1) << endl;
 
-    TEST_EQUALITY_CONST( X_sub.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.dimension_1 (), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.d_view.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.d_view.dimension_1 (), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.h_view.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.h_view.dimension_1 (), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.d_view.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.d_view.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.h_view.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.h_view.extent (1), newNumCols );
     out << endl;
 
     newNumRows = numRows;
@@ -140,15 +139,15 @@ namespace { // (anonymous)
         << "," << colRng.second << "))" << endl;
     X_sub = subview (X, ALL (), colRng);
 
-    out << "X_sub claims to be " << X_sub.dimension_0 () << " x "
-        << X_sub.dimension_1 () << endl;
+    out << "X_sub claims to be " << X_sub.extent (0) << " x "
+        << X_sub.extent (1) << endl;
 
-    TEST_EQUALITY_CONST( X_sub.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.dimension_1 (), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.d_view.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.d_view.dimension_1 (), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.h_view.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.h_view.dimension_1 (), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.d_view.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.d_view.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.h_view.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.h_view.extent (1), newNumCols );
     out << endl;
 
     newNumRows = 0;
@@ -159,15 +158,15 @@ namespace { // (anonymous)
         << rowRng.second << "), ALL)" << endl;
     X_sub = subview (X, rowRng, ALL ());
 
-    out << "X_sub claims to be " << X_sub.dimension_0 () << " x "
-        << X_sub.dimension_1 () << endl;
+    out << "X_sub claims to be " << X_sub.extent (0) << " x "
+        << X_sub.extent (1) << endl;
 
-    TEST_EQUALITY_CONST( X_sub.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.dimension_1 (), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.d_view.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.d_view.dimension_1 (), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.h_view.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.h_view.dimension_1 (), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.d_view.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.d_view.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.h_view.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.h_view.extent (1), newNumCols );
     out << endl;
 
     newNumRows = 0;
@@ -180,15 +179,15 @@ namespace { // (anonymous)
         << colRng.second << "))" << endl;
     X_sub = subview (X, rowRng, colRng);
 
-    out << "X_sub claims to be " << X_sub.dimension_0 () << " x "
-        << X_sub.dimension_1 () << endl;
+    out << "X_sub claims to be " << X_sub.extent (0) << " x "
+        << X_sub.extent (1) << endl;
 
-    TEST_EQUALITY_CONST( X_sub.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.dimension_1 (), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.d_view.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.d_view.dimension_1 (), newNumCols );
-    TEST_EQUALITY_CONST( X_sub.h_view.dimension_0 (), newNumRows );
-    TEST_EQUALITY_CONST( X_sub.h_view.dimension_1 (), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.d_view.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.d_view.extent (1), newNumCols );
+    TEST_EQUALITY_CONST( X_sub.h_view.extent (0), newNumRows );
+    TEST_EQUALITY_CONST( X_sub.h_view.extent (1), newNumCols );
     out << endl;
   }
 

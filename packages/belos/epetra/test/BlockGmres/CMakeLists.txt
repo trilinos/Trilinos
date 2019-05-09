@@ -5,14 +5,14 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     bl_gmres_diag
-    SOURCES test_bl_gmres_diag.cpp createEpetraProblem.cpp
+    SOURCES test_bl_gmres_diag.cpp 
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     bl_gmres_hb
-    SOURCES test_bl_gmres_hb.cpp createEpetraProblem.cpp
+    SOURCES test_bl_gmres_hb.cpp 
     COMM serial mpi
     ARGS
       "--verbose --filename=orsirr1.hb"
@@ -22,7 +22,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     resolve_gmres_hb
-    SOURCES test_resolve_gmres_hb.cpp createEpetraProblem.cpp
+    SOURCES test_resolve_gmres_hb.cpp 
     COMM serial mpi
     ARGS
       "--verbose --filename=orsirr1.hb"
@@ -32,7 +32,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     pseudo_gmres_hb
-    SOURCES test_pseudo_gmres_hb.cpp createEpetraProblem.cpp
+    SOURCES test_pseudo_gmres_hb.cpp 
     COMM serial mpi
     ARGS "--verbose --filename=orsirr1.hb"
     STANDARD_PASS_OUTPUT 
@@ -49,7 +49,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_pgmres_hb
-      SOURCES test_bl_pgmres_hb.cpp createEpetraProblem.cpp
+      SOURCES test_bl_pgmres_hb.cpp 
       COMM serial mpi
       ARGS
         "--verbose --filename=orsirr1.hb"
@@ -60,7 +60,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       pseudo_pgmres_hb
-      SOURCES test_pseudo_pgmres_hb.cpp createEpetraProblem.cpp
+      SOURCES test_pseudo_pgmres_hb.cpp 
       COMM serial mpi
       ARGS "--verbose --filename=orsirr1.hb"
       STANDARD_PASS_OUTPUT 
@@ -68,7 +68,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_fgmres_hb
-      SOURCES test_bl_fgmres_hb.cpp createEpetraProblem.cpp
+      SOURCES test_bl_fgmres_hb.cpp 
       COMM serial mpi
       ARGS "--verbose --filename=orsirr1.hb"
       STANDARD_PASS_OUTPUT 

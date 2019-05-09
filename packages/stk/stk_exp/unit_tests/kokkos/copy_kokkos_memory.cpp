@@ -2,9 +2,9 @@
 #include <Kokkos_Core.hpp>
 #include <vector>
 
-#if defined(KOKKOS_HAVE_CUDA) && defined(__CUDACC__)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
 #define KOKKOS_DEVICE Kokkos::Cuda
-#elif defined(KOKKOS_HAVE_OPENMP)
+#elif defined(KOKKOS_ENABLE_OPENMP)
 #define KOKKOS_DEVICE Kokkos::OpenMP
 #else
 #define KOKKOS_DEVICE Kokkos::Serial

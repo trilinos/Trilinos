@@ -60,6 +60,7 @@ using Teuchos::rcp;
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_ScatterResidual_BlockedEpetra.hpp"
 #include "Panzer_GatherSolution_BlockedEpetra.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -128,7 +129,7 @@ namespace panzer {
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
     RCP<panzer::BlockedDOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::BlockedDOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
     dofManager->addField(fieldName1_q1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
@@ -251,12 +252,12 @@ namespace panzer {
     derivative_dimensions.push_back(12);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Solution Gather Container",loc);
-    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    panzer::Traits::PED ped;
+    ped.gedc->addDataObject("Solution Gather Container",loc);
+    ped.gedc->addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Residual>(ped);
 
     // run tests
@@ -337,7 +338,7 @@ namespace panzer {
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
     RCP<panzer::BlockedDOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::BlockedDOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
     dofManager->addField(fieldName1_q1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
@@ -461,12 +462,12 @@ namespace panzer {
     derivative_dimensions.push_back(12);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Solution Gather Container",loc);
-    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    panzer::Traits::PED ped;
+    ped.gedc->addDataObject("Solution Gather Container",loc);
+    ped.gedc->addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Jacobian>(ped);
 
     // run tests

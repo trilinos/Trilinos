@@ -216,11 +216,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test2, Scalar, LO, GO)
   MV x = *xrcp;
 
   TEST_INEQUALITY(&x, &y);                                               // vector x and y are different
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   x.template sync<Kokkos::HostSpace> ();
   y.template sync<Kokkos::HostSpace> ();
   auto x_lcl_host = x.template getLocalView<Kokkos::HostSpace> ();
   auto y_lcl_host = x.template getLocalView<Kokkos::HostSpace> ();
-  TEST_EQUALITY( x_lcl_host.ptr_on_device (), y_lcl_host.ptr_on_device () ); // vector x and y are pointing to the same memory location (such test only works if num of local elements != 0)
+#else
+  x.sync_host ();
+  y.sync_host ();
+  auto x_lcl_host = x.getLocalViewHost ();
+  auto y_lcl_host = x.getLocalViewHost ();
+#endif
+  TEST_EQUALITY( x_lcl_host.data (), y_lcl_host.data () ); // vector x and y are pointing to the same memory location (such test only works if num of local elements != 0)
 
   prec.apply(x, y);
 
@@ -468,7 +475,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, 
   out << "#local blocks = " << numLocalBlocks << std::endl;
 
   //out.setOutputToRootOnly(-1);
-  //Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   //const int myRank = comm->getRank ();
   for (int i=0,j=0; i<numLocalBlocks; ++i) {
     ArrayRCP<LocalOrdinal> block(3);
@@ -631,8 +637,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
 
   out << "Ifpack2::BlockRelaxation diagonal block matrix test" << endl;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -708,7 +713,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.ptr_on_device();
+    Scalar* yb = ylcl.data();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol,1e-14);
     }
@@ -738,8 +743,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
 
   out << "Ifpack2::BlockRelaxation lower triangular BlockCrsMatrix test" << endl;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -836,7 +840,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
   for (size_t k = 0; k < num_rows_per_proc; ++k) {
     LO lcl_row = k;
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(lcl_row,0);
-    Scalar* yb = ylcl.ptr_on_device();
+    Scalar* yb = ylcl.data();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
     }
@@ -859,7 +863,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   const int num_rows_per_proc = 3;
   const int blockSize = 5;
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  auto comm = Tpetra::getDefaultComm();
   Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<block_crs_matrix_type> bcrsmatrix =
@@ -897,7 +901,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    auto yb = ylcl.ptr_on_device();
+    auto yb = ylcl.data();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
     }
@@ -919,26 +923,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal,GlobalOrdinal)
 
-// FIXME (mfh 21 Oct 2015) This test exercises two different GO
-// (GlobalOrdinal) types: whatever GO is, and GO = LO (LocalOrdinal).
-// As such, given that LO = int is the only currently enabled LO type,
-// this test won't build if GO = int is disabled (Bug 6358).  We
-// disable building the test in that case.
-
-#ifdef HAVE_TPETRA_INST_INT_INT
-
-// mfh 21 Oct 2015: This class was only getting tested for Scalar =
-// double, LocalOrdinal = int, GlobalOrdinal = int, and the default
-// Node type.  As part of the fix for Bug 6358, I'm removing the
-// assumption that GlobalOrdinal = int exists.
+// FIXME (mfh 11 Apr 2018) Test for other Scalar types at least.
 
 typedef Tpetra::MultiVector<>::scalar_type default_scalar_type;
 typedef Tpetra::MultiVector<>::local_ordinal_type default_local_ordinal_type;
 typedef Tpetra::MultiVector<>::global_ordinal_type default_global_ordinal_type;
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(default_scalar_type, default_local_ordinal_type, default_global_ordinal_type)
-
-#endif // HAVE_TPETRA_INST_INT_INT
 
 } // namespace (anonymous)
 

@@ -43,14 +43,14 @@
 // @HEADER
 
 %{
-// Epetra includes
+// Epetra include files
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
 #include "Epetra_Distributor.h"
 #include "Epetra_SerialDistributor.h"
 
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 %}
 

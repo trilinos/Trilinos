@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,7 @@ void make_connected(
     int *                 vtxlist,    /* space for nvtxs ints */
     struct connect_data **cdata,      /* space for connectivity data */
     int                   using_ewgts /* are edges of graph weighted? */
-    )
+)
 {
   struct edgeslist *new_edges; /* list of edges connecting graph */
   struct edgeslist *prev_edge; /* pointer for manipulating edge list */
@@ -91,7 +91,7 @@ void make_unconnected(
     int *                 nedges,     /* number of edges in graph */
     struct connect_data **cdata,      /* space for connectivity data */
     int                   using_ewgts /* are edges of graph weighted? */
-    )
+)
 {
   struct ilists *   old_edges = NULL; /* edges overwritten for connecting */
   struct flists *   old_ewgts = NULL; /* weights of edges overwritten */
@@ -148,7 +148,7 @@ void make_unconnected(
 
 /* Print out the added edges. */
 void print_connected(struct connect_data *cdata /* space for connectivity data */
-                     )
+)
 {
   struct edgeslist *edges; /* loops through new edges */
 
@@ -168,7 +168,7 @@ void print_connected(struct connect_data *cdata /* space for connectivity data *
 
 /* Free the edge list created by find_edges. */
 void free_edgeslist(struct edgeslist *edge_list /* list to be freed */
-                    )
+)
 {
   struct edgeslist *next_list; /* next guy in list */
 

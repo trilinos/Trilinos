@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -79,7 +79,8 @@ int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
 
   // Launch 3 teams of the maximum number of threads per team
-  const team_policy policy( 3 , team_policy::team_size_max( hello_world() ) );
+  const int team_size_max = team_policy(3,1).team_size_max( hello_world(), Kokkos::ParallelReduceTag());
+  const team_policy policy( 3 , team_size_max );
   
   int sum = 0;
   Kokkos::parallel_reduce( policy , hello_world() , sum );

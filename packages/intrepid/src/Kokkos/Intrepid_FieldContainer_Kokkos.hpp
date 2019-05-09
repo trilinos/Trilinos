@@ -1,8 +1,9 @@
+#ifdef Intrepid_ENABLE_DEPRECATED_KOKKOS_CODE
 
 #ifndef INTREPID_FIELDCONTAINER_KOKKOS_HPP
 #define INTREPID_FIELDCONTAINER_KOKKOS_HPP
 
-//#ifdef HAVE_INTREPID_KOKKOSCORE
+//#ifdef INTREPID_OLD_KOKKOS_CODE
 #include "Kokkos_Core.hpp"
 #include "Sacado.hpp"
 #include <impl/Kokkos_Timer.hpp>
@@ -359,4 +360,6 @@ struct Return_Type<const Intrepid::FieldContainer_Kokkos<FadType, Layout, Device
 #include "Intrepid_FieldContainer_Kokkos_PThreads_Right.hpp"
 #include "Intrepid_FieldContainer_Kokkos_Serial_Left.hpp"
 #include "Intrepid_FieldContainer_Kokkos_Serial_Right.hpp"
+#endif
+
 #endif

@@ -34,82 +34,164 @@
 #ifndef STKTOPOLOGY_DETAIL_META_FUNCTION_HPP
 #define STKTOPOLOGY_DETAIL_META_FUNCTION_HPP
 
-#include <boost/mpl/vector.hpp>
-#include <boost/mpl/vector_c.hpp>
-#include <boost/mpl/bool.hpp>
-#include <boost/mpl/integral_c.hpp>
-#include <boost/mpl/at.hpp>
-#include <boost/mpl/eval_if.hpp>
-#include <boost/mpl/identity.hpp>
-
-#define STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(name,result)     \
-  template <typename Topology>                                   \
-  struct name##_                                       \
-    : public boost::mpl::integral_c< result, Topology::name >    \
-  {};
+#include <type_traits>
 
 namespace stk { namespace topology_detail {
 
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(is_valid,bool)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(is_shell,bool)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(has_homogeneous_faces,bool)
-
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(rank,topology::rank_t)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(side_rank,topology::rank_t)
-
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(dimension,unsigned)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_nodes,unsigned)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_vertices,unsigned)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_edges,unsigned)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_faces,unsigned)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(num_permutations,unsigned)
-
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(base,topology::topology_t)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(edge_topology,topology::topology_t)
-
-
-template <typename Topology, unsigned SpatialDimension>
-struct defined_on_spatial_dimension_
-  : public boost::mpl::eval_if_c<  (SpatialDimension < 4)
-      , boost::mpl::at_c< typename Topology::spatial_dimension_vector, SpatialDimension >
-      , boost::mpl::identity< boost::mpl::false_>
-    >::type
-{};
-
+//------------------------------------------------------------------------------
 template <typename Topology, unsigned EdgeOrdinal>
-struct edge_node_ordinals_
-  : public boost::mpl::eval_if_c<  (EdgeOrdinal < num_edges_<Topology>::value)
-      , boost::mpl::at_c< typename Topology::edge_node_ordinals_vector, EdgeOrdinal >
-      , boost::mpl::identity< boost::mpl::vector_c<unsigned> >
-    >::type
-{};
+STK_INLINE_FUNCTION
+constexpr unsigned num_edge_nodes_() {
+  return (Topology::edge_node_ordinals_offsets[EdgeOrdinal+1] - Topology::edge_node_ordinals_offsets[EdgeOrdinal]);
+}
 
 template <typename Topology, unsigned FaceOrdinal>
-struct face_topology_
-  : public boost::mpl::eval_if_c<  (FaceOrdinal < num_faces_<Topology>::value)
-      , boost::mpl::at_c< typename Topology::face_topology_vector, FaceOrdinal >
-      , boost::mpl::identity< boost::mpl::integral_c<topology::topology_t, topology::INVALID_TOPOLOGY> >
-    >::type
-{};
+STK_INLINE_FUNCTION
+constexpr unsigned num_face_nodes_() {
+  return (Topology::face_node_ordinals_offsets[FaceOrdinal+1] - Topology::face_node_ordinals_offsets[FaceOrdinal]);
+}
 
+template <typename Topology, unsigned EdgeOrdinal, unsigned NodeOrdinal>
+STK_INLINE_FUNCTION
+constexpr unsigned edge_node_ordinal_()
+{
+  return (Topology::edge_node_ordinals_vector[Topology::edge_node_ordinals_offsets[EdgeOrdinal] + NodeOrdinal]);
+}
+
+template <typename Topology, unsigned FaceOrdinal, unsigned NodeOrdinal>
+STK_INLINE_FUNCTION
+constexpr unsigned face_node_ordinal_()
+{
+  return (Topology::face_node_ordinals_vector[Topology::face_node_ordinals_offsets[FaceOrdinal] + NodeOrdinal]);
+}
+
+template <typename Topology, unsigned PermutationOrdinal, unsigned NodeOrdinal>
+STK_INLINE_FUNCTION
+constexpr unsigned permutation_node_ordinal_()
+{
+  return Topology::permutation_node_ordinals_vector[PermutationOrdinal*Topology::num_nodes + NodeOrdinal];
+}
+
+
+//------------------------------------------------------------------------------
+template <typename Topology, unsigned SpatialDimension>
+STK_INLINE_FUNCTION
+constexpr bool defined_on_spatial_dimension_()
+{
+  static_assert(SpatialDimension < 4, "Invalid spatial dimension");
+  return Topology::spatial_dimension_vector[SpatialDimension];
+}
+
+
+//------------------------------------------------------------------------------
 template <typename Topology, unsigned FaceOrdinal>
-struct face_node_ordinals_
-  : public boost::mpl::eval_if_c<  (FaceOrdinal < num_faces_<Topology>::value)
-      , boost::mpl::at_c< typename Topology::face_node_ordinals_vector, FaceOrdinal >
-      , boost::mpl::identity< boost::mpl::vector_c<unsigned> >
-    >::type
-{};
+STK_INLINE_FUNCTION
+constexpr topology::topology_t face_topology_()
+{
+  return (FaceOrdinal < Topology::num_faces) ? Topology::face_topology_vector[FaceOrdinal] : topology::INVALID_TOPOLOGY;
+}
 
-template <typename Topology, unsigned PermutationOrdinal>
-struct permutation_node_ordinals_
-  : public boost::mpl::eval_if_c<  (PermutationOrdinal < num_permutations_<Topology>::value)
-      , boost::mpl::at_c< typename Topology::permutation_node_ordinals_vector, PermutationOrdinal >
-      , boost::mpl::identity< boost::mpl::vector_c<unsigned> >
-    >::type
-{};
 
+//------------------------------------------------------------------------------
+template <typename Topology, typename OrdinalOutputFunctor, unsigned EdgeOrdinal, unsigned NumNodes, unsigned CurrentNode = 0>
+struct edge_node_ordinals_impl_ {
+  STK_INLINE_FUNCTION
+  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+    return fillOutput(edge_node_ordinal_<Topology, EdgeOrdinal, CurrentNode>()),
+           edge_node_ordinals_impl_<Topology, OrdinalOutputFunctor, EdgeOrdinal, NumNodes, CurrentNode+1>::execute(fillOutput);
+  }
+};
+
+template <typename Topology, typename OrdinalOutputFunctor, unsigned EdgeOrdinal, unsigned NumNodes>
+struct edge_node_ordinals_impl_<Topology, OrdinalOutputFunctor, EdgeOrdinal, NumNodes, NumNodes> {
+  STK_INLINE_FUNCTION
+  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+    return 0;
+  }
+};
+
+template <typename Topology, unsigned EdgeOrdinal, typename OrdinalOutputFunctor>
+STK_INLINE_FUNCTION
+constexpr typename std::enable_if<(EdgeOrdinal < Topology::num_edges), int>::type edge_node_ordinals_(OrdinalOutputFunctor fillOutput)
+{
+  return edge_node_ordinals_impl_<Topology, OrdinalOutputFunctor, EdgeOrdinal, num_edge_nodes_<Topology, EdgeOrdinal>()>::execute(fillOutput);
+}
+
+template <typename Topology, unsigned EdgeOrdinal, typename OrdinalOutputFunctor>
+STK_INLINE_FUNCTION
+constexpr typename std::enable_if<(EdgeOrdinal >= Topology::num_edges), int>::type edge_node_ordinals_(OrdinalOutputFunctor fillOutput)
+{
+  return 0;
+}
+
+
+//------------------------------------------------------------------------------
+template <typename Topology, typename OrdinalOutputFunctor, unsigned FaceOrdinal, unsigned NumNodes, unsigned CurrentNode = 0>
+struct face_node_ordinals_impl_ {
+  STK_INLINE_FUNCTION
+  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+    return fillOutput(face_node_ordinal_<Topology, FaceOrdinal, CurrentNode>()),
+           face_node_ordinals_impl_<Topology, OrdinalOutputFunctor, FaceOrdinal, NumNodes, CurrentNode+1>::execute(fillOutput);
+  }
+};
+
+template <typename Topology, typename OrdinalOutputFunctor, unsigned FaceOrdinal, unsigned NumNodes>
+struct face_node_ordinals_impl_<Topology, OrdinalOutputFunctor, FaceOrdinal, NumNodes, NumNodes> {
+  STK_INLINE_FUNCTION
+  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+    return 0;
+  }
+};
+
+template <typename Topology, unsigned FaceOrdinal, typename OrdinalOutputFunctor>
+STK_INLINE_FUNCTION
+constexpr typename std::enable_if<(FaceOrdinal < Topology::num_faces), int>::type face_node_ordinals_(OrdinalOutputFunctor fillOutput)
+{
+  return face_node_ordinals_impl_<Topology, OrdinalOutputFunctor, FaceOrdinal, num_face_nodes_<Topology, FaceOrdinal>()>::execute(fillOutput);
+}
+
+template <typename Topology, unsigned FaceOrdinal, typename OrdinalOutputFunctor>
+STK_INLINE_FUNCTION
+constexpr typename std::enable_if<(FaceOrdinal >= Topology::num_faces), int>::type face_node_ordinals_(OrdinalOutputFunctor fillOutput)
+{
+  return 0;
+}
+
+
+//------------------------------------------------------------------------------
+template <typename Topology, typename OrdinalOutputFunctor, unsigned PermutationOrdinal, unsigned NumNodes, unsigned CurrentNode = 0>
+struct permutation_node_ordinals_impl_ {
+  STK_INLINE_FUNCTION
+  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+    return fillOutput(permutation_node_ordinal_<Topology, PermutationOrdinal, CurrentNode>()),
+           permutation_node_ordinals_impl_<Topology, OrdinalOutputFunctor, PermutationOrdinal, NumNodes, CurrentNode+1>::execute(fillOutput);
+  }
+};
+
+template <typename Topology, typename OrdinalOutputFunctor, unsigned PermutationOrdinal, unsigned NumNodes>
+struct permutation_node_ordinals_impl_<Topology, OrdinalOutputFunctor, PermutationOrdinal, NumNodes, NumNodes> {
+  STK_INLINE_FUNCTION
+  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+    return 0;
+  }
+};
+
+template <typename Topology, unsigned PermutationOrdinal, typename OrdinalOutputFunctor>
+STK_INLINE_FUNCTION
+constexpr typename std::enable_if<(PermutationOrdinal < Topology::num_permutations), int>::type permutation_node_ordinals_(OrdinalOutputFunctor fillOutput)
+{
+  return permutation_node_ordinals_impl_<Topology, OrdinalOutputFunctor, PermutationOrdinal, Topology::num_nodes>::execute(fillOutput);
+}
+
+template <typename Topology, unsigned PermutationOrdinal, typename OrdinalOutputFunctor>
+STK_INLINE_FUNCTION
+constexpr typename std::enable_if<(PermutationOrdinal >= Topology::num_permutations), int>::type permutation_node_ordinals_(OrdinalOutputFunctor fillOutput)
+{
+  return 0;
+}
+
+
+//------------------------------------------------------------------------------
 }} //namespace stk::topology_detail
-
-#undef STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION
 
 #endif //STKTOPOLOGY_DETAIL_META_FUNCTION_HPP

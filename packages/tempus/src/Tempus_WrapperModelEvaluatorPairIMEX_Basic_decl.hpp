@@ -83,7 +83,8 @@ public:
     /// Set parameters for application implicit ModelEvaluator solve.
     virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
       Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs,
+      EVALUATION_TYPE /* evaluationType */ = SOLVE_FOR_X)
     {
       timeDer_ = timeDer;
       wrapperImplicitInArgs_.setArgs(inArgs);
@@ -140,9 +141,20 @@ public:
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> & out) const;
   //@}
 
-private:
-  /// Default constructor - not allowed
+protected:
+
+  /// Default constructor -- only allowed for derived classes
   WrapperModelEvaluatorPairIMEX_Basic(){}
+
+  /// Setup ME when using default constructor -- for derived classes
+  void setup(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel)
+  {
+    setExplicitModel(explicitModel);
+    setImplicitModel(implicitModel);
+    initialize();
+  }
 
 protected:
 

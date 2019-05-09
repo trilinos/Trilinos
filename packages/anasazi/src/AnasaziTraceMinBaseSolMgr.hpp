@@ -47,7 +47,8 @@
 */
 
 #include "AnasaziBasicOrthoManager.hpp"
-#include "AnasaziBasicOutputManager.hpp"
+#include "AnasaziOutputManager.hpp"
+#include "AnasaziOutputStreamTraits.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEigenproblem.hpp"
@@ -65,12 +66,7 @@
 #include "AnasaziTypes.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
-#ifdef TEUCHOS_DEBUG
-#  include <Teuchos_FancyOStream.hpp>
-#endif
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+#include "Teuchos_FancyOStream.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -133,6 +129,9 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - Solver parameters
    *      - \c "Which" - a \c string that specifies whether we want the largest eigenvalues "LM" or the smallest "SM". Default: "SM"
    *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: ::Errors
+   *      - \c "Output Stream" - a reference-counted pointer to the formatted output stream where all
+   *                             solver output is sent.  Default: Teuchos::getFancyOStream ( Teuchos::rcpFromRef (std::cout) )
+   *      - \c "Output Processor" - an \c int specifying the MPI processor that will print solver/timer details.  Default: 0
    *      - \c "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
    *      - \c "Saddle Solver Type" - a \c string specifying how to solve the saddle point problem arising at each iteration.
    *           Options are "Projected Krylov", "Schur Complement", and "Block Diagonal Preconditioned Minres". Default: "Projected Krylov"
@@ -258,7 +257,7 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
   int blockSize_, numBlocks_, numRestartBlocks_;
 
   // Output variables
-  RCP<BasicOutputManager<ScalarType> > printer_;
+  RCP<OutputManager<ScalarType> > printer_;
 
   // Convergence variables
   MagnitudeType convTol_;
@@ -351,49 +350,20 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Output parameters
 
-  // output stream
-  std::string fntemplate = "";
-  bool allProcs = false;
-  if (pl.isParameter("Output on all processors")) {
-    if (Teuchos::isParameterType<bool>(pl,"Output on all processors")) {
-      allProcs = pl.get("Output on all processors",allProcs);
-    } else {
-      allProcs = ( Teuchos::getParameter<int>(pl,"Output on all processors") != 0 );
-    }
-  }
-  fntemplate = pl.get("Output filename template",fntemplate);
-  int MyPID;
-# ifdef HAVE_MPI
-    // Initialize MPI
-    int mpiStarted = 0;
-    MPI_Initialized(&mpiStarted);
-    if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
-    else MyPID=0;
-# else 
-    MyPID = 0;
-# endif
-  if (fntemplate != "") {
-    std::ostringstream MyPIDstr;
-    MyPIDstr << MyPID;
-    // replace %d in fntemplate with MyPID
-    int pos, start=0;
-    while ( (pos = fntemplate.find("%d",start)) != -1 ) {
-      fntemplate.replace(pos,2,MyPIDstr.str());
-      start = pos+2;
-    }
-  }
-  RCP<ostream> osp;
-  if (fntemplate != "") {
-    osp = rcp( new std::ofstream(fntemplate.c_str(),std::ios::out | std::ios::app) );
-    if (!*osp) {
-      osp = Teuchos::rcpFromRef(std::cout);
-      std::cout << "Anasazi::TraceMinBaseSolMgr::constructor(): Could not open file for write: " << fntemplate << std::endl;
-    }
+  // Create a formatted output stream to print to.
+  // See if user requests output processor.
+  int osProc = pl.get("Output Processor", 0);
+     
+  // If not passed in by user, it will be chosen based upon operator type.
+  Teuchos::RCP<Teuchos::FancyOStream> osp;
+
+  if (pl.isParameter("Output Stream")) {
+    osp = Teuchos::getParameter<Teuchos::RCP<Teuchos::FancyOStream> >(pl,"Output Stream");
   }
   else {
-    osp = Teuchos::rcpFromRef(std::cout);
+    osp = OutputStreamTraits<OP>::getOutputStream (*problem_->getOperator(), osProc);
   }
-  // Output manager
+
   int verbosity = Anasazi::Errors;
   if (pl.isParameter("Verbosity")) {
     if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
@@ -402,14 +372,7 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
       verbosity = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
     }
   }
-  if (allProcs) {
-    // print on all procs
-    printer_ = rcp( new BasicOutputManager<ScalarType>(verbosity,osp,MyPID) );
-  }
-  else {
-    // print only on proc 0
-    printer_ = rcp( new BasicOutputManager<ScalarType>(verbosity,osp,0) );
-  }
+  printer_ = rcp( new OutputManager<ScalarType>(verbosity,osp) );
 
   // TODO: Add restart parameters to TraceMin-Davidson
 

@@ -40,7 +40,7 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
 #include "stk_mesh/baseImpl/FieldBaseImpl.hpp"  // for FieldBaseImpl
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf
 
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
@@ -230,8 +230,12 @@ FieldBase * FieldRepository::declare_field(
 
 void FieldRepository::verify_and_clean_restrictions(const Part& superset, const Part& subset)
 {
+  stk::mesh::EntityRank partRank = subset.primary_entity_rank();
   for ( FieldVector::iterator f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
-    (*f)->m_impl.verify_and_clean_restrictions( superset, subset );
+    if (partRank == stk::topology::INVALID_RANK || partRank == (*f)->entity_rank())
+    {
+      (*f)->m_impl.verify_and_clean_restrictions( superset, subset );
+    }
   }
 }
 

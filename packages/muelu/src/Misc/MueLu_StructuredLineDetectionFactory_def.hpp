@@ -61,7 +61,6 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",               Teuchos::null, "Generating factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",     Teuchos::null, "Generating factory for coorindates");
     validParamList->set< std::string >           ("orientation",               "Z", "Lines orientation");
     validParamList->set< RCP<const FactoryBase> >("lNodesPerDim",    Teuchos::null, "Number of nodes per spatial dimension provided by CoordinatesTransferFactory.");
 
@@ -71,7 +70,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void StructuredLineDetectionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
-    Input(currentLevel, "Coordinates");
     // Request the global number of nodes per dimensions
     if(currentLevel.GetLevelID() == 0) {
       if(currentLevel.IsAvailable("lNodesPerDim", NoFactory::get())) {
@@ -89,8 +87,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void StructuredLineDetectionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
 
-    using xdMV = Xpetra::MultiVector<double, LO, GO, NO>;
-
     // The following three variables are needed by the line smoothers in Ifpack/Ifpack2
     LO                        NumZDir        = 0;
     Teuchos::ArrayRCP<LO>     VertLineId     = Teuchos::arcp<LO>(0);
@@ -101,9 +97,8 @@ namespace MueLu {
 
     // Extract data from currentLevel
     RCP<Matrix>      A            = Get< RCP<Matrix> >(currentLevel, "A");
-    RCP<xdMV>        Coordinates  = Get< RCP<xdMV> >  (currentLevel, "Coordinates");
     Array<LO>        lNodesPerDir = Get<Array<LO> >   (currentLevel, "lNodesPerDim");
-    LO numNodes    = Coordinates->getLocalLength();
+    LO numNodes    = lNodesPerDir[0]*lNodesPerDir[1]*lNodesPerDir[2];
     VertLineId.resize(numNodes);
     if(lineOrientation == "X") {
       NumZDir = lNodesPerDir[0];

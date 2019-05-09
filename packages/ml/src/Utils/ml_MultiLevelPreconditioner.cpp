@@ -483,8 +483,8 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & CurlCurlMatrix,
 }
 #ifdef NewStuff
 // ================================================ ====== ==== ==== == =
-/*! Constructor for multiphysics problems with variable dofs per node.  This version uses a 
- *  discrete laplacian and padding on coarse grids to make a hierarchy. It also allows for 
+/*! Constructor for multiphysics problems with variable dofs per node.  This version uses a
+ *  discrete laplacian and padding on coarse grids to make a hierarchy. It also allows for
  *  the removal of column nonzeros associated with Dirichlet points. To use this option
  *  the rhs and initial guess must be provided.
  */
@@ -508,7 +508,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
               dynamic_cast<Epetra_CrsMatrix *>(&RowMatrix);
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(Acrs == NULL,
-             ErrorMsg_ << "matrix must be crs to use this constructor\n"); 
+             ErrorMsg_ << "matrix must be crs to use this constructor\n");
 
   int nDofs = Acrs->NumMyRows();
   int *dofGlobals;
@@ -523,7 +523,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
   MLVec<bool> dofPresent(NotMLVecDofPresent,NotMLVecDofPresent+nNodes*maxDofPerNode);
 
   RowMatrix.Comm().SumAll(&itemp,&nGlobalNodes,1);
-  
+
   double *XXX = NULL, *YYY = NULL, *ZZZ = NULL;
 
   XXX = List_.get("x-coordinates",(double *) 0);
@@ -531,7 +531,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
   ZZZ = List_.get("z-coordinates",(double *) 0);
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG( (XXX == NULL) && (nDofs != 0),
-             ErrorMsg_ << "Must supply coordinates to use multiphysics variable dof constructor\n"); 
+             ErrorMsg_ << "Must supply coordinates to use multiphysics variable dof constructor\n");
 
   struct wrappedCommStruct epetraFramework;
 
@@ -567,8 +567,8 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
   MLextractDiag(rowPtr,   cols, vals, theDiag, epetraFramework);
   MLfindDirichlets(rowPtr,cols, vals, theDiag, dirDropTol, dirOrNot, epetraFramework);
 
-  // if the rhs and solution are provided, remove column entries 
-  // associated with Dirichlet rows. Here, we overwrite the original 
+  // if the rhs and solution are provided, remove column entries
+  // associated with Dirichlet rows. Here, we overwrite the original
   // matrix arrays to reflect removal.
 
   if (rhsAndsolProvided) {
@@ -612,8 +612,8 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
    MLrmDifferentDofsCrossings(dofPresent,maxDofPerNode,amalgRowPtr,amalgCols,nDofs+nGhost, epetraFramework, myLocalNodeIds);
 
    int iiii = amalgColMap.size();
-   
-   MLVec<double> ghostedXXX(iiii); 
+
+   MLVec<double> ghostedXXX(iiii);
    if (YYY == NULL) iiii = 0;
    MLVec<double> ghostedYYY(iiii);
    if (ZZZ == NULL) iiii = 0;
@@ -680,9 +680,9 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
 // the code is hidden behind an ifdef in ML_agg_MIS.c. You can use run in parallel
 // turning on ML_AGGR_OUTAGGR. This will output a bunch of files (one per proc per
 // level). You need to cat together files associated with each level (e.g.,
-// cat agg*_0 > agg_0 ; cat agg*_1 > agg_1 ; ....). Then, recompile with 
+// cat agg*_0 > agg_0 ; cat agg*_1 > agg_1 ; ....). Then, recompile with
 // ML_AGGR_OUTAGGR undefined but ML_AGGR_INAGGR defined. Not run in serial.
-// If the smoother is jacobi, and the max eigenvalue is fixed independent of the 
+// If the smoother is jacobi, and the max eigenvalue is fixed independent of the
 // number of procs (e.g., hacking in return 2.0; inside ML_Krylov_Get_MaxEigenvalue()),
 // then the output should be the same as the parallel run
 
@@ -693,11 +693,11 @@ extern_index = (int *) ML_allocate(sizeof(int)*(nDofs+nGhost));
 for (int i = 0; i < nNodes; i++) update_index[i] = i;
 for (int i = 0; i < nGhost; i++) extern_index[i] = i+nNodes;
 external = &(update[nNodes]);
-#endif 
+#endif
 
   RowMatrix_ = LapMat;
-  AllocatedRowMatrix_ = false;  
-                                
+  AllocatedRowMatrix_ = false;
+
   ML_CHK_ERRV(Initialize());
 
   DontSetSmoothers_ = true;   // don't make smoothers based on Laplacian
@@ -715,14 +715,14 @@ Comm_ = &(RowMatrix.Comm());
 DomainMap_ = &(RowMatrix.OperatorDomainMap());
 RangeMap_ = &(RowMatrix.OperatorRangeMap());
 
-  
+
   int levelIndex, levelIncr = -1;
 
   levelIndex = ml_->ML_finest_level;
   if (levelIndex == 0) levelIncr = 1;
 
   // shove the real matrix into ML
-    
+
   int numMyRows = Acrs->NumMyRows();
   int N_ghost   = Acrs->NumMyCols() - numMyRows;
 
@@ -730,7 +730,7 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
   ML_Operator_Init(&(altml->Amat[levelIndex]), altml->comm);
   delete LapMat;
   delete epetAmalgColMap;
-  delete epetAmalgRowMap;  
+  delete epetAmalgRowMap;
   ML_Init_Amatrix(altml,levelIndex,numMyRows, numMyRows, (void *) Acrs);
   altml->Amat[levelIndex].type = ML_TYPE_CRS_MATRIX;
   ML_Set_Amatrix_Getrow(altml, levelIndex, ML_Epetra_CrsMatrix_getrow,
@@ -747,10 +747,10 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
     struct ML_CSR_MSRdata* ptr= (struct ML_CSR_MSRdata *) ml_->Pmat[levelIndex+levelIncr].data;
 
      // wrap crs stuff into std vectors
-    
+
     nNodesCoarse = ml_->Pmat[levelIndex+levelIncr].invec_leng;
 
-    MLVec<int>     PAmalgRowPtr(ptr->rowptr,ptr->rowptr+nNodesFine+1); 
+    MLVec<int>     PAmalgRowPtr(ptr->rowptr,ptr->rowptr+nNodesFine+1);
     MLVec<int>     PAmalgCols(ptr->columns,ptr->columns+(ptr->rowptr)[nNodesFine] );
     MLVec<double>  PAmalgVals(ptr->values,ptr->values + (ptr->rowptr)[nNodesFine] );
     MLVec<int>     newPRowPtr(nDofs+1);
@@ -775,7 +775,7 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
     mlFramework.myPid    = RowMatrix.Comm().MyPID();
     mlFramework.maxDofPerNode = maxDofPerNode;
     mlFramework.vecSize    = maxDofPerNode*(nGhostNew+ml_->Pmat[levelIndex+levelIncr].invec_leng);
-   
+
     MLShove(&(altml->Pmat[levelIndex+levelIncr]),newPRowPtr,newPCols,newPVals,
             ml_->Pmat[levelIndex+levelIncr].invec_leng*maxDofPerNode,
             dofCommUsingMlNodalMatrix, mlFramework, maxDofPerNode*nGhostNew);
@@ -785,7 +785,7 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
                            &(altml->SingleLevel[levelIndex]));
 
     // take the transpose and push in Rmat
-   
+
     ML_Operator_Clean(&(altml->Rmat[levelIndex]));
     ML_Operator_Init(&(altml->Rmat[levelIndex]), altml->comm);
     ML_Gen_Restrictor_TransP(altml, levelIndex, levelIndex+levelIncr, NULL);
@@ -798,36 +798,36 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
 
     int nCoarse = altml->Amat[levelIndex+levelIncr].outvec_leng;
 
-    // the coarse level matrix might have some empty rows due to the 
+    // the coarse level matrix might have some empty rows due to the
     // padding intended to force all coarse matrices to have the same
-    // number of dofs per node. For these empty rows, we want to 
+    // number of dofs per node. For these empty rows, we want to
     // stick in some Dirichlet points. It turns out that this would
-    // be real easy with ML's MSR matrices. We would just looks for 
+    // be real easy with ML's MSR matrices. We would just looks for
     // zeros on the diagonal and replace them by ones. However, I'd
     // like to prepare the code for MueLu and CRS matrices. So ...
     // I instead copy the MSR data to a buncy of CRS arrays. I then
     // invoke MLfindEmptyRows() & MLreplaceEmptyByDir() that are intended
     // for CRS matrices. Finally, I need to copy these back to the
     // MSR that ML wants.
-  
+
     // For a code like MueLu that works with CRS matrices, we could
     // perhaps just wrap the CRS vectors into MLVec's instead of copy as is
-    // done for ML. We'd have to be careful that there is actually 
+    // done for ML. We'd have to be careful that there is actually
     // enough storage for the new 1's entries.
     //
-    //  MLVec<int>    AcoarseRowPtr(newptr->rowptr, newptr->rowptr +  nCoarse+1); 
+    //  MLVec<int>    AcoarseRowPtr(newptr->rowptr, newptr->rowptr +  nCoarse+1);
     //  MLVec<int>    AcoarseCols(  newptr->columns,newptr->columns + (newptr->rowptr)[nCoarse] );
     //  MLVec<double> AcoarseVals(  newptr->values, newptr->values  + (newptr->rowptr)[nCoarse] );
-    // 
-    //    
+    //
+    //
 
     // count the number of nonzeros (for ML)
 
     int count = 0;
-    for (int i = 0; i < (newptr->columns)[nCoarse]; i++) 
+    for (int i = 0; i < (newptr->columns)[nCoarse]; i++)
       if (newptr->values[i] != 0.0) count++;
 
-    MLVec<int>      AcoarseRowPtr( nCoarse+1); 
+    MLVec<int>      AcoarseRowPtr( nCoarse+1);
     MLVec<int>     AcoarseCols(  count );
     MLVec<double>  AcoarseVals(  count );
 
@@ -865,13 +865,13 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
        }
        (newptr->columns)[i+1] =  count;
     }
-    AcoarseRowPtr.resize(0); AcoarseCols.resize(0); AcoarseVals.resize(0); 
-    
+    AcoarseRowPtr.resize(0); AcoarseCols.resize(0); AcoarseVals.resize(0);
+
     // compute the status array for the next level indicating whether dofs
-    // are padded or real. 
+    // are padded or real.
 
     MLVec<bool>   empty;
-    if (ii != ml_->ML_num_actual_levels - 2) 
+    if (ii != ml_->ML_num_actual_levels - 2)
       MLcoarseStatus(rowEmpty, empty , status);
 
     rowEmpty.resize(0);   // MLVec.resize(0) actually frees space
@@ -901,14 +901,14 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
  *  by simply duplicating the supernodes row of P for each of the individual
  *  vertices that contribute to the supernode. If share dofs are weakly
  *  connected (or not connected at all), nothing special is done (other than
- *  the ususal ignoring of weak connections). One last trick is employed, 
+ *  the ususal ignoring of weak connections). One last trick is employed,
  *  connections between supernodes and non-supernodes (i.e., regular nodes)
  *  are always assumed to be weak. Shared nodes are often used to capture
  *  interfaces or other features. By breaking these connections, the AMG
  *  can better maintain these features throughout the hierarchy. Finally, the
  *  constructor also allows for *  the removal of column nonzeros associated
  *  with Dirichlet points. To use this option the rhs and initial guess must be
- *  provided. Modification of the matrix, rhs, and initial guess must be 
+ *  provided. Modification of the matrix, rhs, and initial guess must be
  *  allowable to use this option.
  */
 ML_Epetra::MultiLevelPreconditioner::
@@ -932,7 +932,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
               dynamic_cast<Epetra_CrsMatrix *>(&RowMatrix);
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(Acrs == NULL,
-             ErrorMsg_ << "matrix must be crs to use this constructor\n"); 
+             ErrorMsg_ << "matrix must be crs to use this constructor\n");
 
   int nDofs = Acrs->NumMyRows();
   int *dofGlobals;
@@ -948,7 +948,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
   ZZZ = List_.get("z-coordinates",(double *) 0);
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(XXX == NULL,
-             ErrorMsg_ << "Must supply coordinates to use shaerd dof constructor\n"); 
+             ErrorMsg_ << "Must supply coordinates to use shaerd dof constructor\n");
 
   struct wrappedCommStruct epetraFramework;
 
@@ -982,8 +982,8 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
   MLextractDiag(rowPtr,   cols, vals, theDiag, epetraFramework);
   MLfindDirichlets(rowPtr,cols, vals, theDiag, dirDropTol, dirOrNot, epetraFramework);
 
-  // if the rhs and solution are provided, remove column entries 
-  // associated with Dirichlet rows. Here, we overwrite the original 
+  // if the rhs and solution are provided, remove column entries
+  // associated with Dirichlet rows. Here, we overwrite the original
   // matrix arrays to reflect removal.
 
   if (rhsAndsolProvided) {
@@ -1016,10 +1016,10 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
         epetraFramework, nLocalNodes, nLocalPlusGhostNodes);
 
     int iiii = Acrs->ColMap().NumMyElements();
-   
+
     MLVec<double> xx(iiii);   if (YYY == NULL) iiii = 0;
     MLVec<double> yy(iiii);   if (ZZZ == NULL) iiii = 0;
-    MLVec<double> zz(iiii); 
+    MLVec<double> zz(iiii);
 
     for (int i = 0; i < nDofs; i++) xx[i] = XXX[i];
     nodalComm(xx, myLocalNodeIds, epetraFramework);
@@ -1032,7 +1032,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
       for (int i = 0; i < nDofs; i++) zz[i] = ZZZ[i];
       nodalComm(zz, myLocalNodeIds, epetraFramework);
     }
-    
+
     MLVec<int> newGlobals(iiii);
 
     ZeroDist(xx,yy,zz,rowPtr,cols,vals,theDiag,tol,rowZeros,colZeros,distTol);
@@ -1052,7 +1052,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
     int        nNonShared;
 
     nNonShared = BuildNonSharedMap(newMap, groupHead, groupNext);
-    
+
     // fill the ghost part of newMap
     newMap.resize(nDofs+nGhost);
     nodalComm(groupHead, myLocalNodeIds, epetraFramework);
@@ -1078,7 +1078,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
     MLVec<int> newRowPtr(nNonShared+1);
     MLVec<int> newCols(cols.size());
 
-    buildCompressedA(rowPtr, cols, vals, theDiag, groupHead, groupNext, 
+    buildCompressedA(rowPtr, cols, vals, theDiag, groupHead, groupNext,
                      newRowPtr, newCols, newMap, nNonShared, tol);
 
     MLVec<double> newVals(newCols.size());
@@ -1126,8 +1126,8 @@ external = &(update[nNonShared]);
 #endif
 
   RowMatrix_ = LapMat;
-  AllocatedRowMatrix_ = false;  
-                                
+  AllocatedRowMatrix_ = false;
+
   ML_CHK_ERRV(Initialize());
 
   DontSetSmoothers_ = true;   // don't make smoothers based on Laplacian
@@ -1145,14 +1145,14 @@ Comm_ = &(RowMatrix.Comm());
 DomainMap_ = &(RowMatrix.OperatorDomainMap());
 RangeMap_ = &(RowMatrix.OperatorRangeMap());
 
-  
+
   int levelIndex, levelIncr = -1;
 
   levelIndex = ml_->ML_finest_level;
   if (levelIndex == 0) levelIncr = 1;
 
   // shove actual discretization matrix into ML
-    
+
   int numMyRows = Acrs->NumMyRows();
   int N_ghost   = Acrs->NumMyCols() - numMyRows;
 
@@ -1160,7 +1160,7 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
   ML_Operator_Init(&(altml->Amat[levelIndex]), altml->comm);
   delete LapMat;
   delete epetNewColMap;
-  delete epetNewRowMap;  
+  delete epetNewRowMap;
   ML_Init_Amatrix(altml,levelIndex,numMyRows, numMyRows, (void *) Acrs);
   altml->Amat[levelIndex].type = ML_TYPE_CRS_MATRIX;
   ML_Set_Amatrix_Getrow(altml, levelIndex, ML_Epetra_CrsMatrix_getrow,
@@ -1176,7 +1176,7 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
   int                  *Prowptr= ptr->rowptr;
 
   // count the number of nonzeros in uncompressed P
-    
+
   int nnz = 0;
   for (int i = 0; i < nDofs; i++) {
      int j = newMap[i];
@@ -1184,7 +1184,7 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
   }
 
   // allocated new CSR arrays and fill with uncompressed data
-  
+
   MLVec<int> newPRowPtr(nDofs+1);
   MLVec<int>     newPCols(nnz);
   MLVec<double>  newPVals(nnz);
@@ -1200,30 +1200,30 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
     newPRowPtr[i+1] = nnz;
   }
 
-  // stick new CSR arrays into the hierarchy 
- 
+  // stick new CSR arrays into the hierarchy
+
   struct ML_CSR_MSRdata* Newptr = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
   if (Newptr == NULL) pr_error("no space for NewPtr\n");
 
   Newptr->rowptr  = newPRowPtr.getptr();     // getptr() + relinquishData
-  Newptr->columns = newPCols.getptr();       // effectively pulls data  
-  Newptr->values  = newPVals.getptr();       // out of a MLVec and empties 
+  Newptr->columns = newPCols.getptr();       // effectively pulls data
+  Newptr->values  = newPVals.getptr();       // out of a MLVec and empties
   newPRowPtr.relinquishData();               // MLVec's contents
-  newPCols.relinquishData();                
+  newPCols.relinquishData();
   newPVals.relinquishData();
 
 
   // old communication widget should still be good as uncompressed matrix has
   // the same ghost information. So, we'll take it out of the hierarchy, then
   // set it to null within the hierarchy so that ML_Operator_Clean() does not
-  // free it. Then later will manuall assign the save point to the new 
+  // free it. Then later will manuall assign the save point to the new
   // uncompressed matrix within the hierarchy
-  
+
   int insize  = ml_->Pmat[levelIndex+levelIncr].invec_leng;
   ML_CommInfoOP *newPrecComm = altml->Pmat[levelIndex+levelIncr].getrow->pre_comm;
   altml->Pmat[levelIndex+levelIncr].getrow->pre_comm = NULL;
   ML_Operator_Clean(&(altml->Pmat[levelIndex+levelIncr]));
-  ML_Operator_Init(&(altml->Pmat[levelIndex+levelIncr]), altml->comm); 
+  ML_Operator_Init(&(altml->Pmat[levelIndex+levelIncr]), altml->comm);
   ML_Operator_Set_ApplyFuncData(&(altml->Pmat[levelIndex+levelIncr]), insize,
                                 nDofs, Newptr, nDofs, NULL,0);
   ML_Operator_Set_Getrow(&(altml->Pmat[levelIndex+levelIncr]),nDofs,CSR_getrow);
@@ -1237,12 +1237,12 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
                           &(altml->SingleLevel[levelIndex]));
 
   // take the transpose and push in Rmat
-   
+
   ML_Operator_Clean(&(altml->Rmat[levelIndex]));
   ML_Operator_Init(&(altml->Rmat[levelIndex]), altml->comm);
   ML_Gen_Restrictor_TransP(altml, levelIndex, levelIndex+levelIncr, NULL);
 
-  // re-do all RAPs with the real A (as opposesd to Laplacian) 
+  // re-do all RAPs with the real A (as opposesd to Laplacian)
   for (int ii = 0; ii < ml_->ML_num_actual_levels - 1 ; ii++) {
 
     ML_Operator_Clean(&(altml->Amat[levelIndex+levelIncr]));
@@ -2015,7 +2015,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ml_nodes_->comm->ML_mypid  = Comm().MyPID();
     ml_nodes_->output_level = OutputLevel;
 #ifdef ML_MPI
-    ml_nodes_->comm->USR_comm = dynamic_cast<const Epetra_MpiComm*>(&Comm())->Comm(); 
+    ml_nodes_->comm->USR_comm = dynamic_cast<const Epetra_MpiComm*>(&Comm())->Comm();
 #endif
     ML_Set_Label(ml_nodes_, const_cast<char*>("nodes"));
 #ifdef HAVE_ML_EPETRAEXT
@@ -2071,7 +2071,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
      ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
 
      if( List_.isParameter("aggregation: req aggregates per process") )
-       ReqAggrePerProc=List_.get("aggregation: req aggregates per proces",
+       ReqAggrePerProc=List_.get("aggregation: req aggregates per process",
                                  ReqAggrePerProc);
      else {
        ReqAggrePerProc=List_.get("aggregation: next-level aggregates per process",
@@ -4348,13 +4348,13 @@ ResetTime()
 */
 
 #ifdef NewStuff
-// All of these functions are used by the multiphysics variable dof per node 
+// All of these functions are used by the multiphysics variable dof per node
 // precondiitoner. They should be made as private functions of this class.
 
 int MLcolGlobalIds(struct wrappedCommStruct& framework, MLVec<int>& myGids)
 {
    /***************************************************************************
-    Gets global column ids from an epetra matrx. 
+    Gets global column ids from an epetra matrx.
    ***************************************************************************/
 
    int nLocal;
@@ -4419,8 +4419,8 @@ int dofCommUsingMlNodalMatrix(double *data, void *widget)
 int MLnMyGhost(struct wrappedCommStruct& framework)
 {
    /***************************************************************************
-    Determine the number of ghost nodes based on either an ML matrix or an 
-    epetra matrix. 
+    Determine the number of ghost nodes based on either an ML matrix or an
+    epetra matrix.
    ***************************************************************************/
 
    if (framework.whichOne == mlType) {
@@ -4437,11 +4437,11 @@ int MLnMyGhost(struct wrappedCommStruct& framework)
    }
 }
 
-/*! 
-  @brief Take Crs std::vec's, make arrays and shove them into an ML Operator 
- 
+/*!
+  @brief Take Crs std::vec's, make arrays and shove them into an ML Operator
+
   This includes allocating double arrays and a widget to point to them and
-  calling all the appropriate ML functions to clean out what used to be in the 
+  calling all the appropriate ML functions to clean out what used to be in the
   operator before inserting the new matrix.
 
   @param[in] rowPtr,cols,vals    Crs matrix std:vectors
@@ -4455,8 +4455,8 @@ int MLShove(ML_Operator *Mat, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double
     if (ptr == NULL) pr_error("ML_Operator_Add: no space for temp\n");
 
     ptr->rowptr = rowPtr.getptr();         // getptr() + relinquishData
-    rowPtr.relinquishData();               // effectively pulls data 
-    ptr->columns = cols.getptr();          // out of a MLVec and empties 
+    rowPtr.relinquishData();               // effectively pulls data
+    ptr->columns = cols.getptr();          // out of a MLVec and empties
     cols.relinquishData();                 // MLVec's contents
     ptr->values = vals.getptr();
     vals.relinquishData();
@@ -4468,7 +4468,7 @@ int MLShove(ML_Operator *Mat, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double
 
     ML_CommInfoOP *newPrecComm = NULL;
     if (commfunc != NULL) {
-        ML_CommInfoOP_Generate( &newPrecComm, commfunc, (void *) &framework, 
+        ML_CommInfoOP_Generate( &newPrecComm, commfunc, (void *) &framework,
                               Mat->comm, invec_leng, nGhost);
     }
     ML_Operator_Clean(Mat);
@@ -4489,7 +4489,7 @@ int MLShove(ML_Operator *Mat, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double
 int MLextractDiag(const MLVec<int>& rowPtr, const MLVec<int>& cols, const MLVec<double>& vals, MLVec<double>& diagonal, struct wrappedCommStruct &framework)
 {
 /******************************************************************************
- * extract matrix diagonal and store in diagonal. 
+ * extract matrix diagonal and store in diagonal.
  *****************************************************************************/
 
    for (int i = 0; i < (int) rowPtr.size()-1; i++) {
@@ -4505,11 +4505,11 @@ int MLextractDiag(const MLVec<int>& rowPtr, const MLVec<int>& cols, const MLVec<
 int MLfindDirichlets(const MLVec<int>& rowPtr, const MLVec<int>& cols, const MLVec<double>& vals, const MLVec<double>& diagonal, double tol, MLVec<bool>& dirOrNot, struct wrappedCommStruct &framework)
 {
 /******************************************************************************
- * Look at each matrix row and mark it as Dirichlet if there is only one 
- * "not small" nonzero on the diagonal. In determining whether a nonzero is 
+ * Look at each matrix row and mark it as Dirichlet if there is only one
+ * "not small" nonzero on the diagonal. In determining whether a nonzero is
  * "not small" use
- *           abs(A(i,j))/sqrt(abs(diag[i]*diag[j])) > tol 
- * 
+ *           abs(A(i,j))/sqrt(abs(diag[i]*diag[j])) > tol
+ *
  * On output,  dirOrNot is set to to true for Dirichlet rows, false for non-
  * Dirichlet rows
  *****************************************************************************/
@@ -4545,17 +4545,17 @@ int MLrmDirichletCols(MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals,
  *  When removing matrix entries, we can either set a zero in vals[k] or
  *  if squeeze == 1 we can actually really remove the entries and change
  *  rowPtr to reflect the removal.
- *  
+ *
  *  On output:  rowPtr, cols, vals, rhs, and possible solution
  *    are updated to reflect the removed entries.
- *  
+ *
  *  ******************************************************************************/
 
   if (!solution.empty()) {
     for (int i = 0; i < (int) rowPtr.size()-1; i++)
        if (dirOrNot[i]) solution[i] = rhs[i]/diagonal[i];
   }
-  MLVec<double> rhsCopy(dirOrNot.size()); 
+  MLVec<double> rhsCopy(dirOrNot.size());
   for (int i = 0; i < (int) rowPtr.size()-1; i++) rhsCopy[i] = rhs[i];
   dofComm(rhsCopy, framework);
 
@@ -4584,7 +4584,7 @@ int MLsqueezeOutNnzs(MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals, 
  * Get rid of nonzero entries that have 0's in them and properly change
  * rowPtr to reflect this removal (either vals == NULL & vals != NULL
  * or the contrary)
- * 
+ *
  *****************************************************************************/
   int count, newStart;
 
@@ -4625,9 +4625,9 @@ int MLbuildMap(const MLVec<bool>& dofPresent, MLVec<int>& map, int nDofs)
 {
 /******************************************************************************
  *  Compute map that maps dofs in a variable dof matrix to dofs in a padded
- *  matrix. Specifically, on input: 
+ *  matrix. Specifically, on input:
  *     dofPresent[ i*maxDofPerNode+j] indicates whether or not the jth dof
- *                                    at the ith node is present in the 
+ *                                    at the ith node is present in the
  *                                    variable dof matrix (e.g., the ith node
  *                                    has an air pressure dof). true means the
  *                                    dof is present while false means it is not
@@ -4635,13 +4635,13 @@ int MLbuildMap(const MLVec<bool>& dofPresent, MLVec<int>& map, int nDofs)
  *
  * On output:
  *    map[k]                          indicates that the kth dof in the variable
- *                                    dof matrix would correspond to the 
+ *                                    dof matrix would correspond to the
  *                                    map[k]th dof in a padded system. This
  *                                    padded system is not ever created but
  *                                    would be the associated matrix if every
  *                                    node had maxDofPerNode dofs.
  *
- *    nDofs                           length of map that should equal the 
+ *    nDofs                           length of map that should equal the
  *                                    dimension of the variable dof matrix.
  *                                    It is returned here to double check this.
  *  NOTE: in parallel we would want to do something so that map[j] also
@@ -4651,7 +4651,7 @@ int MLbuildMap(const MLVec<bool>& dofPresent, MLVec<int>& map, int nDofs)
 
    count = 0;
    for (int i = 0; i < (int) dofPresent.size(); i++) {
-     if (dofPresent[i]) map[count++] = i; 
+     if (dofPresent[i]) map[count++] = i;
    }
 
    TEUCHOS_TEST_FOR_EXCEPTION(nDofs != count,std::logic_error,
@@ -4667,36 +4667,36 @@ int MLassignGhostLocalNodeIds(MLVec<int> &myLocalNodeIds, int nLocalDofs, int nL
 /******************************************************************************
     Assign the ghost portion of myLocalNodeIds[], which will be the local
     amalgamated node id associated with the kth local non-amalgamated dof.
-    It is assumed that the non-ghost portion is properly set. 
+    It is assumed that the non-ghost portion is properly set.
 
-    For ghosts, we assign a "unique" number from nLocalNodes to 
+    For ghosts, we assign a "unique" number from nLocalNodes to
     nLocalNodes+nGhostNodes-1 (which is actually nLocalPlusGhostNodes-1
-    in the code). Here, nLocalNodes refers to the number of mesh nodes owned 
+    in the code). Here, nLocalNodes refers to the number of mesh nodes owned
     by the processor. nGhostNodes is the total number of ghost mesh nodes
-    associated with all of its ghost dofs. When I say "unique", I mean that 
-    I get to pick any local numbering of the ghost nodes so long as the 
+    associated with all of its ghost dofs. When I say "unique", I mean that
+    I get to pick any local numbering of the ghost nodes so long as the
     following is true:
        a) no two ghost dofs that are associated with different
-          mesh nodes have the same nodal id. 
+          mesh nodes have the same nodal id.
        b) all ghost nodes that are associated with a processor
           have consecutive numbering
-   
+
     This is done is as follows:
-   
+
        a) communicate so that for each ghost dof, a processor knows the local
           node id on the owning proc and knows the processor that owns it
-   
+
        b) for each owning proc ...
             i) copy the owning proc local node id into a new array, and record
                as well where this information came from. That is,
-   
+
                   tempId[  j] = myLocalNodeIds[i];
                   location[j] = i;
-   
+
             ii) sort tempId to make it easier to determine whether two ghosts
                 belong to the same node. Also shuffle location[] in the same
-                way as tempId[] so tempId[j] corresonds to myLocalNodeIds[ location[j] ]. 
-   
+                way as tempId[] so tempId[j] corresonds to myLocalNodeIds[ location[j] ].
+
        c) go through tempId[] and assign a unique ghost node id to tempId[k] if
           it has a different owning proc or a different local node id on the
           owning proc. That is, increment the number of ghost node ids when
@@ -4713,13 +4713,13 @@ int MLassignGhostLocalNodeIds(MLVec<int> &myLocalNodeIds, int nLocalDofs, int nL
    // local ids associated with the owning processor. We want to convert
    // these to local ids associated with the processor on which these are
    // ghosts. Thus, we have to re-number them. In doing this re-numbering
-   // we must make sure that we find all ghosts with the same id & proc 
+   // we must make sure that we find all ghosts with the same id & proc
    // and assign a unique local id to this group. To do this find, we sort
    // sort all ghost myLocalNodeIds that are owned by the same processor.
    // Then we can look for duplicates (i.e. several ghost entries
    // corresponding to dofs with the same node id) easily and make sure these
-   // are all assigned the same local id. To do the sorting  
-   // we'll make a temporary copy of the ghosts via tempId and tempProc and 
+   // are all assigned the same local id. To do the sorting
+   // we'll make a temporary copy of the ghosts via tempId and tempProc and
    // sort this multiple times for each group owned by the same processor
 
    int* location= (int *) ML_allocate(sizeof(int)*(nLocalPlusGhostDofs - nLocalDofs + 1));
@@ -4746,13 +4746,13 @@ int MLassignGhostLocalNodeIds(MLVec<int> &myLocalNodeIds, int nLocalDofs, int nL
         if ( myProc[i] == neighbor ) {
            location[tempIndex  ] = i;
            tempId[  tempIndex++] = myLocalNodeIds[i];
-           myProc[     i       ]= -1; // mark as visited 
+           myProc[     i       ]= -1; // mark as visited
         }
      }
      ML_az_sort(&(tempId[first]), tempIndex-first, &(location[first]), NULL);
 
      for (int i = first; i < tempIndex; i++) tempProc[i] = neighbor;
-     
+
      // find next notProcessed corresponding to first non-visited guy
 
      notProcessed++;
@@ -4760,15 +4760,15 @@ int MLassignGhostLocalNodeIds(MLVec<int> &myLocalNodeIds, int nLocalDofs, int nL
        notProcessed++;
    }
    TEUCHOS_TEST_FOR_EXCEPTION(tempIndex != nLocalPlusGhostDofs-nLocalDofs,std::logic_error,
-   "poo error, number of nonzero ghosts is not consistent\n"); 
-   
-     
+   "poo error, number of nonzero ghosts is not consistent\n");
+
+
    // now assign ids to all ghost nodes (giving the same id to those with
    // the same myProc[] and the same local id (on the proc
    // that actually owns the variable associated with the ghost)
 
    int lagged = -1;
-   nLocalNodes = 0; 
+   nLocalNodes = 0;
 
    if (nLocalDofs > 0) nLocalNodes = myLocalNodeIds[nLocalDofs-1] + 1;
    nLocalPlusGhostNodes = nLocalNodes;
@@ -4776,22 +4776,22 @@ int MLassignGhostLocalNodeIds(MLVec<int> &myLocalNodeIds, int nLocalDofs, int nL
    if (nLocalDofs < nLocalPlusGhostDofs) nLocalPlusGhostNodes++; // 1st ghost node is unique
                                                // (not already accounted for)
 
-   // check if two adjacent ghost dofs correspond to different nodes. To do 
-   // this, check if they are from different processors or whether they have 
+   // check if two adjacent ghost dofs correspond to different nodes. To do
+   // this, check if they are from different processors or whether they have
    // different local node ids
-   
+
    for (int i = nLocalDofs+1; i < nLocalPlusGhostDofs; i++) {
-   
+
       lagged = nLocalPlusGhostNodes-1;
 
       // i is a new unique ghost node (not already accounted for)
-      if ((tempId[i-nLocalDofs] != tempId[i-1-nLocalDofs]) || 
+      if ((tempId[i-nLocalDofs] != tempId[i-1-nLocalDofs]) ||
           (tempProc[i-nLocalDofs]         != tempProc[i-1-nLocalDofs]))
          nLocalPlusGhostNodes++;
 
       tempId[i-1-nLocalDofs] = lagged;
    }
-   if (nLocalPlusGhostDofs > nLocalDofs) 
+   if (nLocalPlusGhostDofs > nLocalDofs)
       tempId[nLocalPlusGhostDofs-1-nLocalDofs] = nLocalPlusGhostNodes-1;
 
 
@@ -4800,32 +4800,32 @@ int MLassignGhostLocalNodeIds(MLVec<int> &myLocalNodeIds, int nLocalDofs, int nL
    for (int i = nLocalDofs; i < nLocalPlusGhostDofs; i++)
       myLocalNodeIds[location[i-nLocalDofs]] = tempId[i-nLocalDofs];
 
-   ML_free(location); 
-   ML_free(tempProc); 
-   ML_free(tempId); 
+   ML_free(location);
+   ML_free(tempProc);
+   ML_free(tempId);
 
    return 0;
 }
 
 int MLfillNodalMaps(MLVec<int> &amalgRowMap, MLVec<int> &amalgColMap,
-        MLVec<int> &myLocalNodeIds, int nLocalDofs, 
+        MLVec<int> &myLocalNodeIds, int nLocalDofs,
         struct wrappedCommStruct &framework,
         int nLocalNodes, int nLocalPlusGhostNodes)
 {
 /*
     Fill amalgRowMap and amalgColMap.
 
-    amalgRowMap is easy. It corresponds to the global id of the 1st dof of each node 
+    amalgRowMap is easy. It corresponds to the global id of the 1st dof of each node
     (owned by this processor). It is easy because it doesn't involve communication.
 
-    amalgColMap is essentially the colmap version of amalgRowMap. We basically 
+    amalgColMap is essentially the colmap version of amalgRowMap. We basically
     assign the local portion of amalgColMap in the same way as amalgRowMap. To
     get the ghost part of amalgColMap, we use nodalComm(). This routine uses
     myLocalNodeIds[] in conjunction with a function to perform amalgamated dof
     communication.
 */
 
-   MLVec<int> myGids; 
+   MLVec<int> myGids;
 
    MLcolGlobalIds(framework, myGids);
 
@@ -4833,13 +4833,13 @@ int MLfillNodalMaps(MLVec<int> &amalgRowMap, MLVec<int> &amalgColMap,
    amalgColMap.resize(nLocalPlusGhostNodes);
 
    int count = 0;
-   if (nLocalDofs > 0) { 
+   if (nLocalDofs > 0) {
       amalgRowMap[count] = myGids[0];
       amalgColMap[count] = myGids[0];
       count++;
    }
    // dofs belonging to same node must be consecutive only for the local
-   // part of myLocalNodeIds[] 
+   // part of myLocalNodeIds[]
 
    for (int i = 1; i < nLocalDofs; i++) {
       if (myLocalNodeIds[i] != myLocalNodeIds[i-1]) {
@@ -4848,27 +4848,27 @@ int MLfillNodalMaps(MLVec<int> &amalgRowMap, MLVec<int> &amalgColMap,
          count++;
       }
    }
-   nodalComm(amalgColMap,  myLocalNodeIds, framework); 
+   nodalComm(amalgColMap,  myLocalNodeIds, framework);
 
    return 0;
 }
 
 /******************************************************************************
  *****************************************************************************/
-int MLvariableDofAmalg(int nCols, const MLVec<int>& rowPtr, 
-                     const MLVec<int>& cols, const MLVec<double>& vals, 
+int MLvariableDofAmalg(int nCols, const MLVec<int>& rowPtr,
+                     const MLVec<int>& cols, const MLVec<double>& vals,
                      int nNodes, int maxDofPerNode, const MLVec<int>& map,
-                     const MLVec<double>& diag, double tol, 
+                     const MLVec<double>& diag, double tol,
                      MLVec<int>& amalgRowPtr, MLVec<int>& amalgCols,
-                     struct wrappedCommStruct &framework,
+                     struct wrappedCommStruct &/* framework */,
                      MLVec<int>& myLocalNodeIds)
 {
 /******************************************************************************
- *  Amalgmate crs matrix (rowPtr,cols,vals) and store result in 
+ *  Amalgmate crs matrix (rowPtr,cols,vals) and store result in
  *  amalgRowPtr, amalgCols.  Optionally, small vals in the non-amalgamated
- *  matrix can be dropped when performing this amalgamation  when 
+ *  matrix can be dropped when performing this amalgamation  when
  *
- *           abs(A(i,j))/sqrt(abs(diag[i]*diag[j])) < tol 
+ *           abs(A(i,j))/sqrt(abs(diag[i]*diag[j])) < tol
  *
  *  Here, the local non-amalgamated matrix is of size nRows x nCols and the
  *  resulting amalgamated matrix should have nNodes local rows.  On input,
@@ -4879,7 +4879,7 @@ int MLvariableDofAmalg(int nCols, const MLVec<int>& rowPtr,
  *****************************************************************************/
    int  blockRow = 0, blockColumn, newNzs, oldBlockRow;
    int  nNonZeros, doNotDrop;
-   int  nLocal = rowPtr.size()-1; 
+   int  nLocal = rowPtr.size()-1;
 
 
 
@@ -4894,7 +4894,7 @@ int MLvariableDofAmalg(int nCols, const MLVec<int>& rowPtr,
    newNzs = 0;
    amalgRowPtr[0] = newNzs;
 
-   doNotDrop = 0; 
+   doNotDrop = 0;
    if  (tol ==     0.0) doNotDrop = 1;
    if  (vals.empty())  doNotDrop = 1;
 
@@ -4910,7 +4910,7 @@ int MLvariableDofAmalg(int nCols, const MLVec<int>& rowPtr,
       }
 
       for (int j = rowPtr[i]; j < rowPtr[i+1]; j++) {
-        if (doNotDrop || 
+        if (doNotDrop ||
             ( fabs(vals[j]/sqrt(fabs(diag[i]*diag[cols[j]]))) >= tol)) {
            blockColumn = myLocalNodeIds[cols[j]];
            if  (isNonZero[blockColumn] == false) {
@@ -4938,16 +4938,16 @@ int MLrmDifferentDofsCrossings(const MLVec<bool>& dofPresent, int maxDofPerNode,
 {
 /******************************************************************************
  *  Remove matrix entries (i,j) where the ith node and the jth node
- *  have different dofs that are 'present'. 
+ *  have different dofs that are 'present'.
  *
- *  Specifically, on input: 
+ *  Specifically, on input:
  *    dofPresent[ i*maxDofPerNode+k] indicates whether or not the kth dof
- *                                   at the ith node is present in the 
+ *                                   at the ith node is present in the
  *                                   variable dof matrix (e.g., the ith node
  *                                   has an air pressure dof). true means the
  *                                   dof is present while false means it is not
- *                                     
- *  We create a unique id for the ith node (i.e. uniqueId[i]) via 
+ *
+ *  We create a unique id for the ith node (i.e. uniqueId[i]) via
  *      sum_{k=0 to maxDofPerNode-1} dofPresent[i*maxDofPerNode+k]*2^k
  *  and use this unique idea to remove entries (i,j) when
  *  uniqueId[i] != uniqueId[j]
@@ -4979,7 +4979,7 @@ int MLrmDifferentDofsCrossings(const MLVec<bool>& dofPresent, int maxDofPerNode,
    }
 
    MLVec<double>   empty;
-   MLsqueezeOutNnzs(rowPtr, cols, empty, keep); 
+   MLsqueezeOutNnzs(rowPtr, cols, empty, keep);
 
    return(0);
 }
@@ -4990,7 +4990,7 @@ int MLrmDifferentDofsCrossings(const MLVec<bool>& dofPresent, int maxDofPerNode,
 int MLbuildLaplacian(const MLVec<int>& rowPtr, const MLVec<int>& cols, MLVec<double>& vals, const MLVec<double>& x, const MLVec<double>& y, const MLVec<double>& z)
 {
 /******************************************************************************
- *  Given an inputMatrix (rowPtr,cols) Build a Laplacian matrix defined by 
+ *  Given an inputMatrix (rowPtr,cols) Build a Laplacian matrix defined by
  *
  *  L(i,j)  = 0                     if  inputMatrix(i,j) = 0
  *  L(i,j)  = 1/nodalDistance(i,j)  otherwise
@@ -5057,30 +5057,30 @@ int MLbuildLaplacian(const MLVec<int>& rowPtr, const MLVec<int>& cols, MLVec<dou
 
 /*! @brief Unamalgamate prolongator so that it is suitable for PDE systems
  *
- 
+
 Unamalgamate Pmat (represented as a CRS matrix via amalgRowPtr, amalgCols, amalgVals
 for two different situations:
   Case 1:  Fine level matrix is padded
            In this case, we basically replicate the unamalgamated
-           operator, except that padded dofs and Dirichlet points use 
+           operator, except that padded dofs and Dirichlet points use
            injection. Thus, PUnAmalg is equivalent to something like
                        (  Pmat      0       0  )
                        (    0     Pmat      0  )
                        (    0       0     Pmat )
            where entries associated with fine level padded dofs or Dir. BCs
-           are replaced by rows with a single nonzero (whose 
+           are replaced by rows with a single nonzero (whose
            value equals one) and the entire matrix is instead ordered
            so that dofs associated with nodes are consecutive.
- 
-  Case 2:  Fine level matrix is not padded. 
-           Thus, PUnAmalg is equivalent to 
+
+  Case 2:  Fine level matrix is not padded.
+           Thus, PUnAmalg is equivalent to
                        (  Pmat      0       0  )
                        (    0     Pmat      0  )
                        (    0       0     Pmat )
            where rows associated with dofs not present on finest level (e.g.,
            an air pressure dof within water region) are removed and rows
-           associated with Dir. BCs are replaced by rows with a single 
-           nonzero (whose value equals one) and the entire matrix is 
+           associated with Dir. BCs are replaced by rows with a single
+           nonzero (whose value equals one) and the entire matrix is
            instead ordered so dofs associated with nodes are consecutive.
 
 In both of the above cases, the coarse level discretization matrix is assumed to be padded.
@@ -5091,19 +5091,19 @@ In both of the above cases, the coarse level discretization matrix is assumed to
 @params amalgVals  CRS vals for amalgamted prolongator
 @params maxDofPerNode maximum number of degrees-of-freedom at any mesh node
 @params status    status[i*maxDofPerNode+j] refers to the jth dof at the ith node.  status()==s ==> standard element: present in fine operator and not a Dirichlet BC. status()==d ==> element corresponds to Dirichlet BC.  status()==p ==> element not present or is padded dof.
-@params fineIsPadded Indicates whether fine grid matrix includes padded dofs for those not really present in the PDE system 
+@params fineIsPadded Indicates whether fine grid matrix includes padded dofs for those not really present in the PDE system
 @params rowPtr   CRS local row pointer for resulting unamalgamated prolongator
 @params cols   CRS local cols for resulting unamalgamated prolongator
 @params vals   CRS vals for resulting unamalgamated prolongator
 */
 
-int MLunamalgP(const MLVec<int>& amalgRowPtr, const MLVec<int>& amalgCols, const MLVec<double>& amalgVals, 
+int MLunamalgP(const MLVec<int>& amalgRowPtr, const MLVec<int>& amalgCols, const MLVec<double>& amalgVals,
  int maxDofPerNode, const MLVec<char>& status, bool fineIsPadded, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals)
 {
 
    int paddedNrows;
    int Cnt, rowLength, rowCount = 0;
- 
+
    paddedNrows = (amalgRowPtr.size()-1)*maxDofPerNode;
 
    if (fineIsPadded) {
@@ -5113,7 +5113,7 @@ int MLunamalgP(const MLVec<int>& amalgRowPtr, const MLVec<int>& amalgCols, const
       /* fine level Dirichlet points also use injection.                    */
 
       Cnt  = 0;
-      for (int i=0; i < (int) amalgRowPtr.size()-1; i++) { 
+      for (int i=0; i < (int) amalgRowPtr.size()-1; i++) {
        rowLength = amalgRowPtr[i+1] -  amalgRowPtr[i];
        for (int j = 0; j < maxDofPerNode; j++) {
           rowPtr[i*maxDofPerNode+j] = Cnt;
@@ -5128,7 +5128,7 @@ int MLunamalgP(const MLVec<int>& amalgRowPtr, const MLVec<int>& amalgCols, const
       }
       rowPtr[paddedNrows] = Cnt;
       rowCount = paddedNrows;
-   
+
    }
    else {
       /* Build Pmat for non-padded fine level matrices.  Need to map from   */
@@ -5136,7 +5136,7 @@ int MLunamalgP(const MLVec<int>& amalgRowPtr, const MLVec<int>& amalgCols, const
       /* skip padded dofs.                                                  */
 
      Cnt = 0;
-     for (int i=0; i < (int) amalgRowPtr.size()-1; i++) { 
+     for (int i=0; i < (int) amalgRowPtr.size()-1; i++) {
         rowLength = amalgRowPtr[i+1] -  amalgRowPtr[i];
 
         for (int j = 0; j < maxDofPerNode; j++) {
@@ -5149,7 +5149,7 @@ int MLunamalgP(const MLVec<int>& amalgRowPtr, const MLVec<int>& amalgCols, const
                 vals[Cnt++] = amalgVals[k+amalgRowPtr[i]];
              }
           }
-          if (status[i*maxDofPerNode+j] == 'd') 
+          if (status[i*maxDofPerNode+j] == 'd')
              rowPtr[rowCount++] = Cnt;
         }
      }
@@ -5159,25 +5159,25 @@ int MLunamalgP(const MLVec<int>& amalgRowPtr, const MLVec<int>& amalgCols, const
 
 
    return(rowCount);
-} 
+}
 
-int MLfindEmptyRows(const MLVec<int>& rowPtr, const MLVec<int>& cols, const MLVec<double>& vals, MLVec<bool>& rowEmpty)
+int MLfindEmptyRows(const MLVec<int>& rowPtr, const MLVec<int>& /* cols */, const MLVec<double>& vals, MLVec<bool>& rowEmpty)
 {
 /******************************************************************************
-  Find rows that have no nonzero entries. 
+  Find rows that have no nonzero entries.
 
   Padded matrices might give rise to empty rows (e.g., after RAP) that we want
   to replace with Dirichlet rows (where the Dirichlet point has no connections
   to the rest of the matrix).
- 
+
  *****************************************************************************/
-   
+
    rowEmpty.resize(rowPtr.size()-1);
 
    for (int i = 0; i < (int) rowPtr.size()-1; i++) {
       rowEmpty[i] = true;
       for (int j = rowPtr[i]; j < rowPtr[i+1]; j++) {
-         if (vals[j] != 0.0) { 
+         if (vals[j] != 0.0) {
             rowEmpty[i] = false;
             break;
          }
@@ -5194,7 +5194,7 @@ int MLreplaceEmptyByDirichlet(MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double
   Padded matrices might give rise to empty rows (e.g., after RAP) that we want
   to replace with Dirichlet rows (where the Dirichlet point has no connections
   to the rest of the matrix).
- 
+
  *****************************************************************************/
    int nEmpties, rowStart, rowEnd, lastMoved;
    int nRows = rowPtr.size()-1;
@@ -5242,9 +5242,9 @@ int MLfineStatus(const MLVec<bool>& dofPresent, const MLVec<int>& map, const MLV
 {
 /*****************************************************************************
   Fill the status array on the finest level based on the information in both
-  dofPresent and dirOrNot.  status[i*maxDofPerNode+j] refers to the jth dof 
+  dofPresent and dirOrNot.  status[i*maxDofPerNode+j] refers to the jth dof
   at the ith node.  status()==s ==> standard element: present in fine operator
-                                    and not a Dirichlet BC. 
+                                    and not a Dirichlet BC.
                     status()==d ==> element corresponds to Dirichlet BC.
                     status()==p ==> element not present (or on coarse levels
                                                          is padded)
@@ -5264,14 +5264,14 @@ int MLfineStatus(const MLVec<bool>& dofPresent, const MLVec<int>& map, const MLV
 int MLcoarseStatus(const MLVec<bool>& rowEmpty, const MLVec<bool>& dirOrNot, MLVec<char>& status)
 {
 /*****************************************************************************
-  Fill the status array on a coarse level based on the information in dirOrNot.  
-  status[i*maxDofPerNode+j] refers to the jth dof at the ith node.  
+  Fill the status array on a coarse level based on the information in dirOrNot.
+  status[i*maxDofPerNode+j] refers to the jth dof at the ith node.
 
                     status()==s ==> standard element: present in fine operator
-                                    and not a Dirichlet BC. 
+                                    and not a Dirichlet BC.
                     status()==p ==> element is padded dof.
 
-  The main difference with MLfineStatus() is that it is assumed that the 
+  The main difference with MLfineStatus() is that it is assumed that the
   dofsPerNode at all nodes is equal to maxDofsPerNode (that is padding
   has already been used so that this is true) and that no Dirichlet
   points remain.
@@ -5303,32 +5303,32 @@ int MLsortCols(const MLVec<int>& ARowPtr, MLVec<int>& ACols, MLVec<double>& AVal
 }
 
 /****************************************************************************/
-/* Given arrays denoting pairwise vertices that are shared, make a set of 
- * linked lists that groups all shared vertices together. For example, 
+/* Given arrays denoting pairwise vertices that are shared, make a set of
+ * linked lists that groups all shared vertices together. For example,
  * consider
  *     rowZeros[0] = i; colZeros[0] = j;  // indicates i and j are shared
  *     rowZeros[1] = j; colZeros[1] = k;  // indicates j and k are shared
  *     rowZeros[2] = k; colZeros[2] = m;  // indicates k and m are shared
  *
- * Create a linked list indicated that i,j,k, and m are all shared. More 
- * generally, we might have several linked lists indicating different 
+ * Create a linked list indicated that i,j,k, and m are all shared. More
+ * generally, we might have several linked lists indicating different
  * sets of shared vertices. On output groupHead[] and groupNext[] encode
  * all of the linked lists. groupHead[] and groupNext[] are described in
  * the comments to buildCompressedA().
  */
 /****************************************************************************/
-int MergeShared(MLVec<int>& cols, MLVec<int>& rowZeros, MLVec<int>& colZeros, 
+int MergeShared(MLVec<int>& /* cols */, MLVec<int>& rowZeros, MLVec<int>& colZeros,
                 MLVec<int>& groupHead, MLVec<int>& groupNext)
 {
    int vertOne, vertTwo, vertOneHead;
    int secondGuy, currentListTwo;
    int prior;
 
-   for (int i = 0; i < groupHead.size(); i++) groupHead[i] = -1; 
-   for (int i = 0; i < groupNext.size(); i++) groupNext[i] = -1; 
+   for (int i = 0; i < groupHead.size(); i++) groupHead[i] = -1;
+   for (int i = 0; i < groupNext.size(); i++) groupNext[i] = -1;
 
 
-   for (int i = 0; i < rowZeros.size(); i++) { 
+   for (int i = 0; i < rowZeros.size(); i++) {
       vertOne = rowZeros[i];
       vertTwo = colZeros[i];
 
@@ -5359,11 +5359,11 @@ int MergeShared(MLVec<int>& cols, MLVec<int>& rowZeros, MLVec<int>& colZeros,
             // if these are the same shared group, then there is nothing
             // else to do. If they are different groups, we must merge
             // the two lists together into a single group.
-            
+
             if (groupHead[vertOne] != groupHead[vertTwo]) {
                // insert all of vertTwo's list just after the head of
                // vertOne's list
-              
+
                vertOneHead = groupHead[vertOne];
                secondGuy   = groupNext[vertOneHead];
                currentListTwo = groupHead[vertTwo];
@@ -5382,17 +5382,17 @@ int MergeShared(MLVec<int>& cols, MLVec<int>& rowZeros, MLVec<int>& colZeros,
    return 0;
 }
 /****************************************************************************/
-/* Look at the graph described by (rowPtr,cols,vals) and calculate the 
+/* Look at the graph described by (rowPtr,cols,vals) and calculate the
  * distance between any two adjacent vertices. If any of these distances
- * are less than a tol, then record these two vertices in 
+ * are less than a tol, then record these two vertices in
  * rowZeros and colZeros.
  *
  * Note: adjacent vertices that have small values are ignored. Specifically,
- * dropped entries correspond to 
- *           a(i,j) <= a(i,i)*a(j,j)*tol^2 
+ * dropped entries correspond to
+ *           a(i,j) <= a(i,i)*a(j,j)*tol^2
  */
 /****************************************************************************/
- 
+
 int ZeroDist(MLVec<double>& xxx, MLVec<double>& yyy, MLVec<double>& zzz,
              MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals,
              MLVec<double>& diagonal, double tol, MLVec<int>& rowZeros,  MLVec<int>& colZeros,
@@ -5424,14 +5424,14 @@ int ZeroDist(MLVec<double>& xxx, MLVec<double>& yyy, MLVec<double>& zzz,
    }
    rowZeros.resize(count);
    colZeros.resize(count);
-        
+
    return 0;
 }
 
 /****************************************************************************/
-/* Given a list of shared dofs (encoded within groupHead and groupNext), 
+/* Given a list of shared dofs (encoded within groupHead and groupNext),
  * compute an array that maps original rows to a compressed set of rows
- * where all shared dofs correspond to the same row in the compressed set. 
+ * where all shared dofs correspond to the same row in the compressed set.
  * The list of shared dofs is given by a strange linked list that is described
  * in the comments for buildCompressedA().
  */
@@ -5460,7 +5460,7 @@ int BuildNonSharedMap(MLVec<int>& newMap, MLVec<int>& groupHead, MLVec<int>& gro
        }
     }
     // restore groupHead
-    
+
     for (int i = 0; i < groupHead.size(); i++) {
        if (groupHead[i] < -1) groupHead[i] = -2 - groupHead[i];
     }
@@ -5470,12 +5470,12 @@ int BuildNonSharedMap(MLVec<int>& newMap, MLVec<int>& groupHead, MLVec<int>& gro
 /****************************************************************************/
 /*
 Given a set of shared dofs, build a compressed graph of the matrix. This
-compressed version is equivalent to taking any rows or columns that are 
-shared and merging them together into a single row or a single column 
+compressed version is equivalent to taking any rows or columns that are
+shared and merging them together into a single row or a single column
 within a compressed matrix. However, small entries in the original matrix
 are dropped when building the compressed graph. Specifically, dropped entries
-correspond to 
-             a(i,j) <= a(i,i)*a(j,j)*tol^2 
+correspond to
+             a(i,j) <= a(i,i)*a(j,j)*tol^2
 
 The list of shared dofs is given by a strange linked list. In particular,
 if groupHead[i] == -1, then i is not a shared dof. If groupHead[i] > -1,
@@ -5486,23 +5486,23 @@ the following when four nodes are shared (i,j,k,m):
     ______________      ______________     ______________     ______________
    | groupHead[i] |    | groupHead[j] |   | groupHead[k] |   | groupHead[m] |
    | groupNext[i]-|--->| groupNext[j]-|-->| groupNext[k]-|-->| groupNext[m] |
-    --------------      --------------     --------------      --------------   
+    --------------      --------------     --------------      --------------
 where
     groupHead[i] =    groupHead[j] =    groupHead[k] = groupHead[m]
-    groupNext[i] = j; groupNext[j] = k; groupNext[k] = m; 
-    groupNext[m] = -1; 
+    groupNext[i] = j; groupNext[j] = k; groupNext[k] = m;
+    groupNext[m] = -1;
 
 Additionally, it is assumed that map[] has already been computed such that
 map[ii] gives the row/col number in the compressed matrix corresponding to ii.
 Thus, in the above example  map[i]=map[j]=map[k]=map[m] as i,j,k,m all map
 to the same row. Such a map can be computed by invoking int BuildNonSharedMap()
-given groupHead[] and groupNext[].  Finally, newN is also given on input and 
+given groupHead[] and groupNext[].  Finally, newN is also given on input and
 it corresponds to the total number of rows in the compressed matrix.
 */
 /****************************************************************************/
 int buildCompressedA(MLVec<int>& inputRowPtr, MLVec<int>& inputCols,
                      MLVec<double>& inputVals, MLVec<double>& diagonal,
-                     MLVec<int>& groupHead, MLVec<int>& groupNext, 
+                     MLVec<int>& groupHead, MLVec<int>& groupNext,
                      MLVec<int>& outputRowPtr, MLVec<int>& outputCols,
                      MLVec<int>& map, int newN, double tol)
 {
@@ -5515,13 +5515,13 @@ int buildCompressedA(MLVec<int>& inputRowPtr, MLVec<int>& inputCols,
 
 
    for (int i=0; i < filled.size() ; i++) filled[i] = false;
-   
+
    outputRowPtr[0] = 0;
    for (int i=0; i < inputRowPtr.size()-1 ; i++) {
       nFilled = 0;
-      current = i; 
+      current = i;
       if (groupHead[i] > -1) current = groupHead[i];
-      if (groupHead[i] < -1) current = -1; 
+      if (groupHead[i] < -1) current = -1;
 
       while (current != -1) {
          newRow = map[current];
@@ -5542,21 +5542,21 @@ int buildCompressedA(MLVec<int>& inputRowPtr, MLVec<int>& inputCols,
                     outputCols[count] = newCol;
                     count++;
                  } // if filled(newCol) == 0,
-              }  
+              }
            }
          } // for (int j=inputRowPtr[current]; ...
 
          if (groupHead[current] > -1) groupHead[current]= -2 - groupHead[current]; // visited
          current = groupNext[current];
-      } // while (current != -1) 
-      for (int k=0; k < nFilled; k++)  filled[result[k]] = 0; 
+      } // while (current != -1)
+      for (int k=0; k < nFilled; k++)  filled[result[k]] = 0;
       nFilled = 0;
    }
    outputRowPtr[outputRowPtr.size()-1] = count;
 
    outputCols.resize(count);
    // restore groupHead
-    
+
    for (int i = 0; i < groupHead.size(); i++) {
       if (groupHead[i] < -1) groupHead[i] = -2 - groupHead[i];
    }

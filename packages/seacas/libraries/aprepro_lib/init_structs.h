@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 National Technology & Engineering Solutions
+ * Copyright (c) 2014-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,6 +38,14 @@
 namespace SEAMS {
   struct array;
 } // namespace SEAMS
+
+struct init
+{
+  const char *fname;
+  double (*fnct)();
+  const char *syntax;
+  const char *description;
+};
 
 struct init_d
 {
@@ -83,6 +91,14 @@ struct init_dddddd
 {
   const char *fname;
   double (*fnct)(double, double, double, double, double, double);
+  const char *syntax;
+  const char *description;
+};
+
+struct init_ccc
+{
+  const char *fname;
+  double (*fnct)(char *, char *, char *);
   const char *syntax;
   const char *description;
 };
@@ -151,6 +167,14 @@ struct str_dcc_init
   const char *description;
 };
 
+struct str_cc_init
+{
+  const char *fname;
+  const char *(*fnct)(char *, char *);
+  const char *syntax;
+  const char *description;
+};
+
 struct str_ccc_init
 {
   const char *fname;
@@ -179,6 +203,14 @@ struct array_cd_init
 {
   const char *fname;
   SEAMS::array *(*fnct)(const char *, double);
+  const char *syntax;
+  const char *description;
+};
+
+struct array_ddd_init
+{
+  const char *fname;
+  SEAMS::array *(*fnct)(double, double, double);
   const char *syntax;
   const char *description;
 };

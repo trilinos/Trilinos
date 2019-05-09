@@ -63,7 +63,7 @@ public:
 
   using Objective<Real>::update;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     update(*(xs.getVector()),flag,true);
   }
 
@@ -71,19 +71,19 @@ public:
 
   using Objective<Real>::value;
   Real value( const Vector<Real> &x, Real &tol ) {
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     return value(*(xs.getVector()),tol);
   }
 
   virtual void gradient( std::vector<Real> &g, const std::vector<Real> &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::StdObjective): gradient not implemented!");
   }
 
   using Objective<Real>::gradient;
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    StdVector<Real> gs = Teuchos::dyn_cast<StdVector<Real> >(g);
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    StdVector<Real> gs = dynamic_cast<StdVector<Real>&>(g);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     try {
       gradient(*(gs.getVector()),*(xs.getVector()),tol);
     }
@@ -93,14 +93,14 @@ public:
   }
 
   virtual Real dirDeriv( const std::vector<Real> &x, const std::vector<Real> &d, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::StdObjective): dirDeriv not implemented!");
   }
 
   using Objective<Real>::dirDeriv;
   Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) {
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
-    const StdVector<Real> ds = Teuchos::dyn_cast<const StdVector<Real> >(d);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
+    const StdVector<Real> ds = dynamic_cast<const StdVector<Real>&>(d);
     try {
       return dirDeriv(*(xs.getVector()),*(ds.getVector()),tol);
     }
@@ -110,16 +110,16 @@ public:
   }
 
   virtual void hessVec( std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::StdObjective): hessVec not implemented!");
   }
 
   using Objective<Real>::hessVec;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     try {
-      StdVector<Real> hvs = Teuchos::dyn_cast<StdVector<Real> >(hv);
-      const StdVector<Real> vs = Teuchos::dyn_cast<const StdVector<Real> >(v);
-      const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+      StdVector<Real> hvs = dynamic_cast<StdVector<Real>&>(hv);
+      const StdVector<Real> vs = dynamic_cast<const StdVector<Real>&>(v);
+      const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
       hessVec(*(hvs.getVector()),*(vs.getVector()),*(xs.getVector()),tol);
     }
     catch (std::exception &e) {
@@ -128,15 +128,15 @@ public:
   }
 
   virtual void invHessVec( std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::StdObjective): invHessVec not implemented!");
   }
 
   using Objective<Real>::invHessVec;
   void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    StdVector<Real> hvs = Teuchos::dyn_cast<StdVector<Real> >(hv);
-    const StdVector<Real> vs = Teuchos::dyn_cast<const StdVector<Real> >(v);
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    StdVector<Real> hvs = dynamic_cast<StdVector<Real>&>(hv);
+    const StdVector<Real> vs = dynamic_cast<const StdVector<Real>&>(v);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     invHessVec(*(hvs.getVector()),*(vs.getVector()),*(xs.getVector()),tol);
   }
 
@@ -146,9 +146,9 @@ public:
 
   using Objective<Real>::precond;
   void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    StdVector<Real> Pvs = Teuchos::dyn_cast<StdVector<Real> >(Pv);
-    const StdVector<Real> vs = Teuchos::dyn_cast<const StdVector<Real> >(v);
-    const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
+    StdVector<Real> Pvs = dynamic_cast<StdVector<Real>&>(Pv);
+    const StdVector<Real> vs = dynamic_cast<const StdVector<Real>&>(v);
+    const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
     precond(*(Pvs.getVector()),*(vs.getVector()),*(xs.getVector()),tol);
   }
 };

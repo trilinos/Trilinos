@@ -50,28 +50,6 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
-// declare content from Galeri_XpetraMaps.hpp
-// we cannot include the header file, since it
-// is already included for the Repartition.cpp
-// unit tests
-//#include <Galeri_XpetraMaps.hpp>
-namespace Galeri {
-  namespace Xpetra {
-
-    using Teuchos::RCP;
-
-    //! Map creation function (for Tpetra, Epetra, Xpetra::TpetraMap and Xpetra::EpetraMap)
-    template <class LocalOrdinal, class GlobalOrdinal, class Map>
-    RCP<Map> CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
-
-#ifdef HAVE_GALERI_XPETRA
-    //! Map creation function (for Xpetra::Map with an UnderlyingLib parameter)
-    template <class LocalOrdinal, class GlobalOrdinal, class Node>
-    RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
-#endif
-  }
-}
-
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_VariableDofLaplacianFactory.hpp"
 
@@ -86,6 +64,9 @@ namespace MueLuTests {
     if (!TYPE_EQUAL(GO, int)) { out << "Skipping test for GO != int"        << std::endl; return; }
     if (!TYPE_EQUAL(SC, double)) { out << "Skipping test for SC != double; no support for complex SC in Galeri::Xpetra branch" << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
@@ -102,7 +83,7 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
 
     // TODO coords should use SC = double
-    RCP<MultiVector> coords = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", A->getRowMap(), matrixParameters);
+    RCP<RealValuedMultiVector> coords = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("2D", A->getRowMap(), matrixParameters);
 
     // build hierarchy
     RCP<Level> l = rcp(new Level());
@@ -140,6 +121,9 @@ namespace MueLuTests {
     if (!TYPE_EQUAL(GO, int)) { out << "Skipping test for GO != int"        << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -149,7 +133,7 @@ namespace MueLuTests {
 
     GlobalOrdinal nx = 6, ny = 6;
 
-    typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
     typedef Xpetra::MultiVectorFactory<double,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
 
     // Describes the initial layout of matrix rows across processors.
@@ -159,7 +143,7 @@ namespace MueLuTests {
     RCP<const Map> nodeMap = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, "Cartesian2D", comm, galeriList);
 
     //build coordinates before expanding map (nodal coordinates, not dof-based)
-    RCP<mv_type_double> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,mv_type_double>("2D", nodeMap, galeriList);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
     RCP<const Map> dofMap = MapFactory::Build(nodeMap, 2); //expand map for 2 DOFs per node
 
     galeriList.set("right boundary" , "Neumann");
@@ -238,6 +222,9 @@ namespace MueLuTests {
     if (!TYPE_EQUAL(GO, int)) { out << "Skipping test for GO != int"        << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -247,7 +234,7 @@ namespace MueLuTests {
 
     GlobalOrdinal nx = 6, ny = 6;
 
-    typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
     typedef Xpetra::MultiVectorFactory<double,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
 
     // Describes the initial layout of matrix rows across processors.
@@ -257,7 +244,7 @@ namespace MueLuTests {
     RCP<const Map> nodeMap = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, "Cartesian2D", comm, galeriList);
 
     //build coordinates before expanding map (nodal coordinates, not dof-based)
-    RCP<mv_type_double> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,mv_type_double>("2D", nodeMap, galeriList);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
     RCP<const Map> dofMap = MapFactory::Build(nodeMap, 2); //expand map for 2 DOFs per node
 
     galeriList.set("right boundary" , "Neumann");
@@ -300,6 +287,7 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel;
     test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
+    fineLevel.Set("Coordinates", coordinates);
     fineLevel.Set("A", lapA);
 
     TentativePFactory PFact;

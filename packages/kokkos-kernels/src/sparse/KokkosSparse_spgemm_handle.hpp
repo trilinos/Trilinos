@@ -46,9 +46,9 @@
 #include <iostream>
 #include <string>
 
-//#define KERNELS_HAVE_CUSPARSE
+//#define KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
 #endif
 #ifndef _SPGEMMHANDLE_HPP
@@ -60,23 +60,39 @@ namespace KokkosSparse{
 //TODO:SPGEMM_KK_MEMORY2 option is for testing in openmp.
 //it wont work on cuda, not bind to a test program.
 //hidden parameter for StringToSPGEMMAlgorithm for now.
-enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_DEBUG, SPGEMM_SERIAL,
-                      SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA,
-                     //SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
-                      SPGEMM_KK_MULTIMEM, SPGEMM_KK_OUTERMULTIMEM,
-                      SPGEMM_KK_TRIANGLE_AI, //SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM, SPGEMM_KK_TRIANGLE_DENSE,
-                      SPGEMM_KK_TRIANGLE_IA_UNION, //SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION, SPGEMM_KK_TRIANGLE_MEM_IA_UNION, SPGEMM_KK_TRIANGLE_DENSE_IA_UNION,
-                      SPGEMM_KK_TRIANGLE_IA,//SPGEMM_KK_TRIANGLE_IA_DEFAULT, SPGEMM_KK_TRIANGLE_IA_MEM, SPGEMM_KK_TRIANGLE_IA_DENSE,
-                      SPGEMM_KK_TRIANGLE_LL,
-                      SPGEMM_KK_TRIANGLE_LU,
-                     SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_MEMORY2, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2, SPGEMM_KK_MEMSPEED};
+enum SPGEMMAlgorithm{
+		/*DEFAULT*/SPGEMM_KK, SPGEMM_KK_DENSE, SPGEMM_KK_MEMORY, SPGEMM_KK_LP, //KKVARIANTS
+		SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA, //TPLS
+
+		//TRIANGLE COUNTING SPECIALIZED
+		SPGEMM_KK_TRIANGLE_AI, //SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM, SPGEMM_KK_TRIANGLE_DENSE,
+		SPGEMM_KK_TRIANGLE_IA_UNION, //SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION, SPGEMM_KK_TRIANGLE_MEM_IA_UNION, SPGEMM_KK_TRIANGLE_DENSE_IA_UNION,
+		SPGEMM_KK_TRIANGLE_IA,//SPGEMM_KK_TRIANGLE_IA_DEFAULT, SPGEMM_KK_TRIANGLE_IA_MEM, SPGEMM_KK_TRIANGLE_IA_DENSE,
+		SPGEMM_KK_TRIANGLE_LL,
+		SPGEMM_KK_TRIANGLE_LU,
+
+		//below research code.
+		SPGEMM_KK_MULTIMEM, SPGEMM_KK_OUTERMULTIMEM,
+		SPGEMM_DEFAULT, SPGEMM_DEBUG, SPGEMM_SERIAL,
+		SPGEMM_KK_CUCKOO, //USE CUCKOO HASHING
+		SPGEMM_KK_TRACKED_CUCKOO, //USE SCALED CUCKOO HASHING
+		SPGEMM_KK_TRACKED_CUCKOO_F, //USE SCALED FANCY CUCKOO HASHING
+		SPGEMM_KK_SPEED,  // DENSE ACCUMULATOR SAME AS SPEED
+		SPGEMM_KK_MEMORY_SORTED,
+		SPGEMM_KK_MEMORY_TEAM,
+		SPGEMM_KK_MEMORY_BIGTEAM,
+		SPGEMM_KK_MEMORY_SPREADTEAM,
+		SPGEMM_KK_MEMORY_BIGSPREADTEAM,
+		SPGEMM_KK_MEMORY2,
+		SPGEMM_KK_COLOR,
+		SPGEMM_KK_MULTICOLOR,
+		SPGEMM_KK_MULTICOLOR2,
+		SPGEMM_KK_MEMSPEED};
 
 enum SPGEMMAccumulator{
   SPGEMM_ACC_DEFAULT, SPGEMM_ACC_DENSE, SPGEMM_ACC_SPARSE,
 };
-template <class lno_row_view_t_,
-          class lno_nnz_view_t_,
-          class scalar_nnz_view_t_,
+template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace,
           class TemporaryMemorySpace,
           class PersistentMemorySpace>
@@ -86,58 +102,15 @@ public:
   typedef TemporaryMemorySpace HandleTempMemorySpace;
   typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
-  typedef lno_row_view_t_ in_lno_row_view_t;
-  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
-  typedef scalar_nnz_view_t_ in_scalar_nnz_view_t;
 
-  typedef typename in_lno_row_view_t::non_const_value_type size_type;
-  /*
-  typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
-  typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
-  typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
-  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
-  */
-  //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
+  typedef typename std::remove_const<size_type_>::type  size_type;
+  typedef const size_type const_size_type;
 
-  typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
-  /*
-  typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
-  typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
-  typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
-  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
-  */
-  //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
+  typedef typename std::remove_const<lno_t_>::type  nnz_lno_t;
+  typedef const nnz_lno_t const_nnz_lno_t;
 
-  typedef typename in_scalar_nnz_view_t::non_const_value_type nnz_scalar_t;
-  /*
-  typedef typename in_scalar_nnz_view_t::array_layout nnz_scalar_view_array_layout;
-  typedef typename in_scalar_nnz_view_t::device_type nnz_scalar_view_device_t;
-  typedef typename in_scalar_nnz_view_t::memory_traits nnz_scalar_view_memory_traits;
-  typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
-  */
-
-
-  /*
-  typedef typename in_lno_row_view_t::const_data_type const_row_lno_t;
-  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_lno_t;
-  */
-
-  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
-
-  /*
-  typedef typename in_lno_nnz_view_t::const_data_type const_nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nnz_lno_t;
-  */
-  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
-
-  /*
-  typedef typename in_scalar_nnz_view_t::const_data_type const_nnz_scalar_t;
-  typedef typename in_scalar_nnz_view_t::non_const_data_type non_const_nnz_scalar_t;
-  */
-  typedef typename in_scalar_nnz_view_t::const_type const_scalar_nnz_view_t;
-  typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
+  typedef typename std::remove_const<scalar_t_>::type  nnz_scalar_t;
+  typedef const nnz_scalar_t const_nnz_scalar_t;
 
 
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
@@ -155,7 +128,7 @@ public:
 
 
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   struct cuSparseHandleType{
     cusparseHandle_t handle;
     cusparseOperation_t transA;
@@ -272,7 +245,7 @@ private:
   int mkl_sort_option;
   bool calculate_read_write_cost;
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   SPGEMMcuSparseHandleType *cuSPARSEHandle;
 #endif
   public:
@@ -281,8 +254,28 @@ private:
   std::string coloring_output_file;
 
   int min_hash_size_scale;
+  double compression_cut_off;
+  double first_level_hash_cut_off;
+  size_t original_max_row_flops, original_overall_flops;
+  row_lno_persistent_work_view_t row_flops;
 
+  size_t compressed_max_row_flops, compressed_overall_flops;
 
+  void set_first_level_hash_cut_off(double first_level_hash_cut_off_){
+    this->first_level_hash_cut_off = first_level_hash_cut_off_;
+  }
+
+  double get_first_level_hash_cut_off(){
+    return this->first_level_hash_cut_off;
+  }
+
+  void set_compression_cut_off(double compression_cut_off_){
+    this->compression_cut_off = compression_cut_off_;
+  }
+
+  double get_compression_cut_off(){
+    return this->compression_cut_off;
+  }
   void set_min_hash_size_scale(int scale){
     min_hash_size_scale = scale;
   }
@@ -297,6 +290,7 @@ private:
   }
 
   typename Kokkos::View<int *, HandlePersistentMemorySpace> persistent_c_xadj, persistent_a_xadj, persistent_b_xadj, persistent_a_adj, persistent_b_adj;
+  size_t MaxColDenseAcc;
   bool mkl_keep_output;
   bool mkl_convert_to_1base;
   bool is_compression_single_step;
@@ -472,12 +466,13 @@ private:
     incidence_matrix_entries(),compress_second_matrix(true),
 
     multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
-	coloring_input_file(""),
-	coloring_output_file(""), min_hash_size_scale(1),
-    persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
+    coloring_input_file(""),
+    coloring_output_file(""), min_hash_size_scale(1), compression_cut_off(0.85), first_level_hash_cut_off(0.50),
+    original_max_row_flops(std::numeric_limits<size_t>::max()), original_overall_flops(std::numeric_limits<size_t>::max()),
+    persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(), MaxColDenseAcc(250001),
     mkl_keep_output(true),
-    mkl_convert_to_1base(true), is_compression_single_step(true)
-#ifdef KERNELS_HAVE_CUSPARSE
+    mkl_convert_to_1base(true), is_compression_single_step(false)
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif
   {
@@ -489,12 +484,12 @@ private:
 
   virtual ~SPGEMMHandle(){
 
-#ifdef KERNELS_HAVE_CUSgPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     this->destroy_cuSPARSE_Handle();
 #endif
   };
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   void create_cuSPARSE_Handle(bool transA, bool transB){
     this->destroy_cuSPARSE_Handle();
     this->cuSPARSEHandle = new cuSparseHandleType(transA, transB);
@@ -513,7 +508,7 @@ private:
     /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
    */
   void choose_default_algorithm(){
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
       this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
@@ -522,16 +517,16 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
       this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
-      std::cout << "PTHREAD Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
+      std::cout << "THREADS Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
 #endif
     }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
       this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
@@ -540,7 +535,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->algorithm_type = SPGEMM_CUSPARSE;
 #ifdef VERBOSE
@@ -549,7 +544,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
       this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
@@ -615,7 +610,7 @@ private:
       return;
     }
 
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
       suggested_vector_size_ = this->suggested_vector_size = 1;
       suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
@@ -623,7 +618,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
       suggested_vector_size_ = this->suggested_vector_size = 1;
       suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
@@ -631,14 +626,14 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
       suggested_vector_size_ = this->suggested_vector_size = 1;
       suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
     }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
 
       this->suggested_vector_size = nnz / double (nr) + 0.5;
@@ -664,7 +659,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
       suggested_vector_size_ = this->suggested_vector_size = 1;
       suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
@@ -692,25 +687,22 @@ private:
 
 
   inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string & name) {
-    if(name=="SPGEMM_DEFAULT")             return SPGEMM_DEFAULT;
-    else if(name=="SPGEMM_DEBUG")          return SPGEMM_DEBUG;
+    if(name=="SPGEMM_DEFAULT")             return SPGEMM_KK;
+    else if(name=="SPGEMM_KK")       	   return SPGEMM_KK;
+    else if(name=="SPGEMM_KK_MEMORY")      return SPGEMM_KK_MEMORY;
+    else if(name=="SPGEMM_KK_DENSE")       return SPGEMM_KK_DENSE;
+    else if(name=="SPGEMM_KK_LP")  		   return SPGEMM_KK_LP;
+    else if(name=="SPGEMM_KK_MEMSPEED")    return SPGEMM_KK;
+
+    else if(name=="SPGEMM_DEBUG")          return SPGEMM_SERIAL;
     else if(name=="SPGEMM_SERIAL")         return SPGEMM_SERIAL;
     else if(name=="SPGEMM_CUSPARSE")       return SPGEMM_CUSPARSE;
     else if(name=="SPGEMM_CUSP")           return SPGEMM_CUSP;
     else if(name=="SPGEMM_MKL")            return SPGEMM_MKL;
     else if(name=="SPGEMM_VIENNA")         return SPGEMM_VIENNA;
-    else if(name=="SPGEMM_KK_SPEED")       return SPGEMM_KK_SPEED;
-    else if(name=="SPGEMM_KK_MEMORY")      return SPGEMM_KK_MEMORY;
-    else if(name=="SPGEMM_KK_COLOR")       return SPGEMM_KK_COLOR;
-    else if(name=="SPGEMM_KK_MULTICOLOR")  return SPGEMM_KK_MULTICOLOR;
-    else if(name=="SPGEMM_KK_MULTICOLOR2") return SPGEMM_KK_MULTICOLOR2;
-    else if(name=="SPGEMM_KK_MEMSPEED")    return SPGEMM_KK_MEMSPEED;
     else
       throw std::runtime_error("Invalid SPGEMMAlgorithm name");
   }
-
-
-
 
 
 

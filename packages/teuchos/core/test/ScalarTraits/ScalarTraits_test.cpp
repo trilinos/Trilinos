@@ -328,10 +328,8 @@ int main( int argc, char* argv[] ) {
     result = testOrdinalTraits<size_t>(*out);
     if(!result) success = false;
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
     result = testOrdinalTraits<long long int>(*out);
     if(!result) success = false;
-#endif
 
 #ifdef HAVE_TEUCHOS___INT64
     result = testOrdinalTraits<__int64>(*out);

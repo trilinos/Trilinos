@@ -1,4 +1,4 @@
-// Copyright(C) 2009-2010 National Technology & Engineering Solutions
+// Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,17 +34,9 @@
 #include <vector> // for vector
 namespace Excn {
   struct Block;
-} // namespace Excn
-namespace Excn {
   struct CommunicationMetaData;
-} // namespace Excn
-namespace Excn {
   template <typename INT> struct Mesh;
-} // namespace Excn
-namespace Excn {
   template <typename INT> struct NodeSet;
-} // namespace Excn
-namespace Excn {
   template <typename INT> struct SideSet;
 } // namespace Excn
 

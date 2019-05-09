@@ -30,7 +30,7 @@ IF (Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_Cuda_UVM)
   MESSAGE (FATAL_ERROR "If CUDA is enabled in Kokkos, Tpetra requires that Kokkos' UVM support be enabled.  You may do this by setting the CMake option Kokkos_ENABLE_Cuda_UVM:BOOL=ON (WARNING: IT IS CASE SENSITIVE!) and running CMake again.\n\nDetails for developers: UVM stands for \"Unified Virtual Memory\".  It lets code running on the host processor access GPU memory.  There is a difference between CUDA's support for UVM, and Kokkos' support for UVM.  Versions of CUDA >= 6 have UVM support built in by default.  Kokkos always supports this.  In particular, Kokkos always has a memory space for UVM allocations, called Kokkos::CudaUVMSpace.  \"Turning on UVM support in Kokkos\" means two things:\n\n1. Kokkos::Cuda::memory_space (the CUDA execution space's default memory space) is Kokkos::CudaUVMSpace, rather than Kokkos::CudaSpace.\n\n2. Kokkos::DualView<T, Kokkos::Cuda> only uses a single allocation, in the Kokkos::CudaUVMSpace memory space.")
 ENDIF ()
 
-SET(Tpetra_MACHINE_XML_FILE_DIR 
+SET(Tpetra_MACHINE_XML_FILE_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}/machine_files
     CACHE INTERNAL "")
 
@@ -67,11 +67,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT}
   )
 
+# mfh 20 Oct 2017: This option only exists for backwards
+# compatibility.  It should always be true.
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_BUGTESTS
   HAVE_TPETRA_BUGTESTS
-  "Enabling testing of previous Tpetra bugs."
-  ${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE}
+  "Enable testing of previous Tpetra bugs.  This option only exists for backwards compatibility, and no longer has an effect.  The tests in question always build and run, if Tpetra's tests are enabled."
+  ON
   )
 
 # ==================================================================
@@ -106,6 +108,7 @@ GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_
 GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_NODES   ${${PACKAGE_NAME}_ETI_NODES})
+
 
 # ==================================================================
 # Other Tpetra options
@@ -257,9 +260,9 @@ ADD_SUBDIRECTORY(ext)
 IF (${PACKAGE_NAME}_ENABLE_RTI)
   ADD_SUBDIRECTORY(rti)
 ENDIF()
- 
+
 TRIBITS_ADD_TEST_DIRECTORIES(test)
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example guide)
 
 #
 # Do standard subpackage postprocessing

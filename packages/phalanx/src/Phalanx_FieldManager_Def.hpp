@@ -76,7 +76,7 @@ PHX::FieldManager<Traits>::~FieldManager()
 
 // **************************************************************
 template<typename Traits>
-template<typename DataT, typename EvalT,
+template<typename EvalT, typename DataT,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 inline
@@ -92,7 +92,7 @@ getFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
 
 // **************************************************************
 template<typename Traits>
-template<typename DataT, typename EvalT,
+template<typename EvalT, typename DataT,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 inline
@@ -137,7 +137,7 @@ template<typename Traits>
 template<typename EvalT, typename DataT>
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(const PHX::FieldTag& ft, Kokkos::View<DataT,PHX::Device>& f)
+getFieldData(const PHX::FieldTag& ft, PHX::View<DataT>& f)
 {
   PHX::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(ft);
@@ -146,12 +146,12 @@ getFieldData(const PHX::FieldTag& ft, Kokkos::View<DataT,PHX::Device>& f)
   // correctly cast the any object to the Kokkos::View, need to
   // pull the const off the scalar type if this MDField has a
   // const scalar type.
-  typedef Kokkos::View<typename Kokkos::View<DataT,PHX::Device>::non_const_data_type,PHX::Device> non_const_view;
+  typedef PHX::View<typename PHX::View<DataT>::non_const_data_type> non_const_view;
   try {
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
     f = tmp;
   }
-  catch (std::exception& e) {
+  catch (std::exception& ) {
     std::cout << "\n\nError in FieldManager::getFieldData()  using PHX::any_cast. Tried to cast a field "
               << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
               << "\" from a PHX::any object containing a type of \""
@@ -201,13 +201,13 @@ template<typename EvalT, typename DataT>
 inline
 void PHX::FieldManager<Traits>::
 setUnmanagedField(const PHX::FieldTag& ft,
-                  Kokkos::View<DataT,PHX::Device>& f)
+                  PHX::View<DataT>& f)
 {
   // Make sure field data type is not const. We always store static
   // non-const views so that we know how to cast back from an any
   // object.
-  typedef typename Kokkos::View<DataT,PHX::Device>::value_type value_type;
-  typedef typename Kokkos::View<DataT,PHX::Device>::non_const_value_type non_const_value_type;
+  typedef typename PHX::View<DataT>::value_type value_type;
+  typedef typename PHX::View<DataT>::non_const_value_type non_const_value_type;
   static_assert(std::is_same<value_type,non_const_value_type>::value, "FieldManager::setUnmanagedField(FieldTag, View) - DataT must be non-const!");
 
   PHX::any any_f(f);
@@ -220,7 +220,6 @@ void PHX::FieldManager<Traits>::
 aliasFieldForAllEvaluationTypes(const PHX::FieldTag& aliasedField,
                                 const PHX::FieldTag& targetField)
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it)
     it->aliasField(aliasedField,targetField);
@@ -242,8 +241,6 @@ inline
 void PHX::FieldManager<Traits>::
 requireFieldForAllEvaluationTypes(const PHX::FieldTag& t)
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
-
   typename SCTM::iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it) {
     it->requireField(t);
@@ -266,8 +263,6 @@ inline
 void PHX::FieldManager<Traits>::
 registerEvaluatorForAllEvaluationTypes(const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
-
   typename SCTM::iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it) {
     it->registerEvaluator(e);
@@ -299,22 +294,21 @@ template<typename Traits>
 template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
-postRegistrationSetupForType(typename Traits::SetupData d)
+postRegistrationSetupForType(typename Traits::SetupData d, const bool& buildDeviceDAG)
 {
   m_eval_containers.template getAsObject<EvalT>()->
-    postRegistrationSetup(d, *this);
+    postRegistrationSetup(d, *this, buildDeviceDAG);
 }
 
 // **************************************************************
 template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
-postRegistrationSetup(typename Traits::SetupData d)
+postRegistrationSetup(typename Traits::SetupData d, const bool& buildDeviceDAG)
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::iterator it = m_eval_containers.begin();
   for (std::size_t i = 0; it != m_eval_containers.end(); ++it, ++i)
-    it->postRegistrationSetup(d, *this);
+    it->postRegistrationSetup(d, *this, buildDeviceDAG);
 }
 
 // **************************************************************
@@ -325,6 +319,19 @@ void PHX::FieldManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   m_eval_containers.template getAsBase<EvalT>()->evaluateFields(d);
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT>
+inline
+void PHX::FieldManager<Traits>::
+evaluateFieldsDeviceDag(const int& work_size,
+			const int& team_size,
+			const int& vector_size,
+			typename Traits::EvalData d)
+{
+  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsDeviceDag(work_size,team_size,vector_size,d);
 }
 
 // **************************************************************
@@ -425,7 +432,6 @@ writeGraphvizFile(const std::string base_filename,
 		  bool writeDependentFields,
 		  bool debugRegisteredEvaluators) const
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::const_iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it) {
     std::string name = base_filename + "_" + it->evaluationType() +
@@ -440,7 +446,6 @@ template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::print(std::ostream& os) const
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::const_iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it)
     os << (*it);
@@ -481,6 +486,15 @@ const std::vector<Teuchos::RCP<PHX::FieldTag>>&
 PHX::FieldManager<Traits>::getFieldTagsForSizing()
 {
   return m_eval_containers.template getAsObject<EvalT>()->getFieldTags();
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT>
+void PHX::FieldManager<Traits>::
+printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
+{
+  m_eval_containers.template getAsObject<EvalT>()->printEvaluatorStartStopMessage(ostr);  
 }
 
 // **************************************************************

@@ -119,7 +119,7 @@ struct LocalReciprocalThreshold {
            const typename XV::non_const_value_type& minVal)
   {
     typedef typename XV::execution_space execution_space;
-    Kokkos::RangePolicy<execution_space, SizeType> policy (0, X.dimension_0 ());
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, X.extent (0));
     V_ReciprocalThresholdSelfFunctor<XV, SizeType> op (X, minVal);
     Kokkos::parallel_for (policy, op);
   }
@@ -821,7 +821,7 @@ Chebyshev<ScalarType, MV>::compute ()
       if (! A_crsMat.is_null () && A_crsMat->isStaticGraph ()) {
         // It's a CrsMatrix with a const graph; cache diagonal offsets.
         const size_t lclNumRows = A_crsMat->getNodeNumRows ();
-        if (diagOffsets_.dimension_0 () < lclNumRows) {
+        if (diagOffsets_.extent (0) < lclNumRows) {
           diagOffsets_ = offsets_type (); // clear first to save memory
           diagOffsets_ = offsets_type ("offsets", lclNumRows);
         }
@@ -839,7 +839,7 @@ Chebyshev<ScalarType, MV>::compute ()
         // if we haven't already.
         if (! savedDiagOffsets_) {
           const size_t lclNumRows = A_crsMat->getNodeNumRows ();
-          if (diagOffsets_.dimension_0 () < lclNumRows) {
+          if (diagOffsets_.extent (0) < lclNumRows) {
             diagOffsets_ = offsets_type (); // clear first to save memory
             diagOffsets_ = offsets_type ("offsets", lclNumRows);
           }
@@ -1077,8 +1077,13 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
     // In debug mode, make sure that all diagonal entries are
     // positive, on all processes.  Note that *out_ only prints on
     // Process 0 of the matrix's communicator.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     D_rangeMap->template sync<Kokkos::HostSpace> ();
     auto D_lcl = D_rangeMap->template getLocalView<Kokkos::HostSpace> ();
+#else
+    D_rangeMap->sync_host ();
+    auto D_lcl = D_rangeMap->getLocalViewHost ();
+#endif
     auto D_lcl_1d = Kokkos::subview (D_lcl, Kokkos::ALL (), 0);
 
     typedef typename MV::impl_scalar_type IST;
@@ -1261,7 +1266,11 @@ ifpackApplyImpl (const op_type& A,
                  const V& D_inv)
 {
   using std::endl;
+#ifdef HAVE_IFPACK2_DEBUG
   const bool debug = debug_;
+#else
+  const bool debug = false;
+#endif
 
   if (debug) {
     *out_ << " \\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
@@ -1314,17 +1323,14 @@ ifpackApplyImpl (const op_type& A,
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     computeResidual (V1, B, A, X); // V1 = B - A*X
-
     if (debug) {
       *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
     }
 
     solve (W, one/theta, D_inv, V1); // W = (1/theta)*D_inv*(B-A*X)
-
     if (debug) {
       *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
     }
-
     X.update (one, W, one); // X = X + W
   }
   else {
@@ -1342,7 +1348,6 @@ ifpackApplyImpl (const op_type& A,
   ST rhok = one / s1;
   ST rhokp1, dtemp1, dtemp2;
   for (int deg = 1; deg < numIters; ++deg) {
-
     if (debug) {
       *out_ << " Iteration " << deg+1 << ":" << endl
             << " - \\|D\\|_{\\infty} = " << D_->normInf () << endl
@@ -1353,7 +1358,6 @@ ifpackApplyImpl (const op_type& A,
     }
 
     computeResidual (V1, B, A, X); // V1 = B - A*X
-
     if (debug) {
       *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
     }
@@ -1368,8 +1372,8 @@ ifpackApplyImpl (const op_type& A,
             << " - dtemp2 = " << dtemp2 << endl;
     }
 
-    W.scale (dtemp1);
-    W.elementWiseMultiply (dtemp2, D_inv, V1, one);
+
+    W.elementWiseMultiply (dtemp2, D_inv, V1, dtemp1);
     X.update (one, W, one);
 
     if (debug) {

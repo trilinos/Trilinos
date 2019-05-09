@@ -39,6 +39,7 @@
 
 
 INCLUDE(TribitsAddExecutableTestHelpers)
+INCLUDE(TribitsGeneralMacros)
 INCLUDE(TribitsTestCategories)
 
 INCLUDE(CMakeParseArguments)

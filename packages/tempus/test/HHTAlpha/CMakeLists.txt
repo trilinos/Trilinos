@@ -19,6 +19,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_HHTAlpha_CopyFiles
-  DEST_FILES Tempus_Newmark_BallParabolic.xml Tempus_Newmark_SinCos_SecondOrder.xml Tempus_Newmark_SinCos_FirstOrder.xml Tempus_Newmark_SinCos_ExplicitCD.xml 
+  DEST_FILES Tempus_HHTAlpha_BallParabolic.xml Tempus_HHTAlpha_SinCos_SecondOrder.xml Tempus_HHTAlpha_SinCos_FirstOrder.xml Tempus_HHTAlpha_SinCos_ExplicitCD.xml 
   EXEDEPS HHTAlpha
   )

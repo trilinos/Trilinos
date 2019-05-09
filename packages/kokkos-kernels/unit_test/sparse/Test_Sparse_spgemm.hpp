@@ -83,8 +83,14 @@ int run_spgemm(crsMat_t input_mat, crsMat_t input_mat2, KokkosSparse::SPGEMMAlgo
   typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
+
+
+  typedef typename lno_view_t::value_type size_type;
+  typedef typename lno_nnz_view_t::value_type lno_t;
+  typedef typename scalar_view_t::value_type scalar_t;
+
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
-      <lno_view_t,lno_nnz_view_t, scalar_view_t,
+      <size_type,lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 
   KernelHandle kh;
@@ -164,13 +170,13 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
-  size_t nrows1 = output_mat1.graph.row_map.dimension_0();
-  size_t nentries1 = output_mat1.graph.entries.dimension_0() ;
-  size_t nvals1 = output_mat1.values.dimension_0();
+  size_t nrows1 = output_mat1.graph.row_map.extent(0);
+  size_t nentries1 = output_mat1.graph.entries.extent(0) ;
+  size_t nvals1 = output_mat1.values.extent(0);
 
-  size_t nrows2 = output_mat2.graph.row_map.dimension_0();
-  size_t nentries2 = output_mat2.graph.entries.dimension_0() ;
-  size_t nvals2 = output_mat2.values.dimension_0();
+  size_t nrows2 = output_mat2.graph.row_map.extent(0);
+  size_t nentries2 = output_mat2.graph.entries.extent(0) ;
+  size_t nvals2 = output_mat2.values.extent(0);
 
 
   lno_nnz_view_t h_ent1 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries1);
@@ -281,13 +287,13 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
   crsMat_t output_mat2;
   run_spgemm<crsMat_t, device>(input_mat, input_mat, SPGEMM_DEBUG, output_mat2);
 
-  SPGEMMAlgorithm algorithms [] = {SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED, SPGEMM_KK_MEMSPEED, SPGEMM_CUSPARSE,SPGEMM_MKL};
+  SPGEMMAlgorithm algorithms [] = {SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED, SPGEMM_KK_MEMSPEED, /*SPGEMM_CUSPARSE, */SPGEMM_MKL};
 
-  for (int ii = 0; ii < 5; ++ii){
+  for (int ii = 0; ii < 4; ++ii){
 
     SPGEMMAlgorithm spgemm_algorithm = algorithms[ii];
 
-    const int max_integer = 2147483647;
+    const uint64_t max_integer = 2147483647;
     std::string algo = "UNKNOWN";
     bool is_expected_to_fail = false;
 
@@ -295,14 +301,14 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
     case SPGEMM_CUSPARSE:
       //TODO: add these test failure cases for cusparse too.
       algo = "SPGEMM_CUSPARSE";
-#ifndef KERNELS_HAVE_CUSPARSE
+#if !defined(KERNELS_HAVE_CUSPARSE) && !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
       is_expected_to_fail = true;
 #endif
       break;
 
     case SPGEMM_MKL:
       algo = "SPGEMM_MKL";
-#ifndef HAVE_KOKKOSKERNELS_MKL
+#if !defined(HAVE_KOKKOSKERNELS_MKL) && !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
       is_expected_to_fail = true;
 #endif
       //MKL requires scalar to be either float or double
@@ -315,7 +321,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
       }
       //if size_type is larger than int, mkl casts it to int.
       //it will fail if casting cause overflow.
-      if (input_mat.values.dimension_0() > max_integer){
+      if (input_mat.values.extent(0) > max_integer){
         is_expected_to_fail = true;
       }
 

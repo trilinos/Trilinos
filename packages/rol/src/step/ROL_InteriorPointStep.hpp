@@ -62,35 +62,33 @@ typedef Constraint_Partitioned<Real>            IPCON;
 
 private:
 
-  Teuchos::RCP<StatusTest<Real> >       status_;
-  Teuchos::RCP<Step<Real> >             step_;  
-  Teuchos::RCP<IPOBJ>                   ipobj_;
-  Teuchos::RCP<IPCON>                   ipcon_;
-  Teuchos::RCP<Algorithm<Real> >        algo_;
-  Teuchos::RCP<Teuchos::ParameterList>  parlist_;
-  Teuchos::RCP<BoundConstraint<Real> >  bnd_;
+  ROL::Ptr<StatusTest<Real> >       status_;
+  ROL::Ptr<Step<Real> >             step_;  
+  ROL::Ptr<Algorithm<Real> >        algo_;
+  ROL::Ptr<BoundConstraint<Real> >  bnd_;
+  ROL::ParameterList                parlist_;
 
   // Storage
-  Teuchos::RCP<Vector<Real> > x_;
-  Teuchos::RCP<Vector<Real> > g_;
-  Teuchos::RCP<Vector<Real> > l_;
-  Teuchos::RCP<Vector<Real> > c_;
+  ROL::Ptr<Vector<Real> > x_;
+  ROL::Ptr<Vector<Real> > g_;
+  ROL::Ptr<Vector<Real> > l_;
+  ROL::Ptr<Vector<Real> > c_;
 
   Real mu_;      // Barrier parameter
   Real mumin_;   // Minimal value of barrier parameter
   Real mumax_;   // Maximal value of barrier parameter 
   Real rho_;     // Barrier parameter reduction factor
-  int  maxit_;   // Maximum number of interior point subproblem solves
 
   // For the subproblem
-  Real gtol_;           // Status test gradient tolerance
-  Real ctol_;           // Status test constraint tolerance
-  Real stol_;           // Status test step tolerance
   int subproblemIter_;  // Status test maximum number of iterations
 
   int verbosity_;       // Adjust level of detail in printing step information
+  bool print_;
 
   bool hasEquality_;
+
+  EStep stepType_;
+  std::string stepname_;
 
 public:
  
@@ -100,42 +98,44 @@ public:
 
   ~InteriorPointStep() {}
 
-  InteriorPointStep(Teuchos::ParameterList &parlist) :
+  InteriorPointStep(ROL::ParameterList &parlist) :
     Step<Real>(), 
-    status_(Teuchos::null), 
-    step_(Teuchos::null),
-    ipobj_(Teuchos::null),
-    ipcon_(Teuchos::null),
-    algo_(Teuchos::null), 
-    x_(Teuchos::null),
-    g_(Teuchos::null),
-    l_(Teuchos::null),
-    c_(Teuchos::null),
-    hasEquality_(false) {
+    status_(ROL::nullPtr), 
+    step_(ROL::nullPtr),
+    algo_(ROL::nullPtr), 
+    parlist_(parlist),
+    x_(ROL::nullPtr),
+    g_(ROL::nullPtr),
+    l_(ROL::nullPtr),
+    c_(ROL::nullPtr),
+    hasEquality_(false),
+    stepType_(STEP_COMPOSITESTEP),
+    stepname_("Composite Step") {
 
-    using Teuchos::ParameterList;
+    using ROL::ParameterList;
     
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
 
     // List of general Interior Point parameters
-    ParameterList& iplist  = parlist.sublist("Step").sublist("Interior Point");
-
+    ParameterList& iplist = parlist.sublist("Step").sublist("Interior Point");
     mu_             = iplist.get("Initial Barrier Penalty",1.0);
     mumin_          = iplist.get("Minimum Barrier Penalty",1.e-4);
     mumax_          = iplist.get("Maximum Barrier Penalty",1e8);
     rho_            = iplist.get("Barrier Penalty Reduction Factor",0.5);
-    subproblemIter_ = iplist.get("Subproblem Iteration Limit",10);
 
-
-    // List of Status Test parameters
-    ParameterList& stlist  = parlist.sublist("Status Test");
-
-    gtol_  = stlist.get("Gradient Tolerance", 1.e-8);
-    ctol_  = stlist.get("Constraint Tolerance", 1.e-8);
-    stol_  = stlist.get("Step Tolerance", 1.e-8);
-    maxit_ = stlist.get("Iteration Limit", 100);
- 
-    parlist_ = Teuchos::rcp(&parlist, false);
+    // Subproblem step information
+    print_ = iplist.sublist("Subproblem").get("Print History",false);
+    Real gtol = iplist.sublist("Subproblem").get("Optimality Tolerance",1e-8);
+    Real ctol = iplist.sublist("Subproblem").get("Feasibility Tolerance",1e-8);
+    Real stol = static_cast<Real>(1e-6)*std::min(gtol,ctol);
+    int maxit = iplist.sublist("Subproblem").get("Iteration Limit",1000);
+    parlist_.sublist("Status Test").set("Gradient Tolerance",   gtol);
+    parlist_.sublist("Status Test").set("Constraint Tolerance", ctol);
+    parlist_.sublist("Status Test").set("Step Tolerance",       stol);
+    parlist_.sublist("Status Test").set("Iteration Limit",      maxit);
+    // Get step name from parameterlist
+    stepname_ = iplist.sublist("Subproblem").get("Step Type","Composite Step");
+    stepType_ = StringToEStep(stepname_);
   }
 
   /** \brief Initialize step with equality constraint 
@@ -146,7 +146,7 @@ public:
                    AlgorithmState<Real> &algo_state ) {
     hasEquality_ = true;
 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
     state->constraintVec = c.clone();
@@ -159,11 +159,11 @@ public:
 
     x_->set(x);
 
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
-    ipcon_ = Teuchos::rcp(&Teuchos::dyn_cast<IPCON>(con),false);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
+    auto& ipcon = dynamic_cast<IPCON&>(con);
 
     // Set initial penalty
-    ipobj_->updatePenalty(mu_);
+    ipobj.updatePenalty(mu_);
 
     algo_state.nfval = 0;
     algo_state.ncval = 0;
@@ -179,9 +179,9 @@ public:
     con.value(*c_,x,zerotol);
     algo_state.cnorm = c_->norm();
 
-    algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
-    algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
-    algo_state.ncval += ipcon_->getNumberConstraintEvaluations(); 
+    algo_state.nfval += ipobj.getNumberFunctionEvaluations();
+    algo_state.ngrad += ipobj.getNumberGradientEvaluations();
+    algo_state.ncval += ipcon.getNumberConstraintEvaluations(); 
 
   }
 
@@ -202,7 +202,7 @@ public:
                    AlgorithmState<Real> &algo_state ) {
     bnd.projectInterior(x);
 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
 
@@ -211,8 +211,8 @@ public:
     g_ = g.clone();
 
     // Set initial penalty
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
-    ipobj_->updatePenalty(mu_);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
+    ipobj.updatePenalty(mu_);
 
     algo_state.nfval = 0;
     algo_state.ncval = 0;
@@ -227,10 +227,10 @@ public:
 
     algo_state.cnorm = static_cast<Real>(0);
 
-    algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
-    algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
+    algo_state.nfval += ipobj.getNumberFunctionEvaluations();
+    algo_state.ngrad += ipobj.getNumberGradientEvaluations();
 
-    bnd_ = Teuchos::rcp(new BoundConstraint<Real>());
+    bnd_ = ROL::makePtr<BoundConstraint<Real>>();
     bnd_->deactivate();
   }
 
@@ -245,16 +245,36 @@ public:
                 Constraint<Real>     &con, 
                 AlgorithmState<Real> &algo_state ) {
     // Grab interior point objective and constraint
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
-    ipcon_ = Teuchos::rcp(&Teuchos::dyn_cast<IPCON>(con),false);
+    //auto& ipobj = dynamic_cast<IPOBJ&>(obj);
+    //auto& ipcon = dynamic_cast<IPCON&>(con);
 
+    Real one(1);
     // Create the algorithm 
-    algo_ = Teuchos::rcp( new Algorithm<Real>("Composite Step",*parlist_,false) );
+    Ptr<Objective<Real>> penObj;
+    if (stepType_ == STEP_AUGMENTEDLAGRANGIAN) {
+      Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
+      Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
+      Ptr<StepState<Real>>  state   = Step<Real>::getState();
+      penObj = makePtr<AugmentedLagrangian<Real>>(raw_obj,raw_con,l,one,x,*(state->constraintVec),parlist_);
+    }
+    else if (stepType_ == STEP_FLETCHER) {
+      Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
+      Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
+      Ptr<StepState<Real>>  state   = Step<Real>::getState();
+      penObj = makePtr<Fletcher<Real>>(raw_obj,raw_con,x,*(state->constraintVec),parlist_);
+    }
+    else {
+      penObj = makePtrFromRef(obj);
+      stepname_ = "Composite Step";
+      stepType_ = STEP_COMPOSITESTEP;
+    }
+    algo_ = ROL::makePtr<Algorithm<Real>>(stepname_,parlist_,false);
+    //algo_ = ROL::makePtr<Algorithm<Real>>("Composite Step",parlist_,false);
 
     //  Run the algorithm
-    x_->set(x);
-    algo_->run(*x_,*g_,*l_,*c_,*ipobj_,*ipcon_,false);
-    s.set(*x_); s.axpy(-1.0,x);
+    x_->set(x); l_->set(l);
+    algo_->run(*x_,*g_,*l_,*c_,*penObj,con,print_);
+    s.set(*x_); s.axpy(-one,x);
 
     // Get number of iterations from the subproblem solve
     subproblemIter_ = (algo_->getState())->iter;
@@ -277,14 +297,14 @@ public:
                 BoundConstraint<Real> &bnd,
                 AlgorithmState<Real>  &algo_state ) {
     // Grab interior point objective and constraint
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
 
     // Create the algorithm 
-    algo_ = Teuchos::rcp( new Algorithm<Real>("Trust Region",*parlist_,false) );
+    algo_ = ROL::makePtr<Algorithm<Real>>("Trust Region",parlist_,false);
 
     //  Run the algorithm
     x_->set(x);
-    algo_->run(*x_,*g_,*ipobj_,*bnd_,false);
+    algo_->run(*x_,*g_,ipobj,*bnd_,print_);
     s.set(*x_); s.axpy(-1.0,x);
 
     // Get number of iterations from the subproblem solve
@@ -302,16 +322,17 @@ public:
                Constraint<Real>     &con,
                AlgorithmState<Real> &algo_state ) {
     // Grab interior point objective and constraint
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
-    ipcon_ = Teuchos::rcp(&Teuchos::dyn_cast<IPCON>(con),false);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
+    auto& ipcon = dynamic_cast<IPCON&>(con);
 
     // If we can change the barrier parameter, do so
     if( (rho_< 1.0 && mu_ > mumin_) || (rho_ > 1.0 && mu_ < mumax_) ) {
       mu_ *= rho_;
-      ipobj_->updatePenalty(mu_);
+      ipobj.updatePenalty(mu_);
     }
 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    state->SPiter = subproblemIter_;
  
     // Update optimization vector
     x.plus(s);
@@ -323,25 +344,25 @@ public:
 
     Real zerotol = 0.0;
 
-    algo_state.value = ipobj_->value(x,zerotol);
-    algo_state.value = ipobj_->getObjectiveValue();
+    algo_state.value = ipobj.value(x,zerotol);
+    algo_state.value = ipobj.getObjectiveValue();
 
-    ipcon_->value(*c_,x,zerotol);
+    ipcon.value(*c_,x,zerotol);
     state->constraintVec->set(*c_);
 
-    ipobj_->gradient(*g_,x,zerotol);
+    ipobj.gradient(*g_,x,zerotol);
     state->gradientVec->set(*g_);
 
-    ipcon_->applyAdjointJacobian(*g_,*l_,x,zerotol);
+    ipcon.applyAdjointJacobian(*g_,*l_,x,zerotol);
     state->gradientVec->plus(*g_);    
 
     algo_state.gnorm = g_->norm();
     algo_state.cnorm = state->constraintVec->norm();
     algo_state.snorm = s.norm();
 
-    algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
-    algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
-    algo_state.ncval += ipcon_->getNumberConstraintEvaluations();
+    algo_state.nfval += ipobj.getNumberFunctionEvaluations();
+    algo_state.ngrad += ipobj.getNumberGradientEvaluations();
+    algo_state.ncval += ipcon.getNumberConstraintEvaluations();
     
   }
 
@@ -354,7 +375,7 @@ public:
                AlgorithmState<Real>  &algo_state ) {
     update(x,l,s,obj,con,algo_state); 
 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     x_->set(x);
     x_->axpy(static_cast<Real>(-1),state->gradientVec->dual());
     bnd.project(*x_);
@@ -368,15 +389,15 @@ public:
                BoundConstraint<Real> &bnd,
                AlgorithmState<Real>  &algo_state ) {
     // Grab interior point objective
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
 
     // If we can change the barrier parameter, do so
     if( (rho_< 1.0 && mu_ > mumin_) || (rho_ > 1.0 && mu_ < mumax_) ) {
       mu_ *= rho_;
-      ipobj_->updatePenalty(mu_);
+      ipobj.updatePenalty(mu_);
     }
 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
  
     // Update optimization vector
     x.plus(s);
@@ -388,10 +409,10 @@ public:
 
     Real zerotol = std::sqrt(ROL_EPSILON<Real>());
 
-    algo_state.value = ipobj_->value(x,zerotol);
-    algo_state.value = ipobj_->getObjectiveValue();
+    algo_state.value = ipobj.value(x,zerotol);
+    algo_state.value = ipobj.getObjectiveValue();
 
-    ipobj_->gradient(*g_,x,zerotol);
+    ipobj.gradient(*g_,x,zerotol);
     state->gradientVec->set(*g_);
 
     x_->set(x);
@@ -402,8 +423,8 @@ public:
     algo_state.gnorm = x_->norm();
     algo_state.snorm = s.norm();
 
-    algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
-    algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
+    algo_state.nfval += ipobj.getNumberFunctionEvaluations();
+    algo_state.ngrad += ipobj.getNumberGradientEvaluations();
   }
 
   /** \brief Print iterate header.

@@ -44,7 +44,7 @@
 #ifndef ROL_DISTRIBUTIONFACTORY_HPP
 #define ROL_DISTRIBUTIONFACTORY_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "ROL_Dirac.hpp"
 #include "ROL_Gaussian.hpp"
@@ -164,9 +164,9 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Teuchos::RCP<Distribution<Real> > DistributionFactory(Teuchos::ParameterList &parlist) {
+  inline ROL::Ptr<Distribution<Real> > DistributionFactory(ROL::ParameterList &parlist) {
     std::string dist;
-    Teuchos::ParameterList sollist;
+    ROL::ParameterList sollist;
     if ( parlist.isSublist("SOL") ) {
       dist.assign(parlist.sublist("SOL").sublist("Distribution").get("Name","Dirac"));
       sollist = parlist;
@@ -177,24 +177,24 @@ namespace ROL {
     }
     EDistribution ed = StringToEDistribution(dist);
     switch(ed) {
-      case DISTRIBUTION_ARCSINE:              return Teuchos::rcp(new Arcsine<Real>(sollist));
-      case DISTRIBUTION_BETA:                 return Teuchos::rcp(new Beta<Real>(sollist));
-      case DISTRIBUTION_CAUCHY:               return Teuchos::rcp(new Cauchy<Real>(sollist));
-      case DISTRIBUTION_DIRAC:                return Teuchos::rcp(new Dirac<Real>(sollist));
-      case DISTRIBUTION_EXPONENTIAL:          return Teuchos::rcp(new Exponential<Real>(sollist));
-      case DISTRIBUTION_GAMMA:                return Teuchos::rcp(new Gamma<Real>(sollist));
-      case DISTRIBUTION_GAUSSIAN:             return Teuchos::rcp(new Gaussian<Real>(sollist));
-      case DISTRIBUTION_KUMARASWAMY:          return Teuchos::rcp(new Kumaraswamy<Real>(sollist));
-      case DISTRIBUTION_LAPLACE:              return Teuchos::rcp(new Laplace<Real>(sollist));
-      case DISTRIBUTION_LOGISTIC:             return Teuchos::rcp(new Logistic<Real>(sollist));
-      case DISTRIBUTION_PARABOLIC:            return Teuchos::rcp(new Parabolic<Real>(sollist));
-      case DISTRIBUTION_RAISEDCOSINE:         return Teuchos::rcp(new RaisedCosine<Real>(sollist));
-      case DISTRIBUTION_SMALE:                return Teuchos::rcp(new Smale<Real>(sollist));
-      case DISTRIBUTION_TRIANGLE:             return Teuchos::rcp(new Triangle<Real>(sollist));
-      case DISTRIBUTION_TRUNCATEDEXPONENTIAL: return Teuchos::rcp(new TruncatedExponential<Real>(sollist));
-      case DISTRIBUTION_TRUNCATEDGAUSSIAN:    return Teuchos::rcp(new TruncatedGaussian<Real>(sollist));
-      case DISTRIBUTION_UNIFORM:              return Teuchos::rcp(new Uniform<Real>(sollist));
-      default:                                return Teuchos::null;
+      case DISTRIBUTION_ARCSINE:              return ROL::makePtr<Arcsine<Real>>(sollist);
+      case DISTRIBUTION_BETA:                 return ROL::makePtr<Beta<Real>>(sollist);
+      case DISTRIBUTION_CAUCHY:               return ROL::makePtr<Cauchy<Real>>(sollist);
+      case DISTRIBUTION_DIRAC:                return ROL::makePtr<Dirac<Real>>(sollist);
+      case DISTRIBUTION_EXPONENTIAL:          return ROL::makePtr<Exponential<Real>>(sollist);
+      case DISTRIBUTION_GAMMA:                return ROL::makePtr<Gamma<Real>>(sollist);
+      case DISTRIBUTION_GAUSSIAN:             return ROL::makePtr<Gaussian<Real>>(sollist);
+      case DISTRIBUTION_KUMARASWAMY:          return ROL::makePtr<Kumaraswamy<Real>>(sollist);
+      case DISTRIBUTION_LAPLACE:              return ROL::makePtr<Laplace<Real>>(sollist);
+      case DISTRIBUTION_LOGISTIC:             return ROL::makePtr<Logistic<Real>>(sollist);
+      case DISTRIBUTION_PARABOLIC:            return ROL::makePtr<Parabolic<Real>>(sollist);
+      case DISTRIBUTION_RAISEDCOSINE:         return ROL::makePtr<RaisedCosine<Real>>(sollist);
+      case DISTRIBUTION_SMALE:                return ROL::makePtr<Smale<Real>>(sollist);
+      case DISTRIBUTION_TRIANGLE:             return ROL::makePtr<Triangle<Real>>(sollist);
+      case DISTRIBUTION_TRUNCATEDEXPONENTIAL: return ROL::makePtr<TruncatedExponential<Real>>(sollist);
+      case DISTRIBUTION_TRUNCATEDGAUSSIAN:    return ROL::makePtr<TruncatedGaussian<Real>>(sollist);
+      case DISTRIBUTION_UNIFORM:              return ROL::makePtr<Uniform<Real>>(sollist);
+      default:                                return ROL::nullPtr;
     }
   }
 }

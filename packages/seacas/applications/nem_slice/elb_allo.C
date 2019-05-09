@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -107,7 +107,7 @@ void *array_alloc(int numdim, ...)
 
   dim[0].index = va_arg(va, size_t);
 
-  if (dim[0].index <= 0) {
+  if (dim[0].index == 0) {
     va_end(va);
     return nullptr;
   }
@@ -117,7 +117,7 @@ void *array_alloc(int numdim, ...)
   dim[0].off   = 0;
   for (int i = 1; i < numdim; i++) {
     dim[i].index = va_arg(va, size_t);
-    if (dim[i].index <= 0) {
+    if (dim[i].index == 0) {
       va_end(va);
       return nullptr;
     }
@@ -165,8 +165,9 @@ static void *smalloc(size_t n)
   }
 
   if (pntr == nullptr && n != 0) {
-    fprintf(stderr, "smalloc: Out of space - number of bytes "
-                    "requested = " ST_ZU "\n",
+    fprintf(stderr,
+            "smalloc: Out of space - number of bytes "
+            "requested = " ST_ZU "\n",
             n);
     exit(0);
   }

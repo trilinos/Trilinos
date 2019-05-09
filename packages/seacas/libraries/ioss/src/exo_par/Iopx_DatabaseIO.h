@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -77,7 +77,7 @@ namespace Ioss {
   class SideBlock;
   class SideSet;
   class StructuredBlock;
-}
+} // namespace Ioss
 
 /** \brief A namespace for the decompose-on-the-fly version of the
  *  parallel exodus database format.
@@ -99,22 +99,12 @@ namespace Iopx {
 
     void release_memory__() override;
 
-    // Check to see if database state is ok...
-    // If 'write_message' true, then output a warning message indicating the problem.
-    // If 'error_message' non-null, then put the warning message into the string and return it.
-    // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
-    //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-    bool ok__(bool write_message = false, std::string *error_message = nullptr,
-              int *bad_count = nullptr) const override;
-
     void get_step_times__() override;
 
-    void compute_block_adjacencies() const override;
-
     bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
-                         bool abort_if_error) const;
+                         bool abort_if_error) const override;
     bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
-                            bool overwrite, bool abort_if_error) const;
+                            bool overwrite, bool abort_if_error) const override;
     bool check_valid_file_ptr(bool write_message, std::string *error_msg, int *bad_count,
                               bool abort_if_error) const;
 
@@ -187,7 +177,7 @@ namespace Iopx {
     int free_file_pointer() const override;
 
     int64_t read_nodal_coordinates();
-    void read_elements(const Ioss::ElementBlock &block);
+    void    read_elements(const Ioss::ElementBlock &block);
 
     void create_implicit_global_map() const;
     void output_node_map() const;
@@ -243,16 +233,6 @@ namespace Iopx {
                              int64_t file_count, ex_entity_type entity_type,
                              ex_inquiry inquiry_type) const;
 
-    int64_t node_global_to_local__(int64_t global, bool must_exist) const override
-    {
-      return nodeMap.global_to_local(global, must_exist);
-    }
-
-    int64_t element_global_to_local__(int64_t global) const override
-    {
-      return elemMap.global_to_local(global);
-    }
-
     // Internal data handling
     int64_t handle_node_ids(void *ids, int64_t num_to_get, size_t offset, size_t count) const;
     int64_t handle_element_ids(const Ioss::ElementBlock *eb, void *ids, size_t num_to_get,
@@ -285,7 +265,7 @@ namespace Iopx {
     // for a GroupingEntity* which is a NodeSet*
     mutable std::map<const Ioss::GroupingEntity *, Ioss::Int64Vector> nodesetOwnedNodes;
 
-    mutable bool metaDataWritten;
+    mutable bool metaDataWritten{false};
   };
-}
+} // namespace Iopx
 #endif

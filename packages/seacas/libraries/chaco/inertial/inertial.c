@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -48,7 +48,7 @@ void inertial(struct vtx_data **graph,        /* graph data structure */
               int *             sets,         /* set each vertex gets assigned to */
               double *          goal,         /* desired set sizes */
               int               using_vwgts   /* are vertex weights being used? */
-              )
+)
 {
   extern int    DEBUG_TRACE;     /* trace the execution of the code */
   extern int    PROJECTION_AXIS; /* axis to project out geometry */

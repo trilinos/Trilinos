@@ -160,8 +160,8 @@ RawWorkspace::~RawWorkspace()
   }
   else {
     if(workspace_store_) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        workspace_store_->curr_ws_ptr_ != workspace_end_, std::logic_error
+      TEUCHOS_TEST_FOR_TERMINATION(
+        workspace_store_->curr_ws_ptr_ != workspace_end_
         ,"RawWorkspace::~RawWorkspace(...): Error, "
         "Invalid usage of RawWorkspace class, corrupted WorspaceStore object!" );
       workspace_store_->curr_ws_ptr_ = workspace_begin_;

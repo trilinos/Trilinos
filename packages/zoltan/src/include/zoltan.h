@@ -3353,6 +3353,17 @@ extern int Zoltan_LB_Set_Part_Sizes(struct Zoltan_Struct *zz, int global_num,
  */
 extern int Zoltan_Generate_Files(struct Zoltan_Struct *zz, char *fname, int base_index, int gen_geom, int gen_graph, int gen_hg);
 
+/* 
+ * Returns sizeof(ZOLTAN_ID_TYPE) for the ZOLTAN_ID_TYPE used in building 
+ * the library.  (Allows applications to check that their Zoltan include
+ * files are consistent with the linked-in Zoltan libraries.)
+ * Input/Output:
+ *   name          -- if non-null on input, *name is set to a 
+ *                    string describing ZOLTAN_ID_TYPE (e.g., "unsigned int")
+ * Output:
+ *   Return value  -- sizeof(ZOLTAN_ID_TYPE)
+ */
+extern int Zoltan_get_global_id_type(char **name);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

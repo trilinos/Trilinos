@@ -383,13 +383,24 @@
 
     % We need eso-pic packaged for background image on front cover
     % (added 4/5/12 by RF)
+    % updated background image - LBV, 10/03/18
     \RequirePackage{eso-pic}
     \newcommand\BackgroundPic{
       \put(-3,0){
         \parbox[b][\paperheight]{\paperwidth}{%
           \vfill
           \centering
-          \includegraphics[width=\paperwidth,height=\paperheight]{SANDbackground}
+          \includegraphics[width=\paperwidth,height=\paperheight]{SANDbackground_1}
+          \vfill
+        }}}
+
+    % We now need a background picture on the back page of SAND reports, LBV - 10/03/18
+    \newcommand\BackgroundPicBack{
+      \put(-3,0){
+        \parbox[b][\paperheight]{\paperwidth}{%
+          \vfill
+          \centering
+          \includegraphics[width=\paperwidth,height=\paperheight]{SANDbackground_2}
           \vfill
         }}}
 
@@ -605,29 +616,33 @@
 	%
 	%\hspace*{-0.375in}
 
-        % Background image (added 4/5/12, RF)
         \AddToShipoutPicture*{\BackgroundPic}
         %
 
+        % Switching text color to white, matching new SAND report style, LBV - 10/03/18
 	\begin{minipage}[t]{6.0in}
 	    \CoverFont{b}{18}{22pt}
-	    \vspace{0.25in}
-	    SANDIA REPORT
-	    \vspace{0.125in}\\
-	    \CoverFont{m}{12}{14pt}
-	    \SANDnumVar\\
-	    \SANDreleaseTypeVar\\
-	    \ifthenelse{\boolean{SANDrePrintDateProvided}}   {
+	    \vspace{0.5in}
+	    \textcolor{white}{
+              SANDIA REPORT
+              \vspace{-0.125in}\\
+              \CoverFont{m}{12}{14pt}
+              \SANDnumVar
+              \vspace{-0.125in}\\
+              \SANDreleaseTypeVar
+              \vspace{-0.125in}\\
+              \ifthenelse{\boolean{SANDrePrintDateProvided}}   {
 		Printed \SANDrePrintDateVar
-	    }{
+              }{
 		Printed \SANDprintDateVar
-	    }
-	    \ifthenelse{\boolean{SANDsupersedProvided}}   {
+              }
+              \ifthenelse{\boolean{SANDsupersedProvided}}   {
 		\vspace{0.125in}\\
 		\SANDsupersedVar
-	    }{
+              }{
 		\\
-	    }
+              }
+            }
 
 	    \vspace{0.25in}
 	    \CoverFont{b}{24}{28pt}
@@ -637,30 +652,24 @@
 	    }
 
 
-            % Changed this space from 0.75in to 0.375in to match official SAND covers, and provide more space to prevent
-	    % overfilling the page - MJK, 1/12/07
+            % Remove unnecessary mentions to match new report style and switch to gray color - LBV, 10/03/18
 	    \vspace{0.375in}
 	    \CoverFont{m}{12}{14pt}
-	    \SANDauthorVar
-
-	    \vspace{0.25in}
-	    \CoverFont{m}{8}{10pt}
-	    Prepared by\\
-	    Sandia National Laboratories\\
-	    Albuquerque, New Mexico 87185 and Livermore, California 94550\\
-	    \\
-	    Sandia National Laboratories is a multi-program laboratory managed and operated by Sandia Corporation,\\
-	    a wholly owned subsidiary of Lockheed Martin Corporation, for the U.S. Department of Energy's\\
-	    National Nuclear Security Administration under contract DE-AC04-94AL85000.\\
-	    \\
-	    \MarkCoverVar
+            \textcolor{gray}{
+              \SANDauthorVar\\
+              \MarkCoverVar
+            }
 	\end{minipage}
 
-	\vspace*{\fill} % Move the logo to the bottom of the cover page
-
-	%\hspace*{-0.5in}
+        % Removing logo and adding the Prepared by mention at the correct location - LBV, 10/03/18
+	\vspace*{\fill} % Move the addresses to the bottom of the cover page
+	\hspace*{4.875in}
 	\begin{minipage}[b]{6.0in}
-	    \includegraphics{snllineblk}
+          \CoverFont{m}{8}{10pt}
+          Prepared by\\
+          Sandia National Laboratories\\
+          Albuquerque, New Mexico 87185\\
+          and Livermore, California 94550
 	\end{minipage}
 
 
@@ -679,8 +688,9 @@
 	    \fontsize{9}{11pt}
 	    \selectfont
 
-	    Issued by Sandia National Laboratories, operated for the
-	    United States Department of Energy by Sandia Corporation.
+            Issued by Sandia National Laboratories, operated for the United States Department of Energy by National Technology \& Engineering Solutions of Sandia, LLC.
+	    % Issued by Sandia National Laboratories, operated for the
+	    % United States Department of Energy by Sandia Corporation.
 	    \vspace{\baselineskip}
 
             % Removed \fontsize{11}{13} to make NOTICE simply bold, to match official SAND covers better, MJK - 1/12/07
@@ -711,42 +721,42 @@
 	    \ifthenelse{\boolean{SANDnoticeOUO}}{}{
 	    Printed in the United States of America. This report has
 	    been reproduced directly from the best available copy.
-	    \vspace{\baselineskip}
+	    % \vspace{\baselineskip}
 
-	    Available to DOE and DOE contractors from\\
-	    \begin{tabular}{ll}
-		\hspace*{\coverindent} & U.S. Department of Energy \\
-		& Office of Scientific and Technical Information \\
-		& P.O. Box 62 \\
-		& Oak Ridge, TN 37831 \\
-		&  \\
-	    \end{tabular}
-	    \\
-	    \begin{tabular}{lll}
-		\hspace*{\coverindent} & Telephone: & (865) 576-8401\\
-		& Facsimile: & (865) 576-5728\\
-		& E-Mail: & 	reports@adonis.osti.gov\\
-		& Online ordering: & http://www.osti.gov/bridge\\
-	    \end{tabular}
-	    \vspace{\baselineskip}
-	    \vspace{0.25in}
+	    % Available to DOE and DOE contractors from\\
+	    % \begin{tabular}{ll}
+	    %     \hspace*{\coverindent} & U.S. Department of Energy \\
+	    %     & Office of Scientific and Technical Information \\
+	    %     & P.O. Box 62 \\
+	    %     & Oak Ridge, TN 37831 \\
+	    %     &  \\
+	    % \end{tabular}
+	    % \\
+	    % \begin{tabular}{lll}
+	    %     \hspace*{\coverindent} & Telephone: & (865) 576-8401\\
+	    %     & Facsimile: & (865) 576-5728\\
+	    %     & E-Mail: & 	reports@adonis.osti.gov\\
+	    %     & Online ordering: & http://www.osti.gov/bridge\\
+	    % \end{tabular}
+	    % \vspace{\baselineskip}
+	    % \vspace{0.25in}
 
-	    Available to the public from\\
-	    \begin{tabular}{ll}
-		\hspace*{\coverindent} & U.S. Department of Commerce \\
-		& National Technical Information Service \\
-		& 5285 Port Royal Rd \\
-		& Springfield, VA 22161 \\
-		&  \\
-	    \end{tabular}
-	    \\
-	    \begin{tabular}{lll}
-		\hspace*{\coverindent} & Telephone: & (800) 553-6847 \\
-		& Facsimile: & (703) 605-6900 \\
-		& E-Mail: & orders@ntis.fedworld.gov \\
-		%& Online ordering: & http://www.ntis.gov/ordering.htm \\
-		& Online ordering: & http://www.ntis.gov/help/ordermethods.asp?loc=7-4-0\#online \\
-	    \end{tabular}
+	    % Available to the public from\\
+	    % \begin{tabular}{ll}
+	    %     \hspace*{\coverindent} & U.S. Department of Commerce \\
+	    %     & National Technical Information Service \\
+	    %     & 5285 Port Royal Rd \\
+	    %     & Springfield, VA 22161 \\
+	    %     &  \\
+	    % \end{tabular}
+	    % \\
+	    % \begin{tabular}{lll}
+	    %     \hspace*{\coverindent} & Telephone: & (800) 553-6847 \\
+	    %     & Facsimile: & (703) 605-6900 \\
+	    %     & E-Mail: & orders@ntis.fedworld.gov \\
+	    %     %& Online ordering: & http://www.ntis.gov/ordering.htm \\
+	    %     & Online ordering: & http://www.ntis.gov/help/ordermethods.asp?loc=7-4-0\#online \\
+	    % \end{tabular}
 	    }% end of text for non-OUO reports
 	    \vspace{\baselineskip}
 	    \vspace{0.125in}
@@ -1938,10 +1948,16 @@
 	\pagestyle{empty}
 	\newpage		% Now we're on the outside of the end page
 
-	\vspace*{\fill}		% Move the logo to the bottom of the page
+        % Adding new pack page with background picture and management contract mention, LBV - 10/03/18
 	\thispagestyle{empty}
-	\begin{center}
-	    \includegraphics{snllineblk}
-	\end{center}
+        \AddToShipoutPicture*{\BackgroundPicBack}
+
+	\vspace*{\fill} % Move the management contract mention to the bottom of the back page
+	\hspace*{-0.125in}
+        \vspace*{-0.425in}
+	\begin{minipage}[b]{1.5in}
+          \CoverFont{m}{8}{10pt}
+          Sandia National Laboratories is a multimission laboratory managed and operated by National Technology \& Engineering Solutions of Sandia LLC, a wholly owned subsidiary of Honeywell International Inc. for the U.S. Department of Energy’s National Nuclear Security Administration under contract DE-NA0003525.
+	\end{minipage}
 
     } % End of AtEndDocument{}

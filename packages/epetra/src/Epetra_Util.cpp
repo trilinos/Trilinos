@@ -373,8 +373,7 @@ Epetra_Map Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
 }
 
 //----------------------------------------------------------------------------
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
-// FIXME long long
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 Epetra_BlockMap
 Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
               bool high_rank_proc_owns_shared)
@@ -426,6 +425,55 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 }
 #endif // EPETRA_NO_32BIT_GLOBAL_INDICES
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_BlockMap
+Epetra_Util::Create_OneToOne_BlockMap64(const Epetra_BlockMap& usermap,
+              bool high_rank_proc_owns_shared)
+{
+  //if usermap is already 1-to-1 then we'll just return a copy of it.
+  if (usermap.IsOneToOne()) {
+    Epetra_BlockMap newmap(usermap);
+    return(newmap);
+  }
+
+  int myPID = usermap.Comm().MyPID();
+  Epetra_Directory* directory = usermap.Comm().CreateDirectory(usermap);
+
+  int numMyElems = usermap.NumMyElements();
+  const long long* myElems = usermap.MyGlobalElements64();
+
+  int* owner_procs = new int[numMyElems*2];
+  int* sizes = owner_procs+numMyElems;
+
+  directory->GetDirectoryEntries(usermap, numMyElems, myElems, owner_procs,
+         0, sizes, high_rank_proc_owns_shared);
+
+  //we'll fill a list of map-elements which belong on this processor
+
+  long long* myOwnedElems = new long long[numMyElems*2];
+  long long* ownedSizes = myOwnedElems+numMyElems;
+  int numMyOwnedElems = 0;
+
+  for(int i=0; i<numMyElems; ++i) {
+    long long GID = myElems[i];
+    int owner = owner_procs[i];
+
+    if (myPID == owner) {
+      ownedSizes[numMyOwnedElems] = sizes[i];
+      myOwnedElems[numMyOwnedElems++] = GID;
+    }
+  }
+
+  Epetra_BlockMap one_to_one_map((long long)-1, numMyOwnedElems, myOwnedElems,
+         sizes, usermap.IndexBase64(), usermap.Comm());
+
+  delete [] myOwnedElems;
+  delete [] owner_procs;
+  delete directory;
+
+  return(one_to_one_map);
+}
+#endif // EPETRA_NO_64BIT_GLOBAL_INDICES
 
 //----------------------------------------------------------------------------
 int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals){
@@ -440,6 +488,44 @@ int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_col
 
     double* locValues = &CRS_vals[start];
     int NumEntries    = CRS_rowptr[i+1] - start;
+    int* locIndices   = &CRS_colind[start];
+
+    int n = NumEntries;
+    int m = n/2;
+
+    while(m > 0) {
+      int max = n - m;
+      for(int j = 0; j < max; j++) {
+        for(int k = j; k >= 0; k-=m) {
+          if(locIndices[k+m] >= locIndices[k])
+            break;
+          double dtemp = locValues[k+m];
+          locValues[k+m] = locValues[k];
+          locValues[k] = dtemp;
+          int itemp = locIndices[k+m];
+          locIndices[k+m] = locIndices[k];
+          locIndices[k] = itemp;
+        }
+      }
+      m = m/2;
+    }
+  }
+  return(0);
+}
+
+//----------------------------------------------------------------------------
+int Epetra_Util::SortCrsEntries(int NumRows, const size_t *CRS_rowptr, int *CRS_colind, double *CRS_vals){
+  // For each row, sort column entries from smallest to largest.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  // Code copied from  Epetra_CrsMatrix::SortEntries()
+  size_t nnz = CRS_rowptr[NumRows];
+
+  for(int i = 0; i < NumRows; i++){
+    size_t start = CRS_rowptr[i];
+    if(start >= nnz) continue;
+
+    double* locValues = &CRS_vals[start];
+    int NumEntries    = static_cast<int>(CRS_rowptr[i+1] - start);
     int* locIndices   = &CRS_colind[start];
 
     int n = NumEntries;
@@ -505,6 +591,67 @@ int Epetra_Util::SortAndMergeCrsEntries(int NumRows, int *CRS_rowptr, int *CRS_c
 
     // Merge & shrink
     for(int j=CRS_rowptr[i]; j < CRS_rowptr[i+1]; j++) {
+      if(j > CRS_rowptr[i] && CRS_colind[j]==CRS_colind[new_curr-1]) {
+        CRS_vals[new_curr-1] += CRS_vals[j];
+      }
+      else if(new_curr==j) {
+        new_curr++;
+      }
+      else {
+        CRS_colind[new_curr] = CRS_colind[j];
+        CRS_vals[new_curr]   = CRS_vals[j];
+        new_curr++;
+      }
+    }
+
+    CRS_rowptr[i] = old_curr;
+    old_curr=new_curr;
+  }
+
+  CRS_rowptr[NumRows] = new_curr;
+  return (0);
+}
+
+//----------------------------------------------------------------------------
+int Epetra_Util::SortAndMergeCrsEntries(int NumRows, size_t *CRS_rowptr, int *CRS_colind, double *CRS_vals){
+  // For each row, sort column entries from smallest to largest, merging column ids that are identical by adding values.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  // Code copied from  Epetra_CrsMatrix::SortEntries()
+
+  size_t nnz = CRS_rowptr[NumRows];
+  size_t new_curr=CRS_rowptr[0], old_curr=CRS_rowptr[0];
+
+  for(int i = 0; i < NumRows; i++){
+    size_t start=CRS_rowptr[i];
+    if(start >= nnz) continue;
+
+    double* locValues = &CRS_vals[start];
+    int NumEntries    = static_cast<int>(CRS_rowptr[i+1] - start);
+    int* locIndices   = &CRS_colind[start];
+
+    // Sort phase
+    int n = NumEntries;
+    int m = n/2;
+
+    while(m > 0) {
+      int max = n - m;
+      for(int j = 0; j < max; j++) {
+        for(int k = j; k >= 0; k-=m) {
+          if(locIndices[k+m] >= locIndices[k])
+            break;
+          double dtemp = locValues[k+m];
+          locValues[k+m] = locValues[k];
+          locValues[k] = dtemp;
+          int itemp = locIndices[k+m];
+          locIndices[k+m] = locIndices[k];
+          locIndices[k] = itemp;
+        }
+      }
+      m = m/2;
+    }
+
+    // Merge & shrink
+    for(size_t j=CRS_rowptr[i]; j < CRS_rowptr[i+1]; j++) {
       if(j > CRS_rowptr[i] && CRS_colind[j]==CRS_colind[new_curr-1]) {
         CRS_vals[new_curr-1] += CRS_vals[j];
       }
@@ -677,7 +824,12 @@ int Epetra_Util::GetPids(const Epetra_Import & Importer, std::vector<int> &pids,
 //----------------------------------------------------------------------------
 int Epetra_Util::GetRemotePIDs(const Epetra_Import & Importer, std::vector<int> &RemotePIDs){
 #ifdef HAVE_MPI
-  Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
+  const Epetra_Distributor* Dptr = Importer.DistributorPtr();
+  if (Dptr == NULL) {
+    RemotePIDs.resize(0);
+    return 0;
+  }
+  const Epetra_MpiDistributor *D=dynamic_cast<const Epetra_MpiDistributor*>(Dptr);
   if(!D) {
     RemotePIDs.resize(0);
     return 0;

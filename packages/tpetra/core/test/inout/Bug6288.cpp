@@ -117,9 +117,16 @@ testImpl (Teuchos::FancyOStream& out,
 
   std::istringstream mapInFile (mapOutFile.str ());
   RCP<const map_type> readMap =
-    reader_type::readMap (mapInFile, comm, origMap->getNode (), false, false);
+    reader_type::readMap (mapInFile, comm,
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                          origMap->getNode (), 
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                          false, false);
   std::istringstream mvInFile (mvOutFile.str ());
-  RCP<MV> read_mv = reader_type::readDense (mvInFile, comm, origMap->getNode (),
+  RCP<MV> read_mv = reader_type::readDense (mvInFile, comm, 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                            origMap->getNode (),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
                                             readMap, false, false);
 
   out << "Write MultiVector again" << endl;
@@ -137,7 +144,7 @@ testImpl (Teuchos::FancyOStream& out,
     // minimum number of digits to represent the precision correctly.
     // The test really shouldn't depend as much on the printed digits;
     // it should depend on the values not changing.
-    Teuchos::MatrixMarket::details::SetScientific<scalar_type> sci (exp);
+    Teuchos::SetScientific<scalar_type> sci (exp);
 
     exp << "%%MatrixMarket matrix array real general" << endl
         << gblNumRows << " " << numCols << endl;

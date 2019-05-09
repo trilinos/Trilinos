@@ -46,8 +46,8 @@
 
 #include "ROL_Distribution.hpp"
 #include "ROL_Gaussian.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_Ptr.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -59,7 +59,7 @@ private:
   Real mean_;
   Real sdev_;
 
-  Teuchos::RCP<Gaussian<Real> > gauss_;
+  ROL::Ptr<Gaussian<Real> > gauss_;
 
   Real alpha_;
   Real beta_;
@@ -73,16 +73,16 @@ public:
     : a_((lo < up) ? lo : up), b_((up > lo) ? up : lo),
       mean_(mean), sdev_((sdev>0) ? sdev : 1) {
     //Real var = sdev_*sdev_;
-    gauss_ = Teuchos::rcp(new Gaussian<Real>());
+    gauss_ = ROL::makePtr<Gaussian<Real>>();
     alpha_ = (a_-mean_)/sdev_;
     beta_  = (b_-mean_)/sdev_;
     phi_   = gauss_->evaluateCDF(alpha_);
     Z_     = gauss_->evaluateCDF(beta_)-gauss_->evaluateCDF(alpha_);
   }
 
-  TruncatedGaussian(Teuchos::ParameterList &parlist) {
+  TruncatedGaussian(ROL::ParameterList &parlist) {
     const Real zero(0), one(1);
-    Teuchos::ParameterList TGlist
+    ROL::ParameterList TGlist
       = parlist.sublist("SOL").sublist("Distribution").sublist("Truncated Gaussian");
     a_ = TGlist.get("Lower Bound",-one);
     b_ = TGlist.get("Upper Bound", one);
@@ -95,7 +95,7 @@ public:
     sdev_ = (sdev_ > zero) ? sdev_ : one;
 
     //Real var = sdev_*sdev_;
-    gauss_ = Teuchos::rcp(new Gaussian<Real>());
+    gauss_ = ROL::makePtr<Gaussian<Real>>();
     alpha_ = (a_-mean_)/sdev_;
     beta_  = (b_-mean_)/sdev_;
     phi_   = gauss_->evaluateCDF(alpha_);
@@ -115,7 +115,7 @@ public:
   }
 
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::TruncatedGaussian): Truncated Gaussian integrateCDF not implemented!");
     //return ((input < 0.5*(a_+b_)) ? 0.0 : input - 0.5*(a_+b_));
   }
@@ -136,7 +136,7 @@ public:
       case 1: val = mean;                                                                       break;
       case 2: val = var*(one+(alpha_*phiA-beta_*phiB)/Z_-std::pow((phiA-phiB)/Z_,2))+mean*mean; break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
           ">>> ERROR (ROL::TruncatedGaussian): Truncated Gaussian moment not implemented for m > 2!");
     }
     return val;

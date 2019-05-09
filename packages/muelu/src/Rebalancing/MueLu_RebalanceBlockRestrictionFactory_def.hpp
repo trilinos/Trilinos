@@ -83,6 +83,9 @@ RCP<const ParameterList> RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, 
   //validParamList->set< RCP<const FactoryBase> >("repartition: use subcommunicators", Teuchos::null, "test");
 
   validParamList->set< RCP<const FactoryBase> >("R", Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
+  validParamList->set<RCP<const FactoryBase> >("Importer", Teuchos::null, "Generating factory of the matrix Importer for rebalancing");
+  validParamList->set<RCP<const FactoryBase> >("SubImporters", Teuchos::null, "Generating factory of the matrix sub-Importers for rebalancing");
+  validParamList->set<RCP<const FactoryBase> >("Nullspace", Teuchos::null, "Generating factory of the Nullspace operator");
 
   return validParamList;
 }
@@ -101,9 +104,16 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
     SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
 
-    coarseLevel.DeclareInput("Importer",(*it)->GetFactory("Importer").get(), this);
+    if(!UseSingleSourceImporters_) coarseLevel.DeclareInput("Importer",(*it)->GetFactory("Importer").get(), this);
     coarseLevel.DeclareInput("Nullspace",(*it)->GetFactory("Nullspace").get(), this);
   }
+
+  // Use the non-manager path if the maps / importers are generated in one place
+  if(UseSingleSourceImporters_) {
+    Input(coarseLevel,"SubImporters");
+  }
+
+
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -151,15 +161,21 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   std::vector<Teuchos::RCP<Matrix> > subBlockRebR;
   subBlockRebR.reserve(bOriginalTransferOp->Cols());
 
+  std::vector<RCP<const Import> > importers = std::vector<RCP<const Import> >(bOriginalTransferOp->Rows(), Teuchos::null);
+  if(UseSingleSourceImporters_) {
+    importers = Get<std::vector<RCP<const Import> > >(coarseLevel,"SubImporters");
+  }
+
   int curBlockId = 0;
-  Teuchos::RCP<const Import> rebalanceImporter = Teuchos::null;
+  Teuchos::RCP<const Import> rebalanceImporter;
   std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
   for (it = FactManager_.begin(); it != FactManager_.end(); ++it) {
     // begin SubFactoryManager environment
     SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
     SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
 
-    rebalanceImporter = coarseLevel.Get<Teuchos::RCP<const Import> >("Importer", (*it)->GetFactory("Importer").get());
+    if(UseSingleSourceImporters_) rebalanceImporter = importers[curBlockId];
+    else rebalanceImporter = coarseLevel.Get<Teuchos::RCP<const Import> >("Importer", (*it)->GetFactory("Importer").get());
 
     // extract matrix block
     Teuchos::RCP<Matrix> Rii = bOriginalTransferOp->getMatrix(curBlockId, curBlockId);

@@ -97,11 +97,18 @@ public:
    BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                                  const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT> > & gidProvider);
 
+  /** \brief Ctor that takes a vector of DOFManagers instead of the
+      BlockedDOFManager. Plan is to deprecate the BlockedDOFManager,
+      but for now it is ingrained in all gather/scatter operators.
+   */
+   BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
+                                 const std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>>> & gidProviders);
+
    virtual ~BlockedTpetraLinearObjFactory();
 
 /*************** Linear object factory methods *******************/
 
-   virtual void readVector(const std::string & /* identifier */, LinearObjContainer & /* loc */, int /* id */) const 
+   virtual void readVector(const std::string & /* identifier */, LinearObjContainer & /* loc */, int /* id */) const
    { TEUCHOS_ASSERT(false); }
 
    virtual void writeVector(const std::string & /* identifier */, const LinearObjContainer & /* loc */, int /* id */) const
@@ -109,12 +116,12 @@ public:
 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
 
-   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const
    { return buildLinearObjContainer(); }
 
    virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const;
 
-   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const
    { return buildGhostedLinearObjContainer(); }
 
    virtual void globalToGhostContainer(const LinearObjContainer & container,
@@ -143,7 +150,13 @@ public:
      * This is used primarily for gather operations and hides the allocation and usage
      * of the ghosted vector from the user.
      */
-   virtual Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> buildDomainContainer() const;
+   virtual Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> buildReadOnlyDomainContainer() const;
+
+   /** Build a GlobalEvaluationDataContainer that handles all domain communication.
+     * This is used primarily for gather operations and hides the allocation and usage
+     * of the ghosted vector from the user.
+     */
+   virtual Teuchos::RCP<WriteVector_GlobalEvaluationData> buildWriteDomainContainer() const;
 
    Teuchos::MpiComm<int> getComm() const;
 
@@ -178,7 +191,7 @@ public:
    { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
 
 /*************** Generic helper functions for container setup *******************/
-   
+
    /** Initialize container with a specific set of member values.
      *
      * \note This will overwrite everything in the container and zero out values
@@ -214,6 +227,12 @@ public:
 
    //! Get the range vector space (f)
    Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraRangeSpace() const;
+
+   //! Get the domain vector space (x and dxdt)
+   Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraDomainSpace(int blk) const;
+
+   //! Get the range vector space (f)
+   Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraRangeSpace(int blk) const;
 
    //! Get a domain vector
    Teuchos::RCP<Thyra::VectorBase<ScalarT> > getThyraDomainVector() const;
@@ -264,6 +283,12 @@ public:
    Teuchos::RCP<CrsMatrixType> getTpetraMatrix(int i,int j) const;
    Teuchos::RCP<CrsMatrixType> getGhostedTpetraMatrix(int i,int j) const;
 
+   Teuchos::RCP<VectorType> getTpetraDomainVector(int i) const;
+   Teuchos::RCP<VectorType> getGhostedTpetraDomainVector(int i) const;
+
+   Teuchos::RCP<VectorType> getTpetraRangeVector(int i) const;
+   Teuchos::RCP<VectorType> getGhostedTpetraRangeVector(int i) const;
+
    //! how many block rows
    int getBlockRowCount() const;
 
@@ -305,7 +330,7 @@ protected:
 
    // which block entries are ignored
   std::unordered_set<std::pair<int,int>,panzer::pair_hash> excludedPairs_;
-  
+
 /*************** Thyra based methods/members *******************/
 
    void ghostToGlobalThyraVector(const Teuchos::RCP<const Thyra::VectorBase<ScalarT> > & in,

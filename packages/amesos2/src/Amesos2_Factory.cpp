@@ -68,6 +68,14 @@ namespace Amesos2 {
     }
 #endif
 
+#ifdef HAVE_AMESOS2_SHYLUBASKER
+    if (solverName == "amesos2_shylubasker" ||
+        //solverName == "ShyLUBasker" || // unnecessary - tolower called on solver name prior
+        solverName == "shylubasker") {
+      return true;
+    }
+#endif
+
 #ifdef HAVE_AMESOS2_KLU2
     if (solverName == "amesos2_klu2" ||
         solverName == "klu2" ||
@@ -97,6 +105,12 @@ namespace Amesos2 {
 
 #ifdef HAVE_AMESOS2_UMFPACK
     if (solverName == "amesos2_umfpack" || solverName == "umfpack") {
+      return true;
+    }
+#endif
+
+#ifdef HAVE_AMESOS2_TACHO
+    if (solverName == "amesos2_tacho" || solverName == "tacho") {
       return true;
     }
 #endif

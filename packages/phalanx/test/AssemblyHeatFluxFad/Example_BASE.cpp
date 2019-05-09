@@ -269,8 +269,8 @@ int main(int argc, char *argv[])
       // Fields we require
       MDField<double,Cell,QuadPoint,Dim> energy_flux(energy_flux_tag);
       MDField<double,Cell,QuadPoint> source(source_tag);
-      fm.getFieldData<double,MyTraits::Residual,Cell,QuadPoint,Dim>(energy_flux);
-      fm.getFieldData<double,MyTraits::Residual,Cell,QuadPoint>(source);
+      fm.getFieldData<MyTraits::Residual,double,Cell,QuadPoint,Dim>(energy_flux);
+      fm.getFieldData<MyTraits::Residual,double,Cell,QuadPoint>(source);
 
       // Get host arrays to copy from device back to host
       auto host_energy_flux = Kokkos::create_mirror_view(energy_flux.get_static_view());
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
       cout << "Testing data members" << endl;
       Tag<double> d_var("Density", qp_scalar);
       MDField<double> den(d_var); 
-      fm.getFieldData<double,MyTraits::Residual>(den);
+      fm.getFieldData<MyTraits::Residual>(den);
       cout << "size of density = " << den.size() << ", should be " 
 	   << d_var.dataLayout().size() << "." << endl;
       TEUCHOS_TEST_FOR_EXCEPTION(den.size() != d_var.dataLayout().size(),
@@ -334,8 +334,8 @@ int main(int argc, char *argv[])
       // Fields we require
       MDField<JacScalarT,Cell,QuadPoint,Dim> j_energy_flux(j_energy_flux_tag);
       MDField<JacScalarT,Cell,QuadPoint> j_source(j_source_tag);
-      fm.getFieldData<JacScalarT,MyTraits::Jacobian,Cell,QuadPoint,Dim>(j_energy_flux);
-      fm.getFieldData<JacScalarT,MyTraits::Jacobian,Cell,QuadPoint>(j_source);
+      fm.getFieldData<MyTraits::Jacobian,JacScalarT,Cell,QuadPoint,Dim>(j_energy_flux);
+      fm.getFieldData<MyTraits::Jacobian,JacScalarT,Cell,QuadPoint>(j_source);
       RCP<Time> eval_time2 = TimeMonitor::getNewTimer("Evaluation Time Jacobian");
 
       auto host_j_energy_flux = Kokkos::create_mirror_view(j_energy_flux.get_static_view());

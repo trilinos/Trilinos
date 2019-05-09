@@ -192,8 +192,8 @@ LOCA::Hopf::MooreSpence::ExtendedVector::ExtendedVector(
 Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::Hopf::MooreSpence::ExtendedVector::generateMultiVector(
                             int nColumns,
-                            int nVectorRows,
-                            int nScalarRows) const
+                            int /* nVectorRows */,
+                            int /* nScalarRows */) const
 {
   return
     Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedMultiVector(globalData,

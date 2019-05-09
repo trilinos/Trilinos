@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -720,7 +720,9 @@ private:
                        , void * const   alloc_ptr
                        , const size_t   alloc_size );
 
+#ifdef KOKKOS_DEBUG
   static RecordBase s_root_record ;
+#endif
 
   ::cudaTextureObject_t   m_tex_obj ;
   const Kokkos::CudaSpace m_space ;

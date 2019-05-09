@@ -50,15 +50,17 @@
 #include "Sacado.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
-#include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "Phalanx_config.hpp"
 #include "Phalanx_any.hpp"
-#include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_MDField_TypeTraits.hpp"
 
 namespace PHX {
+
+  class DataLayout;
+  class FieldTag;
   
   // *************************************
   // Runtime time checked MDField
@@ -77,8 +79,7 @@ namespace PHX {
     typedef DataT value_type;
     typedef DataT& reference_type;
  
-    // typedef typename Kokkos::Experimental::DynRankView <DataT,PHX::Device,Kokkos::MemoryUnmanaged> array_type;
-    typedef typename Kokkos::Experimental::DynRankView <DataT,PHX::Device> array_type;
+    typedef typename Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device> array_type;
       
     typedef typename PHX::Device::size_type size_type;
 
@@ -86,7 +87,9 @@ namespace PHX {
 
     MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
     
-    MDField(const PHX::Tag<DataT>& v);
+    MDField(const PHX::FieldTag& v);
+
+    MDField(const Teuchos::RCP<const PHX::FieldTag>& v);
     
     MDField();
 
@@ -99,6 +102,8 @@ namespace PHX {
     ~MDField();
     
     const PHX::FieldTag& fieldTag() const;
+
+    Teuchos::RCP<const PHX::FieldTag> fieldTagPtr() const;
 
     template<typename CopyDataT,
              typename T0, typename T1, typename T2, 
@@ -192,7 +197,9 @@ namespace PHX {
     KOKKOS_FORCEINLINE_FUNCTION
     size_type size() const;
 
-    void setFieldTag(const PHX::Tag<DataT>& t);
+    void setFieldTag(const PHX::FieldTag& t);
+
+    void setFieldTag(const Teuchos::RCP<const PHX::FieldTag>& t);
     
     void setFieldData(const PHX::any& a);
     
@@ -233,12 +240,11 @@ namespace PHX {
    
   private:
    
-    PHX::Tag<DataT> m_tag;  
+    Teuchos::RCP<const PHX::FieldTag> m_tag;  
     PHX::any m_any; //! Store RCP to Kokkos::View
     array_type m_field_data;
 
 #ifdef PHX_DEBUG
-    bool m_tag_set;
     bool m_data_set;
     static const std::string m_field_tag_error_msg;
     static const std::string m_field_data_error_msg;

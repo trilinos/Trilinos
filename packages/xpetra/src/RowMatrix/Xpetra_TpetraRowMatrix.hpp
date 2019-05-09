@@ -114,12 +114,6 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("TpetraRowMatrix::getNumEntriesInLocalRow"); return mtx_->getNumEntriesInLocalRow(localRow); }
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    Tpetra::global_size_t getGlobalNumDiags() const { XPETRA_MONITOR("TpetraRowMatrix::getGlobalNumDiags"); return mtx_->getGlobalNumDiags(); }
-
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    size_t getNodeNumDiags() const { XPETRA_MONITOR("TpetraRowMatrix::getNodeNumDiags"); return mtx_->getNodeNumDiags(); }
-
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("TpetraRowMatrix::getGlobalMaxNumRowEntries"); return mtx_->getGlobalMaxNumRowEntries(); }
 
@@ -144,7 +138,7 @@ namespace Xpetra {
     //@{
 
     //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
-    void getLocalRowCopy(LocalOrdinal LocalRow, const Teuchos::ArrayView< LocalOrdinal > &Indices, const Teuchos::ArrayView< Scalar > &Values, size_t &NumEntries) const { XPETRA_MONITOR("TpetraRowMatrix::getLocalRowCopy"); mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
+    void getLocalRowCopy(LocalOrdinal LocalRow, const Teuchos::ArrayView< LocalOrdinal > &Indices, const Teuchos::ArrayView< Scalar > &Values, size_t &NumEntries) const { XPETRA_MONITOR("TpetraRowMatrix::getLocalRowCopy"); mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);}
 
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const { XPETRA_MONITOR("TpetraRowMatrix::getGlobalRowView"); mtx_->getGlobalRowView(GlobalRow, indices, values); }

@@ -53,6 +53,7 @@
 // LOCA Includes
 #include "NOX_Utils.H"
 #include "NOX_Solver_Factory.H"
+#include "NOX_Exceptions.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
@@ -106,6 +107,7 @@ LOCA::Stepper::Stepper(
   minTangentFactor(0.1),
   tangentFactorExponent(1.0),
   calcEigenvalues(false),
+  calcEigenvaluesTargetStep(false),
   return_failed_on_max_steps(true),
   printOnlyConvergedSol(p->get("Write Only Converged Solution", true))
 {
@@ -149,6 +151,7 @@ LOCA::Stepper::Stepper(
   minTangentFactor(0.1),
   tangentFactorExponent(1.0),
   calcEigenvalues(false),
+  calcEigenvaluesTargetStep(false),
   return_failed_on_max_steps(true),
   printOnlyConvergedSol(p->get("Write Only Converged Solution", true))
 {
@@ -287,6 +290,7 @@ LOCA::Stepper::resetExceptLocaStatusTest(
   tangentFactorExponent =
     stepperList->get("Tangent Factor Exponent",1.0);
   calcEigenvalues = stepperList->get("Compute Eigenvalues",false);
+  calcEigenvaluesTargetStep = stepperList->get("Compute Eigenvalues On Target Step",false);
 
   // TODO Deprecated as moved to LOCA::StatusTest::MaxIters
   return_failed_on_max_steps =
@@ -520,6 +524,9 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     // Solve step
     NOX::StatusTest::StatusType solverStatus = solverPtr->solve();
 
+    // Compute eigenvalues/eigenvectors if requested
+    if (calcEigenvaluesTargetStep) computeEigenData();
+
     // Allow continuation group to postprocess the step
     if (solverStatus == NOX::StatusTest::Converged)
       curGroupPtr->postProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
@@ -580,7 +587,7 @@ LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 LOCA::Abstract::Iterator::StepStatus
-LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus /* stepStatus */)
 {
   NOX::StatusTest::StatusType solverStatus;
 
@@ -588,7 +595,16 @@ LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
   printStartStep();
 
   // Compute next point on continuation curve
-  solverStatus = solverPtr->solve();
+  try
+  {
+    solverStatus = solverPtr->solve();
+  }
+  catch (const NOX::Exceptions::SolverFailure& e)
+  {
+    globalData->locaUtils->err() << "Caught NOX::Exceptions::SolverFailure:"
+      << std::endl << e.what() << std::endl;
+    solverStatus = NOX::StatusTest::Failed;
+  }
 
   // Check solver status
   if (solverStatus == NOX::StatusTest::Failed) {
@@ -666,7 +682,7 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 LOCA::Abstract::Iterator::IteratorStatus
-LOCA::Stepper::stopLocaStatus(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::stopLocaStatus(LOCA::Abstract::Iterator::StepStatus /* stepStatus */)
 {
   // FIXME Remove this.
   LOCA::StatusTest::CheckType checkType = LOCA::StatusTest::Complete;
@@ -878,8 +894,8 @@ LOCA::Stepper::getList() const
   return paramListPtr;
 }
 
-Teuchos::RCP<const NOX::Solver::Generic>
-LOCA::Stepper::getSolver() const
+Teuchos::RCP<NOX::Solver::Generic>
+LOCA::Stepper::getSolver()
 {
   if (solverPtr.get() == NULL) {
     globalData->locaErrorCheck->throwError(
@@ -1032,4 +1048,16 @@ LOCA::Stepper::withinThreshold()
   double conParam = curGroupPtr->getContinuationParameter();
 
   return (fabs(conParam-targetValue) < relt*fabs(initialStep));
+}
+
+Teuchos::ParameterList &
+LOCA::Stepper::getParams()
+{
+  return *stepperList;
+}
+
+Teuchos::ParameterList &
+LOCA::Stepper::getStepSizeParams()
+{
+  return *parsedParams->getSublist("Step Size");
 }

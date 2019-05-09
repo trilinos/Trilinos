@@ -1,7 +1,0 @@
-      
-     Processors       Registers       L1 (shared)  L2            L3       MainMemory  MainBandWidth 
-==================================================================================================
-HSW  10 cores         16/core AVX2    32  KB/core  256 KB/core   25 MB    64 GB       64 GB/s
-HSW  68 cores         32/core AVX512  32  KB/core  1024KB/tile   0~16 GB  384/16 GB   115/421 GB/s
-K40c 15 SMx192 cores  256 KB/SM       64 KB/SM     1.5 MB                 12 GB       288 GB/s     
-P100 56 SMx64  cores  256 KB/SM       64 JB/SM     4   MB                 16 GB       720 GB/s

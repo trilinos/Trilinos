@@ -52,10 +52,6 @@
 #include "Intrepid2_Basis.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 
-#ifndef __KK__
-#define __KK__
-#endif
-
 namespace panzer {
 
   class CellData;
@@ -65,7 +61,7 @@ namespace panzer {
   class PureBasis { 
 
   public:
-    typedef enum { HGRAD=0, HCURL=1, HDIV=2, CONST=3 } EElementSpace;
+    typedef enum { HGRAD=0, HCURL=1, HDIV=2, HVOL=3, CONST=4 } EElementSpace;
     
     /** Build a basis given a type, order and CellData object
       \param[in] basis_type String name that describes the type of basis
@@ -127,11 +123,7 @@ namespace panzer {
 
     bool requiresOrientations() const
     { 
-#if defined(__KK__)
       return intrepid_basis_->requireOrientation(); 
-#else 
-      return getElementSpace()==HCURL || getElementSpace()==HDIV; 
-#endif
     }
 
     bool supportsGrad() const
@@ -147,7 +139,7 @@ namespace panzer {
     { return getElementSpace()==HCURL || getElementSpace()==HDIV; }
 
     bool isScalarBasis() const
-    { return getElementSpace()==HGRAD || getElementSpace()==CONST; }
+    { return getElementSpace()==HGRAD || getElementSpace()==CONST || getElementSpace()==HVOL; }
 
     int getBasisRank() const
     { return basis_rank_; }

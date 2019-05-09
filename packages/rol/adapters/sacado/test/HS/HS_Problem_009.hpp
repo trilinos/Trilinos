@@ -75,7 +75,7 @@ public:
 template<class Real> 
 class Problem_009 : public ROL::NonlinearProgram<Real> {
 
-  template<typename T> using RCP = Teuchos::RCP<T>;
+  
   
   typedef ROL::Vector<Real>             V;
   typedef ROL::Objective<Real>          OBJ;
@@ -91,16 +91,15 @@ public:
   int dimension_x()  { return 2; }
   int dimension_ce() { return 1; }
 
-  const RCP<OBJ> getObjective() { 
-    return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_009::Obj> );
+  const ROL::Ptr<OBJ> getObjective() { 
+    return ROL::makePtr<ROL::Sacado_StdObjective<Real,HS_009::Obj>>();
   }
 
-  const RCP<CON> getEqualityConstraint() {
-    return Teuchos::rcp( 
-      new ROL::Sacado_StdConstraint<Real,HS_009::EqCon> );
+  const ROL::Ptr<CON> getEqualityConstraint() {
+    return ROL::makePtr<ROL::Sacado_StdConstraint<Real,HS_009::EqCon>>();
   }
 
-  const RCP<const V> getInitialGuess() {
+  const ROL::Ptr<const V> getInitialGuess() {
     Real x[] = {0,0};
     return NP::createOptVector(x);
   };
@@ -116,7 +115,7 @@ public:
   }
 
   // x* = (12k-3,16k-4) for all integer k
-  RCP<const V> getSolutionSet() {
+  ROL::Ptr<const V> getSolutionSet() {
 
     Real x1[] = {-15,-20};
     Real x2[] = {-3, -4};

@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -81,10 +81,10 @@ struct IndexType
 
 /**\brief Specify Launch Bounds for CUDA execution.
  *
- *  The "best" defaults may be architecture specific.
+ *  If no launch bounds specified then do not set launch bounds.
  */
-template< unsigned int maxT = 1024 /* Max threads per block */
-        , unsigned int minB = 1    /* Min blocks per SM */
+template< unsigned int maxT = 0 /* Max threads per block */
+        , unsigned int minB = 0 /* Min blocks per SM */
         >
 struct LaunchBounds
 {
@@ -105,7 +105,10 @@ namespace Kokkos {
   template< typename T > struct is_ ## CONCEPT { \
   private: \
     template< typename , typename = std::true_type > struct have : std::false_type {}; \
-    template< typename U > struct have<U,typename std::is_same<U,typename U:: CONCEPT >::type> : std::true_type {}; \
+    template< typename U > struct have<U,typename std::is_same< \
+     typename std::remove_cv<U>::type, \
+     typename std::remove_cv<typename U:: CONCEPT>::type \
+   >::type> : std::true_type {}; \
   public: \
     enum { value = is_ ## CONCEPT::template have<T>::value }; \
   };
@@ -280,6 +283,9 @@ struct MemorySpaceAccess {
   enum { deepcopy = assignable };
 };
 
+}} // namespace Kokkos::Impl
+
+namespace Kokkos {
 
 /**\brief  Can AccessSpace access MemorySpace ?
  *
@@ -357,6 +363,13 @@ public:
     , Kokkos::Device< typename AccessSpace::execution_space , MemorySpace >
     >::type  space ;
 };
+
+} // namespace Kokkos
+
+namespace Kokkos {
+namespace Impl {
+
+using Kokkos::SpaceAccessibility ; // For backward compatibility
 
 }} // namespace Kokkos::Impl
 

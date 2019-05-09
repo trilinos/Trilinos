@@ -70,9 +70,9 @@ namespace PAMGEN_NEVADA {
       long long Check_Spans();
 
       virtual void calculateSize(
-          long long & total_el_count,
-          long long & total_node_count,
-          long long & total_edge_count
+          long long & /* total_el_count */,
+          long long & /* total_node_count */,
+          long long & /* total_edge_count */
           )
       {
       };
@@ -328,10 +328,10 @@ namespace PAMGEN_NEVADA {
       // private:
       virtual long long Calc_Coord_Vectors();
       virtual void Populate_Coords(
-          double * coords,
-          std::vector<long long> & global_node_vector,
-          std::map <long long, long long> & global_node_map,
-          long long num_nodes
+          double * /* coords */,
+          std::vector<long long> & /* global_node_vector */,
+          std::map <long long, long long> & /* global_node_map */,
+          long long /* num_nodes */
           )
       {};
 
@@ -368,7 +368,8 @@ namespace PAMGEN_NEVADA {
           );
       virtual long long Element_Proc(long long);
       virtual long long Decompose(std::set <long long> & global_el_ids);
-      virtual long long Decompose(std::set <long long> & global_el_ids, long long* lNPD);
+      virtual long long Decompose(std::set <long long> & global_el_ids, long long* lNPD,
+                                  long long* gNPD);
       long long DecomposeSequential(std::set <long long> & global_el_ids);
       long long get_block_index(long long ordinal_val, long long count, long long * cumulative);
 

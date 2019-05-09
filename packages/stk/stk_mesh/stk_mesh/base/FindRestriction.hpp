@@ -37,6 +37,7 @@
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
 #include <stk_mesh/base/Types.hpp>      // for EntityRank, PartVector
 namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Bucket; } }
 
 namespace stk {
 namespace mesh {
@@ -55,6 +56,11 @@ const FieldBase::Restriction& find_and_check_restriction(const FieldBase& field,
 const FieldBase::Restriction& find_restriction(const FieldBase& field,
                                                EntityRank erank,
                                                const Part & part);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 5 2019
+STK_DEPRECATED const FieldBase::Restriction& find_restriction(const FieldBase& field,
+                                               const Bucket & bucket);
+#endif
 
 } // namespace mesh
 } // namespace stk

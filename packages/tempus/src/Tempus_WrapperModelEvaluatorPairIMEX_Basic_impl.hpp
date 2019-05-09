@@ -48,7 +48,7 @@ template <typename Scalar>
 void
 WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 setAppModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & /* me */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
     "Error - WrapperModelEvaluatorPairIMEX_Basic<Scalar>::setAppModel\n"
@@ -142,7 +142,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar>  & inArgs,
   appImplicitInArgs.set_x(x);
   appImplicitInArgs.set_x_dot(x_dot);
   for (int i=0; i<implicitModel_->Np(); ++i) {
-    // Copy over parameters except for the parameter for explicit-only vector!
     if (inArgs.get_p(i) != Teuchos::null)
       appImplicitInArgs.set_p(i, inArgs.get_p(i));
   }

@@ -45,64 +45,6 @@
 namespace Belos {
 namespace Details {
 
-EBelosSolverType
-getEnumFromCanonicalName (const std::string& canonicalName)
-{
-  // Mapping from canonical solver name (a string) to its
-  // corresponding enum value.  This mapping is one-to-one.
-  //
-  // NOTE (mfh 12 Aug 2015) The keys need to be all uppercase.
-  if (canonicalName == "BLOCK GMRES") {
-    return SOLVER_TYPE_BLOCK_GMRES;
-  }
-  else if (canonicalName == "PSEUDOBLOCK GMRES") {
-    return SOLVER_TYPE_PSEUDO_BLOCK_GMRES;
-  }
-  else if (canonicalName == "BLOCK CG") {
-    return SOLVER_TYPE_BLOCK_CG;
-  }
-  else if (canonicalName == "PSEUDOBLOCK CG") {
-    return SOLVER_TYPE_PSEUDO_BLOCK_CG;
-  }
-  else if (canonicalName == "PSEUDOBLOCK STOCHASTIC CG") {
-    return SOLVER_TYPE_STOCHASTIC_CG;
-  }
-  else if (canonicalName == "GCRODR") {
-    return SOLVER_TYPE_GCRODR;
-  }
-  else if (canonicalName == "RCG") {
-    return SOLVER_TYPE_RCG;
-  }
-  else if (canonicalName == "MINRES") {
-    return SOLVER_TYPE_MINRES;
-  }
-  else if (canonicalName == "LSQR") {
-    return SOLVER_TYPE_LSQR;
-  }
-  else if (canonicalName == "TFQMR") {
-    return SOLVER_TYPE_TFQMR;
-  }
-  else if (canonicalName == "PSEUDOBLOCK TFQMR") {
-    return SOLVER_TYPE_PSEUDO_BLOCK_TFQMR;
-  }
-  else if (canonicalName == "HYBRID BLOCK GMRES") {
-    return SOLVER_TYPE_GMRES_POLY;
-  }
-  else if (canonicalName == "PCPG") {
-    return SOLVER_TYPE_PCPG;
-  }
-  else if (canonicalName == "FIXED POINT") {
-    return SOLVER_TYPE_FIXED_POINT;
-  }
-  else if (canonicalName == "BICGSTAB") {
-    return SOLVER_TYPE_BICGSTAB;
-  }
-  else {
-    // An error code; not actually a valid value.
-    return SOLVER_TYPE_UPPER_BOUND;
-  }
-}
-
 std::pair<std::string, bool>
 getCanonicalNameFromAlias (const std::string& candidateAlias)
 {
@@ -240,14 +182,9 @@ solverNameAliases ()
 #endif // HAVE_TEUCHOSCORE_CXX11
 }
 
-int numSupportedSolvers () {
-  return static_cast<int> (SOLVER_TYPE_UPPER_BOUND);
-}
-
 std::vector<std::string>
 canonicalSolverNames ()
 {
-#ifdef HAVE_TEUCHOSCORE_CXX11
   return {
     {"BLOCK GMRES"},
     {"PSEUDOBLOCK GMRES"},
@@ -265,27 +202,11 @@ canonicalSolverNames ()
     {"FIXED POINT"},
     {"BICGSTAB"}
   };
-#else
-  std::vector<std::string> canonicalNames (numSupportedSolvers ());
+}
 
-  canonicalNames.push_back ("BLOCK GMRES");
-  canonicalNames.push_back ("PSEUDOBLOCK GMRES");
-  canonicalNames.push_back ("BLOCK CG");
-  canonicalNames.push_back ("PSEUDOBLOCK CG");
-  canonicalNames.push_back ("PSEUDOBLOCK STOCHASTIC CG");
-  canonicalNames.push_back ("GCRODR");
-  canonicalNames.push_back ("RCG");
-  canonicalNames.push_back ("MINRES");
-  canonicalNames.push_back ("LSQR");
-  canonicalNames.push_back ("TFQMR");
-  canonicalNames.push_back ("PSEUDOBLOCK TFQMR");
-  canonicalNames.push_back ("HYBRID BLOCK GMRES");
-  canonicalNames.push_back ("PCPG");
-  canonicalNames.push_back ("FIXED POINT");
-  canonicalNames.push_back ("BICGSTAB");
-
-  return canonicalNames;
-#endif // HAVE_TEUCHOSCORE_CXX11
+// TODO: Keep this method with new DII system?
+int numSupportedSolvers () {
+  return static_cast<int> (canonicalSolverNames().size());
 }
 
 void

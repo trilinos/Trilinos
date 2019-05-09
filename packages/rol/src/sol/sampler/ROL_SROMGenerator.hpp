@@ -61,16 +61,15 @@ template<class Real>
 class SROMGenerator : public SampleGenerator<Real> {
 private:
   // Parameterlist for optimization
-  Teuchos::ParameterList parlist_;
+  ROL::ParameterList parlist_;
   // Vector of distributions (size = dimension of space)
-  std::vector<Teuchos::RCP<Distribution<Real> > > dist_;
+  std::vector<Ptr<Distribution<Real>>> dist_;
 
   const int dimension_;
   int numSamples_;
   int numMySamples_;
   int numNewSamples_;
   bool adaptive_;
-  bool print_;
 
   Real ptol_;
   Real atol_;
@@ -78,7 +77,7 @@ private:
   void pruneSamples(const ProbabilityVector<Real> &prob,
                     const AtomVector<Real>        &atom) {
     // Remove points with zero weight
-    std::vector<std::vector<Real> > pts;
+    std::vector<std::vector<Real>> pts;
     std::vector<Real> wts;
     for (int i = 0; i < numMySamples_; i++) {
       if ( prob.getProbability(i) > ptol_ ) {
@@ -134,67 +133,49 @@ private:
 
 public:
 
-  SROMGenerator(Teuchos::ParameterList                          &parlist,
-          const Teuchos::RCP<BatchManager<Real> >               &bman,
-          const std::vector<Teuchos::RCP<Distribution<Real> > > &dist)
+  SROMGenerator(ROL::ParameterList               &parlist,
+          const Ptr<BatchManager<Real>>              &bman,
+          const std::vector<Ptr<Distribution<Real>>> &dist,
+                std::ostream                         &outStream = std::cout)
     : SampleGenerator<Real>(bman), parlist_(parlist), dist_(dist),
       dimension_(dist.size()) {
     // Get SROM sublist
-    Teuchos::ParameterList list = parlist.sublist("SOL").sublist("Sample Generator").sublist("SROM");
+    ROL::ParameterList &list = parlist.sublist("SOL").sublist("Sample Generator").sublist("SROM");
     numSamples_    = list.get("Number of Samples",50);
     adaptive_      = list.get("Adaptive Sampling",false);
     numNewSamples_ = list.get("Number of New Samples Per Adaptation",0);
-    print_         = list.get("Output to Screen",false);
     ptol_          = list.get("Probability Tolerance",1.e2*std::sqrt(ROL_EPSILON<Real>()));
     atol_          = list.get("Atom Tolerance",1.e2*std::sqrt(ROL_EPSILON<Real>()));
-    print_        *= !SampleGenerator<Real>::batchID();
+    bool presolve  = list.get("Presolve for Atom Locations",false);
     // Compute batch local number of samples
-    int rank    = (int)SampleGenerator<Real>::batchID();
-    int nProc   = (int)SampleGenerator<Real>::numBatches();
-    int frac    = numSamples_ / nProc;
-    int rem     = numSamples_ % nProc;
-    numMySamples_  = frac + ((rank < rem) ? 1 : 0);
+    int rank  = (int)SampleGenerator<Real>::batchID();
+    int nProc = (int)SampleGenerator<Real>::numBatches();
+    int frac  = numSamples_ / nProc;
+    int rem   = numSamples_ % nProc;
+    numMySamples_ = frac + ((rank < rem) ? 1 : 0);
     // Initialize vectors
-    Teuchos::RCP<ProbabilityVector<Real> > prob, prob_lo, prob_hi, prob_eq;
-    Teuchos::RCP<AtomVector<Real> > atom, atom_lo, atom_hi, atom_eq;
-    Teuchos::RCP<Vector<Real> > x, x_lo, x_hi, x_eq;
+    Ptr<ProbabilityVector<Real>> prob, prob_lo, prob_hi, prob_eq;
+    Ptr<AtomVector<Real>> atom, atom_lo, atom_hi, atom_eq;
+    Ptr<Vector<Real>> x, x_lo, x_hi, x_eq;
     initialize_vectors(prob,prob_lo,prob_hi,prob_eq,atom,atom_lo,atom_hi,atom_eq,x,x_lo,x_hi,x_eq,bman);
-    Teuchos::RCP<Vector<Real> > l
-      = Teuchos::rcp(new SingletonVector<Real>(0.0));
-    bool optProb = false, optAtom = true;
-    for ( int i = 0; i < 2; i++ ) {
-      if ( i == 0 ) { optProb = false; optAtom = true;  }
-      if ( i == 1 ) { optProb = true;  optAtom = true;  }
-      // Initialize objective function
-      std::vector<Teuchos::RCP<Objective<Real> > > obj_vec;
-      Teuchos::RCP<Objective<Real> > obj;
-      initialize_objective(obj_vec,obj,dist,bman,optProb,optAtom,list);
-      // Initialize constraints
-      Teuchos::RCP<BoundConstraint<Real> > bnd
-        = Teuchos::rcp(new Bounds<Real>(x_lo,x_hi));
-      Teuchos::RCP<Constraint<Real> > con
-        = Teuchos::rcp(new ScalarLinearConstraint<Real>(x_eq,1.0));
-      // Test objective and constraints
-      if ( print_ ) { std::cout << "\nCheck derivatives of CDFObjective\n"; }
-      check_objective(*x,obj_vec[0],bman,optProb,optAtom);
-      if ( print_ ) { std::cout << "\nCheck derivatives of MomentObjective\n"; }
-      check_objective(*x,obj_vec[1],bman,optProb,optAtom);
-      if ( print_ ) { std::cout << "\nCheck derivatives of LinearCombinationObjective\n"; }
-      check_objective(*x,obj,bman,optProb,optAtom);
-      if ( print_ && optProb ) { std::cout << "\nCheck ScalarLinearConstraint\n"; }
-      check_constraint(*x,con,bman,optProb);
-      // Solve optimization problems to sample
-      Teuchos::RCP<Algorithm<Real> > algo;
-      initialize_optimizer(algo,list,optProb);
-      if ( optProb ) {
-        OptimizationProblem<Real> optProblem(obj,x,bnd,con,l);
-        OptimizationSolver<Real>  optSolver(optProblem, list);
-        optSolver.solve(std::cout);
-      }
-      else {
-        algo->run(*x,*obj,*bnd,print_);
-      }
+    Ptr<Vector<Real>> l = makePtr<SingletonVector<Real>>(0.0);
+    // Initialize constraints
+    Ptr<BoundConstraint<Real>> bnd = makePtr<Bounds<Real>>(x_lo,x_hi);
+    Ptr<Constraint<Real>>      con = makePtr<ScalarLinearConstraint<Real>>(x_eq,1.0);
+    if (presolve) { // Optimize over atom locations only
+      ROL::ParameterList pslist(list);
+      pslist.sublist("Step").set("Type","Trust Region");
+      Ptr<Objective<Real>> obj = initialize_objective(dist,bman,false,true,pslist);
+      OptimizationProblem<Real> optProblem(obj,x,bnd);
+      OptimizationSolver<Real>  optSolver(optProblem, pslist);
+      optSolver.solve(outStream);
     }
+    // Optimization over atom locations and probabilities
+    Ptr<Objective<Real>> obj = initialize_objective(dist,bman,true,true,list);
+    OptimizationProblem<Real> optProblem(obj,x,bnd,con,l);
+    optProblem.check(outStream);
+    OptimizationSolver<Real>  optSolver(optProblem, list);
+    optSolver.solve(outStream);
     // Prune samples with zero weight and set samples/weights
     pruneSamples(*prob,*atom);
   }
@@ -219,19 +200,19 @@ private:
     }
   }
 
-  void initialize_vectors(Teuchos::RCP<ProbabilityVector<Real> >  &prob,
-                          Teuchos::RCP<ProbabilityVector<Real> >  &prob_lo,
-                          Teuchos::RCP<ProbabilityVector<Real> >  &prob_hi,
-                          Teuchos::RCP<ProbabilityVector<Real> >  &prob_eq,
-                          Teuchos::RCP<AtomVector<Real> >         &atom,
-                          Teuchos::RCP<AtomVector<Real> >         &atom_lo,
-                          Teuchos::RCP<AtomVector<Real> >         &atom_hi,
-                          Teuchos::RCP<AtomVector<Real> >         &atom_eq,
-                          Teuchos::RCP<Vector<Real> >             &vec,
-                          Teuchos::RCP<Vector<Real> >             &vec_lo,
-                          Teuchos::RCP<Vector<Real> >             &vec_hi,
-                          Teuchos::RCP<Vector<Real> >             &vec_eq,
-                          const Teuchos::RCP<BatchManager<Real> > &bman) const {
+  void initialize_vectors(Ptr<ProbabilityVector<Real>>  &prob,
+                          Ptr<ProbabilityVector<Real>>  &prob_lo,
+                          Ptr<ProbabilityVector<Real>>  &prob_hi,
+                          Ptr<ProbabilityVector<Real>>  &prob_eq,
+                          Ptr<AtomVector<Real>>         &atom,
+                          Ptr<AtomVector<Real>>         &atom_lo,
+                          Ptr<AtomVector<Real>>         &atom_hi,
+                          Ptr<AtomVector<Real>>         &atom_eq,
+                          Ptr<Vector<Real>>             &vec,
+                          Ptr<Vector<Real>>             &vec_lo,
+                          Ptr<Vector<Real>>             &vec_hi,
+                          Ptr<Vector<Real>>             &vec_eq,
+                          const Ptr<BatchManager<Real>> &bman) const {
     // Compute scaling for probability and atom vectors
     std::vector<Real> typx, typw;
     get_scaling_vectors(typw,typx);
@@ -253,144 +234,66 @@ private:
       }
     }
     // Build probability, atom, and SROM vectors 
-    prob = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-           Teuchos::rcp(new std::vector<Real>(wt)),bman,
-           Teuchos::rcp(new std::vector<Real>(typw))));
-    atom = Teuchos::rcp(new PrimalAtomVector<Real>(
-           Teuchos::rcp(new std::vector<Real>(pt)),bman,numMySamples_,dimension_,
-           Teuchos::rcp(new std::vector<Real>(typx))));
-    vec  = Teuchos::rcp(new SROMVector<Real>(prob,atom));
+    prob = makePtr<PrimalProbabilityVector<Real>>(
+           makePtr<std::vector<Real>>(wt),bman,
+           makePtr<std::vector<Real>>(typw));
+    atom = makePtr<PrimalAtomVector<Real>>(
+           makePtr<std::vector<Real>>(pt),bman,numMySamples_,dimension_,
+           makePtr<std::vector<Real>>(typx));
+    vec  = makePtr<SROMVector<Real>>(prob,atom);
     // Lower and upper bounds on Probability Vector
-    prob_lo = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(wt_lo)),bman,
-              Teuchos::rcp(new std::vector<Real>(typw))));
-    prob_hi = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(wt_hi)),bman,
-              Teuchos::rcp(new std::vector<Real>(typw))));
+    prob_lo = makePtr<PrimalProbabilityVector<Real>>(
+              makePtr<std::vector<Real>>(wt_lo),bman,
+              makePtr<std::vector<Real>>(typw));
+    prob_hi = makePtr<PrimalProbabilityVector<Real>>(
+              makePtr<std::vector<Real>>(wt_hi),bman,
+              makePtr<std::vector<Real>>(typw));
     // Lower and upper bounds on Atom Vector
-    atom_lo = Teuchos::rcp(new PrimalAtomVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(pt_lo)),bman,numMySamples_,dimension_,
-              Teuchos::rcp(new std::vector<Real>(typx))));
-    atom_hi = Teuchos::rcp(new PrimalAtomVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(pt_hi)),bman,numMySamples_,dimension_,
-              Teuchos::rcp(new std::vector<Real>(typx))));
-    // Lower and upper bounds on SROM Vector
-    vec_lo = Teuchos::rcp(new SROMVector<Real>(prob_lo,atom_lo));
-    vec_hi = Teuchos::rcp(new SROMVector<Real>(prob_hi,atom_hi));
+    atom_lo = makePtr<PrimalAtomVector<Real>>(
+              makePtr<std::vector<Real>>(pt_lo),bman,numMySamples_,dimension_,
+              makePtr<std::vector<Real>>(typx));
+    atom_hi = makePtr<PrimalAtomVector<Real>>(
+              makePtr<std::vector<Real>>(pt_hi),bman,numMySamples_,dimension_,
+              makePtr<std::vector<Real>>(typx));
+   // Lower and upper bounds on SROM Vector
+    vec_lo = makePtr<SROMVector<Real>>(prob_lo,atom_lo);
+    vec_hi = makePtr<SROMVector<Real>>(prob_hi,atom_hi);
     // Constraint vectors
-    prob_eq = Teuchos::rcp(new DualProbabilityVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(wt_eq)),bman,
-              Teuchos::rcp(new std::vector<Real>(typw))));
-    atom_eq = Teuchos::rcp(new DualAtomVector<Real>(
-              Teuchos::rcp(new std::vector<Real>(pt_eq)),bman,numMySamples_,dimension_,
-              Teuchos::rcp(new std::vector<Real>(typx))));
-    vec_eq  = Teuchos::rcp(new SROMVector<Real>(prob_eq,atom_eq));
+    prob_eq = makePtr<DualProbabilityVector<Real>>(
+              makePtr<std::vector<Real>>(wt_eq),bman,
+              makePtr<std::vector<Real>>(typw));
+    atom_eq = makePtr<DualAtomVector<Real>>(
+              makePtr<std::vector<Real>>(pt_eq),bman,numMySamples_,dimension_,
+              makePtr<std::vector<Real>>(typx));
+    vec_eq  = makePtr<SROMVector<Real>>(prob_eq,atom_eq);
   }
 
-  void initialize_objective(std::vector<Teuchos::RCP<Objective<Real> > > &obj_vec,
-                            Teuchos::RCP<Objective<Real> >               &obj,
-                            const std::vector<Teuchos::RCP<Distribution<Real> > > &dist,
-                            const Teuchos::RCP<BatchManager<Real> >      &bman,
-                            const bool optProb, const bool optAtom,
-                            Teuchos::ParameterList                       &list) const {
+  Ptr<Objective<Real>>  initialize_objective(const std::vector<Ptr<Distribution<Real>>> &dist,
+                                             const Ptr<BatchManager<Real>>              &bman,
+                                             const bool optProb, const bool optAtom,
+                                             ROL::ParameterList                     &list) const {
+    std::vector<Ptr<Objective<Real>>> obj_vec;
     // Build CDF objective function
     Real scale = list.get("CDF Smoothing Parameter",1.e-2);
-    obj_vec.push_back(Teuchos::rcp(new CDFObjective<Real>(dist,bman,scale,optProb,optAtom)));
+    obj_vec.push_back(makePtr<CDFObjective<Real>>(dist,bman,scale,optProb,optAtom));
     // Build moment matching objective function
-    Teuchos::Array<int> tmp_order
-      = Teuchos::getArrayFromStringParameter<int>(list,"Moments");
+    std::vector<int> tmp_order
+      = ROL::getArrayFromStringParameter<int>(list,"Moments");
     std::vector<int> order(tmp_order.size(),0);
-    for ( int i = 0; i < tmp_order.size(); i++) {
+    for (unsigned int i = 0; i < tmp_order.size(); i++) {
       order[i] = static_cast<int>(tmp_order[i]);
     }
-    obj_vec.push_back(Teuchos::rcp(new MomentObjective<Real>(dist,order,bman,optProb,optAtom)));
+    obj_vec.push_back(makePtr<MomentObjective<Real>>(dist,order,bman,optProb,optAtom));
     // Build linear combination objective function
-    Teuchos::Array<Real> tmp_coeff
-      = Teuchos::getArrayFromStringParameter<Real>(list,"Coefficients");
+    std::vector<Real> tmp_coeff
+      = ROL::getArrayFromStringParameter<Real>(list,"Coefficients");
     std::vector<Real> coeff(2,0.);
     coeff[0] = tmp_coeff[0]; coeff[1] = tmp_coeff[1];
-    obj = Teuchos::rcp(new LinearCombinationObjective<Real>(coeff,obj_vec));
+    return makePtr<LinearCombinationObjective<Real>>(coeff,obj_vec);
   }
 
-  void initialize_optimizer(Teuchos::RCP<Algorithm<Real> > &algo,
-                            Teuchos::ParameterList         &parlist,
-                            const bool optProb) const {
-    std::string type = parlist.sublist("Step").get("Type","Trust Region");
-    if ( optProb ) {
-      if ( type == "Moreau-Yosida Penalty" ) {
-        algo = Teuchos::rcp(new Algorithm<Real>("Moreau-Yosida Penalty",parlist,false));
-      }
-      else if ( type == "Augmented Lagrangian" ) {
-        algo = Teuchos::rcp(new Algorithm<Real>("Augmented Lagrangian",parlist,false));
-      }
-      else {
-        algo = Teuchos::rcp(new Algorithm<Real>("Interior Point",parlist,false));
-      }
-    }
-    else {
-      algo = Teuchos::rcp(new Algorithm<Real>("Trust Region",parlist,false));
-    }
-  }
-
-  void check_objective(const Vector<Real>                      &x,
-                       const Teuchos::RCP<Objective<Real> >    &obj,
-                       const Teuchos::RCP<BatchManager<Real> > &bman,
-                       const bool optProb, const bool optAtom) {
-    // Get scaling for probability and atom vectors
-    std::vector<Real> typx, typw;
-    get_scaling_vectors(typw,typx);
-    // Set random direction
-    std::vector<Real> pt(dimension_*numMySamples_,0.), wt(numMySamples_,0.);
-    for (int i = 0; i < numMySamples_; i++) {
-      wt[i] = (optProb ? (Real)rand()/(Real)RAND_MAX : 0);
-      for ( int j = 0; j < dimension_; j++) {
-        pt[i*dimension_ + j] = (optAtom ? dist_[j]->invertCDF((Real)rand()/(Real)RAND_MAX) : 0);
-      }
-    }
-    Teuchos::RCP<ProbabilityVector<Real> > dprob
-      = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-        Teuchos::rcp(new std::vector<Real>(wt)),bman,
-        Teuchos::rcp(new std::vector<Real>(typw))));
-    Teuchos::RCP<AtomVector<Real> > datom
-      = Teuchos::rcp(new PrimalAtomVector<Real>(
-        Teuchos::rcp(new std::vector<Real>(pt)),bman,numMySamples_,dimension_,
-        Teuchos::rcp(new std::vector<Real>(typx))));
-    SROMVector<Real> d = SROMVector<Real>(dprob,datom);
-    // Check derivatives
-    obj->checkGradient(x,d,print_);
-    obj->checkHessVec(x,d,print_);
-  }
-
-  void check_constraint(const Vector<Real>                            &x,
-                        const Teuchos::RCP<Constraint<Real> >         &con,
-                        const Teuchos::RCP<BatchManager<Real> >       &bman,
-                        const bool optProb) {
-    if ( optProb ) {
-      SingletonVector<Real> c(1.0);
-      // Get scaling for probability and atom vectors
-      std::vector<Real> typx, typw;
-      get_scaling_vectors(typw,typx);
-      // Set random direction
-      std::vector<Real> pt(dimension_*numMySamples_,0.), wt(numMySamples_,0.);
-      for (int i = 0; i < numMySamples_; i++) {
-        wt[i] = (Real)rand()/(Real)RAND_MAX;
-        for ( int j = 0; j < dimension_; j++) {
-          pt[i*dimension_ + j] = dist_[j]->invertCDF((Real)rand()/(Real)RAND_MAX);
-        }
-      }
-      Teuchos::RCP<ProbabilityVector<Real> > dprob
-        = Teuchos::rcp(new PrimalProbabilityVector<Real>(
-          Teuchos::rcp(new std::vector<Real>(wt)),bman,
-          Teuchos::rcp(new std::vector<Real>(typw))));
-      Teuchos::RCP<AtomVector<Real> > datom
-        = Teuchos::rcp(new PrimalAtomVector<Real>(
-          Teuchos::rcp(new std::vector<Real>(pt)),bman,numMySamples_,dimension_,
-          Teuchos::rcp(new std::vector<Real>(typx))));
-      SROMVector<Real> d = SROMVector<Real>(dprob,datom);
-      // Check derivatives
-      con->checkApplyJacobian(x,d,c,print_);
-      con->checkAdjointConsistencyJacobian(c,d,x,print_);
-    }
+  int numGlobalSamples(void) const {
+    return numSamples_;
   }
 };
 

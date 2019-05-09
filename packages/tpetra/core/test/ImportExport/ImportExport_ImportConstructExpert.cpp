@@ -51,33 +51,21 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_Import_Util.hpp"
 
 namespace {
-  using Tpetra::TestingUtilities::getNode;
   using Teuchos::Comm;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::outArg;
   using std::endl;
 
-  bool testMpi = true;
+  // bool testMpi = true;
 
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
-    clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
-        "Test MPI (if available) or force test of serial.  In a serial build,"
-        " this option is ignored and a serial comm is always used." );
-  }
-
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    if (testMpi) {
-      return Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    return rcp(new Teuchos::SerialComm<int>());
   }
 
   //
@@ -89,8 +77,8 @@ namespace {
     using Teuchos::rcp;
     using std::endl;
     typedef Teuchos::Array<int>::size_type size_type;
-    typedef Tpetra::BlockCrsMatrix<double,LO,GO,NT> matrix_type;
-    typedef typename matrix_type::impl_scalar_type Scalar;
+    typedef Tpetra::BlockCrsMatrix<>::scalar_type Scalar;
+    typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,NT> matrix_type;
     typedef Tpetra::Map<LO,GO,NT> map_type;
     typedef Tpetra::CrsGraph<LO,GO,NT>  graph_type;
     typedef Tpetra::global_size_t GST;
@@ -100,9 +88,9 @@ namespace {
     Teuchos::OSTab tab0 (out);
     Teuchos::OSTab tab1 (out);
 
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
-    int rank = comm->getRank();
+    //    int rank = comm->getRank();
 
     const LO NumRows = 32;
     const GST gblNumRows = static_cast<GST> ( NumRows * comm->getSize ());
@@ -147,6 +135,7 @@ namespace {
       127, 131, 137, 139, 149, 151, 157, 163, 167, 173,
       179, 181, 191, 193, 197, 199, 211, 223, 227, 229,
       233, 239, 241, 251, 257, 263, 269, 271};
+
     int idx=0;
     block_type curBlk ("curBlk", blkSize, blkSize);
 
@@ -166,7 +155,7 @@ namespace {
       for (LO k = 0; k < static_cast<LO> (lclColInds.size ()); ++k) {
         const LO lclColInd = lclColInds[k];
         const LO err =
-          A->replaceLocalValues (lclRow, &lclColInd, curBlk.ptr_on_device (), 1);
+          A->replaceLocalValues (lclRow, &lclColInd, curBlk.data (), 1);
         TEUCHOS_TEST_FOR_EXCEPTION(err != 1, std::logic_error, "Bug");
       }
     }
@@ -179,98 +168,101 @@ namespace {
 
     // Still need to get remote GID's, and export LID's.
 
-    Teuchos::ArrayView<const GO> avremoteGIDs = target->getNodeElementList ();
-    Teuchos::ArrayView<const GO> avexportGIDs  = source->getNodeElementList ();
-
-    Teuchos::Array<LO> exportLIDs(avexportGIDs.size(),0);
-    Teuchos::Array<LO> remoteLIDs(avremoteGIDs.size(),0);
-    Teuchos::Array<int> userExportPIDs(avexportGIDs.size(),0);
-    Teuchos::Array<int> userRemotePIDs(avremoteGIDs.size(),0);
-
-    source->getRemoteIndexList(avexportGIDs,userExportPIDs,exportLIDs);
-    target->getRemoteIndexList(avremoteGIDs,userRemotePIDs,remoteLIDs);
-
     Teuchos::Array<LO> saveremoteLIDs = G->getImporter()->getRemoteLIDs();
 
-    Teuchos::Array<GO> remoteGIDs(avremoteGIDs);
+    Teuchos::Array<LO> remoteLIDs = G->getImporter()->getRemoteLIDs();
+
+    Teuchos::Array<GO> remoteGIDs(remoteLIDs.size());
+    Teuchos::Array<int> userRemotePIDs(remoteLIDs.size());
+    for(size_t i=0; i< (size_t)remoteLIDs.size(); i++)
+      remoteGIDs[i] = target->getGlobalElement(G->getImporter()->getRemoteLIDs()[i]);
+    Tpetra::Import_Util::getRemotePIDs(*G->getImporter(),userRemotePIDs);
+
+    const Teuchos::ArrayView<const LO> exportLIDs      = G->getImporter()->getExportLIDs();
+    const Teuchos::ArrayView<const int> userExportPIDs = G->getImporter()->getExportPIDs();
 
     Tpetra::Import<LO,GO,NT> newimport(source,
-                                target,
-                                userRemotePIDs,
-                                remoteGIDs,
-                                exportLIDs,
-                                userExportPIDs ,
-                                false,
-                                Teuchos::null,
-                                Teuchos::null ); // plist == null
+                                       target,
+                                       userRemotePIDs,
+                                       exportLIDs,
+                                       userExportPIDs ,
+                                       Teuchos::null,
+                                       Teuchos::null ); // plist == null
 
     Teuchos::RCP<const map_type> newsource = newimport.getSourceMap ();
     Teuchos::RCP<const map_type> newtarget = newimport.getTargetMap ();
 
-    Teuchos::ArrayView<const GO> newremoteGIDs = newtarget->getNodeElementList ();
-    Teuchos::ArrayView<const GO> newexportGIDs = newsource->getNodeElementList ();
+    const int rank = newsource->getComm()->getRank();
 
-    if(avremoteGIDs.size()!=newremoteGIDs.size())
-      {
-        success = false;
-        std::cerr<<"Rank "<<rank<<" oldrGID:: "<<avremoteGIDs<<std::endl;
-        std::cerr<<"Rank "<<rank<<" newrGID:: "<<newremoteGIDs<<std::endl;
-      }
-    else
-      for(size_type i=0;i<avremoteGIDs.size();++i)
-        if(avremoteGIDs[i]!=newremoteGIDs[i]) {
-          std::cerr<<"Rank "<<rank<<" @["<<i<<"] oldrgid "<<avremoteGIDs[i]<<" newrgid "<<newremoteGIDs[i]<<std::endl;
-          success = false;
-        }
-
-    if(avexportGIDs.size()!=newexportGIDs.size()) {
+    Teuchos::Array<LO> newexportLIDs = newimport.getExportLIDs();    
+    if (newexportLIDs.size () != exportLIDs.size ()) {
+      out << "Rank " << rank << " newexportLIDs.size() != exportLIDs.size()" << endl
+	  << "Rank " << rank << " oldExportLIDs " << exportLIDs << endl
+	  << "Rank " << rank << " newExportLIDs " << newexportLIDs << endl;
       success = false;
-      std::cerr<<"Rank "<<rank<<" oldeGID:: "<<avexportGIDs<<std::endl;
-      std::cerr<<"Rank "<<rank<<" neweGID:: "<<newexportGIDs<<std::endl;
     }
-    else
-      for(size_type i=0;i<avexportGIDs.size();++i)
-        if(avexportGIDs[i]!=newexportGIDs[i]) {
-          success = false;
-          std::cerr<<"Rank "<<rank<<" @["<<i<<"] oldEgid "<<avexportGIDs[i]<<" newEgid "<<newexportGIDs[i]<<std::endl;
-        }
-
-
-    Teuchos::Array<LO> newexportLIDs = newimport.getExportLIDs();
-    if(newexportLIDs.size()!=exportLIDs.size())
-      {
-        out <<" newexportLIDs.size does not match exportLIDs.size()"<<endl;
-        out <<" oldExportLIDs "<<exportLIDs<<endl;
-        out <<" newExportLIDs "<<newexportLIDs<<endl;
-        success = false;
+    else {
+      auto newExportLIDs_hv = newimport.getExportLIDs_dv ().view_host ();
+      if (size_t (newExportLIDs_hv.extent (0)) != size_t (newexportLIDs.size ())) {
+	success = false;
       }
-    else
-      for(size_type i=0;i<exportLIDs.size();++i)
-        if(exportLIDs[i]!=newexportLIDs[i]) {
-          out <<" exportLIDs["<<i<<"] ="<<exportLIDs[i]<<" != newexportLIDs[i] = "<<newexportLIDs[i]<<endl;
-          success = false;
-          break;
-        }
+      else {
+	for (size_type i = 0; i < exportLIDs.size (); ++i) {
+	  if (exportLIDs[i] != newexportLIDs[i]) {
+	    out << "Rank " << rank << " exportLIDs[" << i <<"] =" << exportLIDs[i]
+		<< " != newexportLIDs[i] = " << newexportLIDs[i] << endl;
+	    success = false;
+	    break;
+	  }
+	  if (newExportLIDs_hv[i] != newexportLIDs[i]) {
+	    out << "Rank " << rank << " newExportLIDs_hv[" << i << "] = "
+		<< newExportLIDs_hv[i] << " != newexportLIDs[i] = "
+		<< newexportLIDs[i] << endl;
+	    success = false;
+	    break;
+	  }
+	}
+      }
+    }
 
     Teuchos::Array<LO> newremoteLIDs = newimport.getRemoteLIDs();
-    if(newremoteLIDs.size()!=saveremoteLIDs.size())
-      {
-        out <<" newremoteLIDs.size does not match remoteLIDs.size()"<<endl;
-        out <<" oldRemoteLIDs "<<saveremoteLIDs<<endl;
-        out <<" newRemoteLIDs "<<newremoteLIDs<<endl;
-        success = false;
+    if (newremoteLIDs.size () != saveremoteLIDs.size ()) {
+      out << "Rank " << rank << " newremoteLIDs.size() != remoteLIDs.size()" << endl
+	  << "Rank " << rank << " oldRemoteLIDs " << saveremoteLIDs << endl
+	  << "Rank " << rank << " newRemoteLIDs " << newremoteLIDs << endl;
+      success = false;
+    }
+    else {
+      auto newRemoteLIDs_hv = newimport.getRemoteLIDs_dv ().view_host ();
+      if (size_t (newRemoteLIDs_hv.extent (0)) != size_t (newremoteLIDs.size ())) {
+	success = false;
       }
-    else
-      for(size_type i=0;i<saveremoteLIDs.size();++i)
-        if(saveremoteLIDs[i]!=newremoteLIDs[i]) {
-          out <<" remoteLIDs["<<i<<"] ="<<remoteLIDs[i]<<" != newremoteLIDs[i] = "<<newremoteLIDs[i]<<endl;
-          success = false;
-          break;
-        }
+      else {
+	for (size_type i = 0; i < saveremoteLIDs.size (); ++i) {
+	  if (saveremoteLIDs[i] != newremoteLIDs[i]) {
+	    out << "Rank " << rank << " saveremoteLIDs["<<i<<"] = "
+		<< saveremoteLIDs[i] << " != newremoteLIDs[i] = "
+		<< newremoteLIDs[i] << endl;
+	    success = false;
+	    break;
+	  }
+	  if (newRemoteLIDs_hv[i] != newremoteLIDs[i]) {
+	    out << "Rank " << rank << " newRemoteLIDs_hv["<<i<<"] = "
+		<< newRemoteLIDs_hv[i] << " != newremoteLIDs[i] = "
+		<< newremoteLIDs[i] << endl;
+	    success = false;
+	    break;
+	  }
+	}
+      }
+    }
 
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+    out<<" GlobalSuccess = "<<globalSuccess_int<<std::endl;
+
   }
 
   //

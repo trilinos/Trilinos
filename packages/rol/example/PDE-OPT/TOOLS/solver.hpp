@@ -52,7 +52,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsGraph.hpp"
@@ -61,6 +60,8 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "MatrixMarket_Tpetra.hpp"
+
+#include "ROL_Ptr.hpp"
 
 // Forward declarations.
 
@@ -96,15 +97,15 @@ class Solver {
 private:
 
   // Linear solvers and preconditioners for Jacobian and adjoint Jacobian
-  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_;
-  Teuchos::RCP<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_;
-  Teuchos::RCP<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_trans_;
-  Teuchos::RCP<Ifpack2::Preconditioner<Real,LO,GO,NO> > ifpack2Preconditioner_;
-  Teuchos::RCP<Ifpack2::Preconditioner<Real,LO,GO,NO> > ifpack2Preconditioner_trans_;
-  Teuchos::RCP<Belos::BlockGmresSolMgr<Real,MV,OP> > solverBelos_;
-  Teuchos::RCP<Belos::BlockGmresSolMgr<Real,MV,OP> > solverBelos_trans_;
-  Teuchos::RCP<Belos::LinearProblem<Real,MV,OP> > problemBelos_;
-  Teuchos::RCP<Belos::LinearProblem<Real,MV,OP> > problemBelos_trans_;
+  ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<>>> solver_;
+  ROL::Ptr<MueLu::TpetraOperator<Real,LO,GO,NO>> mueLuPreconditioner_;
+  ROL::Ptr<MueLu::TpetraOperator<Real,LO,GO,NO>> mueLuPreconditioner_trans_;
+  ROL::Ptr<Ifpack2::Preconditioner<Real,LO,GO,NO>> ifpack2Preconditioner_;
+  ROL::Ptr<Ifpack2::Preconditioner<Real,LO,GO,NO>> ifpack2Preconditioner_trans_;
+  ROL::Ptr<Belos::BlockGmresSolMgr<Real,MV,OP>> solverBelos_;
+  ROL::Ptr<Belos::BlockGmresSolMgr<Real,MV,OP>> solverBelos_trans_;
+  ROL::Ptr<Belos::LinearProblem<Real,MV,OP>> problemBelos_;
+  ROL::Ptr<Belos::LinearProblem<Real,MV,OP>> problemBelos_trans_;
 
   // Linear solver options.
   bool useDirectSolver_;
@@ -112,7 +113,7 @@ private:
   std::string preconditioner_;
 
   // Matrix transpose.
-  Teuchos::RCP<Tpetra::CrsMatrix<> > A_trans_;
+  ROL::Ptr<Tpetra::CrsMatrix<>> A_trans_;
 
   // Parameter list.
   Teuchos::ParameterList parlist_;
@@ -128,14 +129,14 @@ public:
   Solver(Teuchos::ParameterList & parlist) : parlist_(parlist), firstSolve_(true) {
     useDirectSolver_ = parlist.get("Use Direct Solver", true);
     directSolver_ = parlist.sublist("Direct").get("Solver Type", "KLU2");
-    parlistAmesos2_ = Teuchos::rcp(new Teuchos::ParameterList("Amesos2"));
+    parlistAmesos2_ = ROL::makePtr<Teuchos::ParameterList>("Amesos2");
     preconditioner_ = parlist.get("Preconditioner", "Ifpack2");
   }
 
-  void setA(Teuchos::RCP<Tpetra::CrsMatrix<> > &A);
+  void setA(ROL::Ptr<Tpetra::CrsMatrix<>> &A);
 
-  void solve(const Teuchos::RCP<Tpetra::MultiVector<> > &x,
-             const Teuchos::RCP<const Tpetra::MultiVector<> > &b,
+  void solve(const ROL::Ptr<Tpetra::MultiVector<>> &x,
+             const ROL::Ptr<const Tpetra::MultiVector<>> &b,
              const bool transpose = false);
 
 };

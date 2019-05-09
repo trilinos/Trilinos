@@ -161,14 +161,14 @@ StringVisualDependencyXMLConverter::convertSpecialVisualAttributes(
 }
 
 void BoolVisualDependencyXMLConverter::convertSpecialVisualAttributes(
-  RCP<const VisualDependency> dependency,
-  XMLObject& xmlObj,
+  RCP<const VisualDependency> /* dependency */,
+  XMLObject& /* xmlObj */,
   const XMLParameterListWriter::EntryIDsMap& /*entryIDsMap*/) const
 {}
 
 RCP<VisualDependency>
 BoolVisualDependencyXMLConverter::convertSpecialVisualAttributes(
-  const XMLObject& xmlObj,
+  const XMLObject& /* xmlObj */,
   const Dependency::ConstParameterEntryList dependees,
   const Dependency::ParameterEntryList dependents,
   bool showIf,
@@ -197,7 +197,7 @@ void ConditionVisualDependencyXMLConverter::convertSpecialVisualAttributes(
 RCP<VisualDependency>
 ConditionVisualDependencyXMLConverter::convertSpecialVisualAttributes(
   const XMLObject& xmlObj,
-  const Dependency::ConstParameterEntryList dependees,
+  const Dependency::ConstParameterEntryList /* dependees */,
   const Dependency::ParameterEntryList dependents,
   bool showIf,
   const XMLParameterListReader::EntryIDsMap& entryIDsMap) const

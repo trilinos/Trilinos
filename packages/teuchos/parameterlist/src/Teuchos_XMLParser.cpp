@@ -442,7 +442,7 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
 }
 
 
-void XMLParser::getComment(long startLine)
+void XMLParser::getComment(long /* startLine */)
 {
   /* Recall from the specification:
         Comment   ::= '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'

@@ -74,6 +74,7 @@ namespace panzer
       std::vector<std::string>() */)
     :
     evalStyle_(evalStyle),
+    useDescriptors_(false),
     multiplier_(multiplier),
     basisName_(basis.name())
   {
@@ -120,11 +121,87 @@ namespace panzer
     int i(0);
     fieldMults_.resize(fmNames.size());
     kokkosFieldMults_ =
-      View<View<const ScalarT**>*>("BasisTimesVector::KokkosFieldMultipliers",
+      View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>("BasisTimesVector::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
       fieldMults_[i++] = MDField<const ScalarT, Cell, IP>(name, ir.dl_scalar);
+      this->addDependentField(fieldMults_[i - 1]);
+    } // end loop over the field multipliers
+
+    // Set the name of this object.
+    string n("Integrator_BasisTimesVector (");
+    if (evalStyle == EvaluatorStyle::CONTRIBUTES)
+      n += "Cont";
+    else // if (evalStyle == EvaluatorStyle::EVALUATES)
+      n += "Eval";
+    n += ", " + typeAsString<EvalT>() + "):  " + field_.fieldTag().name();
+    this->setName(n);
+  } // end of Main Constructor
+
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  Descriptor Constructor
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  Integrator_BasisTimesVector<EvalT, Traits>::
+  Integrator_BasisTimesVector(
+    const panzer::EvaluatorStyle&                         evalStyle,
+    const PHX::FieldTag&                                  resTag,
+    const PHX::FieldTag&                                  valTag,
+    const BasisDescriptor&                                bd,
+    const IntegrationDescriptor&                          id,
+    const double&                                         multiplier, /* = 1 */
+    const std::vector<PHX::FieldTag>&                     multipliers /* =
+      std::vector<PHX::FieldTag>() */)
+    :
+    evalStyle_(evalStyle),
+    useDescriptors_(true),
+    bd_(bd),
+    id_(id),
+    multiplier_(multiplier)
+  {
+    using Kokkos::View;
+    using panzer::BASIS;
+    using panzer::Cell;
+    using panzer::EvaluatorStyle;
+    using panzer::IP;
+    using panzer::PureBasis;
+    using PHX::MDField;
+    using PHX::typeAsString;
+    using std::invalid_argument;
+    using std::logic_error;
+    using std::string;
+    using Teuchos::RCP;
+
+    // Ensure the input makes sense.
+    TEUCHOS_TEST_FOR_EXCEPTION(not ((bd_.getType() == "HCurl") or
+      (bd_.getType() == "HDiv")), logic_error, "Error:  "                     \
+      "Integrator_BasisTimesVector:  Basis of type \"" << bd_.getType()
+      << "\" is not a vector basis.")
+
+    // Create the field for the vector-valued quantity we're integrating.
+    vector_ = valTag;
+    this->addDependentField(vector_);
+
+    // Create the field that we're either contributing to or evaluating
+    // (storing).
+    field_ = resTag;
+    if (evalStyle == EvaluatorStyle::CONTRIBUTES)
+      this->addContributedField(field_);
+    else // if (evalStyle == EvaluatorStyle::EVALUATES)
+      this->addEvaluatedField(field_);
+
+    // Add the dependent field multipliers, if there are any.
+    int i(0);
+    fieldMults_.resize(multipliers.size());
+    kokkosFieldMults_ =
+      View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>("BasisTimesVector::KokkosFieldMultipliers",
+      multipliers.size());
+    for (const auto& fm : multipliers)
+    {
+      fieldMults_[i++] = fm;
       this->addDependentField(fieldMults_[i - 1]);
     } // end loop over the field multipliers
 
@@ -193,7 +270,8 @@ namespace panzer
     numDim_ = vector_.extent(2);
 
     // Determine the index in the Workset bases for our particular basis name.
-    basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
+    if (not useDescriptors_)
+      basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
   } // end of postRegistrationSetup()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -290,7 +368,10 @@ namespace panzer
     using Kokkos::RangePolicy;
 
     // Grab the basis information.
-    basis_ = this->wda(workset).bases[basisIndex_]->weighted_basis_vector;
+    const panzer::BasisValues2<double>& bv = useDescriptors_ ?
+      this->wda(workset).getBasisValues(bd_,id_) :
+      *this->wda(workset).bases[basisIndex_];
+    basis_ = bv.weighted_basis_vector;
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.  The parallel_fors will loop over the cells

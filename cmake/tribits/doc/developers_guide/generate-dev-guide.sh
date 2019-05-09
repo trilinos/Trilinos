@@ -115,6 +115,8 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   generate_gitdist_dist_help_topic dist-repo-status
   generate_gitdist_dist_help_topic repo-versions
   generate_gitdist_dist_help_topic aliases
+  generate_gitdist_dist_help_topic default-branch
+  generate_gitdist_dist_help_topic move-to-base-dir
   generate_gitdist_dist_help_topic usage-tips
   generate_gitdist_dist_help_topic script-dependencies
   generate_gitdist_dist_help_topic all
@@ -139,6 +141,27 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   ../../ci_support/is_checkin_tested_commit.py --help \
     &> is_checkin_tested_commit.txt.tmp
   update_if_different  is_checkin_tested_commit.txt  tmp
+
+  echo
+  echo "Generating output for 'get-tribits-packages-from-files-list.py --help' ..."
+  echo
+  ../../ci_support/get-tribits-packages-from-files-list.py --help \
+    &> get-tribits-packages-from-files-list.txt.tmp
+  update_if_different  get-tribits-packages-from-files-list.txt  tmp
+
+  echo
+  echo "Generating output for 'get-tribits-packages-from-last-tests-failed.py --help' ..."
+  echo
+  ../../ci_support/get-tribits-packages-from-last-tests-failed.py --help \
+    &> get-tribits-packages-from-last-tests-failed.txt.tmp
+  update_if_different  get-tribits-packages-from-last-tests-failed.txt  tmp
+
+  echo
+  echo "Generating output for 'filter-packages-list.py --help' ..."
+  echo
+  ../../ci_support/filter-packages-list.py --help \
+    &> filter-packages-list.txt.tmp
+  update_if_different  filter-packages-list.txt  tmp
 
   echo
   echo "Generating output for 'install_devtools.py --help' ..."

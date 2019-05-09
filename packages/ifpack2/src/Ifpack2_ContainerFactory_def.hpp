@@ -44,8 +44,35 @@
 #define IFPACK2_CONTAINERFACTORY_DEF_H
 
 #include "Ifpack2_ContainerFactory_decl.hpp"
+#include "Ifpack2_TriDiContainer.hpp"
+#include "Ifpack2_DenseContainer.hpp"
+#include "Ifpack2_SparseContainer.hpp"
+#include "Ifpack2_BandedContainer.hpp"
+#include "Ifpack2_BlockTriDiContainer.hpp"
+#include "Ifpack2_ILUT.hpp"
+#include "Teuchos_ArrayView.hpp"
+
+#include <sstream>
 
 namespace Ifpack2 {
+
+template<typename MatrixType>
+void ContainerFactory<MatrixType>::
+registerDefaults()
+{
+  registerContainer<Ifpack2::TriDiContainer<MatrixType, scalar_type>>("TriDi");
+  registerContainer<Ifpack2::DenseContainer<MatrixType, scalar_type>>("Dense");
+  registerContainer<Ifpack2::BandedContainer<MatrixType, scalar_type>>("Banded");
+  registerContainer<SparseContainer<MatrixType, ILUT<MatrixType>>>("SparseILUT");
+#ifdef HAVE_IFPACK2_AMESOS2
+  registerContainer<SparseContainer<MatrixType, Details::Amesos2Wrapper<MatrixType>>>("SparseAmesos");
+  registerContainer<SparseContainer<MatrixType, Details::Amesos2Wrapper<MatrixType>>>("SparseAmesos2");
+#endif
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+  registerContainer<Ifpack2::BlockTriDiContainer<MatrixType>>("BlockTriDi");
+#endif
+  registeredDefaults = true;
+}
 
 template<typename MatrixType>
 template<typename ContainerType>

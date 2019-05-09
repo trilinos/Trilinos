@@ -87,7 +87,15 @@ template <typename ExecSpace, typename crsMat_t>
 void run_experiment(
     crsMat_t crsmat){
 
-  typedef typename crsMat_t::values_type scalar_view_t;
+
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
+
+
+  typedef typename lno_nnz_view_t::value_type lno_t;
+  typedef typename lno_view_t::value_type size_type;
+  typedef typename scalar_view_t::value_type scalar_t;
 
   INDEX_TYPE nv = crsmat.numRows();
   scalar_view_t kok_x_original = create_x_vector<scalar_view_t>(nv, MAXVAL);
@@ -105,10 +113,13 @@ void run_experiment(
 
   KokkosKernels::Experimental::Example::CGSolveResult cg_result ;
 
+
+
+
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
-        < typename crsMat_t::StaticCrsGraphType::row_map_type,
-          typename crsMat_t::StaticCrsGraphType::entries_type,
-          typename crsMat_t::values_type,
+        < size_type,
+		  lno_t,
+		  scalar_t,
           ExecSpace, ExecSpace, ExecSpace > KernelHandle;
 
   KernelHandle kh;
@@ -257,32 +268,32 @@ int main (int argc, char ** argv){
 
 
   for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
+    if ( 0 == strcasecmp( argv[i] , "--threads" ) ) {
       cmdline[ CMD_USE_THREADS ] = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
       cmdline[ CMD_USE_OPENMP ] = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "cores" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cores" ) ) {
       sscanf( argv[++i] , "%dx%d" ,
               cmdline + CMD_USE_NUMA ,
               cmdline + CMD_USE_CORE_PER_NUMA );
     }
-    else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       cmdline[ CMD_USE_CUDA ] = 1 ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "cuda-dev" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cuda-dev" ) ) {
       cmdline[ CMD_USE_CUDA ] = 1 ;
       cmdline[ CMD_USE_CUDA_DEV ] = atoi( argv[++i] ) ;
     }
 
-    else if ( 0 == strcasecmp( argv[i] , "mtx" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--mtx" ) ) {
       mtx_bin_file = argv[++i];
     }
     else {
       cmdline[ CMD_ERROR ] = 1 ;
       std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]" << std::endl;
+      std::cerr << "OPTIONS\n\t--threads [numThreads]\n\t--openmp [numThreads]\n\t--cuda\n\t--cuda-dev[DeviceIndex]\n\t--mtx[binary_mtx_file]" << std::endl;
 
       return 0;
     }
@@ -290,7 +301,7 @@ int main (int argc, char ** argv){
 
   if (mtx_bin_file == NULL){
     std::cerr << "Provide a mtx binary file" << std::endl ;
-    std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]" << std::endl;
+    std::cerr << "OPTIONS\n\t--threads [numThreads]\n\t--openmp [numThreads]\n\t--cuda\n\t--cuda-dev[DeviceIndex]\n\t--mtx[binary_mtx_file]" << std::endl;
 
     return 0;
   }
@@ -300,25 +311,29 @@ int main (int argc, char ** argv){
 
 
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
 
     if ( cmdline[ CMD_USE_THREADS ] ) {
+
+      Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
+
+      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
+        init_args.num_threads = cmdline[ CMD_USE_THREADS ];
+        init_args.num_numa = cmdline[ CMD_USE_NUMA ];
+        //const int core_per_numa = cmdline[ CMD_USE_CORE_PER_NUMA ]; // How to get this to initialize() without using impl_initialize()?
+      }
+      else {
+        init_args.num_threads = cmdline[ CMD_USE_THREADS ];
+      }
+
+      Kokkos::initialize( init_args );
+      Kokkos::print_configuration(std::cout);
+
       INDEX_TYPE nv = 0, ne = 0;
       INDEX_TYPE *xadj, *adj;
       SCALAR_TYPE *ew;
 
-
-      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
-        Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] ,
-                                     cmdline[ CMD_USE_NUMA ] ,
-                                     cmdline[ CMD_USE_CORE_PER_NUMA ] );
-      }
-      else {
-        Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] );
-      }
-
       KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
-      Kokkos::Threads::print_configuration(std::cout);
 
       typedef Kokkos::Threads myExecSpace;
       typedef typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE > crsMat_t;
@@ -344,28 +359,31 @@ int main (int argc, char ** argv){
 
       run_experiment<myExecSpace, crsMat_t>(crsmat);
 
-      myExecSpace::finalize();
+      Kokkos::finalize();
     }
-
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 
     if ( cmdline[ CMD_USE_OPENMP ] ) {
+
+      Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
+
+      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
+        init_args.num_threads = cmdline[ CMD_USE_OPENMP ];
+        init_args.num_numa = cmdline[ CMD_USE_NUMA ];
+        //const int core_per_numa = cmdline[ CMD_USE_CORE_PER_NUMA ];
+      }
+      else {
+        init_args.num_threads = cmdline[ CMD_USE_OPENMP ];
+      }
+
+      Kokkos::initialize( init_args );
+      Kokkos::print_configuration(std::cout);
+
       INDEX_TYPE nv = 0, ne = 0;
       INDEX_TYPE *xadj, *adj;
       SCALAR_TYPE *ew;
-
-
-      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
-        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] ,
-                                     cmdline[ CMD_USE_NUMA ] ,
-                                     cmdline[ CMD_USE_CORE_PER_NUMA ] );
-      }
-      else {
-        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] );
-      }
-      Kokkos::OpenMP::print_configuration(std::cout);
 
       KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
@@ -396,20 +414,24 @@ int main (int argc, char ** argv){
 
       run_experiment<myExecSpace, crsMat_t>(crsmat);
 
-      myExecSpace::finalize();
+      Kokkos::finalize();
     }
-
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if ( cmdline[ CMD_USE_CUDA ] ) {
+
+      Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
+
       // Use the last device:
+      init_args.device_id = cmdline[ CMD_USE_CUDA_DEV ];
+
+      Kokkos::initialize( init_args );
+      Kokkos::print_configuration(std::cout);
+
       INDEX_TYPE nv = 0, ne = 0;
       INDEX_TYPE *xadj, *adj;
       SCALAR_TYPE *ew;
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
-      Kokkos::Cuda::print_configuration(std::cout);
 
       KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
@@ -455,16 +477,11 @@ int main (int argc, char ** argv){
       delete [] adj;
       delete [] ew;
 
-
       run_experiment<myExecSpace, crsMat_t>(crsmat);
 
-      myExecSpace::finalize();
-      Kokkos::HostSpace::execution_space::finalize();
+      Kokkos::finalize();
     }
-
 #endif
-
-
 
   return 0;
 }

@@ -35,6 +35,7 @@
 #define STK_MESH_FIXTURES_QUAD_MESH_FIXTURE_HPP
 
 #include <map>                          // for multimap, etc
+#include <memory>
 #include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
@@ -42,6 +43,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_unit_tests/stk_mesh_fixtures/CoordinateMapping.hpp>
 #include <string>                       // for string
 #include <vector>                       // for vector
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -72,6 +74,8 @@ class QuadFixture
    * Set up meta data to support this fixture. Meta data is left uncommitted
    * to allow additional modifications by the client.
    */
+  // The nz argument is ignored, only here to allow use in templated functions that also operate on 3D fixtures
+  QuadFixture( MetaData& meta, BulkData& bulk, size_t nx, size_t ny, size_t nz, size_t nid_start, size_t eid_start);
 
   QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny, const std::vector<std::string>& rank_names = std::vector<std::string>() );
 
@@ -82,28 +86,44 @@ class QuadFixture
   ~QuadFixture() {}
 
   const unsigned                m_spatial_dimension;
-  MetaData                      m_meta ;
-  BulkData                      m_bulk_data ;
+ private:
+  std::unique_ptr<MetaData>     m_meta_p;
+  std::unique_ptr<BulkData>     m_bulk_p;
+ public:
+  MetaData &                    m_meta ;
+  BulkData &                    m_bulk_data ;
   Part &                        m_quad_part ;
   PartVector                    m_elem_parts;
   PartVector                    m_node_parts;
   CoordFieldType &              m_coord_field ;
   const unsigned                m_nx ;
   const unsigned                m_ny ;
+  const size_t                  m_node_id_start = 1;
+  const size_t                  m_elem_id_start = 1;
+  stk::topology                 m_elem_topology = stk::topology::QUAD_4_2D;
+  stk::topology                 m_face_topology = stk::topology::LINE_2;
+
+  size_t num_nodes() const {
+    return (m_nx+1)*(m_ny+1);
+  }
+
+  size_t num_elements() const {
+    return (m_nx)*(m_ny);
+  }
 
   /**
    * Thinking in terms of rows and columns of nodes, get the id of the node in
    * the (x, y) position.
    */
   EntityId node_id( unsigned x , unsigned y ) const
-    { return 1 + x + ( m_nx + 1 ) * y ; }
+    { return m_node_id_start + x + ( m_nx + 1 ) * y ; }
 
   /**
    * Thinking in terms of rows and columns of elements, get the id of the
    * element in the (x, y) position.
    */
   EntityId elem_id( unsigned x , unsigned y ) const
-    { return 1 + x + m_nx * y ; }
+    { return m_elem_id_start + x + m_nx * y ; }
 
   /**
    * Thinking in terms of rows and columns of nodes, get the node in
@@ -136,9 +156,9 @@ class QuadFixture
   /**
    * Create the mesh (into m_bulk_data).
    */
-  void generate_mesh();
+  void generate_mesh(const CoordinateMapping & coordMap = CartesianCoordinateMapping());
 
-  void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
+  void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor, const CoordinateMapping & coordMap = CartesianCoordinateMapping() );
  private:
 
   typedef std::multimap<EntityId, int> NodeToProcsMMap;

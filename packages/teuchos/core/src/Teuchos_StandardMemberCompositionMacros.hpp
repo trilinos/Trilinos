@@ -46,10 +46,12 @@
 #define TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H
 
 /*! \file Teuchos_StandardMemberCompositionMacros.hpp \brief Macro
-	that adds <<std member comp>> members as attribute members for any
-	class.
+        that adds <<std member comp>> members as attribute members for any
+        class.
 */
 #include "Teuchos_ConfigDefs.hpp"
+
+namespace Teuchos { class DummyDummyClass; } // see below
 
 /** \brief Macro that adds <<std member comp>> attributes to any class
  *
@@ -66,8 +68,8 @@
  \endverbatim
  * This macro adds the following data member to the class declaration:
  \verbatim
-	private:
-		MyClass my_attribute_;
+        private:
+                MyClass my_attribute_;
  \endverbatim
  * and the following methods to your class declaration:
  \verbatim
@@ -97,4 +99,4 @@ public: \
 // which allows a semicolon at the end!
 //
 
-#endif	// TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H
+#endif  // TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H

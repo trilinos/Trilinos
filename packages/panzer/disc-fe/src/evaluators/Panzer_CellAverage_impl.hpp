@@ -53,7 +53,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(CellAverage,p) : quad_index(-1)
+template<typename EvalT, typename Traits>
+CellAverage<EvalT, Traits>::
+CellAverage(
+  const Teuchos::ParameterList& p) : quad_index(0)
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
@@ -61,7 +64,7 @@ PHX_EVALUATOR_CTOR(CellAverage,p) : quad_index(-1)
   Teuchos::RCP<panzer::IntegrationRule> ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
   quad_order = ir->cubature_degree;
 
-  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->dimension(0)));
+  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->extent(0)));
   average = PHX::MDField<ScalarT,Cell>( p.get<std::string>("Average Name"), dl_cell);
   scalar = PHX::MDField<const ScalarT,Cell,IP>( p.get<std::string>("Field Name"), ir->dl_scalar);
 
@@ -93,22 +96,23 @@ PHX_EVALUATOR_CTOR(CellAverage,p) : quad_index(-1)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(CellAverage,sd,fm)
+template<typename EvalT, typename Traits>
+void
+CellAverage<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(average,fm);
-  this->utils.setFieldData(scalar,fm);
-  
-  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->utils.setFieldData(*field,fm);
-
-  num_qp = scalar.dimension(1);
-
+  num_qp = scalar.extent(1);
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(CellAverage,workset)
+template<typename EvalT, typename Traits>
+void
+CellAverage<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     

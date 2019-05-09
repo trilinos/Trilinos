@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,7 @@ int maxmatch(struct vtx_data **graph,       /* array of vtx data for graph */
              int               using_ewgts, /* are edge weights being used? */
              int               igeom,       /* geometric dimensionality */
              float **          coords       /* coordinates for each vertex */
-             )
+)
 {
   extern int DEBUG_COARSEN; /* debug output for coarsening? */
   extern int MATCH_TYPE;    /* which matching routine to use */

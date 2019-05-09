@@ -26,16 +26,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ML_Nox
   "Enable ML with NOX support."
   ${TrilinosCouplings_HAVE_ML_NOX_DEFAULT} )
 
-
-# Intrepid2 Refactor support
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Intrepid2_Refactor
-  HAVE_${PACKAGE_NAME_UC}_INTREPID2_REFACTOR
-  "Enable Intrepid2 Refactor."
-  "${Intrepid2_ENABLE_KokkosDynRankView}")
-
-
-
 #
 # C) Add the libraries, tests, and examples
 #

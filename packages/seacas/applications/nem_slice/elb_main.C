@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     status = internal_main(argc, argv, int(0));
   }
 
-  /* Report any non-fatal errors that may have occured */
+  /* Report any non-fatal errors that may have occurred */
   error_report();
 
   /* Get ending time */
@@ -332,6 +332,19 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
     problem.alloc_graph = ELB_FALSE;
   }
 
+  /* if fix_columns is on, we need the face adjacency graph. So if
+   * nothing else has asked for the full adjacency graph, ask for the
+   * face adjacency graph. If something else did ask for the adjacency
+   * graph, we don't know if its full or face adjacency only, so leave
+   * the option as is */
+
+  if (problem.fix_columns) {
+    if (problem.alloc_graph == ELB_FALSE) {
+      problem.alloc_graph = ELB_TRUE;
+      problem.face_adj    = ELB_TRUE;
+    }
+  }
+
   /* Allocate necessary memory */
   if (problem.type == NODAL) {
     problem.num_vertices = mesh.num_nodes;
@@ -353,8 +366,8 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
     mesh.coords = nullptr;
   }
 
-  mesh.elem_type = (E_Type *)array_alloc(1, mesh.num_elems, sizeof(E_Type));
-  mesh.connect   = (INT **)array_alloc(2, mesh.num_elems, mesh.max_np_elem, sizeof(INT));
+  mesh.elem_type = static_cast<E_Type *>(array_alloc(1, mesh.num_elems, sizeof(E_Type)));
+  mesh.connect = static_cast<INT **>(array_alloc(2, mesh.num_elems, mesh.max_np_elem, sizeof(INT)));
   if (!(mesh.elem_type) || !(mesh.connect)) {
     Gen_Error(0, "fatal: insufficient memory");
     error_report();
@@ -409,7 +422,7 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
 
 #ifdef PRINT_VERT
   for (size_t cnt = 0; cnt < problem.num_vertices; cnt++)
-    printf("element = %i, proc = %i\n", cnt, lb.vertex2proc[cnt]);
+    printf("element = %lu, proc = %i\n", cnt, lb.vertex2proc[cnt]);
 #endif
 
   /*

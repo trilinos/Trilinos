@@ -86,4 +86,29 @@ namespace Tpetra {
                                                  defaultVal, caseSensitive)));
   }
 
+  std::string combineModeToString (const CombineMode combineMode)
+  {
+    std::string combineModeStr;
+    switch (combineMode) {
+    case ADD:
+      combineModeStr = "ADD";
+      break;
+    case REPLACE:
+      combineModeStr = "REPLACE";
+      break;
+    case ABSMAX:
+      combineModeStr = "ABSMAX";
+      break;
+    case INSERT:
+      combineModeStr = "INSERT";
+      break;
+    case ZERO:
+      combineModeStr = "ZERO";
+      break;
+    default:
+      combineModeStr = "INVALID";
+    }
+    return combineModeStr;
+  }
+
 } // namespace Tpetra

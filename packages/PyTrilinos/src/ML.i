@@ -47,7 +47,7 @@
 PyTrilinos.ML is the python interface to the Trilinos multi-level
 preconditioner package ML/MLAPI:
 
-    http://trilinos.sandia.gov/packages/ml
+    https://trilinos.org/docs/dev/packages/ml/doc/html/index.html
 
 The purpose of ML is to provide multilevel preconditioners to
 Trilinos.
@@ -84,36 +84,23 @@ example subdirectory of the PyTrilinos package:
 	docstring = %ml_docstring) ML
 
 %{
-//  PyTrilinos includes
+//  PyTrilinos include files
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_FILEstream.hpp"
 
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
-// Teuchos includes
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -121,24 +108,13 @@ example subdirectory of the PyTrilinos package:
 #include "numpy_include.hpp"
 #endif
 
-// IFPACK includes
+// IFPACK include files
 #ifdef HAVE_IFPACK
-#include "Ifpack_IC.h"
-#include "Ifpack_ICT.h"
-#include "Ifpack_ILU.h"
-#include "Ifpack_ILUT.h"
-#include "Ifpack_PointRelaxation.h"
-#include "Ifpack_Amesos.h"
+#include "PyTrilinos_IFPACK_Headers.hpp"
 #endif
 
-// ML includes
-#undef HAVE_STDINT_H
-#undef HAVE_INTTYPES_H
-#undef HAVE_SYS_TIME_H
-#include "ml_MultiLevelPreconditioner.h"
-#include "MLAPI.h"
-#include "PyTrilinos_ML_Util.hpp"
-
+// ML include files
+#include "PyTrilinos_ML_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration
@@ -163,7 +139,7 @@ example subdirectory of the PyTrilinos package:
 // External Trilinos package imports
 %import "Teuchos.i"
 
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %include "Epetra_RowMatrix_Utils.i"
 %ignore Epetra_Version;
 %import  "Epetra.i"
@@ -183,7 +159,7 @@ Epetra = PyTrilinos.Epetra
 // Teuchos::RCP handling
 %teuchos_rcp(MLAPI::DoubleVector)
 %teuchos_rcp(MLAPI::ML_Operator_Box)
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %teuchos_rcp(ML_Epetra::MultiLevelPreconditioner)
 #endif
 
@@ -636,7 +612,7 @@ MultiVector::Delete;
 // MLAPI_Operator support //
 ////////////////////////////
 %include "MLAPI_Operator.h"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 namespace MLAPI
 {
 %extend Operator
@@ -699,7 +675,7 @@ namespace MLAPI
 ////////////////////////////////
 // PyTrilinos_ML_Util support //
 ////////////////////////////////
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %include "PyTrilinos_ML_Util.hpp"
 %extend PyTrilinos::PyMatrix
 {
@@ -750,7 +726,7 @@ namespace MLAPI
 // ml_MultiLevelPreconditioner support //
 /////////////////////////////////////////
 %include "ml_MultiLevelPreconditioner.h"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 namespace ML_Epetra
 {
 %extend MultiLevelPreconditioner
@@ -811,7 +787,7 @@ namespace MLAPI
 //////////////////////////////////////
 // MLAPI_EpetraBaseOperator support //
 //////////////////////////////////////
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %teuchos_rcp(MLAPI::EpetraBaseOperator)
 %include "MLAPI_EpetraBaseOperator.h"
 #endif

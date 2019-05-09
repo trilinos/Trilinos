@@ -3227,7 +3227,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
     default:
       fprintf( stderr,
-               "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+               "*ML*ERR* specified options not valid or not yet implemented (%d)\n"
                "*ML*ERR* (file %s, line %d)\n",
                Settings.Level[i].coarsen_scheme,
                __FILE__,
@@ -3258,7 +3258,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
       default:
         fprintf( stderr,
-                 "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+                 "*ML*ERR* specified options not valid or not yet implemented (%d)\n"
                  "*ML*ERR* (file %s, line %d)\n",
                  Settings.Level[i].metis_aggregation_value,
                  __FILE__,
@@ -3422,7 +3422,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
     default:
       fprintf( stderr,
-               "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+               "*ML*ERR* specified options not valid or not yet implemented (%d)\n"
                "*ML*ERR* (file %s, line %d)\n",
                Settings.Level[i].smoother,
                __FILE__,
@@ -3474,7 +3474,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
   default:
     fprintf( stderr,
-             "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+             "*ML*ERR* specified options not valid or not yet implemented (%d)\n"
              "*ML*ERR* (file %s, line %d)\n",
              Settings.Level[MLAZ_COARSE_LEVEL].smoother,
              __FILE__,

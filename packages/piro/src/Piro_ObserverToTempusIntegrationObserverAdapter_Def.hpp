@@ -50,16 +50,18 @@ template <typename Scalar>
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegrationObserverAdapter(
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
-    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver, 
-    const bool supports_x_dotdot)
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver,
+    const bool supports_x_dotdot, const bool abort_on_fail_at_min_dt)
     : solutionHistory_(solutionHistory),
       timeStepControl_(timeStepControl),
       out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
       wrappedObserver_(wrappedObserver),
-      supports_x_dotdot_(supports_x_dotdot) 
+      supports_x_dotdot_(supports_x_dotdot),
+      abort_on_fail_at_min_dt_(abort_on_fail_at_min_dt) 
 {
   //Currently, sensitivities are not supported in Tempus.
   hasSensitivities_ = false;
+  previous_dt_ = 0.0;
 }
 
 template <typename Scalar>
@@ -76,6 +78,20 @@ observeStartIntegrator(const Tempus::Integrator<Scalar>& integrator)
   // store off the solution history and time step control
   solutionHistory_ = integrator.getSolutionHistory();
   timeStepControl_ = integrator.getTimeStepControl();
+
+  std::time_t begin = std::time(nullptr);
+  const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+  Teuchos::OSTab ostab(out,0,"ScreenOutput");
+  *out << "\nTempus - IntegratorBasic\n"
+       << std::asctime(std::localtime(&begin)) << "\n"
+       << "  Stepper = " << integrator.getStepper()->description() << "\n"
+       << "  Simulation Time Range  [" << integrator.getTimeStepControl()->getInitTime()
+       << ", " << integrator.getTimeStepControl()->getFinalTime() << "]\n"
+       << "  Simulation Index Range [" << integrator.getTimeStepControl()->getInitIndex()
+       << ", " << integrator.getTimeStepControl()->getFinalIndex() << "]\n"
+       << "============================================================================\n"
+       << "  Step       Time         dt  Abs Error  Rel Error  Order  nFail  dCompTime"
+       << std::endl;
 }
 
 template <typename Scalar>
@@ -112,27 +128,101 @@ observeAfterTakeStep(const Tempus::Integrator<Scalar>& )
 }
 
 
-template <typename Scalar>
+template<class Scalar>
 void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
-observeAcceptedTimeStep(const Tempus::Integrator<Scalar>& )
+observeAfterCheckTimeStep(const Tempus::Integrator<Scalar>& integrator)
 {
   //Nothing to do
+}
+
+
+template<class Scalar>
+void
+Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
+observeEndTimeStep(const Tempus::Integrator<Scalar>& integrator)
+{
+
+  using Teuchos::RCP;
+  RCP<Tempus::SolutionStateMetaData<Scalar> > csmd =
+    integrator.getSolutionHistory()->getCurrentState()->getMetaData();
+
+  if ((csmd->getOutputScreen() == true) or
+      (csmd->getOutput() == true) or
+      (csmd->getTime() == integrator.getTimeStepControl()->getFinalTime())) {
+
+     const Scalar steppertime = integrator.getStepperTimer()->totalElapsedTime();
+     // reset the stepper timer
+     integrator.getStepperTimer()->reset();
+
+     const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+     Teuchos::OSTab ostab(out,0,"ScreenOutput");
+     *out<<std::scientific<<std::setw( 6)<<std::setprecision(3)<<csmd->getIStep()
+        <<std::setw(11)<<std::setprecision(3)<<csmd->getTime()
+        <<std::setw(11)<<std::setprecision(3)<<csmd->getDt()
+        <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorAbs()
+        <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorRel()
+        <<std::fixed     <<std::setw( 7)<<std::setprecision(1)<<csmd->getOrder()
+        <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getNFailures()
+        <<std::setw(11)<<std::setprecision(3)<<steppertime
+        <<std::endl;
+  }
 }
 
 
 template <typename Scalar>
 void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
-observeEndIntegrator(const Tempus::Integrator<Scalar>& )
+observeEndIntegrator(const Tempus::Integrator<Scalar>& integrator)
 {
   this->observeTimeStep();
+
+  std::string exitStatus;
+  //const Scalar runtime = integrator.getIntegratorTimer()->totalElapsedTime();
+  if (integrator.getSolutionHistory()->getCurrentState()->getSolutionStatus() ==
+      Tempus::Status::FAILED or integrator.getStatus() == Tempus::Status::FAILED) {
+    exitStatus = "Time integration FAILURE!";
+  } else {
+    exitStatus = "Time integration complete.";
+  }
+  std::time_t end = std::time(nullptr);
+  const Scalar runtime = integrator.getIntegratorTimer()->totalElapsedTime();
+  const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+  Teuchos::OSTab ostab(out,0,"ScreenOutput");
+  *out << "============================================================================\n"
+       << "  Total runtime = " << runtime << " sec = "
+       << runtime/60.0 << " min\n"
+       << std::asctime(std::localtime(&end))
+       << exitStatus << "\n"
+       << std::endl;
+
 }
 
 template <typename Scalar>
 void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
 {
+  Scalar current_dt; 
+  if (Teuchos::nonnull(solutionHistory_->getWorkingState())) {
+    current_dt = solutionHistory_->getWorkingState()->getTimeStep();
+  }
+  else {
+    current_dt = solutionHistory_->getCurrentState()->getTimeStep();
+  }
+  
+  //Don't observe solution if step failed to converge
+  if ((solutionHistory_->getWorkingState() != Teuchos::null) &&
+     (solutionHistory_->getWorkingState()->getSolutionStatus() == Tempus::Status::FAILED)) {
+    Scalar min_dt = timeStepControl_->getMinTimeStep(); 
+    if ((previous_dt_ == current_dt) && (previous_dt_ == min_dt)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter, 
+        "\n Error!  Time integration FAILURE!  Time integrator has failed using Minimum Time Step = " << min_dt << "\n" 
+        << "and is unable to reduce time step further.\n");  
+    }
+    previous_dt_ = current_dt; 
+    return;
+  }
+
   //Get solution
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = solutionHistory_->getCurrentState()->getX();
   solution.assert_not_null();
@@ -157,5 +247,6 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   else {
     wrappedObserver_->observeSolution(*solution, time);
   }
+  previous_dt_ = current_dt; 
 }
 

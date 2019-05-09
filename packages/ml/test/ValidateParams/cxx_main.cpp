@@ -42,8 +42,7 @@ int main(int argc, char *argv[])
   int ny = nx;
 
   char xmlFile[80];
-  bool readXML=false;
-  if (argc > 2) {strcpy(xmlFile,argv[2]); readXML = true;}
+  if (argc > 2) {strcpy(xmlFile,argv[2]);}
   else sprintf(xmlFile,"params.xml");
 
   ParameterList GaleriList;

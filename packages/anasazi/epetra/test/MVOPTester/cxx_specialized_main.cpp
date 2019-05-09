@@ -62,7 +62,7 @@
 
 int main(int argc, char *argv[])
 {
-  int i, epetra_ierr;
+  int i;
   bool ierr, gerr;
   gerr = true;
 
@@ -102,13 +102,11 @@ int main(int argc, char *argv[])
   std::vector<double> Values(1, 1.0);
   for (i=0; i<NumMyElements; i++) {
     // Put in the diagonal entry
-    epetra_ierr = A->InsertGlobalValues(MyGlobalElements[i],1,&Values[0],&MyGlobalElements[i]);
-    assert(epetra_ierr==0);
+    A->InsertGlobalValues(MyGlobalElements[i],1,&Values[0],&MyGlobalElements[i]);
   }
    
   // Finish building the epetra matrix A
-  epetra_ierr = A->FillComplete();
-  assert(epetra_ierr==0);
+  A->FillComplete();
 
   // Issue several useful typedefs;
   typedef Anasazi::MultiVec<double> EMV;

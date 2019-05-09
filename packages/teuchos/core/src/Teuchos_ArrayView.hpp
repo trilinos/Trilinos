@@ -72,10 +72,20 @@ ArrayView<const T>::ArrayView( ENull )
 
 template<class T> inline
 ArrayView<T>::ArrayView( T* p, size_type size_in, const ERCPNodeLookup rcpNodeLookup )
-  :ptr_(p), size_(size_in)
+  :ptr_(size_in == 0 ? nullptr : p), size_(size_in)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  TEUCHOS_TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
+  // We comment out the one check below, as part of the fix for #4234:
+  //
+  // https://github.com/trilinos/Trilinos/issues/4234
+  //
+  // This permits conversion from std::vector or Kokkos::View, using
+  // ArrayView(x.data(), x.size(), RCP_DISABLE_NODE_LOOKUP).  The
+  // other part of the fix is that we make sure ptr_ is null if
+  // size_in is zero.
+  //
+  //TEUCHOS_TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
+
   TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 );
   // This only does something if HAVE_TEUCHOS_ARRAY_BOUNDSCHECK is defined.
   setUpIterators(rcpNodeLookup);
@@ -86,10 +96,20 @@ ArrayView<T>::ArrayView( T* p, size_type size_in, const ERCPNodeLookup rcpNodeLo
 
 template<class T> inline
 ArrayView<const T>::ArrayView(const T* p, size_type size_in, const ERCPNodeLookup rcpNodeLookup )
-  : ptr_(p), size_(size_in)
+  : ptr_(size_in == 0 ? nullptr : p), size_(size_in)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  TEUCHOS_TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
+  // We comment out the one check below, as part of the fix for #4234:
+  //
+  // https://github.com/trilinos/Trilinos/issues/4234
+  //
+  // This permits conversion from std::vector or Kokkos::View, using
+  // ArrayView(x.data(), x.size(), RCP_DISABLE_NODE_LOOKUP).  The
+  // other part of the fix is that we make sure ptr_ is null if
+  // size_in is zero.
+  //
+  //TEUCHOS_TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
+
   TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 );
   // This only does something if HAVE_TEUCHOS_ARRAY_BOUNDSCHECK is defined.
   setUpIterators(rcpNodeLookup);
@@ -120,7 +140,7 @@ template<class T> inline
 ArrayView<T>::ArrayView(
   std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
-  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+  : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
   setUpIterators();
 }
@@ -129,7 +149,7 @@ template<class T> inline
 ArrayView<const T>::ArrayView(
   std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
-  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+  : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
   setUpIterators();
 }
@@ -139,7 +159,7 @@ template<class T> inline
 ArrayView<T>::ArrayView(
   const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
-  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+  : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
   setUpIterators();
 }
@@ -148,7 +168,7 @@ template<class T> inline
 ArrayView<const T>::ArrayView(
   const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
-  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+  : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
   setUpIterators();
 }
@@ -296,12 +316,25 @@ T* ArrayView<T>::getRawPtr() const
 }
 
 template<class T> inline
+T* ArrayView<T>::data() const
+{
+  debug_assert_valid_ptr();
+  return ptr_;
+}
+
+template<class T> inline
 const T* ArrayView<const T>::getRawPtr() const
 {
   debug_assert_valid_ptr();
   return ptr_;
 }
 
+template<class T> inline
+const T* ArrayView<const T>::data() const
+{
+  debug_assert_valid_ptr();
+  return ptr_;
+}
 
 template<class T> inline
 T& ArrayView<T>::operator[](size_type i) const

@@ -45,7 +45,7 @@
 #define ROL_CAUCHY_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -59,31 +59,31 @@ public:
   Cauchy(const Real loc = 0., const Real scale = 1.)
     : loc_(loc), scale_((scale>0.) ? scale : 1.) {}
 
-  Cauchy(Teuchos::ParameterList &parlist) {
+  Cauchy(ROL::ParameterList &parlist) {
     loc_   = parlist.sublist("SOL").sublist("Distribution").sublist("Cauchy").get("Location",0.);
     scale_ = parlist.sublist("SOL").sublist("Distribution").sublist("Cauchy").get("Scale",1.);
     scale_ = (scale_>0.) ? scale_ : 1.;
   }
 
   Real evaluatePDF(const Real input) const {
-    return 1./(Teuchos::ScalarTraits<Real>::pi()*scale_*(1.+std::pow((input-loc_)/scale_,2.)));
+    return 1./(ROL::ScalarTraits<Real>::pi()*scale_*(1.+std::pow((input-loc_)/scale_,2.)));
   }
 
   Real evaluateCDF(const Real input) const {
-    return 0.5+atan((input-loc_)/scale_)/Teuchos::ScalarTraits<Real>::pi();
+    return 0.5+atan((input-loc_)/scale_)/ROL::ScalarTraits<Real>::pi();
   }
 
   Real integrateCDF(const Real input) const {
     Real v = input-loc_;
-    return 0.5*input + (v*atan(v/scale_) - 0.5*scale_*std::log(v*v+scale_*scale_))/Teuchos::ScalarTraits<Real>::pi();
+    return 0.5*input + (v*atan(v/scale_) - 0.5*scale_*std::log(v*v+scale_*scale_))/ROL::ScalarTraits<Real>::pi();
   }
 
   Real invertCDF(const Real input) const {
-    return loc_+scale_*tan(Teuchos::ScalarTraits<Real>::pi()*(input-0.5));
+    return loc_+scale_*tan(ROL::ScalarTraits<Real>::pi()*(input-0.5));
   }
 
   Real moment(const size_t m) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Cauchy): Cauchy moments are undefined!");
     return 0.;
   }

@@ -63,16 +63,16 @@ class BlockOperator2Determinant : public LinearOperator<Real> {
  
 private:
 
-  Teuchos::RCP<OP> A_, B_, C_, D_;
-  Teuchos::RCP<V> scratch_;  
+  ROL::Ptr<OP> A_, B_, C_, D_;
+  ROL::Ptr<V> scratch_;  
 
 public:
 
-  BlockOperator2Determinant( Teuchos::RCP<OP> &A, 
-                             Teuchos::RCP<OP> &B, 
-                             Teuchos::RCP<OP> &C, 
-                             Teuchos::RCP<OP> &D,
-                             Teuchos::RCP<V>  &scratch ) : 
+  BlockOperator2Determinant( ROL::Ptr<OP> &A, 
+                             ROL::Ptr<OP> &B, 
+                             ROL::Ptr<OP> &C, 
+                             ROL::Ptr<OP> &D,
+                             ROL::Ptr<V>  &scratch ) : 
     A_(A), B_(B), C_(C), D_(D), scratch_(scratch) {}
 
 
@@ -94,7 +94,7 @@ public:
 
   virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( true , std::logic_error, 
+    ROL_TEST_FOR_EXCEPTION( true , std::logic_error, 
                                 ">>> ERROR (ROL_BlockOperator2Determinant, applyInverse): "
                                 "Not implemented."); 
   }

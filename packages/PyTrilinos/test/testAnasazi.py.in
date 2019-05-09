@@ -75,7 +75,7 @@ class AnasaziTestCase(unittest.TestCase):
 
     def testVersion(self):
         "Test Anasazi Anasazi_Version function"
-        front   = "Anasazi Version "
+        front   = "Anasazi in Trilinos "
         version = Anasazi.Anasazi_Version()
         self.assertEquals(version[:len(front)], front)
 

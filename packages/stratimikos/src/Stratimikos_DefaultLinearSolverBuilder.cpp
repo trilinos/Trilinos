@@ -52,6 +52,9 @@
 #ifdef HAVE_STRATIMIKOS_AMESOS
 #  include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #endif
+#ifdef HAVE_STRATIMIKOS_AMESOS2
+#  include "Thyra_Amesos2LinearOpWithSolveFactory.hpp"
+#endif
 #if defined(HAVE_STRATIMIKOS_EPETRAEXT) && defined(HAVE_STRATIMIKOS_AZTECOO)
 #  include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
 #endif
@@ -214,7 +217,7 @@ void DefaultLinearSolverBuilder::readParameters( std::ostream *out )
 
 
 void DefaultLinearSolverBuilder::writeParamsFile(
-  const Thyra::LinearOpWithSolveFactoryBase<double> &lowsFactory,
+  const Thyra::LinearOpWithSolveFactoryBase<double> &/* lowsFactory */,
   const std::string &outputXmlFileName
   ) const
 {
@@ -478,6 +481,14 @@ void DefaultLinearSolverBuilder::initializeDefaults()
   // Linear Solvers
   //
 
+#ifdef HAVE_STRATIMIKOS_AMESOS2
+  setLinearSolveStrategyFactory(
+    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<double>,
+    Thyra::Amesos2LinearOpWithSolveFactory<double>>(),
+    "Amesos2", true
+    );
+#endif
+
 #ifdef HAVE_STRATIMIKOS_BELOS
   setLinearSolveStrategyFactory(
     abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<double>,
@@ -502,14 +513,14 @@ void DefaultLinearSolverBuilder::initializeDefaults()
     );
 #endif
 
+  // Note: Above, the last LOWSF object set will be the default!
+  // (unless we have only one processor, see below:)
+
 #ifdef HAVE_STRATIMIKOS_AMESOS
   if (Teuchos::GlobalMPISession::getNProc() == 1) {
     setDefaultLinearSolveStrategyFactoryName("Amesos");
   }
 #endif
-
-  // Note: ABove, the last LOWSF object set will be the default unless we are
-  // on multiple processors!
 
   //
   // Preconditioners

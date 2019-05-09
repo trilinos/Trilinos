@@ -44,7 +44,7 @@
 #define __Panzer_GeometricAggFieldPattern_hpp__
 
 #include "Panzer_FieldPattern.hpp"
-
+#include "Panzer_FieldType.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace panzer {
@@ -76,13 +76,14 @@ public:
      * <code>buildPattern()</code> and is equivalent to calling the
      * default constructor and then <code>buildPattern()</code>.
      */
-   GeometricAggFieldPattern(std::vector<Teuchos::RCP<const FieldPattern> > & patterns);
+  GeometricAggFieldPattern(std::vector<std::pair<FieldType,Teuchos::RCP<const FieldPattern>>> & patterns);
 
    /** Construct the geometric version of this pattern, this automatically calls 
      * <code>buildPattern()</code> and is equivalent to calling the
      * default constructor and then <code>buildPattern()</code>.
      */
-   GeometricAggFieldPattern(const Teuchos::RCP<const FieldPattern> & pattern);
+  GeometricAggFieldPattern(const FieldType& fieldType,
+                           const Teuchos::RCP<const FieldPattern> & pattern);
 
    virtual ~GeometricAggFieldPattern() {}
 
@@ -95,12 +96,13 @@ public:
      *       any previous state is not saved and the new
      *       state is constructed.
      */
-   virtual void buildPattern(const std::vector<Teuchos::RCP<const FieldPattern> > & patterns);
+   virtual void buildPattern(const std::vector<std::pair<FieldType,Teuchos::RCP<const FieldPattern>>> & patterns);
    
    /** Convenience function, simply builds a vector and calls the vectorized
      * form of <code>buildPattern</code>.
      */
-   virtual void buildPattern(const Teuchos::RCP<const FieldPattern> & patterns);
+   virtual void buildPattern(const FieldType& fieldType,
+                             const Teuchos::RCP<const FieldPattern> & pattern);
 
    /** Returns the sub cell count (see <code>FieldPattern</code>) if 
      * <code>buildPattern</code> has been called. Otherwise it will throw an exception.

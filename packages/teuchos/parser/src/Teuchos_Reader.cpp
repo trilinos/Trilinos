@@ -66,9 +66,13 @@ void Reader::at_token(std::istream& stream) {
       }
       ss << "}\n";
       ss << "Got: " << at(grammar->symbol_names, lexer_token) << '\n';
+      ss << "Lexer text: \"" << lexer_text << "\"\n";
       ss << "Parser was in state " << parser_state << '\n';
       throw ParserFail(ss.str());
     } else if (parser_action.kind == ACTION_SHIFT) {
+      if (sensing_indent) {
+        symbol_indentation_stack.push_back(indent_text.size());
+      }
       Teuchos::any shift_result;
       this->at_shift(shift_result, lexer_token, lexer_text);
       add_back(value_stack, shift_result);
@@ -85,8 +89,26 @@ void Reader::at_token(std::istream& stream) {
       }
       resize(value_stack, size(value_stack) - size(prod.rhs));
       Teuchos::any reduce_result;
-      this->at_reduce(reduce_result, parser_action.production, reduction_rhs);
+      try {
+        this->at_reduce(reduce_result, parser_action.production, reduction_rhs);
+      } catch (const ParserFail& e) {
+        std::stringstream ss;
+        ss << "error: Parser failure at line " << line;
+        ss << " column " << column << " of " << stream_name << '\n';
+        error_print_line(stream, ss);
+        ss << '\n' << e.what();
+        throw ParserFail(ss.str());
+      }
       add_back(value_stack, reduce_result);
+      if (sensing_indent) {
+        if (size(prod.rhs)) {
+          resize(symbol_indentation_stack,
+              (size(symbol_indentation_stack) + 1)
+              - size(prod.rhs));
+        } else {
+          symbol_indentation_stack.push_back(symbol_indentation_stack.back());
+        }
+      }
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "SERIOUS BUG: Action::kind enum value not in range\n");
@@ -110,13 +132,13 @@ void Reader::at_token_indent(std::istream& stream) {
     at_token(stream);
     return;
   }
-  at_token(stream);
-  std::size_t end_of_actual_newlines = 0;
-  for (; end_of_actual_newlines < lexer_text.size(); ++end_of_actual_newlines) {
-    char c = lexer_text[end_of_actual_newlines];
-    if (c != '\n' && c != '\r') break;
+  std::size_t last_newline_pos = lexer_text.find_last_of("\n");
+  if (last_newline_pos == std::string::npos) {
+    throw ParserFail("INDENT token did not contain a newline '\\n' !\n");
   }
-  std::string lexer_indent = lexer_text.substr(end_of_actual_newlines, std::string::npos);
+  std::string lexer_indent = lexer_text.substr(last_newline_pos + 1, std::string::npos);
+  // the at_token call is allowed to do anything to lexer_text
+  at_token(stream);
   lexer_text.clear();
   std::size_t minlen = std::min(lexer_indent.length(), indent_text.length());
   if (lexer_indent.length() > indent_text.length()) {
@@ -290,6 +312,9 @@ void Reader::read_string(any& result, std::string const& string, std::string con
 
 void Reader::read_file(any& result, std::string const& file_name) {
   std::ifstream stream(file_name.c_str());
+  TEUCHOS_TEST_FOR_EXCEPTION(!stream.is_open(),
+      ParserFail,
+      "Could not open file " << file_name);
   read_stream(result, stream, file_name);
 }
 

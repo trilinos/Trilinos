@@ -47,8 +47,9 @@
 #include "Tpetra_Details_Hash.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
-#include "Teuchos_VerbosityLevel.hpp"
+#include "Teuchos_Describable.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace Tpetra {
@@ -132,7 +133,7 @@ public:
   ///   starting with zero.
   ///
   /// Add <tt>(keys[i], i)</tt> to the table,
-  /// for i = 0, 1, ..., <tt>keys.dimension_0()</tt>.
+  /// for i = 0, 1, ..., <tt>keys.extent(0)</tt>.
   ///
   /// \param keys [in] The keys in the hash table.  The table
   ///   <i>always</i> keeps a (shallow) copy, and thus hasKeys() is
@@ -156,7 +157,7 @@ public:
   ///   starting with \c startingValue.
   ///
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table, for i =
-  /// 0, 1, ..., <tt>keys.dimension_0()</tt>.  This version is useful
+  /// 0, 1, ..., <tt>keys.extent(0)</tt>.  This version is useful
   /// if Map wants to exclude an initial sequence of contiguous GIDs
   /// from the table, and start with a given LID.
   ///
@@ -276,10 +277,10 @@ public:
     // That's why we use a specialized deep copy function here instead
     // of Kokkos::deep_copy.
     nonconst_ptr_type ptr (ViewAllocateWithoutInitializing ("ptr"),
-                           src.ptr_.dimension_0 ());
+                           src.ptr_.extent (0));
     ::Tpetra::Details::copyOffsets (ptr, src.ptr_);
     nonconst_val_type val (ViewAllocateWithoutInitializing ("val"),
-                           src.val_.dimension_0 ());
+                           src.val_.extent (0));
     // val and src.val_ have the same entry types, unlike (possibly)
     // ptr and src.ptr_.  Thus, we can use Kokkos::deep_copy here.
     Kokkos::deep_copy (val, src.val_);
@@ -363,16 +364,16 @@ public:
   ///
   /// This counts pairs with the same key value as separate pairs.
   KOKKOS_INLINE_FUNCTION offset_type numPairs () const {
-    // NOTE (mfh 26 May 2015) Using val_.dimension_0() only works
+    // NOTE (mfh 26 May 2015) Using val_.extent(0) only works
     // because the table stores pairs with duplicate keys separately.
     // If the table didn't do that, we would have to keep a separate
     // numPairs_ field (remembering the size of the input array of
     // keys).
     if (this->hasContiguousValues ()) {
-      return val_.dimension_0 () + static_cast<offset_type> (lastContigKey_ - firstContigKey_);
+      return val_.extent (0) + static_cast<offset_type> (lastContigKey_ - firstContigKey_);
     }
     else {
-      return val_.dimension_0 ();
+      return val_.extent (0);
     }
   }
 
@@ -539,9 +540,9 @@ private:
 
   //! The number of "buckets" in the bucket array.
   KOKKOS_INLINE_FUNCTION offset_type getSize () const {
-    return ptr_.dimension_0 () == 0 ?
+    return ptr_.extent (0) == 0 ?
       static_cast<offset_type> (0) :
-      static_cast<offset_type> (ptr_.dimension_0 () - 1);
+      static_cast<offset_type> (ptr_.extent (0) - 1);
   }
 
   //! Sanity checks; throw std::logic_error if any of them fail.

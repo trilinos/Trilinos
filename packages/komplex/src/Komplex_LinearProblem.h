@@ -99,8 +99,8 @@ Although formally the system is a 2-by-2 block system, we actually apply the int
 such that the real part of the first complex equation is followed by the imaginary part of the first complex equation,
 and so on.  This approach is documented in:
  
- David Day and Michael A. Heroux. Solving complex-valued linear systems via equivalent real formulations. 
- SIAM J. Sci. Comput., 23(2):480–498, 2001.
+ David Day and Michael A. Heroux. Solving complex-valued linear systems via equivalent real formulations.
+ SIAM J. Sci. Comput., 23(2):480--498, 2001.
 
 
 */    

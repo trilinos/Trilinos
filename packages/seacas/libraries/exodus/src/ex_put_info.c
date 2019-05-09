@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_INFO, etc
-#include "netcdf.h"       // for NC_NOERR, nc_enddef, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 #include <string.h> // for strlen, NULL
@@ -111,7 +110,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
   int rootid = exoid & EX_FILE_ID_MASK;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* only do this if there are records */
   if (num_info > 0) {
@@ -123,18 +122,10 @@ int ex_put_info(int exoid, int num_info, char *info[])
     status = nc_inq_dimid(rootid, DIM_NUM_INFO, &num_info_dim);
     if (status != NC_NOERR) {
 
-      /*   inquire previously defined dimensions  */
-      if ((status = nc_inq_dimid(rootid, DIM_LIN, &lindim)) != NC_NOERR) {
-        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get line string length in file id %d",
-                 rootid);
-        ex_err("ex_put_info", errmsg, status);
-        EX_FUNC_LEAVE(EX_FATAL);
-      }
-
       /* put file into define mode  */
       if ((status = nc_redef(rootid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed put file id %d into define mode", rootid);
-        ex_err("ex_put_info", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
 
@@ -143,14 +134,22 @@ int ex_put_info(int exoid, int num_info, char *info[])
         if (status == NC_ENAMEINUSE) { /* duplicate entry? */
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: info records already exist in file id %d",
                    rootid);
-          ex_err("ex_put_info", errmsg, status);
+          ex_err_fn(exoid, __func__, errmsg, status);
         }
         else {
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to define number of info records in file id %d", rootid);
-          ex_err("ex_put_info", errmsg, status);
+          ex_err_fn(exoid, __func__, errmsg, status);
         }
 
+        goto error_ret; /* exit define mode and return */
+      }
+
+      /* create line length dimension */
+      if ((status = nc_def_dim(rootid, DIM_LIN, (MAX_LINE_LENGTH + 1), &lindim)) != NC_NOERR) {
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define line length in file id %d",
+                 rootid);
+        ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
 
@@ -161,16 +160,13 @@ int ex_put_info(int exoid, int num_info, char *info[])
       if ((status = nc_def_var(rootid, VAR_INFO, NC_CHAR, 2, dims, &varid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define info record in file id %d",
                  rootid);
-        ex_err("ex_put_info", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
       ex_compress_variable(rootid, varid, 3);
 
       /*   leave define mode  */
-      if ((status = nc_enddef(rootid)) != NC_NOERR) {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to complete info record definition in file id %d", rootid);
-        ex_err("ex_put_info", errmsg, status);
+      if ((status = ex_leavedef(rootid, __func__)) != NC_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -178,7 +174,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
       if ((status = nc_inq_varid(rootid, VAR_INFO, &varid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find info record variable in file id %d",
                  rootid);
-        ex_err("ex_put_info", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -186,7 +182,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
     if (info != NULL) {
       /* write out information records */
       for (i = 0; i < num_info; i++) {
-        int length = strlen(info[i]);
+        int length = strlen(info[i]) + 1;
         start[0]   = i;
         start[1]   = 0;
 
@@ -196,7 +192,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
         if ((status = nc_put_vara_text(rootid, varid, start, count, info[i])) != NC_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store info record in file id %d",
                    rootid);
-          ex_err("ex_put_info", errmsg, status);
+          ex_err_fn(exoid, __func__, errmsg, status);
           EX_FUNC_LEAVE(EX_FATAL);
         }
       }
@@ -216,9 +212,6 @@ int ex_put_info(int exoid, int num_info, char *info[])
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(rootid)) != NC_NOERR) { /* exit define mode */
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", rootid);
-    ex_err("ex_put_info", errmsg, status);
-  }
+  ex_leavedef(rootid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

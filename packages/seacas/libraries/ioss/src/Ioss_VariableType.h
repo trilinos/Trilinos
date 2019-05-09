@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,7 +34,8 @@
 #define IOSS_Ioss_VariableType_h
 
 #include <Ioss_CodeTypes.h>
-#include <cstring>    // for strncmp, strncpy
+#include <Ioss_Utils.h>
+#include <cstring>    // for strncmp
 #include <functional> // for less
 #include <map>        // for map, map<>::value_compare
 #include <string>     // for string, operator<
@@ -51,7 +52,7 @@ namespace Ioss {
   class Registry
   {
   public:
-    void insert(const Ioss::VTM_ValuePair &value, bool delete_me);
+    void                      insert(const Ioss::VTM_ValuePair &value, bool delete_me);
     VariableTypeMap::iterator begin() { return m_registry.begin(); }
     VariableTypeMap::iterator end() { return m_registry.end(); }
     VariableTypeMap::iterator find(const std::string &type) { return m_registry.find(type); }
@@ -67,16 +68,8 @@ namespace Ioss {
 #define MAX_SUFFIX 8
   struct Suffix
   {
-    explicit Suffix(const char new_data[MAX_SUFFIX])
-    {
-      std::strncpy(m_data, new_data, MAX_SUFFIX);
-      m_data[MAX_SUFFIX] = '\0';
-    }
-    explicit Suffix(const std::string &new_data)
-    {
-      std::strncpy(m_data, new_data.c_str(), MAX_SUFFIX);
-      m_data[MAX_SUFFIX] = '\0';
-    }
+    explicit Suffix(const char new_data[MAX_SUFFIX]) { Ioss::Utils::copy_string(m_data, new_data); }
+    explicit Suffix(const std::string &new_data) { Ioss::Utils::copy_string(m_data, new_data); }
     bool operator==(const std::string &str) const
     {
       return std::strncmp(m_data, str.c_str(), MAX_SUFFIX) == 0;
@@ -94,7 +87,7 @@ namespace Ioss {
   {
   public:
     static void alias(const std::string &base, const std::string &syn);
-    static int describe(NameList *names);
+    static int  describe(NameList *names);
     static bool create_named_suffix_field_type(const std::string &             type_name,
                                                const std::vector<std::string> &suffices);
     static bool get_field_type_mapping(const std::string &field, std::string *type);
@@ -109,10 +102,10 @@ namespace Ioss {
     virtual int suffix_count() const;
     std::string name() const;
 
-    static std::string numeric_label(int which, int ncomp, const std::string &name);
+    static std::string  numeric_label(int which, int ncomp, const std::string &name);
     virtual std::string label(int which, char suffix_sep = '_') const = 0;
     virtual std::string label_name(const std::string &base, int which, char suffix_sep = '_') const;
-    virtual bool match(const std::vector<Suffix> &suffices) const;
+    virtual bool        match(const std::vector<Suffix> &suffices) const;
 
     static const VariableType *factory(const std::string &raw_name, int copies = 1);
     static const VariableType *factory(const std::vector<Suffix> &suffices);
@@ -125,8 +118,8 @@ namespace Ioss {
     const std::string name_;
     int               componentCount;
 
-    VariableType(const VariableType &);            // Do not implement...
-    VariableType &operator=(const VariableType &); // Do not implement...
+    VariableType(const VariableType &) = delete;
+    VariableType &operator=(const VariableType &) = delete;
 
     static bool build_variable_type(const std::string &raw_type);
   };

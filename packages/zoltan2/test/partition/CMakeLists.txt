@@ -10,7 +10,32 @@ IF (${PROJECT_NAME}_ENABLE_Galeri)
     )
 ENDIF()
   
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    fix2010
+    SOURCES fix2010.cpp
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 # MultiJagged Tests
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    mj_int_coordinates
+    SOURCES mj_int_coordinates.cpp
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    fix4785
+    SOURCES fix4785.cpp
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     mjTest
     SOURCES MultiJaggedTest.cpp
@@ -454,10 +479,13 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-TRIBITS_ADD_EXECUTABLE(
-  MapSimulater
-  SOURCES TaskMappingSimulate.cpp
-)
+IF (Tpetra_INST_DOUBLE)
+  # Double needed for file I/O.
+  TRIBITS_ADD_EXECUTABLE(
+    MapSimulater
+    SOURCES TaskMappingSimulate.cpp
+  )
+ENDIF()
 
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests

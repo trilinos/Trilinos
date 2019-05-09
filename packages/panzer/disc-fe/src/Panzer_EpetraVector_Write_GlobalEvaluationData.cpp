@@ -74,7 +74,9 @@ namespace panzer
     const Teuchos::RCP<const Epetra_Map>&    ghostedMap,
     const Teuchos::RCP<const Epetra_Map>&    ownedMap)
   {
+    using panzer::kokkos_utils::getView;
     using Teuchos::rcp;
+    using Thyra::create_Vector;
     using Thyra::create_VectorSpace;
 
     // Save the input.
@@ -86,13 +88,15 @@ namespace panzer
     ghostedSpace_ = create_VectorSpace(ghostedMap_);
     ownedSpace_   = create_VectorSpace(ownedMap_);
   
-    // Allocate the ghosted vector.
+    // Allocate the vectors.
     ghostedVector_ = rcp(new Epetra_Vector(*ghostedMap_));
+    auto ownedVector = rcp(new Epetra_Vector(*ownedMap_));
+    ownedVector_ = create_Vector(ownedVector, ownedSpace_);
     isInitialized_ = true;
 
     // Get the Kokkos::View corresponding to the ghosted vector.
-    ghostedView_   =
-      panzer::kokkos_utils::getView<Epetra_Vector>(*getGhostedVector());
+    ownedView_   = getView<Epetra_Vector>(*ownedVector_);
+    ghostedView_ = getView<Epetra_Vector>(*getGhostedVector());
   } // end of initialize()
   
   /////////////////////////////////////////////////////////////////////////////
@@ -112,12 +116,6 @@ namespace panzer
     TEUCHOS_TEST_FOR_EXCEPTION(ownedVector_.is_null(), logic_error,
       "EpetraVector_Write_GlobalEvaluationData::ghostToGlobal():  Owned "     \
       "vector has not been set; can't perform the halo exchange!")
-  
-    // Initialize the ghosted data, zeroing out things, and filling in
-    // specified constants.
-    initializeData();
-    RCP<Epetra_Vector> ownedVector_ep = get_Epetra_Vector(*ownedMap_,
-      ownedVector_);
   
     // Set different combine modes.
     Epetra_CombineMode cm = Add;
@@ -143,6 +141,8 @@ namespace panzer
     }; // end switch (getCombineMode())
     
     // Do the global distribution.
+    RCP<Epetra_Vector> ownedVector_ep = get_Epetra_Vector(*ownedMap_,
+      ownedVector_);
     ownedVector_ep->Export(*ghostedVector_, *exporter_, cm);
   } // end of ghostToGlobal()
   
@@ -173,13 +173,14 @@ namespace panzer
   setOwnedVector_Epetra(
     const Teuchos::RCP<Epetra_Vector>& ownedVector)
   {
+    using panzer::kokkos_utils::getView;
     using std::logic_error;
     using Thyra::create_Vector;
     TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
       "EpetraVector_Write_GlobalEvaluationData::setOwnedVector_Epetra():  "   \
       "This object hasn't yet been initialized.")
     ownedVector_ = create_Vector(ownedVector, ownedSpace_);
-    ownedView_ = panzer::kokkos_utils::getView<Epetra_Vector>(*ownedVector_);
+    ownedView_   = getView<Epetra_Vector>(*ownedVector_);
   } // end of setOwnedVector_Epetra()
   
   /////////////////////////////////////////////////////////////////////////////
@@ -211,12 +212,13 @@ namespace panzer
   setOwnedVector(
     const Teuchos::RCP<Thyra::VectorBase<double>>& ownedVector)
   {
+    using panzer::kokkos_utils::getView;
     using std::logic_error;
     TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
       "EpetraVector_Write_GlobalEvaluationData::setOwnedVector():  This "     \
       "object hasn't yet been initialized.")
     ownedVector_ = ownedVector;
-    ownedView_ = panzer::kokkos_utils::getView<Epetra_Vector>(*ownedVector_);
+    ownedView_   = getView<Epetra_Vector>(*ownedVector_);
   } // end of setOwnedVector()
   
   /////////////////////////////////////////////////////////////////////////////

@@ -585,6 +585,26 @@ void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateRowMaps()
   maps_.composite_map_ = elements;
   maps_.region_maps_ = elements_per_region;
   maps_.regionToAll_ = regionToAll;
+
+  for (int i = 0; i < comm_->getSize(); ++i)
+  {
+    comm_->barrier();
+
+    if (comm_->getRank() == i)
+    {
+      std::cout << "Proc " << i << std::endl;
+      for (int i = 0; i < regionToAll.size(); ++i)
+      {
+        Teuchos::Array<std::tuple<GlobalOrdinal,GlobalOrdinal> > currArray = regionToAll[i];
+        for (int j = 0; j < currArray.size(); ++j)
+        {
+          std::cout << std::get<0>(currArray[j]) << "\t" << std::get<1>(currArray[j]) << std::endl;
+        }
+      }
+    }
+
+    comm_->barrier();
+  }
 }
 
 
@@ -612,7 +632,7 @@ Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > RegionHandler<Scalar, LocalOrdi
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printView()
+void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printView() const
 {
   if( 0==comm_->getRank() )
   {
@@ -628,7 +648,7 @@ void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printView()
 
 //Print methods
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printNodesToRegion()
+void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printNodesToRegion() const
 {
   if( 0==comm_->getRank() )
   {
@@ -643,7 +663,7 @@ void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printNodesToRegio
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printInactive()
+void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printInactive() const
 {
   if( maps_.composite_map_.empty() )
     std::cout<<"INACTIVE PROC ID: "<<comm_->getRank()<<std::endl;

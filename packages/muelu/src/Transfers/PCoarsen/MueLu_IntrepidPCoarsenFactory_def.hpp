@@ -139,7 +139,7 @@ inline std::string tolower(const std::string & str) {
 
     std::vector<std::set<LocalOrdinal>> seedSets(spaceDim+1);
 
-    int numCells = elementToNodeMap.dimension(0);
+    int numCells = elementToNodeMap.extent(0);
     for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
     {
       for (int d=0; d<=spaceDim; d++)
@@ -191,13 +191,8 @@ inline std::string tolower(const std::string & str) {
 // Outputs:
 //  degree - order of resulting discretization
 //  return value - Intrepid2 basis correspionding to the name
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
 template<class Scalar,class KokkosExecutionSpace>
 Teuchos::RCP< Intrepid2::Basis<KokkosExecutionSpace,Scalar,Scalar> > BasisFactory(const std::string & name, int & degree)
-#else
-template<class Scalar>
-  Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  BasisFactory(const std::string & name, int & degree)
-#endif
 {
     using std::string;
     using Teuchos::rcp;
@@ -229,7 +224,6 @@ template<class Scalar>
     if(degree<=0) throw std::runtime_error(myerror);
 
     // FIXME LATER: Allow for alternative point types for Kirby elements
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     if(deriv=="hgrad" && el=="quad" && poly=="c"){
       if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<KokkosExecutionSpace,Scalar,Scalar>());
       else          return rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<KokkosExecutionSpace,Scalar,Scalar>(degree,Intrepid2::POINTTYPE_EQUISPACED));
@@ -238,18 +232,6 @@ template<class Scalar>
       if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_LINE_C1_FEM<KokkosExecutionSpace,Scalar,Scalar>());
       else          return rcp(new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<KokkosExecutionSpace,Scalar,Scalar>(degree,Intrepid2::POINTTYPE_EQUISPACED));
     }
-#else
-    typedef Intrepid2::FieldContainer<Scalar> ArrayScalar;
-    if(deriv=="hgrad" && el=="quad" && poly=="c"){
-      if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Scalar,ArrayScalar>());
-      else          return rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar>(degree,Intrepid2::POINTTYPE_EQUISPACED));
-    }
-    else if(deriv=="hgrad" && el=="line" && poly=="c"){
-      if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_LINE_C1_FEM<Scalar,ArrayScalar>());
-      else          return rcp(new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>(degree,Intrepid2::POINTTYPE_EQUISPACED));
-    }
-#endif
-
 
     // Error out
     throw std::runtime_error(myerror);
@@ -263,7 +245,6 @@ template<class Scalar>
 // Outputs:
 //  lo_node_in_hi   - std::vector<size_t> of size lo dofs in the reference element, which describes the coindcident hi dots
 //  hi_DofCoords    - FC<Scalar> of size (#hi dofs, dim) with the coordinate locations of the hi dofs on the reference element
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
 template<class Scalar,class KokkosDeviceType>
 void IntrepidGetP1NodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> >&hi_basis,
                            std::vector<size_t> & lo_node_in_hi,
@@ -289,34 +270,6 @@ void IntrepidGetP1NodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDe
   Kokkos::resize(hi_DofCoords,hi_basis->getCardinality(),hi_basis->getBaseCellTopology().getDimension());
   hi_basis->getDofCoords(hi_DofCoords);
 }
-#else
-typedef<class Scalar, class ArrayScalar>
-void IntrepidGetP1NodeIn(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &hi_basis,
-                         std::vector<size_t> & lo_node_in_hi,
-                         ArrayScalar & hi_DofCoords) {
-
-  // Figure out which unknowns in hi_basis correspond to nodes on lo_basis. This varies by element type.
-  size_t degree         = hi_basis->getDegree();
-  lo_node_in_hi.resize(0);
-  RCP<Intrepid2::DofCoordsInterface<ArrayScalar> > hi_dci;
-  if(!rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar> >(hi_basis).is_null()) {
-    // HGRAD QUAD Cn: Numbering as per the Kirby convention (straight across, bottom to top)
-    lo_node_in_hi.insert(lo_node_in_hi.end(),{0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)});
-    hi_dci = rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar> >(hi_basis);
-  }
-  else if(!rcp_dynamic_cast<Intrepid2::Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> >(hi_basis).is_null()) {
-    // HGRAD LINE Cn: Numbering as per the Kirby convention (straight across)
-    lo_node_in_hi.insert(lo_node_in_hi.end(),{0,degree});
-    hi_dci = rcp_dynamic_cast<Intrepid2::Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> >(hi_basis);
-  }
-  else
-    throw std::runtime_error("IntrepidPCoarsenFactory: Unknown element type");
-
-  // Get coordinates of the hi_basis dof's
-  hi_DofCoords.resize(hi_basis->getCardinality(),hi_basis->getBaseCellTopology().getDimension());
-  hi_dci->getDofCoords(hi_DofCoords);
-}
-#endif
 
 
 /*********************************************************************************************************/
@@ -336,7 +289,7 @@ void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candida
   // Given: A set of "candidate" hi-DOFs to serve as the "representative" DOF for each lo-DOF on the reference element.
   // Algorithm:  For each element, we choose the lowest GID of the candidates for each DOF to generate the lo_elemToHiRepresentativeNode map
 
-   size_t numElem     = hi_elemToNode.dimension(0);
+   size_t numElem     = hi_elemToNode.extent(0);
    size_t lo_nperel   = candidates.size();
    Kokkos::resize(lo_elemToHiRepresentativeNode,numElem, lo_nperel);
 
@@ -381,9 +334,9 @@ void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
   typedef LocalOrdinal LO;
   using Teuchos::RCP;
   //  printf("CMS:BuildLoElemToNodeViaRepresentatives: hi_elemToNode.rank() = %d hi_elemToNode.size() = %d\n",hi_elemToNode.rank(), hi_elemToNode.size());
-  size_t numElem     = hi_elemToNode.dimension(0);
+  size_t numElem     = hi_elemToNode.extent(0);
   size_t hi_numNodes = hi_nodeIsOwned.size();
-  size_t lo_nperel = lo_elemToHiRepresentativeNode.dimension(1);
+  size_t lo_nperel = lo_elemToHiRepresentativeNode.extent(1);
   Kokkos::resize(lo_elemToNode,numElem, lo_nperel);
 
   // Start by flagginc the representative nodes
@@ -457,7 +410,7 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
   LocalOrdinal LOINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
   //  printf("CMS:BuildLoElemToNode: hi_elemToNode.rank() = %d hi_elemToNode.size() = %d\n",hi_elemToNode.rank(), hi_elemToNode.size());
 
-  size_t numElem     = hi_elemToNode.dimension(0);
+  size_t numElem     = hi_elemToNode.extent(0);
   size_t hi_numNodes = hi_nodeIsOwned.size();
 
   size_t lo_nperel = lo_node_in_hi.size();
@@ -579,23 +532,16 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
 template<class Basis, class SCFieldContainer>
 void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContainer & ReferenceNodeLocations, const double threshold,std::vector<std::vector<size_t> > & representative_node_candidates) {
  typedef SCFieldContainer FC;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
  typedef typename FC::data_type SC;
-#else
- typedef typename FC::scalar_type SC;
-#endif
+
  // Evaluate the linear basis functions at the Pn nodes
- size_t numFieldsHi = ReferenceNodeLocations.dimension(0);
- // size_t dim         = ReferenceNodeLocations.dimension(1);
+ size_t numFieldsHi = ReferenceNodeLocations.extent(0);
+ // size_t dim         = ReferenceNodeLocations.extent(1);
  size_t numFieldsLo = basis.getCardinality();
+ 
+ FC LoValues("LoValues",numFieldsLo,numFieldsHi);
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
-  FC LoValues("LoValues",numFieldsLo,numFieldsHi);
-#else
-  FC LoValues(numFieldsLo,numFieldsHi);
-#endif
-
-  basis.getValues(LoValues, ReferenceNodeLocations , Intrepid2::OPERATOR_VALUE);
+ basis.getValues(LoValues, ReferenceNodeLocations , Intrepid2::OPERATOR_VALUE);
 
 
 #if 0
@@ -611,7 +557,7 @@ void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContaine
   representative_node_candidates.resize(numFieldsLo);
   for(size_t i=0; i<numFieldsLo; i++) {
     // 1st pass: find the max value
-    double vmax = Teuchos::ScalarTraits<SC>::zero();
+    typename Teuchos::ScalarTraits<SC>::magnitudeType vmax = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<SC>::magnitudeType>::zero();
     for(size_t j=0; j<numFieldsHi; j++)
       vmax = std::max(vmax,Teuchos::ScalarTraits<SC>::magnitude(LoValues(i,j)));
 
@@ -651,14 +597,10 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
                                                                                                                  Teuchos::RCP<Matrix>& P) const{
   typedef SCFieldContainer FC;
   // Evaluate the linear basis functions at the Pn nodes
-  size_t numFieldsHi = hi_elemToNode.dimension(1);
+  size_t numFieldsHi = hi_elemToNode.extent(1);
   size_t numFieldsLo = lo_basis.getCardinality();
   LocalOrdinal LOINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
-#else
-  FC LoValues_at_HiDofs(numFieldsLo,numFieldsHi);
-#endif
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
 
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
@@ -670,7 +612,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
   // Slow-ish fill
-  size_t Nelem=hi_elemToNode.dimension(0);
+  size_t Nelem=hi_elemToNode.extent(0);
   std::vector<bool> touched(hi_map->getNodeNumElements(),false);
   Teuchos::Array<GO> col_gid(1);
   Teuchos::Array<SC> val(1);
@@ -712,13 +654,9 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
                                                                                                                  Teuchos::RCP<Matrix>& P) const{
   typedef SCFieldContainer FC;
   // Evaluate the linear basis functions at the Pn nodes
-  size_t numFieldsHi = hi_elemToNode.dimension(1);
+  size_t numFieldsHi = hi_elemToNode.extent(1);
   size_t numFieldsLo = lo_basis.getCardinality();
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
-#else
-  FC LoValues_at_HiDofs(numFieldsLo,numFieldsHi);
-#endif
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
 
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
@@ -730,7 +668,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
   // Slow-ish fill
-  size_t Nelem=hi_elemToNode.dimension(0);
+  size_t Nelem=hi_elemToNode.extent(0);
   std::vector<bool> touched(hi_map->getNodeNumElements(),false);
   Teuchos::Array<GO> col_gid(1);
   Teuchos::Array<SC> val(1);
@@ -775,7 +713,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
 /*********************************************************************************************************/
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &/* coarseLevel */) const {
     Input(fineLevel, "A");
     Input(fineLevel, "pcoarsen: element to node map");
     Input(fineLevel, "Nullspace");
@@ -795,13 +733,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     const std::string prefix = "MueLu::IntrepidPCoarsenFactory(" + levelIDs + "): ";
 
     // NOTE: This is hardwired to double on purpose.  See the note below.
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
     typedef Kokkos::DynRankView<double,typename Node::device_type> FC;
-#else
-    typedef Intrepid2::FieldContainer<LocalOrdinal> FCi;
-    typedef Intrepid2::FieldContainer<double> FC;
-#endif
 
     // Level Get
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
@@ -839,13 +772,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     // NOTE: To make sure Stokhos works we only instantiate these guys with double.  There's a lot
     // of stuff in the guts of Intrepid2 that doesn't play well with Stokhos as of yet.
     int lo_degree, hi_degree;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<double,typename Node::device_type::execution_space>(pL.get<std::string>("pcoarsen: hi basis"),hi_degree);
     RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<double,typename Node::device_type::execution_space>(pL.get<std::string>("pcoarsen: lo basis"),lo_degree);
-#else
-    RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("pcoarsen: hi basis"),hi_degree);
-    RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("pcoarsen: lo basis"),lo_degree);
-#endif
 
     // Useful Output
     GetOStream(Statistics1) << "P-Coarsening from basis "<<pL.get<std::string>("pcoarsen: hi basis")<<" to "<<pL.get<std::string>("pcoarsen: lo basis") <<std::endl;
@@ -916,15 +844,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
         // Get lo-order candidates
         double threshold = 1e-10;
         std::vector<std::vector<size_t> > candidates;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         Kokkos::resize(hi_DofCoords,hi_basis->getCardinality(),hi_basis->getBaseCellTopology().getDimension());
         hi_basis->getDofCoords(hi_DofCoords);
-#else
-        // NTS: This might not work
-        RCP<Intrepid2::DofCoordsInterface<ArrayScalar> > hi_dci = rcp_dynamic_cast<Intrepid2::DofCoordsInterface<ArrayScalar> >(hi_basis);
-        hi_DofCoords.resize(hi_basis->getCardinality(),hi_basis->getBaseCellTopology().getDimension());
-        hi_dci->getDofCoords(hi_DofCoords);
-#endif
 
         MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo_basis,hi_DofCoords,threshold,candidates);
 
@@ -986,11 +907,11 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
       Set(coarseLevel, "R", R);
 
-      if (IsPrint(Statistics1)) {
+      if (IsPrint(Statistics2)) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
-        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
+        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*R, "R", params);
       }
     }
 

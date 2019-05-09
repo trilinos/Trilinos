@@ -134,6 +134,30 @@ Piro::SteadyStateSolver<Scalar>::getNominalValues() const
   return result;
 }
 
+template<typename Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+Piro::SteadyStateSolver<Scalar>::getLowerBounds() const
+{
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgsImpl();
+  result.setArgs(
+      model_->getLowerBounds(),
+      /* ignoreUnsupported = */ true,
+      /* cloneObjects = */ false);
+  return result;
+}
+
+template<typename Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+Piro::SteadyStateSolver<Scalar>::getUpperBounds() const
+{
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgsImpl();
+  result.setArgs(
+      model_->getUpperBounds(),
+      /* ignoreUnsupported = */ true,
+      /* cloneObjects = */ false);
+  return result;
+}
+
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar> Piro::SteadyStateSolver<Scalar>::createInArgs() const
 {
@@ -206,6 +230,16 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::SteadyStateSolver<Scalar>::crea
             result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l, total_dgdp_support);
           }
         }
+      }
+    }
+  }
+
+  for (int i=0; i<num_g_; i++) {
+    for (int j=0; j<num_p_; j++) {
+      Thyra::ModelEvaluatorBase::DerivativeSupport ds = modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j);
+      if (!ds.none()) {
+        ds.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+        result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j, ds);
       }
     }
   }
@@ -410,13 +444,13 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModel(
             }
           }
 
-          if (Teuchos::is_null(minus_dxdp_op)) {
+          if (Teuchos::is_null(minus_dxdp_op) && Teuchos::nonnull(dfdp_op)) {
             const RCP<const Thyra::LinearOpBase<Scalar> > dfdx_inv_op =
               Thyra::inverse<Scalar>(jacobian);
             minus_dxdp_op = Thyra::multiply<Scalar>(dfdx_inv_op, dfdp_op);
           }
 
-          if (Teuchos::nonnull(minus_dxdp_mv)) {
+          if (Teuchos::nonnull(minus_dxdp_mv) && Teuchos::nonnull(dfdp_mv)) {
             Thyra::assign(minus_dxdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 
             const Thyra::SolveCriteria<Scalar> defaultSolveCriteria;

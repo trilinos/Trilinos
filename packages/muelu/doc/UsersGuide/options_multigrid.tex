@@ -1,9 +1,15 @@
 
 \cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
           
+\cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
+          
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
           
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
+          
+\cbb{interp: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
+          
+\cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
           
 \cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
           

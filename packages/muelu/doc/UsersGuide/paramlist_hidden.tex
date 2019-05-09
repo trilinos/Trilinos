@@ -20,6 +20,8 @@
         
 \cbb{parameterlist: syntax}{string}{muelu}{Syntax of ParameterList to use.  This should either be "muelu" or "ml." }
         
+\cbb{hierarchy label}{string}{""}{Label for the hierarchy. Is applied to timer labels.}
+        
 \cbb{smoother: pre or post}{string}{"both"}{Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).}
         
 \cbb{smoother: type}{string}{"RELAXATION"}{Smoother type. Possible values: see Table~\ref{tab:smoothers}.}
@@ -50,6 +52,8 @@
         
 \cbb{aggregation: type}{string}{"uncoupled"}{Aggregation scheme. Possible values: see Table~\ref{t:aggregation}.}
         
+\cbb{aggregation: mode}{string}{"uncoupled"}{Controls whether aggregates are allowed to cross processor boundaries. Possible values: "coupled" aggregates can cross processor boundaries, "uncoupled" aggregates cannot cross processor boundaries.}
+        
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
         
 \cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".}
@@ -66,9 +70,11 @@
         
 \cbb{aggregation: brick z size}{int}{2}{Number of points for z axis in "brick" aggregation (limited to 3).}
         
-\cbb{aggregation: max selected neighbors}{int}{0}{Maximum number of neighbour nodes that are already aggregated. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.}
+\cbb{aggregation: max selected neighbors}{int}{0}{Maximum number of neighbor nodes that are already aggregated. If a new aggregate has some neighbors that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.}
         
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
+        
+\cbb{aggregation: phase 1 algorithm}{string}{Serial}{Choice of algorithm for aggregation phase 1.}
         
 \cbb{aggregation: enable phase 1}{bool}{true}{Turn on/off phase 1 of aggregation}
         
@@ -82,11 +88,18 @@
       non-Dirichlet nodes that have no on-rank neighbors.  This only
       works for Uncoupled Aggregation.}
         
+\cbb{aggregation: phase3 avoid singletons}{bool}{false}{Causes phase 3 aggregation to try and group any
+      vertices that remain unaggregated with any other on-rank vertex
+      (even if it is not a neighbor) to define an aggregate.  This only
+      works for Uncoupled Aggregation.}
+        
 \cbb{aggregation: allow empty prolongator columns}{bool}{false}{Fix diagonal of coarse level operator A resulting from empty columns (rows) in the prolongation (restriction) operators caused by singleton aggregates and number of null space vectors larger than number of DOFs per node. This option might be helpful for elasticity problems with singleton aggregates.}
         
 \cbb{aggregation: preserve Dirichlet points}{bool}{false}{Turn on/off Dirichlet points preservation}
         
 \cbb{aggregation: allow user-specified singletons}{bool}{false}{Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)}
+        
+\cbb{aggregation: use interface aggregation}{bool}{false}{Allow an application to prescribe root nodes to uncoupled aggregation}
         
 \cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
         
@@ -108,6 +121,16 @@
         
 \cba{strength-of-connection: params}{\parameterlist}{Sublist of options for use by coalesce/drop.}
         
+\cbb{aggregation: mesh layout}{string}{Global Lexicographic}{Type of ordering for structured mesh aggregation. Possible values: "Global Lexicographic" and "Local Lexicographic".}
+        
+\cbb{aggregation: output type}{string}{Aggregates}{Type of object holding the aggregation data. Possible values: "Aggregates" or "CrsGraph".}
+        
+\cbb{aggregation: coarsening rate}{string}{{3}}{Coarsening rate per spatial dimensions, the string must be interpretable as an array by Teuchos.}
+        
+\cbb{aggregation: number of spatial dimensions}{int}{3}{The number of spatial dimensions in the problem.}
+        
+\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.}
+        
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter
       names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
@@ -124,9 +147,11 @@
         
 \cbb{transpose: use implicit}{bool}{false}{Use implicit transpose for the restriction operator.}
         
-\cbb{use kokkos refactor}{bool}{false}{Switch on the new Kokkos based version.}
+\cbb{use kokkos refactor}{bool}{false}{Switch on the new \kokkos based version for on-node parallelism.}
         
 \cbb{synchronize factory timers}{bool}{false}{Add barriers before and after Factory Build() calls.}
+        
+\cbb{rap: triple product}{bool}{false}{Use all-at-once triple matrix product kernel}
         
 \cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
         
@@ -147,6 +172,10 @@
 \cbb{sa: calculate eigenvalue estimate}{bool}{false}{Force calculation of eigenvalue estimate during prolongator smoothing.}
         
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
+        
+\cbb{interp: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
+        
+\cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
         
 \cba{transfer: params}{\parameterlist}{Sublist of options for use by transfer.}
         
@@ -178,17 +207,27 @@
         
 \cbb{tentative: calculate qr}{bool}{true}{If false, skip local QR decomposition phase of smoothed aggregation.}
         
+\cbb{tentative: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
+        
 \cbb{repartition: enable}{bool}{false}{Rebalancing on/off switch.}
         
 \cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).}
         
-\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library.}
+\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library. In particular, this allows to choose a partitioning algorithm from \zoltan{} or \zoltan2{} or from external packages such as \parmetis{}.}
         
 \cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
         
-\cbb{repartition: min rows per proc}{int}{800}{Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs.}
-
+\cbb{repartition: node repartition level}{int}{-1}{Level on which to run node-level repartitioning (negative means don't).}
+        
+\cbb{repartition: node id}{int}{-1}{Id of the current node (only used for node-level repartitioning).}
+        
+\cbb{repartition: min rows per proc}{int}{800}{Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs. The value is not used if "repartition: min rows per thread" is positive.}
+        
 \cbb{repartition: target rows per proc}{int}{0}{Target number of rows per MPI process after rebalancing. If the value is set to 0, it will use the value of "repartition: min rows per proc"}
+        
+\cbb{repartition: min rows per thread}{int}{0}{Minimum number of rows per thread. If the actual number if smaller, then rebalancing occurs. If the value is set to 0, no repartitioning based on thread count will occur.}
+        
+\cbb{repartition: target rows per thread}{int}{0}{Target number of rows per thread after rebalancing. If the value is set to 0, it will use the value of "repartition: min rows per thread".}
         
 \cbb{repartition: max imbalance}{double}{1.2}{Maximum nonzero imbalance ratio. If the actual number is larger, the rebalancing occurs.}
         
@@ -196,19 +235,43 @@
         
 \cbb{repartition: remap num values}{int}{4}{Number of maximum components from each processor used to construct partial bipartite graph.}
         
+\cbb{repartition: remap accept partition}{bool}{true}{Whether the local rank should accept a partition.}
+        
 \cbb{repartition: print partition distribution}{bool}{false}{Partition distribution printout.}
         
 \cbb{repartition: rebalance P and R}{bool}{false}{Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
         
+\cbb{repartition: rebalance Nullspace}{bool}{true}{Rebalancing of Nullspace during the setup.}
+        
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
+        
+\cbb{rap: relative diagonal floor}{Array(double)}{{}}{Will boost diagonals on A matrices to the given floor.}
         
 \cbb{rap: fix zero diagonals}{bool}{false}{Set zero diagonals on coarse grids to one.}
         
+\cbb{rap: fix zero diagonals threshold}{double}{0.}{Threshold at which diagonal entry is considered zero.}
+        
 \cbb{rap: shift}{double}{0.0}{Shift to use in the RAPShiftFactory}
+        
+\cbb{rap: shift diagonal M}{bool}{false}{Shift for the RAPShiftFactory is stored as a
+      vector (representing the matrix diagonal)}
+        
+\cbb{rap: shift low storage}{bool}{false}{Use the low-storage version of the rap: shift}
+        
+\cbb{rap: shift array}{Array(double)}{{}}{Effective shift at each level to use in the RAPShiftFactory (the string must be interpretable as an array by Teuchos).}
+        
+\cbb{rap: cfl array}{Array(double)}{{}}{Effective CFl at each level to use in the RAPShiftFactory (the string must be interpretable as an array by Teuchos).  }
         
 \cbb{rap: algorithm}{string}{galerkin}{Whether to use the Galerkin RAP or the Shift version}
         
-\cba{matrixmatrix: kernel params}{parameterlist}{Controls the kernel algorithms for matrix-matrix operations}
+\cba{matrixmatrix: kernel params}{\parameterlist}{Controls the kernel algorithms for matrix-matrix operations}
+        
+\cbb{matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount }{int}{3000 }{Core Count above which the
+optimized neighbor discovery is used for Importer construction, for some matrix
+multiplication operations.}
+        
+\cbb{isMatrixMatrix_TransferAndFillComplete }{bool}{false}{Try to use the
+optimized neighbor discovery for Importer construction.}
         
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
         

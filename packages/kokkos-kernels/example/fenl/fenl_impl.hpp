@@ -73,7 +73,7 @@ inline
 double maximum( MPI_Comm comm , double local )
 {
   double global = local ;
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
   MPI_Allreduce( & local , & global , 1 , MPI_DOUBLE , MPI_MAX , comm );
 #endif
   return global ;
@@ -216,7 +216,7 @@ Perf fenl(
   {
     int global_error = ! fixture.ok();
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
     int local_error = global_error ;
     global_error = 0 ;
     MPI_Allreduce( & local_error , & global_error , 1 , MPI_INT , MPI_SUM , comm );
@@ -371,11 +371,11 @@ Perf fenl(
         std::cout << "}" << std::endl ;
 
         std::cout << "ElemGraph {" << std::endl ;
-        for ( unsigned ielem = 0 ; ielem < mesh_to_graph.elem_graph.dimension_0() ; ++ielem ) {
+        for ( unsigned ielem = 0 ; ielem < mesh_to_graph.elem_graph.extent(0) ; ++ielem ) {
           std::cout << "  elem[" << ielem << "]{" ;
-          for ( unsigned irow = 0 ; irow < mesh_to_graph.elem_graph.dimension_1() ; ++irow ) {
+          for ( unsigned irow = 0 ; irow < mesh_to_graph.elem_graph.extent(1) ; ++irow ) {
             std::cout << " {" ;
-            for ( unsigned icol = 0 ; icol < mesh_to_graph.elem_graph.dimension_2() ; ++icol ) {
+            for ( unsigned icol = 0 ; icol < mesh_to_graph.elem_graph.extent(2) ; ++icol ) {
               std::cout << " " << mesh_to_graph.elem_graph(ielem,irow,icol);
             }
             std::cout << " }" ;

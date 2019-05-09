@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -59,6 +59,8 @@ namespace Impl {
 namespace {
 
 HostThreadTeamData g_serial_thread_team_data ;
+
+bool g_serial_is_initialized = false;
 
 }
 
@@ -136,11 +138,16 @@ HostThreadTeamData * serial_get_thread_team_data()
 
 namespace Kokkos {
 
-int Serial::is_initialized()
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+bool Serial::is_initialized()
+#else
+bool Serial::impl_is_initialized()
+#endif
 {
-  return 1 ;
+  return Impl::g_serial_is_initialized ;
 }
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 void Serial::initialize( unsigned threads_count
                        , unsigned use_numa_count
                        , unsigned use_cores_per_numa
@@ -150,17 +157,27 @@ void Serial::initialize( unsigned threads_count
   (void) use_numa_count;
   (void) use_cores_per_numa;
   (void) allow_asynchronous_threadpool;
+#else
+void Serial::impl_initialize()
+{
+#endif
 
   Impl::SharedAllocationRecord< void, void >::tracking_enable();
 
   // Init the array of locks used for arbitrarily sized atomics
   Impl::init_lock_array_host_space();
-  #if defined(KOKKOS_ENABLE_PROFILING)
+  #if defined(KOKKOS_ENABLE_DEPRECATED_CODE) && defined(KOKKOS_ENABLE_PROFILING)
     Kokkos::Profiling::initialize();
   #endif
+
+  Impl::g_serial_is_initialized = true;
 }
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 void Serial::finalize()
+#else
+void Serial::impl_finalize()
+#endif
 {
   if ( Impl::g_serial_thread_team_data.scratch_buffer() ) {
     Impl::g_serial_thread_team_data.disband_team();
@@ -177,6 +194,8 @@ void Serial::finalize()
   #if defined(KOKKOS_ENABLE_PROFILING)
     Kokkos::Profiling::finalize();
   #endif
+
+  Impl::g_serial_is_initialized = false;
 }
 
 const char* Serial::name() { return "Serial"; }

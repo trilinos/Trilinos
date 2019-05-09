@@ -129,30 +129,30 @@ public:
     , elem_graph()
    {
       //--------------------------------
-      // Guess at capacity required for the map:
+      // Guess at span required for the map:
 
       Kokkos::Impl::Timer wall_clock ;
 
       wall_clock.reset();
       phase = FILL_NODE_SET ;
 
-      // upper bound on the capacity
-      size_t set_capacity = (28ull * node_count) / 2;
+      // upper bound on the span
+      size_t set_span = (28ull * node_count) / 2;
 
       {
         // Zero the row count to restart the fill
         Kokkos::deep_copy( row_count , 0u );
 
-        node_node_set = SetType( set_capacity );
+        node_node_set = SetType( set_span );
 
         // May be larger that requested:
-        set_capacity = node_node_set.capacity();
+        set_span = node_node_set.span();
 
-        Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
+        Kokkos::parallel_for( "kokkos-kernels/example/fenl: NodeNodeGraph" , elem_node_id.extent(0) , *this );
       }
 
       execution_space::fence();
-      results.ratio = (double)node_node_set.size() / (double)node_node_set.capacity();
+      results.ratio = (double)node_node_set.size() / (double)node_node_set.span();
       results.fill_node_set = wall_clock.seconds();
       //--------------------------------
 
@@ -183,7 +183,7 @@ public:
 
       wall_clock.reset();
       phase = FILL_GRAPH_ENTRIES ;
-      Kokkos::parallel_for( node_node_set.capacity() , *this );
+      Kokkos::parallel_for( node_node_set.span() , *this );
 
       execution_space::fence();
       results.fill_graph_entries = wall_clock.seconds();
@@ -209,8 +209,8 @@ public:
       // Element-to-graph mapping:
       wall_clock.reset();
       phase = FILL_ELEMENT_GRAPH ;
-      elem_graph = ElemGraphType("elem_graph", elem_node_id.dimension_0() );
-      Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
+      elem_graph = ElemGraphType("elem_graph", elem_node_id.extent(0) );
+      Kokkos::parallel_for( elem_node_id.extent(0) , *this );
 
       execution_space::fence();
       results.fill_element_graph = wall_clock.seconds();
@@ -223,17 +223,17 @@ public:
   void fill_set( const unsigned ielem ) const
   {
     // Loop over element's (row_local_node,col_local_node) pairs:
-    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
+    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.extent(1) ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
 
-      for ( unsigned col_local_node = row_local_node ; col_local_node < elem_node_id.dimension_1() ; ++col_local_node ) {
+      for ( unsigned col_local_node = row_local_node ; col_local_node < elem_node_id.extent(1) ; ++col_local_node ) {
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
         // If either node is locally owned then insert the pair into the unordered map:
 
-        if ( row_node < row_count.dimension_0() || col_node < row_count.dimension_0() ) {
+        if ( row_node < row_count.extent(0) || col_node < row_count.extent(0) ) {
 
           const key_type key = (row_node < col_node) ? make_pair( row_node, col_node ) : make_pair( col_node, row_node ) ;
 
@@ -243,10 +243,10 @@ public:
           if ( result.success() ) {
 
             // If row node is owned then increment count
-            if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
+            if ( row_node < row_count.extent(0) ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
 
             // If column node is owned and not equal to row node then increment count
-            if ( col_node < row_count.dimension_0() && col_node != row_node ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
+            if ( col_node < row_count.extent(0) && col_node != row_node ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
           }
         }
       }
@@ -263,12 +263,12 @@ public:
       const unsigned row_node = key.first ;
       const unsigned col_node = key.second ;
 
-      if ( row_node < row_count.dimension_0() ) {
+      if ( row_node < row_count.extent(0) ) {
         const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , 1 );
         graph.entries( offset ) = col_node ;
       }
 
-      if ( col_node < row_count.dimension_0() && col_node != row_node ) {
+      if ( col_node < row_count.extent(0) && col_node != row_node ) {
         const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , 1 );
         graph.entries( offset ) = row_node ;
       }
@@ -293,17 +293,17 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_elem_graph_map( const unsigned ielem ) const
   {
-    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
+    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.extent(1) ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
 
-      for ( unsigned col_local_node = 0 ; col_local_node < elem_node_id.dimension_1() ; ++col_local_node ) {
+      for ( unsigned col_local_node = 0 ; col_local_node < elem_node_id.extent(1) ; ++col_local_node ) {
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
         unsigned entry = ~0u ;
 
-        if ( row_node + 1 < graph.row_map.dimension_0() ) {
+        if ( row_node + 1 < graph.row_map.extent(0) ) {
 
           const unsigned entry_end = graph.row_map( row_node + 1 );
 
@@ -350,7 +350,7 @@ public:
     update += row_count( irow );
 
     if ( final ) {
-      if ( irow + 1 == row_count.dimension_0() ) {
+      if ( irow + 1 == row_count.extent(0) ) {
         row_map( irow + 1 ) = update ;
         row_total()         = update ;
       }
@@ -455,8 +455,8 @@ public:
     : elem_node_id( arg_elem_node_id )
     , elem_graph( arg_elem_graph )
     , row_total( "row_total" )
-    , row_count( "row_count" , arg_residual.dimension_0() )
-    , row_map( "graph_row_map" , arg_residual.dimension_0() + 1 )
+    , row_count( "row_count" , arg_residual.extent(0) )
+    , row_map( "graph_row_map" , arg_residual.extent(0) + 1 )
     , graph()
     , residual( arg_residual )
     , jacobian( arg_jacobian )
@@ -469,7 +469,7 @@ public:
 
       phase = FILL_NODE_COUNT ;
 
-      Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
+      Kokkos::parallel_for( elem_node_id.extent(0) , *this );
 
       //--------------------------------
 
@@ -478,7 +478,7 @@ public:
       // Exclusive scan of row_count into row_map
       // including the final total in the 'node_count + 1' position.
       // Zero the 'row_count' values.
-      Kokkos::parallel_scan( residual.dimension_0() , *this );
+      Kokkos::parallel_scan( residual.extent(0) , *this );
 
       // Zero the row count for the fill:
       Kokkos::deep_copy( row_count , typename RowMapType::value_type(0) );
@@ -500,7 +500,7 @@ public:
       phase = FILL_GRAPH_ENTRIES ;
 
       Kokkos::deep_copy( row_count , 0u );
-      Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
+      Kokkos::parallel_for( elem_node_id.extent(0) , *this );
 
       execution_space::fence();
 
@@ -514,7 +514,7 @@ public:
       //--------------------------------
 
       phase = SORT_GRAPH_ENTRIES ;
-      Kokkos::parallel_for( residual.dimension_0() , *this );
+      Kokkos::parallel_for( residual.extent(0) , *this );
 
       execution_space::fence();
 
@@ -523,7 +523,7 @@ public:
 
   void apply() const
   {
-    Kokkos::parallel_for( residual.dimension_0() , *this );
+    Kokkos::parallel_for( residual.extent(0) , *this );
   }
 
   //------------------------------------
@@ -533,11 +533,11 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_node_count( const unsigned ielem ) const
   {
-    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
+    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.extent(1) ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
 
-      if ( row_node < row_count.dimension_0() ) {
+      if ( row_node < row_count.extent(0) ) {
         atomic_fetch_add( & row_count( row_node ) , 1 );
       }
     }
@@ -546,11 +546,11 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_graph_entries( const unsigned ielem ) const
   {
-    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
+    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.extent(1) ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
 
-      if ( row_node < row_count.dimension_0() ) {
+      if ( row_node < row_count.extent(0) ) {
 
         const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , 1 );
 
@@ -640,7 +640,7 @@ public:
     update += row_count( irow );
 
     if ( final ) {
-      if ( irow + 1 == row_count.dimension_0() ) {
+      if ( irow + 1 == row_count.extent(0) ) {
         row_map( irow + 1 ) = update ;
         row_total()         = update ;
       }
@@ -770,7 +770,7 @@ public:
 
   void apply() const
   {
-    parallel_for( elem_node_ids.dimension_0() , *this );
+    parallel_for( elem_node_ids.extent(0) , *this );
   }
 
   //------------------------------------
@@ -983,7 +983,7 @@ if ( 1 == ielem ) {
 
 #endif
 
-    if ( ! residual.dimension_0() ) {
+    if ( ! residual.extent(0) ) {
       for( unsigned i = 0; i < FunctionCount ; i++){
         elem_residuals(ielem, i) = elem_vec[i] ;
         for( unsigned j = 0; j < FunctionCount ; j++){
@@ -994,7 +994,7 @@ if ( 1 == ielem ) {
     else {
       for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
         const unsigned row = node_index[i] ;
-        if ( row < residual.dimension_0() ) {
+        if ( row < residual.extent(0) ) {
           atomic_fetch_add( & residual( row ) , elem_vec[i] );
 
           for( unsigned j = 0 ; j < FunctionCount ; j++ ) {

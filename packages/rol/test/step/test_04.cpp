@@ -47,11 +47,11 @@
 
 #define USE_HESSVEC 1
 
-#include "ROL_TestObjectives.hpp"
-#include "ROL_Algorithm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_GetTestProblems.hpp"
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 #include <iostream>
 //#include <fenv.h>
@@ -65,12 +65,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -79,71 +79,81 @@ int main(int argc, char *argv[]) {
   try {
 
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    
+    auto parlist = ROL::getParametersFromXmlFile( filename );
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",true);
 #if USE_HESSVEC
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
+    parlist->sublist("Step").set("Type","Trust Region");
 
-    for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_HS1; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
-      if ( prob == ROL::TESTOPTPROBLEM_HS2 || prob == ROL::TESTOPTPROBLEM_BVP ) {
-        parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.e-4);
-        parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
-        parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e-4);
-        parlist->sublist("Status Test").set("Gradient Tolerance",1.e-6);
-      }
-      else if ( prob == ROL::TESTOPTPROBLEM_HS25 ) {
-        parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.0);
-        parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",1.e3);
-        parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e4);
-        parlist->sublist("Status Test").set("Gradient Tolerance",1.e-8);
-      }
-      else {
-        parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.0);
-        parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
-        parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e4);
-        parlist->sublist("Status Test").set("Gradient Tolerance",1.e-6);
-      }
-      parlist->sublist("General").set("Scale for Epsilon Active Sets",1.0);
-      if ( prob == ROL::TESTOPTPROBLEM_HS4 ) {
-        parlist->sublist("General").set("Scale for Epsilon Active Sets",1.e-2);
-      }
-      *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
-
+    for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_ROSENBROCK; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
       // Get Objective Function
-      Teuchos::RCP<ROL::Vector<RealT> > x0, z;
-      Teuchos::RCP<ROL::Objective<RealT> > obj;
-      Teuchos::RCP<ROL::BoundConstraint<RealT> > con;
-      ROL::getTestObjectives<RealT>(obj,con,x0,z,prob);
-      Teuchos::RCP<ROL::Vector<RealT> > x = x0->clone();;
+      ROL::Ptr<ROL::Vector<RealT> > x0;
+      std::vector<ROL::Ptr<ROL::Vector<RealT> > > z;
+      ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
+      ROL::GetTestProblem<RealT>(problem,x0,z,prob);
+      if (problem->getProblemType() == ROL::TYPE_B) {
+        if ( prob == ROL::TESTOPTPROBLEM_HS2 || prob == ROL::TESTOPTPROBLEM_BVP ) {
+          parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.e-4);
+          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
+          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e-4);
+          parlist->sublist("Status Test").set("Gradient Tolerance",1.e-6);
+        }
+        else if ( prob == ROL::TESTOPTPROBLEM_HS25 ) {
+          parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.0);
+          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",1.e3);
+          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e4);
+          parlist->sublist("Status Test").set("Gradient Tolerance",1.e-8);
+        }
+        else {
+          parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.0);
+          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
+          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e4);
+          parlist->sublist("Status Test").set("Gradient Tolerance",1.e-6);
+        }
+        parlist->sublist("General").set("Scale for Epsilon Active Sets",1.0);
+        if ( prob == ROL::TESTOPTPROBLEM_HS4 ) {
+          parlist->sublist("General").set("Scale for Epsilon Active Sets",1.e-2);
+        }
+        *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
 
-      // Get Dimension of Problem
-      int dim = x0->dimension();
-      parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
+        // Get Dimension of Problem
+        int dim = x0->dimension();
+        parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
-      // Error Vector
-      Teuchos::RCP<ROL::Vector<RealT> > e = x0->clone();;
-      e->zero();
+        // Error Vector
+        ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
+        e->zero();
 
-      //ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; 
-      //ROL::ETrustRegion tr = ROL::TRUSTREGION_DOGLEG; 
-      //ROL::ETrustRegion tr = ROL::TRUSTREGION_DOUBLEDOGLEG; 
-      ROL::ETrustRegion tr = ROL::TRUSTREGION_TRUNCATEDCG; 
-      parlist->sublist("Step").sublist("Trust Region").set("Subproblem Solver", ROL::ETrustRegionToString(tr));
-      *outStream << std::endl << std::endl << ROL::ETrustRegionToString(tr) << std::endl << std::endl;
-      
-      // Define Algorithm
-      ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+        //ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; 
+        //ROL::ETrustRegion tr = ROL::TRUSTREGION_DOGLEG; 
+        //ROL::ETrustRegion tr = ROL::TRUSTREGION_DOUBLEDOGLEG; 
+        ROL::ETrustRegion tr = ROL::TRUSTREGION_TRUNCATEDCG; 
+        //ROL::ETrustRegion tr = ROL::TRUSTREGION_LINMORE; 
+        parlist->sublist("Step").sublist("Trust Region").set("Subproblem Solver", ROL::ETrustRegionToString(tr));
+        *outStream << std::endl << std::endl << ROL::ETrustRegionToString(tr) << std::endl << std::endl;
 
-      // Run Algorithm
-      x->set(*x0);
-      algo.run(*x, *obj, *con, true, *outStream);
+        // Define Solver
+        ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
 
-      // Compute Error
-      e->set(*x);
-      e->axpy(-1.0,*z);
-      *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
+        // Run Solver
+        solver.solve(*outStream);
+
+        // Compute Error
+        RealT err(0);
+        for (int i = 0; i < static_cast<int>(z.size()); ++i) {
+          e->set(*x0);
+          e->axpy(-1.0,*z[i]);
+          if (i == 0) {
+            err = e->norm();
+          }
+          else {
+            err = std::min(err,e->norm());
+          }
+        }
+        *outStream << std::endl << "Norm of Error: " << err << std::endl;
+      }
     }
   }
   catch (std::logic_error err) {
@@ -159,4 +169,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-

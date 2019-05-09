@@ -97,7 +97,15 @@ def fromPyTrilinosImport(name, fromBuild=False, globals={}, locals={}):
     # Time to import the module from the PyTrilinos package, whether the build
     # directory has been added to the search path or not.
     fullname = PyTrilinosStr + "." + name
-    PyTrilinosPkg = __import__(fullname, globals, locals)
+    try:
+        PyTrilinosPkg = __import__(fullname, globals, locals)
+    except ImportError as e:
+        print(e)
+        print("\nIf you are trying to run examples from the build directory, you\n"
+              "need to run these scripts with either the '-t' or the\n"
+              "'--testharness' command-line argument, to tell the script to look\n"
+              "in the build directory for the PyTrilinos package.") 
+        sys.exit(1)
     module = sys.modules[fullname]
 
     # If fromBuild is True, then the user is going to expect the module to have
@@ -108,7 +116,11 @@ def fromPyTrilinosImport(name, fromBuild=False, globals={}, locals={}):
         PyTrilinosDir = os.path.join(buildDir, PyTrilinosStr)
         importDir = PyTrilinosPkg.__path__[0]
         if importDir != PyTrilinosDir:
-            raise ImportError("PyTrilinos not imported from build directory")
+            print("PyTrilinos not imported from build directory\n\n"
+                  "This can happen when you have a version of PyTrilinos\n"
+                  "installed somewhere on your system, but have not yet built\n"
+                  "PyTrilinos in the local build directory.")
+            sys.exit(1)
 
     # We have the module and it is from the expected location, so return it to
     # the user.

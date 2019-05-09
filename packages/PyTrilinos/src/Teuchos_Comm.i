@@ -43,24 +43,12 @@
 // @HEADER
 
 %{
-// System includes
+// System include files
 #include <string>
 
-// Teuchos includes
-#include "Teuchos_VerbosityLevel.hpp"
-#include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_LabeledObject.hpp"
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_ReductionOp.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#include "Teuchos_CommHelpers.hpp"
-#include "Teuchos_OpaqueWrapper.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 using Teuchos::OpaqueWrapper;
-
-// PyTrilinos includes
-#include "PyTrilinos_config.h"
-#include "PyTrilinos_PythonException.hpp"
 %}
 
 // Convey the PyTrilinos configuration to SWIG
@@ -590,23 +578,21 @@ else:
 //////////////////////////////
 // Teuchos::MpiComm support //
 //////////////////////////////
+#ifdef HAVE_MPI4PY
+// Here, we DO NOT %ignore Teuchos::MpiComm::MpiComm(MPI_Comm), and we
+// let the MPI4PY typemap for MPI_Comm handle that constructor
+#else
 %extend Teuchos::MpiComm
 {
-#ifdef HAVE_MPI4PY
-  MpiComm(MPI_Comm mpiComm = MPI_COMM_WORLD)
-  {
-    return new Teuchos::MpiComm< Ordinal >
-      (Teuchos::opaqueWrapper(mpiComm));
-  }
-#else
   MpiComm(PyObject * dummy = NULL)
   {
     return new Teuchos::MpiComm< Ordinal >
       (Teuchos::opaqueWrapper(MPI_COMM_WORLD));
   }
-#endif
 }
 %ignore Teuchos::MpiComm::MpiComm(MPI_Comm rawMpiComm);
+#endif
+
 %ignore Teuchos::MpiComm::MpiComm(const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm);
 %ignore Teuchos::MpiComm::MpiComm(const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm,
                                   const int defaultTag);
@@ -618,46 +604,23 @@ else:
 %ignore Teuchos::MpiComm::scan;
 %teuchos_rcp(Teuchos::MpiComm< int >)
 %include "Teuchos_DefaultMpiComm.hpp"
-%template(MpiComm_int) Teuchos::MpiComm<int>;
+%template(MpiComm_int) Teuchos::MpiComm< int >;
 %pythoncode
 %{
 MpiComm = MpiComm_int
 %}
 
-///////////////////////////////////////////
-// Teuchos.DefaultComm support under MPI //
-///////////////////////////////////////////
-%pythoncode
-%{
-
-class DefaultComm:
-    "Encapsulate the default global communicator"
-    __defaultComm = MpiComm(mpiCommunicator)
-    @classmethod
-    def getComm(cls):
-        "Return the default global communicator"
-        return cls.__defaultComm
-%}
-
-#else
-
-////////////////////////////////////////////////////////////////////////////////
-// The following code is implemented if HAVE_MPI is not defined
-////////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////
-// Teuchos.DefaultComm support without MPI //
-/////////////////////////////////////////////
-%pythoncode
-%{
-
-class DefaultComm:
-    "Encapsulate the default global communicator"
-    __defaultComm = SerialComm()
-    @classmethod
-    def getComm(cls):
-        "Return the default global communicator"
-        return cls.__defaultComm
-%}
-
 #endif
+
+/////////////////////////////////
+// Teuchos.DefaultComm support //
+/////////////////////////////////
+#define MPI_VERSION 3
+%warnfilter(302) Teuchos::Details::mpiFreeDefaultComm;
+%warnfilter(302) Teuchos::Details::mpiFreeDefaultSerialComm;
+%include "Teuchos_DefaultComm.hpp"
+%template(DefaultComm_int) Teuchos::DefaultComm<int>;
+%pythoncode
+%{
+DefaultComm = DefaultComm_int
+%}

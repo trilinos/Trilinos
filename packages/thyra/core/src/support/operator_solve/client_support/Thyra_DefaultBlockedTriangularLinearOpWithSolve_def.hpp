@@ -152,6 +152,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
   using Teuchos::null;
 #ifdef THYRA_DEBUG
   TEUCHOS_ASSERT_EQUALITY(numRowBlocks, numColBlocks);
+#else
+  (void)numColBlocks;
 #endif
   assertBlockFillIsActive(false);
   numDiagBlocks_ = numRowBlocks;
@@ -202,8 +204,8 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::acceptsBlock(
 
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstBlock(
-  const int i, const int j,
-  const Teuchos::RCP<LinearOpBase<Scalar> > &block
+  const int /* i */, const int /* j */,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &/* block */
   )
 {
   assertBlockFillIsActive(true);
@@ -213,8 +215,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstBlock(
 
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setBlock(
-  const int i, const int j,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &block
+  const int /* i */, const int /* j */,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &/* block */
   )
 {
   assertBlockFillIsActive(true);
@@ -550,11 +552,11 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveImpl(
     *this, M_trans, *X_inout, &B_in
     );
   TEUCHOS_TEST_FOR_EXCEPT(!this->solveSupportsImpl(M_trans));
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    nonnull(solveCriteria) && !solveCriteria->solveMeasureType.useDefault(),
-    std::logic_error,
-    "Error, we can't handle any non-default solve criteria yet!"
-    );
+  // TEUCHOS_TEST_FOR_EXCEPTION(
+  //   nonnull(solveCriteria) && !solveCriteria->solveMeasureType.useDefault(),
+  //   std::logic_error,
+  //   "Error, we can't handle any non-default solve criteria yet!"
+  //   );
   // ToDo: If solve criteria is to be handled, then we will have to be very
   // carefull how it it interpreted in terms of the individual period solves!
 #endif // THYRA_DEBUG  
@@ -573,18 +575,26 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveImpl(
     &B = dyn_cast<const ProductMultiVectorBase<Scalar> >(B_in);
   ProductMultiVectorBase<Scalar>
     &X = dyn_cast<ProductMultiVectorBase<Scalar> >(*X_inout);
-  
+
+  bool converged = true;
   for ( int i = 0; i < numDiagBlocks_; ++ i ) {
     const RCP<const LinearOpWithSolveBase<Scalar> >
       Op_k = diagonalBlocks_[i].getConstObj();
     Op_k->setOStream(this->getOStream());
     Op_k->setVerbLevel(this->getVerbLevel());
-    Thyra::solve( *Op_k, M_trans, *B.getMultiVectorBlock(i),
-      X.getNonconstMultiVectorBlock(i).ptr() );
+     SolveStatus<Scalar> status =
+       Thyra::solve( *Op_k, M_trans, *B.getMultiVectorBlock(i),
+                     X.getNonconstMultiVectorBlock(i).ptr(), solveCriteria );
+     if (status.solveStatus != SOLVE_STATUS_CONVERGED)
+       converged = false;
     // ToDo: Pass in solve criteria when needed!
   }
 
-  return SolveStatus<Scalar>();
+   SolveStatus<Scalar> solveStatus;
+   solveStatus.solveStatus =
+     converged ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNCONVERGED;
+
+  return solveStatus;
 
 }
 
@@ -600,6 +610,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertBlockFillIsActive(
 {
 #ifdef THYRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(!(blockFillIsActive_==blockFillIsActive_in));
+#else
+  (void)blockFillIsActive_in;
 #endif
 }
 
@@ -618,6 +630,9 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertBlockRowCol(
     !( 0 <= j && j < numDiagBlocks_ ), std::logic_error,
     "Error, j="<<j<<" does not fall in the range [0,"<<numDiagBlocks_-1<<"]!"
       );
+#else
+  (void)i;
+  (void)j;
 #endif
 }
 
@@ -640,6 +655,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setLOWSBlockImpl(
     "Error, this DefaultBlockedTriangularLinearOpWithSolve does not accept\n"
     "LOWSB objects for the block i="<<i<<", j="<<j<<"!"
     );
+#else
+  (void)j;
 #endif
   diagonalBlocks_[i] = block;
 }
@@ -661,6 +678,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructu
     );
   // ToDo: Make sure that all of the blocks are above or below the diagonal
   // but not both!
+#else
+  (void)blocks;
 #endif
   // ToDo: Set if this is an upper or lower triangular block operator.
 }

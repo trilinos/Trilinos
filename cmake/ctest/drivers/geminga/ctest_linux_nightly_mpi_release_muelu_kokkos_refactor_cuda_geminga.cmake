@@ -60,10 +60,13 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-cuda.cmak
 # Set the options specific to this build case
 #
 
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-string(TOUPPER $ENV{SEMS_MPI_NAME} UC_MPI_NAME)
-SET(BUILD_DIR_NAME ${UC_MPI_NAME}_$ENV{SEMS_MPI_VERSION}_RELEASE_DEV_MueLu_KOKKOS_REFACTOR_CUDA_$ENV{SEMS_CUDA_VERSION})
+SET(BUILD_NAME_DETAILS KOKKOS-REFACTOR_EXPERIMENTAL_CUDA-$ENV{SEMS_CUDA_VERSION})
+
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
@@ -73,8 +76,8 @@ SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 SET(EXTRA_CONFIGURE_OPTIONS
   ### ETI ###
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-    "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=OFF"
     "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF"
+    "-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
     "-DTeuchos_ENABLE_COMPLEX:BOOL=OFF"
     "-DTpetra_INST_COMPLEX_DOUBLE:BOOL=OFF"
     "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
@@ -92,6 +95,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   ### PACKAGES CONFIGURATION ###
       "-DMueLu_ENABLE_Experimental:BOOL=ON"
       "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor_Use_By_Default:BOOL=ON"
       "-DXpetra_ENABLE_Experimental:BOOL=ON"
       "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
 )

@@ -53,8 +53,8 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_LineSearch.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_ParameterList.hpp"
+#include "ROL_Ptr.hpp"
 
 /** @ingroup step_group
     \class ROL::BundleStep
@@ -67,8 +67,8 @@ template <class Real>
 class BundleStep : public Step<Real> {
 private:
   // Bundle
-  Teuchos::RCP<Bundle<Real> >     bundle_;     // Bundle of subgradients and linearization errors
-  Teuchos::RCP<LineSearch<Real> > lineSearch_; // Line-search object for nonconvex problems
+  ROL::Ptr<Bundle<Real> >     bundle_;     // Bundle of subgradients and linearization errors
+  ROL::Ptr<LineSearch<Real> > lineSearch_; // Line-search object for nonconvex problems
 
   // Dual cutting plane solution
   unsigned QPiter_;                        // Number of QP solver iterations
@@ -79,14 +79,14 @@ private:
   int step_flag_;                          // Whether serious or null step
 
   // Additional storage
-  Teuchos::RCP<Vector<Real> > y_;
+  ROL::Ptr<Vector<Real> > y_;
 
   // Updated iterate storage
   Real linErrNew_;
   Real valueNew_;
 
   // Aggregate subgradients, linearizations, and distance measures
-  Teuchos::RCP<Vector<Real> > aggSubGradNew_;  // New aggregate subgradient
+  ROL::Ptr<Vector<Real> > aggSubGradNew_;  // New aggregate subgradient
   Real aggSubGradOldNorm_;                          // Old aggregate subgradient norm
   Real aggLinErrNew_;                               // New aggregate linearization error
   Real aggLinErrOld_;                               // Old aggregate linearization error
@@ -116,17 +116,17 @@ public:
   using Step<Real>::compute;
   using Step<Real>::update;
 
-  BundleStep(Teuchos::ParameterList &parlist)
-    : bundle_(Teuchos::null), lineSearch_(Teuchos::null),
+  BundleStep(ROL::ParameterList &parlist)
+    : bundle_(ROL::nullPtr), lineSearch_(ROL::nullPtr),
       QPiter_(0), QPmaxit_(0), QPtol_(0), step_flag_(0),
-      y_(Teuchos::null), linErrNew_(0), valueNew_(0),
-      aggSubGradNew_(Teuchos::null), aggSubGradOldNorm_(0),
+      y_(ROL::nullPtr), linErrNew_(0), valueNew_(0),
+      aggSubGradNew_(ROL::nullPtr), aggSubGradOldNorm_(0),
       aggLinErrNew_(0), aggLinErrOld_(0), aggDistMeasNew_(0),
       T_(0), tol_(0), m1_(0), m2_(0), m3_(0), nu_(0),
       ls_maxit_(0), first_print_(true), isConvex_(false),
       ftol_(ROL_EPSILON<Real>()) {
     Real zero(0), two(2), oem3(1.e-3), oem6(1.e-6), oem8(1.e-8), p1(0.1), p2(0.2), p9(0.9), oe3(1.e3), oe8(1.e8);
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     state->searchSize = parlist.sublist("Step").sublist("Bundle").get("Initial Trust-Region Parameter", oe3);
     T_   = parlist.sublist("Step").sublist("Bundle").get("Maximum Trust-Region Parameter",       oe8); 
     tol_ = parlist.sublist("Step").sublist("Bundle").get("Epsilon Solution Tolerance",           oem6);
@@ -141,11 +141,11 @@ public:
     unsigned maxSize  = parlist.sublist("Step").sublist("Bundle").get("Maximum Bundle Size",            200);
     unsigned remSize  = parlist.sublist("Step").sublist("Bundle").get("Removal Size for Bundle Update", 2);
     if ( parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Solver",0) == 1 ) {
-      bundle_ = Teuchos::rcp(new Bundle_TT<Real>(maxSize,coeff,omega,remSize));
-      //bundle_ = Teuchos::rcp(new Bundle_AS<Real>(maxSize,coeff,omega,remSize));
+      bundle_ = ROL::makePtr<Bundle_TT<Real>>(maxSize,coeff,omega,remSize);
+      //bundle_ = ROL::makePtr<Bundle_AS<Real>>(maxSize,coeff,omega,remSize);
     }
     else {
-      bundle_ = Teuchos::rcp(new Bundle_AS<Real>(maxSize,coeff,omega,remSize));
+      bundle_ = ROL::makePtr<Bundle_AS<Real>>(maxSize,coeff,omega,remSize);
     }
     isConvex_ = ((coeff == zero) ? true : false);
 
@@ -168,7 +168,7 @@ public:
                    Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) { 
     // Call default initializer, but maintain current searchSize
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     Real searchSize = state->searchSize;
     Step<Real>::initialize(x,x,g,obj,con,algo_state);
     state->searchSize = searchSize;
@@ -187,7 +187,7 @@ public:
 
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, 
                 BoundConstraint<Real> &con, AlgorithmState<Real> &algo_state ) { 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     first_print_ = false;                     // Print header only on first serious step
     QPiter_ = (step_flag_==1 ? 0 : QPiter_);  // Reset QPiter only on serious steps
     Real v(0), l(0), u = T_, gd(0);           // Scalar storage
@@ -389,7 +389,9 @@ public:
 
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
                BoundConstraint<Real> &con, AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    state->flag = step_flag_;
+    state->SPiter = QPiter_;
     if ( !algo_state.flag ) {
       /*************************************************************/
       /******** Reset Bundle If Maximum Size Reached ***************/
@@ -444,7 +446,7 @@ public:
   }
 
   std::string print( AlgorithmState<Real> &algo_state, bool print_header = false ) const {
-    const Teuchos::RCP<const StepState<Real> > state = Step<Real>::getStepState();
+    const ROL::Ptr<const StepState<Real> > state = Step<Real>::getStepState();
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);
     if ( algo_state.iter == 0 && first_print_ ) {

@@ -336,16 +336,21 @@ public:
   //
   // This is the first performance-portable implementation of a block
   // relaxation, and it is supported currently only by BlockTriDiContainer.
-  virtual void applyInverseJacobi (const mv_type& X, mv_type& Y,
-                                   bool zeroStartingSolution = false,
-                                   int numSweeps = 1) const
+  virtual void applyInverseJacobi (const mv_type& /* X */, mv_type& /* Y */,
+                                   bool /* zeroStartingSolution = false */,
+                                   int /* numSweeps = 1 */) const
   { TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented."); }
 
   //! Wrapper for apply with MVs, used in unit tests (never called by BlockRelaxation)
   void applyMV (mv_type& X, mv_type& Y) const
   {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     HostView XView = X.template getLocalView<Kokkos::HostSpace>();
     HostView YView = Y.template getLocalView<Kokkos::HostSpace>();
+#else
+    HostView XView = X.getLocalViewHost();
+    HostView YView = Y.getLocalViewHost();
+#endif
     this->apply (XView, YView, 0, X.getStride());
   }
 
@@ -384,9 +389,15 @@ public:
                         mv_type& Y,
                         vector_type& W)
   {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     HostView XView = X.template getLocalView<Kokkos::HostSpace>();
     HostView YView = Y.template getLocalView<Kokkos::HostSpace>();
     HostView WView = W.template getLocalView<Kokkos::HostSpace>();
+#else
+    HostView XView = X.getLocalViewHost();
+    HostView YView = Y.getLocalViewHost();
+    HostView WView = W.getLocalViewHost();
+#endif
     weightedApply (XView, YView, WView, 0, X.getStride());
   }
 
@@ -450,7 +461,7 @@ void Container<MatrixType>::DoJacobi(HostView& X, HostView& Y, int stride) const
   const scalar_type one = STS::one();
   // Note: Flop counts copied naively from Ifpack.
   // use partitions_ and blockRows_
-  size_t numVecs = X.dimension_1();
+  size_t numVecs = X.extent(1);
   // Non-overlapping Jacobi
   for (local_ordinal_type i = 0; i < numBlocks_; i++)
   {
@@ -465,7 +476,11 @@ void Container<MatrixType>::DoJacobi(HostView& X, HostView& Y, int stride) const
     {
       local_ordinal_type LRID = partitions_[partitionIndices_[i]];
       getMatDiag();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       HostView diagView = Diag_->template getLocalView<Kokkos::HostSpace>();
+#else
+      HostView diagView = Diag_->getLocalViewHost();
+#endif
       impl_scalar_type d = (impl_scalar_type) one / diagView(LRID, 0);
       for(size_t nv = 0; nv < numVecs; nv++)
       {
@@ -503,7 +518,7 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2
   // Note: Flop counts copied naively from Ifpack.
   const scalar_type one = STS::one();
   const size_t Length = inputMatrix_->getNodeMaxNumRowEntries();
-  auto numVecs = X.dimension_1();
+  auto numVecs = X.extent(1);
   Array<scalar_type> Values;
   Array<local_ordinal_type> Indices;
   Indices.resize(Length);
@@ -513,7 +528,7 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2
   // One to store the sum of the corrections (initialized to zero)
   // One to store the temporary residual (doesn't matter if it is zeroed or not)
   // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
-  HostView Resid("", X.dimension_0(), X.dimension_1());
+  HostView Resid("", X.extent(0), X.extent(1));
   for(local_ordinal_type i = 0; i < numBlocks_; i++)
   {
     if(blockRows_[i] > 1 || hasBlockCrs_)
@@ -573,7 +588,11 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2
       // a singleton calculation is exact, all residuals should be zero.
       local_ordinal_type LRID = partitionIndices_[i];  // by definition, a singleton 1 row in block.
       getMatDiag();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       HostView diagView = Diag_->template getLocalView<Kokkos::HostSpace>();
+#else
+      HostView diagView = Diag_->getLocalViewHost();
+#endif
       impl_scalar_type d = (impl_scalar_type) one / diagView(LRID, 0);
       for(size_t m = 0; m < numVecs; m++)
       {
@@ -608,7 +627,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, HostView& Y2, int st
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
   const scalar_type one = STS::one();
-  auto numVecs = X.dimension_1();
+  auto numVecs = X.extent(1);
   const size_t Length = inputMatrix_->getNodeMaxNumRowEntries();
   Array<scalar_type> Values;
   Array<local_ordinal_type> Indices(Length);
@@ -617,7 +636,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, HostView& Y2, int st
   // One to store the sum of the corrections (initialized to zero)
   // One to store the temporary residual (doesn't matter if it is zeroed or not)
   // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
-  HostView Resid("", X.dimension_0(), X.dimension_1());
+  HostView Resid("", X.extent(0), X.extent(1));
   // Forward Sweep
   for(local_ordinal_type i = 0; i < numBlocks_; i++)
   {
@@ -675,7 +694,11 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, HostView& Y2, int st
     {
       local_ordinal_type LRID  = partitions_[partitionIndices_[i]];
       getMatDiag();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       HostView diagView = Diag_->template getLocalView<Kokkos::HostSpace>();
+#else
+      HostView diagView = Diag_->getLocalViewHost();
+#endif
       impl_scalar_type d = (impl_scalar_type) one / diagView(LRID, 0);
       for(size_t m = 0; m < numVecs; m++)
       {

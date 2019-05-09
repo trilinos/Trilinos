@@ -48,11 +48,13 @@
 #define ROL_UNUSED(x) (void) x
 
 #include <ostream>
+#include <vector>
+#include <algorithm>
 
 #include "ROL_Elementwise_Function.hpp"
 
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Ptr.hpp"
+#include "ROL_Stream.hpp"
 
 /** @ingroup la_group
     \class ROL::Vector
@@ -75,7 +77,11 @@
 namespace ROL {
 
 template <class Real>
-class Vector {
+class Vector
+#ifdef ENABLE_PYROL
+ : public std::enable_shared_from_this<Vector<Real>> 
+#endif 
+{
 public:
 
   virtual ~Vector() {}
@@ -130,7 +136,7 @@ public:
 
              ---             
   */
-  virtual Teuchos::RCP<Vector> clone() const = 0;
+  virtual ROL::Ptr<Vector> clone() const = 0;
 
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mathtt{*this}\f$.
@@ -145,7 +151,7 @@ public:
              ---
   */
   virtual void axpy( const Real alpha, const Vector &x ) {
-    Teuchos::RCP<Vector> ax = x.clone();
+    ROL::Ptr<Vector> ax = x.clone();
     ax->set(x);
     ax->scale(alpha);
     this->plus(*ax);
@@ -173,9 +179,9 @@ public:
 
              ---
   */
-  virtual Teuchos::RCP<Vector> basis( const int i ) const {
+  virtual ROL::Ptr<Vector> basis( const int i ) const {
     ROL_UNUSED(i);
-    return Teuchos::null;
+    return ROL::nullPtr;
   }
 
 
@@ -223,20 +229,20 @@ public:
 
   virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
     ROL_UNUSED(f);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyUnary wass called, but not implemented" << std::endl); 
   }
 
   virtual void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector &x ) {
     ROL_UNUSED(f);
     ROL_UNUSED(x);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyBinary wass called, but not implemented" << std::endl); 
   }
 
   virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     ROL_UNUSED(r);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method reduce was called, but not implemented" << std::endl); 
   }
 
@@ -244,6 +250,37 @@ public:
     outStream << "The method print was called, but not implemented" << std::endl;
   }
 
+  /** \brief Set \f$y \leftarrow C\f$ where \f$C\in\mathbb{R}\f$.
+
+             @param[in]      C     is a scalar.
+
+             On return \f$\mathtt{*this} = C\f$.
+             Uses #applyUnary methods for the computation.
+             Please overload if a more efficient implementation is needed.
+
+             ---
+  */
+  virtual void setScalar( const Real C ) {
+    this->applyUnary(Elementwise::Fill<Real>(C));
+  }
+
+  /** \brief Set vector to be uniform random between [l,u].
+
+             @param[in]      l     is a the lower bound.
+             @param[in]      u     is a the upper bound.
+
+             On return the components of \f$\mathtt{*this}\f$ are uniform
+             random numbers on the interval \f$[l,u]\f$.
+       	     The default implementation uses #applyUnary methods for the
+       	     computation. Please overload if a more efficient implementation is
+             needed.
+
+             ---
+  */
+  virtual void randomize( const Real l = 0.0, const Real u = 1.0 ) {
+    Elementwise::UniformlyRandom<Real> ur(l,u);
+    this->applyUnary(ur);
+  }
 
   /** \brief Verify vector-space methods.
 
@@ -283,25 +320,24 @@ public:
     int width =  94;
     std::vector<Real> vCheck;
 
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::nullstream bhs; // outputs nothing
 
-    Teuchos::RCP<std::ostream> pStream;
+    ROL::Ptr<std::ostream> pStream;
     if (printToStream) {
-      pStream = Teuchos::rcp(&outStream, false);
+      pStream = ROL::makePtrFromRef(outStream);
     } else {
-      pStream = Teuchos::rcp(&bhs, false);
+      pStream = ROL::makePtrFromRef(bhs);
     }
 
     // Save the format state of the original pStream.
-    Teuchos::oblackholestream oldFormatState, headerFormatState;
+    ROL::nullstream oldFormatState, headerFormatState;
     oldFormatState.copyfmt(*pStream);
 
-    Teuchos::RCP<Vector> v    = this->clone();
-    Teuchos::RCP<Vector> vtmp = this->clone();
-    Teuchos::RCP<Vector> xtmp = x.clone();
-    Teuchos::RCP<Vector> ytmp = y.clone();
+    ROL::Ptr<Vector> v    = this->clone();
+    ROL::Ptr<Vector> vtmp = this->clone();
+    ROL::Ptr<Vector> xtmp = x.clone();
+    ROL::Ptr<Vector> ytmp = y.clone();
 
-    //*pStream << "\n************ Begin verification of linear algebra.\n\n";
     *pStream << "\n" << std::setw(width) << std::left << std::setfill('*') << "********** Begin verification of linear algebra. " << "\n\n";
     headerFormatState.copyfmt(*pStream);
 
@@ -352,7 +388,7 @@ public:
 
     // Additivity of dot (inner) product.
     xtmp->set(x);
-    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - this->dot(x) - this->dot(y))/std::max(std::abs(this->dot(*xtmp)), std::max(std::abs(this->dot(x)), std::abs(this->dot(y)))));
+    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - this->dot(x) - this->dot(y))/std::max({static_cast<Real>(std::abs(this->dot(*xtmp))), static_cast<Real>(std::abs(this->dot(x))), static_cast<Real>(std::abs(this->dot(y))), one}));
     *pStream << std::setw(width) << std::left << "Additivity of dot (inner) product. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Consistency of scalar multiplication and norm.
@@ -369,8 +405,8 @@ public:
 
     // Reflexivity.
     v->set(*this);
-    xtmp = Teuchos::rcp_const_cast<Vector>(Teuchos::rcpFromRef(this->dual()));
-    ytmp = Teuchos::rcp_const_cast<Vector>(Teuchos::rcpFromRef(xtmp->dual()));
+    xtmp = ROL::constPtrCast<Vector>(ROL::makePtrFromRef(this->dual()));
+    ytmp = ROL::constPtrCast<Vector>(ROL::makePtrFromRef(xtmp->dual()));
     v->axpy(-one, *ytmp); vCheck.push_back(v->norm());
     *pStream << std::setw(width) << std::left << "Reflexivity. Consistency error: " << " " << vCheck.back() << "\n\n";
 

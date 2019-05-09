@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,7 @@ int define_subcubes(int              nsets_real, /* actual number of sets being 
                     int              inert,      /* using inertial method? */
                     int *            pstriping,  /* cut in single direction? */
                     int              hop_mtx_special[MAXSETS][MAXSETS] /* nonstandard hop values */
-                    )
+)
 {
   extern int KL_METRIC; /* 2 => using hops so generate hop matrix */
   int        hop_flag;  /* use special hop matrix? */

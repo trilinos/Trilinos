@@ -40,8 +40,10 @@
 
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_makeValidVerboseStream.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include <numeric>
 
 namespace Tpetra {
   namespace Details {
@@ -76,6 +78,8 @@ namespace Tpetra {
         return "By createFromSends";
       case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS:
         return "By createFromRecvs";
+      case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS:
+        return "By createFromSendsAndRecvs";
       case Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE:
         return "By createReverseDistributor";
       case Details::DISTRIBUTOR_INITIALIZED_BY_COPY:
@@ -139,117 +143,58 @@ namespace Tpetra {
   }
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-  void
-  Distributor::init (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                     const Teuchos::RCP<Teuchos::FancyOStream>& out,
-                     const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  Distributor::
+  Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+               const Teuchos::RCP<Teuchos::FancyOStream>& out,
+               const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    : comm_ (comm)
+    , out_ (::Tpetra::Details::makeValidVerboseStream (out))
+    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
+    , sendType_ (Details::DISTRIBUTOR_SEND)
+    , barrierBetween_ (barrierBetween_default)
+    , verbose_ (tpetraDistributorDebugDefault)
+    , selfMessage_ (false)
+    , numSends_ (0)
+    , maxSendLength_ (0)
+    , numReceives_ (0)
+    , totalReceiveLength_ (0)
+    , lastRoundBytesSend_ (0)
+    , lastRoundBytesRecv_ (0)
+    , useDistinctTags_ (useDistinctTags_default)
   {
-    this->out_ = out.is_null () ?
-      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out;
-    if (! plist.is_null ()) {
-      this->setParameterList (plist);
-    }
+    TEUCHOS_ASSERT( ! out_.is_null () );
 
+    this->setParameterList (plist); // sets verbose_ via Behavior
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
-
-    if (debug_) {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: debug_ "
-         "is true but out_ (pointer to the output stream) is NULL.  Please "
-         "report this bug to the Tpetra developers.");
-      Teuchos::OSTab tab (out_);
-      std::ostringstream os;
-      os << comm_->getRank ()
-         << ": Distributor ctor done" << std::endl;
-      *out_ << os.str ();
-    }
   }
 
-  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
-    : comm_ (comm)
-    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
-    , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (barrierBetween_default)
-    , debug_ (tpetraDistributorDebugDefault)
-    , selfMessage_ (false)
-    , numSends_ (0)
-    , maxSendLength_ (0)
-    , numReceives_ (0)
-    , totalReceiveLength_ (0)
-    , lastRoundBytesSend_ (0)
-    , lastRoundBytesRecv_ (0)
-    , useDistinctTags_ (useDistinctTags_default)
-  {
-    init (comm, Teuchos::null, Teuchos::null);
-  }
+  Distributor::
+  Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+    : Distributor (comm, Teuchos::null, Teuchos::null)
+  {}
 
-  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Teuchos::FancyOStream>& out)
-    : comm_ (comm)
-    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
-    , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (barrierBetween_default)
-    , debug_ (tpetraDistributorDebugDefault)
-    , selfMessage_ (false)
-    , numSends_ (0)
-    , maxSendLength_ (0)
-    , numReceives_ (0)
-    , totalReceiveLength_ (0)
-    , lastRoundBytesSend_ (0)
-    , lastRoundBytesRecv_ (0)
-    , useDistinctTags_ (useDistinctTags_default)
-  {
-    init (comm, out, Teuchos::null);
-  }
+  Distributor::
+  Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+               const Teuchos::RCP<Teuchos::FancyOStream>& out)
+    : Distributor (comm, out, Teuchos::null)
+  {}
 
-  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : comm_ (comm)
-    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
-    , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (barrierBetween_default)
-    , debug_ (tpetraDistributorDebugDefault)
-    , selfMessage_ (false)
-    , numSends_ (0)
-    , maxSendLength_ (0)
-    , numReceives_ (0)
-    , totalReceiveLength_ (0)
-    , lastRoundBytesSend_ (0)
-    , lastRoundBytesRecv_ (0)
-    , useDistinctTags_ (useDistinctTags_default)
-  {
-    init (comm, Teuchos::null, plist);
-  }
+  Distributor::
+  Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+               const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    : Distributor (comm, Teuchos::null, plist)
+  {}
 
-  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Teuchos::FancyOStream>& out,
-                            const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : comm_ (comm)
-    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
-    , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (barrierBetween_default)
-    , debug_ (tpetraDistributorDebugDefault)
-    , selfMessage_ (false)
-    , numSends_ (0)
-    , maxSendLength_ (0)
-    , numReceives_ (0)
-    , totalReceiveLength_ (0)
-    , lastRoundBytesSend_ (0)
-    , lastRoundBytesRecv_ (0)
-    , useDistinctTags_ (useDistinctTags_default)
-  {
-    init (comm, out, plist);
-  }
-
-  Distributor::Distributor (const Distributor & distributor)
+  Distributor::
+  Distributor (const Distributor& distributor)
     : comm_ (distributor.comm_)
     , out_ (distributor.out_)
     , howInitialized_ (Details::DISTRIBUTOR_INITIALIZED_BY_COPY)
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
-    , debug_ (distributor.debug_)
+    , verbose_ (distributor.verbose_)
     , selfMessage_ (distributor.selfMessage_)
     , numSends_ (distributor.numSends_)
     , procsTo_ (distributor.procsTo_)
@@ -269,36 +214,19 @@ namespace Tpetra {
     , useDistinctTags_ (distributor.useDistinctTags_)
   {
     using Teuchos::ParameterList;
-    using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    // Clone the right-hand side's ParameterList, so that this' list
-    // is decoupled from the right-hand side's list.  We don't need to
-    // do validation, since the right-hand side already has validated
-    // its parameters, so just call setMyParamList().  Note that this
-    // won't work if the right-hand side doesn't have a list set yet,
-    // so we first check for null.
+    TEUCHOS_ASSERT( ! out_.is_null () );
+
     RCP<const ParameterList> rhsList = distributor.getParameterList ();
-    if (! rhsList.is_null ()) {
-      this->setMyParamList (parameterList (* rhsList));
-    }
+    RCP<ParameterList> newList = rhsList.is_null () ? Teuchos::null :
+      Teuchos::parameterList (*rhsList);
+    this->setParameterList (newList);
 
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
-
-    if (debug_) {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: debug_ "
-         "is true but out_ (pointer to the output stream) is NULL.  Please "
-         "report this bug to the Tpetra developers.");
-      Teuchos::OSTab tab (out_);
-      std::ostringstream os;
-      os << comm_->getRank ()
-         << ": Distributor copy ctor done" << std::endl;
-      *out_ << os.str ();
-    }
   }
 
   void Distributor::swap (Distributor& rhs) {
@@ -311,7 +239,7 @@ namespace Tpetra {
     std::swap (howInitialized_, rhs.howInitialized_);
     std::swap (sendType_, rhs.sendType_);
     std::swap (barrierBetween_, rhs.barrierBetween_);
-    std::swap (debug_, rhs.debug_);
+    std::swap (verbose_, rhs.verbose_);
     std::swap (selfMessage_, rhs.selfMessage_);
     std::swap (numSends_, rhs.numSends_);
     std::swap (procsTo_, rhs.procsTo_);
@@ -348,28 +276,11 @@ namespace Tpetra {
     // Distributor use the same timers.
   }
 
-  Distributor::~Distributor()
-  {
-    // mfh 10 May 2017: We shouldn't have any outstanding
-    // communication requests at this point.  It would be legitimate
-    // to check here, and report an error if requests_.size() != 0.
-    // However, throwing in a destructor is bad form.  See #1303:
-    //
-    // https://github.com/trilinos/Trilinos/issues/1303
-    //
-    // If someone wants to restore the error check, please don't
-    // throw; instead, use MPI_Abort (or exit() in a non-MPI build).
-
-    // TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-    //   "Tpetra::Distributor: Destructor called with " << requests_.size()
-    //   << " outstanding posts (unfulfilled communication requests).  There "
-    //   "should be none at this point.  Please report this bug to the Tpetra "
-    //   "developers.");
-  }
-
   void
-  Distributor::setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  Distributor::
+  setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
+    using ::Tpetra::Details::Behavior;
     using Teuchos::FancyOStream;
     using Teuchos::getIntegralValue;
     using Teuchos::includesVerbLevel;
@@ -379,54 +290,62 @@ namespace Tpetra {
     using Teuchos::RCP;
     using std::endl;
 
-    RCP<const ParameterList> validParams = getValidParameters ();
-    plist->validateParametersAndSetDefaults (*validParams);
+    const bool verboseDefault = Behavior::verbose ("Distributor") ||
+      Behavior::verbose ("Tpetra::Distributor");
 
-    const bool barrierBetween =
-      plist->get<bool> ("Barrier between receives and sends");
-    const Details::EDistributorSendType sendType =
-      getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
-    const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
-    const bool debug = plist->get<bool> ("Debug");
-    {
-      // mfh 03 May 2016: We keep this option only for backwards
-      // compatibility, but it must always be true.  See discussion of
-      // Github Issue #227.
-      const bool enable_cuda_rdma =
-        plist->get<bool> ("Enable MPI CUDA RDMA support");
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (! enable_cuda_rdma, std::invalid_argument, "Tpetra::Distributor::"
-         "setParameterList: " << "You specified \"Enable MPI CUDA RDMA "
-         "support\" = false.  This is no longer valid.  You don't need to "
-         "specify this option any more; Tpetra assumes it is always true.  "
-         "This is a very light assumption on the MPI implementation, and in "
-         "fact does not actually involve hardware or system RDMA support.  "
-         "Tpetra just assumes that the MPI implementation can tell whether a "
-         "pointer points to host memory or CUDA device memory.");
+    if (plist.is_null ()) {
+      verbose_ = verboseDefault;
     }
+    else {
+      RCP<const ParameterList> validParams = getValidParameters ();
+      plist->validateParametersAndSetDefaults (*validParams);
 
-    // We check this property explicitly, since we haven't yet learned
-    // how to make a validator that can cross-check properties.
-    // Later, turn this into a validator so that it can be embedded in
-    // the valid ParameterList and used in Optika.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! barrierBetween && sendType == Details::DISTRIBUTOR_RSEND,
-      std::invalid_argument, "Tpetra::Distributor::setParameterList: " << endl
-      << "You specified \"Send type\"=\"Rsend\", but turned off the barrier "
-      "between receives and sends." << endl << "This is invalid; you must "
-      "include the barrier if you use ready sends." << endl << "Ready sends "
-      "require that their corresponding receives have already been posted, "
-      "and the only way to guarantee that in general is with a barrier.");
+      const bool barrierBetween =
+        plist->get<bool> ("Barrier between receives and sends");
+      const Details::EDistributorSendType sendType =
+        getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
+      const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
+      const bool debug = plist->get<bool> ("Debug");
+      {
+        // mfh 03 May 2016: We keep this option only for backwards
+        // compatibility, but it must always be true.  See discussion of
+        // Github Issue #227.
+        const bool enable_cuda_rdma =
+          plist->get<bool> ("Enable MPI CUDA RDMA support");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! enable_cuda_rdma, std::invalid_argument, "Tpetra::Distributor::"
+           "setParameterList: " << "You specified \"Enable MPI CUDA RDMA "
+           "support\" = false.  This is no longer valid.  You don't need to "
+           "specify this option any more; Tpetra assumes it is always true.  "
+           "This is a very light assumption on the MPI implementation, and in "
+           "fact does not actually involve hardware or system RDMA support.  "
+           "Tpetra just assumes that the MPI implementation can tell whether a "
+           "pointer points to host memory or CUDA device memory.");
+      }
 
-    // Now that we've validated the input list, save the results.
-    sendType_ = sendType;
-    barrierBetween_ = barrierBetween;
-    useDistinctTags_ = useDistinctTags;
-    debug_ = debug;
+      // We check this property explicitly, since we haven't yet learned
+      // how to make a validator that can cross-check properties.
+      // Later, turn this into a validator so that it can be embedded in
+      // the valid ParameterList and used in Optika.
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! barrierBetween && sendType == Details::DISTRIBUTOR_RSEND,
+         std::invalid_argument, "Tpetra::Distributor::setParameterList: " << endl
+         << "You specified \"Send type\"=\"Rsend\", but turned off the barrier "
+         "between receives and sends." << endl << "This is invalid; you must "
+         "include the barrier if you use ready sends." << endl << "Ready sends "
+         "require that their corresponding receives have already been posted, "
+         "and the only way to guarantee that in general is with a barrier.");
 
-    // ParameterListAcceptor semantics require pointer identity of the
-    // sublist passed to setParameterList(), so we save the pointer.
-    this->setMyParamList (plist);
+      // Now that we've validated the input list, save the results.
+      sendType_ = sendType;
+      barrierBetween_ = barrierBetween;
+      useDistinctTags_ = useDistinctTags;
+      verbose_ = debug || verboseDefault;
+
+      // ParameterListAcceptor semantics require pointer identity of the
+      // sublist passed to setParameterList(), so we save the pointer.
+      this->setMyParamList (plist);
+    }
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
@@ -463,6 +382,7 @@ namespace Tpetra {
                 " to avoid message collisions.");
     plist->set ("Debug", debug, "Whether to print copious debugging output on "
                 "all processes.");
+    plist->set ("Timer Label","","Label for Time Monitor output");
     plist->set ("Enable MPI CUDA RDMA support", true, "Assume that MPI can "
                 "tell whether a pointer points to host memory or CUDA device "
                 "memory.  You don't need to specify this option any more; "
@@ -528,7 +448,7 @@ namespace Tpetra {
     reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
     reverseDistributor_->sendType_ = sendType_;
     reverseDistributor_->barrierBetween_ = barrierBetween_;
-    reverseDistributor_->debug_ = debug_;
+    reverseDistributor_->verbose_ = verbose_;
 
     // The total length of all the sends of this Distributor.  We
     // calculate it because it's the total length of all the receives
@@ -614,7 +534,7 @@ namespace Tpetra {
 
     const int myRank = comm_->getRank ();
 
-    if (debug_) {
+    if (verbose_) {
       std::ostringstream os;
       os << myRank << ": doWaits: # reqs = "
          << requests_.size () << endl;
@@ -655,7 +575,7 @@ namespace Tpetra {
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
-    if (debug_) {
+    if (verbose_) {
       std::ostringstream os;
       os << myRank << ": doWaits done" << endl;
       *out_ << os.str ();
@@ -686,7 +606,7 @@ namespace Tpetra {
         << (barrierBetween_ ? "true" : "false")
         << ", Use distinct tags: "
         << (useDistinctTags_ ? "true" : "false")
-        << ", Debug: " << (debug_ ? "true" : "false")
+        << ", Debug: " << (verbose_ ? "true" : "false")
         << "}}";
     return out.str ();
   }
@@ -802,7 +722,7 @@ namespace Tpetra {
             << (barrierBetween_ ? "true" : "false") << endl
             << "\"Use distinct tags\": "
             << (useDistinctTags_ ? "true" : "false") << endl
-            << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
+            << "\"Debug\": " << (verbose_ ? "true" : "false") << endl;
       }
     } // if myRank == 0
 
@@ -823,7 +743,8 @@ namespace Tpetra {
   }
 
   void
-  Distributor::computeReceives ()
+  Distributor::
+  computeReceives ()
   {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -849,10 +770,12 @@ namespace Tpetra {
     const int pathTag = 2;
     const int tag = this->getTag (pathTag);
 
-    if (debug_) {
+    std::unique_ptr<std::string> prefix;
+    if (verbose_) {
       std::ostringstream os;
-      os << myRank << ": computeReceives: "
-        "{selfMessage_: " << (selfMessage_ ? "true" : "false")
+      os << "Proc " << myRank << ": computeReceives: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << "{selfMessage_: " << (selfMessage_ ? "true" : "false")
          << ", tag: " << tag << "}" << endl;
       *out_ << os.str ();
     }
@@ -883,9 +806,9 @@ namespace Tpetra {
         *comm_);
 #endif // HAVE_TEUCHOS_DEBUG
 
-      if (debug_) {
+      if (verbose_) {
         std::ostringstream os;
-        os << myRank << ": computeReceives: Calling reduce and scatter" << endl;
+        os << *prefix << "Reduce & scatter" << endl;
         *out_ << os.str ();
       }
 
@@ -993,10 +916,10 @@ namespace Tpetra {
     const int anySourceProc = -1;
 #endif
 
-    if (debug_) {
+    if (verbose_) {
       std::ostringstream os;
-      os << myRank << ": computeReceives: Posting "
-         << actualNumReceives << " irecvs" << endl;
+      os << *prefix << "Post " << actualNumReceives << " irecv"
+         << (actualNumReceives != size_t (1) ? "s" : "") << endl;
       *out_ << os.str ();
     }
 
@@ -1008,19 +931,19 @@ namespace Tpetra {
       // do that!).
       lengthsFromBuffers[i].resize (1);
       lengthsFromBuffers[i][0] = as<size_t> (0);
-      requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc, tag, *comm_);
-      if (debug_) {
+      requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc,
+                                           tag, *comm_);
+      if (verbose_) {
         std::ostringstream os;
-        os << myRank << ": computeReceives: "
-          "Posted any-proc irecv w/ specified tag " << tag << endl;
+        os << *prefix << "Posted any-proc irecv w/ tag " << tag << endl;
         *out_ << os.str ();
       }
     }
 
-    if (debug_) {
+    if (verbose_) {
       std::ostringstream os;
-      os << myRank << ": computeReceives: "
-        "posting " << numSends_ << " sends" << endl;
+      os << *prefix << "Post " << numSends_ << " send"
+         << (numSends_ != size_t (1) ? "s" : "") << endl;
       *out_ << os.str ();
     }
     // Post the sends: Tell each process to which we are sending how
@@ -1038,10 +961,9 @@ namespace Tpetra {
         // lengthsTo_[i] blocks of packets.
         const size_t* const lengthsTo_i = &lengthsTo_[i];
         send<int, size_t> (lengthsTo_i, 1, as<int> (procsTo_[i]), tag, *comm_);
-        if (debug_) {
+        if (verbose_) {
           std::ostringstream os;
-          os << myRank << ": computeReceives: "
-            "Posted send to Proc " << procsTo_[i] << " w/ specified tag "
+          os << *prefix << "Posted send to Proc " << procsTo_[i] << " w/ tag "
              << tag << endl;
           *out_ << os.str ();
         }
@@ -1058,7 +980,7 @@ namespace Tpetra {
       }
     }
 
-    if (debug_) {
+    if (verbose_) {
       std::ostringstream os;
       os << myRank << ": computeReceives: waitAll on "
          << requests.size () << " requests" << endl;
@@ -1082,12 +1004,19 @@ namespace Tpetra {
     sort2 (procsFrom_.begin(), procsFrom_.end(), lengthsFrom_.begin());
 
     // Compute indicesFrom_
-    totalReceiveLength_ = std::accumulate (lengthsFrom_.begin(), lengthsFrom_.end(), 0);
+    totalReceiveLength_ =
+      std::accumulate (lengthsFrom_.begin (), lengthsFrom_.end (), 0);
     indicesFrom_.clear ();
+    // NOTE (mfh 13 Feb 2019): Epetra_MpiDistributor deliberately does
+    // _not_ fill indicesFrom_ (what it calls "indices_from_") like
+    // this; it leaves indicesFrom_ empty.  The comment there mentions
+    // that not filling indicesFrom_ helps reverse mode correctness.
+#if 0
     indicesFrom_.reserve (totalReceiveLength_);
     for (size_t i = 0; i < totalReceiveLength_; ++i) {
       indicesFrom_.push_back(i);
     }
+#endif // 0
 
     startsFrom_.clear ();
     startsFrom_.reserve (numReceives_);
@@ -1100,28 +1029,34 @@ namespace Tpetra {
       --numReceives_;
     }
 
-    if (debug_) {
+    if (verbose_) {
       std::ostringstream os;
-      os << myRank << ": computeReceives: done" << endl;
+      os << *prefix << "Done!" << endl;
       *out_ << os.str ();
     }
   }
 
   size_t
-  Distributor::createFromSends (const Teuchos::ArrayView<const int> &exportProcIDs)
+  Distributor::
+  createFromSends (const Teuchos::ArrayView<const int>& exportProcIDs)
   {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
     using std::endl;
+    const char rawPrefix[] = "Tpetra::Distributor::createFromSends: ";
 
     Teuchos::OSTab tab (out_);
     const size_t numExports = exportProcIDs.size();
     const int myProcID = comm_->getRank();
     const int numProcs = comm_->getSize();
-    if (debug_) {
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose_) {
       std::ostringstream os;
-      os << myProcID << ": createFromSends" << endl;
+      os << "Proc " << myProcID << ": " << rawPrefix << ": ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << "exportPIDs: " << exportProcIDs << endl;
       *out_ << os.str ();
     }
 
@@ -1204,7 +1139,8 @@ namespace Tpetra {
 
         // null entries break continuity.
         // e.g.,  [ 0, 0, 0, 1, -99, 1, 2, 2, 2] is not contiguous
-        if (needSendBuff==0 && starts[exportID] > 1 && exportID != exportProcIDs[i-1]) {
+        if (needSendBuff == 0 && starts[exportID] > 1 &&
+            exportID != exportProcIDs[i-1]) {
           needSendBuff = 1;
         }
         ++numActive;
@@ -1220,7 +1156,7 @@ namespace Tpetra {
       int gbl_badID;
       reduceAll<int, int> (*comm_, REDUCE_MAX, badID, outArg (gbl_badID));
       TEUCHOS_TEST_FOR_EXCEPTION(gbl_badID >= 0, std::runtime_error,
-        Teuchos::typeName(*this) << "::createFromSends(): Process  " << gbl_badID
+        Teuchos::typeName(*this) << "::createFromSends: Proc " << gbl_badID
         << ", perhaps among other processes, got a bad send process ID.");
     }
 #else
@@ -1423,9 +1359,9 @@ namespace Tpetra {
     // Invert map to see what msgs are received and what length
     computeReceives();
 
-    if (debug_) {
+    if (verbose_) {
       std::ostringstream os;
-      os << myProcID << ": createFromSends: done" << endl;
+      os << *prefix << "Done!" << endl;
       *out_ << os.str ();
     }
 
@@ -1621,11 +1557,16 @@ namespace Tpetra {
     }
     totalReceiveLength_ = remoteProcIDs.size();
     indicesFrom_.clear ();
+    // NOTE (mfh 13 Feb 2019): Epetra_MpiDistributor deliberately does
+    // _not_ fill indicesFrom_ (what it calls "indices_from_") like
+    // this; it leaves indicesFrom_ empty.  The comment there mentions
+    // that not filling indicesFrom_ helps reverse mode correctness.
+#if 0
     indicesFrom_.reserve (totalReceiveLength_);
     for (size_t i = 0; i < totalReceiveLength_; ++i) {
       indicesFrom_.push_back(i);
     }
-
+#endif // 0
     numReceives_-=selfMessage_;
   }
 

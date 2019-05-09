@@ -79,6 +79,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("tentative: calculate qr");
+    SET_VALID_ENTRY("tentative: build coarse coordinates");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -86,6 +87,8 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Nullspace",          Teuchos::null, "Generating factory of the nullspace");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >("Node Comm",          Teuchos::null, "Generating factory of the node level communicator");
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
@@ -96,12 +99,23 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
+
+    const ParameterList& pL = GetParameterList();
+
     Input(fineLevel, "A");
     Input(fineLevel, "Aggregates");
     Input(fineLevel, "Nullspace");
     Input(fineLevel, "UnAmalgamationInfo");
     Input(fineLevel, "CoarseMap");
+    if( fineLevel.GetLevelID() == 0 &&
+        fineLevel.IsAvailable("Coordinates", NoFactory::get()) &&     // we have coordinates (provided by user app)
+        pL.get<bool>("tentative: build coarse coordinates") ) {       // and we want coordinates on other levels
+      bTransferCoordinates_ = true;                                   // then set the transfer coordinates flag to true
+      Input(fineLevel, "Coordinates");
+    } else if (bTransferCoordinates_) {
+      Input(fineLevel, "Coordinates");
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -112,15 +126,94 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
+    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
+    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
 
-    RCP<Matrix>           A             = Get< RCP<Matrix> >          (fineLevel, "A");
-    RCP<Aggregates>       aggregates    = Get< RCP<Aggregates> >      (fineLevel, "Aggregates");
-    RCP<AmalgamationInfo> amalgInfo     = Get< RCP<AmalgamationInfo> >(fineLevel, "UnAmalgamationInfo");
-    RCP<MultiVector>      fineNullspace = Get< RCP<MultiVector> >     (fineLevel, "Nullspace");
-    RCP<const Map>        coarseMap     = Get< RCP<const Map> >       (fineLevel, "CoarseMap");
+    RCP<Matrix>                A             = Get< RCP<Matrix> >               (fineLevel, "A");
+    RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");
+    RCP<AmalgamationInfo>      amalgInfo     = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
+    RCP<MultiVector>           fineNullspace = Get< RCP<MultiVector> >          (fineLevel, "Nullspace");
+    RCP<const Map>             coarseMap     = Get< RCP<const Map> >            (fineLevel, "CoarseMap");
+    RCP<RealValuedMultiVector> fineCoords;
+    if(bTransferCoordinates_) {
+      fineCoords = Get< RCP<RealValuedMultiVector> >(fineLevel, "Coordinates");
+    }
 
-    RCP<Matrix>           Ptentative;
-    RCP<MultiVector>      coarseNullspace;
+    // FIXME: We should remove the NodeComm on levels past the threshold
+    if(fineLevel.IsAvailable("Node Comm")) {
+      RCP<const Teuchos::Comm<int> > nodeComm = Get<RCP<const Teuchos::Comm<int> > >(fineLevel,"Node Comm");
+      Set<RCP<const Teuchos::Comm<int> > >(coarseLevel, "Node Comm", nodeComm);
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements() != fineNullspace->getMap()->getNodeNumElements(),
+			       Exceptions::RuntimeError,"MueLu::TentativePFactory::MakeTentative: Size mismatch between A and Nullspace");
+
+    RCP<Matrix>                Ptentative;
+    RCP<MultiVector>           coarseNullspace;
+    RCP<RealValuedMultiVector> coarseCoords;
+
+    if(bTransferCoordinates_) {
+      //*** Create the coarse coordinates ***
+      // First create the coarse map and coarse multivector
+      ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
+      LO                  blkSize      = 1;
+      if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
+        blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
+      GO                  indexBase     = coarseMap->getIndexBase();
+      size_t              numNodes      = elementAList.size() / blkSize;
+      Array<GO>           nodeList(numNodes);
+      const int           numDimensions = fineCoords->getNumVectors();
+
+      for (LO i = 0; i < Teuchos::as<LO>(numNodes); i++) {
+        nodeList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
+      }
+      RCP<const Map> coarseCoordsMap = MapFactory::Build(fineCoords->getMap()->lib(),
+                                                         Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                         nodeList,
+                                                         indexBase,
+                                                         fineCoords->getMap()->getComm());
+      coarseCoords = RealValuedMultiVectorFactory::Build(coarseCoordsMap, numDimensions);
+
+      // Create overlapped fine coordinates to reduce global communication
+      RCP<RealValuedMultiVector> ghostedCoords;
+      if (aggregates->AggregatesCrossProcessors()) {
+        RCP<const Map>    aggMap = aggregates->GetMap();
+        RCP<const Import> importer     = ImportFactory::Build(fineCoords->getMap(), aggMap);
+
+        ghostedCoords = RealValuedMultiVectorFactory::Build(aggMap, numDimensions);
+        ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
+      } else {
+        ghostedCoords = fineCoords;
+      }
+
+      // Get some info about aggregates
+      int                         myPID        = coarseCoordsMap->getComm()->getRank();
+      LO                          numAggs      = aggregates->GetNumAggregates();
+      ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
+      const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
+      const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
+
+      // Fill in coarse coordinates
+      for (int dim = 0; dim < numDimensions; ++dim) {
+        ArrayRCP<const coordinate_type> fineCoordsData = ghostedCoords->getData(dim);
+        ArrayRCP<coordinate_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
+
+        for (LO lnode = 0; lnode < Teuchos::as<LO>(numNodes); lnode++) {
+          if (procWinner[lnode] == myPID &&
+              lnode < vertex2AggID.size() &&
+              lnode < fineCoordsData.size() &&
+              vertex2AggID[lnode] < coarseCoordsData.size() &&
+              Teuchos::ScalarTraits<coordinate_type>::isnaninf(fineCoordsData[lnode]) == false) {
+            coarseCoordsData[vertex2AggID[lnode]] += fineCoordsData[lnode];
+          }
+        }
+        for (LO agg = 0; agg < numAggs; agg++) {
+          coarseCoordsData[agg] /= aggSizes[agg];
+        }
+      }
+    }
+
     if (!aggregates->AggregatesCrossProcessors())
       BuildPuncoupled(A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace,coarseLevel.GetLevelID());
     else
@@ -139,13 +232,16 @@ namespace MueLu {
     else
       Ptentative->CreateView("stridedMaps", Ptentative->getRangeMap(),   coarseMap);
 
-    Set(coarseLevel, "Nullspace", coarseNullspace);
-    Set(coarseLevel, "P",         Ptentative);
+    if(bTransferCoordinates_) {
+      Set(coarseLevel, "Coordinates", coarseCoords);
+    }
+    Set(coarseLevel, "Nullspace",   coarseNullspace);
+    Set(coarseLevel, "P",           Ptentative);
 
-    if (IsPrint(Statistics1)) {
+    if (IsPrint(Statistics2)) {
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+      GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
     }
   }
 
@@ -458,9 +554,9 @@ namespace MueLu {
 
     // Managing labels & constants for ESFC
     RCP<ParameterList> FCparams;
-    if(pL.isSublist("matrixmatrix: kernel params")) 
+    if(pL.isSublist("matrixmatrix: kernel params"))
       FCparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-    else 
+    else
       FCparams= rcp(new ParameterList);
     // By default, we don't need global constants for TentativeP
     FCparams->set("compute global constants",FCparams->get("compute global constants",false));

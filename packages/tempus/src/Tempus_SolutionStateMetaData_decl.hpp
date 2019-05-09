@@ -39,11 +39,12 @@ public:
     const Scalar errorRel,
     const int    order,
     const int    nFailures,
+    const int    nRunningFailures,
     const int    nConsecutiveFailures,
     const Status solutionStatus,
     const bool   output,
     const bool   outputScreen,
-    const bool   isRestartable,
+    const bool   isSynced,
     const bool   isInterpolated,
     const Scalar accuracy);
 
@@ -51,13 +52,13 @@ public:
   SolutionStateMetaData(const SolutionStateMetaData<Scalar>& ssmd);
 
   /// Clone constructor
-  Teuchos::RCP<SolutionStateMetaData<Scalar> > clone();
+  Teuchos::RCP<SolutionStateMetaData<Scalar> > clone() const;
 
   /// This is a deep copy
-  void copy(Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd);
+  void copy(const Teuchos::RCP<const SolutionStateMetaData<Scalar> >& ssmd);
 
   /// Destructor
-  virtual ~SolutionStateMetaData() {};
+  virtual ~SolutionStateMetaData() {}
 
   /// \name Accessor methods
   //@{
@@ -68,13 +69,16 @@ public:
     Scalar getErrorRel()             const {return errorRel_;}
     Scalar getOrder()                const {return order_;}
     int    getNFailures()            const {return nFailures_;}
+    int    getNRunningFailures()     const {return nRunningFailures_;}
     int    getNConsecutiveFailures() const {return nConsecutiveFailures_;}
     Status getSolutionStatus()       const {return solutionStatus_;}
     bool   getOutput()               const {return output_;}
     bool   getOutputScreen()         const {return outputScreen_;}
-    bool   getIsRestartable()        const {return isRestartable_;}
+    bool   getIsSynced()             const {return isSynced_;}
     bool   getIsInterpolated()       const {return isInterpolated_;}
     Scalar getAccuracy()             const {return accuracy_;}
+    Scalar getTolAbs()               const {return tolAbs_;}
+    Scalar getTolRel()               const {return tolRel_;}
 
     void setTime(Scalar time) {time_ = time;}
     void setIStep(int iStep) {iStep_ = iStep;}
@@ -83,16 +87,20 @@ public:
     void setErrorRel (Scalar errorRel){errorRel_ = errorRel;}
     void setOrder(Scalar order) {order_ = order;}
     void setNFailures(int nFailures) {nFailures_ = nFailures;}
+    void setNRunningFailures(int nFailures) {nRunningFailures_ = nFailures;}
     void setNConsecutiveFailures(int nConsecutiveFailures)
       {nConsecutiveFailures_ = nConsecutiveFailures;}
     void setSolutionStatus(Status solutionStatus)
       {solutionStatus_ = solutionStatus;}
     void setOutput(bool output) {output_ = output;}
     void setOutputScreen(bool outputScreen) {outputScreen_ = outputScreen;}
-    void setIsRestartable(bool isRestartable) {isRestartable_=isRestartable;}
+    void setIsSynced(bool isSynced) {isSynced_=isSynced;}
     void setIsInterpolated(bool isInterpolated)
       {isInterpolated_ = isInterpolated;}
     void setAccuracy(Scalar accuracy) {accuracy_ = accuracy;}
+    void setTolAbs(Scalar tolAbs){tolAbs_ = tolAbs;}
+    void setTolRel(Scalar tolRel){tolRel_ = tolRel;}
+       
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -110,9 +118,12 @@ protected:
   Scalar errorRel_;          ///< Relative local truncation error
   Scalar order_;             ///< Order of this solution
   int nFailures_;            ///< Total number of stepper failures
+  int nRunningFailures_;     ///< Total number of running stepper failures
   int nConsecutiveFailures_; ///< Consecutive number of stepper failures
+  Scalar tolRel_;            ///< Absolute tolerance 
+  Scalar tolAbs_;            ///< Relative tolerance
 
-  /** The solutionStatus is used to indicate
+  /** \brief The solutionStatus is used to indicate
       - if the solution is still being worked on; WORKING
       - if the solution is accepted and completed (e.g., past solutions
         in SolutionHistory); PASSED.
@@ -120,11 +131,15 @@ protected:
         failing, or Integrator not accepting the time step.
   */
   Status solutionStatus_;
-  bool   output_;            ///< SolutionState should be or has been outputted
-  bool   outputScreen_;      ///< Output screen dump
-  bool   isRestartable_;     ///< T - soln can be used as a restart
-  bool   isInterpolated_;    ///< F - soln is time integrated; T - soln is interpolated
-  Scalar accuracy_;          ///< Interpolation accuracy of solution
+  bool   output_;         ///< SolutionState should be or has been outputted
+  bool   outputScreen_;   ///< Output screen dump
+  /** \brief True - all of soln (x, xDot, xDotDot) is at the same time level.
+   *  False - solution is at different time levels, e.g., leapfrog where
+   *  \f$x_n\f$ and \f$\dot{x}_{n+1/2}\f$
+   */
+  bool   isSynced_;
+  bool   isInterpolated_; ///< F - soln is time integrated; T - soln is interpolated
+  Scalar accuracy_;       ///< Interpolation accuracy of solution
 
 };
 } // namespace Tempus

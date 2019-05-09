@@ -118,7 +118,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
     \param Y (Out) -A Epetra_MultiVector of dimension NumVectors containing result.
     \warning - This method has no effect and returns -1 as error code.
   */
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  int Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const {
     return(-1);}
 
   //! Returns the result of a Operator inverse applied to an Epetra_MultiVector X in Y.
@@ -191,7 +191,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
   { }
 
   //! Operator= (NOT DEFINED)
-  MultiLevelOperator& operator=(const MultiLevelOperator& RHS)
+  MultiLevelOperator& operator=(const MultiLevelOperator& /* RHS */)
   {
     return(*this);
   }

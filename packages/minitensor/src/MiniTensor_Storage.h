@@ -61,7 +61,7 @@ struct dimension_const<DYNAMIC, C> {
 template<Index D>
 struct check_static {
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
     // Empty
 #else
   static Index const
@@ -259,6 +259,7 @@ public:
   {
   }
 
+  KOKKOS_INLINE_FUNCTION
   T const &
   operator[](Index const i) const
   {
@@ -269,6 +270,7 @@ public:
 #pragma GCC diagnostic pop
   }
 
+  KOKKOS_INLINE_FUNCTION
   T &
   operator[](Index const i)
   {
@@ -279,12 +281,14 @@ public:
 #pragma GCC diagnostic pop
   }
 
+  KOKKOS_INLINE_FUNCTION
   Index
   size() const
   {
     return size_;
   }
 
+  KOKKOS_INLINE_FUNCTION
   void
   resize(Index const number_entries)
   {
@@ -292,17 +296,20 @@ public:
     size_ = number_entries;
   }
 
+  KOKKOS_INLINE_FUNCTION
   void
   clear()
   {
   }
 
+  KOKKOS_INLINE_FUNCTION
   pointer_type
   get_pointer()
   {
     return &storage_[0];
   }
 
+  KOKKOS_INLINE_FUNCTION
   const_pointer_type
   get_const_pointer() const
   {
@@ -366,6 +373,7 @@ public:
     clear();
   }
 
+  KOKKOS_INLINE_FUNCTION
   T const &
   operator[](Index const i) const
   {
@@ -373,6 +381,7 @@ public:
     return storage_[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   T &
   operator[](Index const i)
   {
@@ -380,12 +389,14 @@ public:
     return storage_[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   Index
   size() const
   {
     return size_;
   }
 
+  KOKKOS_INLINE_FUNCTION
   void
   resize(Index const number_entries)
   {
@@ -396,6 +407,7 @@ public:
     }
   }
 
+  KOKKOS_INLINE_FUNCTION
   void
   clear()
   {
@@ -406,12 +418,14 @@ public:
     }
   }
 
+  KOKKOS_INLINE_FUNCTION
   pointer_type
   get_pointer()
   {
     return storage_;
   }
 
+  KOKKOS_INLINE_FUNCTION
   const_pointer_type
   get_const_pointer() const
   {

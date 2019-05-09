@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -63,8 +63,9 @@ namespace Ioss {
                               DatabaseUsage db_usage, MPI_Comm communicator = MPI_COMM_WORLD,
                               const Ioss::PropertyManager &properties = Ioss::PropertyManager());
 
-    static int describe(NameList *names);
+    static int  describe(NameList *names);
     static void clean();
+    static void show_configuration();
 
   protected:
     explicit IOFactory(const std::string &type);
@@ -72,6 +73,8 @@ namespace Ioss {
     virtual DatabaseIO *make_IO(const std::string &filename, DatabaseUsage db_usage,
                                 MPI_Comm                     communicator,
                                 const Ioss::PropertyManager &properties) const = 0;
+
+    virtual void show_config() const { return; }
 
     static void alias(const std::string &base, const std::string &syn);
 

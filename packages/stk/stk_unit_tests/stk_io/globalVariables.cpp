@@ -57,8 +57,6 @@ namespace Ioss { class DatabaseIO; }
 
 namespace {
 
-const double tolerance = 1e-16;
-
 Ioss::Field::BasicType iossBasicType(double)
 {
     return Ioss::Field::REAL;
@@ -88,7 +86,7 @@ void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber
         ASSERT_TRUE(stkIo.get_global(globalVarNames[i], globalVar));
         for(size_t j=0; j<globalVar.size(); j++)
         {
-            EXPECT_NEAR(goldGlobalVarValue[i]+goldGlobalScale*j, globalVar[j], tolerance);
+            EXPECT_NEAR(goldGlobalVarValue[i]+goldGlobalScale*j, globalVar[j], std::numeric_limits<double>::epsilon());
         }
     }
 }
@@ -108,7 +106,7 @@ void testNodalFieldOnFile(const std::string &outputFileName, const int stepNumbe
     ASSERT_EQ(goldNodalFieldValues.size(), fieldValues.size());
     for(size_t i=0; i<goldNodalFieldValues.size(); i++)
     {
-        EXPECT_NEAR(goldNodalFieldValues[i], fieldValues[i], tolerance);
+        EXPECT_NEAR(goldNodalFieldValues[i], fieldValues[i], std::numeric_limits<double>::epsilon());
     }
 }
 
@@ -356,7 +354,8 @@ stk::mesh::Field<double> &createNodalTestField(stk::mesh::MetaData &stkMeshMetaD
 {
     const int numberOfStates = 1;
     stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, numberOfStates);
-    stk::mesh::put_field(field0, stkMeshMetaData.universal_part());
+    stk::mesh::put_field_on_mesh(field0, stkMeshMetaData.universal_part(),
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
     return field0;
 }
 void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Field<double> &field0, std::vector<double> &nodalFieldValues)
@@ -465,7 +464,7 @@ TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
         EXPECT_STRCASEEQ(globalVarName.c_str(), globalVarNames[0].c_str());
         double globalVar = 0.0;
 	ASSERT_TRUE(stkIo.get_global(globalVarNames[0], globalVar));
-        EXPECT_NEAR(globalVarValue, globalVar, tolerance);
+        EXPECT_NEAR(globalVarValue, globalVar, std::numeric_limits<double>::epsilon());
     }
     const int stepNumber = 1;
     std::vector<std::string> globalVarNames(1, globalVarName);

@@ -201,7 +201,9 @@ public:
 
   typename dual_view_type::t_dev_um getDeviceLocalView() const {
     throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
     typename dual_view_type::t_dev ret;
+#endif
     TEUCHOS_UNREACHABLE_RETURN(ret);
   }
 
@@ -387,8 +389,10 @@ public:
 
   typename dual_view_type::t_dev_um getDeviceLocalView() const {
     throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
     typename dual_view_type::t_dev ret;
-    return ret; // make compiler happy
+#endif
+    TEUCHOS_UNREACHABLE_RETURN(ret);
   }
 
   /// \brief Return an unmanaged non-const view of the local data on a specific device.
@@ -570,8 +574,10 @@ public:
 
   typename dual_view_type::t_dev_um getDeviceLocalView() const {
     throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
     typename dual_view_type::t_dev ret;
-    return ret; // make compiler happy
+#endif
+    TEUCHOS_UNREACHABLE_RETURN(ret);
   }
 
   /// \brief Return an unmanaged non-const view of the local data on a specific device.

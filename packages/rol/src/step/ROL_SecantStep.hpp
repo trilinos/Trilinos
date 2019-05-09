@@ -60,9 +60,9 @@ template <class Real>
 class SecantStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<Secant<Real> > secant_; ///< Secant object (used for quasi-Newton)
+  ROL::Ptr<Secant<Real> > secant_; ///< Secant object (used for quasi-Newton)
   ESecant esec_;
-  Teuchos::RCP<Vector<Real> > gp_;     ///< Additional vector storage
+  ROL::Ptr<Vector<Real> > gp_;     ///< Additional vector storage
   int verbosity_;                      ///< Verbosity setting
   bool computeObj_;
 
@@ -78,20 +78,20 @@ public:
 
       Constructor to build a SecantStep object with a user-defined 
       secant object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
+      a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
       @param[in]     secant     is a user-defined secant object
   */
-  SecantStep( Teuchos::ParameterList &parlist,
-              const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,
+  SecantStep( ROL::ParameterList &parlist,
+              const ROL::Ptr<Secant<Real> > &secant = ROL::nullPtr,
               const bool computeObj = true )
     : Step<Real>(), secant_(secant), esec_(SECANT_USERDEFINED),
-      gp_(Teuchos::null), verbosity_(0), computeObj_(computeObj) {
+      gp_(ROL::nullPtr), verbosity_(0), computeObj_(computeObj) {
     // Parse ParameterList
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
     // Initialize secant object
-    if ( secant == Teuchos::null ) {
+    if ( secant == ROL::nullPtr ) {
       secantName_ = parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS");
       esec_ = StringToESecant(secantName_);
       secant_ = SecantFactory<Real>(parlist);
@@ -113,7 +113,7 @@ public:
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
     Real one(1);
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Compute search direction
     secant_->applyH(s,*(step_state->gradientVec));
@@ -123,7 +123,7 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate
     algo_state.iter++;

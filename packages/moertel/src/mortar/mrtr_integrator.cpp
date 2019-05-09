@@ -1040,7 +1040,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
     MOERTEL::Segment& mseg,
     Epetra_SerialDenseMatrix** Ddense,
     Epetra_SerialDenseMatrix** Mdense,
-    MOERTEL::Overlap& overlap, double eps,
+    MOERTEL::Overlap<MOERTEL::Interface>& overlap, double eps,
     bool exactvalues)
 {
   //  static int cnt = 0;
@@ -1228,8 +1228,8 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
       for (int point=0; point<np; ++point)
         for (int j=0; j<3; ++j)
         {
-          x[j] += val[point] * points[point]->Node()->X()[j];
-          n[j] += val[point] * points[point]->Node()->N()[j];
+          x[j] += val[point] * points[point]->Node()->XCoords()[j];
+          n[j] += val[point] * points[point]->Node()->Normal()[j];
         }
       const double length = MOERTEL::length(n,3);
       for (int j=0; j<3; ++j) n[j] /= length;

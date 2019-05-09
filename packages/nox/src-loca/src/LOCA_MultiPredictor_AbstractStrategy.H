@@ -51,6 +51,8 @@
 #ifndef LOCA_MULTIPREDICTOR_ABSTRACTSTRATEGY_H
 #define LOCA_MULTIPREDICTOR_ABSTRACTSTRATEGY_H
 
+#include <vector>
+
 #include "Teuchos_RCP.hpp"
 
 #include "NOX_Abstract_Group.H"  // for ReturnType, Teuchos::ParameterList

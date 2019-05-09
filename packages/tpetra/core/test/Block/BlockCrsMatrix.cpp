@@ -47,6 +47,8 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_BlockVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 
 namespace {
   using Tpetra::TestingUtilities::getDefaultComm;
@@ -256,6 +258,28 @@ namespace {
 
     out << "Test getLocalRowView, getLocalRowCopy, and replaceLocalValues" << endl;
 
+    blockMat.sync_host ();
+    blockMat.modify_host ();
+    {
+      if (! std::is_same<typename Node::device_type::memory_space, Kokkos::HostSpace>::value) {
+        TEST_ASSERT( blockMat.template need_sync<typename Node::device_type::memory_space> () );
+        TEST_ASSERT( blockMat.need_sync_device () );
+        TEST_ASSERT( ! blockMat.template need_sync<Kokkos::HostSpace> () );
+        TEST_ASSERT( ! blockMat.need_sync_host () );
+      }
+      auto val = blockMat.template getValues<Kokkos::HostSpace> ();
+      // "Host" View may live in CudaUVMSpace, but its execution space
+      // had better be host.  We can tell that by getting the
+      // execution space's default memory space.
+      static_assert (std::is_same<typename decltype (val)::execution_space::memory_space,
+                     Kokkos::HostSpace>::value,
+                     "Host View is not actually a host View.");
+      auto val2 = blockMat.getValuesHost ();
+      static_assert (std::is_same<typename decltype (val2)::execution_space::memory_space,
+                     Kokkos::HostSpace>::value,
+                     "Host View is not actually a host View.");
+    }
+
     Array<Scalar> tempBlockSpace (maxNumEntPerRow * entriesPerBlock);
 
     // Test that getLocalRowView returns the right column indices.
@@ -358,6 +382,26 @@ namespace {
       } // for each entry in the row
     } // for each local row
 
+    // We're done modifying data on host.
+    blockMat.template sync<typename Node::device_type::memory_space> ();
+    {
+      TEST_ASSERT( ! blockMat.template need_sync<typename Node::device_type::memory_space> () );
+      TEST_ASSERT( ! blockMat.template need_sync<Kokkos::HostSpace> () );
+      auto val = blockMat.template getValues<typename Node::device_type::memory_space> ();
+      // "Device" View may live in CudaUVMSpace.
+#if defined(KOKKOS_ENABLE_CUDA)
+      constexpr bool testing_cuda =
+        std::is_same<typename Node::device_type::execution_space, Kokkos::Cuda>::value;
+      static_assert (! testing_cuda ||
+                     std::is_same<typename decltype (val)::execution_space, Kokkos::Cuda>::value,
+                     "Device View is not actually a Device View.");
+      auto val2 = blockMat.getValuesDevice ();
+      static_assert (! testing_cuda ||
+                     std::is_same<typename decltype (val2)::execution_space, Kokkos::Cuda>::value,
+                     "Device View is not actually a Device View.");
+#endif // defined(KOKKOS_ENABLE_CUDA)
+    }
+
     out << "Test applyBlock for a single vector" << endl;
 
     // Fill a BlockVector and test applyBlock() for a single vector.
@@ -389,21 +433,22 @@ namespace {
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         little_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
-        TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+        TEST_ASSERT( X_lcl.data () != NULL );
+        TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
           X_lcl(i) = static_cast<Scalar> (static_cast<MT> (blockSize - i));
         }
       }
 
       TEST_NOTHROW( blockMat.applyBlock (X, Y) );
+      Kokkos::fence ();
 
       const map_type& meshRangeMap = * (graph.getRangeMap ());
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
-        TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+        TEST_ASSERT( Y_lcl.data () != NULL );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -429,12 +474,13 @@ namespace {
       Scalar beta = -(STS::one () + STS::one () + STS::one ());
 
       TEST_NOTHROW( blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, alpha, beta) );
+      Kokkos::fence ();
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
-        TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+        TEST_ASSERT( Y_lcl.data () != NULL );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -496,8 +542,8 @@ namespace {
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         for (LO j = 0; j < numVecs; ++j) {
           little_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
-          TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+          TEST_ASSERT( X_lcl.data () != NULL );
+          TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
             X_lcl(i) = static_cast<Scalar> (static_cast<MT> ((blockSize - i) * (j + 1)));
           }
@@ -505,14 +551,15 @@ namespace {
       }
 
       TEST_NOTHROW( blockMat.applyBlock (X, Y) );
+      Kokkos::fence ();
 
       const map_type& meshRangeMap = * (graph.getRangeMap ());
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
-          TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+          TEST_ASSERT( Y_lcl.data () != NULL );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -540,13 +587,14 @@ namespace {
       Scalar beta = -three;
 
       TEST_NOTHROW( blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, alpha, beta) );
+      Kokkos::fence ();
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
-          TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+          TEST_ASSERT( Y_lcl.data () != NULL );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -604,8 +652,8 @@ namespace {
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         little_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
-        TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+        TEST_ASSERT( X_lcl.data () != NULL );
+        TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
           X_lcl(i) = static_cast<Scalar> (static_cast<MT> (blockSize - i));
         }
@@ -615,6 +663,7 @@ namespace {
       vec_type Y_vec = Y.getVectorView ();
 
       TEST_NOTHROW( blockMat.apply (X_vec, Y_vec) );
+      Kokkos::fence ();
 
       // This test also exercises whether getVectorView really does
       // return a view, since we access and test results using the
@@ -624,8 +673,8 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
-        TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+        TEST_ASSERT( Y_lcl.data () != NULL );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -651,12 +700,13 @@ namespace {
       Scalar beta = -(STS::one () + STS::one () + STS::one ());
 
       TEST_NOTHROW( blockMat.apply (X_vec, Y_vec, Teuchos::NO_TRANS, alpha, beta) );
+      Kokkos::fence ();
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
-        TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+        TEST_ASSERT( Y_lcl.data () != NULL );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -718,8 +768,8 @@ namespace {
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         for (LO j = 0; j < numVecs; ++j) {
           little_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
-          TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+          TEST_ASSERT( X_lcl.data () != NULL );
+          TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
             X_lcl(i) = static_cast<Scalar> (static_cast<MT> ((blockSize - i) * (j + 1)));
           }
@@ -730,6 +780,7 @@ namespace {
       mv_type Y_mv = Y.getMultiVectorView ();
 
       TEST_NOTHROW( blockMat.apply (X_mv, Y_mv) );
+      Kokkos::fence ();
 
       // This test also exercises whether getMultiVectorView really
       // does return a view, since we access and test results using
@@ -740,8 +791,8 @@ namespace {
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
-          TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+          TEST_ASSERT( Y_lcl.data () != NULL );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -769,13 +820,14 @@ namespace {
       Scalar beta = -three;
 
       TEST_NOTHROW( blockMat.apply (X_mv, Y_mv, Teuchos::NO_TRANS, alpha, beta) );
+      Kokkos::fence ();
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
-          TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
+          TEST_ASSERT( Y_lcl.data () != NULL );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -1018,6 +1070,7 @@ namespace {
     // later for getLocalDiagCopy.
     typedef typename Node::device_type DT;
     Kokkos::View<size_t*, DT> diagMeshOffsets ("offsets", numLclMeshPoints);
+    Kokkos::fence ();
     try {
       graph.getLocalDiagOffsets (diagMeshOffsets);
     } catch (std::exception& e) {
@@ -1027,6 +1080,7 @@ namespace {
         "threw an exception: " << e.what () << endl;
       std::cerr << os.str ();
     }
+    Kokkos::fence ();
 
     lclSuccess = success ? 1 : 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -1044,20 +1098,20 @@ namespace {
     // OK to use here.)
     bool meshOffsetsCorrect = true;
     if (numLclMeshPoints == 0) {
-      TEST_EQUALITY( diagMeshOffsets.dimension_0 (), 0 );
-      if (diagMeshOffsets.dimension_0 () != 0) {
+      TEST_EQUALITY( diagMeshOffsets.extent (0), 0 );
+      if (diagMeshOffsets.extent (0) != 0) {
         meshOffsetsCorrect = false;
       }
     }
     else {
-      TEST_ASSERT( diagMeshOffsets.dimension_0 () != 0 );
+      TEST_ASSERT( diagMeshOffsets.extent (0) != 0 );
       auto localGraph = graph.getLocalGraph ();
       const auto& colMap = * (graph.getColMap ());
 
       TEST_EQUALITY( static_cast<size_t> (numLclMeshPoints + 1),
-                     static_cast<size_t> (localGraph.row_map.dimension_0 ()) );
+                     static_cast<size_t> (localGraph.row_map.extent (0)) );
       if (static_cast<size_t> (numLclMeshPoints + 1) ==
-          static_cast<size_t> (localGraph.row_map.dimension_0 ())) {
+          static_cast<size_t> (localGraph.row_map.extent (0))) {
         for (LO lclRowInd = 0;
              lclRowInd < static_cast<LO> (numLclMeshPoints);
              ++lclRowInd) {
@@ -1145,7 +1199,9 @@ namespace {
     typedef Kokkos::View<IST***, device_type> diag_blocks_type;
     diag_blocks_type diagBlocks ("diagBlocks", numLclMeshPoints,
                                  blockSize, blockSize);
+    Kokkos::fence ();
     blockMat.getLocalDiagCopy (diagBlocks, diagMeshOffsets);
+    Kokkos::fence ();
 
     bool allBlocksGood = true;
     for (LO lclRowInd = 0; lclRowInd < static_cast<LO> (numLclMeshPoints); ++lclRowInd) {
@@ -1271,6 +1327,7 @@ namespace {
     X.putScalar (STS::one ());
     BMV Y (* (graph.getRangeMap ()), pointRangeMap, blockSize, static_cast<LO> (1));
     blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+    Kokkos::fence ();
 
     out << "Make sure applyBlock got the right answer" << endl;
     const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
@@ -1284,6 +1341,8 @@ namespace {
 
     TEST_NOTHROW( blockMat.setAllToScalar (STS::zero ()) );
     blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+    Kokkos::fence ();
+
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
       typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
       for (LO i = 0; i < blockSize; ++i) {
@@ -1302,6 +1361,7 @@ namespace {
   // just a test of the "copy" part of copyAndPermute.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockCrsMatrix, ImportCopy, Scalar, LO, GO, Node )
   {
+    using Tpetra::Details::gathervPrint;
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
@@ -1315,7 +1375,6 @@ namespace {
 
     RCP<const Comm<int> > comm = getDefaultComm ();
     const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Creating mesh row Map" << endl;
@@ -1357,14 +1416,9 @@ namespace {
     // Fill all entries of the first matrix with 3.
     const Scalar three = STS::one () + STS::one () + STS::one ();
     A1.setAllToScalar (three);
-
-#ifdef HAVE_TPETRA_DEBUG
-    if (! std::is_same<typename Kokkos::HostSpace, typename BCM::device_type::memory_space>::value) {
-      // The above setAllToScalar should have run on device.
-      TEST_ASSERT( A1.template need_sync<Kokkos::HostSpace> () );
-      TEST_ASSERT( ! A1.template need_sync<typename BCM::device_type> () );
-    }
-#endif // HAVE_TPETRA_DEBUG
+    // A1 must have been modified on exactly one side.
+    TEST_ASSERT( (! A1.need_sync_host () && A1.need_sync_device ()) ||
+                 (A1.need_sync_host () && ! A1.need_sync_device ()) );
 
     out << "The matrix A1, after construction:" << endl;
     A1.describe (out, Teuchos::VERB_EXTREME);
@@ -1381,88 +1435,81 @@ namespace {
     import_type imp (graph.getMap (), graph.getMap ());
 
     out << "Import A1 into A2" << endl;
-    bool importSuccess = true;
+    bool importFailedGlobally = false;
+    bool importThrewLocally = false;
+    std::string exceptionMessage;
     try {
       // The CombineMode doesn't matter for this example, since it
       // amounts to a matrix copy.  We use ADD arbitrarily.
       A2.doImport (A1, imp, Tpetra::ADD);
-    } catch (std::exception& e) {
-      importSuccess = false;
-      if (myRank == 0) {
-        out << "Import FAILED by throwing an exception" << endl;
-      }
-      for (int p = 0; p < numProcs; ++p) {
-        if (p == myRank) {
-          std::ostringstream os;
-          os << "Process " << myRank << ": error messages from A1: "
-             << A1.errorMessages () << endl
-             << "Process " << myRank << ": error messages from A2: "
-             << A2.errorMessages () << endl;
-          std::cerr << os.str ();
-        }
-        comm->barrier (); // give time for output to complete
-        comm->barrier ();
-        comm->barrier ();
-      }
     }
-    if (A1.localError () || A2.localError ()) {
-      if (myRank == 0) {
-        out << "Import FAILED by reporting local error" << endl;
-      }
-      importSuccess = false;
+    catch (std::exception& e) {
+      importThrewLocally = true;
+      exceptionMessage = e.what ();
     }
 
-    TEST_ASSERT( importSuccess );
-
-    int lclImportSuccess = importSuccess ? 1 : 0;
+    int lclImportSuccess = importThrewLocally ? 0 : 1;
     int gblImportSuccess = 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclImportSuccess, outArg (gblImportSuccess));
-    importSuccess = (gblImportSuccess == 1);
-
-    if (! importSuccess) {
-      for (int p = 0; p < numProcs; ++p) {
-        if (p == myRank) {
-          std::ostringstream os;
-          os << "Process " << myRank << ": error messages from A1: "
-             << A1.errorMessages () << endl
-             << "Process " << myRank << ": error messages from A2: "
-             << A2.errorMessages () << endl;
-          std::cerr << os.str ();
-        }
-        comm->barrier (); // give time for output to complete
-        comm->barrier ();
-        comm->barrier ();
+    TEST_ASSERT( gblImportSuccess == 1 );
+    if (gblImportSuccess != 1) {
+      importFailedGlobally = true;
+      if (myRank == 0) {
+        out << "Import FAILED: It threw an exception on at least one process." << endl;
       }
-    }
-    else { // doImport claims that it succeeded
-      out << "Import claims that it succeeded; test the matrix" << endl;
-
-      // Y := A2*X, where X is a block multivector (with one column)
-      // full of 1s.  Since there are two block entries per row, each
-      // of which is all 3s, we know that each entry of the result Y
-      // will be 3*2*blockSize = 6*blockSize.
-      const Scalar requiredValue = static_cast<Scalar> (6 * blockSize);
-      BMV X (* (graph.getDomainMap ()), * (A2.getDomainMap ()), blockSize, static_cast<LO> (1));
-      X.putScalar (STS::one ());
-      BMV Y (* (graph.getRangeMap ()), * (A2.getRangeMap ()), blockSize, static_cast<LO> (1));
-      A2.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
-
-      const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
-      const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
-      bool valsMatch = true;
-      for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-        typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
-        for (LO i = 0; i < blockSize; ++i) {
-          if (static_cast<Scalar> (Y_lcl(i)) != requiredValue) {
-            valsMatch = false;
-          }
-        }
-      }
-      TEST_ASSERT( valsMatch );
+      gathervPrint (out, exceptionMessage, *comm);
     }
 
-    out << "The matrix A2, after Import (should be same as A1):" << endl;
-    A2.describe (out, Teuchos::VERB_EXTREME);
+    lclImportSuccess = (A1.localError () || A2.localError ()) ? 0 : 1;
+    gblImportSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclImportSuccess, outArg (gblImportSuccess));
+    TEST_ASSERT( gblImportSuccess == 1 );
+    if (gblImportSuccess != 1) {
+      importFailedGlobally = true;
+      if (myRank == 0) {
+        out << "Import FAILED by reporting local error on at least one process." << endl
+            << "Error messages from A1:" << endl;
+      }
+      gathervPrint (out, A1.errorMessages (), *comm);
+      if (myRank == 0) {
+        out << "Error messages from A2:" << endl;
+      }
+      gathervPrint (out, A2.errorMessages (), *comm);
+    }
+
+    if (importFailedGlobally) {
+      return;
+    }
+
+    // doImport claims that it succeeded
+    out << "Import claims that it succeeded; test the matrix" << endl;
+
+    // Y := A2*X, where X is a block multivector (with one column)
+    // full of 1s.  Since there are two block entries per row, each
+    // of which is all 3s, we know that each entry of the result Y
+    // will be 3*2*blockSize = 6*blockSize.
+    const Scalar requiredValue = static_cast<Scalar> (6 * blockSize);
+    BMV X (* (graph.getDomainMap ()), * (A2.getDomainMap ()), blockSize, static_cast<LO> (1));
+    X.putScalar (STS::one ());
+    BMV Y (* (graph.getRangeMap ()), * (A2.getRangeMap ()), blockSize, static_cast<LO> (1));
+    A2.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+    Kokkos::fence ();
+
+    const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
+    const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
+    bool valsMatch = true;
+    for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
+      typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      for (LO i = 0; i < blockSize; ++i) {
+        if (static_cast<Scalar> (Y_lcl(i)) != requiredValue) {
+          valsMatch = false;
+        }
+      }
+    }
+    TEST_ASSERT( valsMatch );
+
+    //out << "The matrix A2, after Import (should be same as A1):" << endl;
+    //A2.describe (out, Teuchos::VERB_EXTREME);
 
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 0;
@@ -1489,7 +1536,6 @@ namespace {
 
     RCP<const Comm<int> > comm = getDefaultComm ();
     const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Create nonoverlapping mesh row Map" << endl;
@@ -1545,6 +1591,16 @@ namespace {
     }
     overlapGraph.fillComplete (meshDomainMapPtr, meshRangeMapPtr);
 
+    {
+      const LO lclNumRowsOverlap = static_cast<LO> (overlapMeshRowMapPtr->getNodeNumElements ());
+      for (LO lclRow = 0; lclRow < lclNumRowsOverlap; ++lclRow) {
+        const LO numEnt = static_cast<LO> (overlapGraph.getNumEntriesInLocalRow (lclRow));
+        TEST_EQUALITY( numEnt, static_cast<LO> (2) );
+      }
+      const LO maxNumRowEnt = static_cast<LO> (overlapGraph.getNodeMaxNumRowEntries ());
+      TEST_EQUALITY( maxNumRowEnt, static_cast<LO> (2) );
+    }
+
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     if (gblSuccess != 1) {
       out << "*** FAILED to create or fill-complete graph with overlapping mesh row Map! ***" << endl;
@@ -1555,7 +1611,7 @@ namespace {
     RCP<graph_type> graph;
     try {
       out << "Create empty graph with nonoverlapping mesh row Map" << endl;
-      graph = rcp (new graph_type (meshRowMapPtr, 0, Tpetra::DynamicProfile));
+      graph = rcp (new graph_type (meshRowMapPtr, 0, Tpetra::StaticProfile));
 
       out << "Create Export from overlap to nonoverlap mesh row Map" << endl;
       theExport = rcp (new export_type (overlapMeshRowMapPtr, meshRowMapPtr));
@@ -1565,12 +1621,26 @@ namespace {
 
       out << "Call fillComplete on nonoverlap graph" << endl;
       graph->fillComplete (meshDomainMapPtr, meshRangeMapPtr);
-    } catch (std::exception&) {
+    }
+    catch (std::exception&) {
       lclSuccess = 0;
     }
+
+    // Export can only add entries to each row, not remove them.
+    {
+      const LO lclNumRowsNonoverlap =
+        static_cast<LO> (meshRowMapPtr->getNodeNumElements ());
+      for (LO lclRow = 0; lclRow < lclNumRowsNonoverlap; ++lclRow) {
+        const LO numEnt = static_cast<LO> (graph->getNumEntriesInLocalRow (lclRow));
+        TEST_ASSERT( numEnt >= static_cast<LO> (2) );
+      }
+      const LO maxNumRowEnt = static_cast<LO> (graph->getNodeMaxNumRowEntries ());
+      TEST_ASSERT( maxNumRowEnt >= static_cast<LO> (2) );
+    }
+
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     if (gblSuccess != 1) {
-      out << "*** FAILED to get past fillComplete on nonoverlap graph! ***" << endl;
+      out << "*** CrsGraph Export or fillComplete failed! ***" << endl;
       return;
     }
 
@@ -1580,9 +1650,11 @@ namespace {
     try {
       out << "Create matrix with overlapping mesh row Map" << endl;
       A_overlap = rcp (new BCM (overlapGraph, blockSize));
+
       out << "Create matrix with nonoverlapping mesh row Map" << endl;
       A = rcp (new BCM (*graph, blockSize));
-    } catch (std::exception&) {
+    }
+    catch (std::exception&) {
       lclSuccess = 0;
     }
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -1595,7 +1667,8 @@ namespace {
     try {
       const Scalar three = STS::one () + STS::one () + STS::one ();
       A_overlap->setAllToScalar (three);
-    } catch (std::exception&) {
+    }
+    catch (std::exception&) {
       lclSuccess = 0;
     }
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -1604,8 +1677,8 @@ namespace {
       return;
     }
 
-    out << "The matrix A_overlap, after construction:" << endl;
-    A_overlap->describe (out, Teuchos::VERB_EXTREME);
+    // out << "The matrix A_overlap, after construction:" << endl;
+    // A_overlap->describe (out, Teuchos::VERB_EXTREME);
 
     // Fill all entries of the second matrix with -2.
     try {
@@ -1620,13 +1693,14 @@ namespace {
       return;
     }
 
-    out << "The matrix A, after construction:" << endl;
-    A->describe (out, Teuchos::VERB_EXTREME);
+    // out << "The matrix A, after construction:" << endl;
+    // A->describe (out, Teuchos::VERB_EXTREME);
 
     out << "Export A_overlap into A" << endl;
     try {
       A->doExport (*A_overlap, *theExport, Tpetra::REPLACE);
-    } catch (std::exception& e) {
+    }
+    catch (std::exception& e) {
       lclSuccess = 0;
       std::ostringstream os;
       os << "Proc " << myRank << ": A->doExport(...) threw an exception: "
@@ -1634,37 +1708,26 @@ namespace {
       std::cerr << os.str ();
     }
 
-    if (A->localError ()) {
-      lclSuccess = 0;
-      for (int p = 0; p < numProcs; ++p) {
-        if (myRank == p && A->localError ()) {
-          std::ostringstream os;
-          os << "Proc " << myRank << ": A reports local error: "
-             << A->errorMessages () << endl;
-          std::cerr << os.str ();
-        }
-        comm->barrier ();
-        comm->barrier ();
-        comm->barrier ();
+    {
+      const int lclErr = A->localError () ? 1 : 0;
+      int gblErr = 0;
+      reduceAll<int, int> (*comm, Teuchos::REDUCE_MAX, lclErr, outArg (gblErr));
+      TEST_EQUALITY( gblErr, 0 );
+      if (gblErr != 0) {
+        out << "A reports a local error on some process!" << endl;
+        gathervPrint (out, A->errorMessages (), *comm);
       }
     }
 
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     if (gblSuccess != 1) {
-      out << "*** Export FAILED!" << endl;
-      for (int p = 0; p < numProcs; ++p) {
-        if (p == myRank) {
-          std::ostringstream os;
-          os << "Process " << myRank << ": error messages from A_overlap: "
-             << A_overlap->errorMessages () << endl
-             << "Process " << myRank << ": error messages from A: "
-             << A->errorMessages () << endl;
-          std::cerr << os.str ();
-        }
-        comm->barrier (); // give time for output to complete
-        comm->barrier ();
-        comm->barrier ();
-      }
+      using ::Tpetra::Details::gathervPrint;
+
+      out << "*** Export FAILED!" << endl
+          << "Error messages from A_overlap:" << endl;
+      gathervPrint (out, A_overlap->errorMessages (), *comm);
+      out << "Error messages from A:" << endl;
+      gathervPrint (out, A->errorMessages (), *comm);
     }
     else { // doExport claims that it succeeded
       out << "Export claims that it succeeded" << endl;
@@ -1825,7 +1888,7 @@ namespace {
     Kokkos::View<int**, device_type> pivots ("pivots", numLocalMeshPoints, blockSize);
     // That's how we found this test: the pivots array was filled with ones.
     Kokkos::deep_copy (pivots, 1);
-    out << "pivots size = " << pivots.dimension_0() << endl;
+    out << "pivots size = " << pivots.extent(0) << endl;
 
     for (LO lclMeshRow = 0; lclMeshRow < static_cast<LO> (numLocalMeshPoints); ++lclMeshRow) {
       auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());
@@ -1865,7 +1928,7 @@ namespace {
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
-      ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
+      ST* x = reinterpret_cast<ST*> (xlcl.data ());
       out << "row = " << lclRowInd << endl;
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[k], tol );
@@ -1878,7 +1941,7 @@ namespace {
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
-      ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
+      ST* x = reinterpret_cast<ST*> (xlcl.data ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[k], tol );
       }
@@ -2028,11 +2091,18 @@ namespace {
     typedef Kokkos::View<IST***, device_type> block_diag_type;
     block_diag_type blockDiag ("blockDiag", numLocalMeshPoints,
                                blockSize, blockSize);
+    Kokkos::fence ();
     blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets);
+    Kokkos::fence ();
 
-    Kokkos::View<int**, device_type> pivots ("pivots", numLocalMeshPoints, blockSize);
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
+    Kokkos::View<int**, device_type> pivots (view_alloc ("pivots", WithoutInitializing),
+                                             numLocalMeshPoints, blockSize);
     // That's how we found this test: the pivots array was filled with ones.
     Kokkos::deep_copy (pivots, 1);
+
+    Kokkos::fence ();
 
     for (LO lclMeshRow = 0; lclMeshRow < static_cast<LO> (numLocalMeshPoints); ++lclMeshRow) {
       auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());
@@ -2056,7 +2126,7 @@ namespace {
          lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
       const LO rowOffset = lclRowInd - meshRowMap.getMinLocalIndex ();
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
-      ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
+      ST* x = reinterpret_cast<ST*> (xlcl.data ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], tol );
         x[k] = -STS::one ();
@@ -2098,6 +2168,7 @@ namespace {
     }
 
     blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets);
+    Kokkos::fence ();
 
     for (LO lclMeshRow = 0; lclMeshRow < static_cast<LO> (numLocalMeshPoints); ++lclMeshRow) {
       auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());
@@ -2116,12 +2187,13 @@ namespace {
 
     blockMat.localGaussSeidel (residual, solution, blockDiag,
                                STS::one (), Tpetra::Symmetric);
+    Kokkos::fence ();
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
       const LO rowOffset = lclRowInd - meshRowMap.getMinLocalIndex ();
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
-      ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
+      ST* x = reinterpret_cast<ST*> (xlcl.data ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], tol );
         x[k] = -STS::one ();

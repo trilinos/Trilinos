@@ -123,10 +123,10 @@ void openmp_smart_static_matvec(AType A, XType x, YType y, int rows_per_thread,
   const Scalar s_b                                = 0.0;
 
   //const LocalOrdinal rowCount                           = A.numRows();
-  const Scalar* OMP_BENCH_RESTRICT x_ptr           	= (Scalar*) x.ptr_on_device();
-  Scalar* OMP_BENCH_RESTRICT y_ptr                	= (Scalar*) y.ptr_on_device();
-  const Scalar* OMP_BENCH_RESTRICT matrixCoeffs   	= A.values.ptr_on_device();
-  const LocalOrdinal* OMP_BENCH_RESTRICT matrixCols        = A.graph.entries.ptr_on_device();
+  const Scalar* OMP_BENCH_RESTRICT x_ptr           	= (Scalar*) x.data();
+  Scalar* OMP_BENCH_RESTRICT y_ptr                	= (Scalar*) y.data();
+  const Scalar* OMP_BENCH_RESTRICT matrixCoeffs   	= A.values.data();
+  const LocalOrdinal* OMP_BENCH_RESTRICT matrixCols        = A.graph.entries.data();
   const LocalOrdinal* OMP_BENCH_RESTRICT matrixRowOffsets  = &A.graph.row_map(0);
   
 #ifdef KOKKOS_ENABLE_PROFILING

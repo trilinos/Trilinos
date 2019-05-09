@@ -1,4 +1,5 @@
 
+IF (${PACKAGE_NAME}_ENABLE_KLU2 AND NOT ${PROJECT_NAME}_ENABLE_DEBUG AND NOT KOKKOS_ENABLE_DEBUG)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SimpleSolveExampleNonContigMap
   SOURCES SimpleSolveNonContigMap
@@ -6,7 +7,23 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 2
 )
+ENDIF()
 
+IF (Tpetra_INST_DOUBLE)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  GappedMtxGIDs-1proc
+  SOURCES GappedMtxGIDs-1proc
+  ARGS
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+)
+ENDIF ()
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(GappedMtxGIDs_File
+  SOURCE_FILES gap-ids-1proc-rowmap.mm gap-ids-1procA.mm gap-ids-1procRhs.mm
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../test/matrices/
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  )
 
 TRIBITS_ADD_EXECUTABLE(
   SimpleSolveExample
@@ -41,34 +58,26 @@ TRIBITS_ADD_EXECUTABLE(
 #   )
 
 
-IF (Tpetra_INST_INT_INT)
 TRIBITS_ADD_EXECUTABLE(
   QuickSolve
   SOURCES quick_solve
   )
-ENDIF ()
 
-IF (Tpetra_INST_INT_INT)
  TRIBITS_ADD_EXECUTABLE(
    SimpleSolveFileExample
   SOURCES SimpleSolve_File
  )
-ENDIF ()
 
 
-IF (Tpetra_INST_INT_INT)
-IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
   TRIBITS_ADD_EXECUTABLE(
     QuickSolveEpetra
     SOURCES quick_solve_epetra
   )
 ENDIF()
-ENDIF()
 
-IF (Tpetra_INST_INT_INT)
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Amesos2_SimpleSolve_File
   SOURCE_FILES arc130.mtx
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../test/matrices/
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )
-ENDIF()

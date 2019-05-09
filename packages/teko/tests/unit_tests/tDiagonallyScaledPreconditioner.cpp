@@ -201,7 +201,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
 
    Teuchos::ParameterList pl;
    Teuchos::ParameterList & diagList = pl.sublist("DiagScal");
@@ -288,13 +288,13 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm ();
 
    // build linear op tester
    bool result;
    Thyra::LinearOpTester<ST> tester;
    tester.show_all_tests(true);
-   tester.set_all_error_tol(5e-14);
+   tester.set_all_error_tol(5.5e-14);
 
    // build operators and factories
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
@@ -392,7 +392,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm ();
 
    // build linear op tester
    bool result;
@@ -455,7 +455,7 @@ TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues)
 
 TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues_tpetra)
 {
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm ();
 
    RCP<Thyra::LinearOpBase<ST> > A =  buildSystem(Comm,50);
 

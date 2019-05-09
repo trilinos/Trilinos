@@ -68,7 +68,7 @@ namespace Epetra {
 //       comm - Epetra_Comm object related to the map
 //
 BasicMappingStrategy::BasicMappingStrategy(const Teuchos::RCP<const Epetra_Map> & rMap,
-                                           const Teuchos::RCP<const Epetra_Map> & dMap, const Epetra_Comm & comm)
+                                           const Teuchos::RCP<const Epetra_Map> & dMap, const Epetra_Comm & /* comm */)
 {
    rangeMap_ = rMap;
    domainMap_ = dMap;

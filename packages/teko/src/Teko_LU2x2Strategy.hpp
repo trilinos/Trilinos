@@ -127,8 +127,8 @@ public:
      *
      * \note The default implementation does nothing.
      */
-   virtual void initializeFromParameterList(const Teuchos::ParameterList & settings,
-                                            const InverseLibrary & invLib)
+   virtual void initializeFromParameterList(const Teuchos::ParameterList & /* settings */,
+                                            const InverseLibrary & /* invLib */)
    { }
 
    /** \brief Request the additional parameters this preconditioner factory
@@ -161,7 +161,7 @@ public:
      *
      * \note The default implementation returns true (it does nothing!).
      */
-   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl)
+   virtual bool updateRequestedParameters(const Teuchos::ParameterList & /* pl */)
    { return true; }
 
    //! This method sets the request handler for this object
@@ -208,17 +208,17 @@ public:
 
    /** returns a static (approximate) inverse of F */
    virtual const Teko::LinearOp
-   getHatInvA00(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
+   getHatInvA00(const Teko::BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return hatInvA00_; }
 
    /** returns a static (approximate) inverse of F */
    virtual const Teko::LinearOp
-   getTildeInvA00(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
+   getTildeInvA00(const Teko::BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return tildeInvA00_; }
 
    /** returns a static (approximate) inverse of S = -D + L*inv(F)*U */
    virtual const Teko::LinearOp
-   getInvS(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
+   getInvS(const Teko::BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return invS_; }
 
    //@}

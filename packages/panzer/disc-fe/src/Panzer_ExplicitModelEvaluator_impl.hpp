@@ -148,8 +148,10 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if(invMassMatrix_==Teuchos::null || constantMassMatrix_==false)
     buildInverseMassMatrix(inArgs);
 
+  if(f!=Teuchos::null)
+      Thyra::Vt_S(scrap_f_.ptr(),-1.0);
+
   // invert the mass matrix
-  Thyra::Vt_S(scrap_f_.ptr(),-1.0);
   if(f!=Teuchos::null && this->applyMassInverse_) {
     Thyra::apply(*invMassMatrix_,Thyra::NOTRANS,*scrap_f_,f.ptr()); 
   }

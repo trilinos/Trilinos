@@ -50,7 +50,7 @@
 #include "ROL_HS2.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_RandomVector.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 //#include <fenv.h>
 
@@ -62,44 +62,48 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>          V;
   typedef ROL::Objective<RealT>       OBJ;
   typedef ROL::BoundConstraint<RealT> CON; 
-  using Teuchos::RCP;
+  
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
   RealT zero(0);
 
-  RCP<V>   x0;
-  RCP<V>   x;
-  RCP<V>   g;
-  RCP<OBJ> obj;
-  RCP<CON> con;
-  RCP<OBJ> model;  
+  ROL::Ptr<V>   x0;
+  ROL::Ptr<V>   x;
+  ROL::Ptr<V>   g;
+  ROL::Ptr<OBJ> obj;
+  ROL::Ptr<CON> con;
+  ROL::Ptr<OBJ> model;  
 
-  ROL::ZOO::getHS2(obj,con,x0,x);
+  ROL::ZOO::getHS2<RealT> HS2;
+  obj = HS2.getObjective();
+  con = HS2.getBoundConstraint();
+  x0  = HS2.getInitialGuess();
+  x   = HS2.getSolution();
 
   g = x->dual().clone();
 
   // Need to evaluate the gradient to construct the model
   obj->gradient(*g,*x,zero);
 
-  model = Teuchos::rcp(new ROL::ColemanLiModel<RealT>(*obj,*con,*x,*g));
+  model = ROL::makePtr<ROL::ColemanLiModel<RealT>>(*obj,*con,*x,*g);
 
-  RCP<V> s = x->clone();
-  RCP<V> v = x->clone();
-  RCP<V> u = x->clone();
+  ROL::Ptr<V> s = x->clone();
+  ROL::Ptr<V> v = x->clone();
+  ROL::Ptr<V> u = x->clone();
 
   ROL::RandomizeVector(*s,-1.0,1.0);
   ROL::RandomizeVector(*u,-1.0,1.0);

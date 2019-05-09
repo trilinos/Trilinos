@@ -31,19 +31,6 @@ IF (NOT TeuchosCore_ENABLE_MPI)
 
 ENDIF()
 
-
-IF (NOT TeuchosCore_ENABLE_yaml-cpp)
-
-  LIST(REMOVE_ITEM  HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_YamlParameterListHelpers.hpp
-    )
-
-  LIST(REMOVE_ITEM  SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_YamlParameterListHelpers.cpp
-    )
-
-ENDIF()
-
 #
 # C) Define the targets for package's library(s)
 #

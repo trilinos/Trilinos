@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -60,11 +60,11 @@ namespace Ioss {
     FileInfo();
 
     //! Create object referring to file with name \a filename
-    //! \param filename name of file
+    //! \param my_filename name of file
     explicit FileInfo(std::string my_filename);
 
     //! Create object referring to file with name \a filename
-    //! \param filename name of file
+    //! \param my_filename name of file
     explicit FileInfo(const char *my_filename);
 
     //! Copy constructor
@@ -72,20 +72,20 @@ namespace Ioss {
 
     //! Constructor
     //! \param dirpath Directory Path
-    //! \param filename base filename
+    //! \param my_filename base filename
     FileInfo(const std::string &dirpath, const std::string &my_filename);
 
     ~FileInfo();
 
     //! returns the number of processors that this file exists.
     //! 0: Exists nowhere
-    //! #proc: Exists everywhere
+    //! \#proc: Exists everywhere
     //! else: exists on some proc, but not all.
     //! In the last case, a list of processors where it is missing is returned in 'where' on
     //! processor 0.
     int parallel_exists(MPI_Comm communicator, std::string &where) const;
 
-    bool exists() const;        //!< returns True if file exists, false if nonexistant
+    bool exists() const;        //!< returns True if file exists, false if nonexistent
     bool is_readable() const;   //!< Exists and is readable
     bool is_writable() const;   //!< Exists and is writable
     bool is_executable() const; //!< Exists and is executable
@@ -116,9 +116,9 @@ namespace Ioss {
     bool remove_file();
 
   private:
-    std::string filename_;
-    bool        exists_{};   ///< this is used frequently, check on creation
-    bool        readable_{}; ///< this is used frequently, check on creation
+    std::string filename_{};
+    bool        exists_{false};   ///< this is used frequently, check on creation
+    bool        readable_{false}; ///< this is used frequently, check on creation
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_FileInfo_h

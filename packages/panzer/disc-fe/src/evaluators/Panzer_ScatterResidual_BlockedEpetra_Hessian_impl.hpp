@@ -110,7 +110,7 @@ template<typename TRAITS,typename LO,typename GO>
 void
 ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm) 
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   indexerIds_.resize(scatterFields_.size());
   subFieldIds_.resize(scatterFields_.size());
@@ -122,9 +122,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
 
     indexerIds_[fd]  = getFieldBlock(fieldName,rowIndexers_);
     subFieldIds_[fd] = rowIndexers_[indexerIds_[fd]]->getFieldNum(fieldName);
-
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
   }
 }
 
@@ -140,8 +137,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer ELOC;
 
    // extract linear object container
-   RCP<const BLOC> blockedContainer = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_));
-   RCP<const ELOC> epetraContainer  = rcp_dynamic_cast<const ELOC>(d.gedc.getDataObject(globalDataKey_));
+   RCP<const BLOC> blockedContainer = rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject(globalDataKey_));
+   RCP<const ELOC> epetraContainer  = rcp_dynamic_cast<const ELOC>(d.gedc->getDataObject(globalDataKey_));
 
    // if its blocked do this
    if(blockedContainer!=Teuchos::null) {
@@ -196,7 +193,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-         const std::vector<LO> & rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+	 auto rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
 
          // loop over the basis functions (currently they are nodes)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
@@ -223,7 +220,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                   continue;
 
                auto subColIndexer = colIndexers_[colIndexer];
-               const std::vector<LO> & cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
+	       auto cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
 
                TEUCHOS_ASSERT(end-start==Teuchos::as<int>(cLIDs.size()));
 

@@ -46,12 +46,11 @@
 
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_MatrixIO.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
-#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
@@ -70,7 +69,6 @@ namespace {
   using Tpetra::MatrixMarket::Reader;
   using Tpetra::CrsMatrix;
   using Tpetra::CrsMatrixMultiplyOp;
-  using Tpetra::DefaultPlatform;
   using Tpetra::global_size_t;
   using Tpetra::Map;
   using Tpetra::RowMatrixTransposer;
@@ -168,7 +166,11 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
   return identityMatrix;
 }
 
-
+template<class Matrix_t>
+RCP<Matrix_t>
+copyMatrix(RCP<Matrix_t> &A) {
+ return rcp(new Matrix_t(*A,Teuchos::Copy));
+}
 
 typedef struct add_test_results_struct{
   double correctNorm;
@@ -339,7 +341,7 @@ mult_test_results multiply_test_kernel(
   RCP<const Map_t> map = C->getRowMap();
   LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-  SC one = Teuchos::ScalarTraits<SC>::one();
+  // SC one = Teuchos::ScalarTraits<SC>::one();
   mult_test_results results;
 
   // Transposes
@@ -409,7 +411,8 @@ mult_test_results multiply_test_kernel(
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<lno_view_t,lno_nnz_view_t, scalar_view_t, typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type, 
+          typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrix-es
   const KCRS & Ak = Aeff->getLocalMatrix();
@@ -418,7 +421,7 @@ mult_test_results multiply_test_kernel(
   // Setup
   // As a note "SPGEMM_MKL" will *NOT* pass all of these tests
   //  std::vector<std::string> ALGORITHMS={"SPGEMM_MKL","SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
-  std::vector<std::string> ALGORITHMS={"SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
+  std::vector<std::string> ALGORITHMS={"SPGEMM_KK_MEMORY"};
 
   for(int alg = 0; alg < (int)ALGORITHMS.size(); alg++) {
     std::string myalg = ALGORITHMS[alg];
@@ -616,21 +619,17 @@ mult_test_results multiply_reuse_test(
   computedC1->leftScale (*leftScaling);
   computedC1->rightScale(*rightScaling);
 
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = map->getNode ();
-
   // As = leftScaling * op(A) =
   //   leftScaling * A, if AT=false
   //   A*leftScaling,   if AT=true
-  RCP<Matrix_t> As = A->clone(node);
+  RCP<Matrix_t> As = copyMatrix(A);
   if (AT == false) As->leftScale (*leftScaling);
   else             As->rightScale(*leftScaling);
 
   // Bs = op(B) * rightScaling =
   //   B * rightScaling, if BT=false
   //   rightScaling*B,   if BT=true
-  RCP<Matrix_t> Bs = B->clone(node);
+  RCP<Matrix_t> Bs = copyMatrix(B);
   if (BT == false) Bs->rightScale(*rightScaling);
   else             Bs->leftScale (*rightScaling);
 
@@ -739,11 +738,7 @@ mult_test_results jacobi_reuse_test(
   computedC1->rightScale(*rightScaling);
 
   // Bs = B * rightScaling
-
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = map->getNode ();
-  RCP<Matrix_t> Bs = B->clone(node);
+  RCP<Matrix_t> Bs = copyMatrix(B);
   Bs->rightScale(*rightScaling);
 
   // computedC2 = (I - Dinv*A)*Bs
@@ -766,7 +761,7 @@ mult_test_results jacobi_reuse_test(
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, GO, NT)  {
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   
   // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
@@ -811,12 +806,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
     double epsilon = currentSystem.get<double> ("epsilon", defaultEpsilon);
     std::string op = currentSystem.get<std::string> ("op");
 
-    RCP<Matrix_t> A = Reader<Matrix_t>::readSparseFile (A_file, comm);
-    RCP<Matrix_t> B = Reader<Matrix_t>::readSparseFile (B_file, comm);
-    RCP<Matrix_t> C = Reader<Matrix_t>::readSparseFile (C_file, comm);
+    RCP<Matrix_t> A, B, C;
+    if (A_file != "")
+      A = Reader<Matrix_t>::readSparseFile (A_file, comm);
+    if (B_file != "")
+      B = Reader<Matrix_t>::readSparseFile (B_file, comm);
+    if (C_file != "")
+      C = Reader<Matrix_t>::readSparseFile (C_file, comm);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
-      "Unrecognized Matrix Operation: " << op);
+    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add" && op != "RAP", std::runtime_error,
+                               "Unrecognized Matrix Operation: " << op);
 
     if (op == "multiply") {
       if (verbose)

@@ -19,10 +19,6 @@
 /* Deprecated */
 #cmakedefine HAVE_TEUCHOSCORE_ARPREC
 
-#define HAVE_TEUCHOSCORE_YAML_CPP @YAML_CPP_DEF@
-/* ToDo: Move the TeuchosCore parts from Teuchos_config.h.in to here and git
- * rid of Teuchos_config.h.in */
-
 #cmakedefine HAVE_TEUCHOSCORE_PTHREAD
 
 #endif // TEUCHOSCORE_CONFIG_H_

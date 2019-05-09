@@ -60,9 +60,13 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc.cmake")
 # Set the options specific to this build case
 #
 
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_MueLu_Tpetra)
+SET(BUILD_NAME_DETAILS NO-EPETRA)
+
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(Trilinos_TRACK  Nightly)    # Set the CDash track to Nightly

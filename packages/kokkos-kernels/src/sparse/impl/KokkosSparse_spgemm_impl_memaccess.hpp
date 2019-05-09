@@ -239,7 +239,7 @@ void KokkosSPGEMM
   c_flop_rowmap = row_lno_temp_work_view_t ("flops per row", a_row_cnt + 1);
 
   //KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
-  int suggested_vector_size = this->handle->get_suggested_vector_size(a_row_cnt, entriesA.dimension_0());
+  int suggested_vector_size = this->handle->get_suggested_vector_size(a_row_cnt, entriesA.extent(0));
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
 
@@ -399,7 +399,7 @@ void KokkosSPGEMM
 
   /*
   isGPU = true;
-  vectorlane = get_suggested_vector__size(b_row_cnt, entriesB.dimension_0(), KokkosKernels::Impl::Exec_CUDA);
+  vectorlane = get_suggested_vector__size(b_row_cnt, entriesB.extent(0), KokkosKernels::Impl::Exec_CUDA);
   cache_line_size = 32 * 8;
   cache_size = cache_line_size * 7;
   */
@@ -487,8 +487,8 @@ std::cout << "num_colors:" << num_colors << " num_multi_colors:" << num_multi_co
 
 
 
-  size_t a_line_size = entriesA.dimension_0() / cache_line_size + 1;
-  size_t b_line_size = entriesB.dimension_0() / cache_line_size + 1;
+  size_t a_line_size = entriesA.extent(0) / cache_line_size + 1;
+  size_t b_line_size = entriesB.extent(0) / cache_line_size + 1;
 
 
   typename nnz_lno_temp_work_view_t::HostMirror tester("t", overall_flops);
@@ -508,7 +508,7 @@ std::cout << "num_colors:" << num_colors << " num_multi_colors:" << num_multi_co
 
   //std::cout << "I:" << i << " color_begin:" << color_begin <<  " color_end:" << color_end << " percore:" << percore << std::endl;
   int num_threads = 1;
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 #pragma omp parallel
   {
     num_threads = omp_get_num_threads();
@@ -587,7 +587,7 @@ std::cout << "num_colors:" << num_colors << " num_multi_colors:" << num_multi_co
       std::vector <size_type> team_ends(num_teams_in_core, 0);
       */
       int mytid = 0;
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
       mytid = omp_get_thread_num();
 #endif
       Cache L1_cache = *(t_team_caches[mytid]);
@@ -828,9 +828,9 @@ std::cout << "num_colors:" << num_colors << " num_multi_colors:" << num_multi_co
             << "\n\twrite per nnz:" << overall_c_l1_misswrite/ double(rowmapC(a_row_cnt))
             << std::endl;
 
-  std::cout << "\topt_a_read:" << entriesA.dimension_0() / cache_1_line_word_count
-            << " opt_b_read:" << entriesB.dimension_0() / cache_1_line_word_count
-            << " opt_total_read:" << entriesA.dimension_0() / cache_1_line_word_count + entriesB.dimension_0() / cache_1_line_word_count << std::endl;
+  std::cout << "\topt_a_read:" << entriesA.extent(0) / cache_1_line_word_count
+            << " opt_b_read:" << entriesB.extent(0) / cache_1_line_word_count
+            << " opt_total_read:" << entriesA.extent(0) / cache_1_line_word_count + entriesB.extent(0) / cache_1_line_word_count << std::endl;
 
   std::cout << "\taverage_per_thread a_read:" << overall_a_l1_missread  / num_cores
             << " average_per_thread b_read:" << overall_b_l1_missread  / num_cores

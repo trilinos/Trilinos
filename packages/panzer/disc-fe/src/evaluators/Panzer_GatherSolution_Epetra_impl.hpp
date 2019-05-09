@@ -59,6 +59,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Teuchos
 #include "Teuchos_Assert.hpp"
@@ -191,15 +192,15 @@ preEvaluate(
   // First try the refactored ReadOnly container.
   RCP<GED> ged;
   string post(useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X");
-  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  if (d.gedc->containsDataObject(globalDataKey_ + post))
   {
-    ged       = d.gedc.getDataObject(globalDataKey_ + post);
+    ged       = d.gedc->getDataObject(globalDataKey_ + post);
     xEvRoGed_ = rcp_dynamic_cast<EVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
 
   // Now try the old path.
-  ged = d.gedc.getDataObject(globalDataKey_);
+  ged = d.gedc->getDataObject(globalDataKey_);
   {
     // Try to extract the linear object container.
     auto epetraContainer = rcp_dynamic_cast<ELOC>(ged);
@@ -246,7 +247,6 @@ evaluateFields(
   using Thyra::SpmdVectorBase;
 
   // For convenience, pull out some objects from the workset.
-  vector<int> LIDs;
   string blockId(this->wda(workset).block_id);
   const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
   int numCells(localCellIds.size()), numFields(gatherFields_.size());
@@ -260,7 +260,7 @@ evaluateFields(
     for (int cell(0); cell < numCells; ++cell)
     {
       size_t cellLocalId(localCellIds[cell]);
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
       // Loop over the fields to be gathered.
       for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
@@ -286,7 +286,7 @@ evaluateFields(
     for (int cell(0); cell < numCells; ++cell)
     {
       size_t cellLocalId(localCellIds[cell]);
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
       // Loop over the fields to be gathered.
       for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
@@ -433,15 +433,15 @@ preEvaluate(
   // First try the refactored ReadOnly container.
   RCP<GED> ged;
   string post(useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X");
-  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  if (d.gedc->containsDataObject(globalDataKey_ + post))
   {
-    ged       = d.gedc.getDataObject(globalDataKey_ + post);
+    ged       = d.gedc->getDataObject(globalDataKey_ + post);
     xEvRoGed_ = rcp_dynamic_cast<EVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
 
   // Now try the old path.
-  ged = d.gedc.getDataObject(globalDataKey_);
+  ged = d.gedc->getDataObject(globalDataKey_);
   {
     // Try to extract the linear object container.
     auto epetraContainer = rcp_dynamic_cast<ELOC>(ged);
@@ -488,7 +488,6 @@ evaluateFields(
   using Thyra::SpmdVectorBase;
 
   // For convenience, pull out some objects from the workset.
-  vector<int> LIDs;
   string blockId(this->wda(workset).block_id);
   const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
   int numCells(localCellIds.size()), numFields(gatherFields_.size());
@@ -502,7 +501,7 @@ evaluateFields(
     for (int cell(0); cell < numCells; ++cell)
     {
       size_t cellLocalId(localCellIds[cell]);
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
       // Loop over the fields to be gathered.
       for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
@@ -528,7 +527,7 @@ evaluateFields(
     for (int cell(0); cell < numCells; ++cell)
     {
       size_t cellLocalId(localCellIds[cell]);
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
       // Loop over the fields to be gathered.
       for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
@@ -690,15 +689,15 @@ preEvaluate(
   // First try the refactored ReadOnly container.
   RCP<GED> ged;
   string post(useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X");
-  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  if (d.gedc->containsDataObject(globalDataKey_ + post))
   {
-    ged       = d.gedc.getDataObject(globalDataKey_ + post);
+    ged       = d.gedc->getDataObject(globalDataKey_ + post);
     xEvRoGed_ = rcp_dynamic_cast<EVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
 
   // Now try the old path.
-  ged = d.gedc.getDataObject(globalDataKey_);
+  ged = d.gedc->getDataObject(globalDataKey_);
   {
     // Try to extract the linear object container.
     auto epetraContainer = rcp_dynamic_cast<ELOC>(ged);
@@ -797,7 +796,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         size_t cellLocalId(localCellIds[cell]);
-        const vector<int>& LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+	auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)
@@ -823,7 +822,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         size_t cellLocalId(localCellIds[cell]);
-        const vector<int>& LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+	auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)

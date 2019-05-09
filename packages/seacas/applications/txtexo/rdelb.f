@@ -1,23 +1,23 @@
-C Copyright (c) 2007 National Technology & Engineering Solutions of
+C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,9 +29,8 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
-C $Id: rdelb.f,v 1.4 2007/10/17 18:47:22 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE RDELB (NTXT, IELB, IDELB, NUMELB, NUMLNK, NUMATR,
      &   NAMELB, A, KLINK, KATRIB, *)
@@ -62,11 +61,12 @@ C   --upon entry; upon exit at end of element block information.
       include 'exodusII.inc'
       DIMENSION A(*)
       CHARACTER*(MXSTLN) NAMELB
-      CHARACTER*5 STRA
+      CHARACTER*32 STRA
 
       NAMELB = ' '
       READ (NTXT, *, END=110, ERR=110)
-      READ (NTXT, 130, END=110, ERR=110) IDELB, NUMELB, NAMELB
+      READ (NTXT, *, END=110, ERR=110) IDELB, NUMELB, NAMELB
+
 C ... Strip everything in namelb from first space to end
       IEX = index(namelb, " ")
       if (iex .gt. 0) then
@@ -94,6 +94,5 @@ C ... Strip everything in namelb from first space to end
      &   'Reading ELEMENT BLOCK SIZING PARAMETERS for block '
      &   // STRA(:LSTRA))
   120 CONTINUE
- 130  format (2I10,6X,A)
       RETURN 1
       END

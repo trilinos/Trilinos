@@ -143,7 +143,7 @@ void test_regex_reader(std::string const& regex,
     std::vector<std::string> const& expect_matches,
     std::vector<std::string> const& expect_non_matches) {
   regex::Reader reader(42);
-  any result_any;
+  Teuchos::any result_any;
   reader.read_string(result_any, regex, "test_regex_reader");
   FiniteAutomaton& result = any_ref_cast<FiniteAutomaton>(result_any);
   for (std::vector<std::string>::const_iterator it = expect_matches.begin();
@@ -223,7 +223,7 @@ TEUCHOS_UNIT_TEST( Parser, xml_language ) {
 
 void test_xml_reader(std::string const& str) {
   Reader reader(XML::ask_reader_tables());
-  any result;
+  Teuchos::any result;
   reader.read_string(result, str, "test_xml_reader");
 }
 
@@ -235,10 +235,9 @@ TEUCHOS_UNIT_TEST( Parser, xml_reader ) {
   test_xml_reader("<P name=\"foo&quot;&#72;bar\"/>");
 }
 
-// TODO: use this function to test most languages
 static void test_reader(ReaderTablesPtr tables, std::string const& str, std::string const& name) {
   Reader reader(tables);
-  any result;
+  Teuchos::any result;
   reader.read_string(result, str, name);
 }
 
@@ -278,6 +277,8 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
       "    }\n"
       "  g: .125\n"
       "  i: -6.022e-23\n"
+      "  mesh path: ../meshes/cube.exo\n"
+      "  empty parameter list:\n"
       "...\n"
       , "1");
   test_reader(tables,
@@ -398,8 +399,99 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
       "  sub-entry2: green\n"
       "...\n",
       "21");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "  Particle Periodic:\n"
+      "    X: \"-1.0, 1.0\"\n"
+      "  emotions: happy_sad, indifferent\n"
+      "...\n",
+      "Trilinos issue #1801");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "  Particle Periodic:\n"
+      "    X: \"-1.0, 1.0\"\n"
+      "  emotions: happy_sad, indifferent\n"
+      "...\n",
+      "Trilinos issue #1801");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "\tMesh:\n"
+      "\t\tInline:\n"
+      "\t\t\tType: Quad\n"
+      "\t\t\tElements: [     10,     10 ]\n"
+      "...\n",
+      "Trilinos issue #1801 part 2");
+  test_reader(tables,
+      "# Hi\n"
+      "My Awesome Problem: #other\n",
+      "Trilinos issue #1807");
 }
 
+TEUCHOS_UNIT_TEST( Parser, yaml_reader_Match1 ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  Teuchos::any result;
+  reader.read_string(result,
+      "%YAML 1.1\n"
+      "---\n"
+      "Muelu:\n"
+      "  'coarse: max size': 1000\n"
+      "  'multigrid algorithm': unsmoothed\n"
+      "  'smoother: type': RELAXATION\n"
+      "  'smoother: params':\n"
+      "    'relaxation: type': Jacobi\n"
+      "    'relaxation: sweeps': 5\n"
+      "    'relaxation: damping factor': 0.9\n"
+      "  'aggregation: type': uncoupled\n"
+      "  'aggregation: drop tol': 1e-7\n"
+      "  'aggregation: export visualization data': true\n"
+      "...\n",
+      "Match1.yaml (inline)");
+}
+
+TEUCHOS_UNIT_TEST( Parser, yaml_reader_Arrays ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  Teuchos::any result;
+  reader.read_string(result,
+      "%YAML 1.1\n"
+      "---\n"
+      "Muelu:\n"
+      "  'coarse: max size': 1000\n"
+      "  'multigrid algorithm': unsmoothed\n"
+      "  'smoother: type': RELAXATION\n"
+      "  'smoother: params':\n"
+      "    'relaxation: type': Jacobi\n"
+      "    'relaxation: sweeps': 5\n"
+      "    'relaxation: damping factor': 0.9\n"
+      "    intArray: !!seq [2, 3, 5, 7, 11]\n"
+      "    doubleArray: !!seq [2.718, 3.14159, 1.618, 1.23456789, 42.1337]\n"
+      "  'aggregation: type': uncoupled\n"
+      "  'aggregation: drop tol': 1e-7\n"
+      "  'aggregation: export visualization data': true\n"
+      "...\n",
+      "Match1.yaml (inline)");
+}
+
+TEUCHOS_UNIT_TEST( Parser, yaml_plasma ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  Teuchos::any result;
+  reader.read_file(result, "plasma_oscillation_rtc.xml.yaml");
+}
+
+TEUCHOS_UNIT_TEST( Parser, yaml_whitespace_after_string ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  Teuchos::any result;
+  reader.read_string(result,
+      "%YAML 1.1\n"
+      "---\n"
+      "hydro app:\n"
+      "  heat capacity ratio: '5.0 / 3.0' # a.k.a gamma\n"
+      "...\n",
+      "whitespace after string");
+}
 
 TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
   LanguagePtr lang = MathExpr::ask_language();
@@ -409,7 +501,7 @@ TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
 
 void test_mathexpr_reader(std::string const& str) {
   Reader reader(MathExpr::ask_reader_tables());
-  any result;
+  Teuchos::any result;
   reader.read_string(result, str, "test_mathexpr_reader");
 }
 
@@ -422,6 +514,25 @@ TEUCHOS_UNIT_TEST( Parser, mathexpr_reader ) {
   test_mathexpr_reader("1.23e5+8.07e10*exp(-((x^2 + (y-180)^2))/(2.*(2.2)^2))");
   test_mathexpr_reader("---16");
   test_mathexpr_reader("((1 < 2) && (2 < 1)) ? 42 : 9");
+  test_mathexpr_reader("x = 2; y = 5; x^2 + y^2");
+}
+
+TEUCHOS_UNIT_TEST( Parser, mathexpr_symbols ) {
+  auto vars = Teuchos::MathExpr::get_variables_used("sin(pi * x)");
+  std::set<std::string> expect_vars = {"pi", "x"};
+  TEUCHOS_ASSERT(vars == expect_vars);
+  auto symbols = Teuchos::MathExpr::get_symbols_used("sin(pi * x)");
+  std::set<std::string> expect_symbols = {"sin", "pi", "x"};
+  TEUCHOS_ASSERT(symbols == expect_symbols);
+}
+
+TEUCHOS_UNIT_TEST( Parser, pull_request_3312 ) {
+  Teuchos::RCP<Teuchos::Reader> reader(Teuchos::MathExpr::new_calc_reader());
+  Teuchos::any result_any;
+  reader->read_string(result_any, "x = 5; -x^2", "neg versus pow");
+  TEUCHOS_ASSERT(Teuchos::any_cast<double>(result_any) == -25.0);
+  reader->read_string(result_any, "3.0^2.0^3.0", "pow left or right");
+  TEUCHOS_ASSERT(Teuchos::any_cast<double>(result_any) == 6561.0);
 }
 
 } // anonymous namespace

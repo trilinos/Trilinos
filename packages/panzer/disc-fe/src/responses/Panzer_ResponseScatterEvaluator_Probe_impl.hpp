@@ -57,6 +57,7 @@
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
@@ -120,18 +121,10 @@ preEvaluate(typename Traits::PreEvalData d)
   // extract linear object container
   responseObj_ =
     Teuchos::rcp_dynamic_cast<Response_Probe<EvalT> >(
-      d.gedc.getDataObject(ResponseBase::buildLookupName(responseName_)),
+      d.gedc->getDataObject(ResponseBase::buildLookupName(responseName_)),
       true);
 }
 
-
-template<typename EvalT, typename Traits, typename LO, typename GO>
-void ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData /* d */,
-                      PHX::FieldManager<Traits>& fm)
-{
-  this->utils.setFieldData(field_,fm);
-}
 
 template<typename EvalT, typename Traits, typename LO, typename GO>
 bool ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
@@ -177,7 +170,7 @@ computeBasisValues(typename Traits::EvalData d)
   }
 
   // Map point to reference frame
-  const size_t num_vertex = this->wda(d).cell_vertex_coordinates.dimension_1();
+  const size_t num_vertex = this->wda(d).cell_vertex_coordinates.extent(1);
   Kokkos::DynRankView<double,PHX::Device> cell_coords(
     "cell_coords", 1, num_vertex, num_dim); // Cell, Basis, Dim
   for (size_t i=0; i<num_vertex; ++i) {
@@ -275,14 +268,14 @@ evaluateFields(typename Traits::EvalData d)
     return;
 
   // Get field coefficients for cell
-  Kokkos::DynRankView<ScalarT,PHX::Device> field_coeffs =
+  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> field_coeffs =
     Kokkos::createDynRankView(field_.get_static_view(), "field_val",
                               1, num_basis); // Cell, Basis
   for (size_t i=0; i<num_basis; ++i)
     field_coeffs(0,i) = field_(cellIndex_,i);
 
   // Evaluate FE interpolant at point
-  Kokkos::DynRankView<ScalarT,PHX::Device> field_val =
+  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> field_val =
     Kokkos::createDynRankView(field_coeffs, "field_val", 1, 1); // Cell, Point
   Intrepid2::FunctionSpaceTools<PHX::exec_space>::evaluate(
     field_val, field_coeffs, basis_values_);

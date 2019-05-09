@@ -17,6 +17,13 @@ namespace Tempus {
 
 template <typename Scalar>
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
+WrapperModelEvaluatorPairPartIMEX_Basic()
+  : timeDer_(Teuchos::null), numExplicitOnlyBlocks_(0),
+    parameterIndex_(-1), useImplicitModel_(false)
+{}
+
+template <typename Scalar>
+WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 WrapperModelEvaluatorPairPartIMEX_Basic(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel,
@@ -24,6 +31,24 @@ WrapperModelEvaluatorPairPartIMEX_Basic(
   : timeDer_(Teuchos::null), numExplicitOnlyBlocks_(numExplicitOnlyBlocks),
     parameterIndex_(parameterIndex), useImplicitModel_(false)
 {
+  setExplicitModel(explicitModel);
+  setImplicitModel(implicitModel);
+  setParameterIndex();
+  initialize();
+}
+
+template <typename Scalar>
+void
+WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
+setup(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel,
+  int numExplicitOnlyBlocks, int parameterIndex)
+{
+  timeDer_ = Teuchos::null;
+  numExplicitOnlyBlocks_ = numExplicitOnlyBlocks;
+  parameterIndex_ = parameterIndex;
+  useImplicitModel_ = false;
   setExplicitModel(explicitModel);
   setImplicitModel(implicitModel);
   setParameterIndex();
@@ -76,7 +101,7 @@ template <typename Scalar>
 void
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 setAppModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & /* me */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
     "Error - WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::setAppModel\n"
@@ -133,11 +158,6 @@ setImplicitModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model )
 {
   implicitModel_ = model;
-  TEUCHOS_TEST_FOR_EXCEPTION( implicitModel_->Np() < 1, std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()\n"
-    "  Implicit model requires at least one parameter for partitioned\n"
-    "  IMEX-RK to pass in the explicit-only vector."
-    "  implicitModel_->Np() = " << implicitModel_->Np() << "\n");
 }
 
 template <typename Scalar>
@@ -148,23 +168,74 @@ getIMEXVector(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & full) const
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  if(numExplicitOnlyBlocks_==0)
-    return full;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > vector;
+  if(full == Teuchos::null) {
+    vector = Teuchos::null;
+  }
+  else if(numExplicitOnlyBlocks_ == 0) {
+    vector = full;
+  }
+  else {
 
-  RCP<Thyra::ProductVectorBase<Scalar> > blk_full =
-    rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(full);
-  TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getIMEXVector()\n"
-    "  was given a VectorBase that could not be cast to a\n"
-    "  ProductVectorBase!\n");
-  int numBlocks = blk_full->productSpace()->numBlocks();
+    RCP<Thyra::ProductVectorBase<Scalar> > blk_full =
+      rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(full);
+    TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
+      "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getIMEXVector()\n"
+      "  was given a VectorBase that could not be cast to a\n"
+      "  ProductVectorBase!\n");
+    int numBlocks = blk_full->productSpace()->numBlocks();
 
-  // special case where the implicit terms are not blocked
-  if(numBlocks==numExplicitOnlyBlocks_+1)
-    return blk_full->getNonconstVectorBlock(numExplicitOnlyBlocks_);
+    // special case where the implicit terms are not blocked
+    if(numBlocks == numExplicitOnlyBlocks_+1)
+      vector = blk_full->getNonconstVectorBlock(numExplicitOnlyBlocks_);
 
-  TEUCHOS_ASSERT(false);
-  return Teuchos::null;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !( numExplicitOnlyBlocks_ == 0 || full == Teuchos::null ||
+         numBlocks == numExplicitOnlyBlocks_+1 ),
+      std::logic_error, "Error - Invalid values!\n");
+  }
+
+  return vector;
+}
+
+template <typename Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
+getIMEXVector(const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > vector;
+  if(full == Teuchos::null) {
+    vector = Teuchos::null;
+  }
+  else if(numExplicitOnlyBlocks_ == 0) {
+    vector = full;
+  }
+  else {
+
+    // special case where the implicit terms are not blocked
+
+    RCP<const Thyra::ProductVectorBase<Scalar> > blk_full =
+      rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(full);
+    TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
+      "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getIMEXVector()\n"
+      "  was given a VectorBase that could not be cast to a\n"
+      "  ProductVectorBase!\n");
+    int numBlocks = blk_full->productSpace()->numBlocks();
+
+    // special case where the implicit terms are not blocked
+    if(numBlocks == numExplicitOnlyBlocks_+1)
+      vector = blk_full->getVectorBlock(numExplicitOnlyBlocks_);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !( numExplicitOnlyBlocks_ == 0 || full == Teuchos::null ||
+         numBlocks == numExplicitOnlyBlocks_+1 ),
+      std::logic_error, "Error - Invalid values!\n");
+  }
+
+  return vector;
 }
 
 template <typename Scalar>
@@ -176,23 +247,66 @@ getExplicitOnlyVector(
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  if(numExplicitOnlyBlocks_==0)
-    return Teuchos::null;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > vector;
+  if(numExplicitOnlyBlocks_ == 0 || full == Teuchos::null) {
+    vector = Teuchos::null;
+  }
+  else if(numExplicitOnlyBlocks_ == 1) {
 
-  RCP<Thyra::ProductVectorBase<Scalar> > blk_full =
-    rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(full);
-  TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getExplicitOnlyVector()\n"
-    "  was given a VectorBase that could not be cast to a ProductVectorBase!\n"
-    "  full = " << *full << "\n");
+    // special case where the explicit terms are not blocked
 
-  // special case where the explicit terms are not blocked
-  if(numExplicitOnlyBlocks_==1)
-    return blk_full->getNonconstVectorBlock(0);
+    RCP<Thyra::ProductVectorBase<Scalar> > blk_full =
+      rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(full);
+    TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
+      "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getExplicitOnlyVector\n"
+      "  given a VectorBase that could not be cast to a ProductVectorBase!\n"
+      "  full = " << *full << "\n");
 
-  TEUCHOS_ASSERT(false);
-  return Teuchos::null;
+    vector = blk_full->getNonconstVectorBlock(0);
+  }
 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !( (numExplicitOnlyBlocks_ == 0 || full == Teuchos::null) ||
+       (numExplicitOnlyBlocks_ == 1) ),
+    std::logic_error, "Error - Invalid values!\n");
+
+  return vector;
+}
+
+template <typename Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
+getExplicitOnlyVector(
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  RCP<const Thyra::VectorBase<Scalar> > vector;
+  if(numExplicitOnlyBlocks_ == 0 || full == Teuchos::null) {
+    vector = Teuchos::null;
+  }
+  else if(numExplicitOnlyBlocks_ == 1) {
+
+    // special case where the explicit terms are not blocked
+
+    RCP<const Thyra::ProductVectorBase<Scalar> > blk_full =
+      rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(full);
+    TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
+      "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getExplicitOnlyVector\n"
+      "  given a VectorBase that could not be cast to a ProductVectorBase!\n"
+      "  full = " << *full << "\n");
+
+    vector = blk_full->getVectorBlock(0);
+
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !( (numExplicitOnlyBlocks_ == 0 || full == Teuchos::null) ||
+       (numExplicitOnlyBlocks_ == 1) ),
+    std::logic_error, "Error - Invalid values!\n");
+
+  return vector;
 }
 
 template <typename Scalar>
@@ -200,24 +314,39 @@ void
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 setParameterIndex(int parameterIndex)
 {
-  if(parameterIndex >= 0) {
-    parameterIndex_ = parameterIndex;
-  } else if (parameterIndex_ < 0) {
-    parameterIndex_ = 0;
-    for(int i=0; i<implicitModel_->Np(); i++) {
-      if((*implicitModel_->get_p_names(i))[0] == "EXPLICIT_ONLY_VECTOR") {
-        parameterIndex_ = i;
-        break;
+  if (implicitModel_->Np() == 0) {
+    if (parameterIndex >= 0) {
+      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,
+        "WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()");
+      *out << "Warning -- \n"
+           << "  Invalid input parameter index = " << parameterIndex << "\n"
+           << "  Should not be set since Np = "<<implicitModel_->Np() << "\n"
+           << "  Not setting parameter index." << std::endl;
+    }
+    if (parameterIndex_ >= 0) {
+      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,
+        "WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()");
+      *out << "Warning -- \n"
+           << "  Invalid parameter index = " << parameterIndex_ << "\n"
+           << "  Should not be set since Np = "<<implicitModel_->Np() << "\n"
+           << "  Resetting to parameter index to unset state." << std::endl;
+      parameterIndex_ = -1;
+    }
+  } else {
+    if(parameterIndex >= 0) {
+      parameterIndex_ = parameterIndex;
+    } else if (parameterIndex_ < 0) {
+      parameterIndex_ = 0;
+      for(int i=0; i<implicitModel_->Np(); i++) {
+        if((*implicitModel_->get_p_names(i))[0] == "EXPLICIT_ONLY_VECTOR") {
+          parameterIndex_ = i;
+          break;
+        }
       }
     }
   }
-
-  TEUCHOS_TEST_FOR_EXCEPTION( 0 > parameterIndex_ or
-                                  parameterIndex_ >= implicitModel_->Np(),
-    std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()\n"
-    "  Invalid parameter index = " << parameterIndex_ << "\n"
-    "  Should be in the interval [0, Np) = [0, "<<implicitModel_->Np()<<")\n");
 
   return;
 }
@@ -240,6 +369,7 @@ getNominalValues() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgsSetup<Scalar> inArgs = this->createInArgs();
+  inArgs.set_Np(1);
   return inArgs;
 }
 
@@ -249,14 +379,19 @@ WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 createInArgs() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar> implicitInArgs = implicitModel_->getNominalValues();
+  MEB::InArgs<Scalar> explicitInArgs = explicitModel_->getNominalValues();
+  const int np = std::max(implicitInArgs.Np(), explicitInArgs.Np());
   if (useImplicitModel_ == true) {
-    MEB::InArgsSetup<Scalar> inArgs(implicitModel_->getNominalValues());
+    MEB::InArgsSetup<Scalar> inArgs(implicitInArgs);
     inArgs.setModelEvalDescription(this->description());
+    inArgs.set_Np(np);
     return inArgs;
   }
 
-  MEB::InArgsSetup<Scalar> inArgs(explicitModel_->getNominalValues());
+  MEB::InArgsSetup<Scalar> inArgs(explicitInArgs);
   inArgs.setModelEvalDescription(this->description());
+  inArgs.set_Np(np);
   return inArgs;
 }
 
@@ -266,14 +401,19 @@ WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> implicitOutArgs = implicitModel_->createOutArgs();
+  MEB::OutArgs<Scalar> explicitOutArgs = explicitModel_->createOutArgs();
+  const int np = std::max(implicitOutArgs.Np(), explicitOutArgs.Np());
   if (useImplicitModel_ == true) {
-    MEB::OutArgsSetup<Scalar> outArgs(implicitModel_->createOutArgs());
+    MEB::OutArgsSetup<Scalar> outArgs(implicitOutArgs);
     outArgs.setModelEvalDescription(this->description());
+    outArgs.set_Np_Ng(np,implicitOutArgs.Ng());
     return outArgs;
   }
 
-  MEB::OutArgsSetup<Scalar> outArgs(explicitModel_->createOutArgs());
+  MEB::OutArgsSetup<Scalar> outArgs(explicitOutArgs);
   outArgs.setModelEvalDescription(this->description());
+  outArgs.set_Np_Ng(np,explicitOutArgs.Ng());
   return outArgs;
 }
 

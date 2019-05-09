@@ -20,8 +20,6 @@ namespace KokkosBatched {
       invoke(const int m, 
              const ScalarType alpha, 
              /* */ ValueType *__restrict__ A, const int as0) {
-        static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                      "SerialScaleInternal:: not valid template types");
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -39,8 +37,6 @@ namespace KokkosBatched {
       invoke(const int m, const int n, 
              const ScalarType alpha, 
              /* */ ValueType *__restrict__ A, const int as0, const int as1) {
-        static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                      "SerialScaleInternal:: not valid template types");
 
         if (as0 > as1)
           for (int i=0;i<m;++i)
@@ -66,8 +62,6 @@ namespace KokkosBatched {
              const int m, 
              const ScalarType alpha, 
              /* */ ValueType *__restrict__ A, const int as0) {
-        static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                      "SerialScaleInternal:: not valid template types");
 
         Kokkos::parallel_for
           (Kokkos::TeamThreadRange(member,0,m),

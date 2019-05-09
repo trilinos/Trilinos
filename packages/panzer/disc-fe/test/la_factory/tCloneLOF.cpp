@@ -49,7 +49,6 @@
 #include <iostream>
 
 #include "PanzerDiscFE_config.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
@@ -107,7 +106,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
+   RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
@@ -124,13 +123,13 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    control_indexer->buildGlobalUnknowns();
  
    // setup factory
-   RCP<EpetraLinearObjFactory<Traits,int> > ep_lof
-         = Teuchos::rcp(new EpetraLinearObjFactory<Traits,int>(tComm.getConst(),indexer));
+   RCP<BlockedEpetraLinearObjFactory<Traits,int> > ep_lof
+         = Teuchos::rcp(new BlockedEpetraLinearObjFactory<Traits,int>(tComm.getConst(),indexer));
    
    // this is the member we are testing!
    RCP<const LinearObjFactory<Traits> > control_lof = cloneWithNewDomain(*ep_lof,control_indexer);
-   RCP<const EpetraLinearObjFactory<Traits,int> > ep_control_lof 
-       = rcp_dynamic_cast<const EpetraLinearObjFactory<Traits,int> >(control_lof);
+   RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof 
+       = rcp_dynamic_cast<const BlockedEpetraLinearObjFactory<Traits,int> >(control_lof);
 
    std::vector<int> control_owned;
    control_indexer->getOwnedIndices(control_owned);
@@ -157,7 +156,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
+   RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
@@ -253,7 +252,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
+   RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();

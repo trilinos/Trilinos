@@ -36,11 +36,23 @@ namespace Tempus {
  * parameters are not allowed at the present time.  Also, note that, like
  * the Newmark Beta stepper, the linear solve for the explicit version of
  * this scheme has not been optimized (the mass matrix is not lumped).
+ *
+ *  The First-Step-As-Last (FSAL) principle is not used with the
+ *  HHT-Alpha method.
  */
 template<class Scalar>
 class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
+
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperHHTAlpha();
 
   /// Constructor
   StepperHHTAlpha(
@@ -51,21 +63,16 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return wrapperModel_->getAppModel();}
 
-    /// Set the solver
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -79,7 +86,24 @@ public:
     }
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 2.0;}
+
+    virtual bool isExplicit()         const {return false;}
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
+
+  /// Return W_xDotxDot_coeff = d(xDotDot)/d(x).
+  virtual Scalar getW_xDotDot_coeff (const Scalar dt) const
+    { return Scalar(1.0)/(beta_*dt*dt); }
+  /// Return alpha = d(xDot)/d(x).
+  virtual Scalar getAlpha(const Scalar dt) const { return gamma_/(beta_*dt); }
+  /// Return beta  = d(x)/d(x).
+  virtual Scalar getBeta (const Scalar ) const { return Scalar(1.0); }
 
   /// \name ParameterList methods
   //@{
@@ -128,15 +152,6 @@ public:
                                const Scalar dt) const;
 
 private:
-
-  /// Default Constructor -- not allowed
-  StepperHHTAlpha();
-
-private:
-
-  Teuchos::RCP<Teuchos::ParameterList>                     stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >        solver_;
 
   Scalar beta_;
   Scalar gamma_;

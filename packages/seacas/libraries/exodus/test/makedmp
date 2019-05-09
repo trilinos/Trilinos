@@ -1,4 +1,5 @@
-# Copyright (c) 2005 National Technology & Engineering Solutions
+#! /usr/bin/env bash
+# Copyright (c) 2005-2017 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 # 
@@ -31,92 +32,276 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-# script to save dump files.
+# script to run all tests and compare them to saved dump files.
 #
-# testwt - single precision write test
-echo "testwt ..."
+# To run the tests with valgrind checking, uncomment the next line and comment the
+# following line. Can also define other prefixes if wanted.
+
+if [ "$1" == "" ]; then
+    mkdir -p nc3; cd nc3
+fi
+if [ "$1" == "netcdf4" ]; then
+   export EXODUS_NETCDF4=quiet
+    mkdir -p nc4; cd nc4
+fi
+if [ "$1" == "netcdf5" ]; then
+   export EXODUS_NETCDF5=quiet
+    mkdir -p nc5; cd nc5
+fi
+
+
+#set PREFIX = "valgrind --tool=memcheck"
+PREFIX=""
+SUFFIX=""
+BINDIR=/Users/gdsjaar/src/seacas/build/packages/seacas/libraries/exodus/test
+SRCDIR=/Users/gdsjaar/src/seacas/packages/seacas/libraries/exodus/test
+NCDUMP=/Users/gdsjaar/src/seacas/bin/ncdump
+THREAD_SAFE=@SEACASExodus_ENABLE_THREADSAFE@
+
+DIFF="diff -w"
+
+rm -f test.output
+echo "testwt - single precision write test..."
 echo "begin testwt" > test.output
-testwt >> test.output
+${PREFIX} ${BINDIR}/testwt${SUFFIX} >> test.output
 echo "end testwt" >> test.output
-ncdump -d5,5 test.exo > test.dmp 
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length > ${SRCDIR}/test.dmp
 
-# testrd - single precision read test
-echo "testrd ..."
-testrd > testrd.dmp 
+echo "testrd - single precision read test..."
+echo "begin testrd" >> test.output
+${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrd.dmp
+echo "end testrd" >> test.output
 
-# testcp_ss - single-to-single precision copy test
-echo "testcp_ss ..."
+echo "testcp_ss - single-to-single precision copy test..."
 echo "begin testcp_ss" >> test.output
-testcp >> test.output
+${PREFIX} ${BINDIR}/testcp${SUFFIX} >> test.output
 echo "end testcp_ss" >> test.output
-ncdump -d5,5 testcp.exo > testcp_ss.dmp 
+${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testcp_ss.dmp
 
-# testcp_sd - single-to-double precision copy test
-echo "testcp_sd ..."
+echo "testcp_sd - single-to-double precision copy test..."
 echo "begin testcp_sd" >> test.output
-testcpd >> test.output
+${PREFIX} ${BINDIR}/testcpd${SUFFIX} >> test.output
 echo "end testcp_sd" >> test.output
-ncdump -d5,5 testcpd.exo > testcp_sd.dmp 
+${NCDUMP} -d5,5 testcpd.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testcp_sd.dmp
 
-# testwtd - double precision write test
-echo "testwtd ..."
+echo "testcp_nl - normal_model to large_model single precision copy test..."
+echo "begin testcp_nl" >> test.output
+${PREFIX} ${BINDIR}/testcp_nl${SUFFIX} >> test.output
+echo "end testcp_nl" >> test.output
+${NCDUMP} -d5,5 testcp_nl.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testcp_nl.dmp
+
+echo "testcp_transient - copy mesh and transient data..."
+echo "begin testcp_tran" >> test.output
+${PREFIX} ${BINDIR}/testcp_tran${SUFFIX} >> test.output
+echo "end testcp_tran" >> test.output
+${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testcp_tran.dmp
+
+echo "testwt_clb - single precision write test using concatenated puts..."
+echo "begin testwt_clb" >> test.output
+${PREFIX} ${BINDIR}/testwt_clb${SUFFIX} >> test.output
+echo "end testwt_clb" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/test_clb.dmp
+
+echo "testwtd - double precision write test..."
 echo "begin testwtd" >> test.output
-testwtd >> test.output
+${PREFIX} ${BINDIR}/testwtd${SUFFIX} >> test.output
 echo "end testwtd" >> test.output
-ncdump -d5,5 test.exo > testd.dmp 
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testd.dmp
 
-# testrdd - double precision read test
-echo "testrdd ..."
-testrdd > testrdd.dmp 
+echo "testrdd - double precision read test..."
+echo "begin testrdd" >> test.output
+${PREFIX} ${BINDIR}/testrdd${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrdd.dmp
+echo "end testrdd" >> test.output
 
-# testcp_dd - double-to-double precision copy test
-echo "testcp_dd ..."
+echo "testcp_dd - double-to-double precision copy test..."
 echo "begin testcp_dd" >> test.output
-testcpd >> test.output
+${PREFIX} ${BINDIR}/testcpd${SUFFIX} >> test.output
 echo "end testcp_dd" >> test.output
-ncdump -d5,5 testcpd.exo > testcp_dd.dmp 
+${NCDUMP} -d5,5 testcpd.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testcp_dd.dmp
 
-# testcp_ds - double-to-single precision copy test
-echo "testcp_ds ..."
+echo "testcp_ds - double-to-single precision copy test..."
 echo "begin testcp_ds" >> test.output
-testcp >> test.output
+${PREFIX} ${BINDIR}/testcp${SUFFIX} >> test.output
 echo "end testcp_ds" >> test.output
-ncdump -d5,5 testcp.exo > testcp_ds.dmp 
+${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testcp_ds.dmp
 
-# testwt1 - single precision write files with several side sets
-echo "testwt1 ..."
+echo "testwt1 - single precision write files with several side sets..."
+echo "testwt1 ... [Expect WEDGE6 warning from this test]"
 echo "begin testwt1" >> test.output
-testwt1 >> test.output
+${PREFIX} ${BINDIR}/testwt1${SUFFIX} >> test.output
 echo "end testwt1" >> test.output
-ncdump -d5,5 test.exo > test1.dmp 
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/test1.dmp
 
-# testrd1 - single precision read test of a file with several side sets
-echo "testrd1 ..."
-testrd1 > testrd1.dmp 
+echo "testrd1 - single precision read test of a file with several side sets..."
+echo "testrd1 ... [Expect file create failure error, NOCLOBBER]"
+echo "testrd1 ... [Expect failure locating elem var 1 for elem block 12]"
+echo "begin testrd1" >> test.output
+${PREFIX} ${BINDIR}/testrd1${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrd1.dmp
+echo "end testrd1" >> test.output
 
-# testwt_ss - write file to test side sets
-echo "testwt_ss ..."
+echo "testwt_ss - write files to test side sets..."
+echo "testwt_ss ... [Expect WEDGE6 warning from this test]"
 echo "begin testwt_ss" >> test.output
-testwt_ss >> test.output
+${PREFIX} ${BINDIR}/testwt_ss${SUFFIX} >> test.output
 echo "end testwt_ss" >> test.output
-ncdump -d5,5 test.exo > testwt_ss.dmp 
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testwt_ss.dmp
 
-# testrd_ss - read test of a file with several side sets
-echo "testrd_ss ..."
-testrd_ss > testrd_ss.dmp 
+echo "testrd_ss - read test of a file with several side sets..."
+echo "testrd_ss ... [Expect warning for NULL sidesets 30 and 31]"
+echo "begin testrd_ss" >> test.output
+${PREFIX} ${BINDIR}/testrd_ss${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrd_ss.dmp
+echo "end testrd_ss" >> test.output
 
-# testwt2 - single precision write 2 files (simultaneously open) test
-echo "testwt2 ..."
+echo "testwt2 - single precision write 2 files (simultaneously open) test..."
 echo "begin testwt2" >> test.output
-testwt2 >> test.output
+${PREFIX} ${BINDIR}/testwt2${SUFFIX} >> test.output
 echo "end testwt2" >> test.output
-ncdump -d5,5 test.exo > test2-1.dmp 
-ncdump -d5,5 test2.exo > test2-2.dmp 
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/test2-1.dmp
+${NCDUMP} -d5,5 test2.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/test2-2.dmp
 
-# testrdwt - read from one and write to another (simutaneously open) file
-echo "testrdwt ..."
+echo "testrdwt - read from one and write to another (simutaneously open) file..."
 echo "begin testrdwt" >> test.output
-testrdwt >> test.output
+${PREFIX} ${BINDIR}/testrdwt${SUFFIX} >> test.output
 echo "end testrdwt" >> test.output
-ncdump -d5,5 test2.exo > test2.dmp 
+${NCDUMP} -d5,5 test2.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/test2.dmp
+
+echo "testwt_nc - write x y z components of coordinates separately..."
+echo "begin testwt_nc" >> test.output
+${PREFIX} ${BINDIR}/testwt_nc${SUFFIX} >> test.output
+echo "end testwt_nc" >> test.output
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | grep -v maximum_name_length > ${SRCDIR}/test.dmp
+
+echo "testrd_nc - read x y z components of coordinates separately..."
+echo "begin testrd_nc" >> test.output
+${PREFIX} ${BINDIR}/testrd_nc${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrd_nc.dmp
+echo "end testrd" >> test.output
+
+echo "testwt-zeron - write file with zero nodes and elements..."
+echo "begin testwt-zeron" >> test.output
+${PREFIX} ${BINDIR}/testwt-zeron${SUFFIX} >> test.output
+echo "end testwt-zeron" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testwt-zeron.dmp
+
+echo "testrd - read test of file with zero nodes and elements..."
+echo "begin testrd zero nodes" >> test.output
+${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrd_zeron.dmp
+echo "end testrd zero nodes" >> test.output
+
+echo "testwt-zeroe - write file with zero elements..."
+echo "begin testwt-zeroe" >> test.output
+${PREFIX} ${BINDIR}/testwt-zeroe${SUFFIX} >> test.output
+echo "end testwt-zeroe" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testwt-zeroe.dmp
+
+echo "testrd - read test of file with zero elements..."
+echo "begin testrd zero elements" >> test.output
+${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrd_zeroe.dmp
+echo "end testrd zero elements" >> test.output
+
+echo "testwt-one-attrib - read/write test of element attributes - read one at a time..."
+echo "begin testwt-one-attrib - read attributes one at a time" >> test.output
+${PREFIX} ${BINDIR}/testwt-one-attrib${SUFFIX}
+echo "end testwt-one-attrib - read attributes one at a time" >> test.output
+
+echo "testwt-nsided - write file with nsided elements..."
+echo "begin testwt-nsided" >> test.output
+${PREFIX} ${BINDIR}/testwt-nsided${SUFFIX} >> test.output
+echo "end testwt-nsided" >> test.output
+${NCDUMP} -d5,5 test-nsided.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testwt-nsided.dmp
+
+echo "testrd-nsided - read file with nsided elements..."
+echo "begin testrd-nsided" >> test.output
+${PREFIX} ${BINDIR}/testrd-nsided${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrd-nsided.dmp
+echo "end testrd-nsided" >> test.output
+
+echo "testwt-nfaced - write file with nfaced elements..."
+echo "begin testwt-nfaced" >> test.output
+${PREFIX} ${BINDIR}/testwt-nfaced${SUFFIX} >> test.output
+echo "end testwt-nfaced" >> test.output
+${NCDUMP} -d5,5 test-nfaced.exo | grep -v version | grep -v _FillValue > ${SRCDIR}/testwt-nfaced.dmp
+
+echo "testrd-nfaced - read file with nfaced elements..."
+echo "begin testrd-nfaced" >> test.output
+${PREFIX} ${BINDIR}/testrd-nfaced${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrd-nfaced.dmp
+echo "end testrd-nfaced" >> test.output
+
+echo "testwt-long-name - write file with long (64-character) names..."
+echo "begin testwt-long-name" >> test.output
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
+${PREFIX} ${BINDIR}/testwt-long-name${SUFFIX} >> test.output
+echo "end testwt-long-name" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" > ${SRCDIR}/testwt-long-name.dmp
+
+echo "testrd - read long name file truncating to 32 characters on read..."
+echo "begin testrd (truncate)" >> test.output
+${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrd-nm32.dmp
+echo "end testrd (truncate)" >> test.output
+
+echo "testrd-long-name - read long name file..."
+echo "begin testrd-long-name" >> test.output
+${PREFIX} ${BINDIR}/testrd-long-name${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/testrd-long-name.dmp
+echo "end testrd-long-name" >> test.output
+
+echo "test_nemesis - read long name file..."
+echo "begin test_nemesis" >> test.output
+${PREFIX} ${BINDIR}/test_nemesis${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/test_nemesis.dmp
+echo "end test_nemesis" >> test.output
+
+echo "test-empty - read an empty (only ex_create called) exodus file..."
+echo "begin test-empty" >> test.output
+${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/test-empty.dmp
+echo "end test-empty" >> test.output
+
+if [ "$THREAD_SAFE" == "ON" ]; then
+
+echo "test_ts_nvar - each thread writes data for a single nodal variable..."
+echo "begin test_ts_nvar" >> test.output
+${PREFIX} ${BINDIR}/test_ts_nvar${SUFFIX} >> test.output
+echo "end test_ts_nvar" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" > ${SRCDIR}/test_ts_nvar.dmp
+ 
+echo "test_ts_nvar_rd - each thread reads data for a single nodal variable..."
+echo "begin test_ts_nvar_rd" >> test.output
+${PREFIX} ${BINDIR}/test_ts_nvar_rd${SUFFIX} > ${SRCDIR}/test_ts_nvar_rd.dmp
+echo "end test_ts_nvar_rd" >> test.output
+
+ 
+echo "test_ts_partial_nvar - each thread writes data for a single nodal variable..."
+echo "begin test_ts_partial_nvar" >> test.output
+${PREFIX} ${BINDIR}/test_ts_partial_nvar${SUFFIX} >> test.output
+echo "end test_ts_partial_nvar" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" > ${SRCDIR}/test_ts_partial_nvar.dmp
+ 
+echo "test_ts_partial_nvar_rd - each thread reads data for a single nodal variable..."
+echo "begin test_ts_partial_nvar_rd" >> test.output
+${PREFIX} ${BINDIR}/test_ts_partial_nvar${SUFFIX} >> test.output
+echo "end test_ts_partial_nvar_rd" >> test.output
+${PREFIX} ${BINDIR}/test_ts_partial_nvar_rd${SUFFIX} > ${SRCDIR}/test_ts_partial_nvar_rd.dmp
+echo "test_ts_files - each thread creates its own file..."
+echo "begin test_ts_files" >> test.output
+${PREFIX} ${BINDIR}/test_ts_files${SUFFIX} >> test.output
+echo "end test_ts_files" >> test.output
+mv test0.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length > ${SRCDIR}/test.dmp
+mv test1.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length > ${SRCDIR}/test.dmp
+mv test2.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length > ${SRCDIR}/test.dmp
+mv test3.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length > ${SRCDIR}/test.dmp
+mv test4.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length > ${SRCDIR}/test.dmp
+mv test5.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length > ${SRCDIR}/test.dmp
+mv test6.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length > ${SRCDIR}/test.dmp
+mv test7.exo test.exo
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length > ${SRCDIR}/test.dmp
+echo "test_ts_errval - multiple threads calling ex_err and ex_get_err..."
+echo "begin test_ts_errval" >> test.output
+${PREFIX} ${BINDIR}/test_ts_errval${SUFFIX} >> test.output
+echo "end test_ts_errval" >> test.output
+fi
 

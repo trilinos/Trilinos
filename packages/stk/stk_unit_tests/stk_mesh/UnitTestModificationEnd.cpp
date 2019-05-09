@@ -803,7 +803,7 @@ TEST(BulkDataModificationEnd, test_invalid_add_node_sharing)
         stk::unit_test_util::BulkDataTester mesh(meta_data, MPI_COMM_WORLD);
         mesh.modification_begin();
 
-        stk::mesh::Entity node1 = mesh.declare_node(1, {&node_part});
+        stk::mesh::Entity node1 = mesh.declare_node(1, stk::mesh::ConstPartVector{&node_part});
 
         if ( myProcId == 2 )
         {
@@ -867,7 +867,7 @@ void build_one_hex_on_p0(stk::unit_test_util::BulkDataTester& bulkData, const st
 {
     bulkData.modification_begin();
     if (bulkData.parallel_rank() == 0) {
-        stk::mesh::Part& elem_part = metaData.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::HEX_8));
+        stk::mesh::Part& elem_part = metaData.get_topology_root_part(stk::topology::HEX_8);
         const int elemID = 1;
         stk::mesh::EntityIdVector nodeIDs = { 1, 2, 3, 4, 5, 6, 7, 8 };
         stk::mesh::declare_element(bulkData, elem_part, elemID, nodeIDs);
@@ -924,7 +924,7 @@ TEST(ModEndForEntityCreation, DISABLED_promotion_of_ghosted_to_shared)
     EXPECT_EQ( 6u, localCounts[stk::topology::FACE_RANK]);
     EXPECT_EQ( 1u, localCounts[stk::topology::ELEM_RANK]);
 
-    stk::mesh::Part& elem_part = metaData.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::HEX_8));
+    stk::mesh::Part& elem_part = metaData.get_topology_root_part(stk::topology::HEX_8);
     bulkData.modification_begin();
     if (p_rank == 1) {
         stk::mesh::EntityIdVector nodeIDs = {5, 6, 7, 8, 9, 10, 11, 12};

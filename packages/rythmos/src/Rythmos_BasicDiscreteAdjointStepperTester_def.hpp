@@ -94,7 +94,7 @@ BasicDiscreteAdjointStepperTester<Scalar>::getValidParameters() const
 
 template<class Scalar>
 bool BasicDiscreteAdjointStepperTester<Scalar>::testAdjointStepper(
-  Thyra::ModelEvaluator<Scalar>& adjointModel,
+  Thyra::ModelEvaluator<Scalar>& /* adjointModel */,
   const Ptr<IntegratorBase<Scalar> >& forwardIntegrator
   )
 {

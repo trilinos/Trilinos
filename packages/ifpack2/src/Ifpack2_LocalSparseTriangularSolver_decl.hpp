@@ -45,15 +45,9 @@
 
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include <type_traits>
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-namespace Tpetra {
-  // forward declaration of CrsMatrix
-  template<class S, class LO, class GO, class N, const bool classic> class CrsMatrix;
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Ifpack2 {
 
@@ -109,7 +103,7 @@ public:
                             global_ordinal_type, node_type> row_matrix_type;
   //! Specialization of Tpetra::CrsMatrix used by this class.
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type, false> crs_matrix_type;
+                            global_ordinal_type, node_type> crs_matrix_type;
 
   static_assert (std::is_same<MatrixType, row_matrix_type>::value,
                  "Ifpack2::LocalSparseTriangularSolver: The template parameter "
@@ -186,7 +180,7 @@ public:
   /// - "trisolver: reverse U" (\c bool): reverse storage for upper triangular matrices
   ///   to be more cache-efficient
   ///
-  /// If Trilinos_ENABLE_ShyLUHTS=TRUE, then these parameters are available:
+  /// If Trilinos_ENABLE_ShyLU_NodeHTS=TRUE, then these parameters are available:
   ///   - "trisolver: type" (\c string): One of {"Internal" (default), "HTS"}.
   ///   - "trisolver: block size" (\c int): The triangular matrix can usefully be
   ///     thought of as being blocked int little blocks of this size. Default
@@ -349,6 +343,15 @@ private:
 
   bool isInitialized_;
   bool isComputed_;
+  /// \brief True if and only if this class' internal storage
+  ///   representation of the matrix is not the same as A_.
+  ///
+  /// If true, then one of two things has happened:
+  ///
+  /// <ol>
+  /// <li> A_crs_ is actually a copy, with permuted / reversed storage. </li>
+  /// <li> htsImpl_->initialize(*A_crs_) has been called. </li>
+  /// </ol>
   bool isInternallyChanged_;
   bool reverseStorage_;
 
@@ -363,6 +366,14 @@ private:
   //! Optional HTS implementation.
   class HtsImpl;
   Teuchos::RCP<HtsImpl> htsImpl_;
+
+  /// \brief "L" if the matrix is locally lower triangular, "U" if the
+  ///   matrix is locally upper triangular, or "N" if unknown or
+  ///   otherwise.
+  std::string uplo_;
+  /// \brief "U" if the matrix is known to have an implicitly stored
+  ///   unit diagonal, else "N".
+  std::string diag_;
 
   /// \brief The purely local part of apply().
   ///
@@ -388,6 +399,12 @@ private:
               const Teuchos::ETransp mode,
               const scalar_type& alpha,
               const scalar_type& beta) const;
+
+  //! Replacement for Tpetra::CrsMatrix::localSolve.
+  void
+  localTriangularSolve (const MV& Y,
+                        MV& X,
+                        const Teuchos::ETransp mode) const;
 
   void initializeState();
 };

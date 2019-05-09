@@ -47,6 +47,9 @@
 #include <string>
 #include <map>
 
+#include "Intrepid2_HVOL_C0_FEM.hpp"
+#include "Intrepid2_HVOL_TRI_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_QUAD_Cn_FEM.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Intrepid2_Basis.hpp"
@@ -63,16 +66,20 @@
 
 #include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
 
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_Cn_FEM.hpp"
 
 #include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 
 #include "Intrepid2_HCURL_TRI_I1_FEM.hpp"
+#include "Intrepid2_HCURL_TRI_In_FEM.hpp"
 
 #include "Intrepid2_HCURL_TET_I1_FEM.hpp"
+#include "Intrepid2_HCURL_TET_In_FEM.hpp"
 
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
@@ -81,16 +88,17 @@
 #include "Intrepid2_HCURL_HEX_In_FEM.hpp"
 
 #include "Intrepid2_HDIV_TRI_I1_FEM.hpp"
+#include "Intrepid2_HDIV_TRI_In_FEM.hpp"
 
 #include "Intrepid2_HDIV_QUAD_I1_FEM.hpp"
 #include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
 
 #include "Intrepid2_HDIV_TET_I1_FEM.hpp"
+#include "Intrepid2_HDIV_TET_In_FEM.hpp"
 
 #include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 #include "Intrepid2_HDIV_HEX_In_FEM.hpp"
 
-#include "Intrepid2_L2_C0_FEM.hpp"
 
 namespace panzer {
 
@@ -129,7 +137,16 @@ namespace panzer {
     const Intrepid2::EPointType point_type = Intrepid2::POINTTYPE_EQUISPACED;
 
     if ( (basis_type == "Const") && (basis_order == 0) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_L2_C0_FEM<ExecutionSpace,OutputValueType,PointValueType>(cell_topology) );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HVOL_C0_FEM<ExecutionSpace,OutputValueType,PointValueType>(cell_topology) );
+
+    else if ( (basis_type == "HVol") && (basis_order == 0) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HVOL_C0_FEM<ExecutionSpace,OutputValueType,PointValueType>(cell_topology) );
+
+    else if ( (basis_type == "HVol") && (cell_type == "Quadrilateral") && (basis_order > 0) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HVOL_QUAD_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
+
+    else if ( (basis_type == "HVol") && (cell_type == "Triangle") && (basis_order > 0) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HVOL_TRI_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
@@ -156,16 +173,25 @@ namespace panzer {
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TET_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Tetrahedron") && (basis_order == 2) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TET_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TET_C2_FEM<ExecutionSpace,OutputValueType,PointValueType> );
+
+    else if ( (basis_type == "HGrad") && (cell_type == "Tetrahedron") && (basis_order > 2) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TET_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
 
     else if ( (basis_type == "HCurl") && (cell_type == "Tetrahedron") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_TET_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
+    else if ( (basis_type == "HCurl") && (cell_type == "Tetrahedron") && (basis_order > 1) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_TET_In_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
+
     else if ( (basis_type == "HDiv") && (cell_type == "Tetrahedron") && (basis_order == 1) )
-    { basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_TET_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> ); }
+      basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_TET_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> ); 
+
+    else if ( (basis_type == "HDiv") && (cell_type == "Tetrahedron") && (basis_order > 1) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_TET_In_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) ); 
 
     else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order == 1) )
-        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order == 2) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<ExecutionSpace,OutputValueType,PointValueType> );
@@ -184,25 +210,34 @@ namespace panzer {
 
     else if ( (basis_type == "HDiv") && (cell_type == "Quadrilateral") && (basis_order > 1) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_QUAD_In_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
-
+    
     else if ( (basis_type == "HGrad") && (cell_type == "Triangle") && (basis_order == 1) )
-        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
- 
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
+    
     else if ( (basis_type == "HGrad") && (cell_type == "Triangle") && (basis_order == 2) )
-        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<ExecutionSpace,OutputValueType,PointValueType> );
-
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<ExecutionSpace,OutputValueType,PointValueType> );
+    
+    else if ( (basis_type == "HGrad") && (cell_type == "Triangle") && (basis_order > 2) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
+    
     else if ( (basis_type == "HCurl") && (cell_type == "Triangle") && (basis_order == 1) )
-        basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_TRI_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_TRI_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
+    else if ( (basis_type == "HCurl") && (cell_type == "Triangle") && (basis_order > 1) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_TRI_In_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
+    
     else if ( (basis_type == "HDiv") && (cell_type == "Triangle") && (basis_order == 1) )
-        basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_TRI_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_TRI_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
+
+    else if ( (basis_type == "HDiv") && (cell_type == "Triangle") && (basis_order > 1) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_TRI_In_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Line") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_LINE_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Line") && (basis_order >= 2) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
-
+    
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
                                "Failed to create the requestedbasis with basis_type=\"" << basis_type << 
                                "\", basis_order=\"" << basis_order << "\", and cell_type=\"" << cell_type << "\"!\n");

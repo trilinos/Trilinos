@@ -57,13 +57,13 @@ template<class Real>
 class Objective_PDEOPT_Poisson : public ROL::Objective_SimOpt<Real> {
 private:
 
-  const Teuchos::RCP<PoissonData<Real> > data_;
+  const ROL::Ptr<PoissonData<Real> > data_;
   Real cost_control_;
   Real cost_state_;
 
 public:
 
-  Objective_PDEOPT_Poisson(const Teuchos::RCP<PoissonData<Real> > &data,
+  Objective_PDEOPT_Poisson(const ROL::Ptr<PoissonData<Real> > &data,
                            const Teuchos::RCP<Teuchos::ParameterList> &parlist)
       : data_(data) {
     cost_control_ = parlist->sublist("Problem").get("Control Cost", 1e0);
@@ -71,22 +71,22 @@ public:
   }
 
   Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    //Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-    //  (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(z)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > up =
+      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
+    //ROL::Ptr<const Tpetra::MultiVector<> > zp =
+    //  (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      (dynamic_cast<const ROL::StdVector<Real>&>(z)).getVector();
 
     Teuchos::Array<Real> dotvalU(1, 0);
     //Teuchos::Array<Real> dotvalZ(1, 0);
 
     // Set difference vector diffp to up.
-    Teuchos::RCP<Tpetra::MultiVector<> > diffp =
-      Teuchos::rcp(new Tpetra::MultiVector<>(*up, Teuchos::Copy));
+    ROL::Ptr<Tpetra::MultiVector<> > diffp =
+      ROL::makePtr<Tpetra::MultiVector<>>(*up, Teuchos::Copy);
     // Temporary matvec vector.
-    Teuchos::RCP<Tpetra::MultiVector<> > matvecp =
-      Teuchos::rcp(new Tpetra::MultiVector<>(*up, Teuchos::Copy));
+    ROL::Ptr<Tpetra::MultiVector<> > matvecp =
+      ROL::makePtr<Tpetra::MultiVector<>>(*up, Teuchos::Copy);
 
     // (u-ud)
     Real one(1);
@@ -113,14 +113,14 @@ public:
   }
 
   void gradient_1(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > gp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > gp =
+      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(g)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > up =
+      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
 
     // Set difference vector diffp to up.
-    Teuchos::RCP<Tpetra::MultiVector<> > diffp =
-      Teuchos::rcp(new Tpetra::MultiVector<>(*up, Teuchos::Copy));
+    ROL::Ptr<Tpetra::MultiVector<> > diffp =
+      ROL::makePtr<Tpetra::MultiVector<>>(*up, Teuchos::Copy);
     // (u-ud)
     Real one(1);
     diffp->update(-one, *(data_->getVecUd()), one);
@@ -130,13 +130,13 @@ public:
   }
 
   void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > gp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(g)).getVector();
+    ROL::Ptr<std::vector<Real> > gp =
+      (dynamic_cast<ROL::StdVector<Real>&>(g)).getVector();
     gp->assign(gp->size(),cost_control_);
-//    Teuchos::RCP<Tpetra::MultiVector<> > gp =
-//      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
-//    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-//      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+//    ROL::Ptr<Tpetra::MultiVector<> > gp =
+//      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(g)).getVector();
+//    ROL::Ptr<const Tpetra::MultiVector<> > zp =
+//      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
 //
 //    // alpha * R*z
 //    data_->getMatR()->apply(*zp, *gp);
@@ -145,10 +145,10 @@ public:
 
   void hessVec_11(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
                   const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > hvp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > hvp =
+      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(hv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
+      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 
     // M*v
     data_->getMatM()->apply(*vp, *hvp); // mass matrix product
@@ -168,10 +168,10 @@ public:
   void hessVec_22(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
                   const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     hv.zero();
-//    Teuchos::RCP<Tpetra::MultiVector<> > hvp =
-//      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-//    Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-//      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+//    ROL::Ptr<Tpetra::MultiVector<> > hvp =
+//      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(hv)).getVector();
+//    ROL::Ptr<const Tpetra::MultiVector<> > vp =
+//      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 //
 //    // alpha * R*v
 //    data_->getMatR()->apply(*vp, *hvp);

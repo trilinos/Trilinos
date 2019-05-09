@@ -40,7 +40,7 @@
 #include <stk_mesh/base/ModificationObserver.hpp>
 #include <stk_mesh/base/Types.hpp>      // for EntityRank
 #include <stk_topology/topology.hpp>    // for topology, etc
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_max
 #include <vector>                       // for vector
@@ -116,15 +116,15 @@ private:
 
 TEST(MeshModNotifier, testLocalEvents)
 {
-    TestListener listener(MPI_COMM_WORLD);
+    std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(MPI_COMM_WORLD);
     stk::mesh::ModificationNotifier notifier;
-    notifier.register_observer(&listener);
+    notifier.register_observer(listener);
 
-    EXPECT_EQ(0u, listener.get_local_entities_created_or_deleted(stk::topology::NODE_RANK));
+    EXPECT_EQ(0u, listener->get_local_entities_created_or_deleted(stk::topology::NODE_RANK));
 
     notifier.notify_local_entities_created_or_deleted(stk::topology::NODE_RANK);
 
-    EXPECT_EQ(1u, listener.get_local_entities_created_or_deleted(stk::topology::NODE_RANK));
+    EXPECT_EQ(1u, listener->get_local_entities_created_or_deleted(stk::topology::NODE_RANK));
 }
 
 TEST(MeshModNotifier, testGlobalEvents)
@@ -134,12 +134,12 @@ TEST(MeshModNotifier, testGlobalEvents)
     {
         int procId = stk::parallel_machine_rank(comm);
 
-        TestListener listener(comm);
+        std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(comm);
         stk::mesh::ModificationNotifier notifier;
-        notifier.register_observer(&listener);
+        notifier.register_observer(listener);
 
-        EXPECT_EQ(0u, listener.get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
-        EXPECT_EQ(0u, listener.get_global_buckets_changed(stk::topology::NODE_RANK));
+        EXPECT_EQ(0u, listener->get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
+        EXPECT_EQ(0u, listener->get_global_buckets_changed(stk::topology::NODE_RANK));
 
         if (procId == 0) {
             notifier.notify_local_entity_comm_info_changed(stk::topology::NODE_RANK);
@@ -147,8 +147,8 @@ TEST(MeshModNotifier, testGlobalEvents)
         }
         notifier.notify_finished_modification_end(comm);
 
-        EXPECT_EQ(1u, listener.get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
-        EXPECT_EQ(1u, listener.get_global_buckets_changed(stk::topology::NODE_RANK));
+        EXPECT_EQ(1u, listener->get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
+        EXPECT_EQ(1u, listener->get_global_buckets_changed(stk::topology::NODE_RANK));
     }
 }
 

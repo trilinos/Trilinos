@@ -1,28 +1,21 @@
 TRILINOS_DRIVER_SETUP()
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  SERIAL_RELEASE_MueLu_Matlab
+  SERIAL_MATLAB
   ctest_linux_nightly_serial_release_muelu_matlab_dorksaber.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
   TIMEOUT_MINUTES 330
 )
 
+# Refactor (kokkos) tests
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_RELEASE_Teuchos_YAML
-  ctest_linux_nightly_mpi_release_teuchos_yaml_dorksaber.cmake
+  MueLu_Kokkos_Refactor_OpenMP
+  ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_openmp_dorksaber.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
-  TIMEOUT_MINUTES 330
-)
-
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_RELEASE_MueLu_TpetraKernels
-  ctest_linux_nightly_mpi_release_tpetrakernels_experimental_dorksaber.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 330
-)
+  TIMEOUT_MINUTES 420
+  )
 
 
 

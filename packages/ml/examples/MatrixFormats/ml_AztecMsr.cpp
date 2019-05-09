@@ -208,7 +208,6 @@ AZ_MATRIX *BuildMatrix(struct partition_data *Partition)
   int    *reordered_glob = NULL, *cpntr = NULL, *Kn_data_org = NULL;
   int i, ii, jj, nx, gid, Nlocal, nz_ptr;
   int *reordered_externs = NULL;  /* Aztec thing */
-  size_t size;
 
   Nlocal = Partition->Nlocal;
   Kn_bindx = (int    *) malloc((27*Nlocal+5)*sizeof(int));
@@ -256,7 +255,7 @@ AZ_MATRIX *BuildMatrix(struct partition_data *Partition)
   Kn_mat = AZ_matrix_create( Nlocal );
   AZ_set_MSR(Kn_mat, Kn_bindx, Kn_val, Kn_data_org, 0, NULL, AZ_LOCAL);
 
-  size = sizeof(double)*(Nlocal+Partition->Nghost);
+  // size_t size = sizeof(double)*(Nlocal+Partition->Nghost);
 
   AZ_free(reordered_glob);
   AZ_free(reordered_externs);

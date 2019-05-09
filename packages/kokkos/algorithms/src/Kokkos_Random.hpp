@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -697,20 +697,27 @@ namespace Kokkos {
     typedef Random_XorShift64<DeviceType> generator_type;
     typedef DeviceType device_type;
 
+    KOKKOS_INLINE_FUNCTION
     Random_XorShift64_Pool() {
       num_states_ = 0;
     }
     Random_XorShift64_Pool(uint64_t seed) {
       num_states_ = 0;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       init(seed,DeviceType::max_hardware_threads());
+#else
+      init(seed,DeviceType::impl_max_hardware_threads());
+#endif
     }
 
+    KOKKOS_INLINE_FUNCTION
     Random_XorShift64_Pool(const Random_XorShift64_Pool& src):
       locks_(src.locks_),
       state_(src.state_),
       num_states_(src.num_states_)
     {}
 
+    KOKKOS_INLINE_FUNCTION
     Random_XorShift64_Pool operator = (const Random_XorShift64_Pool& src) {
       locks_ = src.locks_;
       state_ = src.state_;
@@ -751,7 +758,11 @@ namespace Kokkos {
 
     KOKKOS_INLINE_FUNCTION
     Random_XorShift64<DeviceType> get_state() const {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       const int i = DeviceType::hardware_thread_id();;
+#else
+      const int i = DeviceType::impl_hardware_thread_id();;
+#endif
       return Random_XorShift64<DeviceType>(state_(i),i);
     }
 
@@ -950,6 +961,7 @@ namespace Kokkos {
 
     typedef DeviceType device_type;
 
+    KOKKOS_INLINE_FUNCTION
     Random_XorShift1024_Pool() {
       num_states_ = 0;
     }
@@ -957,9 +969,14 @@ namespace Kokkos {
     inline
     Random_XorShift1024_Pool(uint64_t seed){
       num_states_ = 0;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       init(seed,DeviceType::max_hardware_threads());
+#else
+      init(seed,DeviceType::impl_max_hardware_threads());
+#endif
     }
 
+    KOKKOS_INLINE_FUNCTION
     Random_XorShift1024_Pool(const Random_XorShift1024_Pool& src):
       locks_(src.locks_),
       state_(src.state_),
@@ -967,6 +984,7 @@ namespace Kokkos {
       num_states_(src.num_states_)
     {}
 
+    KOKKOS_INLINE_FUNCTION
     Random_XorShift1024_Pool operator = (const Random_XorShift1024_Pool& src) {
       locks_ = src.locks_;
       state_ = src.state_;
@@ -1012,7 +1030,11 @@ namespace Kokkos {
 
     KOKKOS_INLINE_FUNCTION
     Random_XorShift1024<DeviceType> get_state() const {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       const int i = DeviceType::hardware_thread_id();
+#else
+      const int i = DeviceType::impl_hardware_thread_id();
+#endif
       return Random_XorShift1024<DeviceType>(state_,p_(i),i);
     };
 
@@ -1530,7 +1552,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,1,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0()))
+      if(idx<static_cast<IndexType>(a.extent(0)))
         a(idx) = Rand::draw(gen,range);
     }
     rand_pool.free_state(gen);
@@ -1555,8 +1577,8 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,2,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
           a(idx,k) = Rand::draw(gen,range);
       }
     }
@@ -1583,9 +1605,9 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,3,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
             a(idx,k,l) = Rand::draw(gen,range);
       }
     }
@@ -1611,10 +1633,10 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,4, IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
-            for(IndexType m=0;m<static_cast<IndexType>(a.dimension_3());m++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
+            for(IndexType m=0;m<static_cast<IndexType>(a.extent(3));m++)
               a(idx,k,l,m) = Rand::draw(gen,range);
       }
     }
@@ -1640,11 +1662,11 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,5,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
-            for(IndexType m=0;m<static_cast<IndexType>(a.dimension_3());m++)
-              for(IndexType n=0;n<static_cast<IndexType>(a.dimension_4());n++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
+            for(IndexType m=0;m<static_cast<IndexType>(a.extent(3));m++)
+              for(IndexType n=0;n<static_cast<IndexType>(a.extent(4));n++)
               a(idx,k,l,m,n) = Rand::draw(gen,range);
       }
     }
@@ -1670,12 +1692,12 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,6,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
-            for(IndexType m=0;m<static_cast<IndexType>(a.dimension_3());m++)
-              for(IndexType n=0;n<static_cast<IndexType>(a.dimension_4());n++)
-                for(IndexType o=0;o<static_cast<IndexType>(a.dimension_5());o++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
+            for(IndexType m=0;m<static_cast<IndexType>(a.extent(3));m++)
+              for(IndexType n=0;n<static_cast<IndexType>(a.extent(4));n++)
+                for(IndexType o=0;o<static_cast<IndexType>(a.extent(5));o++)
               a(idx,k,l,m,n,o) = Rand::draw(gen,range);
       }
     }
@@ -1701,13 +1723,13 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,7,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
-            for(IndexType m=0;m<static_cast<IndexType>(a.dimension_3());m++)
-              for(IndexType n=0;n<static_cast<IndexType>(a.dimension_4());n++)
-                for(IndexType o=0;o<static_cast<IndexType>(a.dimension_5());o++)
-                  for(IndexType p=0;p<static_cast<IndexType>(a.dimension_6());p++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
+            for(IndexType m=0;m<static_cast<IndexType>(a.extent(3));m++)
+              for(IndexType n=0;n<static_cast<IndexType>(a.extent(4));n++)
+                for(IndexType o=0;o<static_cast<IndexType>(a.extent(5));o++)
+                  for(IndexType p=0;p<static_cast<IndexType>(a.extent(6));p++)
               a(idx,k,l,m,n,o,p) = Rand::draw(gen,range);
       }
     }
@@ -1733,14 +1755,14 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,8,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
-            for(IndexType m=0;m<static_cast<IndexType>(a.dimension_3());m++)
-              for(IndexType n=0;n<static_cast<IndexType>(a.dimension_4());n++)
-                for(IndexType o=0;o<static_cast<IndexType>(a.dimension_5());o++)
-                  for(IndexType p=0;p<static_cast<IndexType>(a.dimension_6());p++)
-                    for(IndexType q=0;q<static_cast<IndexType>(a.dimension_7());q++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
+            for(IndexType m=0;m<static_cast<IndexType>(a.extent(3));m++)
+              for(IndexType n=0;n<static_cast<IndexType>(a.extent(4));n++)
+                for(IndexType o=0;o<static_cast<IndexType>(a.extent(5));o++)
+                  for(IndexType p=0;p<static_cast<IndexType>(a.extent(6));p++)
+                    for(IndexType q=0;q<static_cast<IndexType>(a.extent(7));q++)
               a(idx,k,l,m,n,o,p,q) = Rand::draw(gen,range);
       }
     }
@@ -1765,7 +1787,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,1,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0()))
+      if(idx<static_cast<IndexType>(a.extent(0)))
         a(idx) = Rand::draw(gen,begin,end);
     }
     rand_pool.free_state(gen);
@@ -1790,8 +1812,8 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,2,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
           a(idx,k) = Rand::draw(gen,begin,end);
       }
     }
@@ -1818,9 +1840,9 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,3,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
             a(idx,k,l) = Rand::draw(gen,begin,end);
       }
     }
@@ -1846,10 +1868,10 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,4,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
-            for(IndexType m=0;m<static_cast<IndexType>(a.dimension_3());m++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
+            for(IndexType m=0;m<static_cast<IndexType>(a.extent(3));m++)
               a(idx,k,l,m) = Rand::draw(gen,begin,end);
       }
     }
@@ -1875,11 +1897,11 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,5,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())){
-        for(IndexType l=0;l<static_cast<IndexType>(a.dimension_1());l++)
-          for(IndexType m=0;m<static_cast<IndexType>(a.dimension_2());m++)
-            for(IndexType n=0;n<static_cast<IndexType>(a.dimension_3());n++)
-              for(IndexType o=0;o<static_cast<IndexType>(a.dimension_4());o++)
+      if(idx<static_cast<IndexType>(a.extent(0))){
+        for(IndexType l=0;l<static_cast<IndexType>(a.extent(1));l++)
+          for(IndexType m=0;m<static_cast<IndexType>(a.extent(2));m++)
+            for(IndexType n=0;n<static_cast<IndexType>(a.extent(3));n++)
+              for(IndexType o=0;o<static_cast<IndexType>(a.extent(4));o++)
           a(idx,l,m,n,o) = Rand::draw(gen,begin,end);
       }
     }
@@ -1905,12 +1927,12 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,6,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
-            for(IndexType m=0;m<static_cast<IndexType>(a.dimension_3());m++)
-              for(IndexType n=0;n<static_cast<IndexType>(a.dimension_4());n++)
-                for(IndexType o=0;o<static_cast<IndexType>(a.dimension_5());o++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
+            for(IndexType m=0;m<static_cast<IndexType>(a.extent(3));m++)
+              for(IndexType n=0;n<static_cast<IndexType>(a.extent(4));n++)
+                for(IndexType o=0;o<static_cast<IndexType>(a.extent(5));o++)
           a(idx,k,l,m,n,o) = Rand::draw(gen,begin,end);
       }
     }
@@ -1937,13 +1959,13 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,7,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
-            for(IndexType m=0;m<static_cast<IndexType>(a.dimension_3());m++)
-              for(IndexType n=0;n<static_cast<IndexType>(a.dimension_4());n++)
-                for(IndexType o=0;o<static_cast<IndexType>(a.dimension_5());o++)
-                  for(IndexType p=0;p<static_cast<IndexType>(a.dimension_6());p++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
+            for(IndexType m=0;m<static_cast<IndexType>(a.extent(3));m++)
+              for(IndexType n=0;n<static_cast<IndexType>(a.extent(4));n++)
+                for(IndexType o=0;o<static_cast<IndexType>(a.extent(5));o++)
+                  for(IndexType p=0;p<static_cast<IndexType>(a.extent(6));p++)
             a(idx,k,l,m,n,o,p) = Rand::draw(gen,begin,end);
       }
     }
@@ -1969,14 +1991,14 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,8,IndexType>{
     typename RandomPool::generator_type gen = rand_pool.get_state();
     for(IndexType j=0;j<loops;j++) {
       const IndexType idx = i*loops+j;
-      if(idx<static_cast<IndexType>(a.dimension_0())) {
-        for(IndexType k=0;k<static_cast<IndexType>(a.dimension_1());k++)
-          for(IndexType l=0;l<static_cast<IndexType>(a.dimension_2());l++)
-            for(IndexType m=0;m<static_cast<IndexType>(a.dimension_3());m++)
-              for(IndexType n=0;n<static_cast<IndexType>(a.dimension_4());n++)
-                for(IndexType o=0;o<static_cast<IndexType>(a.dimension_5());o++)
-                  for(IndexType p=0;p<static_cast<IndexType>(a.dimension_6());p++)
-                    for(IndexType q=0;q<static_cast<IndexType>(a.dimension_7());q++)
+      if(idx<static_cast<IndexType>(a.extent(0))) {
+        for(IndexType k=0;k<static_cast<IndexType>(a.extent(1));k++)
+          for(IndexType l=0;l<static_cast<IndexType>(a.extent(2));l++)
+            for(IndexType m=0;m<static_cast<IndexType>(a.extent(3));m++)
+              for(IndexType n=0;n<static_cast<IndexType>(a.extent(4));n++)
+                for(IndexType o=0;o<static_cast<IndexType>(a.extent(5));o++)
+                  for(IndexType p=0;p<static_cast<IndexType>(a.extent(6));p++)
+                    for(IndexType q=0;q<static_cast<IndexType>(a.extent(7));q++)
               a(idx,k,l,m,n,o,p,q) = Rand::draw(gen,begin,end);
       }
     }
@@ -1988,14 +2010,14 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,8,IndexType>{
 
 template<class ViewType, class RandomPool, class IndexType = int64_t>
 void fill_random(ViewType a, RandomPool g, typename ViewType::const_value_type range) {
-  int64_t LDA = a.dimension_0();
+  int64_t LDA = a.extent(0);
   if(LDA>0)
     parallel_for((LDA+127)/128,Impl::fill_random_functor_range<ViewType,RandomPool,128,ViewType::Rank,IndexType>(a,g,range));
 }
 
 template<class ViewType, class RandomPool, class IndexType = int64_t>
 void fill_random(ViewType a, RandomPool g, typename ViewType::const_value_type begin,typename ViewType::const_value_type end ) {
-  int64_t LDA = a.dimension_0();
+  int64_t LDA = a.extent(0);
   if(LDA>0)
     parallel_for((LDA+127)/128,Impl::fill_random_functor_begin_end<ViewType,RandomPool,128,ViewType::Rank,IndexType>(a,g,begin,end));
 }

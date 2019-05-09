@@ -82,10 +82,11 @@ namespace panzer {
       */
     template <typename CoordinateArray,typename PointArray>
     void evaluateValues(const CoordinateArray & node_coords,
-                        const PointArray & point_coords)
+                        const PointArray & in_point_coords,
+                        const int in_num_cells = -1)
     { copyNodeCoords(node_coords);
-      copyPointCoords(point_coords);
-      evaluateValues(); }
+      copyPointCoords(in_point_coords);
+      evaluateValues(in_num_cells); }
 
     /** Evaluate teh jacobian and derivative information at the requested reference
       * points. This version allows a shallow copy of the vertex coordinates. 
@@ -96,14 +97,15 @@ namespace panzer {
       */ 
     template <typename PointArray>
     void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coords,
-                        const PointArray & point_coords, 
-                        bool shallow_copy_nodes)
+                        const PointArray & in_point_coords, 
+                        bool shallow_copy_nodes,
+                        const int in_num_cells = -1)
     { if(shallow_copy_nodes)
         node_coordinates = node_coords;
       else
         copyNodeCoords(node_coords);
-      copyPointCoords(point_coords);
-      evaluateValues(); }
+      copyPointCoords(in_point_coords);
+      evaluateValues(in_num_cells); }
 
     //! Return reference cell coordinates this class uses (IP,Dim) sized
     PHX::MDField<Scalar,IP,Dim> & getRefCoordinates() const 
@@ -127,7 +129,7 @@ namespace panzer {
     Teuchos::RCP<const panzer::PointRule> point_rule;
 
   private:
-    void evaluateValues();
+    void evaluateValues(const int in_num_cells);
 
     template <typename CoordinateArray>
     void copyNodeCoords(const CoordinateArray& in_node_coords);

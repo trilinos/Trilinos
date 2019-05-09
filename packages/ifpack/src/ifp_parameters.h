@@ -88,11 +88,17 @@ struct param_struct {
 
 Teuchos::map<std::string,parameter>& key_map();
 
-IFPACK_DEPRECATED void initialize_string_map();
+// This was marked as IFPACK_DEPRECATED for a very long time,
+// but the function never went away and was still used in Ifpack.
+// Please consider it still marked as deprecated.
+void initialize_string_map();
 
 std::string upper_case(const std::string& s);
 
-IFPACK_DEPRECATED void set_parameters(const Teuchos::ParameterList& parameterlist,
+// This was marked as IFPACK_DEPRECATED for a very long time,
+// but the function never went away and was still used in Ifpack.
+// Please consider it still marked as deprecated.
+void set_parameters(const Teuchos::ParameterList& parameterlist,
                     param_struct& params,
                     bool cerr_warning_if_unused=false);
 

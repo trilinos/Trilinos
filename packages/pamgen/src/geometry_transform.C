@@ -4,7 +4,7 @@
 namespace PAMGEN_NEVADA {
 
 /*****************************************************************************/
-void Geometry_Transform::Display_Class(std::ostream& s, const std::string &indent)
+void Geometry_Transform::Display_Class(std::ostream& s, const std::string &/* indent */)
 /*****************************************************************************/
 {
   s << std::endl 

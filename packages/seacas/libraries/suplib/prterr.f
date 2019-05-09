@@ -1,23 +1,23 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C         
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,26 +33,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C=======================================================================
       SUBROUTINE PRTERR (ERRTYP, ERRMSG)
 C=======================================================================
-C$Id: prterr.f,v 1.3 2009/03/25 12:46:02 gdsjaar Exp $
-C$Log: prterr.f,v $
-CRevision 1.3  2009/03/25 12:46:02  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.2  1993/11/18 21:29:19  gdsjaar
-CAdded unknown message print
-C
-c Revision 1.1.1.1  1990/08/14  16:16:13  gdsjaar
-c Testing
-c
-c Revision 1.1  90/08/14  16:16:12  gdsjaar
-c Initial revision
-c 
-c Revision 1.1  90/08/09  13:39:44  gdsjaar
-c Initial revision
-c 
-
 C   --*** PRTERR *** (ETCLIB) Print error message
-C   --   Written by Amy Gilkey - revised 02/19/88
 C   --
 C   --PRTERR prints an error message.
 C   --
@@ -71,7 +52,7 @@ C   --   ERRMSG - IN - the error message
    10    FORMAT (' FATAL ERROR - ', A)
       ELSE IF (ERRTYP .EQ. 'PROGRAM') THEN
          WRITE (*, *)
-         WRITE (*, 20) ERRMSG, ' - call code sponsor'
+         WRITE (*, 20) ERRMSG, ' - email code sponsor'
    20    FORMAT (' PROGRAM ERROR - ', A, A)
       ELSE IF (ERRTYP .EQ. 'ERROR') THEN
          WRITE (*, *)

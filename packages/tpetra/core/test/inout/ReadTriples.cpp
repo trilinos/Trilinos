@@ -42,6 +42,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Details_ReadTriples.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Map.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #ifdef HAVE_TPETRACORE_MPI
 #  include "Teuchos_DefaultMpiComm.hpp"
@@ -55,7 +56,7 @@ using Teuchos::Comm;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using std::endl;
-typedef long long GO;
+typedef ::Tpetra::Map<>::global_ordinal_type GO;
 
 // Type of each (row index, column index) pair in the std::map we use
 //   in this test for representing a sparse matrix.

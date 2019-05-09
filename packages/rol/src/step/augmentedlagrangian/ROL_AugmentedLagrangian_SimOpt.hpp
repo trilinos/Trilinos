@@ -49,7 +49,7 @@
 #include "ROL_QuadraticPenalty_SimOpt.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include <iostream>
 
 /** @ingroup func_group
@@ -97,18 +97,18 @@ template <class Real>
 class AugmentedLagrangian_SimOpt : public Objective_SimOpt<Real> {
 private:
   // Required for Augmented Lagrangian definition
-  const Teuchos::RCP<Objective_SimOpt<Real> > obj_;
-  Teuchos::RCP<QuadraticPenalty_SimOpt<Real> > pen_;
+  const ROL::Ptr<Objective_SimOpt<Real> > obj_;
+  ROL::Ptr<QuadraticPenalty_SimOpt<Real> > pen_;
   Real penaltyParameter_;
 
   // Auxiliary storage
-  Teuchos::RCP<Vector<Real> > dualSimVector_;
-  Teuchos::RCP<Vector<Real> > dualOptVector_;
+  ROL::Ptr<Vector<Real> > dualSimVector_;
+  ROL::Ptr<Vector<Real> > dualOptVector_;
 
   // Objective and constraint evaluations
   Real fval_;
-  Teuchos::RCP<Vector<Real> > gradient1_;
-  Teuchos::RCP<Vector<Real> > gradient2_;
+  ROL::Ptr<Vector<Real> > gradient1_;
+  ROL::Ptr<Vector<Real> > gradient2_;
 
   // Evaluation counters
   int nfval_;
@@ -123,14 +123,14 @@ private:
   bool isGradient2Computed_;
 
 public:
-  AugmentedLagrangian_SimOpt(const Teuchos::RCP<Objective_SimOpt<Real> > &obj,
-                             const Teuchos::RCP<Constraint_SimOpt<Real> > &con,
+  AugmentedLagrangian_SimOpt(const ROL::Ptr<Objective_SimOpt<Real> > &obj,
+                             const ROL::Ptr<Constraint_SimOpt<Real> > &con,
                              const Vector<Real> &multiplier,
                              const Real penaltyParameter,
                              const Vector<Real> &simVec,
                              const Vector<Real> &optVec,
                              const Vector<Real> &conVec,
-                             Teuchos::ParameterList &parlist)
+                             ROL::ParameterList &parlist)
     : obj_(obj), penaltyParameter_(penaltyParameter),
       fval_(0), nfval_(0), ngval_(0), isValueComputed_(false),
       isGradient1Computed_(false), isGradient2Computed_(false) {
@@ -140,11 +140,11 @@ public:
     dualSimVector_  = simVec.dual().clone();
     dualOptVector_  = optVec.dual().clone();
 
-    Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
+    ROL::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
     scaleLagrangian_  = sublist.get("Use Scaled Augmented Lagrangian", false);
     int HessianApprox = sublist.get("Level of Hessian Approximation",  0);
 
-    pen_ = Teuchos::rcp(new QuadraticPenalty_SimOpt<Real>(con,multiplier,penaltyParameter,simVec,optVec,conVec,scaleLagrangian_,HessianApprox));
+    pen_ = ROL::makePtr<QuadraticPenalty_SimOpt<Real>>(con,multiplier,penaltyParameter,simVec,optVec,conVec,scaleLagrangian_,HessianApprox);
   }
 
   virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {

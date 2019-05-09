@@ -2,6 +2,36 @@
 #define MOERTEL_CONFIG_H
 
 /* Define if we have Exodus in Seacas */
+/* DEPRECATED */
 #cmakedefine MOERTEL_HAVE_EXODUS
+/* DEPRECATED */
+#cmakedefine MOERTEL_HAVE_MORKON
+
+#cmakedefine HAVE_MOERTEL_MPI
+#cmakedefine HAVE_MOERTEL_SEACAS
+#cmakedefine HAVE_MOERTEL_EPETRA
+#cmakedefine HAVE_MOERTEL_EPETRAEXT
+#cmakedefine HAVE_MOERTEL_AMESOS
+#cmakedefine HAVE_MOERTEL_AZTECOO
+#cmakedefine HAVE_MOERTEL_IFPACK
+#cmakedefine HAVE_MOERTEL_ML
+#cmakedefine HAVE_MOERTEL_TPETRA
+#cmakedefine HAVE_MOERTEL_KOKKOS
+#cmakedefine HAVE_MOERTEL_MORKON
+
+/* ETI */
+#cmakedefine HAVE_MOERTEL_EXPLICIT_INSTANTIATION
+
+/* ETI Types supported */
+#cmakedefine HAVE_MOERTEL_INST_DOUBLE_INT_INT
+#cmakedefine HAVE_MOERTEL_INST_DOUBLE_INT_LONGINT
+#cmakedefine HAVE_MOERTEL_INST_DOUBLE_INT_LONGLONGINT
+#cmakedefine HAVE_MOERTEL_INST_FLOAT_INT_INT
+
+/* Nodes supported */
+#cmakedefine HAVE_MOERTEL_SERIAL
+#cmakedefine HAVE_MOERTEL_PTHREAD
+#cmakedefine HAVE_MOERTEL_OPENMP
+#cmakedefine HAVE_MOERTEL_CUDA
 
 #endif

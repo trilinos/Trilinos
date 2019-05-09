@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,6 +40,10 @@
 #include <string>  // for string
 #include <vector>  // for vector
 
+#ifdef SEACAS_HAVE_MPI
+#include <Ioss_SerializeIO.h>
+#endif
+
 namespace Ioss {
 
   class ParallelUtils
@@ -60,6 +64,13 @@ namespace Ioss {
      * If '!sync_parallel', then don't push to other processors.
      */
     bool get_environment(const std::string &name, std::string &value, bool sync_parallel) const;
+
+    /*!
+     * See if any external properties specified via the
+     * IOSS_PROPERTIES environment variable.  If any found, add to
+     * `properties`.
+     */
+    void add_environment_properties(Ioss::PropertyManager &properties);
 
     /*!
      * Returns 'true' if 'name' is defined in the environment.
@@ -93,6 +104,14 @@ namespace Ioss {
      */
     void attribute_reduction(int length, char buffer[]) const;
 
+    /*!
+     * Generate a "globally unique id" which is unique over all entities
+     * of a specific type over all processors.
+     * Used by some applications for uniquely identifying an entity.
+     * If `rank` == -1, then use parallel_rank; otherwise use rank
+     */
+    int64_t generate_guid(size_t id, int rank = -1) const;
+
     /*! Return min, max, average memory used by any process */
     void memory_stats(int64_t &min, int64_t &max, int64_t &avg) const;
 
@@ -109,14 +128,17 @@ namespace Ioss {
     void global_count(const Int64Vector &local_counts, Int64Vector &global_counts) const;
 
     template <typename T> T global_minmax(T local_minmax, MinMax which) const;
+
     template <typename T>
     void global_array_minmax(std::vector<T> &local_minmax, MinMax which) const;
-    template <typename T>
-    void global_array_minmax(T *local_minmax, size_t count, MinMax which) const;
 
     template <typename T> void gather(T my_value, std::vector<T> &result) const;
     template <typename T> void all_gather(T my_value, std::vector<T> &result) const;
     template <typename T> void gather(std::vector<T> &my_values, std::vector<T> &result) const;
+    template <typename T> void all_gather(std::vector<T> &my_values, std::vector<T> &result) const;
+    template <typename T>
+    int gather(int vals_count, int size_per_val, std::vector<T> &my_values,
+               std::vector<T> &result) const;
 
     void progress(const std::string &output) const;
 
@@ -124,26 +146,15 @@ namespace Ioss {
     MPI_Comm communicator_;
   };
 
-  inline int power_2(int count)
-  {
-    // Return the power of two which is equal to or greater than 'count'
-    // count = 15 -> returns 16
-    // count = 16 -> returns 16
-    // count = 17 -> returns 32
-
-    // Use brute force...
-    int pow2 = 1;
-    while (pow2 < count) {
-      pow2 *= 2;
-    }
-    return pow2;
-  }
-
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   inline MPI_Datatype mpi_type(double /*dummy*/) { return MPI_DOUBLE; }
+  inline MPI_Datatype mpi_type(float /*dummy*/) { return MPI_FLOAT; }
   inline MPI_Datatype mpi_type(int /*dummy*/) { return MPI_INT; }
-  inline MPI_Datatype mpi_type(int64_t /*dummy*/) { return MPI_LONG_LONG_INT; }
+  inline MPI_Datatype mpi_type(char /*dummy*/) { return MPI_CHAR; }
+  inline MPI_Datatype mpi_type(long int /*dummy*/) { return MPI_LONG_LONG_INT; }
+  inline MPI_Datatype mpi_type(long long int /*dummy*/) { return MPI_LONG_LONG_INT; }
   inline MPI_Datatype mpi_type(unsigned int /*dummy*/) { return MPI_UNSIGNED; }
+  inline MPI_Datatype mpi_type(unsigned long int /*dummy*/) { return MPI_UNSIGNED_LONG; }
 
   template <typename T>
   int MY_Alltoallv64(const std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts,
@@ -164,14 +175,15 @@ namespace Ioss {
         std::ostringstream errmsg;
         errmsg << "ERROR: The number of items that must be communicated via MPI calls from\n"
                << "       processor " << my_processor << " to processor " << i << " is "
-               << sendcounts[i] << "\n       which exceeds the storage capacity of the integers "
-                                   "used by MPI functions.\n";
+               << sendcounts[i]
+               << "\n       which exceeds the storage capacity of the integers "
+                  "used by MPI functions.\n";
         std::cerr << errmsg.str();
         exit(EXIT_FAILURE);
       }
     }
 
-    size_t pow_2 = power_2(processor_count);
+    size_t pow_2 = Ioss::Utils::power_2(processor_count);
 
     for (size_t i = 1; i < pow_2; i++) {
       MPI_Status status{};
@@ -255,5 +267,45 @@ namespace Ioss {
                          mpi_type(T(0)), comm);
   }
 #endif
+
+  template <typename T>
+  void ParallelUtils::global_array_minmax(std::vector<T> &local_minmax, MinMax which) const
+  {
+#ifdef SEACAS_HAVE_MPI
+    if (parallel_size() > 1 && !local_minmax.empty()) {
+      if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
+        std::ostringstream errmsg;
+        errmsg << "Attempting mpi while in barrier owned by " << Ioss::SerializeIO::getOwner();
+        IOSS_ERROR(errmsg);
+      }
+
+      std::vector<T> maxout(local_minmax.size());
+      MPI_Op         oper = MPI_MAX;
+      if (which == Ioss::ParallelUtils::DO_MAX) {
+        oper = MPI_MAX;
+      }
+      else if (which == Ioss::ParallelUtils::DO_MIN) {
+        oper = MPI_MIN;
+      }
+      else if (which == Ioss::ParallelUtils::DO_SUM) {
+        oper = MPI_SUM;
+      }
+
+      const int success =
+          MPI_Allreduce((void *)(local_minmax.data()), maxout.data(),
+                        static_cast<int>(local_minmax.size()), mpi_type(T()), oper, communicator_);
+      if (success != MPI_SUCCESS) {
+        std::ostringstream errmsg;
+        errmsg << "Ioss::ParallelUtils::global_array_minmax - MPI_Allreduce failed";
+        IOSS_ERROR(errmsg);
+      }
+      // Now copy back into passed in array...
+      for (size_t i = 0; i < local_minmax.size(); i++) {
+        local_minmax[i] = maxout[i];
+      }
+    }
+#endif
+  }
+
 } // namespace Ioss
 #endif

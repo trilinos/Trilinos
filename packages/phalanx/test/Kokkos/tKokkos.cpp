@@ -44,14 +44,16 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_TypeStrings.hpp"
 #include <Phalanx_any.hpp>
 #include <unordered_map>
 #include <map>
 
 #include "Sacado.hpp"
 #include "Kokkos_View_Fad.hpp"
-#include "Kokkos_DynRankView.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
+#include "Kokkos_DynRankView.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
 #include "Kokkos_TaskScheduler.hpp"
@@ -83,7 +85,7 @@ namespace phalanx_test {
     KOKKOS_INLINE_FUNCTION
     void operator () (const int i) const
     {
-      for (int ip = 0; ip < static_cast<int>(rho_.dimension_1()); ++ip) {
+      for (int ip = 0; ip < static_cast<int>(rho_.extent(1)); ++ip) {
 	rho_(i,ip) = k_ * P_(i,ip) / T_(i,ip);
       }
     }
@@ -172,7 +174,7 @@ namespace phalanx_test {
     KOKKOS_INLINE_FUNCTION
     void operator () (const int i) const
     {
-      for (int ip = 0; ip < static_cast<int>(rho_.dimension_1()); ++ip) {
+      for (int ip = 0; ip < static_cast<int>(rho_.extent(1)); ++ip) {
 	rho_(i,ip) = k_(0) * P_(i,ip) / T_(i,ip);
       }
     }
@@ -320,8 +322,8 @@ namespace phalanx_test {
     using execution_space = PHX::exec_space;
     using memory_space = PHX::Device::memory_space;
     using policy_type = Kokkos::TaskScheduler<execution_space>;
-    const unsigned memory_capacity = 3 * sizeof(TaskDep<execution_space>);    
-    policy_type policy(memory_space(),memory_capacity);    
+    const unsigned memory_span = 3 * sizeof(TaskDep<execution_space>);    
+    policy_type policy(memory_space(),memory_span);    
     auto f1 = policy.host_spawn(TaskDep<execution_space>(policy,3),Kokkos::TaskSingle);
     auto f2 = policy.host_spawn(TaskDep<execution_space>(policy,2,f1),Kokkos::TaskSingle, f1);
     auto f3 = policy.host_spawn(TaskDep<execution_space>(policy,1,f2),Kokkos::TaskSingle, f2);
@@ -350,7 +352,7 @@ namespace phalanx_test {
     KOKKOS_INLINE_FUNCTION
     void operator () (const int i) const
     {
-      const int ip_size = static_cast<int>(view_.dimension_1());
+      const int ip_size = static_cast<int>(view_.extent(1));
       for (int ip = 0; ip < ip_size; ++ip) {
 	view_(i,ip) = k_;
       }
@@ -448,10 +450,10 @@ namespace phalanx_test {
     TaskWrap<execution_space,ComputeRho<double,execution_space>> n3(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
 
     // Assign memory pool size
-    //const unsigned memory_capacity = sizeof(n1) + sizeof(n2) + sizeof(n3);
-    //const unsigned memory_capacity = n1.taskSize() + n2.taskSize() + n3.taskSize();
-    const unsigned memory_capacity = 1000000;
-    policy_type policy(memory_space(),memory_capacity);
+    //const unsigned memory_span = sizeof(n1) + sizeof(n2) + sizeof(n3);
+    //const unsigned memory_span = n1.taskSize() + n2.taskSize() + n3.taskSize();
+    const unsigned memory_span = 1000000;
+    policy_type policy(memory_space(),memory_span);
 
     // test that dependent_futures can leave scope
     {
@@ -531,9 +533,9 @@ namespace phalanx_test {
   TEUCHOS_UNIT_TEST(kokkos, DynRankView)
   { 
     using array_type = 
-      Kokkos::Experimental::DynRankView<int, PHX::exec_space>;
+      Kokkos::DynRankView<int, PHX::exec_space>;
 
-    //using val_t = Kokkos::Experimental::DynRankView<int, PHX::exec_space>::value_type;
+    //using val_t = Kokkos::DynRankView<int, PHX::exec_space>::value_type;
 
     array_type a("a",10,4);    
     Kokkos::parallel_for(a.extent(0),AssignValue<array_type>(a));
@@ -569,11 +571,11 @@ namespace phalanx_test {
     // Create a DynRankView from a compiletime View
     {
       Kokkos::View<double**,PHX::Device> d("d",100,4);
-      Kokkos::DynRankView<double,PHX::Device,Kokkos::MemoryUnmanaged> e(d.ptr_on_device(),100,4);
+      Kokkos::DynRankView<double,PHX::Device,Kokkos::MemoryUnmanaged> e(d.data(),100,4);
       TEST_EQUALITY(d.extent(0),e.extent(0));
       TEST_EQUALITY(d.extent(1),e.extent(1));
 
-      // Interesting. ptr_on_device returns pointer before first
+      // Interesting. data returns pointer before first
       // touch. Would have expected test failure below since memory
       // not allocated yet.
       
@@ -679,7 +681,7 @@ namespace phalanx_test {
 
       TEST_EQUALITY(c.rank(),2);
       TEST_EQUALITY(Kokkos::dimension_scalar(c),2);
-      TEST_EQUALITY(c.implementation_map().dimension_scalar(),2);
+      TEST_EQUALITY(c.impl_map().dimension_scalar(),2);
 
       // verify for bracket access
       double tol = std::numeric_limits<double>::epsilon() * 100.0;
@@ -717,4 +719,165 @@ namespace phalanx_test {
     TEST_EQUALITY(a.extent(5),1);
   }
 
+  class FillJacobian {
+    KokkosSparse::CrsMatrix<double,int,PHX::Device> Jacobian;
+    
+  public:
+    typedef PHX::Device execution_space;
+    FillJacobian(KokkosSparse::CrsMatrix<double,int,PHX::Device> inJ)
+      : Jacobian(inJ)
+    {}
+    KOKKOS_INLINE_FUNCTION
+    void operator () (const int i) const
+    {
+      auto row = Jacobian.row(i);
+      auto length = row.length;
+      int indices[3];
+      double values[3];
+      // Fill the cols in reverse order to see if the sumInto puts
+      // thingsinto the right place
+      for (int j=length-1; j > -1; --j) {
+        indices[j] = row.colidx(j);
+        values[j] = (double) indices[j];
+      }
+      Jacobian.sumIntoValues(i,indices,length,values,false,true);
+    }
+  };
+
+  // Test CrsMatrix used in example
+  TEUCHOS_UNIT_TEST(kokkos, CrsMatrix)
+  {
+    std::string name = "CrsMatrix";
+    const int num_rows = 10;
+    const size_t nnz = 21;
+
+    using Kokkos::View;
+    View<typename Kokkos::StaticCrsGraph<int,Kokkos::LayoutLeft,PHX::Device>::size_type*,PHX::Device> row_offsets("row_offsets",num_rows+1);
+
+    auto host_row_offsets = Kokkos::create_mirror_view(row_offsets);
+    host_row_offsets(0) = 0;
+    host_row_offsets(1) = 3;
+    host_row_offsets(2) = 5;
+    host_row_offsets(3) = 7;
+    host_row_offsets(4) = 9;
+    host_row_offsets(5) = 11;
+    host_row_offsets(6) = 13;
+    host_row_offsets(7) = 15;
+    host_row_offsets(8) = 17;
+    host_row_offsets(9) = 19;
+    host_row_offsets(10) = 21;
+
+    Kokkos::deep_copy(row_offsets,host_row_offsets);
+
+    View<int*,PHX::Device> col_ids("col_ids",nnz);
+    auto host_col_ids = Kokkos::create_mirror_view(col_ids);
+
+    host_col_ids(0) = 0;  host_col_ids(1) = 1; host_col_ids(2) = 9; // row 0
+    host_col_ids(3) = 1;  host_col_ids(4) = 2; // row 1
+    host_col_ids(5) = 2;  host_col_ids(6) = 3; // row 2
+    host_col_ids(7) = 3;  host_col_ids(8) = 4; // row 3
+    host_col_ids(9) = 4;  host_col_ids(10) = 5; // row 4
+    host_col_ids(11) = 5; host_col_ids(12) = 6; // row 5
+    host_col_ids(13) = 6; host_col_ids(14) = 7; // row 6
+    host_col_ids(15) = 7; host_col_ids(16) = 8; // row 7
+    host_col_ids(17) = 8; host_col_ids(18) = 9; // row 8
+    host_col_ids(19) = 1; host_col_ids(20) = 9; // row 9
+
+    Kokkos::deep_copy(col_ids, host_col_ids);
+
+    // CrsMatrix requires LayoutLeft!
+    Kokkos::StaticCrsGraph<int,Kokkos::LayoutLeft,PHX::Device> g(col_ids,row_offsets);
+    KokkosSparse::CrsMatrix<double,int,PHX::Device> J("Jacobian",g);
+
+    TEST_EQUALITY(J.numRows(),10);
+    TEST_EQUALITY(J.numCols(),10);
+    TEST_EQUALITY(J.nnz(),21);
+
+    Kokkos::deep_copy(J.values,0.0);
+    Kokkos::parallel_for(J.numRows(),FillJacobian(J));
+    auto host_J_values = Kokkos::create_mirror_view(J.values);
+    Kokkos::deep_copy(host_J_values,J.values);
+    Kokkos::fence();
+
+    TEST_EQUALITY(J.rowConst(0).length,3);
+    TEST_EQUALITY(J.rowConst(0).colidx(2),9);
+    
+    // Values should be equal to the column index
+    double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
+    TEST_EQUALITY(J.rowConst(0).length,3);
+    TEST_EQUALITY(J.rowConst(0).colidx(0),0);
+    TEST_EQUALITY(J.rowConst(0).colidx(1),1);
+    TEST_EQUALITY(J.rowConst(0).colidx(2),9);
+    TEST_FLOATING_EQUALITY(J.rowConst(0).value(0),0.0,tol);
+    TEST_FLOATING_EQUALITY(J.rowConst(0).value(1),1.0,tol);
+    TEST_FLOATING_EQUALITY(J.rowConst(0).value(2),9.0,tol);
+
+    TEST_EQUALITY(J.rowConst(5).length,2);
+    TEST_EQUALITY(J.rowConst(5).colidx(0),5);
+    TEST_EQUALITY(J.rowConst(5).colidx(1),6);
+    TEST_FLOATING_EQUALITY(J.rowConst(5).value(0),5.0,tol);
+    TEST_FLOATING_EQUALITY(J.rowConst(5).value(1),6.0,tol);
+
+    TEST_EQUALITY(J.rowConst(8).length,2);
+    TEST_EQUALITY(J.rowConst(8).colidx(0),8);
+    TEST_EQUALITY(J.rowConst(8).colidx(1),9);
+    TEST_FLOATING_EQUALITY(J.rowConst(8).value(0),8.0,tol);
+    TEST_FLOATING_EQUALITY(J.rowConst(8).value(1),9.0,tol);
+
+    TEST_EQUALITY(J.rowConst(9).length,2);
+    TEST_EQUALITY(J.rowConst(9).colidx(0),1);
+    TEST_EQUALITY(J.rowConst(9).colidx(1),9);
+    TEST_FLOATING_EQUALITY(J.rowConst(9).value(0),1.0,tol);
+    TEST_FLOATING_EQUALITY(J.rowConst(9).value(1),9.0,tol);
+  }
+
+  TEUCHOS_UNIT_TEST(kokkos, DeviceLayoutTypes)
+  {
+    using RealType = double;
+    using FadType = Sacado::Fad::DFad<double>;
+
+    // Get the layout in the view
+    using scalar_view_layout = PHX::View<RealType**>::array_layout;
+    using fad_view_layout = PHX::View<FadType**>::array_layout;
+
+    // Layout from PHX::DevLayout
+    using scalar_dev_layout = typename PHX::DevLayout<RealType**>::type;
+    using fad_dev_layout = typename PHX::DevLayout<FadType**>::type;
+
+    // Expected layout based on architecture.
+    using DefaultDevLayout = PHX::exec_space::array_layout;
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+
+#if defined(KOKKOS_ENABLE_CUDA)
+    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+#else
+    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
+#endif
+
+#else
+    using DefaultFadLayout = DefaultDevLayout;
+#endif
+
+    static_assert(std::is_same<scalar_view_layout,scalar_dev_layout>::value,"ERROR: Layout Inconsistency!");
+    static_assert(std::is_same<fad_view_layout,fad_dev_layout>::value,"ERROR: Layout Inconsistency!");
+    static_assert(std::is_same<scalar_view_layout,DefaultDevLayout>::value,"ERROR: Layout Inconsistency!");
+    static_assert(std::is_same<fad_view_layout,DefaultFadLayout>::value,"ERROR: Layout Inconsistency!");
+
+    std::cout << "\n\nscalar_view_layout = " << PHX::typeAsString<scalar_view_layout>() << std::endl;
+    std::cout << "scalar_dev_layout  = " << PHX::typeAsString<scalar_dev_layout>() << std::endl;
+    std::cout << "DefaultDevLayout   = " << PHX::typeAsString<DefaultDevLayout>() << "\n" << std::endl;
+
+    std::cout << "fad_view_layout    = " << PHX::typeAsString<fad_view_layout>() << std::endl;
+    std::cout << "fad_dev_layout     = " << PHX::typeAsString<fad_dev_layout>() << std::endl;
+    std::cout << "DefaultFadLayout   = " << PHX::typeAsString<DefaultFadLayout>() << "\n" << std::endl;
+
+    // Tests for assignments from static View to DynRankView
+    Kokkos::View<FadType**,typename PHX::DevLayout<FadType>::type,PHX::Device> static_a("static_a",100,8,64);
+    Kokkos::DynRankView<FadType,typename PHX::DevLayout<FadType>::type,PHX::Device> dyn_a;
+    dyn_a = static_a;
+
+    Kokkos::View<FadType**,Kokkos::LayoutLeft,PHX::Device> static_a_ll("static_a",100,8,64);
+    Kokkos::DynRankView<FadType,Kokkos::LayoutLeft,PHX::Device> dyn_a_ll;
+    dyn_a_ll = static_a_ll;
+  }
 }

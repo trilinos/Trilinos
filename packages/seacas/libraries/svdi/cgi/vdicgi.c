@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -591,7 +591,7 @@ void vbinq(void)
   if (vstat == CVAL) {
     dev_cap[3]  = (float)nsimul - 2; /* Simultaneous colors    */
     dev_cap[26] = (float)navail - 2; /* Available colors       */
-    dev_cap[2]  = (float)nint;       /* Availabe intensities   */
+    dev_cap[2]  = (float)nint;       /* Available intensities   */
     dev_cap[31] = 1.;                /* Color or monochrome    */
     if (monoc == CYES) {
       dev_cap[31] = 0.;

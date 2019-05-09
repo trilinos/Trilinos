@@ -42,9 +42,7 @@
 
 #include "Panzer_WorksetContainer.hpp"
 
-#if defined(__KK__)
 #include "Panzer_IntrepidOrientation.hpp"
-#endif
 
 #include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
@@ -76,7 +74,7 @@ WorksetContainer::WorksetContainer(const WorksetContainer & wc)
 
 /** Clear all allocated worksets, maintain the workset factory and element to physics
   * block map.
-  */ 
+  */
 void WorksetContainer::clear()
 {
    worksets_.clear();
@@ -94,15 +92,15 @@ setNeeds(const std::string & eBlock,const WorksetNeeds & needs)
 const WorksetNeeds & WorksetContainer::lookupNeeds(const std::string & eBlock) const
 {
    std::map<std::string,WorksetNeeds>::const_iterator itr = ebToNeeds_.find(eBlock);
- 
-   TEUCHOS_TEST_FOR_EXCEPTION(itr==ebToNeeds_.end(),std::logic_error, 
+
+   TEUCHOS_TEST_FOR_EXCEPTION(itr==ebToNeeds_.end(),std::logic_error,
                       "WorksetContainer::lookupNeeds no WorksetNeeds object is associated "
                       "with the element block \""+eBlock+"\".");
 
    return itr->second;
 }
 
-Teuchos::RCP<std::vector<Workset> >  
+Teuchos::RCP<std::vector<Workset> >
 WorksetContainer::getWorksets(const WorksetDescriptor & wd)
 {
    Teuchos::RCP<std::vector<Workset> > worksetVector;
@@ -113,8 +111,9 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
       worksetVector = wkstFactory_->getWorksets(wd,needs);
 
       // apply orientations to the just constructed worksets
-      if(worksetVector!=Teuchos::null && wd.applyOrientations())
+      if(worksetVector!=Teuchos::null && wd.applyOrientations()) {
         applyOrientations(wd.getElementBlock(),*worksetVector);
+      }
 
       if(worksetVector!=Teuchos::null)
         setIdentifiers(wd,*worksetVector);
@@ -122,14 +121,14 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
       // store vector for reuse in the future
       worksets_[wd] = worksetVector;
    }
-   else 
+   else
       worksetVector = itr->second;
 
    return worksetVector;
 }
 
 //! Access, and construction of side worksets
-Teuchos::RCP<std::map<unsigned,Workset> > 
+Teuchos::RCP<std::map<unsigned,Workset> >
 WorksetContainer::getSideWorksets(const WorksetDescriptor & desc)
 {
    Teuchos::RCP<std::map<unsigned,Workset> > worksetMap;
@@ -157,12 +156,13 @@ WorksetContainer::getSideWorksets(const WorksetDescriptor & desc)
       // store map for reuse in the future
       sideWorksets_[desc] = worksetMap;
    }
-   else { 
+   else {
       worksetMap = itr->second;
    }
 
    return worksetMap;
 }
+
 
 void WorksetContainer::
 setGlobalIndexer(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi)
@@ -182,8 +182,8 @@ addBasis(const std::string & type,int order,const std::string & rep_field)
     RCP<PureBasis> basis = rcp(new PureBasis(type,order,needs.cellData));
 
     // add in the new basis
-    needs.bases.push_back(basis); 
-    needs.rep_field_name.push_back(rep_field); 
+    needs.bases.push_back(basis);
+    needs.rep_field_name.push_back(rep_field);
   }
 
   // clear all arrays, lazy evaluation means it will be rebuilt
@@ -198,31 +198,16 @@ applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ug
 
   globalIndexer_ = ugi;
 
-#if defined(__KK__)
   // this should be created once and stored in an appropriate place
-  const auto orientations = buildIntrepidOrientation(globalIndexer_);
-  
+  TEUCHOS_TEST_FOR_EXCEPTION(globalIndexer_ == Teuchos::null, std::logic_error,
+                             "global indexer is not set yet");
+  orientations_ = buildIntrepidOrientation(globalIndexer_);
+
   // loop over volume worksets, apply orientations to each
   for(WorksetMap::iterator itr=worksets_.begin();
       itr!=worksets_.end();++itr) {
     std::string eBlock = itr->first.getElementBlock();
-   
-    applyOrientations(*orientations, eBlock, *itr->second);
-  }
 
-  // loop over side worksets, apply orientations to each
-  for(SideMap::iterator itr=sideWorksets_.begin();
-      itr!=sideWorksets_.end();itr++) {
-    WorksetDescriptor desc = itr->first;
-
-    applyOrientations(*orientations, desc, *itr->second);
-  }
-#else
-  // loop over volume worksets, apply orientations to each
-  for(WorksetMap::iterator itr=worksets_.begin();
-      itr!=worksets_.end();++itr) {
-    std::string eBlock = itr->first.getElementBlock();
-   
     applyOrientations(eBlock,*itr->second);
   }
 
@@ -232,7 +217,6 @@ applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ug
 
     applyOrientations(itr->first,*itr->second);
   }
-#endif
 }
 
 void WorksetContainer::
@@ -256,11 +240,8 @@ setIdentifiers(const WorksetDescriptor & wd,std::map<unsigned,Workset> & workset
   }
 }
 
-#if defined(__KK__)
 void WorksetContainer::
-applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
-                  const std::string& /* eBlock */,
-                  std::vector<Workset> & worksets) const
+applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) const
 {
   using Teuchos::RCP;
 
@@ -269,309 +250,218 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
   /////////////////////////////////
 
   // short circuit if no global indexer exists
-  if(globalIndexer_==Teuchos::null) { 
+  if(globalIndexer_==Teuchos::null) {
     Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
     fout.setOutputToRootOnly(0);
- 
+
     fout << "Panzer Warning: No global indexer assigned to a workset container. "
          << "Orientation of the basis for edge basis functions cannot be applied, "
          << "if those basis functions are used, there will be problems!" << std::endl;
     return;
   }
 
+  // this should be matched to global indexer size (not sure how to retrive it)
+  TEUCHOS_TEST_FOR_EXCEPTION(orientations_ == Teuchos::null, std::logic_error,
+                             "intrepid2 orientation is not constructed");
+
   // loop over each basis requiring orientations, then apply them
   //////////////////////////////////////////////////////////////////////////////////
-
-  // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
- 
-  std::vector<Intrepid2::Orientation> ortsPerBlock;
-
-  // loop over worksets compute and apply orientations
-  for(std::size_t i=0;i<worksets.size();i++) {    
-    // break out of the workset loop
-    if(worksets[i].num_cells<=0) continue;
-
-    for(std::size_t j=0;j<worksets[i].numDetails();j++) {
-      WorksetDetails & details = worksets[i](j);
-      
-      ortsPerBlock.clear();
-      for (int k=0;k<worksets[i].num_cells;++k) {
-        ortsPerBlock.push_back(orientations[details.cell_local_ids[k]]);
-      }
-      
-      for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
-        Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
-        TEUCHOS_ASSERT(layout!=Teuchos::null);
-        TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
-        if(layout->getBasis()->requiresOrientations()) {
-          // apply orientations for this basis
-          details.bases[basis_index]->applyOrientations(ortsPerBlock);
-        }
-      }
-    }
-  }
-}
-
-void WorksetContainer::
-applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
-                  const WorksetDescriptor& /* desc */,
-                  std::map<unsigned,Workset> & worksets) const
-{
-  using Teuchos::RCP;
-
-  /////////////////////////////////
-  // this is for side worksets //
-  /////////////////////////////////
-
-  // short circuit if no global indexer exists
-  if(globalIndexer_==Teuchos::null) { 
-    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
-    fout.setOutputToRootOnly(0);
- 
-    fout << "Panzer Warning: No global indexer assigned to a workset container. "
-         << "Orientation of the basis for edge basis functions cannot be applied, "
-         << "if those basis functions are used, there will be problems!";
-    return;
-  }
   
-  // loop over each basis requiring orientations, then apply them
-  //////////////////////////////////////////////////////////////////////////////////
-
   // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
 
-  std::vector<Intrepid2::Orientation> ortsPerBlock;
-  
-  // loop over worksets compute and apply orientations
-  for(std::map<unsigned,Workset>::iterator itr=worksets.begin();
-      itr!=worksets.end();++itr) {
-    
-    // break out of the workset loop
-    if(itr->second.num_cells<=0) continue;
-
-    for(std::size_t j=0;j<itr->second.numDetails();j++) {
-      WorksetDetails & details = itr->second(j);
-      
-      ortsPerBlock.clear();
-      for (int k=0;k<itr->second.num_cells;++k) {
-        ortsPerBlock.push_back(orientations[details.cell_local_ids[k]]);
-      }
-      
-      for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
-        Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
-        TEUCHOS_ASSERT(layout!=Teuchos::null);
-        TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
-        if(layout->getBasis()->requiresOrientations()) {
-          // apply orientations for this basis
-          details.bases[basis_index]->applyOrientations(ortsPerBlock);
-        }
-      }
-    }
-  }
-}
-#endif
-
-void WorksetContainer::
-applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) const
-{
-  using Teuchos::RCP;
-
-  typedef double Scalar;                          // orientation container scalar type
-  typedef PHX::MDField<Scalar,Cell,BASIS> Array; // orientation container array type
-
-  /////////////////////////////////
-  // this is for volume worksets //
-  /////////////////////////////////
-
-  // short circuit if no global indexer exists
-  if(globalIndexer_==Teuchos::null) { 
-    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
-    fout.setOutputToRootOnly(0);
- 
-    fout << "Panzer Warning: No global indexer assigned to a workset container. "
-         << "Orientation of the basis for edge basis functions cannot be applied, "
-         << "if those basis functions are used, there will be problems!" << std::endl;
-    return;
-  }
-
-  // loop over each basis requiring orientations, then apply them
-  //////////////////////////////////////////////////////////////////////////////////
-
-  // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
- 
   const WorksetNeeds & needs = lookupNeeds(eBlock);
-  TEUCHOS_ASSERT(needs.bases.size()==needs.rep_field_name.size());
+
+  if(needs.bases.size()>0) {
+    // sanity check that we aren't missing something (the old and new "needs" should not be used together)
+    TEUCHOS_ASSERT(needs.getBases().size()==0);
+
+    for(std::size_t w=0;w<needs.bases.size();w++) {
+      const PureBasis & basis = *needs.bases[w];
   
-  for(std::size_t i=0;i<needs.bases.size();i++) {
-    const std::string & fieldName = needs.rep_field_name[i];
-    const PureBasis & basis = *needs.bases[i];
-
-    // no need for this if orientations are not required!
-    if(!basis.requiresOrientations()) continue;
-
-    // build accessors for orientation fields
-    RCP<const OrientationContainerBase<Scalar,Array> > orientationContainer 
-        = buildOrientationContainer<Scalar,Array>(globalIndexer_,fieldName); 
-
-    MDFieldArrayFactory fc_factory("",true);
- 
-    // loop over worksets compute and apply orientations
-    for(std::size_t i=0;i<worksets.size();i++) {
-      for(std::size_t j=0;j<worksets[i].numDetails();j++) {
-
+      // no need for this if orientations are not required!
+      if(!basis.requiresOrientations())
+        continue;
+  
+      // build accessors for orientation fields
+      std::vector<Intrepid2::Orientation> ortsPerBlock;
+  
+      // loop over worksets compute and apply orientations
+      for(std::size_t i=0;i<worksets.size();i++) {
         // break out of the workset loop
         if(worksets[i].num_cells<=0) continue;
-
-        // int array0_sz = worksets[i].num_cells;
-        // int array0_sz = getWorksetSize();
-        int array0_sz = Teuchos::as<int>(needs.cellData.numCells());
-        int array1_sz = basis.functional->dimension(1);
-        Array orientations = fc_factory.buildStaticArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
-
-        WorksetDetails & details = worksets[i](j);
-
-        // compute orientations using the orientation container (and global indexer eventually)
-        orientationContainer->getOrientations(eBlock,details.cell_local_ids,orientations);
-
-        for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
-          Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
-          TEUCHOS_ASSERT(layout!=Teuchos::null);
-          TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
-          if(layout->getBasis()->name()==basis.name()) {
-            // apply orientations for this basis
-            details.bases[basis_index]->applyOrientations(orientations);
+  
+        for(std::size_t j=0;j<worksets[i].numDetails();j++) {
+          WorksetDetails & details = worksets[i](j);
+  
+          ortsPerBlock.clear();
+          for (int k=0;k<worksets[i].num_cells;++k) {
+            ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
+          }
+  
+          for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
+            Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
+  
+            // only apply orientations if its relevant to the current needs
+            if(layout->getBasis()->name()!=basis.name())
+              continue;
+  
+            TEUCHOS_ASSERT(layout!=Teuchos::null);
+            TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
+            if(layout->getBasis()->requiresOrientations()) {
+              // apply orientations for this basis
+              details.bases[basis_index]->applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
+            }
           }
         }
       }
-    }
+    } // end for w
+  }
+  else if(needs.getBases().size()>0) {
+    // sanity check that we aren't missing something (the old and new "needs" should not be used together)
+    TEUCHOS_ASSERT(needs.bases.size()==0);
+
+    // This is for forwards compatibility, the needs now use "getBasis" calls as opposed
+    // to director accessors.
+    for(const auto & bd : needs.getBases()) {
+  
+      // build accessors for orientation fields
+      std::vector<Intrepid2::Orientation> ortsPerBlock;
+  
+      // loop over worksets compute and apply orientations
+      for(std::size_t i=0;i<worksets.size();i++) {
+        // break out of the workset loop
+        if(worksets[i].num_cells<=0) continue;
+  
+        for(std::size_t j=0;j<worksets[i].numDetails();j++) {
+          WorksetDetails & details = worksets[i](j);
+  
+          ortsPerBlock.clear();
+          // for (int k=0;k<worksets[i].num_cells;++k) {
+          for (int k=0;k<details.numOwnedCells();++k) {
+            ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
+          }
+  
+          for(const auto & id : needs.getIntegrators()) {
+            // apply orientations for this basis
+            details.getBasisValues(bd,id).applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
+          }
+        }
+      }
+    } // end for w
   }
 }
-
+  
+  
 void WorksetContainer::
 applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & worksets) const
 {
   using Teuchos::RCP;
-
-  typedef double Scalar;                          // orientation container scalar type
-  typedef PHX::MDField<Scalar,Cell,BASIS> Array; // orientation container array type
-
+  
   /////////////////////////////////
   // this is for side worksets //
   /////////////////////////////////
-
+  
   // short circuit if no global indexer exists
-  if(globalIndexer_==Teuchos::null) { 
+  if(globalIndexer_==Teuchos::null) {
     Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
     fout.setOutputToRootOnly(0);
- 
+    
     fout << "Panzer Warning: No global indexer assigned to a workset container. "
          << "Orientation of the basis for edge basis functions cannot be applied, "
          << "if those basis functions are used, there will be problems!";
     return;
   }
-
+  
   // loop over each basis requiring orientations, then apply them
   //////////////////////////////////////////////////////////////////////////////////
-
+  
   // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
-  
   const WorksetNeeds & needs = lookupNeeds(desc.getElementBlock());
-  TEUCHOS_ASSERT(needs.bases.size()==needs.rep_field_name.size());
+
+  if(needs.bases.size()>0) {
+    // sanity check that we aren't missing something (the old and new "needs" should not be used together)
+    TEUCHOS_ASSERT(needs.getBases().size()==0);
+    for(std::size_t i=0;i<needs.bases.size();i++) {
+      const PureBasis & basis = *needs.bases[i];
+      
+      // no need for this if orientations are not required!
+      if(!basis.requiresOrientations()) continue;
+      
+      // build accessors for orientation fields
+      std::vector<Intrepid2::Orientation> ortsPerBlock;  
+      
+      // loop over worksets compute and apply orientations
+      for(std::map<unsigned,Workset>::iterator itr=worksets.begin(); 
+          itr!=worksets.end();++itr) { 
+        
+        // break out of the workset loop
+        if(itr->second.num_cells<=0) continue;
+        
+        for(std::size_t j=0;j<itr->second.numDetails();j++) {  
+          WorksetDetails & details = itr->second(j);
   
-  for(std::size_t i=0;i<needs.bases.size();i++) {
-    const std::string & fieldName = needs.rep_field_name[i];
-    const PureBasis & basis = *needs.bases[i];
-
-    // no need for this if orientations are not required!
-    if(!basis.requiresOrientations()) continue;
-
-    // build accessors for orientation fields
-    RCP<const OrientationContainerBase<Scalar,Array> > orientationContainer 
-        = buildOrientationContainer<Scalar,Array>(globalIndexer_,fieldName); 
- 
-    // loop over worksets compute and apply orientations
-    for(std::map<unsigned,Workset>::iterator itr=worksets.begin();
-        itr!=worksets.end();++itr) {
-
-      // break out of the workset loop
-      if(itr->second.num_cells<=0) continue;
-
-      int array0_sz = itr->second.num_cells;
-      int array1_sz = basis.functional->dimension(1);
-      // Intrepid2FieldContainerFactory fc_factory;
-      MDFieldArrayFactory fc_factory("",true);
-      Array orientations = fc_factory.buildStaticArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
-
-      for(std::size_t j=0;j<itr->second.numDetails();j++) {
-
-        WorksetDetails & details = itr->second(j);
-
-        // compute orientations using the orientation container (and global indexer eventually)
-        orientationContainer->getOrientations(desc.getElementBlock(),details.cell_local_ids,orientations);
-
-        for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
-          Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
-          TEUCHOS_ASSERT(layout!=Teuchos::null);
-          TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
-          if(layout->getBasis()->name()==basis.name()) {
-            // apply orientations for this basis
-            details.bases[basis_index]->applyOrientations(orientations);
+          ortsPerBlock.clear();
+          for (int k=0;k<itr->second.num_cells;++k) {
+            ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
+          }
+  
+          for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
+            Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
+  
+            // only apply orientations if its relevant to the current needs
+            if(layout->getBasis()->name()!=basis.name())
+              continue;
+  
+            TEUCHOS_ASSERT(layout!=Teuchos::null);
+            TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
+            if(layout->getBasis()->requiresOrientations()) {
+              // apply orientations for this basis
+              details.bases[basis_index]->applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
+            }
           }
         }
       }
-    }
+    } // end for i
+  }
+  else if(needs.getBases().size()>0) {
+    // sanity check that we aren't missing something (the old and new "needs" should not be used together)
+    TEUCHOS_ASSERT(needs.bases.size()==0);
+
+    // This is for forwards compatibility, the needs now use "getBasis" calls as opposed
+    // to director accessors.
+    for(const auto & bd : needs.getBases()) {
+  
+      // build accessors for orientation fields
+      std::vector<Intrepid2::Orientation> ortsPerBlock;
+  
+      // loop over worksets compute and apply orientations
+      for(std::map<unsigned,Workset>::iterator itr=worksets.begin(); 
+          itr!=worksets.end();++itr) { 
+        
+        // break out of the workset loop
+        if(itr->second.num_cells<=0) continue;
+        
+        for(std::size_t j=0;j<itr->second.numDetails();j++) {  
+          WorksetDetails & details = itr->second(j);
+  
+          ortsPerBlock.clear();
+          for (int k=0;k<itr->second.num_cells;++k) {
+            ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
+          }
+  
+          for(const auto & id : needs.getIntegrators()) {
+            // apply orientations for this basis
+            details.getBasisValues(bd,id).applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
+          }
+        }
+      }
+    } // end for w
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-#if 1
-
-//! Access, and construction of side worksets
-Teuchos::RCP<std::map<unsigned,Workset> > 
-WorksetContainer::getSideWorksets(const BC & bc)
-{
-  WorksetDescriptor desc = bcDescriptor(bc);
-
-  return getSideWorksets(desc);
-}
-
-//! Access, and construction of volume worksets
-Teuchos::RCP<std::vector<Workset> >  
-WorksetContainer::getVolumeWorksets(const std::string & eBlock)
-{
-   const WorksetDescriptor wd = blockDescriptor(eBlock);
-
-   return getWorksets(wd);
-}
-
-void WorksetContainer::setPhysicsBlockVector(const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks)
-{
-   using Teuchos::RCP;
-
-   for(std::size_t i=0;i<physicsBlocks.size();i++) {
-      WorksetNeeds needs = physicsBlocks[i]->getWorksetNeeds();
-
-     ebToNeeds_[physicsBlocks[i]->elementBlockID()] = needs;
-   }
-}
-
-WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
-                                   const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
-                                   std::size_t wkstSz)
-   : wkstFactory_(factory), worksetSize_(wkstSz)
-{
-   setPhysicsBlockVector(physicsBlocks);
-}
-
-#endif
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 void getVolumeWorksetsFromContainer(WorksetContainer & wc,
                                     const std::vector<std::string> & elementBlockNames,
-                                    std::map<std::string,Teuchos::RCP<std::vector<Workset> > > & volumeWksts) 
+                                    std::map<std::string,Teuchos::RCP<std::vector<Workset> > > & volumeWksts)
 {
    for(std::size_t i=0;i<elementBlockNames.size();i++) {
       WorksetDescriptor wd = blockDescriptor(elementBlockNames[i]);

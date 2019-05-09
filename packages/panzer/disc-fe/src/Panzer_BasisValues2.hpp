@@ -51,10 +51,6 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_ArrayTraits.hpp"
 
-#ifndef __KK__
-#define __KK__
-#endif
-
 namespace panzer {
 
   /** Data structure that holds all evaluated fields associated
@@ -87,7 +83,8 @@ namespace panzer {
     void evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> & cub_points,
                         const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
                         const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv);
+                        const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+                        const int in_num_cells = -1);
 
     void evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> & cub_points,
                         const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
@@ -95,7 +92,8 @@ namespace panzer {
                         const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
                         const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                         const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-                        bool use_vertex_coordinates=true);
+                        bool use_vertex_coordinates=true,
+                        const int in_num_cells = -1);
 
     void evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cell_cub_points,
                           const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
@@ -108,15 +106,17 @@ namespace panzer {
                         const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
                         const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                         const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-                        bool use_vertex_coordinates=true);
+                        bool use_vertex_coordinates=true,
+                        const int in_num_cells = -1);
 
 
     //! Method to apply orientations to a basis values container.
+    // some evaluators use this apply orientation (this will be deprecated)
     void applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations);
 
-#if defined(__KK__)
-    void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations);
-#endif
+    // this is used in workset factory
+    void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
+                           const int in_num_cells = -1);
 
     void setExtendedDimensions(const std::vector<PHX::index_size_type> & ddims)
     { ddims_ = ddims; }
@@ -177,26 +177,37 @@ namespace panzer {
 
     void evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
                               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
-                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure);
+                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+                              const int in_num_cells);
+
+    void evaluateValues_HVol(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
+                             const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+                             const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+                             const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+                             const int in_num_cells);
 
     void evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
                               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
-                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure);
+                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+                              const int in_num_cells);
 
     void evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
                               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
                               const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
                               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
-                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure);
+                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+                              const int in_num_cells);
 
     void evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
                              const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
                              const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                             const PHX::MDField<Scalar,Cell,IP> & weighted_measure);
+                             const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+                             const int in_num_cells);
  
   private:
 
-    void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates);
+    void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+                                  const int in_num_cells = -1);
 
     /** Evaluate the reference values for the basis functions needed
       *

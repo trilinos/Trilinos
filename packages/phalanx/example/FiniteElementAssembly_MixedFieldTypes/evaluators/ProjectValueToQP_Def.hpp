@@ -61,7 +61,7 @@ template<typename EvalT, typename Traits>
 void ProjectValueToQP<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   basis_view = workset.basis_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 //**********************************************************************
@@ -72,7 +72,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int cell = team.league_rank();
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,field_at_qp.extent(1)), KOKKOS_LAMBDA (const int& qp) {
-      field_at_qp(cell,qp) = 0.0;
+      field_at_qp(cell,qp) = ScalarT(0.0);
       for (int basis = 0; basis < static_cast<int>(field_at_basis.extent(1)); ++basis)
         field_at_qp(cell,qp) += field_at_basis(cell,basis) * basis_view(qp,basis);
   });

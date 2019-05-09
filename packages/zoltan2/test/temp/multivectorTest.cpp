@@ -72,9 +72,9 @@ using Teuchos::Comm;
 
 enum testConstants {COORDDIM=3};
 
-static void usage(char *argv[]){
+static void usage(char *arg[]){
   std::cout << "Usage:" << std::endl;
-  std::cout << argv[0] << " {num coords}" << std::endl;
+  std::cout << arg[0] << " {num coords}" << std::endl;
 }
 
 ///////////////////////////////////////////////
@@ -201,28 +201,28 @@ void timeZoltan(ZOLTAN_GO numGlobalCoords, bool);
 // Main
 ///////////////////////////////////////////////
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
-  RCP<const Comm<int> > genComm = Teuchos::DefaultComm<int>::getComm();
-  RCP<const MpiComm<int> > comm =
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > genComm = Tpetra::getDefaultComm();
+  Teuchos::RCP<const MpiComm<int> > comm =
     rcp_dynamic_cast<const MpiComm<int> >(genComm);
 
   int rank = genComm->getRank();
 
-  if (argc < 2){
+  if (narg < 2){
     if (rank == 0)
-      usage(argv);
+      usage(arg);
     return 1;
   }
 
   TPETRA_GO numGlobalCoords = 0;
-  std::string theArg(argv[1]);
+  std::string theArg(arg[1]);
   std::istringstream iss(theArg);
   iss >> numGlobalCoords;
   if (numGlobalCoords < genComm->getSize()){
     if (rank == 0)
-      usage(argv);
+      usage(arg);
     return 1;
   }
 
@@ -291,8 +291,6 @@ timeTpetra (const TPETRA_GO numGlobalCoords,
   using Teuchos::Comm;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using std::cout;
-  using std::endl;
   typedef Tpetra::Map<TPETRA_LO, TPETRA_GO> map_type;
   typedef Tpetra::MultiVector<TPETRA_SCALAR, TPETRA_LO, TPETRA_GO> MV;
   typedef ArrayView<const TPETRA_SCALAR> coordList_t;
@@ -330,7 +328,7 @@ timeTpetra (const TPETRA_GO numGlobalCoords,
 
   if (rank == 0 && doMemory) {
     const long nkb = Zoltan2::getProcessKilobytes ();
-    cout << "Create mvector 1: " << nkb << endl;
+    std::cout << "Create mvector 1: " << nkb << std::endl;
   }
 
   ///////////// Step 2 //////////////////////////////////
@@ -361,7 +359,7 @@ timeTpetra (const TPETRA_GO numGlobalCoords,
 
   if (rank == 0 && doMemory) {
     const long nkb = Zoltan2::getProcessKilobytes ();
-    cout << "Create mvector 2: " << nkb << endl;
+    std::cout << "Create mvector 2: " << nkb << std::endl;
   }
 
   ///////////// Step 3 //////////////////////////////////
@@ -809,11 +807,10 @@ void timeZoltan(ZOLTAN_GO numGlobalCoords,
   Zoltan_Comm_Destroy(&subCommPlan);
 }
 #else
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
-  Teuchos::RCP<const Teuchos::Comm<int> > genComm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > genComm = Tpetra::getDefaultComm();
 
   if (genComm->getRank() == 0){
     std::cout << "Test not run because MPI is not available." << std::endl;

@@ -69,9 +69,6 @@
 /* Define if want to build intrepid2 */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_INTREPID2
 
-/* Define if want to build intrepid2 w/ the refactor */
-#cmakedefine HAVE_TRILINOSCOUPLINGS_INTREPID2_REFACTOR
-
 /* Define if TriKota is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_TRIKOTA
 
@@ -80,3 +77,6 @@
 
 /* Define if Stratimikos is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
+
+/* Define if Avatar is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_AVATAR

@@ -46,7 +46,7 @@
 
 /*! \file Teuchos_ConfigDefs.hpp
     \brief Teuchos header file which uses auto-configuration information
-	to include necessary C++ headers.
+        to include necessary C++ headers.
 */
 
 #include "TeuchosCore_config.h"
@@ -77,31 +77,31 @@
 #  define HAVE_COMPLEX
 #endif
 
-#include <cstdio>
-#include <cstdarg>
-#include <cerrno>
-#include <climits>
+// #include <cstdio>
+// #include <cstdarg>
+// #include <cerrno>
+// #include <climits>
 #include <cstdlib>
 #include <string>
 #include <cstring>
 #include <cmath>
 #include <iostream>
 #include <iomanip>
-#include <fstream>
+// #include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <cassert>
 #include <complex>
-#include <map>
-#include <vector>
-#include <deque>
+// #include <map>
+// #include <vector>
+// #include <deque>
 #include <algorithm>
-#include <numeric>
-#include <list>
-#include <set>
-#include <typeinfo>
+// #include <numeric>
+// #include <list>
+// #include <set>
+// #include <typeinfo>
 #include <limits>
-#include <memory>
+// #include <memory>
 #include <cstddef>
 
 /* Avoid duplicating instantiation provided by IBM XL C++ runtime library. */
@@ -109,20 +109,10 @@
 # pragma do_not_instantiate std::fpos<mbstate_t>
 #endif
 
-namespace Teuchos { class DummyDummyClass; }
-// Above, is used for a dumb reason (see
-// Teuchs_StandardMemberCompositionMacros.hpp).
-
 const double Teuchos_MinDouble = 1.0E-100;
 const double Teuchos_MaxDouble = 1.0E+100;
 const double Teuchos_Overflow = 1.79E308; // Used to test if equilibration should be done.
 const double Teuchos_Underflow = 2.23E-308;
-
-// 2007/06/29: These are hacks for std::ostringstream that should be removed
-// now what we assume that a faily complete standard C++ library is available.
-
-#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str().c_str()
-typedef std::ostringstream TeuchosOStringStream;
 
 #else /* __cplusplus */
 

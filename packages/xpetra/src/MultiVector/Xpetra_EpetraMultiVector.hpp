@@ -68,6 +68,7 @@
 #include "Epetra_SerialComm.h"
 
 #include <Epetra_MultiVector.h>
+#include <Epetra_Vector.h>
 
 namespace Xpetra {
 
@@ -221,6 +222,9 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { return 0; }
 
+    // \brief Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { return false; }
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -312,7 +316,9 @@ namespace Xpetra {
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
       throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
       typename dual_view_type::t_dev_um ret;
+#endif
       TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
@@ -474,7 +480,8 @@ namespace Xpetra {
       // scale().  Deal with this by scaling one column at a time.
       const size_t numVecs = this->getNumVectors ();
       for (size_t j = 0; j < numVecs; ++j) {
-        vec_->Scale (alpha[j]);
+        Epetra_Vector *v = (*vec_)(j);
+        v->Scale (alpha[j]);
       }
     }
 
@@ -516,6 +523,13 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { XPETRA_MONITOR("EpetraMultiVectorT::getGlobalLength"); return vec_->GlobalLength64(); }
 
+    //! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { 
+      XPETRA_MONITOR("EpetraMultiVectorT::isSameSize"); 
+      auto vv = toEpetra<GlobalOrdinal,Node>(vec); 
+      return ( (vec_->MyLength() == vv.MyLength()) && (vec_->NumVectors() == vv.NumVectors()));
+    }
+                          
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -529,7 +543,7 @@ namespace Xpetra {
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel /* verbLevel */=Teuchos::Describable::verbLevel_default) const {
       XPETRA_MONITOR("EpetraMultiVectorT::describe");
       vec_->Print(out);
     }
@@ -682,8 +696,10 @@ namespace Xpetra {
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
       throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
       typename dual_view_type::t_dev_um ret;
-      return ret; // make compiler happy
+#endif
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
 #endif
@@ -878,7 +894,8 @@ namespace Xpetra {
       // scale().  Deal with this by scaling one column at a time.
       const size_t numVecs = this->getNumVectors ();
       for (size_t j = 0; j < numVecs; ++j) {
-        vec_->Scale (alpha[j]);
+        Epetra_Vector *v = (*vec_)(j);
+        v->Scale (alpha[j]);
       }
     }
 
@@ -920,6 +937,13 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { XPETRA_MONITOR("EpetraMultiVectorT::getGlobalLength"); return vec_->GlobalLength64(); }
 
+    //! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { 
+      XPETRA_MONITOR("EpetraMultiVectorT::isSameSize"); 
+      auto vv = toEpetra<GlobalOrdinal,Node>(vec); 
+      return ( (vec_->MyLength() == vv.MyLength()) && (vec_->NumVectors() == vv.NumVectors()));
+    }
+         
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -933,7 +957,7 @@ namespace Xpetra {
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel /* verbLevel */=Teuchos::Describable::verbLevel_default) const {
       XPETRA_MONITOR("EpetraMultiVectorT::describe");
       vec_->Print(out);
     }
@@ -1086,8 +1110,10 @@ namespace Xpetra {
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
       throw std::runtime_error("Epetra does not support device views!");
+#ifndef __NVCC__ //prevent nvcc warning
       typename dual_view_type::t_dev_um ret;
-      return ret; // make compiler happy
+#endif
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
 #endif

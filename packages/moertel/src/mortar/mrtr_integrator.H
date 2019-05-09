@@ -67,7 +67,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_RefCountPtr.hpp"
 
-#include "mrtr_overlap.H"
+#include "mrtr_overlap.hpp"
 
 // ----------   User Defined Includes   ----------
 
@@ -275,7 +275,7 @@ public:
                  MOERTEL::Segment& mseg,
                  Epetra_SerialDenseMatrix** Ddense, 
                  Epetra_SerialDenseMatrix** Mdense, 
-                 MOERTEL::Overlap& overlap, double eps,
+                 MOERTEL::Overlap<MOERTEL::Interface>& overlap, double eps,
                  bool exactvalues);
 
   /*!

@@ -55,7 +55,7 @@
 
 #ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #endif
 
@@ -225,7 +225,6 @@ int main(int argc, char *argv[]) {
     typedef Tpetra::MultiVector<SC,LO,GO,NO>      tMultiVector;
     typedef Tpetra::Map<LO,GO,NO>                 tMap;
     typedef Thyra::TpetraVectorSpace<SC,LO,GO,NO> THTP_Vs;
-    RCP<NO> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
 
     // Read data from files
     RCP<tOperator> A11, A119Pt, A21, A12;
@@ -236,11 +235,11 @@ int main(int argc, char *argv[]) {
     try {
       if (!binary) {
         filename = prefix + "A.mm";
-        A11     = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm, node);
+        A11     = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
         A119Pt  = A11;
         if (use9ptPatA) {
           filename = prefix + "AForPat.mm";
-          A119Pt = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm, node);
+          A119Pt = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
         }
       } else {
         filename = prefix + "A.dat";
@@ -252,15 +251,15 @@ int main(int argc, char *argv[]) {
         }
       }
       filename = prefix + "B.mm";
-      A21 = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm, node);
+      A21 = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
       filename = prefix + "Bt.mm";
-      A12 = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm, node);
+      A12 = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
 
       RCP<const tMap> cmap1 = A11->getDomainMap(), cmap2 = A12->getDomainMap();
       filename = prefix + "VelCoords.mm";
-      Vcoords = Reader<tCrsMatrix>::readDenseFile(filename.c_str(),  comm, node, cmap1);
+      Vcoords = Reader<tCrsMatrix>::readDenseFile(filename.c_str(),  comm, cmap1);
       filename = prefix + "PresCoords.mm";
-      Pcoords = Reader<tCrsMatrix>::readDenseFile(filename.c_str(), comm, node, cmap2);
+      Pcoords = Reader<tCrsMatrix>::readDenseFile(filename.c_str(), comm, cmap2);
 
       // For now, we assume that p2v maps local pressure DOF to a local x-velocity DOF
       filename = prefix + "p2vMap.mm";
@@ -324,11 +323,11 @@ int main(int argc, char *argv[]) {
     std::cout << "Input parameters: " << *stratimikosList << std::endl;
 
     // Stratimikos vodou
-    typedef Thyra::PreconditionerFactoryBase<SC>         Base;
+    typedef Thyra::PreconditionerFactoryBase<SC>             Base;
     typedef Thyra::Ifpack2PreconditionerFactory<tCrsMatrix > Impl;
-    typedef Thyra::LinearOpWithSolveFactoryBase<SC>      LOWSFB;
-    typedef Thyra::LinearOpWithSolveBase<SC>             LOWSB;
-    typedef Thyra::MultiVectorBase<SC>                   TH_Mvb;
+    typedef Thyra::LinearOpWithSolveFactoryBase<SC>          LOWSFB;
+    typedef Thyra::LinearOpWithSolveBase<SC>                 LOWSB;
+    typedef Thyra::MultiVectorBase<SC>                       TH_Mvb;
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
@@ -365,7 +364,7 @@ int main(int argc, char *argv[]) {
       A->apply(*tX, *tB);
     } else {
       typedef Tpetra::MatrixMarket::Reader<tCrsMatrix> reader_type;
-      tB = reader_type::readDenseFile(rhs.c_str(), fullMap->getComm(), fullMap->getNode(), fullMap);
+      tB = reader_type::readDenseFile(rhs.c_str(), fullMap->getComm(), fullMap);
     }
 
     tX->putScalar(0.0);
@@ -373,8 +372,8 @@ int main(int argc, char *argv[]) {
     // Set the initial guess Dirichlet points to the proper value.
     // This step is pretty important as the preconditioner may return zero at Dirichlet points
     ArrayRCP<const bool> dirBCs = Utilities::DetectDirichletRows(*MueLu::TpetraCrs_To_XpetraMatrix(rcp_dynamic_cast<tCrsMatrix>(A)));
-    ArrayRCP<SC>        tXdata = tX->getDataNonConst(0);
-    ArrayRCP<const SC>  tBdata = tB->getData(0);
+    ArrayRCP<SC>         tXdata = tX->getDataNonConst(0);
+    ArrayRCP<const SC>   tBdata = tB->getData(0);
     for (LO i = 0; i < tXdata.size(); i++)
       if (dirBCs[i])
         tXdata[i] = tBdata[i];

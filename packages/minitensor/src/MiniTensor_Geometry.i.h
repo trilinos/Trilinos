@@ -130,7 +130,7 @@ KOKKOS_INLINE_FUNCTION
 SphericalParametrization<T, N>::SphericalParametrization(
     Tensor4<T, N> const & A) : tangent_(A)
 {
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   minimum_ = DBL_MAX;
   maximum_ = DBL_MIN;
 #else
@@ -205,7 +205,7 @@ KOKKOS_INLINE_FUNCTION
 StereographicParametrization<T, N>::StereographicParametrization(
     Tensor4<T, N> const & A) : tangent_(A)
 {
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   minimum_ = DBL_MAX;
   maximum_ = DBL_MIN;
 #else
@@ -285,7 +285,7 @@ KOKKOS_INLINE_FUNCTION
 ProjectiveParametrization<T, N>::ProjectiveParametrization(
     Tensor4<T, N> const & A) : tangent_(A)
 {
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   minimum_ = DBL_MAX;
   maximum_ = DBL_MIN;
 #else
@@ -372,7 +372,7 @@ KOKKOS_INLINE_FUNCTION
 TangentParametrization<T, N>::TangentParametrization(
     Tensor4<T, N> const & A) : tangent_(A)
 {
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   minimum_ = DBL_MAX;
   maximum_ = DBL_MIN;
 #else
@@ -458,7 +458,7 @@ KOKKOS_INLINE_FUNCTION
 CartesianParametrization<T, N>::CartesianParametrization(
     Tensor4<T, N> const & A) : tangent_(A)
 {
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   minimum_ = DBL_MAX;
   maximum_ = DBL_MIN;
 #else

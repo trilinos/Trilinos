@@ -56,7 +56,7 @@ namespace ROL {
 template <class Real>
 class UpperBoundToConstraint : public Constraint<Real> { 
 private:
-  Teuchos::RCP<Vector<Real> > up_;
+  ROL::Ptr<Vector<Real> > up_;
 
 public:
   UpperBoundToConstraint(BoundConstraint<Real> &bnd) {

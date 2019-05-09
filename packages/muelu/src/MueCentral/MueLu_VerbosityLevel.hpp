@@ -78,7 +78,7 @@ namespace MueLu {
       External        = 0x01000000, //!< Print external lib objects
       Debug           = 0x02000000, //!< Print additional debugging information
 
-      Test            = 0x10000000, //!< Print skeleton for the run, i.e. factory calls and used parameters
+      Test0           = 0x10000000, //!< Print skeleton for the run, i.e. factory calls and used parameters
 
       // Predefined combinations of MsgType
       // Can be used in user code or examples. Do not used as input parameters of IsPrint() or GetOStream().
@@ -87,12 +87,13 @@ namespace MueLu {
       Parameters      = Parameters0 | Parameters1,                         //!< Print parameters
       Statistics      = Statistics0 | Statistics1 | Statistics2,           //!< Print all statistics
       Timings         = Timings0 | Timings1 | TimingsByLevel,              //!< Print all timing information
+      Test            = Test0 | Runtime0,
 
       //
       None    = 0,
       Low     = Errors | Warnings0 | Statistics0,
       Medium  = Errors | Warnings0 | Runtime0 | Parameters0 | Statistics0 | Statistics1 | Timings0,
-      High    = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings,
+      High    = Errors | Warnings  | Runtime  | Parameters  | Statistics0 | Statistics1  | Timings,
 #ifdef HAVE_MUELU_DEBUG
       Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External | Debug,
 #else

@@ -50,10 +50,10 @@
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
 typedef double RealT;
@@ -66,14 +66,14 @@ void print_vector( const ROL::Vector<Real> &x ) {
   typedef ROL::SimulatedVector<Real>   PV;
   typedef typename PV::size_type       size_type;
 
-  const PV eb = Teuchos::dyn_cast<const PV>(x);
+  const PV eb = dynamic_cast<const PV&>(x);
   size_type n = eb.numVectors();
     
   for(size_type k=0; k<n; ++k) {
     std::cout << "[subvector " << k << "]" << std::endl;
-    Teuchos::RCP<const V> vec = eb.get(k);
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      Teuchos::dyn_cast<const SV>(*vec).getVector();  
+    ROL::Ptr<const V> vec = eb.get(k);
+    ROL::Ptr<const std::vector<Real> > vp = 
+      dynamic_cast<const SV&>(*vec).getVector();  
    for(size_type i=0;i<vp->size();++i) {
       std::cout << (*vp)[i] << std::endl;
     }  
@@ -90,18 +90,18 @@ int main(int argc, char *argv[]) {
   typedef ROL::SimulatedVector<RealT>   PV;
 
   GlobalMPISession mpiSession(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  Teuchos::RCP<ROL::TpetraTeuchosBatchManager<RealT> > bman = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
+  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  ROL::Ptr<ROL::TpetraTeuchosBatchManager<RealT> > bman = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
 
   int iprint = argc - 1;
 
-  Teuchos::RCP<std::ostream> outStream;
-  oblackholestream bhs; // no output
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // no output
  
   if( iprint>0 ) 
-    outStream = Teuchos::rcp(&std::cout,false);
+   outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs,false);
+   outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -113,8 +113,8 @@ int main(int argc, char *argv[]) {
     int nSamp = 100;
     std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<RealT> > bounds(stoch_dim,tmp);
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,bounds,bman));
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman);
 
     int batchID = bman->batchID();
     int nvecloc = sampler->numMySamples();
@@ -127,42 +127,42 @@ int main(int argc, char *argv[]) {
      
     RealT left = -1e0, right = 1e0;
 
-    std::vector<Teuchos::RCP<V> > x_rcp;
-    std::vector<Teuchos::RCP<V> > y_rcp;
-    std::vector<Teuchos::RCP<V> > z_rcp;
+    std::vector<ROL::Ptr<V> > x_ptr;
+    std::vector<ROL::Ptr<V> > y_ptr;
+    std::vector<ROL::Ptr<V> > z_ptr;
 
     for( int k=0; k<nvecloc; ++k ) {
        
-      Teuchos::RCP<std::vector<RealT> > xk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
-      Teuchos::RCP<std::vector<RealT> > yk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
-      Teuchos::RCP<std::vector<RealT> > zk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
+      ROL::Ptr<std::vector<RealT> > xk_ptr = ROL::makePtr<std::vector<RealT>>(dim);
+      ROL::Ptr<std::vector<RealT> > yk_ptr = ROL::makePtr<std::vector<RealT>>(dim);
+      ROL::Ptr<std::vector<RealT> > zk_ptr = ROL::makePtr<std::vector<RealT>>(dim);
 
-      Teuchos::RCP<V> xk = Teuchos::rcp( new SV( xk_rcp ) );
-      Teuchos::RCP<V> yk = Teuchos::rcp( new SV( yk_rcp ) );
-      Teuchos::RCP<V> zk = Teuchos::rcp( new SV( zk_rcp ) );
+      ROL::Ptr<V> xk = ROL::makePtr<SV>( xk_ptr );
+      ROL::Ptr<V> yk = ROL::makePtr<SV>( yk_ptr );
+      ROL::Ptr<V> zk = ROL::makePtr<SV>( zk_ptr );
 
       for( int i=0; i<dim; ++i ) {
-        (*xk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*yk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*zk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*xk_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*yk_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*zk_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       }
    
-      x_rcp.push_back(xk);
-      y_rcp.push_back(yk);
-      z_rcp.push_back(zk);
+      x_ptr.push_back(xk);
+      y_ptr.push_back(yk);
+      z_ptr.push_back(zk);
       
       total_dim += dim;
     }
 
     *outStream << "Proc " << batchID << ", total dimension = " << total_dim << std::endl;
 
-    PV x(x_rcp, bman);
-    PV y(y_rcp, bman);
-    PV z(z_rcp, bman);
+    PV x(x_ptr, bman);
+    PV y(y_ptr, bman);
+    PV z(z_ptr, bman);
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
-    ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
+    ROL::StdVector<RealT> checkvec(ROL::makePtrFromRef(consistency));
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }
@@ -176,19 +176,19 @@ int main(int argc, char *argv[]) {
 
     // Reset x and y vectors to all 1 and 2, resp., and compute dot product.
 /*
-    x_rcp.resize(0);
-    y_rcp.resize(0);
+    x_ptr.resize(0);
+    y_ptr.resize(0);
     for( int k=0; k<nvecloc; ++k ) {
-      Teuchos::RCP<std::vector<RealT> > xk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
-      Teuchos::RCP<std::vector<RealT> > yk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
-      Teuchos::RCP<V> xk = Teuchos::rcp( new SV( xk_rcp ) );
-      Teuchos::RCP<V> yk = Teuchos::rcp( new SV( yk_rcp ) );
+      ROL::Ptr<std::vector<RealT> > xk_ptr = ROL::makePtr<std::vector<RealT>>(dim);
+      ROL::Ptr<std::vector<RealT> > yk_ptr = ROL::makePtr<std::vector<RealT>>(dim);
+      ROL::Ptr<V> xk = ROL::makePtr<SV>( xk_ptr );
+      ROL::Ptr<V> yk = ROL::makePtr<SV>( yk_ptr );
       for( int i=0; i<dim; ++i ) {
-        (*xk_rcp)[i] = 1.0;
-        (*yk_rcp)[i] = 2.0;
+        (*xk_ptr)[i] = 1.0;
+        (*yk_ptr)[i] = 2.0;
       }
-      x_rcp.push_back(xk);
-      y_rcp.push_back(yk);
+      x_ptr.push_back(xk);
+      y_ptr.push_back(yk);
     }
     *outStream << "x.dot(y) = " << x.dot(y) << std::endl;
     if (std::abs(x.dot(y) - nSamp*dim*2) > std::sqrt(errtol)) {

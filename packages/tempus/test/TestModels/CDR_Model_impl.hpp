@@ -363,6 +363,12 @@ void CDR_Model<Scalar>::evalModelImpl(
     // Create ghosted objects
     // ****************
 
+    // Set the boundary condition directly.  Works for both x and xDot solves.
+    if (comm_->MyPID() == 0) {
+      RCP<Thyra::VectorBase<Scalar> > x = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgs.get_x());
+      (*Thyra::get_Epetra_Vector(*x_owned_map_,x))[0] = 1.0;
+    }
+
     if (is_null(u_ptr))
       u_ptr = Teuchos::rcp(new Epetra_Vector(*x_ghosted_map_));
 
@@ -399,6 +405,8 @@ void CDR_Model<Scalar>::evalModelImpl(
       J->PutScalar(0.0);
     if (nonnull(M_inv))
       M_inv->PutScalar(0.0);
+
+
 
     // Loop Over # of Finite Elements on Processor
     for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
@@ -449,15 +457,20 @@ void CDR_Model<Scalar>::evalModelImpl(
             }
           }
           if (nonnull(M_inv)) {
-            TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"CDR_Model: Preconditioner is NOT implemented for transient term yet!!!");
             for(int j=0;j < 2; j++) {
               if (x_owned_map_->MyGID(row)) {
                 int column=x_ghosted_map_->GID(ne+j);
+                // The prec will be the diagonal of J. No need to assemble the other entries
                 if (row == column) {
-                  double jac = basis.wt*basis.dz*((1.0/(basis.dz*basis.dz))*
-                                  basis.dphide[j]*basis.dphide[i]
-                                  +2.0*k_*basis.uu*basis.phi[j]*
-                                 basis.phi[i]);
+                  double jac=
+                    basis.wt*basis.dz*(
+                                       alpha * basis.phi[i] * basis.phi[j] // transient
+                                       + beta * (
+                                                 +a_/basis.dz*basis.dphide[j]*basis.phi[i] // convection
+                                                 +(1.0/(basis.dz*basis.dz))*basis.dphide[j]*basis.dphide[i] // diffusion
+                                                 +2.0*k_*basis.uu*basis.phi[j]*basis.phi[i] // source
+                                                 )
+                                       );
                   ierr = M_inv->SumIntoGlobalValues(row, 1, &jac, &column);
                 }
               }
@@ -471,7 +484,8 @@ void CDR_Model<Scalar>::evalModelImpl(
     // U(0)=1
     if (comm_->MyPID() == 0) {
       if (nonnull(f))
-        (*f)[0]= u[0] - 1.0;
+        (*f)[0] = 0.0;           // Setting BC above and zero residual here works for x and xDot solves.
+        //(*f)[0]= u[0] - 1.0;   // BC equation works for x solves.
       if (nonnull(J)) {
         int column=0;
         double jac=1.0;

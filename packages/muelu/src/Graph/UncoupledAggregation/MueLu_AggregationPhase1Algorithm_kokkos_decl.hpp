@@ -96,7 +96,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationPhase1Algorithm_kokkos(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    AggregationPhase1Algorithm_kokkos(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~AggregationPhase1Algorithm_kokkos() { }
@@ -110,9 +110,30 @@ namespace MueLu {
     /*! @brief Local aggregation. */
 
     void BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+
+    void BuildAggregatesSerial(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
+      std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
+      LO minNodesPerAggregate, LO maxNodesPerAggregate,
+      LO maxNeighAlreadySelected, std::string& orderingStr) const;
+
+    void BuildAggregatesDistance2(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
+        std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes, LO maxAggSize) const;
     //@}
 
     std::string description() const { return "Phase 1 (main)"; }
+
+    enum struct Algorithm
+    {
+      Serial,
+      Distance2 
+    };
+
+    static Algorithm algorithmFromName(const std::string& name)
+    {
+      if(name == "Distance2")
+        return Algorithm::Distance2;
+      return Algorithm::Serial;
+    }
 
   private:
 

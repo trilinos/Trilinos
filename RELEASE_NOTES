@@ -1,6 +1,120 @@
 ###############################################################################
 #                                                                             #
-# Trilinos Release 12.10 Release Notes                                         #
+# Trilinos Release 12.12 Release Notes                                        #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 12.12 general release contains 58 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Domi, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
+Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, ROL, RTOp, Rythmos, Sacado,
+SEACAS, Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Tempus*,
+Teuchos, ThreadPool, Thyra, Tpetra, TriKota, TrilinosCouplings, Trios,
+Triutils, Xpetra, Zoltan, Zoltan2.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+Domi 
+
+  - Enhancements
+    - Added more sophisticated processor decomposition algorithm. If the
+      decomposition of the processors along each axis is specified
+      incompletely for two or more axes, Domi now returns a much more
+      logical decomposition
+
+  - Bug fixes
+    - Fixed memory management error related to Tuple and ArrayView
+    - Update ParameterList documentation so that they display properly
+      in HTML documentation
+    - Fixed bug in MDMap::getAugmentedMDMap() method
+
+Ifpack2
+
+  - Multithreaded Gauss-Seidel now builds by default (#288)
+
+    Ifpack2's support for multithreaded Gauss-Seidel uses a new
+    thread-parallel graph coloring algorithm implemented in KokkosKernels.
+    (KokkosKernels currently lives in tpetra/kernels.)  Ifpack2 makes this
+    algorithm available in Ifpack2::Relaxation.  In the 12.10 release,
+    users had to set CMake configuration options to nondefault values in
+    order to enable this code.  Now, this code builds and is available by
+    default.  (This fixes GitHub Issue #288.)  It is still possible to
+    disable building this code, by setting the following CMake option to
+    OFF:
+
+      - Ifpack2_ENABLE_Experimental_KokkosKernels_Features
+
+Isorropia
+
+ - Removed experimental Tpetra interface.  The macro that would have
+   enabled it was commented out, so it could never have built.  See
+   discussion in #1406: https://github.com/trilinos/Trilinos/issues/1406
+
+PyTrilinos
+
+  - General
+    - PyTrilinos now works with both Python versions 2 and 3
+    - Internally, PyTrilinos now uses relative imports
+    - Protect against Doxygen version 1.8.13
+
+  - Teuchos
+    - Fix ParameterList __cmp__() operator
+    - Improved memory management for wrapped version of sublists
+    - Fixed a memory leak in the definitions for certain directorin
+      typemaps
+
+  - Epetra
+    - Add AsMap() method to Epetra.BlockMap class
+
+  - ML
+    - Fixed a dangling reference error in an ML example script.
+
+  - LOCA
+    - Fixed a memory leak in LOCA example script
+    - Fixed a memory leak in the wrappers for the
+      LOCA::Abstract::Iterator::StepStatus enumeration
+
+  - Anasazi
+    - Fixed a memory leak that PyTrilinos introduced with the
+      Eigensolution<...>::evecs() and espace() methods
+
+Tempus
+
+  Tempus provides a general infrastructure for the time evolution
+  of solutions to ODEs, PDEs, and DAEs, through a variety of general
+  integration schemes, and can be used from small systems of
+  equations (e.g., single ODEs for the time evolution of plasticity
+  models) to large-scale transient simulations requiring exascale
+  computing (e.g., flow fields around reentry vehicles and
+  magneto-hydrodynamics).
+
+  - Examples of time-integration methods available are:
+    - Tempus::StepperForwardEuler "Forward Euler"
+    - Tempus::StepperBackwardEuler "Backward Euler"
+    - Tempus::StepperExplicitRK "Explicit Runge-Kutta"
+    - Tempus::StepperDIRK "Diagonally Implicit Runge-Kutta methods"
+    - Newmark-&beta;
+      - Tempus::StepperNewmarkExplicitAForm "Explicit A-form"
+      - Tempus::StepperNewmarkImplicitAForm "Implicit A-form"
+      - Tempus::StepperNewmarkImplicitDForm "Implicit D-form"
+    - Tempus::StepperHHTAlpha "Hilber-Hughes-Taylor (HHT-&alpha;)"
+    - Tempus::StepperIMEX_RK "Implicit/Explicit Runge-Kutta (IMEX-RK) methods"
+    - Tempus::StepperIMEX_RK_Partition "Partitioned IMEX-RK methods"
+
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 12.10 Release Notes                                        #
 #                                                                             #
 ###############################################################################
 
@@ -3433,7 +3547,7 @@ SEACAS
      - exotxt:     convert exodus database to text format
      - gjoin:      join 2 or more exodus databases into a single database.
                    Will combine nodes, blocks, nodesets, sidesets
-     - grope:      query an exodus database.
+     - explore:    query an exodus database.
      - mapvar:     transfer solution results from one database to another.
      - mapvar-kd:  same as mapvar with a kd-based internal search; minor other
                    differences.

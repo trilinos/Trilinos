@@ -51,10 +51,10 @@
 #include "ROL_Types.hpp"
 #include "ROL_Zakharov.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 typedef double RealT;
 typedef double ElementT;
@@ -67,18 +67,17 @@ typedef Tpetra::MultiVector<RealT, LO, GO, Node> MV;
 
 int main(int argc, char *argv[]) {
 
-    using Teuchos::RCP;
-    using Teuchos::rcp; 
-    typedef RCP<MV> MVP;
+    
+     
+    typedef ROL::Ptr<MV> MVP;
 
     Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm();
- 
+
+    ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
 
     int iprint = argc - 1;
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::nullstream bhs; // outputs nothing
     std::ostream& outStream = (iprint > 0) ? std::cout : bhs;
 
     int errorFlag = 0;
@@ -90,23 +89,23 @@ int main(int argc, char *argv[]) {
 
         int dim = 10; 
       
-        RCP<Map> map = rcp( new Map(dim,0,comm) );
+        ROL::Ptr<Map> map = ROL::makePtr<Map>(dim,0,comm);
 
         // Create Tpetra::MultiVectors (single vectors) 
-        MVP x_rcp = rcp( new MV(map,1,true) ); 
-        MVP y_rcp = rcp( new MV(map,1,true) ); 
+        MVP x_ptr = ROL::makePtr<MV>(map,1,true); 
+        MVP y_ptr = ROL::makePtr<MV>(map,1,true); 
 
         // Random elements
-        x_rcp->randomize(); 
+        x_ptr->randomize(); 
 
         // Set all values to 2
-        y_rcp->putScalar(-2.0);
+        y_ptr->putScalar(-2.0);
            
         /*---[ Begin Test of ROL::TpetraMultiVector methods ] ---*/
 
         // Create ROL vectors
-        ROL::TpetraMultiVector<RealT> x(x_rcp); // Testing default parameters here
-        ROL::TpetraMultiVector<RealT,LO,GO,Node> y(y_rcp);
+        ROL::TpetraMultiVector<RealT> x(x_ptr); // Testing default parameters here
+        ROL::TpetraMultiVector<RealT,LO,GO,Node> y(y_ptr);
 
         // norm of x
         RealT xnorm = x.norm();
@@ -126,7 +125,7 @@ int main(int argc, char *argv[]) {
         }
 
         // clone z from x, deep copy x into z, norm of z
-        Teuchos::RCP<ROL::Vector<RealT> > z = x.clone();
+        ROL::Ptr<ROL::Vector<RealT> > z = x.clone();
         z->set(x);
         RealT znorm = z->norm();
         outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
@@ -178,37 +177,37 @@ int main(int argc, char *argv[]) {
  
         /*---[ Begin Test of optimization using ROL::TpetraMultiVector ]---*/
         // Set to initial guess
-        x_rcp->putScalar(4.0);
+        x_ptr->putScalar(4.0);
 
         // For constructing Zakharov objective
-        MVP k_rcp     = rcp(new MV(map,1,true));
+        MVP k_ptr     = ROL::makePtr<MV>(map,1,true);
 
         // For gradient and Hessian checks
-        MVP xtest_rcp = rcp(new MV(map,1,true));
-        MVP d_rcp     = rcp(new MV(map,1,true));
-        MVP v_rcp     = rcp(new MV(map,1,true));
-        MVP hv_rcp    = rcp(new MV(map,1,true));
-        MVP ihhv_rcp  = rcp(new MV(map,1,true));
+        MVP xtest_ptr = ROL::makePtr<MV>(map,1,true);
+        MVP d_ptr     = ROL::makePtr<MV>(map,1,true);
+        MVP v_ptr     = ROL::makePtr<MV>(map,1,true);
+        MVP hv_ptr    = ROL::makePtr<MV>(map,1,true);
+        MVP ihhv_ptr  = ROL::makePtr<MV>(map,1,true);
  
         int numElem = map->getNodeNumElements();
          
         for( LO lclRow = 0; lclRow < static_cast<LO> (numElem); ++lclRow) {
             const GO gblRow = map->getGlobalElement(lclRow);
-            k_rcp->replaceGlobalValue(gblRow,0,gblRow+1.0);
+            k_ptr->replaceGlobalValue(gblRow,0,gblRow+1.0);
         }
 
-        xtest_rcp->randomize();
-        d_rcp->randomize();
-        v_rcp->randomize();
+        xtest_ptr->randomize();
+        d_ptr->randomize();
+        v_ptr->randomize();
 
-        RCP<ROL::Vector<RealT> > k = rcp(new ROL::TpetraMultiVector<RealT,LO,GO,Node>(k_rcp));
+        ROL::Ptr<ROL::Vector<RealT> > k = ROL::makePtr<ROL::TpetraMultiVector<RealT,LO,GO,Node>>(k_ptr);
 
         // Check gradient and Hessian
-        ROL::TpetraMultiVector<RealT,LO,GO,Node> xtest(xtest_rcp);
-        ROL::TpetraMultiVector<RealT,LO,GO,Node> d(d_rcp);
-        ROL::TpetraMultiVector<RealT,LO,GO,Node> v(v_rcp);
-        ROL::TpetraMultiVector<RealT,LO,GO,Node> hv(hv_rcp);
-        ROL::TpetraMultiVector<RealT,LO,GO,Node> ihhv(ihhv_rcp);
+        ROL::TpetraMultiVector<RealT,LO,GO,Node> xtest(xtest_ptr);
+        ROL::TpetraMultiVector<RealT,LO,GO,Node> d(d_ptr);
+        ROL::TpetraMultiVector<RealT,LO,GO,Node> v(v_ptr);
+        ROL::TpetraMultiVector<RealT,LO,GO,Node> hv(hv_ptr);
+        ROL::TpetraMultiVector<RealT,LO,GO,Node> ihhv(ihhv_ptr);
 
         // Create Objective function 
         ROL::ZOO::Objective_Zakharov<RealT> obj(k);

@@ -1,0 +1,4 @@
+MOCK_PROGRAM_INPUT: diff --name-only sha1-from sha1-two packagesToEnable.cmake
+MOCK_PROGRAM_RETURN: 0
+MOCK_PROGRAM_OUTPUT: Projects.cmake
+packages/teuchos/core/CMakeLists.txt

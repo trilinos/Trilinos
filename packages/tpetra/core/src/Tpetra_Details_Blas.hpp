@@ -99,7 +99,10 @@ getStride2DView (const ViewType& A)
                  "IndexType must be a built-in integer type.");
   IndexType stride[8];
   A.stride (stride);
-  return (A.dimension_1 () > 1) ? stride[1] : A.dimension_0 ();
+  // BLAS implementations do not like zero LDA, even if (e.g.,) the
+  // number of rows is actually zero.  See e.g., GitHub Issue #3235.
+  const auto LDA = (A.extent (1) > 1) ? stride[1] : A.extent (0);
+  return LDA == 0 ? IndexType (1) : LDA;
 }
 
 namespace Impl {

@@ -52,8 +52,8 @@
 #include "ROL_BisectionScalarMinimization.hpp"
 #include "ROL_GoldenSectionScalarMinimization.hpp"
 #include "ROL_ScalarFunction.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_ParameterList.hpp"
+#include "ROL_Ptr.hpp"
 #include <iostream>
 
 namespace ROL { 
@@ -61,24 +61,24 @@ namespace ROL {
 template<class Real>
 class ScalarMinimizationTest {
 private:
-  Teuchos::RCP<ScalarMinimization<Real> > algo_;
+  ROL::Ptr<ScalarMinimization<Real> > algo_;
 
 public:
   virtual ~ScalarMinimizationTest(void) {}
 
-  ScalarMinimizationTest(Teuchos::ParameterList &parlist) {
+  ScalarMinimizationTest(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("Scalar Minimization").get("Type","Brent's");
     if ( type == "Brent's" ) {
-      algo_ = Teuchos::rcp(new BrentsScalarMinimization<Real>(parlist));
+      algo_ = ROL::makePtr<BrentsScalarMinimization<Real>>(parlist);
     }
     else if ( type == "Bisection" ) {
-      algo_ = Teuchos::rcp(new BisectionScalarMinimization<Real>(parlist));
+      algo_ = ROL::makePtr<BisectionScalarMinimization<Real>>(parlist);
     }
     else if ( type == "Golden Section" ) {
-      algo_ = Teuchos::rcp(new GoldenSectionScalarMinimization<Real>(parlist));
+      algo_ = ROL::makePtr<GoldenSectionScalarMinimization<Real>>(parlist);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> (ROL::ScalarMinimizationTest): Undefined ScalarMinimization type!");
     }
   }

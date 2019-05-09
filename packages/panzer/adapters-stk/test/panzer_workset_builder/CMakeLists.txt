@@ -38,7 +38,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   hdiv_basis 
   SOURCES hdiv_basis.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
-  NUM_MPI_PROCS 2
+  NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -46,4 +46,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES workset_container.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 2
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  check_rotation_matrices 
+  SOURCES check_rotation_matrices.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  check_sorted_face_quads
+  SOURCES check_sorted_face_quads.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
   )

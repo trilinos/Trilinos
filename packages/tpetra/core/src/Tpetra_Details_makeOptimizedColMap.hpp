@@ -59,9 +59,12 @@
 /// making the Import requires some of the same information that
 /// optimizing the column Map does.
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Import.hpp>
-#include <Tpetra_Util.hpp>
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Util.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include <memory>
 
 namespace Tpetra {
 namespace Details {
@@ -75,88 +78,106 @@ namespace Details {
   template<class MapType>
   class OptColMap {
   public:
-    typedef MapType map_type;
-    typedef typename MapType::local_ordinal_type local_ordinal_type;
-    typedef typename MapType::global_ordinal_type global_ordinal_type;
-    typedef typename MapType::node_type node_type;
-    typedef Import<local_ordinal_type,
-                   global_ordinal_type,
-                   node_type> import_type;
+    using local_ordinal_type = typename MapType::local_ordinal_type;
+    using global_ordinal_type = typename MapType::global_ordinal_type;
+    using node_type = typename MapType::node_type;
+    using map_type = ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
+    using import_type = ::Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>;
 
-    /// \brief Return an optimized reordering of the given column Map.
-    ///   Optionally, recompute an Import from the input domain Map to
-    ///   the new column Map.
-    /// \tparam MapType A specialization of Map.
-    ///
-    /// See the documentation of the free function
-    /// makeOptimizedColMapAndImport().
-    ///
-    /// \param errStream [out] Output stream for human-readable error
-    ///   reporting.  This is local to the calling process and may
-    ///   differ on different processes.
-    /// \param lclErr [out] On output: true if anything went wrong on
-    ///   the calling process.  This value is local to the calling
-    ///   process and may differ on different processes.
-    /// \param domMap [in] Domain Map of a CrsGraph or CrsMatrix.
-    /// \param colMap [in] <i>Original</i> column Map of the same
-    ///   CrsGraph or CrsMatrix as \c domMap.
-    /// \param oldImport [in] Optional pointer to the "original
-    ///   Import: an Import from \c domMap to \c colMap.  This is not
-    ///   required, but if you supply this, this function may use it
-    ///   to avoid some communication and/or work when setting up the
-    ///   new Import object.  This function will <i>only</i> look at
-    ///   this pointer if \c makeImport is true.
-    /// \param makeImport [in] Whether to make and return an Import from
-    ///   the input domain Map to the new column Map.
-    ///
-    /// \return The possibly reordered column Map \c newColMap, and the
-    ///   corresponding Import from \c domMap to \c newColMap.  The
-    ///   latter is nonnull if and only if \c makeImport is true.
-    ///
-    /// \pre \c domMap and \c colMap must have the same or congruent
-    ///   communicators.
-    /// \pre On all calling processes, the indices in \c colMap must be
-    ///   a subset of the indices in \c domMap.
-    static std::pair<map_type, Teuchos::RCP<import_type> >
-    make (std::ostream& errStream,
-          bool& lclErr,
-          const map_type& domMap,
-          const map_type& colMap,
-          const import_type* oldImport,
-          const bool makeImport)
+    static Teuchos::RCP<const map_type>
+    makeOptColMap (std::ostream& errStream,
+                   bool& lclErr,
+                   const map_type& domMap,
+                   const map_type& colMap,
+                   const import_type* /* oldImport */)
     {
+      using ::Tpetra::Details::Behavior;
       using Teuchos::Array;
       using Teuchos::ArrayView;
+      using Teuchos::FancyOStream;
+      using Teuchos::getFancyOStream;
       using Teuchos::RCP;
       using Teuchos::rcp;
+      using Teuchos::rcpFromRef;
       using std::endl;
-      typedef local_ordinal_type LO;
-      typedef global_ordinal_type GO;
-      const char prefix[] = "Tpetra::makeOptimizedColMapAndImport: ";
-      std::ostream& err = errStream;
-
-      (void) oldImport; // We don't currently use this argument.
+      using LO = local_ordinal_type;
+      using GO = global_ordinal_type;
+      const char prefix[] = "Tpetra::Details::makeOptimizedColMap: ";
 
       RCP<const Teuchos::Comm<int> > comm = colMap.getComm ();
-      const LO colMapMinLid = colMap.getMinLocalIndex ();
-      const LO colMapMaxLid = colMap.getMaxLocalIndex ();
+      std::ostream& err = errStream;
 
-      // Count the numbers of GIDs in colMap that are in and not in
-      // domMap on the calling process.  Check for zero indices on the
-      // calling process first, because if it's true, then we shouldn't
-      // trust [getMinLocalIndex(), getMaxLocalIndex()] to return a
-      // correct range.
-      LO numOwnedGids = 0;
-      LO numRemoteGids = 0;
-      if (colMap.getNodeNumElements () != 0) {
-        for (LO colMapLid = colMapMinLid; colMapLid <= colMapMaxLid; ++colMapLid) {
-          const GO colMapGid = colMap.getGlobalElement (colMapLid);
-          if (domMap.isNodeLocalElement (colMapGid)) {
-            ++numOwnedGids;
-          } else {
-            ++numRemoteGids;
+      const bool verbose = Behavior::verbose ("Tpetra::Details::makeOptimizedColMap");
+
+      RCP<FancyOStream> outPtr = getFancyOStream (rcpFromRef (std::cerr));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (outPtr.is_null (), std::logic_error,
+         "outPtr is null; this should never happen!");
+      FancyOStream& out = *outPtr;
+      Teuchos::OSTab tab1 (out);
+
+      std::unique_ptr<std::string> verboseHeader;
+      if (verbose) {
+        std::ostringstream os;
+        const int myRank = comm->getRank ();
+        os << "Proc " << myRank << ": ";
+        verboseHeader = std::unique_ptr<std::string> (new std::string (os.str ()));
+      }
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Tpetra::Details::makeOptimizedColMap" << endl;
+        out << os.str ();
+      }
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Domain Map GIDs: [";
+        const LO domMapLclNumInds = static_cast<LO> (domMap.getNodeNumElements ());
+        for (LO lid = 0; lid < domMapLclNumInds; ++lid) {
+          const GO gid = domMap.getGlobalElement (lid);
+          os << gid;
+          if (lid + LO (1) < domMapLclNumInds) {
+            os << ", ";
           }
         }
+        os << "]" << endl;
+        out << os.str ();
+      }
+
+      const LO colMapLclNumInds = static_cast<LO> (colMap.getNodeNumElements ());
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Column Map GIDs: [";
+        for (LO lid = 0; lid < colMapLclNumInds; ++lid) {
+          const GO gid = colMap.getGlobalElement (lid);
+          os << gid;
+          if (lid + LO (1) < colMapLclNumInds) {
+            os << ", ";
+          }
+        }
+        os << "]" << endl;
+        out << os.str ();
+      }
+
+      // Count remote GIDs.
+      LO numOwnedGids = 0;
+      LO numRemoteGids = 0;
+      for (LO colMapLid = 0; colMapLid < colMapLclNumInds; ++colMapLid) {
+        const GO colMapGid = colMap.getGlobalElement (colMapLid);
+        if (domMap.isNodeGlobalElement (colMapGid)) {
+          ++numOwnedGids;
+        }
+        else {
+          ++numRemoteGids;
+        }
+      }
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "- numOwnedGids: " << numOwnedGids << endl
+           << *verboseHeader << "- numRemoteGids: " << numRemoteGids << endl;
+        out << os.str ();
       }
 
       // Put all colMap GIDs on the calling process in a single array.
@@ -172,14 +193,13 @@ namespace Details {
       // use of Kokkos to parallelize these loops later.
       LO ownedPos = 0;
       LO remotePos = 0;
-      if (colMap.getNodeNumElements () != 0) {
-        for (LO colMapLid = colMapMinLid; colMapLid <= colMapMaxLid; ++colMapLid) {
-          const GO colMapGid = colMap.getGlobalElement (colMapLid);
-          if (domMap.isNodeLocalElement (colMapGid)) {
-            ownedGids[ownedPos++] = colMapGid;
-          } else {
-            remoteGids[remotePos++] = colMapGid;
-          }
+      for (LO colMapLid = 0; colMapLid < colMapLclNumInds; ++colMapLid) {
+        const GO colMapGid = colMap.getGlobalElement (colMapLid);
+        if (domMap.isNodeGlobalElement (colMapGid)) {
+          ownedGids[ownedPos++] = colMapGid;
+        }
+        else {
+          remoteGids[remotePos++] = colMapGid;
         }
       }
 
@@ -210,25 +230,14 @@ namespace Details {
       // process rank" -1, to help us test whether getRemoteIndexList
       // did its job.
       Array<int> remotePids (numRemoteGids, -1);
-      Array<LO> remoteLids;
-      if (makeImport) {
-        remoteLids.resize (numRemoteGids);
-        std::fill (remoteLids.begin (), remoteLids.end (),
-                   Teuchos::OrdinalTraits<LO>::invalid ());
-      }
-      LookupStatus lookupStatus;
-      if (makeImport) {
-        lookupStatus = domMap.getRemoteIndexList (remoteGids, remotePids (),
-                                                  remoteLids ());
-      } else {
-        lookupStatus = domMap.getRemoteIndexList (remoteGids, remotePids ());
-      }
+      const LookupStatus lookupStatus =
+        domMap.getRemoteIndexList (remoteGids, remotePids ());
 
       // If any process returns IDNotPresent, then at least one of the
       // remote indices was not present in the domain Map.  This means
       // that the Import object cannot be constructed, because of
-      // incongruity between the column Map and domain Map.  This means
-      // that either the column Map or domain Map, or both, is
+      // incongruity between the column Map and domain Map.  This
+      // means that either the column Map or domain Map, or both, is
       // incorrect.
       const bool getRemoteIndexListFailed = (lookupStatus == IDNotPresent);
       if (getRemoteIndexListFailed) {
@@ -256,32 +265,91 @@ namespace Details {
         }
       }
 
-      // Sort incoming remote column Map indices so that all columns
-      // coming from a given remote process are contiguous.  This means
-      // the Import's Distributor doesn't need to reorder data.
-      if (makeImport) {
-        sort2 (remotePids.begin (), remotePids.end (), remoteGids.begin ());
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "- Before sort2:" << endl
+           << *verboseHeader << "-- ownedGids: " << Teuchos::toString (ownedGids) << endl
+           << *verboseHeader << "-- remoteGids: " << Teuchos::toString (remoteGids) << endl
+           << *verboseHeader << "-- allGids: " << Teuchos::toString (allGids ()) << endl;
+        out << os.str ();
       }
-      else {
-        sort3 (remotePids.begin (), remotePids.end (),
-               remoteGids.begin (),
-               remoteLids.begin ());
+      using Tpetra::sort2;
+      sort2 (remotePids.begin (), remotePids.end (), remoteGids.begin ());
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "- After sort2:" << endl
+           << *verboseHeader << "-- ownedGids: " << Teuchos::toString (ownedGids) << endl
+           << *verboseHeader << "-- remoteGids: " << Teuchos::toString (remoteGids) << endl
+           << *verboseHeader << "-- allGids: " << Teuchos::toString (allGids ()) << endl;
+        out << os.str ();
       }
-      // Make the new column Map.
-      MapType newColMap (colMap.getGlobalNumElements (), allGids (),
-                         colMap.getIndexBase (), comm, colMap.getNode ());
-      // Optionally, make the new Import object.
-      RCP<import_type> imp;
-      if (makeImport) {
-        imp = rcp (new import_type (rcp (new map_type (domMap)),
-                                    rcp (new map_type (newColMap))));
-        // FIXME (mfh 06 Jul 2014) This constructor throws a runtime
-        // error, so I'm not using it for now.
-        //
-        // imp = rcp (new import_type (domMap, newColMap, remoteGids,
-        //                             remotePids (), remoteLids (),
-        //                             Teuchos::null, Teuchos::null));
+
+      auto optColMap = rcp (new map_type (colMap.getGlobalNumElements (),
+                                          allGids (),
+                                          colMap.getIndexBase (),
+                                          comm));
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Tpetra::Details::makeOptimizedColMap: Done" << endl;
+        out << os.str ();
       }
+      return optColMap;
+    }
+
+    /// \brief Return an optimized reordering of the given column Map.
+    ///   Optionally, recompute an Import from the input domain Map to
+    ///   the new column Map.
+    /// \tparam MapType A specialization of Map.
+    ///
+    /// See the documentation of the free function
+    /// makeOptimizedColMapAndImport().
+    ///
+    /// \param errStream [out] Output stream for human-readable error
+    ///   reporting.  This is local to the calling process and may
+    ///   differ on different processes.
+    /// \param lclErr [out] On output: true if anything went wrong on
+    ///   the calling process.  This value is local to the calling
+    ///   process and may differ on different processes.
+    /// \param domMap [in] Domain Map of a CrsGraph or CrsMatrix.
+    /// \param colMap [in] <i>Original</i> column Map of the same
+    ///   CrsGraph or CrsMatrix as \c domMap.
+    /// \param oldImport [in] Optional pointer to the "original
+    ///   Import: an Import from \c domMap to \c colMap.  This is not
+    ///   required, but if you supply this, this function may use it
+    ///   to avoid some communication and/or work when setting up the
+    ///   new Import object. 
+    ///
+    /// \return The possibly reordered column Map \c newColMap, and the
+    ///   corresponding Import from \c domMap to \c newColMap. 
+    ///
+    /// \pre \c domMap and \c colMap must have the same or congruent
+    ///   communicators.
+    /// \pre On all calling processes, the indices in \c colMap must be
+    ///   a subset of the indices in \c domMap.
+    static std::pair<Teuchos::RCP<const map_type>,
+                     Teuchos::RCP<import_type> >
+    makeOptColMapAndImport (std::ostream& errStream,
+                            bool& lclErr,
+                            const map_type& domMap,
+                            const map_type& colMap,
+                            const import_type* oldImport)
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      // mfh 15 May 2018: For now, just call makeOptColMap, and use
+      // the conventional two-Map (source and target) Import
+      // constructor.
+      RCP<const map_type> newColMap =
+        makeOptColMap (errStream, lclErr, domMap, colMap, oldImport);
+      RCP<import_type> imp (new import_type (rcp (new map_type (domMap)), newColMap));
+
+      // FIXME (mfh 06 Jul 2014) This constructor throws a runtime
+      // error, so I'm not using it for now.
+      //
+      // imp = rcp (new import_type (domMap, newColMap, remoteGids,
+      //                             remotePids (), remoteLids (),
+      //                             Teuchos::null, Teuchos::null));
       return std::make_pair (newColMap, imp);
     }
   };
@@ -298,6 +366,11 @@ namespace Details {
   /// \param domMap [in] Domain Map of a CrsGraph or CrsMatrix.
   /// \param colMap [in] <i>Original</i> column Map of the same
   ///   CrsGraph or CrsMatrix as \c domMap.
+  /// \param oldImport [in] Optional pointer to the "original
+  ///   Import: an Import from \c domMap to \c colMap.  This is not
+  ///   required, but if you supply this, this function may use it
+  ///   to avoid some communication and/or work when setting up the
+  ///   new Import object. 
   ///
   /// \return The possibly reordered column Map \c newColMap.
   ///
@@ -306,22 +379,24 @@ namespace Details {
   /// It does everything that that function does, except that it does
   /// not compute a new Import.
   template<class MapType>
-  MapType
+  Teuchos::RCP<const MapType>
   makeOptimizedColMap (std::ostream& errStream,
                        bool& lclErr,
                        const MapType& domMap,
-                       const MapType& colMap)
+                       const MapType& colMap,
+                       const Tpetra::Import<
+                         typename MapType::local_ordinal_type,
+                         typename MapType::global_ordinal_type,
+                         typename MapType::node_type>* oldImport = nullptr)
   {
-    typedef typename MapType::local_ordinal_type LO;
-    typedef typename MapType::global_ordinal_type GO;
-    typedef typename MapType::node_type NT;
-    typedef ::Tpetra::Import<LO, GO, NT> import_type;
-
-    const bool makeImport = false;
-    std::pair<MapType, Teuchos::RCP<import_type> > ret =
-      OptColMap<MapType>::make (errStream, lclErr, domMap, colMap,
-                                NULL, makeImport);
-    return ret.first;
+    using map_type = ::Tpetra::Map<
+      typename MapType::local_ordinal_type,
+      typename MapType::global_ordinal_type,
+      typename MapType::node_type>;
+    using impl_type = OptColMap<map_type>;
+    auto mapPtr = impl_type::makeOptColMap (errStream, lclErr,
+                                            domMap, colMap, oldImport);
+    return mapPtr;
   }
 
   /// \brief Return an optimized reordering of the given column Map.
@@ -348,12 +423,14 @@ namespace Details {
   /// \param domMap [in] Domain Map of a CrsGraph or CrsMatrix.
   /// \param colMap [in] <i>Original</i> column Map of the same
   ///   CrsGraph or CrsMatrix as \c domMap.
-  /// \param makeImport [in] Whether to make and return an Import from
-  ///   the input domain Map to the new column Map.
+  /// \param oldImport [in] Optional pointer to the "original
+  ///   Import: an Import from \c domMap to \c colMap.  This is not
+  ///   required, but if you supply this, this function may use it
+  ///   to avoid some communication and/or work when setting up the
+  ///   new Import object. 
   ///
   /// \return The possibly reordered column Map \c newColMap, and the
-  ///   corresponding Import from \c domMap to \c newColMap.  The
-  ///   latter is nonnull if and only if \c makeImport is true.
+  ///   corresponding Import from \c domMap to \c newColMap. 
   ///
   /// \pre \c domMap and \c colMap must have the same or congruent
   ///   communicators.
@@ -379,16 +456,22 @@ namespace Details {
   /// domain Map) permits the use of contiguous send and receive
   /// buffers in Distributor, which is used in an Import operation.
   template<class MapType>
-  std::pair<MapType, Teuchos::RCP<typename OptColMap<MapType>::import_type> >
+  std::pair<Teuchos::RCP<const MapType>,
+            Teuchos::RCP<typename OptColMap<MapType>::import_type> >
   makeOptimizedColMapAndImport (std::ostream& errStream,
                                 bool& lclErr,
                                 const MapType& domMap,
                                 const MapType& colMap,
-                                const typename OptColMap<MapType>::import_type* oldImport,
-                                const bool makeImport)
+                                const typename OptColMap<MapType>::import_type* oldImport = nullptr)
   {
-    return OptColMap<MapType>::make (errStream, lclErr, domMap, colMap,
-                                     oldImport, makeImport);
+    using local_ordinal_type = typename MapType::local_ordinal_type;
+    using global_ordinal_type = typename MapType::global_ordinal_type;
+    using node_type = typename MapType::node_type;
+    using map_type = ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
+    using impl_type = OptColMap<map_type>;
+
+    auto mapAndImp = impl_type::makeOptColMapAndImport (errStream, lclErr, domMap, colMap, oldImport);
+    return std::make_pair (mapAndImp.first, mapAndImp.second);
   }
 
 } // namespace Details

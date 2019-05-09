@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -104,14 +104,15 @@ struct find_2_tuples {
 
 int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
-  
+
+  {
   int chunk_size = 1024;
   int nchunks = 100000; //1024*1024;
   Kokkos::DualView<int*> data("data",nchunks*chunk_size+1);
 
   srand(1231093);
 
-  for(int i = 0; i < (int) data.dimension_0(); i++) {
+  for(int i = 0; i < (int) data.extent(0); i++) {
     data.h_view(i) = rand()%TEAM_SIZE;
   }
   data.modify<Host>();
@@ -122,7 +123,10 @@ int main(int narg, char* args[]) {
 
   Kokkos::Timer timer;
   // threads/team is automatically limited to maximum supported by the device.
-  Kokkos::parallel_for( team_policy( nchunks , TEAM_SIZE )
+  int team_size = TEAM_SIZE;
+  if( team_size > Device::execution_space::concurrency() )
+    team_size = Device::execution_space::concurrency();
+  Kokkos::parallel_for( team_policy( nchunks , team_size )
                       , find_2_tuples(chunk_size,data,histogram) );
   Kokkos::fence();
   double time = timer.seconds();
@@ -139,6 +143,7 @@ int main(int narg, char* args[]) {
     printf("\n");
   }
   printf("Result: %i %i\n",sum,chunk_size*nchunks);
+  }
   Kokkos::finalize();
 }
 

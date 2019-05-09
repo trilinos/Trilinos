@@ -43,7 +43,7 @@
 
 #include "Tpetra_Details_FixedHashTable_decl.hpp"
 
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(KOKKOS_HAVE_CUDA)
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(KOKKOS_ENABLE_CUDA)
 
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_Details_FixedHashTable_def.hpp"
@@ -91,4 +91,4 @@ namespace Details {
 } // namespace Details
 } // namespace Tpetra
 
-#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(KOKKOS_HAVE_CUDA)
+#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(KOKKOS_ENABLE_CUDA)

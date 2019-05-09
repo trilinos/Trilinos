@@ -71,6 +71,12 @@ MOERTEL::Segment(id,nnode,nodeId,out)
   stype_ = MOERTEL::Segment::seg_BiLinearTri;
 }
 
+MOERTEL::Segment_BiLinearTri::Segment_BiLinearTri(int id, const std::vector<int>& nodev, int out) :
+MOERTEL::Segment(id, nodev, out)
+{
+  stype_ = MOERTEL::Segment::seg_BiLinearTri;
+}
+
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 10/05|
  |  This constructor should not be used by the user, it is used         |
@@ -249,8 +255,8 @@ double* MOERTEL::Segment_BiLinearTri::BuildNormal(double* xi)
   double g2[3];
   for (int i=0; i<3; ++i)
   {
-    g1[i] = Nodes()[1]->X()[i] - Nodes()[0]->X()[i];  
-    g2[i] = Nodes()[2]->X()[i] - Nodes()[0]->X()[i]; 
+    g1[i] = Nodes()[1]->XCoords()[i] - Nodes()[0]->XCoords()[i];  
+    g2[i] = Nodes()[2]->XCoords()[i] - Nodes()[0]->XCoords()[i]; 
   }
   
   // build normal as their cross product

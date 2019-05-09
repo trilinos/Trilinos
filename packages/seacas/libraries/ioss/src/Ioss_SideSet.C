@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -44,11 +44,40 @@
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_PropertyManager.h"
 
+namespace {
+  const std::string id_str() { return std::string("id"); }
+  void check_for_duplicate_names(const Ioss::SideSet *sset, const Ioss::SideBlock *side_block)
+  {
+    const std::string &name = side_block->name();
+
+    // See if there is a side_block with this name...
+    const Ioss::SideBlock *old_ge = sset->get_side_block(name);
+
+    if (old_ge != nullptr) {
+      std::string        filename = sset->get_database()->get_filename();
+      std::ostringstream errmsg;
+      int64_t            id1 = 0;
+      int64_t            id2 = 0;
+      if (side_block->property_exists(id_str())) {
+        id1 = side_block->get_property(id_str()).get_int();
+      }
+      if (old_ge->property_exists(id_str())) {
+        id2 = old_ge->get_property(id_str()).get_int();
+      }
+      errmsg << "\nERROR: There are multiple side blocks with the same name "
+             << "defined in side set '" << sset->name() << "' in the database file '" << filename
+             << "'.\n"
+             << "\tBoth " << side_block->type_string() << " " << id1 << " and "
+             << old_ge->type_string() << " " << id2 << " are named '" << name
+             << "'.  All names must be unique.";
+      IOSS_ERROR(errmsg);
+    }
+  }
+} // namespace
+
 namespace Ioss {
   class Field;
 } // namespace Ioss
-
-static const std::string SCALAR("scalar");
 
 /** \brief Create a side set with no members initially.
  *
@@ -100,6 +129,7 @@ Ioss::SideBlock *Ioss::SideSet::get_side_block(const std::string &my_name) const
 
 bool Ioss::SideSet::add(Ioss::SideBlock *side_block)
 {
+  check_for_duplicate_names(this, side_block);
   IOSS_FUNC_ENTER(m_);
   sideBlocks.push_back(side_block);
   side_block->owner_ = this;

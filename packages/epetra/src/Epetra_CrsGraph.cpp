@@ -176,12 +176,12 @@ int Epetra_CrsGraph::TAllocate(const int* numIndicesPerRow, int Inc, bool static
     // yet.
     Data.SortedEntries_[i].entries_.resize(NumIndices,
                  indexBaseMinusOne);
-    Data.Indices_[i] = NumIndices > 0 ? &Data.SortedEntries_[i].entries_[0]: NULL;
+    Data.Indices_[i] = Epetra_Util_data_ptr(Data.SortedEntries_[i].entries_);
     Data.SortedEntries_[i].entries_.resize(0);
   }
       }
       else {
-  Data.Indices_[i] = 0;
+        Data.Indices_[i] = NULL;
       }
 
       CrsGraphData_->NumAllocatedIndicesPerRow_[i] = NumIndices;
@@ -319,7 +319,7 @@ int Epetra_CrsGraph::InsertMyIndices(int Row, int NumIndices, int* indices) {
 
 // protected ===================================================================
 template<typename int_type>
-int Epetra_CrsGraph::InsertIndices(int Row,
+int Epetra_CrsGraph::TInsertIndices(int Row,
            int NumIndices,
            int_type* UserIndices)
 {
@@ -415,33 +415,30 @@ int Epetra_CrsGraph::InsertIndices(int Row,
 }
 
 // =========================================================================
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_CrsGraph::InsertIndices(int Row,
            int NumIndices,
            int* UserIndices)
 {
   if(RowMap().GlobalIndicesTypeValid())
-    return InsertIndices<int>(Row, NumIndices, UserIndices);
+    return TInsertIndices<int>(Row, NumIndices, UserIndices);
   else
     throw ReportError("Epetra_CrsGraph::InsertIndices global index type unknown.", -1);
 }
-#endif
+
 // =========================================================================
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_CrsGraph::InsertIndices(int Row,
            int NumIndices,
            long long* UserIndices)
 {
   if(RowMap().GlobalIndicesLongLong())
-    return InsertIndices<long long>(Row, NumIndices, UserIndices);
+    return TInsertIndices<long long>(Row, NumIndices, UserIndices);
   else
     throw ReportError("Epetra_CrsGraph::InsertIndices long long version called for a graph that is not long long.", -1);
 }
-#endif
 
 // =========================================================================
 template<typename int_type>
-int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
+int Epetra_CrsGraph::TInsertIndicesIntoSorted(int Row,
               int NumIndices,
               int_type* UserIndices)
 {
@@ -516,29 +513,27 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
 }
 
 //==============================================================================
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
               int NumIndices,
               int* UserIndices)
 {
   if(RowMap().GlobalIndicesTypeValid())
-    return InsertIndicesIntoSorted<int>(Row, NumIndices, UserIndices);
+    return TInsertIndicesIntoSorted<int>(Row, NumIndices, UserIndices);
   else
     throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted global index type unknown.", -1);
 }
-#endif
+
 //==============================================================================
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
               int NumIndices,
               long long* UserIndices)
 {
   if(RowMap().GlobalIndicesLongLong())
-    return InsertIndicesIntoSorted<long long>(Row, NumIndices, UserIndices);
+    return TInsertIndicesIntoSorted<long long>(Row, NumIndices, UserIndices);
   else
     throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted long long version called for a graph that is not long long.", -1);
 }
-#endif
+
 //==============================================================================
 template<typename int_type>
 int Epetra_CrsGraph::RemoveGlobalIndices(int_type Row, int NumIndices, int_type* indices) {
@@ -1059,22 +1054,21 @@ int Epetra_CrsGraph::ComputeGlobalConstants()
     CrsGraphData_->MaxNumNonzeros_ = 0;  // We will determine the max number of nonzeros in any one block row
     int* RowElementSizeList = RowMap().ElementSizeList();
     int* ColElementSizeList = RowElementSizeList;
-    if(Importer() != 0)
-      ColElementSizeList = ColMap().ElementSizeList();
-      const Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
+    if(Importer() != 0) ColElementSizeList = ColMap().ElementSizeList();
+    const Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
     for(int i = 0; i < numMyBlockRows; i++){
       int NumEntries = CrsGraphData_->NumIndicesPerRow_[i];
       int* indices = intData.Indices_[i];
       if(NumEntries > 0) {
-  int CurNumNonzeros = 0;
-  int RowDim = RowElementSizeList[i];
-  for(int j = 0; j < NumEntries; j++) {
-    int ColDim = ColElementSizeList[indices[j]];
-    CurNumNonzeros += RowDim*ColDim;
-    CrsGraphData_->MaxColDim_ = EPETRA_MAX(CrsGraphData_->MaxColDim_, ColDim);
-  }
-  CrsGraphData_->MaxNumNonzeros_ = EPETRA_MAX(CrsGraphData_->MaxNumNonzeros_, CurNumNonzeros);
-  CrsGraphData_->NumMyNonzeros_ += CurNumNonzeros;
+        int CurNumNonzeros = 0;
+        int RowDim = RowElementSizeList[i];
+        for(int j = 0; j < NumEntries; j++) {
+          int ColDim = ColElementSizeList[indices[j]];
+          CurNumNonzeros += RowDim*ColDim;
+          CrsGraphData_->MaxColDim_ = EPETRA_MAX(CrsGraphData_->MaxColDim_, ColDim);
+        }
+        CrsGraphData_->MaxNumNonzeros_ = EPETRA_MAX(CrsGraphData_->MaxNumNonzeros_, CurNumNonzeros);
+        CrsGraphData_->NumMyNonzeros_ += CurNumNonzeros;
       }
     }
 

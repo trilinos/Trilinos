@@ -49,6 +49,7 @@
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -56,6 +57,7 @@
 
 #include "MueLu_Graph_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
+#include "MueLu_IndexManager.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
@@ -130,6 +132,18 @@ namespace MueLu {
     */
     void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
 
+    /*! @brief Get the index manager used by structured aggregation algorithms.
+
+        This has to be done by the aggregation factory.
+    */
+    RCP<IndexManager>& GetIndexManager() { return geoData_; }
+
+    /*! @brief Get the index manager used by structured aggregation algorithms.
+
+        This has to be done by the aggregation factory.
+    */
+    void SetIndexManager(RCP<IndexManager> & geoData) { geoData_ = geoData; }
+
     //! @brief Record whether aggregates include DOFs from other processes.
     void AggregatesCrossProcessors(const bool &flag) {aggregatesIncludeGhosts_ = flag;};
 
@@ -143,7 +157,7 @@ namespace MueLu {
 
         For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
     */
-    RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       }
+    RCP<LOMultiVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       }
 
     /*! @brief Returns nonconsant vector that maps local node IDs to owning processor IDs.
 
@@ -154,7 +168,7 @@ namespace MueLu {
 
         For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
     */
-    const RCP<LOVector> & GetVertex2AggId() const { return vertex2AggId_;       }
+    const RCP<LOMultiVector> & GetVertex2AggId() const { return vertex2AggId_;       }
 
     /*! @brief Returns constant vector that maps local node IDs to owning processor IDs.
 
@@ -201,13 +215,18 @@ namespace MueLu {
      * local id k has been assigned. While k is the local id on my processor (MyPID),
      * vertex2AggId[k] is the local id on the processor which actually owns the aggregate.
      */
-    RCP<LOVector> vertex2AggId_;
+    RCP<LOMultiVector> vertex2AggId_;
 
     /*!
      * If k is the local id on my processor (MyPID), the owning processor has the
      * id given by procWinner[k]
      */
     RCP<LOVector> procWinner_;
+
+    /*! geoData stores an index manager object that is used to perform structured aggreation
+     *  on a problem.
+     */
+    RCP<IndexManager> geoData_;
 
     Teuchos::ArrayRCP<bool> isRoot_;//< IsRoot[i] indicates whether vertex i is a root node.
 

@@ -176,6 +176,7 @@ namespace MueLu {
         RCP<Vector> invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A);
 
         SC omega = dampingFactor / lambdaMax;
+        TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
@@ -188,6 +189,7 @@ namespace MueLu {
     // Level Set
     if (!restrictionMode_) {
       // prolongation factory is in prolongation mode
+      if(!finalP.is_null()) {std::ostringstream oss; oss << "P_" << coarseLevel.GetLevelID(); finalP->setObjectLabel(oss.str());}
       Set(coarseLevel, "P", finalP);
 
       // NOTE: EXPERIMENTAL
@@ -198,17 +200,18 @@ namespace MueLu {
       // prolongation factory is in restriction mode
       RCP<Matrix> R = Utilities_kokkos::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
+      if(!R.is_null()) {std::ostringstream oss; oss << "R_" << coarseLevel.GetLevelID(); R->setObjectLabel(oss.str());}
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
         R->CreateView("stridedMaps", Ptent, true);
     }
 
-    if (IsPrint(Statistics1)) {
+    if (IsPrint(Statistics2)) {
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
       params->set("printCommInfo",          true);
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
+      GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
     }
 
   } //Build()

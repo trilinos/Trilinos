@@ -156,6 +156,7 @@ struct ScalarTraits<char>
   typedef char magnitudeType;
   typedef char halfPrecision;
   typedef char doublePrecision;
+  typedef char coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -192,6 +193,7 @@ struct ScalarTraits<short int>
   typedef short int magnitudeType;
   typedef short int halfPrecision;
   typedef short int doublePrecision;
+  typedef short int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -227,6 +229,7 @@ struct ScalarTraits<unsigned short int>
   typedef unsigned short int magnitudeType;
   typedef unsigned short int halfPrecision;
   typedef unsigned short int doublePrecision;
+  typedef unsigned short int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -263,6 +266,7 @@ struct ScalarTraits<int>
   typedef int magnitudeType;
   typedef int halfPrecision;
   typedef int doublePrecision;
+  typedef int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -299,6 +303,7 @@ struct ScalarTraits<unsigned int>
   typedef unsigned int magnitudeType;
   typedef unsigned int halfPrecision;
   typedef unsigned int doublePrecision;
+  typedef unsigned int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -335,6 +340,7 @@ struct ScalarTraits<long int>
   typedef long int magnitudeType;
   typedef long int halfPrecision;
   typedef long int doublePrecision;
+  typedef long int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -373,6 +379,7 @@ struct ScalarTraits<long unsigned int>
   typedef long unsigned int magnitudeType;
   typedef long unsigned int halfPrecision;
   typedef long unsigned int doublePrecision;
+  typedef long unsigned int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -405,13 +412,13 @@ struct ScalarTraits<long unsigned int>
 };
 
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template<>
 struct ScalarTraits<long long int>
 {
   typedef long long int magnitudeType;
   typedef long long int halfPrecision;
   typedef long long int doublePrecision;
+  typedef long long int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -449,6 +456,7 @@ struct ScalarTraits<unsigned long long int>
   typedef unsigned long long int magnitudeType;
   typedef unsigned long long int halfPrecision;
   typedef unsigned long long int doublePrecision;
+  typedef unsigned long long int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -479,7 +487,6 @@ struct ScalarTraits<unsigned long long int>
   static inline unsigned long long int log(unsigned long long int x) { return static_cast<unsigned long long int> (std::log (static_cast<double> (x))); }
   static inline unsigned long long int log10(unsigned long long int x) { return static_cast<unsigned long long int> (std::log10 (static_cast<double> (x))); }
 };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 #ifdef HAVE_TEUCHOS___INT64
@@ -490,6 +497,7 @@ struct ScalarTraits<__int64>
   typedef __int64 magnitudeType;
   typedef __int64 halfPrecision;
   typedef __int64 doublePrecision;
+  typedef __int64 coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -526,6 +534,7 @@ struct ScalarTraits<unsigned __int64>
   typedef unsigned __int64 magnitudeType;
   typedef unsigned __int64 halfPrecision;
   typedef unsigned __int64 doublePrecision;
+  typedef unsigned __int64 coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -570,6 +579,7 @@ struct ScalarTraits<float>
   typedef float magnitudeType;
   typedef float halfPrecision; // should become IEEE754-2008 binary16 or fp16 later, perhaps specified at configure according to architectural support
   typedef double doublePrecision;
+  typedef float coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -682,6 +692,7 @@ struct ScalarTraits<double>
 #else
   typedef double doublePrecision;     // don't double "double" in this case
 #endif
+  typedef double coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -778,6 +789,7 @@ struct ScalarTraits<__float128> {
   // cause unforeseen issues.
   typedef __float128 doublePrecision;
   typedef double halfPrecision;
+  typedef __float128 coordinateType;
 
   static const bool isComplex = false;
   static const bool isOrdinal = false;
@@ -891,6 +903,7 @@ struct ScalarTraits<dd_real>
   typedef dd_real magnitudeType;
   typedef double halfPrecision;
   typedef qd_real doublePrecision;
+  typedef dd_real coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -953,6 +966,7 @@ struct ScalarTraits<qd_real>
   typedef qd_real magnitudeType;
   typedef dd_real halfPrecision;
   typedef qd_real doublePrecision;
+  typedef qd_real coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -1040,6 +1054,7 @@ struct ScalarTraits<mpf_class>
   typedef mpf_class magnitudeType;
   typedef mpf_class halfPrecision;
   typedef mpf_class doublePrecision;
+  typedef mpf_class coordinateType;
   static const bool isComplex = false;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
@@ -1075,6 +1090,7 @@ struct ScalarTraits<mp_real>
   typedef mp_real magnitudeType;
   typedef double halfPrecision;
   typedef mp_real doublePrecision;
+  typedef mp_real coordinateType;
   static const bool isComplex = false;
   static const bool isComparable = true;
   static const bool isOrdinal = false;
@@ -1116,6 +1132,7 @@ struct ScalarTraits<
   typedef std::complex<typename ScalarTraits<T>::halfPrecision> halfPrecision;
   typedef std::complex<typename ScalarTraits<T>::doublePrecision> doublePrecision;
   typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
+  typedef typename ScalarTraits<T>::coordinateType coordinateType;
   static const bool isComplex = true;
   static const bool isOrdinal = ScalarTraits<T>::isOrdinal;
   static const bool isComparable = false;

@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 					"Error, Test was run with " << np << " processes,"
 					<< "but is only valid for up to " << MAX_PROCESSES << " processes." << std::endl);
 
-	typedef Kokkos::Experimental::DynRankView<double, PHX::Device> FieldContainer;
+	typedef Kokkos::DynRankView<double, PHX::Device> FieldContainer;
 
     // For printing
 	bool print = false;
@@ -257,11 +257,11 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 
       // Create the connectivity manager.
       if (print) output << "Creating the connectivity manager." << std::endl;
-      IOSSConnManager<int> connManager(iossMeshDB);
+      IOSSConnManager connManager(iossMeshDB);
 
       // Create a clone
       bool cloneCreated = false;
-      Teuchos::RCP<panzer::ConnManagerBase<int>> cmClone;
+      Teuchos::RCP<panzer::ConnManager> cmClone;
       if (IossDatabaseTypeManager::supportsMultipleOpenDatabases(iossDatabaseType)) {
         if (print) output << "Creating a clone." << std::endl;
         cmClone = connManager.noConnectivityClone(iossDatabaseType, databaseProps);
@@ -354,7 +354,7 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 
       // Check for correct connectivity for all local elements
       if (print) output << "Checking for correct connectivity for all local elements." << std::endl;
-      int * conn;
+      panzer::Ordinal64 * conn;
       for (size_t localElementId = 0; localElementId < ownedElementCount; ++localElementId) {
         conn = connManager.getConnectivity(localElementId);
         for (int i = 0; i < connectivitySize[localElementId]; ++i) {

@@ -44,6 +44,9 @@
 /*! \file  test_01.cpp
     \brief Test scalar minimization algorithms on test 01.
 */
+#include "Teuchos_GlobalMPISession.hpp"
+
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_ScalarMinimizationTest01.hpp"
 
@@ -55,15 +58,15 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
   int errorFlag  = 0;
@@ -72,12 +75,12 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     parlist.sublist("Scalar Minimization").set("Type","Brent's");
     parlist.sublist("Scalar Minimization").sublist("Brent's").set("Tolerance",1.e-10);
     parlist.sublist("Scalar Minimization").sublist("Brent's").set("Iteration Limit",1000);
-    Teuchos::RCP<ROL::ScalarMinimizationTest<RealT> > smt
-      = Teuchos::rcp(new ROL::ScalarMinimizationTest01<RealT>(parlist));
+    ROL::Ptr<ROL::ScalarMinimizationTest<RealT> > smt
+      = ROL::makePtr<ROL::ScalarMinimizationTest01<RealT>>(parlist);
     *outStream << "\nBrent's Method\n";
     bool flag = smt->test(*outStream);
     errorFlag += (flag ? 0 : 1);
@@ -85,7 +88,7 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Scalar Minimization").set("Type","Bisection");
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Tolerance",1.e-10);
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Iteration Limit",1000);
-    smt = Teuchos::rcp(new ROL::ScalarMinimizationTest01<RealT>(parlist));
+    smt = ROL::makePtr<ROL::ScalarMinimizationTest01<RealT>>(parlist);
     *outStream << "\nBisection Method\n";
     flag = smt->test(*outStream);
     errorFlag += (flag ? 0 : 1);
@@ -93,7 +96,7 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Scalar Minimization").set("Type","Golden Section");
     parlist.sublist("Scalar Minimization").sublist("Golden Section").set("Tolerance",1.e-10);
     parlist.sublist("Scalar Minimization").sublist("Golden Section").set("Iteration Limit",1000);
-    smt = Teuchos::rcp(new ROL::ScalarMinimizationTest01<RealT>(parlist));
+    smt = ROL::makePtr<ROL::ScalarMinimizationTest01<RealT>>(parlist);
     *outStream << "\nGolden Section Method\n";
     flag = smt->test(*outStream);
     errorFlag += (flag ? 0 : 1);

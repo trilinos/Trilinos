@@ -125,20 +125,20 @@ trsv (const char uplo[],
   const size_type numCols = static_cast<size_type> (A.numCols ());*/
 
   const bool transpose = trans[0] != 'N' && trans[0] != 'n';
-  if (! transpose && (numCols != x.dimension_0 () || numRows != b.dimension_0 ())) {
+  if (! transpose && (numCols != x.extent(0) || numRows != b.extent(0))) {
     std::ostringstream os;
     os << "Dimensions do not match (non-transpose case).  "
        << "A is " << numRows << " x " << numCols
-       << ", x is " << x.dimension_0 () << " x " << x.dimension_1 ()
-       << ", and b is " << b.dimension_0 () << " x " << b.dimension_1 ();
+       << ", x is " << x.extent(0) << " x " << x.extent(1)
+       << ", and b is " << b.extent(0) << " x " << b.extent(1);
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
-  if (transpose && (numRows != x.dimension_0 () || numCols != b.dimension_0 ())) {
+  if (transpose && (numRows != x.extent(0) || numCols != b.extent(0))) {
     std::ostringstream os;
     os << "Dimensions do not match (transpose or conjugate transpose case).  "
        << "A is " << numRows << " x " << numCols
-       << ", x is " << x.dimension_0 () << " x " << x.dimension_1 ()
-       << ", and b is " << b.dimension_0 () << " x " << b.dimension_1 ();
+       << ", x is " << x.extent(0) << " x " << x.extent(1)
+       << ", and b is " << b.extent(0) << " x " << b.extent(1);
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 

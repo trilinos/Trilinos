@@ -228,8 +228,9 @@ long long Inline_Mesh_Desc::DecomposeSequential(std::set <long long> & global_el
 
 long long Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids){
   long long local_ijk[3];
+  long long global_ijk[6];
   long long return_value;
-  return_value = Inline_Mesh_Desc::Decompose(global_el_ids,local_ijk);
+  return_value = Inline_Mesh_Desc::Decompose(global_el_ids,local_ijk,global_ijk);
   return return_value;
 }
 
@@ -239,7 +240,8 @@ long long Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids){
 //! Zoltan could be used for this. The elements on the processor are
 //! packed into the stl list.
 /****************************************************************************/
-long long Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids, long long* local_ijk)
+  long long Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids, long long* local_ijk,
+                                        long long* global_ijk)
 /****************************************************************************/
 {
   //Recursive Bisection decomposition
@@ -432,6 +434,12 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
   local_ijk[0] = my_part->highs[0] - my_part->lows[0] + 1;
   local_ijk[1] = my_part->highs[1] - my_part->lows[1] + 1;
   local_ijk[2] = my_part->highs[2] - my_part->lows[2] + 1;
+  global_ijk[0] = my_part->lows[0];
+  global_ijk[1] = my_part->highs[0];
+  global_ijk[2] = my_part->lows[1];
+  global_ijk[3] = my_part->highs[1];
+  global_ijk[4] = my_part->lows[2];
+  global_ijk[5] = my_part->highs[2];
   //
   
   //Then loop over the elements for the current processor and push them into
@@ -1394,7 +1402,7 @@ void Inline_Mesh_Desc::get_l_i_j_k_from_element_number(long long el,
 //! A utility function to build up required bookkeeping objects.
 /****************************************************************************/
 void Inline_Mesh_Desc::get_l_i_j_k_from_node_number(long long nn,
-								 long long & l,
+								 long long & /* l */,
 								 long long & i,
 								 long long & j,
 								 long long & k)
@@ -1407,7 +1415,7 @@ void Inline_Mesh_Desc::get_l_i_j_k_from_node_number(long long nn,
 }
 
 /****************************************************************************/
-long long Inline_Mesh_Desc::get_element_number_from_l_i_j_k( long long  l,
+long long Inline_Mesh_Desc::get_element_number_from_l_i_j_k( long long  /* l */,
 						       long long  i,
 						       long long  j,
 						       long long  k)
@@ -1439,7 +1447,7 @@ long long Inline_Mesh_Desc::get_element_number_from_l_i_j_k( long long  l,
 }
 
 /****************************************************************************/
-long long Inline_Mesh_Desc::get_node_number_from_l_i_j_k( long long  l,
+long long Inline_Mesh_Desc::get_node_number_from_l_i_j_k( long long  /* l */,
 							  long long  i,
 							  long long  j,
 							  long long  k)

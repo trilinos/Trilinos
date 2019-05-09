@@ -67,24 +67,24 @@ class BlockOperator2Diagonal : public BlockOperator2<Real> {
 
 private:
 
-  Teuchos::RCP<OP> A_, D_;
+  ROL::Ptr<OP> A_, D_;
 
 public:   
 
-  BlockOperator2Diagonal( Teuchos::RCP<OP> &A, Teuchos::RCP<OP> &D ) : A_(A), D_(D) {}
+  BlockOperator2Diagonal( ROL::Ptr<OP> &A, ROL::Ptr<OP> &D ) : A_(A), D_(D) {}
 
   }
 
   void apply( V &Hv, const V &v, Real &tol ) const {
-    using Teuchos::RCP;
+    
 
-    PV &Hv_pv = Teuchos::dyn_cast<PV>(Hv);
-    const PV &v_pv = Teuchos::dyn_cast<const PV>(v);
+    PV &Hv_pv = dynamic_cast<PV&>(Hv);
+    const PV &v_pv = dynamic_cast<const PV&>(v);
       
-    RCP<V> Hv1 = Hv_pv.get(0);
-    RCP<V> Hv2 = Hv_pv.get(1);
-    RCP<const V> v1 = v_pv.get(0);
-    RCP<const V> v2 = v_pv.get(1);
+    ROL::Ptr<V> Hv1 = Hv_pv.get(0);
+    ROL::Ptr<V> Hv2 = Hv_pv.get(1);
+    ROL::Ptr<const V> v1 = v_pv.get(0);
+    ROL::Ptr<const V> v2 = v_pv.get(1);
 
     A_->apply(*Hv1,*v1,tol);
     D_->apply(*Hv2,*v2,tol); 
@@ -93,22 +93,22 @@ public:
 
 
   void applyInverse( V &Hv, const V &v Real &tol ) const {
-    using Teuchos::RCP;
+    
 
-    PV &Hv_pv = Teuchos::dyn_cast<PV>(Hv);
-    const PV &v_pv = Teuchos::dyn_cast<const PV>(v);
+    PV &Hv_pv = dynamic_cast<PV&>(Hv);
+    const PV &v_pv = dynamic_cast<const PV&>(v);
       
-    RCP<V> Hv1 = Hv_pv.get(0);
-    RCP<V> Hv2 = Hv_pv.get(1);
-    RCP<const V> v1 = v_pv.get(0);
-    RCP<const V> v2 = v_pv.get(1);
+    ROL::Ptr<V> Hv1 = Hv_pv.get(0);
+    ROL::Ptr<V> Hv2 = Hv_pv.get(1);
+    ROL::Ptr<const V> v1 = v_pv.get(0);
+    ROL::Ptr<const V> v2 = v_pv.get(1);
  
     A_->applyInverse(*Hv1,*v1,tol);
     D_->applyInverse(*Hv2,*v2,tol); 
 
   } 
 
-  Teuchos::RCP<LinearOperator<Real> > getOperator( int row, int col ) const {
+  ROL::Ptr<LinearOperator<Real> > getOperator( int row, int col ) const {
     if( row == 0 && col == 0 ) {
       return A_;
     } 
@@ -116,7 +116,7 @@ public:
       return D_;
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+      ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                                   ">>> ERROR (ROL_BlockOperator2Diagonal, getOperator): "
                                   "invalid block indices."); 
     }

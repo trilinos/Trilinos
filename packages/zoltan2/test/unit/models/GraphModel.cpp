@@ -72,11 +72,9 @@
 #include <Teuchos_ArrayView.hpp>
 
 const int SMALL_NUMBER_OF_ROWS = 5;
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 using Teuchos::ArrayView;
 
 typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> simpleUser_t;
@@ -126,6 +124,63 @@ void printGraph(zlno_t nrows, const zgno_t *v,
   }
   comm->barrier();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+template <typename MatrixOrGraph>
+void computeNumDiags(
+    RCP<const MatrixOrGraph> &M,
+    size_t &numLocalDiags,
+    size_t &numGlobalDiags
+)
+{
+  // See specializations below
+}
+
+template <>
+void computeNumDiags<tcrsGraph_t>(
+    RCP<const tcrsGraph_t> &M,
+    size_t &numLocalDiags,
+    size_t &numGlobalDiags
+)
+{
+  typedef typename tcrsGraph_t::global_ordinal_type gno_t;
+
+  size_t maxnnz = M->getNodeMaxNumRowEntries();
+  Teuchos::Array<gno_t> colGids(maxnnz);
+
+  numLocalDiags = 0;
+  numGlobalDiags = 0;
+
+  int nLocalRows = M->getNodeNumRows();
+  for (int i = 0; i < nLocalRows; i++) {
+
+    gno_t rowGid = M->getRowMap()->getGlobalElement(i);
+    size_t nnz;
+    M->getGlobalRowCopy(rowGid, colGids(), nnz);
+
+    for (size_t j = 0; j < nnz; j++) {
+      if (rowGid == colGids[j]) {
+        numLocalDiags++;
+        break;
+      }
+    }
+  }
+  Teuchos::reduceAll<int, size_t>(*(M->getComm()), Teuchos::REDUCE_SUM, 1,
+                                  &numLocalDiags, &numGlobalDiags);
+}
+
+template <>
+void computeNumDiags<tcrsMatrix_t>(
+    RCP<const tcrsMatrix_t> &M,
+    size_t &numLocalDiags,
+    size_t &numGlobalDiags
+)
+{
+  RCP<const tcrsGraph_t> graph = M->getCrsGraph();
+  computeNumDiags<tcrsGraph_t>(graph, numLocalDiags, numGlobalDiags);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename BaseAdapter, typename Adapter, typename MatrixOrGraph>
@@ -217,8 +272,11 @@ void testAdapter(
     tmi.setCoordinateInput(via);
   }
 
-  int numLocalDiags = M->getNodeNumDiags();
-  int numGlobalDiags = M->getGlobalNumDiags();
+  size_t numLocalDiags = 0;
+  size_t numGlobalDiags = 0;
+  if (removeSelfEdges) {
+    computeNumDiags<MatrixOrGraph>(M, numLocalDiags, numGlobalDiags);
+  }
 
   const RCP<const tmap_t> rowMap = M->getRowMap();
   const RCP<const tmap_t> colMap = M->getColMap();
@@ -228,7 +286,7 @@ void testAdapter(
   int *numNbors = new int [nLocalRows];
   int *numLocalNbors = new int [nLocalRows];
   bool *haveDiag = new bool [nLocalRows];
-  zgno_t totalLocalNbors = 0;
+  size_t totalLocalNbors = 0;
 
   for (zlno_t i=0; i < nLocalRows; i++){
     numLocalNbors[i] = 0;
@@ -281,7 +339,7 @@ void testAdapter(
     if (model->getLocalNumVertices() != size_t(nLocalRows)) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
-    size_t num = (removeSelfEdges ? (totalLocalNbors - numLocalDiags)
+    size_t num = (removeSelfEdges ? totalLocalNbors - numLocalDiags
                                   : totalLocalNbors);
     if (model->getLocalNumEdges() != num) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
@@ -293,7 +351,7 @@ void testAdapter(
     if (model->getGlobalNumVertices() != size_t(nGlobalRows)) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
-    size_t num = (removeSelfEdges ? (nLocalNZ-numLocalDiags) : nLocalNZ);
+    size_t num = (removeSelfEdges ? nLocalNZ-numLocalDiags : nLocalNZ);
     if (model->getLocalNumEdges() != num) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
 
@@ -508,8 +566,8 @@ void testAdapter(
     TEST_FAIL_AND_EXIT(*comm, numLocalNeighbors==num,
                        "getLocalEdgeList sum size", 1)
 
-    fail = ((removeSelfEdges ? size_t(totalLocalNbors-numLocalDiags)
-                             : size_t(totalLocalNbors))
+    fail = ((removeSelfEdges ? totalLocalNbors-numLocalDiags
+                             : totalLocalNbors)
             != numLocalNeighbors);
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList total size", 1)
 
@@ -564,23 +622,23 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
   int rank = comm->getRank();
 
   if (rank==0){
-    cout << endl << "=======================" << endl;
+    std::cout << std::endl << "=======================" << std::endl;
     if (fname.size() > 0)
-      cout << endl << "Test parameters: file name " << fname << endl;
+      std::cout << std::endl << "Test parameters: file name " << fname << std::endl;
     else{
-      cout << endl << "Test parameters: dimension ";
-      cout  << xdim << "x" << ydim << "x" << zdim << endl;
+      std::cout << std::endl << "Test parameters: dimension ";
+      std::cout  << xdim << "x" << ydim << "x" << zdim << std::endl;
     }
 
-    cout << "Num Vertex Weights: " << nVtxWeights << endl;
+    std::cout << "Num Vertex Weights: " << nVtxWeights << std::endl;
     if (nnzWgtIdx >= 0)
-     cout << "  Dimension " << nnzWgtIdx << " is number of neighbors" << endl;
+     std::cout << "  Dimension " << nnzWgtIdx << " is number of neighbors" << std::endl;
 
-    cout << "Coordinate dim: " << coordDim << endl;
-    cout << "Request consecutive vertex gids: ";
-    cout << (consecutiveIdsRequested ? "yes" : "no") << endl;
-    cout << "Request to remove self edges: ";
-    cout << (removeSelfEdges ? "yes" : "no") << endl;
+    std::cout << "Coordinate dim: " << coordDim << std::endl;
+    std::cout << "Request consecutive vertex gids: ";
+    std::cout << (consecutiveIdsRequested ? "yes" : "no") << std::endl;
+    std::cout << "Request to remove self edges: ";
+    std::cout << (removeSelfEdges ? "yes" : "no") << std::endl;
   }
 
   // Input generator
@@ -599,7 +657,7 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
 
   RCP<const Tpetra::CrsGraph<zlno_t, zgno_t> > graph = Mconsec->getCrsGraph();
 
-//  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, cout, 100, 
+//  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, std::cout, 100, 
 //    "Graph having consecutive IDs");
 
   if (rank == 0) 
@@ -639,7 +697,7 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
 
   graph = Mnonconsec->getCrsGraph();
 
-//  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, cout, 100, 
+//  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, std::cout, 100, 
 //    "Graph having non-consecutive (Round-Robin) IDs");
 
   if (rank == 0)
@@ -670,11 +728,10 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
 }
 
 /////////////////////////////////////////////////////////////////////////////
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
 
@@ -792,7 +849,7 @@ int main(int argc, char *argv[])
     nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
   if (rank==0)
-    cout << "PASS" << endl;
+    std::cout << "PASS" << std::endl;
 
   return 0;
 }

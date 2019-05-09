@@ -45,7 +45,7 @@
 #define ROL_GAUSSIAN_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -61,7 +61,7 @@ private:
   std::vector<Real> d_;
 
   Real erfi(const Real p) const {
-    const Real zero(0), half(0.5), one(1), two(2), pi(Teuchos::ScalarTraits<Real>::pi());
+    const Real zero(0), half(0.5), one(1), two(2), pi(ROL::ScalarTraits<Real>::pi());
     Real val(0), z(0);
     if ( std::abs(p) > static_cast<Real>(0.7) ) {
       Real sgn = (p < zero) ? -one : one;
@@ -89,7 +89,7 @@ public:
     d_[0] =  3.543889200; d_[1] =  1.637067800;
   }
 
-  Gaussian(Teuchos::ParameterList &parlist) {
+  Gaussian(ROL::ParameterList &parlist) {
     mean_     = parlist.sublist("SOL").sublist("Distribution").sublist("Gaussian").get("Mean",0.);
     variance_ = parlist.sublist("SOL").sublist("Distribution").sublist("Gaussian").get("Variance",1.);
     variance_ = (variance_ > 0.) ? variance_ : 1.;
@@ -102,7 +102,7 @@ public:
   }
 
   Real evaluatePDF(const Real input) const {
-    return std::exp(-std::pow(input-mean_,2)/(2.*variance_))/(std::sqrt(2.*Teuchos::ScalarTraits<Real>::pi()*variance_));
+    return std::exp(-std::pow(input-mean_,2)/(2.*variance_))/(std::sqrt(2.*ROL::ScalarTraits<Real>::pi()*variance_));
   }
 
   Real evaluateCDF(const Real input) const {
@@ -111,34 +111,48 @@ public:
   }
 
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Gaussian): Gaussian integrateCDF not implemented!");
     return ((input < mean_) ? 0.0 : input);
   }
 
   Real invertCDF(const Real input) const {
     //return std::sqrt(2.*variance_)*erfi(2.*input-1.) + mean_;
-    const Real zero(0), half(0.5), one(1), eps(ROL_EPSILON<Real>());
-    if ( input <= eps ) {
-      return zero;
-    }
-    if ( input >= one-eps ) {
-      return one;
-    }
-    Real a  = eps, b = one-eps, c = zero;
+    const Real zero(0), half(0.5), one(1), eight(8);
+    const Real dev(std::sqrt(variance_)), eps(1.24419211485e-15);
+    // Set lower and upper bounds to the mean plus/minus 8 standard
+    //   -- deviations this ensures that 1-eps probability mass is
+    //   -- covered by the interval.
+    const Real lVal = mean_ - eight*dev;
+    const Real uVal = mean_ + eight*dev;
+    // If the input is outside of the interval (half*eps,1-half*eps)
+    //   -- then set the return value to be either the lower or
+    //   -- upper bound.  This case can occur with probability eps.
+    if ( input <= half*eps )     { return lVal; }
+    if ( input >= one-half*eps ) { return uVal; }
+    // Determine maximum number of iterations.
+    //   -- maxit is set to the number of iterations required to
+    //   -- ensure that |b-a| < eps after maxit iterations.
+    size_t maxit = static_cast<size_t>(one-std::log2(eps/(eight*dev)));
+    maxit = (maxit < 1 ? 100 : maxit);
+    // Run bisection to solve CDF(x) = input.
+    Real a  = (input < half ? lVal  : mean_);
+    Real b  = (input < half ? mean_ : uVal );
+    Real c  = half*(a+b);
     Real fa = evaluateCDF(a) - input;
-    Real fc = zero;
+    Real fc = evaluateCDF(c) - input;
     Real sa = ((fa < zero) ? -one : ((fa > zero) ? one : zero));
-    Real sc = zero;
-    for (size_t i = 0; i < 100; i++) {
-      c  = (a+b)*half;
-      fc = evaluateCDF(c) - input;
-      sc = ((fc < zero) ? -one : ((fc > zero) ? one : zero));
-      if ( fc == zero || (b-a)*half < eps ) {
+    Real sc = ((fc < zero) ? -one : ((fc > zero) ? one : zero));
+    for (size_t i = 0; i < maxit; ++i) {
+      if ( std::abs(fc) < eps || (b-a)*half < eps ) {
         break;
       }
       if ( sc == sa ) { a = c; fa = fc; sa = sc; }
       else            { b = c; }
+      // Compute interval midpoint.
+      c  = (a+b)*half;
+      fc = evaluateCDF(c) - input;
+      sc = ((fc < zero) ? -one : ((fc > zero) ? one : zero));
     }
     return c;
   }
@@ -170,7 +184,7 @@ public:
                     + 420.*std::pow(mean_,2)*std::pow(variance_,3)
                     + 105.*std::pow(variance_,4);                  break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
           ">>> ERROR (ROL::Distribution): Gaussian moment not implemented for m > 8!");
     }
     return val;

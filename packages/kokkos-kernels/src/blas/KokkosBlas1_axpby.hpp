@@ -75,12 +75,12 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
                  "XMV and YMV must either have rank 1 or rank 2.");
 
   // Check compatibility of dimensions at run time.
-  if (X.dimension_0 () != Y.dimension_0 () ||
-      X.dimension_1 () != Y.dimension_1 ()) {
+  if (X.extent(0) != Y.extent(0) ||
+      X.extent(1) != Y.extent(1)) {
     std::ostringstream os;
     os << "KokkosBlas::axpby: Dimensions of X and Y do not match: "
-       << "X: " << X.dimension_0 () << " x " << X.dimension_1 ()
-       << ", Y: " << Y.dimension_0 () << " x " << Y.dimension_1 ();
+       << "X: " << X.extent(0) << " x " << X.extent(1)
+       << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 

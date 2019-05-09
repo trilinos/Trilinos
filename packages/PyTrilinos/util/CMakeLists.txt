@@ -55,5 +55,5 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/copyWithCMakeSubstitutions.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/copyWithCMakeSubstitutions.py)
 
 # Generate the configfix python script
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/configfix.py.in
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/configFix.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/configFix.py)

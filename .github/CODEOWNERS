@@ -1,0 +1,115 @@
+/packages/amesos/            @trilinos/amesos
+
+/packages/amesos2/           @trilinos/amesos2
+
+/packages/anasazi/           @trilinos/anasazi
+
+/packages/aztecoo/           @trilinos/aztecoo
+
+/packages/belos/             @trilinos/belos
+
+/packages/claps/             @trilinos/claps
+
+/packages/domi/              @trilinos/domi
+
+/packages/epetra/            @trilinos/epetra
+
+/packages/epetraext/         @trilinos/epetraext
+
+/packages/fei/               @trilinos/fei
+
+#/packages/galeri/            @trilinos/
+
+/packages/globipack/         @trilinos/globipack
+
+/packages/ifpack/            @trilinos/ifpack
+
+/packages/ifpack2/           @trilinos/ifpack2
+
+/packages/intrepid/          @trilinos/intrepid
+
+/packages/intrepid2/         @trilinos/intrepid2
+
+/packages/isorropia/         @trilinos/isorropia
+
+/packages/kokkos/            @trilinos/kokkos
+
+/packages/kokkos-kernels/    @trilinos/kokkos-kernels
+
+/packages/komplex/           @trilinos/komplex
+
+#/packages/meshinggenie/      @trilinos/
+
+#/packages/minitensor/        @trilinos/
+
+/packages/ml/                @trilinos/ml
+
+/packages/moertel/           @trilinos/moertel
+
+/packages/muelu/             @trilinos/muelu
+
+/packages/new_package/       @trilinos/new_package
+
+/packages/nox/               @trilinos/nox
+
+/packages/optipack/          @trilinos/optipack
+
+/packages/pamgen/            @trilinos/pamgen
+
+/packages/panzer/            @trilinos/panzer
+
+/packages/phalanx/           @trilinos/phalanx
+
+#/packages/pike/              @trilinos/
+
+/packages/piro/              @trilinos/piro
+
+/packages/pliris/            @trilinos/pliris
+
+/packages/PyTrilinos/        @trilinos/pytrilinos
+
+/packages/rol/               @trilinos/rol
+
+/packages/rtop/              @trilinos/rtop
+
+/packages/rythmos/           @trilinos/rythmos
+
+/packages/sacado/            @trilinos/sacado
+
+/packages/seacas/            @trilinos/seacas
+
+/packages/shards/            @trilinos/shards
+
+/packages/shylu/             @trilinos/shylu
+
+/packages/stk/               @trilinos/stk
+
+/packages/stokhos/           @trilinos/stokhos
+
+/packages/stratimikos/       @trilinos/stratimikos
+
+/packages/teko/              @trilinos/teko
+
+/packages/tempus/            @trilinos/tempus
+
+/packages/teuchos/           @trilinos/teuchos
+
+#/packages/ThreadPool/        @trilinos/
+
+/packages/thyra/             @trilinos/thyra
+
+/packages/tpetra/            @trilinos/tpetra
+
+/packages/TriKota/           @trilinos/trikota
+
+#/packages/trilinoscouplings/ @trilinos/
+
+#/packages/trios/             @trilinos/
+
+/packages/triutils/          @trilinos/triutils
+
+/packages/xpetra/            @trilinos/xpetra
+
+/packages/zoltan/            @trilinos/zoltan
+
+/packages/zoltan2/           @trilinos/zoltan2

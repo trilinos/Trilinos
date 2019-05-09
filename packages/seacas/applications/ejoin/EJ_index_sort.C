@@ -1,4 +1,4 @@
-// Copyright(C) 2010 National Technology & Engineering Solutions
+// Copyright(C) 2010-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -150,7 +150,7 @@ namespace {
     ex_int_iisort(v, iv, N);
 
 #if defined(DEBUG_QSORT)
-    fprintf(stderr, "Checking sort of %d values\n", N + 1);
+    fprintf(stderr, "Checking sort of %lu values\n", N + 1);
     int i;
     for (i = 1; i < N; i++) {
       assert(v[iv[i - 1]] <= v[iv[i]]);

@@ -43,53 +43,47 @@
 #define KOKKOS_DEFAULTNODE_HPP
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "KokkosClassic_DefaultNode_config.h"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  // Dear users: This is just a forward declaration.
+  // Please skip over it.
+  class ParameterList;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace KokkosClassic {
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 namespace Details {
   /// \fn getNode
   /// \brief Create and return a Kokkos Node instance.
   /// \tparam NodeType The Kokkos Node type.
   ///
-  /// \warning This function is <i>not</i> safe to be called by
-  ///   multiple threads simultaneously.  The first call to this
-  ///   function must be serialized.  Also, RCP is not currently
-  ///   thread safe.
-  ///
-  /// \param params [in/out] On input: Any parameters that the Kokkos
-  ///   Node accepts.  On output, the list may be modified to include
-  ///   missing parameters and their default values.  If params is
-  ///   null, default parameters will be used.
-  ///
-  /// Every Kokkos Node's constructor takes a Teuchos::ParameterList.
-  /// We presume that for every Kokkos Node, if that list of
-  /// parameters is empty, then the Node will use default parameters.
-  /// This is true for all the Node types implemented in Kokkos.
+  /// \warning This function is DEPRECATED.  DO NOT CALL IT.
+  ///   It may return Teuchos::null and/or have no effect.
   template<class NodeType>
-  Teuchos::RCP<NodeType>
-  getNode (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
-    static Teuchos::RCP<NodeType> theNode;
-    if (theNode.is_null ()) {
-      if (params.is_null ()) {
-        Teuchos::ParameterList defaultParams;
-        theNode = Teuchos::rcp (new NodeType (defaultParams));
-      } else {
-        theNode = Teuchos::rcp (new NodeType (*params));
-      }
-    }
-    return theNode;
+  Teuchos::RCP<NodeType> TPETRA_DEPRECATED
+  getNode (const Teuchos::RCP<Teuchos::ParameterList>& /* params */ = Teuchos::null)
+  {
+    // Node instances don't do anything any more, but for backward
+    // compatibility, sometimes it helps for them to be nonnull.
+    return Teuchos::rcp (new NodeType);
   }
-
 } // namespace Details
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
-  /** \brief Class to specify %Kokkos default node type and instantiate the default node.
-      \ingroup kokkos_node_api
-    */
+  /// \brief Specify Tpetra's default Node type.
+  ///
+  /// Tpetra::Map uses this class to get Tpetra's default Node type.
+  /// <i>This is an implementation detail of Tpetra</i>.  If you want
+  /// to know the default Node type, just ask Tpetra::Map, like this:
+  /// \code
+  /// typedef Tpetra::Map<>::node_type default_node_type;
+  /// \endcode
   class DefaultNode {
   public:
 #if defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
@@ -104,8 +98,13 @@ namespace Details {
 #    error "No default Kokkos Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
 #endif
 
-    //! \brief Return a pointer to the default node.
-    static Teuchos::RCP<DefaultNodeType> getDefaultNode();
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    /// \brief Return a pointer to a default Node instance.
+    ///
+    /// \warning This method is DEPRECATED and will be removed soon.
+    ///   Node instances don't do anything any more.
+    static Teuchos::RCP<DefaultNodeType> TPETRA_DEPRECATED getDefaultNode();
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   };
 
 } // namespace KokkosClassic

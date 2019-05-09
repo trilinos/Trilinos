@@ -46,11 +46,11 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
@@ -70,18 +70,18 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
   }
 
   int errorFlag  = 0;
@@ -95,10 +95,10 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    Teuchos::RCP<ElasticitySIMPData<RealT> > data = Teuchos::rcp(new ElasticitySIMPData<RealT>(comm, parlist, outStream));
-    Teuchos::RCP<Tpetra::MultiVector<RealT> > rhs = data->getVecF();
+    ROL::Ptr<ElasticitySIMPData<RealT> > data = ROL::makePtr<ElasticitySIMPData<RealT>>(comm, parlist, outStream);
+    ROL::Ptr<Tpetra::MultiVector<RealT> > rhs = data->getVecF();
     data->getSolver()->setB(rhs);
-    Teuchos::RCP<Tpetra::MultiVector<RealT> > sol = Teuchos::rcp(new Tpetra::MultiVector<RealT>(rhs->getMap(), 1, true));
+    ROL::Ptr<Tpetra::MultiVector<RealT> > sol = ROL::makePtr<Tpetra::MultiVector<RealT>>(rhs->getMap(), 1, true);
     //sol->putScalar(0.0);
     data->getSolver()->setX(sol);
     data->getSolver()->solve();

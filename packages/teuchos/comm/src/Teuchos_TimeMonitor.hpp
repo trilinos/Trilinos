@@ -127,6 +127,9 @@
 
 namespace Teuchos {
 
+// Forward declaration
+class StackedTimer;
+
 /// \typedef stat_map_type
 /// \brief Global statistics collected from timer data.
 ///
@@ -135,7 +138,7 @@ namespace Teuchos {
 /// Value: each entry in the vector is a timing and call count for
 ///   that timer, corresponding to a particular statistic (e.g.,
 ///   minimum, arithmetic mean, or maximum).  What statistic that is
-///   depends on an auxillary array "statNames" which has the same
+///   depends on an auxiliary array "statNames" which has the same
 ///   ordering as the entries in this vector.  See the documentation
 ///   of \c TimeMonitor::computeGlobalTimerStatistics().
 typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map_type;
@@ -162,6 +165,12 @@ typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map
 /// computeGlobalTimerStatistics() to compute the same global
 /// statistics, if you wish to use them in your program or output them
 /// in a different format than that of these methods.
+///
+/// If Teuchos is configured with <tt>TPL_ENABLE_Valgrind=ON</tt>
+/// and <tt>Teuchos_TIME_MASSIF_SNAPSHOTS=ON</tt> Valgrind Massif
+/// snapshots are taken before and after each Time invocation. The
+/// resulting memory profile can be plotted using
+/// <tt>core/utils/plotMassifMemoryUsage.py</tt>
 ///
 /// \warning This class must only be used to time functions that are
 ///   called only within the main program.  It may <i>not</i> be used
@@ -602,6 +611,14 @@ public:
   //! Default parameters (with validators) for report().
   static RCP<const ParameterList> getValidReportParameters ();
 
+  /// \brief Sets the StackedTimer that the TimeMonitor will use to insert timings into.
+  ///
+  /// \param t [in] StackedTimer object the TimeMonitor should insert timings into.
+  static void setStackedTimer(const Teuchos::RCP<Teuchos::StackedTimer>& t);
+
+  /// Returns the StackedTimer used by the TimeMonitor.
+  static const Teuchos::RCP<Teuchos::StackedTimer>& getStackedTimer();
+
  private:
   /// \brief Valid output formats for report().
   ///
@@ -713,6 +730,9 @@ public:
   /// \note Keeping this helps us avoid keeping the whole
   ///   ParameterList around.
   static bool setParams_;
+
+  //! Stacked timer for optional injetion of timing from TimeMontior enabled objects.
+  static Teuchos::RCP<Teuchos::StackedTimer> stackedTimer_; 
 };
 
 

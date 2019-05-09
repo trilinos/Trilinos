@@ -665,7 +665,7 @@ void ML_GGB2CSR (double *v, int nconv, int MatSize, int proc_id,
     struct ML_CSR_MSRdata  *mydata, int Debug_Flag)
 
   /* Function to transfer dense columns of matrix to ML CSR format */
-  /* The colums are input as one long vector */
+  /* The columns are input as one long vector */
 
 {
   int          nrows,   ncolumns,  nnz;

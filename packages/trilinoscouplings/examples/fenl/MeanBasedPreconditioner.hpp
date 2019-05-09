@@ -42,111 +42,21 @@
 #ifndef STOKHOS_MEAN_BASED_PRECONDITIONER_HPP
 #define STOKHOS_MEAN_BASED_PRECONDITIONER_HPP
 
-#include "Teuchos_RCP.hpp"
-#include "SGPreconditioner.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "MueLu_CreateTpetraPreconditioner.hpp"
-#include "KokkosSparse_CrsMatrix.hpp"
+#include "MueLuPreconditioner.hpp"
 
 namespace Kokkos {
 namespace Example {
 
-  //! Get mean values matrix for mean-based preconditioning
-  /*! Default implementation for all scalar types where "mean" is the same
-   * as the scalar type.
-   */
-  template <class ViewType>
-  class GetMeanValsFunc {
-  public:
-    typedef ViewType MeanViewType;
-    typedef typename ViewType::execution_space execution_space;
-    typedef typename ViewType::size_type size_type;
-
-    GetMeanValsFunc(const ViewType& vals)
-    {
-      mean_vals = ViewType("mean-values", vals.dimension_0());
-      Kokkos::deep_copy( mean_vals, vals );
-    }
-
-    MeanViewType getMeanValues() const { return mean_vals; }
-
-  private:
-    MeanViewType mean_vals;
-  };
-
-  /*!
-   * \brief A stochastic preconditioner based on applying the inverse of the
-   * mean.
-   */
+  // Default implementation just uses the original matrix
   template<class Scalar, class LO, class GO, class N>
-  class MeanBasedPreconditioner : public SGPreconditioner<Scalar, LO, GO, N> {
-  public:
-
-    //! Constructor
-    MeanBasedPreconditioner() {}
-
-    //! Destructor
-    virtual ~MeanBasedPreconditioner() {}
-
-    //! Setup preconditioner
-    virtual
-    Teuchos::RCP<Tpetra::Operator<Scalar,LO,GO,N> >
-    setupPreconditioner(
-      const Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,N> >& A,
-      const Teuchos::RCP<Teuchos::ParameterList>& precParams,
-      const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
-    {
-      using Teuchos::ArrayView;
-      using Teuchos::Array;
-      typedef Tpetra::CrsMatrix<Scalar,LO,GO,N> MatrixType;
-      typedef Tpetra::Map<LO,GO,N> Map;
-      typedef Tpetra::Operator<Scalar,LO,GO,N> OperatorType;
-      typedef MueLu::TpetraOperator<Scalar,LO,GO,N> PreconditionerType;
-
-      typedef typename MatrixType::local_matrix_type KokkosMatrixType;
-
-      typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
-      typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;
-
-      Teuchos::RCP< const Map > rmap = A->getRowMap();
-      Teuchos::RCP< const Map > cmap = A->getColMap();
-
-      KokkosMatrixType  kokkos_matrix = A->getLocalMatrix();
-      KokkosGraphType kokkos_graph = kokkos_matrix.graph;
-      KokkosMatrixValuesType matrix_values = kokkos_matrix.values;
-      const size_t ncols = kokkos_matrix.numCols();
-
-      typedef GetMeanValsFunc <KokkosMatrixValuesType > MeanFunc;
-      typedef typename MeanFunc::MeanViewType KokkosMeanMatrixValuesType;
-      MeanFunc meanfunc(matrix_values);
-      KokkosMeanMatrixValuesType mean_matrix_values = meanfunc.getMeanValues();
-
-      // From here on we are assuming that
-      // KokkosMeanMatrixValuesType == KokkosMatrixValuestype
-
-      KokkosMatrixType mean_kokkos_matrix(
-        "mean-matrix", ncols, mean_matrix_values, kokkos_graph);
-      Teuchos::RCP < MatrixType > M =
-          Teuchos::rcp( new MatrixType(rmap, cmap, mean_kokkos_matrix) );
-
-      Teuchos::RCP< OperatorType > M_op = M;
-      Teuchos::RCP< PreconditionerType > mueluPreconditioner;
-      mueluPreconditioner =
-        MueLu::CreateTpetraPreconditioner(M_op,*precParams,coords);
-      return mueluPreconditioner;
-    };
-
-  private:
-
-    //! Private to prohibit copying
-    MeanBasedPreconditioner(const MeanBasedPreconditioner&);
-
-    //! Private to prohibit copying
-    MeanBasedPreconditioner& operator=(const MeanBasedPreconditioner&);
-
-
-  }; // class MeanBasedPreconditioner
+  Teuchos::RCP<Tpetra::Operator<Scalar,LO,GO,N> >
+  build_mean_based_muelu_preconditioner(
+    const Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,N> >& A,
+    const Teuchos::RCP<Teuchos::ParameterList>& precParams,
+    const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
+  {
+    return build_muelu_preconditioner(A, precParams, coords);
+  }
 
 }
 }

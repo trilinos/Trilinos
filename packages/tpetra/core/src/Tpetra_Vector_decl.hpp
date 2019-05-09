@@ -51,6 +51,7 @@
 /// (Tpetra_Vector_decl.hpp).
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
@@ -67,29 +68,20 @@ namespace Tpetra {
 ///   documentation of Map for requirements.
 /// \tparam Node The Kokkos Node type.  See the documentation of Map
 ///   for requirements.
-/// \tparam classic DO NOT SPECIFY THIS EXPLICITLY.  This exists only
-///   for backwards compatibility.  It must always be false.
 ///
 /// This class inherits from MultiVector, and has the same template
 /// parameters.  A Vector is a special case of a MultiVector that has
 /// only one vector (column).  It may be used wherever a MultiVector
 /// may be used.  Please see the documentation of MultiVector for more
 /// details.
-template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-          class Node = ::Tpetra::Details::DefaultTypes::node_type,
-          const bool classic = Node::classic>
-class Vector :
-   public MultiVector<Scalar,
-                      LocalOrdinal,
-                      GlobalOrdinal,
-                      Node,
-                      classic>
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
 private:
-  friend class MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>;
-  typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> base_type;
+  using base_type = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 public:
   //! \name Typedefs to facilitate template metaprogramming
@@ -143,6 +135,9 @@ public:
   //! \name Constructors and destructor
   //@{
 
+  //! Default constructor: makes a Vector with no rows or columns.
+  Vector ();
+
   /// \brief Basic constructor.
   ///
   /// \param map [in] The Vector's Map.  The Map describes the
@@ -156,16 +151,6 @@ public:
   explicit Vector (const Teuchos::RCP<const map_type>& map,
                    const bool zeroOut = true);
 
-  /// \brief Copy constructor (always a shallow copy).
-  ///
-  /// In this, the Kokkos refactor version of Tpetra, the "copy
-  /// constructor" does a shallow copy.  Use the nonmember function
-  /// deep_copy() to do a deep copy from one existing Vector to
-  /// another, and use the two-argument copy constructor below (with
-  /// copyOrView=Teuchos::Copy) to create a Vector which is a deep
-  /// copy of an existing Vector.
-  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source);
-
   /// \brief Copy constructor (shallow or deep copy).
   ///
   /// \param source [in] The Vector to copy.
@@ -177,8 +162,17 @@ public:
   ///   with the resulting object will always do a shallow copy, and
   ///   will transmit view semantics to the result of the shallow
   ///   copy.
-  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source,
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
           const Teuchos::DataAccess copyOrView);
+
+  /// \brief "Offset view" constructor that views the input Vector's
+  ///   local data, but with the given Map, using the given row offset.
+  ///
+  /// \param source [in] The Vector to view.
+  /// \param map [in] The Map to use to interpret the local data.
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+          const Teuchos::RCP<const map_type>& map,
+          const local_ordinal_type rowOffset = 0);
 
   //! \brief Set vector values from an existing array (copy)
   Vector (const Teuchos::RCP<const map_type>& map,
@@ -222,11 +216,44 @@ public:
   ///
   /// \param X [in] Input MultiVector to view (in possibly nonconst fashion).
   /// \param j [in] The column of X to view.
-  Vector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+  Vector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
           const size_t j);
 
-  //! Destructor.
-  virtual ~Vector ();
+  /// \brief Copy constructor (shallow copy).
+  ///
+  /// Vector's copy constructor always does a shallow copy.  Use the
+  /// nonmember function <tt>Tpetra::deep_copy</tt> (see
+  /// <tt>Tpetra_MultiVector_decl.hpp</tt>) to deep-copy one existing
+  /// Vector to another, and use the two-argument "copy constructor"
+  /// below (with <tt>copyOrView=Teuchos::Copy</tt>) to create a
+  /// Vector that is a deep copy of an existing Vector.
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = default;
+
+  //! Move constructor (shallow move).
+  Vector (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = default;
+
+  /// \brief Copy assignment (shallow copy).
+  ///
+  /// Vector's copy assignment operator always does a shallow copy.
+  /// Use the nonmember function <tt>Tpetra::deep_copy</tt> (see
+  /// <tt>Tpetra_MultiVector_decl.hpp</tt>) to deep-copy one existing
+  /// Vector to another.
+  Vector& operator= (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = default;
+
+  //! Move assigment (shallow move).
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+  operator= (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = default;
+
+  /// \brief Destructor (virtual for memory safety of derived classes).
+  ///
+  /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+  ///   ("If you define or <tt>=delete</tt> any default operation,
+  ///   define or <tt>=delete</tt> them all"), in particular the
+  ///   AbstractBase example, for why this destructor declaration
+  ///   implies that we need the above four <tt>=default</tt>
+  ///   declarations for copy construction, move construction, copy
+  ///   assignment, and move assignment.
+  virtual ~Vector () = default;
 
   //@}
   //! \name Clone method
@@ -237,9 +264,11 @@ public:
   /// \tparam Node2 The returned Vector's Node type.
   ///
   /// \param node2 [in] The returned Vector's Kokkos Node instance.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Node2>
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2, Node2::classic> >
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > TPETRA_DEPRECATED
   clone (const Teuchos::RCP<Node2>& node2);
+#endif
 
   //@}
   //! @name Post-construction modification routines
@@ -306,57 +335,59 @@ public:
   //! @name Extraction methods
   //@{
 
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::get1dCopy; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get1dCopy; // overloading, not hiding
   //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
   void get1dCopy (const Teuchos::ArrayView<Scalar>& A) const;
 
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::getDataNonConst; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDataNonConst; // overloading, not hiding
   //! View of the local values of this vector.
   Teuchos::ArrayRCP<Scalar> getDataNonConst () {
     return getDataNonConst (0);
   }
 
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::getData; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getData; // overloading, not hiding
   //! Const view of the local values of this vector.
   Teuchos::ArrayRCP<const Scalar> getData () const {
     return getData (0);
   }
 
-  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   offsetView (const Teuchos::RCP<const map_type>& subMap,
               const size_t offset) const;
 
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   offsetViewNonConst (const Teuchos::RCP<const map_type>& subMap,
                       const size_t offset);
   //@}
   //! @name Mathematical methods
   //@{
 
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::dot; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot; // overloading, not hiding
   //! Return the dot product of this Vector and the input Vector x.
-  dot_type dot (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& y) const;
+  dot_type dot (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y) const;
 
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::norm1; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm1; // overloading, not hiding
   //! Return the one-norm of this Vector.
   mag_type norm1() const;
 
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::norm2; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm2; // overloading, not hiding
   //! Return the two-norm of this Vector.
   mag_type norm2() const;
 
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::normInf; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::normInf; // overloading, not hiding
   //! Return the infinity-norm of this Vector.
   mag_type normInf() const;
 
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::normWeighted; // overloading, not hiding
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::normWeighted; // overloading, not hiding
   /// \brief Compute Weighted 2-norm (RMS Norm) of this Vector.
   ///
   /// \warning This method is DEPRECATED.
   mag_type TPETRA_DEPRECATED
-  normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& weights) const;
+  normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::meanValue; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::meanValue; // overloading, not hiding
   //! Compute mean (average) value of this Vector.
   Scalar meanValue () const;
 
@@ -395,23 +426,22 @@ public:
   //@}
 }; // class Vector
 
-
 /// \brief Return a deep copy of the given Vector.
 /// \relatesalso Vector
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic = Node::classic>
-Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>
-createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& src);
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
 
 /// \brief Nonmember Vector "constructor": Create a Vector from a given Map.
 /// \relatesalso Vector
 ///
 /// \param map [in] Map describing the distribution of rows of the
 ///   resulting Vector.
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic = Node::classic>
-Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 createVector (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map)
 {
-  return rcp (new Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> (map));
+  return rcp (new Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map));
 }
 
 } // namespace Tpetra

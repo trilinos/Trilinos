@@ -72,8 +72,14 @@ namespace Amesos2{
     //Update JDB 6.25.15
     //MKL has changed _INTEGER_t to deprecated
     //MKL has changed _INTEGER_t to define from typedef 
-    #include <mkl_dss.h>
+  #ifdef _MKL_TYPES_H_
+    #undef _MKL_TYPES_H_
+  #endif
     #include <mkl_types.h>
+  #ifdef __MKL_DSS_H
+    #undef __MKL_DSS_H
+  #endif
+    #include <mkl_dss.h>
     #undef _INTEGER_t
     typedef MKL_INT _INTEGER_t;
   } // end namespace PMKL
@@ -87,6 +93,7 @@ namespace Amesos2{
  * template specializations of the Teuchos::ValueTypeConversionTraits
  * class.
  */
+#ifdef HAVE_TEUCHOS_COMPLEX
 namespace Teuchos {
 
   template <typename TypeFrom>
@@ -181,7 +188,7 @@ namespace Teuchos {
   //@}  End Conversion group
 
 } // end namespace Teuchos
-
+#endif
 
 namespace Amesos2 {
 
@@ -193,6 +200,7 @@ namespace Amesos2 {
    * Additional nested types may be added without harm.  For an example, look at
    * Amesos2_Superlu_TypeMap.hpp
    */
+
   template <>
   struct TypeMap<PardisoMKL,float>
   {

@@ -52,6 +52,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GatherSolution_Input.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -119,26 +120,30 @@ GatherSolution_Tpetra(
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
   fieldIds_.resize(gatherFields_.size());
 
+  const Workset & workset_0 = (*d.worksets_)[0];
+  std::string blockId = this->wda(workset_0).block_id;
+  scratch_offsets_.resize(gatherFields_.size());
+
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
+    int fieldNum = fieldIds_[fd];
+    const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+    scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    for(std::size_t i=0;i<offsets.size();i++)
+      scratch_offsets_[fd](i) = offsets[i];
   }
 
-  if (has_tangent_fields_) {
-    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
-      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
-        this->utils.setFieldData(tangentFields_[fd][i],fm);
-  }
+  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].extent(0),
+                                                 globalIndexer_->getElementBlockGIDCount(blockId));
 
   indexerNames_.clear();  // Don't need this anymore
 }
@@ -151,11 +156,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
 
    if(tpetraContainer_==Teuchos::null) {
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
       tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
    }
 }
@@ -167,8 +172,6 @@ evaluateFields(typename TRAITS::EvalData workset)
 {
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
-   std::vector<LO> LIDs;
-
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -179,7 +182,9 @@ evaluateFields(typename TRAITS::EvalData workset)
    else
      x = tpetraContainer_->get_x();
 
-   Teuchos::ArrayRCP<const double> x_array = x->get1dView();
+   auto x_data = x->template getLocalView<PHX::Device>();
+
+   globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -187,23 +192,22 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       may be more expensive!
 
    // gather operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+   auto lids = scratch_lids_;
+   for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
+     auto offsets = scratch_offsets_[fieldIndex];
+     auto gather_field = gatherFields_[fieldIndex];
 
-      // loop over the fields to be gathered
-      for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+     Kokkos::parallel_for(localCellIds.size(), KOKKOS_LAMBDA (std::size_t worksetCellIndex) {
+       // loop over basis functions and fill the fields
+       for(std::size_t basis=0;basis<offsets.extent(0);basis++) {
+         int offset = offsets(basis);
+         LO lid    = lids(worksetCellIndex,offset);
 
-         // loop over basis functions and fill the fields
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            LO lid = LIDs[offset];
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x_array[lid];
-         }
-      }
+         // set the value and seed the FAD object
+         gather_field(worksetCellIndex,basis) = x_data(lid,0);
+       }
+     });
    }
 }
 
@@ -269,7 +273,7 @@ GatherSolution_Tpetra(
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -278,15 +282,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
-  }
-
-  if (has_tangent_fields_) {
-    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
-      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
-        this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
   indexerNames_.clear();  // Don't need this anymore
@@ -300,11 +295,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
 
    if(tpetraContainer_==Teuchos::null) {
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
       tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
    }
 }
@@ -315,8 +310,6 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>:
 evaluateFields(typename TRAITS::EvalData workset)
 {
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
-
-   std::vector<LO> LIDs;
 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
@@ -342,7 +335,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
        std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-       LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+       auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
        // loop over the fields to be gathered
        for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -370,7 +363,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
        std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-       LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+       auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
        // loop over the fields to be gathered
        for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -445,7 +438,7 @@ GatherSolution_Tpetra(
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -459,9 +452,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
-
     int fieldNum = fieldIds_[fd];
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
     scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
@@ -469,7 +459,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
       scratch_offsets_[fd](i) = offsets[i];
   }
 
-  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].dimension_0(),
+  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].extent(0),
                                                  globalIndexer_->getElementBlockGIDCount(blockId));
 
   indexerNames_.clear();  // Don't need this anymore
@@ -504,8 +494,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
   // first try refactored ReadOnly container
   std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
-  if(d.gedc.containsDataObject(globalDataKey_+post)) {
-    ged = d.gedc.getDataObject(globalDataKey_+post);
+  if(d.gedc->containsDataObject(globalDataKey_+post)) {
+    ged = d.gedc->getDataObject(globalDataKey_+post);
 
     RCP<RO_GED> ro_ged = rcp_dynamic_cast<RO_GED>(ged,true);
 
@@ -516,7 +506,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     return;
   }
 
-  ged = d.gedc.getDataObject(globalDataKey_);
+  ged = d.gedc->getDataObject(globalDataKey_);
 
   // try to extract linear object container
   {
@@ -615,7 +605,7 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>
 operator()(const int worksetCellIndex) const
 {
   // loop over basis functions and fill the fields
-  for(std::size_t basis=0;basis<functor_data.offsets.dimension_0();basis++) {
+  for(std::size_t basis=0;basis<functor_data.offsets.extent(0);basis++) {
     int offset = functor_data.offsets(basis);
     LO lid    = functor_data.lids(worksetCellIndex,offset);
 
@@ -632,7 +622,7 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>
 operator()(const NoSeed,const int worksetCellIndex) const
 {
   // loop over basis functions and fill the fields
-  for(std::size_t basis=0;basis<functor_data.offsets.dimension_0();basis++) {
+  for(std::size_t basis=0;basis<functor_data.offsets.extent(0);basis++) {
     int offset = functor_data.offsets(basis);
     LO lid    = functor_data.lids(worksetCellIndex,offset);
 

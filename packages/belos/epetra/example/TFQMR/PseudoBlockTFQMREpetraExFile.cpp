@@ -47,7 +47,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosPseudoBlockTFQMRSolMgr.hpp"
-#include "createEpetraProblem.hpp"
+#include "BelosEpetraUtils.h"
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
 #include "Epetra_CrsMatrix.h"
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     //
     int MyPID;
     RCP<Epetra_CrsMatrix> A;
-    int return_val =Belos::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
+    int return_val =Belos::Util::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
     const Epetra_Map &Map = A->RowMap();
     if(return_val != 0) return return_val;
     proc_verbose = verbose && (MyPID==0); /* Only print on zero processor */

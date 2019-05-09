@@ -157,7 +157,7 @@ void print_stats(std::ostream& out, double maxTime, size_t maxHwm, unsigned numS
 {
     print_tagged_stat(out, "### Total Wall Clock Run Time Used ###: ", maxTime);
     print_tagged_stat(out, "### Total Number of Steps Taken ###: ", numSteps);
-    print_tagged_stat(out, "Total Memory In Use ", maxHwm);
+    print_tagged_stat(out, "Max High-water memory usage ", maxHwm);
 }
 
 inline

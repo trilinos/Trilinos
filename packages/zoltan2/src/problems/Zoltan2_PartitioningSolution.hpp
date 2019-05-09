@@ -415,7 +415,7 @@ public:
 
   /*! \brief returns the part box boundary list.
    */
-  std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > &
+  std::vector<Zoltan2::coordinateModelPartBox> &
   getPartBoxesView() const
   {
     return this->algorithm_->getPartBoxesView();
@@ -551,7 +551,7 @@ private:
   const RCP<const Comm<int> > comm_;       // the problem communicator
 
   //part box boundaries as a result of geometric partitioning algorithm.
-  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > partBoxes;
+  RCP<std::vector<Zoltan2::coordinateModelPartBox> > partBoxes;
 
   part_t nGlobalParts_;// target global number of parts
   part_t nLocalParts_; // number of parts to be on this process
@@ -1264,8 +1264,8 @@ template <typename Adapter>
   // respect to a desired solution.  This solution may have more or
   // fewer parts that the desired solution.)
 
-  part_t lMax = std::numeric_limits<part_t>::min(); 
-  part_t lMin = std::numeric_limits<part_t>::max();
+  part_t lMax = -1;
+  part_t lMin = (len > 0 ? std::numeric_limits<part_t>::max() : 0);
   part_t gMax, gMin;
 
   for (size_t i = 0; i < len; i++) {
@@ -1325,7 +1325,7 @@ template <typename Adapter>
           double dNum = partCounter[part];
           double dProcs = numprocs;
   
-          //cout << "dNum:" << dNum << " dProcs:" << dProcs << endl;
+          //std::cout << "dNum:" << dNum << " dProcs:" << dProcs << std::endl;
           double each = floor(dNum/dProcs);
           double extra = fmod(dNum,dProcs);
   
@@ -1806,7 +1806,7 @@ void PartitioningSolution<Adapter>::RemapParts()
     }
 
 #ifdef KDDKDD_DEBUG
-    cout << "IDX ";
+    std::cout << "IDX ";
     for (part_t i = 0; i <= tnVtx; i++) std::cout << idx[i] << " ";
     std::cout << std::endl;
 
@@ -1884,8 +1884,8 @@ void PartitioningSolution<Adapter>::RemapParts()
     delete [] match;
 
 #ifdef KDDKDD_DEBUG
-    cout << "Remap vector: ";
-    for (part_t i = 0; i < nGlobalParts_; i++) cout << remap[i] << " ";
+    std::cout << "Remap vector: ";
+    for (part_t i = 0; i < nGlobalParts_; i++) std::cout << remap[i] << " ";
     std::cout << std::endl;
 #endif
 

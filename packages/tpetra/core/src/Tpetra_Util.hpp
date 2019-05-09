@@ -51,10 +51,13 @@
   here so that they can be updated and maintained in a single spot.
 */
 
-#include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream
+#include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_DualView.hpp"
-#include "Teuchos_Utils.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_Utils.hpp"
 #include <algorithm>
 #include <iterator>
 #include <sstream>
@@ -444,9 +447,9 @@ namespace Tpetra {
     const IT1& first1,
     const IT1& last1,
     const IT2& first2,
-    const IT2& last2,
+    const IT2& /* last2 */,
     const IT3& first3,
-    const IT3& last3)
+    const IT3& /* last3 */)
    {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
@@ -481,7 +484,7 @@ namespace Tpetra {
     const IT1& first1,
     const IT1& last1,
     const IT2& first2,
-    const IT2& last2)
+    const IT2& /* last2 */)
    {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
@@ -629,7 +632,7 @@ namespace Tpetra {
   void
   merge2 (IT1& indResultOut, IT2& valResultOut,
           IT1 indBeg, IT1 indEnd,
-          IT2 valBeg, IT2 valEnd)
+          IT2 valBeg, IT2 /* valEnd */)
   {
     if (indBeg == indEnd) {
       indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
@@ -877,15 +880,19 @@ namespace Tpetra {
       static_assert (static_cast<int> (DualViewType::t_dev::rank) == 1,
                      "The input DualView must have rank 1.");
       TEUCHOS_TEST_FOR_EXCEPTION
-        (x.template need_sync<Kokkos::HostSpace> (), std::logic_error, "The "
+        (x.need_sync_host (), std::logic_error, "The "
          "input Kokkos::DualView was most recently modified on device, but this "
          "function needs the host view of the data to be the most recently "
          "modified.");
 
-      auto x_host = x.template view<Kokkos::HostSpace> ();
+      auto x_host = x.view_host ();
       typedef typename DualViewType::t_dev::value_type value_type;
-      return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
-                                             x_host.dimension_0 ());
+      // mfh 15 Jan 2019: In debug mode, Teuchos::ArrayView's
+      // constructor throws if the pointer is nonnull but the length
+      // is nonpositive.
+      const auto len = x_host.extent (0);
+      return Teuchos::ArrayView<value_type> (len != 0 ? x_host.data () : nullptr,
+                                             len);
     }
 
     /// \brief Get a 1-D Kokkos::DualView which is a deep copy of the
@@ -918,14 +925,33 @@ namespace Tpetra {
       Kokkos::View<const T*, HMS, MemoryUnmanaged> x_in (x_av.getRawPtr (), len);
       Kokkos::DualView<T*, DT> x_out (label, len);
       if (leaveOnHost) {
-        x_out.template modify<HMS> ();
-        Kokkos::deep_copy (x_out.template view<HMS> (), x_in);
+        x_out.modify_host ();
+        Kokkos::deep_copy (x_out.view_host (), x_in);
       }
       else {
         x_out.template modify<DMS> ();
         Kokkos::deep_copy (x_out.template view<DMS> (), x_in);
       }
       return x_out;
+    }
+
+    /// \brief Return the status of the given Kokkos::DualView, as a
+    ///   human-readable string.
+    ///
+    /// This is meant for Tpetra developers as a debugging aid.
+    ///
+    /// \param dv [in] Kokkos::DualView
+    /// \param name [in] Human-readable name of the Kokkos::DualView
+    template<class DualViewType>
+    std::string dualViewStatusToString (const DualViewType& dv, const char name[])
+    {
+      const auto host = dv.need_sync_device();
+      const auto dev = dv.need_sync_host();
+
+      std::ostringstream os;
+      os << name << ": {size: " << dv.extent (0)
+         << ", sync: {host: " << host << ", dev: " << dev << "}";
+      return os.str ();
     }
 
   } // namespace Details

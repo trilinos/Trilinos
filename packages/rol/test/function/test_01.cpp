@@ -48,9 +48,9 @@
 //#define USE_HESSVEC 0
 
 #include "ROL_StdVector.hpp"
-#include "ROL_TestObjectives.hpp"
+#include "ROL_GetTestProblems.hpp"
 #include "ROL_HelperFunctions.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
@@ -63,15 +63,15 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
   int errorFlag  = 0;
@@ -84,18 +84,18 @@ int main(int argc, char *argv[]) {
   try {
 
     int dim = 128;
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    ROL::StdVector<RealT> x(x_rcp);
-    ROL::StdVector<RealT> y(y_rcp);
-    ROL::StdVector<RealT> z(z_rcp);
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > y_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::StdVector<RealT> x(x_ptr);
+    ROL::StdVector<RealT> y(y_ptr);
+    ROL::StdVector<RealT> z(z_ptr);
 
     // set x,y
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i] = 10.0* (1.0 + (RealT)rand() / (RealT)RAND_MAX);
-      (*y_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*z_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*x_ptr)[i] = 10.0* (1.0 + (RealT)rand() / (RealT)RAND_MAX);
+      (*y_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*z_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
     //ROL::ZOO::Objective_Rosenbrock<RealT> obj;

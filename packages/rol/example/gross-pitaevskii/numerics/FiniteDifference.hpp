@@ -42,7 +42,7 @@ class FiniteDifference {
         }    
 
         //! Given f, compute -u''=f 
-        void solve(Teuchos::RCP<const std::vector<Real> > fp, Teuchos::RCP<std::vector<Real> > up) {            
+        void solve(ROL::Ptr<const std::vector<Real> > fp, ROL::Ptr<std::vector<Real> > up) {            
             for(int i=0;i<n_;++i) {
                 (*up)[i] = (*fp)[i];
             }
@@ -50,12 +50,12 @@ class FiniteDifference {
         }
 
         //! Same as above but with overwrite in place
-        void solve(Teuchos::RCP<std::vector<Real> > up) {            
+        void solve(ROL::Ptr<std::vector<Real> > up) {            
             lapack_.GTTRS('n',n_,1,&dl_[0],&d_[0],&du_[0],&du2_[0],&ipiv_[0],&(*up)[0],n_,&info_);
         }
  
         //! Given u, compute f = -u'' 
-        void apply(Teuchos::RCP<const std::vector<Real> > up,  Teuchos::RCP<std::vector<Real> > fp) {
+        void apply(ROL::Ptr<const std::vector<Real> > up,  ROL::Ptr<std::vector<Real> > fp) {
             (*fp)[0] = (2.0*(*up)[0]-(*up)[1])/dx2_;
   
             for(int i=1;i<n_-1;++i) {
@@ -65,9 +65,9 @@ class FiniteDifference {
         }    
 
         //! Same as above but with overwrite in place
-        void apply(Teuchos::RCP<std::vector<Real> > fp) {
+        void apply(ROL::Ptr<std::vector<Real> > fp) {
 
-            Teuchos::RCP<std::vector<Real> > up = Teuchos::rcp( new std::vector<Real> (n_, 0.0) );
+            ROL::Ptr<std::vector<Real> > up = ROL::makePtr<std::vector<Real>>(n_, 0.0);
              for(int i=0;i<n_;++i) {
                 (*up)[i] = (*fp)[i];
             }

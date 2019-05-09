@@ -85,7 +85,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include <Intrepid_KokkosRank.hpp>
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef INTREPID_OLD_KOKKOS_CODE
 #include "Kokkos_Core.hpp"
 #endif
 namespace Intrepid {
@@ -348,7 +348,7 @@ public:
         \param  whichCell         [in]  - cell ordinal (for single cell Jacobian computation); default is -1      
      */
 /*
- #ifdef HAVE_INTREPID_KOKKOSCORE
+ #ifdef INTREPID_OLD_KOKKOS_CODE
 
     
 template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
@@ -1502,7 +1502,7 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
 } // namespace Intrepid
 
 // include templated function definitions
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef INTREPID_OLD_KOKKOS_CODE
 #include <Intrepid_CellTools_Kokkos.hpp>
 #endif
 #include "Intrepid_CellToolsDef.hpp"

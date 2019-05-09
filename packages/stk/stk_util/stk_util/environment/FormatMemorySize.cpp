@@ -32,45 +32,51 @@
 // 
 
 #include <stk_util/environment/FormatMemorySize.hpp>
-#include <boost/lexical_cast.hpp>       // for lexical_cast
-#include <sstream>                      // for basic_stringbuf<>::int_type, etc
+#include <iomanip>
+#include <string>
+#include <sstream>
 
 namespace stk {
 
-std::string
-formatMemorySize(
-  double                size)
+std::string format_memory_size(double size)
 {
-  std::string           result;
-  
-  static const double kb = 1024.0;
+  std::string result;
 
+  const double kb = 1024.0;
+  const double mb = kb * kb;
   if (size < 0.0) {
-    result = "-";
-    size = -size;
-  }
+    return "bad value";
+  } else {
+    double numMB = size / mb;
+    std::stringstream memOut;
 
-  // output size in kilo bytes
-  result += boost::lexical_cast<std::string>(static_cast<unsigned long>(size / kb));
-  result += " KB";
-  
-  return result;
+    if(numMB == 0.0) {
+      //
+      //  Short format for exact zero
+      //
+      memOut << std::setw(6) << std::fixed << std::setprecision(1) << numMB <<" MB";
+    } else if(numMB < 1.0) {
+      //
+      //  Go to small number scientific notation
+      //
+      memOut << std::setw(6) << std::scientific << std::setprecision(5) << numMB <<" MB";
+    } else if (numMB <= 99999.9) {
+      //
+      //  For most any common numbers output value in MB fixed format
+      //
+      memOut << std::setw(6) << std::fixed << std::setprecision(1) << numMB <<" MB";
+    } else {
+      //
+      //  For huge values go back to scientific notation
+      //
+      memOut << std::setw(6) << std::scientific << std::setprecision(5) << numMB <<" MB";
+    }
+    return memOut.str();
+  }
 }
 
-
-std::string
-formatMemorySize(
-  MemorySize            size)
-{
-  std::string           result;
-  
-  static const MemorySize kb = 1024;
-
-  // output size in kilo bytes
-  result = boost::lexical_cast<std::string>(size / kb);
-  result += " KB";
-  
-  return result;
+std::string format_memory_size(MemorySize size) {
+  return(format_memory_size((double)size));
 }
 
 } // namespace stk

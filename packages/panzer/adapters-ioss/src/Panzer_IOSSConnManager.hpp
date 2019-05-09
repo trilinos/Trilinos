@@ -78,12 +78,11 @@
 
 namespace panzer_ioss {
 
-template <typename GO>
-class IOSSConnManager : public panzer::ConnManager<int,GO> {
+class IOSSConnManager : public panzer::ConnManager {
 
 public:
-   typedef typename panzer::ConnManager<int, GO>::LocalOrdinal LocalOrdinal;
-   typedef typename panzer::ConnManager<int, GO>::GlobalOrdinal GlobalOrdinal;
+   using LocalOrdinal = panzer::ConnManager::LocalOrdinal;
+   using GlobalOrdinal = panzer::ConnManager::GlobalOrdinal;
 
    typedef typename std::vector<Ioss::NodeBlock*> NodeBlockContainer;
    typedef typename std::vector<Ioss::ElementBlock*> ElementBlockContainer;
@@ -105,7 +104,7 @@ public:
      * This default version assumes an exodus-type database and a property
      * manager containing the single property DECOMPOSITION_METHOD=LINEAR
      */
-   virtual Teuchos::RCP<panzer::ConnManagerBase<int> > noConnectivityClone() const {
+   virtual Teuchos::RCP<panzer::ConnManager> noConnectivityClone() const {
      std::string type = "exodus";
      Ioss::PropertyManager properties;
      Ioss::Property decomp_prop("DECOMPOSITION_METHOD", "LINEAR");
@@ -117,7 +116,7 @@ public:
         * about the required connectivity (e.g. <code>buildConnectivity</code>
         * has never been called).
         */
-   virtual Teuchos::RCP<panzer::ConnManagerBase<int> > noConnectivityClone(std::string & type, Ioss::PropertyManager & properties) const;
+   virtual Teuchos::RCP<panzer::ConnManager> noConnectivityClone(std::string & type, Ioss::PropertyManager & properties) const;
 
    /** Get ID connectivity for a particular element
      *
@@ -157,16 +156,16 @@ public:
     /** How many element blocks in this mesh?
       */
     virtual std::size_t numElementBlocks() const {
- 	  return iossElementBlocks_.size();
+       return iossElementBlocks_.size();
     };
 
 
     /** Get block IDs from IOSS mesh object
       */
     virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const {
- 	   elementBlockIds.clear();
- 	   for (Ioss::ElementBlock * iossElementBlock : iossElementBlocks_)
- 		  elementBlockIds.push_back(iossElementBlock->name());
+        elementBlockIds.clear();
+        for (Ioss::ElementBlock * iossElementBlock : iossElementBlocks_)
+           elementBlockIds.push_back(iossElementBlock->name());
     };
 
 
@@ -187,7 +186,7 @@ public:
       * \returns Vector of local element IDs.
       */
     virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockId) const {
-    	return *(elementBlocks_.find(blockId)->second);
+        return *(elementBlocks_.find(blockId)->second);
     };
 
     virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & blockId) const
@@ -274,8 +273,8 @@ protected:
                                   GlobalOrdinal & faceOffset, GlobalOrdinal & cellOffset) const;
 
    LocalOrdinal addSubcellConnectivities(const panzer::FieldPattern & fp, std::string & blockId,
-		                                 std::size_t elmtIdInBlock, std::size_t elmtLid,
-										 unsigned subcellRank, LocalOrdinal idCnt,GlobalOrdinal offset);
+                                         std::size_t elmtIdInBlock, std::size_t elmtLid,
+                                         unsigned subcellRank, LocalOrdinal idCnt,GlobalOrdinal offset);
 
    /* Determine whether a FieldPattern object is compatible with the Ioss::ElementTopology
     * of every block in the mesh.

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,6 +33,7 @@
  *
  */
 
+#include "copy_string_cpp.h"
 #include "exodusII.h" // for MAX_LINE_LENGTH, ex_close, etc
 #include "globals.h"
 #include "nem_spread.h"
@@ -94,25 +95,24 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
   /* Open the EXODUS II mesh file */
   exoid = ex_open(exofile, mode, &cpu_ws, &io_ws, &version);
   if (exoid == -1) {
-    fprintf(stderr, "%s: ERROR openning up the mesh exoII file, %s\n", yo, exofile);
+    fprintf(stderr, "%s: ERROR opening up the mesh exoII file, %s\n", yo, exofile);
     exit(-1);
   }
 
   /* Read the initialization parameters */
-  memset(GeomTitle, '\0', MAX_LINE_LENGTH * sizeof(char));
+  memset(GeomTitle, '\0', (MAX_LINE_LENGTH + 1) * sizeof(char));
   ex_init_params info{};
   info.title[0] = '\0';
   error         = ex_get_init_ext(exoid, &info);
   check_exodus_error(error, "ex_get_init");
 
-  strncpy(GeomTitle, info.title, MAX_LINE_LENGTH);
-  GeomTitle[MAX_LINE_LENGTH] = '\0';
-  globals.Num_Dim            = info.num_dim;
-  globals.Num_Node           = info.num_nodes;
-  globals.Num_Elem           = info.num_elem;
-  globals.Num_Elem_Blk       = info.num_elem_blk;
-  globals.Num_Node_Set       = info.num_node_sets;
-  globals.Num_Side_Set       = info.num_side_sets;
+  copy_string(GeomTitle, info.title);
+  globals.Num_Dim      = info.num_dim;
+  globals.Num_Node     = info.num_nodes;
+  globals.Num_Elem     = info.num_elem;
+  globals.Num_Elem_Blk = info.num_elem_blk;
+  globals.Num_Node_Set = info.num_node_sets;
+  globals.Num_Side_Set = info.num_side_sets;
 
   printf("\nExodus file (%s)\n", exofile);
   printf("\tTitle of file: %s\n", GeomTitle);

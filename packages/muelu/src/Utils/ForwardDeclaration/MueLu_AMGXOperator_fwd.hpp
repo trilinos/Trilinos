@@ -47,7 +47,7 @@
 #define MUELU_AMGXOPERATOR_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_AMGX)
+#if defined(HAVE_MUELU_AMGX)
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -51,7 +51,7 @@
 ///   and CrsMatrix).
 
 #include "TpetraCore_config.h"
-#include "Kokkos_Core.hpp"
+#include "Tpetra_Details_getEntryOnHost.hpp"
 #include <limits>
 #include <type_traits>
 
@@ -118,7 +118,7 @@ public:
                             const counts_view_type& counts) :
     offsets_ (offsets),
     counts_ (counts),
-    size_ (counts.dimension_0 ())
+    size_ (counts.extent (0))
   {}
 
   //! Set the initial value of the reduction result.
@@ -177,7 +177,7 @@ private:
 ///   may use a shorter type to improve performance.
 ///
 /// The type of each entry of the \c ptr array must be able to store
-/// <tt>ptr.dimension_0 () * count</tt>.  This functor makes no
+/// <tt>ptr.extent (0) * count</tt>.  This functor makes no
 /// attempt to check for overflow in this sum.
 template<class OffsetsViewType,
          class CountType,
@@ -212,9 +212,9 @@ public:
                                    const count_type count) :
     offsets_ (offsets),
     count_ (count),
-    size_ (offsets_.dimension_0 () == 0 ?
+    size_ (offsets_.extent (0) == 0 ?
            static_cast<size_type> (0) :
-           static_cast<size_type> (offsets_.dimension_0 () - 1))
+           static_cast<size_type> (offsets_.extent (0) - 1))
   {}
 
   //! Set the initial value of the reduction result.
@@ -313,8 +313,9 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
   if (numOffsets != 0) {
     TEUCHOS_TEST_FOR_EXCEPTION
       (numCounts >= numOffsets, std::invalid_argument,
-       "computeOffsetsFromCounts: counts.dimension_0() = " << numCounts
-       << " >= ptr.dimension_0() = " << numOffsets << ".");
+       "Tpetra::Details::computeOffsetsFromCounts: "
+       "counts.extent(0) = " << numCounts
+       << " >= ptr.extent(0) = " << numOffsets << ".");
 
     Kokkos::RangePolicy<execution_space, SizeType> range (0, numCounts+1);
     try {
@@ -330,6 +331,16 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
         Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<memory_space,
         typename CountsViewType::memory_space>::value;
       if (countsAccessibleFromOffsets) {
+#ifdef KOKKOS_ENABLE_CUDA
+        // If 'counts' is a UVM allocation, then conservatively fence
+        // first, in case it was last accessed on host.  We're about
+        // to access it on device.
+        using counts_memory_space = typename CountsViewType::memory_space;
+        if (std::is_same<counts_memory_space, Kokkos::CudaUVMSpace>::value) {
+          using counts_exec_space = typename counts_memory_space::execution_space;
+          counts_exec_space::fence (); // for UVM's sake.
+        }
+#endif // KOKKOS_ENABLE_CUDA
         typedef ComputeOffsetsFromCounts<OffsetsViewType, CountsViewType,
           SizeType> functor_type;
         // offsets' execution space can access counts
@@ -353,31 +364,22 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::runtime_error, "computeOffsetsFromCounts: parallel_scan "
-         "(with device_type Kokkos::Device<" <<
-         typeid (execution_space).name () << ", " <<
-         typeid (memory_space).name () << ">) threw an std::exception: "
+        (true, std::runtime_error,
+         "Tpetra::Details::computeOffsetsFromCounts: "
+         "Kokkos::parallel_scan (with device_type Kokkos::Device<"
+         << typeid (execution_space).name () << ", "
+         << typeid (memory_space).name () << ">) threw an std::exception: "
          << e.what ());
     }
     catch (...) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::runtime_error, "Kokkos::parallel_scan threw an "
-         "exception not a subclass of std::exception");
+        (true, std::runtime_error,
+         "Tpetra::Details::computeOffsetsFromCounts: "
+         "Kokkos::parallel_scan threw an exception "
+         "not a subclass of std::exception");
     }
-
-    // Get the sum of all the entries of counts from the last entry of
-    // ptr.  The second branch of this 'if' always works, but we save
-    // a little time by specializing for non-CUDA execution spaces.
-    if (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<Kokkos::HostSpace,
-          memory_space>::value) {
-      return ptr[numCounts];
-    }
-    else {
-      auto ptr_last = Kokkos::subview (ptr, numCounts);
-      auto ptr_last_h = Kokkos::create_mirror_view (ptr_last);
-      Kokkos::deep_copy (ptr_last_h, ptr_last);
-      return ptr_last_h ();
-    }
+    // Get the sum of all entries of counts from the last entry of ptr.
+    return ::Tpetra::Details::getEntryOnHost (ptr, numCounts);
   }
   else {
     return static_cast<offset_type> (0);
@@ -404,7 +406,7 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
 ///   may use a shorter type to improve performance.
 ///
 /// The type of each entry of the \c ptr array must be able to store
-/// <tt>ptr.dimension_0 () * count</tt>.  This functor makes no
+/// <tt>ptr.extent (0) * count</tt>.  This functor makes no
 /// attempt to check for overflow in this sum.
 template<class OffsetsViewType,
          class CountType,
@@ -454,20 +456,8 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
         (true, std::runtime_error, "Kokkos::parallel_scan threw an "
          "exception not a subclass of std::exception");
     }
-
-    // Get the sum of all the entries of counts from the last entry of
-    // ptr.  The second branch of this 'if' always works, but we save
-    // a little time by specializing for non-CUDA execution spaces.
-    if (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<Kokkos::HostSpace,
-          memory_space>::value) {
-      return ptr[numOffsets - 1];
-    }
-    else {
-      auto ptr_last = Kokkos::subview (ptr, numOffsets - 1);
-      auto ptr_last_h = Kokkos::create_mirror_view (ptr_last);
-      Kokkos::deep_copy (ptr_last_h, ptr_last);
-      return ptr_last_h ();
-    }
+    // Get the sum from the last entry of ptr.
+    return ::Tpetra::Details::getEntryOnHost (ptr, numOffsets - 1);
   }
   else {
     return static_cast<offset_type> (0);

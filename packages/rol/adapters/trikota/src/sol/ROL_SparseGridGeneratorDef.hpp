@@ -47,29 +47,29 @@
 namespace ROL {
 
 template <class Real>
-SparseGridGenerator<Real>::SparseGridGenerator(const Teuchos::RCP<BatchManager<Real> > &bman, 
+SparseGridGenerator<Real>::SparseGridGenerator(const ROL::Ptr<BatchManager<Real> > &bman, 
                                                const QuadratureInfo &info, const bool adaptive)
   : SampleGenerator<Real>(bman), info_(info), isVectorInit_(false) {
   adaptive_ = info.adaptive;
   if ( adaptive_ ) {
-    indices_   = Teuchos::rcp(new SparseGridIndexSet<Real>(info.dim, info.maxLevel));
-    grid_      = Teuchos::rcp(new Quadrature<Real>(info.dim));
+    indices_   = ROL::makePtr<SparseGridIndexSet<Real>>(info.dim, info.maxLevel);
+    grid_      = ROL::makePtr<Quadrature<Real>>(info.dim);
     error_     = static_cast<Real>(0);
     direction_ = 0;
   }
   else {
-    grid_ = Teuchos::rcp(new Quadrature<Real>(info));
+    grid_ = ROL::makePtr<Quadrature<Real>>(info);
   }
   // Split points and weights across processors
   setSamples(true);
 }
 
 template <class Real>
-SparseGridGenerator<Real>::SparseGridGenerator(const Teuchos::RCP<BatchManager<Real> > &bman, 
+SparseGridGenerator<Real>::SparseGridGenerator(const ROL::Ptr<BatchManager<Real> > &bman, 
                                                const char* SGinfo, const char* SGdata, 
                                                const bool isNormalized)
     : SampleGenerator<Real>(bman), adaptive_(false), isVectorInit_(false) {
-  grid_ = Teuchos::rcp(new Quadrature<Real>(SGinfo,SGdata,isNormalized));
+  grid_ = ROL::makePtr<Quadrature<Real>>(SGinfo,SGdata,isNormalized);
   // Split points and weights across processors
   setSamples(true);
 }
@@ -96,7 +96,7 @@ void SparseGridGenerator<Real>::update(const Vector<Real> &x) {
   SampleGenerator<Real>::update(x);
   if ( adaptive_ ) {
     indices_->reset();
-    grid_ = Teuchos::rcp(new Quadrature<Real>(info_.dim));
+    grid_ = ROL::makePtr<Quadrature<Real>>(info_.dim);
     index_.clear();
     direction_ = 0;
     error_ = static_cast<Real>(0);
@@ -109,7 +109,7 @@ template<class Real>
 void SparseGridGenerator<Real>::refine(void) {
   if ( adaptive_ ) {
     npts_ = 0;
-    Teuchos::RCP<Quadrature<Real> > rule;
+    ROL::Ptr<Quadrature<Real> > rule;
 //    bool terminate = false;
 //int cnt = 0;
 //    while (!terminate) {
@@ -135,7 +135,7 @@ void SparseGridGenerator<Real>::refine(void) {
         search_index_ = index_;
         search_index_[direction_]++;
       }
-      rule = Teuchos::rcp(new Quadrature<Real>(info_.dim));
+      rule = ROL::makePtr<Quadrature<Real>>(info_.dim);
       if (    !(indices_->isMember(search_index_))           // Check if index is old/active
            && !(indices_->isMaxLevelExceeded(search_index_)) // Check if index violates maxLevel
            && indices_->isAdmissible(search_index_) ) {      // Check if index is admissible
@@ -181,7 +181,7 @@ Real SparseGridGenerator<Real>::computeError(std::vector<Real> &vals){
 }
 
 template<class Real>
-Real SparseGridGenerator<Real>::computeError(std::vector<Teuchos::RCP<Vector<Real> > > &vals,
+Real SparseGridGenerator<Real>::computeError(std::vector<ROL::Ptr<Vector<Real> > > &vals,
                                              const Vector<Real> &x ){
   if ( adaptive_ ) {
     if ( !isVectorInit_ ) {
@@ -286,7 +286,7 @@ void SparseGridGenerator<Real>::updateSamples( Quadrature<Real> &grid ) {
 
 template<class Real>
 void SparseGridGenerator<Real>::printIndexSet(void) const {
-  if (indices_ != Teuchos::null) {
+  if (indices_ != ROL::nullPtr) {
     indices_->print(info_.name,SampleGenerator<Real>::batchID());
   }
 }

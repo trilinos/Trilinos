@@ -41,23 +41,15 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_ConfigDefs.hpp>
-
-#include <Tpetra_TestingUtilities.hpp>
-
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace {
-  using Tpetra::TestingUtilities::getNode;
-  using Tpetra::TestingUtilities::getDefaultComm;
 
   using std::endl;
   using std::string;
 
-  using Teuchos::TypeTraits::is_same;
   using Teuchos::as;
   using Teuchos::FancyOStream;
   using Teuchos::RCP;
@@ -87,13 +79,9 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
-  using Tpetra::createNonContigMapWithNode;
-  using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createLocalMapWithNode;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
-  using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
@@ -107,10 +95,6 @@ namespace {
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
-    clp.setOption(
-        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
-        "Test MPI (if available) or force test of serial.  In a serial build,"
-        " this option is ignored and a serial comm is always used." );
   }
 
   //
@@ -120,7 +104,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceDomainMapAndImporter, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     // Based on the FullTriDiag tests...
 
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -132,12 +115,12 @@ namespace {
     const size_t ZERO = OrdinalTraits<GO>::zero();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t numImages = comm->getSize();
     const size_t myImageID = comm->getRank();
     if (numImages < 3) return;
     // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,ONE,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,ONE,comm);
 
     // RCP<FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
 
@@ -173,7 +156,7 @@ namespace {
       const size_t NumMyElements = (comm->getRank () == 0) ?
         A.getDomainMap ()->getGlobalNumElements () : 0;
       RCP<const Map<LO,GO,Node> > NewMap =
-        rcp (new Map<LO,GO,Node> (INVALID, NumMyElements, ZERO, comm, node));
+        rcp (new Map<LO,GO,Node> (INVALID, NumMyElements, ZERO, comm));
       RCP<const Tpetra::Import<LO,GO,Node> > NewImport =
         rcp (new Import<LO,GO,Node> (NewMap, A.getColMap ()));
 

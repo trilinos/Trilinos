@@ -43,11 +43,6 @@
 
 #include "Amesos2_Basker_decl.hpp"
 
-
-#ifdef SHYLUBASKER
-#pragma message("SHYLUBASKER FLAG EXISTS")
-#endif
-
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
 #include "Amesos2_Basker_def.hpp"
@@ -55,10 +50,8 @@
 
 namespace Amesos2 {
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
   AMESOS2_SOLVER_EPETRA_INST(Basker);
-#endif
 #endif
 
 #ifdef HAVE_TPETRA_INST_INT_INT

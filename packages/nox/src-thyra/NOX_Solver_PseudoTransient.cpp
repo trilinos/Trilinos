@@ -60,6 +60,8 @@
 #include "NOX_LineSearch_Factory.H"
 #include "NOX_Direction_Generic.H"
 #include "NOX_Direction_Factory.H"
+#include "NOX_Observer.hpp"
+#include "NOX_SolverStats.hpp"
 #include <limits>
 
 // This relies explicitly on thyra
@@ -81,7 +83,7 @@ PseudoTransient(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils();
-  prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
 
   this->setMyParamList(p);
   thyraSolnGroup = Teuchos::rcp_dynamic_cast<NOX::Thyra::Group>(solnPtr,true);
@@ -98,6 +100,7 @@ void NOX::Solver::PseudoTransient::init()
   stepSize = 0.0;
   nIter = 0;
   status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
 
   Teuchos::RCP<Teuchos::ParameterList> paramsPtr = this->getMyNonconstParamList();
   paramsPtr->validateParametersAndSetDefaults(*this->getValidParameters());
@@ -172,27 +175,47 @@ reset(const NOX::Abstract::Vector& initialGuess,
 {
   solnPtr->setX(initialGuess);
   testPtr = t;
-  init();
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  time = 0.0;
 }
 
 void NOX::Solver::PseudoTransient::
 reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnPtr->setX(initialGuess);
-  init();
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  time = 0.0;
 }
 
-NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::getStatus()
+void NOX::Solver::PseudoTransient::
+reset()
+{
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  time = 0.0;
+}
+
+NOX::StatusTest::StatusType
+NOX::Solver::PseudoTransient::getStatus() const
 {
   return status;
 }
 
 NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
 {
-  prePostOperator.runPreIterate(*this);
+  observer->runPreIterate(*this);
 
   // On the first step, do some initializations
   if (nIter == 0) {
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
 
     // Stupid row sum scaling.  Computes a Jacobian before x_dot or
     // alpha/beta is known so first Jacobian is for steady-state.  Need
@@ -224,7 +247,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
 
   // First check status
   if (status != NOX::StatusTest::Unconverged) {
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -308,7 +331,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
   {
     utilsPtr->out() << "NOX::Solver::PseudoTransient::iterate - unable to calculate direction" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -322,35 +345,24 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
     inArgs.set_t(0.0);
   }
 
-
-
-  // Debug output
-  if (false){
-    std::cout << "Direction:" << std::endl;
-    dirPtr->print(std::cout);
-
-    std::cout << "Solution:" << std::endl;
-    thyraSolnGroup->getXPtr()->print(std::cout);
-  }
-
-
-
-
   // Update iteration count.
   nIter ++;
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
   // Copy current soln to the old soln.
   *oldSolnPtr = *solnPtr;
 
   // Do line search and compute new soln.
+  observer->runPreSolutionUpdate(*dirPtr,*this);
   ok = lineSearchPtr->compute(soln, stepSize, *dirPtr, *this);
+  observer->runPostSolutionUpdate(*this);  
   if (!ok)
   {
     if (stepSize == 0.0)
     {
       utilsPtr->out() << "NOX::Solver::PseudoTransient::iterate - line search failed" << std::endl;
       status = NOX::StatusTest::Failed;
-      prePostOperator.runPostIterate(*this);
+      observer->runPostIterate(*this);
       printUpdate();
       return status;
     }
@@ -365,7 +377,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
   {
     utilsPtr->out() << "NOX::Solver::PseudoTransient::iterate - unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -373,7 +385,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
   // Evaluate the current status.
   status = test.checkStatus(*this, checkType);
 
-  prePostOperator.runPostIterate(*this);
+  observer->runPostIterate(*this);
 
   printUpdate();
 
@@ -382,7 +394,9 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
 
 NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::solve()
 {
-  prePostOperator.runPreSolve(*this);
+  observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged)
@@ -392,7 +406,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::solve()
   outputParams.set("Nonlinear Iterations", nIter);
   outputParams.set("2-Norm of Residual", solnPtr->getNormF());
 
-  prePostOperator.runPostSolve(*this);
+  observer->runPostSolve(*this);
 
   return status;
 }
@@ -487,3 +501,7 @@ NOX::Solver::PseudoTransient::getPreviousSolutionGroupPtr() const
 Teuchos::RCP< const Teuchos::ParameterList >
 NOX::Solver::PseudoTransient::getListPtr() const
 {return this->getMyParamList();}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::PseudoTransient::getSolverStatistics() const
+{ return globalDataPtr->getSolverStatistics(); }

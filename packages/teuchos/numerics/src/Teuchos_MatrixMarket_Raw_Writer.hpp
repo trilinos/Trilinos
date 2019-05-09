@@ -42,7 +42,7 @@
 #ifndef __Teuchos_MatrixMarket_Raw_Writer_hpp
 #define __Teuchos_MatrixMarket_Raw_Writer_hpp
 
-#include "Teuchos_MatrixMarket_SetScientific.hpp"
+#include <Teuchos_SetScientific.hpp>
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include <fstream>
@@ -142,7 +142,7 @@ namespace Teuchos {
 	  // scientific notation.  It will politely put the output
 	  // stream back to its state on input, when this scope
 	  // terminates.
-	  Teuchos::MatrixMarket::details::SetScientific<ScalarType> sci (out);
+	  Teuchos::SetScientific<ScalarType> sci (out);
 
 	  // Data type string for ScalarType.
 	  std::string dataType;

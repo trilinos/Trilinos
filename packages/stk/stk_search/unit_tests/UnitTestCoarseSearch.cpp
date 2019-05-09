@@ -267,11 +267,6 @@ TEST(stk_search, coarse_search_boost_rtree)
   testCoarseSearchForAlgorithm(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
 }
 
-TEST(stk_search, coarse_search_octree)
-{
-  testCoarseSearchForAlgorithm(stk::search::OCTREE, MPI_COMM_WORLD);
-}
-
 TEST(stk_search, coarse_search_kdtree)
 {
   testCoarseSearchForAlgorithm(stk::search::KDTREE, MPI_COMM_WORLD);
@@ -280,11 +275,6 @@ TEST(stk_search, coarse_search_kdtree)
 TEST(stk_search, coarse_search_boost_rtree_using_float_aa_boxes)
 {
     testCoarseSearchForAlgorithmUsingFloatAABoxes(BOOST_RTREE, MPI_COMM_WORLD);
-}
-
-TEST(stk_search, coarse_search_octree_using_float_aa_boxes)
-{
-    testCoarseSearchForAlgorithmUsingFloatAABoxes(OCTREE, MPI_COMM_WORLD);
 }
 
 TEST(stk_search, coarse_search_kdtree_using_float_aa_boxes)
@@ -353,11 +343,6 @@ TEST(stk_search, coarse_search_boost_ident_proc_switch)
     testIdentProcWithSearch(stk::search::BOOST_RTREE);
 }
 
-TEST(stk_search, coarse_search_octree_ident_proc_switch)
-{
-    testIdentProcWithSearch(stk::search::OCTREE);
-}
-
 TEST(stk_search, coarse_search_kdtree_ident_proc_switch)
 {
     testIdentProcWithSearch(stk::search::KDTREE);
@@ -413,11 +398,6 @@ void testCoarseSearchOnePoint(stk::search::SearchMethod searchMethod)
     } else {
       ASSERT_EQ(searchResults.size(), 0u);
     }
-}
-
-TEST(stk_search, coarse_search_one_point_OCTREE)
-{
-    testCoarseSearchOnePoint(stk::search::OCTREE);
 }
 
 TEST(stk_search, coarse_search_one_point_BOOST_RTREE)
@@ -514,8 +494,8 @@ void testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::Search
 
     SearchResults searchResults;
 
-    double markTime, elapsedTime, totalTime;
-    markTime = elapsedTime = totalTime = 0.0;
+    double markTime = 0.0;
+    double totalTime = 0.0;
 
     for (int count = 0; count < numLoops; ++count) {
 

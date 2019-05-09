@@ -23,11 +23,12 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
    errorRel_      (0.0),
    order_         (1),
    nFailures_     (0),
+   nRunningFailures_(0),
    nConsecutiveFailures_(0),
    solutionStatus_(WORKING),
    output_        (false),
    outputScreen_  (false),
-   isRestartable_ (true),
+   isSynced_      (true),
    isInterpolated_(false),
    accuracy_      (0.0)
 {}
@@ -41,11 +42,12 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const Scalar errorRel,
   const int    order,
   const int    nFailures,
+  const int    nRunningFailures,
   const int    nConsecutiveFailures,
   const Status solutionStatus,
   const bool   output,
   const bool   outputScreen,
-  const bool   isRestartable,
+  const bool   isSynced,
   const bool   isInterpolated,
   const Scalar accuracy)
   :time_          (time),
@@ -55,11 +57,12 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
    errorRel_      (errorRel),
    order_         (order),
    nFailures_     (nFailures),
+   nRunningFailures_(nRunningFailures),
    nConsecutiveFailures_(nConsecutiveFailures),
    solutionStatus_(solutionStatus),
    output_        (output),
    outputScreen_  (outputScreen),
-   isRestartable_ (isRestartable),
+   isSynced_      (isSynced),
    isInterpolated_(isInterpolated),
    accuracy_      (accuracy)
 {}
@@ -73,18 +76,19 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData
    errorRel_      (ssmd.errorRel_),
    order_         (ssmd.order_),
    nFailures_     (ssmd.nFailures_),
+   nRunningFailures_(ssmd.nRunningFailures_),
    nConsecutiveFailures_(ssmd.nConsecutiveFailures_),
    solutionStatus_(ssmd.solutionStatus_),
    output_        (ssmd.output_),
    outputScreen_  (ssmd.outputScreen_),
-   isRestartable_ (ssmd.isRestartable_),
+   isSynced_      (ssmd.isSynced_),
    isInterpolated_(ssmd.isInterpolated_),
    accuracy_      (ssmd.accuracy_)
 {}
 
 
 template<class Scalar>
-Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clone()
+Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clone() const
 {
   Teuchos::RCP<SolutionStateMetaData<Scalar> > md =
     rcp(new SolutionStateMetaData<Scalar> (
@@ -95,11 +99,12 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
       errorRel_,
       order_,
       nFailures_,
+      nRunningFailures_,
       nConsecutiveFailures_,
       solutionStatus_,
       output_,
       outputScreen_,
-      isRestartable_,
+      isSynced_,
       isInterpolated_,
       accuracy_));
 
@@ -109,7 +114,7 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
 
 template<class Scalar>
 void SolutionStateMetaData<Scalar>::
-copy(Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd)
+copy(const Teuchos::RCP<const SolutionStateMetaData<Scalar> >& ssmd)
 {
   time_           = ssmd->time_;
   iStep_          = ssmd->iStep_;
@@ -118,11 +123,12 @@ copy(Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd)
   errorRel_       = ssmd->errorRel_;
   order_          = ssmd->order_;
   nFailures_      = ssmd->nFailures_;
+  nRunningFailures_= ssmd->nRunningFailures_;
   nConsecutiveFailures_ = ssmd->nConsecutiveFailures_;
   solutionStatus_ = ssmd->solutionStatus_;
   output_         = ssmd->output_;
   outputScreen_   = ssmd->outputScreen_;
-  isRestartable_  = ssmd->isRestartable_;
+  isSynced_       = ssmd->isSynced_;
   isInterpolated_ = ssmd->isInterpolated_;
   accuracy_       = ssmd->accuracy_;
 }
@@ -150,11 +156,12 @@ void SolutionStateMetaData<Scalar>::describe(
         << "errorRel       = " << errorRel_ << std::endl
         << "order          = " << order_ << std::endl
         << "nFailures      = " << nFailures_ << std::endl
+        << "nRunningFailures= " << nRunningFailures_<< std::endl
         << "nConsecutiveFailures = " << nConsecutiveFailures_ << std::endl
         << "solutionStatus = " << toString(solutionStatus_) << std::endl
         << "output         = " << output_ << std::endl
         << "outputScreen   = " << outputScreen_ << std::endl
-        << "isRestartable  = " << isRestartable_ << std::endl
+        << "isSynced       = " << isSynced_ << std::endl
         << "isInterpolated = " << isInterpolated_ << std::endl
         << "accuracy       = " << accuracy_ << std::endl;
   }

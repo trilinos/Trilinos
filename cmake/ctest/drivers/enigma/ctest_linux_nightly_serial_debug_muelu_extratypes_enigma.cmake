@@ -60,9 +60,14 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.enigma.gcc.cmake")
 # Set the options specific to this build case
 #
 
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_MueLu_ExtraTypes)
+#SET(BUILD_DIR_NAME SERIAL_${BUILD_TYPE}_DEV_MueLu_ExtraTypes)
+SET(BUILD_NAME_DETAILS LONG-LONG_COMPLEX-DOUBLE)
+
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(Trilinos_TRACK Nightly)       # set the CDash track
@@ -72,10 +77,9 @@ SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
     "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
-    "-DTeuchos_ENABLE_LONG_LONG_INT=ON"
     "-DTpetra_INST_INT_LONG_LONG=ON"
     "-DTeuchos_ENABLE_COMPLEX=ON"
-    "-DTpetra_INST_COMPLEX_DOUBLE=ON"
+    "-DTrilinos_ENABLE_COMPLEX_DOUBLE=ON"
     "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
     "-DTPL_ENABLE_SuperLU:BOOL=ON"
     "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"

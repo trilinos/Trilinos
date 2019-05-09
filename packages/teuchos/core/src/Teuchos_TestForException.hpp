@@ -75,6 +75,9 @@ TEUCHOSCORE_LIB_DLL_EXPORT void TestForException_setEnableStacktrace(bool enable
  * exceptions are thrown. */
 TEUCHOSCORE_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
 
+/** \brief Prints the message to std::cerr and calls std::terminate. */
+TEUCHOSCORE_LIB_DLL_EXPORT [[noreturn]] void TestForTermination_terminate(const std::string &msg);
+
 
 } // namespace Teuchos
 
@@ -358,7 +361,34 @@ catch(const std::exception &except) { \
   throw std::runtime_error(omsg.str()); \
 }
 
-
-
+/** \brief This macro is to be used instead of
+ * <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> to report an error in situations
+ * where an exception can't be throw (like in an destructor).
+ *
+ * \param terminate_test [in] See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt>.
+ *
+ * \param msg [in] See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt>.
+ *
+ * If the termination test evaluates to <tt>true</tt>, then
+ * <tt>std::terminate()</tt> is called (which should bring down an entire
+ * multi-process MPI program even if only one process calls
+ * <tt>std::terminate()</tt> with most MPI implementations).
+ *
+ * \ingroup TestForException_grp
+ */
+#define TEUCHOS_TEST_FOR_TERMINATION(terminate_test, msg) \
+{ \
+  const bool call_terminate = (terminate_test); \
+  if (call_terminate) { \
+    std::ostringstream omsg; \
+    omsg \
+      << __FILE__ << ":" << __LINE__ << ":\n\n" \
+      << "Terminate test that evaluated to true: "#terminate_test \
+      << "\n\n" \
+      << msg << "\n\n"; \
+    auto str = omsg.str(); \
+    Teuchos::TestForTermination_terminate(str); \
+  } \
+}
 
 #endif // TEUCHOS_TEST_FOR_EXCEPTION_H

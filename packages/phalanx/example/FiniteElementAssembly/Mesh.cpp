@@ -51,8 +51,7 @@ Mesh::Mesh(const int num_elements_x,
            const int num_elements_z,
            const double length_x,
            const double length_y,
-           const double length_z,
-           const int num_equations) :
+           const double length_z) :
   nex_(num_elements_x),
   ney_(num_elements_y),
   nez_(num_elements_z),
@@ -60,7 +59,6 @@ Mesh::Mesh(const int num_elements_x,
   lx_(length_x),
   ly_(length_y),
   lz_(length_z),
-  neq_("neq"),
   gids_("gids",nel_,8),  // Assume nodal linear elements
   coords_("coords",nel_,8,3), // Assume nodal linear elements
   qp_coords_("qp_coords",nel_,8,3), // Assume nodal linear elements
@@ -72,9 +70,7 @@ Mesh::Mesh(const int num_elements_x,
   inv_jac_("inv_jac",nel_,8,3,3),
   det_jac_("det_jac",nel_,8),
   grad_basis_real_("grad_basis_real",nel_,8,8,3)
-{
-  Kokkos::deep_copy(neq_,num_equations);
-  
+{  
   // Create unstructured data objects even though this is structured
   // underneath
   const double dx = lx_ / static_cast<double>(nex_);
@@ -294,8 +290,12 @@ void Mesh::operator() (const ComputeGradBasisReal_Tag& , const team_t& team) con
 }
 
 //**********************************************************************
-const Kokkos::View<int[1],PHX::Device> Mesh::getNumEquations() const
-{ return neq_; }
+int Mesh::getNumElements() const
+{ return nel_; }
+
+//**********************************************************************
+int Mesh::getNumNodes() const
+{ return (nex_+1)*(ney_+1)*(nez_+1); }
 
 //**********************************************************************
 const Kokkos::View<int**,PHX::Device>& Mesh::getGlobalIndices() const

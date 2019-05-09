@@ -1,0 +1,8 @@
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  canarySelfMessages
+  SOURCES canarySelfMessages.c
+  COMM mpi 
+  NUM_MPI_PROCS 2
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)

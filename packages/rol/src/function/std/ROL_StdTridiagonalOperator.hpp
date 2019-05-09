@@ -67,14 +67,13 @@ namespace ROL {
 template <class Real>
 class StdTridiagonalOperator : public StdLinearOperator<Real> {
  
-  template <typename T> using RCP = Teuchos::RCP<T>;
   template <typename T> using vector = std::vector<T>;
   
 private:
 
-  const RCP<const vector<Real> > a_; // Diagonal
-  const RCP<const vector<Real> > b_; // Superdiagonal
-  const RCP<const vector<Real> > c_; // Subdiagonal
+  const ROL::Ptr<const vector<Real> > a_; // Diagonal
+  const ROL::Ptr<const vector<Real> > b_; // Superdiagonal
+  const ROL::Ptr<const vector<Real> > c_; // Subdiagonal
 
   mutable vector<Real> dl_;
   mutable vector<Real> d_;
@@ -85,7 +84,7 @@ private:
 
   int N_;
   
-  Teuchos::LAPACK<int,Real>  lapack_;
+  ROL::LAPACK<int,Real>  lapack_;
 
   void copy(void) const {
     for(int i=0;i<N_-1;++i) {
@@ -99,9 +98,9 @@ private:
 
 public:
 
-  StdTridiagonalOperator( const RCP<const vector<Real> > &a,
-                          const RCP<const vector<Real> > &b,
-                          const RCP<const vector<Real> > &c ) : 
+  StdTridiagonalOperator( const ROL::Ptr<const vector<Real> > &a,
+                          const ROL::Ptr<const vector<Real> > &b,
+                          const ROL::Ptr<const vector<Real> > &c ) : 
     StdLinearOperator<Real>(), a_(a), b_(b), c_(c) { 
 
     N_ = a_->size();
@@ -113,8 +112,8 @@ public:
     ipiv_.resize(N_);   
   }
 
-  StdTridiagonalOperator( const RCP<const vector<Real> > &a,
-                          const RCP<const vector<Real> > &b ) {
+  StdTridiagonalOperator( const ROL::Ptr<const vector<Real> > &a,
+                          const ROL::Ptr<const vector<Real> > &b ) {
     StrdTridiagonalOperator(a,b,b);
   }
    

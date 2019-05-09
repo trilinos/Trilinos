@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -115,7 +115,7 @@ Thyra::create_Comm( const RCP<const Epetra_Comm> &epetraComm )
   }
 
 #ifdef HAVE_MPI
-  
+
   RCP<const Epetra_MpiComm>
     mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm>(epetraComm);
   if( mpiEpetraComm.get() ) {
@@ -128,7 +128,7 @@ Thyra::create_Comm( const RCP<const Epetra_Comm> &epetraComm )
   }
 
 #endif // HAVE_MPI
-  
+
   // If you get here then the failed!
   return Teuchos::null;
 
@@ -141,19 +141,24 @@ Thyra::create_VectorSpace(
   )
 {
   using Teuchos::as; using Teuchos::inoutArg;
+
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     !epetra_map.get(), std::invalid_argument,
     "create_VectorSpace::initialize(...): Error!" );
 #endif // TEUCHOS_DEBUG
+
   RCP<const Teuchos::Comm<Ordinal> > comm =
     create_Comm(Teuchos::rcpFromRef(epetra_map->Comm())).assert_not_null();
+
   Teuchos::set_extra_data(epetra_map, "epetra_map", inoutArg(comm));
   const Ordinal localSubDim = epetra_map->NumMyElements();
+
   RCP<DefaultSpmdVectorSpace<double> > vs =
     defaultSpmdVectorSpace<double>(
       comm, localSubDim, epetra_map->NumGlobalElements64(),
       !epetra_map->DistributedGlobal());
+
   TEUCHOS_ASSERT_EQUALITY(vs->dim(), as<Ordinal>(epetra_map->NumGlobalElements64()));
   // NOTE: the above assert just checks to make sure that the size of the
   // Ordinal type can hold the size returned from NumGlobalElemenets64().  A
@@ -163,6 +168,7 @@ Thyra::create_VectorSpace(
   // this assert will only likely trigger in a non-debug build, we will leave
   // the assert unguarded since it is very cheap to perform.
   Teuchos::set_extra_data( epetra_map, "epetra_map", inoutArg(vs) );
+
   return vs;
 }
 
@@ -195,6 +201,10 @@ Thyra::create_Vector(
   RCP<const SpmdVectorSpaceBase<double> >
     space = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
       space_in,true);
+  // mfh 06 Dec 2017: This return should not trigger an issue like
+  // #1941, because if epetra_v is NULL on some process but not
+  // others, then that process should not be participating in
+  // collectives with the other processes anyway.
   if(!epetra_v.get())
     return Teuchos::null;
   // New local view of raw data
@@ -227,6 +237,10 @@ Thyra::create_Vector(
   RCP<const SpmdVectorSpaceBase<double> >
     space = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
       space_in,true);
+  // mfh 06 Dec 2017: This return should not trigger an issue like
+  // #1941, because if epetra_v is NULL on some process but not
+  // others, then that process should not be participating in
+  // collectives with the other processes anyway.
   if(!epetra_v.get())
     return Teuchos::null;
   // New local view of raw data
@@ -268,6 +282,10 @@ Thyra::create_MultiVector(
       unwrapSingleProductVectorSpace(domain_in),
       true
       );
+  // mfh 06 Dec 2017: This return should not trigger an issue like
+  // #1941, because if epetra_mv is NULL on some process but not
+  // others, then that process should not be participating in
+  // collectives with the other processes anyway.
   if (!epetra_mv.get() )
     return Teuchos::null;
   if ( is_null(domain) ) {
@@ -320,6 +338,10 @@ Thyra::create_MultiVector(
       unwrapSingleProductVectorSpace(domain_in),
       true
       );
+  // mfh 06 Dec 2017: This return should not trigger an issue like
+  // #1941, because if epetra_mv is NULL on some process but not
+  // others, then that process should not be participating in
+  // collectives with the other processes anyway.
   if (!epetra_mv.get())
     return Teuchos::null;
   if ( is_null(domain) ) {
@@ -376,7 +398,7 @@ Thyra::get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm_in)
     ptr_dynamic_cast<const MpiComm<Ordinal> >(comm);
 
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(mpiComm) && is_null(serialComm),
-    std::runtime_error, 
+    std::runtime_error,
     "SPMD std::vector space has a communicator that is "
     "neither a serial comm nor an MPI comm");
 
@@ -389,24 +411,25 @@ Thyra::get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm_in)
 
 #else
 
-  TEUCHOS_TEST_FOR_EXCEPTION(is_null(serialComm), std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(serialComm), std::runtime_error,
     "SPMD std::vector space has a communicator that is "
     "neither a serial comm nor an MPI comm");
 
   epetraComm = rcp(new Epetra_SerialComm());
-  
+
 #endif
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(epetraComm), std::runtime_error,
     "null communicator created");
-  
+
   return epetraComm;
 
 }
 
 
 Teuchos::RCP<const Epetra_Map>
-Thyra::get_Epetra_Map(const VectorSpaceBase<double>& vs_in,
+Thyra::get_Epetra_Map(
+  const VectorSpaceBase<double>& vs_in,
   const RCP<const Epetra_Comm>& comm)
 {
 
@@ -417,11 +440,11 @@ Thyra::get_Epetra_Map(const VectorSpaceBase<double>& vs_in,
   using Teuchos::ptr_dynamic_cast;
 
   const Ptr<const VectorSpaceBase<double> > vs_ptr = ptrFromRef(vs_in);
-  
+
   const Ptr<const SpmdVectorSpaceBase<double> > spmd_vs =
     ptr_dynamic_cast<const SpmdVectorSpaceBase<double> >(vs_ptr);
 
-  const Ptr<const ProductVectorSpaceBase<double> > &prod_vs = 
+  const Ptr<const ProductVectorSpaceBase<double> > &prod_vs =
     ptr_dynamic_cast<const ProductVectorSpaceBase<double> >(vs_ptr);
 
   TEUCHOS_TEST_FOR_EXCEPTION( is_null(spmd_vs) && is_null(prod_vs), std::logic_error,
@@ -432,7 +455,7 @@ Thyra::get_Epetra_Map(const VectorSpaceBase<double>& vs_in,
   const int numBlocks = (nonnull(prod_vs) ? prod_vs->numBlocks() : 1);
 
   // Get an array of SpmdVectorBase objects for the blocks
-  
+
   Array<RCP<const SpmdVectorSpaceBase<double> > > spmd_vs_blocks;
   if (nonnull(prod_vs)) {
     for (int block_i = 0; block_i < numBlocks; ++block_i) {
@@ -445,19 +468,23 @@ Thyra::get_Epetra_Map(const VectorSpaceBase<double>& vs_in,
   else {
     spmd_vs_blocks.push_back(rcpFromPtr(spmd_vs));
   }
-  
+
   // Find the number of local elements, summed over all blocks
 
   int myLocalElements = 0;
   for (int block_i = 0; block_i < numBlocks; ++block_i) {
     myLocalElements += spmd_vs_blocks[block_i]->localSubDim();
   }
-  
+
   // Find the GIDs owned by this processor, taken from all blocks
-  
+
   int count=0;
   int blockOffset = 0;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Array<int> myGIDs(myLocalElements);
+#else
+  Array<long long> myGIDs(myLocalElements);
+#endif
   for (int block_i = 0; block_i < numBlocks; ++block_i) {
     const RCP<const SpmdVectorSpaceBase<double> > spmd_vs_i = spmd_vs_blocks[block_i];
     const int lowGIDInBlock = spmd_vs_i->localOffset();
@@ -467,14 +494,45 @@ Thyra::get_Epetra_Map(const VectorSpaceBase<double>& vs_in,
     }
     blockOffset += spmd_vs_i->dim();
   }
-  
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   const int globalDim = vs_in.dim();
+#else
+  const long long globalDim = vs_in.dim();
+#endif
 
   return Teuchos::rcp(
     new Epetra_Map(globalDim, myLocalElements, myGIDs.getRawPtr(), 0, *comm));
 
 }
 
+// Almost like the above one, but working on an RCP vs as input, we can check for the
+// presence of RCP<const Epetra_Map> in the RCP extra data, to save us time.
+Teuchos::RCP<const Epetra_Map>
+Thyra::get_Epetra_Map(
+  const RCP<const VectorSpaceBase<double>>& vs,
+  const RCP<const Epetra_Comm>& comm)
+{
+  //
+  // First, try to grab the Epetra_Map straight out of the
+  // RCP since this is the fastest way.
+  //
+  const Ptr<const RCP<const Epetra_Map> >
+    epetra_map_ptr = Teuchos::get_optional_extra_data<RCP<const Epetra_Map> >(
+      vs,"epetra_map");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
+  if(!is_null(epetra_map_ptr)) {
+    return *epetra_map_ptr;
+  }
+
+  // No luck. We need to call get_Epetra_Map(*vs,comm).
+  TEUCHOS_TEST_FOR_EXCEPTION(comm.is_null(), std::runtime_error,
+                             "Error! No RCP Epetra_Map attached to the input vector space RCP, "
+                             "and the input comm RCP is null.\n");
+
+  return get_Epetra_Map(*vs,comm);
+}
 
 Teuchos::RCP<Epetra_Vector>
 Thyra::get_Epetra_Vector(
@@ -486,7 +544,7 @@ Thyra::get_Epetra_Vector(
 #ifdef TEUCHOS_DEBUG
   RCP<const VectorSpaceBase<double> >
     epetra_vs = create_VectorSpace(Teuchos::rcp(&map,false));
-  THYRA_ASSERT_VEC_SPACES( 
+  THYRA_ASSERT_VEC_SPACES(
     "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
 #endif
   //
@@ -496,6 +554,8 @@ Thyra::get_Epetra_Vector(
   const Ptr<const RCP<Epetra_Vector> >
     epetra_v_ptr = get_optional_extra_data<RCP<Epetra_Vector> >(
       v,"Epetra_Vector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
   if(!is_null(epetra_v_ptr)) {
     return *epetra_v_ptr;
   }
@@ -504,7 +564,7 @@ Thyra::get_Epetra_Vector(
   // are compatible, that either the multi-vectors are both in-core or the
   // vector spaces are both derived from SpmdVectorSpaceBase and have
   // compatible maps.
-  // 
+  //
   const VectorSpaceBase<double>  &vs = *v->range();
   const SpmdVectorSpaceBase<double> *mpi_vs
     = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
@@ -552,10 +612,38 @@ Thyra::get_Epetra_Vector(
   return epetra_v;
 }
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<Epetra_Vector>)
+Teuchos::RCP<Epetra_Vector>
+Thyra::get_Epetra_Vector(
+  const RCP<VectorBase<double> > &v,
+  const RCP<const Epetra_Map>& map
+  )
+{
+  //
+  // First, try to grab the Epetra_Vector straight out of the
+  // RCP since this is the fastest way.
+  //
+  const Ptr<const RCP<Epetra_Vector> >
+    epetra_v_ptr = Teuchos::get_optional_extra_data<RCP<Epetra_Vector> >(
+      v,"Epetra_Vector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
+  if(!is_null(epetra_v_ptr)) {
+    return *epetra_v_ptr;
+  }
+
+  // No luck. We need to call get_Epetra_Vector(*map,v).
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
+                            "Error! No RCP Epetra_Vector attached to the input vector RCP, "
+                            "and the input map RCP is null.\n");
+
+  return get_Epetra_Vector(*map,v);
+}
 
 Teuchos::RCP<const Epetra_Vector>
 Thyra::get_Epetra_Vector(
-  const Epetra_Map &map, 
+  const Epetra_Map &map,
   const RCP<const VectorBase<double> > &v
   )
 {
@@ -573,11 +661,15 @@ Thyra::get_Epetra_Vector(
   const Ptr<const RCP<const Epetra_Vector> >
     epetra_v_ptr = get_optional_extra_data<RCP<const Epetra_Vector> >(
       v,"Epetra_Vector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
   if(!is_null(epetra_v_ptr))
     return *epetra_v_ptr;
   const Ptr<const RCP<Epetra_Vector> >
     epetra_nonconst_v_ptr = get_optional_extra_data<RCP<Epetra_Vector> >(
       v,"Epetra_Vector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
   if(!is_null(epetra_nonconst_v_ptr))
     return *epetra_nonconst_v_ptr;
   //
@@ -619,6 +711,34 @@ Thyra::get_Epetra_Vector(
   return epetra_v;
 }
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<Epetra_Vector>)
+Teuchos::RCP<const Epetra_Vector>
+Thyra::get_Epetra_Vector(
+  const RCP<const VectorBase<double> > &v,
+  const RCP<const Epetra_Map>& map
+  )
+{
+  //
+  // First, try to grab the Epetra_Vector straight out of the
+  // RCP since this is the fastest way.
+  //
+  const Ptr<const RCP<const Epetra_Vector> >
+    epetra_v_ptr = Teuchos::get_optional_extra_data<RCP<const Epetra_Vector> >(
+      v,"Epetra_Vector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
+  if(!is_null(epetra_v_ptr)) {
+    return *epetra_v_ptr;
+  }
+
+  // No luck. We need to call get_Epetra_Vector(*map,v).
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
+                             "Error! No RCP to Epetra_Vector attached to the input vector RCP, "
+                             "and the input map RCP is null.\n");
+
+  return get_Epetra_Vector(*map,v);
+}
 
 Teuchos::RCP<Epetra_MultiVector>
 Thyra::get_Epetra_MultiVector(
@@ -640,6 +760,8 @@ Thyra::get_Epetra_MultiVector(
   const Ptr<const RCP<Epetra_MultiVector> >
     epetra_mv_ptr = get_optional_extra_data<RCP<Epetra_MultiVector> >(
       mv,"Epetra_MultiVector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
   if(!is_null(epetra_mv_ptr)) {
     return *epetra_mv_ptr;
   }
@@ -648,7 +770,7 @@ Thyra::get_Epetra_MultiVector(
   // are compatible, that either the multi-vectors are both in-core or the
   // vector spaces are both derived from SpmdVectorSpaceBase and have
   // compatible maps.
-  // 
+  //
   const VectorSpaceBase<double> &vs = *mv->range();
   const SpmdVectorSpaceBase<double> *mpi_vs
     = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
@@ -697,6 +819,34 @@ Thyra::get_Epetra_MultiVector(
   return epetra_mv;
 }
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<const Epetra_MultiVector>)
+Teuchos::RCP<Epetra_MultiVector>
+Thyra::get_Epetra_MultiVector(
+  const RCP<MultiVectorBase<double> > &mv,
+  const RCP<const Epetra_Map>& map
+  )
+{
+  //
+  // First, try to grab the Epetra_MultiVector straight out of the
+  // RCP since this is the fastest way.
+  //
+  const Ptr<const RCP<Epetra_MultiVector> >
+    epetra_mv_ptr = Teuchos::get_optional_extra_data<RCP<Epetra_MultiVector> >(
+      mv,"Epetra_MultiVector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
+  if(!is_null(epetra_mv_ptr)) {
+    return *epetra_mv_ptr;
+  }
+
+  // No luck. We need to call get_Epetra_MultiVector(*map,mv).
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
+                             "Error! No RCP to Epetra_MultiVector attached to the input vector RCP, "
+                             "and the input map RCP is null.\n");
+
+  return get_Epetra_MultiVector(*map,mv);
+}
 
 Teuchos::RCP<const Epetra_MultiVector>
 Thyra::get_Epetra_MultiVector(
@@ -705,13 +855,16 @@ Thyra::get_Epetra_MultiVector(
   )
 {
   using Teuchos::get_optional_extra_data;
+
 #ifdef TEUCHOS_DEBUG
   RCP<const VectorSpaceBase<double> >
     epetra_vs = create_VectorSpace(Teuchos::rcp(&map,false));
+
   THYRA_ASSERT_VEC_SPACES(
     "Thyra::get_Epetra_MultiVector(map,mv)",
     *epetra_vs, *mv->range() );
 #endif
+
   //
   // First, try to grab the Epetra_MultiVector straight out of the
   // RCP since this is the fastest way.
@@ -720,9 +873,12 @@ Thyra::get_Epetra_MultiVector(
     epetra_mv_ptr
     = get_optional_extra_data<RCP<const Epetra_MultiVector> >(
       mv,"Epetra_MultiVector" );
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
   if(!is_null(epetra_mv_ptr)) {
     return *epetra_mv_ptr;
   }
+
   //
   // Same as above function except as stated below
   //
@@ -740,6 +896,7 @@ Thyra::get_Epetra_MultiVector(
         ,Range1D(localOffset,localOffset+localSubDim-1)
         )
       );
+
   // Create a temporary Epetra_MultiVector object and give it
   // the above view
   RCP<Epetra_MultiVector>
@@ -752,6 +909,7 @@ Thyra::get_Epetra_MultiVector(
         ,emvv->numSubCols()                     // NumVectors
         )
       );
+
   // This next statement will cause the destructor to free the view if
   // needed (see above function).  Since this view is non-mutable,
   // only a releaseDetachedView(...) and not a commit will be called.
@@ -761,10 +919,39 @@ Thyra::get_Epetra_MultiVector(
     Teuchos::PRE_DESTROY );
   // Also set the mv itself as extra data just to be safe
   Teuchos::set_extra_data( mv, "mv", Teuchos::inOutArg(epetra_mv) );
+
   // We are done!
   return epetra_mv;
 }
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<const Epetra_MultiVector>)
+Teuchos::RCP<const Epetra_MultiVector>
+Thyra::get_Epetra_MultiVector(
+  const RCP<const MultiVectorBase<double> > &mv,
+  const RCP<const Epetra_Map>& map
+  )
+{
+  //
+  // First, try to grab the Epetra_MultiVector straight out of the
+  // RCP since this is the fastest way.
+  //
+  const Ptr<const RCP<const Epetra_MultiVector> >
+    epetra_mv_ptr = Teuchos::get_optional_extra_data<RCP<const Epetra_MultiVector> >(
+      mv,"Epetra_MultiVector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
+  if(!is_null(epetra_mv_ptr)) {
+    return *epetra_mv_ptr;
+  }
+
+  // No luck. We need to call get_Epetra_MultiVector(*map,mv).
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
+                             "Error! No RCP to Epetra_MultiVector attached to the input vector RCP, "
+                             "and the input map RCP is null.\n");
+
+  return get_Epetra_MultiVector(*map,mv);
+}
 
 Teuchos::RCP<Epetra_MultiVector>
 Thyra::get_Epetra_MultiVector(
@@ -773,25 +960,25 @@ Thyra::get_Epetra_MultiVector(
   )
 {
   using Teuchos::rcpWithEmbeddedObj;
-  using Teuchos::rcpFromRef;
   using Teuchos::ptrFromRef;
   using Teuchos::ptr_dynamic_cast;
   using Teuchos::outArg;
+
+  Ptr<SpmdMultiVectorBase<double> > mvSpmdMv =
+    ptr_dynamic_cast<SpmdMultiVectorBase<double> >(ptrFromRef(mv));
+
   ArrayRCP<double> mvData;
-  Ordinal mvLeadingDim = -1;
-  Ptr<SpmdMultiVectorBase<double> > mvSpmdMv;
-  if (nonnull(mvSpmdMv = ptr_dynamic_cast<SpmdMultiVectorBase<double> >(ptrFromRef(mv)))) {
+  Ordinal mvLeadingDim = 0;
+  if (nonnull(mvSpmdMv)) {
     mvSpmdMv->getNonconstLocalData(outArg(mvData), outArg(mvLeadingDim));
   }
-  if (nonnull(mvData)) {
-    return rcpWithEmbeddedObj(
-      new Epetra_MultiVector(
-        ::View, map, mvData.getRawPtr(), mvLeadingDim, mv.domain()->dim()
-        ),
-      mvData
-      );
-  }
-  return ::Thyra::get_Epetra_MultiVector(map, rcpFromRef(mv));
+
+  return rcpWithEmbeddedObj(
+    new Epetra_MultiVector(
+      ::View, map, mvData.getRawPtr(), mvLeadingDim, mv.domain()->dim()
+      ),
+    mvData
+    );
 }
 
 
@@ -802,23 +989,23 @@ Thyra::get_Epetra_MultiVector(
   )
 {
   using Teuchos::rcpWithEmbeddedObj;
-  using Teuchos::rcpFromRef;
   using Teuchos::ptrFromRef;
   using Teuchos::ptr_dynamic_cast;
   using Teuchos::outArg;
+
+  Ptr<const SpmdMultiVectorBase<double> > mvSpmdMv =
+    ptr_dynamic_cast<const SpmdMultiVectorBase<double> >(ptrFromRef(mv));
+
   ArrayRCP<const double> mvData;
-  Ordinal mvLeadingDim = -1;
-  Ptr<const SpmdMultiVectorBase<double> > mvSpmdMv;
-  if (nonnull(mvSpmdMv = ptr_dynamic_cast<const SpmdMultiVectorBase<double> >(ptrFromRef(mv)))) {
+  Ordinal mvLeadingDim = 0;
+  if (nonnull(mvSpmdMv)) {
     mvSpmdMv->getLocalData(outArg(mvData), outArg(mvLeadingDim));
   }
-  if (nonnull(mvData)) {
-    return rcpWithEmbeddedObj(
-      new Epetra_MultiVector(
-        ::View,map, const_cast<double*>(mvData.getRawPtr()), mvLeadingDim, mv.domain()->dim()
-        ),
-      mvData
-      );
-  }
-  return ::Thyra::get_Epetra_MultiVector(map, rcpFromRef(mv));
+
+  return rcpWithEmbeddedObj(
+    new Epetra_MultiVector(
+      ::View, map, const_cast<double*>(mvData.getRawPtr()), mvLeadingDim, mv.domain()->dim()
+      ),
+    mvData
+    );
 }

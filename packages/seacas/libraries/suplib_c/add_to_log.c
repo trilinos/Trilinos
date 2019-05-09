@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2009 National Technology & Engineering Solutions
+ * Copyright(C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -126,7 +126,7 @@ void add_to_log(const char *my_name, double elapsed)
 
         uname(&sys_info);
 
-        minutes = elapsed / 60;
+        minutes = (int)(elapsed / 60.0);
         seconds = elapsed - minutes * 60.0;
 
         snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs %d:%5.2f 0.0%% 0+0k 0+0io 0pf+0w %s\n",

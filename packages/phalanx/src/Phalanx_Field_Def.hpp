@@ -51,6 +51,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Kokkos_DynRankView_Fad.hpp" // for copy/assignment specializations
+#include "Phalanx_FieldTag_Tag.hpp"
 
 // **********************************************************************
 #ifdef PHX_DEBUG
@@ -66,31 +67,37 @@ const std::string PHX::Field<DataT,Rank>::m_field_data_error_msg =
 // **********************************************************************
 template<typename DataT,int Rank>
 PHX::Field<DataT,Rank>::
-Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
-  m_tag(name,t)
+Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl)
 #ifdef PHX_DEBUG
-  , m_tag_set(true),
-  m_data_set(false)
+  : m_data_set(false)
+#endif
+{
+  m_tag = Teuchos::rcp(new PHX::Tag<DataT>(name,dl));
+}
+
+// **********************************************************************
+template<typename DataT,int Rank>
+PHX::Field<DataT,Rank>::Field(const PHX::FieldTag& t) :
+  m_tag(t.clone())
+#ifdef PHX_DEBUG
+  , m_data_set(false)
 #endif
 { }
 
 // **********************************************************************
 template<typename DataT,int Rank>
-PHX::Field<DataT,Rank>::Field(const PHX::Tag<DataT>& v) :
-  m_tag(v)
+PHX::Field<DataT,Rank>::Field(const Teuchos::RCP<const PHX::FieldTag>& t) :
+  m_tag(t)
 #ifdef PHX_DEBUG
-  ,m_tag_set(true),
-  m_data_set(false)
+  , m_data_set(false)
 #endif
 { }
 
 // **********************************************************************
 template<typename DataT,int Rank>
-PHX::Field<DataT,Rank>::Field() :
-  m_tag("???", Teuchos::null)
+PHX::Field<DataT,Rank>::Field()
 #ifdef PHX_DEBUG
-  ,m_tag_set(false),
-  m_data_set(false)
+  : m_data_set(false)
 #endif
 { }
 
@@ -101,8 +108,7 @@ PHX::Field<DataT,Rank>::Field(const Field<CopyDataT,Rank>& source) :
   m_tag(source.m_tag),
   m_field_data(source.m_field_data)
 #ifdef PHX_DEBUG
-  ,m_tag_set(source.m_tag_set),
-  m_data_set(source.m_data_set)
+  ,m_data_set(source.m_data_set)
 #endif
 {
   static_assert(std::is_same<typename std::decay<DataT>::type, typename std::decay<CopyDataT>::type>::value,
@@ -120,7 +126,18 @@ const PHX::FieldTag&
 PHX::Field<DataT,Rank>::fieldTag() const
 {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
+#endif
+  return *m_tag;
+}
+
+// **********************************************************************
+template<typename DataT,int Rank>
+Teuchos::RCP<const PHX::FieldTag>
+PHX::Field<DataT,Rank>::fieldTagPtr() const
+{
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
 #endif
   return m_tag;
 }
@@ -134,7 +151,6 @@ PHX::Field<DataT,Rank>::operator=(const Field<CopyDataT,Rank>& source)
   m_tag = source.m_tag;
   m_field_data = source.m_field_data;
 #ifdef PHX_DEBUG
-  m_tag_set = source.m_tag_set;
   m_data_set = source.m_data_set;
 #endif
   static_assert(std::is_same<typename std::decay<DataT>::type, typename std::decay<CopyDataT>::type>::value,
@@ -177,12 +193,17 @@ PHX::Field<DataT,Rank>::size() const
 
 // **********************************************************************
 template<typename DataT,int Rank>
-void PHX::Field<DataT,Rank>::setFieldTag(const PHX::Tag<DataT>& v)
+void PHX::Field<DataT,Rank>::setFieldTag(const PHX::FieldTag& t)
 {
-#ifdef PHX_DEBUG
-  m_tag_set = true;
-#endif
-  m_tag = v;
+  m_tag = t.clone();
+}
+
+// **********************************************************************
+template<typename DataT,int Rank>
+void PHX::Field<DataT,Rank>::
+setFieldTag(const Teuchos::RCP<const PHX::FieldTag>& t)
+{
+  m_tag = t;
 }
 
 // **********************************************************************
@@ -190,19 +211,19 @@ template<typename DataT,int Rank>
 void PHX::Field<DataT,Rank>::setFieldData(const PHX::any& a)
 {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
   m_data_set = true;
 #endif
 
   // any object is always the non-const data type.  To correctly cast
   // the any object to the Kokkos::View, need to pull the const off
   // the scalar type if this Field has a const scalar type.
-  typedef Kokkos::View<typename array_type::non_const_data_type,PHX::Device> non_const_view;
+  typedef PHX::View<typename array_type::non_const_data_type> non_const_view;
   try {
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
     m_field_data = tmp;
   }
-  catch (std::exception& e) {
+  catch (std::exception& ) {
     std::cout << "\n\nError in compiletime PHX::Field::setFieldData() in PHX::any_cast. Tried to cast the field \""
 	      << this->fieldTag().name()  << "\" with the identifier \"" << this->fieldTag().identifier()
 	      << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
@@ -220,11 +241,12 @@ void PHX::Field<DataT,Rank>::print(std::ostream& os, bool printValues) const
   for (int i=0; i < Rank; ++i) {
     if (i > 0)
       os << ",";
-    os << m_field_data.dimension(i);
+    os << m_field_data.extent(i);
   }
   os << "): ";
 
-  os << m_tag;
+  if (nonnull(m_tag))
+    os << *m_tag;
 
   if (printValues)
     os << "Error - Field no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please disconstinue the use of this call!" << std::endl;
@@ -233,7 +255,7 @@ void PHX::Field<DataT,Rank>::print(std::ostream& os, bool printValues) const
 // *********************************************************************
 template<typename DataT,int Rank>
 KOKKOS_INLINE_FUNCTION
-Kokkos::DynRankView<DataT,PHX::Device>
+Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device>
 PHX::Field<DataT,Rank>::get_view()
 {
   return m_field_data;
@@ -242,7 +264,7 @@ PHX::Field<DataT,Rank>::get_view()
 // *********************************************************************
 template<typename DataT,int Rank>
 KOKKOS_INLINE_FUNCTION
-const Kokkos::DynRankView<DataT,PHX::Device>
+const Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device>
 PHX::Field<DataT,Rank>::get_view() const
 {
   return m_field_data;

@@ -28,6 +28,9 @@
 // ************************************************************************
 // @HEADER
 
+
+#include <limits>
+
 // TrilinosCouplings includes
 #include <TrilinosCouplings_config.h>
 
@@ -51,6 +54,7 @@
 #include <pamgen_im_exodusII_l.h>
 #include <pamgen_im_ne_nemesisI_l.h>
 #include <pamgen_extras.h>
+#include "RTC_FunctionRTC.hh"
 
 #ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
@@ -63,6 +67,31 @@
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
 #include "TrilinosCouplings_Pamgen_Utils.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
+
+
+// Disable the full set of problem statistics
+const bool use_new_problem_stats = false;
+
+
+/*********************************************************/
+/*                     Typedefs                          */
+/*********************************************************/
+
+struct fecomp{
+  bool operator () ( topo_entity* x,  topo_entity*  y )const
+  {
+    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;
+    return false;
+  }
+};
+
+template<class FC>
+double distance2(const FC & coord, int n1, int n2) {
+  double dist = 0.0;
+  for(int i=0; i<coord.dimension(1); i++)
+    dist += (coord(n2,i) -coord(n1,i)) * (coord(n2,i) -coord(n1,i));
+  return sqrt(dist);
+}
 
 namespace TrilinosCouplings {
 namespace TpetraIntrepidPoissonExample {
@@ -156,9 +185,12 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type>& B,
                             Teuchos::RCP<multivector_type>& X_exact,
                             Teuchos::RCP<multivector_type>& X,
+                            Teuchos::RCP<multivector_type> & coords,
+                            Teuchos::RCP<vector_type>& node_sigma,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
+                            Teuchos::ParameterList & inputList,
+                            Teuchos::ParameterList & problemStatistics,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose,
@@ -168,7 +200,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::rcp_implicit_cast;
 
   RCP<vector_type> b, x_exact, x;
-  makeMatrixAndRightHandSide (A, b, x_exact, x, comm, node, meshInput,
+  makeMatrixAndRightHandSide (A, b, x_exact, x, coords, node_sigma, comm, meshInput, inputList, problemStatistics,
                               out, err, verbose, debug);
 
   B = rcp_implicit_cast<multivector_type> (b);
@@ -181,9 +213,12 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<vector_type>& B,
                             Teuchos::RCP<vector_type>& X_exact,
                             Teuchos::RCP<vector_type>& X,
+                            Teuchos::RCP<multivector_type> & coords,
+                            Teuchos::RCP<vector_type>& node_sigma,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
+                            Teuchos::ParameterList & inputList,
+                            Teuchos::ParameterList & problemStatistics,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose,
@@ -235,14 +270,33 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   /**********************************************************************************/
 
   *out << "Getting cell topology" << endl;
-
   // Get cell topology for base hexahedron
   shards::CellTopology cellType (shards::getCellTopologyData<shards::Hexahedron<8> > ());
-
   // Get dimensions
   int numNodesPerElem = cellType.getNodeCount();
+  int numEdgesPerElem = cellType.getEdgeCount();
+  int numFacesPerElem = cellType.getSideCount();
+  int numNodesPerEdge = 2; // for any rational universe
+  int numNodesPerFace = 4; // hardwired for hexes
   int spaceDim = cellType.getDimension();
   int dim = 3;
+
+
+  // Build reference element edge to node map
+  FieldContainer<int> refEdgeToNode(numEdgesPerElem,numNodesPerEdge);
+  for (int i=0; i<numEdgesPerElem; i++){
+    refEdgeToNode(i,0)=cellType.getNodeMap(1, i, 0);
+    refEdgeToNode(i,1)=cellType.getNodeMap(1, i, 1);
+  }
+
+  // Build reference element face to node map
+  FieldContainer<int> refFaceToNode(numFacesPerElem,numNodesPerFace);
+  for (int i=0; i<numFacesPerElem; i++){
+    refFaceToNode(i,0)=cellType.getNodeMap(2, i, 0);
+    refFaceToNode(i,1)=cellType.getNodeMap(2, i, 1);
+    refFaceToNode(i,2)=cellType.getNodeMap(2, i, 2);
+    refFaceToNode(i,3)=cellType.getNodeMap(2, i, 3);
+  }
 
   /**********************************************************************************/
   /******************************* GENERATE MESH ************************************/
@@ -257,6 +311,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   long long *  node_cmap_ids        = NULL;
   long long ** comm_node_ids        = NULL;
   long long ** comm_node_proc_ids   = NULL;
+
+  std::set < topo_entity * , fecomp > edge_set;
+  std::set < topo_entity * , fecomp > face_set;
+  std::vector < topo_entity * > edge_vector;
+  std::vector < topo_entity * > face_vector;
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
@@ -348,9 +407,64 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     nodeCoord(i,1)=nodeCoordy[i];
     nodeCoord(i,2)=nodeCoordz[i];
   }
-  delete [] nodeCoordx;
-  delete [] nodeCoordy;
-  delete [] nodeCoordz;
+
+  // Get the "time" value for the RTC
+  double time = 0.0;
+  if(inputList.isParameter("time"))
+    time = inputList.get("time",time);
+
+  // Get sigma value for each block of elements from parameter list
+  std::vector<double>  sigma(numElemBlk);
+  std::vector<PG_RuntimeCompiler::Function> sigmaRTC(numElemBlk);
+  std::vector<bool> useSigmaRTC(numElemBlk,false);
+
+  for(int b = 0; b < numElemBlk; b++){
+    std::stringstream sigmaBlock, mysigmaRTC;
+    sigmaBlock << "sigma" << b;
+    mysigmaRTC << "sigma RTC " << b;
+    if(inputList.isParameter(sigmaBlock.str()))
+      sigma[b] = inputList.get(sigmaBlock.str(),1.0);
+    else if(inputList.isParameter(mysigmaRTC.str())) {
+      std::string mystr;
+      mystr = inputList.get(mysigmaRTC.str(),mystr);
+      if(!sigmaRTC[b].addVar("double","x")) {printf("ERROR: sigmaRTC.addVar(x) failed\n");exit(-1);}
+      if(!sigmaRTC[b].addVar("double","y")) {printf("ERROR: sigmaRTC.addVar(y) failed\n");exit(-1);}
+      if(!sigmaRTC[b].addVar("double","z")) {printf("ERROR: sigmaRTC.addVar(z) failed\n");exit(-1);}
+      if(!sigmaRTC[b].addVar("double","time")) {printf("ERROR: sigmaRTC.addVar(time) failed\n");exit(-1);}
+      if(!sigmaRTC[b].addVar("double","sigma")) {printf("ERROR: sigmaRTC.addVar(sigma) failed\n");exit(-1);}
+      if(!sigmaRTC[b].addBody(mystr)) {printf("ERROR: sigmaRTC[%d].addBody failed\n",b);exit(-1);}
+      useSigmaRTC[b]=true;
+    }
+    else
+	sigma[b]=1.0;
+  }
+
+  // Get node-element connectivity and set element mu/sigma value
+  telct = 0;
+  FieldContainer<double> sigmaVal(numElems);
+  for(long long b = 0; b < numElemBlk; b++){
+    for(long long el = 0; el < elements[b]; el++){
+      std::vector<double> centercoord(3,0);
+      for (int j=0; j<numNodesPerElem; j++) {
+        centercoord[0] += nodeCoord(elemToNode(telct,j),0) / numNodesPerElem;
+        centercoord[1] += nodeCoord(elemToNode(telct,j),1) / numNodesPerElem;
+        centercoord[2] += nodeCoord(elemToNode(telct,j),2) / numNodesPerElem;
+      }
+      if(useSigmaRTC[b]) {
+        sigmaRTC[b].varAddrFill(0,&centercoord[0]);
+        sigmaRTC[b].varAddrFill(1,&centercoord[1]);
+        sigmaRTC[b].varAddrFill(2,&centercoord[2]);
+        sigmaRTC[b].varAddrFill(3,&time);
+        sigmaRTC[b].varAddrFill(4,&sigmaVal(telct));
+        sigmaRTC[b].execute();
+      }
+      else
+        sigmaVal(telct) = sigma[b];
+      telct ++;
+    }
+  }
+
+
 
   // parallel info
   long long num_internal_nodes;
@@ -422,6 +536,108 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                         node_comm_proc_ids,
                         comm_node_ids,
                         myRank);
+
+
+ // Container indicating whether a node is on the boundary (1-yes 0-no)
+  FieldContainer<int> nodeOnBoundary (numNodes);
+
+  // Get boundary (side set) information
+  long long * sideSetIds = new long long [numSideSets];
+  long long numSidesInSet;
+  long long numDFinSet;
+  im_ex_get_side_set_ids_l(id,sideSetIds);
+  for (int i=0; i < numSideSets; ++i) {
+    im_ex_get_side_set_param_l (id,sideSetIds[i], &numSidesInSet, &numDFinSet);
+    if (numSidesInSet > 0){
+      long long * sideSetElemList = new long long [numSidesInSet];
+      long long * sideSetSideList = new long long [numSidesInSet];
+      im_ex_get_side_set_l (id, sideSetIds[i], sideSetElemList, sideSetSideList);
+      for (int j = 0; j < numSidesInSet; ++j) {
+        int sideNode0 = cellType.getNodeMap(2,sideSetSideList[j]-1,0);
+        int sideNode1 = cellType.getNodeMap(2,sideSetSideList[j]-1,1);
+        int sideNode2 = cellType.getNodeMap(2,sideSetSideList[j]-1,2);
+        int sideNode3 = cellType.getNodeMap(2,sideSetSideList[j]-1,3);
+
+        nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode0))=1;
+        nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode1))=1;
+        nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode2))=1;
+        nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode3))=1;
+      }
+      delete [] sideSetElemList;
+      delete [] sideSetSideList;
+    }
+  }
+  delete [] sideSetIds;
+
+
+
+  FieldContainer<int> elemToEdge(numElems,numEdgesPerElem);
+  FieldContainer<int> elemToFace(numElems,numFacesPerElem);
+
+  // Calculate edge and face ids
+  int elct = 0;
+  for(long long b = 0; b < numElemBlk; b++){
+    if(nodes_per_element[b] == 4){
+    }
+    else if (nodes_per_element[b] == 8){
+      //loop over all elements and push their edges onto a set if they are not there already
+      for(long long el = 0; el < elements[b]; el++){
+        std::set< topo_entity *, fecomp > ::iterator fit;
+        for (int i=0; i < numEdgesPerElem; i++){
+          topo_entity * teof = new topo_entity;
+          for(int j = 0; j < numNodesPerEdge;j++){
+            teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds.getRawPtr());
+          }
+          teof->sort();
+          fit = edge_set.find(teof);
+          if(fit == edge_set.end()){
+            teof->local_id = edge_vector.size();
+            edge_set.insert(teof);
+            elemToEdge(elct,i)= edge_vector.size();
+            edge_vector.push_back(teof);
+          }
+          else{
+            elemToEdge(elct,i) = (*fit)->local_id;
+            delete teof;
+          }
+        }
+        for (int i=0; i < numFacesPerElem; i++){
+          topo_entity * teof = new topo_entity;
+          for(int j = 0; j < numNodesPerFace;j++){
+            teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,j)],globalNodeIds.getRawPtr());
+          }
+          teof->sort();
+          fit = face_set.find(teof);
+          if(fit == face_set.end()){
+            teof->local_id = face_vector.size();
+            face_set.insert(teof);
+            elemToFace(elct,i)= face_vector.size();
+            face_vector.push_back(teof);
+          }
+          else{
+            elemToFace(elct,i) = (*fit)->local_id;
+            delete teof;
+          }
+        }
+        elct ++;
+      }
+    }
+  }
+
+  // Edge to Node connectivity
+  FieldContainer<int> edgeToNode(edge_vector.size(), numNodesPerEdge);
+  for(unsigned ect = 0; ect != edge_vector.size(); ect++){
+    std::list<long long>::iterator elit;
+    int nct = 0;
+    for(elit  = edge_vector[ect]->local_node_ids.begin();
+        elit != edge_vector[ect]->local_node_ids.end();
+        elit ++){
+      edgeToNode(ect,nct) = *elit-1;
+      nct++;
+    }
+  }
+
+
   //
   // Mesh cleanup
   //
@@ -458,36 +674,203 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   delete [] elements;
   elements = NULL;
 
-  // Container indicating whether a node is on the boundary (1-yes 0-no)
-  FieldContainer<int> nodeOnBoundary (numNodes);
 
-  // Get boundary (side set) information
-  long long * sideSetIds = new long long [numSideSets];
-  long long numSidesInSet;
-  long long numDFinSet;
-  im_ex_get_side_set_ids_l(id,sideSetIds);
-  for (int i=0; i < numSideSets; ++i) {
-    im_ex_get_side_set_param_l (id,sideSetIds[i], &numSidesInSet, &numDFinSet);
-    if (numSidesInSet > 0){
-      long long * sideSetElemList = new long long [numSidesInSet];
-      long long * sideSetSideList = new long long [numSidesInSet];
-      im_ex_get_side_set_l (id, sideSetIds[i], sideSetElemList, sideSetSideList);
-      for (int j = 0; j < numSidesInSet; ++j) {
-        int sideNode0 = cellType.getNodeMap(2,sideSetSideList[j]-1,0);
-        int sideNode1 = cellType.getNodeMap(2,sideSetSideList[j]-1,1);
-        int sideNode2 = cellType.getNodeMap(2,sideSetSideList[j]-1,2);
-        int sideNode3 = cellType.getNodeMap(2,sideSetSideList[j]-1,3);
+/**********************************************************************************/
+/****************************** STATISTICS (Part I) *******************************/
+/**********************************************************************************/
+  // Statistics: Compute max / min of sigma parameter, mesh information
+  // Definitions of mesh statistics:
+  // TODO: 07/10/18
+  // Put the current statistics into their own functions so this looks less awful
+  int NUM_STATISTICS = 7;
+  std::vector<double> local_stat_max(NUM_STATISTICS);
+  std::vector<double> local_stat_min(NUM_STATISTICS);
+  std::vector<double> local_stat_sum(NUM_STATISTICS);
 
-        nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode0))=1;
-        nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode1))=1;
-        nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode2))=1;
-        nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode3))=1;
-      }
-      delete [] sideSetElemList;
-      delete [] sideSetSideList;
-    }
+  // Intialize
+  for(int i=0; i<NUM_STATISTICS; i++) {
+    local_stat_max[i] = 0.0;
+    local_stat_min[i] = std::numeric_limits<double>::max();
+    local_stat_sum[i] = 0.0;
   }
-  delete [] sideSetIds;
+
+  // Statistics
+  double maxmin_ratio = 0;
+  double stretch = 0;
+  double diag_ratio = 0;
+  double diag_length_max = 0;
+  double diag_length_min = 0;
+  double edge_length_max = 0;
+  double edge_length_min = 0;
+  double principle_axis_1[] = {0, 0, 0};
+  double principle_axis_2[] = {0, 0, 0};
+  double principle_axis_3[] = {0, 0, 0};
+  double hex_0[] = {0, 0, 0};
+  double hex_1[] = {0, 0, 0};
+  double hex_2[] = {0, 0, 0};
+  double hex_3[] = {0, 0, 0};
+  double hex_4[] = {0, 0, 0};
+  double hex_5[] = {0, 0, 0};
+  double hex_6[] = {0, 0, 0};
+  double hex_7[] = {0, 0, 0};
+
+  int edge = elemToEdge(0, 0);
+  int node1 = edgeToNode(edge, 0);
+  int node2 = edgeToNode(edge, 1);
+  int node3 = edgeToNode(edge, 0);
+  int node4 = edgeToNode(edge, 1);
+  double dist = 0;
+  static const int NUM_NODE_PAIRS = 4;
+  int diag_nodes1[] = {0, 1, 2, 3};
+  int diag_nodes2[] = {6, 7, 4, 5};
+  int edge_nodes_1[] = {0, 0, 0, 1, 1, 2, 2, 3, 4, 4, 5, 6};
+  int edge_nodes_2[] = {1, 3, 4, 2, 5, 3, 6, 7, 5, 7, 6, 7};
+  static const int NUM_EDGE_PAIRS = 6;
+  int edge_opposites_1[] = { 0,  1, 2, 3, 4, 5};
+  int edge_opposites_2[] = {11, 10, 6, 9, 7, 8};
+  double edge_length_1 = 0;
+  double edge_length_2 = 0;
+
+  for(int i=0; i<numElems; i++) {
+    // Set up hex nodes
+    int hexnode0 = elemToNode(i, 0);
+    int hexnode1 = elemToNode(i, 1);
+    int hexnode2 = elemToNode(i, 2);
+    int hexnode3 = elemToNode(i, 3);
+    int hexnode4 = elemToNode(i, 4);
+    int hexnode5 = elemToNode(i, 5);
+    int hexnode6 = elemToNode(i, 6);
+    int hexnode7 = elemToNode(i, 7);
+
+    // Now I have to get the node coordinates
+    for(int j=0; j<dim; j++) {
+      hex_0[j] = nodeCoord(hexnode0, j);
+      hex_1[j] = nodeCoord(hexnode1, j);
+      hex_2[j] = nodeCoord(hexnode2, j);
+      hex_3[j] = nodeCoord(hexnode3, j);
+      hex_4[j] = nodeCoord(hexnode4, j);
+      hex_5[j] = nodeCoord(hexnode5, j);
+      hex_6[j] = nodeCoord(hexnode6, j);
+      hex_7[j] = nodeCoord(hexnode7, j);
+    }
+
+    double pr1_norm = 0;
+    double pr2_norm = 0;
+    double pr3_norm = 0;
+    for(int j=0; j<dim; j++){
+      principle_axis_1[j] = hex_1[j] - hex_0[j] + hex_2[j] - hex_3[j] + hex_5[j] - hex_4[j] + hex_6[j] - hex_7[j];
+      pr1_norm += principle_axis_1[j] * principle_axis_1[j];
+      principle_axis_2[j] = hex_3[j] - hex_0[j] + hex_2[j] - hex_1[j] + hex_7[j] - hex_4[j] + hex_6[j] - hex_5[j];
+      pr2_norm += principle_axis_2[j] * principle_axis_2[j];
+      principle_axis_3[j] = hex_4[j] - hex_0[j] + hex_5[j] - hex_1[j] + hex_6[j] - hex_2[j] + hex_7[j] - hex_3[j];
+      pr3_norm += principle_axis_3[j] * principle_axis_3[j];
+    }
+
+    pr1_norm = sqrt(pr1_norm);
+    pr2_norm = sqrt(pr2_norm);
+    pr3_norm = sqrt(pr3_norm);
+
+    for(int j=0; j<dim; j++) {
+      principle_axis_1[j] = principle_axis_1[j] / pr1_norm;
+      principle_axis_2[j] = principle_axis_2[j] / pr2_norm;
+      principle_axis_3[j] = principle_axis_3[j] / pr3_norm;
+    }
+
+
+    // 0 - Material property
+    local_stat_max[0] = std::max(local_stat_max[0],sigmaVal(i));
+    local_stat_min[0] = std::min(local_stat_min[0],sigmaVal(i));
+    local_stat_sum[0] += sigmaVal(i);
+
+    edge = elemToEdge(i, 0);
+    node1 = edgeToNode(edge, 0);
+    node2 = edgeToNode(edge, 1);
+
+    // 1 - Max/min edge - ratio of max to min edge length
+    edge_length_max = distance2(nodeCoord, node1, node2);
+    edge_length_min = edge_length_max;
+    for (int j=0; j<numEdgesPerElem; j++) {
+      edge = elemToEdge(i,j);
+      node1 = edgeToNode(edge,0);
+      node2 = edgeToNode(edge,1);
+      dist = distance2(nodeCoord,node1,node2);
+      edge_length_max = std::max(edge_length_max,dist);
+      edge_length_min = std::min(edge_length_min,dist);
+    }
+    maxmin_ratio = edge_length_max / edge_length_min;
+    local_stat_max[1] = std::max(local_stat_max[1],maxmin_ratio);
+    local_stat_min[1] = std::min(local_stat_min[1],maxmin_ratio);
+    local_stat_sum[1] += maxmin_ratio;
+
+    // 2 - det of cell Jacobian (later)
+
+    // 3 - Stretch
+    diag_length_max = distance2(nodeCoord, elemToNode(i, diag_nodes1[0]),
+                                           elemToNode(i, diag_nodes2[0]));
+    diag_length_min = distance2(nodeCoord, elemToNode(i, diag_nodes1[0]),
+                                           elemToNode(i, diag_nodes2[0]));
+    for (int j=0; j<NUM_NODE_PAIRS; j++) {
+      node1 = elemToNode(i, diag_nodes1[j]);
+      node2 = elemToNode(i, diag_nodes2[j]);
+      dist = distance2(nodeCoord, node1, node2);
+      diag_length_max = std::max(diag_length_max, dist);
+      diag_length_min = std::min(diag_length_min, dist);
+    }
+    stretch = sqrt(3) * edge_length_min / diag_length_max;
+    diag_ratio = diag_length_min / diag_length_max;
+    local_stat_max[3] = std::max(local_stat_max[3], stretch);
+    local_stat_min[3] = std::min(local_stat_min[3], stretch);
+    local_stat_sum[3] += stretch;
+
+    // 4 - Diagonal Ratio
+    local_stat_max[4] = std::max(local_stat_max[4], diag_ratio);
+    local_stat_min[4] = std::min(local_stat_min[4], diag_ratio);
+    local_stat_sum[4] += diag_ratio;
+
+    // 5 - Inverse Taper
+    node1 = elemToNode(i, diag_nodes1[0]);
+    node2 = elemToNode(i, diag_nodes1[1]);
+    node3 = elemToNode(i, diag_nodes2[0]);
+    node4 = elemToNode(i, diag_nodes2[1]);
+    edge_length_1 = distance2(nodeCoord, node1, node2);
+    edge_length_2 = distance2(nodeCoord, node3, node4);
+    double ratio = edge_length_1 / edge_length_2;
+    ratio = std::min(ratio, 1/ratio);
+    for (int j=0; j<NUM_EDGE_PAIRS; j++) {
+      node1 = elemToNode(i, edge_nodes_1[edge_opposites_1[j]]);
+      node2 = elemToNode(i, edge_nodes_2[edge_opposites_1[j]]);
+      node3 = elemToNode(i, edge_nodes_1[edge_opposites_2[j]]);
+      node4 = elemToNode(i, edge_nodes_2[edge_opposites_2[j]]);
+      edge_length_1 = distance2(nodeCoord, node1, node2);
+      edge_length_2 = distance2(nodeCoord, node3, node4);
+      double ratio = edge_length_1 / edge_length_2;
+      ratio = std::min(ratio, 1/ratio);
+    }
+    local_stat_max[5] = std::max(local_stat_max[5], ratio);
+    local_stat_min[5] = std::min(local_stat_min[5], ratio);
+    local_stat_sum[5] += ratio;
+
+    // 6 - Skew
+    double skew = 0;
+    double skew1 = 0;
+    double skew2 = 0;
+    double skew3 = 0;
+
+    for(int j=0; j<dim; j++) {
+      skew1 += principle_axis_1[j] * principle_axis_2[j];
+      skew2 += principle_axis_1[j] * principle_axis_3[j];
+      skew3 += principle_axis_1[j] * principle_axis_3[j];
+    }
+    skew1 = std::abs(skew1);
+    skew2 = std::abs(skew2);
+    skew3 = std::abs(skew3);
+    skew = std::max(skew1, skew2);
+    skew = std::max(skew, skew3);
+    local_stat_max[6] = std::max(local_stat_max[6], skew);
+    local_stat_min[6] = std::min(local_stat_min[6], skew);
+    local_stat_sum[6] += skew;
+  }
+
 
 /**********************************************************************************/
 /********************************* GET CUBATURE ***********************************/
@@ -553,7 +936,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
         ++oidx;
       }
     }
-    globalMapG = rcp (new map_type (-1, ownedGIDs (), 0, comm, node));
+    globalMapG = rcp (new map_type (-1, ownedGIDs (), 0, comm));
   }
 
   /**********************************************************************************/
@@ -574,10 +957,26 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     }
 
     //Generate overlapped Map for nodes.
-    overlappedMapG = rcp (new map_type (-1, overlappedGIDs (), 0, comm, node));
+    overlappedMapG = rcp (new map_type (-1, overlappedGIDs (), 0, comm));
 
     // Build Tpetra Export from overlapped to owned Map.
     exporter = rcp (new export_type (overlappedMapG, globalMapG));
+  }
+
+  /**********************************************************************************/
+  /****************************** STASH COORDINATES *********************************/
+  /**********************************************************************************/
+
+  coords = rcp(new multivector_type(globalMapG,dim));
+  for(int j=0; j<dim; j++) {
+    auto cdata = coords->getDataNonConst(j);
+    int lid=0;
+    for(int i=0; i<numNodes; i++) {
+      if (nodeIsOwned[i]) {
+        cdata[lid] = nodeCoord(i,j);
+        lid++;
+      }
+    }
   }
 
   /**********************************************************************************/
@@ -686,6 +1085,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   // version of the exact solution vector.
   RCP<vector_type> gl_exactSolVector = rcp (new vector_type (globalMapG));
 
+  RCP<vector_type> gl_nodalSigma(new vector_type(globalMapG));
+  RCP<vector_type> gl_nodalVolume(new vector_type(globalMapG));
+  RCP<vector_type> gl_inverseNodalVolume(new vector_type(globalMapG));
+
   //
   // Overlapped distribution objects: their names don't start with gl_.
   //
@@ -693,7 +1096,15 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     rcp (new sparse_matrix_type (overlappedGraph.getConst ()));
   StiffMatrix->setAllToScalar (STS::zero ());
   RCP<vector_type> rhsVector = rcp (new vector_type (overlappedMapG));
+  RCP<vector_type> nodalSigma(new vector_type(overlappedMapG));
+  RCP<vector_type> nodalVolume(new vector_type(overlappedMapG));
+
   rhsVector->putScalar (STS::zero ());
+  nodalSigma->putScalar (STS::zero ());
+  nodalVolume->putScalar (STS::zero ());
+
+
+
 
   /**********************************************************************************/
   /************************** DIRICHLET BC SETUP ************************************/
@@ -767,6 +1178,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
          << "Number of worksets (per process): " << numWorksets << endl;
   }
 
+
   for (int workset = 0; workset < numWorksets; ++workset) {
 
     // Compute cell numbers where the workset starts and ends
@@ -825,6 +1237,14 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     FieldContainer<ST> worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
     FieldContainer<ST> worksetRHS         (worksetSize, numFieldsG);
 
+    // Weighted measure for material parameters
+    FieldContainer<ST> weightedMeasureSigma      (worksetSize, numCubPoints);
+
+    // Containers for the volume-weighted nodal mass 
+    FieldContainer<ST> worksetHGBValuesWeightedSigma(worksetSize, numFieldsG, numCubPoints);
+    FieldContainer<double> massMatrixG(worksetSize, numFieldsG, numFieldsG);
+    FieldContainer<double> sigmaMassMatrixG(worksetSize, numFieldsG, numFieldsG);
+
     {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF(
       "Matrix/RHS fill:  1-Element discretization", elem_discretization);
@@ -862,9 +1282,19 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     IntrepidFSTools::computeCellMeasure<ST> (worksetCubWeights, // Det(DF)*w = J*w
                                              worksetJacobDet,
                                              cubWeights);
+
+    // Combine sigma value with weighted measure
+    cellCounter = 0;
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+      for (int nPt = 0; nPt < numCubPoints; nPt++){
+        weightedMeasureSigma(cellCounter,nPt) = worksetCubWeights(cellCounter,nPt) * sigmaVal(cell);
+      }
+      cellCounter++;
+    }
+
     // Multiply transformed (workset) gradients with weighted measure
     IntrepidFSTools::multiplyMeasure<ST> (worksetHGBGradsWeighted, // DF^{-T}(grad u)*J*w
-                                          worksetCubWeights,
+                                          weightedMeasureSigma,
                                           worksetHGBGrads);
     // Compute the diffusive flux:
     IntrepidFSTools::tensorMultiplyDataField<ST> (worksetDiffusiveFlux, // A*(DF^{-T}(grad u)
@@ -893,7 +1323,41 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                                     worksetHGBValuesWeighted,
                                     COMP_BLAS);
 
+
+    /**********************************************************************************/
+    /*                         Compute Mass Matrix                                    */
+    /**********************************************************************************/
+    // Get the non-sigma mass matrix
+    IntrepidFSTools::integrate<ST>(massMatrixG, worksetHGBValues,worksetHGBValuesWeighted,COMP_BLAS);
+      
+    // Get the sigma mass matrix
+    IntrepidFSTools::multiplyMeasure<ST> (worksetHGBValuesWeightedSigma, // (u)*J*w
+                                          weightedMeasureSigma,
+                                          worksetHGBValues);
+    IntrepidFSTools::integrate<ST>(sigmaMassMatrixG, worksetHGBValues,worksetHGBValuesWeightedSigma,COMP_BLAS);
+
     } // Element discretization timer
+
+
+
+    /**********************************************************************************/
+    /***************************** STATISTICS (Part II) ******************************/
+    /**********************************************************************************/
+    for(int i=0; i<worksetSize; i++) {
+      // 0 - Material property
+      // 1 - Max/min edge - ratio of max to min edge length
+      // 2 - det of cell Jacobian (later)
+      double elementdetJ = 0.0, elementWeight=0.0;
+      for(int j=0; j<numCubPoints; j++) {
+        elementdetJ   += worksetJacobDet(i,j) * worksetCubWeights(i,j);
+        elementWeight += worksetCubWeights(i,j);
+      }
+      double detJ = elementdetJ / elementWeight;
+      local_stat_max[2] = std::max(local_stat_max[2],detJ);
+      local_stat_min[2] = std::min(local_stat_min[2],detJ);
+      local_stat_sum[2] += detJ;
+    }
+
 
     /**********************************************************************************/
     /*                         Assemble into Global Matrix                            */
@@ -920,6 +1384,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
             //   "Matrix/RHS fill:  2a-RHS sum into local values",
             //   elem_rhs);
             rhsVector->sumIntoLocalValue (localRow, sourceTermContribution);
+
+
           }
 
           // "CELL VARIABLE" loop for the workset cell: sum entire element
@@ -936,11 +1402,70 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
             StiffMatrix->sumIntoLocalValues (localRow, localColAV,
                                              operatorMatrixContributionAV);
           }
+
+          // Sigma vector goodness
+          ArrayView<ST> mass_m  =  arrayView<ST> (&massMatrixG(worksetCellOrdinal,cellRow,0),numFieldsG);
+          ArrayView<ST> sigma_m =  arrayView<ST> (&sigmaMassMatrixG(worksetCellOrdinal,cellRow,0),numFieldsG);
+          ST sigma_sum = Teuchos::ScalarTraits<ST>::zero();
+          ST volume_sum = Teuchos::ScalarTraits<ST>::zero();
+          for(size_t i=0; i<(size_t)mass_m.size(); i++) {
+            sigma_sum+= sigma_m[i];
+            volume_sum+= mass_m[i];           
+          }
+          nodalSigma->sumIntoLocalValue(localRow,sigma_sum);
+          nodalVolume->sumIntoLocalValue(localRow,volume_sum);
+                           
+
         }// *** cell row loop ***
       }// *** workset cell loop **
     } // *** stop timer ***
   }// *** workset loop ***
 
+
+/**********************************************************************************/
+/***************************** STATISTICS (Part III) ******************************/
+/**********************************************************************************/
+  std::vector<double> global_stat_max(NUM_STATISTICS),global_stat_min(NUM_STATISTICS), global_stat_sum(NUM_STATISTICS);
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,NUM_STATISTICS,local_stat_min.data(),global_stat_min.data());
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,NUM_STATISTICS,local_stat_max.data(),global_stat_max.data());
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,NUM_STATISTICS,local_stat_sum.data(),global_stat_sum.data());
+  // NOTE: All output properties should be unitless if we want to compare across problems.
+  // NOTE: Should the mean be weighted by cell volume?  That is not currently done.
+
+  // 0 - Material property
+  problemStatistics.set("sigma: min/mean",global_stat_min[0]/global_stat_sum[0]*numElemsGlobal);
+  problemStatistics.set("sigma: max/mean",global_stat_max[0]/global_stat_sum[0]*numElemsGlobal);
+
+  // 1 - Max/min edge ratio
+  problemStatistics.set("element edge ratio: min",global_stat_min[1]);
+  problemStatistics.set("element edge ratio: max",global_stat_max[1]);
+  problemStatistics.set("element edge ratio: mean",global_stat_sum[1] / numElemsGlobal);
+
+  // 2 - det of cell Jacobian (later)
+  problemStatistics.set("element det jacobian: min/mean",global_stat_min[2]/global_stat_sum[2]*numElemsGlobal);
+  problemStatistics.set("element det jacobian: max/mean",global_stat_max[2]/global_stat_sum[2]*numElemsGlobal);
+
+  if(use_new_problem_stats) {
+    // 3 - Stretch
+    problemStatistics.set("Stretch max", global_stat_max[3]);
+    problemStatistics.set("Stretch min", global_stat_min[3]);
+    problemStatistics.set("Stretch mean", global_stat_sum[3] / numElemsGlobal);
+
+    // 4 - Diagonal Ratio
+    problemStatistics.set("Diagonal Ratio max", global_stat_max[4]);
+    problemStatistics.set("Diagonal Ratio min", global_stat_min[4]);
+    problemStatistics.set("Diagonal Ratio mean", global_stat_sum[4]/numElemsGlobal);
+
+    // 5 - Inverse Taper
+    problemStatistics.set("Inverse Taper max", global_stat_max[5]);
+    problemStatistics.set("Inverse Taper min", global_stat_min[5]);
+    problemStatistics.set("Inverse Taper mean", global_stat_sum[5] / numElemsGlobal);
+    
+    // 6 - Skew
+    problemStatistics.set("Skew max", global_stat_max[6]);
+    problemStatistics.set("Skew min", global_stat_min[6]);
+    problemStatistics.set("Skew mean", global_stat_sum[6] / numElemsGlobal);
+  }
   //////////////////////////////////////////////////////////////////////////////
   // Export sparse matrix and right-hand side from overlapping row Map
   // to owned (nonoverlapping) row Map.
@@ -968,6 +1493,16 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
       "Matrix/RHS fill:  5-RHS export", rhs_export);
     gl_rhsVector->doExport (*rhsVector, *exporter, Tpetra::ADD);
   }
+
+  gl_nodalSigma->putScalar (STS::zero ());
+  gl_nodalSigma->doExport (*nodalSigma, *exporter, Tpetra::ADD);
+
+  gl_nodalVolume->putScalar (STS::zero ());
+  gl_nodalVolume->doExport (*nodalVolume, *exporter, Tpetra::ADD);
+
+  // Get the volume-weighted sigma
+  gl_inverseNodalVolume->reciprocal(*gl_nodalVolume);
+  gl_nodalSigma->elementWiseMultiply(STS::one(), *gl_nodalSigma,*gl_inverseNodalVolume,STS::zero());
 
   //////////////////////////////////////////////////////////////////////////////
   // Adjust matrix for boundary conditions
@@ -1014,7 +1549,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     RCP<const map_type> ColMap = gl_StiffMatrix->getColMap ();
     RCP<const map_type> globalMap =
       rcp (new map_type (gl_StiffMatrix->getGlobalNumCols (), 0, comm,
-                         Tpetra::GloballyDistributed, node));
+                         Tpetra::GloballyDistributed));
 
     // Create the exporter from this process' column Map to the global
     // 1-1 column map. (???)
@@ -1103,6 +1638,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   B = gl_rhsVector;
   X_exact = gl_exactSolVector;
   X = gl_approxSolVector;
+  node_sigma = gl_nodalSigma;
 }
 
 std::vector<Teuchos::ScalarTraits<ST>::magnitudeType>

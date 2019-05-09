@@ -90,8 +90,8 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
-    const RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
-      conn_manager = rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
+    const RCP<panzer::ConnManager> 
+      conn_manager = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
         = rcp(new panzer::DOFManager<int,panzer::Ordinal64>(conn_manager,MPI_COMM_WORLD));

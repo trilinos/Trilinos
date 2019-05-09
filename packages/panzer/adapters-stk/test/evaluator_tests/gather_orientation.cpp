@@ -113,7 +113,7 @@ namespace panzer {
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
     RCP<panzer::DOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
     dofManager->addField(fieldName_q1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
     dofManager->addField(fieldName_qedge1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_qedge1->getIntrepid2Basis())));
@@ -142,8 +142,8 @@ namespace panzer {
        evalField_q1 = evaluator->evaluatedFields()[0];
 
        TEST_EQUALITY(evalField_q1->name(),basis_q1->name()+" Orientation");
-       TEST_EQUALITY(evalField_q1->dataLayout().dimension(0),basis_q1->functional->dimension(0));
-       TEST_EQUALITY(evalField_q1->dataLayout().dimension(1),basis_q1->functional->dimension(1));
+       TEST_EQUALITY(evalField_q1->dataLayout().extent(0),basis_q1->functional->extent(0));
+       TEST_EQUALITY(evalField_q1->dataLayout().extent(1),basis_q1->functional->extent(1));
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
        fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);
@@ -164,8 +164,8 @@ namespace panzer {
        evalField_qedge1 = evaluator->evaluatedFields()[0];
 
        TEST_EQUALITY(evalField_qedge1->name(),basis_qedge1->name()+" Orientation");
-       TEST_EQUALITY(evalField_qedge1->dataLayout().dimension(0),basis_qedge1->functional->dimension(0));
-       TEST_EQUALITY(evalField_qedge1->dataLayout().dimension(1),basis_qedge1->functional->dimension(1));
+       TEST_EQUALITY(evalField_qedge1->dataLayout().extent(0),basis_qedge1->functional->extent(0));
+       TEST_EQUALITY(evalField_qedge1->dataLayout().extent(1),basis_qedge1->functional->extent(1));
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
        fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);
@@ -192,8 +192,8 @@ namespace panzer {
     PHX::MDField<panzer::Traits::Residual::ScalarT> 
        fieldData_qedge1(evalField_qedge1->name(),basis_qedge1->functional);
 
-    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_q1);
-    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_qedge1);
+    fm.getFieldData<panzer::Traits::Residual>(fieldData_q1);
+    fm.getFieldData<panzer::Traits::Residual>(fieldData_qedge1);
 
     for(int i=0;i<static_cast<int>(fieldData_q1.size());i++) {
        TEST_EQUALITY(fieldData_q1[i],1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,7 +41,7 @@ void count_weights(struct vtx_data **graph,      /* data structure for graph */
                    int               nsets,      /* number of sets in this division */
                    double *          weights,    /* vertex weights in each set */
                    int               using_vwgts /* are vertex weights being used? */
-                   )
+)
 
 {
   int i; /* loop counters */

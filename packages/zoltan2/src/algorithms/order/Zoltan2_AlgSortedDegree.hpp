@@ -83,7 +83,7 @@ class AlgSortedDegree : public Algorithm<Adapter>
   {
   }
 
-  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution)
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &/* solution */)
   {
      throw std::logic_error(
        "AlgSortedDegree does not yet support global ordering.");

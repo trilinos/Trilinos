@@ -29,7 +29,7 @@ namespace Test {
     void operator()(const int k) const {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
 
-      for (int i=0;i<static_cast<int>(aa.dimension_0());++i)
+      for (int i=0;i<static_cast<int>(aa.extent(0));++i)
         aa(i,i) += 10.0;
 
       SerialLU<AlgoTagType>::invoke(aa);
@@ -37,8 +37,17 @@ namespace Test {
 
     inline
     void run() {
-      Kokkos::RangePolicy<DeviceType> policy(0, _a.dimension_0());
-      Kokkos::parallel_for(policy, *this);
+      typedef typename ViewType::value_type value_type;
+      std::string name_region("KokkosBatched::Test::SerialLU");
+      std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
+                                      std::is_same<value_type,double>::value ? "::Double" :
+                                      std::is_same<value_type,Kokkos::complex<float> >::value ? "::ComplexFloat" :
+                                      std::is_same<value_type,Kokkos::complex<double> >::value ? "::ComplexDouble" : "::UnknownValueType" );                               
+      std::string name = name_region + name_value_type;
+      Kokkos::Profiling::pushRegion( name.c_str() );
+      Kokkos::RangePolicy<DeviceType> policy(0, _a.extent(0));
+      Kokkos::parallel_for(name.c_str(), policy, *this);
+      Kokkos::Profiling::popRegion();
     }
   };
 
@@ -56,10 +65,14 @@ namespace Test {
     Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
     Kokkos::fill_random(a0, random, value_type(1.0));
 
+    Kokkos::fence();
+
     Kokkos::deep_copy(a1, a0);
 
     Functor_TestBatchedSerialLU<DeviceType,ViewType,Algo::LU::Unblocked>(a0).run();
     Functor_TestBatchedSerialLU<DeviceType,ViewType,AlgoTagType>(a1).run();
+
+    Kokkos::fence();
 
     /// for comparison send it to host
     typename ViewType::HostMirror a0_host = Kokkos::create_mirror_view(a0);
@@ -93,7 +106,7 @@ int test_batched_lu() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
     Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutLeft,  Blksize %d\n", i); 
+      //printf("Testing: LayoutLeft,  Blksize %d\n", i); 
       Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }
@@ -103,7 +116,7 @@ int test_batched_lu() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
     Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutLeft,  Blksize %d\n", i); 
+      //printf("Testing: LayoutLeft,  Blksize %d\n", i); 
       Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }

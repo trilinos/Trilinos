@@ -23,19 +23,19 @@ Ninja Input:
          sideset, jhi, 5
          sideset, khi, 6
       end
-     user defined geometry transformation
-     '
-       double r = sqrt(inxcoord*inxcoord +inycoord*inycoord );
-       double theta = atan2(inycoord,inxcoord); 
-       if(r > 0.5)
-       {
-         theta = theta + (3.14159 / 4.0)*((r-0.5)/0.5);
-         outxcoord = r*cos(theta);
-         outycoord = r*sin(theta);
-         outzcoord = outzcoord;
-       }
-     '
-     end
+      user defined geometry transformation
+      '
+        double r = sqrt(inxcoord*inxcoord +inycoord*inycoord );
+        double theta = atan2(inycoord,inxcoord); 
+        if(r > 0.5)
+        {
+          theta = theta + (3.14159 / 4.0)*((r-0.5)/0.5);
+          outxcoord = r*cos(theta);
+          outycoord = r*sin(theta);
+          outzcoord = outzcoord;
+        }
+      '
+      end
     end
   mu0: 1.0
 ...

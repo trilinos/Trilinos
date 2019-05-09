@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -180,8 +180,10 @@ private:
 
   static void deallocate( RecordBase * );
 
+#ifdef KOKKOS_DEBUG
   /**\brief  Root record for tracked allocations from this HBWSpace instance */
   static RecordBase s_root_record;
+#endif
 
   const Kokkos::Experimental::HBWSpace m_space;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -340,7 +340,7 @@ int main(int argc, char **argv)
 
   for (i = 0; i < num_elem_blk; i++) {
     if (num_elem_in_block[i] > 0) {
-      for (j            = 0; j < num_attr[i]; j++)
+      for (j = 0; j < num_attr[i]; j++)
         attrib_names[j] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
 
       attrib = (float *)calloc(num_attr[i] * num_elem_in_block[i], sizeof(float));

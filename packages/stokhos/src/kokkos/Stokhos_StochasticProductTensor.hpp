@@ -45,6 +45,7 @@
 #include <ostream>
 
 #include "Kokkos_Core.hpp"
+//#include "Kokkos_View.hpp"
 
 #include "Stokhos_ProductBasis.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -131,7 +132,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   size_type aligned_dimension() const {
     const bool is_cuda =
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
       Kokkos::Impl::is_same<execution_space,Kokkos::Cuda>::value;
 #else
       false ;
@@ -162,9 +163,9 @@ public:
 
   void print( std::ostream & s ) const
   {
-    for ( unsigned i = 1 ; i < m_degree_map.dimension_0() ; ++i ) {
+    for ( unsigned i = 1 ; i < m_degree_map.extent(0) ; ++i ) {
       s << "  bases[" << i - 1 << "] (" ;
-      for ( unsigned j = 0 ; j < m_degree_map.dimension_1() ; ++j ) {
+      for ( unsigned j = 0 ; j < m_degree_map.extent(1) ; ++j ) {
         s << " " << m_degree_map(i,j);
       }
       s << " )" << std::endl ;

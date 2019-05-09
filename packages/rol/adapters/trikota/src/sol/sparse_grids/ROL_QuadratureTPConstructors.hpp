@@ -59,7 +59,7 @@ Quadrature<Real>::Quadrature(const int dimension,
                              const std::vector<EQuadrature> &rule1D, 
                              const bool isNormalized) 
   : dimension_(dimension) {
-  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
+  ROL_TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
 		      dimension!=(int)rule1D.size()),std::out_of_range,
            ">>> ERROR (ROL::Quadrature): Dimension mismatch for inputs.");
   accuracy_.clear();
@@ -94,7 +94,7 @@ Quadrature<Real>::Quadrature(const int dimension,
                              const std::vector<EGrowth> &growth1D,
                              const bool isNormalized) 
   : dimension_(dimension) {
-  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
+  ROL_TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
 		      dimension!=(int)rule1D.size()||
 		      dimension!=(int)growth1D.size()),std::out_of_range,
            ">>> ERROR (Quadrature): Dimension mismatch for inputs.");
@@ -133,7 +133,7 @@ Quadrature<Real>::Quadrature(const int dimension,
                              const bool isNormalized,
                              const bool adaptive)
   : dimension_(dimension) {
-  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)rule1D.size()||
+  ROL_TEST_FOR_EXCEPTION((dimension!=(int)rule1D.size()||
 		      dimension!=(int)growth1D.size()),std::out_of_range,
             ">>> ERROR (Quadrature): Dimension mismatch for inputs.");
   if ( adaptive ) {
@@ -156,7 +156,7 @@ Quadrature<Real>::Quadrature(const QuadratureInfo &info) {
   std::vector<EGrowth> growth1D = info.growth1D;
   bool isNormalized = info.normalized;
   bool adaptive = info.adaptive;  
-  TEUCHOS_TEST_FOR_EXCEPTION(((dimension_!=(int)rule1D.size()) ||
+  ROL_TEST_FOR_EXCEPTION(((dimension_!=(int)rule1D.size()) ||
 		              (dimension_!=(int)growth1D.size())),
                              std::out_of_range,
     ">>> ERROR (Quadrature): Dimension mismatch for inputs.");

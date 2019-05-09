@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2017-09-03 18:19:25 mhoemme"
+#+DATE: Time-stamp: "2019-04-16 09:58:15 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -16,9 +16,8 @@ between tildes, like ~this~, denotes literal (verbatim) text.  We use
 this with source code, error messages, and other such things that call
 for literalness.
 
-* Questions about building Tpetra
+* Building and running Tpetra
 ** How do I build and run Tpetra to use OpenMP for threads?
-
 *** Introduction
 
 OpenMP is a portable standard for thread parallelism.  Tpetra uses
@@ -61,6 +60,16 @@ Tpetra will enable its OpenMP support by default.  (See "How does
 Tpetra pick its default Kokkos execution space?" below.)  Avoid
 setting CMake options explicitly; this hinders portability and makes
 your build configuration unnecessarily complicated.
+
+*** How do I set run-time options for Intel KNL?
+
+"KNL" refers to "Knights Landing," a code name for Intel's
+second-generation Xeon Phi processor, with product numbers 72x0 or
+72x0F (replace "x" with a single-digit number).  For best practice
+when running on KNL, please refer to the following Trilinos GitHub
+issue:
+
+https://github.com/trilinos/Trilinos/issues/1727
 
 ** How do I build and run Tpetra for NVIDIA GPUs (CUDA)?
 *** Introduction
@@ -115,13 +124,13 @@ variables that you would normally set:
 -D TPL_ENABLE_CUDA:BOOL=ON
 -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON
 -D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON
--D CMAKE_CXX_FLAGS:STRING="-std=c++11 -expt-extended-lambda" 
+-D Trilinos_CXX11_FLAGS:STRING="-std=c++11 -expt-extended-lambda" 
 #+END_EXAMPLE
 
-If you already define `CMAKE_CXX_FLAGS` yourself, just make sure that
+If you already define ~CMAKE_CXX_FLAGS~ yourself, just make sure that
 you include the above options.  If the versions of ~nvcc~ and ~mpicxx~
 that live in your path are correct, then this should work.  The
-`-std=c++11` option is required, though it may cause harmless build
+~-std=c++11~ option is required, though it may cause harmless build
 warnings that look like this:
 
 #+BEGIN_EXAMPLE
@@ -272,6 +281,31 @@ by adding the following to your CMake invocation line:
 -D CMAKE_CXX_FLAGS_DEBUG:STRING="-g -Os"
 #+END_EXAMPLE
 
+** "Error 127" link error in CUDA builds
+
+In a CUDA build of kokkos-kernels (upstream of Tpetra) with complex
+arithmetic and explicit template instantiation (ETI) enabled, one
+might see a link error with the mysterious "Error 127" message.
+
+Short answer: Try setting the following CMake option:
+#+BEGIN_EXAMPLE
+-D CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON
+#+END_EXAMPLE
+
+For details, see the following GitHub issue:
+
+https://github.com/trilinos/Trilinos/issues/2141
+
+and the following instructions:
+
+http://trilinos.org/docs/files/TrilinosBuildReference.html#enabling-the-usage-of-resource-files-to-reduce-length-of-build-lines
+
+If you have trouble seeing the above trilinos.org link, due to web
+page certificate issues, please refer to the following tribits.org
+link instead:
+
+https://tribits.org/doc/TribitsBuildReference.html#enabling-the-usage-of-resource-files-to-reduce-length-of-build-lines
+
 * Thread safety
 ** Weak and strong thread safety
 
@@ -320,14 +354,18 @@ rules to decide which execution space to use by default:
   - Set ~Tpetra_INST_PTHREAD=ON~ to enable ~Kokkos::Threads~
   - Set ~Tpetra_INST_SERIAL=ON~ to enable ~Kokkos::Serial~
 
-** Why is performance bad when I use both ~Kokkos::OpenMP~ and ~Kokkos::Threads~?
+** Why does Kokkos forbid enabling both OpenMP and Pthreads?
 
-Please don't do that.  ~Kokkos::Threads~ uses Pthreads; OpenMP uses
-its own threads.  The two sets of worker threads fight over hardware
-resources.  As soon as you start up either of these execution spaces
-in the same executable, it dominates the hardware and makes life hard
-for the other one.  Pick one of these two (we prefer OpenMP) and stick
-to it.
+As of Dec 2017, Kokkos forbids, at configure time, enabling both
+~Kokkos::OpenMP~ (OpenMP back-end) and ~Kokkos::Threads~ (Pthreads
+back-end).  This would be a bad idea anyway, because using both
+execution spaces at the same time would result in very poor
+performance.  This is because ~Kokkos::Threads~ uses Pthreads; OpenMP
+uses its own threads.  The two sets of worker threads fight over
+hardware resources.  As soon as you start up either of these execution
+spaces in the same executable, it dominates the hardware and makes
+life hard for the other one.  Pick one of these two (we prefer OpenMP)
+and stick to it.
 
 ** What GlobalOrdinal (GO) types does Tpetra allow?
 
@@ -354,27 +392,14 @@ GO types it enables by default.
 ** How does Tpetra pick which GO types to enable by default?
 
 By default, Tpetra currently enables ~GO = int~ and ~GO = long long~.
-Some build options affect Tpetra's default behavior; see below.
+If users enable ~GO = long~ (by setting ~Tpetra_INST_INT_LONG:BOOL=ON~
+explicitly), then Tpetra does not enable ~GO = long long~ by default.
 Tpetra prefers ~GO = long long~, because the C++11 standard requires
 that ~long long~ have at least 64 bits.  Depending on the platform,
 ~long~ could be either 32 or 64 bits.  Tpetra does not enable more
 types by default, because that would increase build times and library
 sizes.  Bug 6358 (in the Bugzilla bug tracking system) prevents Tpetra
 from disabling ~GO = int~ by default.
-
-Two build options control Tpetra's default-enabled GO types:
-
-  - If users enable ~GO = long~ (by setting
-    ~Tpetra_INST_INT_LONG:BOOL=ON~ explicitly), then Tpetra does not
-    enable ~GO = long long~ by default.
-  - Tpetra currently requires Teuchos to have support for ~long long~.
-    Specifically, the CMake option ~Teuchos_ENABLE_LONG_LONG_INT~ must
-    be ON (or ~NOT DEFINED~).  If it is ~DEFINED~ but OFF, then Tpetra
-    enables ~long~ by default instead.
-
-These two options help Tpetra work around environments that lack
-correct ~long long~ support.  (This used to be the case for CUDA,
-but is not true any more.  See GitHub issue #1683.)
 
 ** What Scalar types does Tpetra allow?
 

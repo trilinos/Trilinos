@@ -198,6 +198,13 @@ struct BlockTriDiContainerTester {
         std::cerr << _ss_.str();                \
       }                                         \
     } while (0)
+#define TEST_BR_BTDC_SUCCESS(msg) do {          \
+      if (comm->getRank() == 0) {               \
+        std::stringstream _ss_;                 \
+        _ss_ << msg << "\n";                    \
+        std::cerr << _ss_.str();                \
+      }                                         \
+    } while (0)
     struct Parameters {
       const char* name;
       bool tridiag_only, tridiag_is_identity;
@@ -239,7 +246,7 @@ struct BlockTriDiContainerTester {
           auto input = T_bare->createDefaultApplyParameters();
           input.zeroStartingSolution = zero_starting;
           input.maxNumSweeps = num_sweeps;
-          input.tolerance = norm_based > 1 ? tol : 0;
+          input.tolerance = norm_based ? tol : 0;
           return T_bare->applyInverseJacobi(B, X, input);
         }
       };
@@ -252,11 +259,14 @@ struct BlockTriDiContainerTester {
         // Test that we formed I.
         rd = bcmm::reldif(*X, *B);
         if (rd != 0) TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I) " << details);
+        else TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I) " << details);
       } else if (p.tridiag_only) {
         apply(*B, *X_solve, false);
         rd = bcmm::reldif(*X, *X_solve);
         if (rd > 1e2*std::numeric_limits<Magnitude>::epsilon())
           TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D) " << details << " rd " << rd);
+        else
+          TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D) " << details << " rd " << rd);
       } else if (p.tridiag_is_identity) {
         // A = I + R. In this case, T->apply(X, Y) computes
         //   Y := inv(D) (X - R Y) = I (X + R X) = A X.
@@ -266,56 +276,73 @@ struct BlockTriDiContainerTester {
         rd = bcmm::reldif(*B, *Y);
         if (rd > 1e2*std::numeric_limits<Magnitude>::epsilon())
           TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I + R) " << details);
+        else 
+          TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I + R) " << details);
       } else {
         // Test that we can solve a problem.
         apply(*B, *X_solve, false);
         rd = bcmm::reldif(*X, *X_solve);
         if (rd > 1e-4)
           TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R) " << details << " rd " << rd);
-        if ( ! T_bare.is_null()) {
-          { // Test norm-based termination.
-            const int nits = apply(*B, *X_solve, true);
+        else
+          TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R) " << details << " rd " << rd);
+        { // Advanced options only the bare object supports.
+          auto T_bare_advanced = T_bare;
+          if (T_bare_advanced.is_null()) {
+            T_bare_advanced = make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi,
+                                        seq_method);
+            T_bare_advanced->initialize();
+            T_bare_advanced->compute(T_bare_advanced->createDefaultComputeParameters());
+          }
+          if ( ! seq_method) { // Test norm-based termination.
+            auto input = T_bare_advanced->createDefaultApplyParameters();
+            input.zeroStartingSolution = zero_starting;
+            input.maxNumSweeps = num_sweeps;
+            input.tolerance = tol;
+            const int nits = T_bare_advanced->applyInverseJacobi(*B, *X, input);
             if (nits < num_sweeps) {
-              const auto n0 = T_bare->getNorms0();
-              const auto nf = T_bare->getNormsFinal();
-              bool ok = true;
-              Magnitude r = 0;
-              for (int i = 0; i < nvec; ++i) {
-                r = nf[i] / n0[i];
-                if (r > tol) { ok = false; break; }
-              }
+              const auto n0 = T_bare_advanced->getNorms0();
+              const auto nf = T_bare_advanced->getNormsFinal();
+
+              const Magnitude r = nf/n0;
+              const bool ok = r <= tol;
               if ( ! ok)
                 TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, norm) " << details << " r " << r);
+              else
+                TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R, norm) " << details << " r " << r);
             }
           }
           { // Test damping factor and ! zeroStartingSolution.
             const Magnitude df = 0.75;
             // Start by mimicking damping factor manually. First sweep.
             const auto X1 = Teuchos::rcp(new Tpetra_MultiVector(A->getRangeMap(), nvec));
-            auto input = T_bare->createDefaultApplyParameters();
+            auto input = T_bare_advanced->createDefaultApplyParameters();
             input.zeroStartingSolution = true;
             input.maxNumSweeps = 1;
-            T_bare->applyInverseJacobi(*B, *X1, input);
+            T_bare_advanced->applyInverseJacobi(*B, *X1, input);
             X1->scale(df);
             // Second sweep. This sweep also tests ! zeroStartingSolution.
             auto X_true = Tpetra::createCopy(*X1);
-            input = T_bare->createDefaultApplyParameters();
-            T_bare->applyInverseJacobi(*B, *X1, input);
+            input = T_bare_advanced->createDefaultApplyParameters();
+            T_bare_advanced->applyInverseJacobi(*B, *X1, input);
             X_true.update(df, *X1, 1 - df);
             // Norm-based calcs have a different code path; need to test both.
-            for (const auto tol : {0.0, 1e-20}) {
+            for (const auto tol_test : {0.0, 1e-20}) {
               if (seq_method) continue;
               // Damping factor computation. 2 sweeps, starting with 0.
-              input = T_bare->createDefaultApplyParameters();
+              input = T_bare_advanced->createDefaultApplyParameters();
               input.zeroStartingSolution = true;
               input.maxNumSweeps = 2;
-              input.tolerance = tol;
+              input.tolerance = tol_test;
               input.dampingFactor = df;
-              T_bare->applyInverseJacobi(*B, *X, input);
+              T_bare_advanced->applyInverseJacobi(*B, *X, input);
               // Check if X agrees with the manually computed X_true.
               rd = bcmm::reldif(*X, X_true);
-              if (rd > 1e1*std::numeric_limits<Magnitude>::epsilon())
-                TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, damping factor) " << details);
+              const auto eps = 1e1*std::numeric_limits<Magnitude>::epsilon();
+              if (rd > eps)
+                TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, damping factor) " << details << " rd = " << rd << " eps = " << eps);
+              else
+                TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R, damping factor) " << details << " rd = " << rd << " eps = " << eps);
             }
           }
         }

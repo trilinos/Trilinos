@@ -119,7 +119,7 @@ class GatherSolution_BlockedTpetra<panzer::Traits::Residual,TRAITS,S,LO,GO,NodeT
 public:
 
    GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
-     : gidIndexer_(indexer) {}
+     : globalIndexer_(indexer) {}
 
    GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p);
@@ -132,7 +132,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Residual,TRAITS,S,LO,GO>(gidIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Residual,TRAITS,S,LO,GO>(globalIndexer_,pl)); }
 
 
 private:
@@ -147,11 +147,19 @@ private:
   typedef Tpetra::Import<LO,GO,NodeT> ImportType;
   typedef Tpetra::Export<LO,GO,NodeT> ExportType;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,GO> > gidIndexer_;
+  //! Maps the local (field,element,basis) triplet to a global ID for
+  // scattering
+  Teuchos::RCP<const BlockedDOFManager<LO,GO> > globalIndexer_;
 
-  std::vector<int> fieldIds_; // field IDs needing mapping
+  //! Field IDs in the local product vector block (not global field id)
+  std::vector<int> fieldIds_;
+
+  //! Vector of global indexers, one for each field to gather, respectively
+  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO>>> fieldGlobalIndexers_;
+
+  //! Returns the index to the Thyra ProductVector sub-block. Size
+  //! of number of fields to gather
+  std::vector<int> productVectorBlockIndex_;
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
@@ -167,6 +175,12 @@ private:
   // when saving the tangent components to the output file
   bool has_tangent_fields_;
   std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
+
+  //! Local indices for unknowns
+  Kokkos::View<LO**,PHX::Device> worksetLIDs_;
+
+  //! Offset into the cell lids for each field
+  std::vector<Kokkos::View<int*,PHX::Device>> fieldOffsets_;
 
   GatherSolution_BlockedTpetra();
 };
@@ -245,7 +259,7 @@ class GatherSolution_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,S,LO,GO,NodeT
 
 public:
   GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
-     : gidIndexer_(indexer) {}
+     : globalIndexer_(indexer) {}
 
   GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                const Teuchos::ParameterList& p);
@@ -258,11 +272,12 @@ public:
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,S,LO,GO>(gidIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,S,LO,GO>(globalIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Jacobian EvalT;
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
+  typedef typename TRAITS::RealType RealType;
 
   typedef BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> ContainerType;
   typedef Tpetra::Vector<S,LO,GO,NodeT> VectorType;
@@ -274,9 +289,13 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,GO> > gidIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,GO> > globalIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
+
+  //! Returns the index into the Thyra ProductVector sub-block. Size
+  //! of number of fields to scatter
+  std::vector<int> productVectorBlockIndex_;
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
@@ -286,6 +305,15 @@ private:
   std::string globalDataKey_; // what global data does this fill?
 
   Teuchos::RCP<const BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> > blockedContainer_;
+
+  //! Local indices for unknowns
+  Kokkos::View<LO**,PHX::Device> worksetLIDs_;
+
+  //! Offset into the cell lids for each field. Size of number of fields to scatter.
+  std::vector<Kokkos::View<int*,PHX::Device>> fieldOffsets_;
+
+  //! The offset values of the blocked DOFs per element. Size of number of blocks in the product vector + 1. The plus one is a sentinel.
+  Kokkos::View<LO*,PHX::Device> blockOffsets_;
 
   GatherSolution_BlockedTpetra();
 };

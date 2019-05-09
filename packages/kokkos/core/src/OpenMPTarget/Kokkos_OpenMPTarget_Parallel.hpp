@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -248,12 +248,13 @@ private:
 
   typedef Kokkos::Impl::if_c< std::is_same<InvalidType,ReducerType>::value, FunctorType, ReducerType> ReducerConditional;
   typedef typename ReducerConditional::type ReducerTypeFwd;
+  typedef typename Kokkos::Impl::if_c< std::is_same<InvalidType,ReducerType>::value, WorkTag, void>::type WorkTagFwd;
 
   // Static Assert WorkTag void if ReducerType not InvalidType
 
-  typedef Kokkos::Impl::FunctorValueTraits< ReducerTypeFwd, WorkTag > ValueTraits ;
-  typedef Kokkos::Impl::FunctorValueInit<   ReducerTypeFwd, WorkTag > ValueInit ;
-  typedef Kokkos::Impl::FunctorValueJoin<   ReducerTypeFwd, WorkTag > ValueJoin ;
+  typedef Kokkos::Impl::FunctorValueTraits< ReducerTypeFwd , WorkTagFwd > ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit<   ReducerTypeFwd , WorkTagFwd > ValueInit ;
+  typedef Kokkos::Impl::FunctorValueJoin<   ReducerTypeFwd , WorkTagFwd > ValueJoin ;
 
   enum {HasJoin = ReduceFunctorHasJoin<FunctorType>::value };
   enum {UseReducer = is_reducer_type<ReducerType>::value };
@@ -350,7 +351,7 @@ private:
             , reference_type update , const bool final )
     {
       #ifdef KOKKOS_OPT_RANGE_AGGRESSIVE_VECTORIZATION
-      #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+      #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
       #pragma ivdep
       #endif
       #endif
@@ -368,7 +369,7 @@ private:
     {
       const TagType t{} ;
       #ifdef KOKKOS_OPT_RANGE_AGGRESSIVE_VECTORIZATION
-      #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+      #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
       #pragma ivdep
       #endif
       #endif
@@ -620,10 +621,11 @@ private:
 
   typedef Kokkos::Impl::if_c< std::is_same<InvalidType,ReducerType>::value, FunctorType, ReducerType> ReducerConditional;
   typedef typename ReducerConditional::type ReducerTypeFwd;
+  typedef typename Kokkos::Impl::if_c< std::is_same<InvalidType,ReducerType>::value, WorkTag, void>::type WorkTagFwd;
 
-  typedef Kokkos::Impl::FunctorValueTraits< ReducerTypeFwd , WorkTag >  ValueTraits ;
-  typedef Kokkos::Impl::FunctorValueInit<   ReducerTypeFwd , WorkTag >  ValueInit ;
-  typedef Kokkos::Impl::FunctorValueJoin<   ReducerTypeFwd , WorkTag >  ValueJoin ;
+  typedef Kokkos::Impl::FunctorValueTraits< ReducerTypeFwd , WorkTagFwd >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit<   ReducerTypeFwd , WorkTagFwd >  ValueInit ;
+  typedef Kokkos::Impl::FunctorValueJoin<   ReducerTypeFwd , WorkTagFwd >  ValueJoin ;
 
   typedef typename ValueTraits::pointer_type    pointer_type ;
   typedef typename ValueTraits::reference_type  reference_type ;
@@ -711,18 +713,18 @@ namespace Impl {
   template<typename iType>
   struct ThreadVectorRangeBoundariesStruct<iType,OpenMPTargetExecTeamMember> {
     typedef iType index_type;
-    const iType start;
-    const iType end;
-    const iType increment;
+    const index_type start;
+    const index_type end;
+    const index_type increment;
 
     inline
-    ThreadVectorRangeBoundariesStruct (const OpenMPTargetExecTeamMember& thread_, const iType& count):
+    ThreadVectorRangeBoundariesStruct (const OpenMPTargetExecTeamMember& thread_, const index_type& count):
       start( thread_.m_vector_lane ),
       end( count ),
       increment( thread_.m_vector_length )
     {}
     inline
-    ThreadVectorRangeBoundariesStruct (const OpenMPTargetExecTeamMember& thread_, const iType& begin_, const iType& end_):
+    ThreadVectorRangeBoundariesStruct (const OpenMPTargetExecTeamMember& thread_, const index_type& begin_, const index_type& end_):
       start( begin_+thread_.m_vector_lane ),
       end( end_ ),
       increment( thread_.m_vector_length )

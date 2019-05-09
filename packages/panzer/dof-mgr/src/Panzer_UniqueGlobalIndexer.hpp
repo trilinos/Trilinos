@@ -56,7 +56,7 @@
 namespace panzer {
 
 // Forward declaration.
-template <typename LocalOrdinalT> class ConnManagerBase;
+class ConnManager;
 
 class UniqueGlobalIndexerBase {
 public:
@@ -299,8 +299,13 @@ public:
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method.
      */
-   const std::vector<LocalOrdinalT> & getElementLIDs(LocalOrdinalT localElmtId) const
-   { return localIDs_[localElmtId]; }
+  const Kokkos::View<const LocalOrdinalT*,Kokkos::LayoutRight,PHX::Device> getElementLIDs(LocalOrdinalT localElmtId) const
+    { return Kokkos::subview(localIDs_k_, localElmtId, Kokkos::ALL() ); }
+
+  /** Return all the element LIDS for a given indexer
+   */
+  const Kokkos::View<const LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> getLIDs() const
+    {return localIDs_k_;}
 
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method. Note
@@ -313,7 +318,7 @@ public:
      functor.global_lids = localIDs_k_;
      functor.local_lids = lids; // we assume this array is sized correctly!
 
-     Kokkos::parallel_for(cellIds.dimension_0(),functor);
+     Kokkos::parallel_for(cellIds.extent(0),functor);
    }
 
    /** \brief How many GIDs are associate with a particular element block
@@ -332,20 +337,20 @@ public:
 
    /** \brief Returns the connection manager currently being used.
      */
-   virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const = 0;
+   virtual Teuchos::RCP<const ConnManager> getConnManager() const = 0;
 
    class CopyCellLIDsFunctor {
    public:
      typedef typename PHX::Device execution_space;
 
      Kokkos::View<const int*,PHX::Device> cellIds;
-     Kokkos::View<const LocalOrdinalT**,PHX::Device> global_lids;
+     Kokkos::View<const LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> global_lids;
      Kokkos::View<LocalOrdinalT**,PHX::Device> local_lids;
 
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<Teuchos::as<int>(local_lids.dimension_1());i++) 
+       for(int i=0;i<static_cast<int>(local_lids.extent(1));i++) 
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
      
@@ -378,16 +383,15 @@ protected:
      * access exteremly fast.
      */
    void setLocalIds(const std::vector<std::vector<LocalOrdinalT> > & localIDs)
-   { localIDs_ = localIDs; 
- 
+   {  
      // determine the maximium second dimension of the local IDs
      std::size_t max = 0;
      for(std::size_t i=0;i<localIDs.size();i++)
        max = localIDs[i].size() > max ? localIDs[i].size() : max;
 
      // allocate for the kokkos size
-     Kokkos::View<LocalOrdinalT**,PHX::Device> localIDs_k 
-         = Kokkos::View<LocalOrdinalT**,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
+     Kokkos::View<LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> localIDs_k 
+       = Kokkos::View<LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
      for(std::size_t i=0;i<localIDs.size();i++) {
        for(std::size_t j=0;j<localIDs[i].size();j++)
          localIDs_k(i,j) = localIDs[i][j];
@@ -404,13 +408,11 @@ protected:
      */
    void shareLocalIDs(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & src)
    {
-     localIDs_   = src.localIDs_;
      localIDs_k_ = src.localIDs_k_;
    }
 
 private:
-   std::vector<std::vector<LocalOrdinalT> > localIDs_; 
-   Kokkos::View<const LocalOrdinalT**,PHX::Device> localIDs_k_;
+  Kokkos::View<const LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> localIDs_k_;
 };
 
 // prevents a warning because a destructor does not exist

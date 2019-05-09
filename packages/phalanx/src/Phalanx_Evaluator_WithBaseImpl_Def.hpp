@@ -79,12 +79,12 @@ namespace PHX {
       // correctly cast the any object to the Kokkos::View, need to
       // pull the const off the scalar type if this MDField has a
       // const scalar type.
-      typedef Kokkos::View<typename FieldType::non_const_data_type,PHX::Device> non_const_view;
+      typedef PHX::View<typename FieldType::non_const_data_type> non_const_view;
       try {
         non_const_view tmp = PHX::any_cast<non_const_view>(f);
         *ptr_ = tmp;
       }
-      catch (std::exception& e) {
+      catch (std::exception& ) {
         std::cout << "\n\nError in MemoryBinder using PHX::any_cast. Tried to cast a field "
                   << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
                   << "\" from a PHX::any object containing a type of \""
@@ -102,7 +102,7 @@ namespace PHX {
     DummyMemoryBinder& operator=(const DummyMemoryBinder& ) = default;
     DummyMemoryBinder(DummyMemoryBinder&& ) = default;
     DummyMemoryBinder& operator=(DummyMemoryBinder&& ) = default;
-    void operator()(const PHX::any& f) { /* DO NOTHING! */ }
+    void operator()(const PHX::any& /* f */) { /* DO NOTHING! */ }
   };
 
 } // namespace PHX
@@ -304,16 +304,16 @@ addDependentField(const PHX::Field<const DataT,Rank>& f)
 
 //**********************************************************************
 // needed for function below
-namespace PHX {
-  template<typename T> 
-  struct remove_all_pointers {
-    typedef T type;
-  };
-  template<typename T>
-  struct remove_all_pointers<T*> {
-    typedef typename remove_all_pointers<T>::type type;
-  };
-}
+// namespace PHX {
+//   template<typename T> 
+//   struct remove_all_pointers {
+//     typedef T type;
+//   };
+//   template<typename T>
+//   struct remove_all_pointers<T*> {
+//     typedef typename remove_all_pointers<T>::type type;
+//   };
+// }
 
 //**********************************************************************
 template<typename Traits>
@@ -341,8 +341,8 @@ setName(const std::string& name)
 //**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-postRegistrationSetup(typename Traits::SetupData d,
-                      PHX::FieldManager<Traits>& vm)
+postRegistrationSetup(typename Traits::SetupData /* d */,
+                      PHX::FieldManager<Traits>& /* vm */)
 {}
 
 //**********************************************************************
@@ -374,7 +374,7 @@ createTask(Kokkos::TaskScheduler<PHX::exec_space>& ,
 	   typename Traits::EvalData )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-			     "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createTask() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the createTask() method in this Evalautor.");
+			     "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for createTask() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the createTask() method in this Evaluator.");
 }
 #endif
 //**********************************************************************
@@ -385,20 +385,20 @@ PHX::EvaluatorWithBaseImpl<Traits>::
 taskSize() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-			     "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for taskSize() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the taskSize() method in this Evalautor.");
+			     "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for taskSize() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the taskSize() method in this Evaluator.");
 }
 #endif
 
 //**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-preEvaluate(typename Traits::PreEvalData d)
+preEvaluate(typename Traits::PreEvalData /* d */)
 { }
 
 //**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-postEvaluate(typename Traits::PostEvalData d)
+postEvaluate(typename Traits::PostEvalData /* d */)
 { }
 
 //**********************************************************************
@@ -415,6 +415,37 @@ bindField(const PHX::FieldTag& ft, const PHX::any& f)
   const auto& range = field_binders_.equal_range(ft.identifier());
   for (auto it = range.first; it != range.second; ++it)
     (it->second)(f);
+}
+
+//**********************************************************************
+template<typename Traits>
+PHX::DeviceEvaluator<Traits>* PHX::EvaluatorWithBaseImpl<Traits>::
+createDeviceEvaluator() const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                             "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for createDeviceEvaluator() that is required when using Device DAG support.  Please implement the createDeviceEvaluator() method in this Evaluator.");
+  // Suppress cuda warning for unreachable code
+#ifndef KOKKOS_ENABLE_CUDA
+  return nullptr;
+#endif
+}
+
+//**********************************************************************
+template<typename Traits>
+void
+PHX::EvaluatorWithBaseImpl<Traits>::rebuildDeviceEvaluator(PHX::DeviceEvaluator<Traits>* /* e */) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                             "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for rebuildDeviceEvaluator() that is required when using Device DAG support.  Please implement the rebuildDeviceEvaluator() method in this Evaluator.");
+}
+
+//**********************************************************************
+template<typename Traits>
+void
+PHX::EvaluatorWithBaseImpl<Traits>::deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* /* e */) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                             "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for deleteDeviceEvaluator() that is required when using Device DAG support.  Please implement the deleteDeviceEvaluator() method in this Evaluator.");
 }
 
 //**********************************************************************

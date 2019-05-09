@@ -49,10 +49,10 @@
 #include "ROL_ScaledTpetraMultiVector.hpp"
 #include "ROL_StdVector.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 typedef double RealT;
 typedef double ElementT;
@@ -63,18 +63,16 @@ typedef Tpetra::Map<>::node_type Node;
 typedef Tpetra::Map<LO, GO, Node> Map;
 typedef Tpetra::MultiVector<RealT, LO, GO, Node> MV;
 typedef Tpetra::Vector<RealT, LO, GO, Node> V;
-typedef Teuchos::RCP<MV> MVP;
-typedef Teuchos::RCP<V> VP;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
+typedef ROL::Ptr<MV> MVP;
+typedef ROL::Ptr<V> VP;
 
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int iprint = argc - 1;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   std::ostream& outStream = (iprint > 0) ? std::cout : bhs;
 
   int errorFlag = 0;
@@ -86,25 +84,25 @@ int main(int argc, char *argv[]) {
 
     int dim = 10; 
   
-    Teuchos::RCP<Map> map = Teuchos::rcp( new Map(dim,0,comm) );
+    ROL::Ptr<Map> map = ROL::makePtr<Map>(dim,0,comm);
 
     // Create Tpetra::MultiVectors (single vectors) 
-    MVP x_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    MVP y_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    VP W_rcp = Teuchos::rcp( new V(map,true) );
+    MVP x_ptr = ROL::makePtr<MV>(map,1,true); 
+    MVP y_ptr = ROL::makePtr<MV>(map,1,true); 
+    VP W_ptr = ROL::makePtr<V>(map,true);
 
     // Random elements
-    //x_rcp->randomize();
-    //y_rcp->randomize();
-    x_rcp->putScalar(1.0);
-    y_rcp->putScalar(1.0);
+    //x_ptr->randomize();
+    //y_ptr->randomize();
+    x_ptr->putScalar(1.0);
+    y_ptr->putScalar(1.0);
 
     // Set all values to 2
-    W_rcp->putScalar(2.0);
+    W_ptr->putScalar(2.0);
 
     // Create ROL vectors
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x(x_rcp,W_rcp);
-    ROL::DualScaledTpetraMultiVector<RealT,LO,GO,Node>   y(y_rcp,W_rcp);
+    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x(x_ptr,W_ptr);
+    ROL::DualScaledTpetraMultiVector<RealT,LO,GO,Node>   y(y_ptr,W_ptr);
 
 //    const ROL::Vector<RealT> &g = x.dual();
 //    const ROL::Vector<RealT> &h = x.dual();
@@ -145,7 +143,7 @@ int main(int argc, char *argv[]) {
     }
 
     // clone z from x, deep copy x into z, norm of z
-    Teuchos::RCP<ROL::Vector<RealT> > z = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > z = x.clone();
     z->set(x);
     RealT znorm = z->norm();
     outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
@@ -153,7 +151,7 @@ int main(int argc, char *argv[]) {
       outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }
-    Teuchos::RCP<ROL::Vector<RealT> > w = y.clone();
+    ROL::Ptr<ROL::Vector<RealT> > w = y.clone();
     w = y.clone();
     w->set(y);
     RealT wnorm = w->norm();
@@ -165,18 +163,18 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     // Create Tpetra::MultiVectors (single vectors) 
-    MVP x1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    MVP y1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    MVP z1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x1(x1_rcp,W_rcp);
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> y1(y1_rcp,W_rcp);
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> z1(z1_rcp,W_rcp);
-    x1_rcp->randomize();
-    y1_rcp->randomize();
-    z1_rcp->randomize();
+    MVP x1_ptr = ROL::makePtr<MV>(map,1,true); 
+    MVP y1_ptr = ROL::makePtr<MV>(map,1,true); 
+    MVP z1_ptr = ROL::makePtr<MV>(map,1,true); 
+    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x1(x1_ptr,W_ptr);
+    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> y1(y1_ptr,W_ptr);
+    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> z1(z1_ptr,W_ptr);
+    x1_ptr->randomize();
+    y1_ptr->randomize();
+    z1_ptr->randomize();
 
     std::vector<RealT> consistency = x1.checkVector(y1, z1, true, outStream);
-    ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
+    ROL::StdVector<RealT> checkvec(ROL::makePtrFromRef(consistency));
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }

@@ -67,7 +67,7 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
@@ -219,8 +219,8 @@ int main(int argc,char * argv[])
  
    out << "BUILD CONN MANAGER" << std::endl;
    // build the connection manager 
-   const Teuchos::RCP<panzer::ConnManager<int,int> > 
-     conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+   const Teuchos::RCP<panzer::ConnManager> conn_manager =
+     Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
@@ -228,8 +228,8 @@ int main(int argc,char * argv[])
 
    // construct some linear algebra object, build object to pass to evaluators
    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-   Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+   Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
+         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
    // setup field manager build

@@ -63,11 +63,24 @@ namespace panzer {
     class AssemblyEngine : public panzer::Base {
 
   public:    
-    
+    struct EvaluationFlags {
+      EvaluationFlags(int flags) : value_(flags) {
+        TEUCHOS_ASSERT(flags>0 && flags <= EvaluationFlags::All);
+      }
+      static constexpr int Initialize=1;
+      static constexpr int VolumetricFill=2;
+      static constexpr int BoundaryFill=4;
+      static constexpr int Scatter=8;
+      static constexpr int All=15;
+      int getValue() const {return value_;}
+    protected:
+      int value_;
+    };
+
     AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                    const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof);
     
-    void evaluate(const panzer::AssemblyEngineInArgs& input_arguments);
+    void evaluate(const panzer::AssemblyEngineInArgs& input_arguments, const EvaluationFlags flags=EvaluationFlags(EvaluationFlags::All));
 
     void evaluateVolume(const panzer::AssemblyEngineInArgs& input_arguments);
 
