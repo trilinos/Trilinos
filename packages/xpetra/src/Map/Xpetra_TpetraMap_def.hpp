@@ -495,7 +495,7 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED 
     TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const 
     { 
-      return Teuchos::null; 
+        return Teuchos::null; 
     }
 #endif
     //@}
