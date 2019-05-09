@@ -48,7 +48,7 @@
 #include "ROL_PinTVector.hpp"
 #include "ROL_PinTVectorCommunication_Tpetra.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 typedef double RealT;
 typedef double ElementT;
@@ -66,9 +66,7 @@ int main(int argc, char* argv[])
   typedef ROL::Ptr<ROL::Vector<RealT>> PtrVector;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  ROL::Ptr<const Teuchos::Comm<int> > comm = platform.getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
