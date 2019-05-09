@@ -26,7 +26,7 @@ namespace panzer {
   void panzer::L2Projection<LO,GO>::setup(const panzer::BasisDescriptor& targetBasis,
                                           const panzer::IntegrationDescriptor& integrationDescriptor,
                                           const Teuchos::RCP<const Teuchos::MpiComm<int>>& comm,
-                                          const Teuchos::RCP<const panzer::ConnManager<LO,GO>>& connManager,
+                                          const Teuchos::RCP<const panzer::ConnManager>& connManager,
                                           const std::vector<std::string>& elementBlockNames,
                                           const Teuchos::RCP<panzer::WorksetContainer> worksetContainer)
   {
@@ -40,7 +40,7 @@ namespace panzer {
 
     // Build target DOF Manager
     targetGlobalIndexer_ =
-      Teuchos::rcp(new panzer::DOFManager<LO,GO>(Teuchos::rcp_const_cast<panzer::ConnManager<LO,GO>>(connManager),*(comm->getRawMpiComm())));
+      Teuchos::rcp(new panzer::DOFManager<LO,GO>(Teuchos::rcp_const_cast<panzer::ConnManager>(connManager),*(comm->getRawMpiComm())));
 
     // For hybrid mesh, blocks could have different topology
     for (const auto& eBlock : elementBlockNames_) {

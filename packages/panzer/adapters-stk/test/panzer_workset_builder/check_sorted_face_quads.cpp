@@ -86,9 +86,9 @@ namespace panzer {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set<int>   ("X Blocks",     1);
     pl->set<int>   ("X Elements", 128);
-    pl->set<double>("X0",         0.0);   
+    pl->set<double>("X0",         0.0);
     pl->set<double>("Xf",         2.5);
-    pl->set<int>   ("X Procs",      1);  
+    pl->set<int>   ("X Procs",      1);
     pl->set<int>   ("Y Blocks",     1);
     pl->set<int>   ("Y Elements",   2);
     pl->set<double>("Y0",           0);
@@ -106,10 +106,10 @@ namespace panzer {
 
     // build DOF Manager (with a single HDiv basis)
     /////////////////////////////////////////////////////////////
- 
-    // build the connection manager 
-    const RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
-      conn_manager = rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
+
+    // build the connection manager
+    const RCP<panzer::ConnManager>
+      conn_manager = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
         = rcp(new panzer::DOFManager<int,panzer::Ordinal64>(conn_manager,MPI_COMM_WORLD));
@@ -127,14 +127,14 @@ namespace panzer {
 
     // build WorksetContainer
     //////////////////////////////////////////////////////////////
-    
+
     panzer::IntegrationDescriptor sid(3, panzer::IntegrationDescriptor::SURFACE);
     panzer::BasisDescriptor bd(2, "HGrad");
     std::map<std::string, panzer::WorksetNeeds> wkstRequirements;
     wkstRequirements[element_block].addIntegrator(sid);
     wkstRequirements[element_block].addBasis(bd);
 
-    RCP<panzer_stk::WorksetFactory> wkstFactory 
+    RCP<panzer_stk::WorksetFactory> wkstFactory
        = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = rcp(new panzer::WorksetContainer(wkstFactory,wkstRequirements));
@@ -146,7 +146,7 @@ namespace panzer {
     auto worksets = wkstContainer->getWorksets(workset_descriptor);
 
     TEST_ASSERT(worksets->size()==1);
-    
+
     auto & workset = (*worksets)[0];
     auto rot_matrices = workset.getIntegrationValues(sid).surface_rotation_matrices;
     auto normals = workset.getIntegrationValues(sid).surface_normals;
@@ -154,7 +154,7 @@ namespace panzer {
 
     const panzer::SubcellConnectivity & face_connectivity = workset.getFaceConnectivity();
 
- 
+
     const int num_points = normals.extent(1);
     const int num_faces = face_connectivity.numSubcells();
     const int num_faces_per_cell = face_connectivity.numSubcellsOnCell(0);
@@ -206,7 +206,7 @@ namespace panzer {
       TEST_ASSERT(std::fabs(ip_coordinates(cell_l,point_l,1) - ip_coordinates(cell_r,point_r,1)) < 1.0e-14);
 
       out << "LEFT rotation" << std::endl;
-      out << std::setprecision(16) 
+      out << std::setprecision(16)
           << "  " << rot_matrices(cell_l,point_l,0,0) << ", " << rot_matrices(cell_l,point_l,0,1) << "  " << rot_matrices(cell_l,point_l,0,2) << std::endl
           << "  " << rot_matrices(cell_l,point_l,1,0) << ", " << rot_matrices(cell_l,point_l,1,1) << "  " << rot_matrices(cell_l,point_l,1,2) << std::endl
           << "  " << rot_matrices(cell_l,point_l,2,0) << ", " << rot_matrices(cell_l,point_l,2,1) << "  " << rot_matrices(cell_l,point_l,2,2) << std::endl;
@@ -237,10 +237,10 @@ namespace panzer {
       TEST_ASSERT(std::fabs(ip_coordinates(cell_l,point_l,1) - ip_coordinates(cell_r,point_r,1)) < 1.0e-14);
 
       out << "LEFT rotation" << std::endl;
-      out << std::setprecision(16) 
+      out << std::setprecision(16)
           << "  " << rot_matrices(cell_l,point_l,0,0) << ", " << rot_matrices(cell_l,point_l,0,1) << "  " << rot_matrices(cell_l,point_l,0,2) << std::endl
           << "  " << rot_matrices(cell_l,point_l,1,0) << ", " << rot_matrices(cell_l,point_l,1,1) << "  " << rot_matrices(cell_l,point_l,1,2) << std::endl
           << "  " << rot_matrices(cell_l,point_l,2,0) << ", " << rot_matrices(cell_l,point_l,2,1) << "  " << rot_matrices(cell_l,point_l,2,2) << std::endl;
     }
-  } 
+  }
 } // end namespace panzer

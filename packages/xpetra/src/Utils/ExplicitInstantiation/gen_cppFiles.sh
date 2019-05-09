@@ -5,7 +5,7 @@ IFS=$'\n'
 
 classListDir=../ClassList/
 
-for i in LO-GO-NO SC-LO-GO-NO
+for i in LO-GO-NO SC-LO-GO-NO MULTIVECTOR
   do
 
   classList=$classListDir/$i.classList

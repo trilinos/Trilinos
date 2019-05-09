@@ -121,7 +121,7 @@ template <typename LO,typename GO>
 Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,std::pair<int,GO> > > 
 BlockedDOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
+                            const Teuchos::RCP<ConnManager> & connMngr,
                             const std::string & fieldOrder) const
 {
    TEUCHOS_ASSERT(requiresBlocking(fieldOrder));

@@ -49,8 +49,7 @@
 namespace panzer {
 namespace unit_test {
 
-template <typename GO>
-ConnManager<GO>::ConnManager(int rank,int procCount)
+ConnManager::ConnManager(int rank,int procCount)
 {
    TEUCHOS_ASSERT(procCount==2);
    TEUCHOS_ASSERT(rank==0 || rank==1);
@@ -75,13 +74,11 @@ ConnManager<GO>::ConnManager(int rank,int procCount)
    }
 }
 
-template <typename GO>
-void GLOBAL_CONN(std::vector<std::vector<GO> > & conn,
+  void GLOBAL_CONN(std::vector<std::vector<panzer::Ordinal64> > & conn,
                         int le,int a,int b,int c,int d)
 { conn[le].push_back(a); conn[le].push_back(b); conn[le].push_back(c); conn[le].push_back(d); }
 
-template <typename GO>
-void ConnManager<GO>::buildConnectivity(const FieldPattern & fp) 
+void ConnManager::buildConnectivity(const FieldPattern & fp) 
 {
    if(callback_!=Teuchos::null) 
       callback_->buildConnectivity(fp);
@@ -113,18 +110,15 @@ void ConnManager<GO>::buildConnectivity(const FieldPattern & fp)
    TEUCHOS_ASSERT(false);
 }
 
-template <typename GO>
-const typename ConnManager<GO>::GlobalOrdinal * ConnManager<GO>::getConnectivity(typename ConnManager<GO>::LocalOrdinal localElmtId) const
+const ConnManager::GlobalOrdinal * ConnManager::getConnectivity(ConnManager::LocalOrdinal localElmtId) const
 {
    return &connectivity_[localElmtId][0];
 }
 
-template <typename GO>
-typename ConnManager<GO>::LocalOrdinal ConnManager<GO>::getConnectivitySize(typename ConnManager<GO>::LocalOrdinal /* localElmtId */) const
+ConnManager::LocalOrdinal ConnManager::getConnectivitySize(ConnManager::LocalOrdinal /* localElmtId */) const
 { return 4; }
 
-template <typename GO>
-std::string ConnManager<GO>::getBlockId(typename ConnManager<GO>::LocalOrdinal localElmtId) const
+std::string ConnManager::getBlockId(ConnManager::LocalOrdinal localElmtId) const
 {
    if(procRank_==0) {
       switch(localElmtId) {
@@ -149,25 +143,23 @@ std::string ConnManager<GO>::getBlockId(typename ConnManager<GO>::LocalOrdinal l
    TEUCHOS_ASSERT(false);
 }
 
-template <typename GO>
-std::size_t ConnManager<GO>::numElementBlocks() const { return 3; }
+std::size_t ConnManager::numElementBlocks() const { return 3; }
 
-template <typename GO>
-void ConnManager<GO>::getElementBlockIds(std::vector<std::string> & elementBlockIds) const
+void ConnManager::getElementBlockIds(std::vector<std::string> & elementBlockIds) const
 {
    elementBlockIds.push_back("block_0");
    elementBlockIds.push_back("block_1");
    elementBlockIds.push_back("block_2");
 }
-template <typename GO>
-void ConnManager<GO>::getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const
+
+void ConnManager::getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const
 {
   const CellTopologyData & myCellData = *shards::getCellTopologyData<shards::Quadrilateral<4> >();
   struct shards::CellTopology my_topo(&myCellData);
   elementBlockTopologies = std::vector<shards::CellTopology>(3,my_topo);
 }
-template <typename GO>
-const std::vector<typename ConnManager<GO>::LocalOrdinal> & ConnManager<GO>::getElementBlock(const std::string & blockID) const
+
+const std::vector<ConnManager::LocalOrdinal> & ConnManager::getElementBlock(const std::string & blockID) const
 {
    std::map<std::string,std::vector<int> >::const_iterator itr = elements_.find(blockID);
    if(itr!=elements_.end())
@@ -175,12 +167,6 @@ const std::vector<typename ConnManager<GO>::LocalOrdinal> & ConnManager<GO>::get
 
    TEUCHOS_ASSERT(false);
 }
-
-template class ConnManager<int>;
-
-#ifndef PANZER_ORDINAL64_IS_INT
-template class ConnManager<Ordinal64>;
-#endif
 
 } // end unit test
 } // end panzer

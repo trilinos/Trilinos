@@ -95,7 +95,7 @@
 // By default, do not try to run Stratimikos, since that only works for Scalar=double.
 template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 struct MainWrappers {
-static int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]);
+  static int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]);
 };
 
 
@@ -138,7 +138,8 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string xml               = "";                clp.setOption("xml",                   &xml,               "xml file with solver parameters");
     double      tol               = 1e-10;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
     
-    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="";
+    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="";
+
     if (!TYPE_EQUAL(SC, std::complex<double>)) {
       S_file = "S.mat";
       SM_file = "";
@@ -146,7 +147,6 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       M0_file = "M0.mat";
       M0inv_file = "";
       D0_file = "D0.mat";
-      coords_file = "coords.mat";
     } else {
       S_file = "S_complex.mat";
       SM_file = "";
@@ -154,8 +154,9 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       M0_file = "M0_complex.mat";
       M0inv_file = "";
       D0_file = "D0_complex.mat";
-      coords_file = "coords.mat";
     }
+    coords_file = "coords.mat";
+
     clp.setOption("S", &S_file);
     clp.setOption("SM", &SM_file);
     clp.setOption("M1", &M1_file);
@@ -163,6 +164,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     clp.setOption("M0inv", &M0inv_file);
     clp.setOption("D0", &D0_file);
     clp.setOption("coords", &coords_file);
+    clp.setOption("nullspace", &nullspace_file);
     clp.setOption("rhs", &rhs_file);
 
     clp.recogniseAllOptions(true);
@@ -223,7 +225,11 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       M0inv_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0inv_file, node_map);
     }
     // coordinates
-    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::ReadMultiVector(coords_file, node_map);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LO, GO, NO> > coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LO, GO, NO>::ReadMultiVector(coords_file, node_map);
+
+    RCP<MultiVector> nullspace = Teuchos::null;
+    if (nullspace_file != "")
+      nullspace = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(nullspace_file, edge_map);
 
     // set parameters
     std::string defaultXMLfile;
@@ -260,14 +266,14 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       if (usePrec)
         preconditioner
           = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
-                                                    M1_Matrix,Teuchos::null,coords,params) );
+                                                    M1_Matrix,nullspace,coords,params) );
 
 
 #ifdef HAVE_MUELU_TPETRA
       {
         // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
-        RCP<Operator> precOp = Teuchos::rcp_dynamic_cast<Operator>(precOp);
-        MueLu::TpetraOperator<SC,LO,GO,NO> OpT(precOp);   
+        RCP<Operator> precOp = Teuchos::rcp_dynamic_cast<Operator>(preconditioner);
+        MueLu::TpetraOperator<SC,LO,GO,NO> OpT(precOp);
       }
 #endif
 
@@ -322,7 +328,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     }
     comm->barrier();
     globalTimeMonitor = Teuchos::null;
-    
+
     if (printTimings) {
       RCP<Teuchos::ParameterList> reportParams = rcp(new Teuchos::ParameterList);
       if (timingsFormat == "yaml") {
@@ -390,7 +396,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string xml               = "";                clp.setOption("xml",                   &xml,               "xml file with solver parameters");
     double      tol               = 1e-10;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
 
-    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="";
+    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="";
     if (!TYPE_EQUAL(SC, std::complex<double>)) {
       S_file = "S.mat";
       SM_file = "";
@@ -398,7 +404,6 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       M0_file = "M0.mat";
       M0inv_file = "";
       D0_file = "D0.mat";
-      coords_file = "coords.mat";
     } else {
       S_file = "S_complex.mat";
       SM_file = "";
@@ -406,8 +411,9 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       M0_file = "M0_complex.mat";
       M0inv_file = "";
       D0_file = "D0_complex.mat";
-      coords_file = "coords.mat";
     }
+    coords_file = "coords.mat";
+
     clp.setOption("S", &S_file);
     clp.setOption("SM", &SM_file);
     clp.setOption("M1", &M1_file);
@@ -416,6 +422,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     clp.setOption("D0", &D0_file);
     clp.setOption("coords", &coords_file);
     clp.setOption("rhs", &rhs_file);
+    clp.setOption("nullspace", &nullspace_file);
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {
@@ -477,6 +484,10 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     // coordinates
     RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::ReadMultiVector(coords_file, node_map);
 
+    RCP<MultiVector> nullspace = Teuchos::null;
+    if (nullspace_file != "")
+      nullspace = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(nullspace_file, edge_map);
+
     // set parameters
     std::string defaultXMLfile;
     if (!TYPE_EQUAL(SC, std::complex<double>))
@@ -487,7 +498,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     Teuchos::updateParametersFromXmlFileAndBroadcast(defaultXMLfile,Teuchos::Ptr<Teuchos::ParameterList>(&params),*comm);
     if (xml != "")
       Teuchos::updateParametersFromXmlFileAndBroadcast(xml,Teuchos::Ptr<Teuchos::ParameterList>(&params),*comm);
-    
+
     // setup LHS, RHS
     // setup LHS, RHS
     RCP<MultiVector> B;
@@ -511,7 +522,17 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner;
       if (usePrec)
         preconditioner = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
-                                                                 M1_Matrix,Teuchos::null,coords,params) );
+                                                                 M1_Matrix,nullspace,coords,params) );
+
+
+#ifdef HAVE_MUELU_TPETRA
+      {
+        // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
+        RCP<Operator> precOp = Teuchos::rcp_dynamic_cast<Operator>(preconditioner);
+        MueLu::TpetraOperator<SC,LO,GO,NO> OpT(precOp);
+      }
+#endif
+
 
       // Belos linear problem
 #ifdef HAVE_MUELU_BELOS

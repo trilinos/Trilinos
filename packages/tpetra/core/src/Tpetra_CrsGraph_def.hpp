@@ -1024,13 +1024,16 @@ namespace Tpetra {
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::RCP<Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const
   {
     return rowMap_.is_null () ? Teuchos::null : rowMap_->getNode ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::map_type>
@@ -1102,7 +1105,7 @@ namespace Tpetra {
 
     const char tfecfFuncName[] = "isStorageOptimized: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (isOpt && getProfileType () == DynamicProfile, std::logic_error,
+      (isOpt && getProfileType () != StaticProfile, std::logic_error,
       "The matrix claims to have optimized storage, but getProfileType() "
       "returns DynamicProfile.  This should never happen.  Please report this "
       "bug to the Tpetra developers.");
@@ -2535,7 +2538,7 @@ namespace Tpetra {
         (this->indicesAreAllocated_ &&
          (this->storageStatus_ == ::Tpetra::Details::STORAGE_1D_PACKED ||
           this->storageStatus_ == ::Tpetra::Details::STORAGE_1D_UNPACKED) &&
-         this->pftype_ == DynamicProfile, std::logic_error,
+         this->pftype_ != StaticProfile, std::logic_error,
          "Graph claims to have allocated indices and 1-D storage "
          "(either packed or unpacked), but also claims to be DynamicProfile.");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -2642,7 +2645,7 @@ namespace Tpetra {
          "k_rowPtrs_ must have N+1 rows, and "
          "k_rowPtrs_(N) must equal k_lclInds1D_.extent(0)." << suffix);
 
-      if (this->pftype_ == DynamicProfile) {
+      if (this->pftype_ != StaticProfile) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (this->indicesAreAllocated () &&
            this->getNodeNumRows () > 0 &&
@@ -4159,7 +4162,7 @@ namespace Tpetra {
     if (! params.is_null () && ! params->get ("Optimize Storage", true)) {
       requestOptimizedStorage = false;
     }
-    if (this->getProfileType () == DynamicProfile) {
+    if (this->getProfileType () != StaticProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
       //
       // DynamicProfile means that the graph's column indices are
@@ -6042,7 +6045,6 @@ namespace Tpetra {
         Kokkos::DualView<const int*, buffer_device_type>;
       export_pids_type exportPIDs; // not filling it; needed for syntax
       using LO = local_ordinal_type;
-      using GO = global_ordinal_type;
       using NT = node_type;
       using Tpetra::Details::packCrsGraphNew;
       packCrsGraphNew<LO,GO,NT> (*srcCrsGraphPtr, exportLIDs, exportPIDs,
