@@ -71,7 +71,7 @@ private:
   const Real orthTol_;
   const int  orthIt_;
 
-  const int truncRank_;
+  const bool truncate_;
 
   ROL::LAPACK<int,Real> lapack_;
 
@@ -225,8 +225,8 @@ private:
         }
       }
       // Compute best rank r approximation
-      if (truncRank_ > 0 && truncRank_ < k_) {
-        infoLRA = lowRankApprox(C_,truncRank_);
+      if (truncate_) {
+        infoLRA = lowRankApprox(C_,rank_);
       }
       // Set flag
       flagC_ = true;
@@ -284,9 +284,9 @@ public:
 
   Sketch(const Vector<Real> &x, const int ncol, const int rank,
          const Real orthTol = 1e-8, const int orthIt = 2,
-         const int truncRank = 0)
+         const bool truncate = false)
     : ncol_(ncol), rank_(rank), orthTol_(orthTol), orthIt_(orthIt),
-      truncRank_(truncRank), flagP_(false), flagQ_(false), flagC_(false) {
+      truncate_(truncate), flagP_(false), flagQ_(false), flagC_(false) {
     nrand_ = makePtr<Elementwise::NormalRandom<Real>>();
     // Compute reduced dimensions
     k_ = std::min(4*rank_+1,ncol_);
@@ -365,7 +365,7 @@ public:
     }
     else {
       // Reconstruct has already been called!
-      return 2;
+      return 1;
     }
     return 0;
   }
@@ -374,15 +374,25 @@ public:
     // Check to see if col is less than ncol_
     if ( col >= ncol_ ) {
       // Input column index exceeds total number of columns!
-      return 1;
+      return 2;
     }
     const Real zero(0);
+    int flag(0);
     // Compute QR factorization of X store in X
-    computeP();
+    flag = computeP();
+    if (flag > 0 ) {
+      return 3;
+    }
     // Compute QR factorization of Y store in Y
-    computeQ();
+    flag = computeQ();
+    if (flag > 0 ) {
+      return 4;
+    }
     // Compute (Phi Q)\Z/(Psi P)* store in C
-    computeC();
+    flag = computeC();
+    if (flag > 0 ) {
+      return 5;
+    }
     // Recover sketch
     a.zero();
     Real coeff(0);

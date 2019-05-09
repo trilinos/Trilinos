@@ -135,10 +135,19 @@ private:
       std::stringstream out;
       out << ">>> ROL::ReducedDynamicObjective::" << func << " (Line " << line << "): ";
       if (err == 1) {
-        out << "Input column index exceeds total number of columns!";
+        out << "Reconstruction has already been called!";
       }
       else if (err == 2) {
-        out << "Reconstruction has already been called!";
+        out << "Input column index exceeds total number of columns!";
+      }
+      else if (err == 3) {
+        out << "Reconstruction failed to compute domain-space basis!";
+      }
+      else if (err == 4) {
+        out << "Reconstruction failed to compute range-space basis!";
+      }
+      else if (err == 5) {
+        out << "Reconstruction failed to generate core matrix!";
       }
       throw Exception::NotImplemented(out.str());
     }
@@ -179,17 +188,18 @@ public:
     if (useSketch_) { // Only maintain a sketch of the state time history
       Real orthTol = pl.get("Orthogonality Tolerance", 1e2*ROL_EPSILON<Real>());
       int  orthIt  = pl.get("Reorthogonalization Iterations", 5);
+      bool trunc   = pl.get("Truncate Approximation", false);
       if (syncHessRank_) {
         rankAdjoint_   = rankState_;
         rankStateSens_ = rankState_;
       }
-      stateSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankState_,orthTol,orthIt);
+      stateSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankState_,orthTol,orthIt,trunc);
       uhist_.push_back(u0_->clone());
       uhist_.push_back(u0_->clone());
       lhist_.push_back(cvec->dual().clone());
-      adjointSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankAdjoint_,orthTol,orthIt);
+      adjointSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankAdjoint_,orthTol,orthIt,trunc);
       if (useHessian_) {
-        stateSensSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankStateSens_,orthTol,orthIt);
+        stateSensSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankStateSens_,orthTol,orthIt,trunc);
         whist_.push_back(u0_->clone());
         whist_.push_back(u0_->clone());
         phist_.push_back(cvec->dual().clone());
@@ -582,7 +592,7 @@ private:
   Real updateSketch(const Vector<Real> &x, const Real tol) {
     int eflag(0);
     const PartitionedVector<Real> &xp = partition(x);
-    Real err(0), cdot(0), dt(0);
+    Real err(0), cnorm(0); // cdot(0), dt(0);
     bool flag = true;
     while (flag) {
       err = static_cast<Real>(0);
@@ -592,16 +602,20 @@ private:
         throwError(eflag,"reconstruct","updateSketch",592);
         con_->update(*uhist_[0], *uhist_[1], *xp.get(k), timeStamp_[k]);
         con_->value(*cprimal_, *uhist_[0], *uhist_[1], *xp.get(k), timeStamp_[k]);
-        cdot  = cprimal_->dot(*cprimal_);
-        //err   = (cnorm > err ? cnorm : err); // Use Linf norm.  Could change to use, e.g., L2.
-        dt    = timeStamp_[k].t[1]-timeStamp_[k].t[0];
-        err  += dt * cdot;
-        if (std::sqrt(err) > tol) {
+        /**** Linf norm for residual error ****/
+        cnorm   = cprimal_->norm();
+        err   = (cnorm > err ? cnorm : err);
+        if (err > tol) {
+        /**** L2 norm for residual error ****/
+        //cdot  = cprimal_->dot(*cprimal_);
+        //dt    = timeStamp_[k].t[1]-timeStamp_[k].t[0];
+        //err  += cdot / dt;
+        //if (std::sqrt(err) > tol) {
           break;
         }
         uhist_[0]->set(*uhist_[1]);
       }
-      err = std::sqrt(err);
+      //err = std::sqrt(err);
       if (stream_ != nullPtr) {
         *stream_ << "    *** State Rank:                      " << rankState_ << std::endl;
         *stream_ << "    *** Required Tolerance:              " << tol << std::endl;
