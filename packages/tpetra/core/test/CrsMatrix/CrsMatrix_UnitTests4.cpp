@@ -140,7 +140,6 @@ namespace {
   using Tpetra::Import;
   using Tpetra::global_size_t;
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;

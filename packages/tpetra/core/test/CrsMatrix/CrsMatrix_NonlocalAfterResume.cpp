@@ -68,7 +68,6 @@ namespace {
   using Tpetra::createNonContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createVector;
-  using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;

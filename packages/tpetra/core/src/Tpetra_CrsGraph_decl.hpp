@@ -2579,7 +2579,11 @@ namespace Tpetra {
   {
     using Teuchos::rcp;
     typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
-    return rcp (new graph_type (map, maxNumEntriesPerRow, DynamicProfile, params));
+    return rcp (new graph_type (map, maxNumEntriesPerRow, 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                DynamicProfile, 
+#endif
+                                params));
   }
 
   /// \brief Nonmember CrsGraph constructor that fuses Import and fillComplete().

@@ -147,7 +147,6 @@ namespace {
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createVector;
-  using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
