@@ -62,71 +62,154 @@
 namespace Tpetra {
   namespace Details {
 
-    // We implement unary transform as a for_each, where
-    // InnerLoopBodyType (a function f(X_ij,i,j)) just does X_ij =
-    // g(Y(i,j)), for the user's unary function g and input View Y.
-    // That is, Tpetra::transform will pass
-    // MultiVectorUnaryTransformLoopBody(Y,g) as the "user function"
-    // to Tpetra::for_each, after using withLocalAccess to get Y.
+    // Kokkos::parallel_for functor that implements unary
+    // Tpetra::transform for MultiVector objects.
     //
-    // The input View Y and output View X may be the same object
-    // (locally).  Tpetra::transform must check for this case before
-    // invoking Tpetra::for_each, so that it doesn't incorrectly sync.
-    //
-    // This suggests a general approach, based on expression
-    // templates, for chaining arithmetic expressions involving
-    // Tpetra::MultiVector or Tpetra::Vector.  We won't take the
-    // general approach for now, but see
-    // MultiVectorBinaryTransformLoopBody.
-    //
-    // OutputScalarRefType is normally impl_scalar_type&, but
-    // could be a proxy reference type -- anything that
-    // Kokkos::View<T>::operator() returns for nonconst T.
-
+    // The input and output Views may be the same object (locally).
     template<class InputViewType,
-             class OutputScalarRefType,
-             class InnerLoopBodyType,
+             class OutputViewType,
+             class UnaryFunctionType,
              class LocalIndexType>
-    struct MultiVectorUnaryTransformLoopBody {
+    class MultiVectorUnaryTransformLoopBody {
+    private:
       static_assert (static_cast<int> (InputViewType::Rank) == 2,
                      "InputViewType must be a rank-2 Kokkos::View.");
+      static_assert (static_cast<int> (OutputViewType::Rank) == 2,
+                     "OutputViewType must be a rank-2 Kokkos::View.");
 
-      MultiVectorUnaryTransformLoopBody (const InputViewType& Y,
-                                         InnerLoopBodyType g) :
-        Y_ (Y), g_ (g)
+    public:
+      MultiVectorUnaryTransformLoopBody (const InputViewType& in,
+                                         const OutputViewType& out,
+                                         UnaryFunctionType f) :
+        in_ (in), out_ (out), f_ (f)
       {}
+
       KOKKOS_INLINE_FUNCTION void
-      operator () (OutputScalarRefType X_ij,
-                   const LocalIndexType i,
-                   const LocalIndexType j) const
-      {
-        X_ij = g_ (Y_(i,j));
-      };
-      InputViewType Y_;
-      InnerLoopBodyType g_;
+      operator () (const LocalIndexType i) const {
+        using LO = LocalIndexType;
+        const LO numCols = static_cast<LO> (in_.extent (1));
+        for (LO j = 0; j < numCols; ++j) {
+          out_(i,j) = f_ (in_(i,j));
+        }
+      }
+
+    private:
+      InputViewType in_;
+      OutputViewType out_;
+      UnaryFunctionType f_;
     };
 
-    template<class InputViewType,
-             class OutputScalarRefType,
-             class InnerLoopBodyType,
+    // Kokkos::parallel_for functor that implements binary
+    // Tpetra::transform for MultiVector objects.
+    //
+    // The input and output Views may be the same object (locally).
+    template<class InputViewType1,
+             class InputViewType2,
+             class OutputViewType,
+             class BinaryFunctionType,
              class LocalIndexType>
-    struct VectorUnaryTransformLoopBody {
+    class MultiVectorBinaryTransformLoopBody {
+    private:
+      static_assert (static_cast<int> (InputViewType1::Rank) == 2,
+                     "InputViewType1 must be a rank-2 Kokkos::View.");
+      static_assert (static_cast<int> (InputViewType2::Rank) == 2,
+                     "InputViewType2 must be a rank-2 Kokkos::View.");
+      static_assert (static_cast<int> (OutputViewType::Rank) == 2,
+                     "OutputViewType must be a rank-2 Kokkos::View.");
+
+    public:
+      MultiVectorBinaryTransformLoopBody (const InputViewType1& in1,
+                                          const InputViewType2& in2,
+                                          const OutputViewType& out,
+                                          BinaryFunctionType f) :
+        in1_ (in1), in2_ (in2), out_ (out), f_ (f)
+      {}
+
+      KOKKOS_INLINE_FUNCTION void
+      operator () (const LocalIndexType i) const {
+        using LO = LocalIndexType;
+        const LO numCols = static_cast<LO> (in1_.extent (1));
+        for (LO j = 0; j < numCols; ++j) {
+          out_(i,j) = f_ (in1_(i,j), in2_(i,j));
+        }
+      }
+
+    private:
+      InputViewType1 in1_;
+      InputViewType2 in2_;
+      OutputViewType out_;
+      BinaryFunctionType f_;
+    };
+
+    // Kokkos::parallel_for functor that implements unary
+    // Tpetra::transform for Vector objects.
+    //
+    // The input and output Views may be the same object (locally).
+    template<class InputViewType,
+             class OutputViewType,
+             class UnaryFunctionType,
+             class LocalIndexType>
+    class VectorUnaryTransformLoopBody {
+    private:
       static_assert (static_cast<int> (InputViewType::Rank) == 1,
                      "InputViewType must be a rank-1 Kokkos::View.");
+      static_assert (static_cast<int> (OutputViewType::Rank) == 1,
+                     "OutputViewType must be a rank-1 Kokkos::View.");
 
-      VectorUnaryTransformLoopBody (const InputViewType& Y,
-                                    InnerLoopBodyType g) :
-        Y_ (Y), g_ (g)
+    public:
+      VectorUnaryTransformLoopBody (const InputViewType& in,
+                                    const OutputViewType& out,
+                                    UnaryFunctionType f) :
+        in_ (in), out_ (out), f_ (f)
       {}
+
       KOKKOS_INLINE_FUNCTION void
-      operator () (OutputScalarRefType X_ij,
-                   const LocalIndexType i,
-                   const LocalIndexType /* j */) const
-      {
-        X_ij = g_ (Y_(i));
-      };
-      InputViewType Y_;
-      InnerLoopBodyType g_;
+      operator () (const LocalIndexType i) const {
+        out_(i) = f_ (in_(i));
+      }
+
+    private:
+      InputViewType in_;
+      OutputViewType out_;
+      UnaryFunctionType f_;
+    };
+
+    // Kokkos::parallel_for functor that implements binary
+    // Tpetra::transform for Vector objects.
+    //
+    // The input and output Views may be the same object (locally).
+    template<class InputViewType1,
+             class InputViewType2,
+             class OutputViewType,
+             class BinaryFunctionType,
+             class LocalIndexType>
+    class VectorBinaryTransformLoopBody {
+    private:
+      static_assert (static_cast<int> (InputViewType1::Rank) == 1,
+                     "InputViewType1 must be a rank-1 Kokkos::View.");
+      static_assert (static_cast<int> (InputViewType1::Rank) == 1,
+                     "InputViewType1 must be a rank-1 Kokkos::View.");
+      static_assert (static_cast<int> (OutputViewType::Rank) == 1,
+                     "OutputViewType must be a rank-1 Kokkos::View.");
+
+    public:
+      VectorBinaryTransformLoopBody (const InputViewType1& in1,
+                                     const InputViewType2& in2,
+                                     const OutputViewType& out,
+                                     BinaryFunctionType f) :
+        in1_ (in1), in2_ (in2), out_ (out), f_ (f)
+      {}
+
+      KOKKOS_INLINE_FUNCTION void
+      operator () (const LocalIndexType i) const {
+        out_(i) = f_ (in1_(i), in2_(i));
+      }
+
+    private:
+      InputViewType1 in1_;
+      InputViewType2 in2_;
+      OutputViewType out_;
+      BinaryFunctionType f_;
     };
 
     // CUDA 9.2 doesn't like it when you call lambdas in private or
@@ -136,13 +219,13 @@ namespace Tpetra {
     template<class ExecutionSpace,
              class SC, class LO, class GO, class NT,
              class UnaryFunctionType>
-    class TransformSameMultiVector {
+    class UnaryTransformSameMultiVector {
     private:
       using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
       using IST = typename MV::impl_scalar_type;
 
     public:
-      TransformSameMultiVector (UnaryFunctionType f) : f_ (f) {}
+      UnaryTransformSameMultiVector (UnaryFunctionType f) : f_ (f) {}
 
       KOKKOS_INLINE_FUNCTION void operator() (IST& X_ij) const {
         // User function has the form IST(const IST&) suitable for
@@ -159,12 +242,12 @@ namespace Tpetra {
              class SC, class LO, class GO, class NT,
              class UnaryFunctionType>
     void
-    transformSameMultiVector (const char kernelLabel[],
-                              ExecutionSpace execSpace,
-                              ::Tpetra::MultiVector<SC, LO, GO, NT>& output,
-                              UnaryFunctionType f)
+    unaryTransformSameMultiVector (const char kernelLabel[],
+                                   ExecutionSpace execSpace,
+                                   ::Tpetra::MultiVector<SC, LO, GO, NT>& output,
+                                   UnaryFunctionType f)
     {
-      using functor_type = TransformSameMultiVector<ExecutionSpace,
+      using functor_type = UnaryTransformSameMultiVector<ExecutionSpace,
         SC, LO, GO, NT, UnaryFunctionType>;
       ::Tpetra::for_each (kernelLabel, execSpace, output, functor_type (f));
     }
@@ -199,8 +282,8 @@ namespace Tpetra {
 
       // This is not the same as "aliases" -- we actually want to know
       // if input and output are the same object (locally), so that we
-      // can defer to for_each in that case.  The result of transform
-      // is undefined if input and output partially alias one another.
+      // can sync correctly.  The result of transform is undefined if
+      // input and output partially alias one another.
       static bool
       sameObject (const ::Tpetra::MultiVector<SC, LO, GO, NT>& input,
                   const ::Tpetra::MultiVector<SC, LO, GO, NT>& output)
@@ -226,16 +309,24 @@ namespace Tpetra {
         using input_view_type =
           with_local_access_function_argument_type<
             decltype (readOnly (input).on (memSpace))>;
-        // Lambda needs to be mutable, else it makes output const.
-        withLocalAccess
-          ([=] (const input_view_type& input_lcl) mutable {
-             using output_scalar_ref_type = IST&;
-             using loop_body_type = VectorUnaryTransformLoopBody<
-               input_view_type, IST&, UnaryFunctionType, LO>;
+        using output_view_type =
+          with_local_access_function_argument_type<
+            decltype (writeOnly (output).on (memSpace))>;
 
-             loop_body_type g (input_lcl, f);
-             ::Tpetra::for_each (kernelLabel, execSpace, output, g);
-           }, readOnly (input).on (memSpace));
+        withLocalAccess
+          ([=] (const input_view_type& input_lcl,
+                const output_view_type& output_lcl) {
+             using functor_type = VectorUnaryTransformLoopBody<
+               input_view_type, output_view_type, UnaryFunctionType, LO>;
+             functor_type g (input_lcl, output_lcl, f);
+
+             const LO lclNumRows = static_cast<LO> (input_lcl.extent (0));
+             using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
+             range_type range (execSpace, 0, lclNumRows);
+             Kokkos::parallel_for (kernelLabel, range, g);
+           },
+           readOnly (input).on (memSpace),
+           writeOnly (output).on (memSpace));
       }
 
       template<class UnaryFunctionType>
@@ -248,24 +339,31 @@ namespace Tpetra {
          UnaryFunctionType f)
       {
         memory_space memSpace;
-        // Generic lambdas need C++14, so we need a typedef here.
+        // Generic lambdas need C++14, so we need typedefs here.
         using input_view_type =
           with_local_access_function_argument_type<
             decltype (readOnly (input).on (memSpace))>;
-        // Lambda needs to be mutable, else it makes output const.
-        withLocalAccess
-          ([=] (const input_view_type& input_lcl) mutable {
-             using output_scalar_ref_type = IST&;
-             using loop_body_type = MultiVectorUnaryTransformLoopBody<
-               input_view_type, IST&, UnaryFunctionType, LO>;
-             loop_body_type g (input_lcl, f);
+        using output_view_type =
+          with_local_access_function_argument_type<
+            decltype (writeOnly (output).on (memSpace))>;
 
-             ::Tpetra::for_each (kernelLabel, execSpace, output, g);
-           }, readOnly (input).on (memSpace));
+        withLocalAccess
+          ([=] (const input_view_type& input_lcl,
+                const output_view_type& output_lcl) {
+            using functor_type = MultiVectorUnaryTransformLoopBody<
+            input_view_type, output_view_type, UnaryFunctionType, LO>;
+            functor_type g (input_lcl, output_lcl, f);
+
+            const LO lclNumRows = static_cast<LO> (input_lcl.extent (0));
+            using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
+            range_type range (execSpace, 0, lclNumRows);
+            Kokkos::parallel_for (kernelLabel, range, g);
+          },
+          readOnly (input).on (memSpace),
+          writeOnly (output).on (memSpace));
       }
 
     public:
-      // Implementation of unary Transform on
       template<class UnaryFunctionType>
       static void
       transform (const char kernelLabel[],
@@ -307,7 +405,8 @@ namespace Tpetra {
             // some columns of input & output to alias.  Aliasing is a
             // correctness issue (e.g., for sync'ing).
             if (sameObject (*output_j, *input_j)) {
-              transformSameMultiVector (kernelLabel, execSpace, *output_j, f);
+              unaryTransformSameMultiVector (kernelLabel, execSpace,
+                                             *output_j, f);
             }
             else {
               transform_vec_notSameObject (kernelLabel, execSpace,
@@ -317,7 +416,8 @@ namespace Tpetra {
         }
         else {
           if (sameObject (output, input)) {
-            transformSameMultiVector (kernelLabel, execSpace, output, f);
+            unaryTransformSameMultiVector (kernelLabel, execSpace,
+                                           output, f);
           }
           else {
             transform_mv_notSameObject (kernelLabel, execSpace,
@@ -369,19 +469,15 @@ namespace Tpetra {
           input1.isConstantStride () && input2.isConstantStride ();
         memory_space memSpace;
 
+        const LO lclNumRows = static_cast<LO> (output.getLocalLength ());
+        using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
+        range_type range (execSpace, 0, lclNumRows);
+
         if (numVecs == size_t (1) || ! constStride) { // operate on Vectors
           for (size_t j = 0; j < numVecs; ++j) {
             auto output_j = output.getVectorNonConst (j);
             auto input1_j = input1.getVectorNonConst (j);
             auto input2_j = input2.getVectorNonConst (j);
-
-            // Generic lambdas need C++14, so we need typedefs here.
-            using input1_view_type =
-              with_local_access_function_argument_type<
-                decltype (readOnly (*input1_j).on (memSpace))>;
-            using input2_view_type =
-              with_local_access_function_argument_type<
-                decltype (readOnly (*input2_j).on (memSpace))>;
 
             // Check for aliasing here, since it's possible for only
             // some columns of input & output to alias.  Aliasing is a
@@ -392,74 +488,100 @@ namespace Tpetra {
             const bool in1in2same = sameObject (*input1_j, *input2_j);
             const bool allsame = outin1same && outin2same; // by transitivity
 
-            // If input1 or input2 is the same as output, then we can
-            // rely on Tpetra::for_each accessing output as readWrite.
-            // If either input1 or input2 differs from output, we can
-            // use withLocalAccess with readOnly to access it.  The
-            // ensuing lambda needs to be mutable, else it makes
-            // output const.
+            // Once we get C++14 generic lambdas, we can get rid of
+            // these typedefs and use "const auto&" as the argument(s)
+            // for the withLocalAccess lambdas below.
+            using input1_view_type =
+              with_local_access_function_argument_type<
+                decltype (readOnly (*input1_j).on (memSpace))>;
+            using input2_view_type =
+              with_local_access_function_argument_type<
+                decltype (readOnly (*input2_j).on (memSpace))>;
+            using rw_output_view_type =
+              with_local_access_function_argument_type<
+                decltype (readWrite (*output_j).on (memSpace))>;
+            using wo_output_view_type =
+              with_local_access_function_argument_type<
+                decltype (writeOnly (*output_j).on (memSpace))>;
 
             if (allsame) {
-              ::Tpetra::for_each
-                (kernelLabel, execSpace, *output_j,
-                 KOKKOS_LAMBDA (IST& out_i) {
-                  out_i = f (out_i, out_i);
-                });
-            }
-            else if (outin1same) {
               withLocalAccess
-                ([=] (const input2_view_type& input2_lcl) mutable {
-                   ::Tpetra::for_each
-                       (kernelLabel, execSpace, *output_j,
-                        KOKKOS_LAMBDA (IST& out, const LO i) {
-                         out = f (out, input2_lcl(i));
-                       });
-                 }, readOnly (*input2_j).on (memSpace));
+                ([=] (const rw_output_view_type& output_lcl) {
+                  using functor_type = VectorBinaryTransformLoopBody<
+                    typename rw_output_view_type::const_type,
+                    typename rw_output_view_type::const_type,
+                    rw_output_view_type,
+                    BinaryFunctionType, LO>;
+                  functor_type functor (output_lcl, output_lcl, output_lcl, f);
+                  Kokkos::parallel_for (kernelLabel, range, functor);
+                },
+                readWrite (*output_j).on (memSpace));
             }
-            else if (outin2same) {
-              withLocalAccess
-                ([=] (const input1_view_type& input1_lcl) mutable {
-                   ::Tpetra::for_each
-                       (kernelLabel, execSpace, *output_j,
-                        KOKKOS_LAMBDA (IST& out, const LO i) {
-                         out = f (input1_lcl(i), out);
-                       });
-                 }, readOnly (*input1_j).on (memSpace));
-            }
-            else if (in1in2same) {
-              withLocalAccess
-                ([=] (const input1_view_type& input1_lcl) mutable {
-                   ::Tpetra::for_each
-                    (kernelLabel, execSpace, *output_j,
-                     KOKKOS_LAMBDA (IST& out, const LO i) {
-                      out = f (input1_lcl(i), input1_lcl(i));
-                    });
-                 }, readOnly (*input1_j).on (memSpace));
-            }
-            else {
+            else if (in1in2same) { // and not same as output
               withLocalAccess
                 ([=] (const input1_view_type& input1_lcl,
-                      const input2_view_type& input2_lcl) mutable {
-                   ::Tpetra::for_each
-                    (kernelLabel, execSpace, *output_j,
-                     KOKKOS_LAMBDA (IST& out, const LO i) {
-                      out = f (input1_lcl(i), input2_lcl(i));
-                    });
-                 },
-                 readOnly (*input1_j).on (memSpace),
-                 readOnly (*input2_j).on (memSpace));
+                      const wo_output_view_type& output_lcl) {
+                  using functor_type = VectorBinaryTransformLoopBody<
+                    input1_view_type,
+                    input1_view_type,
+                    wo_output_view_type,
+                    BinaryFunctionType, LO>;
+                  functor_type functor (input1_lcl, input1_lcl, output_lcl, f);
+                  Kokkos::parallel_for (kernelLabel, range, functor);
+                },
+                readOnly (*input1_j).on (memSpace),
+                writeOnly (*output_j).on (memSpace));
+            }
+            else if (outin1same) { // and input1 not same as input2
+              withLocalAccess
+                ([=] (const input2_view_type& input2_lcl,
+                      const rw_output_view_type& output_lcl) {
+                  using functor_type = VectorBinaryTransformLoopBody<
+                    typename rw_output_view_type::const_type,
+                    input2_view_type,
+                    rw_output_view_type,
+                    BinaryFunctionType, LO>;
+                  functor_type functor (output_lcl, input2_lcl, output_lcl, f);
+                  Kokkos::parallel_for (kernelLabel, range, functor);
+                },
+                readOnly (*input2_j).on (memSpace),
+                readWrite (*output_j).on (memSpace));
+            }
+            else if (outin2same) { // and input1 not same as input2
+              withLocalAccess
+                ([=] (const input1_view_type& input1_lcl,
+                      const rw_output_view_type& output_lcl) {
+                  using functor_type = VectorBinaryTransformLoopBody<
+                    input1_view_type,
+                    typename rw_output_view_type::const_type,
+                    rw_output_view_type,
+                    BinaryFunctionType, LO>;
+                  functor_type functor (input1_lcl, output_lcl, output_lcl, f);
+                  Kokkos::parallel_for (kernelLabel, range, functor);
+                },
+                readOnly (*input1_j).on (memSpace),
+                readWrite (*output_j).on (memSpace));
+            }
+            else { // output, input1, and input2 all differ
+              withLocalAccess
+                ([=] (const input1_view_type& input1_lcl,
+                      const input2_view_type& input2_lcl,
+                      const wo_output_view_type& output_lcl) {
+                  using functor_type = VectorBinaryTransformLoopBody<
+                    input1_view_type,
+                    input2_view_type,
+                    wo_output_view_type,
+                    BinaryFunctionType, LO>;
+                  functor_type functor (input1_lcl, input2_lcl, output_lcl, f);
+                  Kokkos::parallel_for (kernelLabel, range, functor);
+                },
+                readOnly (*input1_j).on (memSpace),
+                readOnly (*input2_j).on (memSpace),
+                writeOnly (*output_j).on (memSpace));
             }
           }
         }
         else { // operate on MultiVectors
-          // Generic lambdas need C++14, so we need typedefs here.
-          using input1_view_type =
-            with_local_access_function_argument_type<
-              decltype (readOnly (input1).on (memSpace))>;
-          using input2_view_type =
-            with_local_access_function_argument_type<
-              decltype (readOnly (input2).on (memSpace))>;
-
           // Check for aliasing here, since it's possible for only
           // some columns of input & output to alias.  Aliasing is a
           // correctness issue (e.g., for sync'ing).
@@ -469,62 +591,96 @@ namespace Tpetra {
           const bool in1in2same = sameObject (input1, input2);
           const bool allsame = outin1same && outin2same; // by transitivity
 
-          // If input1 or input2 is the same as output, then we can
-          // rely on Tpetra::for_each accessing output as readWrite.
-          // If either input1 or input2 differs from output, we can
-          // use withLocalAccess with readOnly to access it.  The
-          // ensuing lambda needs to be mutable, else it makes output
-          // const.
+          // Once we get C++14 generic lambdas, we can get rid of
+          // these typedefs and use "const auto&" as the argument(s)
+          // for the withLocalAccess lambdas below.
+          using input1_view_type =
+            with_local_access_function_argument_type<
+              decltype (readOnly (input1).on (memSpace))>;
+          using input2_view_type =
+            with_local_access_function_argument_type<
+              decltype (readOnly (input2).on (memSpace))>;
+          using rw_output_view_type =
+            with_local_access_function_argument_type<
+              decltype (readWrite (output).on (memSpace))>;
+          using wo_output_view_type =
+            with_local_access_function_argument_type<
+              decltype (writeOnly (output).on (memSpace))>;
 
           if (allsame) {
-            ::Tpetra::for_each
-              (kernelLabel, execSpace, output,
-               KOKKOS_LAMBDA (IST& X_ij) {
-                X_ij = f (X_ij, X_ij);
-              });
-          }
-          else if (outin1same) {
             withLocalAccess
-              ([=] (const input2_view_type& input2_lcl) mutable {
-                 ::Tpetra::for_each
-                  (kernelLabel, execSpace, output,
-                   KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
-                    out = f (out, input2_lcl(i, j));
-                  });
-               }, readOnly (input2).on (memSpace));
+              ([=] (const rw_output_view_type& output_lcl) {
+                using functor_type = MultiVectorBinaryTransformLoopBody<
+                  typename rw_output_view_type::const_type,
+                  typename rw_output_view_type::const_type,
+                  rw_output_view_type,
+                  BinaryFunctionType, LO>;
+                functor_type functor (output_lcl, output_lcl, output_lcl, f);
+                Kokkos::parallel_for (kernelLabel, range, functor);
+              },
+              readWrite (output).on (memSpace));
           }
-          else if (outin2same) {
-            withLocalAccess
-              ([=] (const input1_view_type& input1_lcl) mutable {
-                 ::Tpetra::for_each
-                  (kernelLabel, execSpace, output,
-                   KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
-                    out = f (input1_lcl(i, j), out);
-                  });
-               }, readOnly (input1).on (memSpace));
-          }
-          else if (in1in2same) {
-            withLocalAccess
-              ([=] (const input1_view_type& input1_lcl) mutable {
-                 ::Tpetra::for_each
-                  (kernelLabel, execSpace, output,
-                   KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
-                    out = f (input1_lcl(i, j), input1_lcl(i, j));
-                  });
-               }, readOnly (input1).on (memSpace));
-          }
-          else {
+          else if (in1in2same) { // and not same as output
             withLocalAccess
               ([=] (const input1_view_type& input1_lcl,
-                    const input2_view_type& input2_lcl) mutable {
-                      ::Tpetra::for_each
-                       (kernelLabel, execSpace, output,
-                        KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
-                         out = f (input1_lcl(i, j), input2_lcl(i, j));
-                       });
-               },
-               readOnly (input1).on (memSpace),
-               readOnly (input2).on (memSpace));
+                    const wo_output_view_type& output_lcl) {
+                using functor_type = MultiVectorBinaryTransformLoopBody<
+                  input1_view_type,
+                  input1_view_type,
+                  wo_output_view_type,
+                  BinaryFunctionType, LO>;
+                functor_type functor (input1_lcl, input1_lcl, output_lcl, f);
+                Kokkos::parallel_for (kernelLabel, range, functor);
+              },
+              readOnly (input1).on (memSpace),
+              writeOnly (output).on (memSpace));
+          }
+          else if (outin1same) { // and input1 not same as input2
+            withLocalAccess
+              ([=] (const input2_view_type& input2_lcl,
+                    const rw_output_view_type& output_lcl) {
+                using functor_type = MultiVectorBinaryTransformLoopBody<
+                  typename rw_output_view_type::const_type,
+                  input2_view_type,
+                  rw_output_view_type,
+                  BinaryFunctionType, LO>;
+                functor_type functor (output_lcl, input2_lcl, output_lcl, f);
+                Kokkos::parallel_for (kernelLabel, range, functor);
+              },
+              readOnly (input2).on (memSpace),
+              readWrite (output).on (memSpace));
+          }
+          else if (outin2same) { // and input1 not same as input2
+            withLocalAccess
+              ([=] (const input1_view_type& input1_lcl,
+                    const rw_output_view_type& output_lcl) {
+                using functor_type = MultiVectorBinaryTransformLoopBody<
+                  input1_view_type,
+                  typename rw_output_view_type::const_type,
+                  rw_output_view_type,
+                  BinaryFunctionType, LO>;
+                functor_type functor (input1_lcl, output_lcl, output_lcl, f);
+                Kokkos::parallel_for (kernelLabel, range, functor);
+              },
+              readOnly (input1).on (memSpace),
+              readWrite (output).on (memSpace));
+          }
+          else { // output, input1, and input2 all differ
+            withLocalAccess
+              ([=] (const input1_view_type& input1_lcl,
+                    const input2_view_type& input2_lcl,
+                    const wo_output_view_type& output_lcl) {
+                using functor_type = MultiVectorBinaryTransformLoopBody<
+                  input1_view_type,
+                  input2_view_type,
+                  wo_output_view_type,
+                  BinaryFunctionType, LO>;
+                functor_type functor (input1_lcl, input2_lcl, output_lcl, f);
+                Kokkos::parallel_for (kernelLabel, range, functor);
+              },
+              readOnly (input1).on (memSpace),
+              readOnly (input2).on (memSpace),
+              writeOnly (output).on (memSpace));
           }
         }
       }
