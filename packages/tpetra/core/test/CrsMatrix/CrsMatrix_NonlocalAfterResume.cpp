@@ -68,9 +68,6 @@ namespace {
   using Tpetra::createNonContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createVector;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -163,7 +160,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     //----------------------------------------------------------------------
     // put in diagonal, locally
     //----------------------------------------------------------------------
-    Tpetra::CrsMatrix<Scalar,LO,GO,Node> matrix(rmap,cmap,3,DynamicProfile);
+    Tpetra::ProfileType pftype = Tpetra::TPETRA_DEFAULT_PROFILE_TYPE;
+    Tpetra::CrsMatrix<Scalar,LO,GO,Node> matrix(rmap,cmap,3,pftype);
     for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
       matrix.insertGlobalValues(r,tuple(r),tuple(ST::one()));
     }
@@ -295,5 +293,3 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
 
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 }
-
-
