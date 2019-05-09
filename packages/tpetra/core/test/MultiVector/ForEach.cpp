@@ -98,12 +98,13 @@ namespace { // (anonymous)
     const GO indexBase = 0;
     auto map = rcp (new map_type (INVALID, numLocal, indexBase, comm));
 
-    myOut << "Create a MultiVector, and make sure that it has "
-      "the right number of vectors (columns)" << endl;
+    myOut << "Test Tpetra::for_each with Tpetra::MultiVector with "
+          << numVecs << " columns" << endl;
     multivec_type X (map, numVecs);
     TEST_EQUALITY( X.getNumVectors (), numVecs );
 
-    out << "Test for_each(MV, void(double&)): Set entries to 418" << endl;
+    out << "Test for_each(MV) on default execution space: "
+      "Set entries to 418" << endl;
     for_each ("X_ij=418", X, KOKKOS_LAMBDA (double& X_ij) {
         X_ij = 418.0;
       });
@@ -133,8 +134,8 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test for_each(DefaultHostExecutionSpace, MV, "
-      "void(double&)): Set entries to 777" << endl;
+    out << "Test for_each(DefaultHostExecutionSpace, MV): "
+      "Set entries to 777" << endl;
     for_each ("X_ij=777", Kokkos::DefaultHostExecutionSpace (), X,
               KOKKOS_LAMBDA (double& X_ij) {
                 X_ij = 777.0;
@@ -200,8 +201,8 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test for_each(DefaultHostExecutionSpace, MV, "
-      "void(double&)): Set entries to 44" << endl;
+    out << "Test for_each(DefaultHostExecutionSpace, MV): "
+      "Set entries to 44" << endl;
     for_each ("X_ij=44", Kokkos::DefaultHostExecutionSpace (), X,
               KOKKOS_LAMBDA (double& X_ij) {
                 X_ij = 44.0;
@@ -232,7 +233,8 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test for_each(MV, void(double&)): Set entries to 31" << endl;
+    out << "Test for_each(MV) on default execution space: "
+      "Set entries to 31" << endl;
     //Kokkos::fence (); // Doesn't help with CUDA_LAUNCH_BLOCKING unset
     for_each ("X_ij=31", X, KOKKOS_LAMBDA (double& X_ij) {
         X_ij = 31.0;
@@ -263,8 +265,9 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test for_each(MV, void(double&,LO)): Set entries to 93" << endl;
-    for_each ("X_ij=93", X, KOKKOS_LAMBDA (double& X_ij, LO /* i */) {
+    out << "Test for_each(MV) on default execution space: "
+      "Set entries to 93" << endl;
+    for_each ("X_ij=93", X, KOKKOS_LAMBDA (double& X_ij) {
         X_ij = 93.0;
       });
     {
@@ -293,87 +296,23 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test for_each(MV, void(double&,LO,LO))" << endl;
-    for_each ("X_ij=777", X, KOKKOS_LAMBDA (double& X_ij,
-                                const LO /* i */,
-                                const LO /* j */) {
-                X_ij = 777.0;
-              });
-    {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
-      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
-        out << "Column " << j << std::endl;
-        bool ok = true;
-        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
-          const double expectedVal = 777.0;
-          if (X_lcl(i,j) != expectedVal) {
-            out << "X_lcl(" << i << "," << j << ") = " << X_lcl(i,j)
-                << " != " << expectedVal << std::endl;
-            ok = false;
-          }
-        }
-        TEST_ASSERT( ok );
-      }
-    }
-
-    lclSuccess = success ? 1 : 0;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_ASSERT( gblSuccess == 1 );
-    if (gblSuccess != 1) {
-      out << "Returning early" << endl;
-      return;
-    }
-
-    myOut << "Create a Vector, and make sure that "
-      "it has exactly one vector (column)" << endl;
+    myOut << "Test Tpetra::for_each with Tpetra::Vector for tests" << endl;
     vec_type vec (map);
     TEST_EQUALITY_CONST(vec.getNumVectors (), size_t (1));
 
-    // Exercise overload of for_each that runs on X's default
-    // execution space, and whose function takes (scalar&, LO, LO)
-    // arguments.  Exercise it for a Vector.
-    for_each ("X_ij+=(i+1)+(j+1)", vec,
-        KOKKOS_LAMBDA (double& X_ij, const LO i, const LO j) {
-          X_ij += double (i+1.0) + double (j+1.0);
-        });
-
-    lclSuccess = success ? 1 : 0;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_ASSERT( gblSuccess == 1 );
-    if (gblSuccess != 1) {
-      out << "Returning early" << endl;
-      return;
-    }
-
-    // Exercise overload of for_each that runs on X's default
-    // execution space, and whose function takes (scalar&, LO)
-    // arguments.  Exercise it for a Vector.
-    for_each ("X_ij+=i+1", vec, KOKKOS_LAMBDA (double& X_ij, const LO i) {
-        X_ij += double (i+1.0);
-      });
-
-    lclSuccess = success ? 1 : 0;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_ASSERT( gblSuccess == 1 );
-    if (gblSuccess != 1) {
-      out << "Returning early" << endl;
-      return;
-    }
-
-    // Exercise overload of for_each that runs on X's default
-    // execution space, and whose function takes (scalar&).
-    // Exercise it for a Vector.
-    for_each ("X_ij=42", vec, KOKKOS_LAMBDA (double& X_ij) {
-        X_ij = 42.0;
-      });
-
+    myOut << "Test for_each(Vector) on default execution space" << endl;
+    for_each ("X_i=418 (Vec)", vec,
+              KOKKOS_LAMBDA (double& X_i) { X_i = 418.0; });
     {
       vec.sync_host ();
-      auto vec_lcl = subview (vec.getLocalViewHost (), ALL (), 0);
+      auto X_lcl_2d = vec.getLocalViewHost ();
+      auto X_lcl_1d = Kokkos::subview (X_lcl_2d, Kokkos::ALL (), 0);
       bool ok = true;
-      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
-        if (vec_lcl(i) != 42.0) {
+      for (LO i = 0; i < LO (vec.getLocalLength ()); ++i) {
+        const double expectedVal = 418.0;
+        if (X_lcl_1d(i) != expectedVal) {
+          out << "X_lcl_1d(" << i << ") = " << X_lcl_1d(i)
+              << " != " << expectedVal << endl;
           ok = false;
         }
       }
@@ -388,18 +327,20 @@ namespace { // (anonymous)
       return;
     }
 
-    for_each ("X_ij+=1", vec, KOKKOS_LAMBDA (double& X_ij) {
-        X_ij += 1.0;
-      });
-
+    out << "Test for_each(DefaultHostExecutionSpace, Vector): "
+      "Set entries to 666" << endl;
+    for_each ("X_i=666 (Vec)", Kokkos::DefaultHostExecutionSpace (), vec,
+              KOKKOS_LAMBDA (double& X_i) { X_i = 666.0; });
     {
-      vec.sync_host ();
-      auto vec_lcl = subview (vec.getLocalViewHost (), ALL (), 0);
+      //vec.sync_host ();
+      auto X_lcl_2d = vec.getLocalViewHost ();
+      auto X_lcl_1d = Kokkos::subview (X_lcl_2d, Kokkos::ALL (), 0);
       bool ok = true;
-      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
-        if (vec_lcl(i) != 43.0) {
-          out << "vec_lcl(" << i << ") = " << vec_lcl(i) << " != 43.0"
-              << std::endl;
+      for (LO i = 0; i < LO (vec.getLocalLength ()); ++i) {
+        const double expectedVal = 666.0;
+        if (X_lcl_1d(i) != expectedVal) {
+          out << "X_lcl_1d(" << i << ") = " << X_lcl_1d(i)
+              << " != " << expectedVal << endl;
           ok = false;
         }
       }
@@ -409,6 +350,10 @@ namespace { // (anonymous)
     lclSuccess = success ? 1 : 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
   }
 
 } // namespace (anonymous)

@@ -464,6 +464,9 @@ namespace { // (anonymous)
                       KOKKOS_LAMBDA (double& Z_ij) { Z_ij = 333.0; });
 
     out << "transform on default host execution space: X = 222+333" << endl;
+    // We should accept both const double& and const double.  There
+    // are examples that take const double (no reference) after the
+    // example below.
     transform ("X=Y+Z (222+333)",
                Kokkos::DefaultHostExecutionSpace (),
                Y, Z, X,
@@ -538,8 +541,8 @@ namespace { // (anonymous)
     transform ("X=Y+Z (111+666)",
                device_execution_space (),
                Y, Z, X,
-               KOKKOS_LAMBDA (const double& Y_i,
-                              const double& Z_i) { return Y_i + Z_i; });
+               KOKKOS_LAMBDA (const double Y_i,
+                              const double Z_i) { return Y_i + Z_i; });
     {
       X.sync_host ();
       auto X_lcl = X.getLocalViewHost ();
@@ -574,8 +577,8 @@ namespace { // (anonymous)
     transform ("X=Y+Z (222+333)",
                Kokkos::DefaultHostExecutionSpace (),
                Y, Z, X,
-               KOKKOS_LAMBDA (const double& Y_i,
-                              const double& Z_i) { return Y_i + Z_i; });
+               KOKKOS_LAMBDA (const double Y_i,
+                              const double Z_i) { return Y_i + Z_i; });
     {
       X.sync_host ();
       auto X_lcl = X.getLocalViewHost ();
