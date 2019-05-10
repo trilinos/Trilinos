@@ -206,7 +206,9 @@ add_test_results regular_add_test(
   toReturn.correctNorm = C->getFrobeniusNorm ();
 
   RCP<const Map_t > rowmap = AT ? A->getDomainMap() : A->getRowMap();
-  RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, 1));
+  size_t estSize = A->getGlobalMaxNumRowEntries() + B->getGlobalMaxNumRowEntries();
+         // estSize is upper bound for A, B; estimate only for AT, BT.
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, estSize));
 
   SC one = Teuchos::ScalarTraits<SC>::one();
   Tpetra::MatrixMatrix::Add(*A, AT, one, *B, BT, one, computedC);
@@ -741,12 +743,13 @@ mult_test_results jacobi_test(
   Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C);
 
   // Multiply + Add version
-  RCP<Matrix_t> C2 = rcp(new Matrix_t(B->getRowMap(),0));
+  RCP<Matrix_t> C2; 
   bool done=false;
 #ifdef HAVE_TPETRA_INST_OPENMP
     if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
       Teuchos::ParameterList p;
       p.set("openmp: jacobi algorithm","MSAK");
+      C2 = rcp(new Matrix_t(B->getRowMap());
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
@@ -755,6 +758,7 @@ mult_test_results jacobi_test(
     if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
       Teuchos::ParameterList p;
       p.set("cuda: jacobi algorithm","MSAK");
+      C2 = rcp(new Matrix_t(B->getRowMap());
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
@@ -766,12 +770,14 @@ mult_test_results jacobi_test(
 
       Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
       AB->leftScale(Dinv);
+      C2 = rcp(new Matrix_t(B->getRowMap(), 
+                            B->getGlobalMaxNumRowEntries() + AB->getGlobalMaxNumRowEntries())); // upper bound
       Tpetra::MatrixMatrix::Add(*AB,false,-one,*B,false,one,C2);
       if(!C2->isFillComplete()) C2->fillComplete(C->getDomainMap(),C->getRangeMap());
     }
 
   // Check the difference
-  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(),0));
+  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(), C->getGlobalMaxNumRowEntries()));
   Tpetra::MatrixMatrix::Add(*C, false, -one, *C2, false,one,C_check);
   C_check->fillComplete(B->getDomainMap(),B->getRangeMap());
 
@@ -975,9 +981,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       if (verbose)
         newOut << "Running multiply test (manual FC) for " << currentSystem.name() << endl;
 
-std::cout << comm->getRank() << " KDDKDD ONE" << std::endl;
       mult_test_results results = multiply_test_manualfc(name, A, B, AT, BT, C, comm, newOut);
-std::cout << comm->getRank() << " KDDKDD TWO" << std::endl;
 
       if (verbose) {
         newOut << "Results:"     << endl;
@@ -992,9 +996,7 @@ std::cout << comm->getRank() << " KDDKDD TWO" << std::endl;
       if (verbose)
         newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
 
-std::cout << comm->getRank() << " KDDKDD THREE" << std::endl;
       results = multiply_test_autofc(name, A, B, AT, BT, C, comm, newOut);
-std::cout << comm->getRank() << " KDDKDD FOUR" << std::endl;
 
       if (verbose) {
         newOut << "Results:"     << endl;
@@ -1009,9 +1011,7 @@ std::cout << comm->getRank() << " KDDKDD FOUR" << std::endl;
       if (verbose)
         newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
 
-std::cout << comm->getRank() << " KDDKDD FIVE" << std::endl;
       results = multiply_reuse_test(name, A, B, AT, BT, C, comm, newOut);
-std::cout << comm->getRank() << " KDDKDD SIX" << std::endl;
 
       if (verbose) {
         newOut << "Results:"     << endl;
