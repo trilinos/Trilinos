@@ -71,9 +71,8 @@ namespace panzer {
   *
   * \note The description and use of this function are equally confusing...
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
 Teuchos::RCP<Epetra_IntVector>
-buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
+buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer & ugi);
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -85,18 +84,9 @@ buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,Glo
   * \param[in] ugi Unique global indexer object that defines the ordering, global ids and field numbers.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<const Epetra_IntVector>
-buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
+buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
                               const Teuchos::RCP<const Epetra_IntVector> & reducedVec=Teuchos::null);
-
-/** Convenience function default to the basic Kokkos node type.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<const Epetra_IntVector>
-buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                              const Teuchos::RCP<const Epetra_IntVector> & reducedVec=Teuchos::null)
-{ return buildGhostedFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,panzer::TpetraNodeType>(ugi,reducedVec); }
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -111,18 +101,9 @@ buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdi
   *                          build by a call to <code>getOwnedAndGhostedIndices()</code>.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
+void buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
                                    std::vector<int> & fieldNumbers,
                                    const Teuchos::RCP<const Epetra_IntVector> & reducedVec=Teuchos::null);
-
-/** Convenience function default to the basic Kokkos node type.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                                   std::vector<int> & fieldNumbers,
-                                   const Teuchos::RCP<const Epetra_IntVector> & reducedVec=Teuchos::null)
-{ buildGhostedFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,panzer::TpetraNodeType>(ugi,fieldNumbers,reducedVec); }
 
 /** Build a reduced data vector using the reduced field vector. Here reduced is meant in the
   * exact same context as for the field vectors.
@@ -136,9 +117,9 @@ void buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,Globa
   *             now available for an import to construct the true ghosted data vector. This
   *             map must match the reducedFieldVec map.
   */
-template <typename ScalarT,typename ArrayT,typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+template <typename ScalarT,typename ArrayT>
 void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const std::string blockId,
-                                          const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
+                                          const UniqueGlobalIndexer & ugi,
                                           const ArrayT & data,
                                           Epetra_MultiVector & dataVector);
 
@@ -157,13 +138,12 @@ getFieldMapEpetra(int fieldNum,const Epetra_IntVector & fieldVector);
 
 /** This class assists in mapping arrays of field data to field vectors.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 class ArrayToFieldVectorEpetra {
 public:
    /** Construct information for the unique global indexer. Notice that this
      * requires global communication.
      */
-   ArrayToFieldVectorEpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
+   ArrayToFieldVectorEpetra(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi);
 
    /** Get a Tpetra vector containing the data ordered according to 
      * the ordering from <code>UGI::getOwnedAndGhostedIndices</code>.
@@ -214,16 +194,16 @@ protected:
    void buildFieldVector(const Epetra_IntVector & source) const;
 
    //! DOF mapping
-   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi_;
+   Teuchos::RCP<const UniqueGlobalIndexer> ugi_;
 
    Teuchos::RCP<const IntVector> gh_reducedFieldVector_; //! ghosted reduced field vector
    Teuchos::RCP<const IntVector> gh_fieldVector_;        //! ghosted field vector
 
-   mutable std::map<int,Teuchos::RCP<const Map> > gh_reducedFieldMaps_; //! Maps for each field (as needed)
-   mutable std::map<int,Teuchos::RCP<const Map> > gh_fieldMaps_;        //! Maps for each field (as needed)
+   mutable std::map<int,Teuchos::RCP<const Map>> gh_reducedFieldMaps_; //! Maps for each field (as needed)
+   mutable std::map<int,Teuchos::RCP<const Map>> gh_fieldMaps_;        //! Maps for each field (as needed)
 
    mutable Teuchos::RCP<const IntVector> fieldVector_;               //! (unghosted) field vector (as needed)
-   mutable std::map<int,Teuchos::RCP<const Map> > fieldMaps_;        //! Maps for each field (as needed)
+   mutable std::map<int,Teuchos::RCP<const Map>> fieldMaps_;        //! Maps for each field (as needed)
 
 private:
    // hide some constructors

@@ -57,12 +57,11 @@
 
 namespace panzer {
 
-/** Convert a nonconst to a constat vector. This works around an RCP issue where the compiler
+/** Convert a nonconst to a constant vector. This works around an RCP issue where the compiler
   * gets confused by const.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > 
-nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
+std::vector<Teuchos::RCP<const UniqueGlobalIndexer>> 
+nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & ugis);
 
 /** Get the block associated with a particular field. This is an exhaustive (e.g. expensive)
   * search. This returns the first found index into the <code>ugis</code> that contains the 
@@ -73,9 +72,8 @@ nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,Glo
   *
   * \returns The index that this field is in. If this returns -1, no field was found.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
 int getFieldBlock(const std::string & fieldName,
-                  const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
+                  const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & ugis);
 
 /** Get the block associated with a particular field. This is an exhaustive (e.g. expensive)
   * search. This returns the first found index into the <code>ugis</code> that contains the 
@@ -86,9 +84,8 @@ int getFieldBlock(const std::string & fieldName,
   *
   * \returns The index that this field is in. If this returns -1, no field was found.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
 int getFieldBlock(const std::string & fieldName,
-                  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
+                  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer>> & ugis);
 
 /** Compute the offsets for the global indexer for a particular block id. This
   * is useful for unknown numbering into a block format. The local element matrix
@@ -103,9 +100,8 @@ int getFieldBlock(const std::string & fieldName,
   * \param[in] ugis Unique global indexers containing fields to be blocked
   * \param[out] blockOffsets Result vector with length <code>ugis.size()+1</code>.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void computeBlockOffsets(const std::string & blockId,
-                         const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis,
+                         const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & ugis,
                          std::vector<int> & blockOffsets);
 
 /** Compute the offsets for the global indexer for a particular block id. This
@@ -121,24 +117,21 @@ void computeBlockOffsets(const std::string & blockId,
   * \param[in] ugis Unique global indexers containing fields to be blocked
   * \param[out] blockOffsets Result vector with length <code>ugis.size()+1</code>.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void computeBlockOffsets(const std::string & blockId,
-                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis,
+                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer>> & ugis,
                          std::vector<int> & blockOffsets);
 
 /** Print out unique global indexer load balancing information. This includes
   * the minimum unknown, maximum unknown count, mean unknown and standard deviation of
   * the unknowns for both owned and owned and ghosted.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-std::string printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
+std::string printUGILoadBalancingInformation(const UniqueGlobalIndexer & ugi);
 
 /** Print all GIDs and their associated elements to the screen. Note if a FancyOStream is used
   * the correct prefixes this method will label the processors as well. This can print out an 
   * extreme amount of information so it is only useful for debugging.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
+void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer & ugi);
 
 /** Construct a vector that contains a reduced set of field numbers.
   * The ordering is based on the ordering from <code>ugi.getOwnedAndGhostedIndices()</code>.
@@ -152,9 +145,8 @@ void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<Local
   *
   * \note The description and use of this function are equally confusing...
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<Tpetra::Vector<int,int,GlobalOrdinalT,Node> >
-buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
+Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi);
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -166,18 +158,9 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
   * \param[in] ugi Unique global indexer object that defines the ordering, global ids and field numbers.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,Node> >
-buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                        const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,Node> > & reducedVec=Teuchos::null);
-
-/** Convenience function default to the basic Kokkos node type.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,panzer::TpetraNodeType> >
-buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                        const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,panzer::TpetraNodeType> > & reducedVec=Teuchos::null)
-{ return buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,panzer::TpetraNodeType>(ugi,reducedVec); }
+Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
+                        const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > & reducedVec=Teuchos::null);
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -192,18 +175,9 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
   *                          build by a call to <code>getOwnedAndGhostedIndices()</code>.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
+void buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
                              std::vector<int> & fieldNumbers,
-                             const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,Node> > & reducedVec=Teuchos::null);
-
-/** Convenience function default to the basic Kokkos node type.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                             std::vector<int> & fieldNumbers,
-                             const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,panzer::TpetraNodeType> > & reducedVec=Teuchos::null)
-{ buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,panzer::TpetraNodeType>(ugi,fieldNumbers,reducedVec); }
+                             const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > & reducedVec=Teuchos::null);
 
 /** Build a reduced data vector using the reduced field vector. Here reduced is meant in the
   * exact same context as for the field vectors.
@@ -217,11 +191,11 @@ void buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdin
   *             now available for an import to construct the true ghosted data vector. This
   *             map must match the reducedFieldVec map.
   */
-template <typename ScalarT,typename ArrayT,typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+template <typename ScalarT,typename ArrayT>
 void updateGhostedDataReducedVector(const std::string & fieldName,const std::string blockId,
-                                    const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
+                                    const UniqueGlobalIndexer & ugi,
                                     const ArrayT & data,
-                                    Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> & dataVector);
+                                    Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & dataVector);
 
 /** Construct a map that only uses a certain field.
   *
@@ -232,9 +206,8 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
   * \returns A vector that contains the indices of the field requested. Again for the
   *          three dimensional vector field if fieldNum==1, it would be [1,4,7,10,13,...].
   */
-template <typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
-getFieldMap(int fieldNum,const Tpetra::Vector<int,int,GlobalOrdinalT,Node> & fieldVector);
+Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+getFieldMap(int fieldNum,const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & fieldVector);
 
 
 namespace orientation_helpers {
@@ -266,9 +239,8 @@ void computePatternEdgeIndices(const FieldPattern & pattern,std::vector<std::pai
   * \param[in] fieldPattern Field pattern used to define the orientation layout
   * \param[in,out] orientation Orientation vector satisfying the field pattern layout
   */
-template <typename GlobalOrdinalT>
 void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
-                                 const std::vector<GlobalOrdinalT> & topology,
+                                 const std::vector<panzer::GlobalOrdinal2> & topology,
                                  const FieldPattern & fieldPattern, 
                                  std::vector<signed char> & orientation);
 
@@ -303,9 +275,8 @@ void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vec
   * \param[in] fieldPattern Field pattern used to define the orientation layout
   * \param[in,out] orientation Orientation vector satisfying the field pattern layout
   */
-template <typename GlobalOrdinalT>
-void computeCellFaceOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
-                                 const std::vector<GlobalOrdinalT> & topology,
+void computeCellFaceOrientations(const std::vector<std::vector<int>> & topEdgeIndices,
+                                 const std::vector<panzer::GlobalOrdinal2> & topology,
                                  const FieldPattern & fieldPattern, 
                                  std::vector<signed char> & orientation);
 
@@ -314,13 +285,12 @@ void computeCellFaceOrientations(const std::vector<std::pair<int,int> > & topEdg
 
 /** This class assists in mapping arrays of field data to field vectors.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 class ArrayToFieldVector {
 public:
    /** Construct information for the unique global indexer. Notice that this
      * requires global communication.
      */
-   ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
+   ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi);
 
    /** Get a Tpetra vector containing the data ordered according to 
      * the ordering from <code>UGI::getOwnedAndGhostedIndices</code>.
@@ -332,7 +302,7 @@ public:
      *          is related to the <code>UGI::getOwnedAndGhostedIndices</code>.
      */
    template <typename ScalarT,typename ArrayT>
-   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> >
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
    getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const;
 
    /** Get a Tpetra vector containing the data ordered according to 
@@ -345,32 +315,32 @@ public:
      *          is related to the <code>UGI::getOwnedIndices</code>.
      */
    template <typename ScalarT,typename ArrayT>
-   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> >
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
    getDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const;
 
    /** Build a map that contains only global IDs associated with a particular field.
      * This serves to go from a unique vector of all fields, to a vector
      * containing the uniquely owned global ids for a single field.
      */
-   Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
+   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
    getFieldMap(const std::string & fieldName) const;
 
    /** Build a map that contains only global IDs associated with a particular field.
      * This serves to go from a unique vector of all fields, to a vector
      * containing the uniquely owned global ids for a single field.
      */
-   Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
+   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
    getFieldMap(int fieldNum) const;
 
 protected:
-   typedef Tpetra::Vector<int,int,GlobalOrdinalT,Node> IntVector;
-   typedef Tpetra::Map<int,GlobalOrdinalT,Node> Map;
+   using IntVector = Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType>;
+   using Map = Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType>;
 
    //! build unghosted field vector from ghosted field vector
-   void buildFieldVector(const Tpetra::Vector<int,int,GlobalOrdinalT,Node> & source) const;
+   void buildFieldVector(const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & source) const;
 
    //! DOF mapping
-   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi_;
+   Teuchos::RCP<const UniqueGlobalIndexer> ugi_;
 
    Teuchos::RCP<const IntVector> gh_reducedFieldVector_; //! ghosted reduced field vector
    Teuchos::RCP<const IntVector> gh_fieldVector_;        //! ghosted field vector

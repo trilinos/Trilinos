@@ -47,15 +47,15 @@
 
 namespace panzer {
 
-/**
+/** This class wraps a DOFManager and removes certain DOFs from the
+    linear system. This is used to filter out or remove boundary
+    conditions from a DOFManager.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class Filtered_UniqueGlobalIndexer : public UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> {
+class Filtered_UniqueGlobalIndexer : public UniqueGlobalIndexer {
 public:
    // These functions are unique to this class (including constructors)
    
-   /** Default constructor
-     */
+   /** Default constructor */
    Filtered_UniqueGlobalIndexer();
 
    /** Initialize method that allows use of the default constructor and
@@ -67,8 +67,8 @@ public:
      * \note Repeated or unused (not in <code>ugi.getOwnedIndices</code>)indices in 
      *       <code>filteredIndices</code> are ignored without detection or impact.
      */
-   void initialize(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi,
-                   const std::vector<GlobalOrdinalT> & filteredIndices);
+   void initialize(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi,
+                   const std::vector<panzer::GlobalOrdinal2> & filteredIndices);
 
    /** Get an indicator describing if a particular local GID has been filtered. This method
      * requires communication. 
@@ -84,7 +84,7 @@ public:
      *
      * \param[out] indices Set of filtered indices
      */
-   void getFilteredOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const ;
+   void getFilteredOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const ;
 
    // This functions are overriden, and the filtered indices removed
   
@@ -97,12 +97,10 @@ public:
     *  \param[out] indices A `vector` that will be filled with the indices
     *                      owned by this processor.
     */
-   virtual void
-   getOwnedIndices(
-     std::vector<GlobalOrdinalT>& indices) const
+   virtual void getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
    {
      indices = owned_;
-   } // end of getOwnedIndices()
+   }
 
    /**
     *  \brief Get the set of indices ghosted for this processor.
@@ -114,12 +112,10 @@ public:
     *  \param[out] indices A `vector` that will be filled with the indices
     *                      ghosted for this processor.
     */
-   virtual void
-   getGhostedIndices(
-     std::vector<GlobalOrdinalT>& indices) const
+   virtual void getGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
    { 
      indices = ghosted_;
-   } // end of getGhostedIndices()
+   }
 
    /**
     *  \brief Get the set of owned and ghosted indices for this processor.
@@ -131,8 +127,7 @@ public:
     *                      ghosted indices for this processor.
     */
    virtual void
-   getOwnedAndGhostedIndices(
-     std::vector<GlobalOrdinalT>& indices) const 
+   getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const 
    { 
      using std::size_t;
      indices.resize(owned_.size() + ghosted_.size());
@@ -140,7 +135,7 @@ public:
        indices[i] = owned_[i];
      for (size_t i(0); i < ghosted_.size(); ++i)
        indices[owned_.size() + i] = ghosted_[i];
-   } // end of getOwnedAndGhostedIndices()
+   }
 
    /**
     *  \brief Get the number of indices owned by this processor.
@@ -150,11 +145,8 @@ public:
     *
     *  \returns The number of indices owned by this processor.
     */
-   virtual int
-   getNumOwned() const
-   { 
-     return owned_.size();
-   } // end of getNumOwned()
+   virtual int getNumOwned() const
+   { return owned_.size(); }
 
    /**
     *  \brief Get the number of indices ghosted for this processor.
@@ -165,11 +157,8 @@ public:
     *
     *  \returns The number of indices ghosted for this processor.
     */
-   virtual int
-   getNumGhosted() const
-   { 
-     return ghosted_.size();
-   } // end of getNumGhosted()
+   virtual int getNumGhosted() const
+   { return ghosted_.size(); }
 
    /**
     *  \brief Get the number of owned and ghosted indices for this processor.
@@ -179,13 +168,10 @@ public:
     *
     *  \returns The number of owned and ghosted indices for this processor.
     */
-   virtual int
-   getNumOwnedAndGhosted() const
-   { 
-     return owned_.size() + ghosted_.size();
-   } // end of getNumOwnedAndGhosted()
+   virtual int getNumOwnedAndGhosted() const
+   { return owned_.size() + ghosted_.size(); }
 
-   virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
+   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const;
 
    // The following functions are simply part of the decorator pattern and
    // are simple pass throughs
@@ -224,13 +210,13 @@ public:
                               int subcellDim,int subcellId) const 
    { return base_->getGIDFieldOffsets_closure(blockId,fieldNum,subcellDim,subcellId); }
 
-   virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const 
+   virtual void getElementOrientation(panzer::LocalOrdinal2 localElmtId,std::vector<double> & gidsOrientation) const 
    { base_->getElementOrientation(localElmtId,gidsOrientation); }
 
-   virtual const std::vector<LocalOrdinalT> & getElementBlock(const std::string & blockId) const 
+   virtual const std::vector<panzer::LocalOrdinal2> & getElementBlock(const std::string & blockId) const 
    { return base_->getElementBlock(blockId); }
 
-   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint="") const 
+   virtual void getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::vector<panzer::GlobalOrdinal2> & gids,const std::string & blockIdHint="") const 
    { base_->getElementGIDs(localElmtId,gids,blockIdHint); }
 
    virtual int getElementBlockGIDCount(const std::string & blockId) const 
@@ -244,7 +230,7 @@ public:
 
 private:
 
-   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > base_;
+   Teuchos::RCP<const UniqueGlobalIndexer> base_;
 
    /**
     *  \brief The list of owned indices.
@@ -252,7 +238,7 @@ private:
     *  The list of the owned indices from the base `UniqueGlobalIndexer` with
     *  the filtered indices removed.
     */
-   std::vector<GlobalOrdinalT> owned_;
+   std::vector<panzer::GlobalOrdinal2> owned_;
 
    /**
     *  \brief The list of ghosted indices.
@@ -261,7 +247,7 @@ private:
     *  that have been filtered out, combined with the ghosted indices from the
     *  base UGI.
     */
-   std::vector<GlobalOrdinalT> ghosted_;
+   std::vector<panzer::GlobalOrdinal2> ghosted_;
 };
 
 }

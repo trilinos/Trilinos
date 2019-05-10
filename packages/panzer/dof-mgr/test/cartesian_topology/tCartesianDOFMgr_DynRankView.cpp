@@ -95,7 +95,7 @@ std::string getElementBlock(const Triplet & element,
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
 {
   using CCM = CartesianConnManager;
-  using DOFManager = panzer::DOFManager<int,Ordinal64>;
+  using DOFManager = panzer::DOFManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI

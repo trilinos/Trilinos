@@ -24,8 +24,7 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern();
 int main(int argc,char * argv[])
 {
   using CCM = panzer::unit_test::CartesianConnManager;
-  typedef panzer::DOFManager<int,panzer::Ordinal64> DOFManager;
-
+  using panzer::DOFManager;
   using Teuchos::RCP;
   using Teuchos::rcp;
 

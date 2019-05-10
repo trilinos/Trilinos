@@ -90,7 +90,7 @@ std::string getElementBlock(const Triplet & element,
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 {
   typedef CartesianConnManager CCM;
-  typedef panzer::DOFManager<int,Ordinal64> DOFManager;
+  typedef panzer::DOFManager DOFManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -182,7 +182,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
 {
   using CCM = CartesianConnManager;
-  using DOFManager = panzer::DOFManager<int,Ordinal64>;
+  using DOFManager = panzer::DOFManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -281,7 +281,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
 {
   using CCM = CartesianConnManager;
-  using DOFManager = panzer::DOFManager<int,Ordinal64>;
+  using DOFManager = panzer::DOFManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
