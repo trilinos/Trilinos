@@ -20,6 +20,10 @@
 #include "MueLu_ParameterListAcceptor.hpp"
 
 namespace MueLu {
+
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
   class MyFactory : public ParameterListAcceptorImpl {
 
     public:

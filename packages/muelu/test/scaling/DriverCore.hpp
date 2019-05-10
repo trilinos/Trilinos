@@ -65,15 +65,29 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+
 #ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
+#include <MueLu_TpetraOperator.hpp>
+namespace BelosTpetra {
+namespace Impl {
+  extern void register_Cg (const bool verbose);
+  extern void register_CgPipeline (const bool verbose);
+  extern void register_CgSingleReduce (const bool verbose);
+  extern void register_Gmres (const bool verbose);
+  extern void register_GmresS (const bool verbose);
+  extern void register_GmresSstep (const bool verbose);
+  extern void register_GmresSingleReduce (const bool verbose);
+} // namespace Impl
+} // namespace BelosTpetra
 #endif
+
 #ifdef HAVE_MUELU_EPETRA
 #include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
 #endif
 #endif
 
-// Cuda 
+// Cuda
 #ifdef HAVE_MUELU_CUDA
 #include "cuda_profiler_api.h"
 #endif
@@ -152,7 +166,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
                          Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & Prec) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();  
+  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
   typedef typename Teuchos::ScalarTraits<SC>::coordinateType coordinate_type;
   typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> CoordinateMultiVector;
   // =========================================================================
@@ -168,10 +182,9 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
      A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
      if(useAMGX) {
 #if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
-       Teuchos::ParameterList dummyList;
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Ac      = Utilities::Op2NonConstTpetraCrs(A);
        RCP<Tpetra::Operator<SC,LO,GO,NO> > At       = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(Ac);
-       RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > Top = MueLu::CreateTpetraPreconditioner(At, mueluList, dummyList);
+       RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > Top = MueLu::CreateTpetraPreconditioner(At, mueluList);
        Prec = Teuchos::rcp(new Xpetra::TpetraOperator<SC,LO,GO,NO>(Top));
 #endif
      } else if(useML) {
@@ -192,7 +205,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
        userParamList.set<RCP<CoordinateMultiVector> >("Coordinates", coordinates);
        userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
        userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
-       H = MueLu::CreateXpetraPreconditioner(A, mueluList, mueluList);
+       H = MueLu::CreateXpetraPreconditioner(A, mueluList);
      }
    }
 #ifdef HAVE_MUELU_CUDA
@@ -225,7 +238,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();  
+  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero();
 
@@ -263,7 +276,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
     X->putScalar(zero);
     tm = Teuchos::null;
-      
+
     if (solveType == "none") {
       // Do not perform a solve
     } else if (solveType == "matvec") {
@@ -317,16 +330,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         H->IsPreconditioner(true);
         belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
       }
-      
-      // Construct a Belos LinearProblem object
-      RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-      if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
-      
-      bool set = belosProblem->setProblem();
-      if (set == false) {
-        throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
-      }
-      
+
       // Belos parameter list
       RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
       belosList->set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
@@ -336,18 +340,74 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
       belosList->set("Output Style",          Belos::Brief);
       if (!scaleResidualHist)
         belosList->set("Implicit Residual Scaling", "None");
-      
-      // Create an iterative solver manager
-      Belos::SolverFactory<SC, MV, OP> solverFactory;
-      RCP< Belos::SolverManager<SC, MV, OP> > solver = solverFactory.create(belosType, belosList);
-      solver->setProblem(belosProblem);
-      
-      // Perform solve
+
+      int numIts;
       Belos::ReturnType ret = Belos::Unconverged;
-      ret = solver->solve();
-      
+
+#if defined(HAVE_MUELU_TPETRA)
+      constexpr bool verbose = false;
+      BelosTpetra::Impl::register_Cg (verbose);
+      BelosTpetra::Impl::register_CgPipeline (verbose);
+      BelosTpetra::Impl::register_CgSingleReduce (verbose);
+      BelosTpetra::Impl::register_Gmres (verbose);
+      BelosTpetra::Impl::register_GmresS (verbose);
+      BelosTpetra::Impl::register_GmresSstep (verbose);
+      BelosTpetra::Impl::register_GmresSingleReduce (verbose);
+
+      try {
+
+        TEUCHOS_TEST_FOR_EXCEPTION(lib!=Xpetra::UseTpetra, std::invalid_argument, "Need to use Tpetra backend in order to call a Belos Tpetra solver.");
+
+        using tMV = Tpetra::MultiVector<SC, LO, GO, NO>;
+        using tOP = Tpetra::Operator<SC, LO, GO, NO>;
+
+        Teuchos::RCP<tOP> belosPrecTpetra = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
+
+        // Construct a Belos LinearProblem object
+        RCP<Belos::LinearProblem<SC, tMV, tOP> > belosProblem = rcp(new Belos::LinearProblem<SC, tMV, tOP>(Atpetra, Xtpetra, Btpetra));
+        if(solvePreconditioned) belosProblem->setRightPrec(belosPrecTpetra);
+
+        bool set = belosProblem->setProblem();
+        if (set == false) {
+          throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+        }
+
+        // Create an iterative solver manager
+        Belos::SolverFactory<SC, tMV, tOP> solverFactory;
+        RCP< Belos::SolverManager<SC, tMV, tOP> > solver = solverFactory.create(belosType, belosList);
+        solver->setProblem(belosProblem);
+
+        // Perform solve
+        ret = solver->solve();
+        numIts = solver->getNumIters();
+
+      } catch (std::invalid_argument)
+#endif
+      {
+
+        // Construct a Belos LinearProblem object
+        RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
+        if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
+
+        bool set = belosProblem->setProblem();
+        if (set == false) {
+          throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+        }
+
+        // Create an iterative solver manager
+        Belos::SolverFactory<SC, MV, OP> solverFactory;
+        RCP< Belos::SolverManager<SC, MV, OP> > solver = solverFactory.create(belosType, belosList);
+        solver->setProblem(belosProblem);
+
+        // Perform solve
+        ret = solver->solve();
+        numIts = solver->getNumIters();
+
+      }
+
       // Get the number of iterations for this solve.
-      out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+      out << "Number of iterations performed for this solve: " << numIts << std::endl;
+
       // Check convergence
       if (ret != Belos::Converged)
         out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
@@ -361,7 +421,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
       throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
     }
   }// end resolves
-  
+
 }
 
 #endif

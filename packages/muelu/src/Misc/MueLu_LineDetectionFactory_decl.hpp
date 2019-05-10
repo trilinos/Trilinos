@@ -71,6 +71,9 @@ namespace MueLu {
 
   public:
 
+    using coordinate_type       = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using CoordinateMultiVector = typename Xpetra::MultiVector<coordinate_type, LO, GO, NO>;
+
     //! @name Constructors/Destructors.
     //@{
 
@@ -103,15 +106,22 @@ namespace MueLu {
     //@}
 
   private:
-    void sort_coordinates(LO numCoords, LO* OrigLoc, Scalar* xvals, Scalar* yvals, Scalar* zvals, Scalar* xtemp, Scalar* ytemp, Scalar* ztemp, bool flipXY = false) const;
+    void sort_coordinates(LO numCoords, LO* OrigLoc,
+                          coordinate_type* xvals,
+                          coordinate_type* yvals,
+                          coordinate_type* zvals,
+                          coordinate_type* xtemp,
+                          coordinate_type* ytemp,
+                          coordinate_type* ztemp,
+                          bool flipXY = false) const;
 
     LO ML_compute_line_info(LO LayerId[], LO VertLineId[],
-                                      LO Ndof, LO DofsPerNode,
-                                      LO MeshNumbering, LO NumNodesPerVertLine,
-                                      SC *xvals, SC *yvals, SC *zvals,
-                                      const Teuchos::Comm<int>& comm ) const ;
+                            LO Ndof, LO DofsPerNode,
+                            LO MeshNumbering, LO NumNodesPerVertLine,
+                            coordinate_type *xvals, coordinate_type *yvals, coordinate_type *zvals,
+                            const Teuchos::Comm<int>& comm ) const ;
 
-    void ML_az_dsort2(SC dlist[], LO N, LO list2[]) const;
+    void ML_az_dsort2(coordinate_type dlist[], LO N, LO list2[]) const;
 
     //! internally stores line detection mode
     //! can be either vertical, horizontal or coordinates

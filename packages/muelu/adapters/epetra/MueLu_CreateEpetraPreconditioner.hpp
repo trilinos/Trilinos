@@ -21,28 +21,69 @@ namespace MueLu {
     Given a EpetraCrs_Matrix, this function returns a constructed MueLu preconditioner.
     @param[in] inA Matrix
     @param[in] paramListIn Parameter list
-    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
-    @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
   Teuchos::RCP<MueLu::EpetraOperator>
   CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>&   inA,
                              // FIXME: why is it non-const
-                             Teuchos::ParameterList& paramListIn,
-                             const Teuchos::RCP<Epetra_MultiVector>& inCoords    = Teuchos::null,
-                             const Teuchos::RCP<Epetra_MultiVector>& inNullspace = Teuchos::null);
+                             Teuchos::ParameterList& paramListIn);
 
   /*!
     @brief Helper function to create a MueLu preconditioner that can be used by Epetra.
     @ingroup MueLuAdapters
     Given a Epetra_CrsMatrix, this function returns a constructed MueLu preconditioner.
     @param[in] inA Matrix
-    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
-    @param[in] inNullspace (optional) Near nullspace of the matrix.
+    @param[in] xmlFileName XML file containing MueLu options.
     */
   Teuchos::RCP<MueLu::EpetraOperator>
-  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & inA,
-                             const Teuchos::RCP<Epetra_MultiVector>& inCoords    = Teuchos::null,
-                             const Teuchos::RCP<Epetra_MultiVector>& inNullspace = Teuchos::null);
+  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & A,
+                             const std::string& xmlFileName);
+
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Epetra.
+    @ingroup MueLuAdapters
+    Given a Epetra_CrsMatrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    */
+  Teuchos::RCP<MueLu::EpetraOperator>
+  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & A,
+                             const std::string& xmlFileName);
+
+  void ReuseEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>& inA, MueLu::EpetraOperator& Op);
+
+
+#ifdef HAVE_MUELU_DEPRECATED_CODE
+
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Epetra.
+    @ingroup MueLuAdapters
+    Given a EpetraCrs_Matrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] paramListIn Parameter list
+    @param[in] inCoords Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+    */
+  MUELU_DEPRECATED
+  Teuchos::RCP<MueLu::EpetraOperator>
+  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>&   inA,
+                             // FIXME: why is it non-const
+                             Teuchos::ParameterList& paramListIn,
+                             const Teuchos::RCP<Epetra_MultiVector>& inCoords,
+                             const Teuchos::RCP<Epetra_MultiVector>& inNullspace);
+
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Epetra.
+    @ingroup MueLuAdapters
+    Given a EpetraCrs_Matrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] paramListIn Parameter list
+    @param[in] inCoords Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+    @param[in] inNullspace Near nullspace of the matrix.
+    */
+  MUELU_DEPRECATED
+  Teuchos::RCP<MueLu::EpetraOperator>
+  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>&   inA,
+                             // FIXME: why is it non-const
+                             Teuchos::ParameterList& paramListIn,
+                             const Teuchos::RCP<Epetra_MultiVector>& inCoords);
 
   /*!
     @brief Helper function to create a MueLu preconditioner that can be used by Epetra.
@@ -50,16 +91,45 @@ namespace MueLu {
     Given a Epetra_CrsMatrix, this function returns a constructed MueLu preconditioner.
     @param[in] inA Matrix
     @param[in] xmlFileName XML file containing MueLu options
-    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
-    @param[in] inNullspace (optional) Near nullspace of the matrix.
+    @param[in] inCoords Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+    @param[in] inNullspace Near nullspace of the matrix.
     */
+  MUELU_DEPRECATED
   Teuchos::RCP<MueLu::EpetraOperator>
   CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & A,
                              const std::string& xmlFileName,
+                             const Teuchos::RCP<Epetra_MultiVector>& inCoords,
+                             const Teuchos::RCP<Epetra_MultiVector>& inNullspace);
+
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Epetra.
+    @ingroup MueLuAdapters
+    Given a Epetra_CrsMatrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] xmlFileName XML file containing MueLu options
+    @param[in] inCoords Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+    */
+  MUELU_DEPRECATED
+  Teuchos::RCP<MueLu::EpetraOperator>
+  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & A,
+                             const std::string& xmlFileName,
+                             const Teuchos::RCP<Epetra_MultiVector>& inCoords);
+
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Epetra.
+    @ingroup MueLuAdapters
+    Given a Epetra_CrsMatrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+    @param[in] inNullspace (optional) Near nullspace of the matrix.
+    */
+  MUELU_DEPRECATED
+  Teuchos::RCP<MueLu::EpetraOperator>
+  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & inA,
                              const Teuchos::RCP<Epetra_MultiVector>& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Epetra_MultiVector>& inNullspace = Teuchos::null);
 
-  void ReuseEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>& inA, MueLu::EpetraOperator& Op);
+#endif
 
 } //namespace
 #endif // HAVE_MUELU_SERIAL and HAVE_MUELU_EPETRA

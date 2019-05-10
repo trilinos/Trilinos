@@ -374,7 +374,7 @@ createTask(Kokkos::TaskScheduler<PHX::exec_space>& ,
 	   typename Traits::EvalData )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-			     "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createTask() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the createTask() method in this Evalautor.");
+			     "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for createTask() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the createTask() method in this Evaluator.");
 }
 #endif
 //**********************************************************************
@@ -385,7 +385,7 @@ PHX::EvaluatorWithBaseImpl<Traits>::
 taskSize() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-			     "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for taskSize() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the taskSize() method in this Evalautor.");
+			     "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for taskSize() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the taskSize() method in this Evaluator.");
 }
 #endif
 
@@ -423,7 +423,7 @@ PHX::DeviceEvaluator<Traits>* PHX::EvaluatorWithBaseImpl<Traits>::
 createDeviceEvaluator() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                             "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createDeviceEvalautor() that is required when using Device DAG support.  Please implement the createDeviceEvaluator() method in this Evalautor.");
+                             "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for createDeviceEvaluator() that is required when using Device DAG support.  Please implement the createDeviceEvaluator() method in this Evaluator.");
   // Suppress cuda warning for unreachable code
 #ifndef KOKKOS_ENABLE_CUDA
   return nullptr;
@@ -436,7 +436,7 @@ void
 PHX::EvaluatorWithBaseImpl<Traits>::rebuildDeviceEvaluator(PHX::DeviceEvaluator<Traits>* /* e */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                             "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for rebuildDeviceEvalautor() that is required when using Device DAG support.  Please implement the rebuildDeviceEvaluator() method in this Evalautor.");
+                             "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for rebuildDeviceEvaluator() that is required when using Device DAG support.  Please implement the rebuildDeviceEvaluator() method in this Evaluator.");
 }
 
 //**********************************************************************
@@ -445,7 +445,7 @@ void
 PHX::EvaluatorWithBaseImpl<Traits>::deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* /* e */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                             "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for deleteDeviceEvalautor() that is required when using Device DAG support.  Please implement the deleteDeviceEvaluator() method in this Evalautor.");
+                             "Error - The evaluator \""<< this->getName() <<"\" does not have a derived method for deleteDeviceEvaluator() that is required when using Device DAG support.  Please implement the deleteDeviceEvaluator() method in this Evaluator.");
 }
 
 //**********************************************************************

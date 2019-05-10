@@ -48,7 +48,7 @@
 namespace panzer {
 
 template <typename LO,typename GO>
-class BlockedDOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,std::pair<int,GO>,LO,GO> {
+class BlockedDOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,std::pair<int,GO>> {
 public:
    BlockedDOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false) {}
    virtual ~BlockedDOFManagerFactory() {}
@@ -100,7 +100,7 @@ public:
    virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,std::pair<int,GO> > > 
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
+                            const Teuchos::RCP<ConnManager> & connMngr,
                             const std::string & fieldOrder="") const;
 
    void setUseDOFManagerFEI(bool flag)

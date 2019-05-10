@@ -96,7 +96,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel,
-                                                                                 Level& coarseLevel)
+                                                                                 Level& /* coarseLevel */)
     const {
     Input(fineLevel, "A");
     Input(fineLevel, "Nullspace");
@@ -1358,14 +1358,14 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   ComputeLocalEntries(const RCP<const Matrix>& Aghost, const Array<LO> coarseRate,
-                      const Array<LO> endRate, const LO BlkSize, const Array<LO> elemInds,
-                      const Array<LO> lCoarseElementsPerDir, const LO numDimensions,
-                      const Array<LO> lFineNodesPerDir, const Array<GO> gFineNodesPerDir,
-                      const Array<GO> gIndices, const Array<LO> lCoarseNodesPerDir,
+                      const Array<LO> /* endRate */, const LO BlkSize, const Array<LO> elemInds,
+                      const Array<LO> /* lCoarseElementsPerDir */, const LO numDimensions,
+                      const Array<LO> lFineNodesPerDir, const Array<GO> /* gFineNodesPerDir */,
+                      const Array<GO> /* gIndices */, const Array<LO> /* lCoarseNodesPerDir */,
                       const Array<bool> ghostInterface, const Array<int> elementFlags,
-                      const std::string stencilType, const std::string blockStrategy,
+                      const std::string stencilType, const std::string /* blockStrategy */,
                       const Array<LO> elementNodesPerDir, const LO numNodesInElement,
-                      const Array<GO> colGIDs,
+                      const Array<GO> /* colGIDs */,
                       Teuchos::SerialDenseMatrix<LO,SC>& Pi, Teuchos::SerialDenseMatrix<LO,SC>& Pf,
                       Teuchos::SerialDenseMatrix<LO,SC>& Pe, Array<LO>& dofType,
                       Array<LO>& lDofInd) const {
@@ -1670,7 +1670,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CollapseStencil(const int type, const int orientation, const int collapseFlags[3],
+  CollapseStencil(const int type, const int orientation, const int /* collapseFlags */[3],
                   Array<SC>& stencil) const {
 
     if(type == 2) {// Face stencil collapse
@@ -1750,8 +1750,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  FormatStencil(const LO BlkSize, const Array<bool> ghostInterface, const LO ie, const LO je,
-                const LO ke, const ArrayView<const SC> rowValues,const Array<LO> elementNodesPerDir,
+  FormatStencil(const LO BlkSize, const Array<bool> /* ghostInterface */, const LO /* ie */, const LO /* je */,
+                const LO /* ke */, const ArrayView<const SC> rowValues,const Array<LO> /* elementNodesPerDir */,
                 const int collapseFlags[3], const std::string stencilType, Array<SC>& stencil)
     const {
 
@@ -1945,7 +1945,7 @@ namespace MueLu {
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
-                const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const
+                const typename Teuchos::Array<LocalOrdinal>::iterator& /* last2 */) const
   {
     typedef typename std::iterator_traits<typename Teuchos::Array<LocalOrdinal>::iterator>::difference_type DT;
     DT n = last1 - first1;

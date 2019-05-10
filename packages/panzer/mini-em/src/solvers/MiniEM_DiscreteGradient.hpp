@@ -105,6 +105,7 @@ void addDiscreteGradientToRequestHandler(
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);
+    std::vector<bool> insertedEdges(rowmap->getNodeNumElements(),false);
     for(std::size_t blockIter = 0; blockIter < elementBlockIds.size(); ++blockIter) {
 
       // loop over elements
@@ -129,8 +130,8 @@ void addDiscreteGradientToRequestHandler(
 
         // loop over edges
         for(std::size_t eIter = 0; eIter < eFieldOffsets.size(); ++eIter){
- 
-          if(isOwned[eIter]){
+
+          if(isOwned[eIter] && !insertedEdges[eLIDs[eIter]]){
 
             int headIndex = cell_topology.getNodeMap(1, eIter, 0);
             int tailIndex = cell_topology.getNodeMap(1, eIter, 1);
@@ -142,11 +143,8 @@ void addDiscreteGradientToRequestHandler(
  
             // get LIDs associated with nodes
             int indices[2] = {nLIDs[tailIndex],nLIDs[headIndex]};
- 
-            // insert values in matrix
-            LocalOrdinal err = grad_matrix->replaceLocalValues(eLIDs[eIter], 2, values, indices);
-            if (err<2)
-              grad_matrix->insertLocalValues(eLIDs[eIter], 2, values, indices);
+            grad_matrix->insertLocalValues(eLIDs[eIter], 2, values, indices);
+            insertedEdges[eLIDs[eIter]] = true;
           }//end if
         }//end edge loop
       }//end element loop
@@ -200,6 +198,7 @@ void addDiscreteGradientToRequestHandler(
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);
+    std::vector<bool> insertedEdges(rowmap->NumMyElements(),false);
     for(std::size_t blockIter = 0; blockIter < elementBlockIds.size(); ++blockIter) {
 
       // loop over elements
@@ -225,7 +224,7 @@ void addDiscreteGradientToRequestHandler(
         // loop over edges
         for(std::size_t eIter = 0; eIter < eFieldOffsets.size(); ++eIter){
 
-          if(isOwned[eIter]){
+          if(isOwned[eIter] && !insertedEdges[eLIDs[eIter]]){
 
             int headIndex = cell_topology.getNodeMap(1, eIter, 0);
             int tailIndex = cell_topology.getNodeMap(1, eIter, 1);
@@ -239,10 +238,9 @@ void addDiscreteGradientToRequestHandler(
             int indices[2] = {nLIDs[tailIndex],nLIDs[headIndex]};
 
             // insert values in matrix
-            int err = grad_matrix->ReplaceMyValues(eLIDs[eIter], 2, values, indices);
-            if (err != 0)
-              err = grad_matrix->InsertMyValues(eLIDs[eIter], 2, values, indices);
+            int err = grad_matrix->InsertMyValues(eLIDs[eIter], 2, values, indices);
             TEUCHOS_ASSERT_EQUALITY(err,0);
+            insertedEdges[eLIDs[eIter]] = true;
           }//end if
         }//end edge loop
       }//end element loop

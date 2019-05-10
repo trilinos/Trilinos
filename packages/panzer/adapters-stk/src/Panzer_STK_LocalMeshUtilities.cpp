@@ -81,10 +81,9 @@ namespace
 /** Build a Kokkos array of all the global cell IDs from a connection manager.
   * Note that this is mapping between local IDs to global IDs.
   */
-template <typename LO,typename GO>
 void
-buildCellGlobalIDs(panzer::ConnManager<LO,GO> & conn,
-                   Kokkos::View<GO*> & globals)
+buildCellGlobalIDs(panzer::ConnManager & conn,
+                   Kokkos::View<panzer::Ordinal64*> & globals)
 {
   // extract topologies, and build global connectivity...currently assuming only one topology
   std::vector<shards::CellTopology> elementBlockTopologies;
@@ -115,17 +114,17 @@ buildCellGlobalIDs(panzer::ConnManager<LO,GO> & conn,
   std::size_t totalSize = 0;
   for (std::size_t which_blk=0;which_blk<block_ids.size();which_blk++) {
     // get the elem to face mapping
-    const std::vector<LO> & localIDs = conn.getElementBlock(block_ids[which_blk]);
+    const std::vector<int> & localIDs = conn.getElementBlock(block_ids[which_blk]);
     totalSize += localIDs.size();
   }
-  globals = Kokkos::View<GO*>("global_cells",totalSize);
+  globals = Kokkos::View<panzer::Ordinal64*>("global_cells",totalSize);
 
   for (std::size_t id=0;id<totalSize; ++id) {
     // sanity check
     int n_conn = conn.getConnectivitySize(id);
     TEUCHOS_ASSERT(n_conn==1);
 
-    const GO * connectivity = conn.getConnectivity(id);
+    const panzer::Ordinal64 * connectivity = conn.getConnectivity(id);
     globals(id) = connectivity[0];
   }
 
@@ -135,9 +134,8 @@ buildCellGlobalIDs(panzer::ConnManager<LO,GO> & conn,
 /** Build a Kokkos array mapping local cells to global node IDs.
   * Note that these are 'vertex nodes' and not 'basis nodes', 'quad nodes', or 'dof nodes'
   */
-template <typename LO,typename GO>
 void
-buildCellToNodes(panzer::ConnManager<LO,GO> & conn, Kokkos::View<GO**> & globals)
+buildCellToNodes(panzer::ConnManager & conn, Kokkos::View<panzer::Ordinal64**> & globals)
 {
   // extract topologies, and build global connectivity...currently assuming only one topology
   std::vector<shards::CellTopology> elementBlockTopologies;
@@ -160,20 +158,20 @@ buildCellToNodes(panzer::ConnManager<LO,GO> & conn, Kokkos::View<GO**> & globals
   std::size_t totalCells=0, maxNodes=0;
   for (std::size_t which_blk=0;which_blk<block_ids.size();which_blk++) {
     // get the elem to face mapping
-    const std::vector<LO> & localIDs = conn.getElementBlock(block_ids[which_blk]);
+    const std::vector<int> & localIDs = conn.getElementBlock(block_ids[which_blk]);
     if ( localIDs.size() == 0 )
       continue;
-    LO thisSize = conn.getConnectivitySize(localIDs[0]);
+    int thisSize = conn.getConnectivitySize(localIDs[0]);
 
     totalCells += localIDs.size();
     maxNodes = maxNodes<Teuchos::as<std::size_t>(thisSize) ? Teuchos::as<std::size_t>(thisSize) : maxNodes;
   }
-  globals = Kokkos::View<GO**>("cell_to_node",totalCells,maxNodes);
+  globals = Kokkos::View<panzer::Ordinal64**>("cell_to_node",totalCells,maxNodes);
 
   // build connectivity array
   for (std::size_t id=0;id<totalCells; ++id) {
-    const GO * connectivity = conn.getConnectivity(id);
-    LO nodeCnt = conn.getConnectivitySize(id);
+    const panzer::Ordinal64 * connectivity = conn.getConnectivity(id);
+    int nodeCnt = conn.getConnectivitySize(id);
 
     for(int n=0;n<nodeCnt;n++)
       globals(id,n) = connectivity[n];
@@ -462,7 +460,7 @@ buildGhostedVertices(const Tpetra::Import<int,GO,panzer::TpetraNodeType> & impor
 template<typename LO, typename GO>
 void
 setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
-                        panzer::ConnManager<LO,GO> & conn,
+                        panzer::ConnManager & conn,
                         const panzer::LocalMeshInfo<LO,GO> & mesh_info,
                         const std::string & element_block_name,
                         panzer::LocalMeshBlockInfo<LO,GO> & block_info)
@@ -517,7 +515,7 @@ setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
 template<typename LO, typename GO>
 void
 setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
-                          panzer::ConnManager<LO,GO>& /* conn */,
+                          panzer::ConnManager& /* conn */,
                           const panzer::LocalMeshInfo<LO,GO> & mesh_info,
                           const std::string & element_block_name,
                           const std::string & sideset_name,
@@ -750,7 +748,7 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 
 }
 
-}
+} // namespace
 
 template <typename LO, typename GO>
 void
@@ -781,16 +779,16 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   // We're allowed to do this since the connection manager only exists in this scope... even though it is also an RCP...
 
   // extract topology handle
-  RCP<panzer::ConnManager<LO,GO> > conn_rcp = rcp(new panzer_stk::STKConnManager<GO>(mesh_rcp));
-  panzer::ConnManager<LO,GO> & conn = *conn_rcp;
+  RCP<panzer::ConnManager> conn_rcp = rcp(new panzer_stk::STKConnManager(mesh_rcp));
+  panzer::ConnManager & conn = *conn_rcp;
 
   // build cell to node map
-  Kokkos::View<GO**> owned_cell_to_nodes;
+  Kokkos::View<panzer::Ordinal64**> owned_cell_to_nodes;
   buildCellToNodes(conn, owned_cell_to_nodes);
 
   // build the local to global cell ID map
   ///////////////////////////////////////////////////////////
-  Kokkos::View<GO*> owned_cells;
+  Kokkos::View<panzer::Ordinal64*> owned_cells;
   buildCellGlobalIDs(conn, owned_cells);
 
   // get neighboring cells
@@ -1096,14 +1094,14 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
 }
 
 // Explicit instantiation
-template
-void
-panzer_stk::generateLocalMeshInfo<int,int>(const panzer_stk::STK_Interface & mesh,
-                                           panzer::LocalMeshInfo<int,int> & mesh_info);
+// template
+// void
+// panzer_stk::generateLocalMeshInfo<int,int>(const panzer_stk::STK_Interface & mesh,
+//                                            panzer::LocalMeshInfo<int,int> & mesh_info);
 
-#ifndef PANZER_ORDINAL64_IS_INT
+// #ifndef PANZER_ORDINAL64_IS_INT
 template
 void
 panzer_stk::generateLocalMeshInfo<int,panzer::Ordinal64>(const panzer_stk::STK_Interface & mesh,
-                                           panzer::LocalMeshInfo<int,panzer::Ordinal64> & mesh_info);
-#endif
+                                                         panzer::LocalMeshInfo<int,panzer::Ordinal64> & mesh_info);
+// #endif

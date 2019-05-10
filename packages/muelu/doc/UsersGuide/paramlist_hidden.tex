@@ -245,6 +245,8 @@
         
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
         
+\cbb{rap: relative diagonal floor}{Array(double)}{{}}{Will boost diagonals on A matrices to the given floor.}
+        
 \cbb{rap: fix zero diagonals}{bool}{false}{Set zero diagonals on coarse grids to one.}
         
 \cbb{rap: fix zero diagonals threshold}{double}{0.}{Threshold at which diagonal entry is considered zero.}
@@ -257,6 +259,8 @@
 \cbb{rap: shift low storage}{bool}{false}{Use the low-storage version of the rap: shift}
         
 \cbb{rap: shift array}{Array(double)}{{}}{Effective shift at each level to use in the RAPShiftFactory (the string must be interpretable as an array by Teuchos).}
+        
+\cbb{rap: cfl array}{Array(double)}{{}}{Effective CFl at each level to use in the RAPShiftFactory (the string must be interpretable as an array by Teuchos).  }
         
 \cbb{rap: algorithm}{string}{galerkin}{Whether to use the Galerkin RAP or the Shift version}
         

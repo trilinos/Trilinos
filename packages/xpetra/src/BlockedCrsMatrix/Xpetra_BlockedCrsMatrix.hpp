@@ -171,7 +171,7 @@ namespace Xpetra {
      * \param npr extimated number of entries per row in each block(!)
      * \param pftype Xpetra profile type
      */
-    BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+    BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& /* comm */)
       : is_diagonal_(true), thyraOp_(thyraOp)
     {
       // extract information from Thyra blocked operator and rebuilt information

@@ -487,9 +487,6 @@ void Add(
     prefix << "ERROR, input matrix B must not have static graph!");
   TEUCHOS_TEST_FOR_EXCEPTION(B.isLocallyIndexed() , std::runtime_error,
     prefix << "ERROR, input matrix B must not be locally indexed!");
-  TEUCHOS_TEST_FOR_EXCEPTION(B.getProfileType()!=DynamicProfile, std::runtime_error,
-    prefix << "ERROR, input matrix B must have a dynamic profile!");
-
 
   RCP<const crs_matrix_type> Aprime = null;
   if (transposeA) {

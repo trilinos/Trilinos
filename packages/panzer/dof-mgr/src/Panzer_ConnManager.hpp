@@ -48,164 +48,94 @@
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 #include "Shards_CellTopology.hpp"
+#include "PanzerDofMgr_config.hpp"
+
 namespace panzer {
 
 class FieldPattern; // from DOFManager
 
-/** Pure abstract base class templated on the
-  * local ordinal types. This is used as a convenient
-  * abstraction over the different global ordinal types.
-  */
-template <typename LocalOrdinalT>
-class ConnManagerBase {
-public:
-   typedef LocalOrdinalT LocalOrdinal;
+  /// Pure virtual base class for supplying mesh connectivity information to the DOF Manager.
+  class ConnManager {
+  public:
 
-   virtual ~ConnManagerBase() {}
+    using GlobalOrdinal = panzer::Ordinal64;
+    using LocalOrdinal = int;
 
-   /** Tell the connection manager to build the connectivity assuming
+    virtual ~ConnManager() {}
+
+    /** Tell the connection manager to build the connectivity assuming
      * a particular field pattern.
      *
      * \param[in] fp Field pattern to build connectivity for
      */
-   virtual void buildConnectivity(const FieldPattern & fp) = 0;
-  
-   /** Build a clone of this connection manager, without any assumptions
+    virtual void buildConnectivity(const FieldPattern & fp) = 0;
+
+    /** Build a clone of this connection manager, without any assumptions
      * about the required connectivity (i.e. <code>buildConnectivity</code>
      * has never been called).
      */
-   virtual Teuchos::RCP<ConnManagerBase<LocalOrdinalT> > noConnectivityClone() const = 0;
+    virtual Teuchos::RCP<ConnManager> noConnectivityClone() const = 0;
 
-   /** How many mesh IDs are associated with this element?
+    /** How many mesh IDs are associated with this element?
      *
      * \param[in] localElmtId Local element ID
      *
      * \returns Number of mesh IDs that are associated with this element.
      */
-   virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const = 0;
+    virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const = 0;
 
-   /** Get the block ID for a particular element.
-     *
-     * \param[in] localElmtId Local element ID
-     */
-   virtual std::string getBlockId(LocalOrdinal localElmtId) const = 0;
-
-   /** How many element blocks in this mesh?
-     */
-   virtual std::size_t numElementBlocks() const = 0;
-
-   /** What are the blockIds included in this connection manager?
-     */
-   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
-
-   /** What are the cellTopologies linked to element blocks in this connection manager?
-    */
-   virtual void getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const = 0;
-
-    /** Get the local element IDs for a paricular element
-      * block.
-      *
-      * \param[in] blockID Block ID
-      *
-      * \returns Vector of local element IDs.
-      */
-     virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockID) const = 0;
-
-   /** Get the local element IDs for all "neighbor" elements that reside in a paricular element
-     * block (An element is a neighbor if it is in the one ring of owned elements).
-     *
-     * \param[in] blockID Block ID
-     *
-     * \returns Vector of local element IDs.
-     */
-   virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & blockID) const = 0;
-
-   /** Get elements, if any, associated with <code>el</code>, excluding
-     * <code>el</code> itself.
-     */
-   virtual const std::vector<LocalOrdinal>& getAssociatedNeighbors(const LocalOrdinal& el) const = 0;
-
-   /** Return whether getAssociatedNeighbors will return true for at least one
-     * input.
-     */
-   virtual bool hasAssociatedNeighbors() const = 0;
-};
-
-/** Pure abstract base class templated on the
-  * global and local ordinal types. It is assumed
-  * that element blocks are number by a GlobalOrdinal
-  * and local element IDs use the LocalOrdinal.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class ConnManager : public ConnManagerBase<LocalOrdinalT> {
-public:
-   typedef GlobalOrdinalT GlobalOrdinal;
-   typedef LocalOrdinalT LocalOrdinal;
-
-   virtual ~ConnManager() {}
-
-   /** Tell the connection manager to build the connectivity assuming
-     * a particular field pattern.
-     *
-     * \param[in] fp Field pattern to build connectivity for
-     */
-   virtual void buildConnectivity(const FieldPattern & fp) = 0;
-
-   /** Build a clone of this connection manager, without any assumptions
-     * about the required connectivity (e.g. <code>buildConnectivity</code>
-     * has never been called).
-     */
-   virtual Teuchos::RCP<ConnManagerBase<LocalOrdinalT> > noConnectivityClone() const = 0;
-
-   /** Get ID connectivity for a particular element
+    /** Get ID connectivity for a particular element
      *
      * \param[in] localElmtId Local element ID
      *
      * \returns Pointer to beginning of indices, with total size
      *          equal to <code>getConnectivitySize(localElmtId)</code>
      */
-   virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const = 0;
+    virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const = 0;
 
-   /** How many mesh IDs are associated with this element?
-     *
-     * \param[in] localElmtId Local element ID
-     *
-     * \returns Number of mesh IDs that are associated with this element.
-     */
-   virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const = 0;
-
-   /** Get the block ID for a particular element.
+    /** Get the block ID for a particular element.
      *
      * \param[in] localElmtId Local element ID
      */
-   virtual std::string getBlockId(LocalOrdinal localElmtId) const = 0;
+    virtual std::string getBlockId(LocalOrdinal localElmtId) const = 0;
 
-   /** How many element blocks in this mesh?
-     */
-   virtual std::size_t numElementBlocks() const = 0;
+    /** Returns the number of element blocks in this mesh */
+    virtual std::size_t numElementBlocks() const = 0;
 
-   /** What are the blockIds included in this connection manager?
-     */
-   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
+    /** What are the blockIds included in this connection manager */
+    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0;
 
-   /** Get the local element IDs for a paricular element
+    /** Returns the cellTopologies linked to element blocks in this connection manager */
+    virtual void getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const = 0;
+
+    /** Get the local element IDs for a paricular element
      * block.
      *
      * \param[in] blockID Block ID
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockID) const = 0;
+    virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockID) const = 0;
 
-   /** Get the local element IDs for all "neighbor" elements that reside in a particular element
+    /** Get the local element IDs for all "neighbor" elements that reside in a paricular element
      * block (An element is a neighbor if it is in the one ring of owned elements).
      *
      * \param[in] blockID Block ID
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & blockID) const = 0;
-};
+    virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & blockID) const = 0;
+
+    /** Get elements, if any, associated with <code>el</code>, excluding
+     * <code>el</code> itself.
+     */
+    virtual const std::vector<LocalOrdinal>& getAssociatedNeighbors(const LocalOrdinal& el) const = 0;
+
+    /** Return whether getAssociatedNeighbors will return true for at least one
+     * input.
+     */
+    virtual bool hasAssociatedNeighbors() const = 0;
+  };
 
 }
 

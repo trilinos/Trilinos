@@ -58,6 +58,8 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return wrapperModel_->getAppModel();}
+    virtual Teuchos::RCP<const WrapperModelEvaluator<Scalar> >
+      getWrapperModel(){return wrapperModel_;}
 
     /// Set solver via ParameterList solver name.
     virtual void setSolver(std::string solverName);

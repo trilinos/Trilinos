@@ -88,7 +88,6 @@ namespace {
   using std::ostream_iterator;
   using std::endl;
 
-  using Tpetra::createContigMap;
   using Tpetra::createContigMapWithNode;
 
   // bool testMpi = true;
@@ -164,7 +163,7 @@ namespace {
       }
       else {
         MV mineParent(smap,2+numVectors);
-	MV neigParent(tmap,2+numVectors);
+        MV neigParent(tmap,2+numVectors);
         TEUCHOS_TEST_FOR_EXCEPTION(numVectors != 5, std::logic_error, "Test assumption broken.");
         mvMine = mineParent.subViewNonConst(tuple<size_t>(0,6,3,4,5));
         mvWithNeighbors = neigParent.subViewNonConst(tuple<size_t>(0,6,3,4,5));
@@ -350,7 +349,9 @@ namespace {
     using Tpetra::createNonContigMapWithNode;
 
     // test ABSMAX CombineMode
-    // test with local and remote entries, as copyAndPermute() and unpackAndCombine() both need to be tested
+    //
+    // The test includes both local and remote entries, to exercise
+    // both copying and permuting, and unpacking and combining.
     typedef Tpetra::Vector<>::scalar_type SC;
     typedef Tpetra::Vector<SC,LO,GO,Node> Vec;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -465,7 +466,7 @@ namespace {
     }
     TEST_EQUALITY(all_is_well,true);
 
-    
+
     bool isvalid=Tpetra::Import_Util::checkImportValidity(Importer);
     if(!isvalid) {
       std::ostringstream oss;
@@ -475,7 +476,7 @@ namespace {
     }
 
     TEST_EQUALITY(isvalid,true);
-    
+
   }
 
   //

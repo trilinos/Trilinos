@@ -116,8 +116,7 @@ namespace MueLu {
   private:
 
     //@{
-
-
+    
     mutable
     bool hasDeclaredInput_;
 

@@ -94,7 +94,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationPhase2aAlgorithm_kokkos(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    AggregationPhase2aAlgorithm_kokkos(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~AggregationPhase2aAlgorithm_kokkos() { }

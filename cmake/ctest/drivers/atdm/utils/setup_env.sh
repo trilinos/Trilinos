@@ -1,3 +1,7 @@
+#
+# A) Load the env
+#
+
 source ${WORKSPACE}/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 echo
 module list
@@ -13,14 +17,51 @@ set | grep ATDM_CONFIG_
 echo
 echo "PATH=$PATH"
 
+#
+# B) Set the defaut git repo for Trilinos
+#
+
 if [ "${Trilinos_REPOSITORY_LOCATION}" == "" ] ; then
   export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
 fi
 
-# Echo the env var set by the driver (if desired)
-echo "ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE = ${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE}"
+#
+# C) Setup install-releated stuff
+#
+
+echo
+
+if  [[ "${ATDM_CONFIG_USE_WORKSPACE_BASE_DEFAULT}" == "" ]] \
+  && [[ "${ATDM_CONFIG_USE_JENKINS_INSTALL_DEFAULTS}" == "1" ]] ; then
+  export ATDM_CONFIG_USE_WORKSPACE_BASE_DEFAULT=1
+fi
+echo "ATDM_CONFIG_USE_WORKSPACE_BASE_DEFAULT=${ATDM_CONFIG_USE_WORKSPACE_BASE_DEFAULT}"
+
+if  [[ "${ATDM_CONFIG_USE_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT}" == "" ]] \
+  && [[ "${ATDM_CONFIG_USE_JENKINS_INSTALL_DEFAULTS}" == "1" ]] ; then
+  export ATDM_CONFIG_USE_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=1
+fi
+echo "ATDM_CONFIG_USE_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=${ATDM_CONFIG_USE_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT}"
+
+if [[ "${ATDM_CONFIG_WORKSPACE_BASE}" == "" ]] \
+  && [[ "${ATDM_CONFIG_WORKSPACE_BASE_DEFAULT}" != "" ]] \
+  && [[ "${ATDM_CONFIG_USE_WORKSPACE_BASE_DEFAULT}" == "1" ]] ; then
+  export ATDM_CONFIG_WORKSPACE_BASE="${ATDM_CONFIG_WORKSPACE_BASE_DEFAULT}"
+fi
+echo "ATDM_CONFIG_WORKSPACE_BASE=${ATDM_CONFIG_WORKSPACE_BASE}"
+
+if [[ "${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE}" == "" ]] \
+  && [[ "${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT}" != "" ]] \
+  && [[ "${ATDM_CONFIG_USE_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT}" == "1" ]] ; then
+  export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE="${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT}"
+fi
+echo "ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE=${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE}"
 
 if [ "${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE}" != "" ] ; then
+
+  echo
+  echo "Setting up to use a standard <install-prefix-base>/<date>/<system-build-name>/ install dir!"
+  echo
 
   # Get the <date> (YYYY-MM-DD) as part of directory name.  (NOTE: This <date>
   # should exactly match the CDash 'date=<date>` field in the various PHP
@@ -41,6 +82,6 @@ if [ "${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE}" != "" ] ; then
   export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX="${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE}/${CDASH_TESTING_DATE}/${SYSTEM_AND_BUILD_NAME}"
 
   # Show the full install dir path
-  echo "ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX = ${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX}"
+  echo "ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX=${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX}"
 
 fi

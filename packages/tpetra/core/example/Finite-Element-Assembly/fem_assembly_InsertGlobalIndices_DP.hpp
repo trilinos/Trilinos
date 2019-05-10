@@ -63,13 +63,14 @@
 
 namespace TpetraExamples
 {
-using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
-int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOpts& opts);
+int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                                  const struct CmdLineOpts& opts);
 
 
 
-int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpts & opts)
+int executeInsertGlobalIndicesDP(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+                                 const struct CmdLineOpts & opts)
 {
   using Teuchos::RCP;
 
@@ -92,7 +93,8 @@ int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpt
 
 
 
-int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOpts& opts)
+int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+                                  const struct CmdLineOpts& opts)
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;

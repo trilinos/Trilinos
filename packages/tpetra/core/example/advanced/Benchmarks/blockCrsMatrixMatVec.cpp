@@ -49,6 +49,7 @@
 
 #include "Tpetra_Experimental_BlockCrsMatrix.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
@@ -621,14 +622,14 @@ main (int argc, char* argv[])
       setCmdLineOpts (opts, clp);
       int result = parseCmdLineOpts (clp, argc, argv);
       if (result == 1) { // help printed
-	return EXIT_SUCCESS;
+        return EXIT_SUCCESS;
       }
       else if (result == -1) { // parse error
-	return EXIT_FAILURE;
+        return EXIT_FAILURE;
       }
       result = checkCmdLineOpts (out, *comm, opts);
       if (result != 0) {
-	return EXIT_FAILURE;
+        return EXIT_FAILURE;
       }
     }
 
@@ -657,12 +658,12 @@ main (int argc, char* argv[])
     }
     else {
       auto timer =
-	TimeMonitor::getNewCounter ("Tpetra BlockCrsMatrix apply (mat-vec)");
+        TimeMonitor::getNewCounter ("Tpetra BlockCrsMatrix apply (mat-vec)");
       {
-	TimeMonitor timeMon (*timer);
-	for (int trial = 0; trial < opts.numTrials; ++trial) {
-	  A->apply (X, Y);
-	}
+        TimeMonitor timeMon (*timer);
+        for (int trial = 0; trial < opts.numTrials; ++trial) {
+          A->apply (X, Y);
+        }
       }
     }
 
@@ -670,7 +671,7 @@ main (int argc, char* argv[])
       TimeMonitor::report (comm.ptr (), out);
     }
   }
-  
+
   if (success) {
     return EXIT_SUCCESS;
   }

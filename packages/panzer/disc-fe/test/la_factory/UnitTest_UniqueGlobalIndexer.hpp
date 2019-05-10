@@ -227,7 +227,7 @@ public:
 
    /** Not needed, so return null.
      */
-   virtual Teuchos::RCP<const panzer::ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
+   virtual Teuchos::RCP<const panzer::ConnManager> getConnManager() const
    { return Teuchos::null; }
 
 private:
@@ -352,7 +352,7 @@ public:
 
    /** Not needed, so return null.
      */
-   virtual Teuchos::RCP<const panzer::ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
+   virtual Teuchos::RCP<const panzer::ConnManager> getConnManager() const
    { return Teuchos::null; }
 
 private:
@@ -476,7 +476,7 @@ public:
 
    /** Not needed, so return null.
      */
-   virtual Teuchos::RCP<const panzer::ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
+   virtual Teuchos::RCP<const panzer::ConnManager> getConnManager() const
    { return Teuchos::null; }
 
 private:

@@ -242,7 +242,6 @@ class crsGraph_Swap_Tester
         using Teuchos::Comm;
         using Teuchos::RCP;
 
-        using graph_type           = Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;      // Tpetra CrsGraph type
         using map_type             = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;           // Tpetra Map type
         using map_rows_type        = std::map<GlobalOrdinal, int>;                   // map rows to pid's
         using vec_go_type          = std::vector<GlobalOrdinal>;                     // vector of GlobalOrdinals

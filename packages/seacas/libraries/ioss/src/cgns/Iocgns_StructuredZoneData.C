@@ -189,7 +189,7 @@ namespace {
                      int ordinal, int rank)
   {
     for (auto zgc : parent->m_zoneConnectivity) {
-      if (!zgc.is_intra_block() || zgc_overlaps(child, zgc)) {
+      if (!zgc.is_from_decomp() || zgc_overlaps(child, zgc)) {
         // Modify source and donor range to subset it to new block ranges.
         zgc_subset_ranges(child, zgc);
         zgc.m_ownerZone = child->m_zone;

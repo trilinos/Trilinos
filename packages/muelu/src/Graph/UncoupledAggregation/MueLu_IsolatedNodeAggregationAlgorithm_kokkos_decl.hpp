@@ -91,7 +91,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    IsolatedNodeAggregationAlgorithm_kokkos(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    IsolatedNodeAggregationAlgorithm_kokkos(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~IsolatedNodeAggregationAlgorithm_kokkos() { }

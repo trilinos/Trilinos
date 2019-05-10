@@ -456,8 +456,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     // build DOF Managers and linear object factories
 
     // build the connection manager
-    const Teuchos::RCP<panzer::ConnManager<LocalOrdinal,GlobalOrdinal> >
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<GlobalOrdinal>(mesh));
+    const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     // blocked degree of freedom manager
     panzer::BlockedDOFManagerFactory<LocalOrdinal,GlobalOrdinal> globalIndexerFactory;
@@ -491,7 +491,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     req_handler->addRequestCallback(Teuchos::rcp(new mini_em::OperatorRequestCallback(auxGlobalData, matrix_output)));
     Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal> > callback =
       rcp(new panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal>(
-                                                                                   rcp_dynamic_cast<panzer_stk::STKConnManager<GlobalOrdinal> >(conn_manager,true),
+                                                                                   rcp_dynamic_cast<panzer_stk::STKConnManager>(conn_manager,true),
                                                                                    rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(dofManager,true),
                                                                                    rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(auxDofManager,true)));
     req_handler->addRequestCallback(callback);

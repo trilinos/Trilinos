@@ -47,19 +47,12 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Ifpack2_Utilities.hpp"
-#include "Ifpack2_Relaxation_decl.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include <cstdlib>
 #include <sstream>
 #include "KokkosSparse_gauss_seidel.hpp"
-
-
-// mfh 28 Mar 2013: Uncomment out these three lines to compute
-// statistics on diagonal entries in compute().
-// #ifndef IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS
-// #  define IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS 1
-// #endif // IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS
 
 namespace {
   // Validate that a given int is nonnegative.
@@ -154,7 +147,7 @@ template<class MatrixType>
 void Relaxation<MatrixType>::updateCachedMultiVector(const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & map, size_t numVecs) const{
   // Allocate a multivector if the cached one isn't perfect
   // Note: We check for map pointer equality here since it is much cheaper than isSameAs()
-  if(cachedMV_.is_null() || &*map != &*cachedMV_->getMap() || cachedMV_->getNumVectors() !=numVecs) 
+  if(cachedMV_.is_null() || &*map != &*cachedMV_->getMap() || cachedMV_->getNumVectors() !=numVecs)
     cachedMV_ = Teuchos::rcp(new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(map, numVecs, false));
 }
 
@@ -755,7 +748,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   using Teuchos::reduceAll;
   typedef local_ordinal_type LO;
   typedef typename node_type::device_type device_type;
-  
+
   const std::string timerName ("Ifpack2::Relaxation::computeBlockCrs");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {

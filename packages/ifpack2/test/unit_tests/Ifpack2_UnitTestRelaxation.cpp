@@ -305,14 +305,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SymGaussSeidelZeroRows, Sca
     return;
   }
 
-  // Create the Node instance.  This ensures that the test will work
-  // even if Node is not the default Node type.
-  RCP<Node> node;
-  { // All Node constructors demand a ParameterList input.
-    ParameterList junk;
-    node = rcp (new Node (junk));
-  }
-
   // The number of rows of the matrix and vectors owned by the calling
   // process.  One process (Proc 0) owns zero rows, and the other
   // process(es) own a nonzero amount of rows.  This is the point of
@@ -327,7 +319,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SymGaussSeidelZeroRows, Sca
   }
 
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-  RCP<const map_type> rowMap (new map_type (INVALID, nelPerProc, 0, comm, node));
+  RCP<const map_type> rowMap (new map_type (INVALID, nelPerProc, 0, comm));
   RCP<const crs_matrix_type> crsMatrix = tif_utest::create_test_matrix<Scalar,LO,GO,Node> (rowMap);
 
   // We don't really need prec to be a pointer here, but it's

@@ -101,7 +101,7 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createMembers(int num
     weakSelfPtr_.create_strong().getConst(),
     tpetraVectorSpace<Scalar>(
       Tpetra::createLocalMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(
-        numMembers, tpetraMap_->getComm(), tpetraMap_->getNode()
+        numMembers, tpetraMap_->getComm()
         )
       ),
     Teuchos::rcp(

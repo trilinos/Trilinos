@@ -70,7 +70,7 @@ using Teuchos::rcpFromRef;
 namespace panzer {
 namespace unit_test {
 
-typedef CartesianConnManager<int,Ordinal64>::Triplet<Ordinal64> Triplet;
+using Triplet = CartesianConnManager::Triplet<panzer::Ordinal64>;
 
 RCP<const panzer::FieldPattern> buildFieldPattern(RCP<Intrepid2::Basis<PHX::Device,double,double> > basis)
 {
@@ -80,7 +80,7 @@ RCP<const panzer::FieldPattern> buildFieldPattern(RCP<Intrepid2::Basis<PHX::Devi
 }
 
 std::string getElementBlock(const Triplet & element,
-                                    const CartesianConnManager<int,Ordinal64> & connManager)
+                                    const CartesianConnManager & connManager)
                                     
 {
   int localElmtId = connManager.computeLocalElementIndex(element); 
@@ -89,7 +89,7 @@ std::string getElementBlock(const Triplet & element,
 
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
+  typedef CartesianConnManager CCM;
   typedef panzer::DOFManager<int,Ordinal64> DOFManager;
 
   // build global (or serial communicator)
@@ -181,8 +181,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef panzer::DOFManager<int,Ordinal64> DOFManager;
+  using CCM = CartesianConnManager;
+  using DOFManager = panzer::DOFManager<int,Ordinal64>;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -280,8 +280,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
 
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef panzer::DOFManager<int,Ordinal64> DOFManager;
+  using CCM = CartesianConnManager;
+  using DOFManager = panzer::DOFManager<int,Ordinal64>;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI

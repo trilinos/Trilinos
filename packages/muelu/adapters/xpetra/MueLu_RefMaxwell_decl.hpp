@@ -213,7 +213,7 @@ namespace MueLu {
                const Teuchos::RCP<MultiVector>  & Nullspace,
                const Teuchos::RCP<RealValuedMultiVector>  & Coords,
                Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+               bool ComputePrec)
     {
       initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
 
@@ -308,13 +308,16 @@ namespace MueLu {
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
+#ifdef HAVE_MUELU_DEPRECATED_CODE
     template <class NewNode>
     Teuchos::RCP< RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
+    MUELU_DEPRECATED
     clone (const RCP<NewNode>& new_node) const {
       return Teuchos::rcp (new RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, NewNode>
                            (HierarchyH_->template clone<NewNode> (new_node),
                             Hierarchy22_->template clone<NewNode> (new_node)));
     }
+#endif
 
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
 

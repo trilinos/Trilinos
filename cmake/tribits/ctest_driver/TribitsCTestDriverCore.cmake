@@ -696,9 +696,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #   non-empty value is set (default empty "")
 #
 # Arbitrary options can be set to be passed into the inner CMake configure
-# after the above options are passed by setting the following variables in the
-# outer CTest -S driver script file before calling ``TRIBITS_CTEST_DRIVER()``
-# (but are **NOT** read in as env vars):
+# after the above options are passed by setting the following variables:
 #
 #   .. _EXTRA_SYSTEM_CONFIGURE_OPTIONS:
 #
@@ -723,20 +721,33 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     those options.  **WARNING:** Do not include any semicolons ';' in these
 #     arguments (see below WARNING).
 #
+#   ``${PROJECT_NAME}_EXTRA_CONFIGURE_OPTIONS``:
+#
+#     A yet additional list of extra cmake configure options to be passed to
+#     the inner CMake configure after all of the others.  Unlike the above
+#     options, this var is read from the env and allows the user to set
+#     arbitary configure options that overrides all others. **WARNING:** Do
+#     not include any semicolons ';' in these arguments (see below WARNING).
+#
 # These configure options are passed into the ``CTEST_CONFIGURE()`` command in
 # the order::
 #
-#  <initial options> ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}} ${EXTRA_CONFIGURE_OPTIONS}
+#  <initial options> ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}} \
+#     ${EXTRA_CONFIGURE_OPTIONS} ${${PROJECT_NAME}_EXTRA_CONFIGURE_OPTIONS}
 #
-# **WARNING:** The options listed in ``EXTRA_SYSTEM_CONFIGURE_OPTIONS`` and
-# ``EXTRA_CONFIGURE_OPTIONS`` should not contain any semi-colons ';' or they
-# will be interpreted as array bounds and mess up the arguments when passed to
-# the inner CMake configure.  To avoid problems with spaces and semicolons, it
-# is usually a good idea to put these cache vars into ``*.cmake`` file
-# fragments and the pass them through using the variable
-# `<Project>_CONFIGURE_OPTIONS_FILE`_ as::
+# **WARNING:** The options listed in ``EXTRA_SYSTEM_CONFIGURE_OPTIONS``,
+# ``EXTRA_CONFIGURE_OPTIONS``, and ``${PROJECT_NAME}_EXTRA_CONFIGURE_OPTIONS``
+# should not contain any semi-colons ';' or they will be interpreted as array
+# bounds and mess up the arguments when passed to the inner CMake configure.
+# To avoid problems with spaces and semicolons, it is usually a good idea to
+# put these cache vars into ``*.cmake`` file fragments and the pass them
+# through using the variable `<Project>_CONFIGURE_OPTIONS_FILE`_ as::
 #
 #   -D<Project>_CONFIGURE_OPTIONS_FILE=<optionsfile1>.cmake,<optionsfile2>.cmake,...
+#
+# or using the built-in CMake option::
+#
+#   -C<abs-base>/<optionsfile1>.cmake -C<abs-base>/<optionsfile2>.cmake ...
 #
 # NOTE: The full list of options passed into the inner CMake is printed out
 # before calling ``CTEST_CONFIGURE()`` so any issues setting options and the
@@ -840,15 +851,18 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   ``CTEST_DO_INSTALL=[TRUE|FALSE]``
 #
-#     If ``TRUE``, then the 'install' target will be built to install what has
-#     been configured and built by the build step for the all-at-once mode
-#     (i.e. ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=TRUE``.  If ``FALSE``, no
-#     install is performed.  (NOTE: The cmake var ``CMAKE_INSTALL_PREFIX``
-#     must be set on the inner cmake configure for this to work correctly.
-#     Also, the install is currently not implemented for the
-#     package-by-package mode ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=FALSE``
-#     and this option will simply be ignored in that case.)  Default
-#     ``FALSE``.
+#     If ``TRUE``, then ``-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON`` will be
+#     passed th the inner CMake configure and the 'install_package_by_package'
+#     target will be built to install what has been configured and built by
+#     the build step for the all-at-once mode
+#     (i.e. ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=TRUE``).  If ``FALSE``,
+#     then ``-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON`` is **not** added to the
+#     inner configure and no install is performed.  (NOTE: The cmake var
+#     ``CMAKE_INSTALL_PREFIX`` must be set on the inner cmake configure for
+#     this to work correctly.  Also, the install is currently not implemented
+#     for the package-by-package mode
+#     ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=FALSE`` and this option will
+#     simply be ignored in that case.)  Default ``FALSE``.
 #
 #   .. _CTEST_DO_TEST:
 #
@@ -1507,6 +1521,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   ENDIF()
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE
     ${${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE_DEFAULT} )
+
+  # Extra inner CMake configure options that override everything
+  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRA_CONFIGURE_OPTIONS "")
 
   # Call CTEST_CONFIGURE(...) or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_CONFIGURE TRUE )
