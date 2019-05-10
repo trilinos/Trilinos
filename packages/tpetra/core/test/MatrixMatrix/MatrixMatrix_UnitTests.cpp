@@ -144,7 +144,7 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
   typedef Tpetra::CrsMatrix<SC, LO, GO, NT> Matrix_t;
 
   Teuchos::OSTab tab0 (out);
-  out << "getIdentityMatrix" << endl;
+  out << "getIdentityMatrixWithMap" << endl;
   Teuchos::OSTab tab1 (out);
 
   out << "Create CrsMatrix" << endl;
@@ -361,7 +361,8 @@ mult_test_results multiply_test_manualfc(
   typedef Import<LO,GO,NT> Import_t;
   RCP<const Map_t> map = C->getRowMap();
 
-  RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 1));
+  size_t maxNumEntriesPerRow = C->getGlobalMaxNumRowEntries();
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(map, maxNumEntriesPerRow));
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, false);
   computedC->fillComplete(C->getDomainMap(), C->getRangeMap());
@@ -374,7 +375,8 @@ mult_test_results multiply_test_manualfc(
 #endif
   SC one = Teuchos::ScalarTraits<SC>::one();
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
+  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(),
+                                                                  maxNumEntriesPerRow);
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
@@ -452,7 +454,8 @@ mult_test_results multiply_test_autofc(
 #endif
 
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
+  RCP<Matrix_t> diffMatrix = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(), C->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
@@ -544,7 +547,9 @@ mult_test_results multiply_RAP_test_autofc(
 #endif
 
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(Ac->getRowMap());
+  RCP<Matrix_t> diffMatrix = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(Ac->getRowMap(), 
+                                         Ac->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedAc, false, one, diffMatrix);
   diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
 
@@ -605,7 +610,8 @@ mult_test_results multiply_RAP_reuse_test(
   Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC2);  
 
   // Only check the second "reuse" matrix
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(map,0);
+  RCP<Matrix_t> diffMatrix = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(map, Ac->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
 
@@ -659,13 +665,6 @@ mult_test_results multiply_reuse_test(
   rightScaling->norm2(norms);
   rightScaling->scale(1.0/norms[0]);
 
-  // computedC1 = leftScaling * (op(A)*op(B)) * rightScaling
-  RCP<Matrix_t> computedC1 = rcp( new Matrix_t(map, 1));
-  Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC1, false/*call_FillCompleteOnResult*/);
-  computedC1->fillComplete(C->getDomainMap(), C->getRangeMap());
-  computedC1->leftScale (*leftScaling);
-  computedC1->rightScale(*rightScaling);
-
   // As = leftScaling * op(A) =
   //   leftScaling * A, if AT=false
   //   A*leftScaling,   if AT=true
@@ -687,9 +686,18 @@ mult_test_results multiply_reuse_test(
   computedC2->resumeFill();
   Tpetra::MatrixMatrix::Multiply(*As, AT, *Bs, BT, *computedC2, true/*call_FillCompleteOnResult*/);
 
+  // computedC1 = leftScaling * (op(A)*op(B)) * rightScaling
+  RCP<Matrix_t> computedC1 = rcp( new Matrix_t(map, computedC2->getGlobalMaxNumRowEntries()));
+  Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC1, false/*call_FillCompleteOnResult*/);
+  computedC1->fillComplete(C->getDomainMap(), C->getRangeMap());
+  computedC1->leftScale (*leftScaling);
+  computedC1->rightScale(*rightScaling);
+
   // diffMatrix = computedC2 - computedC1
   SC one = Teuchos::ScalarTraits<SC>::one();
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
+  RCP<Matrix_t> diffMatrix = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap(),
+                                         computedC2->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
@@ -822,7 +830,9 @@ mult_test_results jacobi_reuse_test(
 
   // diffMatrix = computedC2 - computedC1
 
-  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(computedC1->getRowMap());
+  RCP<Matrix_t> diffMatrix = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(computedC1->getRowMap(),
+                                         computedC1->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(computedC1->getDomainMap(), computedC1->getRangeMap());
 
@@ -965,7 +975,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       if (verbose)
         newOut << "Running multiply test (manual FC) for " << currentSystem.name() << endl;
 
+std::cout << comm->getRank() << " KDDKDD ONE" << std::endl;
       mult_test_results results = multiply_test_manualfc(name, A, B, AT, BT, C, comm, newOut);
+std::cout << comm->getRank() << " KDDKDD TWO" << std::endl;
 
       if (verbose) {
         newOut << "Results:"     << endl;
@@ -980,7 +992,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       if (verbose)
         newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
 
+std::cout << comm->getRank() << " KDDKDD THREE" << std::endl;
       results = multiply_test_autofc(name, A, B, AT, BT, C, comm, newOut);
+std::cout << comm->getRank() << " KDDKDD FOUR" << std::endl;
 
       if (verbose) {
         newOut << "Results:"     << endl;
@@ -995,7 +1009,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       if (verbose)
         newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
 
+std::cout << comm->getRank() << " KDDKDD FIVE" << std::endl;
       results = multiply_reuse_test(name, A, B, AT, BT, C, comm, newOut);
+std::cout << comm->getRank() << " KDDKDD SIX" << std::endl;
 
       if (verbose) {
         newOut << "Results:"     << endl;
@@ -1229,6 +1245,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
     }
   }
 
+
   newOut << "Call fillComplete on bMatrix" << endl;
   bMatrix->fillComplete(bDomainMap, bRangeMap);
 
@@ -1242,6 +1259,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
     bMatrix,
     comm,
     out);
+
   if(verbose){
     newOut << "Results:" << endl;
     newOut << "\tEpsilon: " << results.epsilon << endl;
@@ -1258,8 +1276,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   RCP<const Map_t > bTransRowMap =
     Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2,comm);
 
-  newOut << "Create and fill bTrans" << endl;
-  RCP<Matrix_t> bTrans = Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 1);
   Array<GO> bTransRangeElements;
   if(rank == 0){
     bTransRangeElements = tuple<GO>(
@@ -1278,15 +1294,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   RCP<const Map_t > bTransDomainMap =
     Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows, comm);
 
-  newOut << "Compute identity * transpose(bTrans)" << endl;
-  Tpetra::MatrixMatrix::Multiply(*identity2,false,*bMatrix, true, *bTrans, false);
-
-  newOut << "Call fillComplete on bTrans" << endl;
-  bTrans->fillComplete(bTransDomainMap, bTransRangeMap);
-
   newOut << "Create and fill bTransTest" << endl;
   RCP<Matrix_t > bTransTest =
-    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 1);
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 2);
 
   {
     Teuchos::ArrayView<const GO> gblRows = bRowMap->getNodeElementList ();
@@ -1300,13 +1310,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   newOut << "Call fillComplete on bTransTest" << endl;
   bTransTest->fillComplete(bTransDomainMap, bTransRangeMap);
 
+  newOut << "Create and fill bTrans" << endl;
+  RCP<Matrix_t> bTrans = 
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 
+                                         bTransTest->getGlobalMaxNumRowEntries());
+
+  newOut << "Compute identity * transpose(bTrans)" << endl;
+  Tpetra::MatrixMatrix::Multiply(*identity2,false,*bMatrix, true, *bTrans, false);
+
+  newOut << "Call fillComplete on bTrans" << endl;
+  bTrans->fillComplete(bTransDomainMap, bTransRangeMap);
+
   // FIXME (mfh 03 May 2016) I didn't write this output message.  I
   // don't know what it means, but I'm leaving it here in case it's
   // meaningful to someone.
   newOut << "Regular I*P^T" << endl;
 
   RCP<Matrix_t > bTransDiff =
-    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 1);
+    Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, bTransTest->getGlobalMaxNumRowEntries());
   Tpetra::MatrixMatrix::Add<SC,LO,GO,NT>(*bTransTest, false, -1.0, *bTrans, false, 1.0,bTransDiff);
 
   newOut << "Call fillComplete on bTransDiff" << endl;
