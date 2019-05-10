@@ -7,18 +7,21 @@ tokenfile=~/.githubOAuth/token
 
 TMPFILE=/tmp/.ac$$
 
-USAGE="Usage: `basename $0` [-hfrbl] \"PR title\""
-OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}\n  -l     -- label [label_name]\n  -e     -- (r)eviewer [reviewer_name]"
+USAGE="Usage: `basename $0` [-hfrbles] \"PR title\""
+OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}]\n  -l     -- label [github package label]\n  -e
+-- (r)eviewer [github handle]\n  -s     -- summary [first comment, ideally should reference github issue]"
+EXAMPLE_USAGE="Example: makepr.sh -l \"pkg: MueLu\" -l \"pkg: Xpetra\" -e \"jhux2\" -e \"csiefer2\" -s \"Fixes issue #666\" \"MueLu: implement nifty feature\""
 
 labels="\"AT: AUTOMERGE\""
 reviewers=""
 
 # Parse command line options.
-while getopts hvf:r:b:l:e: OPT; do
+while getopts hvf:r:b:l:e:s: OPT; do
     case "$OPT" in
         h)
             echo -e $USAGE
             echo -e $OPTDESCR
+            echo -e "\n$EXAMPLE_USAGE"
             exit 0
             ;;
         v)
@@ -43,6 +46,9 @@ while getopts hvf:r:b:l:e: OPT; do
             else
                 reviewers="$reviewers,\"$OPTARG\""
             fi
+            ;;
+        s)
+            MESSAGE_STRING=$OPTARG
             ;;
         \?)
             # getopts issues an error message
@@ -84,7 +90,9 @@ REMOTE=$USER-$SHA
 # Push this branch to remote with a new name
 git push origin $CBRANCH:$REMOTE
 
-MESSAGE_STRING="Auto-PR for SHA $SHA"
+if [[ -z $MESSAGE_STRING ]]; then
+  MESSAGE_STRING="Auto-PR for SHA $SHA"
+fi
 
 # Generate a new pull request
 TITLE_STRING="$*"
