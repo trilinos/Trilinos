@@ -105,6 +105,9 @@
 // if defined, all views are allocated on cuda space intead of cuda uvm space
 #define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_SPACE
 
+// if defined, impl_small_scalar_type is used 
+#define IFPACK2_BLOCKTRIDICONTAINER_USE_SMALL_SCALAR_FOR_BLOCKTRIDIAG
+ 
 namespace Ifpack2 {
 
   namespace BlockTriDiContainerDetails {
@@ -130,7 +133,7 @@ namespace KB = KokkosBatched::Experimental;
     using Unmanaged = Kokkos::View<typename ViewType::data_type,
                                    typename ViewType::array_layout,
                                    typename ViewType::device_type,
-                                   MemoryTraits<typename ViewType::memory_traits,Kokkos::Unmanaged> >;
+                                  MemoryTraits<typename ViewType::memory_traits,Kokkos::Unmanaged> >;
     template <typename ViewType>
     using Atomic = Kokkos::View<typename ViewType::data_type,
                                 typename ViewType::array_layout,
@@ -159,6 +162,15 @@ namespace KB = KokkosBatched::Experimental;
                                  typename ViewType::array_layout,
                                  typename ViewType::execution_space::scratch_memory_space,
                                  MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
+
+    ///
+    /// block tridiag scalar type
+    ///
+    template<typename T> struct BlockTridiagScalarType { typedef T type; };
+#if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_SMALL_SCALAR_FOR_BLOCKTRIDIAG)
+    template<> struct BlockTridiagScalarType<double> { typedef float type; };    
+    //template<> struct SmallScalarType<Kokkos::complex<double> > { typedef Kokkos::complex<float> type; };    
+#endif
 
     ///
     /// cuda specialization
@@ -292,6 +304,9 @@ namespace KB = KokkosBatched::Experimental;
       typedef typename Kokkos::Details::ArithTraits<scalar_type>::val_type impl_scalar_type;
       typedef typename Kokkos::ArithTraits<impl_scalar_type>::mag_type magnitude_type;
 
+      typedef typename BlockTridiagScalarType<impl_scalar_type>::type btdm_scalar_type;
+      typedef typename Kokkos::ArithTraits<btdm_scalar_type>::mag_type btdm_magnitude_type;
+
       ///
       /// default host execution space
       ///
@@ -334,10 +349,10 @@ namespace KB = KokkosBatched::Experimental;
       template<typename T, typename M> using DefaultVectorLength = KB::DefaultVectorLength<T,M>;
       template<typename T, typename M> using DefaultInternalVectorLength = KB::DefaultInternalVectorLength<T,M>;
 
-      static constexpr int vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value;
-      static constexpr int internal_vector_length = DefaultInternalVectorLength<impl_scalar_type,memory_space>::value;
-      typedef Vector<SIMD<impl_scalar_type>,vector_length> vector_type;
-      typedef Vector<SIMD<impl_scalar_type>,internal_vector_length> internal_vector_type;
+      static constexpr int vector_length = 16; //DefaultVectorLength<btdm_scalar_type,memory_space>::value;
+      static constexpr int internal_vector_length = DefaultInternalVectorLength<btdm_scalar_type,memory_space>::value;
+      typedef Vector<SIMD<btdm_scalar_type>,vector_length> vector_type;
+      typedef Vector<SIMD<btdm_scalar_type>,internal_vector_length> internal_vector_type;
 
       ///
       /// commonly used view types 
@@ -357,8 +372,8 @@ namespace KB = KokkosBatched::Experimental;
       typedef Kokkos::View<vector_type***,Kokkos::LayoutRight,device_type> vector_type_3d_view;
       typedef Kokkos::View<internal_vector_type***,Kokkos::LayoutRight,device_type> internal_vector_type_3d_view;
       typedef Kokkos::View<internal_vector_type****,Kokkos::LayoutRight,device_type> internal_vector_type_4d_view;
-      typedef Kokkos::View<impl_scalar_type***,Kokkos::LayoutRight,device_type> impl_scalar_type_3d_view;
-      typedef Kokkos::View<impl_scalar_type****,Kokkos::LayoutRight,device_type> impl_scalar_type_4d_view;
+      typedef Kokkos::View<btdm_scalar_type***,Kokkos::LayoutRight,device_type> btdm_scalar_type_3d_view;
+      typedef Kokkos::View<btdm_scalar_type****,Kokkos::LayoutRight,device_type> btdm_scalar_type_4d_view;
     };
     
     ///
@@ -1374,10 +1389,12 @@ namespace KB = KokkosBatched::Experimental;
       {
         const int vector_length = impl_type::vector_length;
         const int internal_vector_length = impl_type::internal_vector_length;
-
+        
+        using btdm_scalar_type = typename impl_type::btdm_scalar_type;
         using internal_vector_type = typename impl_type::internal_vector_type;
         using internal_vector_type_4d_view =
           typename impl_type::internal_vector_type_4d_view;
+
         using team_policy_type = Kokkos::TeamPolicy<execution_space>;
         const internal_vector_type_4d_view values
           (reinterpret_cast<internal_vector_type*>(btdm.values.data()),
@@ -1393,7 +1410,7 @@ namespace KB = KokkosBatched::Experimental;
         else if (blocksize <= 12) total_team_size =  96;
         else if (blocksize <= 16) total_team_size = 128;
         else if (blocksize <= 20) total_team_size = 160;
-        else                    total_team_size = 160;
+        else                      total_team_size = 160;
         const local_ordinal_type team_size = total_team_size/vector_loop_size;
         const team_policy_type policy(packptr.extent(0)-1, team_size, vector_loop_size);
 #else // Host architecture: team size is always one
@@ -1407,7 +1424,7 @@ namespace KB = KokkosBatched::Experimental;
             const local_ordinal_type iend = pack_td_ptr(packptr(k+1));
             const local_ordinal_type diff = iend - ibeg;
             const local_ordinal_type icount = diff/3 + (diff%3 > 0);
-            const typename impl_type::impl_scalar_type one(1);
+            const btdm_scalar_type one(1);
             Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(member,icount),[&](const local_ordinal_type &ii) {
                     const local_ordinal_type i = ibeg + ii*3;
@@ -1416,7 +1433,6 @@ namespace KB = KokkosBatched::Experimental;
                   });
               });
           });
-
       }
     }
 
@@ -1776,7 +1792,7 @@ namespace KB = KokkosBatched::Experimental;
       const int vector_size = vector_length/internal_vector_length;
       int total_team_size(0);
       if      (blksize <=  5) total_team_size =  32;
-      else if (blksize <=  9) total_team_size =  64;
+      else if (blksize <=  9) total_team_size =  32; // 64 
       else if (blksize <= 12) total_team_size =  96;
       else if (blksize <= 16) total_team_size = 128;
       else if (blksize <= 20) total_team_size = 160;
@@ -1822,14 +1838,15 @@ namespace KB = KokkosBatched::Experimental;
       /// views
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using size_type_1d_view = typename impl_type::size_type_1d_view; 
-      using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view; 
       using impl_scalar_type_1d_view_tpetra = typename impl_type::impl_scalar_type_1d_view_tpetra; 
       /// vectorization 
+      using btdm_scalar_type = typename impl_type::btdm_scalar_type;
+      using btdm_magnitude_type = typename impl_type::btdm_magnitude_type;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using internal_vector_type_4d_view = typename impl_type::internal_vector_type_4d_view;
-      using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
+      using btdm_scalar_type_4d_view = typename impl_type::btdm_scalar_type_4d_view;
       using internal_vector_scratch_type_3d_view = Scratch<typename impl_type::internal_vector_type_3d_view>;
-      using impl_scalar_scratch_type_3d_view = Scratch<typename impl_type::impl_scalar_type_3d_view>;
+      using btdm_scalar_scratch_type_3d_view = Scratch<typename impl_type::btdm_scalar_type_3d_view>;
 
       using internal_vector_type = typename impl_type::internal_vector_type;
       static constexpr int vector_length = impl_type::vector_length;
@@ -1852,7 +1869,7 @@ namespace KB = KokkosBatched::Experimental;
       const ConstUnmanaged<size_type_1d_view> pack_td_ptr, flat_td_ptr;
       const ConstUnmanaged<local_ordinal_type_1d_view> A_colindsub;
       const Unmanaged<internal_vector_type_4d_view> internal_vector_values;
-      const Unmanaged<impl_scalar_type_4d_view> scalar_values;
+      const Unmanaged<btdm_scalar_type_4d_view> scalar_values;
       // shared information
       const local_ordinal_type blocksize, blocksize_square;
       // diagonal safety
@@ -1882,7 +1899,7 @@ namespace KB = KokkosBatched::Experimental;
                                btdm_.values.extent(1),
                                btdm_.values.extent(2),
                                vector_length/internal_vector_length),
-        scalar_values((impl_scalar_type*)btdm_.values.data(),
+        scalar_values((btdm_scalar_type*)btdm_.values.data(),
                       btdm_.values.extent(0),
                       btdm_.values.extent(1),
                       btdm_.values.extent(2),
@@ -1924,7 +1941,7 @@ namespace KB = KokkosBatched::Experimental;
                 const auto idx = ii*blocksize + jj;
                 auto& v = internal_vector_values(pi, ii, jj, 0);
                 for (local_ordinal_type vi=0;vi<npacks;++vi) 
-                  v[vi] = block[vi][idx];
+                  v[vi] = static_cast<btdm_scalar_type>(block[vi][idx]);
               }
             }
 
@@ -1975,7 +1992,7 @@ namespace KB = KokkosBatched::Experimental;
 		  (Kokkos::TeamThreadRange(member,blocksize), 
 		   [&](const local_ordinal_type &ii) {
 		    for (local_ordinal_type jj=0;jj<blocksize;++jj)
-		      scalar_values(pi, ii, jj, v) = block[ii*blocksize + jj];
+		      scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[ii*blocksize + jj]);
 		  });
 	      }
 	    }
@@ -1999,7 +2016,7 @@ namespace KB = KokkosBatched::Experimental;
         typedef default_mode_and_algo_type::algo_type default_algo_type;
 
         // constant
-        const auto one = Kokkos::ArithTraits<magnitude_type>::one();
+        const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
 
         // subview pattern
         auto A = Kokkos::subview(AA, i0, Kokkos::ALL(), Kokkos::ALL(), v);
@@ -2041,11 +2058,11 @@ namespace KB = KokkosBatched::Experimental;
 	  KB::Trsm<member_type,
 		   KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,
 		   default_mode_type,default_algo_type>
-            ::invoke(member, 1.0, W, A);
+            ::invoke(member, one, W, A);
 	  KB::Trsm<member_type,
 		   KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,
 		   default_mode_type,default_algo_type>
-            ::invoke(member, 1.0, W, A);
+            ::invoke(member, one, W, A);
 	}
       }
 
@@ -2129,7 +2146,7 @@ namespace KB = KokkosBatched::Experimental;
 
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using impl_scalar_type = typename impl_type::impl_scalar_type;
-      using magnitude_type = typename impl_type::magnitude_type;
+      using btdm_scalar_type = typename impl_type::btdm_scalar_type;
       using tpetra_multivector_type = typename impl_type::tpetra_multivector_type;
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
@@ -2160,7 +2177,7 @@ namespace KB = KokkosBatched::Experimental;
                              const local_ordinal_type &ri0) const {
 	for (local_ordinal_type col=0;col<num_vectors;++col) 
 	  for (local_ordinal_type i=0;i<blocksize;++i)
-	    packed_multivector(pri, i, col)[vi] = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
+	    packed_multivector(pri, i, col)[vi] = static_cast<btdm_scalar_type>(scalar_multivector(blocksize*lclrow(ri0+j)+i,col));
       }
 
     public:
@@ -2198,7 +2215,7 @@ namespace KB = KokkosBatched::Experimental;
 	  for (local_ordinal_type col=0;col<num_vectors;++col) 
 	    for (local_ordinal_type i=0;i<blocksize;++i)
 	      for (local_ordinal_type v=0;v<npacks;++v) 
-		packed_multivector(pri, i, col)[v] = scalar_multivector(blocksize*lclrow(ri0[v]+j)+i,col);
+		packed_multivector(pri, i, col)[v] = static_cast<btdm_scalar_type>(scalar_multivector(blocksize*lclrow(ri0[v]+j)+i,col));
         }
       }
 
@@ -2218,7 +2235,7 @@ namespace KB = KokkosBatched::Experimental;
 	      const local_ordinal_type pri = pri0;
 	      for (local_ordinal_type col=0;col<num_vectors;++col) {
 		Kokkos::parallel_for(Kokkos::TeamThreadRange(member, blocksize), [&](const local_ordinal_type &i) {
-		    packed_multivector(pri, i, col)[v] = scalar_multivector(blocksize*lclrow(ri0)+i,col);
+		    packed_multivector(pri, i, col)[v] = static_cast<btdm_scalar_type>(scalar_multivector(blocksize*lclrow(ri0)+i,col));
 		  });
 	      }
 	    } else {
@@ -2226,7 +2243,7 @@ namespace KB = KokkosBatched::Experimental;
 		  const local_ordinal_type pri = pri0 + j;
 		  for (local_ordinal_type col=0;col<num_vectors;++col) 
 		    for (local_ordinal_type i=0;i<blocksize;++i)
-		      packed_multivector(pri, i, col)[v] = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
+		      packed_multivector(pri, i, col)[v] = static_cast<btdm_scalar_type>(scalar_multivector(blocksize*lclrow(ri0+j)+i,col));
 		});
 	    }
           });
@@ -2286,7 +2303,7 @@ namespace KB = KokkosBatched::Experimental;
       const int vector_size = vector_length/internal_vector_length;
       int total_team_size(0);
       if      (blksize <=  5) total_team_size =  32;
-      else if (blksize <=  9) total_team_size =  64;
+      else if (blksize <=  9) total_team_size =  32; // 64
       else if (blksize <= 12) total_team_size =  96;
       else if (blksize <= 16) total_team_size = 128;
       else if (blksize <= 20) total_team_size = 160;
@@ -2328,13 +2345,15 @@ namespace KB = KokkosBatched::Experimental;
       using size_type = typename impl_type::size_type;
       using impl_scalar_type = typename impl_type::impl_scalar_type;
       using magnitude_type = typename impl_type::magnitude_type;
+      using btdm_scalar_type = typename impl_type::btdm_scalar_type;
+      using btdm_magnitude_type = typename impl_type::btdm_magnitude_type;
       /// views
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using size_type_1d_view = typename impl_type::size_type_1d_view; 
       /// vectorization 
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using internal_vector_type_4d_view = typename impl_type::internal_vector_type_4d_view;
-      using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
+      //using btdm_scalar_type_4d_view = typename impl_type::btdm_scalar_type_4d_view;
 
       using internal_vector_scratch_type_3d_view = Scratch<typename impl_type::internal_vector_type_3d_view>;
 
@@ -2509,8 +2528,8 @@ namespace KB = KokkosBatched::Experimental;
         auto X = X_internal_vector_values.data();
 
         // constant
-        const auto one = Kokkos::ArithTraits<magnitude_type>::one();
-	const auto zero = Kokkos::ArithTraits<magnitude_type>::zero();
+        const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
+	const auto zero = Kokkos::ArithTraits<btdm_magnitude_type>::zero();
         //const local_ordinal_type num_vectors = X_scalar_values.extent(2);
 
         // const local_ordinal_type blocksize = D_scalar_values.extent(1);
@@ -2633,8 +2652,8 @@ namespace KB = KokkosBatched::Experimental;
         typedef default_mode_and_algo_type::multi_vector_algo_type default_algo_type;
         
         // constant
-        const auto one = Kokkos::ArithTraits<magnitude_type>::one();
-	const auto zero = Kokkos::ArithTraits<magnitude_type>::zero();
+        const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
+	const auto zero = Kokkos::ArithTraits<btdm_magnitude_type>::zero();
 
         // subview pattern
         auto A  = Kokkos::subview(D_internal_vector_values, i0, Kokkos::ALL(), Kokkos::ALL(), v);
@@ -2827,7 +2846,7 @@ namespace KB = KokkosBatched::Experimental;
                                                                      const int team_size) {
       int total_team_size(0);
       if      (blksize <=  5) total_team_size =  32;
-      else if (blksize <=  9) total_team_size =  64;
+      else if (blksize <=  9) total_team_size =  32; // 64
       else if (blksize <= 12) total_team_size =  96;
       else if (blksize <= 16) total_team_size = 128;
       else if (blksize <= 20) total_team_size = 160;
@@ -2847,6 +2866,8 @@ namespace KB = KokkosBatched::Experimental;
       using size_type = typename impl_type::size_type;
       using impl_scalar_type = typename impl_type::impl_scalar_type;
       using magnitude_type = typename impl_type::magnitude_type;
+      using btdm_scalar_type = typename impl_type::btdm_scalar_type;
+      using btdm_magnitude_type = typename impl_type::btdm_magnitude_type;
       /// views
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using size_type_1d_view = typename impl_type::size_type_1d_view; 
@@ -2854,7 +2875,7 @@ namespace KB = KokkosBatched::Experimental;
       using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view; 
       using impl_scalar_type_2d_view_tpetra = typename impl_type::impl_scalar_type_2d_view_tpetra; // block multivector (layout left)
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
-      using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
+      using btdm_scalar_type_4d_view = typename impl_type::btdm_scalar_type_4d_view;
       static constexpr int vector_length = impl_type::vector_length;
 
       /// team policy member type (used in cuda)
@@ -2869,7 +2890,7 @@ namespace KB = KokkosBatched::Experimental;
       ConstUnmanaged<impl_scalar_type_2d_view_tpetra> x_remote;
       Unmanaged<impl_scalar_type_2d_view_tpetra> y;
       Unmanaged<vector_type_3d_view> y_packed;
-      Unmanaged<impl_scalar_type_4d_view> y_packed_scalar;
+      Unmanaged<btdm_scalar_type_4d_view> y_packed_scalar;
 
       // AmD information
       const ConstUnmanaged<size_type_1d_view> rowptr, rowptr_remote;
@@ -2945,7 +2966,7 @@ namespace KB = KokkosBatched::Experimental;
                  const bbViewType &bb, 
                  const yyViewType &yy) const {
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, blocksize), [&](const local_ordinal_type &k0)  {
-            yy(k0) = bb(k0);
+            yy(k0) = static_cast<typename yyViewType::const_value_type>(bb(k0));
           });
       }
 
@@ -2966,7 +2987,7 @@ namespace KB = KokkosBatched::Experimental;
                [&](const local_ordinal_type &k1) {
                 val += AA(k0,k1)*xx(k1);
               });
-	    Kokkos::atomic_fetch_add(&yy(k0), -val);
+	    Kokkos::atomic_fetch_add(&yy(k0), typename yyViewType::const_value_type(-val));
           });
       }
 
@@ -2984,8 +3005,8 @@ namespace KB = KokkosBatched::Experimental;
       	    impl_scalar_type val(0);
       	    for (local_ordinal_type k1=0;k1<blocksize;++k1) {
       	      val += AA(k0,k1)*xx(k1);
-      	    }
-      	    Kokkos::atomic_fetch_add(&yy(k0), -val);
+      	    }            
+      	    Kokkos::atomic_fetch_add(&yy(k0), typename yyViewType::const_value_type(-val));
       	  });
       }
 
@@ -3349,7 +3370,7 @@ namespace KB = KokkosBatched::Experimental;
         b = b_; x = x_; x_remote = x_remote_;
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
-          y_packed_scalar = impl_scalar_type_4d_view((impl_scalar_type*)y_packed_.data(),
+          y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
                                                      y_packed_.extent(0),
                                                      y_packed_.extent(1),
                                                      y_packed_.extent(2),
@@ -3430,7 +3451,7 @@ namespace KB = KokkosBatched::Experimental;
         b = b_; x = x_; x_remote = x_remote_;
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
-          y_packed_scalar = impl_scalar_type_4d_view((impl_scalar_type*)y_packed_.data(),
+          y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
                                                      y_packed_.extent(0),
                                                      y_packed_.extent(1),
                                                      y_packed_.extent(2),
