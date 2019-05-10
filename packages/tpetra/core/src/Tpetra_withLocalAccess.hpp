@@ -351,23 +351,6 @@ namespace Tpetra {
       memory_space space_;
       //! Will I actually need to access this object?
       bool valid_;
-
-    private:
-      // Nonmember "constructors"; see above for declarations.  This are
-      // friends, because they are the only ways that users are supposed
-      // to construct LocalAccess instances.
-      template<class GOT> friend
-      LocalAccess<GOT, typename Details::DefaultMemorySpace<GOT>::type,
-                  AccessMode::ReadOnly> readOnly (GOT&);
-      template<class GOT> friend
-      LocalAccess<GOT, typename Details::DefaultMemorySpace<GOT>::type,
-                  AccessMode::ReadOnly> readOnly (const GOT&);
-      template<class GOT> friend
-      LocalAccess<GOT, typename Details::DefaultMemorySpace<GOT>::type,
-                  AccessMode::WriteOnly> writeOnly (GOT&);
-      template<class GOT> friend
-      LocalAccess<GOT, typename Details::DefaultMemorySpace<GOT>::type,
-                  AccessMode::ReadWrite> readWrite (GOT&);
     };
   } // namespace Details
 

@@ -116,7 +116,12 @@ namespace Tpetra {
       get (local_access_type LA)
       {
         if (LA.isValid ()) {
-          if (am == Details::AccessMode::WriteOnly) {
+          // Intel 17.0.1 requires the static_cast.  Otherwise, you'll
+          // get build errors of the form "error: a built-in binary
+          // operator applied to a scoped enumeration requires two
+          // operands of the same type."
+          if (static_cast<Details::AccessMode> (am) ==
+              Details::AccessMode::WriteOnly) {
             LA.G_.clear_sync_state ();
           }
 
@@ -131,7 +136,12 @@ namespace Tpetra {
           if (LA.G_.template need_sync<execution_space> ()) {
             LA.G_.template sync<execution_space> ();
           }
-          if (am != Details::AccessMode::ReadOnly) {
+          // Intel 17.0.1 requires the static_cast.  Otherwise, you'll
+          // get build errors of the form "error: a built-in binary
+          // operator applied to a scoped enumeration requires two
+          // operands of the same type."
+          if (static_cast<Details::AccessMode> (am) !=
+              Details::AccessMode::ReadOnly) {
             LA.G_.template modify<execution_space> ();
           }
 
@@ -191,7 +201,12 @@ namespace Tpetra {
       get (local_access_type LA)
       {
         if (LA.isValid ()) {
-          if (am == Details::AccessMode::WriteOnly) {
+          // Intel 17.0.1 requires the static_cast.  Otherwise, you'll
+          // get build errors of the form "error: a built-in binary
+          // operator applied to a scoped enumeration requires two
+          // operands of the same type."
+          if (static_cast<Details::AccessMode> (am) ==
+              Details::AccessMode::WriteOnly) {
             LA.G_.clear_sync_state ();
           }
 
@@ -206,7 +221,12 @@ namespace Tpetra {
           if (LA.G_.template need_sync<execution_space> ()) {
             LA.G_.template sync<execution_space> ();
           }
-          if (am != Details::AccessMode::ReadOnly) {
+          // Intel 17.0.1 requires the static_cast.  Otherwise, you'll
+          // get build errors of the form "error: a built-in binary
+          // operator applied to a scoped enumeration requires two
+          // operands of the same type."
+          if (static_cast<Details::AccessMode> (am) !=
+              Details::AccessMode::ReadOnly) {
             LA.G_.template modify<execution_space> ();
           }
 
@@ -245,8 +265,13 @@ namespace Tpetra {
       // input_view_type::non_const_data_type is
       // MV::impl_scalar_type**, where
       // MV = Tpetra::MultiVector<SC, LO, GO, NT>.
+      //
+      // Intel 17.0.1 requires the static_cast.  Otherwise, you'll get
+      // build errors of the form "error: a built-in binary operator
+      // applied to a scoped enumeration requires two operands of the
+      // same type."
       using output_data_type = typename std::conditional<
-        am == AccessMode::ReadOnly,
+        static_cast<AccessMode> (am) == AccessMode::ReadOnly,
         typename input_view_type::const_data_type,
         typename input_view_type::non_const_data_type>::type;
       using output_view_type =
@@ -288,8 +313,13 @@ namespace Tpetra {
         typename GetMasterLocalObject<local_access_type>::master_local_view_type;
       // input_view_type::non_const_data_type is V::impl_scalar_type*,
       // where V = Tpetra::Vector<SC, LO, GO, NT>.
+      //
+      // Intel 17.0.1 requires the static_cast.  Otherwise, you'll get
+      // build errors of the form "error: a built-in binary operator
+      // applied to a scoped enumeration requires two operands of the
+      // same type."
       using output_data_type = typename std::conditional<
-        am == AccessMode::ReadOnly,
+        static_cast<AccessMode> (am) == AccessMode::ReadOnly,
         typename input_view_type::const_data_type,
         typename input_view_type::non_const_data_type>::type;
       using output_view_type =
