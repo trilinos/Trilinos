@@ -62,23 +62,13 @@ namespace Tpetra {
              const AccessMode am>
     struct GetMasterLocalObject<
       LocalAccess<
-        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am> > {
+        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am> >
+    {
     public:
       using local_access_type =
         LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am>;
     private:
-      using global_object_type =
-        typename local_access_type::global_object_type;
-      using memory_space = typename local_access_type::memory_space;
-      static constexpr AccessMode access_mode =
-        local_access_type::access_mode;
-      using non_const_value_type =
-        typename global_object_type::impl_scalar_type;
-      using value_type = typename std::conditional<
-          access_mode == AccessMode::ReadOnly,
-          const non_const_value_type,
-          non_const_value_type
-        >::type;
+      using global_object_type = Tpetra::MultiVector<SC, LO, GO, NT>;
 
       // FIXME (mfh 22 Oct 2018, 25 Apr 2019) Need to make sure that
       // the execution space matches.  If not, we would need to
@@ -90,25 +80,43 @@ namespace Tpetra {
       // mfh 01 May 2019: For now, we avoid allocation and copy back,
       // by using only the Views available in the MV's DualView.
       using dual_view_type = typename global_object_type::dual_view_type;
+
+      // MemorySpace=CudaSpace: false.
+      // MemorySpace=CudaUVMSpace: false.
+      // MemorySpace=CudaHostPinnedSpace: true.
+      // MemorySpace=HostSpace: true.
       static constexpr bool is_host =
-        std::is_same<memory_space, Kokkos::HostSpace>::value;
-      using result_device_type = typename std::conditional<
-        is_host,
-        typename dual_view_type::t_host::device_type,
-        typename dual_view_type::t_dev::device_type>::type;
-      using view_type = Kokkos::View<
-        value_type**,
-        typename dual_view_type::t_dev::array_layout,
-        result_device_type>;
+        std::is_same<
+          typename MemorySpace::execution_space::memory_space,
+          Kokkos::HostSpace>::value;
 
     public:
-      using master_local_object_type = std::unique_ptr<view_type>;
+      // This alias is for the MultiVector specialization of
+      // GetNonowningLocalObject.  withLocalAccess itself does not
+      // need this to be public.
+      //
+      // Owning View type is always a View of nonconst.  If you own
+      // the data, you need to be able to modify them.
+      using master_local_view_type = typename std::conditional<
+        is_host,
+        typename dual_view_type::t_host,
+        typename dual_view_type::t_dev>::type;
 
+      static_assert
+      (static_cast<int> (master_local_view_type::Rank) == 2,
+       "Rank of master_local_view_type must be 2.  "
+       "Please report this bug to the Tpetra developers.");
+
+      // This alias is required by withLocalAccess.
+      using master_local_object_type =
+        std::unique_ptr<master_local_view_type>;
+
+      // This method is required by withLocalAccess.
       static master_local_object_type
       get (local_access_type LA)
       {
         if (LA.isValid ()) {
-          if (access_mode == Details::AccessMode::WriteOnly) {
+          if (am == Details::AccessMode::WriteOnly) {
             LA.G_.clear_sync_state ();
           }
 
@@ -118,22 +126,25 @@ namespace Tpetra {
           // two memory spaces.  (Both the device and the host Views
           // of a DualView of CudaUVMSpace have memory_space =
           // CudaUVMSpace.)
-          using execution_space = typename memory_space::execution_space;
+          using execution_space = typename MemorySpace::execution_space;
 
           if (LA.G_.template need_sync<execution_space> ()) {
             LA.G_.template sync<execution_space> ();
           }
-          if (access_mode != Details::AccessMode::ReadOnly) {
+          if (am != Details::AccessMode::ReadOnly) {
             LA.G_.template modify<execution_space> ();
           }
 
           // See note about "copy back" above.
           auto G_lcl_2d = LA.G_.template getLocalView<execution_space> ();
           // This converts the View to const if applicable.
-          return std::unique_ptr<view_type> (new view_type (G_lcl_2d));
+          // Once we can use C++14, switch to std::make_unique.
+          return std::unique_ptr<master_local_view_type>
+            (new master_local_view_type (G_lcl_2d));
         }
         else { // invalid; return "null" Kokkos::View
-          return std::unique_ptr<view_type> (new view_type ());
+          return std::unique_ptr<master_local_view_type>
+            (new master_local_view_type ());
         }
       }
     };
@@ -144,53 +155,43 @@ namespace Tpetra {
              const Details::AccessMode am>
     struct GetMasterLocalObject<
       LocalAccess<
-        Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am> > {
+        Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am> >
+    {
+    private:
+      using global_object_type = Tpetra::Vector<SC, LO, GO, NT>;
+      using parent_global_object_type = Tpetra::MultiVector<SC, LO, GO, NT>;
+      using parent_local_access_type =
+        LocalAccess<parent_global_object_type, MemorySpace, am>;
+      using mv_gmlo = GetMasterLocalObject<parent_local_access_type>;
+      using parent_master_local_view_type =
+        typename mv_gmlo::master_local_view_type;
+
     public:
       using local_access_type =
-        LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am>;
-    private:
-      using global_object_type =
-        typename local_access_type::global_object_type;
-      using memory_space = typename local_access_type::memory_space;
-      static constexpr AccessMode access_mode =
-        local_access_type::access_mode;
-      using non_const_value_type =
-        typename global_object_type::impl_scalar_type;
-      using value_type = typename std::conditional<
-          access_mode == AccessMode::ReadOnly,
-          const non_const_value_type,
-          non_const_value_type
-        >::type;
-
-      // FIXME (mfh 22 Oct 2018, 25 Apr 2019) Need to make sure that
-      // the execution space matches.  If not, we would need to
-      // allocate a new View, and then we should actually make the
-      // std::unique_ptr's destructor "copy back."  This is why
-      // master_local_object_type is a std::unique_ptr<view_type>, not
-      // just a view_type.
-      //
-      // mfh 01 May 2019: For now, we avoid allocation and copy back,
-      // by using only the Views available in the MV's DualView.
-      using dual_view_type = typename global_object_type::dual_view_type;
-      static constexpr bool is_host =
-        std::is_same<memory_space, Kokkos::HostSpace>::value;
-      using result_device_type = typename std::conditional<
-        is_host,
-        typename dual_view_type::t_host::device_type,
-        typename dual_view_type::t_dev::device_type>::type;
-      using view_type = Kokkos::View<
-        value_type*,
-        typename dual_view_type::t_dev::array_layout,
-        result_device_type>;
+        LocalAccess<global_object_type, MemorySpace, am>;
 
     public:
-      using master_local_object_type = std::unique_ptr<view_type>;
+      // This alias is for the Vector specialization of
+      // GetNonowningLocalObject.  withLocalAccess itself does not
+      // need this to be public.
+      using master_local_view_type = decltype (Kokkos::subview
+        (parent_master_local_view_type (), Kokkos::ALL (), 0));
 
+      static_assert
+      (static_cast<int> (master_local_view_type::Rank) == 1,
+       "Rank of master_local_view_type must be 1.  "
+       "Please report this bug to the Tpetra developers.");
+
+      // This alias is required by withLocalAccess.
+      using master_local_object_type =
+        std::unique_ptr<master_local_view_type>;
+
+      // This method is required by withLocalAccess.
       static master_local_object_type
       get (local_access_type LA)
       {
         if (LA.isValid ()) {
-          if (access_mode == Details::AccessMode::WriteOnly) {
+          if (am == Details::AccessMode::WriteOnly) {
             LA.G_.clear_sync_state ();
           }
 
@@ -200,54 +201,110 @@ namespace Tpetra {
           // two memory spaces.  (Both the device and the host Views
           // of a DualView of CudaUVMSpace have memory_space =
           // CudaUVMSpace.)
-          using execution_space = typename memory_space::execution_space;
+          using execution_space = typename MemorySpace::execution_space;
 
           if (LA.G_.template need_sync<execution_space> ()) {
             LA.G_.template sync<execution_space> ();
           }
-          if (access_mode != Details::AccessMode::ReadOnly) {
+          if (am != Details::AccessMode::ReadOnly) {
             LA.G_.template modify<execution_space> ();
           }
 
           // See note about "copy back" above.
           auto G_lcl_2d = LA.G_.template getLocalView<execution_space> ();
           auto G_lcl_1d = Kokkos::subview (G_lcl_2d, Kokkos::ALL (), 0);
+
           // This converts the View to const if applicable.
-          return std::unique_ptr<view_type> (new view_type (G_lcl_1d));
+          // Once we can use C++14, switch to std::make_unique.
+          return std::unique_ptr<master_local_view_type>
+            (new master_local_view_type (G_lcl_1d));
         }
         else { // invalid; return "null" Kokkos::View
-          return std::unique_ptr<view_type> (new view_type ());
+          return std::unique_ptr<master_local_view_type>
+            (new master_local_view_type ());
         }
       }
     };
 
-    /// \brief Specialization of GetNonowningLocalObject for Kokkos::View.
-    ///
-    /// This is meant for the result of GetMasterLocalObject::get for
-    /// a Tpetra::MultiVector or Tpetra::Vector.  DataType is
-    /// <tt>impl_scalar_type**</tt> for a MultiVector, and
-    /// <tt>impl_scalar_type*</tt> for a Vector.
-    template<class DataType,
-             class LayoutType,
-             class MemorySpace>
+    /// \brief Specialization of GetNonowningLocalObject for
+    ///   Tpetra::MultiVector.
+    template<class SC, class LO, class GO, class NT,
+             class MemorySpace,
+             const AccessMode am>
     struct GetNonowningLocalObject<
-      std::unique_ptr<
-        Kokkos::View<DataType, LayoutType, MemorySpace>>>
+      LocalAccess<
+        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am> >
     {
+    public:
+      using local_access_type = LocalAccess<
+        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am>;
+
     private:
       using input_view_type =
-        Kokkos::View<DataType, LayoutType, MemorySpace>;
+        typename GetMasterLocalObject<local_access_type>::master_local_view_type;
+      // input_view_type::non_const_data_type is
+      // MV::impl_scalar_type**, where
+      // MV = Tpetra::MultiVector<SC, LO, GO, NT>.
+      using output_data_type = typename std::conditional<
+        am == AccessMode::ReadOnly,
+        typename input_view_type::const_data_type,
+        typename input_view_type::non_const_data_type>::type;
       using output_view_type =
-        Kokkos::View<DataType,
-                     LayoutType,
-                     MemorySpace,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+        Kokkos::View<output_data_type,
+                     typename input_view_type::array_layout,
+                     typename input_view_type::device_type,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
     public:
-      using master_local_object_type = std::unique_ptr<input_view_type>;
+      using master_local_object_type =
+        typename GetMasterLocalObject<local_access_type>::master_local_object_type;
       using nonowning_local_object_type = output_view_type;
 
       static nonowning_local_object_type
-      get (const master_local_object_type& M)
+      get (local_access_type /* LA */,
+           const master_local_object_type& M)
+      {
+        input_view_type* viewPtr = M.get ();
+        return viewPtr == nullptr ?
+          nonowning_local_object_type () :
+          nonowning_local_object_type (*viewPtr);
+      }
+    };
+
+    /// \brief Specialization of GetNonowningLocalObject for
+    ///   Tpetra::Vector.
+    template<class SC, class LO, class GO, class NT,
+             class MemorySpace,
+             const AccessMode am>
+    struct GetNonowningLocalObject<
+      LocalAccess<
+        ::Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am> >
+    {
+    public:
+      using local_access_type = LocalAccess<
+        Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am>;
+
+    private:
+      using input_view_type =
+        typename GetMasterLocalObject<local_access_type>::master_local_view_type;
+      // input_view_type::non_const_data_type is V::impl_scalar_type*,
+      // where V = Tpetra::Vector<SC, LO, GO, NT>.
+      using output_data_type = typename std::conditional<
+        am == AccessMode::ReadOnly,
+        typename input_view_type::const_data_type,
+        typename input_view_type::non_const_data_type>::type;
+      using output_view_type =
+        Kokkos::View<output_data_type,
+                     typename input_view_type::array_layout,
+                     typename input_view_type::device_type,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+    public:
+      using master_local_object_type =
+        typename GetMasterLocalObject<local_access_type>::master_local_object_type;
+      using nonowning_local_object_type = output_view_type;
+
+      static nonowning_local_object_type
+      get (local_access_type /* LA */,
+           const master_local_object_type& M)
       {
         input_view_type* viewPtr = M.get ();
         return viewPtr == nullptr ?

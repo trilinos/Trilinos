@@ -94,6 +94,8 @@ namespace Tpetra {
 
     /// \brief Mapping from LocalAccess to the "master" local object type.
     ///
+    /// \tparam LocalAccessType Specialization of LocalAccess.
+    ///
     /// The latter gets the local data from a global object, and holds
     /// on to it until after the user's function (input to
     /// withLocalAccess) returns.  "Holds on to it" is key: the master
@@ -112,6 +114,8 @@ namespace Tpetra {
 
     /// \brief Given a LocalAccess instance (which has a reference to
     ///   a global object), get an instance of its master local object.
+    ///
+    /// \tparam LocalAccessType Specialization of LocalAccess.
     ///
     /// This may be a heavyweight operation.  In fact, implementations
     /// for particular global object types may make this an MPI
@@ -136,25 +140,27 @@ namespace Tpetra {
     ///   nonowning "local view" type that users see (as arguments to
     ///   the function that they give to withLocalAccess).
     ///
+    /// \tparam LocalAccessType Specialization of LocalAccess, the
+    ///   same as that used by the corresponding GetMasterLocalObject
+    ///   specialization.
+    ///
     /// The master local object may encode the memory space and access
     /// mode, but the mapping to local view type may also need
     /// run-time information.
     ///
-    /// Specializations require the following two public features:
+    /// Specializations require the following public features:
     /// <ul>
     /// <li> <tt>nonowning_local_object_type</tt> typedef </li>
-    /// <li> <tt>nonowning_local_object_type get(const MasterLocalObjectType&)</tt>
+    /// <li> <tt>nonowning_local_object_type get(LocalAccessType,
+    ///            const MasterLocalObjectType&)</tt>
     ///      static method </li>
     /// </ul>
     ///
-    /// \note To Tpetra developers: It may make sense to change this
-    ///   class to take both the LocalAccess specialization (given to
-    ///   GetMasterLocalObject) and the master local object type.
-    ///   That would disambiguate between different global object
-    ///   types that happen to have the same master local object type
-    ///   (but that might want different behavior or even different
-    ///   types for their nonowning local objects).
-    template<class MasterLocalObjectType>
+    /// Implementations of get() need not use the first
+    /// LocalAccessType argument.  It exists mainly to help the
+    /// compiler deduce template parameters of the nonmember
+    /// getNonowningLocalObject function below.
+    template<class LocalAccessType>
     struct GetNonowningLocalObject {};
 
     /// \brief Given a master local object, get an instance of a
@@ -167,34 +173,15 @@ namespace Tpetra {
     /// Developers should not need to overload this function.  The
     /// right way is to specialize GetNonowningLocalObject::get (see
     /// above).
-    template<class MasterLocalObjectType>
-    typename GetNonowningLocalObject<MasterLocalObjectType>::
-    nonowning_local_object_type
-    getNonowningLocalObject (const MasterLocalObjectType& master) {
-      return GetNonowningLocalObject<MasterLocalObjectType>::get (master);
-    }
-
-    /// \brief Compile-time mapping from LocalAccess specialization
-    ///   type to the corresponding withLocalAccess function argument.
-    ///
-    /// Developers: Please don't specialize this.  It's fine just as
-    /// it is.
-    ///
-    /// Use the LocalAccess type as the template parameter to determine
-    /// the type of the nonowning local view to the global object's data.
-    /// This only works if GetMasterLocalObject has been specialized for
-    /// these template parameters, and if GetNonowningLocalObject has
-    /// been specialized for the resulting "master" local object type.
     template<class LocalAccessType>
-    class LocalAccessFunctionArgument {
-    private:
-      using gmlo = GetMasterLocalObject<LocalAccessType>;
-      using master_local_object_type =
-        typename gmlo::master_local_object_type;
-      using gnlo = GetNonowningLocalObject<master_local_object_type>;
-    public:
-      using type = typename gnlo::nonowning_local_object_type;
-    };
+    typename GetNonowningLocalObject<LocalAccessType>::
+    nonowning_local_object_type
+    getNonowningLocalObject (LocalAccessType LA,
+      const typename GetMasterLocalObject<LocalAccessType>::
+        master_local_object_type& master)
+    {
+      return GetNonowningLocalObject<LocalAccessType>::get (LA, master);
+    }
   } // namespace Details
 
   /// \brief Type of the local object, that is an argument to the
@@ -213,7 +200,8 @@ namespace Tpetra {
   /// the corresponding local object type.
   template<class LocalAccessType>
   using with_local_access_function_argument_type =
-    typename Details::LocalAccessFunctionArgument<LocalAccessType>::type;
+    typename Details::GetNonowningLocalObject<LocalAccessType>::
+      nonowning_local_object_type;
 
   //////////////////////////////////////////////////////////////////////
   // Users call readOnly, writeOnly, and readWrite, in order to declare
@@ -569,15 +557,14 @@ namespace Tpetra {
         // contained within the lifetime of the master local object.
         //
         // Users define this function and the type it returns by
-        // specializing GetNonowningLocalObject on the "master local
-        // object" type (the type of first_lcl_master).
+        // specializing GetNonowningLocalObject (see above).
         //
         // Constraining the nonowning views' lifetime to this scope
         // means that master local object types may use low-cost
         // ownership models, like that of std::unique_ptr.  There
         // should be no need for reference counting (in the manner of
         // std::shared_ptr) or Herb Sutter's deferred_heap.
-        auto first_lcl_view = getNonowningLocalObject (first_lcl_master);
+        auto first_lcl_view = getNonowningLocalObject (first, first_lcl_master);
 
         // Curry the user's function by fixing the first argument.
 
