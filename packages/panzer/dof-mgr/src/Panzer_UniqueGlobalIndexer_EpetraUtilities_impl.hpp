@@ -63,130 +63,9 @@
 
 namespace panzer {
 
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<Epetra_IntVector>
-buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)
-{
-   typedef Epetra_BlockMap Map;
-   typedef Epetra_IntVector IntVector;
-
-   std::vector<GlobalOrdinalT> indices;
-   std::vector<std::string> blocks;
-
-   ugi.getOwnedAndGhostedIndices(indices);
-   ugi.getElementBlockIds(blocks);
-
-   std::vector<int> fieldNumbers(indices.size(),-1);
-
-   const Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(ugi.getComm());
-   Teuchos::RCP<Epetra_MpiComm> comm;
-   if (mpiComm != Teuchos::null)
-     comm = Teuchos::rcp(new Epetra_MpiComm(*mpiComm->getRawMpiComm()));
-
-   Teuchos::RCP<Map> ghostedMap
-     = Teuchos::rcp(new Map(-1, static_cast<int>(indices.size()), Teuchos::arrayViewFromVector(indices).getRawPtr(),
-                            1, Teuchos::OrdinalTraits<int>::zero(), *comm));
-
-   // build a map from local ids to a field number
-   for(std::size_t blk=0;blk<blocks.size();blk++) {
-      std::string blockId = blocks[blk];
-
-      const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(blockId);
-      const std::vector<int> & fields = ugi.getBlockFieldNumbers(blockId);
- 
-      // loop over all elements, and set field number in output array
-      std::vector<GlobalOrdinalT> gids(fields.size());
-      for(std::size_t e=0;e<elements.size();e++) {
-         ugi.getElementGIDs(elements[e],gids);
-
-         for(std::size_t f=0;f<fields.size();f++) {
-            int fieldNum = fields[f];
-            GlobalOrdinalT gid = gids[f];
-            std::size_t lid = ghostedMap->LID(gid); // hash table lookup
-
-            fieldNumbers[lid] = fieldNum;
-         }
-      }
-   }
-
-   // produce a reduced vector containing only fields known by this processor
-   std::vector<GlobalOrdinalT> reducedIndices;
-   std::vector<int> reducedFieldNumbers;
-   for(std::size_t i=0;i<fieldNumbers.size();i++) {
-      if(fieldNumbers[i]>-1) {
-         reducedIndices.push_back(indices[i]);
-         reducedFieldNumbers.push_back(fieldNumbers[i]);
-      }
-   }
-
-   Teuchos::RCP<Map> reducedMap
-     = Teuchos::rcp(new Map(-1, static_cast<int>(reducedIndices.size()), Teuchos::arrayViewFromVector(reducedIndices).getRawPtr(),
-                            1, Teuchos::OrdinalTraits<int>::zero(), *comm));
-   return Teuchos::rcp(new IntVector(Copy,*reducedMap,Teuchos::arrayViewFromVector(reducedFieldNumbers).getRawPtr()));
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                             std::vector<int> & fieldNumbers,
-                             const Teuchos::RCP<const Epetra_IntVector> & reducedVec)
-{
-   typedef Epetra_IntVector IntVector;
-
-   Teuchos::RCP<const IntVector> dest = buildGhostedFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>(ugi,reducedVec);
-
-   fieldNumbers.resize(dest->MyLength());
-   Teuchos::ArrayView<int> av = Teuchos::arrayViewFromVector(fieldNumbers);
-   dest->ExtractCopy(av.getRawPtr());
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const Epetra_IntVector>
-buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                              const Teuchos::RCP<const Epetra_IntVector> & reducedVec)
-{
-   typedef Epetra_BlockMap Map;
-   typedef Epetra_IntVector IntVector;
-   typedef Epetra_Import Importer;
-
-   // first step: get a reduced field number vector and build a map to
-   // contain the full field number vector
-   ///////////////////////////////////////////////////////////////////////////////
-
-   Teuchos::RCP<Map> destMap;
-   {
-      std::vector<GlobalOrdinalT> indices;
-      ugi.getOwnedAndGhostedIndices(indices);
-
-      const Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(ugi.getComm());
-      Teuchos::RCP<Epetra_MpiComm> comm;
-      if (mpiComm != Teuchos::null)
-        comm = Teuchos::rcp(new Epetra_MpiComm(*mpiComm->getRawMpiComm()));
-
-      destMap = Teuchos::rcp(new Map(-1, static_cast<int>(indices.size()), Teuchos::arrayViewFromVector(indices).getRawPtr(),
-                                     1, Teuchos::OrdinalTraits<int>::zero(), *comm));
-   }
-
-   Teuchos::RCP<const IntVector> source = reducedVec;
-   if(source==Teuchos::null)
-      source = buildGhostedFieldReducedVectorEpetra<LocalOrdinalT,GlobalOrdinalT>(ugi);
-   Teuchos::RCP<const Map> sourceMap = Teuchos::rcpFromRef(source->Map());
-
-   // second step: perform the global communciation required to fix the
-   // interface conditions (where this processor doesn't know what field
-   // some indices are)
-   ///////////////////////////////////////////////////////////////////////////////
-   Teuchos::RCP<IntVector> dest = Teuchos::rcp(new IntVector(*destMap));
-   Importer importer(*destMap,*sourceMap);
-
-   dest->Import(*source,importer,Insert);
-
-   return dest;
-}
-
-template <typename ScalarT,typename ArrayT,typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+template <typename ScalarT,typename ArrayT>
 void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const std::string blockId,
-                                          const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
+                                          const UniqueGlobalIndexer & ugi,
                                           const ArrayT & data,Epetra_MultiVector & dataVector)
 {
    typedef Epetra_BlockMap Map;
@@ -197,7 +76,7 @@ void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const st
    Teuchos::RCP<const Map> dataMap = Teuchos::rcpFromRef(dataVector.Map());
 
    int fieldNum = ugi.getFieldNum(fieldName);
-   const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(blockId);
+   const std::vector<panzer::LocalOrdinal2> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
    
    TEUCHOS_TEST_FOR_EXCEPTION(data.extent(0)!=elements.size(),std::runtime_error,
@@ -207,7 +86,7 @@ void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const st
 
    if(rank==2) {
       // loop over elements distributing relevent data to vector
-      std::vector<GlobalOrdinalT> gids;
+      std::vector<panzer::GlobalOrdinal2> gids;
       for(std::size_t e=0;e<elements.size();e++) {
          ugi.getElementGIDs(elements[e],gids);
    
@@ -224,7 +103,7 @@ void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const st
                       "panzer::updateGhostedDataReducedVector: number of columns in data vector inconsistent with data array");
 
       // loop over elements distributing relevent data to vector
-      std::vector<GlobalOrdinalT> gids;
+      std::vector<panzer::GlobalOrdinal2> gids;
       for(std::size_t e=0;e<elements.size();e++) {
          ugi.getElementGIDs(elements[e],gids);
    
@@ -240,21 +119,10 @@ void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const st
                       "panzer::updateGhostedDataReducedVector: data array rank must be 2 or 3");
 }
 
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>::
-   ArrayToFieldVectorEpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi)
-      : ugi_(ugi)
-{
-   gh_reducedFieldVector_ = buildGhostedFieldReducedVectorEpetra<LocalOrdinalT,GlobalOrdinalT>(*ugi_);
-   gh_fieldVector_ = buildGhostedFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>(*ugi_,gh_reducedFieldVector_);
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 template <typename ScalarT,typename ArrayT>
 Teuchos::RCP<Epetra_MultiVector>
-ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>::
-   getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
+ArrayToFieldVectorEpetra::getGhostedDataVector(const std::string & fieldName,
+                                               const std::map<std::string,ArrayT> & data) const
 {
    TEUCHOS_ASSERT(data.size()>0); // there must be at least one "data" item
 
@@ -300,7 +168,7 @@ ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>::
                         "ArrayToFieldVectorEpetra::getDataVector: can not find block \""+block+"\".");
 
      const ArrayT & d = blockItr->second;
-     updateGhostedDataReducedVectorEpetra<ScalarT,ArrayT,LocalOrdinalT,GlobalOrdinalT,Node>(fieldName,block,*ugi_,d,*finalReducedVec);
+     updateGhostedDataReducedVectorEpetra<ScalarT,ArrayT,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>(fieldName,block,*ugi_,d,*finalReducedVec);
    }
 
    // build final (not reduced vector)
@@ -322,11 +190,10 @@ ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>::
    return finalVec;
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 template <typename ScalarT,typename ArrayT>
 Teuchos::RCP<Epetra_MultiVector>
-ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>::
-   getDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
+ArrayToFieldVectorEpetra::getDataVector(const std::string & fieldName,
+                                        const std::map<std::string,ArrayT> & data) const
 {
    // if neccessary build field vector
    if(fieldVector_==Teuchos::null)
@@ -351,57 +218,6 @@ ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>::
    destVec->Import(*sourceVec,importer,Insert);
 
    return destVec;
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>::
-        buildFieldVector(const Epetra_IntVector & source) const
-{
-   // build (unghosted) vector and map
-   std::vector<GlobalOrdinalT> indices;
-   ugi_->getOwnedIndices(indices);
-
-   const Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(ugi_->getComm(),true);
-   Teuchos::RCP<Epetra_MpiComm> comm;
-   if (mpiComm != Teuchos::null)
-     comm = Teuchos::rcp(new Epetra_MpiComm(*mpiComm->getRawMpiComm()));
-
-   Teuchos::RCP<Map> destMap
-     = Teuchos::rcp(new Map(-1, static_cast<int>(indices.size()),
-                            Teuchos::arrayViewFromVector(indices).getRawPtr(),
-                            // &indices.begin(),
-                            1, Teuchos::OrdinalTraits<int>::zero(), *comm));
-
-   Teuchos::RCP<IntVector> localFieldVector = Teuchos::rcp(new IntVector(*destMap));
-
-   Epetra_Import importer(*destMap,source.Map());
-   localFieldVector->Import(source,importer,Insert);
-
-   fieldVector_ = localFieldVector;
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const Epetra_Map>
-ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>::
-getFieldMap(const std::string & fieldName) const
-{
-   return getFieldMap(ugi_->getFieldNum(fieldName));
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const Epetra_Map>
-ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>::
-getFieldMap(int fieldNum) const
-{
-   if(fieldMaps_[fieldNum]==Teuchos::null) {
-      // if neccessary build field vector
-      if(fieldVector_==Teuchos::null)
-         buildFieldVector(*gh_fieldVector_);
-
-      fieldMaps_[fieldNum] = panzer::getFieldMapEpetra(fieldNum,*fieldVector_);
-   }
-
-   return fieldMaps_[fieldNum];
 }
                                    
 } // end namspace panzer
