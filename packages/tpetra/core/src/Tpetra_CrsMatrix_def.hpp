@@ -2434,6 +2434,7 @@ namespace Tpetra {
           // curOffset, the range is empty.
           const LO numIndInSeq = (endOffset - curOffset);
           if (numIndInSeq != 0) {
+            rowInfo = graph.getRowInfo(lclRow);  // KDD 5/19 Need fresh RowInfo in each loop iteration
             this->insertGlobalValuesImpl (graph, rowInfo,
                                           inputGblColInds + curOffset,
                                           inputVals + curOffset,
