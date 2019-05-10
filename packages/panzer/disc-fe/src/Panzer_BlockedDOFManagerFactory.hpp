@@ -47,8 +47,7 @@
 
 namespace panzer {
 
-template <typename LO,typename GO>
-class BlockedDOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,std::pair<int,GO>> {
+class BlockedDOFManagerFactory : public virtual UniqueGlobalIndexerFactory {
 public:
    BlockedDOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false) {}
    virtual ~BlockedDOFManagerFactory() {}
@@ -97,7 +96,7 @@ public:
      *          the object is fully constructed. If it is false, the caller must
      *          finalize it.
      */
-   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,std::pair<int,GO> > > 
+   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer> 
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager> & connMngr,

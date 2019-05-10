@@ -63,7 +63,6 @@ namespace panzer {
   * index types.  The use case for this is the block assembly
   * functionality.
   */
-template <typename LO,typename GO>
 class UniqueGlobalIndexerFactory {
 public:
 
@@ -84,7 +83,7 @@ public:
      *          the object is fully constructed. If it is false, the caller must
      *          finalize it.
      */
-   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
+   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer> 
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager> & connMngr,

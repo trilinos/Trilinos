@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
   connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
 
   // build the dof manager, and assocaite with the topology
-  using DOFManager = panzer::DOFManager<int,Ordinal64>;
+  using DOFManager = panzer::DOFManager;
   RCP<DOFManager> dofManager = rcp(new DOFManager);
   dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 

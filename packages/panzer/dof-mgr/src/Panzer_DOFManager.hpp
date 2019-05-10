@@ -63,12 +63,8 @@
 
 namespace panzer {
 
-
-template <typename LocalOrdinalT, typename GlobalOrdinalT>
-class DOFManager : public UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT> {
+class DOFManager : public UniqueGlobalIndexer {
 public:
-  typedef GlobalOrdinalT GO;
-  typedef LocalOrdinalT LO;
 
   virtual ~DOFManager() {}
 
@@ -158,7 +154,7 @@ public:
    */
   void
   getOwnedIndices(
-    std::vector<GlobalOrdinalT>& indices) const;
+    std::vector<panzer::GlobalOrdinal2>& indices) const;
 
   /**
    *  \brief Get the set of indices ghosted for this processor.
@@ -168,7 +164,7 @@ public:
    */
   void
   getGhostedIndices(
-    std::vector<GlobalOrdinalT>& indices) const;
+    std::vector<panzer::GlobalOrdinal2>& indices) const;
 
   /**
    *  \brief Get the set of owned and ghosted indices for this processor.
@@ -178,7 +174,7 @@ public:
    */
   void
   getOwnedAndGhostedIndices(
-    std::vector<GlobalOrdinalT>& indices) const;
+    std::vector<panzer::GlobalOrdinal2>& indices) const;
 
   /**
    *  \brief Get the number of indices owned by this processor.
@@ -218,7 +214,7 @@ public:
   const Kokkos::View<const int*,PHX::Device> getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) const;
 
   //! get associated GIDs for a given local element
-  void getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint="") const;
+  void getElementGIDs(panzer::LocalOrdinal2 localElementID, std::vector<panzer::GlobalOrdinal2> & gids, const std::string & blockIdHint="") const;
 
   //! builds the global unknowns array
   void buildGlobalUnknowns();
@@ -259,10 +255,10 @@ public:
   getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const;
 
   //! Get the owned element block
-  const std::vector<LocalOrdinalT> & getElementBlock(const std::string & blockId) const
+  const std::vector<panzer::LocalOrdinal2> & getElementBlock(const std::string & blockId) const
   { return connMngr_->getElementBlock(blockId); }
 
-  void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
+  void ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const;
 
   void setFieldOrder(const std::vector<std::string> & fieldOrder );
 
@@ -281,7 +277,7 @@ public:
 
    /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
      */
-  void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const;
+  void getElementOrientation(panzer::LocalOrdinal2 localElmtId,std::vector<double> & gidsOrientation) const;
 
   const std::string & getFieldString(int num) const;
 
@@ -344,8 +340,8 @@ protected:
 
   /** Use Zoltan2 to locally reorder with RCM.
     */
-  Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
-  runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,panzer::TpetraNodeType> > &);
+  Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+  runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > &);
 
   /** Using the natural ordering associated with the std::vector
     * retrieved from the connection manager
@@ -364,7 +360,7 @@ protected:
     ElementBlockAccess(bool owned,const Teuchos::RCP<const ConnManager> & connMngr)
       : useOwned_(owned), connMngr_(connMngr) {}
 
-    const std::vector<LO> & getElementBlock(const std::string & eBlock) const
+    const std::vector<panzer::LocalOrdinal2> & getElementBlock(const std::string & eBlock) const
     {
       if(useOwned_==true)
         return connMngr_->getElementBlock(eBlock);
@@ -377,13 +373,13 @@ protected:
     * This map is used to construct the GIDs, and also to communicate the used
     * GIDs. (this is steps 1 and 2)
     */
-  Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
+  Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
   buildOverlapMapFromElements(const ElementBlockAccess & access) const;
 
   /** Build a tagged multivector (as defined in GUN paper) to use in global unknown numbering algorithm.
     * Note that this is non-const. It does modify the <code>elementBlockGIDCount</code> member variable.
     */
-  Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >
+  Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
   buildTaggedMultiVector(const ElementBlockAccess & access);
 
   /** Build global unknowns using the algorithm in the Global Unknowns Numbering paper (GUN). This
@@ -391,15 +387,15 @@ protected:
     * tagged overlapped multi-vector (<code>overlap_mv</code>) is overwritten with the global IDs. Note
     * fields on geometric entities that are not assigned a global ID are given an entry of -1.
     */
-  std::pair<Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >,
-            Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> > >
-  buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & tagged_overlap_mv,
-                          Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const;
+  std::pair<Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >,
+            Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > >
+  buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & tagged_overlap_mv,
+                          Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & overlap_mv) const;
 
   void fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
-                                std::vector<std::vector< GO > > & elementGIDs,
-                                const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
-                                const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const;
+                                std::vector<std::vector< panzer::GlobalOrdinal2 > > & elementGIDs,
+                                const Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & overlapmap,
+                                const Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & overlap_mv) const;
   void buildLocalIdsFromOwnedAndGhostedElements();
 
   Teuchos::RCP<ConnManager> connMngr_;
@@ -422,11 +418,11 @@ protected:
   Teuchos::RCP<const panzer::FieldPattern> ga_fp_; // geometric aggregate field pattern
   std::vector<Teuchos::RCP<panzer::FieldAggPattern> > fa_fps_; //Ordered by blockOrder_;
 
-  std::vector<GO> owned_;
-  std::vector<GO> ghosted_;
+  std::vector<panzer::GlobalOrdinal2> owned_;
+  std::vector<panzer::GlobalOrdinal2> ghosted_;
 
   // Element GIDS ordered by LID.
-  std::vector<std::vector< GO > > elementGIDs_;
+  std::vector<std::vector< panzer::GlobalOrdinal2 > > elementGIDs_;
 
   // Mimics the functionality of the getElemenentBlockGIDCount in
   // the original DOFManager. Indexed according to blockOrder_.
