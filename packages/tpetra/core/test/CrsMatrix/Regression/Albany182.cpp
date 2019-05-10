@@ -666,14 +666,17 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap = buildOverlappingRowMap<map_type> (out, success, verbose, comm);
 
     RCP<CrsMatrixType> A;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     if (! staticGraph) {
       A = rcp (new CrsMatrixType (rowMap, 0));
       insertIntoOverlappingCrsMatrix (*A);
     }
-    else {
+    else 
+#endif
+    {
       using Teuchos::rcp_const_cast;
       typedef typename CrsMatrixType::crs_graph_type crs_graph_type;
-      RCP<crs_graph_type> G (new crs_graph_type (rowMap, 0));
+      RCP<crs_graph_type> G (new crs_graph_type (rowMap, 5));
       insertIntoOverlappingCrsGraph (*G);
       G->fillComplete (domainMap, rangeMap);
       // typedef typename CrsMatrixType::device_type::execution_space execution_space;
@@ -1140,7 +1143,12 @@ namespace { // (anonymous)
     out << "testCrsMatrixExport" << endl;
     Teuchos::OSTab tab1 (out);
 
-    for (bool staticGraph : {true, false}) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
+    for (bool staticGraph : {true, false}) 
+#else
+    for (bool staticGraph : {true})
+#endif
+    {
       out << "Source matrix: staticGraph=" << (staticGraph ? "true" : "false")
           << endl;
       RCP<crs_matrix_type> A_overlapping =
