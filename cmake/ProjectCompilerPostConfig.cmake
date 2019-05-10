@@ -1,4 +1,4 @@
-IF (${Trilinos_ENABLE_Kokkos})
+IF (${${PROJECT_NAME}_ENABLE_Kokkos})
 
   PRINT_VAR(KOKKOS_ARCH)
 
