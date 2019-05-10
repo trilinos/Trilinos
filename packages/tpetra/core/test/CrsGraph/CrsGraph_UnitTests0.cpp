@@ -578,8 +578,8 @@ namespace {
 
         RCP<row_graph_type> test_row;
         {
-          // allocate with no space
-          RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 0));
+          // allocate 
+          RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 1));
           // invalid, because none are allocated yet
           TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV );
           if (myRank != 1) {
