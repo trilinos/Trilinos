@@ -69,9 +69,36 @@
 
 #include <memory>
 
+namespace KokkosBatched {
+namespace Experimental {
+
+KOKKOS_INLINE_FUNCTION
+Vector<SIMD<float>, 16>
+operator* (const Vector<SIMD<float>, 16>& x, const double y)
+{
+  return x * static_cast<float> (y);
+}
+
+KOKKOS_INLINE_FUNCTION
+Vector<SIMD<float>, 16>
+operator* (const double x, const Vector<SIMD<float>, 16>& y)
+{
+  return y * static_cast<float> (x);
+}
+
+KOKKOS_INLINE_FUNCTION
+Vector<SIMD<float>, 16>&
+operator*= (Vector<SIMD<float>, 16>& x, const double y)
+{
+  x = x * static_cast<float> (y);
+  return x;
+}
+
+} // namespace Experimental
+} // namespace KokkosBatched
 
 namespace Ifpack2 {
-  
+
   ///
   /// BlockTriDiContainer, ImplSimdTag
   ///
@@ -83,7 +110,7 @@ namespace Ifpack2 {
                   const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                   const Teuchos::RCP<const import_type>& importer,
                   const bool overlapCommAndComp,
-                  const bool useSeqMethod) 
+                  const bool useSeqMethod)
   {
     // create pointer of impl
     impl_ = Teuchos::rcp(new BlockTriDiContainerDetails::ImplObject<MatrixType>());
@@ -97,23 +124,23 @@ namespace Ifpack2 {
 
     impl_->tpetra_importer = Teuchos::null;
     impl_->async_importer  = Teuchos::null;
-    
+
     if (importer.is_null()) // there is no given importer, then create one
-      if (useSeqMethod) 
+      if (useSeqMethod)
         impl_->tpetra_importer = BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(impl_->A);
-      else 
+      else
         impl_->async_importer = BlockTriDiContainerDetails::createBlockCrsAsyncImporter<MatrixType>(impl_->A);
-    else 
+    else
       impl_->tpetra_importer = importer; // if there is a given importer, use it
 
-    // as a result, there are 
+    // as a result, there are
     // 1) tpetra_importer is     null , async_importer is     null (no need for importer)
     // 2) tpetra_importer is NOT null , async_importer is     null (sequential method is used)
     // 3) tpetra_importer is     null , async_importer is NOT null (async method is used)
 
-    // temporary disabling 
+    // temporary disabling
     impl_->overlap_communication_and_computation = overlapCommAndComp;
-    
+
     impl_->Z = typename impl_type::tpetra_multivector_type();
     impl_->W = typename impl_type::impl_scalar_type_1d_view();
 
@@ -132,7 +159,7 @@ namespace Ifpack2 {
     using block_tridiags_type = BlockTriDiContainerDetails::BlockTridiags<MatrixType>;
     using amd_type = BlockTriDiContainerDetails::AmD<MatrixType>;
     using norm_manager_type = BlockTriDiContainerDetails::NormManager<MatrixType>;
-    
+
     impl_->A = Teuchos::null;
     impl_->tpetra_importer = Teuchos::null;
     impl_->async_importer  = Teuchos::null;
@@ -180,7 +207,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  bool 
+  bool
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::isInitialized () const
   {
@@ -188,7 +215,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  bool 
+  bool
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::isComputed () const
   {
@@ -196,7 +223,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  void 
+  void
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::setParameters (const Teuchos::ParameterList& /* List */)
   {
@@ -204,7 +231,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  void 
+  void
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::initialize ()
   {
@@ -215,15 +242,15 @@ namespace Ifpack2 {
     TEUCHOS_ASSERT(!impl_->A.is_null()); // when initInternal is called, A_ must be set
     {
       BlockTriDiContainerDetails::performSymbolicPhase<MatrixType>
-        (impl_->A, 
-         impl_->part_interface, impl_->block_tridiags, 
-         impl_->a_minus_d, 
-         impl_->overlap_communication_and_computation);    
+        (impl_->A,
+         impl_->part_interface, impl_->block_tridiags,
+         impl_->a_minus_d,
+         impl_->overlap_communication_and_computation);
     }
   }
 
   template <typename MatrixType>
-  void 
+  void
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::compute ()
   {
@@ -232,15 +259,15 @@ namespace Ifpack2 {
       this->initialize();
     {
       BlockTriDiContainerDetails::performNumericPhase<MatrixType>
-        (impl_->A, 
-         impl_->part_interface, impl_->block_tridiags, 
+        (impl_->A,
+         impl_->part_interface, impl_->block_tridiags,
          Kokkos::ArithTraits<magnitude_type>::zero());
     }
     IsComputed_ = true;
   }
 
   template <typename MatrixType>
-  void 
+  void
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::clearBlocks ()
   {
@@ -250,7 +277,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  void 
+  void
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::applyInverseJacobi (const mv_type& X, mv_type& Y, bool zeroStartingSolution,
                         int numSweeps) const
@@ -260,8 +287,8 @@ namespace Ifpack2 {
 
     BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
       (impl_->A,
-       impl_->tpetra_importer, 
-       impl_->async_importer, 
+       impl_->tpetra_importer,
+       impl_->async_importer,
        impl_->overlap_communication_and_computation,
        X, Y, impl_->Z, impl_->W,
        impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
@@ -283,7 +310,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  void 
+  void
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::compute (const ComputeParameters& in)
   {
@@ -292,8 +319,8 @@ namespace Ifpack2 {
       this->initialize();
     {
       BlockTriDiContainerDetails::performNumericPhase<MatrixType>
-        (impl_->A, 
-         impl_->part_interface, impl_->block_tridiags, 
+        (impl_->A,
+         impl_->part_interface, impl_->block_tridiags,
          in.addRadiallyToDiagonal);
     }
     IsComputed_ = true;
@@ -310,16 +337,16 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  int 
+  int
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::applyInverseJacobi (const mv_type& X, mv_type& Y, 
+  ::applyInverseJacobi (const mv_type& X, mv_type& Y,
                         const ApplyParameters& in) const
   {
     int r_val = 0;
     {
       r_val = BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
         (impl_->A,
-         impl_->tpetra_importer, 
+         impl_->tpetra_importer,
          impl_->async_importer,
          impl_->overlap_communication_and_computation,
          X, Y, impl_->Z, impl_->W,
@@ -350,7 +377,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  void 
+  void
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::apply (HostView& /* X */, HostView& /* Y */, int /* blockIndex */, int /* stride */, Teuchos::ETransp /* mode */,
            scalar_type /* alpha */, scalar_type /* beta */) const
@@ -361,7 +388,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  void 
+  void
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::weightedApply (HostView& /* X */, HostView& /* Y */, HostView& /* D */, int /* blockIndex */, int /* stride */,
                    Teuchos::ETransp /* mode */, scalar_type /* alpha */, scalar_type /* beta */) const
@@ -370,7 +397,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  std::ostream& 
+  std::ostream&
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::print (std::ostream& os) const
   {
@@ -381,7 +408,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  std::string 
+  std::string
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::description () const
   {
@@ -421,7 +448,7 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  std::string 
+  std::string
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::getName() { return "Ifpack2::BlockTriDiContainer::ImplSimdTag"; }
 
