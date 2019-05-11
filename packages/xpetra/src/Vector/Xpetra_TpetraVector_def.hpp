@@ -174,7 +174,10 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef EpetraNode Node;
 
 #undef XPETRA_TPETRAMULTIVECTOR_SHORT
+#undef XPETRA_TPETRAVECTOR_SHORT
 #include "Xpetra_UseShortNames.hpp"
+#define XPETRA_TPETRAMULTIVECTOR_SHORT
+#define XPETRA_TPETRAVECTOR_SHORT
 
   public:
 
@@ -332,7 +335,10 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef EpetraNode Node;
 
 #undef XPETRA_TPETRAMULTIVECTOR_SHORT
+#undef XPETRA_TPETRAVECTOR_SHORT
 #include "Xpetra_UseShortNames.hpp"
+#define XPETRA_TPETRAMULTIVECTOR_SHORT
+#define XPETRA_TPETRAVECTOR_SHORT
 
   public:
 
