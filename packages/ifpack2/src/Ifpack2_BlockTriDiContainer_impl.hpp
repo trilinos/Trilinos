@@ -2041,11 +2041,11 @@ namespace KB = KokkosBatched::Experimental;
 	  KB::Trsm<member_type,
 		   KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,
 		   default_mode_type,default_algo_type>
-            ::invoke(member, 1.0, W, A);
+            ::invoke(member, one, W, A);
 	  KB::Trsm<member_type,
 		   KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,
 		   default_mode_type,default_algo_type>
-            ::invoke(member, 1.0, W, A);
+            ::invoke(member, one, W, A);
 	}
       }
 
