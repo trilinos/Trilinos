@@ -142,11 +142,11 @@ namespace panzer {
        std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
        block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
        block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
-    
+
        Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       int default_integration_order = 1;
-      
+
        panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                   block_ids_to_cell_topo,
 				  ipb,
@@ -160,42 +160,42 @@ namespace panzer {
 
     // setup worksets
     /////////////////////////////////////////////
- 
+
      std::vector<std::string> validEBlocks;
      mesh->getElementBlockNames(validEBlocks);
 
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physics_blocks.size();i++) 
+    for(size_t i=0;i<physics_blocks.size();i++)
       wkstContainer->setNeeds(physics_blocks[i]->elementBlockID(),physics_blocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
- 
+
     // setup DOF manager
     /////////////////////////////////////////////
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager
+           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
+    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);
-    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
-    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof 
+    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tcomm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 
     // setup field manager builder
     /////////////////////////////////////////////
-      
+
     // Add in the application specific closure model factory
     user_app::MyModelFactory_TemplateBuilder cm_builder;
-    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
@@ -214,13 +214,13 @@ namespace panzer {
 
     // setup and evaluate ResponseLibrary
     ///////////////////////////////////////////////////
- 
+
     out << "Adding responses" << std::endl;
 
-    RCP<ResponseLibrary<Traits> > rLibrary 
+    RCP<ResponseLibrary<Traits> > rLibrary
           = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer,dofManager,lof));
 
-    
+
     ResponseEvaluatorFactory_IPCoordinates_Builder builder;
     builder.cubatureDegree = 1;
 
@@ -250,11 +250,11 @@ namespace panzer {
     panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
     rLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
     rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
- 
+
     std::map<std::string,Teuchos::RCP<const std::vector<panzer::Traits::Residual::ScalarT> > > coords;
     coords["eblock-0_0"] = Teuchos::rcp_dynamic_cast<Response_IPCoordinates<panzer::Traits::Residual> >(resp00,true)->getCoords();;
     coords["eblock-1_0"] = Teuchos::rcp_dynamic_cast<Response_IPCoordinates<panzer::Traits::Residual> >(resp10,true)->getCoords();;
-    
+
     // Debugging
     if (true) {
       Teuchos::RCP<Teuchos::FancyOStream> out2 = Teuchos::getFancyOStream(Teuchos::rcp(&out,false));
@@ -266,8 +266,8 @@ namespace panzer {
       for (std::vector<panzer::Traits::Residual::ScalarT>::const_iterator i = (coords["eblock-1_0"])->begin(); i != (coords["eblock-1_0"])->end(); ++i)
 	*out2 << "pid = " << tcomm->getSize() << ", val = " << *i << std::endl;
     }
-   
-    
+
+
     const double double_tol = 10.0*std::numeric_limits<double>::epsilon();
 
     // NOTE: if the ordering of elements in STK changes or the
@@ -276,27 +276,27 @@ namespace panzer {
     if (tcomm->getSize() == 1) {
       // eblock 1
       {
-	const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-0_0"]); 
-	TEST_FLOATING_EQUALITY(values[0], 1.0, double_tol);  // x 
-	TEST_FLOATING_EQUALITY(values[1], 3.0, double_tol);  // x 
-	TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // x 
-	TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // x 
-	TEST_FLOATING_EQUALITY(values[4], 1.0, double_tol);  // y 
-	TEST_FLOATING_EQUALITY(values[5], 1.0, double_tol);  // y 
-	TEST_FLOATING_EQUALITY(values[6], 3.0, double_tol);  // y 
-	TEST_FLOATING_EQUALITY(values[7], 3.0, double_tol);  // y 
+	const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-0_0"]);
+	TEST_FLOATING_EQUALITY(values[0], 1.0, double_tol);  // x
+	TEST_FLOATING_EQUALITY(values[1], 3.0, double_tol);  // x
+	TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // x
+	TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // x
+	TEST_FLOATING_EQUALITY(values[4], 1.0, double_tol);  // y
+	TEST_FLOATING_EQUALITY(values[5], 1.0, double_tol);  // y
+	TEST_FLOATING_EQUALITY(values[6], 3.0, double_tol);  // y
+	TEST_FLOATING_EQUALITY(values[7], 3.0, double_tol);  // y
       }
       // eblock 2
       {
 	const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-1_0"]);
-	TEST_FLOATING_EQUALITY(values[0], 5.0, double_tol);  // x 
-	TEST_FLOATING_EQUALITY(values[1], 7.0, double_tol);  // x 
-	TEST_FLOATING_EQUALITY(values[2], 5.0, double_tol);  // x 
-	TEST_FLOATING_EQUALITY(values[3], 7.0, double_tol);  // x 
-	TEST_FLOATING_EQUALITY(values[4], 1.0, double_tol);  // y 
-	TEST_FLOATING_EQUALITY(values[5], 1.0, double_tol);  // y 
-	TEST_FLOATING_EQUALITY(values[6], 3.0, double_tol);  // y 
-	TEST_FLOATING_EQUALITY(values[7], 3.0, double_tol);  // y 
+	TEST_FLOATING_EQUALITY(values[0], 5.0, double_tol);  // x
+	TEST_FLOATING_EQUALITY(values[1], 7.0, double_tol);  // x
+	TEST_FLOATING_EQUALITY(values[2], 5.0, double_tol);  // x
+	TEST_FLOATING_EQUALITY(values[3], 7.0, double_tol);  // x
+	TEST_FLOATING_EQUALITY(values[4], 1.0, double_tol);  // y
+	TEST_FLOATING_EQUALITY(values[5], 1.0, double_tol);  // y
+	TEST_FLOATING_EQUALITY(values[6], 3.0, double_tol);  // y
+	TEST_FLOATING_EQUALITY(values[7], 3.0, double_tol);  // y
       }
     }
     else if (tcomm->getSize() == 2) {
@@ -304,37 +304,37 @@ namespace panzer {
       if (tcomm->getRank() == 0) {
 	// eblock 1
 	{
-	  const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-0_0"]); 
-	  TEST_FLOATING_EQUALITY(values[0], 1.0, double_tol);  // x 
-	  TEST_FLOATING_EQUALITY(values[1], 1.0, double_tol);  // x 
-	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y 
-	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y 
+	  const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-0_0"]);
+	  TEST_FLOATING_EQUALITY(values[0], 1.0, double_tol);  // x
+	  TEST_FLOATING_EQUALITY(values[1], 1.0, double_tol);  // x
+	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y
+	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y
 	}
 	// eblock 2
 	{
 	  const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-1_0"]);
-	  TEST_FLOATING_EQUALITY(values[0], 5.0, double_tol);  // x 
-	  TEST_FLOATING_EQUALITY(values[1], 5.0, double_tol);  // x 
-	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y 
-	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y 
+	  TEST_FLOATING_EQUALITY(values[0], 5.0, double_tol);  // x
+	  TEST_FLOATING_EQUALITY(values[1], 5.0, double_tol);  // x
+	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y
+	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y
 	}
       }
       else if (tcomm->getRank() == 1) {
 	// eblock 1
 	{
-	  const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-0_0"]); 
-	  TEST_FLOATING_EQUALITY(values[0], 3.0, double_tol);  // x 
-	  TEST_FLOATING_EQUALITY(values[1], 3.0, double_tol);  // x 
-	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y 
-	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y 
+	  const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-0_0"]);
+	  TEST_FLOATING_EQUALITY(values[0], 3.0, double_tol);  // x
+	  TEST_FLOATING_EQUALITY(values[1], 3.0, double_tol);  // x
+	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y
+	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y
 	}
 	// eblock 2
 	{
 	  const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-1_0"]);
-	  TEST_FLOATING_EQUALITY(values[0], 7.0, double_tol);  // x 
-	  TEST_FLOATING_EQUALITY(values[1], 7.0, double_tol);  // x 
-	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y 
-	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y 
+	  TEST_FLOATING_EQUALITY(values[0], 7.0, double_tol);  // x
+	  TEST_FLOATING_EQUALITY(values[1], 7.0, double_tol);  // x
+	  TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol);  // y
+	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y
 	}
       }
     }
@@ -367,7 +367,7 @@ namespace panzer {
       p.set("Basis Order",1);
       p.set("Integration Order",1);
     }
-    
+
 
     {
       std::size_t bc_id = 0;
@@ -379,10 +379,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    }
     {
       std::size_t bc_id = 1;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -393,10 +393,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 2;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -407,7 +407,7 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
     }

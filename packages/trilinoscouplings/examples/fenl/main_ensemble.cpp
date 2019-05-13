@@ -828,9 +828,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   const int comm_rank = comm->getRank();
 
-  // Create Tpetra Node -- do this first as it initializes host/device
-  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , *comm );
-
   // Print output headers
   const std::vector< size_t > widths =
     print_headers( std::cout , cmd , comm_rank );
@@ -887,7 +884,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
     // Problem setup
     typedef Problem< Scalar, Device , BoxElemPart::ElemLinear > ProblemType;
-    ProblemType problem( comm , node , nelem , geom_bubble , cmd.PRINT ,
+    ProblemType problem( comm , nelem , geom_bubble , cmd.PRINT ,
                          num_sens );
 
     // Grouping method
@@ -941,7 +938,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
     // Problem setup
     Problem< Scalar, Device , BoxElemPart::ElemLinear > problem(
-      comm , node , nelem , geom_bubble , cmd.PRINT , num_sens );
+      comm , nelem , geom_bubble , cmd.PRINT , num_sens );
 
     if (cmd.USE_UQ_SAMPLING == SAMPLING_STOKHOS)
       run_stokhos(*comm, problem, diffusion_coefficient, Teuchos::null,

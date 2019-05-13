@@ -155,21 +155,7 @@ namespace {
 
     // Make a deep copy of the graph, to check later that the
     // conversion was correct.
-    RCP<graph_type> graph2;
-    {
-      const bool cloneDebug = false;
-      RCP<ParameterList> clonePlist = parameterList ("Tpetra::CrsGraph::clone");
-      clonePlist->set ("Debug", cloneDebug);
-      try {
-	Teuchos::RCP<Node> node; // can be null; only for type deduction
-        graph2 = graph.clone (node, clonePlist);
-      } catch (std::exception& e) {
-        std::ostringstream err2;
-        err2 << "Proc " << myRank << ": CrsGraph::clone threw an exception: "
-             << e.what () << endl;
-        cerr << err2.str ();
-      }
-    }
+    RCP<graph_type> graph2 = rcp(new graph_type(graph));
     TEST_ASSERT( ! graph2.is_null () );
 
     gblSuccess = 0;
@@ -627,21 +613,7 @@ namespace {
 
     // Make a deep copy of the graph, to check later that the
     // conversion was correct.
-    RCP<graph_type> graph2;
-    {
-      const bool cloneDebug = false;
-      RCP<ParameterList> clonePlist = parameterList ("Tpetra::CrsGraph::clone");
-      clonePlist->set ("Debug", cloneDebug);
-      try {
-	Teuchos::RCP<Node> node; // can be null; only for type deduction
-        graph2 = graph.clone (node, clonePlist);
-      } catch (std::exception& e) {
-        std::ostringstream err2;
-        err2 << "Proc " << myRank << ": CrsGraph::clone threw an exception: "
-             << e.what () << endl;
-        cerr << err2.str ();
-      }
-    }
+    RCP<graph_type> graph2 = rcp(new graph_type(graph));
     TEST_ASSERT( ! graph2.is_null () );
 
     gblSuccess = 0;

@@ -322,11 +322,15 @@ inline void check_permutation_nodes(stk::topology topology, std::vector<std::vec
   }
 }
 
+constexpr unsigned MAX_NODES_PER_ELEM = 100;
+
 template <unsigned MAX_NODES>
 STK_INLINE_FUNCTION
 void check_side_nodes_ngp(stk::topology topology, unsigned gold_side_node_ordinals[][MAX_NODES])
 {
-  stk::mesh::Entity * allElemNodes = new stk::mesh::Entity[topology.num_nodes()];
+  stk::mesh::Entity allElemNodes[MAX_NODES_PER_ELEM];
+  NGP_EXPECT_TRUE(topology.num_nodes() < MAX_NODES_PER_ELEM);
+
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
@@ -341,15 +345,15 @@ void check_side_nodes_ngp(stk::topology topology, unsigned gold_side_node_ordina
       NGP_EXPECT_EQ(gold_side_node_ordinals[side][sideNodeOrdinal] + 100, sideNodes[sideNodeOrdinal].local_offset());
     }
   }
-
-  delete[] allElemNodes;
 }
 
 template <unsigned MAX_NODES>
 STK_INLINE_FUNCTION
 void check_edge_nodes_ngp(stk::topology topology, unsigned gold_edge_node_ordinals[][MAX_NODES])
 {
-  stk::mesh::Entity * allElemNodes = new stk::mesh::Entity[topology.num_nodes()];
+  stk::mesh::Entity allElemNodes[MAX_NODES_PER_ELEM];
+  NGP_EXPECT_TRUE(topology.num_nodes() < MAX_NODES_PER_ELEM);
+
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
@@ -363,15 +367,15 @@ void check_edge_nodes_ngp(stk::topology topology, unsigned gold_edge_node_ordina
       NGP_EXPECT_EQ(gold_edge_node_ordinals[edge][edgeNodeOrdinal] + 100, edgeNodes[edgeNodeOrdinal].local_offset());
     }
   }
-
-  delete[] allElemNodes;
 }
 
 template <unsigned MAX_NODES>
 STK_INLINE_FUNCTION
 void check_face_nodes_ngp(stk::topology topology, unsigned gold_face_node_ordinals[][MAX_NODES])
 {
-  stk::mesh::Entity * allElemNodes = new stk::mesh::Entity[topology.num_nodes()];
+  stk::mesh::Entity allElemNodes[MAX_NODES_PER_ELEM];
+  NGP_EXPECT_TRUE(topology.num_nodes() < MAX_NODES_PER_ELEM);
+
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
@@ -386,8 +390,6 @@ void check_face_nodes_ngp(stk::topology topology, unsigned gold_face_node_ordina
       NGP_EXPECT_EQ(gold_face_node_ordinals[face][faceNodeOrdinal] + 100, faceNodes[faceNodeOrdinal].local_offset());
     }
   }
-
-  delete[] allElemNodes;
 }
 
 template <unsigned NUM_NODES>

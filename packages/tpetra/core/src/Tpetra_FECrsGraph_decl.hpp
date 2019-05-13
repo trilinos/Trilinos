@@ -53,7 +53,7 @@
 #include "Tpetra_CrsGraph_decl.hpp"
 namespace Tpetra {
 
- 
+
   /// \class FECrsGraph
   /// \brief A distributed graph accessed by rows (adjacency lists)
   ///   and stored sparsely.
@@ -128,10 +128,10 @@ namespace Tpetra {
     /// \param ownedPlusSharedToOwnedimporter [in] Optional importer between the ownedMap and ownedPlusSharedMap
     ///   This will be calculated by FECrsGraph if it is not provided
     ///
-    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap
     ///   will be used for the domainMap in the call to endFill()
     ///
-    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap
     ///   will be used for the domainMap in the call to endFill()
     ///
     /// \param params [in/out] Optional list of parameters.  If not
@@ -159,10 +159,10 @@ namespace Tpetra {
     /// \param ownedPlusSharedToOwnedimporter [in] Optional importer between the ownedMap and ownedPlusSharedMap
     ///   This will be calculated by FECrsGraph if it is not provided
     ///
-    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap
     ///   will be used for the domainMap in the call to endFill()
     ///
-    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap
     ///   will be used for the domainMap in the call to endFill()
     ///
     /// \param params [in/out] Optional list of parameters.  If not
@@ -173,10 +173,10 @@ namespace Tpetra {
                 const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
                 const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter = Teuchos::null,
                 const Teuchos::RCP<const map_type> & domainMap = Teuchos::null,
-                const Teuchos::RCP<const map_type> & rangeMap = Teuchos::null,  
+                const Teuchos::RCP<const map_type> & rangeMap = Teuchos::null,
                 const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    
+
     /// \brief Constructor for locally-indexed assembly specifying a single upper bound for the
     ///   number of entries in all rows on the calling process.
     ///
@@ -184,7 +184,7 @@ namespace Tpetra {
     ///
     /// \param ownedPlusSharedRowMap [in] ownedMap plus the list of shared rows to which off-processor insertion is allowed
     ///
-    /// \param ownedPlusSharedColMap [in] list of owned and shared columns into which assertion is allowed. 
+    /// \param ownedPlusSharedColMap [in] list of owned and shared columns into which assertion is allowed.
     ///
     /// \param maxNumEntriesPerRow [in] Maximum number of graph
     ///   entries per row.  You cannot exceed this number of
@@ -193,10 +193,10 @@ namespace Tpetra {
     /// \param ownedPlusSharedToOwnedimporter [in] Optional importer between the ownedMap and ownedPlusSharedMap
     ///   This will be calculated by FECrsGraph if it is not provided
     ///
-    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap
     ///   will be used for the domainMap in the call to endFill()
     ///
-    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap
     ///   will be used for the domainMap in the call to endFill()
     ///
     /// \param params [in/out] Optional list of parameters.  If not
@@ -226,10 +226,10 @@ namespace Tpetra {
     /// \param ownedPlusSharedToOwnedimporter [in] Optional importer between the ownedMap and ownedPlusSharedMap
     ///   This will be calculated by FECrsGraph if it is not provided
     ///
-    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap
     ///   will be used for the domainMap in the call to endFill()
     ///
-    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap
     ///   will be used for the domainMap in the call to endFill()
     ///
     /// \param params [in/out] Optional list of parameters.  If not
@@ -241,11 +241,32 @@ namespace Tpetra {
                 const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
                 const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter = Teuchos::null,
                 const Teuchos::RCP<const map_type> & domainMap = Teuchos::null,
-                const Teuchos::RCP<const map_type> & rangeMap = Teuchos::null,  
+                const Teuchos::RCP<const map_type> & rangeMap = Teuchos::null,
                 const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+    //! Copy constructor (forbidden).
+    FECrsGraph (const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&) = delete;
 
-    //! Destructor.
+    //! Move constructor (forbidden).
+    FECrsGraph (FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+
+    //! Copy assignment (forbidden).
+    FECrsGraph&
+    operator= (const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+
+    //! Move assignment (forbidden).
+    FECrsGraph&
+    operator= (FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=delete</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
     virtual ~FECrsGraph () = default;
 
     //@}
@@ -345,7 +366,7 @@ namespace Tpetra {
     /// Precondition: Must be FE_ACTIVE_OWNED mode
     void doOwnedToOwnedPlusShared(const CombineMode CM=Tpetra::ADD);
 
-  public: 
+  public:
     //! Switches which CrsGraph is active (without migrating data)
     void switchActiveCrsGraph();
     //@}
@@ -354,14 +375,6 @@ namespace Tpetra {
 
     // Common core guts of the constructor (the colMap argument is Teuchos::null if we're globally-indexed)
     void setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<const map_type> & ownedPlusSharedColMap, const Teuchos::RCP<Teuchos::ParameterList>& params);
-
-
-    // We forbid assignment (operator=) and copy construction
-    FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&
-    operator= (const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&) = delete;
-
-    FECrsGraph (const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&) = delete;
-
 
     // Enum for activity
     enum FEWhichActive
@@ -388,7 +401,7 @@ namespace Tpetra {
 
   }; // class FECrsGraph
 
- 
+
 } // namespace Tpetra
 
 #endif // TPETRA_FECRSGRAPH_DECL_HPP

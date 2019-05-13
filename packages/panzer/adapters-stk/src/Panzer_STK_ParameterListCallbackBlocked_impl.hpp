@@ -49,7 +49,7 @@ using Teuchos::rcp;
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallbackBlocked(
-                      const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
+                      const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager,
                       const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blocked_ugi,
                       const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & aux_blocked_ugi)
    : connManager_(connManager), blocked_ugi_(blocked_ugi), aux_blocked_ugi_(aux_blocked_ugi)
@@ -57,7 +57,7 @@ ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCa
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList>
 ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::request(const Teko::RequestMesg & rm)
 {
    TEUCHOS_ASSERT(handlesRequest(rm)); // design by contract
@@ -316,7 +316,7 @@ getHandledField(const Teuchos::ParameterList & pl) const
     return pl.get<std::string>("Coordinates-Epetra");
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Neither x-coordinates nor Coordinates or Coordinates-Epetra field provided.");
-    
+
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
@@ -371,6 +371,6 @@ Teuchos::RCP<const panzer::Intrepid2FieldPattern> ParameterListCallbackBlocked<L
 }
 
 
-} 
+}
 
 #endif

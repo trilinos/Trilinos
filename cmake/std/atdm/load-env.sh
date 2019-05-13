@@ -15,10 +15,11 @@ fi
 #
 # This uses a temp shell to cd into the directory and then uses pwd to get the
 # path.
-function get_abs_dir_path() {
+function atdm_config_get_abs_dir_path() {
   [ -z "$1" ] && { pwd; return; }
   (cd -P -- "$1" && pwd)
 }
+export atdm_config_get_abs_dir_path
 
 # Get the base dir for the sourced script
 ATDM_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
@@ -66,7 +67,7 @@ fi
 #
 
 # Get the Trilins base dir
-export ATDM_CONFIG_TRILNOS_DIR=`get_abs_dir_path ${ATDM_CONFIG_SCRIPT_DIR}/../../..`
+export ATDM_CONFIG_TRILNOS_DIR=`atdm_config_get_abs_dir_path ${ATDM_CONFIG_SCRIPT_DIR}/../../..`
 if [[ $ATDM_CONFIG_VERBOSE == "1" ]] ; then
   echo "ATDM_CONFIG_TRILNOS_DIR = $ATDM_CONFIG_TRILNOS_DIR"
 fi
@@ -102,18 +103,6 @@ source ${ATDM_CONFIG_SCRIPT_DIR}/utils/atdm_config_helper_funcs.sh
 
 source ${ATDM_CONFIG_SCRIPT_DIR}/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
 
-if [ "${ATDM_CONFIG_BUILD_COUNT_OVERRIDE}" != "" ] ; then
-  export ATDM_CONFIG_BUILD_COUNT=${ATDM_CONFIG_BUILD_COUNT_OVERRIDE}
-fi
-
-if [ "${ATDM_CONFIG_CMAKE_JOB_POOL_LINK_OVERRIDE}" != "" ] ; then
-  export ATDM_CONFIG_CMAKE_JOB_POOL_LINK=${ATDM_CONFIG_CMAKE_JOB_POOL_LINK_OVERRIDE}
-fi
-
-if [ "${ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE}" != "" ] ; then
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=${ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE}
-fi
-
 if [ "$ATDM_CONFIG_COMPLETED_ENV_SETUP" != "TRUE" ] ; then
   echo
   echo "***"
@@ -123,5 +112,40 @@ if [ "$ATDM_CONFIG_COMPLETED_ENV_SETUP" != "TRUE" ] ; then
   return
 fi
 
-# NOTE: The ATDMDevEnv.cmake module when processed will assert that all of
-# these are set!
+#
+# F) Override parallel build and ctest levels
+#
+
+if [ "${ATDM_CONFIG_BUILD_COUNT_OVERRIDE}" != "" ] ; then
+  export ATDM_CONFIG_BUILD_COUNT=${ATDM_CONFIG_BUILD_COUNT_OVERRIDE}
+fi
+
+if [ "${ATDM_CONFIG_PARALLEL_COMPILE_JOBS_LIMIT_OVERRIDE}" != "" ] ; then
+  export ATDM_CONFIG_PARALLEL_COMPILE_JOBS_LIMIT=${ATDM_CONFIG_PARALLEL_COMPILE_JOBS_LIMIT_OVERRIDE}
+fi
+
+if [ "${ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT_OVERRIDE}" != "" ] ; then
+  export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=${ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT_OVERRIDE}
+fi
+
+if [ "${ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE}" != "" ] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=${ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE}
+fi
+
+#
+# G) Set install-related stuff
+#
+
+if  [[ "${ATDM_CONFIG_USE_INSTALL_PBP_RUNNER_DEFAULT}" == "" ]] \
+  && [[ "${ATDM_CONFIG_USE_JENKINS_INSTALL_DEFAULTS}" == "1" ]] ; then
+  export ATDM_CONFIG_USE_INSTALL_PBP_RUNNER_DEFAULT=1
+fi
+
+if [[ "${ATDM_CONFIG_INSTALL_PBP_RUNNER}" == "" ]] \
+  && [[ "${ATDM_CONFIG_INSTALL_PBP_RUNNER_DEFAULT}" != "" ]] \
+  && [[ "${ATDM_CONFIG_USE_INSTALL_PBP_RUNNER_DEFAULT}" == "1" ]] ; then
+  export ATDM_CONFIG_INSTALL_PBP_RUNNER="${ATDM_CONFIG_INSTALL_PBP_RUNNER_DEFAULT}"
+fi
+
+# NOTE: The ATDMDevEnvSettings.cmake module when processed will assert that
+# many of these vars are correctly set.

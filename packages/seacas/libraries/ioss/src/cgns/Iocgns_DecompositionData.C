@@ -220,9 +220,9 @@ namespace {
 
         for (auto &zone : zones) {
           for (auto &z : zone->m_zoneConnectivity) {
-            strncpy(&zgc_name[off_name], z.m_connectionName.c_str(), BYTE_PER_NAME);
+            Ioss::Utils::copy_string(&zgc_name[off_name], z.m_connectionName, BYTE_PER_NAME);
             off_name += BYTE_PER_NAME;
-            strncpy(&zgc_name[off_name], z.m_donorName.c_str(), BYTE_PER_NAME);
+            Ioss::Utils::copy_string(&zgc_name[off_name], z.m_donorName, BYTE_PER_NAME);
             off_name += BYTE_PER_NAME;
 
             off_cnt++;

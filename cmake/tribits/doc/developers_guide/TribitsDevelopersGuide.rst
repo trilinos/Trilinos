@@ -8037,6 +8037,8 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`_
 * `${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
+* `${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE`_
+* `${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE`_
 * `${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS`_
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
 * `${PROJECT_NAME}_SET_INSTALL_RPATH`_
@@ -8357,14 +8359,16 @@ These options are described below.
   then ``<PackageName>Config.cmake`` files are created at configure time in
   the build tree and installed into the install tree.  These files are used by
   external CMake projects to pull in the list of compilers, compiler options,
-  include directories and libraries.  The TriBITS default is ``ON`` but a
+  include directories and libraries.  The TriBITS default is ``OFF`` but a
   project can change the default by setting, for example::
 
-    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
+    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT ON)
 
-  A project would want to turn off the creation and installation of
+  A project would want to leave off the creation and installation of
   ``<PackageName>Config.cmake`` files if it was only installing and providing
   executables (see `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_).
+  However, if it is wanting to provide libraries for other projects to use,
+  then it should turn on the default generation of these files.
 
 .. _${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:
 
@@ -8467,6 +8471,31 @@ These options are described below.
   
     SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT  OFF)
 
+.. _${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE:
+
+.. _${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE:
+
+**${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE**
+**${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE**
+
+  Determines the permissions for directories created during the execution of
+  the of the ``install`` target.  The default permissions are those for the
+  user running the ``install`` target.  For CMake versions 3.11.0+, the user
+  can change these permissions explicitly by setting the CMake vars
+  ``${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE`` and/or
+  ``${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE``.
+
+  To make the created directories by world readable for the project by
+  default, set::
+
+    SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT TRUE)
+
+  To make the created directories by only group readable for the project by
+  default, set::
+
+    SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT TRUE)
+
+  These can be set in the `<projectDir>/ProjectName.cmake`_ file.
 
 .. _${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS:
 

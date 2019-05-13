@@ -25,6 +25,10 @@ FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES SRC_DIR BASE_NAME APPEN
     string(TOLOWER "${DEVICE}" LOWER_DEVICE)
     string(CONCAT INST_VAR "Tpetra_INST_" "${UPPER_DEVICE}")
 
+    # Check if we are a device node and set a variable suitable for the
+    # preprocessor accordingly
+    string(COMPARE EQUAL "${DEVICE}" "Cuda" IS_DEVICE_NODE)
+
     # Create libraries for each enabled device instantation
     if(${${INST_VAR}})
 
@@ -103,6 +107,10 @@ FUNCTION(PROCESS_PCE_ETI ETI_CLASSES EXTRA_ETI_CLASSES SRC_DIR BASE_NAME APPEND_
     string(TOUPPER "${DEVICE}" UPPER_DEVICE)
     string(TOLOWER "${DEVICE}" LOWER_DEVICE)
     string(CONCAT INST_VAR "Tpetra_INST_" "${UPPER_DEVICE}")
+
+    # Check if we are a device node and set a variable suitable for the
+    # preprocessor accordingly
+    string(COMPARE EQUAL "${DEVICE}" "Cuda" IS_DEVICE_NODE)
 
     # Create libraries for each enabled device instantation
     if(${${INST_VAR}})
@@ -791,17 +799,33 @@ IF (Stokhos_ENABLE_Sacado)
         MatrixMatrix
         TripleMatrixMultiply
         )
+      SET(TPETRA_SD_ETI_CLASSES
+        )
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
       IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
+        IF (NOT ("${TPETRA_SD_ETI_CLASSES}" STREQUAL ""))
+          PROCESS_ENSEMBLE_ETI(
+            "${Stokhos_ETI_Ensemble_Sizes}"
+            "${TPETRA_SD_ETI_CLASSES}"
+            "sacado/kokkos/vector/tpetra"
+            "Tpetra_SD"
+            TRUE
+            "${STOKHOS_DEPLIBS}"
+            DEPLIBS_OUT)
+          LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        ENDIF()
+
+        # Tpetra depends on Tpetra_SD
+        SET(STOKHOS_TPETRA_DEPS ${STOKHOS_DEPLIBS} ${STOKHOS_TPETRA_DEPLIBS})
         PROCESS_ENSEMBLE_ETI(
           "${Stokhos_ETI_Ensemble_Sizes}"
           "${TPETRA_ETI_CLASSES}"
           "sacado/kokkos/vector/tpetra"
           "Tpetra"
           TRUE
-          "${STOKHOS_DEPLIBS}"
+          "${STOKHOS_TPETRA_DEPS}"
           DEPLIBS_OUT)
         LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
         # TpetraExt depends on Tpetra
@@ -826,13 +850,27 @@ IF (Stokhos_ENABLE_Sacado)
         SET(EXTRA_TPETRA_ETI_CLASSES
           CrsMatrix
           )
+        IF (NOT ("${TPETRA_SD_ETI_CLASSES}" STREQUAL ""))
+          PROCESS_PCE_ETI(
+            "${TPETRA_SD_ETI_CLASSES}"
+            ""
+            "sacado/kokkos/pce/tpetra"
+            "Tpetra_SD"
+            TRUE
+            "${STOKHOS_DEPLIBS}"
+            DEPLIBS_OUT)
+          LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        ENDIF()
+
+        # Tpetra depends on Tpetra_SD
+        SET(STOKHOS_TPETRA_DEPS ${STOKHOS_DEPLIBS} ${STOKHOS_TPETRA_DEPLIBS})
         PROCESS_PCE_ETI(
           "${TPETRA_ETI_CLASSES}"
           "${EXTRA_TPETRA_ETI_CLASSES}"
           "sacado/kokkos/pce/tpetra"
           "Tpetra"
           TRUE
-          "${STOKHOS_DEPLIBS}"
+          "${STOKHOS_TPETRA_DEPS}"
           DEPLIBS_OUT)
         LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
         # TpetraExt depends on Tpetra
@@ -880,6 +918,62 @@ IF (Stokhos_ENABLE_Sacado)
     SET_PROPERTY(TARGET ${STOKHOS_TPETRA_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
     LIST(APPEND STOKHOS_TPETRA_DEPLIBS stokhos_tpetra)
     LIST(APPEND STOKHOS_DEPLIBS ${STOKHOS_TPETRA_DEPLIBS})
+
+    IF (Stokhos_ENABLE_Xpetra)
+      SET(XPETRA_HEADERS "")
+      SET(XPETRA_CPP_SOURCES Stokhos_Dummy.cpp)
+      SET(STOKHOS_XPETRA_DEPLIBS "")
+
+      # Load list of Xpetra ETI classes
+      GLOBAL_SET(XPETRA_SC_LO_GO_NO_ETI_CLASSES  )
+      IF (Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
+        INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/../../xpetra/src/Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
+        INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/../../xpetra/sup/Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
+        INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/../../xpetra/src/Utils/ExplicitInstantiation/ETI_MULTIVECTOR_classes.cmake)
+        SET(XPETRA_ALL_ETI_CLASSES ${XPETRA_SC_LO_GO_NO_ETI_CLASSES} ${XPETRA_MULTIVECTOR_ETI_CLASSES})
+      ENDIF()
+
+      IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/xpetra)
+        APPEND_GLOB(XPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/xpetra/*.hpp)
+        IF (Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
+          PROCESS_ENSEMBLE_ETI(
+            "${Stokhos_ETI_Ensemble_Sizes}"
+            "${XPETRA_ALL_ETI_CLASSES}"
+            "sacado/kokkos/vector/xpetra"
+            "Xpetra"
+            FALSE
+            "${STOKHOS_DEPLIBS}"
+            DEPLIBS_OUT)
+          LIST(APPEND STOKHOS_XPETRA_DEPLIBS ${DEPLIBS_OUT})
+        ENDIF()
+      ENDIF()
+      IF(Stokhos_ENABLE_PCE_Scalar_Type)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/xpetra)
+        APPEND_GLOB(XPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/xpetra/*.hpp)
+        IF(Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
+          PROCESS_PCE_ETI(
+            "${XPETRA_ALL_ETI_CLASSES}"
+            ""
+            "sacado/kokkos/pce/xpetra"
+            "Xpetra"
+            FALSE
+            "${STOKHOS_DEPLIBS}"
+            DEPLIBS_OUT)
+          LIST(APPEND STOKHOS_XPETRA_DEPLIBS ${DEPLIBS_OUT})
+        ENDIF()
+      ENDIF()
+      TRIBITS_ADD_LIBRARY(
+        stokhos_xpetra
+        HEADERS ${XPETRA_HEADERS}
+        SOURCES ${XPETRA_CPP_SOURCES}
+        DEPLIBS ${STOKHOS_DEPLIBS}
+        ADDED_LIB_TARGET_NAME_OUT STOKHOS_XPETRA_LIBNAME
+        )
+      SET_PROPERTY(TARGET ${STOKHOS_XPETRA_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
+      LIST(APPEND STOKHOS_DEPLIBS stokhos_xpetra)
+      LIST(APPEND STOKHOS_DEPLIBS ${STOKHOS_XPETRA_DEPLIBS})
+    ENDIF()
 
     IF (Stokhos_ENABLE_Amesos2)
       SET(AMESOS2_HEADERS "")

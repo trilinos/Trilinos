@@ -147,6 +147,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
   module load sems-intel/17.0.1
+  module swap sems-gcc/4.8.4 sems-gcc/4.9.3
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
@@ -194,5 +195,17 @@ export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
 export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
+
+#
+# Set up default install-related stuff
+#
+
+export ATDM_CONFIG_WORKSPACE_BASE_DEFAULT=/home/atdm-devops-admin/jenkins
+export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/home/atdm-devops-admin/trilinos_installs
+export ATDM_CONFIG_INSTALL_PBP_RUNNER_DEFAULT=/home/atdm-devops-admin/tools/run-as-atdm-devops-admin
+
+#
+# Done!
+#
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

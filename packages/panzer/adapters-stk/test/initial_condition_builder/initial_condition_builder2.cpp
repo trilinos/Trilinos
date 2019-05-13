@@ -116,11 +116,11 @@ namespace panzer {
        std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
        block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
        block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
-    
+
        Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
        int default_integration_order = 1;
-      
+
        panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                   block_ids_to_cell_topo,
 				  ipb,
@@ -135,46 +135,46 @@ namespace panzer {
     // setup worksets
     /////////////////////////////////////////////
 
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physics_blocks.size();i++) 
+    for(size_t i=0;i<physics_blocks.size();i++)
       wkstContainer->setNeeds(physics_blocks[i]->elementBlockID(),physics_blocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
 
     // get vector of element blocks
     std::vector<std::string> elementBlocks;
     mesh->getElementBlockNames(elementBlocks);
- 
+
     // build volume worksets from container
     std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
     panzer::getSideWorksetsFromContainer(*wkstContainer,bcs,bc_worksets);
 
     // setup DOF manager
     /////////////////////////////////////////////
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager
+           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
+    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);
-    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
-    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof 
+    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 
     // setup field manager builder
     /////////////////////////////////////////////
-      
+
     // Add in the application specific closure model factory
-    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     user_app::STKModelFactory_TemplateBuilder cm_builder;
     cm_factory.buildObjects(cm_builder);
 
@@ -196,7 +196,7 @@ namespace panzer {
     ic_closure_models.sublist("eblock-0_0").sublist("TEMPERATURE").set<double>("Value",3.0);
     ic_closure_models.sublist("eblock-0_0").sublist("ELECTRON_TEMPERATURE").set<double>("Value",3.0);
     ic_closure_models.sublist("eblock-1_0").sublist("TEMPERATURE").set<double>("Value",3.0);
-    ic_closure_models.sublist("eblock-1_0").sublist("ION_TEMPERATURE").set<double>("Value",3.0);    
+    ic_closure_models.sublist("eblock-1_0").sublist("ION_TEMPERATURE").set<double>("Value",3.0);
 
     std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
     panzer::setupInitialConditionFieldManagers(*wkstContainer,
@@ -209,7 +209,7 @@ namespace panzer {
 					       "initial_condition_test",
 					       phx_ic_field_managers);
 
-    
+
     Teuchos::RCP<panzer::LinearObjContainer> loc  = elof->buildLinearObjContainer();
     elof->initializeContainer(panzer::EpetraLinearObjContainer::X,*loc);
 

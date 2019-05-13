@@ -4,8 +4,8 @@ If you are using NetCDF-4.5.1 or later, then you can ignore the information in t
 
 The distributed version of netcdf sets the following limits
 on dimensions and variables:
- * `#define NC_MAX_DIMS	1024`
- * `#define NC_MAX_VARS	8192`
+ * `#define NC_MAX_DIMS 1024`
+ * `#define NC_MAX_VARS 8192`
 
 For use with Exodus, it is recommended that these be increased to:
  * `#define NC_MAX_DIMS  65536`

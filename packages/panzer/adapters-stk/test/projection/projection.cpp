@@ -161,7 +161,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   using LO = int;
   using GO = panzer::Ordinal64;
   timer->start("ConnManager ctor");
-  const RCP<panzer::ConnManager<LO,GO> > connManager = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+  const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
 
   // Set up bases for projections
@@ -724,7 +724,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   using LO = int;
   using GO = panzer::Ordinal64;
   timer->start("ConnManager ctor");
-  const RCP<panzer::ConnManager<LO,GO> > connManager = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+  const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
 
   // Set up bases for projections
@@ -877,7 +877,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   using LO = int;
   using GO = panzer::Ordinal64;
   timer->start("ConnManager ctor");
-  const RCP<panzer::ConnManager<LO,GO> > connManager = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+  const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
 
   // Set up bases for projections
@@ -1293,7 +1293,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
   using LO = int;
   using GO = panzer::Ordinal64;
   timer->start("ConnManager ctor");
-  const RCP<panzer::ConnManager<LO,GO> > connManager = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+  const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
 
   // Set up bases for projections

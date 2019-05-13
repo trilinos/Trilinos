@@ -18,6 +18,7 @@
 #   ATDM_CONFIG_USE_CUDA
 #   ATDM_CONFIG_USE_PTHREADS
 #   ATDM_CONFIG_CUDA_RDC
+#   ATDM_CONFIG_FPIC
 #   ATDM_CONFIG_COMPLEX
 #   ATDM_CONFIG_SHARED_LIBS
 #   ATDM_CONFIG_PT_PACKAGES
@@ -53,7 +54,7 @@ fi
 ATDM_UTILS_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 export ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${ATDM_UTILS_SCRIPT_DIR}/..`
 
-echo "Setting compiler and build options for buld name '${ATDM_CONFIG_BUILD_NAME}'"
+echo "Setting compiler and build options for build-name '${ATDM_CONFIG_BUILD_NAME}'"
 
 # Set the defaults
 export ATDM_CONFIG_COMPILER=DEFAULT
@@ -93,8 +94,13 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2"* ]]; then
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0-gnu-7.4.0"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0_gnu-7.4.0"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0"* ]]; then
-  export ATDM_CONFIG_COMPILER=CUDA-10.0
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1-gnu-7.2.0"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1_gnu-7.2.0"* ]]; then
+  export ATDM_CONFIG_COMPILER=CUDA-10.1_GNU-7.2.0
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1"* ]]; then
+  export ATDM_CONFIG_COMPILER=CUDA-10.1
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10"* ]]; then
+  export ATDM_CONFIG_COMPILER=CUDA-10
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.8.4"* ]]; then
@@ -242,6 +248,13 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"-no-rdc"* ]] \
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-rdc"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"_rdc"* ]]; then
   export ATDM_CONFIG_CUDA_RDC=ON
+fi
+
+# Use -fPIC or not
+export ATDM_CONFIG_FPIC=OFF
+if [[ $ATDM_CONFIG_BUILD_NAME == *"-fpic"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"_fpic"* ]]; then
+  export ATDM_CONFIG_FPIC=ON
 fi
 
 # Enable complex (double) data-types or not

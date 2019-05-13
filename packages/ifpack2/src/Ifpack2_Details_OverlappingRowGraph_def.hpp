@@ -88,12 +88,15 @@ OverlappingRowGraph<GraphType>::getComm () const
 }
   
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class GraphType>
+TPETRA_DEPRECATED
 Teuchos::RCP<typename GraphType::node_type> 
 OverlappingRowGraph<GraphType>::getNode () const
 {
-  return nonoverlappingGraph_->getNode();
+  return Teuchos::null;
 }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   
 
 template<class GraphType>

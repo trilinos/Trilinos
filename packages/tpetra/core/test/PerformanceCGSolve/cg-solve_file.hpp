@@ -74,18 +74,6 @@ struct result_struct {
     final_residual(res),niters(niter) {};
 };
 
-
-template<class Node>
-Teuchos::XMLTestNode machine_configuration(Node node);
-
-template<class Node>
-Teuchos::XMLTestNode machine_configuration(Node node) {
-  Teuchos::XMLTestNode config = Teuchos::PerfTest_MachineConfig();
-  config.addString("KokkosNodeType",node->name());
-  return config;
-}
-
-
 template<class CrsMatrix>
 Teuchos::XMLTestNode test_entry(
     const std::string& filename_matrix,
@@ -143,7 +131,7 @@ Teuchos::XMLTestNode test_entry(
 
 template<class CrsMatrix, class Vector>
 result_struct
-cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int myproc)
+cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int myproc, double tolerance, int max_iter)
 {
   static_assert (std::is_same<typename CrsMatrix::scalar_type, typename Vector::scalar_type>::value,
                  "The CrsMatrix and Vector template parameters must have the same scalar_type.");
@@ -152,8 +140,8 @@ cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector
   typedef typename Vector::mag_type magnitude_type;
   typedef typename Vector::local_ordinal_type LO;
   Teuchos::RCP<Vector> r,p,Ap;
-  int max_iter=200;
-  double tolerance = 1e-8;
+  //int max_iter=200;
+  //double tolerance = 1e-8;
   r = Tpetra::createVector<ScalarType>(A->getRangeMap());
   p = Tpetra::createVector<ScalarType>(A->getRangeMap());
   Ap = Tpetra::createVector<ScalarType>(A->getRangeMap());
@@ -314,7 +302,7 @@ run (int argc, char *argv[])
   Kokkos::InitArguments kokkosArgs;
   kokkosArgs.num_threads = numthreads;
   kokkosArgs.num_numa = numteams; // ???
-  kokkosArgs.device_id = myRank & numgpus;
+  kokkosArgs.device_id = myRank % numgpus;
   kokkosArgs.skip_device = skipgpu;
   kokkosArgs.disable_warnings = ! verbose;
 
@@ -343,7 +331,7 @@ run (int argc, char *argv[])
     A = Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile (filename, comm);
   }
   else {
-    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm, Teuchos::null);
+    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm);
   }
 
   if (printMatrix) {
@@ -366,11 +354,17 @@ run (int argc, char *argv[])
   if (nsize < 0) {
     typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
     b = reader_type::readVectorFile (filename_vector, map->getComm (),
-                                     map->getNode (), map);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                     map->getNode (),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                     map);
   } else {
     typedef Tpetra::Utils::MatrixGenerator<crs_matrix_type> gen_type;
-    b = gen_type::generate_miniFE_vector (nsize, map->getComm (),
-                                          map->getNode ());
+    b = gen_type::generate_miniFE_vector (nsize, map->getComm ()
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                          , map->getNode ()
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                         );
   }
 
   // The vector x on input is the initial guess for the CG solve.
@@ -378,12 +372,11 @@ run (int argc, char *argv[])
   RCP<vec_type> x (new vec_type (A->getDomainMap ()));
 
   // Solve the linear system Ax=b using CG.
-  result_struct results = cg_solve (A, b, x, myRank);
+  result_struct results = cg_solve (A, b, x, myRank, tolerance, niters);
 
   // Print results.
   if (myRank == 0) {
-    Teuchos::XMLTestNode machine_config =
-      machine_configuration (map->getNode ());
+    Teuchos::XMLTestNode machine_config = Teuchos::PerfTest_MachineConfig();
     Teuchos::XMLTestNode test =
       test_entry (filename, filename_vector, nsize, comm->getSize (), numteams,
                   numthreads, A, results, niters, tolerance, tol_small,

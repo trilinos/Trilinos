@@ -120,11 +120,11 @@ namespace panzer {
        std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
        block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
        block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
-    
+
        Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       int default_integration_order = 1;
-      
+
        panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                   block_ids_to_cell_topo,
 				  ipb,
@@ -143,18 +143,18 @@ namespace panzer {
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physics_blocks.size();i++) 
+    for(size_t i=0;i<physics_blocks.size();i++)
       wkstContainer->setNeeds(physics_blocks[i]->elementBlockID(),physics_blocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
- 
+
     // setup DOF manager
     /////////////////////////////////////////////
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager
+           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
+    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);
-    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
@@ -163,7 +163,7 @@ namespace panzer {
 
     // setup field manager builder
     /////////////////////////////////////////////
-      
+
     // Add in the application specific closure model factory
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     user_app::MyModelFactory_TemplateBuilder cm_builder;
@@ -186,11 +186,11 @@ namespace panzer {
     fmb.writeVolumeTextDependencyFiles("FMB_Test", physics_blocks);
     fmb.writeBCTextDependencyFiles("FMB_Test");
 
-    const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm = 
+    const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm =
       fmb.getVolumeFieldManagers();
 
     TEST_EQUALITY(fmb_vol_fm.size(), 2);
-    
+
     Teuchos::RCP<std::vector<panzer::Workset> > fmb_vol_worksets;
 
     panzer::WorksetDescriptor wd = blockDescriptor("eblock-0_0");
@@ -200,12 +200,12 @@ namespace panzer {
     wd = blockDescriptor("eblock-1_0");
     fmb_vol_worksets = wkstContainer->getWorksets(wd);
     TEST_ASSERT(fmb_vol_worksets!=Teuchos::null);
-    
 
-    const std::map<panzer::BC, 
+
+    const std::map<panzer::BC,
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
       panzer::LessBC>& fmb_bc_fm = fmb.getBCFieldManagers();
-      
+
     std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >, panzer::LessBC> fmb_bc_worksets;
     panzer::getSideWorksetsFromContainer(*wkstContainer,bcs,fmb_bc_worksets);
 
@@ -236,7 +236,7 @@ namespace panzer {
       p.set("Basis Order",1);
       p.set("Integration Order",1);
     }
-    
+
     {
       std::size_t bc_id = 0;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -247,10 +247,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    }
     {
       std::size_t bc_id = 1;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -261,10 +261,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 2;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -275,7 +275,7 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
     }

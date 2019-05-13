@@ -67,7 +67,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph,
+  BuildAggregates(const Teuchos::ParameterList& /* params */, const LWGraph_kokkos& graph,
                   Aggregates_kokkos& aggregates,
                   Kokkos::View<unsigned*, memory_space>& aggStat,
                   LO& numNonAggregatedNodes) const {
@@ -194,8 +194,7 @@ namespace MueLu {
                                Teuchos::OrdinalTraits<GO>::invalid(),
                                numCoarseNodes,
                                graph.GetDomainMap()->getIndexBase(),
-                               graph.GetDomainMap()->getComm(),
-                               graph.GetDomainMap()->getNode());
+                               graph.GetDomainMap()->getComm());
     domainMap = colMap;
 
     myGraph = CrsGraphFactory::Build(myLocalGraph, graph.GetDomainMap(), colMap,

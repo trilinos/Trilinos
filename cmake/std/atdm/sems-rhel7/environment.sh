@@ -106,7 +106,12 @@ module load sems-git/2.10.1
 module load sems-cmake/3.12.2
 module load sems-ninja_fortran/1.8.2
 
-if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
+if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
+  # We just need to be super conservative by default when using a GPU.  If
+  # users want to use more MPI processes, then can override this with
+  # ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE.
+elif [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
   export OMP_NUM_THREADS=2
   # NOTE: With hyper-threading enabled, you can run as many threads as there

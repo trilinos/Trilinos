@@ -2060,7 +2060,6 @@ int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs1(int m,
   int i, j;
   bool xtraVec = false;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-  MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
 
   // Real and imaginary eigenvalue components
   std::vector<MagnitudeType> wr(m), wi(m);

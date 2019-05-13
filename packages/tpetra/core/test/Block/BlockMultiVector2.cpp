@@ -43,6 +43,7 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_BlockMultiVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -67,13 +68,17 @@ namespace {
   // MultiVector::elementWiseMultiply).
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, BlockWiseMultiply, Scalar, LO, GO, Node )
   {
-    typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
-    typedef typename BMV::device_type device_type;
-    typedef typename BMV::impl_scalar_type IST;
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::global_size_t GST;
-    typedef Kokkos::Details::ArithTraits<IST> KAT;
-    typedef typename KAT::mag_type MT;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
+    using BMV = Tpetra::BlockMultiVector<Scalar, LO, GO, Node>;
+    using device_type = typename BMV::device_type;
+    using IST = typename BMV::impl_scalar_type;
+    using host_device_type = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
+    using host_layout_type = typename Kokkos::View<IST**, device_type>::array_layout;
+    using map_type = Tpetra::Map<LO, GO, Node>;
+    using GST = Tpetra::global_size_t;
+    using KAT = Kokkos::Details::ArithTraits<IST>;
+    using MT = typename KAT::mag_type;
     // Set debug = true if you want immediate debug output to stderr.
     const bool debug = false;
     int lclSuccess = 1;
@@ -131,15 +136,15 @@ namespace {
     const IST four = two + two;
     const IST five = four + one;
 
-    typename Kokkos::View<IST**, device_type>::HostMirror prototypeBlock_h ("prototypeBlock", blockSize, blockSize);
-    Kokkos::deep_copy (prototypeBlock_h, zero);
+    Kokkos::View<IST**, host_layout_type, host_device_type> prototypeBlock
+      ("prototypeBlock", blockSize, blockSize);
     for (LO i = 0; i < blockSize; ++i) {
-      prototypeBlock_h(i,i) = four; // diagonally dominant
+      prototypeBlock(i,i) = four; // diagonally dominant
       if (i >= 1) {
-        prototypeBlock_h(i, i-1) = one;
+        prototypeBlock(i, i-1) = one;
       }
       if (i + 1 < blockSize) {
-        prototypeBlock_h(i, i+1) = -one; // nonsymmetric
+        prototypeBlock(i, i+1) = -one; // nonsymmetric
       }
     }
 
@@ -150,16 +155,16 @@ namespace {
     Teuchos::SerialDenseMatrix<int, Scalar> teuchosBlock (blockSize, blockSize);
     for (LO j = 0; j < blockSize; ++j) {
       for (LO i = 0; i < blockSize; ++i) {
-        teuchosBlock(i,j) = prototypeBlock_h(i,j);
+        teuchosBlock(i,j) = prototypeBlock(i,j);
       }
     }
 
     // Use LAPACK (through the BLAS interface) to compute the inverse
     // (in place) of teuchosBlock.  We will use this to check our
     // implementation of the LU factorization and explicit inverse.
-    typename Kokkos::View<int*, device_type>::HostMirror ipiv ("ipiv", blockSize);
+    Kokkos::View<int*, host_device_type> ipiv ("ipiv", blockSize);
     Teuchos::LAPACK<int, Scalar> lapack;
-    typename Kokkos::View<IST*, device_type>::HostMirror work ("work", blockSize);
+    Kokkos::View<IST*, host_device_type> work ("work", blockSize);
     int info = 0;
     {
       lapack.GETRF (blockSize, blockSize, teuchosBlock.values (),
@@ -197,14 +202,14 @@ namespace {
       }
     }
 
-    Tpetra::Experimental::GETF2 (prototypeBlock_h, ipiv, info);
+    Tpetra::Experimental::GETF2 (prototypeBlock, ipiv, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       myOut << "Our GETF2 returned info = " << info << " != 0.  "
         "No point in continuing." << endl;
       return;
     }
-    Tpetra::Experimental::GETRI (prototypeBlock_h, ipiv, work, info);
+    Tpetra::Experimental::GETRI (prototypeBlock, ipiv, work, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       myOut << "Our GETF2 returned info = " << info << " != 0.  "
@@ -219,7 +224,7 @@ namespace {
     MT frobNorm = 0.0;
     for (LO i = 0; i < blockSize; ++i) {
       for (LO j = 0; j < blockSize; ++j) {
-        frobNorm += KAT::abs (prototypeBlock_h(i,j) - static_cast<IST> (teuchosBlock(i,j)));
+        frobNorm += KAT::abs (prototypeBlock(i,j) - static_cast<IST> (teuchosBlock(i,j)));
       }
     }
     myOut << "KAT::eps() = " << KAT::eps ()
@@ -236,11 +241,11 @@ namespace {
 
     // Compute the expected solution (little) vector in prototypeY,
     // when applying the explicit inverse to a vector of all ones.
-    typename Kokkos::View<IST*, device_type>::HostMirror
-      prototypeX ("prototypeX", blockSize);
+    Kokkos::View<IST*, host_device_type> prototypeX
+      (view_alloc ("prototypeX", WithoutInitializing), blockSize);
     Kokkos::deep_copy (prototypeX, one);
-    typename Kokkos::View<IST*, device_type>::HostMirror
-      prototypeY ("prototypeY", blockSize);
+    Kokkos::View<IST*, host_device_type> prototypeY
+      ("prototypeY", blockSize);
     Teuchos::BLAS<int, Scalar> blas;
     blas.GEMV (Teuchos::NO_TRANS, blockSize, blockSize,
                static_cast<Scalar> (1.0),
@@ -262,7 +267,7 @@ namespace {
     IST curScalingFactor = one;
     for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
       auto D_cur = subview (D_host, whichBlk, ALL (), ALL ());
-      Tpetra::Experimental::COPY (prototypeBlock_h, D_cur); // copy into D_cur
+      Tpetra::Experimental::COPY (prototypeBlock, D_cur); // copy into D_cur
       Tpetra::Experimental::SCAL (curScalingFactor, D_cur);
       curScalingFactor += one;
     }
@@ -278,7 +283,7 @@ namespace {
     Y.putScalar (zero);
     {
       X.sync_host ();
-      X.modify_host();
+      X.modify_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -290,7 +295,7 @@ namespace {
         }
         curScalingFactor += one;
       }
-      X.template sync<device_type> ();
+      X.sync_device ();
     }
 
     myOut << "Call Y.blockWiseMultiply(alpha, D, X)" << endl;
@@ -326,7 +331,7 @@ namespace {
         }
         curScalingFactor += one;
       }
-      Y.template sync<device_type> ();
+      Y.sync_device ();
     }
 
     myOut << "Call Y.blockWiseMultiply(alpha, D, X) again, where Y has nonzero "
@@ -355,7 +360,6 @@ namespace {
         }
         curScalingFactor += one;
       }
-      Y.template sync<device_type> ();
     }
 
     lclSuccess = success ? 1 : 0;
@@ -376,13 +380,17 @@ namespace {
   //
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, BlockJacobiUpdate, Scalar, LO, GO, Node )
   {
-    typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
-    typedef typename BMV::device_type device_type;
-    typedef typename BMV::impl_scalar_type IST;
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::global_size_t GST;
-    typedef Kokkos::Details::ArithTraits<IST> KAT;
-    typedef typename KAT::mag_type MT;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
+    using BMV = Tpetra::BlockMultiVector<Scalar, LO, GO, Node>;
+    using IST = typename BMV::impl_scalar_type;
+    using device_type = typename BMV::device_type;
+    using host_device_type = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
+    using host_layout_type = typename Kokkos::View<IST**, device_type>::array_layout;
+    using map_type = Tpetra::Map<LO, GO, Node>;
+    using GST = Tpetra::global_size_t;
+    using KAT = Kokkos::Details::ArithTraits<IST>;
+    using MT = typename KAT::mag_type;
     // Set debug = true if you want immediate debug output to stderr.
     const bool debug = false;
     int lclSuccess = 1;
@@ -441,29 +449,29 @@ namespace {
     const IST four = two + two;
     const IST five = four + one;
 
-    typename Kokkos::View<IST**, device_type>::HostMirror prototypeBlock_h ("prototypeBlock", blockSize, blockSize);
-    Kokkos::deep_copy (prototypeBlock_h, zero);
+    Kokkos::View<IST**, host_layout_type, host_device_type>
+      prototypeBlock ("prototypeBlock", blockSize, blockSize);
     for (LO i = 0; i < blockSize; ++i) {
-      prototypeBlock_h(i,i) = four; // diagonally dominant
+      prototypeBlock(i,i) = four; // diagonally dominant
       if (i >= 1) {
-        prototypeBlock_h(i, i-1) = one;
+        prototypeBlock(i, i-1) = one;
       }
       if (i + 1 < blockSize) {
-        prototypeBlock_h(i, i+1) = -one; // nonsymmetric
+        prototypeBlock(i, i+1) = -one; // nonsymmetric
       }
     }
 
-    typename Kokkos::View<int*, device_type>::HostMirror ipiv ("ipiv", blockSize);
+    Kokkos::View<int*, host_device_type> ipiv ("ipiv", blockSize);
     int info = 0;
-    Tpetra::Experimental::GETF2 (prototypeBlock_h, ipiv, info);
+    Tpetra::Experimental::GETF2 (prototypeBlock, ipiv, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       myOut << "Our GETF2 returned info = " << info << " != 0.  "
         "No point in continuing." << endl;
       return;
     }
-    typename Kokkos::View<IST*, device_type>::HostMirror work ("work", blockSize);
-    Tpetra::Experimental::GETRI (prototypeBlock_h, ipiv, work, info);
+    Kokkos::View<IST*, host_device_type> work ("work", blockSize);
+    Tpetra::Experimental::GETRI (prototypeBlock, ipiv, work, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       myOut << "Our GETF2 returned info = " << info << " != 0.  "
@@ -478,14 +486,15 @@ namespace {
     // same factor.  This means the solution should not change.  The
     // point of this is to catch indexing errors.
 
-    Kokkos::View<IST***, device_type> D ("D", numLocalMeshPoints,
+    Kokkos::View<IST***, device_type> D (view_alloc ("D", WithoutInitializing),
+                                         numLocalMeshPoints,
                                          blockSize, blockSize);
     auto D_host = Kokkos::create_mirror_view (D);
 
     IST curScalingFactor = one;
     for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
       auto D_cur = subview (D_host, whichBlk, ALL (), ALL ());
-      Tpetra::Experimental::COPY (prototypeBlock_h, D_cur); // copy into D_cur
+      Tpetra::Experimental::COPY (prototypeBlock, D_cur); // copy into D_cur
       Tpetra::Experimental::SCAL (curScalingFactor, D_cur);
       curScalingFactor += one;
     }
@@ -513,7 +522,7 @@ namespace {
         }
         curScalingFactor += one;
       }
-      X.template sync<device_type> ();
+      X.sync_device ();
     }
 
     // Fill Y with some initial value, so that using beta != 0 gives a
@@ -597,18 +606,15 @@ namespace {
 
     myOut << "Take the norm of the difference between the two results" << endl;
     Y2.update (one, Y, -one); // Y2 := Y - Y2
-    Kokkos::View<MT*, device_type> norms ("norms", numVecs);
-    Y2.getMultiVectorView ().normInf (norms);
-
-    auto norms_host = Kokkos::create_mirror_view (norms);
-    Kokkos::deep_copy (norms_host, norms);
+    Teuchos::Array<MT> norms (numVecs);
+    Y2.getMultiVectorView ().normInf (norms ());
 
     const MT maxResultNorm = KAT::eps () * static_cast<MT> (numLocalMeshPoints) *
       static_cast<MT> (blockSize);
 
     for (LO j = 0; j < numVecs; ++j) {
-      myOut << "Norm of vector " << j << ": " << norms_host(j) << endl;
-      TEST_ASSERT( norms_host(j) <= maxResultNorm );
+      myOut << "Norm of vector " << j << ": " << norms[j] << endl;
+      TEST_ASSERT( norms[j] <= maxResultNorm );
     }
 
     myOut << "Retest Y.blockJacobiUpdate with beta == 0" << endl;
@@ -647,12 +653,11 @@ namespace {
     // Take the norm of the difference between the two results.
 
     Y2.update (one, Y, -one); // Y2 := Y - Y2
-    Y2.getMultiVectorView ().normInf (norms);
-    Kokkos::deep_copy (norms_host, norms);
+    Y2.getMultiVectorView ().normInf (norms ());
 
     for (LO j = 0; j < numVecs; ++j) {
-      myOut << "Norm of vector " << j << ": " << norms_host(j) << endl;
-      TEST_ASSERT( norms_host(j) <= maxResultNorm );
+      myOut << "Norm of vector " << j << ": " << norms[j] << endl;
+      TEST_ASSERT( norms[j] <= maxResultNorm );
     }
 
     lclSuccess = success ? 1 : 0;

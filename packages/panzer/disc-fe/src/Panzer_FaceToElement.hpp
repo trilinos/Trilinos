@@ -76,11 +76,11 @@ public:
 
   FaceToElement();
 
-  FaceToElement(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn);
+  FaceToElement(panzer::ConnManager & conn);
 
   /** Build the mapping from a mesh topology.
     */
-  void initialize(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn);
+  void initialize(panzer::ConnManager & conn);
 
   GlobalOrdinal getLeftElem (GlobalOrdinal face_id) const 
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return elems_by_face_(lid,0);}

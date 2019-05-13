@@ -265,12 +265,14 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance Nullspace\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"rap: relative diagonal floor\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
   "<Parameter name=\"rap: shift\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"rap: shift diagonal M\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: shift low storage\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: shift array\" type=\"Array(double)\" value=\"{}\"/>"
+  "<Parameter name=\"rap: cfl array\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
   "<Parameter name=\"matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount \" type=\"int\" value=\"3000 \"/>"
@@ -691,6 +693,8 @@ namespace MueLu {
       
          ("repartition: use subcommunicators","repartition: use subcommunicators")
       
+         ("rap: relative diagonal floor","rap: relative diagonal floor")
+      
          ("rap: fix zero diagonals","rap: fix zero diagonals")
       
          ("rap: fix zero diagonals threshold","rap: fix zero diagonals threshold")
@@ -702,6 +706,8 @@ namespace MueLu {
          ("rap: shift low storage","rap: shift low storage")
       
          ("rap: shift array","rap: shift array")
+      
+         ("rap: cfl array","rap: cfl array")
       
          ("rap: algorithm","rap: algorithm")
       

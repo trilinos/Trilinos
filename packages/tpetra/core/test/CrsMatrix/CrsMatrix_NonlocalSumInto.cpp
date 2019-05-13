@@ -78,7 +78,6 @@
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType, GlobalOrdinalType, ScalarType, NodeType )
 {
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createNonContigMapWithNode;
   using Tpetra::global_size_t;
   using Tpetra::Map;
   using Teuchos::Array;

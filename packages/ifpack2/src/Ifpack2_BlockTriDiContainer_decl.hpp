@@ -331,15 +331,14 @@ namespace Ifpack2 {
     int applyInverseJacobi (const mv_type& X, mv_type& Y, 
                             const ApplyParameters& input) const;
 
-    /// \brief If a norm-based method was used, return a buffer containing the
-    ///        norms, ordered by degrees of freedom, then RHS; otherwise, return a
-    ///        null ArrayRCp.
-    const Teuchos::ArrayRCP<const magnitude_type> getNorms0 () const;
+    /// \brief If a norm-based method was used, return a L2 norm of all rhs 
+    ///        at the first iteration; otherwise return a minus one indicating
+    ///        norm is not requested.
+    const magnitude_type getNorms0 () const;
 
-    /// \brief If a norm-based method was used, return a buffer containing the
-    ///        norms, ordered by degrees of freedom, then RHS; otherwise, return a
-    ///        null ArrayRCp.
-    const Teuchos::ArrayRCP<const magnitude_type> getNormsFinal () const;
+    /// \brief If a norm-based method was used, return a L2 norm of all rhs;
+    ///        otherwise return zero.
+    const magnitude_type getNormsFinal () const;
   
     //! Compute <tt>Y := (1 - a) Y + a D^{-1} (X - R*Y)</tt>. Not supported. Call
     //! <tt>applyInverseJacobi</tt> instead.

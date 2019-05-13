@@ -358,7 +358,7 @@ public:
   //! @name Constructor/Destructor Methods
   //@{
   //! Constructor specifying fixed number of entries for each row.
-  EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+  EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
 : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
 
 
@@ -367,12 +367,12 @@ public:
   //EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
 
   //! Constructor specifying column Map and fixed number of entries for each row.
-  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=null)
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=null)
   : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
 
   ////! Constructor specifying column Map and number of entries in each row.
   // Definition not in cpp, so comment out
-  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &/* params */=null) {
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
     graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), numEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)));
   }
@@ -380,31 +380,31 @@ public:
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
-  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
-                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
-                  const typename local_graph_type::row_map_type& rowPointers,
-                  const typename local_graph_type::entries_type::non_const_type& columnIndices,
-                  const RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* rowMap */,
+                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* colMap */,
+                  const typename local_graph_type::row_map_type& /* rowPointers */,
+                  const typename local_graph_type::entries_type::non_const_type& /* columnIndices */,
+                  const RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support CrsGraph constructors using Kokkos Views!");
   }
 
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
-  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
-                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
-                  const local_graph_type& lclGraph,
-                  const RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* rowMap */,
+                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* colMap */,
+                  const local_graph_type& /* lclGraph */,
+                  const RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support CrsGraph constructors using a local graph!");
   }
 
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
-  EpetraCrsGraphT(const local_graph_type& lclGraph,
-                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
-                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
-                  const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
-                  const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
-                  const RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+  EpetraCrsGraphT(const local_graph_type& /* lclGraph */,
+                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* rowMap */,
+                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* colMap */,
+                  const Teuchos::RCP<const map_type>& /* domainMap */ = Teuchos::null,
+                  const Teuchos::RCP<const map_type>& /* rangeMap */ = Teuchos::null,
+                  const RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support CrsGraph constructors using a local graph!");
   }
@@ -600,7 +600,7 @@ public:
   std::string description() const { XPETRA_MONITOR("EpetraCrsGraphT::description"); return "NotImplemented"; }
 
   //! Print the object with some verbosity level to an FancyOStream object.
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel /* verbLevel */=Teuchos::Describable::verbLevel_default) const {
     XPETRA_MONITOR("EpetraCrsGraphT::describe");
 
     out << "EpetraCrsGraphT::describe : Warning, verbosity level is ignored by this method." << std::endl;
@@ -720,7 +720,7 @@ public:
   //! @name Constructor/Destructor Methods
   //@{
   //! Constructor specifying fixed number of entries for each row.
-  EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+  EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
 : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
 
 
@@ -729,12 +729,12 @@ public:
   //EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
 
   //! Constructor specifying column Map and fixed number of entries for each row.
-  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=null)
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=null)
   : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
 
   ////! Constructor specifying column Map and number of entries in each row.
   // Definition not in cpp, so comment out
-  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &/* params */=null) {
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
     graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), numEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)));
   }
@@ -742,31 +742,31 @@ public:
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
-  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
-                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
-                  const typename local_graph_type::row_map_type& rowPointers,
-                  const typename local_graph_type::entries_type::non_const_type& columnIndices,
-                  const RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* rowMap */,
+                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* colMap */,
+                  const typename local_graph_type::row_map_type& /* rowPointers */,
+                  const typename local_graph_type::entries_type::non_const_type& /* columnIndices */,
+                  const RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support CrsGraph constructors using Kokkos Views!");
   }
 
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
-  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
-                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
-                  const local_graph_type& lclGraph,
-                  const RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* rowMap */,
+                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* colMap */,
+                  const local_graph_type& /* lclGraph */,
+                  const RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support CrsGraph constructors using a local graph!");
   }
 
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
-  EpetraCrsGraphT(const local_graph_type& lclGraph,
-                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
-                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
-                  const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
-                  const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
-                  const RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+  EpetraCrsGraphT(const local_graph_type& /* lclGraph */,
+                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* rowMap */,
+                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* colMap */,
+                  const Teuchos::RCP<const map_type>& /* domainMap */ = Teuchos::null,
+                  const Teuchos::RCP<const map_type>& /* rangeMap */ = Teuchos::null,
+                  const RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support CrsGraph constructors using a local graph!");
   }
@@ -960,7 +960,7 @@ public:
   std::string description() const { XPETRA_MONITOR("EpetraCrsGraphT::description"); return "NotImplemented"; }
 
   //! Print the object with some verbosity level to an FancyOStream object.
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel /* verbLevel */=Teuchos::Describable::verbLevel_default) const {
     XPETRA_MONITOR("EpetraCrsGraphT::describe");
 
     out << "EpetraCrsGraphT::describe : Warning, verbosity level is ignored by this method." << std::endl;

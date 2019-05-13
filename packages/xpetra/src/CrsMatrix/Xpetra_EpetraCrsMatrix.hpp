@@ -283,13 +283,13 @@ public:
   //@{
 
   //! Constructor specifying fixed number of entries for each row.
-  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist = Teuchos::null)
+  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */ = Teuchos::null)
 : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))), isFillResumed_(false)
 { }
 
 
   //! Constructor specifying (possibly different) number of entries in each row.
-  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
   : isFillResumed_(false)
   {
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
@@ -298,13 +298,13 @@ public:
 
 
   //! Constructor specifying column Map and fixed number of entries for each row.
-  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
   : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), maxNumEntriesPerRow, toEpetra(pftype)))), isFillResumed_(false)
   { }
 
 
   //! Constructor specifying column Map and number of entries in each row.
-  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
   : isFillResumed_(false)
   {
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
@@ -313,7 +313,7 @@ public:
 
 
   //! Constructor specifying a previously constructed graph.
-  EpetraCrsMatrixT(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+  EpetraCrsMatrixT(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
   : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra<GlobalOrdinal,Node>(graph)))), isFillResumed_(false)
   { }
 
@@ -665,7 +665,7 @@ public:
                                                   const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
                                                   const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
                                                   const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
-                                                  const RCP<ParameterList> & params=Teuchos::null) {
+                                                  const RCP<ParameterList> & /* params */=Teuchos::null) {
      XPETRA_MONITOR("EpetraCrsMatrixT::expertStaticFillComplete");
 
      // For Epetra matrices, resumeFill() is a fictive operation.
@@ -694,7 +694,7 @@ public:
   //@{
 
   //!
-  void resumeFill(const RCP< ParameterList > &params=Teuchos::null) {
+  void resumeFill(const RCP< ParameterList > &/* params */=Teuchos::null) {
     XPETRA_MONITOR("EpetraCrsMatrixT::resumeFill");
 
     // According to Tpetra documentation, resumeFill() may be called repeatedly.
@@ -858,12 +858,12 @@ public:
   }
 
   //! Get offsets of the diagonal entries in the matrix.
-  void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
+  void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &/* offsets */) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagOffsets() is not implemented or supported.");
   }
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
-  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
+  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &/* diag */, const Teuchos::ArrayView<const size_t> &/* offsets */) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
   }
 
@@ -1169,7 +1169,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) { }
+  void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& /* newMap */) { }
 
   //@}
 
@@ -1222,9 +1222,9 @@ public:
     return localMatrix_;
   }
 
-  void setAllValues (const typename local_matrix_type::row_map_type& ptr,
-                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
-                     const typename local_matrix_type::values_type& val)
+  void setAllValues (const typename local_matrix_type::row_map_type& /* ptr */,
+                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& /* ind */,
+                     const typename local_matrix_type::values_type& /* val */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
@@ -1242,9 +1242,16 @@ private:
   //@}
 
 private:
+  //! The underlying actual matrix object
   RCP<Epetra_CrsMatrix> mtx_;
 
-  bool isFillResumed_; //< For Epetra, fillResume() is a fictive operation but we need to keep track of it. This boolean is true only is resumeFill() have been called and fillComplete() have not been called afterward.
+  /*!
+  \brief Flag to keep track of fill status
+
+  For Epetra, fillResume() is a fictitious operation but we need to keep track of it.
+  This boolean is true only is resumeFill() have been called and fillComplete() have not been called afterward.
+  */
+  bool isFillResumed_;
 
 }; // EpetraCrsMatrixT class
 
@@ -1275,13 +1282,13 @@ public:
   //@{
 
   //! Constructor specifying fixed number of entries for each row.
-  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist = Teuchos::null)
+  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */ = Teuchos::null)
 : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))), isFillResumed_(false)
 { }
 
 
   //! Constructor specifying (possibly different) number of entries in each row.
-  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
   : isFillResumed_(false)
   {
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
@@ -1290,13 +1297,13 @@ public:
 
 
   //! Constructor specifying column Map and fixed number of entries for each row.
-  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
   : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), maxNumEntriesPerRow, toEpetra(pftype)))), isFillResumed_(false)
   { }
 
 
   //! Constructor specifying column Map and number of entries in each row.
-  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+  EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
   : isFillResumed_(false)
   {
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
@@ -1305,7 +1312,7 @@ public:
 
 
   //! Constructor specifying a previously constructed graph.
-  EpetraCrsMatrixT(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+  EpetraCrsMatrixT(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, const Teuchos::RCP< Teuchos::ParameterList > &/* plist */=Teuchos::null)
   : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra<GlobalOrdinal,Node>(graph)))), isFillResumed_(false)
   { }
 
@@ -1654,7 +1661,7 @@ public:
                                                   const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
                                                   const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
                                                   const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
-                                                  const RCP<ParameterList> & params=Teuchos::null) {
+                                                  const RCP<ParameterList> & /* params */=Teuchos::null) {
      XPETRA_MONITOR("EpetraCrsMatrixT::expertStaticFillComplete");
 
      // For Epetra matrices, resumeFill() is a fictive operation.
@@ -1683,7 +1690,7 @@ public:
   //@{
 
   //!
-  void resumeFill(const RCP< ParameterList > &params=Teuchos::null) {
+  void resumeFill(const RCP< ParameterList > &/* params */=Teuchos::null) {
     XPETRA_MONITOR("EpetraCrsMatrixT::resumeFill");
 
     // According to Tpetra documentation, resumeFill() may be called repeatedly.
@@ -1844,12 +1851,12 @@ public:
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { XPETRA_MONITOR("EpetraCrsMatrixT::getLocalDiagCopy"); mtx_->ExtractDiagonalCopy(toEpetra<GlobalOrdinal,Node>(diag)); }
 
   //! Get offsets of the diagonal entries in the matrix.
-  void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
+  void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &/* offsets */) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagOffsets() is not implemented or supported.");
   }
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
-  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
+  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &/* diag */, const Teuchos::ArrayView<const size_t> &/* offsets */) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
   }
 
@@ -2155,7 +2162,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) { }
+  void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& /* newMap */) { }
 
   //@}
 
@@ -2208,9 +2215,9 @@ public:
     return localMatrix_;
   }
 
-  void setAllValues (const typename local_matrix_type::row_map_type& ptr,
-                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
-                     const typename local_matrix_type::values_type& val)
+  void setAllValues (const typename local_matrix_type::row_map_type& /* ptr */,
+                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& /* ind */,
+                     const typename local_matrix_type::values_type& /* val */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");

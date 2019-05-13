@@ -83,25 +83,65 @@ namespace Amesos2 {
                                        size_t& nnz) const
   {
     using Teuchos::as;
+    const int local_row = this->row_map_->getLocalElement(row);
+    bool threw = false;
 
-    local_ordinal_t local_row = this->row_map_->getLocalElement(row);
+    Teuchos::Array<local_ordinal_t> epetra_lcl_inds_buf;
+    Teuchos::ArrayView<local_ordinal_t> epetra_lcl_inds;
+    if (! std::is_same<global_ordinal_t, local_ordinal_t>::value) {
+      int num_ent = 0;
+      int err = 0;
+      try {
+        err = this->mat_->NumMyRowEntries (local_row, num_ent);
+      }
+      catch (int integer_exception) {
+        threw = true;
+        err = integer_exception;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (threw && err != 0, std::runtime_error, "Epetra_RowMatrix::"
+         "NumMyRowEntries, called on local row " << local_row << ", threw "
+         "an integer exception " << err << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! threw && err != 0, std::runtime_error, "Epetra_RowMatrix returned "
+         "error code " << err << " from NumMyRowEntries for local row "
+         << local_row << ".");
+      epetra_lcl_inds_buf.resize (num_ent);
+      epetra_lcl_inds = epetra_lcl_inds_buf ();
+    }
+    else { // local_ordinal_t == global_ordinal_t
+      using Teuchos::av_reinterpret_cast;
+      epetra_lcl_inds = av_reinterpret_cast<int> (indices);
+    }
+
     int nnz_ret = 0;
-    int rowmatrix_return_val
-      = this->mat_->ExtractMyRowCopy(as<int>(local_row),
-                                     as<int>(std::min(indices.size(), vals.size())),
+    int rowmatrix_return_val = 0;
+    try {
+      rowmatrix_return_val =
+        this->mat_->ExtractMyRowCopy(local_row,
+                                     as<int>(std::min(epetra_lcl_inds.size(), vals.size())),
                                      nnz_ret,
                                      vals.getRawPtr(),
-                                     indices.getRawPtr());
-    TEUCHOS_TEST_FOR_EXCEPTION( rowmatrix_return_val != 0,
-                        std::runtime_error,
-                        "Epetra_RowMatrix object returned error code "
-                        << rowmatrix_return_val << " from ExtractMyRowCopy." );
+                                     epetra_lcl_inds.getRawPtr());
+    }
+    catch (int integer_exception) {
+      threw = true;
+      rowmatrix_return_val = integer_exception;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (threw && rowmatrix_return_val != 0, std::runtime_error,
+       "Epetra_RowMatrix::ExtractMyRowCopy, called on local row " << local_row
+       << ", threw an integer exception " << rowmatrix_return_val << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! threw && rowmatrix_return_val != 0, std::runtime_error,
+       "Epetra_RowMatrix object returned error code "
+       << rowmatrix_return_val << " from ExtractMyRowCopy." );
     nnz = as<size_t>(nnz_ret);
 
     // Epetra_CrsMatrix::ExtractMyRowCopy returns local column
     // indices, so transform these into global indices
     for( size_t i = 0; i < nnz; ++i ){
-      indices[i] = this->col_map_->getGlobalElement(indices[i]);
+      indices[i] = this->col_map_->getGlobalElement(epetra_lcl_inds[i]);
     }
   }
 
@@ -316,8 +356,8 @@ namespace Amesos2 {
   template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
   ::super_t::spmtx_ptr_t
-  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseRowPtr() const 
-  { 
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseRowPtr() const
+  {
     typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
     typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
     typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
@@ -330,8 +370,8 @@ namespace Amesos2 {
   template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
   ::super_t::spmtx_idx_t
-  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseColInd() const 
-  { 
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseColInd() const
+  {
     typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
     typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
     typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
@@ -344,8 +384,8 @@ namespace Amesos2 {
   template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
   ::super_t::spmtx_vals_t
-  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseValues() const 
-  { 
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseValues() const
+  {
     typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
     typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
     typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;

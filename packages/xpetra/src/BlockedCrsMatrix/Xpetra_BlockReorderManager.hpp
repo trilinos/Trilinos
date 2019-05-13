@@ -165,13 +165,13 @@ public:
   }
 
   virtual size_t GetNumBlocks() const { return 0; }
-  virtual void SetNumBlocks(size_t sz) {}
-  virtual void SetBlock(int blockIndex, int reorder) { }
-  virtual void SetBlock(int blockIndex, const Teuchos::RCP<BlockReorderManager> & reorder) {}
-  virtual const Teuchos::RCP<BlockReorderManager> GetBlock(int blockIndex) {
+  virtual void SetNumBlocks(size_t /* sz */) {}
+  virtual void SetBlock(int /* blockIndex */, int /* reorder */) { }
+  virtual void SetBlock(int /* blockIndex */, const Teuchos::RCP<BlockReorderManager> & /* reorder */) {}
+  virtual const Teuchos::RCP<BlockReorderManager> GetBlock(int /* blockIndex */) {
     return Teuchos::null;
   }
-  virtual const Teuchos::RCP<const BlockReorderManager> GetBlock(int blockIndex)const {
+  virtual const Teuchos::RCP<const BlockReorderManager> GetBlock(int /* blockIndex */)const {
     return Teuchos::null;
   }
   //! Get the index that is stored in this block/leaf

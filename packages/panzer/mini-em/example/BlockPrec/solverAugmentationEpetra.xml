@@ -40,6 +40,7 @@
             <Parameter name="Prec Type" type="string" value="MueLu"/>
             <ParameterList name="Prec Types">
               <ParameterList name="MueLu">
+                <Parameter name="use kokkos refactor" type="bool" value="false"/>
                 <Parameter name="verbosity" type="string" value="high"/>
                 <Parameter name="hierarchy label" type="string" value="Q_B"/>
                 <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
@@ -79,6 +80,7 @@
 
           <ParameterList name="T_E Solve">
             <Parameter name="Type" type="string" value="MueLu"/>
+            <Parameter name="use kokkos refactor" type="bool" value="false"/>
             <Parameter name="verbosity" type="string" value="high"/>
             <Parameter name="hierarchy label" type="string" value="T_E"/>
             <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>

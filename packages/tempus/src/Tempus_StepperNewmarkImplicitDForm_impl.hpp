@@ -196,60 +196,6 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     // Update time
     Scalar t = time + dt;
 
-#if 0
-    // Compute initial displacement, velocity and acceleration
-    if (time == solutionHistory->minTime()) {
-
-      RCP<Thyra::VectorBase<Scalar>>
-      d_init = Thyra::createMember(d_old->space());
-
-      RCP<Thyra::VectorBase<Scalar>>
-      v_init = Thyra::createMember(v_old->space());
-
-      RCP<Thyra::VectorBase<Scalar>>
-      a_init = Thyra::createMember(a_old->space());
-
-      Thyra::copy(*a_old, a_init.ptr());
-      Thyra::copy(*v_old, v_init.ptr());
-      Thyra::copy(*d_old, d_init.ptr());
-
-#ifdef DEBUG_OUTPUT
-      Teuchos::Range1D range;
-
-      *out_ << "\n*** d_init ***\n";
-      RTOpPack::ConstSubVectorView<Scalar> div;
-      d_init->acquireDetachedView(range, &div);
-      auto dia = div.values();
-      for (auto i = 0; i < dia.size(); ++i) *out_ << dia[i] << " ";
-      *out_ << "\n*** d_init ***\n";
-
-      *out_ << "\n*** v_init ***\n";
-      RTOpPack::ConstSubVectorView<Scalar> viv;
-      v_init->acquireDetachedView(range, &viv);
-      auto via = viv.values();
-      for (auto i = 0; i < via.size(); ++i) *out_ << via[i] << " ";
-      *out_ << "\n*** v_init ***\n";
-
-      *out_ << "\n*** a_init ***\n";
-      RTOpPack::ConstSubVectorView<Scalar> aiv;
-      a_init->acquireDetachedView(range, &aiv);
-      auto aia = aiv.values();
-      for (auto i = 0; i < aia.size(); ++i) *out_ << aia[i] << " ";
-      *out_ << "\n*** a_init ***\n";
-#endif
-
-      wrapperModel->initializeNewmark(
-          a_init, v_init, d_init, dt, time, beta_, gamma_);
-
-      const Thyra::SolveStatus<Scalar>
-      sStatus = this->solveNonLinear(this->wrapperModel_, *this->solver_, d_init, inArgs_);
-
-      workingState->setSolutionStatus(sStatus);  // Converged --> pass.
-
-      correctAcceleration(*a_old, *d_old, *d_init, dt);
-      Thyra::copy(*d_init, d_old.ptr());
-    }
-#endif
 
 #ifdef DEBUG_OUTPUT
     Teuchos::Range1D range;

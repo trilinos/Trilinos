@@ -233,18 +233,39 @@ namespace MueLu {
     if (useKokkos_) {
       BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
       BCcolsKokkos_ = Utilities_kokkos::DetectDirichletCols(*D0_Matrix_,BCrowsKokkos_);
-    } else {
+      if (IsPrint(Statistics2)) {
+        int BCrowcount = 0;
+        for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
+          if (BCrowsKokkos_(i))
+            BCrowcount += 1;
+        int BCcolcount = 0;
+        for (size_t i = 0; i<BCcolsKokkos_.size(); i++)
+          if (BCcolsKokkos_(i))
+            BCcolcount += 1;
+        GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount << " BC rows and " << BCcolcount << " BC columns." << std::endl;
+      }
+    } else
+#endif
+    {
       BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
       BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
+      if (IsPrint(Statistics2)) {
+        int BCrowcount = 0;
+        for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
+          if (*it)
+            BCrowcount += 1;
+        int BCcolcount = 0;
+        for (auto it = BCcols_.begin(); it != BCcols_.end(); ++it)
+          if (*it)
+            BCcolcount += 1;
+        GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount << " BC rows and " << BCcolcount << " BC columns." << std::endl;
+      }
     }
-#else
-    BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
-    BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
-#endif
 
     // build nullspace if necessary
     if(Nullspace_ != null) {
       // no need to do anything - nullspace is built
+      TEUCHOS_ASSERT(Nullspace_->getMap()->isCompatible(*(SM_Matrix_->getRowMap())));
     }
     else if(Nullspace_ == null && Coords_ != null) {
       // normalize coordinates
@@ -473,7 +494,9 @@ namespace MueLu {
 #endif
       if (!AH_.is_null()) {
         int oldRank = SetProcRankVerbose(AH_->getDomainMap()->getComm()->getRank());
-        HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_, CoordsH_);
+        ParameterList& userParamList = precList11_.sublist("user data");
+        userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
+        HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_);
         SetProcRankVerbose(oldRank);
       }
       VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
@@ -640,7 +663,9 @@ namespace MueLu {
 
       if (!A22_.is_null()) {
         int oldRank = SetProcRankVerbose(A22_->getDomainMap()->getComm()->getRank());
-        Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_, Coords_);
+        ParameterList& userParamList = precList22_.sublist("user data");
+        userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
+        Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_);
         SetProcRankVerbose(oldRank);
       }
       VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
@@ -785,8 +810,8 @@ namespace MueLu {
     if (dump_matrices_) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): dumping data" << std::endl;
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.mat"), *SM_Matrix_);
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M1.mat"), *M1_Matrix_);
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M0inv.mat"), *M0inv_Matrix_);
+      if(!M1_Matrix_.is_null())    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M1.mat"), *M1_Matrix_);
+      if(!M0inv_Matrix_.is_null()) Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M0inv.mat"), *M0inv_Matrix_);
 #ifndef HAVE_MUELU_KOKKOS_REFACTOR
       std::ofstream outBCrows("BCrows.mat");
       std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<LO>(outBCrows, "\n"));
@@ -1663,9 +1688,9 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply (const MultiVector& RHS, MultiVector& X,
-                                                                  Teuchos::ETransp mode,
-                                                                  Scalar alpha,
-                                                                  Scalar beta) const {
+                                                                  Teuchos::ETransp /* mode */,
+                                                                  Scalar /* alpha */,
+                                                                  Scalar /* beta */) const {
 
     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve"));
 
@@ -1775,7 +1800,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+  describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel /* verbLevel */) const {
 
     std::ostringstream oss;
 

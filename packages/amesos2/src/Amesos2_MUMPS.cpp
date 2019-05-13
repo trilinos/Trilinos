@@ -49,10 +49,8 @@
 #  include "Amesos2_ExplicitInstantiationHelpers.hpp"
 
 namespace Amesos2 {
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
   AMESOS2_SOLVER_EPETRA_INST(MUMPS);
-#endif
 #endif
 }
 

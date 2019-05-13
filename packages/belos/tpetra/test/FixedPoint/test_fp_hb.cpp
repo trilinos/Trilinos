@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::Vector<ST>               VV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
+  using GO = MV::global_ordinal_type;
 
   GlobalMPISession mpisess(&argc,&argv,&cout);
 
@@ -90,9 +91,7 @@ int main(int argc, char *argv[]) {
 
     int MyPID = 0;
 
-    typedef Tpetra::Map<>::node_type Node;
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-    RCP<Node>             node; // only for type deduction; null ok
 
     //
     // Get test parameters from command-line processor
@@ -138,7 +137,7 @@ int main(int argc, char *argv[]) {
     // Get the data from the HB file and build the Map,Matrix
     //
     RCP<CrsMatrix<ST> > A;
-    Tpetra::Utils::readHBMatrix(filename,comm,node,A);
+    Tpetra::Utils::readHBMatrix(filename,comm,A);
     RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
     // Create initial vectors
@@ -162,12 +161,12 @@ int main(int argc, char *argv[]) {
     A->getLocalDiagCopy(diag);
     Teuchos::ArrayRCP<ST> dd=diag.getDataNonConst();
 
-    Teuchos::ArrayView<const int> GlobalElements = A->getRowMap()->getNodeElementList();
+    auto GlobalElements = A->getRowMap()->getNodeElementList();
     A->resumeFill();
     for(int i=0; i<(int)dd.size(); i++) {
       dd[i]=dd[i]*1e4;
       A->replaceGlobalValues(GlobalElements[i],
-                            Teuchos::tuple<int>(GlobalElements[i]),
+                            Teuchos::tuple<GO>(GlobalElements[i]),
                             Teuchos::tuple<ST>(dd[i]) );
     }
     A->fillComplete();
@@ -213,13 +212,13 @@ int main(int argc, char *argv[]) {
       A->getLocalDiagCopy(diagonal);
 
       int NumMyElements    = diagonal.getMap()->getNodeNumElements();
-      Teuchos::ArrayView<const int> MyGlobalElements = diagonal.getMap()->getNodeElementList();
+      auto MyGlobalElements = diagonal.getMap()->getNodeElementList();
       Teuchos::ArrayRCP<ST> dd=diagonal.getDataNonConst();
       RCP<CrsMatrix<ST> > invDiagMatrix = Teuchos::rcp(new CrsMatrix<ST>(A->getRowMap(), 1, Tpetra::StaticProfile));
 
       for (Teuchos_Ordinal i=0; i<NumMyElements; ++i) {
         invDiagMatrix->insertGlobalValues(MyGlobalElements[i],
-                                          Teuchos::tuple<int>(MyGlobalElements[i]),
+                                          Teuchos::tuple<GO>(MyGlobalElements[i]),
                                           Teuchos::tuple<ST>(SCT::one() / dd[i]) );
       }
       invDiagMatrix->fillComplete();

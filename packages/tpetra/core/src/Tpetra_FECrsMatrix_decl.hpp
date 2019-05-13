@@ -166,8 +166,29 @@ public:
     explicit FECrsMatrix (const Teuchos::RCP<const fe_crs_graph_type>& graph,
                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    //! Destructor.
-    virtual ~FECrsMatrix () {}
+    //! Copy constructor (forbidden).
+    FECrsMatrix (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+
+    //! Move constructor (forbidden).
+    FECrsMatrix (FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+
+    //! Copy assignment (forbidden).
+    FECrsMatrix&
+    operator= (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+    //! Move assignment (forbidden).
+    FECrsMatrix&
+    operator= (FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=delete</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
+    virtual ~FECrsMatrix () = default;
 
     //! @name Transformational methods
     //@{
@@ -221,17 +242,8 @@ public:
     //! Switches which CrsGraph is active (without migrating data)
     void switchActiveCrsMatrix();
     //@}
-  
+
   private:
-    // We forbid assignment (operator=) and copy construction
-    FECrsMatrix<Scalar,LocalOrdinal, GlobalOrdinal, Node>&
-    operator= (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
-
-    FECrsMatrix (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
-
-
-
-
     // Enum for activity
     enum FEWhichActive
     {

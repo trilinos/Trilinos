@@ -390,13 +390,13 @@ namespace FROSch {
                     straightEdges = DDInterface_->getStraightEdges();
                     straightEdges->buildEntityMap(nodesMap);
                     
-                    if (useShortEdgeTranslations) {
+                    if (useStraightEdgeTranslations) {
                         MultiVectorPtrVecPtr translations = this->computeTranslations(blockId,straightEdges);
                         for (UN i=0; i<translations.size(); i++) {
                             this->InterfaceCoarseSpaces_[blockId]->addSubspace(straightEdges->getEntityMap(),translations[i]);
                         }
                     }
-                    if (useShortEdgeRotations) {
+                    if (useStraightEdgeRotations) {
                         MultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,straightEdges);
                         for (UN i=0; i<rotations.size(); i++) {
                             this->InterfaceCoarseSpaces_[blockId]->addSubspace(straightEdges->getEntityMap(),rotations[i]);
@@ -408,13 +408,13 @@ namespace FROSch {
                     edges = DDInterface_->getEdges();
                     edges->buildEntityMap(nodesMap);
                     
-                    if (useShortEdgeTranslations) {
+                    if (useEdgeTranslations) {
                         MultiVectorPtrVecPtr translations = this->computeTranslations(blockId,edges);
                         for (UN i=0; i<translations.size(); i++) {
                             this->InterfaceCoarseSpaces_[blockId]->addSubspace(edges->getEntityMap(),translations[i]);
                         }
                     }
-                    if (useShortEdgeRotations) {
+                    if (useEdgeRotations) {
                         MultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,edges);
                         for (UN i=0; i<rotations.size(); i++) {
                             this->InterfaceCoarseSpaces_[blockId]->addSubspace(edges->getEntityMap(),rotations[i]);
@@ -426,13 +426,13 @@ namespace FROSch {
                     faces = DDInterface_->getFaces();
                     faces->buildEntityMap(nodesMap);
                     
-                    if (useShortEdgeTranslations) {
+                    if (useFaceTranslations) {
                         MultiVectorPtrVecPtr translations = this->computeTranslations(blockId,faces);
                         for (UN i=0; i<translations.size(); i++) {
                             this->InterfaceCoarseSpaces_[blockId]->addSubspace(faces->getEntityMap(),translations[i]);
                         }
                     }
-                    if (useShortEdgeRotations) {
+                    if (useFaceRotations) {
                         MultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,faces);
                         for (UN i=0; i<rotations.size(); i++) {
                             this->InterfaceCoarseSpaces_[blockId]->addSubspace(faces->getEntityMap(),rotations[i]);

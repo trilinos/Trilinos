@@ -40,7 +40,8 @@
 // @HEADER
 
 //#define TEUCHOS_PARAMETER_LIST_SHOW_TRACE
-
+#include <deque>
+#include <functional>
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_StrUtils.hpp"
@@ -77,13 +78,9 @@ namespace Teuchos {
 // Constructors/Destructor/Info
 
 
-ParameterList::ParameterList()
-  :name_("ANONYMOUS"), disableRecursiveValidation_(false)
-{}
-
-
-ParameterList::ParameterList(const std::string &name_in)
-  :name_(name_in), disableRecursiveValidation_(false)
+ParameterList::ParameterList(const std::string &name_in,
+    RCP<const ParameterListModifier> const& modifier_in)
+  :name_(name_in), modifier_(modifier_in)
 {}
 
 
@@ -92,6 +89,9 @@ ParameterList::ParameterList(const ParameterList& source)
   name_ = source.name_;
   params_ = source.params_;
   disableRecursiveValidation_ = source.disableRecursiveValidation_;
+  disableRecursiveModification_= source.disableRecursiveModification_;
+  disableRecursiveReconciliation_ = source.disableRecursiveReconciliation_;
+  modifier_ = source.modifier_;
 }
 
 
@@ -112,7 +112,17 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
   name_ = source.name_;
   params_ = source.params_;
   disableRecursiveValidation_ = source.disableRecursiveValidation_;
+  disableRecursiveModification_= source.disableRecursiveModification_;
+  disableRecursiveReconciliation_ = source.disableRecursiveReconciliation_;
+  modifier_ = source.modifier_;
   return *this;
+}
+
+
+void ParameterList::setModifier(
+    RCP<const ParameterListModifier> const& modifier_in)
+{
+  modifier_ = modifier_in;
 }
 
 
@@ -162,6 +172,29 @@ ParameterList& ParameterList::setParametersNotAlreadySet(
 ParameterList& ParameterList::disableRecursiveValidation()
 {
   disableRecursiveValidation_ = true;
+  return *this;
+}
+
+
+ParameterList& ParameterList::disableRecursiveModification()
+{
+  disableRecursiveModification_ = true;
+  return *this;
+}
+
+
+ParameterList& ParameterList::disableRecursiveReconciliation()
+{
+  disableRecursiveReconciliation_ = true;
+  return *this;
+}
+
+
+ParameterList& ParameterList::disableRecursiveAll()
+{
+  this->disableRecursiveModification();
+  this->disableRecursiveValidation();
+  this->disableRecursiveReconciliation();
   return *this;
 }
 
@@ -269,6 +302,22 @@ ParameterList& ParameterList::sublist(
   }
 
   return any_cast<ParameterList>(sublist_entry_ptr->getAny(false));
+}
+
+
+ParameterList& ParameterList::sublist(
+  const std::string& name_in, RCP<const ParameterListModifier> const& modifier_in,
+  const std::string& docString
+  )
+{
+  bool alreadyExists = this->isParameter(name_in);
+  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+    alreadyExists, Exceptions::InvalidParameterName
+    ,"The parameter "<<this->name()<<"->\""<<name_in<<"\" already exists."
+    );
+  ParameterList &subpl = this->sublist(name_in, false, docString);
+  subpl.setModifier(modifier_in);
+  return subpl;
 }
 
 
@@ -457,6 +506,96 @@ void ParameterList::validateParameters(
 }
 
 
+void ParameterList::modifyParameterList(ParameterList & valid_pl,
+    int const depth)
+{
+  RCP<const ParameterListModifier> modifier;
+  if (nonnull(modifier = valid_pl.getModifier())) {
+    modifier->modify(*this, valid_pl);
+  }
+  ConstIterator itr;
+  for (itr = valid_pl.begin(); itr != valid_pl.end(); ++itr){
+    const std::string &entry_name = itr->first;
+    const ParameterEntry &entry = itr->second;
+    if (entry.isList() && depth > 0){
+      ParameterList &valid_pl_sublist = valid_pl.sublist(entry_name, true);
+      if(!valid_pl_sublist.disableRecursiveModification_){
+        const ParameterEntry *validEntry = this->getEntryPtr(entry_name);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          !validEntry, Exceptions::InvalidParameterName
+          ,"Error, the parameter {name=\""<<entry_name<<"\","
+          "type=\""<<entry.getAny(false).typeName()<<"\""
+          ",value=\""<<filterValueToString(entry)<<"\"}"
+          "\nin the parameter (sub)list \""<<this->name()<<"\""
+          "\nwas not found in the list of parameters during modification."
+          "\n\nThe parameters and types are:\n"
+          <<this->currentParametersString()
+          );
+        ParameterList &pl_sublist = this->sublist(entry_name, true);
+        pl_sublist.modifyParameterList(valid_pl_sublist, depth-1);
+      }
+    }
+  }
+}
+
+
+void ParameterList::reconcileParameterList(ParameterList & valid_pl,
+    const bool left_to_right)
+{
+  // We do a breadth-first traversal of `valid_pl` and store references to all of the sublists
+  // in `valid_pl` in a deque with a matching deque for `this`.
+  std::deque<std::reference_wrapper<ParameterList>> refs, valid_refs, tmp, valid_tmp;
+  tmp.push_back(*this);
+  valid_tmp.push_back(valid_pl);
+  while (!valid_tmp.empty()){
+    ParameterList &cur_node = tmp.front();
+    ParameterList &valid_cur_node = valid_tmp.front();
+    tmp.pop_front();
+    valid_tmp.pop_front();
+    refs.push_back(cur_node);
+    valid_refs.push_back(valid_cur_node);
+    // Look for all sublists in valid_tmp
+    for (auto itr = valid_cur_node.begin(); itr != valid_cur_node.end(); ++itr){
+      const std::string &entry_name = itr->first;
+      if (valid_cur_node.isSublist(entry_name)){
+        const ParameterEntry &entry = itr->second;
+        ParameterList &valid_cur_node_sublist = valid_cur_node.sublist(entry_name);
+        if (!valid_cur_node_sublist.disableRecursiveReconciliation_){
+          TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+            !cur_node.isSublist(entry_name), Exceptions::InvalidParameterName
+            ,"Error, the parameter {name=\"" << entry_name <<"\","
+            "type=\"" << entry.getAny(false).typeName() << "\""
+            ",value=\"" << filterValueToString(entry) << "\"}"
+            "\nin the parameter (sub)list \"" <<cur_node.name() << "\""
+            "\nwas not found in the list of parameters during reconciliation."
+            "\n\nThe parameters and types are:\n"
+            <<cur_node.currentParametersString()
+            );
+          if (left_to_right){
+            valid_tmp.push_back(valid_cur_node_sublist);
+            tmp.push_back(cur_node.sublist(entry_name));
+          } else{
+            valid_tmp.push_front(valid_cur_node_sublist);
+            tmp.push_front(cur_node.sublist(entry_name));
+          }
+        }
+      }
+    }
+  }
+  // We now apply the reconciliation from the bottom to the top of the parameter lists by
+  // traversing the deques from the back to the front.
+  RCP<const ParameterListModifier> modifier;
+  std::deque<std::reference_wrapper<ParameterList>>::reverse_iterator ref, valid_ref;
+  for(ref = refs.rbegin(), valid_ref = valid_refs.rbegin();
+      ref != refs.rend() && valid_ref != valid_refs.rend();
+      ++ref, ++valid_ref){
+    if (nonnull(modifier = valid_ref->get().getModifier())) {
+      modifier->reconcile(ref->get());
+    }
+  }
+}
+
+
 void ParameterList::validateParametersAndSetDefaults(
   ParameterList const& validParamList,
   int const depth
@@ -632,7 +771,6 @@ void ParameterList::validateMissingSublistMustExist(const std::string &baselist_
 }
 
 
-
 } // namespace Teuchos
 
 
@@ -644,6 +782,9 @@ bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2
   //if ( paramListName1 != paramListName2 ) {
   //  return false;
   //}
+  if (!Teuchos::haveSameModifiers(list1, list2)){
+    return false;
+  }
   ParameterList::ConstIterator itr1, itr2;
   for(
     itr1 = list1.begin(), itr2 = list2.begin();
@@ -669,6 +810,33 @@ bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2
   // Check that the two parameter lists are the same length:
   if ((itr1 != list1.end()) || (itr2 != list2.end())) {
     return false;
+  }
+  return true;
+}
+
+
+bool Teuchos::haveSameModifiers(const ParameterList &list1, const ParameterList &list2) {
+  // Check that the modifiers are the same
+  ParameterList::ConstIterator itr1, itr2;
+  for(
+    itr1 = list1.begin(), itr2 = list2.begin();
+    itr1 != list1.end() && itr2 != list2.end();
+    ++itr1, ++itr2
+    )
+  {
+    const Teuchos::RCP<const ParameterListModifier> &modifier1 = list1.getModifier();
+    const Teuchos::RCP<const ParameterListModifier> &modifier2 = list2.getModifier();
+    if( modifier1 != modifier2 ) {
+      return false;
+    }
+    const Teuchos::ParameterEntry &entry1 = itr1->second;
+    const Teuchos::ParameterEntry &entry2 = itr2->second;
+    if (entry1.isList() && entry2.isList()){
+      if ( !haveSameModifiers( Teuchos::getValue<ParameterList>(entry1),
+                               Teuchos::getValue<ParameterList>(entry2) ) ){
+        return false;
+      }
+    }
   }
   return true;
 }

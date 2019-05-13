@@ -68,8 +68,17 @@ class MultiPrecDriver {
   // output
   bool                             testPassed;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Node> 
-  void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) 
+  TPETRA_DEPRECATED
+  void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> & /* node */) 
+  {
+    run<Node>(myMachPL, comm);
+  }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+  template <class Node> 
+  void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) 
   {
     using std::pair;
     using std::make_pair;
@@ -93,7 +102,7 @@ class MultiPrecDriver {
     typedef Tpetra::CrsMatrix<S,LO,GO,Node> CrsMatrix;
     typedef Tpetra::Vector<S,LO,GO,Node>       Vector;
 
-    *out << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << "/" << comm->getSize() << std::endl;
+    *out << "Running test on rank " << comm->getRank() << "/" << comm->getSize() << std::endl;
 
     // read the matrix
     RCP<CrsMatrix> A;
@@ -101,7 +110,8 @@ class MultiPrecDriver {
     RCP<ParameterList> fillParams = parameterList();
     fillParams->set("Preserve Local Graph",true);
     // must preserve the local graph in order to do convert() calls later
-    Tpetra::Utils::readHBMatrix(matrixFile,comm,node,A,rowMap,fillParams);
+    Tpetra::Utils::readHBMatrix(matrixFile,comm,
+                                A,rowMap,fillParams);
     rowMap = A->getRowMap();
 
     // init the solver stack

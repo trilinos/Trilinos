@@ -113,7 +113,7 @@ namespace Xpetra {
 
     //@}
 
-    virtual void removeEmptyProcessesInPlace(const RCP<const Map>& newMap) { }
+    virtual void removeEmptyProcessesInPlace(const RCP<const Map>& /* newMap */) { }
   };
 
 } // Xpetra namespace

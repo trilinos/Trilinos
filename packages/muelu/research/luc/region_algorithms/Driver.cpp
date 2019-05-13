@@ -125,9 +125,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     }
 
     global_ordinal_type gNumCompFineGIDs = 10, lCompFineGIDOffset = 0;
-    global_ordinal_type gNumRegFineGIDs  = 11, lRegFineGIDOffset  = 0;
+    global_ordinal_type lRegFineGIDOffset = 0; // gNumRegFineGIDs  = 11,
     local_ordinal_type  lNumCompFineGIDs =  0, lNumRegFineGIDs = 0;
-    local_ordinal_type  lNumCompCoarseGIDs =  0, lNumRegCoarseGIDs = 0;
+    local_ordinal_type lNumRegCoarseGIDs = 0; // lNumCompCoarseGIDs =  0,
     if(myRank == 0) {
       lNumCompFineGIDs = 7;
       lNumRegFineGIDs  = 7;
@@ -135,7 +135,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       lCompFineGIDOffset = 0;
       lRegFineGIDOffset  = 0;
 
-      lNumCompCoarseGIDs = 3;
+      // lNumCompCoarseGIDs = 3;
       lNumRegCoarseGIDs  = 3;
     } else if(myRank == 1) {
       lNumCompFineGIDs = 3;
@@ -144,7 +144,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       lCompFineGIDOffset = 7;
       lRegFineGIDOffset  = 6;
 
-      lNumCompCoarseGIDs = 1;
+      // lNumCompCoarseGIDs = 1;
       lNumRegCoarseGIDs  = 2;
     }
 

@@ -92,7 +92,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeometricInterpolationPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
     const ParameterList& pL = GetParameterList();
 
     Input(fineLevel, "A");
