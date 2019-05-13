@@ -123,9 +123,22 @@ namespace MueLu {
 
     if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
+    if(!precList11_.isType<std::string>("smoother: type") && !precList11_.isType<std::string>("smoother: pre type") && !precList11_.isType<std::string>("smoother: post type")) {
+      precList11_.set("smoother: type", "CHEBYSHEV");
+      precList11_.sublist("smoother: params").set("chebyshev: degree",2);
+    }
 
     if(list.isSublist("refmaxwell: 22list"))
       precList22_     =  list.sublist("refmaxwell: 22list");
+    if(!precList22_.isType<std::string>("smoother: type") && !precList22_.isType<std::string>("smoother: pre type") && !precList22_.isType<std::string>("smoother: post type")) {
+      precList22_.set("smoother: type", "CHEBYSHEV");
+      precList22_.sublist("smoother: params").set("chebyshev: degree",2);
+    }
+
+    if(!list.isType<std::string>("smoother: type") && !list.isType<std::string>("smoother: pre type") && !list.isType<std::string>("smoother: post type")) {
+      list.set("smoother: type", "CHEBYSHEV");
+      list.sublist("smoother: params").set("chebyshev: degree",2);
+    }
 
     if(list.isSublist("smoother: params")) {
       smootherList_ = list.sublist("smoother: params");
