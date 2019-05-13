@@ -215,6 +215,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       xml = "Maxwell_complex.xml";
                                                         clp.setOption("xml",                   &xml,               "xml file with solver parameters");
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
+    bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
     
     std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="";
 
@@ -254,6 +255,12 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     }
 
     comm->barrier();
+
+    Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+    if (use_stacked_timer)
+      stacked_timer = rcp(new Teuchos::StackedTimer("Maxwell Driver"));
+    Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+
     auto globalTimeMonitor = TimeMonitor::getNewTimer("Maxwell: S - Global Time");
     auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
@@ -417,7 +424,13 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       std::ios_base::fmtflags ff(out->flags());
       if (timingsFormat == "table-fixed") *out << std::fixed;
       else * out << std::scientific;
-      TimeMonitor::report(comm.ptr(), *out, filter, reportParams);
+      if (use_stacked_timer) {
+        stacked_timer->stop("Maxwell Driver");
+        Teuchos::StackedTimer::OutputOptions options;
+        options.output_fraction = options.output_histogram = options.output_minmax = true;
+        stacked_timer->report(*out, comm, options);
+      } else
+        TimeMonitor::report(comm.ptr(), *out, filter, reportParams);
        *out << std::setiosflags(ff);
     }
 
@@ -440,8 +453,6 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 #include <MueLu_UseShortNames.hpp>
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
-
-// #if defined(HAVE_TPETRA_INST_INT_INT)
 
 #include <MueLu_UseShortNames.hpp>
 
@@ -466,6 +477,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string precType          = "MueLu-RefMaxwell"; clp.setOption("precType",              &precType,          "preconditioner to use (MueLu-RefMaxwell|ML-RefMaxwell|none)");
     std::string xml               = "";                 clp.setOption("xml",                   &xml,               "xml file with solver parameters (default: \"Maxwell.xml\")");
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
+    bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
 
     std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="";
     S_file = "S.mat";
@@ -502,6 +514,12 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     }
 
     comm->barrier();
+
+    Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+    if (use_stacked_timer)
+      stacked_timer = rcp(new Teuchos::StackedTimer("Maxwell Driver"));
+    Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+
     auto globalTimeMonitor = TimeMonitor::getNewTimer("Maxwell: S - Global Time");
     auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
@@ -725,7 +743,13 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       std::ios_base::fmtflags ff(out->flags());
       if (timingsFormat == "table-fixed") *out << std::fixed;
       else * out << std::scientific;
-      TimeMonitor::report(comm.ptr(), *out, filter, reportParams);
+      if (use_stacked_timer) {
+        stacked_timer->stop("Maxwell Driver");
+        Teuchos::StackedTimer::OutputOptions options;
+        options.output_fraction = options.output_histogram = options.output_minmax = true;
+        stacked_timer->report(*out, comm, options);
+      } else
+        TimeMonitor::report(comm.ptr(), *out, filter, reportParams);
        *out << std::setiosflags(ff);
     }
 
@@ -737,7 +761,6 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 #else
   return EXIT_SUCCESS;
-// #endif // HAVE_TPETRA_INST_INT_INT
 #endif
 } // main
 
