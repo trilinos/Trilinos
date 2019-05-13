@@ -258,8 +258,8 @@ struct BlockTriDiContainerTester {
       if (p.tridiag_only && p.tridiag_is_identity) {
         // Test that we formed I.
         rd = bcmm::reldif(*X, *B);
-        if (rd != 0) TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I) " << details);
-        else TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I) " << details);
+        if (rd != 0) TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I) " << details << " rd " << rd);
+        else TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I) " << details << " rd " << rd);
       } else if (p.tridiag_only) {
         apply(*B, *X_solve, false);
         rd = bcmm::reldif(*X, *X_solve);
@@ -275,9 +275,9 @@ struct BlockTriDiContainerTester {
         apply(*X, *Y, false);
         rd = bcmm::reldif(*B, *Y);
         if (rd > 1e2*std::numeric_limits<Magnitude>::epsilon())
-          TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I + R) " << details);
+          TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I + R) " << details << " rd " << rd);
         else 
-          TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I + R) " << details);
+          TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I + R) " << details << " rd " << rd);
       } else {
         // Test that we can solve a problem.
         apply(*B, *X_solve, false);
@@ -340,9 +340,9 @@ struct BlockTriDiContainerTester {
               rd = bcmm::reldif(*X, X_true);
               const auto eps = 1e1*std::numeric_limits<Magnitude>::epsilon();
               if (rd > eps)
-                TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, damping factor) " << details << " rd = " << rd << " eps = " << eps);
+                TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, damping factor) " << details << " rd " << rd << " eps " << eps);
               else
-                TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R, damping factor) " << details << " rd = " << rd << " eps = " << eps);
+                TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R, damping factor) " << details << " rd " << rd << " eps " << eps);
             }
           }
         }
