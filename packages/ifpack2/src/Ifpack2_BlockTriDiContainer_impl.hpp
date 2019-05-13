@@ -105,9 +105,11 @@
 // if defined, all views are allocated on cuda space intead of cuda uvm space
 #define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_SPACE
 
-// if defined, impl_small_scalar_type is used 
+// if defined, btdm_scalar_type is used (if impl_scala_type is double, btdm_scalar_type is float)
+#if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_SMALL_SCALAR)
 #define IFPACK2_BLOCKTRIDICONTAINER_USE_SMALL_SCALAR_FOR_BLOCKTRIDIAG
- 
+#endif
+
 namespace Ifpack2 {
 
   namespace BlockTriDiContainerDetails {
@@ -349,7 +351,7 @@ namespace KB = KokkosBatched::Experimental;
       template<typename T, typename M> using DefaultVectorLength = KB::DefaultVectorLength<T,M>;
       template<typename T, typename M> using DefaultInternalVectorLength = KB::DefaultInternalVectorLength<T,M>;
 
-      static constexpr int vector_length = 16; //DefaultVectorLength<btdm_scalar_type,memory_space>::value;
+      static constexpr int vector_length = DefaultVectorLength<btdm_scalar_type,memory_space>::value;
       static constexpr int internal_vector_length = DefaultInternalVectorLength<btdm_scalar_type,memory_space>::value;
       typedef Vector<SIMD<btdm_scalar_type>,vector_length> vector_type;
       typedef Vector<SIMD<btdm_scalar_type>,internal_vector_length> internal_vector_type;

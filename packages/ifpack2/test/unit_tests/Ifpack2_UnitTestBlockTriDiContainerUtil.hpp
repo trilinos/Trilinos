@@ -59,6 +59,11 @@ template <typename Scalar, typename LO, typename GO>
 struct BlockTriDiContainerTester {
   typedef LO Int;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+#if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_SMALL_SCALAR) 
+  typedef typename std::conditional<std::is_same<Magnitude,double>::value,float,Magnitude>::type SmallMagnitude;
+#else 
+  typedef Magnitude SmallMagnitude;  
+#endif
   typedef tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO> bcmm;
   typedef typename bcmm::Tpetra_RowMatrix Tpetra_RowMatrix;
   typedef typename bcmm::Tpetra_BlockCrsMatrix Tpetra_BlockCrsMatrix;
@@ -263,7 +268,9 @@ struct BlockTriDiContainerTester {
       } else if (p.tridiag_only) {
         apply(*B, *X_solve, false);
         rd = bcmm::reldif(*X, *X_solve);
-        if (rd > 1e2*std::numeric_limits<Magnitude>::epsilon())
+        // D can be small scalar (float when scalar is double)
+        // without norm termination, the error should be bounded by small scalar limit
+        if (rd > 1e2*std::numeric_limits<SmallMagnitude>::epsilon())
           TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D) " << details << " rd " << rd);
         else
           TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D) " << details << " rd " << rd);
@@ -274,7 +281,9 @@ struct BlockTriDiContainerTester {
         Y->update(-1, *X, 0);
         apply(*X, *Y, false);
         rd = bcmm::reldif(*B, *Y);
-        if (rd > 1e2*std::numeric_limits<Magnitude>::epsilon())
+        // D can be small scalar (float when scalar is double)
+        // without norm termination, the error should be bounded by small scalar limit
+        if (rd > 1e2*std::numeric_limits<SmallMagnitude>::epsilon())
           TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I + R) " << details << " rd " << rd);
         else 
           TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I + R) " << details << " rd " << rd);
