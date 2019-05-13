@@ -1318,6 +1318,59 @@ optimized neighbor discovery for Importer construction.</description>
 
   </debug>
 
+  <refmaxwell>
+    <parameter>
+      <name>refmaxwell: mode</name>
+      <type>string</type>
+      <default>"additive"</default>
+      <description>Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212"</description>
+      <name-ML>refmaxwell: mode</name-ML>
+      <type-ML>int</type-ML>
+      <default-ML>"additive"</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212"</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: disable addon</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Specifing whether the addon should be built for stabilization</description>
+      <name-ML>refmaxwell: disable addon</name-ML>
+      <type-ML>bool</type-ML>
+      <default-ML>true</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Specifing whether the addon should be built for stabilization</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: use as preconditioner</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Assume zero initial guess</description>
+      <name-ML>zero starting solution</name-ML>
+      <type-ML>bool</type-ML>
+      <default-ML>false</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Assume zero initial guess</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: dump matrices</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Dump matrices to disk.</description>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: subsolves on subcommunicators</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>redistribute the two subsolves to disjoint sub-communicators (so that the additive solve can occur in parallel).</description>
+    </parameter>
+
+  </refmaxwell>
+
 
 
 </masterlist>

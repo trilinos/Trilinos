@@ -208,7 +208,12 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
                                                                                                                   "(\"Belos\")");
     std::string belosSolverType   = "Block CG";         clp.setOption("belosSolverType",       &belosSolverType,   "Name of the Belos linear solver");
     std::string precType          = "MueLu-RefMaxwell"; clp.setOption("precType",              &precType,          "preconditioner to use (MueLu-RefMaxwell|ML-RefMaxwell|none)");
-    std::string xml               = "";                 clp.setOption("xml",                   &xml,               "xml file with solver parameters");
+    std::string xml;
+    if (!TYPE_EQUAL(SC, std::complex<double>) && !TYPE_EQUAL(SC, std::complex<float>))
+      xml = "Maxwell.xml";
+    else
+      xml = "Maxwell_complex.xml";
+                                                        clp.setOption("xml",                   &xml,               "xml file with solver parameters");
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
     
     std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="";
@@ -305,15 +310,8 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       nullspace = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(nullspace_file, edge_map);
 
     // set parameters
-    std::string defaultXMLfile;
-    if (!TYPE_EQUAL(SC, std::complex<double>) && !TYPE_EQUAL(SC, std::complex<float>))
-      defaultXMLfile = "Maxwell.xml";
-    else
-      defaultXMLfile = "Maxwell_complex.xml";
     Teuchos::ParameterList params;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(defaultXMLfile,Teuchos::Ptr<Teuchos::ParameterList>(&params),*comm);
-    if (xml != "")
-      Teuchos::updateParametersFromXmlFileAndBroadcast(xml,Teuchos::Ptr<Teuchos::ParameterList>(&params),*comm);
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xml,Teuchos::Ptr<Teuchos::ParameterList>(&params),*comm);
 
     // setup LHS, RHS
     RCP<MultiVector> B;
@@ -466,25 +464,16 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
                                                                                                                   "(\"Belos\" or \"Stratimikos\")");
     std::string belosSolverType   = "Block CG";         clp.setOption("belosSolverType",       &belosSolverType,   "Name of the Belos linear solver");
     std::string precType          = "MueLu-RefMaxwell"; clp.setOption("precType",              &precType,          "preconditioner to use (MueLu-RefMaxwell|ML-RefMaxwell|none)");
-    std::string xml               = "";                 clp.setOption("xml",                   &xml,               "xml file with solver parameters");
+    std::string xml               = "";                 clp.setOption("xml",                   &xml,               "xml file with solver parameters (default: \"Maxwell.xml\")");
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
 
     std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="";
-    if (!TYPE_EQUAL(SC, std::complex<double>)) {
-      S_file = "S.mat";
-      SM_file = "";
-      M1_file = "M1.mat";
-      M0_file = "M0.mat";
-      M0inv_file = "";
-      D0_file = "D0.mat";
-    } else {
-      S_file = "S_complex.mat";
-      SM_file = "";
-      M1_file = "M1_complex.mat";
-      M0_file = "M0_complex.mat";
-      M0inv_file = "";
-      D0_file = "D0_complex.mat";
-    }
+    S_file = "S.mat";
+    SM_file = "";
+    M1_file = "M1.mat";
+    M0_file = "M0.mat";
+    M0inv_file = "";
+    D0_file = "D0.mat";
     coords_file = "coords.mat";
 
     clp.setOption("S", &S_file);
@@ -503,6 +492,13 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    }
+
+    if (xml == ""){
+      if (precType == "MueLu-RefMaxwell")
+        xml = "Maxwell.xml";
+      else if (precType == "ML-RefMaxwell")
+        xml = "Maxwell_ML.xml";
     }
 
     comm->barrier();
@@ -562,17 +558,9 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       nullspace = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(nullspace_file, edge_map);
 
     // set parameters
-    std::string defaultXMLfile;
-    if (!TYPE_EQUAL(SC, std::complex<double>))
-      defaultXMLfile = "Maxwell.xml";
-    else
-      defaultXMLfile = "Maxwell_complex.xml";
     Teuchos::ParameterList params;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(defaultXMLfile,Teuchos::Ptr<Teuchos::ParameterList>(&params),*comm);
-    if (xml != "")
-      Teuchos::updateParametersFromXmlFileAndBroadcast(xml,Teuchos::Ptr<Teuchos::ParameterList>(&params),*comm);
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xml,Teuchos::Ptr<Teuchos::ParameterList>(&params),*comm);
 
-    // setup LHS, RHS
     // setup LHS, RHS
     RCP<MultiVector> B;
     if (rhs_file == "") {
