@@ -135,8 +135,8 @@ namespace MueLu {
     RefMaxwell() :
       HierarchyH_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
-      disable_addon_(true),
-      mode_("additive")
+      disable_addon_(MasterList::getDefault<bool>("refmaxwell: disable addon")),
+      mode_(MasterList::getDefault<std::string>("refmaxwell: mode"))
     {
     }
 
@@ -144,8 +144,8 @@ namespace MueLu {
     RefMaxwell(Teuchos::RCP<Hierarchy> HH, Teuchos::RCP<Hierarchy> H22) :
       HierarchyH_(HH),
       Hierarchy22_(H22),
-      disable_addon_(false),
-      mode_("additive")
+      disable_addon_(MasterList::getDefault<bool>("refmaxwell: disable addon")),
+      mode_(MasterList::getDefault<std::string>("refmaxwell: mode"))
     {
     }
 
