@@ -2418,6 +2418,7 @@ namespace Tpetra {
       RowInfo rowInfo = graph.getRowInfo (lclRow);
 
       if (! graph.colMap_.is_null ()) { // We have a column Map.
+
         const map_type& colMap = * (graph.colMap_);
         size_t curOffset = 0;
         while (curOffset < numInputEnt) {

@@ -174,6 +174,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     // fill, but do not pack, because we will add new entries below
     RCP<ParameterList> params = parameterList();
     params->set("Optimize Storage",false);
+    params->set("compute global constants",true);
     TEST_NOTHROW       ( matrix.fillComplete( params ) );
     TEST_EQUALITY_CONST( matrix.isFillComplete(),      true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
@@ -210,6 +211,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     }
     // fill, but do not pack, because we will add new entries below
     params->set("Optimize Storage",false);
+    params->set("compute global constants",true);
     TEST_NOTHROW       ( matrix.fillComplete( params ) );
     TEST_EQUALITY_CONST( matrix.isFillComplete(),      true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
@@ -251,6 +253,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     }
     // fill; it is okay to pack now
     params->set("Optimize Storage",true);
+    params->set("compute global constants",true);
     TEST_NOTHROW       ( matrix.fillComplete( params ) );
     TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), true );
