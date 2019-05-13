@@ -23,7 +23,7 @@ namespace panzer {
 
   class BasisDescriptor;
   class IntegrationDescriptor;
-  template<typename LO,typename GO> class ConnManager;
+  class ConnManager;
   template<typename LO,typename GO> class DOFManager;
   template<typename LO,typename GO> class UniqueGlobalIndexer;
   class WorksetContainer;
@@ -37,7 +37,7 @@ namespace panzer {
     panzer::BasisDescriptor targetBasisDescriptor_;
     panzer::IntegrationDescriptor integrationDescriptor_;
     Teuchos::RCP<const Teuchos::MpiComm<int>> comm_;
-    Teuchos::RCP<const panzer::ConnManager<LO,GO>> connManager_;
+    Teuchos::RCP<const panzer::ConnManager> connManager_;
     std::vector<std::string> elementBlockNames_;
     mutable Teuchos::RCP<panzer::WorksetContainer> worksetContainer_;
     bool setupCalled_;
@@ -61,7 +61,7 @@ namespace panzer {
     void setup(const panzer::BasisDescriptor& targetBasis,
                const panzer::IntegrationDescriptor& integrationDescriptor,
                const Teuchos::RCP<const Teuchos::MpiComm<int>>& comm,
-               const Teuchos::RCP<const panzer::ConnManager<LO,GO>>& connManager,
+               const Teuchos::RCP<const panzer::ConnManager>& connManager,
                const std::vector<std::string>& elementBlockNames,
                const Teuchos::RCP<panzer::WorksetContainer> worksetContainer = Teuchos::null);
 

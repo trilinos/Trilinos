@@ -92,6 +92,7 @@
 #include "MueLu_VerbosityLevel.hpp"
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
+#include <MueLu_ML2MueLuParameterTranslator.hpp>
 
 #ifdef HAVE_MUELU_CUDA
 #include "cuda_profiler_api.h"
@@ -115,17 +116,39 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::ParameterList& list) {
 
-    parameterList_    = list;
-    disable_addon_    = list.get("refmaxwell: disable addon",true);
-    mode_             = list.get("refmaxwell: mode","additive");
-    use_as_preconditioner_ = list.get<bool>("refmaxwell: use as preconditioner");
-    dump_matrices_    = list.get("refmaxwell: dump matrices",false);
+    if (list.isType<std::string>("parameterlist: syntax") && list.get<std::string>("parameterlist: syntax") == "ml") {
+      Teuchos::ParameterList newList = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list,"refmaxwell"));
+      if(list.isSublist("refmaxwell: 11list") && list.sublist("refmaxwell: 11list").isSublist("edge matrix free: coarse"))
+        newList.sublist("refmaxwell: 11list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse"),"SA"));
+      if(list.isSublist("refmaxwell: 22list"))
+        newList.sublist("refmaxwell: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 22list"),"SA"));
+      list = newList;
+    }
+
+    parameterList_         = list;
+    disable_addon_         = list.get("refmaxwell: disable addon",MasterList::getDefault<bool>("refmaxwell: disable addon"));
+    mode_                  = list.get("refmaxwell: mode",MasterList::getDefault<std::string>("refmaxwell: mode"));
+    use_as_preconditioner_ = list.get<bool>("refmaxwell: use as preconditioner",MasterList::getDefault<bool>("refmaxwell: use as preconditioner"));
+    dump_matrices_         = list.get("refmaxwell: dump matrices",MasterList::getDefault<bool>("refmaxwell: dump matrices"));
 
     if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
+    if(!precList11_.isType<std::string>("smoother: type") && !precList11_.isType<std::string>("smoother: pre type") && !precList11_.isType<std::string>("smoother: post type")) {
+      precList11_.set("smoother: type", "CHEBYSHEV");
+      precList11_.sublist("smoother: params").set("chebyshev: degree",2);
+    }
 
     if(list.isSublist("refmaxwell: 22list"))
       precList22_     =  list.sublist("refmaxwell: 22list");
+    if(!precList22_.isType<std::string>("smoother: type") && !precList22_.isType<std::string>("smoother: pre type") && !precList22_.isType<std::string>("smoother: post type")) {
+      precList22_.set("smoother: type", "CHEBYSHEV");
+      precList22_.sublist("smoother: params").set("chebyshev: degree",2);
+    }
+
+    if(!list.isType<std::string>("smoother: type") && !list.isType<std::string>("smoother: pre type") && !list.isType<std::string>("smoother: post type")) {
+      list.set("smoother: type", "CHEBYSHEV");
+      list.sublist("smoother: params").set("chebyshev: degree",2);
+    }
 
     if(list.isSublist("smoother: params")) {
       smootherList_ = list.sublist("smoother: params");
@@ -355,7 +378,7 @@ namespace MueLu {
     }
 
 #ifdef HAVE_MPI
-    bool doRebalancing = parameterList_.get<bool>("refmaxwell: subsolves on subcommunicators", false);
+    bool doRebalancing = parameterList_.get<bool>("refmaxwell: subsolves on subcommunicators", MasterList::getDefault<bool>("refmaxwell: subsolves on subcommunicators"));
     int numProcsAH, numProcsA22;
 #endif
     {

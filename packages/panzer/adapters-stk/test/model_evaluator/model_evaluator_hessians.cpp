@@ -1210,8 +1210,8 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> 
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     // build the state dof manager and LOF
     {

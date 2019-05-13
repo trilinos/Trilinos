@@ -56,7 +56,7 @@
 namespace panzer {
 
 // Forward declaration.
-template <typename LocalOrdinalT> class ConnManagerBase;
+class ConnManager;
 
 class UniqueGlobalIndexerBase {
 public:
@@ -337,7 +337,7 @@ public:
 
    /** \brief Returns the connection manager currently being used.
      */
-   virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const = 0;
+   virtual Teuchos::RCP<const ConnManager> getConnManager() const = 0;
 
    class CopyCellLIDsFunctor {
    public:

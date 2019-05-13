@@ -7,7 +7,7 @@
 
 namespace panzer {
 
-FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
+FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
   conn_(conn){
 
   std::vector<std::string> block_ids;
@@ -57,7 +57,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
       const std::vector<LocalOrdinal> &localIDs = conn_->getElementBlock(block_ids[iblk]);
       for (unsigned id=0;id<localIDs.size(); ++id) {
         int n_conn = conn_->getConnectivitySize(localIDs[id]);
-        const GlobalOrdinal * connectivity = conn_->getConnectivity(localIDs[id]);
+        const auto * connectivity = conn_->getConnectivity(localIDs[id]);
         TEUCHOS_ASSERT(n_conn==1);
         elem_gids[localIDs[id]] = connectivity[0];
       }
@@ -90,7 +90,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
     const std::vector<LocalOrdinal> &localIDs = conn_->getElementBlock(block_ids[iblk]);
     for (unsigned id=0;id<localIDs.size(); ++id) {
       int n_conn = conn_->getConnectivitySize(localIDs[id]);
-      const GlobalOrdinal * connectivity = conn_->getConnectivity(localIDs[id]);
+      const auto * connectivity = conn_->getConnectivity(localIDs[id]);
       elem_to_face_[id].resize(n_conn);
       for (int iconn=0;iconn<n_conn; ++iconn) {
         elem_to_face_[id][iconn] = connectivity[iconn];
@@ -158,7 +158,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
   face_to_node_ = Kokkos::View<GlobalOrdinal**>("face_to_node", face_to_elem_.extent(0), face_to_node[0].size());
   Kokkos::deep_copy(face_to_node_, -1);
   for (int ielem=0;ielem< static_cast<int>(elem_to_face_.size()); ++ielem) {
-    const GlobalOrdinal * connectivity = conn_->getConnectivity(ielem);
+    const auto * connectivity = conn_->getConnectivity(ielem);
     for (int iface=0; iface <static_cast<int>(elem_to_face_[ielem].size()); ++iface ) {
       for (int inode(0); inode < face_to_node_.extent_int(1); ++inode)
       {

@@ -87,8 +87,6 @@ namespace Xpetra {
     : public virtual Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
       public TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
-#undef XPETRA_TPETRAMULTIVECTOR_SHORT
-#include "Xpetra_UseShortNames.hpp"
 
   public:
 
@@ -106,10 +104,10 @@ namespace Xpetra {
     //@{
 
     //! Sets all vector entries to zero.
-    TpetraVector(const Teuchos::RCP<const Map> &map, bool zeroOut=true);
+    TpetraVector(const Teuchos::RCP<const Map< LocalOrdinal, GlobalOrdinal, Node > >&map, bool zeroOut=true);
 
     //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
-    TpetraVector(const Teuchos::RCP<const Map> &map, const Teuchos::ArrayView< const Scalar > &A);
+    TpetraVector(const Teuchos::RCP<const Map< LocalOrdinal, GlobalOrdinal, Node > >&map, const Teuchos::ArrayView< const Scalar > &A);
 
     //! Destructor.
     virtual ~TpetraVector();
@@ -162,10 +160,10 @@ namespace Xpetra {
     //@}
 
     //! Computes dot product of this Vector against input Vector x.
-    Scalar dot(const Vector &a) const;
+    Scalar dot(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node > &a) const;
 
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector &weights) const;
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node > &weights) const;
 
 
     //! @name Xpetra specific

@@ -60,12 +60,12 @@
 namespace Xpetra {
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector(const Teuchos::RCP<const Map> &map, bool zeroOut)
+TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector(const Teuchos::RCP<const Map< LocalOrdinal, GlobalOrdinal, Node > >&map, bool zeroOut)
 : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,1,zeroOut)
 { }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector(const Teuchos::RCP<const Map> &map, const Teuchos::ArrayView< const Scalar > &A)
+TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector(const Teuchos::RCP<const Map< LocalOrdinal, GlobalOrdinal, Node > >&map, const Teuchos::ArrayView< const Scalar > &A)
 : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,A,map->getNodeNumElements(),1)
 { }
 
@@ -115,11 +115,11 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::Fan
 { XPETRA_MONITOR("TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe"); getTpetra_Vector()->describe(out, verbLevel); }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Scalar TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector &a) const
+Scalar TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node > &a) const
 { XPETRA_MONITOR("TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot"); return getTpetra_Vector()->dot(*toTpetra(a)); }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-typename Teuchos::ScalarTraits< Scalar >::magnitudeType TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted(const Vector &weights) const
+typename Teuchos::ScalarTraits< Scalar >::magnitudeType TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node > &weights) const
 { XPETRA_MONITOR("TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted"); return getTpetra_Vector()->normWeighted(*toTpetra(weights)); }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -174,7 +174,10 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef EpetraNode Node;
 
 #undef XPETRA_TPETRAMULTIVECTOR_SHORT
+#undef XPETRA_TPETRAVECTOR_SHORT
 #include "Xpetra_UseShortNames.hpp"
+#define XPETRA_TPETRAMULTIVECTOR_SHORT
+#define XPETRA_TPETRAVECTOR_SHORT
 
   public:
 
@@ -264,7 +267,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) {
+    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (vec) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
@@ -332,7 +335,10 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef EpetraNode Node;
 
 #undef XPETRA_TPETRAMULTIVECTOR_SHORT
+#undef XPETRA_TPETRAVECTOR_SHORT
 #include "Xpetra_UseShortNames.hpp"
+#define XPETRA_TPETRAMULTIVECTOR_SHORT
+#define XPETRA_TPETRAVECTOR_SHORT
 
   public:
 

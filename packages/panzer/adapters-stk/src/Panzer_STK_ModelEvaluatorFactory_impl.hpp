@@ -205,11 +205,11 @@ namespace panzer_stk {
       return false;
     }
 
-    Teuchos::RCP<STKConnManager<int> >
-    getSTKConnManager(const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
+    Teuchos::RCP<STKConnManager>
+    getSTKConnManager(const Teuchos::RCP<panzer::ConnManager>& conn_mgr)
     {
-      const Teuchos::RCP<STKConnManager<int> > stk_conn_mgr =
-        Teuchos::rcp_dynamic_cast<STKConnManager<int> >(conn_mgr);
+      const Teuchos::RCP<STKConnManager> stk_conn_mgr =
+        Teuchos::rcp_dynamic_cast<STKConnManager>(conn_mgr);
       TEUCHOS_TEST_FOR_EXCEPTION(stk_conn_mgr.is_null(), std::logic_error,
                                  "There are interface conditions, but the connection manager"
                                  " does not support the necessary connections.");
@@ -217,18 +217,18 @@ namespace panzer_stk {
     }
 
     void buildInterfaceConnections(const std::vector<panzer::BC>& bcs,
-                                   const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
+                                   const Teuchos::RCP<panzer::ConnManager>& conn_mgr)
     {
-      const Teuchos::RCP<STKConnManager<int> > stk_conn_mgr = getSTKConnManager(conn_mgr);
+      const Teuchos::RCP<STKConnManager> stk_conn_mgr = getSTKConnManager(conn_mgr);
       for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit)
         if (bcit->bcType() == panzer::BCT_Interface)
           stk_conn_mgr->associateElementsInSideset(bcit->sidesetID());
     }
 
-    void checkInterfaceConnections(const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr,
+    void checkInterfaceConnections(const Teuchos::RCP<panzer::ConnManager>& conn_mgr,
                                    const Teuchos::RCP<Teuchos::Comm<int> >& comm)
     {
-      const Teuchos::RCP<STKConnManager<int> > stk_conn_mgr = getSTKConnManager(conn_mgr);
+      const Teuchos::RCP<STKConnManager> stk_conn_mgr = getSTKConnManager(conn_mgr);
       std::vector<std::string> sidesets = stk_conn_mgr->checkAssociateElementsInSidesets(*comm);
       if ( ! sidesets.empty()) {
         std::stringstream ss;
@@ -414,12 +414,7 @@ namespace panzer_stk {
 
     // build the connection manager
     ////////////////////////////////////////////////////////////////////////////////////////
-
-    Teuchos::RCP<panzer::ConnManagerBase<int> > conn_manager;
-    if(useTpetra)
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
-    else
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
     m_conn_manager = conn_manager;
 
     // build DOF Manager
@@ -432,8 +427,6 @@ namespace panzer_stk {
     bool blockedAssembly = false;
 
     if(panzer::BlockedDOFManagerFactory<int,int>::requiresBlocking(field_order) && !useTpetra) {
-       const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager_int
-         = Teuchos::rcp_dynamic_cast<panzer::ConnManager<int,int> >(conn_manager,true);
 
        // use a blocked DOF manager
        blockedAssembly = true;
@@ -442,7 +435,7 @@ namespace panzer_stk {
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
 
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,field_order);
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
        Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > bloLinObjFactory
@@ -473,8 +466,6 @@ namespace panzer_stk {
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
     else if(panzer::BlockedDOFManagerFactory<int,panzer::Ordinal64>::requiresBlocking(field_order) && useTpetra) {
-       const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > conn_manager_long
-         = Teuchos::rcp_dynamic_cast<panzer::ConnManager<int,panzer::Ordinal64> >(conn_manager,true);
 
        // use a blocked DOF manager
        blockedAssembly = true;
@@ -484,7 +475,7 @@ namespace panzer_stk {
        globalIndexerFactory.setUseDOFManagerFEI(false);
 
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,panzer::Ordinal64> > > dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_long,field_order);
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
        Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> > bloLinObjFactory
@@ -515,9 +506,6 @@ namespace panzer_stk {
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
     else if(useTpetra) {
-       const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > conn_manager_long
-         = Teuchos::rcp_dynamic_cast<panzer::ConnManager<int,panzer::Ordinal64> >(conn_manager,true);
-
        // use a flat DOF manager
 
        TEUCHOS_ASSERT(!use_dofmanager_fei);
@@ -525,7 +513,7 @@ namespace panzer_stk {
        globalIndexerFactory.setUseDOFManagerFEI(false);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_long,field_order);
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
        TEUCHOS_ASSERT(!useDiscreteAdjoint); // safety check
@@ -539,16 +527,13 @@ namespace panzer_stk {
        if (has_interface_condition)
          buildInterfaceConnections(bcs, conn_manager);
 
-       const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager_int
-         = Teuchos::rcp_dynamic_cast<panzer::ConnManager<int,int> >(conn_manager,true);
-
        // use a flat DOF manager
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
        globalIndexerFactory.setUseNeighbors(has_interface_condition);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,
                                                          field_order);
        globalIndexer = dofManager;
 
@@ -1544,7 +1529,7 @@ namespace panzer_stk {
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
   buildLOWSFactory(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                   const Teuchos::RCP<panzer::ConnManager> & conn_manager,
                    const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm
                    #ifdef PANZER_HAVE_TEKO

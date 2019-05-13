@@ -55,7 +55,7 @@ template <typename LO,typename GO>
 Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
 DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
+                            const Teuchos::RCP<ConnManager> & connMngr,
                             const std::string & fieldOrder) const
 {
   return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
@@ -66,7 +66,7 @@ template <typename DOFManagerT>
 Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
 DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
+                            const Teuchos::RCP<ConnManager> & connMngr,
                             const std::string & fieldOrder) const
 {
   PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManagerFactory::buildUnqueGlobalIndexer",BUGI);

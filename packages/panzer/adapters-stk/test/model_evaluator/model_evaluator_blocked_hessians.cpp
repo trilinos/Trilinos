@@ -100,7 +100,7 @@ namespace panzer {
 			 std::vector<panzer::BC>& bcs);
 
   struct AssemblyPieces {
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
     Teuchos::RCP<panzer::GlobalData> gd;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
@@ -122,8 +122,8 @@ namespace panzer {
                            AssemblyPieces & ap,
                            const std::vector<std::string>& tangentParamNames = std::vector<std::string>());
 
-  bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
-                                  const Thyra::VectorBase<double> & b, 
+  bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a,
+                                  const Thyra::VectorBase<double> & b,
                                   double tolerance, bool write_to_cout=false);
 
   // Testing Parameter Support
@@ -151,7 +151,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
     bool build_transient_support = true;
-    RCP<PME> me 
+    RCP<PME> me
         = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
 
     const double DENSITY_VALUE = 3.7;
@@ -162,7 +162,7 @@ namespace panzer {
     {
       Teuchos::RCP<panzer::FunctionalResponse_Builder<int,int> > builder
         = Teuchos::rcp(new panzer::FunctionalResponse_Builder<int,int>);
- 
+
       builder->comm = MPI_COMM_WORLD; // good enough
       builder->cubatureDegree = 1;
       builder->requiresCellIntegral = true;
@@ -194,7 +194,7 @@ namespace panzer {
 
     // test value
     {
-      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex)); 
+      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex));
 
       RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
       Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
@@ -216,7 +216,7 @@ namespace panzer {
         // Volume of integral is 1.0, then just compute the integrand
     }
 
-    RCP<VectorType> D2gDx2 = Thyra::createMember(*me->get_x_space()); 
+    RCP<VectorType> D2gDx2 = Thyra::createMember(*me->get_x_space());
 
     // test hessian
     {
@@ -281,7 +281,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
     bool build_transient_support = true;
-    RCP<PME> me 
+    RCP<PME> me
         = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
 
     const double DENSITY_VALUE = 3.7;
@@ -292,7 +292,7 @@ namespace panzer {
     {
       Teuchos::RCP<panzer::FunctionalResponse_Builder<int,int> > builder
         = Teuchos::rcp(new panzer::FunctionalResponse_Builder<int,int>);
- 
+
       builder->comm = MPI_COMM_WORLD; // good enough
       builder->cubatureDegree = 1;
       builder->requiresCellIntegral = true;
@@ -324,7 +324,7 @@ namespace panzer {
 
     // test value
     {
-      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex)); 
+      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex));
 
       RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
       Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
@@ -346,7 +346,7 @@ namespace panzer {
         // Volume of integral is 1.0, then just compute the integrand
     }
 
-    RCP<VectorType> D2gDp2 = Thyra::createMember(*me->get_p_space(pIndex)); 
+    RCP<VectorType> D2gDp2 = Thyra::createMember(*me->get_p_space(pIndex));
 
     // test hessian
     {
@@ -406,7 +406,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
     bool build_transient_support = true;
-    RCP<PME> me 
+    RCP<PME> me
         = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
 
     const double DENSITY_VALUE = 3.7;
@@ -417,7 +417,7 @@ namespace panzer {
     {
       Teuchos::RCP<panzer::FunctionalResponse_Builder<int,int> > builder
         = Teuchos::rcp(new panzer::FunctionalResponse_Builder<int,int>);
- 
+
       builder->comm = MPI_COMM_WORLD; // good enough
       builder->cubatureDegree = 1;
       builder->requiresCellIntegral = true;
@@ -449,7 +449,7 @@ namespace panzer {
 
     // test value
     {
-      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex)); 
+      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex));
 
       RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
       Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
@@ -471,7 +471,7 @@ namespace panzer {
         // Volume of integral is 1.0, then just compute the integrand
     }
 
-    RCP<VectorType> D2gDpDx = Thyra::createMember(*me->get_p_space(pIndex)); 
+    RCP<VectorType> D2gDpDx = Thyra::createMember(*me->get_p_space(pIndex));
 
     // test hessian
     {
@@ -502,7 +502,7 @@ namespace panzer {
       bool b = std::fabs(D2gDpDx_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
       bool c = std::fabs(D2gDpDx_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
       bool d = (D2gDpDx_data[i]==0.0);
- 
+
       TEST_ASSERT(a || b || c || d);
     }
   }
@@ -533,7 +533,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
     bool build_transient_support = true;
-    RCP<PME> me 
+    RCP<PME> me
         = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
 
     const double DENSITY_VALUE = 3.7;
@@ -544,7 +544,7 @@ namespace panzer {
     {
       Teuchos::RCP<panzer::FunctionalResponse_Builder<int,int> > builder
         = Teuchos::rcp(new panzer::FunctionalResponse_Builder<int,int>);
- 
+
       builder->comm = MPI_COMM_WORLD; // good enough
       builder->cubatureDegree = 1;
       builder->requiresCellIntegral = true;
@@ -576,7 +576,7 @@ namespace panzer {
 
     // test value
     {
-      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex)); 
+      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex));
 
       RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
       Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
@@ -598,7 +598,7 @@ namespace panzer {
         // Volume of integral is 1.0, then just compute the integrand
     }
 
-    RCP<VectorType> D2gDxDp = Thyra::createMember(*me->get_x_space()); 
+    RCP<VectorType> D2gDxDp = Thyra::createMember(*me->get_x_space());
 
     // test hessian
     {
@@ -632,7 +632,7 @@ namespace panzer {
         bool b = std::fabs(D2gDxDp_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
         bool c = std::fabs(D2gDxDp_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
         bool d = (D2gDxDp_data[i]==0.0);
-  
+
         TEST_ASSERT(a || b || c || d);
       }
     }
@@ -660,7 +660,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
     bool build_transient_support = true;
-    RCP<PME> me 
+    RCP<PME> me
         = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
 
     const double DENSITY_VALUE = 3.7;
@@ -686,7 +686,7 @@ namespace panzer {
                    ap.user_data,false,"");
 
     // panzer::printMeshTopology(out,*ap.dofManager);
-    
+
 
     RCP<OperatorType> D2fDx2 = me->create_W_op();
 
@@ -763,7 +763,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
     bool build_transient_support = true;
-    RCP<PME> me 
+    RCP<PME> me
         = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
 
     const double DENSITY_VALUE = 3.7;
@@ -789,7 +789,7 @@ namespace panzer {
                    ap.user_data,false,"");
 
     // panzer::printMeshTopology(out,*ap.dofManager);
-    
+
 
     RCP<OperatorType> D2fDxDp = me->create_W_op();
 
@@ -866,7 +866,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
     bool build_transient_support = true;
-    RCP<PME> me 
+    RCP<PME> me
         = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
 
     const double DENSITY_VALUE = 3.7;
@@ -892,7 +892,7 @@ namespace panzer {
                    ap.user_data,false,"");
 
     // panzer::printMeshTopology(out,*ap.dofManager);
-    
+
 
     RCP<OperatorType> D2fDpDx = me->create_DfDp_op(pIndex);
 
@@ -969,7 +969,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
     bool build_transient_support = true;
-    RCP<PME> me 
+    RCP<PME> me
         = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
 
     const double DENSITY_VALUE = 3.7;
@@ -995,7 +995,7 @@ namespace panzer {
                    ap.user_data,false,"");
 
     // panzer::printMeshTopology(out,*ap.dofManager);
-    
+
 
     RCP<OperatorType> D2fDp2 = me->create_DfDp_op(pIndex);
 
@@ -1048,10 +1048,10 @@ namespace panzer {
     TEST_ASSERT(op_cmp);
   }
 
-  bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
-                                  const Thyra::VectorBase<double> & b, 
+  bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a,
+                                  const Thyra::VectorBase<double> & b,
                                   double tolerance, bool write_to_cout)
-  {  
+  {
     bool is_equal = true;
 
     TEUCHOS_ASSERT(a.space()->dim() == b.space()->dim());
@@ -1061,14 +1061,14 @@ namespace panzer {
     dynamic_cast<const Thyra::SpmdVectorBase<double> &>(b).getLocalData(Teuchos::ptrFromRef(b_data));
 
     for (int i = 0; i < a_data.size(); ++i) {
-      
+
       std::string output = "    equal!: ";
-      
+
       if (std::fabs(a_data[i] - b_data[i]) > tolerance) {
 	is_equal = false;
 	output = "NOT equal!: ";
       }
-      
+
       if (write_to_cout)
 	std::cout << output << a_data[i] << " - " << b_data[i] << " = " << (a_data[i] - b_data[i]) << std::endl;
     }
@@ -1114,10 +1114,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    }
     {
       std::size_t bc_id = 1;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -1128,10 +1128,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 2;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -1142,29 +1142,29 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
     }
   }
-  
+
   void buildAssemblyPieces(bool distr_parameter_on,
                            AssemblyPieces & ap,
                            const std::vector<std::string>& tangentParamNames)
   {
     using Teuchos::RCP;
-  
+
     RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
     pl->set("X Elements",6);
     pl->set("Y Elements",4);
-    
+
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     Teuchos::RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
-    Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm 
+    Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm
        = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
@@ -1188,9 +1188,9 @@ namespace panzer {
       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
-      
+
       int default_integration_order = 1;
-      
+
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
@@ -1207,22 +1207,22 @@ namespace panzer {
     // build worksets
     //////////////////////////////////////////////////////////////
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<ap.physicsBlocks.size();i++) 
+    for(size_t i=0;i<ap.physicsBlocks.size();i++)
       wkstContainer->setNeeds(ap.physicsBlocks[i]->elementBlockID(),ap.physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
     ap.wkstContainer = wkstContainer;
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
- 
-    // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+
+    // build the connection manager
+    const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     // build the state dof manager and LOF
     {
@@ -1238,10 +1238,10 @@ namespace panzer {
 
     // build the dof manager and LOF for DENSITY control
     if(distr_parameter_on) {
-      Teuchos::RCP<panzer::DOFManager<int,int> > dofManager 
+      Teuchos::RCP<panzer::DOFManager<int,int> > dofManager
           = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
-      Teuchos::RCP<Intrepid2FieldPattern> fp 
+      Teuchos::RCP<Intrepid2FieldPattern> fp
         = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<PHX::exec_space,double,double>("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
       dofManager->addField("eblock-0_0","DENSITY_P",fp);
       dofManager->addField("eblock-1_0","DENSITY_P",fp);
@@ -1262,11 +1262,11 @@ namespace panzer {
       ap.param_lof = linObjFactory;
     }
 
-    ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,ap.lof)); 
+    ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,ap.lof));
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
- 
+
     // Add in the application specific closure model factory
     user_app::MyModelFactory_TemplateBuilder cm_builder;
     cm_builder.setDistributedParameterLOF(ap.param_lof);
