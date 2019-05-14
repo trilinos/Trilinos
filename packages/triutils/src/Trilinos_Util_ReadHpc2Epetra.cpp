@@ -80,7 +80,7 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
     exit(1);
   }
   int_type numGlobalEquations, total_nnz;
-#ifdef DEBUG
+#ifndef NDEBUG
   int cnt;
 #endif
   // mfh 24 Mar 2015: We use temporaries of the type corresponding to
@@ -91,12 +91,12 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
   // the warning is easy to fix.
   if(sizeof(int) == sizeof(int_type)) {
     int numGlobalEquations_int, total_nnz_int;
-#ifdef DEBUG
+#ifndef NDEBUG
     cnt =
 #endif
     fscanf(in_file,"%d",&numGlobalEquations_int);
     assert(cnt > 0);
-#ifdef DEBUG
+#ifndef NDEBUG
     cnt =
 #endif
     fscanf(in_file,"%d",&total_nnz_int);
@@ -107,12 +107,12 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
   }
   else if(sizeof(long long) == sizeof(int_type)) {
     long long numGlobalEquations_ll, total_nnz_ll;
-#ifdef DEBUG
+#ifndef NDEBUG
     cnt =
 #endif
     fscanf(in_file,"%lld",&numGlobalEquations_ll);
     assert(cnt > 0);
-#ifdef DEBUG
+#ifndef NDEBUG
     cnt =
 #endif
     fscanf(in_file,"%lld",&total_nnz_ll);
@@ -148,7 +148,7 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
   int max_nnz = 0;
 
   for (int i=0; i<numGlobalEquations; i++) {
-#ifdef DEBUG
+#ifndef NDEBUG
     cnt =
 #endif
     fscanf(in_file, "%d",lp); /* row #, nnz in row */
@@ -163,7 +163,7 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
   {
     for (int_type i=0; i<numGlobalEquations; i++) {
       int cur_nnz;
-#ifdef DEBUG
+#ifndef NDEBUG
       cnt =
 #endif
       fscanf(in_file, "%d",&cur_nnz);
@@ -175,7 +175,7 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
         int nnz_kept = 0;
         for (int j=0; j<cur_nnz; j++)
         {
-#ifdef DEBUG
+#ifndef NDEBUG
           cnt =
 #endif
           fscanf(in_file, "%lf %d",vp,lp);
@@ -190,7 +190,7 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
       }
       else
         for (int j=0; j<cur_nnz; j++) {
-#ifdef DEBUG
+#ifndef NDEBUG
           cnt =
 #endif
           fscanf(in_file, "%lf %d",vp,lp); // otherwise read and discard
@@ -207,7 +207,7 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
           std::cout << "Process "<< rank <<" of "
                     << size <<" getting RHS " << i
                     << std::endl;
-#ifdef DEBUG
+#ifndef NDEBUG
         cnt =
 #endif
         fscanf(in_file, "%lf %lf %lf",&xt, &bt, &xxt);
@@ -217,7 +217,7 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
         (*b)[cur_local_row] = bt;
         (*xexact)[cur_local_row] = xxt;
       } else {
-#ifdef DEBUG
+#ifndef NDEBUG
         cnt =
 #endif
         fscanf(in_file, "%lf %lf %lf",vp, vp, vp); // or thrown away
