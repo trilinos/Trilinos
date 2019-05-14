@@ -158,9 +158,19 @@ public:
      */
     inline int getNumRanks() const { return machine->getNumRanks(); }
 
-
+    /*! \brief return the hop count between rank1 and rank2 
+     */
     inline bool getHopCount(int rank1, int rank2, pcoord_t &hops) const {
       return machine->getHopCount(rank1, rank2, hops);
+    }
+
+    /*! \brief return counter for the number of ranks in first dim (a.k.a. groups) 
+     *
+     *  Ex, 4 ranks with coord (3, 1, 1), will return grp_count = [0, 0, 0, 4, 0, ...]
+     *  (Currently only for DragonflyRCA, and used for MultiJagged's first cut in MappingProblem) 
+     */ 
+    inline int getGroupCount(int *grp_count) const {
+      return machine->getGroupCount(grp_count);
     }
 
     /*! \brief Set up validators specific to this Problem

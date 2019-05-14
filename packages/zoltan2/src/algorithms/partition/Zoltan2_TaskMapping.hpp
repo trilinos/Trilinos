@@ -1554,10 +1554,19 @@ public:
 //    std::cout << "recursion_depth:" << recursion_depth 
 //      << " partArraySize:" << partArraySize << std::endl;
 
+    // Optimization for Dragonfly Networks, First Cut is imbalanced to ensure
+    // procs are divided by first RCA coord (a.k.a. group).
+    int num_group_count = 0;
+    int *group_count = NULL;
+
+    num_group_count = machine->getGroupCount(group_count);
+
+
     // Do the partitioning and renumber the parts.
     env->timerStart(MACRO_TIMERS, "Mapping - Proc Partitioning");
     // Partitioning of Processors
     AlgMJ<pcoord_t, part_t, part_t, part_t> mj_partitioner;
+
     mj_partitioner.sequential_task_partitioning(
         env,
         this->no_procs,
@@ -1570,9 +1579,11 @@ public:
         proc_xadj,
         recursion_depth,
         partNoArray,
-        proc_partition_along_longest_dim//, false
-        ,num_ranks_per_node
-        ,divide_to_prime_first
+        proc_partition_along_longest_dim, //, false
+        num_ranks_per_node,
+        divide_to_prime_first,
+        num_group_count,
+        group_count
     );
     env->timerStop(MACRO_TIMERS, "Mapping - Proc Partitioning");
 
@@ -1611,7 +1622,9 @@ public:
         partNoArray,
         task_partition_along_longest_dim,
         num_ranks_per_node,
-        divide_to_prime_first
+        divide_to_prime_first,
+        num_group_count,
+        group_count
         //,"task_partitioning"
         //, false // (myRank == 6)
     );
@@ -2301,13 +2314,18 @@ public:
     int *machine_extent = &(machine_extent_vec[0]);
     bool *machine_extent_wrap_around = new bool[procDim];
     for (int i = 0; i < procDim; ++i)machine_extent_wrap_around[i] = false;
-    machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
+//    machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
 
     // KDDKDD ASK MEHMET:  SHOULD WE GET AND USE machine_dimension HERE IF IT
     // KDDKDD ASK MEHMET:  IS PROVIDED BY THE MACHINE REPRESENTATION?
     // KDDKDD ASK MEHMET:  IF NOT HERE, THEN WHERE?
     // MD: Yes, I ADDED BELOW:
-    if (machine_->getMachineExtent(machine_extent)) {
+    if (machine_->getMachineExtent(machine_extent) &&
+        machine_->getMachineExtentWrapArounds(machine_extent_wrap_around)) {
+      
+      std::cout << "\nmachine_extent[3]: " << machine_extent[3] << "\n";
+      
+      
       procCoordinates =
           this->shiftMachineCoordinates(
               procDim,
@@ -2316,6 +2334,18 @@ public:
               this->nprocs,
               procCoordinates);
     }
+
+
+    for (int i = 0; i < this->nprocs; ++i)
+    {
+      std::cout << "\nMyRank: " << comm_->getRank() << " Rank: " << nprocs << " Coords: ";
+      for (int j = 0; j < procDim; ++j)
+      {
+        std::cout << procCoordinates[j][i] << " ";
+      }
+      
+    }
+    std::cout << "\n";
 
     //get the tasks information, such as coordinate dimension,
     //number of parts.
@@ -2989,13 +3019,17 @@ public:
 
     for (int i = 0; i < machine_dim; ++i) {
       part_t numMachinesAlongDim = machine_dimensions[i];
-      part_t *machineCounts= new part_t[numMachinesAlongDim];
-      memset(machineCounts, 0, sizeof(part_t) *numMachinesAlongDim);
 
-      int *filledCoordinates= new int[numMachinesAlongDim];
+      part_t *machineCounts = new part_t[numMachinesAlongDim];
+      memset(machineCounts, 0, sizeof(part_t) * numMachinesAlongDim);
+
+      int *filledCoordinates = new int[numMachinesAlongDim];
 
       pcoord_t *coords = mCoords[i];
       for (part_t j = 0; j < numProcs; ++j) {
+
+        std::cout << "\ni, j: " << i << " " << j << "\n";
+
         part_t mc = (part_t) coords[j];
         ++machineCounts[mc];
       }

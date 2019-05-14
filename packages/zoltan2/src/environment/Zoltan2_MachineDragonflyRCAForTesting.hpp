@@ -44,6 +44,9 @@ public:
     actual_machine_extent = new int[actual_networkDim];
     this->getActualMachineExtent(this->actual_machine_extent);
     
+    // Number of parts in each Group (i.e. RCA's X coord == Grp g)
+    group_count = new int[actual_machine_extent[0]];
+
     // Transformed dims = 1 + N_y + N_z
     transformed_networkDim = 1 + actual_machine_extent[1] + 
       actual_machine_extent[2];
@@ -102,6 +105,13 @@ public:
     actual_machine_extent = new int[actual_networkDim];
     this->getActualMachineExtent(this->actual_machine_extent);
     
+    // Number of parts in each Group (i.e. RCA's X coord == Grp g)
+    group_count = new int[actual_machine_extent[0]];
+
+    memset(group_count, 0, sizeof(int) * actual_machine_extent[0]);
+    
+    std::cout << "\nMAKE DRAGONFLYRCAFORTESTING\n";
+
     // Allocate memory for processor coords
     actual_procCoords = new pcoord_t *[actual_networkDim];
     transformed_procCoords = new pcoord_t *[transformed_networkDim];
@@ -109,6 +119,37 @@ public:
     pcoord_t *xyz = new pcoord_t[actual_networkDim];
     getMyActualMachineCoordinate(xyz);
 
+    for (int i = 0; i < actual_machine_extent[0]; ++i)
+      std::cout << "\nRank: " << this->myRank << " 1group_count[" << i << "]: " << group_count[i] << "\n";
+
+//    Teuchos::reduce<int, int>(group_count, group_count, 
+//                              this->numRanks, 
+//                              Teuchos::REDUCE_SUM,
+//                              0, comm);
+
+    std::cout << "\nRank: " << this->myRank << " Comm size: " << comm.getSize() << "\n";
+
+
+    int *tmp_vec = new int[actual_machine_extent[0]];
+
+    memset(tmp_vec, 0, sizeof(int) * actual_machine_extent[0]);
+
+//    comm.barrier();
+
+    Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_SUM,
+                                        actual_machine_extent[0], 
+                                        group_count, tmp_vec);
+
+//    comm.barrier();
+
+    group_count = tmp_vec;
+
+    for (int i = 0; i < actual_machine_extent[0]; ++i)
+      std::cout << "\nRank: " << this->myRank << " 2group_count[" << i << "]: " << group_count[i] << "\n";
+
+    for (int i = 0; i < actual_machine_extent[0]; ++i)
+      std::cout << "\nRank: " << this->myRank << " 2tmp_vec[" << i << "]: " << tmp_vec[i] << "\n";
+    
     const Teuchos::ParameterEntry *pe2 = 
       this->pl->getEntryPtr("Machine_Optimization_Level");
 
@@ -141,41 +182,59 @@ public:
         int nx = this->actual_machine_extent[0];
         int ny = this->actual_machine_extent[1];
         int nz = this->actual_machine_extent[2];
-        
-        transformed_procCoords[0][this->myRank] = 2 * xyz[0] * ny * nz;
 
+        const Teuchos::ParameterEntry *pe_x =
+          this->pl->getEntryPtr("Machine_X_Stretch"); 
+        const Teuchos::ParameterEntry *pe_y =
+          this->pl->getEntryPtr("Machine_Y_Stretch"); 
+        const Teuchos::ParameterEntry *pe_z =
+          this->pl->getEntryPtr("Machine_Z_Stretch"); 
+
+        // Default X,Y,Z stretches
+        int x_stretch = 3;
+        int y_stretch = 2;
+        int z_stretch = 1;
+
+        if (pe_x)  
+          x_stretch = pe_x->getValue<int>(&x_stretch);
+        if (pe_y)  
+          y_stretch = pe_y->getValue<int>(&y_stretch);
+        if (pe_x)  
+          z_stretch = pe_z->getValue<int>(&z_stretch);
+         
+        transformed_procCoords[0][this->myRank] = x_stretch * xyz[0] * ny * nz;
+        
         for (int i = 1; i < 1 + ny; ++i) {
           // Shift y-coord given a group, xyz[0];
-          transformed_procCoords[i][this->myRank] = xyz[0] * ny * nz;
+          transformed_procCoords[i][this->myRank] = 0;
           // Increment in the dim where y-coord present  
-          if (xyz[1] == i - 1)
-            ++transformed_procCoords[i][this->myRank];
+          if (xyz[1] == i - 1) {
+            transformed_procCoords[i][this->myRank] = y_stretch; 
+          }
         }
         for (int i = 1 + ny; i < transformed_networkDim; ++i) {
           // Shift z-coord given a group, xyz[0];
-          transformed_procCoords[0][this->myRank] = xyz[0] * ny * nz;
+          transformed_procCoords[i][this->myRank] = 0;
           // Increment in the dim where z-coord present
           if (xyz[2] == i - (1 + ny))
-            ++transformed_procCoords[i][this->myRank];
+            transformed_procCoords[i][this->myRank] = z_stretch;
         }
 
         this->transformed_machine_extent = new int[transformed_networkDim];
         
         // Max shifted high dim coordinate system
-        this->transformed_machine_extent[0] = 2 * (nx - 1) * ny * nz;
+        this->transformed_machine_extent[0] = x_stretch * (nx - 1) * ny * nz;
         for (int i = 1; i < 1 + ny; ++i) {
-          this->transformed_machine_extent[i] = 
-            (ny - 1) + (nx - 1) * ny * nz;
+          this->transformed_machine_extent[i] = y_stretch; 
         }
         for (int i = 1 + ny; i < transformed_networkDim; ++i) {
-          this->transformed_machine_extent[i] = 
-            (nz - 1) + (nx - 1) * ny * nz;
+          this->transformed_machine_extent[i] = z_stretch;
         }
-       
+      
         // reduceAll the transformed coordinates of each processor.
         gatherMachineCoordinates(this->transformed_procCoords, 
           this->transformed_networkDim, comm);    
-         
+            
         this->printAllocation();
       }
     }
@@ -276,12 +335,19 @@ public:
     return true;
   }
 
+  int getGroupCount(int *grp_count) const override {
+    
+    grp_count = group_count;
+
+    return actual_machine_extent[0];
+  }
+
   void printAllocation() {
     if (this->myRank == 0) {
       // Print transformed coordinates and extents
       if (is_transformed) {
         for (int i = 0; i < this->numRanks; ++i) { 
-          std::cout << "Rank:" << i;
+          std::cout << "Rank:" << i << "  ";
             for (int j = 0; j < this->transformed_networkDim; ++j) {
               std::cout << " " << transformed_procCoords[j][i]; 
             }
@@ -348,17 +414,25 @@ public:
     return false;
 #endif
 */
-//    srand(this->myRank);
+    srand(this->myRank);
 
-    xyz[0] = rand() % 11;
-    xyz[1] = rand() % 6;
-    xyz[2] = rand() % 16;
+    int x = rand() % 11;
+    int y = rand() % 6;
+    int z = rand() % 16;
+
+    xyz[0] = x; 
+    xyz[1] = y; 
+    xyz[2] = z; 
 
       // Needed for test/unit_test/Machine.cpp PASS
 //    xyz[0] = this->myRank;
 //    xyz[1] = this->numRanks;
 //    xyz[2] = this->numRanks + 1;
 
+    std::cout << "\nGROUP: " << xyz[0] << "\n"; 
+
+    group_count[x]++;
+    
     return true; 
   }
 
@@ -462,6 +536,7 @@ private:
 
   part_t *transformed_machine_extent;
   part_t *actual_machine_extent;
+  int *group_count;
   bool is_transformed;
 
   const Teuchos::ParameterList *pl;

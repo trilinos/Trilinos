@@ -1364,7 +1364,9 @@ public:
         const mj_part_t *part_no_array,
         bool partition_along_longest_dim,
         int num_ranks_per_node,
-        bool divide_to_prime_first_);
+        bool divide_to_prime_first_,
+        int num_first_cut_parts=0,
+        int *first_cut_parts=NULL);
 
 };
 
@@ -1407,7 +1409,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
     const mj_part_t *part_no_array_,
     bool partition_along_longest_dim,
     int num_ranks_per_node,
-    bool divide_to_prime_first_
+    bool divide_to_prime_first_,
+    int num_first_cut_parts,
+    int *first_cut_parts
 ){
 
 
@@ -1664,8 +1668,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                 mj_part_t total_incomplete_cut_count = 0;
 
                 //Compute weight ratios for parts & cuts:
-                //e.g., 0.25  0.25  0.5    0.5  0.75 0.75  1
-                //part0  cut0  part1 cut1 part2 cut2 part3
+                //e.g., 0.25  0.25 0.5   0.5  0.75  0.75  1.0
+                //      part0 cut0 part1 cut1 part2 cut2  part3
                 mj_part_t concurrent_part_cut_shift = 0;
                 mj_part_t concurrent_part_part_shift = 0;
 
@@ -1674,9 +1678,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                     mj_scalar_t min_coordinate = this->global_min_max_coord_total_weight[kk];
                     mj_scalar_t max_coordinate = this->global_min_max_coord_total_weight[kk +
                                                      current_concurrent_num_parts];
-                    mj_scalar_t global_total_weight =
-                                                        this->global_min_max_coord_total_weight[kk +
-                                                     2 * current_concurrent_num_parts];
+                    mj_scalar_t global_total_weight = this->global_min_max_coord_total_weight[kk +
+                                                        2 * current_concurrent_num_parts];
 
                     mj_part_t concurrent_current_part_index = current_work_part + kk;
 
@@ -2706,19 +2709,19 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_initial_cut_coord
 
             //how much each part should weigh in ideal case.
             mj_scalar_t unit_part_weight = global_weight / total_future_part_count_in_part;
-            /*
+            
            std::cout << "total_future_part_count_in_part:" << total_future_part_count_in_part << std::endl;
            std::cout << "global_weight:" << global_weight << std::endl;
            std::cout << "unit_part_weight" << unit_part_weight << std::endl;
-            */
+            
             for(mj_part_t i = 0; i < num_cuts; ++i){
                 cumulative += (*next_future_num_parts_in_parts)[i + obtained_part_index];
 
-                /*
+                
                std::cout << "obtained_part_index:" << obtained_part_index <<
                                 " (*next_future_num_parts_in_parts)[i + obtained_part_index]:" << (*next_future_num_parts_in_parts)[i + obtained_part_index] <<
                                 " cumulative:" << cumulative << std::endl;
-                */
+                
                 //set target part weight.
                 current_target_part_weights[i] = cumulative * unit_part_weight;
                 //std::cout <<"i:" << i << " current_target_part_weights:" << current_target_part_weights[i] <<std::endl;

@@ -86,12 +86,28 @@ public:
       return false;  // Coordinates not available in this machine
     }
 
-    /*! \brief return the number of ranks.
+    /*! \brief getNumRanks function 
+     *  return the number of ranks.
      */
     int getNumRanks() const { return numRanks; }
 
-    virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops){
+    /*! \brief getHopCount function
+     *  set hops between rank1 and rank2
+     *  return true if coordinates are available 
+     */
+    virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) {
       return false;
+    }
+
+    /*! \brief getGroupCount function
+     *  set counter for the number of ranks in first dim (a.k.a. groups)
+     *
+     *  Ex, 4 ranks with coord (3, 1, 1) will return grp_count = [0, 0, 0, 4, 0, ...] 
+     *  (Currently only for DragonflyRCA, and used for MultiJagged's first cut in MappingProblem)
+     *  return true if group_count is available
+     */
+    virtual int getGroupCount(int *grp_count) const {
+      return 0;
     }
 
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.

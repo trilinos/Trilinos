@@ -57,18 +57,16 @@ namespace Zoltan2{
  *
  *  To assist with MultiJagged coord partitioning we stretch the 
  *  dimensions. If RCA coords are (3, 2, 14), we first transform 
- *  the X, Y, Z by 
+ *  the X by 
  *
  *  X_new = 2 * X * N_Y * N_Z;
- *  Y_new = Y + X * N_Y * N_Z;
- *  Z_new = Z + X * N_Y * N_Z;
  *
- *  Then transformed coords are (576, 290, 302) and in high-dim
+ *  Then transformed coords are (576, 2, 14) and in high-dim
  *  space:
  *
- *  (3,2,10) -> (576, 290, 296) -> 
+ *  (3, 2, 14) -> (576, 2, 14) -> 
  *
- *  (576,| 288, 288, 289, 288, 288, 288,| 288, ..., 288, 289, 288)
+ *  (576,| 0, 0, 1, 0, 0, 0,| 0, ..., 0, 1, 0)
  *  
  *  Now Coordinates are distance sqrt(2) apart if 1 hop, and
  *  distance 2 apart if 2 hops.  
@@ -100,7 +98,10 @@ public:
 
     actual_machine_extent = new int[actual_networkDim];
     this->getActualMachineExtent(this->actual_machine_extent);
-    
+   
+    // Number of parts in each Group (i.e. RCA's X coord == Grp g)
+    group_count = new int[actual_machine_extent[0]];
+
     // Transformed dims = 1 + N_y + N_z
     transformed_networkDim = 1 + actual_machine_extent[1] + 
       actual_machine_extent[2];
@@ -158,6 +159,9 @@ public:
   {
     actual_machine_extent = new int[actual_networkDim];
     this->getActualMachineExtent(this->actual_machine_extent);
+     
+    // Number of parts in each Group (i.e. RCA's X coord == Grp g)
+    group_count = new int[actual_machine_extent[0]];
     
     // Allocate memory for processor coords
     actual_procCoords = new pcoord_t *[actual_networkDim];
@@ -203,17 +207,17 @@ public:
 
         for (int i = 1; i < 1 + ny; ++i) {
           // Shift y-coord given a group, xyz[0];
-          transformed_procCoords[i][this->myRank] = xyz[0] * ny * nz;
+          transformed_procCoords[i][this->myRank] = 0;
           // Increment in the dim where y-coord present  
           if (xyz[1] == i - 1)
-            ++transformed_procCoords[i][this->myRank];
+            transformed_procCoords[i][this->myRank] = 2;
         }
         for (int i = 1 + ny; i < transformed_networkDim; ++i) {
           // Shift z-coord given a group, xyz[0];
-          transformed_procCoords[0][this->myRank] = xyz[0] * ny * nz;
+          transformed_procCoords[i][this->myRank] = 0;
           // Increment in the dim where z-coord present
           if (xyz[2] == i - (1 + ny))
-            ++transformed_procCoords[i][this->myRank];
+            transformed_procCoords[i][this->myRank] = 1;
         }
 
         this->transformed_machine_extent = new int[transformed_networkDim];
@@ -221,12 +225,10 @@ public:
         // Max shifted high dim coordinate system
         this->transformed_machine_extent[0] = 2 * (nx - 1) * ny * nz;
         for (int i = 1; i < 1 + ny; ++i) {
-          this->transformed_machine_extent[i] = 
-            (ny - 1) + (nx - 1) * ny * nz;
+          this->transformed_machine_extent[i] = 2;
         }
         for (int i = 1 + ny; i < transformed_networkDim; ++i) {
-          this->transformed_machine_extent[i] = 
-            (nz - 1) + (nx - 1) * ny * nz;
+          this->transformed_machine_extent[i] = 1;
         }
 
         // reduceAll the transformed coordinates of each processor.
@@ -320,6 +322,13 @@ public:
     return true;
   }
 
+  int getGroupCount(int *grp_count) const override {
+    
+    grp_count = group_count;
+
+    return actual_machine_extent[0];
+  }
+
   void printAllocation() {
     if (this->myRank == 0) {
       // Print transformed coordinates and extents
@@ -386,6 +395,9 @@ public:
     xyz[0] = node_coord.mesh_x;
     xyz[1] = node_coord.mesh_y;
     xyz[2] = node_coord.mesh_z;
+
+    group_count[(int)xyz[0]]++;
+
     return true;
 #else
     return false;
@@ -434,7 +446,8 @@ public:
 
   // Return (approx) hop count from rank1 to rank2. Does not account for 
   // dynamic routing.
-  virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) {
+  bool getHopCount(int rank1, int rank2, pcoord_t &hops) override {
+    
     hops = 0;
 
     if (is_transformed) {     
@@ -493,6 +506,7 @@ private:
 
   part_t *transformed_machine_extent;
   part_t *actual_machine_extent;
+  part_t *group_count;
   bool is_transformed;
 
   const Teuchos::ParameterList *pl;
