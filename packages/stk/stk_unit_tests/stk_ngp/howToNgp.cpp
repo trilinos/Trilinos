@@ -986,6 +986,28 @@ NGP_TEST_F(NgpHowTo, ReuseNgpFieldNewFieldManager)
     check_field_on_device(get_bulk(), ngpMesh, fieldManager, stkField.mesh_meta_data_ordinal(), expectedValue);
 }
 
+NGP_TEST_F(NgpHowTo, CopyAndDestroyFieldManager)
+{
+    int numStates = 1;
+    double initialValue = 0.0;
+    stk::mesh::Field<double> & stkField = create_field_with_num_states_and_init(get_meta(), "field01", numStates, initialValue);
+
+    setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+
+    ngp::Mesh ngpMesh(get_bulk());
+    ngp::FieldManager fieldManager(get_bulk());
+    ngp::Field<double> & ngpField = fieldManager.get_field<double>(stkField.mesh_meta_data_ordinal());
+    stk::mesh::EntityRank rank = ngpField.get_rank();
+
+    {
+       ngp::FieldManager fieldManagerCopy(fieldManager);
+       ngp::Field<double> & ngpFieldCopy = fieldManagerCopy.get_field<double>(stkField.mesh_meta_data_ordinal());
+       EXPECT_EQ(rank, ngpField.get_rank());
+       EXPECT_EQ(rank, ngpFieldCopy.get_rank());
+    }
+    EXPECT_EQ(rank, ngpField.get_rank());
+}
+
 
 template<typename MeshType>
 void run_part_membership_test(const stk::mesh::BulkData& bulk, stk::mesh::PartOrdinal partOrdinal)

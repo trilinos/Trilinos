@@ -157,7 +157,7 @@ bool validate_topology_data()
            && check_face_node_offsets<Topology>()
            && check_permutation_node_offsets<Topology>()
            );
-}
+};
 
 } //unnamed namespace
 
@@ -179,6 +179,8 @@ TEST( stk_topology, validate_topology)
   EXPECT_TRUE( validate_topology_data< topology::BEAM_3        >() );
   EXPECT_TRUE( validate_topology_data< topology::SHELL_LINE_2  >() );
   EXPECT_TRUE( validate_topology_data< topology::SHELL_LINE_3  >() );
+  EXPECT_TRUE( validate_topology_data< topology::SPRING_2      >() );
+  EXPECT_TRUE( validate_topology_data< topology::SPRING_3      >() );
   EXPECT_TRUE( validate_topology_data< topology::TRI_3_2D      >() );
   EXPECT_TRUE( validate_topology_data< topology::TRI_4_2D      >() );
   EXPECT_TRUE( validate_topology_data< topology::TRI_6_2D      >() );

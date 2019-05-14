@@ -7585,6 +7585,11 @@ bool BulkData::was_mesh_modified_since_sideset_creation()
     return m_sideSetData.was_mesh_modified_since_sideset_creation();
 }
 
+void BulkData::synchronize_sideset_sync_count()
+{
+    m_sideSetData.set_sideset_sync_count(this->synchronized_count());
+}
+
 void BulkData::clear_sidesets()
 {
     m_sideSetData.clear_sidesets();

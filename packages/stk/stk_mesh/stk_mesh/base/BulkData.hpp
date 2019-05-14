@@ -819,7 +819,7 @@ public:
   template<typename ObserverType>
   bool has_observer_type() const { return notifier.has_observer_type<ObserverType>(); }
   template<typename ObserverType>
-  std::vector<ObserverType*> get_observer_type() const { return notifier.get_observer_type<ObserverType>(); }
+  std::vector<std::shared_ptr<ObserverType>> get_observer_type() const { return notifier.get_observer_type<ObserverType>(); }
 
   void initialize_face_adjacent_element_graph();
   void delete_face_adjacent_element_graph();
@@ -844,6 +844,7 @@ public:
   void clear_sidesets();
   void clear_sideset(const stk::mesh::Part &part);
   std::vector<SideSet *> get_sidesets();
+  void synchronize_sideset_sync_count();
 
   void clone_solo_side_id_generator(const stk::mesh::BulkData &oldBulk);
   void create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts);

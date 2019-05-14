@@ -75,7 +75,6 @@ int testElement(const std::string &name, unsigned spatialDim)
   // Currently not supported:
   if (element->name() == "unknown"   ||
       element->name() == "tetra14"   || element->name() == "tetra15" ||
-      element->name() == "spring2"   || element->name() == "spring3" ||
       element->name() == "tri7"      || element->name() == "trishell7" ||
       element->name() == "pyramid18" || element->name() == "pyramid19" ||
       element->name() == "wedge20"   || element->name() == "wedge21" ||
@@ -151,9 +150,11 @@ TEST(UnitTestTopology, testUnit)
     }
 
     int current_error = testElement(elements[i], spatialDim);
-    if (elements[i] != "node" &&
-	elements[i] != "bar2" &&
-	elements[i] != "bar3") {
+    if (elements[i] != "node"    &&
+        elements[i] != "bar2"    &&
+        elements[i] != "bar3"    &&
+        elements[i] != "spring2" &&
+        elements[i] != "spring3") {
       errors += current_error;
     }
     else {

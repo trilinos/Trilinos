@@ -80,6 +80,7 @@ std::vector<stk::balance::GraphEdge> get_graph_edges_using_graph_settings(stk::m
     graphData.set_spatial_dim(bulk.mesh_meta_data().spatial_dimension());
 
     graphData.createGraphEdgesUsingNodeConnectivity(bulk,
+                                                    bulk.mesh_meta_data().locally_owned_part(),
                                                     graphSettings,
                                                     graphData.get_num_global_elements(),
                                                     graphEdges,
