@@ -488,21 +488,29 @@ namespace Tpetra {
             const bool in1in2same = sameObject (*input1_j, *input2_j);
             const bool allsame = outin1same && outin2same; // by transitivity
 
+            // Help GCC 4.9.3 deduce the types of *output_j,
+            // *input1_j, and *input2_j.  See discussion here:
+            // https://github.com/trilinos/Trilinos/pull/5115
+            using vec_type = ::Tpetra::Vector<SC, LO, GO, NT>;
+            vec_type& input1_j_ref = *input1_j;
+            vec_type& input2_j_ref = *input2_j;
+            vec_type& output_j_ref = *output_j;
+
             // Once we get C++14 generic lambdas, we can get rid of
             // these typedefs and use "const auto&" as the argument(s)
             // for the withLocalAccess lambdas below.
             using input1_view_type =
               with_local_access_function_argument_type<
-                decltype (readOnly (*input1_j).on (memSpace))>;
+                decltype (readOnly (input1_j_ref).on (memSpace))>;
             using input2_view_type =
               with_local_access_function_argument_type<
-                decltype (readOnly (*input2_j).on (memSpace))>;
+                decltype (readOnly (input2_j_ref).on (memSpace))>;
             using rw_output_view_type =
               with_local_access_function_argument_type<
-                decltype (readWrite (*output_j).on (memSpace))>;
+                decltype (readWrite (output_j_ref).on (memSpace))>;
             using wo_output_view_type =
               with_local_access_function_argument_type<
-                decltype (writeOnly (*output_j).on (memSpace))>;
+                decltype (writeOnly (output_j_ref).on (memSpace))>;
 
             if (allsame) {
               withLocalAccess
@@ -515,7 +523,7 @@ namespace Tpetra {
                   functor_type functor (output_lcl, output_lcl, output_lcl, f);
                   Kokkos::parallel_for (kernelLabel, range, functor);
                 },
-                readWrite (*output_j).on (memSpace));
+                readWrite (output_j_ref).on (memSpace));
             }
             else if (in1in2same) { // and not same as output
               withLocalAccess
@@ -529,8 +537,8 @@ namespace Tpetra {
                   functor_type functor (input1_lcl, input1_lcl, output_lcl, f);
                   Kokkos::parallel_for (kernelLabel, range, functor);
                 },
-                readOnly (*input1_j).on (memSpace),
-                writeOnly (*output_j).on (memSpace));
+                readOnly (input1_j_ref).on (memSpace),
+                writeOnly (output_j_ref).on (memSpace));
             }
             else if (outin1same) { // and input1 not same as input2
               withLocalAccess
@@ -544,8 +552,8 @@ namespace Tpetra {
                   functor_type functor (output_lcl, input2_lcl, output_lcl, f);
                   Kokkos::parallel_for (kernelLabel, range, functor);
                 },
-                readOnly (*input2_j).on (memSpace),
-                readWrite (*output_j).on (memSpace));
+                readOnly (input2_j_ref).on (memSpace),
+                readWrite (output_j_ref).on (memSpace));
             }
             else if (outin2same) { // and input1 not same as input2
               withLocalAccess
@@ -559,8 +567,8 @@ namespace Tpetra {
                   functor_type functor (input1_lcl, output_lcl, output_lcl, f);
                   Kokkos::parallel_for (kernelLabel, range, functor);
                 },
-                readOnly (*input1_j).on (memSpace),
-                readWrite (*output_j).on (memSpace));
+                readOnly (input1_j_ref).on (memSpace),
+                readWrite (output_j_ref).on (memSpace));
             }
             else { // output, input1, and input2 all differ
               withLocalAccess
@@ -575,9 +583,9 @@ namespace Tpetra {
                   functor_type functor (input1_lcl, input2_lcl, output_lcl, f);
                   Kokkos::parallel_for (kernelLabel, range, functor);
                 },
-                readOnly (*input1_j).on (memSpace),
-                readOnly (*input2_j).on (memSpace),
-                writeOnly (*output_j).on (memSpace));
+                readOnly (input1_j_ref).on (memSpace),
+                readOnly (input2_j_ref).on (memSpace),
+                writeOnly (output_j_ref).on (memSpace));
             }
           }
         }

@@ -112,8 +112,6 @@ namespace { // (anonymous)
       using Teuchos::TypeNameTraits;
       using dev_mem_space =
         typename multivec_type::dual_view_type::t_dev::memory_space;
-      using host_mem_space =
-        typename multivec_type::dual_view_type::t_host::memory_space;
 
       {
         using local_access_type =
@@ -386,7 +384,6 @@ namespace { // (anonymous)
 
   TEUCHOS_UNIT_TEST( VectorHarness, WithLocalAccess )
   {
-    using LO = typename multivec_type::local_ordinal_type;
     const bool debug = ::Tpetra::Details::Behavior::debug ();
 
     RCP<Teuchos::FancyOStream> outPtr = debug ?

@@ -177,23 +177,30 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
 
+        // Generic lambdas need C++14, so for now, we use
+        // with_local_access_function_argument_type to get a named
+        // typedef for our withLocalAccess lambda argument(s).
+
         range_type range (execSpace, 0, X.getLocalLength ());
         memory_space memSpace;
         if (X.getNumVectors () == size_t (1) || ! X.isConstantStride ()) {
           const size_t numVecs = X.getNumVectors ();
           for (size_t j = 0; j < numVecs; ++j) {
             auto X_j = X.getVectorNonConst (j);
-            // Generic lambdas need C++14, so we need a typedef here.
+            // Help GCC 4.9.3 deduce the type of *X_j.
+            // See discussion here:
+            // https://github.com/trilinos/Trilinos/pull/5115
+            Tpetra::Vector<SC, LO, GO, NT>& X_j_ref = *X_j;
             using read_write_view_type =
               with_local_access_function_argument_type<
-                decltype (readWrite (*X_j).on (memSpace))>;
+                decltype (readWrite (X_j_ref).on (memSpace))>;
             withLocalAccess
               ([=] (const read_write_view_type& X_j_lcl) {
                 using functor_type = VectorForEachLoopBody<
                   read_write_view_type, UserFunctionType, LO>;
                 Kokkos::parallel_for (kernelLabel, range,
                                       functor_type (X_j_lcl, f));
-              }, readWrite (*X_j).on (memSpace));
+              }, readWrite (X_j_ref).on (memSpace));
           }
         }
         else {
