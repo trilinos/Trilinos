@@ -1,9 +1,9 @@
-/*
 // @HEADER
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,25 +35,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
 // @HEADER
-*/
 
-#include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Include Files
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+// Panzer
+#include "PanzerDiscFE_config.hpp"
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
+#include "Panzer_ZeroContributedField.hpp"
+#include "Panzer_ZeroContributedField_impl.hpp"
 
-#include "Tpetra_Experimental_BlockMultiVector_def.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
-
-namespace Tpetra {
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_INSTANT)
-
-} // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Instantiate the class.
+//
+///////////////////////////////////////////////////////////////////////////////
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::ZeroContributedField)

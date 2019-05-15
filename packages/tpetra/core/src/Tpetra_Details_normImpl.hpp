@@ -39,20 +39,68 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_DETAILS_NORMIMPL_DEF_HPP
-#define TPETRA_DETAILS_NORMIMPL_DEF_HPP
+#ifndef TPETRA_DETAILS_NORMIMPL_HPP
+#define TPETRA_DETAILS_NORMIMPL_HPP
 
-/// \file Tpetra_Details_normImpl_def.hpp
-/// \brief Definition of the Tpetra::Details::normImpl function
+/// \file Tpetra_Details_normImpl.hpp
+/// \brief Declaration and definition of Tpetra::Details::normImpl,
+///   which is an implementation detail of Tpetra::MultiVector.
+///
+/// \warning This file is an implementation detail of Tpetra.  Do not
+///   include this header file directly in your code.  Do not depend
+///   on the contents of this file; they may change or disappear at
+///   any time.
 
-#include "Tpetra_Details_normImpl_decl.hpp" // for the enum
-// #include "Tpetra_Details_Behavior.hpp"
-// #include "Tpetra_Details_isInterComm.hpp"
-// #include "Tpetra_Details_Profiling.hpp"
+#include "TpetraCore_config.h"
+#include "Kokkos_Core.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "KokkosBlas.hpp"
 #include "Kokkos_ArithTraits.hpp"
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  template<class T>
+  class ArrayView; // forward declaration
+  template<class OrdinalType>
+  class Comm; // forward declaration
+}
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+////////////////////////////////////////////////////////////
+// Declarations start here
+////////////////////////////////////////////////////////////
+
+namespace Tpetra {
+namespace Details {
+
+//! Input argument for normImpl() (which see).
+enum EWhichNorm {
+  NORM_ONE, //<! Use the one-norm
+  NORM_TWO, //<! Use the two-norm
+  NORM_INF  //<! Use the infinity-norm
+};
+
+//! Implementation of MultiVector norms.
+template <class ValueType,
+          class ArrayLayout,
+          class DeviceType,
+          class MagnitudeType>
+void
+normImpl (MagnitudeType norms[],
+          const Kokkos::View<const ValueType**, ArrayLayout, DeviceType>& X,
+          const EWhichNorm whichNorm,
+          const Teuchos::ArrayView<const size_t>& whichVecs,
+          const bool isConstantStride,
+          const bool isDistributed,
+          const Teuchos::Comm<int>* comm);
+
+} // namespace Details
+} // namespace Tpetra
+
+////////////////////////////////////////////////////////////
+// Definitions start here
+////////////////////////////////////////////////////////////
 
 namespace Tpetra {
 namespace Details {
@@ -277,24 +325,4 @@ normImpl (MagnitudeType norms[],
 } // namespace Details
 } // namespace Tpetra
 
-#define TPETRA_DETAILS_NORMIMPL_INSTANT( SC, NT ) \
-namespace Details { \
-  template void \
-  normImpl< \
-    Kokkos::ArithTraits<SC>::val_type, \
-    Kokkos::LayoutLeft, \
-    NT::device_type, \
-    Kokkos::ArithTraits<SC>::mag_type \
-  > (Kokkos::ArithTraits<SC>::mag_type[], \
-     const Kokkos::View< \
-       const Kokkos::ArithTraits<SC>::val_type**, \
-       Kokkos::LayoutLeft, \
-       NT::device_type>&, \
-     const EWhichNorm, \
-     const Teuchos::ArrayView<const size_t>&, \
-     const bool, \
-     const bool, \
-     const Teuchos::Comm<int>* ); \
-}
-
-#endif // TPETRA_DETAILS_NORMIMPL_DEF_HPP
+#endif // TPETRA_DETAILS_NORMIMPL_HPP

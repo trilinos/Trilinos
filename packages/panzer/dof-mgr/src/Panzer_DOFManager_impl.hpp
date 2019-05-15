@@ -150,14 +150,14 @@ DOFManager<LO,GO>::DOFManager()
 { }
 
 template <typename LO, typename GO>
-DOFManager<LO,GO>::DOFManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
+DOFManager<LO,GO>::DOFManager(const Teuchos::RCP<ConnManager> & connMngr,MPI_Comm mpiComm)
   : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false), useNeighbors_(false)
 {
   setConnManager(connMngr,mpiComm);
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr, MPI_Comm mpiComm)
+void DOFManager<LO,GO>::setConnManager(const Teuchos::RCP<ConnManager> & connMngr, MPI_Comm mpiComm)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager::setConnManager: setConnManager cannot be called after "
@@ -942,8 +942,8 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
       const std::vector<LO> & fieldIds= fa_fps_[b]->fieldIds();
       const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
       for (size_t l = 0; l < myElements.size(); ++l) {
-        LO connSize = connMngr_->getConnectivitySize(myElements[l]);
-        const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
+        auto connSize = connMngr_->getConnectivitySize(myElements[l]);
+        const auto * elmtConn = connMngr_->getConnectivity(myElements[l]);
         int offset=0;
         for (int c = 0; c < connSize; ++c) {
           size_t lid = overlapmap->getLocalElement(elmtConn[c]);
@@ -1194,9 +1194,9 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
         eOrientation[s] = 1; // put in 1 by default
 
       // get geometry ids
-      LO connSz = connMngr_->getConnectivitySize(elmts[e]);
-      const GO * connPtr = connMngr_->getConnectivity(elmts[e]);
-      const std::vector<GO> connectivity(connPtr,connPtr+connSz);
+      auto connSz = connMngr_->getConnectivitySize(elmts[e]);
+      const panzer::Ordinal64 * connPtr = connMngr_->getConnectivity(elmts[e]);
+      const std::vector<panzer::Ordinal64> connectivity(connPtr,connPtr+connSz);
 
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
 
@@ -1221,9 +1221,9 @@ void DOFManager<LO,GO>::getElementOrientation(LO localElmtId,std::vector<double>
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > DOFManager<LocalOrdinalT,GlobalOrdinalT>::resetIndices()
+Teuchos::RCP<ConnManager> DOFManager<LocalOrdinalT,GlobalOrdinalT>::resetIndices()
 {
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_;
+   Teuchos::RCP<ConnManager> connMngr = connMngr_;
 
    connMngr_ = Teuchos::null;
 
@@ -1281,8 +1281,8 @@ buildOverlapMapFromElements(const ElementBlockAccess & access) const
   for (size_t i = 0; i < blockOrder_.size(); ++i) {
     const std::vector<LO> & myElements = access.getElementBlock(blockOrder_[i]);
     for (size_t e = 0; e < myElements.size(); ++e) {
-      LO connSize = connMngr_->getConnectivitySize(myElements[e]);
-      const GO * elmtConn = connMngr_->getConnectivity(myElements[e]);
+      auto connSize = connMngr_->getConnectivitySize(myElements[e]);
+      const panzer::Ordinal64 * elmtConn = connMngr_->getConnectivity(myElements[e]);
       for (int k = 0; k < connSize; ++k) {
         overlapset.insert(elmtConn[k]);
       }
@@ -1334,8 +1334,8 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
     //
     //
     for (size_t l = 0; l < myElements.size(); ++l) {
-      LO connSize = connMngr_->getConnectivitySize(myElements[l]);
-      const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
+      auto connSize = connMngr_->getConnectivitySize(myElements[l]);
+      const panzer::Ordinal64 * elmtConn = connMngr_->getConnectivity(myElements[l]);
       std::vector<GO> localOrdering;
       int offset=0;
       for (int c = 0; c < connSize; ++c) {

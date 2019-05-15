@@ -101,7 +101,7 @@ namespace panzer {
 			 std::vector<panzer::BC>& bcs);
 
   struct AssemblyPieces {
-    RCP<panzer::FieldManagerBuilder> fmb;  
+    RCP<panzer::FieldManagerBuilder> fmb;
     RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
     RCP<panzer::GlobalData> gd;
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
@@ -122,8 +122,8 @@ namespace panzer {
                            AssemblyPieces & ap,
                            bool useBlocking=false);
 
-  bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
-                                  const Thyra::VectorBase<double> & b, 
+  bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a,
+                                  const Thyra::VectorBase<double> & b,
                                   double tolerance, bool write_to_cout=false);
 
   // Test that the response library can build the correct residual and jacobian
@@ -178,7 +178,7 @@ namespace panzer {
       in_args.set_x_dot(x_dot);
       in_args.set_alpha(alpha);
       in_args.set_beta(beta);
-      
+
       OutArgs out_args = me->createOutArgs();
       f_me = Thyra::createMember(*me->get_f_space());
       J_me = me->create_W_op();
@@ -189,9 +189,9 @@ namespace panzer {
     }
 
     bool residualType = true;
-    RCP<ResponseLibrary<Traits> > rLibrary 
-        = Teuchos::rcp(new ResponseLibrary<Traits>(ap.wkstContainer,ap.dofManager,ap.lof,residualType)); 
- 
+    RCP<ResponseLibrary<Traits> > rLibrary
+        = Teuchos::rcp(new ResponseLibrary<Traits>(ap.wkstContainer,ap.dofManager,ap.lof,residualType));
+
     // verify the residual type
     TEST_ASSERT(rLibrary->isResidualType());
 
@@ -219,9 +219,9 @@ namespace panzer {
       TEST_ASSERT(rLibrary->responseEvaluatorsBuilt());
     }
 
-    RCP<Response_Residual<Traits::Residual> > response_residual = 
+    RCP<Response_Residual<Traits::Residual> > response_residual =
       rcp_dynamic_cast<Response_Residual<Traits::Residual> >(rLibrary->getResponse<Traits::Residual>("RESIDUAL"));
-    RCP<Response_Residual<Traits::Jacobian> > response_jacobian = 
+    RCP<Response_Residual<Traits::Jacobian> > response_jacobian =
       rcp_dynamic_cast<Response_Residual<Traits::Jacobian> >(rLibrary->getResponse<Traits::Jacobian>("RESIDUAL"));
 
     Teuchos::RCP<panzer::ReadOnlyVector_GlobalEvaluationData> resp_param_ged = ap.param_lof->buildReadOnlyDomainContainer();
@@ -239,7 +239,7 @@ namespace panzer {
       xContainer->setOwnedVector(x);
       xdotContainer->setOwnedVector(x_dot);
 
-      // setup output arguments for the residual response 
+      // setup output arguments for the residual response
       response_residual->setResidual(response_residual->allocateResidualVector());
 
       // setup in arguments
@@ -276,7 +276,7 @@ namespace panzer {
       xContainer->setOwnedVector(x);
       xdotContainer->setOwnedVector(x_dot);
 
-      // setup output arguments for the residual response 
+      // setup output arguments for the residual response
       response_jacobian->setJacobian(response_jacobian->allocateJacobian());
 
       // setup in arguments
@@ -296,7 +296,7 @@ namespace panzer {
       Thyra::LinearOpTester<double> tester;
       tester.show_all_tests(true);
       tester.set_all_error_tol(10.0 * std::numeric_limits<double>::epsilon());
-      tester.num_random_vectors(20);      
+      tester.num_random_vectors(20);
 
       Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
       const bool op_cmp = tester.compare( *J_me, *response_jacobian->getJacobian(), Teuchos::ptrFromRef(fout));
@@ -305,12 +305,12 @@ namespace panzer {
   }
 
   bool comparison(double a,double b)
-  { 
+  {
     double exact = std::fabs(a+b)/2.0;
 
     if(exact>1e-12)
       return (std::fabs(a-b)/exact) < 1e-12;
-    else 
+    else
       return (std::fabs(a-b)) < 1e-12;
   }
 
@@ -347,9 +347,9 @@ namespace panzer {
     double beta = Teuchos::ScalarTraits<double>::nan();
 
     bool residualType = true;
-    RCP<ResponseLibrary<Traits> > rLibrary 
-        = Teuchos::rcp(new ResponseLibrary<Traits>(ap.wkstContainer,ap.dofManager,ap.param_lof,residualType)); 
- 
+    RCP<ResponseLibrary<Traits> > rLibrary
+        = Teuchos::rcp(new ResponseLibrary<Traits>(ap.wkstContainer,ap.dofManager,ap.param_lof,residualType));
+
     // verify the residual type
     TEST_ASSERT(rLibrary->isResidualType());
 
@@ -374,7 +374,7 @@ namespace panzer {
       TEST_ASSERT(rLibrary->responseEvaluatorsBuilt());
     }
 
-    RCP<Response_Residual<Traits::Jacobian> > response_jacobian = 
+    RCP<Response_Residual<Traits::Jacobian> > response_jacobian =
       rcp_dynamic_cast<Response_Residual<Traits::Jacobian> >(rLibrary->getResponse<Traits::Jacobian>("RESIDUAL"));
 
     Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> resp_param_ged = ap.param_lof->buildReadOnlyDomainContainer();
@@ -395,7 +395,7 @@ namespace panzer {
       xContainer->setOwnedVector(x);
       xdotContainer->setOwnedVector(x_dot);
 
-      // setup output arguments for the residual response 
+      // setup output arguments for the residual response
       response_jacobian->setJacobian(response_jacobian->allocateJacobian());
 
       // setup in arguments
@@ -418,7 +418,7 @@ namespace panzer {
 
     // test the jacobian for correctness
     {
- 
+
       // build vectors for each type of node
       std::vector<double> corner(4);
       corner[0] = 1./1152.; corner[1] = 1./576.;
@@ -428,11 +428,11 @@ namespace panzer {
       edge[0] = 1./1152.; edge[1] = 1./1152.; edge[2] = 1./576.;
       edge[3] = 1./576.;  edge[4] = 1./288.;  edge[5] = 1./144.;
 
-      std::vector<double> volume(9); 
+      std::vector<double> volume(9);
       volume[0] = 1./1152.; volume[1] = 1./1152.; volume[2] = 1./1152.;
       volume[3] = 1./1152.; volume[4] = 1./288.;  volume[5] = 1./288.;
       volume[6] = 1./288.;  volume[7] = 1./288.;  volume[8] = 1./72.;
-      
+
       RCP<const Thyra::LinearOpBase<double> > thJac = response_jacobian->getJacobian();
       RCP<const Epetra_CrsMatrix> jac = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*thJac));
 
@@ -463,7 +463,7 @@ namespace panzer {
                                     corner.begin(),corner.end(),comparison);
 
           // test passed this row corresponds to a corner
-          if(found_itr!=corner.end()) 
+          if(found_itr!=corner.end())
             continue;
 
           ///////////////////////////////////////////////////////////////////////
@@ -472,7 +472,7 @@ namespace panzer {
                                     edge.begin(),edge.end(),comparison);
 
           // test passed this row corresponds to a edge
-          if(found_itr!=edge.end()) 
+          if(found_itr!=edge.end())
             continue;
 
           ///////////////////////////////////////////////////////////////////////
@@ -481,7 +481,7 @@ namespace panzer {
                                     volume.begin(),volume.end(),comparison);
 
           // test passed this row corresponds to a volume
-          if(found_itr!=volume.end()) 
+          if(found_itr!=volume.end())
             continue;
 
           ///////////////////////////////////////////////////////////////////////
@@ -494,10 +494,10 @@ namespace panzer {
           out << std::endl;
         }
         else {
-          TEST_ASSERT(sorted_values[0]==0.0); 
+          TEST_ASSERT(sorted_values[0]==0.0);
           TEST_ASSERT(sorted_values[sorted_values.size()-1]==0.0);
         }
-                      
+
       }
     }
   }
@@ -532,7 +532,7 @@ namespace panzer {
     bool build_transient_support = true;
 
     user_app::BCFactory bc_factory;
-    RCP<PME> me 
+    RCP<PME> me
         = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
     pIndex = me->addDistributedParameter("DENSITY",th_param_lof->getThyraDomainSpace(),
                                          ap.param_ged,param_density,ap.param_dofManager);
@@ -547,8 +547,8 @@ namespace panzer {
     RCP<Thyra::LinearOpBase<double> > DfDp = me->create_DfDp_op(pIndex);
 
     TEST_ASSERT(DfDp!=Teuchos::null);
-    TEST_ASSERT(DfDp->range()->isCompatible(*me->get_f_space()));   
-    TEST_ASSERT(DfDp->domain()->isCompatible(*th_param_lof->getThyraDomainSpace()));   
+    TEST_ASSERT(DfDp->range()->isCompatible(*me->get_f_space()));
+    TEST_ASSERT(DfDp->domain()->isCompatible(*th_param_lof->getThyraDomainSpace()));
 
     RCP<Thyra::VectorBase<double> > x = Thyra::createMember(*me->get_x_space());
     RCP<Thyra::VectorBase<double> > x_dot = Thyra::createMember(*me->get_x_space());
@@ -568,7 +568,7 @@ namespace panzer {
 
     // test the jacobian for correctness
     {
- 
+
       // build vectors for each type of node
       std::vector<double> corner(4);
       corner[0] = 1./1152.; corner[1] = 1./576.;
@@ -578,11 +578,11 @@ namespace panzer {
       edge[0] = 1./1152.; edge[1] = 1./1152.; edge[2] = 1./576.;
       edge[3] = 1./576.;  edge[4] = 1./288.;  edge[5] = 1./144.;
 
-      std::vector<double> volume(9); 
+      std::vector<double> volume(9);
       volume[0] = 1./1152.; volume[1] = 1./1152.; volume[2] = 1./1152.;
       volume[3] = 1./1152.; volume[4] = 1./288.;  volume[5] = 1./288.;
       volume[6] = 1./288.;  volume[7] = 1./288.;  volume[8] = 1./72.;
-      
+
       RCP<const Epetra_CrsMatrix> jac = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*DfDp));
 
       TEUCHOS_ASSERT(jac!=Teuchos::null);
@@ -612,7 +612,7 @@ namespace panzer {
                                     corner.begin(),corner.end(),comparison);
 
           // test passed this row corresponds to a corner
-          if(found_itr!=corner.end()) 
+          if(found_itr!=corner.end())
             continue;
 
           ///////////////////////////////////////////////////////////////////////
@@ -621,7 +621,7 @@ namespace panzer {
                                     edge.begin(),edge.end(),comparison);
 
           // test passed this row corresponds to a edge
-          if(found_itr!=edge.end()) 
+          if(found_itr!=edge.end())
             continue;
 
           ///////////////////////////////////////////////////////////////////////
@@ -630,7 +630,7 @@ namespace panzer {
                                     volume.begin(),volume.end(),comparison);
 
           // test passed this row corresponds to a volume
-          if(found_itr!=volume.end()) 
+          if(found_itr!=volume.end())
             continue;
 
           ///////////////////////////////////////////////////////////////////////
@@ -643,10 +643,10 @@ namespace panzer {
           out << std::endl;
         }
         else {
-          TEST_ASSERT(sorted_values[0]==0.0); 
+          TEST_ASSERT(sorted_values[0]==0.0);
           TEST_ASSERT(sorted_values[sorted_values.size()-1]==0.0);
         }
-                      
+
       }
     }
   }
@@ -681,7 +681,7 @@ namespace panzer {
     bool build_transient_support = true;
 
     user_app::BCFactory bc_factory;
-    RCP<PME> me 
+    RCP<PME> me
         = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
     pIndex = me->addDistributedParameter("DENSITY",th_param_lof->getThyraDomainSpace(),
                                          ap.param_ged,param_density,ap.param_dofManager);
@@ -696,8 +696,8 @@ namespace panzer {
     RCP<Thyra::LinearOpBase<double> > DfDp = me->create_DfDp_op(pIndex);
 
     TEST_ASSERT(DfDp!=Teuchos::null);
-    TEST_ASSERT(DfDp->range()->isCompatible(*me->get_f_space()));   
-    TEST_ASSERT(DfDp->domain()->isCompatible(*th_param_lof->getThyraDomainSpace()));   
+    TEST_ASSERT(DfDp->range()->isCompatible(*me->get_f_space()));
+    TEST_ASSERT(DfDp->domain()->isCompatible(*th_param_lof->getThyraDomainSpace()));
 
     RCP<Thyra::VectorBase<double> > x = Thyra::createMember(*me->get_x_space());
     RCP<Thyra::VectorBase<double> > x_dot = Thyra::createMember(*me->get_x_space());
@@ -717,7 +717,7 @@ namespace panzer {
 
     // test the jacobian for correctness
     {
- 
+
       // build vectors for each type of node
       std::vector<double> corner(4);
       corner[0] = 1./1152.; corner[1] = 1./576.;
@@ -727,11 +727,11 @@ namespace panzer {
       edge[0] = 1./1152.; edge[1] = 1./1152.; edge[2] = 1./576.;
       edge[3] = 1./576.;  edge[4] = 1./288.;  edge[5] = 1./144.;
 
-      std::vector<double> volume(9); 
+      std::vector<double> volume(9);
       volume[0] = 1./1152.; volume[1] = 1./1152.; volume[2] = 1./1152.;
       volume[3] = 1./1152.; volume[4] = 1./288.;  volume[5] = 1./288.;
       volume[6] = 1./288.;  volume[7] = 1./288.;  volume[8] = 1./72.;
-     
+
       auto DfDp_blocked = rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<double> >(DfDp);
       TEST_ASSERT(DfDp_blocked!=Teuchos::null);
       TEST_EQUALITY(DfDp_blocked->productRange()->numBlocks(),2);
@@ -744,7 +744,7 @@ namespace panzer {
 
         TEST_EQUALITY(J_10->NormInf(),0.0);
       }
-      
+
       RCP<const Epetra_CrsMatrix> jac = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*DfDp_blocked->getBlock(0,0)));
 
       TEST_ASSERT(jac!=Teuchos::null);
@@ -774,7 +774,7 @@ namespace panzer {
                                     corner.begin(),corner.end(),comparison);
 
           // test passed this row corresponds to a corner
-          if(found_itr!=corner.end()) 
+          if(found_itr!=corner.end())
             continue;
 
           ///////////////////////////////////////////////////////////////////////
@@ -783,7 +783,7 @@ namespace panzer {
                                     edge.begin(),edge.end(),comparison);
 
           // test passed this row corresponds to a edge
-          if(found_itr!=edge.end()) 
+          if(found_itr!=edge.end())
             continue;
 
           ///////////////////////////////////////////////////////////////////////
@@ -792,7 +792,7 @@ namespace panzer {
                                     volume.begin(),volume.end(),comparison);
 
           // test passed this row corresponds to a volume
-          if(found_itr!=volume.end()) 
+          if(found_itr!=volume.end())
             continue;
 
           ///////////////////////////////////////////////////////////////////////
@@ -805,18 +805,18 @@ namespace panzer {
           out << std::endl;
         }
         else {
-          TEST_ASSERT(sorted_values[0]==0.0); 
+          TEST_ASSERT(sorted_values[0]==0.0);
           TEST_ASSERT(sorted_values[sorted_values.size()-1]==0.0);
         }
-                      
+
       }
     }
   }
 
-  bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
-                                  const Thyra::VectorBase<double> & b, 
+  bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a,
+                                  const Thyra::VectorBase<double> & b,
                                   double tolerance, bool write_to_cout)
-  {  
+  {
     bool is_equal = true;
 
     TEUCHOS_ASSERT(a.space()->dim() == b.space()->dim());
@@ -829,14 +829,14 @@ namespace panzer {
     dynamic_cast<const Thyra::SpmdVectorBase<double> &>(b).getLocalData(Teuchos::ptrFromRef(b_data));
 
     for (int i = 0; i < a_data.size(); ++i) {
-      
+
       std::string output = "    equal!: ";
-      
+
       if (std::fabs(a_data[i] - b_data[i]) > tolerance) {
 	      is_equal = false;
 	      output = "NOT equal!: ";
       }
-      
+
       if (write_to_cout)
 	      std::cout << output << a_data[i] << " - " << b_data[i] << " = " << (a_data[i] - b_data[i]) << std::endl;
     }
@@ -882,10 +882,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    }
     {
       std::size_t bc_id = 1;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -896,10 +896,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 2;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -910,24 +910,24 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
     }
   }
-  
+
   void buildAssemblyPieces(bool parameter_on,bool distr_parameter_on,
                            AssemblyPieces & ap,
                            bool useBlocking)
   {
     using Teuchos::RCP;
-  
+
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
-    
+
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
@@ -937,7 +937,7 @@ namespace panzer {
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> & bcs = ap.bcs;
     testInitialzation(ipb, bcs);
-    
+
 
     ap.fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
 
@@ -955,9 +955,9 @@ namespace panzer {
       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
-      
+
       int default_integration_order = 1;
-      
+
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
@@ -973,27 +973,27 @@ namespace panzer {
     // build worksets
     //////////////////////////////////////////////////////////////
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<ap.physicsBlocks.size();i++) 
+    for(size_t i=0;i<ap.physicsBlocks.size();i++)
       wkstContainer->setNeeds(ap.physicsBlocks[i]->elementBlockID(),ap.physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
     ap.wkstContainer = wkstContainer;
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
- 
-    // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+
+    // build the connection manager
+    const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     // build the state dof manager and LOF
     if(!useBlocking) {
       panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-      RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+      RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
            = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
       ap.dofManager = dofManager;
 
@@ -1015,10 +1015,10 @@ namespace panzer {
 
     // build the dof manager and LOF for DENSITY control
     if(distr_parameter_on) {
-      Teuchos::RCP<panzer::DOFManager<int,int> > dofManager 
+      Teuchos::RCP<panzer::DOFManager<int,int> > dofManager
           = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
-      Teuchos::RCP<Intrepid2FieldPattern> fp 
+      Teuchos::RCP<Intrepid2FieldPattern> fp
         = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<PHX::exec_space,double,double>("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
       dofManager->addField("eblock-0_0","DENSITY",fp);
       dofManager->addField("eblock-1_0","DENSITY",fp);
@@ -1034,11 +1034,11 @@ namespace panzer {
       ap.param_lof = linObjFactory;
     }
 
-    ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,ap.lof)); 
+    ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,ap.lof));
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
- 
+
     // Add in the application specific closure model factory
     user_app::MyModelFactory_TemplateBuilder cm_builder;
     cm_builder.setDistributedParameterLOF(ap.param_lof);

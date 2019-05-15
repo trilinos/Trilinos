@@ -579,10 +579,10 @@ namespace panzer_stk {
 
     // setup DOF manager
     /////////////////////////////////////////////
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager
-           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager
+           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
+    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);
     const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);

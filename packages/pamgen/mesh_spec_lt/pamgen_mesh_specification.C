@@ -1066,11 +1066,8 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
       border_element_list_size   += ms->getMSI(NUM_BORDER_ELEMS);
 
       long long * const * scnid    = ms->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_IDS);
-      long long * const * scnpid   = ms->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_PROC_IDS);
-      
       long long * const * sceid    = ms->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_IDS);
       long long * const * scsid    = ms->getMSPP(ms_lt::Mesh_Specification::COMM_SIDE_IDS);
-      long long * const * scepid   = ms->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_PROC_IDS);
 
       {
         int nncm = ms->getMSI(NUM_NODE_COMM_MAPS);
@@ -1082,7 +1079,7 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
 
 	  for (long long nctr = 0; nctr < nnodes; nctr ++){
 	    (node_proc_ids[proc_id]).push_back(scnid[ict][nctr]+node_offset);
-	    assert(proc_id == scnpid[ict][nctr]);
+	    assert(proc_id == ms->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_PROC_IDS)[ict][nctr]);
           }
         }
       }
@@ -1097,7 +1094,7 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
           long long nels =  ecmap_cnts[ict];
 	  for(long long ectr = 0; ectr < nels;ectr++){
 	    (element_proc_ids[proc_id]).push_back(std::pair<long,long>(sceid[ict][ectr]+element_offset,scsid[ict][ectr]));
-	    assert(proc_id == scepid[ict][ectr]);
+	    assert(proc_id == ms->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_PROC_IDS)[ict][ectr]);
           }
         }
       }

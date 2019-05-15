@@ -116,6 +116,11 @@
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#include <Amesos2_config.h>
+#include <Amesos2.hpp>
+#endif
+
 // Region MG headers
 #include "SetupRegionHierarchy_def.hpp"
 
@@ -154,7 +159,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string xmlFileName       = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
   std::string yamlFileName      = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
   int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
-  double      tol              = 1e-12;              clp.setOption("tol",                   &tol,              "solver convergence tolerance");
+  int         smootherIts       =  20;               clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
+  double      smootherDamp      = 0.67;              clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
+  double      tol               = 1e-12;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
 #ifdef HAVE_MUELU_TPETRA
@@ -1169,6 +1176,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // create region coordinates vector
   regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(revisedRowMapPerGrp[0],
                                                                                numDimensions);
+  using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
   /* Stuff for multi-level algorithm
    *
@@ -1190,6 +1199,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<std::vector<RCP<Import> > > regRowImporters; // regional row importers on each level
   Array<std::vector<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
   Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
+  RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > coarseCompositeDirectSolver = Teuchos::null;
 
 
   // Create multigrid hierarchy
@@ -1219,7 +1229,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         regInterfaceScalings,
                         coarseCompOp,
                         maxRegPerGID,
-                        compositeToRegionLIDs());
+                        compositeToRegionLIDs(),
+                        coarseCompositeDirectSolver);
 
 
   comm->barrier();
@@ -1273,10 +1284,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     /////////////////////////////////////////////////////////////////////////
 
     // define max iteration counts
-    const int maxVCycle = 200;
     const int maxFineIter = 20;
     const int maxCoarseIter = 100;
-    const double omega = 0.67;
 
     // Prepare output of residual norm to file
     RCP<std::ofstream> log;
@@ -1290,7 +1299,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
 
     // Richardson iterations
-    for (int cycle = 0; cycle < maxVCycle; ++cycle) {
+    for (int cycle = 0; cycle < maxIts; ++cycle) {
       // check for convergence
       {
         ////////////////////////////////////////////////////////////////////////
@@ -1314,7 +1323,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             (*log) << cycle << "\t" << normRes << "\n";
           }
 
-        if (normRes < 1.0e-12)
+        if (normRes < tol)
           break;
       }
 
@@ -1323,10 +1332,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       /////////////////////////////////////////////////////////////////////////
 
       //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-      vCycle(0, numLevels, maxFineIter, maxCoarseIter, omega, maxRegPerProc, regX, regB,
-             regMatrices,
+      vCycle(0, numLevels, smootherIts, maxCoarseIter, smootherDamp, maxRegPerProc,
+             regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, coarseCompOp);
+             regInterfaceScalings, coarseCompOp, coarseCompositeDirectSolver);
     }
   }
 

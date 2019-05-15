@@ -1624,7 +1624,7 @@ buildGhostedGraph(int i,int j,bool optimizeStorage) const
    rowProvider->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
                                                      // same element blocks
                                                         
-   const Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > conn_mgr = colProvider->getConnManagerBase();
+   const Teuchos::RCP<const ConnManager> conn_mgr = colProvider->getConnManager();
    const bool han = conn_mgr.is_null() ? false : conn_mgr->hasAssociatedNeighbors();
 
    // graph information about the mesh

@@ -1,8 +1,9 @@
 // @HEADER
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -34,54 +35,48 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
 // @HEADER
 
-#ifndef TPETRA_DETAILS_NORMIMPL_DECL_HPP
-#define TPETRA_DETAILS_NORMIMPL_DECL_HPP
+#ifndef   PANZER_ZEROCONTRIBUTEDFIELD_IMPL_HPP
+#define   PANZER_ZEROCONTRIBUTEDFIELD_IMPL_HPP
 
-/// \file Tpetra_Details_normImpl_def.hpp
-/// \brief Definition of the Tpetra::Details::normImpl function
+namespace panzer
+{
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  Constructor
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  ZeroContributedField<EvalT, Traits>::
+  ZeroContributedField(
+    const std::string& fieldName,
+    PHX::DataLayout&   layout)
+  {
+    using PHX::MDField;
+    using Teuchos::rcpFromRef;
+    field_ = MDField<ScalarT>(fieldName, rcpFromRef(layout));
+    this->addEvaluatedField(field_);
+    this->setName("ZeroContributedField:  " + field_.fieldTag().identifier());
+  } // end of Constructor
 
-#include "TpetraCore_config.h"
-#include "Kokkos_Core.hpp"
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  evaluateFields()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  void
+  ZeroContributedField<EvalT, Traits>::
+  evaluateFields(
+    typename Traits::EvalData /* d */)
+  {
+    field_.deep_copy(ScalarT(0.0));
+  } // end of evaluateFields()
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-namespace Teuchos {
-  template<class T>
-  class ArrayView; // forward declaration
-  template<class OrdinalType>
-  class Comm; // forward declaration
-}
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+} // end of namespace panzer
 
-namespace Tpetra {
-namespace Details {
-
-//! Input argument for normImpl() (which see).
-enum EWhichNorm {
-  NORM_ONE, //<! Use the one-norm
-  NORM_TWO, //<! Use the two-norm
-  NORM_INF  //<! Use the infinity-norm
-};
-
-//! Implementation of MultiVector norms.
-template <class ValueType,
-          class ArrayLayout,
-          class DeviceType,
-          class MagnitudeType>
-void
-normImpl (MagnitudeType norms[],
-          const Kokkos::View<const ValueType**, ArrayLayout, DeviceType>& X,
-          const EWhichNorm whichNorm,
-          const Teuchos::ArrayView<const size_t>& whichVecs,
-          const bool isConstantStride,
-          const bool isDistributed,
-          const Teuchos::Comm<int>* comm);
-
-} // namespace Details
-} // namespace Tpetra
-
-#endif // TPETRA_DETAILS_NORMIMPL_DECL_HPP
+#endif // PANZER_ZEROCONTRIBUTEDFIELD_IMPL_HPP

@@ -51,7 +51,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallback(
                                              const std::string & coordFieldName,
                                              const std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fps,
-                                             const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
+                                             const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager,
                                              const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi)
    : coordFieldName_(coordFieldName), fieldPatterns_(fps), connManager_(connManager), ugi_(ugi), coordinatesBuilt_(false)
 { }
@@ -100,11 +100,11 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldByKey(con
    double * y = const_cast<double *>(&ycoords_[0]);
    double * z = const_cast<double *>(&zcoords_[0]);
 
-   if(key=="x-coordinates") 
+   if(key=="x-coordinates")
       pl.set<double*>(key,x);
-   else if(key=="y-coordinates") 
+   else if(key=="y-coordinates")
       pl.set<double*>(key,y);
-   else if(key=="z-coordinates") 
+   else if(key=="z-coordinates")
       pl.set<double*>(key,z);
    else
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
@@ -125,7 +125,7 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
 
    std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
 
-   std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> >::const_iterator itr; 
+   std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> >::const_iterator itr;
    for(itr=fieldPatterns_.begin();itr!=fieldPatterns_.end();++itr) {
       std::string blockId = itr->first;
       Teuchos::RCP<const panzer::Intrepid2FieldPattern> fieldPattern = itr->second;
@@ -152,20 +152,20 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
       }
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > resultVec 
+   Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > resultVec
       = arrayToVector_->template getDataVector<double>(coordFieldName_,data);
 
    switch(resultVec->getNumVectors()) {
    case 3:
-      zcoords_.resize(resultVec->getLocalLength()); 
+      zcoords_.resize(resultVec->getLocalLength());
       resultVec->getVector(2)->get1dCopy(Teuchos::arrayViewFromVector(zcoords_));
       // Intentional fall-through.
    case 2:
-      ycoords_.resize(resultVec->getLocalLength()); 
+      ycoords_.resize(resultVec->getLocalLength());
       resultVec->getVector(1)->get1dCopy(Teuchos::arrayViewFromVector(ycoords_));
       // Intentional fall-through.
    case 1:
-      xcoords_.resize(resultVec->getLocalLength()); 
+      xcoords_.resize(resultVec->getLocalLength());
       resultVec->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(xcoords_));
       break;
    default:
@@ -177,6 +177,6 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
    coordinatesBuilt_ = true;
 }
 
-} 
+}
 
 #endif

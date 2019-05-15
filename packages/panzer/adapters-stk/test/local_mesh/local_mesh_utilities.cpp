@@ -81,14 +81,14 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
   // Make sure if fails when you pass in a null mesh
   {
     panzer_stk::STK_Interface mesh;
-    panzer::LocalMeshInfo<int,int> mesh_info;
+    panzer::LocalMeshInfo<int,panzer::Ordinal64> mesh_info;
 
-    TEST_THROW((generateLocalMeshInfo<int,int>(mesh, mesh_info)),std::logic_error);
+    TEST_THROW((generateLocalMeshInfo<int,panzer::Ordinal64>(mesh, mesh_info)),std::logic_error);
   }
 
   // 1D Mesh test
   {
-    auto mesh_info = buildLocalMeshInfo<int,int>({3},{2},{2.});
+    auto mesh_info = buildLocalMeshInfo<int,panzer::Ordinal64>({3},{2},{2.});
 
     // Make sure there are two blocks (eblock-0, and eblock-1)
     TEST_EQUALITY(mesh_info->element_blocks.size(), 2);
@@ -110,7 +110,7 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
 
   // 2D Mesh test
   {
-    auto mesh_info = buildLocalMeshInfo<int,int>({3,5},{4,3},{2.,6.});
+    auto mesh_info = buildLocalMeshInfo<int,panzer::Ordinal64>({3,5},{4,3},{2.,6.});
 
     // Make sure there are blocks
     TEST_EQUALITY(mesh_info->element_blocks.size(), 4*3);
@@ -142,7 +142,7 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
 
   // 3D Mesh test
   {
-    auto mesh_info = buildLocalMeshInfo<int,int>({3,5,2},{4,3,5},{2.,6.,1.});
+    auto mesh_info = buildLocalMeshInfo<int,panzer::Ordinal64>({3,5,2},{4,3,5},{2.,6.,1.});
 
     // Make sure there are blocks
     TEST_EQUALITY(mesh_info->element_blocks.size(), 4*3*5);

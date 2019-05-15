@@ -96,10 +96,10 @@ namespace panzer {
 
     // build DOF Manager (with a single HDiv basis)
     /////////////////////////////////////////////////////////////
- 
-    // build the connection manager 
-    const RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
-      conn_manager = rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
+
+    // build the connection manager
+    const RCP<panzer::ConnManager>
+      conn_manager = rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
         = rcp(new panzer::DOFManager<int,panzer::Ordinal64>(conn_manager,MPI_COMM_WORLD));
@@ -117,12 +117,12 @@ namespace panzer {
 
     // build WorksetContainer
     //////////////////////////////////////////////////////////////
-    
+
     panzer::IntegrationDescriptor sid(2*2, panzer::IntegrationDescriptor::SURFACE);
     std::map<std::string, panzer::WorksetNeeds> wkstRequirements;
     wkstRequirements[element_block].addIntegrator(sid);
 
-    RCP<panzer_stk::WorksetFactory> wkstFactory 
+    RCP<panzer_stk::WorksetFactory> wkstFactory
        = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = rcp(new panzer::WorksetContainer(wkstFactory,wkstRequirements));
@@ -134,7 +134,7 @@ namespace panzer {
     auto worksets = wkstContainer->getWorksets(workset_descriptor);
 
     TEST_ASSERT(worksets->size()==1);
-    
+
     auto rot_matrices = (*worksets)[0].getIntegrationValues(sid).surface_rotation_matrices;
     auto normals = (*worksets)[0].getIntegrationValues(sid).surface_normals;
 
@@ -142,10 +142,10 @@ namespace panzer {
     TEST_ASSERT(rot_matrices.extent_int(0)==7); // 7 cells (6 virtual, one owned)
     TEST_ASSERT(rot_matrices.extent_int(2)==3);
     TEST_ASSERT(rot_matrices.extent_int(3)==3);
-    out << "SIZES = " 
-        << rot_matrices.extent(0) << " " 
-        << rot_matrices.extent(1) << " " 
-        << rot_matrices.extent(2) << " " 
+    out << "SIZES = "
+        << rot_matrices.extent(0) << " "
+        << rot_matrices.extent(1) << " "
+        << rot_matrices.extent(2) << " "
         << rot_matrices.extent(3) << std::endl;
 
     out << std::endl;

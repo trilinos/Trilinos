@@ -46,8 +46,8 @@
 
 // WARNING: This code is experimental. Backwards compatibility should not be expected.
 
-#ifndef XPETRA_CRSMATRIXWRAP_HPP
-#define XPETRA_CRSMATRIXWRAP_HPP
+#ifndef XPETRA_CRSMATRIXWRAP_DECL_HPP
+#define XPETRA_CRSMATRIXWRAP_DECL_HPP
 
 #include <Kokkos_DefaultNode.hpp>
 
@@ -107,69 +107,28 @@ public:
   //! Constructor specifying fixed number of entries for each row.
   CrsMatrixWrap (const RCP<const Map>& rowMap,
                  size_t maxNumEntriesPerRow,
-                 Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
-    : finalDefaultView_ (false)
-  {
-    matrixData_ = CrsMatrixFactory::Build (rowMap, maxNumEntriesPerRow, pftype);
-    CreateDefaultView ();
-  }
+                 Xpetra::ProfileType pftype = Xpetra::DynamicProfile);
 
   //! Constructor specifying (possibly different) number of entries in each row.
   CrsMatrixWrap (const RCP<const Map>& rowMap,
                  const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-                 ProfileType pftype = Xpetra::DynamicProfile)
-    : finalDefaultView_ (false)
-  {
-    matrixData_ = CrsMatrixFactory::Build(rowMap, NumEntriesPerRowToAlloc, pftype);
-    CreateDefaultView ();
-  }
+                 ProfileType pftype = Xpetra::DynamicProfile);
 
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
-    : finalDefaultView_(false)
-  {
-    // Set matrix data
-    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, maxNumEntriesPerRow, pftype);
-
-    // Default view
-    CreateDefaultView();
-  }
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile);
 
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
-    : finalDefaultView_(false)
-  {
-    // Set matrix data
-    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, NumEntriesPerRowToAlloc, pftype);
-
-    // Default view
-    CreateDefaultView();
-  }
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Xpetra::ProfileType pftype = Xpetra::DynamicProfile);
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const local_matrix_type& lclMatrix, const Teuchos::RCP<Teuchos::ParameterList>& params = null)
-    : finalDefaultView_(false)
-  {
-    // Set matrix data
-    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, lclMatrix, params);
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const local_matrix_type& lclMatrix, const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
-    // Default view
-    CreateDefaultView();
-  }
   //! Constructor specifying fixed number of entries for each row and column map
   CrsMatrixWrap(const local_matrix_type& lclMatrix, const RCP<const Map> &rowMap, const RCP<const Map>& colMap,
                 const RCP<const Map>& domainMap = Teuchos::null, const RCP<const Map>& rangeMap = Teuchos::null,
-                const Teuchos::RCP<Teuchos::ParameterList>& params = null)
-    : finalDefaultView_(false)
-  {
-    // Set matrix data
-    matrixData_ = CrsMatrixFactory::Build(lclMatrix, rowMap, colMap, domainMap, rangeMap, params);
-
-    // Default view
-    CreateDefaultView();
-  }
+                const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -177,28 +136,12 @@ public:
 #endif
 #endif
 
-  CrsMatrixWrap(RCP<CrsMatrix> matrix)
-    : finalDefaultView_(matrix->isFillComplete())
-  {
-    // Set matrix data
-    matrixData_ = matrix;
+  CrsMatrixWrap(RCP<CrsMatrix> matrix);
 
-    // Default view
-    CreateDefaultView();
-  }
-
-  CrsMatrixWrap(const RCP<const CrsGraph>& graph, const RCP<ParameterList>& paramList = Teuchos::null)
-    : finalDefaultView_(false)
-  {
-    // Set matrix data
-    matrixData_ = CrsMatrixFactory::Build(graph, paramList);
-
-    // Default view
-    CreateDefaultView();
-  }
+  CrsMatrixWrap(const RCP<const CrsGraph>& graph, const RCP<ParameterList>& paramList = Teuchos::null);
 
   //! Destructor
-  virtual ~CrsMatrixWrap() {}
+  virtual ~CrsMatrixWrap();
 
   //@}
 
@@ -218,9 +161,7 @@ public:
       \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
       \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
   */
-  void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
-    matrixData_->insertGlobalValues(globalRow, cols, vals);
-  }
+  void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals);
 
   //! Insert matrix entries, using local IDs.
   /** All index values must be in the local space.
@@ -230,9 +171,7 @@ public:
 
       \post <tt>isLocallyIndexed() == true</tt>
   */
-  void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
-    matrixData_->insertLocalValues(localRow, cols, vals);
-  }
+  void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals);
 
   //! \brief Replace matrix entries, using global IDs.
   /** All index values must be in the global space.
@@ -242,7 +181,7 @@ public:
   \note If (globalRow,cols[i]) corresponds to an entry that is duplicated in this matrix row (likely because it was inserted more than once and fillComplete() has not been called in the interim), the behavior of this function is not defined. */
   void replaceGlobalValues(GlobalOrdinal globalRow,
                            const ArrayView<const GlobalOrdinal> &cols,
-                           const ArrayView<const Scalar>        &vals) { matrixData_->replaceGlobalValues(globalRow, cols, vals); }
+                           const ArrayView<const Scalar>        &vals);
 
   //! Replace matrix entries, using local IDs.
   /** All index values must be in the local space.
@@ -250,15 +189,13 @@ public:
   */
   void replaceLocalValues(LocalOrdinal localRow,
                           const ArrayView<const LocalOrdinal> &cols,
-                          const ArrayView<const Scalar>       &vals) { matrixData_->replaceLocalValues(localRow, cols, vals); }
+                          const ArrayView<const Scalar>       &vals);
 
   //! Set all matrix entries equal to scalar
-  virtual void setAllToScalar(const Scalar &alpha) { matrixData_->setAllToScalar(alpha); }
+  virtual void setAllToScalar(const Scalar &alpha);
 
   //! Scale the current values of a matrix, this = alpha*this.
-  void scale(const Scalar &alpha) {
-    matrixData_->scale(alpha);
-  }
+  void scale(const Scalar &alpha);
 
   //@}
 
@@ -273,9 +210,7 @@ public:
     \post  <tt>isFillActive() == true<tt>
     \post  <tt>isFillComplete() == false<tt>
   */
-  void resumeFill(const RCP< ParameterList > &params=null) {
-    matrixData_->resumeFill(params);
-  }
+  void resumeFill(const RCP< ParameterList > &params=null);
 
   /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
@@ -288,12 +223,7 @@ public:
   \post <tt>isFillComplete() == true<tt>
   \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
   */
-  void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, const RCP<Teuchos::ParameterList> &params = null) {
-    matrixData_->fillComplete(domainMap, rangeMap, params);
-
-    // Update default view with the colMap because colMap can be <tt>null</tt> until fillComplete() is called.
-    updateDefaultView();
-  }
+  void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, const RCP<Teuchos::ParameterList> &params = null);
 
   /*! \brief Signal that data entry is complete.
 
@@ -309,78 +239,51 @@ public:
   \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
   */
   //TODO : Get ride of "Tpetra"::OptimizeOption
-  void fillComplete(const RCP<ParameterList> &params = null) {
-    matrixData_->fillComplete(params);
-
-    // Update default view with the colMap because colMap can be <tt>null</tt> until fillComplete() is called.
-    updateDefaultView();
-  }
+  void fillComplete(const RCP<ParameterList> &params = null);
 
   //@}
 
   //! Returns the number of global rows in this matrix.
   /** Undefined if isFillActive().
    */
-  global_size_t getGlobalNumRows() const {
-    return matrixData_->getGlobalNumRows();
-  }
+  global_size_t getGlobalNumRows() const;
 
   //! \brief Returns the number of global columns in the matrix.
   /** Undefined if isFillActive().
    */
-  global_size_t getGlobalNumCols() const {
-    return matrixData_->getGlobalNumCols();
-  }
+  global_size_t getGlobalNumCols() const;
 
   //! Returns the number of matrix rows owned on the calling node.
-  size_t getNodeNumRows() const {
-    return matrixData_->getNodeNumRows();
-  }
+  size_t getNodeNumRows() const;
 
   //! Returns the global number of entries in this matrix.
-  global_size_t getGlobalNumEntries() const {
-    return matrixData_->getGlobalNumEntries();
-  }
+  global_size_t getGlobalNumEntries() const;
 
   //! Returns the local number of entries in this matrix.
-  size_t getNodeNumEntries() const {
-    return matrixData_->getNodeNumEntries();
-  }
+  size_t getNodeNumEntries() const;
 
   //! Returns the current number of entries on this node in the specified local row.
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
-  size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
-    return matrixData_->getNumEntriesInLocalRow(localRow);
-  }
+  size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
 
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   /** Undefined if isFillActive().
    */
-  size_t getGlobalMaxNumRowEntries() const {
-    return matrixData_->getGlobalMaxNumRowEntries();
-  }
+  size_t getGlobalMaxNumRowEntries() const;
 
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
   /** Undefined if isFillActive().
    */
-  size_t getNodeMaxNumRowEntries() const {
-    return matrixData_->getNodeMaxNumRowEntries();
-  }
+  size_t getNodeMaxNumRowEntries() const;
 
   //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
-  bool isLocallyIndexed() const {
-    return matrixData_->isLocallyIndexed();
-  }
+  bool isLocallyIndexed() const;
 
   //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
-  bool isGloballyIndexed() const {
-    return matrixData_->isGloballyIndexed();
-  }
+  bool isGloballyIndexed() const;
 
   //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
-  bool isFillComplete() const {
-    return matrixData_->isFillComplete();
-  }
+  bool isFillComplete() const;
 
   //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
   /*!
@@ -399,9 +302,7 @@ public:
                        const ArrayView<LocalOrdinal> &Indices,
                        const ArrayView<Scalar> &Values,
                        size_t &NumEntries
-                       ) const {
-    matrixData_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
-  }
+                       ) const;
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -413,9 +314,7 @@ public:
 
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
-  void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const {
-     matrixData_->getGlobalRowView(GlobalRow, indices, values);
-  }
+  void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const;
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
@@ -427,46 +326,30 @@ public:
 
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
-  void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const {
-     matrixData_->getLocalRowView(LocalRow, indices, values);
-  }
+  void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const;
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
-  void getLocalDiagCopy(Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
-    matrixData_->getLocalDiagCopy(diag);
-  }
+  void getLocalDiagCopy(Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
 
   //! Get offsets of the diagonal entries in the matrix.
-  void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
-    matrixData_->getLocalDiagOffsets(offsets);
-  }
+  void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const;
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
-  void getLocalDiagCopy(Xpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
-    matrixData_->getLocalDiagCopy(diag,offsets);
-  }
+  void getLocalDiagCopy(Xpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const;
 
   //! Get Frobenius norm of the matrix
-  typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const {
-    return matrixData_->getFrobeniusNorm();
-  }
+  typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
 
   //! Left scale matrix using the given vector entries
-  void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
-    matrixData_->leftScale(x);
-  }
+  void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
 
   //! Right scale matrix using the given vector entries
-  void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
-    matrixData_->rightScale(x);
-  }
+  void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
 
   //! Returns true if globalConstants have been computed; false otherwise
-  bool haveGlobalConstants() const {
-    return matrixData_->haveGlobalConstants();
-  }
+  bool haveGlobalConstants() const;
 
   //@}
 
@@ -501,39 +384,24 @@ public:
                    Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
                    Scalar alpha = ScalarTraits<Scalar>::one(),
-                   Scalar beta = ScalarTraits<Scalar>::zero()) const {
-
-    matrixData_->apply(X,Y,mode,alpha,beta);
-  }
+                   Scalar beta = ScalarTraits<Scalar>::zero()) const;
 
   //! \brief Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
-    return matrixData_->getDomainMap();
-  }
+  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
   //! Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
-    return matrixData_->getRangeMap();
-  }
+  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
   //! This might be <tt>null</tt> until fillComplete() is called.
-  const RCP<const Map> & getColMap() const { return getColMap(Matrix::GetCurrentViewLabel()); }
+  const RCP<const Map> & getColMap() const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
-  const RCP<const Map> & getColMap(viewLabel_t viewLabel) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(Matrix::operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetColMap(): view '" + viewLabel + "' does not exist.");
-    updateDefaultView(); // If CrsMatrix::fillComplete() have been used instead of CrsMatrixWrap::fillComplete(), the default view is updated.
-    return Matrix::operatorViewTable_.get(viewLabel)->GetColMap();
-  }
+  const RCP<const Map> & getColMap(viewLabel_t viewLabel) const;
 
-  void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map>& newMap) {
-    matrixData_->removeEmptyProcessesInPlace(newMap);
-    this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetRowMap(matrixData_->getRowMap());
-    this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetColMap(matrixData_->getColMap());
-  }
+  void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map>& newMap);
 
   //@}
 
@@ -541,37 +409,23 @@ public:
   //{@
 
   //! Access function for the Tpetra::Map this DistObject was constructed with.
-  const Teuchos::RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const {
-    return matrixData_->getMap();
-  }
+  const Teuchos::RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const;
 
   //! Import.
   void doImport(const Matrix &source,
-                const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) {
-    const CrsMatrixWrap & sourceWrp = dynamic_cast<const CrsMatrixWrap &>(source);
-    matrixData_->doImport(*sourceWrp.getCrsMatrix(), importer, CM);
-  }
+                const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
 
   //! Export.
   void doExport(const Matrix &dest,
-                const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
-    const CrsMatrixWrap & destWrp = dynamic_cast<const CrsMatrixWrap &>(dest);
-    matrixData_->doExport(*destWrp.getCrsMatrix(), importer, CM);
-  }
+                const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM);
 
   //! Import (using an Exporter).
   void doImport(const Matrix &source,
-                const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
-    const CrsMatrixWrap & sourceWrp = dynamic_cast<const CrsMatrixWrap &>(source);
-    matrixData_->doImport(*sourceWrp.getCrsMatrix(), exporter, CM);
-  }
+                const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
 
   //! Export (using an Importer).
   void doExport(const Matrix &dest,
-                const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
-    const CrsMatrixWrap & destWrp = dynamic_cast<const CrsMatrixWrap &>(dest);
-    matrixData_->doExport(*destWrp.getCrsMatrix(), exporter, CM);
-  }
+                const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
 
   // @}
 
@@ -579,31 +433,14 @@ public:
   //@{
 
   /** \brief Return a simple one-line description of this object. */
-  std::string description() const {
-    return "Xpetra::CrsMatrixWrap";
-  }
+  std::string description() const;
 
   /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
-    //     Teuchos::EVerbosityLevel vl = verbLevel;
-    //     if (vl == VERB_DEFAULT) vl = VERB_LOW;
-    //     RCP<const Comm<int> > comm = this->getComm();
-    //     const int myImageID = comm->getRank(),
-    //       numImages = comm->getSize();
-
-    //     if (myImageID == 0) out << this->description() << std::endl;
-
-    matrixData_->describe(out,verbLevel);
-
-    // Teuchos::OSTab tab(out);
-  }
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
   //! @name Overridden from Teuchos::LabeledObject
   //@{
-  void setObjectLabel( const std::string &objectLabel ) {
-    Teuchos::LabeledObject::setObjectLabel(objectLabel);
-    matrixData_->setObjectLabel(objectLabel);
-  }
+  void setObjectLabel( const std::string &objectLabel );
   //@}
 
 
@@ -612,9 +449,7 @@ public:
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   /// \brief Access the underlying local Kokkos::CrsMatrix object
-  local_matrix_type getLocalMatrix () const {
-    return matrixData_->getLocalMatrix();
-  }
+  local_matrix_type getLocalMatrix () const;
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -624,56 +459,30 @@ public:
 
   // JG: Added:
 
-  bool hasCrsGraph() const {return true;}
+  bool hasCrsGraph() const;
 
   //! Returns the CrsGraph associated with this matrix.
-  RCP<const CrsGraph> getCrsGraph() const { return matrixData_->getCrsGraph(); }
+  RCP<const CrsGraph> getCrsGraph() const;
 
-  RCP<CrsMatrix> getCrsMatrix() const {  return matrixData_; }
+  RCP<CrsMatrix> getCrsMatrix() const;
 
   //@}
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
   template<class Node2>
-  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const {
-#ifdef HAVE_XPETRA_TPETRA
-    RCP<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tMatrix =
-        Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrixData_);
-    if (tMatrix == Teuchos::null)
-      throw Xpetra::Exceptions::RuntimeError("clone() functionality is only available for Tpetra");
-
-    return RCP<CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(tMatrix->clone(node2)));
-    // TODO: inherit strided maps/views ?
-#else
-    return Teuchos::null;
-#endif
-  }
+  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const;
 #endif
 
 private:
 
   // Default view is created after fillComplete()
   // Because ColMap might not be available before fillComplete().
-  void CreateDefaultView() {
-
-    // Create default view
-    this->defaultViewLabel_ = "point";
-    this->CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());
-
-    // Set current view
-    this->currentViewLabel_ = this->GetDefaultViewLabel();
-  }
+  void CreateDefaultView();
 
 private:
 
   // The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Matrix have to be updated when fillComplete() is called.
   // If CrsMatrix::fillComplete() have been used instead of CrsMatrixWrap::fillComplete(), the default view is updated when getColMap() is called.
-  void updateDefaultView() const {
-    if ((finalDefaultView_ == false) &&  matrixData_->isFillComplete() ) {
-      // Update default view with the colMap
-      Matrix::operatorViewTable_.get(Matrix::GetDefaultViewLabel())->SetColMap(matrixData_->getColMap());
-      finalDefaultView_ = true;
-    }
-  }
+  void updateDefaultView() const;
   // The boolean finalDefaultView_ keep track of the status of the default view (= already updated or not)
   // See also CrsMatrixWrap::updateDefaultView()
   mutable bool finalDefaultView_;

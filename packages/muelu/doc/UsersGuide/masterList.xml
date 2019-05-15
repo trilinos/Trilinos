@@ -1044,7 +1044,7 @@
       <description>Level on which to run node-level repartitioning (negative means don't).</description>
       <visible>false</visible>
     </parameter>
-    
+
     <parameter>
       <name>repartition: node id</name>
       <type>int</type>
@@ -1168,6 +1168,16 @@
   </rebalancing>
 
   <rap>
+
+    <parameter>
+      <name>rap: relative diagonal floor</name>
+      <type>Array(double)</type>
+      <default>{}</default>
+      <description>Will boost diagonals on A matrices to the given floor.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
 
     <parameter>
       <name>rap: fix zero diagonals</name>
@@ -1317,6 +1327,80 @@ optimized neighbor discovery for Importer construction.</description>
     </parameter>
 
   </debug>
+
+  <refmaxwell>
+    <parameter>
+      <name>refmaxwell: mode</name>
+      <type>string</type>
+      <default>"additive"</default>
+      <description>Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212"</description>
+      <name-ML>refmaxwell: mode</name-ML>
+      <type-ML>int</type-ML>
+      <default-ML>"additive"</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212"</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: disable addon</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Specifing whether the addon should be built for stabilization</description>
+      <name-ML>refmaxwell: disable addon</name-ML>
+      <type-ML>bool</type-ML>
+      <default-ML>true</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Specifing whether the addon should be built for stabilization</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: 11list</name>
+      <comment-ML>not supported by ML</comment-ML>
+      <type>\parameterlist</type>
+      <description>Specifies the multigrid solver for the 11 block</description>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: 22list</name>
+      <comment-ML>not supported by ML</comment-ML>
+      <type>\parameterlist</type>
+      <description>Specifies the multigrid solver for the 22 block</description>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: use as preconditioner</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Assume zero initial guess</description>
+      <name-ML>zero starting solution</name-ML>
+      <type-ML>bool</type-ML>
+      <default-ML>false</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Assume zero initial guess</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: dump matrices</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Dump matrices to disk.</description>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: subsolves on subcommunicators</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Redistribute the two subsolves to disjoint sub-communicators (so that the additive solve can occur in parallel).</description>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: ratio AH / A22 subcommunicators</name>
+      <type>double</type>
+      <default>1.0</default>
+      <description>Ratio for the split into sub-communicators.</description>
+    </parameter>
+
+  </refmaxwell>
 
 
 

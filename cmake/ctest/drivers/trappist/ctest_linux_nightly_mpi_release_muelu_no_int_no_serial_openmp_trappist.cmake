@@ -89,6 +89,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_HWLOC:BOOL=OFF"
 
   ### PACKAGES CONFIGURATION ###
+  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
   "-DMueLu_ENABLE_Experimental:BOOL=ON"
   "-DXpetra_ENABLE_Experimental:BOOL=ON"
 )

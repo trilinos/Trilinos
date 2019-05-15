@@ -557,28 +557,7 @@ namespace Thyra {
 
       } else {
         // reuse old MueLu preconditioner stored in MueLu Xpetra operator and put in new matrix
-
-        // get old MueLu preconditioner
-#if defined(HAVE_MUELU_TPETRA)
-        if (bIsTpetra) {
-#if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
-    (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
-          RCP<ThyTpLinOp> tpetr_precOp = rcp_dynamic_cast<ThyTpLinOp>(thyra_precOp);
-          preconditioner = rcp_dynamic_cast<MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetr_precOp->getTpetraOperator(),true);
-#else
-          TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,
-                                     "Thyra::MueLuRefMaxwellPreconditionerFactory: Tpetra does not support GO=int and or EpetraNode.");
-#endif
-        }
-#endif
-#if defined(HAVE_MUELU_EPETRA)// && defined(HAVE_MUELU_SERIAL)
-        if (bIsEpetra) {
-          RCP<ThyEpLinOp> epetr_precOp = rcp_dynamic_cast<ThyEpLinOp>(thyra_precOp);
-          preconditioner = rcp_dynamic_cast<MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(epetr_precOp->epetra_op(),true);
-        }
-#endif
-        // TODO add the blocked matrix case here...
-
+        preconditioner->resetMatrix(A);
       }
 
       // wrap preconditioner in thyraPrecOp
