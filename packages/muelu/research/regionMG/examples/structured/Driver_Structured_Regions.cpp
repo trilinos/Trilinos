@@ -1305,11 +1305,21 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         ////////////////////////////////////////////////////////////////////////
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
+        {
+          computeResidual(regRes, regX, regB, regionGrpMats, dofMap,
+              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
-        computeResidual(regRes, regX, regB, regionGrpMats, dofMap,
-                        rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+          for (int j = 0; j < maxRegPerProc; j++) {
+            TEUCHOS_ASSERT(!(regInterfaceScalings[0])[j].is_null());
 
-        //        printRegionalObject<Vector>("regB 1", regB, myRank, *fos);
+            // Compute inverse factors, which are later to be used for scaling
+            RCP<Vector> inverseInterfaceScaling = VectorFactory::Build((regInterfaceScalings[0])[j]->getMap());
+            inverseInterfaceScaling->reciprocal(*((regInterfaceScalings[0])[j]));
+
+            // Do the actual scaling
+            regRes[j]->elementWiseMultiply(one, *regRes[j], *inverseInterfaceScaling, zero);
+          }
+        }
 
         compRes = VectorFactory::Build(dofMap, true);
         regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
