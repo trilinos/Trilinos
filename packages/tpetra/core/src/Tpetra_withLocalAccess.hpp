@@ -437,8 +437,8 @@ namespace Tpetra {
     // I got inspiration from
     // https://stackoverflow.com/questions/15418841/how-do-i-strip-a-tuple-back-into-a-variadic-template-list-of-types
     //
-    // The only significant change change was from "using type =
-    // T<Ts...>;", to "using type = std::function<void (Ts...)>;".
+    // The only significant change was from "using type = T<Ts...>;",
+    // to "using type = std::function<void (Ts...)>;".
     template<class T>
     struct tuple_to_function_type { };
 
