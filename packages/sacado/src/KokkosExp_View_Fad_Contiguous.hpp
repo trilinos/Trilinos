@@ -536,6 +536,7 @@ private:
     std::add_const< fad_value_type >::type  const_fad_value_type ;
 
 public:
+  enum { is_assignable_data_type = true };
 
   enum { FadStaticDimension = Sacado::StaticSize< fad_type >::value };
   enum { PartitionedFadStride = Traits::array_layout::scalar_stride };
@@ -1165,6 +1166,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -1263,6 +1265,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -1368,6 +1371,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -1675,6 +1679,7 @@ class ViewMapping<
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef ViewTraits<DataType,P...> src_traits;
   typedef ViewMapping< src_traits , typename src_traits::specialize >  src_type ;
