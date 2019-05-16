@@ -394,7 +394,7 @@ public:
   TwoPointMockMeshB() : pointA(0.5, 0.5, 0.5), pointB(0.6,0.6,0.6) {}
 
   static std::array<int, 2> owning_ranks() { return {1, 2}; }
-  std::array<unsigned, 2> point_ids = {0, 1};
+  std::array<unsigned, 2> point_ids = {{0, 1}};
   std::array<Point, 2> get_points() const
   {
     return {pointA, pointB};
