@@ -87,7 +87,7 @@ using Teuchos::rcp;
 namespace panzer {
 
   struct AssemblyPieces {
-    RCP<panzer::FieldManagerBuilder> fmb;  
+    RCP<panzer::FieldManagerBuilder> fmb;
     RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
     RCP<panzer::GlobalData> gd;
     RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
@@ -134,7 +134,7 @@ namespace panzer {
 
     bool parameter_on = true;
     AssemblyPieces ap;
-  
+
     buildAssemblyPieces(parameter_on,ap);
 
     // Test a transient me
@@ -146,7 +146,7 @@ namespace panzer {
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
-      
+
       TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x));
       TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot));
       TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_alpha));
@@ -156,8 +156,8 @@ namespace panzer {
 
       TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
       TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
-      
-      
+
+
       RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
       RCP<Epetra_Vector> x_dot = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
       x->Update(1.0, *(me->get_x_init()), 0.0);
@@ -166,7 +166,7 @@ namespace panzer {
       in_args.set_x_dot(x_dot);
       in_args.set_alpha(0.0);
       in_args.set_beta(1.0);
-      
+
       RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
       RCP<Epetra_Operator> J_tmp = me->create_W();
       RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(J_tmp);
@@ -182,7 +182,7 @@ namespace panzer {
       else {
          double norm=0.0, diff=0.0;
          f->Norm2(&norm);
-         f->Update(-1.0,*basic_trans_f,1.0);    
+         f->Update(-1.0,*basic_trans_f,1.0);
          f->Norm2(&diff);
          TEST_ASSERT(diff/norm <= 1e-15);
       }
@@ -198,13 +198,13 @@ namespace panzer {
       (*p_values[0])[0] = 1.0;
       bool build_transient_support = false;
       RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,p_values,ap.gd,build_transient_support));
-      
+
       // store to test parameter capabilities
       // ss_me = me;
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
-      
+
       TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x));
       TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot));
       TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_alpha));
@@ -214,11 +214,11 @@ namespace panzer {
 
       TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
       TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
-      
+
       RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
       x->Update(1.0, *(me->get_x_init()), 0.0);
       in_args.set_x(x);
-      
+
       RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
       RCP<Epetra_Operator> J_tmp = me->create_W();
       RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(J_tmp);
@@ -234,7 +234,7 @@ namespace panzer {
       else {
          double norm=0.0, diff=0.0;
          f->Norm2(&norm);
-         f->Update(-1.0,*basic_ss_f,1.0);    
+         f->Update(-1.0,*basic_ss_f,1.0);
          f->Norm2(&diff);
          out << diff << " " << norm << std::endl;
          TEST_ASSERT(diff/norm <= 1e-15);
@@ -248,7 +248,7 @@ namespace panzer {
     bool parameter_on = true;
     AssemblyPieces ap;
 
-  
+
     buildAssemblyPieces(parameter_on,ap);
 
     {
@@ -256,7 +256,7 @@ namespace panzer {
       std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
       bool build_transient_support = false;
       RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,p_values,ap.gd,build_transient_support));
- 
+
       RespFactoryFunc_Builder builder;
       builder.comm = MPI_COMM_WORLD;
       builder.linearObjFactory = ap.ep_lof;
@@ -274,7 +274,7 @@ namespace panzer {
       RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
       x->PutScalar(0.0);
       in_args.set_x(x);
-      
+
       RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
       RCP<Epetra_Vector> g = Teuchos::rcp(new Epetra_Vector(*me->get_g_map(0)));
       RCP<Epetra_Vector> DgDx = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
@@ -307,7 +307,7 @@ namespace panzer {
     {
       bool parameter_on = true;
       AssemblyPieces ap;
-    
+
       buildAssemblyPieces(parameter_on,ap);
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
       std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values(1);
@@ -323,11 +323,11 @@ namespace panzer {
 
     EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
-      
+
     // solution
     RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
     x->PutScalar(1.0);
-    
+
     // parameter
     TEST_ASSERT(in_args.Np() == 1);
     RCP<Epetra_Vector> p = Teuchos::rcp(new Epetra_Vector(*me->get_p_map(0)));
@@ -349,24 +349,24 @@ namespace panzer {
     out_args.set_f(f1);
     out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
-    
+
     out << "evalModel(f2)" << std::endl;
     out_args.set_f(f2);
     out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
-    
+
     out << "evalModel(f3)" << std::endl;
     p->PutScalar(20.0);
     out_args.set_f(f3);
     out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
-    
+
     out << "evalModel(f4)" << std::endl;
     p->PutScalar(1.0);
     out_args.set_f(f4);
     out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
-    
+
     // f1 == f2 == f4, f3 is evaluated with p=20 instead of p=1
 
     double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
@@ -381,7 +381,7 @@ namespace panzer {
 
     // f2 != f3
     TEST_EQUALITY_CONST(testEqualityOfEpetraVectorValues(*f2,*f3,tol), false);
- 
+
 
     // TEST DfDp
     /////////////////////////////////////////////////////
@@ -413,7 +413,7 @@ namespace panzer {
     {
       bool parameter_on = true;
       AssemblyPieces ap;
-    
+
       buildAssemblyPieces(parameter_on,ap);
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
       std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values(1);
@@ -438,7 +438,7 @@ namespace panzer {
     // solution
     RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
     x->PutScalar(1.0);
-    
+
     // locally replicated scalar parameter
     RCP<Epetra_Vector> p = Teuchos::rcp(new Epetra_Vector(*me->get_p_map(0)));
     p->PutScalar(1.0);
@@ -449,7 +449,7 @@ namespace panzer {
     {
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
-      
+
       TEST_ASSERT(in_args.Np() == 2);
 
       in_args.set_x(x);
@@ -459,14 +459,14 @@ namespace panzer {
       ghosted_distributed_parameter->PutScalar(0.0);
 
       // Set global distributed parameter to 1 in in_args
-      RCP<Epetra_Vector> global_distributed_parameter = 
+      RCP<Epetra_Vector> global_distributed_parameter =
 	Teuchos::rcp(new Epetra_Vector(*me->get_p_map(distributed_parameter_index)));
       global_distributed_parameter->PutScalar(1.0);
       in_args.set_p(distributed_parameter_index,global_distributed_parameter);
 
       out_args.set_f(f);
       me->evalModel(in_args,out_args);
-    
+
       // Export should have performed global to ghost, ghosted values should be 1
       // Create a gold standard to compare against
       RCP<Epetra_Vector> gold_standard = Teuchos::rcp(new Epetra_Vector(ghosted_distributed_parameter->Map()));
@@ -502,7 +502,7 @@ namespace panzer {
       p.set("Basis Order",1);
       p.set("Integration Order",1);
     }
-    
+
 
     {
       std::size_t bc_id = 0;
@@ -514,10 +514,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    }
     {
       std::size_t bc_id = 1;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -528,10 +528,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 2;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -542,30 +542,30 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
     }
   }
-  
+
   /** Compares Epetra_Vector values and returns true if difference is
       less than tolerance
   */
   bool testEqualityOfEpetraVectorValues(Epetra_Vector& a, Epetra_Vector& b, double tolerance, bool write_to_cout)
-  {  
+  {
     bool is_equal = true;
 
     TEUCHOS_ASSERT(a.Map().NumMyElements() == b.Map().NumMyElements());
 
     for (int i = 0; i < a.Map().NumMyElements(); ++i) {
-      
+
       std::string output = "    equal!: ";
-      
+
       if (std::fabs(a[i] - b[i]) > tolerance) {
 	is_equal = false;
 	output = "NOT equal!: ";
       }
-      
+
       if (write_to_cout)
 	std::cout << output << a[i] << " - " << b[i] << " = " << (a[i] - b[i]) << std::endl;
     }
@@ -580,13 +580,13 @@ namespace panzer {
                            AssemblyPieces & ap)
   {
     using Teuchos::RCP;
-  
+
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
     pl->set("X Elements",6);
     pl->set("Y Elements",4);
-    
+
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
@@ -612,9 +612,9 @@ namespace panzer {
       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
-      
+
       int default_integration_order = 1;
-      
+
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
@@ -630,21 +630,21 @@ namespace panzer {
     // build worksets
     //////////////////////////////////////////////////////////////
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<ap.physicsBlocks.size();i++) 
+    for(size_t i=0;i<ap.physicsBlocks.size();i++)
       wkstContainer->setNeeds(ap.physicsBlocks[i]->elementBlockID(),ap.physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
- 
-    // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+
+    // build the connection manager
+    const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     ap.dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
@@ -653,11 +653,11 @@ namespace panzer {
     ap.ep_lof = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),ap.dofManager));
     linObjFactory = ap.ep_lof;
 
-    ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,linObjFactory)); 
+    ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,linObjFactory));
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
- 
+
     // Add in the application specific closure model factory
     user_app::MyModelFactory_TemplateBuilder cm_builder;
     ap.cm_factory.buildObjects(cm_builder);

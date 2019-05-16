@@ -287,7 +287,7 @@ namespace MueLuTests {
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Teuchos::ScalarTraits<SC>::coordinateType real_type;
     typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     using Teuchos::RCP;
@@ -347,7 +347,9 @@ namespace MueLuTests {
     pLevel0.set("M",A);
 
     // Build hierarchy
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params, coordinates, Teuchos::null);
+    Teuchos::ParameterList& userParamList = Params->sublist("user data");
+    userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params);
 
     // Ready the test vector
     RCP<Level> Level1 = H->GetLevel(1);
@@ -423,7 +425,9 @@ namespace MueLuTests {
     pLevel0.set("M",A);
 
     // Build hierarchy
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params,coordinates,Teuchos::null);
+    Teuchos::ParameterList& userParamList = Params->sublist("user data");
+    userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params);
 
     // Ready the test vector
     RCP<Level> Level1 = H->GetLevel(1);
@@ -486,7 +490,7 @@ namespace MueLuTests {
     galeriList.set("nx", nx);
     RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
-    // Extract the diagonal of A 
+    // Extract the diagonal of A
     RCP<Vector> Mdiag = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(A->getRowMap(),false);
     A->getLocalDiagCopy(*Mdiag);
 
@@ -506,7 +510,9 @@ namespace MueLuTests {
     pLevel0.set("Mdiag",Mdiag);
 
     // Build hierarchy
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params,coordinates,Teuchos::null);
+    Teuchos::ParameterList& userParamList = Params->sublist("user data");
+    userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params);
 
     // Ready the test vector
     RCP<Level> Level1 = H->GetLevel(1);
@@ -572,7 +578,7 @@ namespace MueLuTests {
     galeriList.set("nx", nx);
     RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
-    // Extract the diagonal of A 
+    // Extract the diagonal of A
     RCP<Vector> Mdiag = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(A->getRowMap(),false);
     A->getLocalDiagCopy(*Mdiag);
 
@@ -589,9 +595,14 @@ namespace MueLuTests {
     Params->set("max levels",2);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("Mdiag",Mdiag);
+    if(A->getRowMap()->lib() == Xpetra::UseEpetra) {
+      Params->set("use kokkos refactor", false);
+    }
 
     // Build hierarchy
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params,coordinates,Teuchos::null);
+    Teuchos::ParameterList& userParamList = Params->sublist("user data");
+    userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params);
 
     // Ready the test vector
     RCP<Level> Level1 = H->GetLevel(1);
@@ -656,7 +667,7 @@ namespace MueLuTests {
     galeriList.set("nx", nx);
     RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
-    // Extract the diagonal of A 
+    // Extract the diagonal of A
     RCP<Vector> Mdiag = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(A->getRowMap(),false);
     A->getLocalDiagCopy(*Mdiag);
 
@@ -664,7 +675,7 @@ namespace MueLuTests {
     double shift = 2.0;
     Teuchos::Array<double> shifts(2); shifts[0]=1.0; shifts[1]=shifts[0]+shift;
     RCP<Teuchos::ParameterList> Params = rcp(new Teuchos::ParameterList);
-    Params->set("rap: algorithm","shift");    
+    Params->set("rap: algorithm","shift");
     Params->set("rap: shift array",shifts);
     Params->set("rap: shift diagonal M",true);
     Params->set("rap: shift low storage",true);
@@ -674,9 +685,14 @@ namespace MueLuTests {
     Params->set("max levels",2);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("Mdiag",Mdiag);
+    if(A->getRowMap()->lib() == Xpetra::UseEpetra) {
+      Params->set("use kokkos refactor", false);
+    }
 
     // Build hierarchy
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params,coordinates,Teuchos::null);
+    Teuchos::ParameterList& userParamList = Params->sublist("user data");
+    userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params);
 
     // Ready the test vector
     RCP<Level> Level1 = H->GetLevel(1);
@@ -740,7 +756,7 @@ namespace MueLuTests {
     galeriList.set("nx", nx);
     RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
-    // Extract the diagonal of A 
+    // Extract the diagonal of A
     RCP<Vector> Mdiag = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(A->getRowMap(),false);
     A->getLocalDiagCopy(*Mdiag);
 
@@ -748,23 +764,27 @@ namespace MueLuTests {
     double shift = 1.0;
     Teuchos::Array<double> cfls(2); cfls[0]=1.0; cfls[1]=cfls[0] - 1/(1.0+shift);
     RCP<Teuchos::ParameterList> Params = rcp(new Teuchos::ParameterList);
-    Params->set("rap: algorithm","shift");    
+    Params->set("rap: algorithm","shift");
     Params->set("rap: shift diagonal M",true);
     Params->set("rap: shift low storage",true);
     Params->set("rap: cfl array",cfls);
     Params->set("coarse: max size",10);
     Params->set("verbosity","high");
-    Params->set("coarse: max size",10);
     Params->set("max levels",4);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("Mdiag",Mdiag);
+    if(A->getRowMap()->lib() == Xpetra::UseEpetra) {
+      Params->set("use kokkos refactor", false);
+    }
     Teuchos::ParameterList & user = Params->sublist("user data");
     user.set("double deltaT",1.0);
     user.set("double cfl",1.0);
-    
+
 
     // Build hierarchy
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params,coordinates,Teuchos::null);
+    Teuchos::ParameterList& userParamList = Params->sublist("user data");
+    userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params);
 
     // Ready the test vector
     RCP<Level> Level1 = H->GetLevel(1);
@@ -815,4 +835,3 @@ namespace MueLuTests {
 #include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests
-

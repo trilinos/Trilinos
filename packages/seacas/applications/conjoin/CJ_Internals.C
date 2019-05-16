@@ -48,7 +48,7 @@
 #include <CJ_ExodusEntity.h>
 
 #include <algorithm>
-#include <copy_string.h>
+#include <copy_string_cpp.h>
 #include <cstring>
 #include <smart_assert.h>
 
@@ -243,7 +243,7 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh, const std::vector<Bl
 
     if (mesh.blockCount > 0) {
       for (size_t i = 0; i < mesh.blockCount; i++) {
-        copy_string(names[i], sorted_blocks[i].name_.c_str(), name_size);
+        copy_string(names[i], sorted_blocks[i].name_, name_size + 1);
       }
       ex_put_names(exodusFilePtr, EX_ELEM_BLOCK, names);
 
@@ -253,7 +253,7 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh, const std::vector<Bl
           for (size_t j = 0; j < blocks[i].attributeCount; j++) {
             std::memset(names[j], '\0', name_size + 1);
             if (!blocks[i].attributeNames[j].empty()) {
-              copy_string(names[j], blocks[i].attributeNames[j].c_str(), name_size);
+              copy_string(names[j], blocks[i].attributeNames[j], name_size + 1);
             }
           }
           ierr = ex_put_attr_names(exodusFilePtr, EX_ELEM_BLOCK, blocks[i].id, names);
@@ -264,14 +264,14 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh, const std::vector<Bl
 
     if (mesh.nodesetCount > 0) {
       for (size_t i = 0; i < mesh.nodesetCount; i++) {
-        copy_string(names[i], nodesets[i].name_.c_str(), name_size);
+        copy_string(names[i], nodesets[i].name_, name_size + 1);
       }
       ex_put_names(exodusFilePtr, EX_NODE_SET, names);
     }
 
     if (mesh.sidesetCount > 0) {
       for (size_t i = 0; i < mesh.sidesetCount; i++) {
-        copy_string(names[i], sidesets[i].name_.c_str(), name_size);
+        copy_string(names[i], sidesets[i].name_, name_size + 1);
       }
       ex_put_names(exodusFilePtr, EX_SIDE_SET, names);
     }

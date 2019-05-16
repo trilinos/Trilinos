@@ -79,7 +79,6 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -103,6 +102,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NodeConversion, N2 )
   {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     typedef Tpetra::Map<> Map1;
     typedef Tpetra::CrsMatrix<>::scalar_type SCALAR;
     typedef Map1::local_ordinal_type LO;
@@ -188,6 +188,7 @@ namespace {
       TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+numLocal-2 );
     }
 
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   }
 
 //
@@ -198,8 +199,9 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NodeConversion, N2 )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
-
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   TPETRA_INSTANTIATE_N(NC_TESTS)
+#endif
 }
 
 

@@ -343,7 +343,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     userParamList.set("Mdiag",Mdiag);
 
 
-    H = MueLu::CreateXpetraPreconditioner(A, paramList, paramList);
+    H = MueLu::CreateXpetraPreconditioner(A, paramList);
 
 
     comm->barrier();

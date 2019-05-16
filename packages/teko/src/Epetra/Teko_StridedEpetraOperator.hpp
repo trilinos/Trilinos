@@ -130,10 +130,8 @@ public:
    virtual const Epetra_Comm & Comm() const { return fullContent_->Comm(); }
 
    
-   #ifndef Teko_DEBUG_OFF
    //! Helps perform sanity checks
    bool testAgainstFullOperator(int count,double tol) const;
-   #endif
 
 protected:
    // gooey center of this shell

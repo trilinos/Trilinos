@@ -29,6 +29,14 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
+    TRIBITS_ADD_TEST(
+      Maxwell3D
+      NAME "Maxwell3D-Tpetra-ML-list"
+      ARGS "--linAlgebra=Tpetra --xml=Maxwell_ML_MueLu.xml"
+      COMM mpi
+      NUM_MPI_PROCS 4
+      )
+
     IF (${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
       TRIBITS_ADD_TEST(
         Maxwell3D
@@ -48,11 +56,21 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       COMM serial mpi
       NUM_MPI_PROCS 4
       )
+
+    IF (${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
+      TRIBITS_ADD_TEST(
+        Maxwell3D
+        NAME "Maxwell3D-ML"
+        ARGS "--linAlgebra=Epetra --precType=ML-RefMaxwell  --xml=Maxwell_ML.xml"
+        COMM serial mpi
+        NUM_MPI_PROCS 4
+        )
+    ENDIF()
   ENDIF()
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
-    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Maxwell.xml
+    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Maxwell.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml
     )
 
   IF(HAVE_MUELU_COMPLEX)

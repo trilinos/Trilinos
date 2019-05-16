@@ -9,3 +9,4 @@
 /* For development mode */
 #cmakedefine Teko_ENABLE_DEV_MODE
 #cmakedefine Teko_ENABLE_ML_SMOOTHERS
+#cmakedefine Teko_DEBUG_OFF

@@ -122,11 +122,11 @@ namespace panzer {
 
     RCP<const panzer::FieldPattern> constFP = rcp(new panzer::Intrepid2FieldPattern(const_basis->getIntrepid2Basis()));
     RCP<const panzer::FieldPattern> hgradFP = rcp(new panzer::Intrepid2FieldPattern(hgrad_basis->getIntrepid2Basis()));
- 
+
     // setup DOF manager
     /////////////////////////////////////////////
-    RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer::ConnManager> conn_manager
+           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<panzer::DOFManager<int,int> > dofManager
         = rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
@@ -134,14 +134,14 @@ namespace panzer {
     dofManager->addField(condDesc.fieldName, hgradFP);
     dofManager->buildGlobalUnknowns();
 
-    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof 
+    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 
     // setup worksets
     /////////////////////////////////////////////
-    
+
     std::map<std::string,panzer::WorksetNeeds> needs;
     needs["eblock-0_0"].cellData = cellData;
     needs["eblock-0_0"].int_rules.push_back(int_rule);
@@ -153,16 +153,16 @@ namespace panzer {
     needs["eblock-1_0"].bases          = { const_basis,    hgrad_basis};
     needs["eblock-1_0"].rep_field_name = {   densDesc.fieldName, condDesc.fieldName};
 
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
         = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer              // attach it to a workset container (uses lazy evaluation)
         = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,needs));
 
     // setup field manager builder
     /////////////////////////////////////////////
-      
+
     // Add in the application specific closure model factory
-    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     user_app::STKModelFactory_TemplateBuilder cm_builder;
     cm_factory.buildObjects(cm_builder);
 
@@ -172,7 +172,7 @@ namespace panzer {
     ic_closure_models.sublist("eblock-0_0").sublist(densDesc.fieldName).set<double>("Value",3.0);
     ic_closure_models.sublist("eblock-0_0").sublist(condDesc.fieldName).set<double>("Value",9.0);
     ic_closure_models.sublist("eblock-1_0").sublist(densDesc.fieldName).set<double>("Value",3.0);
-    ic_closure_models.sublist("eblock-1_0").sublist(condDesc.fieldName).set<double>("Value",9.0);    
+    ic_closure_models.sublist("eblock-1_0").sublist(condDesc.fieldName).set<double>("Value",9.0);
 
     std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
     block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
@@ -181,7 +181,7 @@ namespace panzer {
     std::map<std::string,std::vector<ICFieldDescriptor> > block_ids_to_fields;
     block_ids_to_fields["eblock-0_0"] = {densDesc,condDesc};
     block_ids_to_fields["eblock-1_0"] = {densDesc,condDesc};
-    
+
     int workset_size = 4;
 
     Teuchos::RCP<panzer::LinearObjContainer> loc  = lof->buildLinearObjContainer();
@@ -196,13 +196,13 @@ namespace panzer {
                                          *lof,cm_factory,ic_closure_models,user_data,
                                          workset_size,
                                          0.0, // t0
-                                         vec); 
+                                         vec);
 
     Teuchos::RCP<Epetra_Vector> x = eloc->get_x();
     out << x->GlobalLength() << " " << x->MyLength() << std::endl;
     for (int i=0; i < x->MyLength(); ++i) {
       double v = (*x)[i];
-      TEST_ASSERT(v==3.0 || v==9.0); 
+      TEST_ASSERT(v==3.0 || v==9.0);
     }
 
   }

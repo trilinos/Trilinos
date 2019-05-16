@@ -603,59 +603,86 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # than global_size_t (e.g., using the wrong
 # Teuchos::OrdinalTraits<>::invalid().
 
-# GO = int is enabled by default, but only because of Bug 6358.
-GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
-
-# GO = long long is enabled by default.  However, if the user enabled
-# GO = long EXPLICITLY, we disable GO = long long by default, because
-# we don't want to enable multiple "long" GO types by default.
-
-# Tpetra currently needs Teuchos to support long long.
-# This may change in the future, though.
-IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
-  IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
-    MESSAGE(WARNING "Do NOT set Teuchos_ENABLE_LONG_LONG_INT=OFF !  The default is ON.  We will VERY SOON require that this option be ON.  Don't set it explicitly!  Just use the default value.  See #1184: https://github.com/trilinos/Trilinos/issues/1184 and see also #1183: https://github.com/trilinos/Trilinos/issues/1183")
-  ENDIF ()
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
-ELSE ()
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
-ENDIF ()
-
-IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
-  IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
-    # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn
-    # off GO = long long by default.  We have to go through the
-    # two-level IF statement because the Tpetra_INST_INT_LONG option
-    # doesn't exist yet; we have not yet encountered the
-    # TRIBITS_ADD_OPTION_AND_DEFINE statement (below) that defines it
-    # and gives it a default value.  (Note the circular dependency
-    # between the default value of Tpetra_INST_INT_LONG and
-    # Tpetra_INST_INT_LONG_LONG.  This is deliberate.  The point is
-    # that only one of them is defined by default at a time.
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-  ENDIF ()
-ENDIF ()
-
-# If GO = long long is OFF by default, turn ON GO = long by default.
-# If GO = long long is ON by default, turn OFF GO = long by default.
-# The point is to have EXACTLY one potentially 64-bit GO type enabled
-# by default.  I say "potentially" because the C++ standard only
-# guarantees long to be at least 32 bits.
-IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
-ELSE ()
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
-ENDIF ()
+# Enable Tpetra Global Ordinals LONG LONG default:
+GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG_LONG is enabled by default.")
 
 # GO = unsigned is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_UNSIGNED is disabled by default.")
+
 # GO = unsigned long is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_UNSIGNED_LONG is disabled by default.")
+
+IF(Tpetra_ENABLE_DEPRECATED_CODE)
+
+    # GO = int is enabled by default, but only because of Bug 6358.
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_INT is enabled by default.")
+
+
+    IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
+      IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
+        # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn
+        # off GO = long long by default.  We have to go through the
+        # two-level IF statement because the Tpetra_INST_INT_LONG option
+        # doesn't exist yet; we have not yet encountered the
+        # TRIBITS_ADD_OPTION_AND_DEFINE statement (below) that defines it
+        # and gives it a default value.  (Note the circular dependency
+        # between the default value of Tpetra_INST_INT_LONG and
+        # Tpetra_INST_INT_LONG_LONG.  This is deliberate.  The point is
+        # that only one of them is defined by default at a time.
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+        MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG_LONG is disabled because Tpetra_INST_INT_LONG was enabled by user option.")
+      ENDIF ()
+    ENDIF ()
+
+    # If GO = long long is OFF by default, turn ON GO = long by default.
+    # If GO = long long is ON by default, turn OFF GO = long by default.
+    # The point is to have EXACTLY one potentially 64-bit GO type enabled
+    # by default.  I say "potentially" because the C++ standard only
+    # guarantees long to be at least 32 bits.
+    IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
+      GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+      MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is disabled.")
+    ELSE ()
+      GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
+      MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is enabled.")
+    ENDIF ()
+
+ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
+
+    # GO = int is disabled by default.
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT OFF)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_INT is disabled by default.")
+
+    # Enable Tpetra Global Ordinals LONG default:
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is disabled by default.")
+
+    #
+    # Discover what parameters were enabled by the user so we can differentiate what is ON via USER vs. DEFAULTS later.
+    #
+
+    # IF anything other than long long is defined and enabled, and long long isn't defined then we disable long long
+    IF( (    (    DEFINED Tpetra_INST_INT_INT           AND Tpetra_INST_INT_INT)
+         OR  (    DEFINED Tpetra_INST_INT_LONG          AND Tpetra_INST_INT_UNSIGNED_LONG)
+         OR  (    DEFINED Tpetra_INST_INT_UNSIGNED      AND Tpetra_INST_INT_UNSIGNED)
+         OR  (    DEFINED Tpetra_INST_INT_UNSIGNED_LONG AND Tpetra_INST_INT_UNSIGNED_LONG))
+         AND (NOT DEFINED Tpetra_INST_INT_LONG_LONG) )
+
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+        MESSAGE(STATUS "Tpetra: Disable Tpetra_INST_INT_LONG_LONG default value because "
+                       "another Global Ordinal type is user-specified.")
+
+    ENDIF()
+ENDIF(Tpetra_ENABLE_DEPRECATED_CODE)
+
 
 #
 # Define options for enabling various GlobalOrdinal types
 #
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_INT
   HAVE_TPETRA_INST_INT_INT
@@ -668,30 +695,26 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default.  Please don't set this option.  We only maintain it for backwards compatibility."
   ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT}
   )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG_LONG
   HAVE_TPETRA_INST_INT_LONG_LONG
   "Enable GlobalOrdinal = long long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT} by default."
   ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT}
   )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG
   HAVE_TPETRA_INST_INT_LONG
   "Enable GlobalOrdinal = long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_LONG_DEFAULT} by default."
   ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
   )
-TRIBITS_ADD_OPTION_AND_DEFINE(
+  TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_UNSIGNED_LONG
   HAVE_TPETRA_INST_INT_UNSIGNED_LONG
   "Enable GlobalOrdinal = unsigned long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT} by default.  We do NOT recommend using this type.  We are NOT responsible for ensuring that it builds or passes tests.  If you want a 64-bit type, we prefer that you use long long (Tpetra_INST_INT_LONG_LONG=ON), or long (Tpetra_INST_INT_LONG=ON) if you know that it is 64 bits.  If you are interested in using unsigned long, Roger Pawlowski is the responsible party; please contact him."
   ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT}
   )
-
-IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
-  IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
-    MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")
-  ENDIF ()
-ENDIF ()
 
 # Warn on use of options that we don't like.
 IF (Tpetra_INST_INT_UNSIGNED)
@@ -724,7 +747,6 @@ ELSE()
   # above options are ON.  However, we still print a STATUS message,
   # to help with debugging in case users do this by accident.
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL OFF)
-  MESSAGE (STATUS "Tpetra: NOTE: No GlobalOrdinal type is enabled.  This means that you, the user, explicitly disabled all GlobalOrdinal types that Tpetra enables by default.  If you know what you are doing, this might be OK.  If you don't know what you are doing, please don't do this.")
 ENDIF()
 
 #
@@ -854,12 +876,6 @@ IF (Tpetra_INST_FLOAT)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but HAVE_TEUCHOS_BLASFLOAT is OFF.  This means that you are linking with a BLAS library that lacks float (S) support.  Tpetra needs a BLAS implementation that supports float.")
   ENDIF ()
 
-ELSE () # Tpetra_INST_FLOAT is OFF
-
-  IF (DEFINED Teuchos_ENABLE_FLOAT AND Teuchos_ENABLE_FLOAT)
-    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is OFF (meaning that you want to disable explicit instantiation and/or tests of Tpetra with Scalar = float), but Teuchos_ENABLE_FLOAT is ON.  This will cause downstream link errors, likely in Stratimikos.  See GitHub Issues 4059 and 4080 for details.  Best practice: Do NOT set Tpetra_INST_FLOAT OR Teuchos_ENABLE_FLOAT explicitly.  Instead, set Trilinos_ENABLE_FLOAT explicitly.  That will set defaults for Teuchos and Tpetra correctly.")
-  ENDIF ()
-
 ENDIF ()
 
 # Decide whether to instantiate / test Scalar = std::complex<float> and/or
@@ -978,14 +994,6 @@ IF (Tpetra_INST_COMPLEX_FLOAT)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is not defined.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
   ELSEIF (NOT HAVE_COMPLEX_BLAS)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
-  ENDIF ()
-
-ELSE () # Tpetra_INST_COMPLEX_FLOAT is OFF
-
-  IF (DEFINED Teuchos_ENABLE_COMPLEX AND Teuchos_ENABLE_COMPLEX)
-    IF (DEFINED Teuchos_ENABLE_FLOAT AND Teuchos_ENABLE_FLOAT)
-      MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is OFF (meaning that you want to disable explicit instantiation and/or tests of Tpetra with Scalar = std::complex<float>), but Teuchos_ENABLE_COMPLEX is ON and Teuchos_ENABLE_FLOAT is ON.  This will cause downstream link errors, likely in Thyra or Stratimikos.  See GitHub Issue 4080 for details.  Best practice: Do NOT set Tpetra_INST_COMPLEX_FLOAT, Teuchos_ENABLE_COMPLEX, or Teuchos_ENABLE_FLOAT explicitly.  Instead, set Trilinos_ENABLE_COMPLEX_FLOAT explicitly.  That will set defaults for Teuchos and Tpetra correctly.")
-    ENDIF ()
   ENDIF ()
 
 ENDIF ()
@@ -1170,8 +1178,17 @@ LIST(LENGTH ${PACKAGE_NAME}_ETI_GORDS lenTpetraCore_ETI_GORDS)
 
 IF(Tpetra_ENABLE_DEPRECATED_CODE)
     IF(lenTpetraCore_ETI_GORDS EQUAL 0)
-        MESSAGE(FATAL_ERROR "Tpetra requires a global ordinal type, but none were specified. "
-                            "To use long long, please set Tpetra_INST_INT_LONG_LONG=ON")
+        MESSAGE(STATUS "Tpetra: ERROR Tpetra requires a GlobalOrdinal type, but none were specified.")
+        MESSAGE(STATUS "This can happens when the default is overridden by user options without enabling")
+        MESSAGE(STATUS "another GlobalOrdinal type in its place. Please check your configuration to ensure")
+        MESSAGE(STATUS "that the default is not being specifically disabled without enabling one of the others:")
+        MESSAGE(STATUS "   Tpetra_INST_INT_INT")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG_LONG (Default, but was overridden)")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED_LONG")
+        MESSAGE(FATAL_ERROR "Tpetra: Tpetra requires a global ordinal type, but none were specified."
+                            " See above message for options.")
     ELSEIF(lenTpetraCore_ETI_GORDS GREATER 1)
         MESSAGE(WARNING "Tpetra requires only one global ordinal, but more than one are set: {${${PACKAGE_NAME}_ETI_GORDS}}. "
                         "Building with more than one global ordinal type in Tpetra is deprecated.")
@@ -1180,10 +1197,19 @@ IF(Tpetra_ENABLE_DEPRECATED_CODE)
     ELSE()
         MESSAGE(FATAL_ERROR "Tpetra: global ordinal setting has a problem setting: {${${PACKAGE_NAME}_ETI_GORDS}}.")
     ENDIF()
-ELSE()
+ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
     IF(lenTpetraCore_ETI_GORDS EQUAL 0)
-        MESSAGE(FATAL_ERROR "Tpetra requires a global ordinal type, but none were specified. "
-                            "To use long long, please set Tpetra_INST_INT_LONG_LONG=ON")
+        MESSAGE(STATUS "Tpetra: ERROR Tpetra requires a GlobalOrdinal type, but none were specified.")
+        MESSAGE(STATUS "This can happens when the default is overridden by user options without enabling")
+        MESSAGE(STATUS "another GlobalOrdinal type in its place. Please check your configuration to ensure")
+        MESSAGE(STATUS "that the default is not being specifically disabled without enabling one of the others:")
+        MESSAGE(STATUS "   Tpetra_INST_INT_INT")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG_LONG (Default, but was overridden)")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED_LONG")
+        MESSAGE(FATAL_ERROR "Tpetra: Tpetra requires a global ordinal type, but none were specified."
+                            " See above message for options.")
     ELSEIF(lenTpetraCore_ETI_GORDS GREATER 1)
         MESSAGE(FATAL_ERROR "Tpetra requires only one global ordinal, but more than one are set: {${${PACKAGE_NAME}_ETI_GORDS}}.")
     ELSEIF(lenTpetraCore_ETI_GORDS EQUAL 1)

@@ -70,7 +70,7 @@
 
 #include "Thyra_EpetraModelEvaluator.hpp"
 
-#ifdef PANZER_HAVE_TEKO 
+#ifdef PANZER_HAVE_TEKO
 #include "Teko_RequestHandler.hpp"
 #endif
 
@@ -90,16 +90,16 @@ namespace panzer {
 
   template <typename,typename> class BlockedDOFManager;
   template <typename,typename> class DOFManager;
-  template <typename> class ConnManagerBase;
+  class ConnManager;
 }
 
 namespace panzer_stk {
 
-  template <typename GO> class STKConnManager;
+  class STKConnManager;
   class NOXObserverFactory;
   class RythmosObserverFactory;
   class WorksetFactory;
-  
+
   template<typename ScalarT>
   class ModelEvaluatorFactory : public Teuchos::ParameterListAcceptorDefaultBase {
 
@@ -112,14 +112,14 @@ namespace panzer_stk {
     //@}
 
     /** \brief Builds the model evaluators for a panzer assembly
-        
+
         \param[in] comm (Required) Teuchos communicator.  Must be non-null.
         \param[in] global_data (Required) A fully constructed (all members allocated) global data object used to control parameter library and output support. Must be non-null.
         \param[in] eqset_factory (Required) Equation set factory to provide user defined equation sets.
         \param[in] bc_factory (Required) Boundary condition factory to provide user defined boundary conditions.
         \param[in] cm_factory (Required) Closure model factory to provide user defined closure models.
     */
-    void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+    void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                       const Teuchos::RCP<panzer::GlobalData>& global_data,
                       const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                       const panzer::BCStrategyFactory & bc_factory,
@@ -127,7 +127,7 @@ namespace panzer_stk {
                       bool meConstructionOn=true);
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
-    
+
     /** @name Methods for building the solver */
     //@{
 
@@ -138,13 +138,13 @@ namespace panzer_stk {
     template <typename BuilderT>
     int addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder);
 
-    void buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory, 
+    void buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                         const bool write_graphviz_file=false,
                         const std::string& graphviz_file_prefix="");
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getResponseOnlyModelEvaluator();
 
-    Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > 
+    Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> >
     buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
                                     const Teuchos::RCP<panzer::GlobalData>& global_data,
                                     const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null,
@@ -161,26 +161,26 @@ namespace panzer_stk {
     const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & getPhysicsBlocks() const;
 
     //! Get mesh object used to build model evaluator
-    Teuchos::RCP<panzer_stk::STK_Interface> getMesh() const 
+    Teuchos::RCP<panzer_stk::STK_Interface> getMesh() const
     { return m_mesh; }
 
     //! Get global indexer used to build model evaluator
-    Teuchos::RCP<panzer::UniqueGlobalIndexerBase> getGlobalIndexer() const 
+    Teuchos::RCP<panzer::UniqueGlobalIndexerBase> getGlobalIndexer() const
     { return m_global_indexer; }
 
     //! Get connection manager
-    Teuchos::RCP<panzer::ConnManagerBase<int> > getConnManager() const 
+    Teuchos::RCP<panzer::ConnManager> getConnManager() const
     { return m_conn_manager; }
 
     //! Is blocked assembly?
-    bool isBlockedAssembly() const 
+    bool isBlockedAssembly() const
     { return m_blockedAssembly; }
 
     //! Get linear object factory used to build model evaluator
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > getLinearObjFactory() const
     { return m_lin_obj_factory; }
 
-    bool isTransient() const  
+    bool isTransient() const
     { return m_is_transient; }
 
     /** Clone the internal model evaluator, but use new physics blocks. Note that
@@ -224,8 +224,8 @@ namespace panzer_stk {
                                 int workset_size) const;
 
     /** This method is to assist with construction of the model evaluators.
-      */ 
-    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > 
+      */
+    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> >
     buildPhysicsModelEvaluator(bool buildThyraME,
                         const Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,
                         const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary,
@@ -241,7 +241,7 @@ namespace panzer_stk {
     { return useDynamicCoordinates_; }
 
     /** \brief Gets the initial time from either the input parameter list or an exodus file
-     *      
+     *
      * \param [in] transient_ic_params ParameterList that determines where to get the initial time value.
      * \param [in] mesh STK Mesh database used if the time value should come from the exodus file
     */
@@ -251,16 +251,16 @@ namespace panzer_stk {
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
     buildLOWSFactory(bool blockedAssembly,
                      const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                     const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                     const Teuchos::RCP<panzer::ConnManager> & conn_manager,
                      const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                      const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm
-                     #ifdef PANZER_HAVE_TEKO 
+                     #ifdef PANZER_HAVE_TEKO
                      , const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null
-                     #endif 
+                     #endif
                      ) const;
 
     //! Get the workset container associated with the mesh database.
-    Teuchos::RCP<panzer::WorksetContainer> getWorksetContainer() const 
+    Teuchos::RCP<panzer::WorksetContainer> getWorksetContainer() const
     { return m_wkstContainer; }
 
     //! Add the user fields specified by output_list to the mesh
@@ -271,12 +271,12 @@ namespace panzer_stk {
 
     void finalizeMeshConstruction(const STK_MeshFactory & mesh_factory,
                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                                  const Teuchos::MpiComm<int> mpi_comm, 
+                                  const Teuchos::MpiComm<int> mpi_comm,
                                   STK_Interface & mesh) const;
 
   protected:
- 
-    Teuchos::RCP<panzer::FieldManagerBuilder> 
+
+    Teuchos::RCP<panzer::FieldManagerBuilder>
     buildFieldManagerBuilder(const Teuchos::RCP<panzer::WorksetContainer> & wc,
                              const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                              const std::vector<panzer::BC> & bcs,
@@ -317,7 +317,7 @@ namespace panzer_stk {
 
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_global_indexer;
-    Teuchos::RCP<panzer::ConnManagerBase<int> > m_conn_manager;
+    Teuchos::RCP<panzer::ConnManager> m_conn_manager;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
     Teuchos::RCP<panzer::GlobalData> m_global_data;
     bool useDiscreteAdjoint;
@@ -329,7 +329,7 @@ namespace panzer_stk {
     Teuchos::RCP<const panzer_stk::RythmosObserverFactory> m_rythmos_observer_factory;
     Teuchos::RCP<panzer_stk::WorksetFactory> m_user_wkst_factory;
     Teuchos::RCP<panzer::WorksetContainer> m_wkstContainer;
- 
+
     bool useDynamicCoordinates_;
   };
 
@@ -342,7 +342,7 @@ addResponse(const std::string & responseName,const std::vector<panzer::WorksetDe
 
   Teuchos::RCP<Thyra::EpetraModelEvaluator> thyra_ep_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
   Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
- 
+
   if(thyra_ep_me!=Teuchos::null && panzer_me==Teuchos::null) {
     // I don't need no const-ness!
     Teuchos::RCP<EpetraExt::ModelEvaluator> ep_me = Teuchos::rcp_const_cast<EpetraExt::ModelEvaluator>(thyra_ep_me->getEpetraModel());
@@ -353,7 +353,7 @@ addResponse(const std::string & responseName,const std::vector<panzer::WorksetDe
   else if(panzer_me!=Teuchos::null && thyra_ep_me==Teuchos::null) {
     return panzer_me->addResponse(responseName,wkstDesc,builder);
   }
-     
+
   TEUCHOS_ASSERT(false);
   return -1;
 }

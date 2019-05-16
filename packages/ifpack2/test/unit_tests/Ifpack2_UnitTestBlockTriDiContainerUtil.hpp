@@ -59,6 +59,11 @@ template <typename Scalar, typename LO, typename GO>
 struct BlockTriDiContainerTester {
   typedef LO Int;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+#if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_SMALL_SCALAR) 
+  typedef typename std::conditional<std::is_same<Magnitude,double>::value,float,Magnitude>::type SmallMagnitude;
+#else 
+  typedef Magnitude SmallMagnitude;  
+#endif
   typedef tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO> bcmm;
   typedef typename bcmm::Tpetra_RowMatrix Tpetra_RowMatrix;
   typedef typename bcmm::Tpetra_BlockCrsMatrix Tpetra_BlockCrsMatrix;
@@ -258,12 +263,14 @@ struct BlockTriDiContainerTester {
       if (p.tridiag_only && p.tridiag_is_identity) {
         // Test that we formed I.
         rd = bcmm::reldif(*X, *B);
-        if (rd != 0) TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I) " << details);
-        else TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I) " << details);
+        if (rd != 0) TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I) " << details << " rd " << rd);
+        else TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I) " << details << " rd " << rd);
       } else if (p.tridiag_only) {
         apply(*B, *X_solve, false);
         rd = bcmm::reldif(*X, *X_solve);
-        if (rd > 1e2*std::numeric_limits<Magnitude>::epsilon())
+        // D can be small scalar (float when scalar is double)
+        // without norm termination, the error should be bounded by small scalar limit
+        if (rd > 1e2*std::numeric_limits<SmallMagnitude>::epsilon())
           TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D) " << details << " rd " << rd);
         else
           TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D) " << details << " rd " << rd);
@@ -274,10 +281,12 @@ struct BlockTriDiContainerTester {
         Y->update(-1, *X, 0);
         apply(*X, *Y, false);
         rd = bcmm::reldif(*B, *Y);
-        if (rd > 1e2*std::numeric_limits<Magnitude>::epsilon())
-          TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I + R) " << details);
+        // D can be small scalar (float when scalar is double)
+        // without norm termination, the error should be bounded by small scalar limit
+        if (rd > 1e2*std::numeric_limits<SmallMagnitude>::epsilon())
+          TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = I + R) " << details << " rd " << rd);
         else 
-          TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I + R) " << details);
+          TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = I + R) " << details << " rd " << rd);
       } else {
         // Test that we can solve a problem.
         apply(*B, *X_solve, false);
@@ -303,12 +312,9 @@ struct BlockTriDiContainerTester {
             if (nits < num_sweeps) {
               const auto n0 = T_bare_advanced->getNorms0();
               const auto nf = T_bare_advanced->getNormsFinal();
-              bool ok = true;
-              Magnitude r = 0;
-              for (int i = 0; i < nvec; ++i) {
-                r = nf[i] / n0[i];
-                if (r > tol) { ok = false; break; }
-              }
+
+              const Magnitude r = nf/n0;
+              const bool ok = r <= tol;
               if ( ! ok)
                 TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, norm) " << details << " r " << r);
               else
@@ -341,10 +347,11 @@ struct BlockTriDiContainerTester {
               T_bare_advanced->applyInverseJacobi(*B, *X, input);
               // Check if X agrees with the manually computed X_true.
               rd = bcmm::reldif(*X, X_true);
-              if (rd > 1e1*std::numeric_limits<Magnitude>::epsilon())
-                TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, damping factor) " << details);
+              const auto eps = 1e1*std::numeric_limits<Magnitude>::epsilon();
+              if (rd > eps)
+                TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, damping factor) " << details << " rd " << rd << " eps " << eps);
               else
-                TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R, damping factor) " << details);
+                TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R, damping factor) " << details << " rd " << rd << " eps " << eps);
             }
           }
         }

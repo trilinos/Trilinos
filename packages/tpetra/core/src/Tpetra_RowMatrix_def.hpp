@@ -215,12 +215,21 @@ namespace Tpetra {
     }
     else { // the row Maps of A and B are not the same
       // Construct the result matrix C.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       if (constructorSublist.is_null ()) {
         C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile));
       } else {
         C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile,
                                       constructorSublist));
       }
+#else
+      // true: !A_rowMap->isSameAs (*B_rowMap)
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
+				 std::invalid_argument,
+				 "Tpetra::RowMatrix::add: The row maps must be the same for statically "
+				 "allocated matrices in order to be sure that there is sufficient space "
+				 "to do the addition");
+#endif
     }
 
 #ifdef HAVE_TPETRA_DEBUG

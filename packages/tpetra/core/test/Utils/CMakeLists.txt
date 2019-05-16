@@ -110,3 +110,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-4
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  withLocalAccess_generic
+  SOURCES
+    withLocalAccess_generic
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )

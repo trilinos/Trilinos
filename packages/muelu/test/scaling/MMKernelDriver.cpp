@@ -234,7 +234,6 @@ static inline std::string to_string (const Experiments& experiment_id) {
     default:
       return ("UNDEFINED");
   }
-  return ("UNDEFINED");
 }
 
 
@@ -1112,9 +1111,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     clp.recogniseAllOptions(false);
     switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
@@ -1181,6 +1180,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     std::stringstream ss;
 
+    // this stuff was designed to report nested parallelism it isn't super helpful
+    // but at some point I was working with OMP_NESTED=true, which is very different
+    // from Kokkos' team based parallelism with OpenMP
+    #ifdef HAVE_MUELU_OPENMP
     #pragma omp parallel
     {
       int num_threads = omp_get_num_threads ();
@@ -1236,6 +1239,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     out << ss.str ();
     out.flush();
+    #endif // have openmp
 
     // =========================================================================
     // Problem construction
@@ -1307,10 +1311,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       // loop over the randomized experiments
       for (const auto& experiment_id : my_experiments) {
         RCP<Matrix> C;
-        std::string kernel_name;
+        std::string kernel_name = to_string(experiment_id);
         #if USE_DESCRIPTIVE_STATS == 1
-        auto& timing_vector = my_experiment_timings[to_string(experiment_id) + ": Total" ];
-        auto& mem_vector = (trackRssHWM) ? my_experiment_timings[to_string(experiment_id) + ": RssHWM"] : mem_dummy;
+        auto& timing_vector = my_experiment_timings[kernel_name + ": Total" ];
+        auto& mem_vector = (trackRssHWM) ? my_experiment_timings[kernel_name+ ": RssHWM"] : mem_dummy;
         #endif
 
         switch (experiment_id) {
@@ -1323,7 +1327,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             DescriptiveTime(Multiply_ViennaCL(*A,*B,*C));
           }
           #endif
-          kernel_name = "ViennaCL";
           break;
         // MKL_SPMM
         case Experiments::MKL_SPMM:
@@ -1334,7 +1337,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             DescriptiveTime(Multiply_MKL_SPMM(*A,*B,*C));
           }
           #endif
-          kernel_name = "MKL";
           break;
         // KK Algorithms (KK Memory)
         case Experiments::KK_MEM:
@@ -1343,7 +1345,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK_MEMORY: Total"));
             DescriptiveTime(Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK_MEMORY"),kk_team_work_size));
           }
-          kernel_name = "KK_Memory";
           break;
         // KK Algorithms (KK Dense)
         case Experiments::KK_DENSE:
@@ -1352,7 +1353,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK_DENSE: Total"));
             DescriptiveTime(Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK_DENSE"),kk_team_work_size));
           }
-          kernel_name = "KK Dense";
           break;
         // KK Algorithms (KK Default)
         case Experiments::KK_DEFAULT:
@@ -1361,7 +1361,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK: Total"));
             DescriptiveTime(Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK"),kk_team_work_size));
           }
-          kernel_name = "KK Default";
           break;
         // LTG
         case Experiments::LTG:
@@ -1371,7 +1370,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             using ltg_tester=LTG_Tests<SC,LO,GO,Node>;
             DescriptiveTime(ltg_tester::Multiply_LTG(*A,*B,*C));
           }
-          kernel_name = "LTG";
           break;
 
         default:

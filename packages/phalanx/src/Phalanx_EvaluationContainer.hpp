@@ -146,7 +146,7 @@ namespace PHX {
      */
     const std::vector<Teuchos::RCP<PHX::FieldTag>>& getFieldTags();
 
-    /** \brief Print to user specified ostream when each evalautor
+    /** \brief Print to user specified ostream when each evaluator
         starts and stops. Useful for debugging. Enabled only in debug
         builds.
 

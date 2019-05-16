@@ -150,7 +150,7 @@ Teuchos::RCP<const panzer::BlockedDOFManager<int,Ordinal64> > buildBlockedIndexe
 
   Teuchos::RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
-  Teuchos::RCP<ConnManager<int,Ordinal64> > connManager = rcp(new unit_test::ConnManager<Ordinal64>(myRank,numProc));
+  Teuchos::RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
   Teuchos::RCP<panzer::BlockedDOFManager<int,Ordinal64> > indexer = rcp(new panzer::BlockedDOFManager<int,Ordinal64>());
 
   indexer->setConnManager(connManager,MPI_COMM_WORLD);

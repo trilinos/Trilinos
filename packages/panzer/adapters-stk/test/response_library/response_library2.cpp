@@ -111,7 +111,7 @@ namespace panzer {
 
     Builder builder;
     tMap.buildObjects(builder);
-  
+
     TEST_EQUALITY(tMap.get<char>(),"Schar");
     TEST_EQUALITY(tMap.get<short>(),"Sshort");
 
@@ -139,10 +139,10 @@ namespace panzer {
 
     // setup and evaluate ResponseLibrary
     ///////////////////////////////////////////////////
- 
+
     out << "Adding responses" << std::endl;
 
-    std::pair< RCP<ResponseLibrary<Traits> >, RCP<panzer::LinearObjFactory<panzer::Traits> > > data 
+    std::pair< RCP<ResponseLibrary<Traits> >, RCP<panzer::LinearObjFactory<panzer::Traits> > > data
           = buildResponseLibrary(physics_blocks,cm_factory,closure_models,user_data);
     RCP<ResponseLibrary<Traits> > rLibrary = data.first;
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof = data.second;
@@ -176,14 +176,14 @@ namespace panzer {
       RCP<const Epetra_Map> map = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(iResp)->getMap();
       RCP<const Thyra::VectorSpaceBase<double> > vs = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(tResp)->getVectorSpace();
 
-      eVec = Teuchos::rcp(new Epetra_Vector(*map)); 
+      eVec = Teuchos::rcp(new Epetra_Vector(*map));
       // eVec->PutScalar(0.0);
 
       // TEST_EQUALITY(eVec->MyLength(),1);
 
       tVec = Thyra::createMember<double>(vs);
       // Thyra::assign(tVec.ptr(),0.0);
-      
+
       Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(iResp)->setVector(eVec);
       Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(tResp)->setVector(tVec);
 
@@ -243,14 +243,14 @@ namespace panzer {
 
     // setup and evaluate ResponseLibrary
     ///////////////////////////////////////////////////
- 
+
     out << "Adding responses" << std::endl;
 
-    std::pair< RCP<ResponseLibrary<Traits> >, RCP<panzer::LinearObjFactory<panzer::Traits> > > data 
+    std::pair< RCP<ResponseLibrary<Traits> >, RCP<panzer::LinearObjFactory<panzer::Traits> > > data
           = buildResponseLibrary(physics_blocks,cm_factory,closure_models,user_data);
     RCP<ResponseLibrary<Traits> > rLibrary = data.first;
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof = data.second;
-    RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer 
+    RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer
         = user_data.sublist("Panzer Data").get<RCP<panzer::UniqueGlobalIndexer<int,int> > >("DOF Manager");
 
     RespFactoryFunc_Builder builder;
@@ -277,14 +277,14 @@ namespace panzer {
 
     // no response should be build for this one
     TEST_ASSERT(rLibrary->getResponse<panzer::Traits::Jacobian>("FIELD_B")==Teuchos::null);
- 
+
     RCP<Epetra_Vector> eVec, eVec2;
     {
       RCP<const Epetra_Map> map = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(ssResp)->getMap();
 
-      eVec = Teuchos::rcp(new Epetra_Vector(*map)); 
-      eVec2 = Teuchos::rcp(new Epetra_Vector(*map)); 
-      
+      eVec = Teuchos::rcp(new Epetra_Vector(*map));
+      eVec2 = Teuchos::rcp(new Epetra_Vector(*map));
+
       TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(blkResp)->setVector(eVec));
       TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(ssResp)->setVector(eVec2));
 
@@ -359,10 +359,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    }
     {
       std::size_t bc_id = 1;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -373,10 +373,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 2;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -387,7 +387,7 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
     }
@@ -441,11 +441,11 @@ namespace panzer {
        std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
        block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
        block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
-    
+
        Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       int default_integration_order = 1;
-      
+
        panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                   block_ids_to_cell_topo,
 				  ipb,
@@ -459,40 +459,40 @@ namespace panzer {
 
     // setup worksets
     /////////////////////////////////////////////
- 
+
      std::vector<std::string> validEBlocks;
      mesh->getElementBlockNames(validEBlocks);
 
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physics_blocks.size();i++) 
+    for(size_t i=0;i<physics_blocks.size();i++)
       wkstContainer->setNeeds(physics_blocks[i]->elementBlockID(),physics_blocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
- 
+
     // setup DOF manager
     /////////////////////////////////////////////
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager
+           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
+    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);
-    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof 
+    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 
     // setup field manager builder
     /////////////////////////////////////////////
-      
+
     // Add in the application specific closure model factory
     user_app::STKModelFactory_TemplateBuilder cm_builder;
     cm_factory.buildObjects(cm_builder);
@@ -510,7 +510,7 @@ namespace panzer {
     user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
     user_data.set<int>("Workset Size",workset_size);
 
-    RCP<ResponseLibrary<Traits> > rLibrary 
+    RCP<ResponseLibrary<Traits> > rLibrary
           = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer,dofManager,lof));
 
     return std::make_pair(rLibrary,lof);

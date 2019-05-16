@@ -166,7 +166,11 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
   return identityMatrix;
 }
 
-
+template<class Matrix_t>
+RCP<Matrix_t>
+copyMatrix(const RCP<Matrix_t> &A) {
+  return rcp(new Matrix_t(*A,Teuchos::Copy));
+}
 
 typedef struct add_test_results_struct{
   double correctNorm;
@@ -662,21 +666,17 @@ mult_test_results multiply_reuse_test(
   computedC1->leftScale (*leftScaling);
   computedC1->rightScale(*rightScaling);
 
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = map->getNode ();
-
   // As = leftScaling * op(A) =
   //   leftScaling * A, if AT=false
   //   A*leftScaling,   if AT=true
-  RCP<Matrix_t> As = A->clone(node);
+  RCP<Matrix_t> As = copyMatrix(A);
   if (AT == false) As->leftScale (*leftScaling);
   else             As->rightScale(*leftScaling);
 
   // Bs = op(B) * rightScaling =
   //   B * rightScaling, if BT=false
   //   rightScaling*B,   if BT=true
-  RCP<Matrix_t> Bs = B->clone(node);
+  RCP<Matrix_t> Bs = copyMatrix(B);
   if (BT == false) Bs->rightScale(*rightScaling);
   else             Bs->leftScale (*rightScaling);
 
@@ -813,11 +813,7 @@ mult_test_results jacobi_reuse_test(
   computedC1->rightScale(*rightScaling);
 
   // Bs = B * rightScaling
-
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = map->getNode ();
-  RCP<Matrix_t> Bs = B->clone(node);
+  RCP<Matrix_t> Bs = copyMatrix(B);
   Bs->rightScale(*rightScaling);
 
   // computedC2 = (I - Dinv*A)*Bs
@@ -865,7 +861,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
   newOut << "Get parameters from XML file" << endl;
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
     Teuchos::getParametersFromXmlFile(matnamesFile);
-
 
   for (Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
        it != matrixSystems->end();
@@ -1076,20 +1071,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       newOut << "\tComputed norm: " << results.computedNorm << endl;
       newOut << "\tEpsilon: " << results.epsilon << endl;
 
-      B = Reader<Matrix_t >::readSparseFile(B_file, comm, false);
+      B = Reader<Matrix_t >::readSparseFile(B_file, comm, true, false, false);
+      //declare E with enough entries to receive A + B
+      size_t n = 0;
+      for (size_t i = 0; i < B->getNodeNumRows(); i++) {
+	if (n < B->getNumEntriesInLocalRow(i))
+	  n = B->getNumEntriesInLocalRow(i);
+      }
+      n += A->getNodeMaxNumRowEntries();
+
+      RCP<const map_type> rm = B->getRowMap();
+      RCP<Matrix_t> E = rcp (new Matrix_t(rm, n, Tpetra::StaticProfile));
+      auto one = Teuchos::ScalarTraits<MT>::one();
+      Tpetra::MatrixMatrix::Add(*B, BT, one, *E, one);
 
       if (! BT) {
         if (verbose)
           newOut << "Running 2-argument add test for "
                  << currentSystem.name() << endl;
 
-        results = add_into_test(A,B,AT,C,comm);
+        results = add_into_test(A,E,AT,C,comm);
         TEST_COMPARE(results.epsilon, <, epsilon)
         newOut << "Add Into Test Results: " << endl;
         newOut << "\tCorrect Norm: " << results.correctNorm << endl;
         newOut << "\tComputed norm: " << results.computedNorm << endl;
         newOut << "\tEpsilon: " << results.epsilon << endl;
       }
+      newOut << "Add tests complete" << endl;
     }
     else if (op == "RAP") {
       if (verbose)

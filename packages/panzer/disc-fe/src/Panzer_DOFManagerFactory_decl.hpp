@@ -50,7 +50,7 @@
 namespace panzer {
 
 template <typename LO,typename GO>
-class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO,LO,GO> {
+class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO> {
 public:
    DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false), useNeighbors_(false) {}
 
@@ -75,7 +75,7 @@ public:
    virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
+                            const Teuchos::RCP<ConnManager> & connMngr,
                             const std::string & fieldOrder="") const;
 
    void setUseDOFManagerFEI(bool flag)
@@ -106,7 +106,7 @@ protected:
    Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
+                            const Teuchos::RCP<ConnManager> & connMngr,
                             const std::string & fieldOrder) const;
 
    bool useDOFManagerFEI_;

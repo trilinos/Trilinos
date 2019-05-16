@@ -284,6 +284,9 @@ namespace Iocgns {
         set_int_byte_size_api(Ioss::USE_INT64_API);
       }
 
+      if (mode == CG_MODE_MODIFY && get_region() != nullptr) {
+	Utils::update_db_zone_property(m_cgnsFilePtr, get_region(), myProcessor, false);
+      }
 #if 0
       // This isn't currently working since CGNS currently has chunking
       // disabled for HDF5 files and compression requires chunking.

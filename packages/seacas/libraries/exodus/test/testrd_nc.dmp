@@ -742,7 +742,7 @@ QA records =
  'testwt'
  '07/07/93'
  '15:41:33'
- ''
+ 'Thirty-Two character QA Record|'
  ''
  ''
  ''
@@ -753,7 +753,7 @@ after ex_get_info, error =   0
 info records = 
  'This is the first information record.'
  ''
- ''
+'This info record is exactly 80 characters long.  last character should be pipe |'
 
 after ex_get_variable_param, error =   0
 
