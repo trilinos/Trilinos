@@ -589,9 +589,6 @@ public:
     }
     boostMatrix->fillComplete(A->getDomainMap(),A->getRangeMap());
 
-    
-    Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("boost.mat",*boostMatrix);
-
     // FIXME: We really need an add that lets you "add into"
     RCP<Matrix> newA;
     Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*A,false,one, *boostMatrix,false,one,newA,fos);

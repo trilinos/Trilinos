@@ -1,0 +1,17 @@
+
+\cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212"}
+          
+\cbb{refmaxwell: disable addon}{bool}{true}{Specifing whether the addon should be built for stabilization}
+          
+\cba{refmaxwell: 11list}{\parameterlist}{Specifies the multigrid solver for the 11 block}
+          
+\cba{refmaxwell: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
+          
+\cbb{refmaxwell: use as preconditioner}{bool}{false}{Assume zero initial guess}
+          
+\cbb{refmaxwell: dump matrices}{bool}{false}{Dump matrices to disk.}
+          
+\cbb{refmaxwell: subsolves on subcommunicators}{bool}{false}{Redistribute the two subsolves to disjoint sub-communicators (so that the additive solve can occur in parallel).}
+          
+\cbb{refmaxwell: ratio AH / A22 subcommunicators}{double}{1.0}{Ratio for the split into sub-communicators.}
+          

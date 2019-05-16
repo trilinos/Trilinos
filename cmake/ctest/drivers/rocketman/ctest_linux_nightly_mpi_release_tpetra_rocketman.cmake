@@ -53,45 +53,32 @@
 # ************************************************************************
 # @HEADER
 
-# JJH corresponds to do-configure-no_serial_no_int
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trappist.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rocketman.gcc.cmake")
 
 #
 # Set the options specific to this build case
 #
 
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME OPENMPI_1.10.1_RELEASE_DEV_MueLu_NO_INT_NO_SERIAL_OPENMP)
+SET(BUILD_NAME_DETAILS TPETRA_DEPRECATED_CODE_OFF)
+
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK  Specialized)    # Set the CDash track to Specialized
-SET(CTEST_TEST_TIMEOUT 900)
+SET(Trilinos_TRACK  Nightly)  # Set the CDash track to Nightly
+SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
+SET(CTEST_DO_MEMORY_TESTING FALSE)
 
-SET(Trilinos_PACKAGES MueLu Xpetra)
+SET(Trilinos_PACKAGES Tpetra)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  ### ETI ###
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-    "-DTpetra_INST_INT_INT:BOOL=OFF"
-    "-DTpetra_INST_INT_LONG:BOOL=OFF"
-    "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
-    "-DTpetra_INST_SERIAL:BOOL=OFF"
-    "-DTrilinos_ENABLE_OpenMP=ON"
-
-  ### MISC ###
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
-  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
-
-  ### TPLS ###
-  "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
-  "-DTPL_ENABLE_HWLOC:BOOL=OFF"
-
-  ### PACKAGES CONFIGURATION ###
-  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
-  "-DMueLu_ENABLE_Experimental:BOOL=ON"
-  "-DXpetra_ENABLE_Experimental:BOOL=ON"
+  "-DTpetra_ENABLE_DEPRECATED_CODE=OFF"
+  "-DKOKKOS_ENABLE_DEPRECATED_CODE=OFF"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
 )
 
 #
