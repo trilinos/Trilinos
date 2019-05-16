@@ -321,7 +321,7 @@ namespace Tacho {
       void run() {
         double sum = 0;
         Kokkos::parallel_reduce(Kokkos::RangePolicy<SpaceType>(0,BufSize/sizeof(double)), *this, sum);
-        SpaceType::fence();
+        SpaceType().fence();
         FILE *fp = fopen("/dev/null", "w");
         fprintf(fp, "%f\n", sum);
         fclose(fp);

@@ -1735,7 +1735,7 @@ struct StokhosViewFill< OutputView ,
       Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
       parallel_for( config, Kernel<vector_length>(output, input) );
-      execution_space::fence();
+      execution_space().fence();
     }
   }
 

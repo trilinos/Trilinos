@@ -481,7 +481,7 @@ struct DeepCopyNonContiguous
     output( arg_out ), input( arg_in )
   {
     parallel_for( output.extent(0) , *this );
-    execution_space::fence();
+    execution_space().fence();
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1921,7 +1921,7 @@ struct StokhosViewFill< OutputView ,
         config, ScalarKernel<vector_length>(output, input.fastAccessCoeff(0)) );
     else
       parallel_for( config, PCEKernel<vector_length>(output, input) );
-    execution_space::fence();
+    execution_space().fence();
   }
 
   StokhosViewFill( const OutputView & output , const scalar_type & input )
@@ -1941,7 +1941,7 @@ struct StokhosViewFill< OutputView ,
     Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
     parallel_for( config, ScalarKernel<vector_length>(output, input) );
-    execution_space::fence();
+    execution_space().fence();
   }
 
 };

@@ -1203,7 +1203,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
   for (size_t i=0; i < drv_orts.size(); ++i)
     host_drv_orts(i) = orientations[i];
   Kokkos::deep_copy(drv_orts,host_drv_orts);
-  PHX::Device::fence();
+  typename PHX::Device().fence();
 
   ///
   /// HGRAD elements

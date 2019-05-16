@@ -4911,7 +4911,7 @@ namespace Tpetra {
         // Make sure that the GPU can see any updates made on host.
         // This code only reads the local graph, so we don't need a
         // fence afterwards.
-        execution_space::fence ();
+        execution_space().fence ();
 
         // mfh 01 May 2018: See GitHub Issue #2658.
         constexpr bool ignoreMapsForTriStruct = true;
@@ -4933,7 +4933,7 @@ namespace Tpetra {
       // Make sure that the GPU can see any updates made on host.
       // This code only reads the local graph, so we don't need a
       // fence afterwards.
-      execution_space::fence ();
+      execution_space().fence ();
 
       auto ptr = this->lclGraph_.row_map;
       const LO lclNumRows = ptr.extent(0) == 0 ?
@@ -5789,7 +5789,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "computeCrsPadding";
 
     // Resize row pointers and indices to accommodate incoming data
-    execution_space::fence ();  // Make sure device sees changes made by host
+    execution_space().fence ();  // Make sure device sees changes made by host
     const map_type& src_row_map = *(source.getRowMap());
     using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
     padding_type padding(numSameIDs+permuteFromLIDs.size());
@@ -5808,7 +5808,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(result.failed(), std::runtime_error,
                                             "unable to insert padding for LID " << tgtid);
     }
-    execution_space::fence ();  // Make sure device sees changes made by host
+    execution_space().fence ();  // Make sure device sees changes made by host
     TEUCHOS_TEST_FOR_EXCEPTION(padding.failed_insert(), std::runtime_error,
       "failed to insert one or more indices in to padding map");
     return padding;
@@ -5829,7 +5829,7 @@ namespace Tpetra {
     using execution_space = typename device_type::execution_space;
     const char tfecfFuncName[] = "computeCrsPaddingNew: ";
 
-    execution_space::fence ();
+    execution_space().fence ();
 
     // Resize row pointers and indices to accommodate incoming data
     const map_type& src_row_map = * (source.getRowMap ());
@@ -5864,7 +5864,7 @@ namespace Tpetra {
         (result.failed(), std::runtime_error,
          "unable to insert padding for LID " << tgtid);
     }
-    execution_space::fence ();  // Make sure device sees changes made by host
+    execution_space().fence ();  // Make sure device sees changes made by host
     TEUCHOS_TEST_FOR_EXCEPTION
       (padding.failed_insert(), std::runtime_error,
        "failed to insert one or more indices in to padding map");
@@ -5880,7 +5880,7 @@ namespace Tpetra {
     using execution_space = typename device_type::execution_space;
     const char tfecfFuncName[] = "computeCrsPadding";
     // Creating padding for each new incoming index
-    execution_space::fence ();  // Make sure device sees changes made by host
+    execution_space().fence ();  // Make sure device sees changes made by host
     using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
     padding_type padding(importLIDs.size());
     auto numEnt = static_cast<size_t>(importLIDs.size());
@@ -5889,7 +5889,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(result.failed(), std::runtime_error,
                                             "unable to insert padding for LID " << importLIDs[i]);
     }
-    execution_space::fence ();  // Make sure device sees changes made by host
+    execution_space().fence ();  // Make sure device sees changes made by host
     TEUCHOS_TEST_FOR_EXCEPTION(padding.failed_insert(), std::runtime_error,
       "failed to insert one or more indices in to padding map");
     return padding;
@@ -5907,7 +5907,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "computeCrsPaddingNew: ";
 
     // Creating padding for each new incoming index
-    execution_space::fence ();  // Make sure device sees changes made by host
+    execution_space().fence ();  // Make sure device sees changes made by host
     using padding_type =
       Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>;
     padding_type padding (importLIDs.extent (0));
@@ -6117,7 +6117,7 @@ namespace Tpetra {
 
     // We may be accessing UVM data on host below, so ensure that the
     // device is done accessing it.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     const map_type& rowMap = * (this->getRowMap ());
     const map_type* const colMapPtr = this->colMap_.getRawPtr ();
@@ -6280,7 +6280,7 @@ namespace Tpetra {
 
     // We may have accessed UVM data on host above, so ensure that the
     // device sees these changes.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (errCount != 0, std::logic_error, "Packing encountered "
@@ -6341,7 +6341,7 @@ namespace Tpetra {
 
     // We may be accessing UVM data on host below, so ensure that the
     // device is done accessing it.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     const map_type& rowMap = * (this->getRowMap ());
     const map_type* const colMapPtr = this->colMap_.getRawPtr ();
@@ -6440,7 +6440,7 @@ namespace Tpetra {
     // The graph may store its data in UVM memory, so make sure that
     // any device kernels are done modifying the graph's data before
     // reading the data.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     errCount = 0;
     Kokkos::parallel_scan

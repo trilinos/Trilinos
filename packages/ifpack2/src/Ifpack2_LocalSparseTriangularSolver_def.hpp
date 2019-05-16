@@ -432,7 +432,7 @@ initialize ()
     decltype(val)                           newval ("val", val.extent (0));
 
     // FIXME: The code below assumes UVM
-    crs_matrix_type::execution_space::fence();
+    typename crs_matrix_type::execution_space().fence();
     newptr(0) = 0;
     for (local_ordinal_type row = 0, rowStart = 0; row < numRows; ++row) {
       auto A_r = Alocal.row(numRows-1 - row);
@@ -445,7 +445,7 @@ initialize ()
       rowStart += numEnt;
       newptr(row+1) = rowStart;
     }
-    crs_matrix_type::execution_space::fence();
+    typename crs_matrix_type::execution_space().fence();
 
     // Reverse maps
     using map_type = typename crs_matrix_type::map_type;

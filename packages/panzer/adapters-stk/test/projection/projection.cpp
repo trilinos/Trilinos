@@ -428,7 +428,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
     const auto source = rhs[col]->getLocalView<NodeType>();
     const int numEntries = source.extent(0);
     Kokkos::parallel_for(numEntries, KOKKOS_LAMBDA (const int& i) { mvView(i,col) = source(i,0); });
-    PHX::Device::fence();
+    typename PHX::Device().fence();
   }
   timer->stop("Copy RHS Values into MV");
 
@@ -467,7 +467,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   {
     const auto hostValues = Kokkos::create_mirror_view(solutionMV->getLocalView<PHX::Device>());
     Kokkos::deep_copy(hostValues,solutionMV->getLocalView<PHX::Device>());
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     const int phiIndex = 0;
     const int dphiDxIndex = 1;
@@ -559,7 +559,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         for (int field=0; field < numVectors; ++field)
           x(i,field) = ilmm(i,0) * rhsMV_k(i,field);
       });
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     solutionMV->template modify<PHX::Device>();
   }
   timer->stop("apply lumped mass matrix");
@@ -569,7 +569,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   {
     const auto hostValues = Kokkos::create_mirror_view(solutionMV->getLocalView<PHX::Device>());
     Kokkos::deep_copy(hostValues,solutionMV->getLocalView<PHX::Device>());
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     const int phiIndex = 0;
     const int dphiDxIndex = 1;
@@ -778,7 +778,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   connMassMatrix->setAllToScalar(0.0);
   ghostedMatrix->resumeFill();
   ghostedMatrix->setAllToScalar(0.0);
-  PHX::Device::fence();
+  typename PHX::Device().fence();
 
   // fill in the mass matrix
   // the integral of the edge basis squared over one cell is 1/3
@@ -794,7 +794,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
       localMass.sumIntoValues(lids(i,r),cols,2,row_values,false,true);
     }
   });
-  PHX::Device::fence();
+  typename PHX::Device().fence();
   ghostedMatrix->fillComplete();
   const auto exporter = factory.getGhostedExport(0);
   connMassMatrix->doExport(*ghostedMatrix, *exporter, Tpetra::ADD);
@@ -1032,7 +1032,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
     const auto source = rhs[col]->getLocalView<NodeType>();
     const int numEntries = source.extent(0);
     Kokkos::parallel_for(numEntries, KOKKOS_LAMBDA (const int& i) { mvView(i,col) = source(i,0); });
-    PHX::Device::fence();
+    typename PHX::Device().fence();
   }
   timer->stop("Copy RHS Values into MV");
 
@@ -1072,7 +1072,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   {
     const auto hostValues = Kokkos::create_mirror_view(solutionMV->getLocalView<PHX::Device>());
     Kokkos::deep_copy(hostValues,solutionMV->getLocalView<PHX::Device>());
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     const int phiIndex = 0;
     const int dphiDxIndex = 1;
@@ -1146,7 +1146,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
         for (int field=0; field < numVectors; ++field)
           x(i,field) = ilmm(i,0) * rhsMV_k(i,field);
       });
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     solutionMV->template modify<PHX::Device>();
   }
   timer->stop("apply lumped mass matrix");
@@ -1157,7 +1157,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   {
     const auto hostValues = Kokkos::create_mirror_view(solutionMV->getLocalView<PHX::Device>());
     Kokkos::deep_copy(hostValues,solutionMV->getLocalView<PHX::Device>());
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     const int phiIndex = 0;
     const int dphiDxIndex = 1;

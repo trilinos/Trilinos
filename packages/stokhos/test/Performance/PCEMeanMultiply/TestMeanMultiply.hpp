@@ -237,7 +237,7 @@ test_mean_multiply(const OrdinalType order,
       }
     }
 
-    execution_space::fence();
+    execution_space().fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type col=0; col<pce_size; ++col) {
@@ -249,7 +249,7 @@ test_mean_multiply(const OrdinalType order,
         KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, x_col[col] , value_type(0.0) ,y_col[col]);
       }
     }
-    execution_space::fence();
+    execution_space().fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size;
@@ -271,12 +271,12 @@ test_mean_multiply(const OrdinalType order,
       KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, xl , value_type(0.0) ,yl);
     }
 
-    execution_space::fence();
+    execution_space().fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, xl , value_type(0.0) ,yl);
     }
-    execution_space::fence();
+    execution_space().fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size;
@@ -298,12 +298,12 @@ test_mean_multiply(const OrdinalType order,
       KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, xr , value_type(0.0) ,yr);
     }
 
-    execution_space::fence();
+    execution_space().fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, xr , value_type(0.0) ,yr);
     }
-    execution_space::fence();
+    execution_space().fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size;
@@ -325,12 +325,12 @@ test_mean_multiply(const OrdinalType order,
       KokkosSparse::spmv(  "N" , value_type(1.0) , pce_matrix, x_pce , value_type(0.0) ,y_pce);
     }
 
-    execution_space::fence();
+    execution_space().fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv(  "N" , value_type(1.0) , pce_matrix, x_pce , value_type(0.0) ,y_pce);
     }
-    execution_space::fence();
+    execution_space().fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size;
@@ -352,12 +352,12 @@ test_mean_multiply(const OrdinalType order,
       KokkosSparse::spmv(  "N" , value_type(1.0) , pce_matrix, x_multi_pce , value_type(0.0) ,y_multi_pce);
     }
 
-    execution_space::fence();
+    execution_space().fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv(  "N" , value_type(1.0) , pce_matrix, x_multi_pce , value_type(0.0) ,y_multi_pce);
     }
-    execution_space::fence();
+    execution_space().fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size * num_pce_col;

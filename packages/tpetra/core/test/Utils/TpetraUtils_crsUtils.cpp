@@ -110,11 +110,11 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
     num_row*(num_packets_per_lid(0) + num_packets_per_lid(num_row-1))/2;
 
   Kokkos::UnorderedMap<ordinal_type,ordinal_type,device_type> padding(import_lids.size());
-  execution_space::fence();
+  execution_space().fence();
   for (size_type i=0; i<import_lids.size(); i++){
     padding.insert(import_lids(i), num_packets_per_lid(i));
   }
-  execution_space::fence();
+  execution_space().fence();
   TEST_ASSERT(!padding.failed_insert());
 
   padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
@@ -184,11 +184,11 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_2)
   num_packets_per_lid(1) = 5;
 
   Kokkos::UnorderedMap<ordinal_type,ordinal_type,device_type> padding(import_lids.size());
-  execution_space::fence();
+  execution_space().fence();
   for (size_type i=0; i<import_lids.size(); i++){
     padding.insert(import_lids(i), num_packets_per_lid(i));
   }
-  execution_space::fence();
+  execution_space().fence();
   TEST_ASSERT(!padding.failed_insert());
   padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
 

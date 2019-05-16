@@ -176,7 +176,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, ImportToStaticGraph, LO, GO, NT)
   // compare graph values.  Thus, we need to do a fence before
   // comparing graph values, in order to ensure that changes made on
   // device are visible on host.
-  execution_space::fence();
+  execution_space().fence();
 
   { // test output
     std::ostringstream errStrm;

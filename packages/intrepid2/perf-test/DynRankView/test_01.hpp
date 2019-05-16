@@ -191,13 +191,13 @@ namespace Intrepid2 {
 
           Kokkos::deep_copy(in, 1.0);                          
 
-          DeviceSpaceType::fence();
+          DeviceSpaceType().fence();
           timer.reset();
 
           for (ordinal_type i=0;i<nworkset;++i) 
             Kokkos::parallel_for( policy, FunctorType(out, in) );
 
-          DeviceSpaceType::fence();
+          DeviceSpaceType().fence();
           t_view[itest] = timer.seconds();
         }
 
@@ -214,13 +214,13 @@ namespace Intrepid2 {
           Kokkos::deep_copy(in, 1.0);                          
 
 
-          DeviceSpaceType::fence();
+          DeviceSpaceType().fence();
           timer.reset();
 
           for (ordinal_type i=0;i<nworkset;++i) 
             Kokkos::parallel_for( policy, FunctorType(out, in) );
 
-          DeviceSpaceType::fence();
+          DeviceSpaceType().fence();
           t_dynrankview[itest] = timer.seconds();
         }
       } catch (std::exception err) {
