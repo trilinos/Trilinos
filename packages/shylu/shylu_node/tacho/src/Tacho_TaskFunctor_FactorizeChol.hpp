@@ -16,7 +16,7 @@ namespace Tacho {
     public:
       typedef ExecSpace exec_space;
 
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef Kokkos::DeprecatedTaskScheduler<exec_space> scheduler_type;
       typedef typename scheduler_type::member_type member_type;
 
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
@@ -131,7 +131,7 @@ namespace Tacho {
                   
                   // respawn with updating state
                   _state = 1;
-                  Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
+                  Kokkos::respawn(this, _sched.when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
 
                   if (depbuf_size) {
                     for (ordinal_type i=0;i<_s.nchildren;++i) (dep+i)->~future_type();

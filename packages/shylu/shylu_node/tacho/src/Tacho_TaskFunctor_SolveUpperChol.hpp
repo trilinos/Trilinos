@@ -16,7 +16,7 @@ namespace Tacho {
     public:
       typedef ExecSpace exec_space;
 
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef Kokkos::DeprecatedTaskScheduler<exec_space> scheduler_type;
       typedef typename scheduler_type::member_type member_type;
 
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;

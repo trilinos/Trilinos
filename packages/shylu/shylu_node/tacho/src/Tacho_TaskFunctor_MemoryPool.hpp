@@ -13,7 +13,7 @@ namespace Tacho {
       typedef ExecSpace exec_space;
       
       // task scheduler/future
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef Kokkos::DeprecatedTaskScheduler<exec_space> scheduler_type;
       typedef typename scheduler_type::member_type member_type;
       typedef void* value_type; // functor return type
       typedef Kokkos::Future<void*,exec_space> future_type;
@@ -52,7 +52,7 @@ namespace Tacho {
       typedef ExecSpace exec_space;
       
       // task scheduler/future
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef Kokkos::DeprecatedTaskScheduler<exec_space> scheduler_type;
       typedef typename scheduler_type::member_type member_type;
       typedef void value_type; // functor return type
       typedef Kokkos::Future<void,exec_space> future_type;
@@ -93,7 +93,7 @@ namespace Tacho {
       typedef ExecSpace exec_space;
       
       // task scheduler/future
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef Kokkos::DeprecatedTaskScheduler<exec_space> scheduler_type;
       typedef typename scheduler_type::member_type member_type;
       typedef Kokkos::View<double**,Kokkos::LayoutLeft,exec_space,Kokkos::MemoryUnmanaged> value_type;
       typedef Kokkos::Future<value_type,exec_space> future_type;
@@ -144,7 +144,7 @@ namespace Tacho {
       typedef ExecSpace exec_space;
       
       // task scheduler/future
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef Kokkos::DeprecatedTaskScheduler<exec_space> scheduler_type;
       typedef typename scheduler_type::member_type member_type;
       typedef void value_type;
       typedef Kokkos::Future<exec_space> future_type;

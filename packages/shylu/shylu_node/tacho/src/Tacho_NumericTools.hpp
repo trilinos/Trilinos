@@ -68,7 +68,7 @@ namespace Tacho {
       typedef typename supernode_info_type::dense_block_type dense_block_type;
       typedef typename supernode_info_type::dense_matrix_of_blocks_type dense_matrix_of_blocks_type;
 
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef Kokkos::DeprecatedTaskScheduler<exec_space> scheduler_type;
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
 
       typedef Kokkos::DefaultHostExecutionSpace host_space;

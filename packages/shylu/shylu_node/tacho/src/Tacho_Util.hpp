@@ -536,9 +536,9 @@ namespace Tacho {
     };
 
     template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>
-    using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::Unmanaged |
-                                              MemoryTraitsType::RandomAccess |
-                                              MemoryTraitsType::Atomic |
+    using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::is_unmanaged |
+                                              MemoryTraitsType::is_random_access |
+                                              MemoryTraitsType::is_atomic |
                                               flag>;
 
     template <typename ViewType>

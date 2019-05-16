@@ -23,7 +23,7 @@ namespace Tacho {
     public:
       typedef ExecSpace exec_space;
 
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef Kokkos::DeprecatedTaskScheduler<exec_space> scheduler_type;
       typedef typename scheduler_type::member_type member_type;
 
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
@@ -214,7 +214,7 @@ namespace Tacho {
                     });
                 });
               Kokkos::single(Kokkos::PerTeam(member), [&]() {
-                  Kokkos::respawn(this, Kokkos::when_all(dep, bn2), Kokkos::TaskPriority::Regular);
+                  Kokkos::respawn(this, _sched.when_all(dep, bn2), Kokkos::TaskPriority::Regular);
                   for (ordinal_type k=0;k<static_cast<ordinal_type>(bn2);++k) (dep+k)->~future_type();
                   _sched.memory()->deallocate((void*)dep, depsize);
                 });
@@ -268,7 +268,7 @@ namespace Tacho {
                 
                 // respawn with updating state
                 _state = 1;
-                Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
+                Kokkos::respawn(this, _sched.when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
 
                 if (depbuf_size) {
                   for (ordinal_type i=0;i<_s.nchildren;++i) (dep+i)->~future_type();

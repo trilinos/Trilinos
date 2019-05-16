@@ -51,7 +51,7 @@ namespace Tacho {
 
                   const future_type dep[3] = { aa.future(), bb.future(), cc.future() };
                   future_type f =
-                    Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 3), Kokkos::TaskPriority::High),
+                    Kokkos::task_spawn(Kokkos::TaskTeam(sched, sched.when_all(dep, 3), Kokkos::TaskPriority::High),
                                        TaskFunctor_Gemm
                                        <scheduler_type,scalar_type,dense_block_type,
                                        Trans::ConjTranspose,Trans::NoTranspose,
@@ -106,7 +106,7 @@ namespace Tacho {
 
                   const future_type dep[3] = { aa.future(), bb.future(), cc.future() };
                   future_type f =
-                    Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 3), Kokkos::TaskPriority::High),
+                    Kokkos::task_spawn(Kokkos::TaskTeam(sched, sched.when_all(dep, 3), Kokkos::TaskPriority::High),
                                        TaskFunctor_Gemm
                                        <scheduler_type,scalar_type,dense_block_type,
                                        Trans::NoTranspose,Trans::NoTranspose,
