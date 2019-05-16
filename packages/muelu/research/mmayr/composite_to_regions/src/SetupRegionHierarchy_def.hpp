@@ -1640,7 +1640,9 @@ void vCycle(const int l, ///< ID of current level
       coarseRegX[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
       coarseRegB[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
 
-      regRes[j]->elementWiseMultiply(SC_ONE, *regRes[j], *((regInterfaceScalings[l])[j]), SC_ZERO);
+      RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(regInterfaceScalings[l][j]->getMap());
+      inverseInterfaceScaling->reciprocal(*regInterfaceScalings[l][j]);
+      regRes[j]->elementWiseMultiply(SC_ONE, *regRes[j], *inverseInterfaceScaling, SC_ZERO);
 
       regProlong[l+1][j]->apply(*regRes[j], *coarseRegB[j], Teuchos::TRANS);
       TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
