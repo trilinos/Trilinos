@@ -8,8 +8,8 @@ ENDIF()
 #   ADD_SUBDIRECTORY(OpenMP)
 # ENDIF()
 
-# IF(Kokkos_ENABLE_Cuda)
-#   ADD_SUBDIRECTORY(Cuda)
-# ENDIF()
+IF(Kokkos_ENABLE_Cuda)
+  ADD_SUBDIRECTORY(Cuda)
+ENDIF()
 
 
