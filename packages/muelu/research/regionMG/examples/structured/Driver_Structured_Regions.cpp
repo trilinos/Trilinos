@@ -1309,16 +1309,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           computeResidual(regRes, regX, regB, regionGrpMats, dofMap,
               rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
-          for (int j = 0; j < maxRegPerProc; j++) {
-            TEUCHOS_ASSERT(!(regInterfaceScalings[0])[j].is_null());
-
-            // Compute inverse factors, which are later to be used for scaling
-            RCP<Vector> inverseInterfaceScaling = VectorFactory::Build((regInterfaceScalings[0])[j]->getMap());
-            inverseInterfaceScaling->reciprocal(*((regInterfaceScalings[0])[j]));
-
-            // Do the actual scaling
-            regRes[j]->elementWiseMultiply(one, *regRes[j], *inverseInterfaceScaling, zero);
-          }
+          scaleInterfaceDOFs(regRes, regInterfaceScalings[0], true);
         }
 
         compRes = VectorFactory::Build(dofMap, true);
