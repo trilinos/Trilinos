@@ -890,21 +890,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       GO r = map->getMinGlobalIndex();
       TEST_THROW( matrix.insertGlobalValues( r, tuple(r+1), tuple(ST::one()) ), std::runtime_error );
     }
-    if (numImages > 1) {
-      // add too many entries globally
-      MAT matrix(map, 1, Tpetra::StaticProfile);
-      // room for one on each row
-      for (GO r=map->getMinGlobalIndex(); r<=map->getMaxGlobalIndex(); ++r)
-      {
-        matrix.insertGlobalValues(r,tuple(r),tuple(ST::one()));
-      }
-      // always room for non-locals
-      GO r = map->getMaxGlobalIndex() + 1;
-      if (r > map->getMaxAllGlobalIndex()) r = map->getMinAllGlobalIndex();
-      TEST_NOTHROW( matrix.insertGlobalValues( r, tuple(r+1), tuple(ST::one()) ) );
-      // after communicating non-locals, failure trying to add them
-      TEST_THROW( matrix.globalAssemble(), std::runtime_error );
-    }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
