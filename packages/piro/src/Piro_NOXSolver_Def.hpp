@@ -182,6 +182,12 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
           std::runtime_error,
           "Nonlinear solver failed to converge");
     }
+
+    auto final_point = model->createInArgs();
+    if (final_point.supports(Thyra::ModelEvaluatorBase::IN_ARG_x)) {
+      final_point.set_x(solver->get_current_x());
+    }
+    model->reportFinalPoint(final_point,solve_status.solveStatus==Thyra::SOLVE_STATUS_CONVERGED);
   }
 
   // Retrieve final solution to evaluate underlying model

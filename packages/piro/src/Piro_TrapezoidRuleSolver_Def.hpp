@@ -479,10 +479,7 @@ Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::reportFinal
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint,
     const bool wasSolved)
 {
-  // TODO
-  TEUCHOS_TEST_FOR_EXCEPTION(true,
-         Teuchos::Exceptions::InvalidParameter,
-         "Calling reportFinalPoint in Piro_TrapezoidDecorator_Def.hpp" << std::endl);
+  this->getNonconstUnderlyingModel()->reportFinalPoint(finalPoint,wasSolved);
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
