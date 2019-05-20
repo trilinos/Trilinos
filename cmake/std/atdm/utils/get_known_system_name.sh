@@ -51,6 +51,10 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] \
   || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ ser[0-9]+ ]] ; then
   ATDM_HOSTNAME=serrano
   ATDM_SYSTEM_NAME=serrano
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "skybridge"* ]] \
+  || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ sb[0-9]+ ]] ; then
+  ATDM_HOSTNAME=skybridge
+  ATDM_SYSTEM_NAME=skybridge
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "eclipse"* ]] \
   || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ ec[0-9]+ ]] ; then
   ATDM_HOSTNAME=eclipse
