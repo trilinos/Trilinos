@@ -1305,11 +1305,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         ////////////////////////////////////////////////////////////////////////
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
+        {
+          computeResidual(regRes, regX, regB, regionGrpMats, dofMap,
+              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
-        computeResidual(regRes, regX, regB, regionGrpMats, dofMap,
-                        rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
-
-        //        printRegionalObject<Vector>("regB 1", regB, myRank, *fos);
+          scaleInterfaceDOFs(regRes, regInterfaceScalings[0], true);
+        }
 
         compRes = VectorFactory::Build(dofMap, true);
         regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
