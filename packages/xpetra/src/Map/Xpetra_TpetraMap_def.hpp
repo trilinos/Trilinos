@@ -480,10 +480,9 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return Teuchos::null; }
 
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    template<class LocalOrdinal, class GlobalOrdinal, class Node>
     template<class Node2>
     RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED 
-    TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const 
+    clone(const RCP<Node2> &node2) const 
     { 
         return Teuchos::null; 
     }
@@ -689,10 +688,9 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return Teuchos::null; }
 
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    template<class LocalOrdinal, class GlobalOrdinal, class Node>
     template<class Node2>
     RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED 
-    TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const 
+    clone(const RCP<Node2> &node2) const 
     { 
         return Teuchos::null; 
     }
