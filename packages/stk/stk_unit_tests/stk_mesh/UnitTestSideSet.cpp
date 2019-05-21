@@ -2,16 +2,53 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/InputFile.hpp>
+#include <stk_io/SidesetUpdater.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 
+void move_elems_from_block_to_block(stk::mesh::BulkData& bulk,
+                                    const std::vector<stk::mesh::EntityId>& elemIDs,
+                                    const std::string& fromBlockName,
+                                    const std::string& toBlockName)
+{
+    stk::mesh::Part& fromBlock = *bulk.mesh_meta_data().get_part(fromBlockName);
+    stk::mesh::Part& toBlock = *bulk.mesh_meta_data().get_part(toBlockName);
+
+    stk::mesh::EntityVector elems;
+    for(stk::mesh::EntityId elemID : elemIDs) {
+        stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemID);
+        ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
+        elems.push_back(elem);
+    }
+
+    bulk.batch_change_entity_parts(elems, stk::mesh::PartVector{&toBlock}, stk::mesh::PartVector{&fromBlock});
+}
+
 class TestSideSet : public stk::unit_test_util::MeshFixture
-{};
+{
+protected:
+    void setup_2_block_mesh()
+    {
+        stk::mesh::MetaData& meta = get_meta();
+        stk::mesh::Part& block2 = meta.declare_part_with_topology("block_2", stk::topology::HEX_8);
+        stk::mesh::Part& surface1 = meta.declare_part_with_topology("surface_1", stk::topology::QUAD_4);
+        stk::io::put_io_part_attribute(block2);
+        stk::io::put_io_part_attribute(surface1);
+        meta.set_part_id(block2, 2);
+        meta.set_part_id(surface1, 1);
+
+        allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::io::fill_mesh("generated:2x2x2", get_bulk());
+
+        move_elems_from_block_to_block(get_bulk(), {2, 4, 6, 8}, "block_1", "block_2");
+    }
+};
 
 TEST_F(TestSideSet, creatingSideOfOneElem_eachProcHasOneSide)
 {
@@ -120,6 +157,122 @@ TEST_F(TestSideSet, createSideSetsSpanningMultipleBlocks)
         stk::io::create_bulkdata_sidesets(get_bulk());
 
         EXPECT_EQ(2u, get_bulk().get_number_of_sidesets());
+    }
+}
+
+void create_sides_between_blocks(stk::mesh::BulkData& bulk,
+                                 const std::string& block1Name,
+                                 const std::string& block2Name,
+                                 const std::string& sidePartName)
+{
+    stk::mesh::Part& block1 = *bulk.mesh_meta_data().get_part(block1Name);
+    stk::mesh::Part& block2 = *bulk.mesh_meta_data().get_part(block2Name);
+    stk::mesh::Part& sidePart = *bulk.mesh_meta_data().get_part(sidePartName);
+
+    stk::mesh::Selector blockSelector = block1 | block2;
+    stk::mesh::create_interior_block_boundary_sides(bulk, blockSelector, stk::mesh::PartVector{&sidePart});
+}
+
+void move_sides_between_blocks_into_sideset_part(stk::mesh::BulkData& bulk,
+                                 const std::string& block1Name,
+                                 const std::string& block2Name,
+                                 const std::string& sidePartName)
+{
+    stk::mesh::Part& block1 = *bulk.mesh_meta_data().get_part(block1Name);
+    stk::mesh::Part& block2 = *bulk.mesh_meta_data().get_part(block2Name);
+    stk::mesh::Part& sidePart = *bulk.mesh_meta_data().get_part(sidePartName);
+
+    stk::mesh::Selector betweenBlocks = block1 & block2;
+    stk::mesh::EntityVector sidesBetweenBlocks;
+    stk::mesh::get_selected_entities(betweenBlocks, bulk.buckets(stk::topology::FACE_RANK),
+                                     sidesBetweenBlocks);
+
+    bulk.batch_change_entity_parts(sidesBetweenBlocks,
+                                   stk::mesh::PartVector{&sidePart}, stk::mesh::PartVector{});
+}
+
+void create_sideset(stk::mesh::BulkData& bulk,
+                    const std::string& surfacePartName,
+                    const std::string& blockPartName)
+{
+    stk::mesh::Part& blockPart = *bulk.mesh_meta_data().get_part(blockPartName);
+    stk::mesh::Part& surfacePart = *bulk.mesh_meta_data().get_part(surfacePartName);
+
+    bulk.mesh_meta_data().set_surface_to_block_mapping(&surfacePart,
+                                                       stk::mesh::ConstPartVector{&blockPart});
+    bulk.create_sideset(surfacePart);
+}
+
+void check_sideset_elems(const stk::mesh::BulkData& bulk,
+                         const std::string surfacePartName,
+                         const std::vector<stk::mesh::EntityId>& elemIDs)
+{
+    EXPECT_EQ(1u, bulk.get_number_of_sidesets());
+
+    stk::mesh::Part& surfacePart = *bulk.mesh_meta_data().get_part(surfacePartName);
+    const stk::mesh::SideSet& sideset = bulk.get_sideset(surfacePart);
+    EXPECT_EQ(4u, sideset.size());
+
+    for(size_t i=0; i<elemIDs.size(); ++i) {
+        EXPECT_EQ(elemIDs[i], bulk.identifier(sideset[i].element));
+    }
+}
+
+TEST_F(TestSideSet, createSingleSidedSideSetOnBlock1BetweenBlocks)
+{
+    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+        setup_2_block_mesh();
+
+        create_sideset(get_bulk(), "surface_1", "block_1");
+        create_sides_between_blocks(get_bulk(), "block_1", "block_2", "surface_1");
+
+        check_sideset_elems(get_bulk(), "surface_1", {1, 3, 5, 7});
+
+//        stk::io::write_mesh("hex_2x2x2_sides_block1.g", get_bulk());
+    }
+}
+
+TEST_F(TestSideSet, createSingleSidedSideSetOnBlock1BetweenBlocks_ChangeSideParts)
+{
+    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+        setup_2_block_mesh();
+
+        create_sideset(get_bulk(), "surface_1", "block_1");
+        stk::mesh::create_all_sides(get_bulk(), get_meta().universal_part(), stk::mesh::PartVector{}, false);
+        move_sides_between_blocks_into_sideset_part(get_bulk(), "block_1", "block_2", "surface_1");
+
+        check_sideset_elems(get_bulk(), "surface_1", {1, 3, 5, 7});
+
+//        stk::io::write_mesh("hex_2x2x2_sides_block1.g", get_bulk());
+    }
+}
+
+TEST_F(TestSideSet, createSingleSidedSideSetOnBlock2BetweenBlocks)
+{
+    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+        setup_2_block_mesh();
+
+        create_sideset(get_bulk(), "surface_1", "block_2");
+        create_sides_between_blocks(get_bulk(), "block_1", "block_2", "surface_1");
+
+        check_sideset_elems(get_bulk(), "surface_1", {2, 4, 6, 8});
+
+//        stk::io::write_mesh("hex_2x2x2_sides_block2.g", get_bulk());
+    }
+}
+
+TEST_F(TestSideSet, createSingleSidedSideSetOnBlock2BetweenBlocks_ChangeSideParts)
+{
+    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+        setup_2_block_mesh();
+
+        create_sideset(get_bulk(), "surface_1", "block_2");
+        stk::mesh::create_all_sides(get_bulk(), get_meta().universal_part(), stk::mesh::PartVector{}, false);
+        move_sides_between_blocks_into_sideset_part(get_bulk(), "block_1", "block_2", "surface_1");
+
+        check_sideset_elems(get_bulk(), "surface_1", {2, 4, 6, 8});
+
+//        stk::io::write_mesh("hex_2x2x2_sides_block1.g", get_bulk());
     }
 }
 

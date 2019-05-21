@@ -170,6 +170,11 @@ class MeshFixture : public MeshFixtureNoTest, public ::ngp_testing::Test {
 
 };
 
+class MeshFixture2D : public MeshFixtureNoTest, public ::ngp_testing::Test {
+ protected:
+  MeshFixture2D() : MeshFixtureNoTest(2) {}
+};
+
 class MeshTestFixture : public MeshFixture
 {
 protected:

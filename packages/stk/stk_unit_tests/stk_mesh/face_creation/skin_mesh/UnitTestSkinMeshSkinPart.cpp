@@ -226,7 +226,7 @@ TEST(ElementGraph, skin_part_3_blocks_2D)
         stk::mesh::MetaData & meta = fixture.m_meta;
         stk::mesh::Part& skin = meta.declare_part_with_topology("skin", stk::topology::LINE_2);
 
-        stk::mesh::PartVector blocks = create_element_blocks(meta, stk::topology::QUAD_4);
+        stk::mesh::PartVector blocks = create_element_blocks(meta, stk::topology::QUAD_4_2D);
         stk::mesh::Part& active = meta.declare_part("active");
 
         fixture.m_meta.commit();

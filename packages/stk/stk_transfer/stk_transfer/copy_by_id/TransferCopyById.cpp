@@ -61,8 +61,10 @@ void TransferCopyById::do_transfer(const KeyToTargetProcessor & key_to_target_pr
           for (unsigned f=0 ; f<numValsb ; ++f) {
             const double * f_dataA = mesha.field_data(key,f);
             double * f_dataB = meshb.field_data(key,f);
-            const unsigned this_field_size = mesha.field_data_size(key,f);
-            for (unsigned index=0 ; index<this_field_size ; ++index) {
+            const unsigned this_field_size_a = mesha.field_data_size(key,f);
+            const unsigned this_field_size_b = meshb.field_data_size(key,f);
+            unsigned fsize = std::min(this_field_size_a, this_field_size_b);
+            for (unsigned index=0 ; index<fsize ; ++index) {
               f_dataB[index] = f_dataA[index];
             }
           }

@@ -340,9 +340,20 @@ void SidesetUpdater::set_active(bool active)
 
 void toggle_sideset_updaters(stk::mesh::BulkData& bulk, bool flag)
 {
-    std::vector<SidesetUpdater*> updaters = bulk.get_observer_type<SidesetUpdater>();
-    for(SidesetUpdater* updater : updaters) {
-        updater->set_active(flag);
+    std::vector<std::shared_ptr<SidesetUpdater>> updaters = bulk.get_observer_type<SidesetUpdater>();
+    bool changedFlag = false;
+    for(std::shared_ptr<SidesetUpdater> updater : updaters) {
+        if (updater->get_active_flag() != flag) {
+            changedFlag = true;
+            updater->set_active(flag);
+        }
+    }
+
+    if (flag == true && changedFlag == true) {
+        //We need to synchronize this so that the sideset updater won't try
+        //to update anything for modifications that were done while the
+        //updater was inactive.
+        bulk.synchronize_sideset_sync_count();
     }
 }
 

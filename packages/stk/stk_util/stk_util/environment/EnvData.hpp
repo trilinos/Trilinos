@@ -122,6 +122,7 @@ struct EnvData
   const std::string	m_onString;
 
   std::string           m_inputFile;
+  std::string           m_outPath;
 };
 }
 #endif

@@ -34,9 +34,8 @@
 INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
 INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_tools)
 
-FILE(GLOB SOURCES mesh_clone/*.cpp block_extractor/*.cpp)
+FILE(GLOB SOURCES mesh_clone/*.cpp mesh_tools/*.cpp block_extractor/*.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/UnitTestExtractBlocks.cpp)
-
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_tools_unit_tests

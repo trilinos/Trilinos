@@ -15,7 +15,7 @@ namespace stk {
 
 namespace mesh { class BulkData; }
 namespace mesh { class FieldBase; }
-namespace mesh { class Entity; }
+namespace mesh { struct Entity; }
 
 namespace balance {
 
