@@ -671,11 +671,11 @@ TEST_P(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
 //I'm not sure who uses that search method or it is supposed to be production ready
 INSTANTIATE_TEST_CASE_P(GeometricTransferTest, GeometricTransferTest,
     ::testing::Values(stk::search::SearchMethod::BOOST_RTREE,
-        stk::search::SearchMethod::KDTREE));
+        stk::search::SearchMethod::KDTREE),);
 
 INSTANTIATE_TEST_CASE_P(ReducedDependencyGeometricTransferTest, ReducedDependencyGeometricTransferTest,
     ::testing::Values(stk::search::SearchMethod::BOOST_RTREE,
-        stk::search::SearchMethod::KDTREE));
+        stk::search::SearchMethod::KDTREE),);
 
 }
 }
