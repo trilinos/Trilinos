@@ -186,20 +186,29 @@ public:
       stream_            (stream) {                                         // Output stream to print sketch information.
     uhist_.clear(); lhist_.clear(); whist_.clear(); phist_.clear();
     if (useSketch_) { // Only maintain a sketch of the state time history
-      Real orthTol = pl.get("Orthogonality Tolerance", 1e2*ROL_EPSILON<Real>());
-      int  orthIt  = pl.get("Reorthogonalization Iterations", 5);
-      bool trunc   = pl.get("Truncate Approximation", false);
+      Real orthTol   = pl.get("Orthogonality Tolerance", 1e2*ROL_EPSILON<Real>());
+      int  orthIt    = pl.get("Reorthogonalization Iterations", 5);
+      bool trunc     = pl.get("Truncate Approximation", false);
       if (syncHessRank_) {
         rankAdjoint_   = rankState_;
         rankStateSens_ = rankState_;
       }
-      stateSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankState_,orthTol,orthIt,trunc);
+      unsigned dseed = pl.get("State Domain Seed",0);
+      unsigned rseed = pl.get("State Range Seed",0);
+      stateSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankState_,
+        orthTol,orthIt,trunc,dseed,rseed);
       uhist_.push_back(u0_->clone());
       uhist_.push_back(u0_->clone());
       lhist_.push_back(cvec->dual().clone());
-      adjointSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankAdjoint_,orthTol,orthIt,trunc);
+      dseed = pl.get("Adjoint Domain Seed",0);
+      rseed = pl.get("Adjoint Range Seed",0);
+      adjointSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankAdjoint_,
+        orthTol,orthIt,trunc,dseed,rseed);
       if (useHessian_) {
-        stateSensSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankStateSens_,orthTol,orthIt,trunc);
+        dseed = pl.get("State Sensitivity Domain Seed",0);
+        rseed = pl.get("State Sensitivity Range Seed",0);
+        stateSensSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,
+          rankStateSens_,orthTol,orthIt,trunc,dseed,rseed);
         whist_.push_back(u0_->clone());
         whist_.push_back(u0_->clone());
         phist_.push_back(cvec->dual().clone());
@@ -556,7 +565,8 @@ private:
   /***************************************************************************/
   /************ Method to solve state equation *******************************/
   /***************************************************************************/
-  void solveState(const Vector<Real> &x) {
+  Real solveState(const Vector<Real> &x) {
+    Real cnorm(0);
     if (!isStateComputed_) {
       int eflag(0);
       const Real one(1);
@@ -578,6 +588,7 @@ private:
         con_->update_uo(*uhist_[index-1], timeStamp_[k]);
         con_->update_z(*xp.get(k), timeStamp_[k]);
         con_->solve(*cprimal_, *uhist_[index-1], *uhist_[index], *xp.get(k), timeStamp_[k]);
+        cnorm = std::max(cnorm,cprimal_->norm()); 
         // Sketch state
         if (useSketch_) {
           eflag = stateSketch_->advance(one, *uhist_[1], static_cast<int>(k)-1, one);
@@ -587,12 +598,13 @@ private:
       }
       isStateComputed_ = true;
     }
+    return cnorm;
   }
 
   Real updateSketch(const Vector<Real> &x, const Real tol) {
     int eflag(0);
     const PartitionedVector<Real> &xp = partition(x);
-    Real err(0), cnorm(0); // cdot(0), dt(0);
+    Real err(0), serr(0), cnorm(0); // cdot(0), dt(0);
     bool flag = true;
     while (flag) {
       err = static_cast<Real>(0);
@@ -633,7 +645,10 @@ private:
         }
         isStateComputed_   = false;
         isAdjointComputed_ = false;
-        solveState(x);
+        serr = solveState(x);
+        if (stream_ != nullPtr) {
+          *stream_ << "    *** Maximum Solver Error:            " << serr << std::endl;
+        }
       }
       else {
         flag = false;

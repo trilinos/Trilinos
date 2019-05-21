@@ -78,6 +78,8 @@ private:
   bool flagP_, flagQ_, flagC_;
 
   Ptr<Elementwise::NormalRandom<Real>> nrand_;
+  Ptr<std::mt19937_64> gen_;
+  Ptr<std::normal_distribution<Real>> dist_;
 
   int computeP(void) {
     int INFO(0);
@@ -237,22 +239,19 @@ private:
 
   void reset(void) {
     const Real zero(0);
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::mt19937_64 gen(seed);
-    std::normal_distribution<Real> dist;
     // Randomize Upsilon, Omega, Psi and Phi, and zero X, Y and Z
     X_.scale(zero); Z_.scale(zero); C_.scale(zero);
     for (int i = 0; i < s_; ++i) {
       Phi_[i]->applyUnary(*nrand_);
       for (int j = 0; j < ncol_; ++j) {
-        Psi_(j,i) = dist(gen);
+        Psi_(j,i) = (*dist_)(*gen_);
       }
     }
     for (int i = 0; i < k_; ++i) {
       Y_[i]->zero();
       Upsilon_[i]->applyUnary(*nrand_);
       for (int j = 0; j < ncol_; ++j) {
-        Omega_(j,i) = dist(gen);
+        Omega_(j,i) = (*dist_)(*gen_);
       }
     }
   }
@@ -284,13 +283,21 @@ public:
 
   Sketch(const Vector<Real> &x, const int ncol, const int rank,
          const Real orthTol = 1e-8, const int orthIt = 2,
-         const bool truncate = false)
+         const bool truncate = false,
+         const unsigned dom_seed = 0, const unsigned rng_seed = 0)
     : ncol_(ncol), rank_(rank), orthTol_(orthTol), orthIt_(orthIt),
       truncate_(truncate), flagP_(false), flagQ_(false), flagC_(false) {
-    nrand_ = makePtr<Elementwise::NormalRandom<Real>>();
+    Real mu(0), sig(1);
+    nrand_ = makePtr<Elementwise::NormalRandom<Real>>(mu,sig,dom_seed);
+    unsigned seed = rng_seed;
+    if (seed == 0) {
+      seed = std::chrono::system_clock::now().time_since_epoch().count();
+    }
+    gen_  = makePtr<std::mt19937_64>(seed);
+    dist_ = makePtr<std::normal_distribution<Real>>(mu,sig);
     // Compute reduced dimensions
-    k_ = std::min(4*rank_+1,ncol_);
-    s_ = std::min(2*k_   +1,ncol_);
+    k_ = std::min(2*rank_+1, ncol_);
+    s_ = std::min(2*k_   +1, ncol_);
     // Initialize matrix storage
     Upsilon_.clear(); Phi_.clear(); Y_.clear();
     Omega_.reshape(ncol_,k_); Psi_.reshape(ncol_,s_);
@@ -310,8 +317,8 @@ public:
     rank_ = rank;
     // Compute reduced dimensions
     Real sold = s_, kold = k_;
-    k_ = std::min(4*rank_+1,ncol_);
-    s_ = std::min(2*k_   +1,ncol_);
+    k_ = std::min(2*rank_+1, ncol_);
+    s_ = std::min(2*k_   +1, ncol_);
     Omega_.reshape(ncol_,k_); Psi_.reshape(ncol_,s_);
     X_.reshape(ncol_,k_); Z_.reshape(s_,s_); C_.reshape(k_,k_);
     if (s_ > sold) {

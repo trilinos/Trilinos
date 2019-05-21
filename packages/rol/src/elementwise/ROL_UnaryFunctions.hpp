@@ -153,8 +153,12 @@ private:
   Ptr<std::normal_distribution<Real>> dist_;
 
 public:
-  NormalRandom(const Real &mu = 0.0, const Real &sigma = 1.0) {
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  NormalRandom(const Real &mu = 0.0, const Real &sigma = 1.0,
+               const unsigned &iseed = 0) {
+    unsigned seed = iseed;
+    if (seed == 0) {
+      seed = std::chrono::system_clock::now().time_since_epoch().count();
+    }
     gen_  = makePtr<std::mt19937_64>(seed);
     dist_ = makePtr<std::normal_distribution<Real>>(mu,sigma);
   }
