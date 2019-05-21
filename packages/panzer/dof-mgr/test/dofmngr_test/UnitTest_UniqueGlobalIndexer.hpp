@@ -170,6 +170,12 @@ public:
     */
    virtual void getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const;
 
+   // Epetra accessors. Will be deprecated.
+   virtual void getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
+   virtual void getOwnedIndicesAsInt(std::vector<int>& indices) const;
+   virtual void getGhostedIndicesAsInt(std::vector<int>& indices) const;
+   virtual void getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const;
+
    /**
     *  \brief Get the number of indices owned by this processor.
     *

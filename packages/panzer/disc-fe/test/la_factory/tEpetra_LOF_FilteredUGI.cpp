@@ -113,7 +113,7 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
    int numProc = eComm->NumProc();
 
    RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
-   RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
+   RCP<DOFManager> dofManager = rcp(new DOFManager); 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
@@ -129,12 +129,12 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
 
    // get GIDs on the "bottom" side of local cell 0, use those as the filtering
    // GIDs
-   std::vector<int> filtered;
+   std::vector<panzer::GlobalOrdinal2> filtered;
    {
      std::pair<std::vector<int>,std::vector<int> > fieldOffsets
          = dofManager->getGIDFieldOffsets_closure("block_0",dofManager->getFieldNum("Ux"),1,0);
  
-     std::vector<int> gids;
+     std::vector<panzer::GlobalOrdinal2> gids;
      dofManager->getElementGIDs(0,gids);
 
      filtered.resize(fieldOffsets.first.size());
@@ -144,7 +144,7 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
 
    TEST_EQUALITY(filtered.size(),2);
 
-   RCP<Filtered_UniqueGlobalIndexer<int,int> > filtered_ugi = rcp(new Filtered_UniqueGlobalIndexer<int,int>);
+   RCP<Filtered_UniqueGlobalIndexer> filtered_ugi = rcp(new Filtered_UniqueGlobalIndexer);
    filtered_ugi->initialize(dofManager,filtered);
 
    out << "check out ownsership" << std::endl;
@@ -164,7 +164,7 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
 
    out << "test out sizes construction by LOF" << std::endl;
    {
-     std::vector<int> indices_f;
+     std::vector<panzer::GlobalOrdinal2> indices_f;
      filtered_ugi->getOwnedIndices(indices_f);
 
      BlockedEpetraLinearObjFactory<panzer::Traits,int> lof(tComm,filtered_ugi);

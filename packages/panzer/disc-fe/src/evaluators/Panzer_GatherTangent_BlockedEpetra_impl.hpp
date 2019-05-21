@@ -79,7 +79,7 @@
 template<typename EvalT, typename TRAITS, typename LO, typename GO>
 panzer::GatherTangent_BlockedEpetra<EvalT, TRAITS, LO, GO>::
 GatherTangent_BlockedEpetra(
-  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer>>&
     indexers,
   const Teuchos::ParameterList& p)
   :

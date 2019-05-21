@@ -75,7 +75,7 @@
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_Epetra<panzer::Traits::Residual, TRAITS, LO, GO>::
 GatherSolution_Epetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+  const Teuchos::RCP<const panzer::UniqueGlobalIndexer>& indexer,
   const Teuchos::ParameterList& p)
   :
   globalIndexer_(indexer),
@@ -316,7 +316,7 @@ evaluateFields(
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_Epetra<panzer::Traits::Tangent, TRAITS, LO, GO>::
 GatherSolution_Epetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+  const Teuchos::RCP<const panzer::UniqueGlobalIndexer>& indexer,
   const Teuchos::ParameterList& p)
   :
   globalIndexer_(indexer),
@@ -585,7 +585,7 @@ evaluateFields(
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, TRAITS, LO, GO>::
 GatherSolution_Epetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+  const Teuchos::RCP<const panzer::UniqueGlobalIndexer>& indexer,
   const Teuchos::ParameterList& p)
   :
   globalIndexer_(indexer)

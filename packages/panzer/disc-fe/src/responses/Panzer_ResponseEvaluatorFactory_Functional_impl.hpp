@@ -104,11 +104,11 @@ buildAndRegisterEvaluators(const std::string & responseName,
 
         TEUCHOS_ASSERT(linearObjFactory_->getDomainGlobalIndexer()!=Teuchos::null);
 
-        auto ugi = Teuchos::rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(linearObjFactory_->getDomainGlobalIndexer());
-        auto bugi = Teuchos::rcp_dynamic_cast<const BlockedDOFManager<LO,GO> >(linearObjFactory_->getDomainGlobalIndexer());
+        auto ugi = Teuchos::rcp_dynamic_cast<const UniqueGlobalIndexer>(linearObjFactory_->getDomainGlobalIndexer());
+        auto bugi = Teuchos::rcp_dynamic_cast<const BlockedDOFManager>(linearObjFactory_->getDomainGlobalIndexer());
 
         if(ugi!=Teuchos::null) {
-          std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > ugis; 
+          std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > ugis; 
           ugis.push_back(ugi);
 
           scatterObj = Teuchos::rcp(new FunctionalScatter<LO,GO>(ugis));

@@ -317,6 +317,41 @@ void DOFManager::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+void DOFManager::getElementGIDsAsInt(panzer::LocalOrdinal2 localElementID, std::vector<int>& gids, const std::string& /* blockIdHint */) const
+{
+  const auto & element_ids = elementGIDs_[localElementID];
+  gids.resize(element_ids.size());
+  for (std::size_t i=0; i < gids.size(); ++i)
+    gids[i] = element_ids[i];
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void DOFManager::getOwnedIndicesAsInt(std::vector<int>& indices) const
+{
+  indices.resize(owned_.size());
+  for (std::size_t i=0; i < owned_.size(); ++i)
+    indices[i] = owned_[i];
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void DOFManager::getGhostedIndicesAsInt(std::vector<int>& indices) const
+{
+  indices.resize(ghosted_.size());
+  for (std::size_t i=0; i < ghosted_.size(); ++i)
+    indices[i] = ghosted_[i];
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void DOFManager::getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const
+{
+  indices.resize(owned_.size() + ghosted_.size());
+  for (std::size_t i=0; i < owned_.size(); ++i)
+    indices[i] = owned_[i];
+  for (std::size_t i=0; i < ghosted_.size(); ++i)
+    indices[owned_.size() + i] = ghosted_[i];
+}
+
+///////////////////////////////////////////////////////////////////////////////
 int DOFManager::getNumOwned() const
 {
   return owned_.size();

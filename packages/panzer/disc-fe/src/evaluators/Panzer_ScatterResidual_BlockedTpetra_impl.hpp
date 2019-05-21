@@ -69,7 +69,7 @@
 
 template <typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterResidual_BlockedTpetra<EvalT,TRAITS,LO,GO,NodeT>::
-ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */,
+ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & /* indexer */,
                               const Teuchos::ParameterList& p)
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
@@ -103,7 +103,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
 
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
-ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                               const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
   , globalDataKey_("Residual Scatter Container")
@@ -234,7 +234,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
-ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                               const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")

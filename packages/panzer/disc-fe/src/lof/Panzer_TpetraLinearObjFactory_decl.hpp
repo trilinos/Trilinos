@@ -84,11 +84,11 @@ public:
    typedef Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> ExportType;
 
    TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & gidProvider);
+                          const Teuchos::RCP<const UniqueGlobalIndexer> & gidProvider);
 
    TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & rowProvider,
-                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & colProvider);
+                          const Teuchos::RCP<const UniqueGlobalIndexer> & rowProvider,
+                          const Teuchos::RCP<const UniqueGlobalIndexer> & colProvider);
 
    virtual ~TpetraLinearObjFactory();
 
@@ -256,11 +256,11 @@ public:
    virtual const Teuchos::RCP<const Teuchos::Comm<int> > getTeuchosComm() const;
 
    //! Get the domain global indexer this factory was created with.
-   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getDomainGlobalIndexer() const
+   Teuchos::RCP<const panzer::UniqueGlobalIndexer> getDomainGlobalIndexer() const
    { return gidProvider_; }
 
    //! Get the domain global indexer this factory was created with.
-   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getRangeGlobalIndexer() const
+   Teuchos::RCP<const panzer::UniqueGlobalIndexer> getRangeGlobalIndexer() const
    { return gidProvider_; }
 
    virtual void beginFill(LinearObjContainer & loc) const;
@@ -298,8 +298,8 @@ protected:
    mutable Teuchos::RCP<ExportType> ghostedExporter_;
    mutable Teuchos::RCP<ExportType> ghostedColExporter_;
 
-   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > gidProvider_;
-   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > colGidProvider_;
+   Teuchos::RCP<const UniqueGlobalIndexer> gidProvider_;
+   Teuchos::RCP<const UniqueGlobalIndexer> colGidProvider_;
 
    bool hasColProvider_;
 

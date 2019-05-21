@@ -137,6 +137,38 @@ public:
        indices[owned_.size() + i] = ghosted_[i];
    }
 
+   // For backwards compatibility with Epetra. Will be deprecated.
+   virtual void getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & blockIdHint="") const 
+   { base_->getElementGIDsAsInt(localElmtId,gids,blockIdHint); }
+
+   // For backwards compatibility with Epetra. Will be deprecated.
+   virtual void getOwnedIndicesAsInt(std::vector<int>& indices) const
+   {
+     indices.resize(owned_.size());
+     for (std::size_t i=0; i < owned_.size(); ++i)
+       indices[i] = owned_[i];
+   }
+ 
+   // For backwards compatibility with Epetra. Will be deprecated.
+   virtual void getGhostedIndicesAsInt(std::vector<int>& indices) const
+   { 
+     indices.resize(ghosted_.size());
+     for (std::size_t i=0; i < ghosted_.size(); ++i)
+       indices[i] = ghosted_[i];
+   }
+
+   // For backwards compatibility with Epetra. Will be deprecated.
+   virtual void
+   getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const 
+   { 
+     indices.resize(owned_.size() + ghosted_.size());
+     for (std::size_t i=0; i < owned_.size(); ++i)
+       indices[i] = owned_[i];
+     for (std::size_t i=0; i < ghosted_.size(); ++i)
+       indices[owned_.size() + i] = ghosted_[i];
+   }
+
+
    /**
     *  \brief Get the number of indices owned by this processor.
     *

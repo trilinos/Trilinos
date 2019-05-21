@@ -82,7 +82,7 @@
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_Epetra<panzer::Traits::Hessian, TRAITS, LO, GO>::
 GatherSolution_Epetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+  const Teuchos::RCP<const panzer::UniqueGlobalIndexer>& indexer,
   const Teuchos::ParameterList&                                  p)
   :
   globalIndexer_(indexer)

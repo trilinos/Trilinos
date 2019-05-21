@@ -60,7 +60,7 @@
 template<typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::GatherTangent_Tpetra<EvalT, TRAITS,LO,GO,NodeT>::
 GatherTangent_Tpetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & indexer,
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)

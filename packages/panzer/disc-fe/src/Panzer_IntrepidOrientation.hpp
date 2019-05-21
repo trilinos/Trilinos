@@ -61,7 +61,7 @@ namespace panzer {
    * object that has been passed in.
    */
   Teuchos::RCP<std::vector<Intrepid2::Orientation> > 
-  buildIntrepidOrientation(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer);
+  buildIntrepidOrientation(const Teuchos::RCP<const panzer::UniqueGlobalIndexer> globalIndexer);
 }
 
 #endif

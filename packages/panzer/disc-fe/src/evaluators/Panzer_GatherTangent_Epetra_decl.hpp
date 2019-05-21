@@ -66,7 +66,6 @@
 
 namespace panzer
 {
-  template <typename LocalOrdinalT, typename GlobalOrdinalT>
   class UniqueGlobalIndexer;
 }
 
@@ -106,7 +105,7 @@ namespace panzer
        *                     unknown numbering.
        */
       GatherTangent_Epetra(
-        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer)
+        const Teuchos::RCP<const panzer::UniqueGlobalIndexer>& indexer)
         :
         globalIndexer_(indexer)
       {
@@ -123,7 +122,7 @@ namespace panzer
        *  \param[in] p       The input parameters.
        */
       GatherTangent_Epetra(
-        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+        const Teuchos::RCP<const panzer::UniqueGlobalIndexer>& indexer,
         const Teuchos::ParameterList&                                  p);
 
       /**
@@ -195,7 +194,7 @@ namespace panzer
        *  \brief Maps the local (field, element, basis) triplet to a global ID
        *         for scattering.
        */
-      Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>> globalIndexer_;
+      Teuchos::RCP<const panzer::UniqueGlobalIndexer> globalIndexer_;
 
       /**
        *  \brief Field IDs, which need to be mapped.

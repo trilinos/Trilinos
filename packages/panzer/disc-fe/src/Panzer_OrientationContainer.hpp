@@ -48,7 +48,7 @@
 namespace panzer {
 
 // forward declaration
-template <typename,typename> class UniqueGlobalIndexer;
+class UniqueGlobalIndexer;
 
 /** This class is used to access orientations and 
   * provides a degree of seperation between the
@@ -60,14 +60,14 @@ template <typename,typename> class UniqueGlobalIndexer;
   */
 template <typename Scalar,typename Array,typename LocalOrdinal,typename GlobalOrdinal>
 class OrientationContainer : public OrientationContainerBase<Scalar,Array> {
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> > globalIndexer_;
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer> globalIndexer_;
   std::string fieldName_;
 
 public:
  
   /** Initialize this container with a particular global indexer.
     */
-  OrientationContainer(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> > & globalIndexer,
+  OrientationContainer(const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & globalIndexer,
                        const std::string & fieldName);
 
   virtual ~OrientationContainer() {}
@@ -92,7 +92,7 @@ public:
   */
 template <typename Scalar,typename Array>
 Teuchos::RCP<const panzer::OrientationContainerBase<Scalar,Array> > 
-buildOrientationContainer(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+buildOrientationContainer(const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & globalIndexer,
                           const std::string & fieldName);
 
 }
