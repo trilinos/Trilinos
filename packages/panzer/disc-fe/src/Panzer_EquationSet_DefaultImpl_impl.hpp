@@ -368,7 +368,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer;
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer> globalIndexer;
   if(lof!=Teuchos::null) 
     globalIndexer = lof->getRangeGlobalIndexer();
   

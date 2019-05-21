@@ -208,7 +208,7 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(physics_block, nontemplate_evaluator_builders)
   {
 
-    Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > ugi 
+    Teuchos::RCP<panzer::UniqueGlobalIndexer> ugi 
           = Teuchos::rcp(new panzer::unit_test::UniqueGlobalIndexer(0,1));
     Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
@@ -247,7 +247,7 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(physics_block, templated_evaluator_builders)
   {
 
-    Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > ugi 
+    Teuchos::RCP<panzer::UniqueGlobalIndexer> ugi 
           = Teuchos::rcp(new panzer::unit_test::UniqueGlobalIndexer(0,1));
     Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);

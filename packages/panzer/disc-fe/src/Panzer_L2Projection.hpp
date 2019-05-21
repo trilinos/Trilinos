@@ -6,6 +6,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "PanzerCore_config.hpp"
 #include "Panzer_BasisDescriptor.hpp"
 #include "Panzer_IntegrationDescriptor.hpp"
 #include "Tpetra_Map.hpp" // for KokkosDeviceWrapperNode

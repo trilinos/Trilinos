@@ -165,8 +165,7 @@ public:
     *              this processor.
     */
    virtual void
-   getOwnedIndices(
-     std::vector<panzer::GlobalOrdinal2>& indices) const = 0;
+   getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const = 0;
 
    /**
     *  \brief Get the set of indices ghosted for this processor.
@@ -175,8 +174,7 @@ public:
     *              this processor.
     */
    virtual void
-   getGhostedIndices(
-     std::vector<panzer::GlobalOrdinal2>& indices) const = 0;
+   getGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const = 0;
 
    /**
     *  \brief Get the set of owned and ghosted indices for this processor.
@@ -185,8 +183,41 @@ public:
     *              indices for this processor.
     */
    virtual void
-   getOwnedAndGhostedIndices(
-     std::vector<panzer::GlobalOrdinal2>& indices) const = 0;
+   getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const = 0;
+  
+   /// @name Epetra related functions. NOTE: for use with Epetra only! Will be deprecated when we drop epetra support!
+   ///@{ 
+
+   /** \brief Get the global IDs for a particular element. This function
+     * overwrites the <code>gids</code> variable.
+     */
+   virtual void getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & blockIdHint="") const = 0;
+
+   /**
+    *  \brief Get the set of indices owned by this processor.
+    *
+    *  \param[out] A `vector` that will be filled with the indices owned by
+    *              this processor.
+    */
+   virtual void getOwnedIndicesAsInt(std::vector<int>& indices) const = 0;
+
+   /**
+    *  \brief Get the set of indices ghosted for this processor.
+    *
+    *  \param[out] A `vector` that will be filled with the indices ghosted for
+    *              this processor.
+    */
+   virtual void getGhostedIndicesAsInt(std::vector<int>& indices) const = 0;
+
+   /**
+    *  \brief Get the set of owned and ghosted indices for this processor.
+    *
+    *  \param[out] A `vector` that will be filled with the owned and ghosted
+    *              indices for this processor.
+    */
+   virtual void getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const = 0;
+
+   ///@}
 
    /**
     *  \brief Get the number of indices owned by this processor.

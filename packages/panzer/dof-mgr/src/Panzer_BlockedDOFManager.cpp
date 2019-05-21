@@ -154,6 +154,29 @@ void BlockedDOFManager::getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::ve
    }
 }
 
+  void BlockedDOFManager::getElementGIDsPair(panzer::LocalOrdinal2 localElmtId,std::vector<std::pair<int,GlobalOrdinal>> & gids,const std::string & blockIdHint) const
+{
+   // WARNING: there is an assumed ordering being used here it
+   // corresponds directly to the blockGIDOffset_ map and (as
+   // a result) the getBlockGIDOffset function. However for 
+   // the sake of speed this conversion is implicit. 
+   //  
+   // Any changes to the order should be reflected in the
+   // blockGIDOffset_ map.
+
+   gids.resize(0);
+
+   // loop over field block manager and grab indices
+   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
+      std::vector<panzer::GlobalOrdinal2> fieldBlockOwned;
+
+      fieldBlockManagers_[fbm]->getElementGIDs(localElmtId,fieldBlockOwned,blockIdHint);
+
+      for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
+         gids.push_back(std::make_pair(fbm,fieldBlockOwned[i]));
+   }
+}
+
 void BlockedDOFManager::getElementOrientation(panzer::LocalOrdinal2 localElmtId,std::vector<double> & gidsOrientation) const
 {
    // WARNING: there is an assumed ordering being used here it
@@ -344,6 +367,80 @@ void BlockedDOFManager::getOwnedAndGhostedIndices(std::vector<GlobalOrdinal>& in
   {
     vector<panzer::GlobalOrdinal2> fieldBlockOwnedAndGhosted;
     fieldBlockManagers_[fbm]->getOwnedAndGhostedIndices(
+      fieldBlockOwnedAndGhosted);
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+    // for (size_t i(0); i < fieldBlockOwnedAndGhosted.size(); ++i)
+    //   indices.push_back(make_pair(fbm, fieldBlockOwnedAndGhosted[i]));
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void BlockedDOFManager::getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & blockIdHint) const
+{
+   // WARNING: there is an assumed ordering being used here it
+   // corresponds directly to the blockGIDOffset_ map and (as
+   // a result) the getBlockGIDOffset function. However for 
+   // the sake of speed this conversion is implicit. 
+   //  
+   // Any changes to the order should be reflected in the
+   // blockGIDOffset_ map.
+
+   gids.resize(0);
+
+   // loop over field block manager and grab indices
+   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
+      std::vector<int> fieldBlockOwned;
+
+      fieldBlockManagers_[fbm]->getElementGIDsAsInt(localElmtId,fieldBlockOwned,blockIdHint);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+      // for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
+      //    gids.push_back(std::make_pair(fbm,fieldBlockOwned[i]));
+   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void BlockedDOFManager::getOwnedIndicesAsInt(std::vector<int>& indices) const
+{
+  using std::make_pair;
+  using std::size_t;
+  using std::vector;
+  for (size_t fbm(0); fbm < fieldBlockManagers_.size(); ++fbm)
+  {
+    vector<int> fieldBlockOwned;
+    fieldBlockManagers_[fbm]->getOwnedIndicesAsInt(fieldBlockOwned);
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+    // for (size_t i(0); i < fieldBlockOwned.size(); ++i)
+    //   indices.push_back(make_pair(fbm, fieldBlockOwned[i]));
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void BlockedDOFManager::getGhostedIndicesAsInt(std::vector<int>& indices) const
+{
+  using std::make_pair;
+  using std::size_t;
+  using std::vector;
+  for (size_t fbm(0); fbm < fieldBlockManagers_.size(); ++fbm)
+  {
+    vector<int> fieldBlockGhosted;
+    fieldBlockManagers_[fbm]->getGhostedIndicesAsInt(fieldBlockGhosted);
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+    // for (size_t i(0); i < fieldBlockGhosted.size(); ++i)
+    //   indices.push_back(make_pair(fbm, fieldBlockGhosted[i]));
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void BlockedDOFManager::getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const
+{
+  using std::make_pair;
+  using std::size_t;
+  using std::vector;
+  for (size_t fbm(0); fbm < fieldBlockManagers_.size(); ++fbm)
+  {
+    vector<int> fieldBlockOwnedAndGhosted;
+    fieldBlockManagers_[fbm]->getOwnedAndGhostedIndicesAsInt(
       fieldBlockOwnedAndGhosted);
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
     // for (size_t i(0); i < fieldBlockOwnedAndGhosted.size(); ++i)

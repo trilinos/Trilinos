@@ -105,7 +105,7 @@ const std::vector<int> & UniqueGlobalIndexer::getElementBlock(const std::string 
    return *elements_;
 }
 
-void UniqueGlobalIndexer::getElementGIDs(int localElmtId,std::vector<int> & gids,const std::string & /* blockId */) const
+void UniqueGlobalIndexer::getElementGIDs(int localElmtId,std::vector<panzer::GlobalOrdinal2> & gids,const std::string & /* blockId */) const
 {
    gids.resize(8);
 
@@ -163,10 +163,7 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & /* blockId *
 //  getOwnedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void
-UniqueGlobalIndexer::
-getOwnedIndices(
-  std::vector<int>& indices) const
+void UniqueGlobalIndexer::getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
 {
   indices.resize(12);
   indices[0] = 0;
@@ -188,26 +185,73 @@ getOwnedIndices(
 //  getGhostedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void
-UniqueGlobalIndexer::
-getGhostedIndices(
-  std::vector<int>& indices) const
+  void UniqueGlobalIndexer::getGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
 {
   indices.resize(0);
-} // end of getGhostedIndices()
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  getOwnedAndGhostedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void
-UniqueGlobalIndexer::
-getOwnedAndGhostedIndices(
-  std::vector<int>& indices) const
+void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
 {
   getOwnedIndices(indices);
-} // end of getOwnedAndGhostedIndices()
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void UniqueGlobalIndexer::getElementGIDsAsInt(int localElmtId,std::vector<int> & gids,const std::string & /* blockId */) const
+{
+   gids.resize(8);
+
+   switch(localElmtId) {
+   case 0:
+      gids[0] = 0; gids[1] = 1; 
+      gids[2] = 2; gids[3] = 3;
+      gids[4] = 4; gids[5] = 5; 
+      gids[6] = 6; gids[7] = 7;
+      break;
+   case 1:
+      gids[0] = 2; gids[1] = 3; 
+      gids[2] = 8; gids[3] = 9;
+      gids[4] = 10; gids[5] = 11; 
+      gids[6] = 4; gids[7] = 5;
+      break;
+   default:
+      break;
+   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void UniqueGlobalIndexer::getOwnedIndicesAsInt(std::vector<int>& indices) const
+{
+  indices.resize(12);
+  indices[0] = 0;
+  indices[1] = 1;
+  indices[2] = 2;
+  indices[3] = 3;
+  indices[4] = 4;
+  indices[5] = 5;
+  indices[6] = 6;
+  indices[7] = 7;
+  indices[8] = 8;
+  indices[9] = 9;
+  indices[10] = 10;
+  indices[11] = 11;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+  void UniqueGlobalIndexer::getGhostedIndicesAsInt(std::vector<int>& indices) const
+{
+  indices.resize(0);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void UniqueGlobalIndexer::getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const
+{
+  getOwnedIndicesAsInt(indices);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -245,9 +289,9 @@ getNumOwnedAndGhosted() const
   return 12;
 } // end of getNumOwnedAndGhosted()
 
-void UniqueGlobalIndexer::ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const
+void UniqueGlobalIndexer::ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const
 {
-   std::vector<int> owned;
+   std::vector<panzer::GlobalOrdinal2> owned;
    getOwnedIndices(owned);
 
    isOwned.resize(indices.size(),false);

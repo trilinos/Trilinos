@@ -80,13 +80,13 @@ public:
 template <typename LO,typename GO>
 class FunctionalScatter : public FunctionalScatterBase {
 public:
-   FunctionalScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer)
+   FunctionalScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & globalIndexer)
    { 
      if(globalIndexer!=Teuchos::null)
        ugis_.push_back(globalIndexer);
    }
 
-   FunctionalScatter(const std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > > & ugis)
+   FunctionalScatter(const std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer> > & ugis)
      : ugis_(ugis) {}
 
    void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
@@ -103,7 +103,7 @@ public:
 
 private:
  
-   std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > > ugis_;
+   std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer> > ugis_;
 };
 
 /** This class handles responses with values aggregated

@@ -11,14 +11,14 @@
 namespace panzer {
 
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewDomain(const LinearObjFactory<panzer::Traits> & lof,
-                                                                         const Teuchos::RCP<const UniqueGlobalIndexerBase> & dUgi)
+                                                                         const Teuchos::RCP<const UniqueGlobalIndexer> & dUgi)
 {
   // This just forwards on to the general case. That makes things much easier
   return cloneWithNewRangeAndDomain(lof,Teuchos::null,dUgi);
 }
 
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRange(const LinearObjFactory<panzer::Traits> & lof,
-                                                                        const Teuchos::RCP<const UniqueGlobalIndexerBase> & rUgi)
+                                                                        const Teuchos::RCP<const UniqueGlobalIndexer> & rUgi)
 {
   // This just forwards on to the general case. That makes things much easier
   return cloneWithNewRangeAndDomain(lof,rUgi,Teuchos::null);
@@ -26,8 +26,8 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRange(const Li
 
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain(
                                                                         const LinearObjFactory<panzer::Traits> & lof,
-                                                                        const Teuchos::RCP<const UniqueGlobalIndexerBase> & rUgi,
-                                                                        const Teuchos::RCP<const UniqueGlobalIndexerBase> & dUgi)
+                                                                        const Teuchos::RCP<const UniqueGlobalIndexer> & rUgi,
+                                                                        const Teuchos::RCP<const UniqueGlobalIndexer> & dUgi)
 {
   using Teuchos::null;
   using Teuchos::RCP;
@@ -37,10 +37,9 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
   using Teuchos::ptr_dynamic_cast;
   using Teuchos::ptrFromRef;
 
-  using TpetraUGI = UniqueGlobalIndexer<int, Ordinal64>;
 /*
   typedef UniqueGlobalIndexer<int,int>       EpetraUGI;
-  typedef BlockedDOFManager<int,int>         BlockedEpetraUGI;
+  typedef BlockedDOFManager        BlockedEpetraUGI;
   typedef BlockedDOFManager<int,Ordinal64>   BlockedTpetraUGI;
 */
   typedef TpetraLinearObjFactory<panzer::Traits,double,int,Ordinal64>        TpetraLOF;
@@ -63,8 +62,8 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
 
   Ptr<const TpetraLOF> tpetra_lof = ptr_dynamic_cast<const TpetraLOF>(ptrFromRef(lof));
   if(tpetra_lof!=null) {
-    auto rangeUGI  = rcp_dynamic_cast<const TpetraUGI>(rUgi==null ? tpetra_lof->getRangeGlobalIndexer() : rUgi,true);
-    auto domainUGI = rcp_dynamic_cast<const TpetraUGI>(dUgi==null ? tpetra_lof->getDomainGlobalIndexer() : dUgi,true);
+    auto rangeUGI  = (rUgi==null ? tpetra_lof->getRangeGlobalIndexer() : rUgi);
+    auto domainUGI = (dUgi==null ? tpetra_lof->getDomainGlobalIndexer() : dUgi);
     auto mpiComm = rcp(new Teuchos::MpiComm<int>(tpetra_lof->getComm()));
 
     return rcp(new TpetraLOF(mpiComm,rangeUGI,domainUGI));
