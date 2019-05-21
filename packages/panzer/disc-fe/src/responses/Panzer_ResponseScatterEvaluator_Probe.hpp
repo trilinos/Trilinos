@@ -75,7 +75,7 @@ public:
 template <typename LO,typename GO>
 class ProbeScatter : public ProbeScatterBase {
 public:
-   ProbeScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer)
+   ProbeScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & globalIndexer)
      : globalIndexer_(globalIndexer) { }
 
    void scatterDerivative(
@@ -88,7 +88,7 @@ public:
 
 private:
 
-   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+   Teuchos::RCP<const panzer::UniqueGlobalIndexer> globalIndexer_;
 };
 
 /** This class handles calculation of a DOF at a single point in space
@@ -107,7 +107,7 @@ public:
     const Teuchos::Array<double>& point,
     const IntegrationRule & ir,
     const Teuchos::RCP<const PureBasis>& basis,
-    const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> >& indexer,
+    const Teuchos::RCP<const panzer::UniqueGlobalIndexer>& indexer,
     const Teuchos::RCP<ProbeScatterBase> & probeScatter);
 
   void evaluateFields(typename Traits::EvalData d);
@@ -124,7 +124,7 @@ protected:
   Teuchos::RCP<const panzer::PureBasis> basis_;
   Teuchos::RCP<Response_Probe<EvalT> > responseObj_;
   Teuchos::RCP<const shards::CellTopology> topology_;
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer> globalIndexer_;
 
   Teuchos::RCP<PHX::FieldTag> scatterHolder_; // dummy target
   PHX::MDField<const ScalarT,Cell,BASIS> field_; // holds field values
@@ -154,7 +154,7 @@ public:
     const Teuchos::Array<double>& point,
     const IntegrationRule & ir,
     const Teuchos::RCP<const PureBasis>& basis,
-    const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+    const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & indexer,
     const Teuchos::RCP<ProbeScatterBase> & probeScatter) :
     Base(responseName, fieldName, fieldComponent, point,
          ir, basis, indexer, probeScatter) {}
@@ -177,7 +177,7 @@ public:
     const Teuchos::Array<double>& point,
     const IntegrationRule & ir,
     const Teuchos::RCP<const PureBasis>& basis,
-    const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+    const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & indexer,
     const Teuchos::RCP<ProbeScatterBase> & probeScatter) :
     Base(responseName, fieldName, fieldComponent, point,
          ir, basis, indexer, probeScatter) {}

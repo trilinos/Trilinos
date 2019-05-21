@@ -152,9 +152,7 @@ public:
    *  \param[out] indices A `vector` that will be fille with the indices owned
    *                      by this processor.
    */
-  void
-  getOwnedIndices(
-    std::vector<panzer::GlobalOrdinal2>& indices) const;
+  void getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const;
 
   /**
    *  \brief Get the set of indices ghosted for this processor.
@@ -162,9 +160,7 @@ public:
    *  \param[out] indices A `vector` that will be fille with the indices
    *                      ghosted for this processor.
    */
-  void
-  getGhostedIndices(
-    std::vector<panzer::GlobalOrdinal2>& indices) const;
+  void getGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const;
 
   /**
    *  \brief Get the set of owned and ghosted indices for this processor.
@@ -172,9 +168,13 @@ public:
    *  \param[out] indices A `vector` that will be fille with the owned and
    *                      ghosted indices for this processor.
    */
-  void
-  getOwnedAndGhostedIndices(
-    std::vector<panzer::GlobalOrdinal2>& indices) const;
+  void getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const;
+
+  // Epetra specifiic interfaces. Will be deprecated.
+  void getElementGIDsAsInt(panzer::LocalOrdinal2 localElementID, std::vector<int> & gids, const std::string & blockIdHint="") const;
+  void getOwnedIndicesAsInt(std::vector<int>& indices) const;
+  void getGhostedIndicesAsInt(std::vector<int>& indices) const;
+  void getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const;
 
   /**
    *  \brief Get the number of indices owned by this processor.

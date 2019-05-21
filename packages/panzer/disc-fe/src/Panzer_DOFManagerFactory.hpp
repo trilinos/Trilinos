@@ -49,8 +49,7 @@
 
 namespace panzer {
 
-template <typename LO,typename GO>
-class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO> {
+class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory {
 public:
    DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false), useNeighbors_(false) {}
 
@@ -72,7 +71,7 @@ public:
      *          the object is fully constructed. If it is false, the caller must
      *          finalize it.
      */
-   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
+   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer> 
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager> & connMngr,
@@ -101,13 +100,8 @@ public:
    { return useNeighbors_; }
 
    static void buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder);
+
 protected:
-   template <typename DOFManagerT>
-   Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
-   buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
-                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager> & connMngr,
-                            const std::string & fieldOrder) const;
 
    bool useDOFManagerFEI_;
    bool useTieBreak_;

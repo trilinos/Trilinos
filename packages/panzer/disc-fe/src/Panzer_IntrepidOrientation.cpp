@@ -102,7 +102,7 @@ namespace panzer {
   }
 
   Teuchos::RCP<std::vector<Intrepid2::Orientation> >
-  buildIntrepidOrientation(const Teuchos::RCP<const UniqueGlobalIndexerBase> globalIndexer)
+  buildIntrepidOrientation(const Teuchos::RCP<const UniqueGlobalIndexer> globalIndexer)
   {
     using Teuchos::rcp_dynamic_cast;
     using Teuchos::RCP;
@@ -115,8 +115,8 @@ namespace panzer {
       typedef int LO;
       typedef int GO;
 
-      RCP<const UniqueGlobalIndexer<LO,GO> > ugi
-        = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
+      RCP<const UniqueGlobalIndexer> ugi
+        = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);
 
       if (ugi!=Teuchos::null) {
         const auto connMgr = ugi->getConnManager()->noConnectivityClone();
@@ -134,8 +134,8 @@ namespace panzer {
       typedef int LO;
       typedef Ordinal64 GO;
 
-      RCP<const UniqueGlobalIndexer<LO,GO> > ugi
-        = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
+      RCP<const UniqueGlobalIndexer> ugi
+        = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);
       if (ugi!=Teuchos::null) {
         const auto connMgr = ugi->getConnManager()->noConnectivityClone();
 
@@ -152,8 +152,8 @@ namespace panzer {
       typedef int LO;
       typedef std::pair<int,int> GO;
 
-      RCP<const UniqueGlobalIndexer<LO,GO> > ugi
-        = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
+      RCP<const UniqueGlobalIndexer> ugi
+        = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);
       if(ugi!=Teuchos::null) {
         const auto connMgr = ugi->getConnManager()->noConnectivityClone();
 
@@ -170,8 +170,8 @@ namespace panzer {
       typedef int LO;
       typedef std::pair<int,Ordinal64> GO;
 
-      RCP<const UniqueGlobalIndexer<LO,GO> > ugi
-        = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
+      RCP<const UniqueGlobalIndexer> ugi
+        = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);
       if(ugi!=Teuchos::null) {
         const auto connMgr = ugi->getConnManager()->noConnectivityClone();
 
@@ -184,7 +184,7 @@ namespace panzer {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                               "panzer::buildIntrepidOrientation: Could not cast UniqueGlobalIndexerBase");
+                               "panzer::buildIntrepidOrientation: Could not cast UniqueGlobalIndexer");
   }
 
 } // end namespace panzer

@@ -55,7 +55,7 @@
 template<typename EvalT,typename TRAITS,typename LO,typename GO>
 panzer::GatherOrientation<EvalT, TRAITS,LO,GO>::
 GatherOrientation(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & indexer,
   const Teuchos::ParameterList& p)
 { 
   indexers_.push_back(indexer);
@@ -85,7 +85,7 @@ GatherOrientation(
 
 template<typename EvalT,typename TRAITS,typename LO,typename GO>
 panzer::GatherOrientation<EvalT, TRAITS,LO,GO>::
-GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > & indexers,
+GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > & indexers,
                   const Teuchos::ParameterList& p)
   : indexers_(indexers)
 { 

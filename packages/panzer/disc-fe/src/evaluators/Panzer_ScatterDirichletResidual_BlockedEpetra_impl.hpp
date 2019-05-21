@@ -78,8 +78,8 @@
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
-ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                       const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > & rIndexers,
+                                       const std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > & cIndexers,
                                        const Teuchos::ParameterList& p,
                                        bool /* useDiscreteAdjoint */)
    : rowIndexers_(rIndexers)
@@ -290,8 +290,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
-ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                       const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > & rIndexers,
+                                       const std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > & cIndexers,
                                        const Teuchos::ParameterList& p,
                                        bool /* useDiscreteAdjoint */)
    : rowIndexers_(rIndexers)
@@ -503,8 +503,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
-ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                       const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > & rIndexers,
+                                       const std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > & cIndexers,
                                        const Teuchos::ParameterList& p,
                                        bool /* useDiscreteAdjoint */)
    : rowIndexers_(rIndexers)

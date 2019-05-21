@@ -64,7 +64,7 @@
 template <typename EvalT,typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_BlockedTpetra<EvalT, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
-  const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  const Teuchos::RCP<const BlockedDOFManager> & indexer,
   const Teuchos::ParameterList& p)
 {
   const std::vector<std::string>& names =
@@ -88,7 +88,7 @@ GatherSolution_BlockedTpetra(
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
-  const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  const Teuchos::RCP<const BlockedDOFManager> & indexer,
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
   , has_tangent_fields_(false)
@@ -245,7 +245,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
-  const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  const Teuchos::RCP<const BlockedDOFManager> & indexer,
   const Teuchos::ParameterList& p)
   : gidIndexer_(indexer)
   , has_tangent_fields_(false)
@@ -359,7 +359,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       LO cellLocalId = localCellIds[worksetCellIndex];
 
-      gidIndexer_->getElementGIDs(cellLocalId,GIDs,blockId);
+      gidIndexer_->getElementGIDsPair(cellLocalId,GIDs,blockId);
 
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
@@ -407,7 +407,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
-  const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  const Teuchos::RCP<const BlockedDOFManager> & indexer,
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
 {

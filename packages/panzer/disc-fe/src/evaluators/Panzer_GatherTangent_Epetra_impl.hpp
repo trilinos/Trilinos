@@ -73,7 +73,7 @@
 template<typename EvalT, typename TRAITS, typename LO, typename GO>
 panzer::GatherTangent_Epetra<EvalT, TRAITS, LO, GO>::
 GatherTangent_Epetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+  const Teuchos::RCP<const panzer::UniqueGlobalIndexer>& indexer,
   const Teuchos::ParameterList& p)
   :
   globalIndexer_(indexer),

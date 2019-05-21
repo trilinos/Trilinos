@@ -72,7 +72,7 @@ public:
 template <typename LO,typename GO>
 class ExtremeValueScatter : public ExtremeValueScatterBase {
 public:
-   ExtremeValueScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer)
+   ExtremeValueScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & globalIndexer)
      : globalIndexer_(globalIndexer) { }
 
    void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
@@ -81,7 +81,7 @@ public:
                          Teuchos::ArrayRCP<double> & dgdx) const;
 private:
  
-   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+   Teuchos::RCP<const panzer::UniqueGlobalIndexer> globalIndexer_;
 };
 
 /** This class handles responses with values aggregated

@@ -152,6 +152,11 @@ public:
      */
    void getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::vector<GlobalOrdinal> & gids,const std::string & blockIdHint="") const; // ?
 
+   /** \brief Get the global IDs for a particular element. This function
+     * overwrites the <code>gids</code> variable.
+     */
+  void getElementGIDsPair(panzer::LocalOrdinal2 localElmtId,std::vector<std::pair<int,GlobalOrdinal>> & gids,const std::string & blockIdHint="") const;
+
    /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
      */
    virtual void getElementOrientation(panzer::LocalOrdinal2 localElmtId,std::vector<double> & gidsOrientation) const; // ?
@@ -184,9 +189,7 @@ public:
     *  \param[out] indices A `vector` that will be filled with the indices
     *              owned by this processor.
     */
-   virtual void
-   getOwnedIndices(
-     std::vector<GlobalOrdinal>& indices) const;
+   virtual void getOwnedIndices(std::vector<GlobalOrdinal>& indices) const;
 
    /**
     *  \brief Get the set of indices ghosted for this processor.
@@ -195,8 +198,7 @@ public:
     *              ghosted for this processor.
     */
    virtual void
-   getGhostedIndices(
-     std::vector<GlobalOrdinal>& indices) const;
+   getGhostedIndices(std::vector<GlobalOrdinal>& indices) const;
 
    /**
     *  \brief Get the set of owned and ghosted indices for this processor.
@@ -205,8 +207,13 @@ public:
     *              ghosted indices for this processor.
     */
    virtual void
-   getOwnedAndGhostedIndices(
-     std::vector<GlobalOrdinal>& indices) const;
+   getOwnedAndGhostedIndices(std::vector<GlobalOrdinal>& indices) const;
+  
+   // For backwards compatibility with Epetra. Will be deprecated.
+   void getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & blockIdHint="") const;
+   virtual void getOwnedIndicesAsInt(std::vector<int>& indices) const;
+   virtual void getGhostedIndicesAsInt(std::vector<int>& indices) const;
+   virtual void getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const;
 
    /**
     *  \brief Get the number of indices owned by this processor.
