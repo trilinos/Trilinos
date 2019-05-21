@@ -556,6 +556,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       receivePIDs[countIDs] = myRank - procsPerDim[0] - 1
           - procsPerDim[1]*procsPerDim[0];
       ++countIDs;
+
       // Receive front-bottom edge nodes
       for(LO i = 0; i < lNodesPerDim[0]; ++i) {
         receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
@@ -563,15 +564,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1] - procsPerDim[0];
         ++countIDs;
       }
-      // Receive left-bottom edge nodes
+
+      // Recieve left-bottom edge nodes
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
               - 1 + j*gNodesPerDim[0];
         receivePIDs[countIDs] = myRank - procsPerDim[0]*procsPerDim[1] - 1;
         ++countIDs;
-      }
-      // Receive bottom face nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+        // Recieve bottom face nodes
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           receiveGIDs[countIDs] = startGID - gNodesPerDim[0]*gNodesPerDim[1]
               + i
@@ -580,24 +580,21 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           ++countIDs;
         }
       }
+
       // Receive front-left edge nodes
-      for(LO k = 0; k < lNodesPerDim[1]; ++k) {
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
         receiveGIDs[countIDs] = startGID - gNodesPerDim[0]
               - 1 + k*gNodesPerDim[0]*gNodesPerDim[1];
         receivePIDs[countIDs] = myRank - procsPerDim[0] - 1;
         ++countIDs;
-      }
-      // Receive front face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        // Receive front face nodes
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           receiveGIDs[countIDs] = startGID - gNodesPerDim[0] + i
               + k*(gNodesPerDim[1]*gNodesPerDim[0]);
           receivePIDs[countIDs] = myRank - procsPerDim[0];
           ++countIDs;
         }
-      }
-      // Receive left face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        // Receive left face nodes
         for(LO j = 0; j < lNodesPerDim[1]; ++j) {
           receiveGIDs[countIDs] = startGID - 1
               + j*gNodesPerDim[0]
@@ -656,9 +653,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           + startGID - gNodesPerDim[1]*gNodesPerDim[0] - 1;
         receivePIDs[countIDs] =  myRank - procsPerDim[1]*procsPerDim[0] - 1;
         ++countIDs;
-      }
-      // Receive bottom face nodes
-      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+        // Receive bottom face nodes
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           receiveGIDs[countIDs] = j*gNodesPerDim[0] + i
             + startGID - gNodesPerDim[1]*gNodesPerDim[0];
@@ -689,18 +684,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           + startGID - gNodesPerDim[0] - 1;
         receivePIDs[countIDs] =  myRank - procsPerDim[0] - 1;
         ++countIDs;
-      }
-      // Receive front face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        // Receive front face nodes
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
             + startGID - gNodesPerDim[0];
           receivePIDs[countIDs] = myRank - procsPerDim[0];
           ++countIDs;
         }
-      }
-      // Receive left face nodes
-      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        // Receive left face nodes
         for(LO j = 0; j < lNodesPerDim[1]; ++j) {
           receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
             + startGID - 1;
