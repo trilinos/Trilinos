@@ -42,6 +42,7 @@ INCLUDE(TribitsAddExecutableTestHelpers)
 INCLUDE(TribitsCommonArgsHelpers)
 INCLUDE(TribitsAddTestHelpers)
 INCLUDE(TribitsGeneralMacros)
+INCLUDE(TribitsReportInvalidTribitsUsage)
 
 INCLUDE(PrintVar)
 INCLUDE(AppendSet)
@@ -344,12 +345,14 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     # This is a subpackage being processed
 
     IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_EXECUTABLE()"
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_EXECUTABLE()"
         " in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
     IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_ADD_EXECUTABLE() before "
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_ADD_EXECUTABLE() before "
         " TRIBITS_SUBPACKAGE_POSTPROCESS() in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
@@ -358,12 +361,14 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     # This is a package being processed
 
     IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_PACKAGE() or TRIBITS_PACKAGE_DECL() before"
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_PACKAGE() or TRIBITS_PACKAGE_DECL() before"
         " TRIBITS_ADD_EXECUTABLE() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
     IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_ADD_EXECUTABLE() before "
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_ADD_EXECUTABLE() before "
         " TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
@@ -397,10 +402,12 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
   #
 
   SET(ADD_THE_TEST FALSE)
+  SET(TEST_NAME ${EXE_NAME})  # For error message
   TRIBITS_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
   IF (NOT ADD_THE_TEST)
     RETURN()
   ENDIF()
+  SET(TEST_NAME)
 
   SET(ADD_THE_TEST FALSE)
   TRIBITS_ADD_TEST_PROCESS_HOST_HOSTTYPE(ADD_THE_TEST)
@@ -488,25 +495,28 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
   FOREACH(IMPORTEDLIB ${PARSE_IMPORTEDLIBS})
     SET(PREFIXED_LIB "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${IMPORTEDLIB}")
     IF (${PREFIXED_LIB}_INCLUDE_DIRS)
-      MESSAGE(FATAL_ERROR "ERROR: Lib '${IMPORTEDLIB}' being passed through"
-      " IMPORTEDLIBS is not allowed to be a TESTONLY lib!"
-      "  Use TESTONLYLIBS instead!" )
+      MESSAGE(FATAL_ERROR
+        "ERROR: Lib '${IMPORTEDLIB}' being passed through"
+        " IMPORTEDLIBS is not allowed to be a TESTONLY lib!"
+        "  Use TESTONLYLIBS instead!" )
     ENDIF()
     LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
     IF (NOT FOUND_IDX EQUAL -1)
-      MESSAGE(FATAL_ERROR "ERROR: Lib '${IMPORTEDLIB}' in IMPORTEDLIBS is in"
-      " this SE package and is *not* an external lib!"
-      "  TriBITS takes care of linking against libs the current"
-      " SE package automatically.  Please remove '${IMPORTEDLIB}' from IMPORTEDLIBS!")
+      MESSAGE(FATAL_ERROR
+        "ERROR: Lib '${IMPORTEDLIB}' in IMPORTEDLIBS is in"
+        " this SE package and is *not* an external lib!"
+        "  TriBITS takes care of linking against libs the current"
+        " SE package automatically.  Please remove '${IMPORTEDLIB}' from IMPORTEDLIBS!")
     ELSEIF (TARGET ${PREFIXED_LIB})
-      MESSAGE(FATAL_ERROR "ERROR: Lib '${IMPORTEDLIB}' being passed through"
-      " IMPORTEDLIBS is *not* an external library but instead is a library"
-      " defined in this CMake project!"
-      "  TriBITS takes care of linking against libraries in dependent upstream"
-      " SE packages.  If you want to link to a library in an upstream SE"
-      " package then add the SE package name for that library to the appropriate"
-      " list in this SE package's dependencies file"
-      " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+      MESSAGE(FATAL_ERROR
+        "ERROR: Lib '${IMPORTEDLIB}' being passed through"
+        " IMPORTEDLIBS is *not* an external library but instead is a library"
+        " defined in this CMake project!"
+        "  TriBITS takes care of linking against libraries in dependent upstream"
+        " SE packages.  If you want to link to a library in an upstream SE"
+        " package then add the SE package name for that library to the appropriate"
+        " list in this SE package's dependencies file"
+        " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
     ENDIF()
   ENDFOREACH()
 
