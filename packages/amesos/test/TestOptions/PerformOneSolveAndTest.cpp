@@ -91,9 +91,9 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 			    double& relresidual,
 			    int ExpectedError )
 {
-
+#ifndef NDEBUG
   int ierr = 0;
-
+#endif
   bool AddToAllDiagonalElements =  ParamList.get( "AddZeroToDiag", false ) ;
 
 
@@ -121,12 +121,18 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   case 2:
     MyMat->OptimizeStorage(); 
     MyRowMat = &*MyMat ; 
-    bool OptStorage = MyMat->StorageOptimized();
+#ifndef NDEBUG
+    bool OptStorage =
+#endif
+    MyMat->StorageOptimized();
     assert( OptStorage) ; 
     break;
   }
-  bool OptStorage = MyMat->StorageOptimized();
-  
+#ifndef NDEBUG
+  bool OptStorage =
+#endif
+  MyMat->StorageOptimized();
+
   Epetra_CrsMatrix* MatPtr = &*MyMat ;
 
   const std::string AC = AmesosClass ;
@@ -165,10 +171,16 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     Epetra_Vector AddConstVecToDiag( MyMatWithDiag->RowMap() );
     AddConstVecToDiag.PutScalar( AddToDiag );
 
-    ierr = MyMatWithDiag->ExtractDiagonalCopy( Diag );
+#ifndef NDEBUG
+    ierr =
+#endif
+    MyMatWithDiag->ExtractDiagonalCopy( Diag );
     assert( ierr == 0 );
     Diag.Update( 1.0, AddConstVecToDiag, 1.0 ) ; 
-    ierr = MyMatWithDiag->ReplaceDiagonalValues( Diag );   // This may return 1 indicating that structurally non-zero elements were left untouched. 
+#ifndef NDEBUG
+    ierr =
+#endif
+    MyMatWithDiag->ReplaceDiagonalValues( Diag );   // This may return 1 indicating that structurally non-zero elements were left untouched.
     assert( ierr >= 0 );
 
       InMat->SetTracebackMode( oldtracebackmode ) ;   
