@@ -54,6 +54,7 @@ TRIBITS_ADD_TEST(
     NAME STK_Transfer_how_to_use_copyTransfer
     ARGS "--gtest_filter=StkMeshHowTo.useCopyTransfer"
     COMM serial mpi
+    NUM_MPI_PROCS 2
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
