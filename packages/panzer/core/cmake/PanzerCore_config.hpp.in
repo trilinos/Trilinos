@@ -15,21 +15,26 @@
 #cmakedefine HAVE_PANZER_EXPLICIT_INSTANTIATION
 #cmakedefine PANZER_EXPLICIT_INSTANTIATION
 
-namespace panzer {
-#ifdef PANZER_HAVE_LONG_LONG_INT
-  typedef long long int Ordinal64;
-#else
-  #define PANZER_ORDINAL64_IS_INT
-  typedef int Ordinal64;
-#endif
-typedef int index_t;
+#include "Tpetra_Details_DefaultTypes.hpp" // for ordinal types
 
-  using GlobalOrdinal2 = panzer::Ordinal64;
-  using LocalOrdinal2 = int;
+namespace panzer {
+
+  // Tpetra deprecated code prefers "int" over "long long" for global
+  // ordinal, while non-deprecated tpetra and panzer prefer "long
+  // long" over "int". This code will choose long long over int. When
+  // tpetra removes deprecated code, we can just default directly to
+  // tpetra.
+#ifdef PANZER_HAVE_LONG_LONG_INT
+  using GlobalOrdinal = long long int;
+#else
+  using GlobalOrdinal = Tpetra::Details::DefaultTypes::global_ordinal_type;
+#endif
+
+  using LocalOrdinal = int;
+  using index_t = int;
 }
 
 @PANZER_TEUCHOS_TIME_MONITOR_DECLARATIONS@
 @PANZER_DEPRECATED_DECLARATIONS@
-
 
 #endif

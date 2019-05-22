@@ -56,23 +56,23 @@ namespace panzer
   /** Base class for LocalMeshInfo structures */
   struct LocalMeshInfoBase
   {
-    panzer::LocalOrdinal2 num_owned_cells;
-    panzer::LocalOrdinal2 num_ghstd_cells;
-    panzer::LocalOrdinal2 num_virtual_cells;
+    panzer::LocalOrdinal num_owned_cells;
+    panzer::LocalOrdinal num_ghstd_cells;
+    panzer::LocalOrdinal num_virtual_cells;
 
     // Global cell indexes -> [owned] then [ghosted] then [virtual]
-    Kokkos::View<panzer::GlobalOrdinal2*> global_cells;
+    Kokkos::View<panzer::GlobalOrdinal*> global_cells;
 
     // These are the cell indexes in the LocalMeshInfo class
-    Kokkos::View<panzer::LocalOrdinal2*> local_cells;
+    Kokkos::View<panzer::LocalOrdinal*> local_cells;
 
     // Vertices
     Kokkos::View<double***,PHX::Device> cell_vertices;
 
     // Face to neighbors
-    Kokkos::View<panzer::LocalOrdinal2*[2]> face_to_cells;
-    Kokkos::View<panzer::LocalOrdinal2*[2]> face_to_lidx;
-    Kokkos::View<panzer::LocalOrdinal2**> cell_to_faces;
+    Kokkos::View<panzer::LocalOrdinal*[2]> face_to_cells;
+    Kokkos::View<panzer::LocalOrdinal*[2]> face_to_lidx;
+    Kokkos::View<panzer::LocalOrdinal**> cell_to_faces;
   };
 
   /** Partition of LocalMeshInfo, used for generating worksets */

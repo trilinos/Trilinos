@@ -129,12 +129,12 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
 
    // get GIDs on the "bottom" side of local cell 0, use those as the filtering
    // GIDs
-   std::vector<panzer::GlobalOrdinal2> filtered;
+   std::vector<panzer::GlobalOrdinal> filtered;
    {
      std::pair<std::vector<int>,std::vector<int> > fieldOffsets
          = dofManager->getGIDFieldOffsets_closure("block_0",dofManager->getFieldNum("Ux"),1,0);
  
-     std::vector<panzer::GlobalOrdinal2> gids;
+     std::vector<panzer::GlobalOrdinal> gids;
      dofManager->getElementGIDs(0,gids);
 
      filtered.resize(fieldOffsets.first.size());
@@ -164,7 +164,7 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
 
    out << "test out sizes construction by LOF" << std::endl;
    {
-     std::vector<panzer::GlobalOrdinal2> indices_f;
+     std::vector<panzer::GlobalOrdinal> indices_f;
      filtered_ugi->getOwnedIndices(indices_f);
 
      BlockedEpetraLinearObjFactory<panzer::Traits,int> lof(tComm,filtered_ugi);

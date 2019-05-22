@@ -128,7 +128,7 @@ void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalInde
 
       // gather operation for each cell in workset
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-         std::vector<panzer::GlobalOrdinal2> GIDs;
+         std::vector<panzer::GlobalOrdinal> GIDs;
          std::vector<int> LIDs;
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
       

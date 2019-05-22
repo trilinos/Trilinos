@@ -119,7 +119,7 @@ public:
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<panzer::LocalOrdinal2> & getElementBlock(const std::string & blockId) const;
+   virtual const std::vector<panzer::LocalOrdinal> & getElementBlock(const std::string & blockId) const;
 
    /** Get field numbers associated with a particular element block.
      */
@@ -128,9 +128,9 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::vector<panzer::GlobalOrdinal2> & gids,const std::string & blockId="") const;
+   virtual void getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<panzer::GlobalOrdinal> & gids,const std::string & blockId="") const;
 
-   virtual void getElementOrientation(panzer::LocalOrdinal2 /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
+   virtual void getElementOrientation(panzer::LocalOrdinal /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
    { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular
@@ -163,7 +163,7 @@ public:
     *
     *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
     */
-   virtual void getOwnedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const;
+   virtual void getOwnedIndices(std::vector<panzer::GlobalOrdinal> & indices) const;
 
    /**
     *  \brief Get the set of indices ghosted for this processor.
@@ -173,7 +173,7 @@ public:
     *
     *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
     */
-   virtual void getGhostedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const;
+   virtual void getGhostedIndices(std::vector<panzer::GlobalOrdinal> & indices) const;
 
    /**
     *  \brief Get the set of owned and ghosted indices for this processor.
@@ -183,10 +183,10 @@ public:
     *
     *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
     */
-   virtual void getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const;
+   virtual void getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal> & indices) const;
 
    // Epetra specific functions. Will be deprecated.
-   void getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
+   void getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
    void getOwnedIndicesAsInt(std::vector<int> & indices) const;
    void getGhostedIndicesAsInt(std::vector<int> & indices) const;
    void getOwnedAndGhostedIndicesAsInt(std::vector<int> & indices) const;
@@ -217,9 +217,9 @@ public:
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const;
+   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const;
 
-   void getCoordinates(panzer::LocalOrdinal2 localElementId,Kokkos::DynRankView<double,PHX::Device> & points);
+   void getCoordinates(panzer::LocalOrdinal localElementId,Kokkos::DynRankView<double,PHX::Device> & points);
 
    int getElementBlockGIDCount(const std::string &) const;
    int getElementBlockGIDCount(const std::size_t &) const;
@@ -231,7 +231,7 @@ public:
 
 private:
    int procRank_;
-   mutable Teuchos::RCP<std::vector<panzer::LocalOrdinal2> > elements_; // local element IDs
+   mutable Teuchos::RCP<std::vector<panzer::LocalOrdinal> > elements_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field0Offset_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field1Offset_; // local element IDs
 };
@@ -294,7 +294,7 @@ public:
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<panzer::LocalOrdinal2> & getElementBlock(const std::string & blockId) const;
+   virtual const std::vector<panzer::LocalOrdinal> & getElementBlock(const std::string & blockId) const;
 
    /** Get field numbers associated with a particular element block.
      */
@@ -303,9 +303,9 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::vector<panzer::GlobalOrdinal2> & gids,const std::string & blockId="") const;
+   virtual void getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<panzer::GlobalOrdinal> & gids,const std::string & blockId="") const;
 
-   virtual void getElementOrientation(panzer::LocalOrdinal2 /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
+   virtual void getElementOrientation(panzer::LocalOrdinal /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
    { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular
@@ -332,18 +332,18 @@ public:
 
    /** Get set of indices owned by this processor
      */
-   virtual void getOwnedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const;
+   virtual void getOwnedIndices(std::vector<panzer::GlobalOrdinal> & indices) const;
 
    /** Get set of indices owned and ghosted by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const;
+   virtual void getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal> & indices) const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const;
+   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const;
 
-   void getCoordinates(panzer::LocalOrdinal2 localElementId,Kokkos::DynRankView<double,PHX::Device> & points);
+   void getCoordinates(panzer::LocalOrdinal localElementId,Kokkos::DynRankView<double,PHX::Device> & points);
 
    int getElementBlockGIDCount(const std::string &) const;
    int getElementBlockGIDCount(const std::size_t &) const;
@@ -355,7 +355,7 @@ public:
 
 private:
    int procRank_;
-   mutable Teuchos::RCP<std::vector<panzer::LocalOrdinal2> > elements_; // local element IDs
+   mutable Teuchos::RCP<std::vector<panzer::LocalOrdinal> > elements_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field0Offset_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field1Offset_; // local element IDs
 };
@@ -409,7 +409,7 @@ public:
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<panzer::LocalOrdinal2> & getElementBlock(const std::string & blockId) const;
+   virtual const std::vector<panzer::LocalOrdinal> & getElementBlock(const std::string & blockId) const;
 
    /** Get field numbers associated with a particular element block.
      */
@@ -419,10 +419,10 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(panzer::LocalOrdinal2 /* localElmtId */, std::vector<std::pair<int, panzer::GlobalOrdinal2>>& /* gids */, const std::string& /* blockId="" */) const
+   virtual void getElementGIDs(panzer::LocalOrdinal /* localElmtId */, std::vector<std::pair<int, panzer::GlobalOrdinal>>& /* gids */, const std::string& /* blockId="" */) const
    { TEUCHOS_ASSERT(false); }
 
-   virtual void getElementOrientation(panzer::LocalOrdinal2 /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
+   virtual void getElementOrientation(panzer::LocalOrdinal /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
    { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular
@@ -451,21 +451,21 @@ public:
 
    /** Get set of indices owned by this processor
      */
-   virtual void getOwnedIndices(std::vector<std::pair<int, panzer::GlobalOrdinal2>>& /* indices */) const
+   virtual void getOwnedIndices(std::vector<std::pair<int, panzer::GlobalOrdinal>>& /* indices */) const
    { TEUCHOS_ASSERT(false); }
 
    /** Get set of indices owned and ghosted by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndGhostedIndices(std::vector<std::pair<int, panzer::GlobalOrdinal2>>& /* indices */) const
+   virtual void getOwnedAndGhostedIndices(std::vector<std::pair<int, panzer::GlobalOrdinal>>& /* indices */) const
    { TEUCHOS_ASSERT(false); }
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<std::pair<int, panzer::GlobalOrdinal2>>& /* indices */, std::vector<bool>& /* isOwned */) const
+   virtual void ownedIndices(const std::vector<std::pair<int, panzer::GlobalOrdinal>>& /* indices */, std::vector<bool>& /* isOwned */) const
    { TEUCHOS_ASSERT(false); }
 
-   void getCoordinates(panzer::LocalOrdinal2 /* localElementId */, Kokkos::DynRankView<double, PHX::Device>& /* points */)
+   void getCoordinates(panzer::LocalOrdinal /* localElementId */, Kokkos::DynRankView<double, PHX::Device>& /* points */)
    { TEUCHOS_ASSERT(false); }
 
    int getElementBlockGIDCount(const std::string &) const { TEUCHOS_ASSERT(false); }
@@ -478,7 +478,7 @@ public:
 
 private:
    int procRank_;
-   mutable Teuchos::RCP<std::vector<panzer::LocalOrdinal2> > elements_; // local element IDs
+   mutable Teuchos::RCP<std::vector<panzer::LocalOrdinal> > elements_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field0Offset_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field1Offset_; // local element IDs
 };

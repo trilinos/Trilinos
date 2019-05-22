@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
 
   // Build Connection Manager
   using LO = int;
-  using GO = panzer::Ordinal64;
+  using GO = panzer::GlobalOrdinal;
   timer->start("ConnManager ctor");
   const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
@@ -722,7 +722,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
 
   // Build Connection Manager
   using LO = int;
-  using GO = panzer::Ordinal64;
+  using GO = panzer::GlobalOrdinal;
   timer->start("ConnManager ctor");
   const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
@@ -875,7 +875,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
 
   // Build Connection Manager
   using LO = int;
-  using GO = panzer::Ordinal64;
+  using GO = panzer::GlobalOrdinal;
   timer->start("ConnManager ctor");
   const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");

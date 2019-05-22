@@ -145,7 +145,7 @@ void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer & ugi
   *
   * \note The description and use of this function are equally confusing...
   */
-Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi);
 
 /** This function builds a vector that defines fields for each global unknown.
@@ -158,9 +158,9 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi);
   * \param[in] ugi Unique global indexer object that defines the ordering, global ids and field numbers.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
-Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
-                        const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > & reducedVec=Teuchos::null);
+                        const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & reducedVec=Teuchos::null);
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -177,7 +177,7 @@ buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
   */
 void buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
                              std::vector<int> & fieldNumbers,
-                             const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > & reducedVec=Teuchos::null);
+                             const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & reducedVec=Teuchos::null);
 
 /** Build a reduced data vector using the reduced field vector. Here reduced is meant in the
   * exact same context as for the field vectors.
@@ -195,7 +195,7 @@ template <typename ScalarT,typename ArrayT>
 void updateGhostedDataReducedVector(const std::string & fieldName,const std::string blockId,
                                     const UniqueGlobalIndexer & ugi,
                                     const ArrayT & data,
-                                    Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & dataVector);
+                                    Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> & dataVector);
 
 /** Construct a map that only uses a certain field.
   *
@@ -206,8 +206,8 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
   * \returns A vector that contains the indices of the field requested. Again for the
   *          three dimensional vector field if fieldNum==1, it would be [1,4,7,10,13,...].
   */
-Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
-getFieldMap(int fieldNum,const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & fieldVector);
+Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
+getFieldMap(int fieldNum,const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> & fieldVector);
 
 
 namespace orientation_helpers {
@@ -240,7 +240,7 @@ void computePatternEdgeIndices(const FieldPattern & pattern,std::vector<std::pai
   * \param[in,out] orientation Orientation vector satisfying the field pattern layout
   */
 void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
-                                 const std::vector<panzer::GlobalOrdinal2> & topology,
+                                 const std::vector<panzer::GlobalOrdinal> & topology,
                                  const FieldPattern & fieldPattern, 
                                  std::vector<signed char> & orientation);
 
@@ -276,7 +276,7 @@ void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vec
   * \param[in,out] orientation Orientation vector satisfying the field pattern layout
   */
 void computeCellFaceOrientations(const std::vector<std::vector<int>> & topEdgeIndices,
-                                 const std::vector<panzer::GlobalOrdinal2> & topology,
+                                 const std::vector<panzer::GlobalOrdinal> & topology,
                                  const FieldPattern & fieldPattern, 
                                  std::vector<signed char> & orientation);
 
@@ -302,7 +302,7 @@ public:
      *          is related to the <code>UGI::getOwnedAndGhostedIndices</code>.
      */
    template <typename ScalarT,typename ArrayT>
-   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
    getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const;
 
    /** Get a Tpetra vector containing the data ordered according to 
@@ -315,29 +315,29 @@ public:
      *          is related to the <code>UGI::getOwnedIndices</code>.
      */
    template <typename ScalarT,typename ArrayT>
-   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
    getDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const;
 
    /** Build a map that contains only global IDs associated with a particular field.
      * This serves to go from a unique vector of all fields, to a vector
      * containing the uniquely owned global ids for a single field.
      */
-   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
    getFieldMap(const std::string & fieldName) const;
 
    /** Build a map that contains only global IDs associated with a particular field.
      * This serves to go from a unique vector of all fields, to a vector
      * containing the uniquely owned global ids for a single field.
      */
-   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
    getFieldMap(int fieldNum) const;
 
 protected:
-   using IntVector = Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType>;
-   using Map = Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType>;
+   using IntVector = Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
+   using Map = Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
 
    //! build unghosted field vector from ghosted field vector
-   void buildFieldVector(const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & source) const;
+   void buildFieldVector(const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> & source) const;
 
    //! DOF mapping
    Teuchos::RCP<const UniqueGlobalIndexer> ugi_;

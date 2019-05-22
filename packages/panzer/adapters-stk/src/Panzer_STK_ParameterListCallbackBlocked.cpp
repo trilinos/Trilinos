@@ -165,7 +165,7 @@ void ParameterListCallbackBlocked::setFieldByKey(const std::string & key,const s
       double * z = const_cast<double *>(&getCoordinateByField(2,field)[0]);
       pl.set<double*>(key,z);
    } else if(key == "Coordinates") {
-     pl.set<Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > >(key,coordsVecTp_);
+     pl.set<Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > >(key,coordsVecTp_);
    } else if(key == "Coordinates-Epetra") {
       pl.set<Teuchos::RCP<Epetra_MultiVector> >("Coordinates",coordsVecEp_);
       // pl.remove("Coordinates-Epetra");

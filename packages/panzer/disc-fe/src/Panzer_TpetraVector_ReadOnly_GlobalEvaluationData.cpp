@@ -49,4 +49,4 @@
 #include "Panzer_NodeType.hpp"
 
 // template class panzer::TpetraVector_ReadOnly_GlobalEvaluationData<double,int,int>;
-template class panzer::TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::Ordinal64>;
+template class panzer::TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::GlobalOrdinal>;

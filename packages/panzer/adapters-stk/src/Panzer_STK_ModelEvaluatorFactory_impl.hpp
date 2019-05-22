@@ -478,8 +478,8 @@ namespace panzer_stk {
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
-       Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> > bloLinObjFactory
-        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(mpi_comm,
+       Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> > bloLinObjFactory
+        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(mpi_comm,
                                                           Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager)));
 
        // parse any explicitly excluded pairs or blocks
@@ -517,7 +517,7 @@ namespace panzer_stk {
        globalIndexer = dofManager;
 
        TEUCHOS_ASSERT(!useDiscreteAdjoint); // safety check
-       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(mpi_comm,dofManager));
+       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(mpi_comm,dofManager));
 
        // build load balancing string for informative output
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);

@@ -736,8 +736,8 @@ int main(int argc,char * argv[]){
   if (linAlgebra == linAlgTpetra) {
     // if (useComplex) {
 // #if defined(HAVE_TPETRA_COMPLEX_DOUBLE)
-//       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,std::complex<double>,int,panzer::Ordinal64> blockedLinObjFactory;
-//       retVal = main_<std::complex<double>,int,panzer::Ordinal64,blockedLinObjFactory>(clp, argc, argv);
+//       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,std::complex<double>,int,panzer::GlobalOrdinal> blockedLinObjFactory;
+//       retVal = main_<std::complex<double>,int,panzer::GlobalOrdinal,blockedLinObjFactory>(clp, argc, argv);
 // #else
 //       std::cout << std::endl
 //                 << "WARNING" << std::endl
@@ -745,8 +745,8 @@ int main(int argc,char * argv[]){
 //       return EXIT_FAILURE;
 // #endif
 //     } else {
-      typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> blockedLinObjFactory;
-      retVal = main_<double,int,panzer::Ordinal64,blockedLinObjFactory>(clp, argc, argv);
+      typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> blockedLinObjFactory;
+      retVal = main_<double,int,panzer::GlobalOrdinal,blockedLinObjFactory>(clp, argc, argv);
 //    }
   } else if (linAlgebra == linAlgEpetra) {
     // TEUCHOS_ASSERT(!useComplex);

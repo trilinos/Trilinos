@@ -103,10 +103,10 @@ buildOrientationContainer(const Teuchos::RCP<const UniqueGlobalIndexer> & global
       return rcp(new OrientationContainer<Scalar,Array,LO,GO>(ugi,fieldName));
   }
 
-  // int, Ordinal64
+  // int, panzer::GlobalOrdinal
   {
     typedef int LO;
-    typedef Ordinal64 GO;
+    typedef panzer::GlobalOrdinal GO;
 
     RCP<const UniqueGlobalIndexer> ugi 
         = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);
@@ -125,10 +125,10 @@ buildOrientationContainer(const Teuchos::RCP<const UniqueGlobalIndexer> & global
       return rcp(new OrientationContainer<Scalar,Array,LO,GO>(ugi,fieldName));
   }
 
-  // int, pair<int,Ordinal64>
+  // int, pair<int,panzer::GlobalOrdinal>
   {
     typedef int LO;
-    typedef std::pair<int,Ordinal64> GO;
+    typedef std::pair<int,panzer::GlobalOrdinal> GO;
 
     RCP<const UniqueGlobalIndexer> ugi 
         = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);

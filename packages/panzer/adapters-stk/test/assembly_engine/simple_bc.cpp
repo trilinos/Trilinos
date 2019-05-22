@@ -478,7 +478,7 @@ namespace panzer {
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     const Epetra_Vector & f = *eGlobal->get_f();
 
-    std::vector<panzer::GlobalOrdinal2> GIDs;
+    std::vector<panzer::GlobalOrdinal> GIDs;
     if(myRank==0) {
        dofManager->getElementGIDs(1,GIDs,"eblock-1_0"); // in eblock-1_0
 
@@ -506,7 +506,7 @@ namespace panzer {
     if(myRank==0) {
        dofManager->getElementGIDs(1,GIDs,"eblock-1_0"); // in eblock-1_0
 
-       panzer::GlobalOrdinal2 gid = GIDs[3]; // top left corner at block interface
+       panzer::GlobalOrdinal gid = GIDs[3]; // top left corner at block interface
        int lid = f.Map().LID(gid);
 
        if(lid>=0) {

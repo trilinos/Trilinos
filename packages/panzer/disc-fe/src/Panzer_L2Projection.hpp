@@ -74,7 +74,7 @@ namespace panzer {
         \param elementBlockMultipliers (optional) If non-null, a multiplier will be used for each element block. The elements should be ordered corresponding to commManger block ordering. 
         \returns Filled mass matrix in a Tpetra::CrsMatrix
     */
-    Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+    Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
       buildMassMatrix(bool use_lumping=false,
                       const std::unordered_map<std::string,double>* elementBlockMultipliers = nullptr);
 
@@ -100,7 +100,7 @@ namespace panzer {
 
         \returns Filled inverse lumped mass matrix in a Tpetra::MultiVector (diagonal entries mass matrix)
     */
-    Teuchos::RCP<Tpetra::MultiVector<double,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+    Teuchos::RCP<Tpetra::MultiVector<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
       buildInverseLumpedMassMatrix();
 
     /** \brief Allocates, fills and returns a rectangular matrix for
@@ -120,9 +120,9 @@ namespace panzer {
 
         \returns Alocated and filled Tpetra::CrsMatrix
     */
-    Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+    Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
       buildRHSMatrix(const panzer::UniqueGlobalIndexer& sourceDOFManager,
-                     const Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
+                     const Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
                      const std::string& sourceFieldName,
                      const panzer::BasisDescriptor& sourceBasisDescriptor,
                      const int vectorOrGradientDirectionIndex = -1);

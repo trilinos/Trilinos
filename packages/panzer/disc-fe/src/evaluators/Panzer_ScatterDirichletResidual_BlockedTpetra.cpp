@@ -52,4 +52,4 @@
 #include "Panzer_ScatterDirichletResidual_BlockedTpetra_Hessian_impl.hpp"
 #endif
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_BlockedTpetra,int,panzer::Ordinal64)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_BlockedTpetra,int,panzer::GlobalOrdinal)

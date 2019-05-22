@@ -147,7 +147,7 @@ printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer & ugi)
   ugi.getElementBlockIds(block_ids);
   for(std::size_t b=0;b<block_ids.size();b++) {
     // extract the elemnts in each element block
-    const std::vector<panzer::LocalOrdinal2> & elements = ugi.getElementBlock(block_ids[b]);
+    const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(block_ids[b]);
 
     os << "Element Block: \"" << block_ids[b] << "\"" << std::endl;
  
@@ -157,7 +157,7 @@ printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer & ugi)
       Kokkos::View<const int*, PHX::Device> lids = ugi.getElementLIDs(elements[e]);
 
       // extract GIDs, this array is filled
-      std::vector<panzer::GlobalOrdinal2> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       ugi.getElementGIDs(elements[e],gids);
 
       os << "   local element id = " << elements[e] << ", ";
@@ -174,13 +174,13 @@ printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer & ugi)
   }
 }
 
-Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi)
 {
-   typedef Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> Map;
-   typedef Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> IntVector;
+   typedef Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> Map;
+   typedef Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> IntVector;
 
-   std::vector<panzer::GlobalOrdinal2> indices;
+   std::vector<panzer::GlobalOrdinal> indices;
    std::vector<std::string> blocks;
 
    ugi.getOwnedAndGhostedIndices(indices);
@@ -189,24 +189,24 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi)
    std::vector<int> fieldNumbers(indices.size(),-1);
 
    Teuchos::RCP<Map> ghostedMap 
-         = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::invalid(), Teuchos::arrayViewFromVector(indices),
-                                Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::zero(), ugi.getComm()));
+         = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(), Teuchos::arrayViewFromVector(indices),
+                                Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::zero(), ugi.getComm()));
 
    // build a map from local ids to a field number
    for(std::size_t blk=0;blk<blocks.size();blk++) {
       std::string blockId = blocks[blk];
 
-      const std::vector<panzer::LocalOrdinal2> & elements = ugi.getElementBlock(blockId);
+      const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(blockId);
       const std::vector<int> & fields = ugi.getBlockFieldNumbers(blockId);
  
       // loop over all elements, and set field number in output array
-      std::vector<panzer::GlobalOrdinal2> gids(fields.size());
+      std::vector<panzer::GlobalOrdinal> gids(fields.size());
       for(std::size_t e=0;e<elements.size();e++) {
          ugi.getElementGIDs(elements[e],gids);
 
          for(std::size_t f=0;f<fields.size();f++) {
             int fieldNum = fields[f];
-            panzer::GlobalOrdinal2 gid = gids[f];
+            panzer::GlobalOrdinal gid = gids[f];
             std::size_t lid = ghostedMap->getLocalElement(gid); // hash table lookup
 
             fieldNumbers[lid] = fieldNum; 
@@ -215,7 +215,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi)
    }
 
    // produce a reduced vector containing only fields known by this processor
-   std::vector<panzer::GlobalOrdinal2> reducedIndices;
+   std::vector<panzer::GlobalOrdinal> reducedIndices;
    std::vector<int> reducedFieldNumbers;
    for(std::size_t i=0;i<fieldNumbers.size();i++) {
       if(fieldNumbers[i]>-1) {
@@ -225,16 +225,16 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi)
    }
 
    Teuchos::RCP<Map> reducedMap 
-      = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::invalid(), Teuchos::arrayViewFromVector(reducedIndices),
-                             Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::zero(), ugi.getComm()));
+      = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(), Teuchos::arrayViewFromVector(reducedIndices),
+                             Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::zero(), ugi.getComm()));
    return Teuchos::rcp(new IntVector(reducedMap,Teuchos::arrayViewFromVector(reducedFieldNumbers)));
 }
 
 void buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
                              std::vector<int> & fieldNumbers,
-                             const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > & reducedVec)
+                             const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & reducedVec)
 {
-   typedef Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> IntVector;
+   typedef Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> IntVector;
 
    Teuchos::RCP<const IntVector> dest = buildGhostedFieldVector(ugi,reducedVec);
 
@@ -242,13 +242,13 @@ void buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
    dest->get1dCopy(Teuchos::arrayViewFromVector(fieldNumbers));
 }
 
-Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
-                        const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > & reducedVec)
+                        const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & reducedVec)
 {
-   typedef Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> Map;
-   typedef Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> IntVector;
-   typedef Tpetra::Import<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> Importer;
+   typedef Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> Map;
+   typedef Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> IntVector;
+   typedef Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> Importer;
 
    // first step: get a reduced field number vector and build a map to 
    // contain the full field number vector
@@ -256,10 +256,10 @@ buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
 
    Teuchos::RCP<Map> destMap;
    {
-      std::vector<panzer::GlobalOrdinal2> indices;
+      std::vector<panzer::GlobalOrdinal> indices;
       ugi.getOwnedAndGhostedIndices(indices);
-      destMap = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::invalid(), Teuchos::arrayViewFromVector(indices),
-                                     Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::zero(), ugi.getComm()));
+      destMap = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(), Teuchos::arrayViewFromVector(indices),
+                                     Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::zero(), ugi.getComm()));
    }
 
    Teuchos::RCP<const IntVector> source = reducedVec;
@@ -280,23 +280,23 @@ buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
 }
 
 /** Construct a map that only uses a certain field. */
-Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
-getFieldMap(int fieldNum,const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & fieldTVector)
+Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
+getFieldMap(int fieldNum,const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> & fieldTVector)
 {
-   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > origMap = fieldTVector.getMap();
+   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > origMap = fieldTVector.getMap();
    std::vector<int> fieldVector(fieldTVector.getLocalLength());
    fieldTVector.get1dCopy(Teuchos::arrayViewFromVector(fieldVector));
 
-   std::vector<panzer::GlobalOrdinal2> mapVector;
+   std::vector<panzer::GlobalOrdinal> mapVector;
    for(std::size_t i=0;i<fieldVector.size();i++) { 
       if(fieldVector[i]==fieldNum)
          mapVector.push_back(origMap->getGlobalElement(i));
    }
 
-   Teuchos::RCP<Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > finalMap 
-      = Teuchos::rcp(new Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType>(
-                                Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::invalid(), Teuchos::arrayViewFromVector(mapVector),
-                                Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::zero(), origMap->getComm()));
+   Teuchos::RCP<Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > finalMap 
+      = Teuchos::rcp(new Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(
+                                Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(), Teuchos::arrayViewFromVector(mapVector),
+                                Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::zero(), origMap->getComm()));
 
    return finalMap;
 }
@@ -309,30 +309,30 @@ ArrayToFieldVector::ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalInde
 }
 
 
-void ArrayToFieldVector::buildFieldVector(const Tpetra::Vector<int,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & source) const
+void ArrayToFieldVector::buildFieldVector(const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> & source) const
 {
    // build (unghosted) vector and map
-   std::vector<panzer::GlobalOrdinal2> indices;
+   std::vector<panzer::GlobalOrdinal> indices;
    ugi_->getOwnedIndices(indices);
 
    Teuchos::RCP<const Map> destMap
-         = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::invalid(), Teuchos::arrayViewFromVector(indices),
-                                Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::zero(), ugi_->getComm()));
+         = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(), Teuchos::arrayViewFromVector(indices),
+                                Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::zero(), ugi_->getComm()));
    Teuchos::RCP<IntVector> localFieldVector = Teuchos::rcp(new IntVector(destMap));
 
-   Tpetra::Import<int,panzer::GlobalOrdinal2> importer(source.getMap(),destMap);
+   Tpetra::Import<int,panzer::GlobalOrdinal> importer(source.getMap(),destMap);
    localFieldVector->doImport(source,importer,Tpetra::INSERT);
 
    fieldVector_ = localFieldVector;
 }
 
-Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 ArrayToFieldVector::getFieldMap(const std::string & fieldName) const
 {
    return getFieldMap(ugi_->getFieldNum(fieldName));
 }
 
-Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 ArrayToFieldVector::getFieldMap(int fieldNum) const
 {
    if(fieldMaps_[fieldNum]==Teuchos::null) {
@@ -354,7 +354,7 @@ namespace orientation_helpers {
 
 
 void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
-                                 const std::vector<panzer::GlobalOrdinal2> & topology,
+                                 const std::vector<panzer::GlobalOrdinal> & topology,
                                  const FieldPattern & fieldPattern, 
                                  std::vector<signed char> & orientation)
 {
@@ -373,8 +373,8 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
       const std::pair<int,int> nodes = topEdgeIndices[e]; 
 
       // extract global values of topological nodes
-      panzer::GlobalOrdinal2 v0 = topology[nodes.first];
-      panzer::GlobalOrdinal2 v1 = topology[nodes.second];
+      panzer::GlobalOrdinal v0 = topology[nodes.first];
+      panzer::GlobalOrdinal v1 = topology[nodes.second];
 
       // using simple rule make a decision about orientation
       signed char edgeOrientation = 1;
@@ -393,7 +393,7 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
 }
 
 void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceIndices,
-                                 const std::vector<panzer::GlobalOrdinal2> & topology,
+                                 const std::vector<panzer::GlobalOrdinal> & topology,
                                  const FieldPattern & fieldPattern, 
                                  std::vector<signed char> & orientation)
 {
@@ -418,11 +418,11 @@ void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceI
    for(std::size_t f=0;f<topFaceIndices.size();f++) {
       // grab topological nodes
       const std::vector<int> & nodes = topFaceIndices[f]; 
-      std::vector<panzer::GlobalOrdinal2> globals(nodes.size());
+      std::vector<panzer::GlobalOrdinal> globals(nodes.size());
       for(std::size_t n=0;n<nodes.size();n++)
          globals[n] = topology[nodes[n]]; 
 
-      typename std::vector<panzer::GlobalOrdinal2>::const_iterator itr 
+      typename std::vector<panzer::GlobalOrdinal>::const_iterator itr 
           = std::min_element(globals.begin(),globals.end()); 
 
       TEUCHOS_TEST_FOR_EXCEPTION(itr==globals.end(),std::out_of_range,
@@ -435,8 +435,8 @@ void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceI
       //         vbefore => itr => vafter
       // note that the nonsense with the beginning and end has to do with
       // if this iterator was the first or last in the array
-      panzer::GlobalOrdinal2 vbefore = itr==globals.begin() ? *(globals.end()-1) : *(itr-1);
-      panzer::GlobalOrdinal2 vafter = (itr+1)==globals.end() ? *globals.begin() : *(itr+1);
+      panzer::GlobalOrdinal vbefore = itr==globals.begin() ? *(globals.end()-1) : *(itr-1);
+      panzer::GlobalOrdinal vafter = (itr+1)==globals.end() ? *globals.begin() : *(itr+1);
 
 /*
       // sanity check in debug mode (uncomment these lines)

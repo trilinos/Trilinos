@@ -78,9 +78,9 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
   typedef Thyra::VectorBase<double> Thyra_Vector;
   typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
 
-  typedef Tpetra::Vector<double,int,panzer::Ordinal64> Tpetra_Vector;
-  typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
-  typedef Tpetra::Import<int,panzer::Ordinal64> Tpetra_Import;
+  typedef Tpetra::Vector<double,int,panzer::GlobalOrdinal> Tpetra_Vector;
+  typedef Tpetra::Map<int,panzer::GlobalOrdinal> Tpetra_Map;
+  typedef Tpetra::Import<int,panzer::GlobalOrdinal> Tpetra_Import;
 
 
   Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
@@ -88,8 +88,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
   // This is required
   TEST_ASSERT(comm->getSize()==2);
 
-  std::vector<panzer::Ordinal64> ghosted(5);
-  std::vector<panzer::Ordinal64> owned(3);
+  std::vector<panzer::GlobalOrdinal> ghosted(5);
+  std::vector<panzer::GlobalOrdinal> owned(3);
 
   if(comm->getRank()==0) {
     owned[0] = 0;
@@ -118,7 +118,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
   RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(-1,ghosted,0,comm));
   RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(ownedMap,ghostedMap));
 
-  TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::Ordinal64> ged;
+  TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::GlobalOrdinal> ged;
  
   TEST_ASSERT(!ged.isInitialized());
 
@@ -266,8 +266,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, blocked)
 
   typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
 
-  typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
-  typedef Tpetra::Import<int,panzer::Ordinal64> Tpetra_Import;
+  typedef Tpetra::Map<int,panzer::GlobalOrdinal> Tpetra_Map;
+  typedef Tpetra::Import<int,panzer::GlobalOrdinal> Tpetra_Import;
 
 
   Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
@@ -275,8 +275,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, blocked)
   // This is required
   TEST_ASSERT(comm->getSize()==2);
 
-  std::vector<Ordinal64> ghosted(5);
-  std::vector<Ordinal64> owned(3);
+  std::vector<panzer::GlobalOrdinal> ghosted(5);
+  std::vector<panzer::GlobalOrdinal> owned(3);
 
   if(comm->getRank()==0) {
     owned[0] = 0;
@@ -305,14 +305,14 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, blocked)
   RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(-1,ghosted,0,comm));
   RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(ownedMap,ghostedMap));
 
-  RCP<TpetraVector_ReadOnly_GlobalEvaluationData<double,int,Ordinal64> > ged_a, ged_b;
-  ged_a = rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<double,int,Ordinal64>(importer,ghostedMap,ownedMap));
-  ged_b = rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<double,int,Ordinal64>(importer,ghostedMap,ownedMap));
+  RCP<TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::GlobalOrdinal> > ged_a, ged_b;
+  ged_a = rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::GlobalOrdinal>(importer,ghostedMap,ownedMap));
+  ged_b = rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::GlobalOrdinal>(importer,ghostedMap,ownedMap));
   std::vector<RCP<ReadOnlyVector_GlobalEvaluationData> > gedBlocks;
   gedBlocks.push_back(ged_a);
   gedBlocks.push_back(ged_b);
 
-  RCP<const Thyra::VectorSpaceBase<double> > ownedSpace_ab = Thyra::tpetraVectorSpace<double,int,Ordinal64>(ownedMap);
+  RCP<const Thyra::VectorSpaceBase<double> > ownedSpace_ab = Thyra::tpetraVectorSpace<double,int,panzer::GlobalOrdinal>(ownedMap);
   RCP<const Thyra::VectorSpaceBase<double> > ghostedSpace_ab = ged_a->getGhostedVector()->space();
 
   RCP<Thyra::DefaultProductVectorSpace<double> > ownedSpace = Thyra::productVectorSpace<double>(ownedSpace_ab,2);
@@ -408,9 +408,9 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef Tpetra::Vector<double,int,panzer::Ordinal64> Tpetra_Vector;
-  typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
-  typedef Tpetra::Import<int,panzer::Ordinal64> Tpetra_Import;
+  typedef Tpetra::Vector<double,int,panzer::GlobalOrdinal> Tpetra_Vector;
+  typedef Tpetra::Map<int,panzer::GlobalOrdinal> Tpetra_Map;
+  typedef Tpetra::Import<int,panzer::GlobalOrdinal> Tpetra_Import;
 
 
   Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
@@ -418,8 +418,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
   // This is required
   TEST_ASSERT(comm->getSize()==2);
 
-  std::vector<panzer::Ordinal64> ghosted(4);
-  std::vector<panzer::Ordinal64> owned(2);
+  std::vector<panzer::GlobalOrdinal> ghosted(4);
+  std::vector<panzer::GlobalOrdinal> owned(2);
 
   // This is a line with 6 notes (numbered 0-5). The boundaries
   // are removed at 0 and 5.
@@ -446,9 +446,9 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
   RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(-1,ghosted,0,comm));
   RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(ownedMap,ghostedMap));
 
-  TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::Ordinal64> ged;
+  TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::GlobalOrdinal> ged;
  
-  std::vector<panzer::Ordinal64> constIndex(1);
+  std::vector<panzer::GlobalOrdinal> constIndex(1);
  
   // setup filtered values
   constIndex[0] = 0;

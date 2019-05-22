@@ -156,7 +156,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
    // unfortunatly this mesh is completly uniform
    double standardO[] = { 1.0, 1.0, -1.0, -1.0 };
    if(myRank==0) {
-     std::vector<panzer::GlobalOrdinal2> gids;
+     std::vector<panzer::GlobalOrdinal> gids;
       std::vector<double> orientation;
 
       // element 0
@@ -201,7 +201,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
          TEST_EQUALITY(orientation[2*i+5],standardO[i]);
    }
    else if(myRank==1) {
-      std::vector<panzer::GlobalOrdinal2> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       std::vector<double> orientation;
 
       // element 0

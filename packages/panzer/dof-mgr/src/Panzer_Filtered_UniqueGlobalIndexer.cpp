@@ -61,10 +61,10 @@ Filtered_UniqueGlobalIndexer::Filtered_UniqueGlobalIndexer(){}
 void
 Filtered_UniqueGlobalIndexer::
 initialize(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi,
-           const std::vector<panzer::GlobalOrdinal2>& filtered)
+           const std::vector<panzer::GlobalOrdinal>& filtered)
 {
-  using GO = panzer::GlobalOrdinal2;
-  using LO = panzer::LocalOrdinal2;
+  using GO = panzer::GlobalOrdinal;
+  using LO = panzer::LocalOrdinal;
   using Node = panzer::TpetraNodeType;
   using Map = Tpetra::Map<LO, GO, Node>;
   using Vector = Tpetra::Vector<GO,LO,GO,Node>;
@@ -72,7 +72,7 @@ initialize(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi,
 
   using std::size_t;
   using std::vector;
-  using HashTable = std::unordered_set<panzer::GlobalOrdinal2>;
+  using HashTable = std::unordered_set<panzer::GlobalOrdinal>;
   using Teuchos::RCP;
 
   owned_.clear();
@@ -80,7 +80,7 @@ initialize(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi,
   base_ = ugi;
 
   // From the base global indexer, build the filtered owned indices.
-  vector<panzer::GlobalOrdinal2> baseOwned, baseGhosted;
+  vector<panzer::GlobalOrdinal> baseOwned, baseGhosted;
   base_->getOwnedIndices(baseOwned);
   base_->getGhostedIndices(baseGhosted);
 
@@ -95,7 +95,7 @@ initialize(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi,
   ownedFiltered.putScalar(0.0);
   ghostedFiltered.putScalar(0.0);
 
-  for(panzer::GlobalOrdinal2 f : filtered) {
+  for(panzer::GlobalOrdinal f : filtered) {
     bool isOwned = std::find(baseOwned.begin(),baseOwned.end(),f)!=baseOwned.end();
     bool isGhosted = std::find(baseGhosted.begin(),baseGhosted.end(),f)!=baseGhosted.end();
  
@@ -109,7 +109,7 @@ initialize(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi,
   Export exporter(ghostedMap,ownedMap);
   ownedFiltered.doExport(ghostedFiltered, exporter, Tpetra::ADD);
 
-  Teuchos::ArrayRCP<const panzer::GlobalOrdinal2> data = ownedFiltered.getData();
+  Teuchos::ArrayRCP<const panzer::GlobalOrdinal> data = ownedFiltered.getData();
 
   // Build a hash table for fast searching.
   HashTable filteredHash;
@@ -145,15 +145,15 @@ getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
 {
   using Teuchos::RCP;
 
-  using GO = panzer::GlobalOrdinal2;
-  using LO = panzer::LocalOrdinal2;
+  using GO = panzer::GlobalOrdinal;
+  using LO = panzer::LocalOrdinal;
   using Node = panzer::TpetraNodeType;
   using Map = Tpetra::Map<LO, GO, Node>;
   using Vector = Tpetra::Vector<GO,LO,GO,Node>;
   using Import = Tpetra::Import<LO,GO,Node>;
 
-  std::vector<panzer::GlobalOrdinal2> ownedIndices;
-  std::vector<panzer::GlobalOrdinal2> ghostedIndices;
+  std::vector<panzer::GlobalOrdinal> ownedIndices;
+  std::vector<panzer::GlobalOrdinal> ghostedIndices;
 
   // build owned and ghosted maps
   getOwnedIndices(ownedIndices);
@@ -188,7 +188,7 @@ getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
 ///////////////////////////////////////////////////////////////////////////////
 void 
 Filtered_UniqueGlobalIndexer::
-getFilteredOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const
+getFilteredOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal> & indices) const
 {
   using Teuchos::RCP;
 
@@ -197,7 +197,7 @@ getFilteredOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2> & indices)
   getOwnedAndGhostedNotFilteredIndicator(indicators);
 
   // build ghosted maps
-  std::vector<panzer::GlobalOrdinal2> ghostedIndices;
+  std::vector<panzer::GlobalOrdinal> ghostedIndices;
   getOwnedAndGhostedIndices(ghostedIndices);
 
   // filtered out filtered indices (isn't that a useful comment)
@@ -210,12 +210,12 @@ getFilteredOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2> & indices)
 ///////////////////////////////////////////////////////////////////////////////
 void 
 Filtered_UniqueGlobalIndexer::
-ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const
+ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const
 {
   //Resizes the isOwned array.
   if(indices.size()!=isOwned.size())
     isOwned.resize(indices.size(),false);
-  typename std::vector<panzer::GlobalOrdinal2>::const_iterator endOf = owned_.end();
+  typename std::vector<panzer::GlobalOrdinal>::const_iterator endOf = owned_.end();
   for (std::size_t i = 0; i < indices.size(); ++i) {
     isOwned[i] = ( std::find(owned_.begin(), owned_.end(), indices[i])!=endOf );
   }

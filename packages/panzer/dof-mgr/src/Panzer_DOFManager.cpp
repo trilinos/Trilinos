@@ -294,19 +294,19 @@ Teuchos::RCP<const FieldPattern> DOFManager::getFieldPattern(const std::string &
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void DOFManager::getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+void DOFManager::getOwnedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   indices = owned_;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void DOFManager::getGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+void DOFManager::getGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   indices = ghosted_;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void DOFManager::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+void DOFManager::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   using std::size_t;
   indices.resize(owned_.size() + ghosted_.size());
@@ -317,7 +317,7 @@ void DOFManager::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void DOFManager::getElementGIDsAsInt(panzer::LocalOrdinal2 localElementID, std::vector<int>& gids, const std::string& /* blockIdHint */) const
+void DOFManager::getElementGIDsAsInt(panzer::LocalOrdinal localElementID, std::vector<int>& gids, const std::string& /* blockIdHint */) const
 {
   const auto & element_ids = elementGIDs_[localElementID];
   gids.resize(element_ids.size());
@@ -410,7 +410,7 @@ DOFManager::getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void DOFManager::getElementGIDs(panzer::LocalOrdinal2 localElementID, std::vector<panzer::GlobalOrdinal2>& gids, const std::string& /* blockIdHint */) const
+void DOFManager::getElementGIDs(panzer::LocalOrdinal localElementID, std::vector<panzer::GlobalOrdinal>& gids, const std::string& /* blockIdHint */) const
 {
   gids = elementGIDs_[localElementID];
 }
@@ -444,12 +444,12 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
 {
   // some typedefs
   typedef panzer::TpetraNodeType Node;
-  typedef Tpetra::Map<panzer::LocalOrdinal2, panzer::GlobalOrdinal2, Node> Map;
+  typedef Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal, Node> Map;
 
-  typedef Tpetra::Import<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Node> Import;
+  typedef Tpetra::Import<panzer::LocalOrdinal,panzer::GlobalOrdinal,Node> Import;
 
-  //the GIDs are of type panzer::GlobalOrdinal2.
-  typedef Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Node> MultiVector;
+  //the GIDs are of type panzer::GlobalOrdinal.
+  typedef Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,Node> MultiVector;
 
   PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns",buildGlobalUnknowns);
 
@@ -485,7 +485,7 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
   RCP<MultiVector> tagged_overlap_mv = buildTaggedMultiVector(ownedAccess);
   RCP<const Map> overlap_map   = tagged_overlap_mv->getMap();
 
-  RCP<MultiVector> overlap_mv = Tpetra::createMultiVector<panzer::GlobalOrdinal2>(overlap_map,(size_t)numFields_);
+  RCP<MultiVector> overlap_mv = Tpetra::createMultiVector<panzer::GlobalOrdinal>(overlap_map,(size_t)numFields_);
 
   // call the GUN paper algorithm
   auto non_overlap_pair = buildGlobalUnknowns_GUN(*tagged_overlap_mv,*overlap_mv);
@@ -513,7 +513,7 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
     Import imp_neighbor(non_overlap_map,overlap_map_neighbor);
 
     Teuchos::RCP<MultiVector> overlap_mv_neighbor =
-      Tpetra::createMultiVector<panzer::GlobalOrdinal2>(overlap_map_neighbor, (size_t)numFields_);
+      Tpetra::createMultiVector<panzer::GlobalOrdinal>(overlap_map_neighbor, (size_t)numFields_);
 
     // get all neighbor information
     overlap_mv_neighbor->doImport(*non_overlap_mv, imp_neighbor,
@@ -529,18 +529,18 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
   //////////////////////////////////////////////////////////////////
   #if 0
   {
-    panzer::Ordinal64 offset = 0xFFFFFFFFLL;
+    panzer::GlobalOrdinal offset = 0xFFFFFFFFLL;
 
     for (size_t b = 0; b < blockOrder_.size(); ++b) {
-      const std::vector<panzer::LocalOrdinal2> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+      const std::vector<panzer::LocalOrdinal> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
       for (std::size_t l = 0; l < myElements.size(); ++l) {
-        std::vector<panzer::GlobalOrdinal2> & localGIDs = elementGIDs_[myElements[l]];
+        std::vector<panzer::GlobalOrdinal> & localGIDs = elementGIDs_[myElements[l]];
         for(std::size_t c=0;c<localGIDs.size();c++)
           localGIDs[c] += offset;
       }
     }
 
-    Teuchos::ArrayRCP<panzer::GlobalOrdinal2> nvals = non_overlap_mv->get1dViewNonConst();
+    Teuchos::ArrayRCP<panzer::GlobalOrdinal> nvals = non_overlap_mv->get1dViewNonConst();
     for (int j = 0; j < nvals.size(); ++j)
       nvals[j] += offset;
   }
@@ -550,7 +550,7 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns::build_owned_vector",build_owned_vector);
 
-    typedef std::unordered_set<panzer::GlobalOrdinal2> HashTable;
+    typedef std::unordered_set<panzer::GlobalOrdinal> HashTable;
     HashTable isOwned, remainingOwned;
 
     // owned_ is made up of owned_ids.: This doesn't work for high order
@@ -563,7 +563,7 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
     for (size_t i = 0; i < nvals.extent(1); ++i) {
       for (size_t j = 0; j < nvals.extent(0); ++j) {
 	if (nvals(j,i) != -1) {
-	  for(panzer::GlobalOrdinal2 offset=0;offset<tagged_vals(j,i);++offset)
+	  for(panzer::GlobalOrdinal offset=0;offset<tagged_vals(j,i);++offset)
 	    isOwned.insert(nvals(j,i)+offset);
 	}
 	else {
@@ -580,10 +580,10 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
       if(fa_fps_[b]==Teuchos::null)
         continue;
 
-      const std::vector<panzer::LocalOrdinal2> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+      const std::vector<panzer::LocalOrdinal> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
 
       for (size_t l = 0; l < myElements.size(); ++l) {
-        const std::vector<panzer::GlobalOrdinal2> & localOrdering = elementGIDs_[myElements[l]];
+        const std::vector<panzer::GlobalOrdinal> & localOrdering = elementGIDs_[myElements[l]];
 
         // add "novel" global ids that are also owned to owned array
         for(std::size_t i=0;i<localOrdering.size();i++) {
@@ -624,7 +624,7 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns::build_ghosted_array",BGA);
 
     // Use a hash table to detect if global IDs have been added to owned_.
-    typedef std::unordered_set<panzer::GlobalOrdinal2> HashTable;
+    typedef std::unordered_set<panzer::GlobalOrdinal> HashTable;
     HashTable hashTable;
     for (std::size_t i = 0; i < owned_.size(); i++)
       hashTable.insert(owned_[i]);
@@ -644,11 +644,11 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
       {
         if (fa_fps_[b] == Teuchos::null)
           continue;
-        const std::vector<panzer::LocalOrdinal2>& myElements =
+        const std::vector<panzer::LocalOrdinal>& myElements =
           access.getElementBlock(blockOrder_[b]);
         for (size_t l = 0; l < myElements.size(); ++l)
         {
-          const std::vector<panzer::GlobalOrdinal2>& localOrdering = elementGIDs_[myElements[l]];
+          const std::vector<panzer::GlobalOrdinal>& localOrdering = elementGIDs_[myElements[l]];
 
           // Add "novel" global IDs into the ghosted_ vector.
           for (std::size_t i = 0; i < localOrdering.size(); ++i)
@@ -686,20 +686,20 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-std::pair<Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >,
-          Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > >
-DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & tagged_overlap_mv,
-                                    Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & overlap_mv) const
+std::pair<Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >,
+          Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> > >
+DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> & tagged_overlap_mv,
+                                    Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> & overlap_mv) const
 {
   // some typedefs
   typedef panzer::TpetraNodeType Node;
-  typedef Tpetra::Map<panzer::LocalOrdinal2, panzer::GlobalOrdinal2, Node> Map;
+  typedef Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal, Node> Map;
 
-  typedef Tpetra::Export<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Node> Export;
-  typedef Tpetra::Import<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Node> Import;
+  typedef Tpetra::Export<panzer::LocalOrdinal,panzer::GlobalOrdinal,Node> Export;
+  typedef Tpetra::Import<panzer::LocalOrdinal,panzer::GlobalOrdinal,Node> Import;
 
-  //the GIDs are of type panzer::GlobalOrdinal2.
-  typedef Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Node> MultiVector;
+  //the GIDs are of type panzer::GlobalOrdinal.
+  typedef Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,Node> MultiVector;
 
   PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns_GUN",BGU_GUN);
 
@@ -715,14 +715,14 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
   if(!useTieBreak_) {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns_GUN::line_04 createOneToOne",GUN04);
 
-    GreedyTieBreak<panzer::LocalOrdinal2,panzer::GlobalOrdinal2> greedy_tie_break;
-    non_overlap_map = Tpetra::createOneToOne<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Node>(overlap_map, greedy_tie_break);
+    GreedyTieBreak<panzer::LocalOrdinal,panzer::GlobalOrdinal> greedy_tie_break;
+    non_overlap_map = Tpetra::createOneToOne<panzer::LocalOrdinal,panzer::GlobalOrdinal,Node>(overlap_map, greedy_tie_break);
   }
   else {
     // use a hash tie break to get better load balancing from create one to one
     // Aug. 4, 2016...this is a bad idea and doesn't work
-    HashTieBreak<panzer::LocalOrdinal2,panzer::GlobalOrdinal2> tie_break;
-    non_overlap_map = Tpetra::createOneToOne<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Node>(overlap_map,tie_break);
+    HashTieBreak<panzer::LocalOrdinal,panzer::GlobalOrdinal> tie_break;
+    non_overlap_map = Tpetra::createOneToOne<panzer::LocalOrdinal,panzer::GlobalOrdinal,Node>(overlap_map,tie_break);
   }
 
  /* 7.  Create a non-overlapped multivector from OneToOne map.
@@ -734,7 +734,7 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns_GUN::line_05 alloc_unique_mv",GUN05);
 
-    tagged_non_overlap_mv = Tpetra::createMultiVector<panzer::GlobalOrdinal2>(non_overlap_map,(size_t)numFields_);
+    tagged_non_overlap_mv = Tpetra::createMultiVector<panzer::GlobalOrdinal>(non_overlap_map,(size_t)numFields_);
   }
 
  /* 8.  Create an export between the two maps.
@@ -770,12 +770,12 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
 
   // LINES 7-9: In the GUN paper
 
-  panzer::GlobalOrdinal2 localsum=0;
+  panzer::GlobalOrdinal localsum=0;
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns_GUN::line_07-09 local_count",GUN07_09);
     auto values = non_overlap_mv->getLocalViewDevice();
     auto mv_size = values.extent(0);
-    Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<panzer::GlobalOrdinal2,decltype(values)>(values),localsum);
+    Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<panzer::GlobalOrdinal,decltype(values)>(values),localsum);
     PHX::Device::fence();
   }
   
@@ -784,13 +784,13 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
 
   // LINE 10: In the GUN paper
 
-  panzer::GlobalOrdinal2 myOffset = -1;
+  panzer::GlobalOrdinal myOffset = -1;
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns_GUN::line_10 prefix_sum",GUN_10);
 
     // do a prefix sum
-    panzer::GlobalOrdinal2 scanResult = 0;
-    Teuchos::scan<int, panzer::GlobalOrdinal2> (*getComm(), Teuchos::REDUCE_SUM, static_cast<panzer::GlobalOrdinal2> (localsum), Teuchos::outArg (scanResult));
+    panzer::GlobalOrdinal scanResult = 0;
+    Teuchos::scan<int, panzer::GlobalOrdinal> (*getComm(), Teuchos::REDUCE_SUM, static_cast<panzer::GlobalOrdinal> (localsum), Teuchos::outArg (scanResult));
     myOffset = scanResult - localsum;
   }
 
@@ -852,13 +852,13 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
 {
   // some typedefs
   typedef panzer::TpetraNodeType Node;
-  typedef Tpetra::Map<panzer::LocalOrdinal2, panzer::GlobalOrdinal2, Node> Map;
-  typedef Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,Node> MultiVector;
+  typedef Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal, Node> Map;
+  typedef Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,Node> MultiVector;
 
   PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildTaggedMultiVector",BTMV);
 
@@ -904,7 +904,7 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildTaggedMultiVector::allocate_tagged_multivector",ATMV);
 
-    overlap_mv = Tpetra::createMultiVector<panzer::GlobalOrdinal2>(overlapmap,(size_t)numFields_);
+    overlap_mv = Tpetra::createMultiVector<panzer::GlobalOrdinal>(overlapmap,(size_t)numFields_);
     overlap_mv->putScalar(0); // if tpetra is not initialized with zeros
     PHX::Device::fence();
   }
@@ -926,9 +926,9 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
       if(fa_fps_[b]==Teuchos::null)
         continue;
 
-      const std::vector<panzer::LocalOrdinal2> & numFields= fa_fps_[b]->numFieldsPerId();
-      const std::vector<panzer::LocalOrdinal2> & fieldIds= fa_fps_[b]->fieldIds();
-      const std::vector<panzer::LocalOrdinal2> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+      const std::vector<panzer::LocalOrdinal> & numFields= fa_fps_[b]->numFieldsPerId();
+      const std::vector<panzer::LocalOrdinal> & fieldIds= fa_fps_[b]->fieldIds();
+      const std::vector<panzer::LocalOrdinal> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
       for (size_t l = 0; l < myElements.size(); ++l) {
         auto connSize = connMngr_->getConnectivitySize(myElements[l]);
         const auto * elmtConn = connMngr_->getConnectivity(myElements[l]);
@@ -1061,12 +1061,12 @@ DOFManager::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void DOFManager::ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const
+void DOFManager::ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const
 {
   //Resizes the isOwned array.
   if(indices.size()!=isOwned.size())
     isOwned.resize(indices.size(),false);
-  typename std::vector<panzer::GlobalOrdinal2>::const_iterator endOf = owned_.end();
+  typename std::vector<panzer::GlobalOrdinal>::const_iterator endOf = owned_.end();
   for (std::size_t i = 0; i < indices.size(); ++i) {
     isOwned[i] = ( std::find(owned_.begin(), owned_.end(), indices[i])!=endOf );
   }
@@ -1168,7 +1168,7 @@ void DOFManager::buildUnknownsOrientation()
       orientation_helpers::computePatternFaceIndices(*ga_fp_,topFaceIndices);
 
     //How many GIDs are associated with a particular element bloc
-    const std::vector<panzer::LocalOrdinal2> & elmts = connMngr_->getElementBlock(blockName);
+    const std::vector<panzer::LocalOrdinal> & elmts = connMngr_->getElementBlock(blockName);
     for(std::size_t e=0;e<elmts.size();e++) {
        // this is the vector of orientations to fill: initialize it correctly
       std::vector<signed char> & eOrientation = orientation_[elmts[e]];
@@ -1182,8 +1182,8 @@ void DOFManager::buildUnknownsOrientation()
 
       // get geometry ids
       auto connSz = connMngr_->getConnectivitySize(elmts[e]);
-      const panzer::Ordinal64 * connPtr = connMngr_->getConnectivity(elmts[e]);
-      const std::vector<panzer::Ordinal64> connectivity(connPtr,connPtr+connSz);
+      const panzer::GlobalOrdinal * connPtr = connMngr_->getConnectivity(elmts[e]);
+      const std::vector<panzer::GlobalOrdinal> connectivity(connPtr,connPtr+connSz);
 
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
 
@@ -1195,7 +1195,7 @@ void DOFManager::buildUnknownsOrientation()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void DOFManager::getElementOrientation(panzer::LocalOrdinal2 localElmtId,std::vector<double> & gidsOrientation) const
+void DOFManager::getElementOrientation(panzer::LocalOrdinal localElmtId,std::vector<double> & gidsOrientation) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(orientation_.size()==0,std::logic_error,
                               "DOFManager::getElementOrientations: Orientations were not constructed!");
@@ -1252,7 +1252,7 @@ void DOFManager::printFieldInformation(std::ostream & os) const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 DOFManager::buildOverlapMapFromElements(const ElementBlockAccess & access) const
 {
   PANZER_FUNC_TIME_MONITOR("panzer::DOFManager::builderOverlapMapFromElements");
@@ -1262,39 +1262,39 @@ DOFManager::buildOverlapMapFromElements(const ElementBlockAccess & access) const
    *     of concerned elements.
    */
 
-  std::set<panzer::GlobalOrdinal2> overlapset;
+  std::set<panzer::GlobalOrdinal> overlapset;
   for (size_t i = 0; i < blockOrder_.size(); ++i) {
-    const std::vector<panzer::LocalOrdinal2> & myElements = access.getElementBlock(blockOrder_[i]);
+    const std::vector<panzer::LocalOrdinal> & myElements = access.getElementBlock(blockOrder_[i]);
     for (size_t e = 0; e < myElements.size(); ++e) {
       auto connSize = connMngr_->getConnectivitySize(myElements[e]);
-      const panzer::Ordinal64 * elmtConn = connMngr_->getConnectivity(myElements[e]);
+      const panzer::GlobalOrdinal * elmtConn = connMngr_->getConnectivity(myElements[e]);
       for (int k = 0; k < connSize; ++k) {
         overlapset.insert(elmtConn[k]);
       }
     }
   }
 
-  Array<panzer::GlobalOrdinal2> overlapVector;
-  for (typename std::set<panzer::GlobalOrdinal2>::const_iterator itr = overlapset.begin(); itr!=overlapset.end(); ++itr) {
+  Array<panzer::GlobalOrdinal> overlapVector;
+  for (typename std::set<panzer::GlobalOrdinal>::const_iterator itr = overlapset.begin(); itr!=overlapset.end(); ++itr) {
     overlapVector.push_back(*itr);
   }
 
   /* 3.  Construct an overlap map from this structure.
    */
-  return Tpetra::createNonContigMap<panzer::LocalOrdinal2,panzer::GlobalOrdinal2>(overlapVector,getComm());
+  return Tpetra::createNonContigMap<panzer::LocalOrdinal,panzer::GlobalOrdinal>(overlapVector,getComm());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void DOFManager::
 fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
-                         std::vector<std::vector< panzer::GlobalOrdinal2 > > & elementGIDs,
-                         const Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & overlapmap,
-                         const Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & const_overlap_mv) const
+                         std::vector<std::vector< panzer::GlobalOrdinal > > & elementGIDs,
+                         const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> & overlapmap,
+                         const Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> & const_overlap_mv) const
 {
   using Teuchos::ArrayRCP;
 
   //To generate elementGIDs we need to go through all of the local elements.
-  auto overlap_mv = const_cast<Tpetra::MultiVector<panzer::GlobalOrdinal2,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>&>(const_overlap_mv);
+  auto overlap_mv = const_cast<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>&>(const_overlap_mv);
   overlap_mv.sync_host();
   PHX::Device::fence();
   const auto twoview_host = overlap_mv.getLocalViewHost();
@@ -1302,12 +1302,12 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
   //And for each of the things in fa_fp.fieldIds we go to that column. To the the row,
   //we move from globalID to localID in the map and use our local value for something.
   for (size_t b = 0; b < blockOrder_.size(); ++b) {
-    const std::vector<panzer::LocalOrdinal2> & myElements = access.getElementBlock(blockOrder_[b]);
+    const std::vector<panzer::LocalOrdinal> & myElements = access.getElementBlock(blockOrder_[b]);
 
     if(fa_fps_[b]==Teuchos::null) {
       // fill elements that are not used with empty vectors
       for (size_t l = 0; l < myElements.size(); ++l) {
-        panzer::LocalOrdinal2 thisID=myElements[l];
+        panzer::LocalOrdinal thisID=myElements[l];
         if(elementGIDs.size()<=(size_t)thisID)
           elementGIDs.resize(thisID+1);
       }
@@ -1320,8 +1320,8 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
     //
     for (size_t l = 0; l < myElements.size(); ++l) {
       auto connSize = connMngr_->getConnectivitySize(myElements[l]);
-      const panzer::Ordinal64 * elmtConn = connMngr_->getConnectivity(myElements[l]);
-      std::vector<panzer::GlobalOrdinal2> localOrdering;
+      const panzer::GlobalOrdinal * elmtConn = connMngr_->getConnectivity(myElements[l]);
+      std::vector<panzer::GlobalOrdinal> localOrdering;
       int offset=0;
       for (int c = 0; c < connSize; ++c) {
         size_t lid = overlapmap.getLocalElement(elmtConn[c]);
@@ -1336,7 +1336,7 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
           dofsPerField[whichField]++;
         }
       }
-      panzer::LocalOrdinal2 thisID=myElements[l];
+      panzer::LocalOrdinal thisID=myElements[l];
       if(elementGIDs.size()<=(size_t)thisID){
         elementGIDs.resize(thisID+1);
       }
@@ -1347,19 +1347,19 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
 
 void DOFManager::buildLocalIdsFromOwnedAndGhostedElements()
 {
-  std::vector<std::vector<panzer::LocalOrdinal2> > elementLIDs(elementGIDs_.size());
+  std::vector<std::vector<panzer::LocalOrdinal> > elementLIDs(elementGIDs_.size());
 
-  std::vector<panzer::GlobalOrdinal2> ownedAndGhosted;
+  std::vector<panzer::GlobalOrdinal> ownedAndGhosted;
   this->getOwnedAndGhostedIndices(ownedAndGhosted);
 
   // build global to local hash map (temporary and used only once)
-  std::unordered_map<panzer::GlobalOrdinal2,panzer::LocalOrdinal2> hashMap;
+  std::unordered_map<panzer::GlobalOrdinal,panzer::LocalOrdinal> hashMap;
   for(std::size_t i = 0; i < ownedAndGhosted.size(); ++i)
     hashMap[ownedAndGhosted[i]] = i;
 
   for (std::size_t i = 0; i < elementGIDs_.size(); ++i) {
-    const std::vector<panzer::GlobalOrdinal2>& gids = elementGIDs_[i];
-    std::vector<panzer::LocalOrdinal2>& lids = elementLIDs[i];
+    const std::vector<panzer::GlobalOrdinal>& gids = elementGIDs_[i];
+    std::vector<panzer::LocalOrdinal>& lids = elementLIDs[i];
     lids.resize(gids.size());
     for (std::size_t g = 0; g < gids.size(); ++g)
       lids[g] = hashMap[gids[g]];
@@ -1369,13 +1369,13 @@ void DOFManager::buildLocalIdsFromOwnedAndGhostedElements()
 }
 
 /*
-template <typename panzer::LocalOrdinal2,typename panzer::GlobalOrdinal2>
-Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
-DOFManager<panzer::LocalOrdinal2,panzer::GlobalOrdinal2>::runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > & map)
+template <typename panzer::LocalOrdinal,typename panzer::GlobalOrdinal>
+Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
+DOFManager<panzer::LocalOrdinal,panzer::GlobalOrdinal>::runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & map)
 {
   typedef panzer::TpetraNodeType Node;
-  typedef Tpetra::Map<panzer::LocalOrdinal2, panzer::GlobalOrdinal2, Node> Map;
-  typedef Tpetra::CrsGraph<panzer::LocalOrdinal2, panzer::GlobalOrdinal2, Node> Graph;
+  typedef Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal, Node> Map;
+  typedef Tpetra::CrsGraph<panzer::LocalOrdinal, panzer::GlobalOrdinal, Node> Graph;
 
   Teuchos::RCP<Graph> graph = Teuchos::rcp(new Graph(map,0));
 
@@ -1384,13 +1384,13 @@ DOFManager<panzer::LocalOrdinal2,panzer::GlobalOrdinal2>::runLocalRCMReordering(
     if(fa_fps_[b]==Teuchos::null)
       continue;
 
-    const std::vector<panzer::LocalOrdinal2> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+    const std::vector<panzer::LocalOrdinal> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
     for (size_t l = 0; l < myElements.size(); ++l) {
-      panzer::LocalOrdinal2 connSize = connMngr_->getConnectivitySize(myElements[l]);
-      const panzer::GlobalOrdinal2 * elmtConn = connMngr_->getConnectivity(myElements[l]);
+      panzer::LocalOrdinal connSize = connMngr_->getConnectivitySize(myElements[l]);
+      const panzer::GlobalOrdinal * elmtConn = connMngr_->getConnectivity(myElements[l]);
       for (int c = 0; c < connSize; ++c) {
-        panzer::LocalOrdinal2 lid = map->getLocalElement(elmtConn[c]);
-        if(Teuchos::OrdinalTraits<panzer::LocalOrdinal2>::invalid()!=lid)
+        panzer::LocalOrdinal lid = map->getLocalElement(elmtConn[c]);
+        if(Teuchos::OrdinalTraits<panzer::LocalOrdinal>::invalid()!=lid)
           continue;
 
         graph->insertGlobalIndices(elmtConn[c],Teuchos::arrayView(elmtConn,connSize));
@@ -1400,7 +1400,7 @@ DOFManager<panzer::LocalOrdinal2,panzer::GlobalOrdinal2>::runLocalRCMReordering(
 
   graph->fillComplete();
 
-  std::vector<panzer::GlobalOrdinal2> newOrder(map->getNodeNumElements());
+  std::vector<panzer::GlobalOrdinal> newOrder(map->getNodeNumElements());
   {
     // graph is constructed, now run RCM using zoltan2
     typedef Zoltan2::XpetraCrsGraphInput<Graph> SparseGraphAdapter;
@@ -1413,13 +1413,13 @@ DOFManager<panzer::LocalOrdinal2,panzer::GlobalOrdinal2>::runLocalRCMReordering(
     problem.solve();
 
     // build a new global ording array using permutation
-    Zoltan2::OrderingSolution<panzer::GlobalOrdinal2,panzer::LocalOrdinal2> * soln = problem.getSolution();
+    Zoltan2::OrderingSolution<panzer::GlobalOrdinal,panzer::LocalOrdinal> * soln = problem.getSolution();
 
     size_t dummy;
     size_t checkLength = soln->getPermutationSize();
-    panzer::LocalOrdinal2 * checkPerm = soln->getPermutation(&dummy);
+    panzer::LocalOrdinal * checkPerm = soln->getPermutation(&dummy);
 
-    Teuchos::ArrayView<const panzer::GlobalOrdinal2 > oldOrder = map->getNodeElementList();
+    Teuchos::ArrayView<const panzer::GlobalOrdinal > oldOrder = map->getNodeElementList();
     TEUCHOS_ASSERT(checkLength==oldOrder.size());
     TEUCHOS_ASSERT(checkLength==newOrder.size());
 
@@ -1427,7 +1427,7 @@ DOFManager<panzer::LocalOrdinal2,panzer::GlobalOrdinal2>::runLocalRCMReordering(
       newOrder[checkPerm[i]] = oldOrder[i];
   }
 
-  return Tpetra::createNonContigMap<panzer::LocalOrdinal2,panzer::GlobalOrdinal2>(newOrder,communicator_);
+  return Tpetra::createNonContigMap<panzer::LocalOrdinal,panzer::GlobalOrdinal>(newOrder,communicator_);
 }
 */
 

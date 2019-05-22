@@ -319,7 +319,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
    TEST_ASSERT(dofManager.getGeometricFieldPattern()!=Teuchos::null);
 
-   std::vector<panzer::GlobalOrdinal2> ownedAndGhosted, owned;
+   std::vector<panzer::GlobalOrdinal> ownedAndGhosted, owned;
    std::vector<bool> ownedAndGhosted_bool, owned_bool;
    dofManager.getOwnedAndGhostedIndices(ownedAndGhosted);
    dofManager.getOwnedIndices(owned);
@@ -811,8 +811,8 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
      const std::vector<int> & elements = dofManager[0].getElementBlock(block_name);
 
      for(std::size_t i=0;i<elements.size();i++) {
-       std::vector<panzer::GlobalOrdinal2> blkgids;
-       std::vector<panzer::GlobalOrdinal2> gids0, gids1;
+       std::vector<panzer::GlobalOrdinal> blkgids;
+       std::vector<panzer::GlobalOrdinal> gids0, gids1;
        dofManager[0].getElementGIDs(elements[i],gids0);
        dofManager[1].getElementGIDs(elements[i],gids1);
        blkDofManager.getElementGIDs(elements[i],blkgids);

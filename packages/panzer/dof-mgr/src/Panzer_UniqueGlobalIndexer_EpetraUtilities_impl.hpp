@@ -76,7 +76,7 @@ void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const st
    Teuchos::RCP<const Map> dataMap = Teuchos::rcpFromRef(dataVector.Map());
 
    int fieldNum = ugi.getFieldNum(fieldName);
-   const std::vector<panzer::LocalOrdinal2> & elements = ugi.getElementBlock(blockId);
+   const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
    
    TEUCHOS_TEST_FOR_EXCEPTION(data.extent(0)!=elements.size(),std::runtime_error,
@@ -86,7 +86,7 @@ void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const st
 
    if(rank==2) {
       // loop over elements distributing relevent data to vector
-      std::vector<panzer::GlobalOrdinal2> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       for(std::size_t e=0;e<elements.size();e++) {
          ugi.getElementGIDs(elements[e],gids);
    
@@ -103,7 +103,7 @@ void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const st
                       "panzer::updateGhostedDataReducedVector: number of columns in data vector inconsistent with data array");
 
       // loop over elements distributing relevent data to vector
-      std::vector<panzer::GlobalOrdinal2> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       for(std::size_t e=0;e<elements.size();e++) {
          ugi.getElementGIDs(elements[e],gids);
    

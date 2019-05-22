@@ -166,7 +166,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    typedef double Scalar;
    typedef int LocalOrdinalEpetra;
    typedef int LocalOrdinalTpetra;
-   typedef panzer::Ordinal64 GlobalOrdinalTpetra;
+   typedef panzer::GlobalOrdinal GlobalOrdinalTpetra;
 
    typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> blockedTpetraLinObjFactory;
    typedef typename panzer::TpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> tpetraLinObjFactory;
