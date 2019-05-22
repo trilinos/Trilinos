@@ -532,6 +532,28 @@ private:
                         Teuchos::RCP<MV>& W,
                         const MV& X);
 
+  //! W = alpha*D_inv*B and X = 0 + W.
+  void
+  firstIterationWithZeroStartingSolution
+  (MV& W,
+   const ScalarType& alpha,
+   const V& D_inv,
+   const MV& B,
+   MV& X);
+
+  /// \brief W := alpha*D_inv*(B-A*X)
+  ///
+  /// We can't fuse this with X := X + W, because data dependencies in
+  /// the input X are not elementwise (unless A is diagonal).
+  void
+  scaledResidual
+  (MV& W,
+   const ScalarType& alpha,
+   const V& D_inv,
+   const MV& B,
+   const MV& X,
+   MV& V1 /* temp, no longer be needed once we fuse */ );
+  
   /// \brief W := alpha*D_inv*(B-A*X) + beta*W.
   ///
   /// We can't fuse this with X := X + W, because data dependencies in

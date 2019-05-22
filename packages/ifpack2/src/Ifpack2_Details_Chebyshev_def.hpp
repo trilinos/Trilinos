@@ -1014,6 +1014,43 @@ print (std::ostream& out) {
 template<class ScalarType, class MV>
 void
 Chebyshev<ScalarType, MV>::
+firstIterationWithZeroStartingSolution
+(MV& W,
+ const ScalarType& alpha,
+ const V& D_inv,
+ const MV& B,
+ MV& X)
+{
+  solve (W, alpha, D_inv, B); // W = alpha*D_inv*B
+  Tpetra::deep_copy (X, W); // X = 0 + W
+}
+
+template<class ScalarType, class MV>
+void
+Chebyshev<ScalarType, MV>::
+scaledResidual
+(MV& W,
+ const ScalarType& alpha,
+ const V& D_inv,
+ const MV& B,
+ const MV& X,
+ MV& V1 /* temp, no longer be needed once we fuse */ )
+{
+  using STS = Teuchos::ScalarTraits<ScalarType>;
+  const ScalarType zero = STS::zero ();  
+  const ScalarType one = STS::one ();
+
+  // V1 = B - A*X
+  Tpetra::deep_copy (V1, B);
+  A_->apply (X, V1, Teuchos::NO_TRANS, -one, one);
+
+  // W := alpha * D_inv * V1
+  W.elementWiseMultiply (alpha, D_inv, V1, zero);
+}
+
+template<class ScalarType, class MV>
+void
+Chebyshev<ScalarType, MV>::
 scaledDampedResidual
 (MV& W,
  const ScalarType& alpha,
@@ -1345,23 +1382,21 @@ ifpackApplyImpl (const op_type& A,
 
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
-    computeResidual (V1, B, A, X); // V1 = B - A*X
-    if (debug) {
-      *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
-    }
-
-    solve (W, one/theta, D_inv, V1); // W = (1/theta)*D_inv*(B-A*X)
+    // mfh 22 May 2019: Tests don't actually exercise this path.
+    
+    // W = (1/theta)*D_inv*(B-A*X)
+    scaledResidual (W, one/theta, D_inv, B, X, V1);
+    X.update (one, W, one); // X = X + W    
     if (debug) {
       *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
     }
-    X.update (one, W, one); // X = X + W
   }
   else {
-    solve (W, one/theta, D_inv, B); // W = (1/theta)*D_inv*B
+    // W = (1/theta)*D_inv*B and X = 0 + W.
+    firstIterationWithZeroStartingSolution (W, one/theta, D_inv, B, X);
     if (debug) {
       *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
     }
-    Tpetra::deep_copy (X, W); // X = 0 + W
   }
   if (debug) {
     *out_ << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
