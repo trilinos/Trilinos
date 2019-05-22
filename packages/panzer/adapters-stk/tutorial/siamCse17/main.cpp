@@ -127,7 +127,7 @@ buildSTKIOResponseLibrary(
   const std::vector<Teuchos::RCP<panzer::PhysicsBlock>>&        physicsBlocks,
   const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits>>& linObjFactory,
   const Teuchos::RCP<panzer::WorksetContainer>&                 wkstContainer,
-  const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>&          globalIndexer,
+  const Teuchos::RCP<panzer::UniqueGlobalIndexer>&          globalIndexer,
   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cmFactory,
   const Teuchos::RCP<panzer_stk::STK_Interface>&                mesh,
   const Teuchos::ParameterList&                                 closureModelPl,
@@ -345,7 +345,7 @@ main(
 
     // Build the degree of freedom manager and the linear object factory, which
     // creates the linear algebra objects (vectors/matrices) for the problem.
-    RCP<UniqueGlobalIndexer<int, int>> dofManager;
+    RCP<UniqueGlobalIndexer> dofManager;
     RCP<LinearObjFactory<Traits>> linObjFactory;
     {
       DOFManagerFactory<int, int> globalIndexerFactory;
@@ -460,7 +460,7 @@ buildSTKIOResponseLibrary(
   const std::vector<Teuchos::RCP<panzer::PhysicsBlock>>&        physicsBlocks,
   const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits>>& linObjFactory,
   const Teuchos::RCP<panzer::WorksetContainer>&                 wkstContainer,
-  const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>&          globalIndexer,
+  const Teuchos::RCP<panzer::UniqueGlobalIndexer>&          globalIndexer,
   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cmFactory,
   const Teuchos::RCP<panzer_stk::STK_Interface>&                mesh,
   const Teuchos::ParameterList&                                 closureModelPl,

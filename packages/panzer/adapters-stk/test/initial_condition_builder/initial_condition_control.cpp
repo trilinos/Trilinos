@@ -128,8 +128,8 @@ namespace panzer {
     RCP<panzer::ConnManager> conn_manager
            = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,int> > dofManager
-        = rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
+    RCP<panzer::DOFManager> dofManager
+        = rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
     dofManager->addField(densDesc.fieldName, constFP);
     dofManager->addField(condDesc.fieldName, hgradFP);
     dofManager->buildGlobalUnknowns();

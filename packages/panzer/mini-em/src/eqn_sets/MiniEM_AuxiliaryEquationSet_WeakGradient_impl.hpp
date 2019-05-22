@@ -127,7 +127,6 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
    typedef double Scalar;
    typedef int LocalOrdinalEpetra;
-   typedef int GlobalOrdinalEpetra;
    typedef int LocalOrdinalTpetra;
    typedef panzer::Ordinal64 GlobalOrdinalTpetra;
 
@@ -156,9 +155,9 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
    if(tblof != Teuchos::null) {
 
-     Teuchos::RCP<const panzer::BlockedDOFManager<LocalOrdinalTpetra,GlobalOrdinalTpetra> > blockedDOFMngr;
-     Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalTpetra,GlobalOrdinalTpetra> > rowUgi;
-     Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalTpetra,GlobalOrdinalTpetra> > colUgi;
+     Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
+     Teuchos::RCP<panzer::UniqueGlobalIndexer> rowUgi;
+     Teuchos::RCP<panzer::UniqueGlobalIndexer> colUgi;
 
      blockedDOFMngr = tblof->getGlobalIndexer();
      TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null); 
@@ -195,9 +194,9 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
      }
 
    } else if(eblof != Teuchos::null) {
-     Teuchos::RCP<const panzer::BlockedDOFManager<LocalOrdinalEpetra,GlobalOrdinalEpetra> > blockedDOFMngr;
-     Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalEpetra,GlobalOrdinalEpetra> > rowUgi;
-     Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalEpetra,GlobalOrdinalEpetra> > colUgi;
+     Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
+     Teuchos::RCP<panzer::UniqueGlobalIndexer> rowUgi;
+     Teuchos::RCP<panzer::UniqueGlobalIndexer> colUgi;
 
      blockedDOFMngr = eblof->getGlobalIndexer();
      TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null);

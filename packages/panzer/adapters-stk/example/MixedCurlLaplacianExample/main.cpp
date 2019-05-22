@@ -343,15 +343,15 @@ int main(int argc,char * argv[])
    // build DOF Manager and linear object factory
    /////////////////////////////////////////////////////////////
 
-   RCP<panzer::UniqueGlobalIndexerBase> dofManager;
+   RCP<panzer::UniqueGlobalIndexer> dofManager;
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
 
    // build the connection manager
    if(!useTpetra) {
      const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager_int
+     panzer::DOFManagerFactory globalIndexerFactory;
+     RCP<panzer::UniqueGlobalIndexer> dofManager_int
            = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
      dofManager = dofManager_int;
 
@@ -361,8 +361,8 @@ int main(int argc,char * argv[])
    else {
      const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-     panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
-     RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager_long
+     panzer::DOFManagerFactory globalIndexerFactory;
+     RCP<panzer::UniqueGlobalIndexer> dofManager_long
            = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
      dofManager = dofManager_long;
 

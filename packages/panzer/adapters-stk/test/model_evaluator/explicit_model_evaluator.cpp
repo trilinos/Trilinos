@@ -360,8 +360,8 @@ namespace panzer {
     const Teuchos::RCP<panzer::ConnManager>
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
+    panzer::DOFManagerFactory globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer> dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory

@@ -40,25 +40,25 @@
 // ***********************************************************************
 // @HEADER
 
+#include "PanzerAdaptersSTK_config.hpp"
 #ifdef PANZER_HAVE_TEKO
+
+#include "Panzer_STK_ParameterListCallbackBlocked.hpp"
 
 namespace panzer_stk {
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallbackBlocked(
+ParameterListCallbackBlocked::ParameterListCallbackBlocked(
                       const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager,
-                      const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blocked_ugi,
-                      const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & aux_blocked_ugi)
+                      const Teuchos::RCP<const panzer::BlockedDOFManager> & blocked_ugi,
+                      const Teuchos::RCP<const panzer::BlockedDOFManager> & aux_blocked_ugi)
    : connManager_(connManager), blocked_ugi_(blocked_ugi), aux_blocked_ugi_(aux_blocked_ugi)
-{
-}
+{}
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<Teuchos::ParameterList>
-ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::request(const Teko::RequestMesg & rm)
+ParameterListCallbackBlocked::request(const Teko::RequestMesg & rm)
 {
    TEUCHOS_ASSERT(handlesRequest(rm)); // design by contract
 
@@ -75,8 +75,7 @@ ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::request(const T
    return outputPL;
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-bool ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::handlesRequest(const Teko::RequestMesg & rm)
+bool ParameterListCallbackBlocked::handlesRequest(const Teko::RequestMesg & rm)
 {
    // check if is a parameter list message, and that the parameter
    // list contains the right fields
@@ -114,9 +113,7 @@ bool ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::handlesReq
    else return false;
 }
 
-template <typename LocalOrdinalT, typename GlobalOrdinalT, typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT, GlobalOrdinalT, Node>::
-preRequest(const Teko::RequestMesg & rm)
+void ParameterListCallbackBlocked::preRequest(const Teko::RequestMesg & rm)
 {
   TEUCHOS_ASSERT(handlesRequest(rm)); // design by contract
 
@@ -125,7 +122,7 @@ preRequest(const Teko::RequestMesg & rm)
   // Check if the field is in the main UGI.  If it's not, assume it's in the
   // auxiliary UGI.
   bool useAux(true);
-  std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer<int, GlobalOrdinalT>>>
+  std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer>>
     fieldDOFMngrs = blocked_ugi_->getFieldDOFManagers();
   for (int b(0); b < static_cast<int>(fieldDOFMngrs.size()); ++b)
   {
@@ -153,8 +150,7 @@ preRequest(const Teko::RequestMesg & rm)
   }
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldByKey(const std::string & key,const std::string & field,Teuchos::ParameterList & pl) const
+void ParameterListCallbackBlocked::setFieldByKey(const std::string & key,const std::string & field,Teuchos::ParameterList & pl) const
 {
    // x-, y-, z-coordinates needed for ML, Coordinates needed for MueLu
    if(key=="x-coordinates") {
@@ -169,7 +165,7 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldBy
       double * z = const_cast<double *>(&getCoordinateByField(2,field)[0]);
       pl.set<double*>(key,z);
    } else if(key == "Coordinates") {
-     pl.set<Teuchos::RCP<Tpetra::MultiVector<double,LocalOrdinalT,GlobalOrdinalT,Node> > >(key,coordsVecTp_);
+     pl.set<Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > >(key,coordsVecTp_);
    } else if(key == "Coordinates-Epetra") {
       pl.set<Teuchos::RCP<Epetra_MultiVector> >("Coordinates",coordsVecEp_);
       // pl.remove("Coordinates-Epetra");
@@ -179,34 +175,31 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldBy
                          "ParameterListCallback cannot handle key=\"" << key << "\"");
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildArrayToVectorTpetra(int block,const std::string & field, const bool useAux)
+void ParameterListCallbackBlocked::buildArrayToVectorTpetra(int block,const std::string & field, const bool useAux)
 {
    if(arrayToVectorTpetra_[field]==Teuchos::null) {
-      Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi;
+      Teuchos::RCP<const panzer::UniqueGlobalIndexer> ugi;
       if(useAux)
         ugi = aux_blocked_ugi_->getFieldDOFManagers()[block];
       else
         ugi = blocked_ugi_->getFieldDOFManagers()[block];
-      arrayToVectorTpetra_[field] = Teuchos::rcp(new panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>(ugi));
+      arrayToVectorTpetra_[field] = Teuchos::rcp(new panzer::ArrayToFieldVector(ugi));
    }
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildArrayToVectorEpetra(int block,const std::string & field, const bool useAux)
+void ParameterListCallbackBlocked::buildArrayToVectorEpetra(int block,const std::string & field, const bool useAux)
 {
    if(arrayToVectorEpetra_[field]==Teuchos::null) {
-      Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi;
+      Teuchos::RCP<const panzer::UniqueGlobalIndexer> ugi;
       if(useAux)
         ugi = aux_blocked_ugi_->getFieldDOFManagers()[block];
       else
         ugi = blocked_ugi_->getFieldDOFManagers()[block];
-      arrayToVectorEpetra_[field] = Teuchos::rcp(new panzer::ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>(ugi));
+      arrayToVectorEpetra_[field] = Teuchos::rcp(new panzer::ArrayToFieldVectorEpetra(ugi));
    }
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinatesTpetra(const std::string & field, const bool useAux)
+void ParameterListCallbackBlocked::buildCoordinatesTpetra(const std::string & field, const bool useAux)
 {
    std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
 
@@ -263,8 +256,7 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
    }
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinatesEpetra(const std::string & field, const bool useAux)
+void ParameterListCallbackBlocked::buildCoordinatesEpetra(const std::string & field, const bool useAux)
 {
    std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
 
@@ -302,9 +294,7 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
    coordsVecEp_ = arrayToVectorEpetra_[field]->template getDataVector<double>(field,data);
 }
 
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-std::string ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::
+std::string ParameterListCallbackBlocked::
 getHandledField(const Teuchos::ParameterList & pl) const
 {
   // because this method assumes handlesRequest is true, this call will succeed
@@ -319,8 +309,7 @@ getHandledField(const Teuchos::ParameterList & pl) const
 
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-const std::vector<double> & ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::
+const std::vector<double> & ParameterListCallbackBlocked::
 getCoordinateByField(int dim,const std::string & field) const
 {
   TEUCHOS_ASSERT(dim>=0);
@@ -347,8 +336,7 @@ getCoordinateByField(int dim,const std::string & field) const
   return itr->second;
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const panzer::Intrepid2FieldPattern> ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>
+Teuchos::RCP<const panzer::Intrepid2FieldPattern> ParameterListCallbackBlocked
 ::getFieldPattern(const std::string & fieldName, const bool useAux) const
 {
   std::vector<std::string> elementBlocks;

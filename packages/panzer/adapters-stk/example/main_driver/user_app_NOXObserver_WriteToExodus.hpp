@@ -71,7 +71,7 @@ namespace user_app {
   public:
     
     NOXObserver_WriteToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			       const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase>& dof_manager,
+			       const Teuchos::RCP<const panzer::UniqueGlobalIndexer>& dof_manager,
 			       const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
                                const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library) :
       m_mesh(mesh),
@@ -196,7 +196,7 @@ namespace user_app {
 
 
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
-    Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> m_dof_manager;
+    Teuchos::RCP<const panzer::UniqueGlobalIndexer> m_dof_manager;
     Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > m_lof;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
   };

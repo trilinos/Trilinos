@@ -159,8 +159,8 @@ namespace panzer {
     const Teuchos::RCP<panzer::ConnManager>
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
+    panzer::DOFManagerFactory globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer> dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
@@ -427,8 +427,8 @@ namespace panzer {
     const Teuchos::RCP<panzer::ConnManager>
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
+    panzer::DOFManagerFactory globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer> dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
@@ -478,7 +478,7 @@ namespace panzer {
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     const Epetra_Vector & f = *eGlobal->get_f();
 
-    std::vector<int> GIDs;
+    std::vector<panzer::GlobalOrdinal2> GIDs;
     if(myRank==0) {
        dofManager->getElementGIDs(1,GIDs,"eblock-1_0"); // in eblock-1_0
 
@@ -506,7 +506,7 @@ namespace panzer {
     if(myRank==0) {
        dofManager->getElementGIDs(1,GIDs,"eblock-1_0"); // in eblock-1_0
 
-       int gid = GIDs[3]; // top left corner at block interface
+       panzer::GlobalOrdinal2 gid = GIDs[3]; // top left corner at block interface
        int lid = f.Map().LID(gid);
 
        if(lid>=0) {
