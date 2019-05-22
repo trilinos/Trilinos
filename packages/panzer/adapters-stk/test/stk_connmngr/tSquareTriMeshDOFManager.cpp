@@ -149,7 +149,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
    TEST_EQUALITY(uy_offsets.size(),ux_offsets.size());
 
    if(myRank==0) {
-      std::vector<panzer::GlobalOrdinal2> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),9);
@@ -188,7 +188,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
       }
    }
    else if(myRank==1) {
-      std::vector<panzer::GlobalOrdinal2> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),9);

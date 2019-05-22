@@ -126,7 +126,7 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(int localElmtId,std::vector<panzer::GlobalOrdinal2> & gids,const std::string & blockId="") const;
+   virtual void getElementGIDs(int localElmtId,std::vector<panzer::GlobalOrdinal> & gids,const std::string & blockId="") const;
 
    virtual void getElementOrientation(int /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
    { TEUCHOS_ASSERT(false); }
@@ -160,7 +160,7 @@ public:
     *                      owned by this processor.
     */
    virtual void
-   getOwnedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const;
+   getOwnedIndices(std::vector<panzer::GlobalOrdinal> & indices) const;
 
    /**
     *  \brief Get the set of indices ghosted for this processor.
@@ -169,7 +169,7 @@ public:
     *                      indices for this processor.
     */
    virtual void
-   getGhostedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const;
+   getGhostedIndices(std::vector<panzer::GlobalOrdinal> & indices) const;
 
    /**
     *  \brief Get the set of owned and ghosted indices for this processor.
@@ -178,7 +178,7 @@ public:
     *                      ghosted indices for this processor.
     */
    virtual void
-   getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const;
+   getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal> & indices) const;
 
    void getElementGIDsAsInt(int localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
    void getOwnedIndicesAsInt(std::vector<int> & indices) const;
@@ -211,7 +211,7 @@ public:
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const;
+   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const;
 
    int getElementBlockGIDCount(const std::string &) const;
    int getElementBlockGIDCount(const std::size_t &) const;

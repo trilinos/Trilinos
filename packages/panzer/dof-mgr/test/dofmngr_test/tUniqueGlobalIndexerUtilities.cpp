@@ -92,7 +92,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
    std::vector<int> ghostedFields;
-   std::vector<panzer::GlobalOrdinal2> ghostedIndices;
+   std::vector<panzer::GlobalOrdinal> ghostedIndices;
    globalIndexer->getOwnedAndGhostedIndices(ghostedIndices);
    panzer::buildGhostedFieldVector(*globalIndexer,ghostedFields);
 
@@ -146,9 +146,9 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 {
   data = Kokkos::DynRankView<int,PHX::Device>("data",1,4);
 
-  const std::vector<panzer::LocalOrdinal2> & elements = ugi.getElementBlock(blockId);
+  const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
-   std::vector<panzer::GlobalOrdinal2> gids;
+   std::vector<panzer::GlobalOrdinal> gids;
    for(std::size_t e=0;e<elements.size();e++) {
       ugi.getElementGIDs(elements[e],gids);
       for(std::size_t f=0;f<fieldOffsets.size();f++)
@@ -162,9 +162,9 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 {
   data = Kokkos::DynRankView<int,PHX::Device>("data",1,4,cols);
 
-   const std::vector<panzer::LocalOrdinal2> & elements = ugi.getElementBlock(blockId);
+   const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
-   std::vector<panzer::GlobalOrdinal2> gids;
+   std::vector<panzer::GlobalOrdinal> gids;
    for(std::size_t e=0;e<elements.size();e++) {
       ugi.getElementGIDs(elements[e],gids);
       for(std::size_t f=0;f<fieldOffsets.size();f++)
@@ -196,11 +196,11 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
    int uFieldNum = globalIndexer->getFieldNum("U");
    int tFieldNum = globalIndexer->getFieldNum("T");
 
-   Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal2> > reducedFieldVector 
+   Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal> > reducedFieldVector 
          = panzer::buildGhostedFieldReducedVector(*globalIndexer);
 
-   Tpetra::Vector<int,int,panzer::GlobalOrdinal2> reducedUDataVector(getFieldMap(uFieldNum,*reducedFieldVector));
-   Tpetra::Vector<int,int,panzer::GlobalOrdinal2> reducedTDataVector(getFieldMap(tFieldNum,*reducedFieldVector));
+   Tpetra::Vector<int,int,panzer::GlobalOrdinal> reducedUDataVector(getFieldMap(uFieldNum,*reducedFieldVector));
+   Tpetra::Vector<int,int,panzer::GlobalOrdinal> reducedTDataVector(getFieldMap(tFieldNum,*reducedFieldVector));
 
    TEST_EQUALITY(reducedUDataVector.getLocalLength(),8);
    TEST_EQUALITY(reducedTDataVector.getLocalLength(),4);
@@ -284,8 +284,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
    fillFieldContainer(globalIndexer->getFieldNum("U"),"block_1",*globalIndexer,dataU["block_1"]);
    fillFieldContainer(globalIndexer->getFieldNum("T"),"block_0",*globalIndexer,dataT["block_0"]);
 
-   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal2> > reducedUDataVector = atfv.getGhostedDataVector<int>("U",dataU);
-   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal2> > reducedTDataVector = atfv.getGhostedDataVector<int>("T",dataT);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal> > reducedUDataVector = atfv.getGhostedDataVector<int>("U",dataU);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal> > reducedTDataVector = atfv.getGhostedDataVector<int>("T",dataT);
 
    std::vector<int> ghostedFields_u(reducedUDataVector->getLocalLength());
    std::vector<int> ghostedFields_t(reducedTDataVector->getLocalLength());
@@ -362,8 +362,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
    fillFieldContainer(globalIndexer->getFieldNum("U"),"block_1",*globalIndexer,dataU["block_1"]);
    fillFieldContainer(globalIndexer->getFieldNum("T"),"block_0",*globalIndexer,dataT["block_0"]);
 
-   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal2> > reducedUDataVector = atfv.getDataVector<int>("U",dataU);
-   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal2> > reducedTDataVector = atfv.getDataVector<int>("T",dataT);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal> > reducedUDataVector = atfv.getDataVector<int>("U",dataU);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal> > reducedTDataVector = atfv.getDataVector<int>("T",dataT);
 
    std::vector<int> fields_u(reducedUDataVector->getLocalLength());
    std::vector<int> fields_t(reducedTDataVector->getLocalLength());
@@ -425,8 +425,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 
    panzer::ArrayToFieldVector atfv(globalIndexer);
 
-   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2> > uMap = atfv.getFieldMap("U"); // these will be tested below!
-   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal2> > tMap = atfv.getFieldMap("T");
+   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal> > uMap = atfv.getFieldMap("U"); // these will be tested below!
+   Teuchos::RCP<const Tpetra::Map<int,panzer::GlobalOrdinal> > tMap = atfv.getFieldMap("T");
 
    std::map<std::string,IntFieldContainer> dataU, dataT;
    std::size_t numCols = 5;
@@ -434,8 +434,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
    fillFieldContainer(globalIndexer->getFieldNum("U"),"block_1",*globalIndexer,dataU["block_1"],numCols);
    fillFieldContainer(globalIndexer->getFieldNum("T"),"block_0",*globalIndexer,dataT["block_0"],numCols);
 
-   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal2> > reducedUDataVector = atfv.getDataVector<int>("U",dataU);
-   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal2> > reducedTDataVector = atfv.getDataVector<int>("T",dataT);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal> > reducedUDataVector = atfv.getDataVector<int>("U",dataU);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,panzer::GlobalOrdinal> > reducedTDataVector = atfv.getDataVector<int>("T",dataT);
 
    TEST_EQUALITY(reducedUDataVector->getNumVectors(),numCols);
    TEST_EQUALITY(reducedTDataVector->getNumVectors(),numCols);

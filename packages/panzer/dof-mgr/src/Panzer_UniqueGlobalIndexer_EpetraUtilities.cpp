@@ -51,7 +51,7 @@ buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer & ugi)
    typedef Epetra_BlockMap Map;
    typedef Epetra_IntVector IntVector;
 
-   std::vector<panzer::GlobalOrdinal2> indices;
+   std::vector<panzer::GlobalOrdinal> indices;
    std::vector<std::string> blocks;
 
    ugi.getOwnedAndGhostedIndices(indices);
@@ -72,17 +72,17 @@ buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer & ugi)
    for(std::size_t blk=0;blk<blocks.size();blk++) {
       std::string blockId = blocks[blk];
 
-      const std::vector<panzer::LocalOrdinal2> & elements = ugi.getElementBlock(blockId);
+      const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(blockId);
       const std::vector<int> & fields = ugi.getBlockFieldNumbers(blockId);
  
       // loop over all elements, and set field number in output array
-      std::vector<panzer::GlobalOrdinal2> gids(fields.size());
+      std::vector<panzer::GlobalOrdinal> gids(fields.size());
       for(std::size_t e=0;e<elements.size();e++) {
          ugi.getElementGIDs(elements[e],gids);
 
          for(std::size_t f=0;f<fields.size();f++) {
             int fieldNum = fields[f];
-            panzer::GlobalOrdinal2 gid = gids[f];
+            panzer::GlobalOrdinal gid = gids[f];
             std::size_t lid = ghostedMap->LID(gid); // hash table lookup
 
             fieldNumbers[lid] = fieldNum;
@@ -91,7 +91,7 @@ buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer & ugi)
    }
 
    // produce a reduced vector containing only fields known by this processor
-   std::vector<panzer::GlobalOrdinal2> reducedIndices;
+   std::vector<panzer::GlobalOrdinal> reducedIndices;
    std::vector<int> reducedFieldNumbers;
    for(std::size_t i=0;i<fieldNumbers.size();i++) {
       if(fieldNumbers[i]>-1) {
@@ -133,7 +133,7 @@ buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
 
    Teuchos::RCP<Map> destMap;
    {
-      std::vector<panzer::GlobalOrdinal2> indices;
+      std::vector<panzer::GlobalOrdinal> indices;
       ugi.getOwnedAndGhostedIndices(indices);
 
       const Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(ugi.getComm());
@@ -173,7 +173,7 @@ ArrayToFieldVectorEpetra::ArrayToFieldVectorEpetra(const Teuchos::RCP<const Uniq
 void ArrayToFieldVectorEpetra::buildFieldVector(const Epetra_IntVector & source) const
 {
    // build (unghosted) vector and map
-   std::vector<panzer::GlobalOrdinal2> indices;
+   std::vector<panzer::GlobalOrdinal> indices;
    ugi_->getOwnedIndices(indices);
 
    const Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(ugi_->getComm(),true);

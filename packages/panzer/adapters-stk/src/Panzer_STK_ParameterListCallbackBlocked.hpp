@@ -135,7 +135,7 @@ private:
   mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVector> > arrayToVectorTpetra_;
   mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVectorEpetra> > arrayToVectorEpetra_;
 
-  Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > coordsVecTp_;
+  Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > coordsVecTp_;
   Teuchos::RCP<Epetra_MultiVector> coordsVecEp_;
 
   bool returnTpetraObjects_;

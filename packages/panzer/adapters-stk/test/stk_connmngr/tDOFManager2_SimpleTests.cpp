@@ -338,8 +338,8 @@ namespace {
 
     my_DOFManager->buildGlobalUnknowns();
 
-    std::vector<panzer::GlobalOrdinal2> myo;
-    std::vector<panzer::GlobalOrdinal2> myog;
+    std::vector<panzer::GlobalOrdinal> myo;
+    std::vector<panzer::GlobalOrdinal> myog;
 
     my_DOFManager->getOwnedIndices(myo);
     my_DOFManager->getOwnedAndGhostedIndices(myog);
@@ -390,7 +390,7 @@ namespace {
     for (size_t b = 0; b < block_names.size(); ++b) {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
-        std::vector<panzer::GlobalOrdinal2> acquiredGIDs;
+        std::vector<panzer::GlobalOrdinal> acquiredGIDs;
         my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         //Now we need to make sure that acquiredGIDs form sets.
         for (size_t i = 0; i < acquiredGIDs.size(); ++i) {
@@ -448,7 +448,7 @@ namespace {
     for (size_t b = 0; b < block_names.size(); ++b) {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
-        std::vector<panzer::GlobalOrdinal2> acquiredGIDs;
+        std::vector<panzer::GlobalOrdinal> acquiredGIDs;
         my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         for (size_t i = 0; i < names.size(); ++i) {
           const std::vector<int> offsets = my_DOFManager->getGIDFieldOffsets(block_names[b],my_DOFManager->getFieldNum(names[i]));
@@ -516,8 +516,8 @@ namespace {
 
     my_DOFManager->buildGlobalUnknowns();
 
-    std::vector<panzer::GlobalOrdinal2> myo;
-    std::vector<panzer::GlobalOrdinal2> myog;
+    std::vector<panzer::GlobalOrdinal> myo;
+    std::vector<panzer::GlobalOrdinal> myog;
 
     my_DOFManager->getOwnedIndices(myo);
     my_DOFManager->getOwnedAndGhostedIndices(myog);
@@ -571,7 +571,7 @@ namespace {
     for (size_t b = 0; b < block_names.size(); ++b) {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
-        std::vector<panzer::GlobalOrdinal2> acquiredGIDs;
+        std::vector<panzer::GlobalOrdinal> acquiredGIDs;
         my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         //Now we need to make sure that acquiredGIDs form sets.
         for (size_t i = 0; i < acquiredGIDs.size(); ++i) {
@@ -632,7 +632,7 @@ namespace {
     for (size_t b = 0; b < block_names.size(); ++b) {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
-        std::vector<panzer::GlobalOrdinal2> acquiredGIDs;
+        std::vector<panzer::GlobalOrdinal> acquiredGIDs;
         my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         for (size_t i = 0; i < names.size(); ++i) {
           const std::vector<int> offsets = my_DOFManager->getGIDFieldOffsets(block_names[b],my_DOFManager->getFieldNum(names[i]));

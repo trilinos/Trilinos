@@ -83,7 +83,7 @@ namespace partitioning_utilities
  */
 void
 setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
-                      const std::vector<panzer::LocalOrdinal2> & owned_parent_cells,
+                      const std::vector<panzer::LocalOrdinal> & owned_parent_cells,
                       panzer::LocalMeshInfoBase & child_info);
 }
 

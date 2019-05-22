@@ -68,7 +68,7 @@ public:
      *       <code>filteredIndices</code> are ignored without detection or impact.
      */
    void initialize(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi,
-                   const std::vector<panzer::GlobalOrdinal2> & filteredIndices);
+                   const std::vector<panzer::GlobalOrdinal> & filteredIndices);
 
    /** Get an indicator describing if a particular local GID has been filtered. This method
      * requires communication. 
@@ -84,7 +84,7 @@ public:
      *
      * \param[out] indices Set of filtered indices
      */
-   void getFilteredOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2> & indices) const ;
+   void getFilteredOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal> & indices) const ;
 
    // This functions are overriden, and the filtered indices removed
   
@@ -97,7 +97,7 @@ public:
     *  \param[out] indices A `vector` that will be filled with the indices
     *                      owned by this processor.
     */
-   virtual void getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+   virtual void getOwnedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
    {
      indices = owned_;
    }
@@ -112,7 +112,7 @@ public:
     *  \param[out] indices A `vector` that will be filled with the indices
     *                      ghosted for this processor.
     */
-   virtual void getGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+   virtual void getGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
    { 
      indices = ghosted_;
    }
@@ -127,7 +127,7 @@ public:
     *                      ghosted indices for this processor.
     */
    virtual void
-   getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const 
+   getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const 
    { 
      using std::size_t;
      indices.resize(owned_.size() + ghosted_.size());
@@ -138,7 +138,7 @@ public:
    }
 
    // For backwards compatibility with Epetra. Will be deprecated.
-   virtual void getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & blockIdHint="") const 
+   virtual void getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,std::vector<int> & gids,const std::string & blockIdHint="") const 
    { base_->getElementGIDsAsInt(localElmtId,gids,blockIdHint); }
 
    // For backwards compatibility with Epetra. Will be deprecated.
@@ -203,7 +203,7 @@ public:
    virtual int getNumOwnedAndGhosted() const
    { return owned_.size() + ghosted_.size(); }
 
-   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const;
+   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const;
 
    // The following functions are simply part of the decorator pattern and
    // are simple pass throughs
@@ -242,13 +242,13 @@ public:
                               int subcellDim,int subcellId) const 
    { return base_->getGIDFieldOffsets_closure(blockId,fieldNum,subcellDim,subcellId); }
 
-   virtual void getElementOrientation(panzer::LocalOrdinal2 localElmtId,std::vector<double> & gidsOrientation) const 
+   virtual void getElementOrientation(panzer::LocalOrdinal localElmtId,std::vector<double> & gidsOrientation) const 
    { base_->getElementOrientation(localElmtId,gidsOrientation); }
 
-   virtual const std::vector<panzer::LocalOrdinal2> & getElementBlock(const std::string & blockId) const 
+   virtual const std::vector<panzer::LocalOrdinal> & getElementBlock(const std::string & blockId) const 
    { return base_->getElementBlock(blockId); }
 
-   virtual void getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::vector<panzer::GlobalOrdinal2> & gids,const std::string & blockIdHint="") const 
+   virtual void getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<panzer::GlobalOrdinal> & gids,const std::string & blockIdHint="") const 
    { base_->getElementGIDs(localElmtId,gids,blockIdHint); }
 
    virtual int getElementBlockGIDCount(const std::string & blockId) const 
@@ -270,7 +270,7 @@ private:
     *  The list of the owned indices from the base `UniqueGlobalIndexer` with
     *  the filtered indices removed.
     */
-   std::vector<panzer::GlobalOrdinal2> owned_;
+   std::vector<panzer::GlobalOrdinal> owned_;
 
    /**
     *  \brief The list of ghosted indices.
@@ -279,7 +279,7 @@ private:
     *  that have been filtered out, combined with the ghosted indices from the
     *  base UGI.
     */
-   std::vector<panzer::GlobalOrdinal2> ghosted_;
+   std::vector<panzer::GlobalOrdinal> ghosted_;
 };
 
 }

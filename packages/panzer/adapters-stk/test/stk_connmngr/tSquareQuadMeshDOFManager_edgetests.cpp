@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
 
    out << "GIDS" << std::endl;
    for(int i=0;i<4;i++) {
-     std::vector<panzer::GlobalOrdinal2> gids;
+     std::vector<panzer::GlobalOrdinal> gids;
       dofManager->getElementGIDs(i,gids);
 
       TEST_EQUALITY(gids.size(),4);
@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
       out << std::endl;
    }
 
-   std::vector<panzer::GlobalOrdinal2> total;
+   std::vector<panzer::GlobalOrdinal> total;
    dofManager->getOwnedIndices(total);
    TEST_EQUALITY(total.size(),12);
 

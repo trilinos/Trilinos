@@ -176,8 +176,8 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::rcp;
 
   // must be able to cast to a block linear object factory
-  const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> & blof
-     = Teuchos::dyn_cast<const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> >(lof); 
+  const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> & blof
+     = Teuchos::dyn_cast<const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> >(lof); 
   Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr = blof.getGlobalIndexer();
   TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null); 
 
@@ -189,7 +189,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    
   // build a new epetra linear object factory 
   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > elof
-     = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(Teuchos::rcp(new Teuchos::MpiComm<int>(blof.getComm())).getConst(),ugi));
+     = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(Teuchos::rcp(new Teuchos::MpiComm<int>(blof.getComm())).getConst(),ugi));
 
   const std::string residualField = "Residual_AuxConstant_" + this->m_bc.equationSetName()+"_"+fieldName_;
   const std::string outPrefix = "ScatterReordered_";

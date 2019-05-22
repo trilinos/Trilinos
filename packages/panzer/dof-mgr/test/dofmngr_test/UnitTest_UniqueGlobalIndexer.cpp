@@ -107,14 +107,14 @@ bool UniqueGlobalIndexer::fieldInBlock(const std::string & field, const std::str
    return false;
 }
 
-const std::vector<panzer::LocalOrdinal2> & UniqueGlobalIndexer::getElementBlock(const std::string & blockId) const
+const std::vector<panzer::LocalOrdinal> & UniqueGlobalIndexer::getElementBlock(const std::string & blockId) const
 {
    if(elements_b0_==Teuchos::null) {
-      elements_b0_ = Teuchos::rcp(new std::vector<panzer::LocalOrdinal2>);
+      elements_b0_ = Teuchos::rcp(new std::vector<panzer::LocalOrdinal>);
       elements_b0_->push_back(0);
    }
    if(elements_b1_==Teuchos::null) {
-      elements_b1_ = Teuchos::rcp(new std::vector<panzer::LocalOrdinal2>);
+      elements_b1_ = Teuchos::rcp(new std::vector<panzer::LocalOrdinal>);
       elements_b1_->push_back(1);
    }
 
@@ -127,7 +127,7 @@ const std::vector<panzer::LocalOrdinal2> & UniqueGlobalIndexer::getElementBlock(
                       "Can't find block ID \"" << blockId << "\" in unit_test::UniqueGlobalIndexer");
 }
 
-void UniqueGlobalIndexer::getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::vector<panzer::GlobalOrdinal2> & gids,const std::string & /* blockId */) const
+void UniqueGlobalIndexer::getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<panzer::GlobalOrdinal> & gids,const std::string & /* blockId */) const
 {
    if(localElmtId==0) {
       gids.resize(8);
@@ -221,7 +221,7 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & /* blockId *
 //  getOwnedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-  void UniqueGlobalIndexer::getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+  void UniqueGlobalIndexer::getOwnedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   switch (procRank_)
   {
@@ -257,7 +257,7 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & /* blockId *
 //  getGhostedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void UniqueGlobalIndexer::getGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+void UniqueGlobalIndexer::getGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   switch (procRank_)
   {
@@ -287,7 +287,7 @@ void UniqueGlobalIndexer::getGhostedIndices(std::vector<panzer::GlobalOrdinal2>&
 //  getOwnedAndGhostedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   switch (procRank_)
   {
@@ -329,7 +329,7 @@ void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOr
 } // end of getOwnedAndGhostedIndices()
 
 ///////////////////////////////////////////////////////////////////////////////
-void UniqueGlobalIndexer::getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & /* blockId */) const
+void UniqueGlobalIndexer::getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,std::vector<int> & gids,const std::string & /* blockId */) const
 {
    if(localElmtId==0) {
       gids.resize(8);
@@ -525,9 +525,9 @@ int UniqueGlobalIndexer::getNumOwnedAndGhosted() const
   } // end switch (procRank_)
 } // end of getNumOwnedAndGhosted()
 
-void UniqueGlobalIndexer::ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const
+void UniqueGlobalIndexer::ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const
 {
-   std::vector<panzer::GlobalOrdinal2> owned;
+   std::vector<panzer::GlobalOrdinal> owned;
    getOwnedIndices(owned);
 
    isOwned.resize(indices.size(),false);

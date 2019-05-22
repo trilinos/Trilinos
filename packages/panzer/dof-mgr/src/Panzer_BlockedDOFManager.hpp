@@ -69,8 +69,8 @@ namespace panzer {
 class BlockedDOFManager : public UniqueGlobalIndexer {
 public:
    // typedef std::pair<int,GlobalOrdinalT> GlobalOrdinal;
-  using GlobalOrdinal = panzer::GlobalOrdinal2;
-  using LocalOrdinal = panzer::LocalOrdinal2;
+  using GlobalOrdinal = panzer::GlobalOrdinal;
+  using LocalOrdinal = panzer::LocalOrdinal;
   using const_field_iterator = std::map<int,std::string>::const_iterator;
 
    virtual ~BlockedDOFManager() {}
@@ -150,16 +150,16 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   void getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::vector<GlobalOrdinal> & gids,const std::string & blockIdHint="") const; // ?
+   void getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<GlobalOrdinal> & gids,const std::string & blockIdHint="") const; // ?
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-  void getElementGIDsPair(panzer::LocalOrdinal2 localElmtId,std::vector<std::pair<int,GlobalOrdinal>> & gids,const std::string & blockIdHint="") const;
+  void getElementGIDsPair(panzer::LocalOrdinal localElmtId,std::vector<std::pair<int,GlobalOrdinal>> & gids,const std::string & blockIdHint="") const;
 
    /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
      */
-   virtual void getElementOrientation(panzer::LocalOrdinal2 localElmtId,std::vector<double> & gidsOrientation) const; // ?
+   virtual void getElementOrientation(panzer::LocalOrdinal localElmtId,std::vector<double> & gidsOrientation) const; // ?
 
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array.
@@ -210,7 +210,7 @@ public:
    getOwnedAndGhostedIndices(std::vector<GlobalOrdinal>& indices) const;
   
    // For backwards compatibility with Epetra. Will be deprecated.
-   void getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & blockIdHint="") const;
+   void getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,std::vector<int> & gids,const std::string & blockIdHint="") const;
    virtual void getOwnedIndicesAsInt(std::vector<int>& indices) const;
    virtual void getGhostedIndicesAsInt(std::vector<int>& indices) const;
    virtual void getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const;

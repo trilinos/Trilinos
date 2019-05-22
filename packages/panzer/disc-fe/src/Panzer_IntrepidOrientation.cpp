@@ -94,7 +94,7 @@ namespace panzer {
       // construct orientation information
       for (int c=0;c<numElementsPerBlock;++c) {
         const int localCellId = elementBlock.at(c);
-        Kokkos::View<const panzer::Ordinal64*, Kokkos::DefaultHostExecutionSpace>
+        Kokkos::View<const panzer::GlobalOrdinal*, Kokkos::DefaultHostExecutionSpace>
           nodes(connMgr.getConnectivity(localCellId), numVertexPerCell);
         orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, nodes));
       }
@@ -110,11 +110,7 @@ namespace panzer {
 
     auto orientation = rcp(new std::vector<Intrepid2::Orientation>);
 
-    // int, int
     {
-      typedef int LO;
-      typedef int GO;
-
       RCP<const UniqueGlobalIndexer> ugi
         = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);
 
@@ -123,60 +119,6 @@ namespace panzer {
 
         TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
                                    "panzer::buildIntrepidOrientation: ConnManager is null!");
-
-        buildIntrepidOrientation(*orientation, *connMgr);
-        return orientation;
-      }
-    }
-
-    // int, Ordinal64
-    {
-      typedef int LO;
-      typedef Ordinal64 GO;
-
-      RCP<const UniqueGlobalIndexer> ugi
-        = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);
-      if (ugi!=Teuchos::null) {
-        const auto connMgr = ugi->getConnManager()->noConnectivityClone();
-
-        TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
-                                   "panzer::buildIntrepidOrientation: ConnManager is null!");
-
-        buildIntrepidOrientation(*orientation, *connMgr);
-        return orientation;
-      }
-    }
-
-    // int, pair<int,int>
-    {
-      typedef int LO;
-      typedef std::pair<int,int> GO;
-
-      RCP<const UniqueGlobalIndexer> ugi
-        = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);
-      if(ugi!=Teuchos::null) {
-        const auto connMgr = ugi->getConnManager()->noConnectivityClone();
-
-        TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
-                                   "panzer::buildIntrepidOrientation: ConnManager is null!");
-
-        buildIntrepidOrientation(*orientation, *connMgr);
-        return orientation;
-      }
-    }
-
-    // int, pair<int,Ordinal64>
-    {
-      typedef int LO;
-      typedef std::pair<int,Ordinal64> GO;
-
-      RCP<const UniqueGlobalIndexer> ugi
-        = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);
-      if(ugi!=Teuchos::null) {
-        const auto connMgr = ugi->getConnManager()->noConnectivityClone();
-
-        TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
-                                   "panzer::buildIntrepidOrientation: ConnManager in null!");
 
         buildIntrepidOrientation(*orientation, *connMgr);
         return orientation;

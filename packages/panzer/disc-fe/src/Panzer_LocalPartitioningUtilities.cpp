@@ -62,11 +62,11 @@ namespace partitioning_utilities
 
 void
 setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
-                      const std::vector<panzer::LocalOrdinal2> & owned_parent_cells,
+                      const std::vector<panzer::LocalOrdinal> & owned_parent_cells,
                       panzer::LocalMeshInfoBase & sub_info)
 {
-  using GO = panzer::GlobalOrdinal2;
-  using LO = panzer::LocalOrdinal2;
+  using GO = panzer::GlobalOrdinal;
+  using LO = panzer::LocalOrdinal;
 
   PANZER_FUNC_TIME_MONITOR_DIFF("panzer::partitioning_utilities::setupSubLocalMeshInfo",setupSLMI);
   // The goal of this function is to fill a LocalMeshInfoBase (sub_info) with
@@ -322,8 +322,7 @@ splitMeshInfo(const panzer::LocalMeshInfoBase & mesh_info,
               const int splitting_size,
               std::vector<panzer::LocalMeshPartition> & partitions)
 {
-  using GO = panzer::GlobalOrdinal2;
-  using LO = panzer::LocalOrdinal2;
+  using LO = panzer::LocalOrdinal;
 
   // Make sure the splitting size makes sense
   TEUCHOS_ASSERT(splitting_size != 0);

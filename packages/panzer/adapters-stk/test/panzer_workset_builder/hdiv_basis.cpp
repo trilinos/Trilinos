@@ -320,7 +320,7 @@ namespace panzer {
     out << "BASIS VECTOR\n" << std::endl;
     for(size_t c=0;c<2;c++) {
       out << "cell " << c << " = ";
-      std::vector<panzer::Ordinal64> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       dof_manager->getElementGIDs(c,gids);
 
       out << "  gids = ";
@@ -349,7 +349,7 @@ namespace panzer {
     out << "WEIGHTED BASIS VECTOR\n" << std::endl;
     for(size_t c=0;c<2;c++) {
       out << "cell " << c << " = ";
-      std::vector<panzer::Ordinal64> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       dof_manager->getElementGIDs(c,gids);
 
       out << "  gids = ";

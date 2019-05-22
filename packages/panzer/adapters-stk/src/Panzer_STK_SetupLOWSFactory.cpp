@@ -180,14 +180,14 @@ namespace {
       // TAW: the following is probably not optimal but it corresponds to what have been there before...
       Stratimikos::enableMueLu(linearSolverBuilder,"MueLu");
       Stratimikos::enableMueLuRefMaxwell(linearSolverBuilder,"MueLuRefMaxwell");
-      Stratimikos::enableMueLu<int,panzer::Ordinal64,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
-      Stratimikos::enableMueLuRefMaxwell<int,panzer::Ordinal64,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell-Tpetra");
+      Stratimikos::enableMueLu<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+      Stratimikos::enableMueLuRefMaxwell<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell-Tpetra");
     }
     #endif // MUELU
     #ifdef PANZER_HAVE_IFPACK2
     {
       typedef Thyra::PreconditionerFactoryBase<double> Base;
-      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, int, panzer::Ordinal64,panzer::TpetraNodeType> > Impl;
+      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, int, panzer::GlobalOrdinal,panzer::TpetraNodeType> > Impl;
 
       linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
     }
@@ -311,8 +311,8 @@ namespace {
              if(!writeCoordinates)
                 callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
 
-             typedef Tpetra::Map<int,panzer::Ordinal64,panzer::TpetraNodeType> Map;
-             typedef Tpetra::MultiVector<double,int,panzer::Ordinal64,panzer::TpetraNodeType> MV;
+             typedef Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> Map;
+             typedef Tpetra::MultiVector<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> MV;
 
              // extract coordinate vectors and modify strat_params to include coordinate vectors
              unsigned dim = Teuchos::as<unsigned>(spatialDim);
@@ -325,13 +325,13 @@ namespace {
                  if(globalIndexer->getNumFields()==1) {
                    RCP<const panzer::UniqueGlobalIndexer> ugi
                        = rcp_dynamic_cast<const panzer::UniqueGlobalIndexer>(globalIndexer);
-                   std::vector<panzer::Ordinal64> ownedIndices;
+                   std::vector<panzer::GlobalOrdinal> ownedIndices;
                    ugi->getOwnedIndices(ownedIndices);
-                   RCP<const Map> coords_map = rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),ownedIndices,0,mpi_comm));
+                   RCP<const Map> coords_map = rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(),ownedIndices,0,mpi_comm));
                    coords = rcp(new MV(coords_map,dim));
                  }
                  else {
-                   RCP<const Map> coords_map = rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),coord.size(),0,mpi_comm));
+                   RCP<const Map> coords_map = rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(),coord.size(),0,mpi_comm));
                    coords = rcp(new MV(coords_map,dim));
                  }
                }
@@ -423,12 +423,12 @@ namespace {
             #ifdef PANZER_HAVE_MUELU
             if(useCoordinates) {
 
-              typedef Xpetra::Map<int,panzer::GlobalOrdinal2> Map;
-              typedef Xpetra::MultiVector<double,int,panzer::GlobalOrdinal2> MV;
+              typedef Xpetra::Map<int,panzer::GlobalOrdinal> Map;
+              typedef Xpetra::MultiVector<double,int,panzer::GlobalOrdinal> MV;
 
               // TODO This is Epetra-specific
-              RCP<const Map> coords_map = Xpetra::MapFactory<int,panzer::GlobalOrdinal2>::Build(Xpetra::UseEpetra,
-                                            Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::invalid(),
+              RCP<const Map> coords_map = Xpetra::MapFactory<int,panzer::GlobalOrdinal>::Build(Xpetra::UseEpetra,
+                                            Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(),
                   //Teuchos::ArrayView<GO>(ownedIndices),
                   xcoords.size(),
                   0,
@@ -437,7 +437,7 @@ namespace {
 
               unsigned dim = Teuchos::as<unsigned>(spatialDim);
 
-              RCP<MV> coords = Xpetra::MultiVectorFactory<double,int,panzer::GlobalOrdinal2>::Build(coords_map,spatialDim);
+              RCP<MV> coords = Xpetra::MultiVectorFactory<double,int,panzer::GlobalOrdinal>::Build(coords_map,spatialDim);
 
               for(unsigned d=0;d<dim;d++) {
                 // sanity check the size

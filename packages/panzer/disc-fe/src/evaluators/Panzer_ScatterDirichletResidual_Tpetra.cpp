@@ -53,4 +53,4 @@
 #endif
 
 // PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Tpetra,int,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Tpetra,int,panzer::Ordinal64)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Tpetra,int,panzer::GlobalOrdinal)

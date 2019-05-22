@@ -359,7 +359,7 @@ int main(int argc,char * argv[])
      dofManager = dofManager_long;
 
      // construct some linear algebra object, build object to pass to evaluators
-     linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(comm,dofManager_long));
+     linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(comm,dofManager_long));
    }
 
    // build worksets
@@ -634,7 +634,7 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
 
 void solveTpetraSystem(panzer::LinearObjContainer & container)
 {
-  typedef panzer::TpetraLinearObjContainer<double,int,panzer::Ordinal64> LOC;
+  typedef panzer::TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> LOC;
 
   LOC & tp_container = Teuchos::dyn_cast<LOC>(container);
 
@@ -644,8 +644,8 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   // only copied shallowly and will be overwritten by the solve, so we
   // make a deep copy here.  That way we can compare the result
   // against the original X_guess.
-  typedef Tpetra::MultiVector<double,int,panzer::Ordinal64> MV;
-  typedef Tpetra::Operator<double,int,panzer::Ordinal64> OP;
+  typedef Tpetra::MultiVector<double,int,panzer::GlobalOrdinal> MV;
+  typedef Tpetra::Operator<double,int,panzer::GlobalOrdinal> OP;
   typedef Belos::LinearProblem<double,MV, OP> ProblemType;
   Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
   TEUCHOS_ASSERT(problem->setProblem());

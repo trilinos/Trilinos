@@ -197,7 +197,7 @@ public:
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherOrientation() const
-   { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers())); }
+  { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,panzer::GlobalOrdinal>(rowDOFManagerContainer_->getFieldDOFManagers())); }
 
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>

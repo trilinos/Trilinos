@@ -78,7 +78,7 @@ using Teuchos::rcpFromRef;
 
 typedef double ScalarT;
 typedef int LocalOrdinalT;
-typedef panzer::Ordinal64 GlobalOrdinalT;
+typedef panzer::GlobalOrdinal GlobalOrdinalT;
 typedef panzer::TpetraNodeType NodeT;
 
 typedef Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> VectorType;
@@ -91,8 +91,8 @@ typedef Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> ExportType;
 
 typedef Thyra::TpetraLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> ThyraLinearOp;
 
-typedef panzer::BlockedTpetraLinearObjContainer<double,int,panzer::Ordinal64> BLOC;
-typedef panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> BLOFact;
+typedef panzer::BlockedTpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> BLOC;
+typedef panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> BLOFact;
 
 
 namespace panzer {

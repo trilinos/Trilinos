@@ -64,7 +64,7 @@ TEUCHOS_UNIT_TEST(setupSubLocalMeshInfo, basic)
   // Make sure passing the function an empty parent info throws an error
   {
     Teuchos::RCP<panzer::LocalMeshInfoBase> mesh(new panzer::LocalMeshInfoBase);
-    std::vector<panzer::LocalOrdinal2> local_cells = {0};
+    std::vector<panzer::LocalOrdinal> local_cells = {0};
     panzer::LocalMeshInfoBase sub_mesh;
 
     TEST_THROW(partitioning_utilities::setupSubLocalMeshInfo(*mesh,local_cells,sub_mesh),std::logic_error);
@@ -73,7 +73,7 @@ TEUCHOS_UNIT_TEST(setupSubLocalMeshInfo, basic)
   // Make sure passing the function an empty set of cells throws an error
   {
     Teuchos::RCP<panzer::LocalMeshInfoBase> mesh = generateLocalMeshInfoBase();
-    std::vector<panzer::LocalOrdinal2> local_cells = {};
+    std::vector<panzer::LocalOrdinal> local_cells = {};
     panzer::LocalMeshInfoBase sub_mesh;
 
     TEST_THROW(partitioning_utilities::setupSubLocalMeshInfo(*mesh,local_cells,sub_mesh),std::logic_error);
@@ -84,7 +84,7 @@ TEUCHOS_UNIT_TEST(setupSubLocalMeshInfo, basic)
     Teuchos::RCP<panzer::LocalMeshInfoBase> mesh = generateLocalMeshInfoBase();
 
     // Skip cell 1 to make it a ghost cell
-    std::vector<panzer::LocalOrdinal2> local_cells = {0,2};
+    std::vector<panzer::LocalOrdinal> local_cells = {0,2};
     panzer::LocalMeshInfoBase sub_mesh;
 
     partitioning_utilities::setupSubLocalMeshInfo(*mesh,local_cells,sub_mesh);

@@ -144,7 +144,7 @@ namespace panzer_stk {
     dofManager->addField("VAR",fp);
     dofManager->buildGlobalUnknowns();
 
-    std::vector<panzer::Ordinal64> owned;
+    std::vector<panzer::GlobalOrdinal> owned;
     dofManager->getOwnedIndices(owned);
 
     std::size_t unkCount = owned.size();

@@ -130,7 +130,7 @@ const std::vector<int> & BlockedDOFManager::getBlockFieldNumbers(const std::stri
    return empty;
 }
 
-void BlockedDOFManager::getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::vector<GlobalOrdinal> & gids,const std::string & blockIdHint) const
+void BlockedDOFManager::getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<GlobalOrdinal> & gids,const std::string & blockIdHint) const
 {
    // WARNING: there is an assumed ordering being used here it
    // corresponds directly to the blockGIDOffset_ map and (as
@@ -144,7 +144,7 @@ void BlockedDOFManager::getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::ve
 
    // loop over field block manager and grab indices
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
-      std::vector<panzer::GlobalOrdinal2> fieldBlockOwned;
+      std::vector<panzer::GlobalOrdinal> fieldBlockOwned;
 
       fieldBlockManagers_[fbm]->getElementGIDs(localElmtId,fieldBlockOwned,blockIdHint);
 
@@ -154,7 +154,7 @@ void BlockedDOFManager::getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::ve
    }
 }
 
-  void BlockedDOFManager::getElementGIDsPair(panzer::LocalOrdinal2 localElmtId,std::vector<std::pair<int,GlobalOrdinal>> & gids,const std::string & blockIdHint) const
+  void BlockedDOFManager::getElementGIDsPair(panzer::LocalOrdinal localElmtId,std::vector<std::pair<int,GlobalOrdinal>> & gids,const std::string & blockIdHint) const
 {
    // WARNING: there is an assumed ordering being used here it
    // corresponds directly to the blockGIDOffset_ map and (as
@@ -168,7 +168,7 @@ void BlockedDOFManager::getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::ve
 
    // loop over field block manager and grab indices
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
-      std::vector<panzer::GlobalOrdinal2> fieldBlockOwned;
+      std::vector<panzer::GlobalOrdinal> fieldBlockOwned;
 
       fieldBlockManagers_[fbm]->getElementGIDs(localElmtId,fieldBlockOwned,blockIdHint);
 
@@ -177,7 +177,7 @@ void BlockedDOFManager::getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::ve
    }
 }
 
-void BlockedDOFManager::getElementOrientation(panzer::LocalOrdinal2 localElmtId,std::vector<double> & gidsOrientation) const
+void BlockedDOFManager::getElementOrientation(panzer::LocalOrdinal localElmtId,std::vector<double> & gidsOrientation) const
 {
    // WARNING: there is an assumed ordering being used here it
    // corresponds directly to the blockGIDOffset_ map and (as
@@ -325,7 +325,7 @@ void BlockedDOFManager::getOwnedIndices(std::vector<GlobalOrdinal>& indices) con
   using std::vector;
   for (size_t fbm(0); fbm < fieldBlockManagers_.size(); ++fbm)
   {
-    vector<panzer::GlobalOrdinal2> fieldBlockOwned;
+    vector<panzer::GlobalOrdinal> fieldBlockOwned;
     fieldBlockManagers_[fbm]->getOwnedIndices(fieldBlockOwned);
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getOwnedIndices() not supported for BlockedDOFManager!")
     // for (size_t i(0); i < fieldBlockOwned.size(); ++i)
@@ -345,7 +345,7 @@ void BlockedDOFManager::getGhostedIndices(std::vector<GlobalOrdinal>& indices) c
   using std::vector;
   for (size_t fbm(0); fbm < fieldBlockManagers_.size(); ++fbm)
   {
-    vector<panzer::GlobalOrdinal2> fieldBlockGhosted;
+    vector<panzer::GlobalOrdinal> fieldBlockGhosted;
     fieldBlockManagers_[fbm]->getGhostedIndices(fieldBlockGhosted);
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getGhostedIndices() not supported for BlockedDOFManager!")
     // for (size_t i(0); i < fieldBlockGhosted.size(); ++i)
@@ -365,7 +365,7 @@ void BlockedDOFManager::getOwnedAndGhostedIndices(std::vector<GlobalOrdinal>& in
   using std::vector;
   for (size_t fbm(0); fbm < fieldBlockManagers_.size(); ++fbm)
   {
-    vector<panzer::GlobalOrdinal2> fieldBlockOwnedAndGhosted;
+    vector<panzer::GlobalOrdinal> fieldBlockOwnedAndGhosted;
     fieldBlockManagers_[fbm]->getOwnedAndGhostedIndices(
       fieldBlockOwnedAndGhosted);
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getOwnedAndGhostedIndices() not supported for BlockedDOFManager!")
@@ -375,7 +375,7 @@ void BlockedDOFManager::getOwnedAndGhostedIndices(std::vector<GlobalOrdinal>& in
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void BlockedDOFManager::getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & blockIdHint) const
+void BlockedDOFManager::getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,std::vector<int> & gids,const std::string & blockIdHint) const
 {
    // WARNING: there is an assumed ordering being used here it
    // corresponds directly to the blockGIDOffset_ map and (as
@@ -494,7 +494,7 @@ void BlockedDOFManager::ownedIndices(const std::vector<GlobalOrdinal> & indices,
 {
    isOwned.resize(0);
 
-   std::vector<std::vector<panzer::GlobalOrdinal2> > blockIndices(fieldBlockManagers_.size());
+   std::vector<std::vector<panzer::GlobalOrdinal> > blockIndices(fieldBlockManagers_.size());
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ownedIndices() not supported for BlockedDOFManager!")
    // for(std::size_t i=0;i<indices.size();i++)
    //    blockIndices[indices[i].first].push_back(indices[i].second); 

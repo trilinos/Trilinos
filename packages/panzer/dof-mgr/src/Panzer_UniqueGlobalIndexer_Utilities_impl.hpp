@@ -59,9 +59,9 @@ namespace panzer {
 template <typename ScalarT,typename ArrayT>
 void updateGhostedDataReducedVector(const std::string & fieldName,const std::string blockId,
                                     const UniqueGlobalIndexer & ugi,
-                                    const ArrayT & data,Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> & dataVector)
+                                    const ArrayT & data,Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> & dataVector)
 {
-   typedef Tpetra::Map<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> Map;
+   typedef Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> Map;
 
    TEUCHOS_TEST_FOR_EXCEPTION(!ugi.fieldInBlock(fieldName,blockId),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: field name = \""+fieldName+"\" is not in element block = \"" +blockId +"\"!");
@@ -69,7 +69,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    Teuchos::RCP<const Map> dataMap = dataVector.getMap();
 
    int fieldNum = ugi.getFieldNum(fieldName);
-   const std::vector<panzer::LocalOrdinal2> & elements = ugi.getElementBlock(blockId);
+   const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
    
    TEUCHOS_TEST_FOR_EXCEPTION(data.extent(0)!=elements.size(),std::runtime_error,
@@ -79,7 +79,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
 
    if(rank==2) {
       // loop over elements distributing relevent data to vector
-      std::vector<panzer::GlobalOrdinal2> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       for(std::size_t e=0;e<elements.size();e++) { 
          ugi.getElementGIDs(elements[e],gids);
    
@@ -96,7 +96,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
                       "panzer::updateGhostedDataReducedVector: number of columns in data vector inconsistent with data array");
 
       // loop over elements distributing relevent data to vector
-      std::vector<panzer::GlobalOrdinal2> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       for(std::size_t e=0;e<elements.size();e++) { 
          ugi.getElementGIDs(elements[e],gids);
    
@@ -113,7 +113,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
 }
 
 template <typename ScalarT,typename ArrayT>
-Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 ArrayToFieldVector::getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
 {
    TEUCHOS_ASSERT(data.size()>0); // there must be at least one "data" item
@@ -145,8 +145,8 @@ ArrayToFieldVector::getGhostedDataVector(const std::string & fieldName,const std
       gh_reducedFieldMaps_[fieldNum] = reducedMap;
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > finalReducedVec
-      = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType>(reducedMap,numCols));
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > finalReducedVec
+      = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(reducedMap,numCols));
    for(std::size_t b=0;b<blockIds.size();b++) {
       std::string block = blockIds[b];
 
@@ -172,25 +172,25 @@ ArrayToFieldVector::getGhostedDataVector(const std::string & fieldName,const std
       gh_fieldMaps_[fieldNum] = map;
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > finalVec
-      = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType>(map,numCols));
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > finalVec
+      = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(map,numCols));
 
    // do import from finalReducedVec
-   Tpetra::Import<int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> importer(reducedMap,map);
+   Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> importer(reducedMap,map);
    finalVec->doImport(*finalReducedVec,importer,Tpetra::INSERT);
 
    return finalVec;
 }
 
 template <typename ScalarT,typename ArrayT>
-Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> >
+Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 ArrayToFieldVector::getDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
 {
    // if neccessary build field vector
    if(fieldVector_==Teuchos::null)
       buildFieldVector(*gh_fieldVector_);
 
-   Teuchos::RCP<const Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > sourceVec
+   Teuchos::RCP<const Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > sourceVec
          = getGhostedDataVector<ScalarT,ArrayT>(fieldName,data);
 
    // use lazy construction for each field
@@ -201,11 +201,11 @@ ArrayToFieldVector::getDataVector(const std::string & fieldName,const std::map<s
       fieldMaps_[fieldNum] = destMap;
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > destVec
-         = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType>(destMap,sourceVec->getNumVectors()));
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > destVec
+         = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(destMap,sourceVec->getNumVectors()));
    
    // do import
-   Tpetra::Import<int,panzer::GlobalOrdinal2> importer(sourceVec->getMap(),destMap);
+   Tpetra::Import<int,panzer::GlobalOrdinal> importer(sourceVec->getMap(),destMap);
    destVec->doImport(*sourceVec,importer,Tpetra::INSERT); 
 
    return destVec;
