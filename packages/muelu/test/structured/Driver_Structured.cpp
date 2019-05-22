@@ -152,7 +152,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   double      tol               = 1e-12;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
-  std::string operation         = "solve";           clp.setOption("op",                    &operation,         "operation to perform: (matvec | setup | solver)");
+  std::string operation         = "solve";           clp.setOption("op",                    &operation,         "operation to perform: (matvec | setup | solver)");  std::string belosType         = "cg";              clp.setOption("belosType",             &belosType,         "belos solver type: (Pseudoblock CG | Block CG | Pseudoblock GMRES | Block GMRES | ...) see BelosSolverFactory.hpp for exhaustive list of solvers");
 #ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
@@ -296,7 +296,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Extract the diagonal of A (for RAPShiftFactory testing)
   RCP<Vector> Mdiag = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(A->getRowMap(),false);
   A->getLocalDiagCopy(*Mdiag);
-  
+
 
   if (matrixType == "Elasticity2D" ||
       matrixType == "Elasticity3D") {
@@ -385,18 +385,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // Belos parameter list
-    Teuchos::ParameterList belosList;
-    belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-    belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-    belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    belosList.set("Output Frequency",      1);
-    belosList.set("Output Style",          Belos::Brief);
+    RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
+    belosList->set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
+    belosList->set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
+    belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+    belosList->set("Output Frequency",      1);
+    belosList->set("Output Style",          Belos::Brief);
     if (!scaleResidualHist)
-      belosList.set("Implicit Residual Scaling", "None");
+      belosList->set("Implicit Residual Scaling", "None");
 
     // Create an iterative solver manager
-    RCP< Belos::SolverManager<SC, MV, OP> > solver;
-    solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+    Belos::SolverFactory<SC, MV, OP> solverFactory;
+    RCP<Belos::SolverManager<SC, MV, OP> > solver = solverFactory.create(belosType, belosList);
+    solver->setProblem(belosProblem);
 
     // Perform solve
     Belos::ReturnType retStatus = Belos::Unconverged;
