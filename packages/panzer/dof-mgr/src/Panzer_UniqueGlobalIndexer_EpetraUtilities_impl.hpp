@@ -168,7 +168,7 @@ ArrayToFieldVectorEpetra::getGhostedDataVector(const std::string & fieldName,
                         "ArrayToFieldVectorEpetra::getDataVector: can not find block \""+block+"\".");
 
      const ArrayT & d = blockItr->second;
-     updateGhostedDataReducedVectorEpetra<ScalarT,ArrayT,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>(fieldName,block,*ugi_,d,*finalReducedVec);
+     updateGhostedDataReducedVectorEpetra<ScalarT,ArrayT>(fieldName,block,*ugi_,d,*finalReducedVec);
    }
 
    // build final (not reduced vector)

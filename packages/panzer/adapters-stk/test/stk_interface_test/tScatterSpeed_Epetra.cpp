@@ -55,14 +55,14 @@ void newAssembly(Teuchos::FancyOStream &out);
 //Will run the generic setup of the DOFManager through the buildGlobalUnknowns
 size_t setUp1(RCP<Map> &rowmap,
            RCP<Map> &colmap,
-           RCP<panzer::DOFManager<int,int> > &my_dofM,
+           RCP<panzer::DOFManager> &my_dofM,
            RCP<panzer::ConnManager> &conn);
 
 //I'm not entirely sure on this yet.
 void fillMeUp1(std::vector<std::vector<int> > &gids,
               std::vector<std::vector<int> > &lids,
               std::vector< std::vector<std::vector<double> > > &miniMat,
-              RCP<panzer::DOFManager<int,int> > &dofM,
+              RCP<panzer::DOFManager> &dofM,
               const std::vector<int> &mElem,
               const RCP<const Map> &mcmap);
 RCP<Time> New_Time = TimeMonitor::getNewCounter("New Assembly Time");
@@ -103,7 +103,7 @@ int main(int argc,char * argv[])
 
 void newAssembly(Teuchos::FancyOStream& /* out */)
 {
-  RCP<panzer::DOFManager<int,int> > my_dofM;
+  RCP<panzer::DOFManager> my_dofM;
   RCP<Map> rowmap;
   RCP<Map> colmap;
   RCP<panzer::ConnManager> conn;
@@ -146,7 +146,7 @@ void newAssembly(Teuchos::FancyOStream& /* out */)
 
 size_t setUp1(RCP<Map> &rowmap,
            RCP<Map> &colmap,
-           RCP<panzer::DOFManager<int,int> > &my_dofM,
+           RCP<panzer::DOFManager> &my_dofM,
            RCP<panzer::ConnManager> &conn)
 {
   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
@@ -166,7 +166,7 @@ size_t setUp1(RCP<Map> &rowmap,
   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
   RCP<const panzer::FieldPattern> pressure_pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis1));
 
-  my_dofM = Teuchos::rcp(new panzer::DOFManager<int,int>());
+  my_dofM = Teuchos::rcp(new panzer::DOFManager());
 
   my_dofM->setConnManager(conn,MPI_COMM_WORLD);
 
@@ -180,8 +180,8 @@ size_t setUp1(RCP<Map> &rowmap,
   std::vector<int> owned; 
   std::vector<int> ownedAndGhosted; 
 
-  my_dofM->getOwnedIndices(owned);
-  my_dofM->getOwnedAndGhostedIndices(ownedAndGhosted);
+  my_dofM->getOwnedIndicesAsInt(owned);
+  my_dofM->getOwnedAndGhostedIndicesAsInt(ownedAndGhosted);
 
   size_t sz = ownedAndGhosted.size();
 
@@ -196,13 +196,13 @@ size_t setUp1(RCP<Map> &rowmap,
 void fillMeUp1(std::vector<std::vector<int> > &gids,
               std::vector<std::vector<int> > &lids,
               std::vector< std::vector<std::vector<double> > > &miniMat,
-              RCP<panzer::DOFManager<int,int> > &dofM,
+              RCP<panzer::DOFManager> &dofM,
               const std::vector<int> &mElem,
               const RCP<const Map> &mcmap)
 {
   for (std::size_t e = 0; e < mElem.size(); ++e) {
     std::vector<int> tgids;
-    dofM->getElementGIDs(mElem[e], tgids);
+    dofM->getElementGIDsAsInt(mElem[e], tgids);
     std::vector<int> tlids;
     for (size_t i = 0; i < tgids.size(); ++i) {
       tlids.push_back(mcmap->LID(tgids[i]));

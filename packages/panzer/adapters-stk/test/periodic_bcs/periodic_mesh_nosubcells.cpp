@@ -139,8 +139,8 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::ConnManager> connMngr
           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    Teuchos::RCP<panzer::DOFManager<int,panzer::Ordinal64> > dofManager
-          = Teuchos::rcp(new panzer::DOFManager<int,panzer::Ordinal64>(connMngr,MPI_COMM_WORLD));
+    Teuchos::RCP<panzer::DOFManager> dofManager
+          = Teuchos::rcp(new panzer::DOFManager(connMngr,MPI_COMM_WORLD));
     dofManager->addField("VAR",fp);
     dofManager->buildGlobalUnknowns();
 

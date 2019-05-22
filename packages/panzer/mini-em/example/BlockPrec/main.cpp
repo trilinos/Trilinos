@@ -70,7 +70,7 @@ Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >
 buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
     const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & linObjFactory,
     const Teuchos::RCP<panzer::WorksetContainer> & wkstContainer,
-    const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & globalIndexer,
+    const Teuchos::RCP<panzer::UniqueGlobalIndexer> & globalIndexer,
     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
     const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
     const Teuchos::ParameterList & closure_model_pl);
@@ -460,17 +460,17 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     // blocked degree of freedom manager
-    panzer::BlockedDOFManagerFactory<LocalOrdinal,GlobalOrdinal> globalIndexerFactory;
+    panzer::BlockedDOFManagerFactory globalIndexerFactory;
     std::string fieldOrder = assembly_pl.get<std::string>("Field Order");
-    RCP<panzer::UniqueGlobalIndexerBase > dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager,fieldOrder);
+    RCP<panzer::UniqueGlobalIndexer > dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager,fieldOrder);
 
     // auxiliary dof manager
     std::string auxFieldOrder = assembly_pl.get<std::string>("Auxiliary Field Order");
-    RCP<panzer::UniqueGlobalIndexerBase > auxDofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),auxPhysicsBlocks,conn_manager,auxFieldOrder);
+    RCP<panzer::UniqueGlobalIndexer > auxDofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),auxPhysicsBlocks,conn_manager,auxFieldOrder);
 
     // construct some linear algebra objects, build object to pass to evaluators
-    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(dofManager,true)));
-    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > auxLinObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(auxDofManager,true)));
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager,true)));
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > auxLinObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager>(auxDofManager,true)));
 
     // Assign the dof managers to worksets
     wkstContainer->setGlobalIndexer(dofManager);
@@ -489,11 +489,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     // coordinate information to MueLu
     Teuchos::RCP<Teko::RequestHandler> req_handler = Teuchos::rcp(new Teko::RequestHandler());
     req_handler->addRequestCallback(Teuchos::rcp(new mini_em::OperatorRequestCallback(auxGlobalData, matrix_output)));
-    Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal> > callback =
-      rcp(new panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal>(
-                                                                                   rcp_dynamic_cast<panzer_stk::STKConnManager>(conn_manager,true),
-                                                                                   rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(dofManager,true),
-                                                                                   rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(auxDofManager,true)));
+    Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked> callback =
+      rcp(new panzer_stk::ParameterListCallbackBlocked(rcp_dynamic_cast<panzer_stk::STKConnManager>(conn_manager,true),
+                                                       rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager,true),
+                                                       rcp_dynamic_cast<panzer::BlockedDOFManager>(auxDofManager,true)));
     req_handler->addRequestCallback(callback);
 
     // add discrete gradient
@@ -815,7 +814,7 @@ Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >
 buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
     const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & linObjFactory,
     const Teuchos::RCP<panzer::WorksetContainer> & wkstContainer,
-    const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & globalIndexer,
+    const Teuchos::RCP<panzer::UniqueGlobalIndexer> & globalIndexer,
     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
     const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
     const Teuchos::ParameterList & closure_model_pl) {

@@ -148,7 +148,7 @@ void BlockedDOFManager::getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::ve
 
       fieldBlockManagers_[fbm]->getElementGIDs(localElmtId,fieldBlockOwned,blockIdHint);
 
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getElementGIDs() not supported for BlockedDOFManager!")
       // for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
       //    gids.push_back(std::make_pair(fbm,fieldBlockOwned[i]));
    }
@@ -327,7 +327,7 @@ void BlockedDOFManager::getOwnedIndices(std::vector<GlobalOrdinal>& indices) con
   {
     vector<panzer::GlobalOrdinal2> fieldBlockOwned;
     fieldBlockManagers_[fbm]->getOwnedIndices(fieldBlockOwned);
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getOwnedIndices() not supported for BlockedDOFManager!")
     // for (size_t i(0); i < fieldBlockOwned.size(); ++i)
     //   indices.push_back(make_pair(fbm, fieldBlockOwned[i]));
   }
@@ -347,7 +347,7 @@ void BlockedDOFManager::getGhostedIndices(std::vector<GlobalOrdinal>& indices) c
   {
     vector<panzer::GlobalOrdinal2> fieldBlockGhosted;
     fieldBlockManagers_[fbm]->getGhostedIndices(fieldBlockGhosted);
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getGhostedIndices() not supported for BlockedDOFManager!")
     // for (size_t i(0); i < fieldBlockGhosted.size(); ++i)
     //   indices.push_back(make_pair(fbm, fieldBlockGhosted[i]));
   }
@@ -368,7 +368,7 @@ void BlockedDOFManager::getOwnedAndGhostedIndices(std::vector<GlobalOrdinal>& in
     vector<panzer::GlobalOrdinal2> fieldBlockOwnedAndGhosted;
     fieldBlockManagers_[fbm]->getOwnedAndGhostedIndices(
       fieldBlockOwnedAndGhosted);
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getOwnedAndGhostedIndices() not supported for BlockedDOFManager!")
     // for (size_t i(0); i < fieldBlockOwnedAndGhosted.size(); ++i)
     //   indices.push_back(make_pair(fbm, fieldBlockOwnedAndGhosted[i]));
   }
@@ -393,7 +393,7 @@ void BlockedDOFManager::getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,st
 
       fieldBlockManagers_[fbm]->getElementGIDsAsInt(localElmtId,fieldBlockOwned,blockIdHint);
 
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getElementGIDsAsInt() not supported for BlockedDOFManager!")
       // for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
       //    gids.push_back(std::make_pair(fbm,fieldBlockOwned[i]));
    }
@@ -409,7 +409,7 @@ void BlockedDOFManager::getOwnedIndicesAsInt(std::vector<int>& indices) const
   {
     vector<int> fieldBlockOwned;
     fieldBlockManagers_[fbm]->getOwnedIndicesAsInt(fieldBlockOwned);
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getOwnedIndicesAsInt() not supported for BlockedDOFManager!")
     // for (size_t i(0); i < fieldBlockOwned.size(); ++i)
     //   indices.push_back(make_pair(fbm, fieldBlockOwned[i]));
   }
@@ -425,7 +425,7 @@ void BlockedDOFManager::getGhostedIndicesAsInt(std::vector<int>& indices) const
   {
     vector<int> fieldBlockGhosted;
     fieldBlockManagers_[fbm]->getGhostedIndicesAsInt(fieldBlockGhosted);
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getGhostedIndicesAsInt() not supported for BlockedDOFManager!")
     // for (size_t i(0); i < fieldBlockGhosted.size(); ++i)
     //   indices.push_back(make_pair(fbm, fieldBlockGhosted[i]));
   }
@@ -442,7 +442,7 @@ void BlockedDOFManager::getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices
     vector<int> fieldBlockOwnedAndGhosted;
     fieldBlockManagers_[fbm]->getOwnedAndGhostedIndicesAsInt(
       fieldBlockOwnedAndGhosted);
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"getOwnedAndGhostedIndicesAsInt() not supported for BlockedDOFManager!")
     // for (size_t i(0); i < fieldBlockOwnedAndGhosted.size(); ++i)
     //   indices.push_back(make_pair(fbm, fieldBlockOwnedAndGhosted[i]));
   }
@@ -495,7 +495,7 @@ void BlockedDOFManager::ownedIndices(const std::vector<GlobalOrdinal> & indices,
    isOwned.resize(0);
 
    std::vector<std::vector<panzer::GlobalOrdinal2> > blockIndices(fieldBlockManagers_.size());
-   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ownedIndices() not supported for BlockedDOFManager!")
    // for(std::size_t i=0;i<indices.size();i++)
    //    blockIndices[indices[i].first].push_back(indices[i].second); 
  
@@ -511,7 +511,7 @@ void BlockedDOFManager::ownedIndices(const std::vector<GlobalOrdinal> & indices,
 
    // loop over indices, consider their block and look it up
    // in iterator vector
-   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER we've hit deleted code!!!")
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ownedIndices() not supported for BlockedDOFManager!")
 /*
    for(std::size_t i=0;i<indices.size();i++) {
       int block = indices[i].first;

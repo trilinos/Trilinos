@@ -65,7 +65,7 @@ namespace panzer_stk {
 
     virtual Teuchos::RCP<NOX::Abstract::PrePostOperator>
     buildNOXObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-		     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase>& dof_manager,
+		     const Teuchos::RCP<const panzer::UniqueGlobalIndexer>& dof_manager,
 		     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const = 0;
   };
 

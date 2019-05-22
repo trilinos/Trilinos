@@ -589,14 +589,14 @@ int main (int argc, char* argv[])
     // build DOF Manager and linear object factory
     /////////////////////////////////////////////////////////////
 
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
+    RCP<panzer::UniqueGlobalIndexer> dofManager;
     {
       const Teuchos::RCP<panzer::ConnManager>
         conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
       const bool has_interface_condition = hasInterfaceCondition(bcs);
       if (has_interface_condition)
         buildInterfaceConnections(bcs, conn_manager);
-      panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+      panzer::DOFManagerFactory globalIndexerFactory;
       globalIndexerFactory.setUseNeighbors(has_interface_condition);
       dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(
         Teuchos::opaqueWrapper(MPI_COMM_WORLD), physicsBlocks, conn_manager, "");
