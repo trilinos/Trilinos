@@ -219,7 +219,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
 
   // Build source DOF Manager that mimics multi-fluid plasma dof manager
   timer->start("Build sourceGlobalIndexer");
-  RCP<panzer::DOFManager<LO,GO>> sourceGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  RCP<panzer::DOFManager> sourceGlobalIndexer = rcp(new panzer::DOFManager(connManager,*comm->getRawMpiComm()));
   sourceGlobalIndexer->addField("PHI",hgradFP); // Electric Potential for ES
   sourceGlobalIndexer->addField("Chaff0",hgradFP); // Dummy
   sourceGlobalIndexer->addField("Chaff1",hgradFP); // Dummy
@@ -231,14 +231,14 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
 
   // Build Target DOF Manager (Separate scalar fields on hgrad)
   timer->start("Build targetGlobalIndexer");
-  RCP<panzer::DOFManager<LO,GO>> targetGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  RCP<panzer::DOFManager> targetGlobalIndexer = rcp(new panzer::DOFManager(connManager,*comm->getRawMpiComm()));
   targetGlobalIndexer->addField("Projection to Mesh Vertices",hgradFP);
   targetGlobalIndexer->buildGlobalUnknowns();
   timer->stop("Build targetGlobalIndexer");
 
   // Build projection factory
   timer->start("projectionFactory.setup()");
-  panzer::L2Projection<LO,GO> projectionFactory;
+  panzer::L2Projection projectionFactory;
   worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
@@ -738,7 +738,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
 
   // Build source DOF Manager for edge and face DOFs
   timer->start("Build sourceGlobalIndexer");
-  RCP<panzer::BlockedDOFManager<LO,GO>> sourceGlobalIndexer = rcp(new panzer::BlockedDOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  RCP<panzer::BlockedDOFManager> sourceGlobalIndexer = rcp(new panzer::BlockedDOFManager(connManager,*comm->getRawMpiComm()));
   sourceGlobalIndexer->addField("E_Field",hcurlFP); // Electric Field for EM
   sourceGlobalIndexer->addField("B_Field",hdivFP); // Magnetic Field for EM
   sourceGlobalIndexer->buildGlobalUnknowns();
@@ -746,7 +746,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
 
   // Build projection factory
   timer->start("projectionFactory.setup()");
-  panzer::L2Projection<LO,GO> projectionFactory;
+  panzer::L2Projection projectionFactory;
   worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hcurlBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
@@ -769,7 +769,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   auto lids = e_ugi->getLIDs();
 
   // set up a global and ghosted mass matrix
-  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO>>> indexers;
+  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer>> indexers;
   indexers.push_back(e_ugi);
   panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,LO,GO,panzer::TpetraNodeType> factory(comm,indexers);
   auto connMassMatrix = factory.getTpetraMatrix(0,0);
@@ -888,7 +888,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
 
   // Build source DOF Manager that mimics multi-fluid plasma dof manager
   timer->start("Build sourceGlobalIndexer");
-  RCP<panzer::DOFManager<LO,GO>> sourceGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  RCP<panzer::DOFManager> sourceGlobalIndexer = rcp(new panzer::DOFManager(connManager,*comm->getRawMpiComm()));
   sourceGlobalIndexer->addField("PHI",hgradFP); // Electric Potential for ES
   sourceGlobalIndexer->addField("Chaff0",hgradFP); // Dummy
   sourceGlobalIndexer->addField("Chaff1",hgradFP); // Dummy
@@ -898,14 +898,14 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
 
   // Build Target DOF Manager (Separate scalar fields on hgrad)
   timer->start("Build targetGlobalIndexer");
-  RCP<panzer::DOFManager<LO,GO>> targetGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  RCP<panzer::DOFManager> targetGlobalIndexer = rcp(new panzer::DOFManager(connManager,*comm->getRawMpiComm()));
   targetGlobalIndexer->addField("Projection to Mesh Vertices",hgradFP);
   targetGlobalIndexer->buildGlobalUnknowns();
   timer->stop("Build targetGlobalIndexer");
 
   // Build projection factory
   timer->start("projectionFactory.setup()");
-  panzer::L2Projection<LO,GO> projectionFactory;
+  panzer::L2Projection projectionFactory;
   worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
@@ -1290,8 +1290,6 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
   RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
 
   // Build Connection Manager
-  using LO = int;
-  using GO = panzer::Ordinal64;
   timer->start("ConnManager ctor");
   const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
@@ -1304,7 +1302,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
 
   // Build source DOF Manager that mimics multi-fluid plasma dof manager
   timer->start("Build sourceGlobalIndexer");
-  RCP<panzer::DOFManager<LO,GO>> sourceGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  RCP<panzer::DOFManager> sourceGlobalIndexer = rcp(new panzer::DOFManager(connManager,*comm->getRawMpiComm()));
   sourceGlobalIndexer->addField("PHI",hgradFP); // Electric Potential for ES
   sourceGlobalIndexer->addField("Chaff0",hgradFP); // Dummy
   sourceGlobalIndexer->addField("Chaff1",hgradFP); // Dummy
@@ -1314,14 +1312,14 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
 
   // Build Target DOF Manager (Separate scalar fields on hgrad)
   timer->start("Build targetGlobalIndexer");
-  RCP<panzer::DOFManager<LO,GO>> targetGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  RCP<panzer::DOFManager> targetGlobalIndexer = rcp(new panzer::DOFManager(connManager,*comm->getRawMpiComm()));
   targetGlobalIndexer->addField("Projection to Mesh Vertices",hgradFP);
   targetGlobalIndexer->buildGlobalUnknowns();
   timer->stop("Build targetGlobalIndexer");
 
   // Build projection factory
   timer->start("projectionFactory.setup()");
-  panzer::L2Projection<LO,GO> projectionFactory;
+  panzer::L2Projection projectionFactory;
   worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");

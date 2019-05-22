@@ -114,11 +114,7 @@ void computeBlockOffsets(const std::string & blockId,
 std::string 
 printUGILoadBalancingInformation(const UniqueGlobalIndexer & ugi)
 {
-  std::vector<panzer::GlobalOrdinal2> owned;
-  ugi.getOwnedIndices(owned);
-
-  std::size_t myOwnedCount = owned.size();
- 
+  std::size_t myOwnedCount = static_cast<std::size_t>(ugi.getNumOwned()); 
   std::size_t sum=0,min=0,max=0;
 
   // get min,max and sum

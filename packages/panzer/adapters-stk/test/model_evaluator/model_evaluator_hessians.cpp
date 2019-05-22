@@ -107,8 +107,8 @@ namespace panzer {
     RCP<panzer::GlobalData> gd;
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
     RCP<panzer::LinearObjFactory<panzer::Traits> > param_lof;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > param_dofManager;
+    RCP<panzer::UniqueGlobalIndexer> dofManager;
+    RCP<panzer::UniqueGlobalIndexer> param_dofManager;
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer;
     Teuchos::ParameterList user_data;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
@@ -1215,8 +1215,8 @@ namespace panzer {
 
     // build the state dof manager and LOF
     {
-      panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-      RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+      panzer::DOFManagerFactory globalIndexerFactory;
+      RCP<panzer::UniqueGlobalIndexer> dofManager 
            = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
       ap.dofManager = dofManager;
 
@@ -1227,8 +1227,8 @@ namespace panzer {
 
     // build the dof manager and LOF for DENSITY control
     if(distr_parameter_on) {
-      Teuchos::RCP<panzer::DOFManager<int,int> > dofManager 
-          = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
+      Teuchos::RCP<panzer::DOFManager> dofManager 
+          = Teuchos::rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
 
       Teuchos::RCP<Intrepid2FieldPattern> fp 
         = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<PHX::exec_space,double,double>("HGrad",1,mesh->getCellTopology("eblock-0_0"))));

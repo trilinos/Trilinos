@@ -178,14 +178,14 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // must be able to cast to a block linear object factory
   const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> & blof
      = Teuchos::dyn_cast<const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> >(lof); 
-  Teuchos::RCP<const panzer::BlockedDOFManager<int,panzer::Ordinal64> > blockedDOFMngr = blof.getGlobalIndexer();
+  Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr = blof.getGlobalIndexer();
   TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null); 
 
   int fieldNum = blockedDOFMngr->getFieldNum(fieldName_);
   int blockIndex = blockedDOFMngr->getFieldBlock(fieldNum);
 
   // get the unique global indexer for just this field
-  Teuchos::RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
+  Teuchos::RCP<panzer::UniqueGlobalIndexer> ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
    
   // build a new epetra linear object factory 
   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > elof

@@ -40,24 +40,24 @@
 // ***********************************************************************
 // @HEADER
 
+#include "PanzerAdaptersSTK_config.hpp"
 #ifdef PANZER_HAVE_TEKO
+
+#include "Panzer_STK_ParameterListCallback.hpp"
 
 namespace panzer_stk {
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallback(
-                                             const std::string & coordFieldName,
+ParameterListCallback::ParameterListCallback(const std::string & coordFieldName,
                                              const std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fps,
                                              const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager,
-                                             const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi)
+                                             const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & ugi)
    : coordFieldName_(coordFieldName), fieldPatterns_(fps), connManager_(connManager), ugi_(ugi), coordinatesBuilt_(false)
 { }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<Teuchos::ParameterList> ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::request(const Teko::RequestMesg & rm)
+Teuchos::RCP<Teuchos::ParameterList> ParameterListCallback::request(const Teko::RequestMesg & rm)
 {
    TEUCHOS_ASSERT(handlesRequest(rm)); // design by contract
 
@@ -71,8 +71,7 @@ Teuchos::RCP<Teuchos::ParameterList> ParameterListCallback<LocalOrdinalT,GlobalO
    return outputPL;
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-bool ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::handlesRequest(const Teko::RequestMesg & rm)
+bool ParameterListCallback::handlesRequest(const Teko::RequestMesg & rm)
 {
    // check if is a parameter list message, and that the parameter
    // list contains the right fields
@@ -80,8 +79,7 @@ bool ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::handlesRequest(co
    else return false;
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::preRequest(const Teko::RequestMesg & rm)
+void ParameterListCallback::preRequest(const Teko::RequestMesg & rm)
 {
    TEUCHOS_ASSERT(handlesRequest(rm)); // design by contract
 
@@ -90,8 +88,7 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::preRequest(const 
    buildCoordinates();
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldByKey(const std::string & key,Teuchos::ParameterList & pl) const
+void ParameterListCallback::setFieldByKey(const std::string & key,Teuchos::ParameterList & pl) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(!coordinatesBuilt_,std::runtime_error,
                       "ParameterListCallback::setFieldByKey: Coordinates have not been built!");
@@ -111,15 +108,13 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldByKey(con
                          "ParameterListCallback cannot handle key=\"" << key << "\"");
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildArrayToVector()
+void ParameterListCallback::buildArrayToVector()
 {
    if(arrayToVector_==Teuchos::null)
-      arrayToVector_ = Teuchos::rcp(new panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>(ugi_));
+      arrayToVector_ = Teuchos::rcp(new panzer::ArrayToFieldVector(ugi_));
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates()
+void ParameterListCallback::buildCoordinates()
 {
    TEUCHOS_ASSERT(fieldPatterns_.size()>0); // must be at least one field pattern
 
@@ -152,7 +147,7 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
       }
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > resultVec
+   Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > resultVec
       = arrayToVector_->template getDataVector<double>(coordFieldName_,data);
 
    switch(resultVec->getNumVectors()) {

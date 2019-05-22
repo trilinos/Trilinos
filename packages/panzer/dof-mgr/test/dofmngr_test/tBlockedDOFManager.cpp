@@ -267,7 +267,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
 }
 
-/* ROGER disabled as Blocked manager doesn't handle gids anymore.
+/* NOTE: disabled as Blocked manager doesn't handle gids anymore.
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 {
@@ -433,7 +433,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 
    dofManager.buildGlobalUnknowns();
 
-   /* ROGER disable since BlockManager can't do this anymore...
+   /* NOTE: disabled since BlockManager can't do this anymore...
 
    // check from element block 0
    std::vector<std::pair<int,int> > gids;
@@ -800,7 +800,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
    // verify the GIDs are correct
    /////////////////////////////////////////////////////////
 
-   /* ROGER disabled since Blocked manager can't return std::pairs anymore...
+   /* NOTE: disabled since Blocked manager can't return std::pairs anymore...
 
    for(std::size_t eb=0;eb<eBlocks.size();eb++) {
      std::string block_name = eBlocks[eb];
