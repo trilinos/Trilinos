@@ -21,8 +21,8 @@
 namespace panzer {
 class FaceToElems{
 public:
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
+  using LocalOrdinal = panzer::LocalOrdinal;
+  using GlobalOrdinal = panzer::GlobalOrdinal;
   FaceToElems(Teuchos::RCP<panzer::ConnManager> conn);
 
   LocalOrdinal numberBoundaryFaces() {return num_boundary_faces_;}
