@@ -66,7 +66,7 @@
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include <Thyra_MueLuRefMaxwellPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
-#include "MatrixMarket_Tpetra.hpp"
+//#include "MatrixMarket_Tpetra.hpp"
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #endif
@@ -177,9 +177,6 @@ namespace {
 
     #ifdef PANZER_HAVE_MUELU
     {
-      // TAW: the following is probably not optimal but it corresponds to what have been there before...
-      Stratimikos::enableMueLu(linearSolverBuilder,"MueLu");
-      Stratimikos::enableMueLuRefMaxwell(linearSolverBuilder,"MueLuRefMaxwell");
       Stratimikos::enableMueLu<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
       Stratimikos::enableMueLuRefMaxwell<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell-Tpetra");
     }
