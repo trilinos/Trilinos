@@ -142,8 +142,8 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    dofManager->printFieldInformation(out);
 
    if(numProcs==1) {
-      std::vector<panzer::GlobalOrdinal2> gids_v;
-      panzer::GlobalOrdinal2 * gids = nullptr;
+      std::vector<panzer::GlobalOrdinal> gids_v;
+      panzer::GlobalOrdinal * gids = nullptr;
 
       TEST_ASSERT(false);
 
@@ -202,7 +202,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 
    // check that owned is_subset owned_and_ghosted
    //////////////////////////////////////////////////////////////////////////
-   std::vector<panzer::GlobalOrdinal2> owned, owned_and_ghosted;
+   std::vector<panzer::GlobalOrdinal> owned, owned_and_ghosted;
    dofManager->getOwnedIndices(owned);
    dofManager->getOwnedAndGhostedIndices(owned_and_ghosted);
 

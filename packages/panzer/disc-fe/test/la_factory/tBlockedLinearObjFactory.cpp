@@ -444,7 +444,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContainer)
    RCP<panzer::UniqueGlobalIndexer> indexer 
          = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
 
-   std::vector<panzer::GlobalOrdinal2> ownedIndices, ownedAndGhostedIndices;
+   std::vector<panzer::GlobalOrdinal> ownedIndices, ownedAndGhostedIndices;
    indexer->getOwnedIndices(ownedIndices);
    indexer->getOwnedAndGhostedIndices(ownedAndGhostedIndices);
  

@@ -70,7 +70,7 @@ namespace panzer {
   panzer::L2Projection::getTargetGlobalIndexer() const
   {return targetGlobalIndexer_;}
 
-  Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>>
+  Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>>
   panzer::L2Projection::buildMassMatrix(bool use_lumping,
                                         const std::unordered_map<std::string,double>* elementBlockMultipliers)
   {
@@ -85,7 +85,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer>> indexers;
     indexers.push_back(targetGlobalIndexer_);
 
-    panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType> factory(comm_,indexers);
+    panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> factory(comm_,indexers);
 
     auto ownedMatrix = factory.getTpetraMatrix(0,0);
     auto ghostedMatrix = factory.getGhostedTpetraMatrix(0,0);
@@ -120,15 +120,15 @@ namespace panzer {
           const auto weightedBasis = basisValues.weighted_basis_scalar;
 
           // Offsets (this assumes UVM, need to fix)
-          const std::vector<panzer::LocalOrdinal2>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
-          PHX::View<panzer::LocalOrdinal2*> kOffsets("MassMatrix: Offsets",offsets.size());
+          const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
+          PHX::View<panzer::LocalOrdinal*> kOffsets("MassMatrix: Offsets",offsets.size());
           for(const auto& i : offsets)
             kOffsets(i) = offsets[i];
 
           PHX::Device::fence();
 
           // Local Ids
-          Kokkos::View<panzer::LocalOrdinal2**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+          Kokkos::View<panzer::LocalOrdinal**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                   targetGlobalIndexer_->getElementBlockGIDCount(block));
 
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
@@ -141,7 +141,7 @@ namespace panzer {
             Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
               double total_mass = 0.0, trace = 0.0;
 
-              panzer::LocalOrdinal2 cLIDs[256];
+              panzer::LocalOrdinal cLIDs[256];
               const int numIds = static_cast<int>(localIds.extent(1));
               for(int i=0;i<numIds;++i)
                 cLIDs[i] = localIds(cell,i);
@@ -165,7 +165,7 @@ namespace panzer {
                   vals[col] = 0;
 
                 int offset = kOffsets(row);
-                panzer::LocalOrdinal2 lid = localIds(cell,offset);
+                panzer::LocalOrdinal lid = localIds(cell,offset);
                 int col = row;
                 vals[col] = 0.0;
                 for (int qp=0; qp < numQP; ++qp)
@@ -178,7 +178,7 @@ namespace panzer {
           } else {
             Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
 
-              panzer::LocalOrdinal2 cLIDs[256];
+              panzer::LocalOrdinal cLIDs[256];
               const int numIds = static_cast<int>(localIds.extent(1));
               for(int i=0;i<numIds;++i)
                 cLIDs[i] = localIds(cell,i);
@@ -188,7 +188,7 @@ namespace panzer {
 
               for (int row=0; row < numBasisPoints; ++row) {
                 int offset = kOffsets(row);
-                panzer::LocalOrdinal2 lid = localIds(cell,offset);
+                panzer::LocalOrdinal lid = localIds(cell,offset);
 
                 for (int col=0; col < numIds; ++col) {
                   vals[col] = 0.0;
@@ -222,15 +222,15 @@ namespace panzer {
           const auto weightedBasis = basisValues.weighted_basis_vector;
 
           // Offsets (this assumes UVM, need to fix)
-          const std::vector<panzer::LocalOrdinal2>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
-          PHX::View<panzer::LocalOrdinal2*> kOffsets("MassMatrix: Offsets",offsets.size());
+          const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
+          PHX::View<panzer::LocalOrdinal*> kOffsets("MassMatrix: Offsets",offsets.size());
           for(const auto& i : offsets)
             kOffsets(i) = offsets[i];
 
           PHX::Device::fence();
 
           // Local Ids
-          Kokkos::View<panzer::LocalOrdinal2**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+          Kokkos::View<panzer::LocalOrdinal**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                   targetGlobalIndexer_->getElementBlockGIDCount(block));
 
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
@@ -241,7 +241,7 @@ namespace panzer {
           const int numBasisPoints = static_cast<int>(weightedBasis.extent(1));
           Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
 
-            panzer::LocalOrdinal2 cLIDs[256];
+            panzer::LocalOrdinal cLIDs[256];
             const int numIds = static_cast<int>(localIds.extent(1));
             for(int i=0;i<numIds;++i)
               cLIDs[i] = localIds(cell,i);
@@ -252,7 +252,7 @@ namespace panzer {
             for (int qp=0; qp < numQP; ++qp) {
               for (int row=0; row < numBasisPoints; ++row) {
                 int offset = kOffsets(row);
-                panzer::LocalOrdinal2 lid = localIds(cell,offset);
+                panzer::LocalOrdinal lid = localIds(cell,offset);
 
                 for (int col=0; col < numIds; ++col){
                   vals[col] = 0.0;
@@ -281,14 +281,14 @@ namespace panzer {
     return ownedMatrix;
   }
 
-  Teuchos::RCP<Tpetra::MultiVector<double,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>>
+  Teuchos::RCP<Tpetra::MultiVector<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>>
   panzer::L2Projection::buildInverseLumpedMassMatrix()
   {
-    PANZER_FUNC_TIME_MONITOR_DIFF("L2Projection<panzer::LocalOrdinal2,panzer::GlobalOrdinal2>::buildInverseLumpedMassMatrix",buildInvLMM);
+    PANZER_FUNC_TIME_MONITOR_DIFF("L2Projection<panzer::LocalOrdinal,panzer::GlobalOrdinal>::buildInverseLumpedMassMatrix",buildInvLMM);
     using Teuchos::rcp;
     const auto massMatrix = this->buildMassMatrix(true);
-    const auto lumpedMassMatrix = rcp(new Tpetra::MultiVector<double,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>(massMatrix->getDomainMap(),1,true));
-    const auto tmp = rcp(new Tpetra::MultiVector<double,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>(massMatrix->getRangeMap(),1,false));
+    const auto lumpedMassMatrix = rcp(new Tpetra::MultiVector<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>(massMatrix->getDomainMap(),1,true));
+    const auto tmp = rcp(new Tpetra::MultiVector<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>(massMatrix->getRangeMap(),1,false));
     tmp->putScalar(1.0);
     {
       PANZER_FUNC_TIME_MONITOR_DIFF("Apply",Apply);
@@ -301,9 +301,9 @@ namespace panzer {
     return lumpedMassMatrix;
   }
 
-  Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>>
+  Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>>
   panzer::L2Projection::buildRHSMatrix(const panzer::UniqueGlobalIndexer& sourceGlobalIndexer,
-                                       const Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>>& inputOwnedSourceMap,
+                                       const Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>>& inputOwnedSourceMap,
                                        const std::string& sourceFieldName,
                                        const panzer::BasisDescriptor& sourceBasisDescriptor,
                                        const int directionIndex)
@@ -313,10 +313,10 @@ namespace panzer {
     // *******************
     using Teuchos::RCP;
     using Teuchos::rcp;
-    using MapType = Tpetra::Map<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>;
-    using GraphType = Tpetra::CrsGraph<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>;
-    using ExportType = Tpetra::Export<panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>;
-    using MatrixType = Tpetra::CrsMatrix<double,panzer::LocalOrdinal2,panzer::GlobalOrdinal2,panzer::TpetraNodeType>;
+    using MapType = Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
+    using GraphType = Tpetra::CrsGraph<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
+    using ExportType = Tpetra::Export<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
+    using MatrixType = Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
 
     // *******************
     // Build ghosted graph
@@ -324,16 +324,16 @@ namespace panzer {
 
     RCP<MapType> ghostedTargetMap;
     {
-      std::vector<panzer::GlobalOrdinal2> indices;
+      std::vector<panzer::GlobalOrdinal> indices;
       targetGlobalIndexer_->getOwnedAndGhostedIndices(indices);
-      ghostedTargetMap = rcp(new MapType(Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::invalid(),indices,0,comm_));
+      ghostedTargetMap = rcp(new MapType(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(),indices,0,comm_));
     }
 
     RCP<MapType> ghostedSourceMap;
     {
-      std::vector<panzer::GlobalOrdinal2> indices;
+      std::vector<panzer::GlobalOrdinal> indices;
       sourceGlobalIndexer.getOwnedAndGhostedIndices(indices);
-      ghostedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::invalid(),indices,0,comm_));
+      ghostedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(),indices,0,comm_));
     }
 
     RCP<GraphType> ghostedGraph = rcp(new GraphType(ghostedTargetMap,ghostedSourceMap,0));
@@ -344,10 +344,10 @@ namespace panzer {
     std::vector<std::string>::const_iterator blockItr;
     for (blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
       std::string blockId = *blockItr;
-      const std::vector<panzer::LocalOrdinal2> & elements = targetGlobalIndexer_->getElementBlock(blockId);
+      const std::vector<panzer::LocalOrdinal> & elements = targetGlobalIndexer_->getElementBlock(blockId);
 
-      std::vector<panzer::GlobalOrdinal2> row_gids;
-      std::vector<panzer::GlobalOrdinal2> col_gids;
+      std::vector<panzer::GlobalOrdinal> row_gids;
+      std::vector<panzer::GlobalOrdinal> col_gids;
 
       for(std::size_t elmt=0;elmt<elements.size();elmt++) {
         targetGlobalIndexer_->getElementGIDs(elements[elmt],row_gids);
@@ -359,16 +359,16 @@ namespace panzer {
 
     RCP<MapType> ownedTargetMap;
     {
-      std::vector<panzer::GlobalOrdinal2> indices;
+      std::vector<panzer::GlobalOrdinal> indices;
       targetGlobalIndexer_->getOwnedIndices(indices);
-      ownedTargetMap = rcp(new MapType(Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::invalid(),indices,0,comm_));
+      ownedTargetMap = rcp(new MapType(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(),indices,0,comm_));
     }
 
     RCP<const MapType> ownedSourceMap = inputOwnedSourceMap;
     if (is_null(ownedSourceMap)) {
-      std::vector<panzer::GlobalOrdinal2> indices;
+      std::vector<panzer::GlobalOrdinal> indices;
       sourceGlobalIndexer.getOwnedIndices(indices);
-      ownedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<panzer::GlobalOrdinal2>::invalid(),indices,0,comm_));
+      ownedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(),indices,0,comm_));
     }
 
     // Fill complete with owned range and domain map
@@ -424,9 +424,9 @@ namespace panzer {
         }
 
         // Get the element local ids
-        Kokkos::View<panzer::LocalOrdinal2**,PHX::Device> targetLocalIds("buildRHSMatrix: targetLocalIds", workset.numOwnedCells(),
+        Kokkos::View<panzer::LocalOrdinal**,PHX::Device> targetLocalIds("buildRHSMatrix: targetLocalIds", workset.numOwnedCells(),
                                                       targetGlobalIndexer_->getElementBlockGIDCount(block));
-        Kokkos::View<panzer::LocalOrdinal2**,PHX::Device> sourceLocalIds("buildRHSMatrix: sourceLocalIds", workset.numOwnedCells(),
+        Kokkos::View<panzer::LocalOrdinal**,PHX::Device> sourceLocalIds("buildRHSMatrix: sourceLocalIds", workset.numOwnedCells(),
                                                       sourceGlobalIndexer.getElementBlockGIDCount(block));
         {
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
@@ -436,11 +436,11 @@ namespace panzer {
         }
 
         // Get the offsets
-        Kokkos::View<panzer::LocalOrdinal2*,PHX::Device> targetFieldOffsets;
+        Kokkos::View<panzer::LocalOrdinal*,PHX::Device> targetFieldOffsets;
         {
           const auto fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
-          const std::vector<panzer::LocalOrdinal2>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
-          targetFieldOffsets = Kokkos::View<panzer::LocalOrdinal2*,PHX::Device>("L2Projection:buildRHS:targetFieldOffsets",offsets.size());
+          const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
+          targetFieldOffsets = Kokkos::View<panzer::LocalOrdinal*,PHX::Device>("L2Projection:buildRHS:targetFieldOffsets",offsets.size());
           const auto hostOffsets = Kokkos::create_mirror_view(targetFieldOffsets);
           for(size_t i=0; i < offsets.size(); ++i)
             hostOffsets(i) = offsets[i];
@@ -448,15 +448,15 @@ namespace panzer {
           PHX::Device::fence();
         }
 
-        Kokkos::View<panzer::LocalOrdinal2*,PHX::Device> sourceFieldOffsets;
+        Kokkos::View<panzer::LocalOrdinal*,PHX::Device> sourceFieldOffsets;
         {
           const auto fieldIndex = sourceGlobalIndexer.getFieldNum(sourceFieldName);
-          const std::vector<panzer::LocalOrdinal2>& offsets = sourceGlobalIndexer.getGIDFieldOffsets(block,fieldIndex);
+          const std::vector<panzer::LocalOrdinal>& offsets = sourceGlobalIndexer.getGIDFieldOffsets(block,fieldIndex);
           TEUCHOS_TEST_FOR_EXCEPTION(offsets.size() == 0, std::runtime_error,
                                      "ERROR: panzer::L2Projection::buildRHSMatrix() - The source field, \""
                                      << sourceFieldName << "\", does not exist in element block \""
                                      << block << "\"!");
-          sourceFieldOffsets = Kokkos::View<panzer::LocalOrdinal2*,PHX::Device>("L2Projection:buildRHS:sourceFieldOffsets",offsets.size());
+          sourceFieldOffsets = Kokkos::View<panzer::LocalOrdinal*,PHX::Device>("L2Projection:buildRHS:sourceFieldOffsets",offsets.size());
           const auto hostOffsets = Kokkos::create_mirror_view(sourceFieldOffsets);
           for(size_t i=0; i <offsets.size(); ++i)
             hostOffsets(i) = offsets[i];
@@ -480,7 +480,7 @@ namespace panzer {
         const int numQP = tmpNumQP;
 
         Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.numOwnedCells()),KOKKOS_LAMBDA (const int& cell) {
-          panzer::LocalOrdinal2 cLIDs[256];
+          panzer::LocalOrdinal cLIDs[256];
           double vals[256];
           for (int row = 0; row < numRows; ++row) {
             const int rowOffset = targetFieldOffsets(row);

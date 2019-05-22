@@ -135,8 +135,8 @@ namespace panzer {
        pl.set("DOF Names",dofNames);
        pl.set("Basis",basis_q1);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
+         = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,panzer::GlobalOrdinal>(dofManager,pl));
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
        evalField_q1 = evaluator->evaluatedFields()[0];
@@ -158,7 +158,7 @@ namespace panzer {
        pl.set("Basis",basis_qedge1);
 
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
+         = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,panzer::GlobalOrdinal>(dofManager,pl));
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
        evalField_qedge1 = evaluator->evaluatedFields()[0];

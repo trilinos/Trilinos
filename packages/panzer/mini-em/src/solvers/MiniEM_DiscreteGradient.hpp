@@ -49,9 +49,8 @@ void addDiscreteGradientToRequestHandler(
 
   typedef double Scalar;
   typedef int LocalOrdinalEpetra;
-  typedef int GlobalOrdinalEpetra;
   typedef int LocalOrdinalTpetra;
-  typedef panzer::Ordinal64 GlobalOrdinalTpetra;
+  typedef panzer::GlobalOrdinal GlobalOrdinalTpetra;
 
   typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> tpetraBlockedLinObjFactory;
   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> epetraBlockedLinObjFactory;
@@ -204,9 +203,9 @@ void addDiscreteGradientToRequestHandler(
       for(std::size_t elemIter = 0; elemIter < elementIds.size(); ++elemIter){
 
         // get IDs for edges and nodes
-        std::vector<panzer::GlobalOrdinal2> eGIDs;
+        std::vector<panzer::GlobalOrdinal> eGIDs;
         eUgi->getElementGIDs(elementIds[elemIter],eGIDs);
-        std::vector<panzer::GlobalOrdinal2> nGIDs;
+        std::vector<panzer::GlobalOrdinal> nGIDs;
         nUgi->getElementGIDs(elementIds[elemIter],nGIDs);
         auto eLIDs = eUgi->getElementLIDs(elementIds[elemIter]);
         auto nLIDs = nUgi->getElementLIDs(elementIds[elemIter]);

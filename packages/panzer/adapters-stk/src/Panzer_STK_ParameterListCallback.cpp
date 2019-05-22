@@ -147,7 +147,7 @@ void ParameterListCallback::buildCoordinates()
       }
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal2,panzer::TpetraNodeType> > resultVec
+   Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > resultVec
       = arrayToVector_->template getDataVector<double>(coordFieldName_,data);
 
    switch(resultVec->getNumVectors()) {

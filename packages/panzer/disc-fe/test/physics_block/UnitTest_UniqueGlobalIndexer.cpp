@@ -105,7 +105,7 @@ const std::vector<int> & UniqueGlobalIndexer::getElementBlock(const std::string 
    return *elements_;
 }
 
-void UniqueGlobalIndexer::getElementGIDs(int localElmtId,std::vector<panzer::GlobalOrdinal2> & gids,const std::string & /* blockId */) const
+void UniqueGlobalIndexer::getElementGIDs(int localElmtId,std::vector<panzer::GlobalOrdinal> & gids,const std::string & /* blockId */) const
 {
    gids.resize(8);
 
@@ -163,7 +163,7 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & /* blockId *
 //  getOwnedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void UniqueGlobalIndexer::getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+void UniqueGlobalIndexer::getOwnedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   indices.resize(12);
   indices[0] = 0;
@@ -185,7 +185,7 @@ void UniqueGlobalIndexer::getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& i
 //  getGhostedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-  void UniqueGlobalIndexer::getGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+  void UniqueGlobalIndexer::getGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   indices.resize(0);
 }
@@ -195,7 +195,7 @@ void UniqueGlobalIndexer::getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& i
 //  getOwnedAndGhostedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const
+void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   getOwnedIndices(indices);
 }
@@ -289,9 +289,9 @@ getNumOwnedAndGhosted() const
   return 12;
 } // end of getNumOwnedAndGhosted()
 
-void UniqueGlobalIndexer::ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const
+void UniqueGlobalIndexer::ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const
 {
-   std::vector<panzer::GlobalOrdinal2> owned;
+   std::vector<panzer::GlobalOrdinal> owned;
    getOwnedIndices(owned);
 
    isOwned.resize(indices.size(),false);

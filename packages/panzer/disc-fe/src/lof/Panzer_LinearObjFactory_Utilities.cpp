@@ -40,11 +40,11 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
 /*
   typedef UniqueGlobalIndexer<int,int>       EpetraUGI;
   typedef BlockedDOFManager        BlockedEpetraUGI;
-  typedef BlockedDOFManager<int,Ordinal64>   BlockedTpetraUGI;
+  typedef BlockedDOFManager<int,panzer::GlobalOrdinal>   BlockedTpetraUGI;
 */
-  typedef TpetraLinearObjFactory<panzer::Traits,double,int,Ordinal64>        TpetraLOF;
+  typedef TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>        TpetraLOF;
   typedef BlockedEpetraLinearObjFactory<panzer::Traits,int>                  BlockedEpetraLOF;
-  typedef BlockedTpetraLinearObjFactory<panzer::Traits,double,int,Ordinal64> BlockedTpetraLOF;
+  typedef BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> BlockedTpetraLOF;
 
   // This proceeds by casting to a number of known LOF types (all explicitly instantiated)
   // then trying to build a new one. Of course for many of these under implemented operation

@@ -142,7 +142,7 @@ public:
 
    /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
      */
-   virtual void getElementOrientation(panzer::LocalOrdinal2 localElmtId,std::vector<double> & gidsOrientation) const = 0;
+   virtual void getElementOrientation(panzer::LocalOrdinal localElmtId,std::vector<double> & gidsOrientation) const = 0;
 
    /** Get the local element IDs for a paricular element
      * block.
@@ -151,12 +151,12 @@ public:
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<panzer::LocalOrdinal2> & getElementBlock(const std::string & blockId) const = 0;
+   virtual const std::vector<panzer::LocalOrdinal> & getElementBlock(const std::string & blockId) const = 0;
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(panzer::LocalOrdinal2 localElmtId,std::vector<panzer::GlobalOrdinal2> & gids,const std::string & blockIdHint="") const = 0;
+   virtual void getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<panzer::GlobalOrdinal> & gids,const std::string & blockIdHint="") const = 0;
 
    /**
     *  \brief Get the set of indices owned by this processor.
@@ -165,7 +165,7 @@ public:
     *              this processor.
     */
    virtual void
-   getOwnedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const = 0;
+   getOwnedIndices(std::vector<panzer::GlobalOrdinal>& indices) const = 0;
 
    /**
     *  \brief Get the set of indices ghosted for this processor.
@@ -174,7 +174,7 @@ public:
     *              this processor.
     */
    virtual void
-   getGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const = 0;
+   getGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const = 0;
 
    /**
     *  \brief Get the set of owned and ghosted indices for this processor.
@@ -183,7 +183,7 @@ public:
     *              indices for this processor.
     */
    virtual void
-   getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal2>& indices) const = 0;
+   getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const = 0;
   
    /// @name Epetra related functions. NOTE: for use with Epetra only! Will be deprecated when we drop epetra support!
    ///@{ 
@@ -191,7 +191,7 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDsAsInt(panzer::LocalOrdinal2 localElmtId,std::vector<int> & gids,const std::string & blockIdHint="") const = 0;
+   virtual void getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,std::vector<int> & gids,const std::string & blockIdHint="") const = 0;
 
    /**
     *  \brief Get the set of indices owned by this processor.
@@ -245,24 +245,24 @@ public:
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal2> & indices,std::vector<bool> & isOwned) const = 0;
+   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const = 0;
 
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method.
      */
-  const Kokkos::View<const panzer::LocalOrdinal2*,Kokkos::LayoutRight,PHX::Device> getElementLIDs(panzer::LocalOrdinal2 localElmtId) const
+  const Kokkos::View<const panzer::LocalOrdinal*,Kokkos::LayoutRight,PHX::Device> getElementLIDs(panzer::LocalOrdinal localElmtId) const
     { return Kokkos::subview(localIDs_k_, localElmtId, Kokkos::ALL() ); }
 
   /** Return all the element LIDS for a given indexer
    */
-  const Kokkos::View<const panzer::LocalOrdinal2**,Kokkos::LayoutRight,PHX::Device> getLIDs() const
+  const Kokkos::View<const panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> getLIDs() const
     {return localIDs_k_;}
 
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method. Note
      */
    void getElementLIDs(Kokkos::View<const int*,PHX::Device> cellIds,
-                       Kokkos::View<panzer::LocalOrdinal2**,PHX::Device> lids) const
+                       Kokkos::View<panzer::LocalOrdinal**,PHX::Device> lids) const
    { 
      CopyCellLIDsFunctor functor;
      functor.cellIds = cellIds;
@@ -288,8 +288,8 @@ public:
      typedef typename PHX::Device execution_space;
 
      Kokkos::View<const int*,PHX::Device> cellIds;
-     Kokkos::View<const panzer::LocalOrdinal2**,Kokkos::LayoutRight,PHX::Device> global_lids;
-     Kokkos::View<panzer::LocalOrdinal2**,PHX::Device> local_lids;
+     Kokkos::View<const panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> global_lids;
+     Kokkos::View<panzer::LocalOrdinal**,PHX::Device> local_lids;
 
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
@@ -312,7 +312,7 @@ protected:
      // call:
      //   buildLocalIdsFromOwnedElements(localIDs_); 
 
-     std::vector<std::vector<panzer::LocalOrdinal2> > localIDs; 
+     std::vector<std::vector<panzer::LocalOrdinal> > localIDs; 
      buildLocalIdsFromOwnedElements(localIDs); 
      setLocalIds(localIDs);
    }
@@ -320,13 +320,13 @@ protected:
    /** This method is used by derived classes to the construct the local IDs from 
      * the <code>getOwnedAndGhostedIndices</code> method.
      */
-   void buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal2> > & localIDs) const ; 
+   void buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal> > & localIDs) const ; 
 
    /** This method provides some capability to set the local IDs externally without
      * using the default buildLocalIds. The point is that we want to keep "getElementLIDs"
      * access exteremly fast.
      */
-   void setLocalIds(const std::vector<std::vector<panzer::LocalOrdinal2> > & localIDs)
+   void setLocalIds(const std::vector<std::vector<panzer::LocalOrdinal> > & localIDs)
    {  
      // determine the maximium second dimension of the local IDs
      std::size_t max = 0;
@@ -334,8 +334,8 @@ protected:
        max = localIDs[i].size() > max ? localIDs[i].size() : max;
 
      // allocate for the kokkos size
-     Kokkos::View<panzer::LocalOrdinal2**,Kokkos::LayoutRight,PHX::Device> localIDs_k 
-       = Kokkos::View<panzer::LocalOrdinal2**,Kokkos::LayoutRight,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
+     Kokkos::View<panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> localIDs_k 
+       = Kokkos::View<panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
      for(std::size_t i=0;i<localIDs.size();i++) {
        for(std::size_t j=0;j<localIDs[i].size();j++)
          localIDs_k(i,j) = localIDs[i][j];
@@ -356,17 +356,17 @@ protected:
    }
 
 private:
-  Kokkos::View<const panzer::LocalOrdinal2**,Kokkos::LayoutRight,PHX::Device> localIDs_k_;
+  Kokkos::View<const panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> localIDs_k_;
 };
 
 inline void UniqueGlobalIndexer::
-buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal2> > & localIDs) const
+buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal> > & localIDs) const
 {
-  std::vector<panzer::GlobalOrdinal2> ownedAndGhosted;
+  std::vector<panzer::GlobalOrdinal> ownedAndGhosted;
   this->getOwnedAndGhostedIndices(ownedAndGhosted);
    
   // build global to local hash map (temporary and used only once)
-  std::unordered_map<panzer::GlobalOrdinal2,panzer::LocalOrdinal2> hashMap;
+  std::unordered_map<panzer::GlobalOrdinal,panzer::LocalOrdinal> hashMap;
   for(std::size_t i=0;i<ownedAndGhosted.size();i++)
     hashMap[ownedAndGhosted[i]] = i;
 
@@ -381,12 +381,12 @@ buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal2> > 
 
   // perform computation of local ids
   for(std::size_t eb=0;eb<elementBlocks.size();eb++) {
-    std::vector<panzer::GlobalOrdinal2> gids;
-    const std::vector<panzer::LocalOrdinal2> & elmts = this->getElementBlock(elementBlocks[eb]);
+    std::vector<panzer::GlobalOrdinal> gids;
+    const std::vector<panzer::LocalOrdinal> & elmts = this->getElementBlock(elementBlocks[eb]);
 
     for(std::size_t e=0;e<elmts.size();e++) {
       this->getElementGIDs(elmts[e],gids,elementBlocks[eb]);
-      std::vector<panzer::LocalOrdinal2> & lids = localIDs[elmts[e]];
+      std::vector<panzer::LocalOrdinal> & lids = localIDs[elmts[e]];
       lids.resize(gids.size());
  
       for(std::size_t g=0;g<gids.size();g++)

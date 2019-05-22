@@ -43,7 +43,7 @@
 #ifndef __Panzer_STK_CubeHexMeshFactory_hpp__
 #define __Panzer_STK_CubeHexMeshFactory_hpp__
 
-#include <Panzer_Traits.hpp> // for Ordinal64
+#include <Panzer_Traits.hpp> // for panzer::GlobalOrdinal
 #include <Panzer_STK_MeshFactory.hpp>
 #include <Panzer_STK_Interface.hpp>
 
@@ -86,9 +86,9 @@ protected:
    void buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const;
    void buildBlock(stk::ParallelMachine machRank,int xBlock,int yBlock,int zBlock,STK_Interface & mesh) const;
 
-   std::pair<panzer::Ordinal64,panzer::Ordinal64> determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const;
-   std::pair<panzer::Ordinal64,panzer::Ordinal64> determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const;
-   std::pair<panzer::Ordinal64,panzer::Ordinal64> determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int rank) const;
+   std::pair<panzer::GlobalOrdinal,panzer::GlobalOrdinal> determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const;
+   std::pair<panzer::GlobalOrdinal,panzer::GlobalOrdinal> determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const;
+   std::pair<panzer::GlobalOrdinal,panzer::GlobalOrdinal> determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int rank) const;
 
    void addSides(STK_Interface & mesh) const; // this adds side entities only (does not inject them into side sets)
    void addSideSets(STK_Interface & mesh) const;
@@ -99,7 +99,7 @@ protected:
 
    int xBlocks_, yBlocks_, zBlocks_;
 
-   panzer::Ordinal64 nXElems_, nYElems_, nZElems_;
+   panzer::GlobalOrdinal nXElems_, nYElems_, nZElems_;
 
    mutable int xProcs_, yProcs_, zProcs_;
 

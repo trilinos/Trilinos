@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof 
        = rcp_dynamic_cast<const BlockedEpetraLinearObjFactory<Traits,int> >(control_lof);
 
-   std::vector<panzer::GlobalOrdinal2> control_owned;
+   std::vector<panzer::GlobalOrdinal> control_owned;
    control_indexer->getOwnedIndices(control_owned);
 
    TEST_ASSERT(ep_control_lof->getMap(0)->SameAs(*ep_lof->getMap(0)));
@@ -189,7 +189,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
      patternC2->print(out);
 
      {
-       std::vector<panzer::GlobalOrdinal2> gids;
+       std::vector<panzer::GlobalOrdinal> gids;
        control_indexer->getFieldDOFManagers()[0]->getOwnedIndices(gids);
        out << "GIDs 0 = " << gids.size() << std::endl;
      }
