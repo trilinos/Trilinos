@@ -205,7 +205,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    dofManager.registerFields(true);
    TEST_ASSERT(dofManager.fieldsRegistered());
-   const std::vector<RCP<panzer::UniqueGlobalIndexer>> & subManagers = 
+   const std::vector<RCP<panzer::GlobalIndexer>> & subManagers = 
          dofManager.getFieldDOFManagers();
    TEST_EQUALITY(subManagers.size(),fieldOrder.size());
 
@@ -550,7 +550,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       const std::pair<std::vector<int>,std::vector<int> > * vec = 0;
       const std::pair<std::vector<int>,std::vector<int> > * sub_vec = 0;
 
-      Teuchos::RCP<const UniqueGlobalIndexer> subManager;
+      Teuchos::RCP<const GlobalIndexer> subManager;
    
       // block 0
       subManager = dofManager.getFieldDOFManagers()[2];
@@ -704,7 +704,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
    dofManager[0].getFieldOrder(fieldOrder[0]);
    dofManager[1].getFieldOrder(fieldOrder[1]);
 
-   std::vector<RCP<panzer::UniqueGlobalIndexer>> ugi_vector;
+   std::vector<RCP<panzer::GlobalIndexer>> ugi_vector;
    ugi_vector.push_back(Teuchos::rcpFromRef(dofManager[0]));
    ugi_vector.push_back(Teuchos::rcpFromRef(dofManager[1]));
 

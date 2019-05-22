@@ -53,7 +53,7 @@ using Teuchos::rcp;
 ParameterListCallback::ParameterListCallback(const std::string & coordFieldName,
                                              const std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fps,
                                              const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager,
-                                             const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & ugi)
+                                             const Teuchos::RCP<const panzer::GlobalIndexer> & ugi)
    : coordFieldName_(coordFieldName), fieldPatterns_(fps), connManager_(connManager), ugi_(ugi), coordinatesBuilt_(false)
 { }
 

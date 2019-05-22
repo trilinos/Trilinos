@@ -57,7 +57,7 @@
 #include "Panzer_CellData.hpp"
 #include "Panzer_PauseToAttach.hpp"
 
-#include "UnitTest_UniqueGlobalIndexer.hpp"
+#include "UnitTest_GlobalIndexer.hpp"
 
 #ifdef HAVE_MPI
    #include "Teuchos_DefaultMpiComm.hpp"
@@ -109,8 +109,8 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
 
    // panzer::pauseToAttach();
 
-   RCP<panzer::UniqueGlobalIndexer> indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
+   RCP<panzer::GlobalIndexer> indexer 
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
  
    // setup factory
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > la_factory
@@ -385,8 +385,8 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
  
    typedef TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> LOC;
 
-   RCP<panzer::UniqueGlobalIndexer> indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
+   RCP<panzer::GlobalIndexer> indexer 
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
 
    // setup factory
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > la_factory
@@ -509,8 +509,8 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, initializeContainer)
  
    typedef TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> LOC;
 
-   RCP<panzer::UniqueGlobalIndexer> indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
+   RCP<panzer::GlobalIndexer> indexer 
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
 
    std::vector<panzer::GlobalOrdinal> ownedIndices, ownedAndGhostedIndices;
    indexer->getOwnedIndices(ownedIndices);

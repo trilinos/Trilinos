@@ -40,15 +40,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __UnitTest_UniqueGlobalIndexer_hpp__
-#define __UnitTest_UniqueGlobalIndexer_hpp__
+#ifndef __UnitTest_GlobalIndexer_hpp__
+#define __UnitTest_GlobalIndexer_hpp__
 
 #include <vector>
 #include <string>
 
 #include "Teuchos_RCP.hpp"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 #ifdef HAVE_MPI
    #include "Teuchos_DefaultMpiComm.hpp"
@@ -65,11 +65,11 @@ namespace unit_test {
   * There is one element block called "block_0" with two elements. Each element
   * resides on a different processor.
   */
-class UniqueGlobalIndexer : public virtual panzer::UniqueGlobalIndexer {
+class GlobalIndexer : public virtual panzer::GlobalIndexer {
 public:
-   UniqueGlobalIndexer(int rank,int procCount);
+   GlobalIndexer(int rank,int procCount);
 
-   ~UniqueGlobalIndexer() {}
+   ~GlobalIndexer() {}
 
    /** \brief Get the number used for access to this
      *        field

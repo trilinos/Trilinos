@@ -59,9 +59,9 @@
 #include "Panzer_BlockedVector_Write_GlobalEvaluationData.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"
-#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_Filtered_GlobalIndexer.hpp"
 #include "Panzer_HashUtils.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 // Thyra
 #include "Thyra_DefaultBlockedLinearOp.hpp"
@@ -84,7 +84,7 @@ namespace panzer {
 template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                              const Teuchos::RCP<const UniqueGlobalIndexer> & gidProvider,
+                              const Teuchos::RCP<const GlobalIndexer> & gidProvider,
                               bool useDiscreteAdjoint)
    : useColGidProviders_(false), eComm_(Teuchos::null)
    , rawMpiComm_(comm->getRawMpiComm())
@@ -107,8 +107,8 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > &
 template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                              const Teuchos::RCP<const UniqueGlobalIndexer> & gidProvider,
-                              const Teuchos::RCP<const UniqueGlobalIndexer> & colGidProvider,
+                              const Teuchos::RCP<const GlobalIndexer> & gidProvider,
+                              const Teuchos::RCP<const GlobalIndexer> & colGidProvider,
                               bool useDiscreteAdjoint)
    : eComm_(Teuchos::null)
    , rawMpiComm_(comm->getRawMpiComm())
@@ -728,14 +728,14 @@ addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs)
 }
 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<const UniqueGlobalIndexer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+Teuchos::RCP<const GlobalIndexer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGlobalIndexer(int i) const
 {
    return rowDOFManagerContainer_->getFieldDOFManagers()[i];
 }
 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<const UniqueGlobalIndexer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+Teuchos::RCP<const GlobalIndexer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getColGlobalIndexer(int i) const
 {
    return colDOFManagerContainer_->getFieldDOFManagers()[i];
@@ -1616,7 +1616,7 @@ buildGhostedGraph(int i,int j,bool optimizeStorage) const
 
    std::vector<std::string> elementBlockIds;
    
-   Teuchos::RCP<const UniqueGlobalIndexer> rowProvider, colProvider;
+   Teuchos::RCP<const GlobalIndexer> rowProvider, colProvider;
  
    rowProvider = getGlobalIndexer(i);
    colProvider = getColGlobalIndexer(j);
@@ -1678,8 +1678,8 @@ buildFilteredGhostedGraph(int i,int j) const
    using Teuchos::rcp_dynamic_cast;
 
    // figure out if the domain is filtered
-   RCP<const Filtered_UniqueGlobalIndexer> filtered_ugi 
-       = rcp_dynamic_cast<const Filtered_UniqueGlobalIndexer>(getColGlobalIndexer(j));
+   RCP<const Filtered_GlobalIndexer> filtered_ugi 
+       = rcp_dynamic_cast<const Filtered_GlobalIndexer>(getColGlobalIndexer(j));
 
    // domain is unfiltered, a filtered graph is just the original ghosted graph
    if(filtered_ugi==Teuchos::null)

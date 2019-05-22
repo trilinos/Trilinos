@@ -45,11 +45,11 @@
 
 #include "PanzerDiscFE_config.hpp"
 
-#include "Panzer_UniqueGlobalIndexerFactory.hpp"
+#include "Panzer_GlobalIndexerFactory.hpp"
 
 namespace panzer {
 
-class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory {
+class DOFManagerFactory : public virtual GlobalIndexerFactory {
 public:
    DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false), useNeighbors_(false) {}
 
@@ -67,12 +67,12 @@ public:
      *            on the same geometric entity. The default is an alphabetical
      *            ordering.
      *
-     * \returns A UniqueGlobalIndexer object. If buildGlobalUnknowns is true,
+     * \returns A GlobalIndexer object. If buildGlobalUnknowns is true,
      *          the object is fully constructed. If it is false, the caller must
      *          finalize it.
      */
-   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer> 
-   buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
+   virtual Teuchos::RCP<panzer::GlobalIndexer> 
+   buildGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager> & connMngr,
                             const std::string & fieldOrder="") const;

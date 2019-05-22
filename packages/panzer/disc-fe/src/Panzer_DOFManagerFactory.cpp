@@ -48,12 +48,12 @@
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 
 namespace panzer {
 
-Teuchos::RCP<panzer::UniqueGlobalIndexer> 
-DOFManagerFactory::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
+Teuchos::RCP<panzer::GlobalIndexer> 
+DOFManagerFactory::buildGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                                             const Teuchos::RCP<ConnManager> & connMngr,
                                             const std::string & fieldOrder) const

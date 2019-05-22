@@ -52,8 +52,8 @@
 #include "Tpetra_Export.hpp"
 
 #include "PanzerDiscFE_config.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
@@ -102,7 +102,7 @@ public:
       but for now it is ingrained in all gather/scatter operators.
    */
    BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                                 const std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer>> & gidProviders);
+                                 const std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> & gidProviders);
 
    virtual ~BlockedTpetraLinearObjFactory();
 
@@ -308,25 +308,25 @@ public:
    { return blockedDOFManager_; }
 
    //! Get the domain unique global indexer this factory was created with.
-   Teuchos::RCP<const panzer::UniqueGlobalIndexer> getDomainGlobalIndexer() const
+   Teuchos::RCP<const panzer::GlobalIndexer> getDomainGlobalIndexer() const
    { return blockProvider_; }
 
    //! Get the range unique global indexer this factory was created with.
-   Teuchos::RCP<const panzer::UniqueGlobalIndexer> getRangeGlobalIndexer() const
+   Teuchos::RCP<const panzer::GlobalIndexer> getRangeGlobalIndexer() const
    { return blockProvider_; }
 
 protected:
 /*************** Generic methods/members *******************/
 
    // Get the global indexer associated with a particular block
-   Teuchos::RCP<const UniqueGlobalIndexer> getGlobalIndexer(int i) const;
+   Teuchos::RCP<const GlobalIndexer> getGlobalIndexer(int i) const;
 
    //! Allocate the space in the std::vector objects so we can fill with appropriate Tpetra data
    void makeRoomForBlocks(std::size_t blockCnt);
 
-   Teuchos::RCP<const UniqueGlobalIndexer> blockProvider_;
+   Teuchos::RCP<const GlobalIndexer> blockProvider_;
    Teuchos::RCP<const BlockedDOFManager> blockedDOFManager_;
-   std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > gidProviders_;
+   std::vector<Teuchos::RCP<const GlobalIndexer> > gidProviders_;
 
    // which block entries are ignored
   std::unordered_set<std::pair<int,int>,panzer::pair_hash> excludedPairs_;

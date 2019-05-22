@@ -61,7 +61,7 @@ namespace panzer {
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 class BlockedTpetraLinearObjContainer;
 
-class UniqueGlobalIndexer;
+class GlobalIndexer;
 class BlockedDOFManager;
 
 /** \brief Gathers tangent vectors dx/dp for computing df/dx*dx/dp + df/dp into

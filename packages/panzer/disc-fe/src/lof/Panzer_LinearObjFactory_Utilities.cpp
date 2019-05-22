@@ -2,7 +2,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
@@ -11,14 +11,14 @@
 namespace panzer {
 
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewDomain(const LinearObjFactory<panzer::Traits> & lof,
-                                                                         const Teuchos::RCP<const UniqueGlobalIndexer> & dUgi)
+                                                                         const Teuchos::RCP<const GlobalIndexer> & dUgi)
 {
   // This just forwards on to the general case. That makes things much easier
   return cloneWithNewRangeAndDomain(lof,Teuchos::null,dUgi);
 }
 
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRange(const LinearObjFactory<panzer::Traits> & lof,
-                                                                        const Teuchos::RCP<const UniqueGlobalIndexer> & rUgi)
+                                                                        const Teuchos::RCP<const GlobalIndexer> & rUgi)
 {
   // This just forwards on to the general case. That makes things much easier
   return cloneWithNewRangeAndDomain(lof,rUgi,Teuchos::null);
@@ -26,8 +26,8 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRange(const Li
 
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain(
                                                                         const LinearObjFactory<panzer::Traits> & lof,
-                                                                        const Teuchos::RCP<const UniqueGlobalIndexer> & rUgi,
-                                                                        const Teuchos::RCP<const UniqueGlobalIndexer> & dUgi)
+                                                                        const Teuchos::RCP<const GlobalIndexer> & rUgi,
+                                                                        const Teuchos::RCP<const GlobalIndexer> & dUgi)
 {
   using Teuchos::null;
   using Teuchos::RCP;
@@ -38,7 +38,7 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
   using Teuchos::ptrFromRef;
 
 /*
-  typedef UniqueGlobalIndexer<int,int>       EpetraUGI;
+  typedef GlobalIndexer<int,int>       EpetraUGI;
   typedef BlockedDOFManager        BlockedEpetraUGI;
   typedef BlockedDOFManager<int,panzer::GlobalOrdinal>   BlockedTpetraUGI;
 */

@@ -85,7 +85,7 @@ namespace Thyra {
 
 namespace panzer {
   struct GlobalData;
-  class UniqueGlobalIndexer;
+  class GlobalIndexer;
   template <typename> class LinearObjFactory;
 
   class BlockedDOFManager;
@@ -165,7 +165,7 @@ namespace panzer_stk {
     { return m_mesh; }
 
     //! Get global indexer used to build model evaluator
-    Teuchos::RCP<panzer::UniqueGlobalIndexer> getGlobalIndexer() const
+    Teuchos::RCP<panzer::GlobalIndexer> getGlobalIndexer() const
     { return m_global_indexer; }
 
     //! Get connection manager
@@ -215,7 +215,7 @@ namespace panzer_stk {
     void writeInitialConditions(const Thyra::ModelEvaluator<ScalarT> & model,
                                 const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                                 const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                                const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & ugi,
+                                const Teuchos::RCP<const panzer::GlobalIndexer> & ugi,
                                 const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                 const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                                 const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
@@ -250,7 +250,7 @@ namespace panzer_stk {
 
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
     buildLOWSFactory(bool blockedAssembly,
-                     const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & globalIndexer,
+                     const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer,
                      const Teuchos::RCP<panzer::ConnManager> & conn_manager,
                      const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                      const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm
@@ -294,7 +294,7 @@ namespace panzer_stk {
       */
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > initializeSolnWriterResponseLibrary(
                                                                 const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                                                                const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & ugi,
+                                                                const Teuchos::RCP<const panzer::GlobalIndexer> & ugi,
                                                                 const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                                 const Teuchos::RCP<panzer_stk::STK_Interface> & mesh) const;
 
@@ -316,7 +316,7 @@ namespace panzer_stk {
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > m_physics_blocks;
 
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
-    Teuchos::RCP<panzer::UniqueGlobalIndexer> m_global_indexer;
+    Teuchos::RCP<panzer::GlobalIndexer> m_global_indexer;
     Teuchos::RCP<panzer::ConnManager> m_conn_manager;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
     Teuchos::RCP<panzer::GlobalData> m_global_data;

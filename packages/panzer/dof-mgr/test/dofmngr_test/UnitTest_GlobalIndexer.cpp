@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "UnitTest_UniqueGlobalIndexer.hpp"
+#include "UnitTest_GlobalIndexer.hpp"
 
 #ifdef HAVE_MPI
    #include "Teuchos_DefaultMpiComm.hpp"
@@ -52,23 +52,23 @@
 namespace panzer {
 namespace unit_test {
 
-UniqueGlobalIndexer::UniqueGlobalIndexer(int rank,int procCount)
+GlobalIndexer::GlobalIndexer(int rank,int procCount)
    : procRank_(rank)
 {
-   TEUCHOS_TEST_FOR_EXCEPTION(procCount!=2,std::runtime_error,"unit_test::UniqueGlobalIndexer runs on only two processors!");
+   TEUCHOS_TEST_FOR_EXCEPTION(procCount!=2,std::runtime_error,"unit_test::GlobalIndexer runs on only two processors!");
 }
 
-int UniqueGlobalIndexer::getFieldNum(const std::string & str) const
+int GlobalIndexer::getFieldNum(const std::string & str) const
 {
    if(str=="U") 
       return 0;
    else if(str=="T") 
       return 1;
    else  
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << str << "\" in unit_test::UniqueGlobalIndexer, try \'U\' or \'T\'");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << str << "\" in unit_test::GlobalIndexer, try \'U\' or \'T\'");
 }
 
-const std::string & UniqueGlobalIndexer::getFieldString(int field) const
+const std::string & GlobalIndexer::getFieldString(int field) const
 {
    static std::string u = "U";
    static std::string t = "T";
@@ -78,17 +78,17 @@ const std::string & UniqueGlobalIndexer::getFieldString(int field) const
    else if(field==1)
       return t;
    else  
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << field << "\" in unit_test::UniqueGlobalIndexer, try \'0\' or \'1\'");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << field << "\" in unit_test::GlobalIndexer, try \'0\' or \'1\'");
 }
 
-void UniqueGlobalIndexer::getElementBlockIds(std::vector<std::string> & elementBlockIds) const 
+void GlobalIndexer::getElementBlockIds(std::vector<std::string> & elementBlockIds) const 
 {
    elementBlockIds.clear();
    elementBlockIds.push_back("block_0");
    elementBlockIds.push_back("block_1");
 }
 
-bool UniqueGlobalIndexer::fieldInBlock(const std::string & field, const std::string & block) const
+bool GlobalIndexer::fieldInBlock(const std::string & field, const std::string & block) const
 {
    if(block=="block_0") {
       if(field=="U" || field=="T")
@@ -107,7 +107,7 @@ bool UniqueGlobalIndexer::fieldInBlock(const std::string & field, const std::str
    return false;
 }
 
-const std::vector<panzer::LocalOrdinal> & UniqueGlobalIndexer::getElementBlock(const std::string & blockId) const
+const std::vector<panzer::LocalOrdinal> & GlobalIndexer::getElementBlock(const std::string & blockId) const
 {
    if(elements_b0_==Teuchos::null) {
       elements_b0_ = Teuchos::rcp(new std::vector<panzer::LocalOrdinal>);
@@ -124,10 +124,10 @@ const std::vector<panzer::LocalOrdinal> & UniqueGlobalIndexer::getElementBlock(c
       return *elements_b1_;
    else 
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                      "Can't find block ID \"" << blockId << "\" in unit_test::UniqueGlobalIndexer");
+                      "Can't find block ID \"" << blockId << "\" in unit_test::GlobalIndexer");
 }
 
-void UniqueGlobalIndexer::getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<panzer::GlobalOrdinal> & gids,const std::string & /* blockId */) const
+void GlobalIndexer::getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<panzer::GlobalOrdinal> & gids,const std::string & /* blockId */) const
 {
    if(localElmtId==0) {
       gids.resize(8);
@@ -170,10 +170,10 @@ void UniqueGlobalIndexer::getElementGIDs(panzer::LocalOrdinal localElmtId,std::v
    else TEUCHOS_ASSERT(false);
 }
 
-const std::vector<int> & UniqueGlobalIndexer::getGIDFieldOffsets(const std::string & blockId,int fieldNum) const
+const std::vector<int> & GlobalIndexer::getGIDFieldOffsets(const std::string & blockId,int fieldNum) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(!((fieldNum==0 || fieldNum==1)), std::runtime_error,
-                   "unit_test::UniqueGlobalIndexer - Invalid field id specified");
+                   "unit_test::GlobalIndexer - Invalid field id specified");
 
    if(field0Offset_b0_==Teuchos::null || field1Offset_b0_==Teuchos::null ||
       field0Offset_b1_==Teuchos::null || field1Offset_b1_==Teuchos::null) {
@@ -205,15 +205,15 @@ const std::vector<int> & UniqueGlobalIndexer::getGIDFieldOffsets(const std::stri
    if(fieldNum==1 && blockId=="block_1") return *field1Offset_b1_;
 
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                   "unit_test::UniqueGlobalIndexer - getGIDFieldOffsets has incorrect arguments!");
+                   "unit_test::GlobalIndexer - getGIDFieldOffsets has incorrect arguments!");
 }
 
 const std::pair<std::vector<int>,std::vector<int> > & 
-UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & /* blockId */, int /* fieldNum */,
+GlobalIndexer::getGIDFieldOffsets_closure(const std::string & /* blockId */, int /* fieldNum */,
                                                 int /* subcellDim */, int /* subcellId */) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                      "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");
+                      "unit_test::GlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -221,7 +221,7 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & /* blockId *
 //  getOwnedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-  void UniqueGlobalIndexer::getOwnedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
+  void GlobalIndexer::getOwnedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   switch (procRank_)
   {
@@ -257,7 +257,7 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & /* blockId *
 //  getGhostedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void UniqueGlobalIndexer::getGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
+void GlobalIndexer::getGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   switch (procRank_)
   {
@@ -287,7 +287,7 @@ void UniqueGlobalIndexer::getGhostedIndices(std::vector<panzer::GlobalOrdinal>& 
 //  getOwnedAndGhostedIndices()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
+void GlobalIndexer::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
   switch (procRank_)
   {
@@ -329,7 +329,7 @@ void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<panzer::GlobalOr
 } // end of getOwnedAndGhostedIndices()
 
 ///////////////////////////////////////////////////////////////////////////////
-void UniqueGlobalIndexer::getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,std::vector<int> & gids,const std::string & /* blockId */) const
+void GlobalIndexer::getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,std::vector<int> & gids,const std::string & /* blockId */) const
 {
    if(localElmtId==0) {
       gids.resize(8);
@@ -372,7 +372,7 @@ void UniqueGlobalIndexer::getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,s
    else TEUCHOS_ASSERT(false);
 }
 ///////////////////////////////////////////////////////////////////////////////
-  void UniqueGlobalIndexer::getOwnedIndicesAsInt(std::vector<int>& indices) const
+  void GlobalIndexer::getOwnedIndicesAsInt(std::vector<int>& indices) const
 {
   switch (procRank_)
   {
@@ -404,7 +404,7 @@ void UniqueGlobalIndexer::getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,s
 } // end of getOwnedIndices()
 
 ///////////////////////////////////////////////////////////////////////////////
-void UniqueGlobalIndexer::getGhostedIndicesAsInt(std::vector<int>& indices) const
+void GlobalIndexer::getGhostedIndicesAsInt(std::vector<int>& indices) const
 {
   switch (procRank_)
   {
@@ -430,7 +430,7 @@ void UniqueGlobalIndexer::getGhostedIndicesAsInt(std::vector<int>& indices) cons
 } // end of getGhostedIndices()
 
 ///////////////////////////////////////////////////////////////////////////////
-void UniqueGlobalIndexer::getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const
+void GlobalIndexer::getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const
 {
   switch (procRank_)
   {
@@ -476,7 +476,7 @@ void UniqueGlobalIndexer::getOwnedAndGhostedIndicesAsInt(std::vector<int>& indic
 //  getNumOwned()
 //
 ///////////////////////////////////////////////////////////////////////////////
-int UniqueGlobalIndexer::getNumOwned() const
+int GlobalIndexer::getNumOwned() const
 {
   switch (procRank_)
   {
@@ -494,7 +494,7 @@ int UniqueGlobalIndexer::getNumOwned() const
 //  getNumGhosted()
 //
 ///////////////////////////////////////////////////////////////////////////////
-int UniqueGlobalIndexer::getNumGhosted() const
+int GlobalIndexer::getNumGhosted() const
 {
   switch (procRank_)
   {
@@ -512,7 +512,7 @@ int UniqueGlobalIndexer::getNumGhosted() const
 //  getNumOwnedAndGhosted()
 //
 ///////////////////////////////////////////////////////////////////////////////
-int UniqueGlobalIndexer::getNumOwnedAndGhosted() const
+int GlobalIndexer::getNumOwnedAndGhosted() const
 {
   switch (procRank_)
   {
@@ -525,7 +525,7 @@ int UniqueGlobalIndexer::getNumOwnedAndGhosted() const
   } // end switch (procRank_)
 } // end of getNumOwnedAndGhosted()
 
-void UniqueGlobalIndexer::ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const
+void GlobalIndexer::ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const
 {
    std::vector<panzer::GlobalOrdinal> owned;
    getOwnedIndices(owned);
@@ -535,7 +535,7 @@ void UniqueGlobalIndexer::ownedIndices(const std::vector<panzer::GlobalOrdinal> 
       isOwned[i] = (std::find(owned.begin(),owned.end(),indices[i])!=owned.end());
 }
 
-const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::string & block) const
+const std::vector<int> & GlobalIndexer::getBlockFieldNumbers(const std::string & block) const
 {
    if(block=="block_0") {
       if(block0Fields_==Teuchos::null) {
@@ -563,7 +563,7 @@ const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::st
       TEUCHOS_ASSERT(false);
 }
 
-Teuchos::RCP<Teuchos::Comm<int> > UniqueGlobalIndexer::getComm() const
+Teuchos::RCP<Teuchos::Comm<int> > GlobalIndexer::getComm() const
 {
    #ifdef HAVE_MPI
       return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
@@ -572,14 +572,14 @@ Teuchos::RCP<Teuchos::Comm<int> > UniqueGlobalIndexer::getComm() const
    #endif
 }
 
-int UniqueGlobalIndexer::getElementBlockGIDCount(const std::string & block) const
+int GlobalIndexer::getElementBlockGIDCount(const std::string & block) const
 {
    if(block=="block_0")
       return 8;
    else return 4;
 }
 
-int UniqueGlobalIndexer::getElementBlockGIDCount(const std::size_t & block) const
+int GlobalIndexer::getElementBlockGIDCount(const std::size_t & block) const
 {
    if(block==0)
       return 8;

@@ -122,7 +122,7 @@ void ParameterListCallbackBlocked::preRequest(const Teko::RequestMesg & rm)
   // Check if the field is in the main UGI.  If it's not, assume it's in the
   // auxiliary UGI.
   bool useAux(true);
-  std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer>>
+  std::vector<Teuchos::RCP<panzer::GlobalIndexer>>
     fieldDOFMngrs = blocked_ugi_->getFieldDOFManagers();
   for (int b(0); b < static_cast<int>(fieldDOFMngrs.size()); ++b)
   {
@@ -178,7 +178,7 @@ void ParameterListCallbackBlocked::setFieldByKey(const std::string & key,const s
 void ParameterListCallbackBlocked::buildArrayToVectorTpetra(int block,const std::string & field, const bool useAux)
 {
    if(arrayToVectorTpetra_[field]==Teuchos::null) {
-      Teuchos::RCP<const panzer::UniqueGlobalIndexer> ugi;
+      Teuchos::RCP<const panzer::GlobalIndexer> ugi;
       if(useAux)
         ugi = aux_blocked_ugi_->getFieldDOFManagers()[block];
       else
@@ -190,7 +190,7 @@ void ParameterListCallbackBlocked::buildArrayToVectorTpetra(int block,const std:
 void ParameterListCallbackBlocked::buildArrayToVectorEpetra(int block,const std::string & field, const bool useAux)
 {
    if(arrayToVectorEpetra_[field]==Teuchos::null) {
-      Teuchos::RCP<const panzer::UniqueGlobalIndexer> ugi;
+      Teuchos::RCP<const panzer::GlobalIndexer> ugi;
       if(useAux)
         ugi = aux_blocked_ugi_->getFieldDOFManagers()[block];
       else

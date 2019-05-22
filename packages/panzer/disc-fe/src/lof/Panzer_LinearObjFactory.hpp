@@ -62,7 +62,7 @@
 
 namespace panzer {
 
-class UniqueGlobalIndexer; // forward declaration
+class GlobalIndexer; // forward declaration
 
 /** Abstract factory that builds the linear algebra 
   * objects required for the assembly including the 
@@ -274,14 +274,14 @@ public:
    { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(scatterDirichletManager_->template getAsBase<EvalT>()->clone(pl)); }
 
    //! Get the range global indexer object associated with this factory
-   PANZER_DEPRECATED Teuchos::RCP<const panzer::UniqueGlobalIndexer> getUniqueGlobalIndexer() const
+   PANZER_DEPRECATED Teuchos::RCP<const panzer::GlobalIndexer> getGlobalIndexer() const
    { return getRangeGlobalIndexer(); }
   
    //! Get the domain global indexer object associated with this factory
-   virtual Teuchos::RCP<const panzer::UniqueGlobalIndexer> getDomainGlobalIndexer() const = 0;
+   virtual Teuchos::RCP<const panzer::GlobalIndexer> getDomainGlobalIndexer() const = 0;
 
    //! Get the range global indexer object associated with this factory
-   virtual Teuchos::RCP<const panzer::UniqueGlobalIndexer> getRangeGlobalIndexer() const = 0;
+   virtual Teuchos::RCP<const panzer::GlobalIndexer> getRangeGlobalIndexer() const = 0;
 
    virtual void beginFill(LinearObjContainer & /* loc */) const {}
    virtual void endFill(LinearObjContainer & /* loc */) const {}

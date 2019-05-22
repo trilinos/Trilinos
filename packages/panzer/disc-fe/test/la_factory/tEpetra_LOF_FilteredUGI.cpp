@@ -54,7 +54,7 @@
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_Filtered_GlobalIndexer.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
@@ -144,7 +144,7 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
 
    TEST_EQUALITY(filtered.size(),2);
 
-   RCP<Filtered_UniqueGlobalIndexer> filtered_ugi = rcp(new Filtered_UniqueGlobalIndexer);
+   RCP<Filtered_GlobalIndexer> filtered_ugi = rcp(new Filtered_GlobalIndexer);
    filtered_ugi->initialize(dofManager,filtered);
 
    out << "check out ownsership" << std::endl;

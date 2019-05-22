@@ -54,7 +54,7 @@
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_ConnManager.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_NodeType.hpp"
 #include "Panzer_HashUtils.hpp"
@@ -66,7 +66,7 @@
 
 namespace panzer {
 
-class BlockedDOFManager : public UniqueGlobalIndexer {
+class BlockedDOFManager : public GlobalIndexer {
 public:
    // typedef std::pair<int,GlobalOrdinalT> GlobalOrdinal;
   using GlobalOrdinal = panzer::GlobalOrdinal;
@@ -85,7 +85,7 @@ public:
 
    ////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////
-   //! \defgroup UniqueGlobalIndexer_methods Methods required by the <code>UniqueGlobalIndexer</code> interface
+   //! \defgroup GlobalIndexer_methods Methods required by the <code>GlobalIndexer</code> interface
    //@{
 
    /** Get communicator associated with this manager.
@@ -393,7 +393,7 @@ public:
      *
      * \note The type of global indexer, and agreement with the geometric field pattern are all checked.
      */
-   virtual void buildGlobalUnknowns(const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & fieldBlockManagers);
+   virtual void buildGlobalUnknowns(const std::vector<Teuchos::RCP<GlobalIndexer>> & fieldBlockManagers);
 
    /** Prints to an output stream the information about
      * the aggregated field.
@@ -423,7 +423,7 @@ public:
    /** Extract the field DOFManagers used underneath to define the
      * global unknowns.
      */
-   const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> &
+   const std::vector<Teuchos::RCP<GlobalIndexer>> &
    getFieldDOFManagers() const
    { return fieldBlockManagers_; }
 
@@ -488,28 +488,28 @@ protected:
 
    /** Build a new indexer. The concrete type is specified internally by this object (FEI version standard)
      */
-   Teuchos::RCP<UniqueGlobalIndexer> buildNewIndexer(const Teuchos::RCP<ConnManager> & connManager,
+   Teuchos::RCP<GlobalIndexer> buildNewIndexer(const Teuchos::RCP<ConnManager> & connManager,
                                                      MPI_Comm mpiComm) const;
 
    /** Do appropriate casting below and set orientations for a particular indexer. (handles FEI versus standard DOFManager)
      */
-   void setOrientationsRequired(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,bool required) const;
+   void setOrientationsRequired(const Teuchos::RCP<GlobalIndexer> & indexer,bool required) const;
 
    /** Do appropriate casting below and call buildGlobalUnknowns for a particular indexer. (handles FEI versus standard DOFManager)
      */
-   void buildGlobalUnknowns(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,const Teuchos::RCP<const FieldPattern> & geomPattern) const;
+   void buildGlobalUnknowns(const Teuchos::RCP<GlobalIndexer> & indexer,const Teuchos::RCP<const FieldPattern> & geomPattern) const;
 
    /** Do appropriate casting below and call getElementBlockGIDCount for a particular indexer. (handles FEI versus standard DOFManager)
      */
-   int getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,const std::string & elementBlock) const;
+   int getElementBlockGIDCount(const Teuchos::RCP<GlobalIndexer> & indexer,const std::string & elementBlock) const;
 
    /** Do appropriate casting below and call getElementBlockGIDCount for a particular indexer. (handles FEI versus standard DOFManager)
      */
-   int getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,const std::size_t & blockIndex) const;
+   int getElementBlockGIDCount(const Teuchos::RCP<GlobalIndexer> & indexer,const std::size_t & blockIndex) const;
 
    /** Do appropriate casting below and call printFieldInformation for a particular indexer. (handles FEI versus standard DOFManager)
      */
-   void printFieldInformation(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,std::ostream & os) const;
+   void printFieldInformation(const Teuchos::RCP<GlobalIndexer> & indexer,std::ostream & os) const;
 
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
@@ -517,7 +517,7 @@ protected:
      * This method assumes that the activeFields are a legitimate ordering for the local field block.
      */
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
-                                     UniqueGlobalIndexer & fieldBlockManager) const;
+                                     GlobalIndexer & fieldBlockManager) const;
 
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
@@ -565,7 +565,7 @@ protected:
    Teuchos::RCP<const FieldPattern> geomPattern_;
    Teuchos::RCP<Teuchos::MpiComm<int> > communicator_;
 
-   std::vector<Teuchos::RCP<UniqueGlobalIndexer>> fieldBlockManagers_;
+   std::vector<Teuchos::RCP<GlobalIndexer>> fieldBlockManagers_;
 
    MPI_Comm mpiComm_;
    int maxSubFieldNum_;

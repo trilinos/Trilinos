@@ -221,8 +221,8 @@ int main(int argc,char * argv[])
      Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
    panzer::DOFManagerFactory globalIndexerFactory;
-   RCP<panzer::UniqueGlobalIndexer> dofManager 
-         = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+   RCP<panzer::GlobalIndexer> dofManager 
+         = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
    // construct some linear algebra object, build object to pass to evaluators
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory

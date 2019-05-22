@@ -41,7 +41,7 @@
 // @HEADER
 
 #include "PanzerDiscFE_config.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_IntrepidOrientation.hpp"
 
 namespace panzer {
@@ -102,7 +102,7 @@ namespace panzer {
   }
 
   Teuchos::RCP<std::vector<Intrepid2::Orientation> >
-  buildIntrepidOrientation(const Teuchos::RCP<const UniqueGlobalIndexer> globalIndexer)
+  buildIntrepidOrientation(const Teuchos::RCP<const GlobalIndexer> globalIndexer)
   {
     using Teuchos::rcp_dynamic_cast;
     using Teuchos::RCP;
@@ -111,8 +111,8 @@ namespace panzer {
     auto orientation = rcp(new std::vector<Intrepid2::Orientation>);
 
     {
-      RCP<const UniqueGlobalIndexer> ugi
-        = rcp_dynamic_cast<const UniqueGlobalIndexer>(globalIndexer);
+      RCP<const GlobalIndexer> ugi
+        = rcp_dynamic_cast<const GlobalIndexer>(globalIndexer);
 
       if (ugi!=Teuchos::null) {
         const auto connMgr = ugi->getConnManager()->noConnectivityClone();
@@ -126,7 +126,7 @@ namespace panzer {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                               "panzer::buildIntrepidOrientation: Could not cast UniqueGlobalIndexer");
+                               "panzer::buildIntrepidOrientation: Could not cast GlobalIndexer");
   }
 
 } // end namespace panzer

@@ -61,7 +61,7 @@ namespace panzer {
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 class BlockedTpetraLinearObjContainer;
 
-class UniqueGlobalIndexer;
+class GlobalIndexer;
 class BlockedDOFManager;
 
 /** \brief Gathers solution values from the Newton solution vector into
@@ -152,7 +152,7 @@ private:
   std::vector<int> fieldIds_;
 
   //! Vector of global indexers, one for each field to gather, respectively
-  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer>> fieldGlobalIndexers_;
+  std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> fieldGlobalIndexers_;
 
   //! Returns the index to the Thyra ProductVector sub-block. Size
   //! of number of fields to gather

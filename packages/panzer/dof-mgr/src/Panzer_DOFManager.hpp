@@ -51,7 +51,7 @@
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_ConnManager.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_NodeType.hpp"
 #include "Panzer_FieldType.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
@@ -63,7 +63,7 @@
 
 namespace panzer {
 
-class DOFManager : public UniqueGlobalIndexer {
+class DOFManager : public GlobalIndexer {
 public:
 
   virtual ~DOFManager() {}

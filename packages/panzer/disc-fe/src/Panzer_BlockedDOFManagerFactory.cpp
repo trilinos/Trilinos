@@ -116,8 +116,8 @@ buildBlocking(const std::string & fieldOrder,std::vector<std::vector<std::string
       blocks.push_back(*current);
 }
 
-Teuchos::RCP<panzer::UniqueGlobalIndexer> 
-BlockedDOFManagerFactory::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
+Teuchos::RCP<panzer::GlobalIndexer> 
+BlockedDOFManagerFactory::buildGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                                                    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                                                    const Teuchos::RCP<ConnManager> & connMngr,
                                                    const std::string & fieldOrder) const

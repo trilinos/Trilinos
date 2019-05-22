@@ -80,7 +80,7 @@
 #include "Panzer_ThyraObjContainer.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -105,8 +105,8 @@ namespace panzer {
     Teuchos::RCP<panzer::GlobalData> gd;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > param_lof;
-    Teuchos::RCP<panzer::UniqueGlobalIndexer> dofManager;
-    Teuchos::RCP<panzer::UniqueGlobalIndexer> param_dofManager;
+    Teuchos::RCP<panzer::GlobalIndexer> dofManager;
+    Teuchos::RCP<panzer::GlobalIndexer> param_dofManager;
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer;
     Teuchos::ParameterList user_data;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
@@ -1227,7 +1227,7 @@ namespace panzer {
     // build the state dof manager and LOF
     {
       panzer::BlockedDOFManagerFactory globalIndexerFactory;
-      auto dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,
+      auto dofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,
                                                                       conn_manager,"blocked: TEMPERATURE ION_TEMPERATURE");
       ap.dofManager = dofManager;
 

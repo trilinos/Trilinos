@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_UniqueGlobalIndexerFactory_hpp__
-#define __Panzer_UniqueGlobalIndexerFactory_hpp__
+#ifndef __Panzer_GlobalIndexerFactory_hpp__
+#define __Panzer_GlobalIndexerFactory_hpp__
 
 // stil includes
 #include <vector>
@@ -51,22 +51,22 @@
 
 // panzer includes
 #include "Panzer_PhysicsBlock.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_ConnManager.hpp"
 
 namespace panzer {
 
-/** A factory for building UniqueGlobalIndexer objects.
+/** A factory for building GlobalIndexer objects.
   * This is basically a single function that takes an MPI_Comm
   * object, a vector of PhysicsBlocks and a connection manager.
   * The Connection manager can have different local and global
   * index types.  The use case for this is the block assembly
   * functionality.
   */
-class UniqueGlobalIndexerFactory {
+class GlobalIndexerFactory {
 public:
 
-   virtual ~UniqueGlobalIndexerFactory() {}
+   virtual ~GlobalIndexerFactory() {}
 
    /** Use the physics block to construct a unique global indexer object.
      * 
@@ -79,12 +79,12 @@ public:
      *            on the same geometric entity. The default is an alphabetical
      *            ordering.
      *
-     * \returns A UniqueGlobalIndexer object. If buildGlobalUnknowns is true,
+     * \returns A GlobalIndexer object. If buildGlobalUnknowns is true,
      *          the object is fully constructed. If it is false, the caller must
      *          finalize it.
      */
-   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer> 
-   buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
+   virtual Teuchos::RCP<panzer::GlobalIndexer> 
+   buildGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager> & connMngr,
                             const std::string & fieldOrder="") const = 0;
