@@ -1014,6 +1014,29 @@ print (std::ostream& out) {
 template<class ScalarType, class MV>
 void
 Chebyshev<ScalarType, MV>::
+scaledDampedResidual
+(MV& W,
+ const ScalarType& alpha,
+ const V& D_inv,
+ const MV& B,
+ const MV& X,
+ const ScalarType& beta,
+ MV& V1 /* temp, no longer be needed once we fuse */ )
+{
+  using STS = Teuchos::ScalarTraits<ScalarType>;
+  const ScalarType one = STS::one ();
+
+  // V1 = B - A*X
+  Tpetra::deep_copy (V1, B);
+  A_->apply (X, V1, Teuchos::NO_TRANS, -one, one);
+
+  // W := alpha * D_inv * V1 + beta * W
+  W.elementWiseMultiply (alpha, D_inv, V1, beta);
+}
+
+template<class ScalarType, class MV>
+void
+Chebyshev<ScalarType, MV>::
 computeResidual (MV& R, const MV& B, const op_type& A, const MV& X,
                  const Teuchos::ETransp mode)
 {
@@ -1357,11 +1380,6 @@ ifpackApplyImpl (const op_type& A,
       V1.putScalar (STS::zero ()); // ???????
     }
 
-    computeResidual (V1, B, A, X); // V1 = B - A*X
-    if (debug) {
-      *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
-    }
-
     rhokp1 = one / (two * s1 - rhok);
     dtemp1 = rhokp1 * rhok;
     dtemp2 = two * rhokp1 * delta;
@@ -1372,8 +1390,10 @@ ifpackApplyImpl (const op_type& A,
             << " - dtemp2 = " << dtemp2 << endl;
     }
 
-
-    W.elementWiseMultiply (dtemp2, D_inv, V1, dtemp1);
+    // computeResidual (V1, B, A, X); // V1 = B - A*X
+    // W.elementWiseMultiply (dtemp2, D_inv, V1, dtemp1);
+    scaledDampedResidual (W, dtemp2, D_inv, B, X, dtemp1, V1);
+    
     X.update (one, W, one);
 
     if (debug) {

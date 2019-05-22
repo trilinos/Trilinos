@@ -532,6 +532,20 @@ private:
                         Teuchos::RCP<MV>& W,
                         const MV& X);
 
+  /// \brief W := alpha*D_inv*(B-A*X) + beta*W.
+  ///
+  /// We can't fuse this with X := X + W, because data dependencies in
+  /// the input X are not elementwise (unless A is diagonal).
+  void
+  scaledDampedResidual
+  (MV& W,
+   const ScalarType& alpha,
+   const V& D_inv,
+   const MV& B,
+   const MV& X,
+   const ScalarType& beta,
+   MV& V1 /* temp, no longer be needed once we fuse */ );
+
   //! R = B - Op(A) * X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   static void
   computeResidual (MV& R, const MV& B, const op_type& A, const MV& X,
