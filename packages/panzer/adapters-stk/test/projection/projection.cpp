@@ -769,7 +769,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   auto lids = e_ugi->getLIDs();
 
   // set up a global and ghosted mass matrix
-  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer>> indexers;
+  std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> indexers;
   indexers.push_back(e_ugi);
   panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,LO,GO,panzer::TpetraNodeType> factory(comm,indexers);
   auto connMassMatrix = factory.getTpetraMatrix(0,0);

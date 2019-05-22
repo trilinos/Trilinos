@@ -52,8 +52,8 @@
 #include "Teko_RequestCallback.hpp"
 
 #include "Panzer_STKConnManager.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
-#include "Panzer_UniqueGlobalIndexer_EpetraUtilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_EpetraUtilities.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 
 #include <vector>
@@ -85,7 +85,7 @@ private:
   {
     // Check both the main and auxiliary UGIs.
     bool useAux(true);
-    std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer>>
+    std::vector<Teuchos::RCP<panzer::GlobalIndexer>>
       fieldDOFMngrs = blocked_ugi_->getFieldDOFManagers();
     for (int b(0); b < static_cast<int>(fieldDOFMngrs.size()); ++b)
     {

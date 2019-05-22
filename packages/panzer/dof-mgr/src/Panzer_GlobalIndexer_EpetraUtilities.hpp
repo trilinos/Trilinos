@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_UniqueGlobalIndexer_EpetraUtilities_decl_hpp__
-#define __Panzer_UniqueGlobalIndexer_EpetraUtilities_decl_hpp__
+#ifndef __Panzer_GlobalIndexer_EpetraUtilities_decl_hpp__
+#define __Panzer_GlobalIndexer_EpetraUtilities_decl_hpp__
 
 #include <map>
 #include <string>
@@ -53,7 +53,7 @@
 #include <Epetra_IntVector.h>
 #include <Epetra_MultiVector.h>
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_FieldPattern.hpp"
 
 namespace panzer {
@@ -72,7 +72,7 @@ namespace panzer {
   * \note The description and use of this function are equally confusing...
   */
 Teuchos::RCP<Epetra_IntVector>
-buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer & ugi);
+buildGhostedFieldReducedVectorEpetra(const GlobalIndexer & ugi);
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -85,7 +85,7 @@ buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer & ugi);
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
 Teuchos::RCP<const Epetra_IntVector>
-buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
+buildGhostedFieldVectorEpetra(const GlobalIndexer & ugi,
                               const Teuchos::RCP<const Epetra_IntVector> & reducedVec=Teuchos::null);
 
 /** This function builds a vector that defines fields for each global unknown.
@@ -101,7 +101,7 @@ buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
   *                          build by a call to <code>getOwnedAndGhostedIndices()</code>.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
-void buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
+void buildGhostedFieldVectorEpetra(const GlobalIndexer & ugi,
                                    std::vector<int> & fieldNumbers,
                                    const Teuchos::RCP<const Epetra_IntVector> & reducedVec=Teuchos::null);
 
@@ -119,7 +119,7 @@ void buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
   */
 template <typename ScalarT,typename ArrayT>
 void updateGhostedDataReducedVectorEpetra(const std::string & fieldName,const std::string blockId,
-                                          const UniqueGlobalIndexer & ugi,
+                                          const GlobalIndexer & ugi,
                                           const ArrayT & data,
                                           Epetra_MultiVector & dataVector);
 
@@ -143,7 +143,7 @@ public:
    /** Construct information for the unique global indexer. Notice that this
      * requires global communication.
      */
-   ArrayToFieldVectorEpetra(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi);
+   ArrayToFieldVectorEpetra(const Teuchos::RCP<const GlobalIndexer> & ugi);
 
    /** Get a Tpetra vector containing the data ordered according to 
      * the ordering from <code>UGI::getOwnedAndGhostedIndices</code>.
@@ -194,7 +194,7 @@ protected:
    void buildFieldVector(const Epetra_IntVector & source) const;
 
    //! DOF mapping
-   Teuchos::RCP<const UniqueGlobalIndexer> ugi_;
+   Teuchos::RCP<const GlobalIndexer> ugi_;
 
    Teuchos::RCP<const IntVector> gh_reducedFieldVector_; //! ghosted reduced field vector
    Teuchos::RCP<const IntVector> gh_fieldVector_;        //! ghosted field vector
@@ -214,6 +214,6 @@ private:
 
 } // end namspace panzer
 
-#include "Panzer_UniqueGlobalIndexer_EpetraUtilities_impl.hpp"
+#include "Panzer_GlobalIndexer_EpetraUtilities_impl.hpp"
 
 #endif

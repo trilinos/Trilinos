@@ -53,7 +53,7 @@
 #include <unordered_set>
 
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_Filtered_GlobalIndexer.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_PauseToAttach.hpp"
 
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
    dofManager->buildGlobalUnknowns();
 
    std::vector<panzer::GlobalOrdinal> filtered;
-   Filtered_UniqueGlobalIndexer filtered_ugi;
+   Filtered_GlobalIndexer filtered_ugi;
    filtered_ugi.initialize(dofManager,filtered);
 
    // check the GIDs
@@ -244,7 +244,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      out << std::endl;
    }
 
-   Filtered_UniqueGlobalIndexer filtered_ugi;
+   Filtered_GlobalIndexer filtered_ugi;
    filtered_ugi.initialize(dofManager,my_filtered);
 
    out << "check the GIDs" << std::endl;

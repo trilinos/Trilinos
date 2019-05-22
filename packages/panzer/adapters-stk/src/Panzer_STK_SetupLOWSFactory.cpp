@@ -80,7 +80,7 @@ namespace panzer_stk {
 namespace {
 
   bool
-  determineCoordinateField(const panzer::UniqueGlobalIndexer & globalIndexer,std::string & fieldName)
+  determineCoordinateField(const panzer::GlobalIndexer & globalIndexer,std::string & fieldName)
   {
     std::vector<std::string> elementBlocks;
     globalIndexer.getElementBlockIds(elementBlocks);
@@ -128,7 +128,7 @@ namespace {
   }
 
   void
-  fillFieldPatternMap(const panzer::UniqueGlobalIndexer & globalIndexer,
+  fillFieldPatternMap(const panzer::GlobalIndexer & globalIndexer,
                       const std::string & fieldName,
                       std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fieldPatterns)
   {
@@ -151,7 +151,7 @@ namespace {
 
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory(bool blockedAssembly,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & globalIndexer,
+                   const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer,
                    const Teuchos::RCP<panzer_stk::STKConnManager> & stkConn_manager,
                    int spatialDim,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
@@ -161,7 +161,7 @@ namespace {
                    #endif
                    bool writeCoordinates,
                    bool writeTopo,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & auxGlobalIndexer,
+                   const Teuchos::RCP<const panzer::GlobalIndexer> & auxGlobalIndexer,
                    bool useCoordinates
                    )
   {
@@ -211,7 +211,7 @@ namespace {
 
           RCP<panzer_stk::ParameterListCallback> callback = rcp(new
                 panzer_stk::ParameterListCallback(fieldName,fieldPatterns,stkConn_manager,
-                rcp_dynamic_cast<const panzer::UniqueGlobalIndexer>(globalIndexer)));
+                rcp_dynamic_cast<const panzer::GlobalIndexer>(globalIndexer)));
           reqHandler_local->addRequestCallback(callback);
 
           // determine if you want rigid body null space modes...currently an extremely specialized case!
@@ -303,7 +303,7 @@ namespace {
           }
 
           #ifdef PANZER_HAVE_MUELU
-          if(rcp_dynamic_cast<const panzer::UniqueGlobalIndexer>(globalIndexer)!=Teuchos::null
+          if(rcp_dynamic_cast<const panzer::GlobalIndexer>(globalIndexer)!=Teuchos::null
              && useCoordinates) {
              if(!writeCoordinates)
                 callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
@@ -320,8 +320,8 @@ namespace {
                // no coords vector has been build yet, build one
                if(coords==Teuchos::null) {
                  if(globalIndexer->getNumFields()==1) {
-                   RCP<const panzer::UniqueGlobalIndexer> ugi
-                       = rcp_dynamic_cast<const panzer::UniqueGlobalIndexer>(globalIndexer);
+                   RCP<const panzer::GlobalIndexer> ugi
+                       = rcp_dynamic_cast<const panzer::GlobalIndexer>(globalIndexer);
                    std::vector<panzer::GlobalOrdinal> ownedIndices;
                    ugi->getOwnedIndices(ownedIndices);
                    RCP<const Map> coords_map = rcp(new Map(Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(),ownedIndices,0,mpi_comm));
@@ -375,7 +375,7 @@ namespace {
              rcp_dynamic_cast<const panzer::BlockedDOFManager>(globalIndexer);
 
           // loop over blocks
-          const std::vector<RCP<panzer::UniqueGlobalIndexer>> & dofVec
+          const std::vector<RCP<panzer::GlobalIndexer>> & dofVec
              = blkDofs->getFieldDOFManagers();
           for(std::size_t i=0;i<dofVec.size();i++) {
 
@@ -483,7 +483,7 @@ namespace {
 
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory(bool blockedAssembly,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & globalIndexer,
+                   const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer,
                    const Teuchos::RCP<panzer::ConnManager> & conn_manager,
                    int spatialDim,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
@@ -493,7 +493,7 @@ namespace {
                    #endif
                    bool writeCoordinates,
                    bool writeTopo,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & auxGlobalIndexer,
+                   const Teuchos::RCP<const panzer::GlobalIndexer> & auxGlobalIndexer,
                    bool useCoordinates
                    )
   {

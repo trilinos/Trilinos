@@ -43,7 +43,7 @@
 #include "PanzerAdaptersSTK_config.hpp"
 
 #include "Panzer_STK_Utilities.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 #include "Kokkos_DynRankView.hpp"
 
@@ -51,7 +51,7 @@
 
 namespace panzer_stk {
 
-static void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer& dofMngr,
+static void gather_in_block(const std::string & blockId, const panzer::GlobalIndexer& dofMngr,
                             const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
                             std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > & fc);
 
@@ -81,12 +81,12 @@ void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> 
    }
 }
 
-void write_solution_data(const panzer::UniqueGlobalIndexer& dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
+void write_solution_data(const panzer::GlobalIndexer& dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
 {
    write_solution_data(dofMngr,mesh,*x(0),prefix,postfix);
 }
 
-void write_solution_data(const panzer::UniqueGlobalIndexer& dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
+void write_solution_data(const panzer::GlobalIndexer& dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
 {
    typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
@@ -112,7 +112,7 @@ void write_solution_data(const panzer::UniqueGlobalIndexer& dofMngr,panzer_stk::
    }
 }
 
-void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer& dofMngr,
+void gather_in_block(const std::string & blockId, const panzer::GlobalIndexer& dofMngr,
                      const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
                      std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > & fc)
 {

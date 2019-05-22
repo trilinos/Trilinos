@@ -70,7 +70,7 @@ Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >
 buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
     const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & linObjFactory,
     const Teuchos::RCP<panzer::WorksetContainer> & wkstContainer,
-    const Teuchos::RCP<panzer::UniqueGlobalIndexer> & globalIndexer,
+    const Teuchos::RCP<panzer::GlobalIndexer> & globalIndexer,
     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
     const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
     const Teuchos::ParameterList & closure_model_pl);
@@ -462,11 +462,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     // blocked degree of freedom manager
     panzer::BlockedDOFManagerFactory globalIndexerFactory;
     std::string fieldOrder = assembly_pl.get<std::string>("Field Order");
-    RCP<panzer::UniqueGlobalIndexer > dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager,fieldOrder);
+    RCP<panzer::GlobalIndexer > dofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager,fieldOrder);
 
     // auxiliary dof manager
     std::string auxFieldOrder = assembly_pl.get<std::string>("Auxiliary Field Order");
-    RCP<panzer::UniqueGlobalIndexer > auxDofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),auxPhysicsBlocks,conn_manager,auxFieldOrder);
+    RCP<panzer::GlobalIndexer > auxDofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),auxPhysicsBlocks,conn_manager,auxFieldOrder);
 
     // construct some linear algebra objects, build object to pass to evaluators
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager,true)));
@@ -814,7 +814,7 @@ Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >
 buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
     const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & linObjFactory,
     const Teuchos::RCP<panzer::WorksetContainer> & wkstContainer,
-    const Teuchos::RCP<panzer::UniqueGlobalIndexer> & globalIndexer,
+    const Teuchos::RCP<panzer::GlobalIndexer> & globalIndexer,
     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
     const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
     const Teuchos::ParameterList & closure_model_pl) {

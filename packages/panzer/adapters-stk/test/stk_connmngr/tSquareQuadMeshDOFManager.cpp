@@ -325,8 +325,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, ghosted_owned_indices)
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
 
-   // test UniqueGlobalIndexer
-   RCP<panzer::UniqueGlobalIndexer> glbNum = dofManager;
+   // test GlobalIndexer
+   RCP<panzer::GlobalIndexer> glbNum = dofManager;
 
    std::vector<panzer::GlobalOrdinal> owned, ownedAndGhosted;
    glbNum->getOwnedIndices(owned);

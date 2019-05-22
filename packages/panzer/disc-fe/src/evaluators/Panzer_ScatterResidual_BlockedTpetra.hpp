@@ -61,7 +61,7 @@ namespace panzer {
 
 // Forward declarations
 class BlockedDOFManager;
-class UniqueGlobalIndexer;
+class GlobalIndexer;
 
 /** \brief Pushes residual values into the residual vector for a 
            Newton-based solve
@@ -145,7 +145,7 @@ private:
   Teuchos::RCP<const BlockedDOFManager> globalIndexer_;
 
   //! Vector of global indexers, one for each scattered field respectively
-  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer>> fieldGlobalIndexers_;
+  std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> fieldGlobalIndexers_;
 
   //! Field IDs in the local product vector block (not global field id)
   std::vector<int> fieldIds_;

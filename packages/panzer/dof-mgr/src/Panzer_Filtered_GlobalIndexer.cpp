@@ -40,14 +40,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_Filtered_UniqueGlobalIndexer_impl_hpp__
-#define __Panzer_Filtered_UniqueGlobalIndexer_impl_hpp__
+#ifndef __Panzer_Filtered_GlobalIndexer_impl_hpp__
+#define __Panzer_Filtered_GlobalIndexer_impl_hpp__
 
 #include <unordered_set>
 
 #include "PanzerDofMgr_config.hpp"
 #include "Panzer_NodeType.hpp"
-#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_Filtered_GlobalIndexer.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
@@ -55,12 +55,12 @@
 
 namespace panzer {
 
-Filtered_UniqueGlobalIndexer::Filtered_UniqueGlobalIndexer(){}
+Filtered_GlobalIndexer::Filtered_GlobalIndexer(){}
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-Filtered_UniqueGlobalIndexer::
-initialize(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi,
+Filtered_GlobalIndexer::
+initialize(const Teuchos::RCP<const GlobalIndexer> & ugi,
            const std::vector<panzer::GlobalOrdinal>& filtered)
 {
   using GO = panzer::GlobalOrdinal;
@@ -140,7 +140,7 @@ initialize(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi,
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
-Filtered_UniqueGlobalIndexer::
+Filtered_GlobalIndexer::
 getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
 {
   using Teuchos::RCP;
@@ -187,7 +187,7 @@ getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
-Filtered_UniqueGlobalIndexer::
+Filtered_GlobalIndexer::
 getFilteredOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal> & indices) const
 {
   using Teuchos::RCP;
@@ -209,7 +209,7 @@ getFilteredOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal> & indices) 
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
-Filtered_UniqueGlobalIndexer::
+Filtered_GlobalIndexer::
 ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const
 {
   //Resizes the isOwned array.

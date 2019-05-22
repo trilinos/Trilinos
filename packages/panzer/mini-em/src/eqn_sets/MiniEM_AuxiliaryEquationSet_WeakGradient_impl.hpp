@@ -156,8 +156,8 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    if(tblof != Teuchos::null) {
 
      Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
-     Teuchos::RCP<panzer::UniqueGlobalIndexer> rowUgi;
-     Teuchos::RCP<panzer::UniqueGlobalIndexer> colUgi;
+     Teuchos::RCP<panzer::GlobalIndexer> rowUgi;
+     Teuchos::RCP<panzer::GlobalIndexer> colUgi;
 
      blockedDOFMngr = tblof->getGlobalIndexer();
      TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null); 
@@ -195,8 +195,8 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
    } else if(eblof != Teuchos::null) {
      Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
-     Teuchos::RCP<panzer::UniqueGlobalIndexer> rowUgi;
-     Teuchos::RCP<panzer::UniqueGlobalIndexer> colUgi;
+     Teuchos::RCP<panzer::GlobalIndexer> rowUgi;
+     Teuchos::RCP<panzer::GlobalIndexer> colUgi;
 
      blockedDOFMngr = eblof->getGlobalIndexer();
      TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null);

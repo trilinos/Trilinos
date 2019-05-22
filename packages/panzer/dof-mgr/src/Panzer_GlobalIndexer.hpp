@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_UniqueGlobalIndexer_hpp__
-#define __Panzer_UniqueGlobalIndexer_hpp__
+#ifndef __Panzer_GlobalIndexer_hpp__
+#define __Panzer_GlobalIndexer_hpp__
 
 #include <vector>
 #include <string>
@@ -56,10 +56,10 @@ namespace panzer {
 // Forward declaration.
 class ConnManager;
 
-class UniqueGlobalIndexer {
+class GlobalIndexer {
 public:
    //! Pure virtual destructor: prevents warnings with inline empty implementation 
-  virtual ~UniqueGlobalIndexer() {}
+  virtual ~GlobalIndexer() {}
 
    /** Get communicator associated with this global indexer.
      */
@@ -350,7 +350,7 @@ protected:
      * fast getElementLIDs methods. Note that this copies from a distinct UGI into
      * this object.
      */
-   void shareLocalIDs(const UniqueGlobalIndexer & src)
+   void shareLocalIDs(const GlobalIndexer & src)
    {
      localIDs_k_ = src.localIDs_k_;
    }
@@ -359,7 +359,7 @@ private:
   Kokkos::View<const panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> localIDs_k_;
 };
 
-inline void UniqueGlobalIndexer::
+inline void GlobalIndexer::
 buildLocalIdsFromOwnedElements(std::vector<std::vector<panzer::LocalOrdinal> > & localIDs) const
 {
   std::vector<panzer::GlobalOrdinal> ownedAndGhosted;

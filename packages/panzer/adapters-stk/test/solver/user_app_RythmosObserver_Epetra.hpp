@@ -50,7 +50,7 @@
 #include "Teuchos_Assert.hpp"
 
 #include "Panzer_STK_Interface.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 
 #include "Panzer_STK_Utilities.hpp"
@@ -65,7 +65,7 @@ namespace user_app {
   public:
     
     RythmosObserver_Epetra(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			   const RCP<panzer::UniqueGlobalIndexer>& dof_manager,
+			   const RCP<panzer::GlobalIndexer>& dof_manager,
 			   const Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >& lof) :
       m_mesh(mesh),
       m_dof_manager(dof_manager),
@@ -105,7 +105,7 @@ namespace user_app {
   protected:
 
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
-    Teuchos::RCP<panzer::UniqueGlobalIndexer> m_dof_manager;
+    Teuchos::RCP<panzer::GlobalIndexer> m_dof_manager;
     Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > m_lof;
 
   };

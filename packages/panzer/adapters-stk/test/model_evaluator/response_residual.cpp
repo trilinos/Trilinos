@@ -106,8 +106,8 @@ namespace panzer {
     RCP<panzer::GlobalData> gd;
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
     RCP<const panzer::LinearObjFactory<panzer::Traits> > param_lof;
-    RCP<const panzer::UniqueGlobalIndexer> dofManager;
-    RCP<panzer::UniqueGlobalIndexer> param_dofManager;
+    RCP<const panzer::GlobalIndexer> dofManager;
+    RCP<panzer::GlobalIndexer> param_dofManager;
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer;
     Teuchos::ParameterList user_data;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
@@ -993,8 +993,8 @@ namespace panzer {
     // build the state dof manager and LOF
     if(!useBlocking) {
       panzer::DOFManagerFactory globalIndexerFactory;
-      RCP<panzer::UniqueGlobalIndexer> dofManager
-           = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
+      RCP<panzer::GlobalIndexer> dofManager
+           = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
@@ -1003,7 +1003,7 @@ namespace panzer {
     }
     else {
       panzer::BlockedDOFManagerFactory globalIndexerFactory;
-      auto dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,
+      auto dofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,
                                                                       conn_manager,"blocked: TEMPERATURE ION_TEMPERATURE");
 
       ap.dofManager = dofManager;

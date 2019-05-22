@@ -71,7 +71,7 @@
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_String_Utilities.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_ExplicitModelEvaluator.hpp"
 #include "Panzer_ParameterLibraryUtilities.hpp"
 
@@ -421,7 +421,7 @@ namespace panzer_stk {
     ////////////////////////////////////////////////////////////////////////////////////////
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
-    Teuchos::RCP<panzer::UniqueGlobalIndexer> globalIndexer;
+    Teuchos::RCP<panzer::GlobalIndexer> globalIndexer;
 
     std::string loadBalanceString = ""; // what is the load balancing information
     bool blockedAssembly = false;
@@ -434,8 +434,8 @@ namespace panzer_stk {
        panzer::BlockedDOFManagerFactory globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
 
-       Teuchos::RCP<panzer::UniqueGlobalIndexer> dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
+       Teuchos::RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
        Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > bloLinObjFactory
@@ -474,8 +474,8 @@ namespace panzer_stk {
        panzer::BlockedDOFManagerFactory globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(false);
 
-       Teuchos::RCP<panzer::UniqueGlobalIndexer> dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
+       Teuchos::RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
        Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> > bloLinObjFactory
@@ -512,8 +512,8 @@ namespace panzer_stk {
        panzer::DOFManagerFactory globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(false);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
-       Teuchos::RCP<panzer::UniqueGlobalIndexer> dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
+       Teuchos::RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
        TEUCHOS_ASSERT(!useDiscreteAdjoint); // safety check
@@ -532,8 +532,8 @@ namespace panzer_stk {
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
        globalIndexerFactory.setUseNeighbors(has_interface_condition);
-       Teuchos::RCP<panzer::UniqueGlobalIndexer> dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,
+       Teuchos::RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,
                                                          field_order);
        globalIndexer = dofManager;
 
@@ -907,7 +907,7 @@ namespace panzer_stk {
   writeInitialConditions(const Thyra::ModelEvaluator<ScalarT> & model,
                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                          const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & ugi,
+                         const Teuchos::RCP<const panzer::GlobalIndexer> & ugi,
                          const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                          const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
@@ -1496,7 +1496,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory<ScalarT>::
   initializeSolnWriterResponseLibrary(const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                                      const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & ugi,
+                                      const Teuchos::RCP<const panzer::GlobalIndexer> & ugi,
                                       const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                       const Teuchos::RCP<panzer_stk::STK_Interface> & mesh) const
   {
@@ -1528,7 +1528,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
   buildLOWSFactory(bool blockedAssembly,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & globalIndexer,
+                   const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer,
                    const Teuchos::RCP<panzer::ConnManager> & conn_manager,
                    const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm

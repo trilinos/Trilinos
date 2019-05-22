@@ -66,7 +66,7 @@ namespace panzer {
     // Check workset needs are correct
   }
 
-  Teuchos::RCP<panzer::UniqueGlobalIndexer>
+  Teuchos::RCP<panzer::GlobalIndexer>
   panzer::L2Projection::getTargetGlobalIndexer() const
   {return targetGlobalIndexer_;}
 
@@ -82,7 +82,7 @@ namespace panzer {
     }
 
     // Allocate the owned matrix
-    std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer>> indexers;
+    std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> indexers;
     indexers.push_back(targetGlobalIndexer_);
 
     panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> factory(comm_,indexers);
@@ -302,7 +302,7 @@ namespace panzer {
   }
 
   Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>>
-  panzer::L2Projection::buildRHSMatrix(const panzer::UniqueGlobalIndexer& sourceGlobalIndexer,
+  panzer::L2Projection::buildRHSMatrix(const panzer::GlobalIndexer& sourceGlobalIndexer,
                                        const Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>>& inputOwnedSourceMap,
                                        const std::string& sourceFieldName,
                                        const panzer::BasisDescriptor& sourceBasisDescriptor,

@@ -64,7 +64,7 @@ namespace Thyra {
 namespace panzer {
 
 class BlockedDOFManager;
-class UniqueGlobalIndexer;
+class GlobalIndexer;
 
 /** \brief Pushes residual values into the residual vector for a
            Newton-based solve
@@ -155,7 +155,7 @@ private:
   //! Vector of global indexers, one for each scattered field
   //! respectively. This is the global indexer for the Thyra
   //! ProductVector sub-block.
-  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer>> fieldGlobalIndexers_;
+  std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> fieldGlobalIndexers_;
 
   //! Field IDs in the local product vector block (not global field id)
   std::vector<int> fieldIds_;
