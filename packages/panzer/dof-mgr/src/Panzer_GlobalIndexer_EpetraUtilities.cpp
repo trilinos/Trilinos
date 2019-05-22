@@ -41,12 +41,12 @@
 // @HEADER
 
 #include "PanzerDofMgr_config.hpp"
-#include "Panzer_UniqueGlobalIndexer_EpetraUtilities.hpp"
+#include "Panzer_GlobalIndexer_EpetraUtilities.hpp"
 
 namespace panzer {
 
 Teuchos::RCP<Epetra_IntVector>
-buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer & ugi)
+buildGhostedFieldReducedVectorEpetra(const GlobalIndexer & ugi)
 {
    typedef Epetra_BlockMap Map;
    typedef Epetra_IntVector IntVector;
@@ -106,7 +106,7 @@ buildGhostedFieldReducedVectorEpetra(const UniqueGlobalIndexer & ugi)
    return Teuchos::rcp(new IntVector(Copy,*reducedMap,Teuchos::arrayViewFromVector(reducedFieldNumbers).getRawPtr()));
 }
 
-void buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
+void buildGhostedFieldVectorEpetra(const GlobalIndexer & ugi,
                              std::vector<int> & fieldNumbers,
                              const Teuchos::RCP<const Epetra_IntVector> & reducedVec)
 {
@@ -120,7 +120,7 @@ void buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
 }
 
 Teuchos::RCP<const Epetra_IntVector>
-buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
+buildGhostedFieldVectorEpetra(const GlobalIndexer & ugi,
                               const Teuchos::RCP<const Epetra_IntVector> & reducedVec)
 {
    typedef Epetra_BlockMap Map;
@@ -162,7 +162,7 @@ buildGhostedFieldVectorEpetra(const UniqueGlobalIndexer & ugi,
    return dest;
 }
 
-ArrayToFieldVectorEpetra::ArrayToFieldVectorEpetra(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi)
+ArrayToFieldVectorEpetra::ArrayToFieldVectorEpetra(const Teuchos::RCP<const GlobalIndexer> & ugi)
       : ugi_(ugi)
 {
    gh_reducedFieldVector_ = buildGhostedFieldReducedVectorEpetra(*ugi_);

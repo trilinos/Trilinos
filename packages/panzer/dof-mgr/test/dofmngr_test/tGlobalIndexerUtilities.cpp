@@ -51,11 +51,11 @@
 #include <vector>
 #include <set>
 
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 
-#include "UnitTest_UniqueGlobalIndexer.hpp"
+#include "UnitTest_GlobalIndexer.hpp"
 
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
@@ -73,7 +73,7 @@ using Teuchos::rcpFromRef;
 
 namespace panzer {
 
-TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
+TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,GhostedFieldVector)
 {
 
    // build global (or serial communicator)
@@ -88,8 +88,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::UniqueGlobalIndexer> globalIndexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
+   RCP<panzer::GlobalIndexer> globalIndexer 
+         = rcp(new panzer::unit_test::GlobalIndexer(myRank,numProcs));
 
    std::vector<int> ghostedFields;
    std::vector<panzer::GlobalOrdinal> ghostedIndices;
@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
 }
 
 void fillFieldContainer(int fieldNum,const std::string & blockId,
-                        const panzer::UniqueGlobalIndexer & ugi,
+                        const panzer::GlobalIndexer & ugi,
                         Kokkos::DynRankView<int,PHX::Device> & data)
 {
   data = Kokkos::DynRankView<int,PHX::Device>("data",1,4);
@@ -157,7 +157,7 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 }
 
 void fillFieldContainer(int fieldNum,const std::string & blockId,
-                        const panzer::UniqueGlobalIndexer & ugi,
+                        const panzer::GlobalIndexer & ugi,
                         Kokkos::DynRankView<int,PHX::Device> & data,std::size_t cols)
 {
   data = Kokkos::DynRankView<int,PHX::Device>("data",1,4,cols);
@@ -173,7 +173,7 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
    }
 }
 
-TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
+TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,updateGhostedDataVector)
 {
 
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
@@ -190,8 +190,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::UniqueGlobalIndexer> globalIndexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
+   RCP<panzer::GlobalIndexer> globalIndexer 
+         = rcp(new panzer::unit_test::GlobalIndexer(myRank,numProcs));
 
    int uFieldNum = globalIndexer->getFieldNum("U");
    int tFieldNum = globalIndexer->getFieldNum("T");
@@ -257,7 +257,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
       TEUCHOS_ASSERT(false);
 }
 
-TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
+TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 {
 
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
@@ -274,8 +274,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::UniqueGlobalIndexer> globalIndexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
+   RCP<panzer::GlobalIndexer> globalIndexer 
+         = rcp(new panzer::unit_test::GlobalIndexer(myRank,numProcs));
 
    panzer::ArrayToFieldVector atfv(globalIndexer);
 
@@ -335,7 +335,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
       TEUCHOS_ASSERT(false);
 }
 
-TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
+TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector)
 {
 
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
@@ -352,8 +352,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::UniqueGlobalIndexer> globalIndexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
+   RCP<panzer::GlobalIndexer> globalIndexer 
+         = rcp(new panzer::unit_test::GlobalIndexer(myRank,numProcs));
 
    panzer::ArrayToFieldVector atfv(globalIndexer);
 
@@ -403,7 +403,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
       TEUCHOS_ASSERT(false);
 }
 
-TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
+TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 {
 
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
@@ -420,8 +420,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::UniqueGlobalIndexer> globalIndexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
+   RCP<panzer::GlobalIndexer> globalIndexer 
+         = rcp(new panzer::unit_test::GlobalIndexer(myRank,numProcs));
 
    panzer::ArrayToFieldVector atfv(globalIndexer);
 

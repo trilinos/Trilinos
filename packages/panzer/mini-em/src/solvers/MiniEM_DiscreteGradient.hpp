@@ -65,7 +65,7 @@ void addDiscreteGradientToRequestHandler(
   if (tblof != Teuchos::null) {
     typedef LocalOrdinalTpetra LocalOrdinal;
     typedef GlobalOrdinalTpetra GlobalOrdinal;
-    typedef panzer::UniqueGlobalIndexer UGI;
+    typedef panzer::GlobalIndexer UGI;
     typedef typename panzer::BlockedTpetraLinearObjContainer<Scalar,LocalOrdinal,GlobalOrdinal> linObjContainer;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> matrix;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> map;
@@ -156,7 +156,7 @@ void addDiscreteGradientToRequestHandler(
     // add gradient callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new GradientRequestCallback(thyra_gradient)));
   } else if (eblof != Teuchos::null) {
-    typedef panzer::UniqueGlobalIndexer UGI;
+    typedef panzer::GlobalIndexer UGI;
     typedef typename panzer::BlockedEpetraLinearObjContainer linObjContainer;
     typedef Epetra_CrsMatrix matrix;
     typedef Epetra_Map map;

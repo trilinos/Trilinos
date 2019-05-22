@@ -177,7 +177,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
      blockIndex = blockedDOFMngr->getFieldBlock(pFieldNum);
 
      // get the unique global indexer for just this field
-     Teuchos::RCP<panzer::UniqueGlobalIndexer> ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
+     Teuchos::RCP<panzer::GlobalIndexer> ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
 
      // build a new linear object factory
      nlof = Teuchos::rcp(new tpetraLinObjFactory(Teuchos::rcp(new Teuchos::MpiComm<int>(tblof->getComm())).getConst(),ugi));
@@ -209,7 +209,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
      blockIndex = blockedDOFMngr->getFieldBlock(pFieldNum);
 
      // get the unique global indexer for just this field
-     Teuchos::RCP<panzer::UniqueGlobalIndexer> ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
+     Teuchos::RCP<panzer::GlobalIndexer> ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
 
      // build a new linear object factory
      nlof = Teuchos::rcp(new epetraLinObjFactory(Teuchos::rcp(new Teuchos::MpiComm<int>(eblof->getComm())).getConst(),ugi));

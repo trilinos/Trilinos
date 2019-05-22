@@ -52,7 +52,7 @@
 #include "Epetra_Export.h"
 
 #include "PanzerDiscFE_config.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
@@ -88,12 +88,12 @@ class BlockedEpetraLinearObjFactory : public LinearObjFactory<Traits>
 public:
 
    BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                                 const Teuchos::RCP<const UniqueGlobalIndexer> & gidProvider,
+                                 const Teuchos::RCP<const GlobalIndexer> & gidProvider,
                                  bool useDiscreteAdjoint=false);
 
    BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                                 const Teuchos::RCP<const UniqueGlobalIndexer> & gidProvider,
-                                 const Teuchos::RCP<const UniqueGlobalIndexer> & colGidProvider,
+                                 const Teuchos::RCP<const GlobalIndexer> & gidProvider,
+                                 const Teuchos::RCP<const GlobalIndexer> & colGidProvider,
                                  bool useDiscreteAdjoint=false);
 
    virtual ~BlockedEpetraLinearObjFactory();
@@ -410,18 +410,18 @@ public:
    Teuchos::RCP<const panzer::BlockedDOFManager> getGlobalIndexer() const
    { return rowDOFManagerContainer_->getBlockedIndexer(); }
 
-   Teuchos::RCP<const panzer::UniqueGlobalIndexer> getRangeGlobalIndexer() const
+   Teuchos::RCP<const panzer::GlobalIndexer> getRangeGlobalIndexer() const
    { return rowDOFManagerContainer_->getGlobalIndexer(); }
 
-   Teuchos::RCP<const panzer::UniqueGlobalIndexer> getDomainGlobalIndexer() const
+   Teuchos::RCP<const panzer::GlobalIndexer> getDomainGlobalIndexer() const
    { return colDOFManagerContainer_->getGlobalIndexer(); }
 
    //! Get global indexers associated with the blocks
-   const std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > & getRangeGlobalIndexers() const
+   const std::vector<Teuchos::RCP<const GlobalIndexer> > & getRangeGlobalIndexers() const
    { return rowDOFManagerContainer_->getFieldDOFManagers(); }
 
    //! Get global indexers associated with the blocks
-   const std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > & getDomainGlobalIndexers() const
+   const std::vector<Teuchos::RCP<const GlobalIndexer> > & getDomainGlobalIndexers() const
    { return colDOFManagerContainer_->getFieldDOFManagers(); }
 
    //! exclude a block pair from the matrix
@@ -454,16 +454,16 @@ protected:
   class DOFManagerContainer {
   public:
     DOFManagerContainer() {} 
-    DOFManagerContainer(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi) 
+    DOFManagerContainer(const Teuchos::RCP<const GlobalIndexer> & ugi) 
     { setGlobalIndexer(ugi); } 
 
-    void setGlobalIndexer(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi)
+    void setGlobalIndexer(const Teuchos::RCP<const GlobalIndexer> & ugi)
     {
       using Teuchos::RCP;
       using Teuchos::rcp_dynamic_cast;
 
       auto blockedDOFManager = rcp_dynamic_cast<const BlockedDOFManager>(ugi);
-      auto flatDOFManager    = rcp_dynamic_cast<const UniqueGlobalIndexer>(ugi);
+      auto flatDOFManager    = rcp_dynamic_cast<const GlobalIndexer>(ugi);
 
       if(blockedDOFManager!=Teuchos::null) {
         // set BlockedDOFManager
@@ -492,7 +492,7 @@ protected:
 
     /** Return true if this contains a blocked DOFManager as opposed to only a single DOFManager.
       * If this returns true then <code>getGlobalIndexer</code> will return a <code>BlockedDOFManager<int,GO></code>,
-      * other wise it will return a <code>UniqueGlobalIndexer<int,GO></code>.
+      * other wise it will return a <code>GlobalIndexer<int,GO></code>.
       */
     bool containsBlockedDOFManager() const
     { return blockedDOFManager_ !=Teuchos::null; }
@@ -505,7 +505,7 @@ protected:
     }
  
     //! Get the "parent" global indexer (if <code>getFieldBlocks()>1</code> this will be blocked, otherwise it may be either)
-    Teuchos::RCP<const UniqueGlobalIndexer> getGlobalIndexer() const
+    Teuchos::RCP<const GlobalIndexer> getGlobalIndexer() const
     {
       if(blockedDOFManager_!=Teuchos::null) 
         return blockedDOFManager_;
@@ -515,20 +515,20 @@ protected:
     }
 
     //! Get DOFManagers associated with the blocks
-    const std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > & getFieldDOFManagers() const
+    const std::vector<Teuchos::RCP<const GlobalIndexer> > & getFieldDOFManagers() const
     { return gidProviders_; }
 
   private:
     Teuchos::RCP<const BlockedDOFManager> blockedDOFManager_;
-    std::vector<Teuchos::RCP<const UniqueGlobalIndexer> > gidProviders_;
+    std::vector<Teuchos::RCP<const GlobalIndexer> > gidProviders_;
   };
 
 /*************** Generic methods/members *******************/
 
    // Get the global indexer associated with a particular block
-   Teuchos::RCP<const UniqueGlobalIndexer> getGlobalIndexer(int i) const;
+   Teuchos::RCP<const GlobalIndexer> getGlobalIndexer(int i) const;
 
-   Teuchos::RCP<const UniqueGlobalIndexer> getColGlobalIndexer(int i) const;
+   Teuchos::RCP<const GlobalIndexer> getColGlobalIndexer(int i) const;
 
    //! Allocate the space in the std::vector objects so we can fill with appropriate Epetra data
    void makeRoomForBlocks(std::size_t blockCnt,std::size_t colBlockCnt=0);

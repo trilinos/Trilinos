@@ -26,7 +26,7 @@ namespace panzer {
   class IntegrationDescriptor;
   class ConnManager;
   class DOFManager;
-  class UniqueGlobalIndexer;
+  class GlobalIndexer;
   class WorksetContainer;
 
   /** \brief Unified set of tools for building objects for lumped and
@@ -65,7 +65,7 @@ namespace panzer {
                const Teuchos::RCP<panzer::WorksetContainer> worksetContainer = Teuchos::null);
 
     /// Returns the target global indexer. Will be null if setup() has not been called.
-    Teuchos::RCP<panzer::UniqueGlobalIndexer> getTargetGlobalIndexer() const;
+    Teuchos::RCP<panzer::GlobalIndexer> getTargetGlobalIndexer() const;
 
     /** \brief Allocates, fills and returns a mass matrix for L2
         projection onto a target basis.
@@ -121,7 +121,7 @@ namespace panzer {
         \returns Alocated and filled Tpetra::CrsMatrix
     */
     Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-      buildRHSMatrix(const panzer::UniqueGlobalIndexer& sourceDOFManager,
+      buildRHSMatrix(const panzer::GlobalIndexer& sourceDOFManager,
                      const Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
                      const std::string& sourceFieldName,
                      const panzer::BasisDescriptor& sourceBasisDescriptor,

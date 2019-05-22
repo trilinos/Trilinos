@@ -52,7 +52,7 @@
 #include "Teko_RequestCallback.hpp"
 
 #include "Panzer_STKConnManager.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 
 #include <vector>
 #include <map>
@@ -70,7 +70,7 @@ public:
   ParameterListCallback(const std::string & coordFieldName,
                         const std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fp,
                         const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager,
-                        const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & ugi);
+                        const Teuchos::RCP<const panzer::GlobalIndexer> & ugi);
 
    Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
 
@@ -114,7 +114,7 @@ private:
    std::string coordFieldName_;
    std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns_;
    Teuchos::RCP<const panzer_stk::STKConnManager> connManager_;
-   Teuchos::RCP<const panzer::UniqueGlobalIndexer> ugi_;
+   Teuchos::RCP<const panzer::GlobalIndexer> ugi_;
    bool coordinatesBuilt_;
 
    std::vector<double> xcoords_;

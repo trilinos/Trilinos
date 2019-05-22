@@ -43,11 +43,11 @@
 #ifndef __Panzer_BlockedDOFManagerFactory_decl_hpp__
 #define __Panzer_BlockedDOFManagerFactory_decl_hpp__
 
-#include "Panzer_UniqueGlobalIndexerFactory.hpp"
+#include "Panzer_GlobalIndexerFactory.hpp"
 
 namespace panzer {
 
-class BlockedDOFManagerFactory : public virtual UniqueGlobalIndexerFactory {
+class BlockedDOFManagerFactory : public virtual GlobalIndexerFactory {
 public:
    BlockedDOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false) {}
    virtual ~BlockedDOFManagerFactory() {}
@@ -92,12 +92,12 @@ public:
      *            DOF manager in additional ways before issuing the call to
      *            build the global unknowns itself.
      *
-     * \returns A UniqueGlobalIndexer object. If buildGlobalUnknowns is true,
+     * \returns A GlobalIndexer object. If buildGlobalUnknowns is true,
      *          the object is fully constructed. If it is false, the caller must
      *          finalize it.
      */
-   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer> 
-   buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
+   virtual Teuchos::RCP<panzer::GlobalIndexer> 
+   buildGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager> & connMngr,
                             const std::string & fieldOrder="") const;

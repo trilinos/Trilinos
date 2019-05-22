@@ -179,8 +179,8 @@ namespace panzer {
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     panzer::DOFManagerFactory globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer> dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+    RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
@@ -310,8 +310,8 @@ namespace panzer {
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     panzer::DOFManagerFactory globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer> dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+    RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
@@ -445,8 +445,8 @@ namespace panzer {
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     panzer::DOFManagerFactory globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer> dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+    RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
@@ -594,8 +594,8 @@ namespace panzer {
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     panzer::DOFManagerFactory globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer> dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+    RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
           = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(comm,dofManager));

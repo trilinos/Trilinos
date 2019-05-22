@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_UniqueGlobalIndexer_Utilities_decl_hpp__
-#define __Panzer_UniqueGlobalIndexer_Utilities_decl_hpp__
+#ifndef __Panzer_GlobalIndexer_Utilities_decl_hpp__
+#define __Panzer_GlobalIndexer_Utilities_decl_hpp__
 
 #include <map>
 #include <string>
@@ -52,7 +52,7 @@
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_MultiVector.hpp>
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_FieldPattern.hpp"
 
 namespace panzer {
@@ -60,8 +60,8 @@ namespace panzer {
 /** Convert a nonconst to a constant vector. This works around an RCP issue where the compiler
   * gets confused by const.
   */
-std::vector<Teuchos::RCP<const UniqueGlobalIndexer>> 
-nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & ugis);
+std::vector<Teuchos::RCP<const GlobalIndexer>> 
+nc2c_vector(const std::vector<Teuchos::RCP<GlobalIndexer>> & ugis);
 
 /** Get the block associated with a particular field. This is an exhaustive (e.g. expensive)
   * search. This returns the first found index into the <code>ugis</code> that contains the 
@@ -73,7 +73,7 @@ nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & ugis);
   * \returns The index that this field is in. If this returns -1, no field was found.
   */
 int getFieldBlock(const std::string & fieldName,
-                  const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & ugis);
+                  const std::vector<Teuchos::RCP<GlobalIndexer>> & ugis);
 
 /** Get the block associated with a particular field. This is an exhaustive (e.g. expensive)
   * search. This returns the first found index into the <code>ugis</code> that contains the 
@@ -85,7 +85,7 @@ int getFieldBlock(const std::string & fieldName,
   * \returns The index that this field is in. If this returns -1, no field was found.
   */
 int getFieldBlock(const std::string & fieldName,
-                  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer>> & ugis);
+                  const std::vector<Teuchos::RCP<const GlobalIndexer>> & ugis);
 
 /** Compute the offsets for the global indexer for a particular block id. This
   * is useful for unknown numbering into a block format. The local element matrix
@@ -101,7 +101,7 @@ int getFieldBlock(const std::string & fieldName,
   * \param[out] blockOffsets Result vector with length <code>ugis.size()+1</code>.
   */
 void computeBlockOffsets(const std::string & blockId,
-                         const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & ugis,
+                         const std::vector<Teuchos::RCP<GlobalIndexer>> & ugis,
                          std::vector<int> & blockOffsets);
 
 /** Compute the offsets for the global indexer for a particular block id. This
@@ -118,20 +118,20 @@ void computeBlockOffsets(const std::string & blockId,
   * \param[out] blockOffsets Result vector with length <code>ugis.size()+1</code>.
   */
 void computeBlockOffsets(const std::string & blockId,
-                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer>> & ugis,
+                         const std::vector<Teuchos::RCP<const GlobalIndexer>> & ugis,
                          std::vector<int> & blockOffsets);
 
 /** Print out unique global indexer load balancing information. This includes
   * the minimum unknown, maximum unknown count, mean unknown and standard deviation of
   * the unknowns for both owned and owned and ghosted.
   */
-std::string printUGILoadBalancingInformation(const UniqueGlobalIndexer & ugi);
+std::string printUGILoadBalancingInformation(const GlobalIndexer & ugi);
 
 /** Print all GIDs and their associated elements to the screen. Note if a FancyOStream is used
   * the correct prefixes this method will label the processors as well. This can print out an 
   * extreme amount of information so it is only useful for debugging.
   */
-void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer & ugi);
+void printMeshTopology(std::ostream & os,const panzer::GlobalIndexer & ugi);
 
 /** Construct a vector that contains a reduced set of field numbers.
   * The ordering is based on the ordering from <code>ugi.getOwnedAndGhostedIndices()</code>.
@@ -146,7 +146,7 @@ void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer & ugi
   * \note The description and use of this function are equally confusing...
   */
 Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
-buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi);
+buildGhostedFieldReducedVector(const GlobalIndexer & ugi);
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -159,7 +159,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi);
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
 Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
-buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
+buildGhostedFieldVector(const GlobalIndexer & ugi,
                         const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & reducedVec=Teuchos::null);
 
 /** This function builds a vector that defines fields for each global unknown.
@@ -175,7 +175,7 @@ buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
   *                          build by a call to <code>getOwnedAndGhostedIndices()</code>.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
-void buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
+void buildGhostedFieldVector(const GlobalIndexer & ugi,
                              std::vector<int> & fieldNumbers,
                              const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & reducedVec=Teuchos::null);
 
@@ -193,7 +193,7 @@ void buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
   */
 template <typename ScalarT,typename ArrayT>
 void updateGhostedDataReducedVector(const std::string & fieldName,const std::string blockId,
-                                    const UniqueGlobalIndexer & ugi,
+                                    const GlobalIndexer & ugi,
                                     const ArrayT & data,
                                     Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> & dataVector);
 
@@ -290,7 +290,7 @@ public:
    /** Construct information for the unique global indexer. Notice that this
      * requires global communication.
      */
-   ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi);
+   ArrayToFieldVector(const Teuchos::RCP<const GlobalIndexer> & ugi);
 
    /** Get a Tpetra vector containing the data ordered according to 
      * the ordering from <code>UGI::getOwnedAndGhostedIndices</code>.
@@ -340,7 +340,7 @@ protected:
    void buildFieldVector(const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> & source) const;
 
    //! DOF mapping
-   Teuchos::RCP<const UniqueGlobalIndexer> ugi_;
+   Teuchos::RCP<const GlobalIndexer> ugi_;
 
    Teuchos::RCP<const IntVector> gh_reducedFieldVector_; //! ghosted reduced field vector
    Teuchos::RCP<const IntVector> gh_fieldVector_;        //! ghosted field vector
@@ -360,6 +360,6 @@ private:
 
 } // end namspace panzer
 
-#include "Panzer_UniqueGlobalIndexer_Utilities_impl.hpp"
+#include "Panzer_GlobalIndexer_Utilities_impl.hpp"
 
 #endif

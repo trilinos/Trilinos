@@ -52,7 +52,7 @@
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 
 // include some intrepid basis functions
 // 2D basis 

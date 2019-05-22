@@ -231,7 +231,7 @@ const std::vector<int> & BlockedDOFManager::getGIDFieldOffsets(const std::string
 
    // first grab all pieces that are needed for extracting GIDs from sub system
    int fieldBlock = getFieldBlock(fieldNum);
-   Teuchos::RCP<const UniqueGlobalIndexer> dofManager = fieldBlockManagers_[fieldBlock];
+   Teuchos::RCP<const GlobalIndexer> dofManager = fieldBlockManagers_[fieldBlock];
 
    // grab offsets for sub dof manager. Notice you must convert to field number used by sub manager!
    const std::vector<int> & subGIDOffsets 
@@ -296,7 +296,7 @@ BlockedDOFManager::getGIDFieldOffsets_closure(const std::string & blockId,int fi
 
    // first grab all pieces that are needed for extracting GIDs from sub system
    int fieldBlock = getFieldBlock(fieldNum);
-   Teuchos::RCP<const UniqueGlobalIndexer> dofManager = fieldBlockManagers_[fieldBlock];
+   Teuchos::RCP<const GlobalIndexer> dofManager = fieldBlockManagers_[fieldBlock];
 
    // grab offsets for sub dof manager. Notice you must convert to field number used by sub manager!
    const std::pair<std::vector<int>,std::vector<int> > & subGIDOffsets_closure
@@ -666,7 +666,7 @@ void BlockedDOFManager::registerFields(bool buildSubUGIs)
    // build sub DOFManagers for each field block
    if(buildSubUGIs) {
      for(std::size_t fldBlk=0;fldBlk<fieldOrder_.size();fldBlk++) {
-       Teuchos::RCP<panzer::UniqueGlobalIndexer> dofManager = buildNewIndexer(getConnManager(),mpiComm_);
+       Teuchos::RCP<panzer::GlobalIndexer> dofManager = buildNewIndexer(getConnManager(),mpiComm_);
 
        // add in these fields to the new manager
        this->addFieldsToFieldBlockManager(fieldOrder_[fldBlk],*dofManager);
@@ -686,7 +686,7 @@ void BlockedDOFManager::registerFields(bool buildSubUGIs)
    maxSubFieldNum_ = -1;
    std::map<std::string,int> tempStrToNum;
    for(std::size_t fldBlk=0;fldBlk<fieldBlockManagers_.size();fldBlk++) {
-      Teuchos::RCP<const panzer::UniqueGlobalIndexer> dofManager =
+      Teuchos::RCP<const panzer::GlobalIndexer> dofManager =
          fieldBlockManagers_[fldBlk];
       const std::vector<std::string> & activeFields = fieldOrder_[fldBlk];
 
@@ -739,7 +739,7 @@ void BlockedDOFManager::registerFields(bool buildSubUGIs)
    fieldsRegistered_ = true;
 }
 
-Teuchos::RCP<UniqueGlobalIndexer> 
+Teuchos::RCP<GlobalIndexer> 
 BlockedDOFManager::buildNewIndexer(const Teuchos::RCP<ConnManager> & connManager,MPI_Comm mpiComm) const
 {
   Teuchos::RCP<panzer::DOFManager> dofManager = Teuchos::rcp(new panzer::DOFManager);
@@ -748,7 +748,7 @@ BlockedDOFManager::buildNewIndexer(const Teuchos::RCP<ConnManager> & connManager
   return dofManager;
 }
 
-void BlockedDOFManager::setOrientationsRequired(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,bool required) const
+void BlockedDOFManager::setOrientationsRequired(const Teuchos::RCP<GlobalIndexer> & indexer,bool required) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -768,7 +768,7 @@ void BlockedDOFManager::setOrientationsRequired(const Teuchos::RCP<UniqueGlobalI
 }
 
 void BlockedDOFManager::
-buildGlobalUnknowns(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,const Teuchos::RCP<const FieldPattern> & geomPattern) const
+buildGlobalUnknowns(const Teuchos::RCP<GlobalIndexer> & indexer,const Teuchos::RCP<const FieldPattern> & geomPattern) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -787,7 +787,7 @@ buildGlobalUnknowns(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,const Teuc
   TEUCHOS_ASSERT(false);
 }
 
-void BlockedDOFManager::printFieldInformation(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,
+void BlockedDOFManager::printFieldInformation(const Teuchos::RCP<GlobalIndexer> & indexer,
                                               std::ostream & os) const
 {
   using Teuchos::RCP;
@@ -807,7 +807,7 @@ void BlockedDOFManager::printFieldInformation(const Teuchos::RCP<UniqueGlobalInd
   TEUCHOS_ASSERT(false);
 }
 
-int BlockedDOFManager::getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,
+int BlockedDOFManager::getElementBlockGIDCount(const Teuchos::RCP<GlobalIndexer> & indexer,
                                                const std::string & elementBlock) const
 {
   using Teuchos::RCP;
@@ -818,7 +818,7 @@ int BlockedDOFManager::getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIn
   return indexer->getElementBlockGIDCount(elementBlock);
 }
 
-int BlockedDOFManager::getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer> & indexer,
+int BlockedDOFManager::getElementBlockGIDCount(const Teuchos::RCP<GlobalIndexer> & indexer,
                                                const std::size_t & elementBlock) const
 {
   using Teuchos::RCP;
@@ -848,13 +848,13 @@ int BlockedDOFManager::getElementBlockGIDCount(const std::size_t & elementBlock)
 }
 
 void BlockedDOFManager::addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
-                                                     UniqueGlobalIndexer & fieldBlockManager) const
+                                                     GlobalIndexer & fieldBlockManager) const
 {
   using Teuchos::Ptr;
   using Teuchos::ptrFromRef;
   using Teuchos::ptr_dynamic_cast;
 
-  Ptr<UniqueGlobalIndexer> ugi_ptr = ptrFromRef(fieldBlockManager);
+  Ptr<GlobalIndexer> ugi_ptr = ptrFromRef(fieldBlockManager);
 
   // standard version
   {
@@ -935,7 +935,7 @@ int BlockedDOFManager::getNumFields() const
 //   2. initializes the connectivity
 //   3. calls initComplete
 void BlockedDOFManager::
-buildGlobalUnknowns(const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & fieldBlockManagers)
+buildGlobalUnknowns(const std::vector<Teuchos::RCP<GlobalIndexer>> & fieldBlockManagers)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;

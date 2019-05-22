@@ -41,15 +41,15 @@
 // @HEADER
 
 #include "PanzerDofMgr_config.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 
 namespace panzer {
 
 
-std::vector<Teuchos::RCP<const UniqueGlobalIndexer>>
-nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer > > & ugis)
+std::vector<Teuchos::RCP<const GlobalIndexer>>
+nc2c_vector(const std::vector<Teuchos::RCP<GlobalIndexer > > & ugis)
 {
-  std::vector<Teuchos::RCP<const UniqueGlobalIndexer>> vec;
+  std::vector<Teuchos::RCP<const GlobalIndexer>> vec;
 
   for(std::size_t blk=0;blk<ugis.size();blk++) 
     vec.push_back(ugis[blk]);
@@ -58,7 +58,7 @@ nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer > > & ugis)
 }
 
 int getFieldBlock(const std::string & fieldName,
-                  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer>> & ugis)
+                  const std::vector<Teuchos::RCP<const GlobalIndexer>> & ugis)
 {
   int fieldNum = -1;
   for(std::size_t blk=0;blk<ugis.size();blk++) {
@@ -71,7 +71,7 @@ int getFieldBlock(const std::string & fieldName,
 }
 
 int getFieldBlock(const std::string & fieldName,
-                  const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & ugis)
+                  const std::vector<Teuchos::RCP<GlobalIndexer>> & ugis)
 {
   int fieldNum = -1;
   for(std::size_t blk=0;blk<ugis.size();blk++) {
@@ -84,7 +84,7 @@ int getFieldBlock(const std::string & fieldName,
 }
 
 void computeBlockOffsets(const std::string & blockId,
-                         const std::vector<Teuchos::RCP<UniqueGlobalIndexer>> & ugis,
+                         const std::vector<Teuchos::RCP<GlobalIndexer>> & ugis,
                          std::vector<int> & blockOffsets)
 {
   blockOffsets.resize(ugis.size()+1); // number of fields, plus a sentinnel
@@ -98,7 +98,7 @@ void computeBlockOffsets(const std::string & blockId,
 }
 
 void computeBlockOffsets(const std::string & blockId,
-                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer>> & ugis,
+                         const std::vector<Teuchos::RCP<const GlobalIndexer>> & ugis,
                          std::vector<int> & blockOffsets)
 {
   blockOffsets.resize(ugis.size()+1); // number of fields, plus a sentinnel
@@ -112,7 +112,7 @@ void computeBlockOffsets(const std::string & blockId,
 }
 
 std::string 
-printUGILoadBalancingInformation(const UniqueGlobalIndexer & ugi)
+printUGILoadBalancingInformation(const GlobalIndexer & ugi)
 {
   std::size_t myOwnedCount = static_cast<std::size_t>(ugi.getNumOwned()); 
   std::size_t sum=0,min=0,max=0;
@@ -140,7 +140,7 @@ printUGILoadBalancingInformation(const UniqueGlobalIndexer & ugi)
 }
 
 void
-printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer & ugi)
+printMeshTopology(std::ostream & os,const panzer::GlobalIndexer & ugi)
 {
   std::vector<std::string> block_ids;
 
@@ -175,7 +175,7 @@ printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer & ugi)
 }
 
 Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
-buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi)
+buildGhostedFieldReducedVector(const GlobalIndexer & ugi)
 {
    typedef Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> Map;
    typedef Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> IntVector;
@@ -230,7 +230,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer & ugi)
    return Teuchos::rcp(new IntVector(reducedMap,Teuchos::arrayViewFromVector(reducedFieldNumbers)));
 }
 
-void buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
+void buildGhostedFieldVector(const GlobalIndexer & ugi,
                              std::vector<int> & fieldNumbers,
                              const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & reducedVec)
 {
@@ -243,7 +243,7 @@ void buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
 }
 
 Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
-buildGhostedFieldVector(const UniqueGlobalIndexer & ugi,
+buildGhostedFieldVector(const GlobalIndexer & ugi,
                         const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & reducedVec)
 {
    typedef Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> Map;
@@ -301,7 +301,7 @@ getFieldMap(int fieldNum,const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panz
    return finalMap;
 }
 
-ArrayToFieldVector::ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer> & ugi)
+ArrayToFieldVector::ArrayToFieldVector(const Teuchos::RCP<const GlobalIndexer> & ugi)
       : ugi_(ugi)
 {
    gh_reducedFieldVector_ = buildGhostedFieldReducedVector(*ugi_);

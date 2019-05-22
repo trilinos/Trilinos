@@ -58,8 +58,8 @@ namespace panzer {
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
-ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer> & indexer,
-                                const Teuchos::RCP<const panzer::UniqueGlobalIndexer> & cIndexer,
+ScatterDirichletResidual_Epetra(const Teuchos::RCP<const GlobalIndexer> & indexer,
+                                const Teuchos::RCP<const panzer::GlobalIndexer> & cIndexer,
                                 const Teuchos::ParameterList& p) 
    : globalIndexer_(indexer)
    , colGlobalIndexer_(cIndexer) 
