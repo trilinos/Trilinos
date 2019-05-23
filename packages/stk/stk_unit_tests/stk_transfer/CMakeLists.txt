@@ -48,13 +48,13 @@ TRIBITS_ADD_EXECUTABLE(
     COMM serial mpi
     )
 
-TRIBITS_ADD_TEST(
-    stk_transfer_unit_tests
-    NAME STK_Transfer_how_to_use_copyTransfer
-    ARGS "--gtest_filter=StkMeshHowTo.useCopyTransfer"
-    COMM serial mpi
-    NUM_MPI_PROCS 2
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+# TRIBITS_ADD_TEST(
+#     stk_transfer_unit_tests
+#     NAME STK_Transfer_how_to_use_copyTransfer
+#     ARGS "--gtest_filter=StkMeshHowTo.useCopyTransfer"
+#     COMM serial mpi
+#     NUM_MPI_PROCS 2
+#     PASS_REGULAR_EXPRESSION "PASS"
+#     FAIL_REGULAR_EXPRESSION "FAIL"
+#   )
 
