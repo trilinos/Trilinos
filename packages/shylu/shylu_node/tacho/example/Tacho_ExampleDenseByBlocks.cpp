@@ -26,6 +26,31 @@ using namespace Tacho;
   printf("       byblocks/reference (speedup):                   %10.6f\n", t_reference/t_byblocks); \
   printf("\n");                                                         
 
+/// select a kokkos task scheudler
+/// - DeprecatedTaskScheduler, DeprecatedTaskSchedulerMultiple
+/// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
+#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskScheduler<T>;
+static char * scheduler_name = "DeprecatedTaskScheduler";
+#endif
+#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskSchedulerMultiple<T>;
+static char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
+static char * scheduler_name = "TaskScheduler";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
+static char * scheduler_name = "TaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
+static char * scheduler_name = "ChaseLevTaskScheduler";
+#endif
+
+
 int main (int argc, char *argv[]) {
   CommandLineParser opts("This example program measure the performance of dense-by-blocks on Kokkos::OpenMP");  
 
@@ -53,14 +78,14 @@ int main (int argc, char *argv[]) {
   typedef double value_type;
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   typedef Kokkos::DefaultExecutionSpace exec_space;
-  //typedef Kokkos::DefaultHostExecutionSpace exec_space;
   typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
 
-  typedef Kokkos::TaskSchedulerMultiple<exec_space> scheduler_type; 
-  typedef Kokkos::TaskSchedulerMultiple<host_exec_space> host_scheduler_type; 
+  typedef TaskSchedulerType<     exec_space> scheduler_type; 
+  typedef TaskSchedulerType<host_exec_space> host_scheduler_type; 
 
   printExecSpaceConfiguration<host_exec_space>("Default HostSpace");
   printExecSpaceConfiguration<     exec_space>("Default DeviceSpace");
+  printf("Scheduler Type = %s\n", scheduler_name);
 
   int r_val = 0;
   const double eps = std::numeric_limits<double>::epsilon()*10000;  
@@ -73,7 +98,6 @@ int main (int argc, char *argv[]) {
 
     Kokkos::Impl::Timer timer;
 
-    // TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler      
     scheduler_type sched;
 
     typedef TaskFunctor_Chol<scheduler_type,DenseMatrixOfBlocksType,
@@ -382,16 +406,12 @@ int main (int argc, char *argv[]) {
     /// Gemm
     ///
 #if 1
-    { //for (ordinal_type m=mbeg;m<=mend;m+=step) {
-      ordinal_type m = 6000;
-      printf("gemm problem %10d\n", m);
-
+    for (ordinal_type m=mbeg;m<=mend;m+=step) {
       t_reference = 0; t_byblocks = 0;
       auto sub_a  = Kokkos::subview(a,  range_type(0,m*m));
       auto sub_b  = Kokkos::subview(b,  range_type(0,m*m));
       auto sub_a1 = Kokkos::subview(a1, range_type(0,m*m));
       auto sub_a2 = Kokkos::subview(a2, range_type(0,m*m));
-
       {
         sub_a. modify_host();
         sub_b. modify_host();
@@ -504,6 +524,7 @@ int main (int argc, char *argv[]) {
         {
           const double alpha = -1.0, beta = 1.0;
           for (ordinal_type iter=dry;iter<niter;++iter) {
+            printf("iter = %d\n", iter);
             timer.reset();
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
                                task_functor_gemm(alpha, DA, DB, beta, DC));

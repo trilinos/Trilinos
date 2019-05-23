@@ -31,6 +31,31 @@
 
 using namespace Tacho;
 
+/// select a kokkos task scheudler
+/// - DeprecatedTaskScheduler, DeprecatedTaskSchedulerMultiple
+/// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
+#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskScheduler<T>;
+static char * scheduler_name = "DeprecatedTaskScheduler";
+#endif
+#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskSchedulerMultiple<T>;
+static char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
+static char * scheduler_name = "TaskScheduler";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
+static char * scheduler_name = "TaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
+static char * scheduler_name = "ChaseLevTaskScheduler";
+#endif
+
+
 int main (int argc, char *argv[]) {
   CommandLineParser opts("This example program measure the performance of Tacho on Kokkos::OpenMP");
 
@@ -69,10 +94,11 @@ int main (int argc, char *argv[]) {
   //typedef Kokkos::DefaultHostExecutionSpace exec_space;
   typedef Kokkos::DefaultHostExecutionSpace host_space;
 
-  typedef Kokkos::TaskSchedulerMultiple<exec_space> scheduler_type;
+  typedef TaskSchedulerType<exec_space> scheduler_type;
 
   printExecSpaceConfiguration<exec_space> ("DeviceSpace", false);
   printExecSpaceConfiguration<host_space> ("HostSpace",   false);
+  printf("Scheduler Type = %s\n", scheduler_name);
   
   int r_val = 0;
   

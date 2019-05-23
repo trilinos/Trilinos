@@ -5,6 +5,30 @@
 
 using ordinal_type = Tacho::ordinal_type;
 
+/// select a kokkos task scheudler
+/// - DeprecatedTaskScheduler, DeprecatedTaskSchedulerMultiple
+/// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
+#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskScheduler<T>;
+static char * scheduler_name = "DeprecatedTaskScheduler";
+#endif
+#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskSchedulerMultiple<T>;
+static char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
+static char * scheduler_name = "TaskScheduler";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
+static char * scheduler_name = "TaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
+static char * scheduler_name = "ChaseLevTaskScheduler";
+#endif
+
 template<typename value_type>
 int driver (int argc, char *argv[]) {
   int nthreads = 1;
@@ -39,14 +63,14 @@ int driver (int argc, char *argv[]) {
   const bool detail = false;
 
   typedef Kokkos::DefaultExecutionSpace exec_space;
-  //typedef Kokkos::DefaultHostExecutionSpace exec_space;
   typedef Kokkos::DefaultHostExecutionSpace host_space;
 
-  typedef Kokkos::TaskSchedulerMultiple<exec_space> scheduler_type;
+  typedef TaskSchedulerType<exec_space> scheduler_type;
 
   Tacho::printExecSpaceConfiguration<exec_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<host_space>("HostSpace",   detail);
-  
+  printf("Scheduler Type = %s\n", scheduler_name);
+
   int r_val = 0;
   
   {
