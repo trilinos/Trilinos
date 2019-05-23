@@ -903,7 +903,7 @@ void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType>
   RCP<const map_type> MyMap = rcp(new map_type(NumGlobalEquations, NumMyEquations, 0, Comm));
 
   // Create the matrix
-  A = rcp(new CrsMatrixType(MyMap,0));
+  A = rcp(new CrsMatrixType(MyMap,3));
 
   // Add  rows one-at-a-time
   // Need some vectors to help
@@ -968,7 +968,7 @@ void build_test_matrix_wideband(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMa
   RCP<const map_type > MyMap = rcp(new map_type(NumGlobalEquations, NumMyEquations, 0, Comm));
 
   // Create the matrix
-  A = rcp(new CrsMatrixType(MyMap,0));
+  A = rcp(new CrsMatrixType(MyMap,10));
 
   // Add  rows one-at-a-time
   // Need some vectors to help
@@ -1072,7 +1072,7 @@ build_test_matrix_with_row_overlap (const Teuchos::RCP<const Teuchos::Comm<int> 
     rcp (new map_type (INVALID, elementList (), 0, comm));
 
   // Create the output matrix.
-  A = rcp (new CrsMatrixType (MyMap, 0));
+  A = rcp (new CrsMatrixType (MyMap, 1));
 
   // Fill the output matrix with entries.
   Teuchos::Array<Scalar> Values(1);
@@ -1116,7 +1116,7 @@ build_test_prolongator (const Teuchos::RCP<const CrsMatrixType>& A,
   RCP<const map_type> DomainMap;
 
   // Create the matrix
-  P = rcp(new CrsMatrixType(RowMap,0));
+  P = rcp(new CrsMatrixType(RowMap,1));
 
   // Make DomainMap
   Array<GO> gids;
@@ -2064,7 +2064,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     os << *prefix << "Build test matrix and source Map" << std::endl;
     std::cerr << os.str ();
   }
+std::cout << Comm->getRank() << " KDDKDD build A" << std::endl;
   build_test_matrix<CrsMatrixType>(Comm,A);
+std::cout << Comm->getRank() << " KDDKDD build A done" << std::endl;
   GST num_global = A->getRowMap()->getGlobalNumElements();
   MapSource = A->getRowMap();
 
@@ -2092,9 +2094,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     }
 
     test_err=0;
+std::cout << Comm->getRank() << " KDDKDD build B" << std::endl;
     B = rcp(new CrsMatrixType(MapTarget,0));
+std::cout << Comm->getRank() << " KDDKDD build B import" << std::endl;
     B->doImport(*A, *Importer, Tpetra::INSERT);
+std::cout << Comm->getRank() << " KDDKDD build B fillComplete" << std::endl;
     B->fillComplete(A->getDomainMap(),A->getRangeMap());
+std::cout << Comm->getRank() << " KDDKDD build B done" << std::endl;
     size_t nnz1=B->getNodeNumEntries();
 
     // Call the P&PWOPIDs
