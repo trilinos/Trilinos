@@ -749,7 +749,7 @@ mult_test_results jacobi_test(
     if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
       Teuchos::ParameterList p;
       p.set("openmp: jacobi algorithm","MSAK");
-      C2 = rcp(new Matrix_t(B->getRowMap());
+      C2 = rcp(new Matrix_t(B->getRowMap(),0));
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }
@@ -758,7 +758,7 @@ mult_test_results jacobi_test(
     if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
       Teuchos::ParameterList p;
       p.set("cuda: jacobi algorithm","MSAK");
-      C2 = rcp(new Matrix_t(B->getRowMap());
+      C2 = rcp(new Matrix_t(B->getRowMap(),0));
       Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
       done=true;
     }

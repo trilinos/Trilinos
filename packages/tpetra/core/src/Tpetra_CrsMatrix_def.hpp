@@ -72,6 +72,7 @@
 #include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
 #include <memory>
 #include <sstream>
