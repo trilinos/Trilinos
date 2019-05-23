@@ -417,7 +417,8 @@ int main (int argc, char *argv[]) {
       ///
       /// tacho
       ///
-      Tacho::Solver<value_type,Kokkos::DefaultHostExecutionSpace> solver;
+      typedef Kokkos::TaskSchedulerMultiple<Kokkos::DefaultHostExecutionSpace> scheduler_type;       
+      Tacho::Solver<value_type,scheduler_type> solver;
 
       //solver.setMatrixType(sym, posdef);
       solver.setVerbose(verbose);

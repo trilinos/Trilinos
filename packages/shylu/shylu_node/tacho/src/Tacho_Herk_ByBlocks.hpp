@@ -20,21 +20,19 @@ namespace Tacho {
 
     template<>
     struct Herk<Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks> {
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename ScalarType,
                typename MatrixOfDenseBlocksType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(SchedulerType &sched,
-             MemberType &member,
+      invoke(MemberType &member,
              const ScalarType alpha,
              const MatrixOfDenseBlocksType &A,
              const ScalarType beta,
              const MatrixOfDenseBlocksType &C) {
-        typedef SchedulerType scheduler_type;
         typedef ScalarType scalar_type;
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
+        typedef typename dense_block_type::scheduler_type scheduler_type;
         typedef typename dense_block_type::future_type future_type;
 
         typedef typename std::conditional
@@ -45,6 +43,7 @@ namespace Tacho {
           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
            Algo::External,Algo::Internal>::type GemmAlgoType;
         
+        auto &sched = member.scheduler();
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
             const ordinal_type pend = A.extent(0);
             for (ordinal_type p=0;p<pend;++p) {
@@ -62,7 +61,7 @@ namespace Tacho {
                                          <scheduler_type,scalar_type,dense_block_type,
                                          Uplo::Upper,Trans::ConjTranspose,
                                          HerkAlgoType>
-                                         (sched, alpha, aa, beta_select, cc));
+                                         (alpha, aa, beta_select, cc));
                     TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
                     cc.set_future(f);
                   } else {
@@ -74,7 +73,7 @@ namespace Tacho {
                                          <scheduler_type,scalar_type,dense_block_type,
                                          Trans::ConjTranspose,Trans::NoTranspose,
                                          GemmAlgoType>
-                                         (sched, alpha, aa, bb, beta_select, cc));
+                                         (alpha, aa, bb, beta_select, cc));
                     TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
                     cc.set_future(f);
                   }

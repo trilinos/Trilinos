@@ -42,6 +42,8 @@ int driver (int argc, char *argv[]) {
   //typedef Kokkos::DefaultHostExecutionSpace exec_space;
   typedef Kokkos::DefaultHostExecutionSpace host_space;
 
+  typedef Kokkos::TaskSchedulerMultiple<exec_space> scheduler_type;
+
   Tacho::printExecSpaceConfiguration<exec_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<host_space>("HostSpace",   detail);
   
@@ -89,7 +91,7 @@ int driver (int argc, char *argv[]) {
     ///   CrsMatrixBaseType A;
     ///   A.setExternalMatrix(nrows, ncols, nnzm ap, aj, ax);
     ///  
-    Tacho::Solver<value_type,exec_space> solver;
+    Tacho::Solver<value_type,scheduler_type> solver;
     solver.setMatrixType(sym, posdef);
     solver.setVerbose(verbose);
     solver.setMaxNumberOfSuperblocks(max_num_superblocks);

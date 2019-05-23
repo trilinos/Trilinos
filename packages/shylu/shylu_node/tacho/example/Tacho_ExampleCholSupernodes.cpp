@@ -69,6 +69,8 @@ int main (int argc, char *argv[]) {
   //typedef Kokkos::DefaultHostExecutionSpace exec_space;
   typedef Kokkos::DefaultHostExecutionSpace host_space;
 
+  typedef Kokkos::TaskSchedulerMultiple<exec_space> scheduler_type;
+
   printExecSpaceConfiguration<exec_space> ("DeviceSpace", false);
   printExecSpaceConfiguration<host_space> ("HostSpace",   false);
   
@@ -150,7 +152,7 @@ int main (int argc, char *argv[]) {
     Kokkos::deep_copy(s_snodes_tree_ptr      , S.SupernodesTreePtr());
     Kokkos::deep_copy(s_snodes_tree_children , S.SupernodesTreeChildren());
     
-    NumericTools<value_type,exec_space> 
+    NumericTools<value_type,scheduler_type> 
       N(A.NumRows(), a_row_ptr, a_cols,
         t_perm, t_peri,
         S.NumSupernodes(), s_supernodes,

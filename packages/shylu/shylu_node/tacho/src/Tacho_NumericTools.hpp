@@ -44,7 +44,7 @@
 
 namespace Tacho {
 
-    template<typename ValueType, typename ExecSpace>
+    template<typename ValueType, typename SchedulerType>
     class NumericTools {
     public:
       typedef ValueType value_type;
@@ -53,8 +53,10 @@ namespace Tacho {
       ///
       /// device space typedefs
       ///
-      typedef ExecSpace exec_space;
-      typedef SupernodeInfo<value_type,exec_space> supernode_info_type;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::execution_space exec_space;
+
+      typedef SupernodeInfo<value_type,scheduler_type> supernode_info_type;
       typedef typename supernode_info_type::crs_matrix_type crs_matrix_type;
 
       typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
@@ -68,7 +70,6 @@ namespace Tacho {
       typedef typename supernode_info_type::dense_block_type dense_block_type;
       typedef typename supernode_info_type::dense_matrix_of_blocks_type dense_matrix_of_blocks_type;
 
-      typedef Kokkos::DeprecatedTaskScheduler<exec_space> scheduler_type;
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
 
       typedef Kokkos::DefaultHostExecutionSpace host_space;
@@ -393,7 +394,7 @@ namespace Tacho {
           const ordinal_type sched = 0, member = 0, nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::Serial>
-              ::factorize_recursive_serial(sched, member, _info, _stree_roots(i), true, buf.data(), bufsize);
+              ::factorize_recursive_serial(member, _info, _stree_roots(i), true, buf.data(), bufsize);
           
           track_free(bufsize);
         }
@@ -442,7 +443,7 @@ namespace Tacho {
           const ordinal_type sched = 0, member = 0, nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::SerialPanel>
-              ::factorize_recursive_serial(sched, member, 
+              ::factorize_recursive_serial(member, 
                                            _info, _stree_roots(i), 
                                            true, buf.data(), bufsize, nb);
           
@@ -496,13 +497,13 @@ namespace Tacho {
           track_alloc(bufsize);
           
           /// recursive tree traversal
-          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.extent(0);
+          const ordinal_type member = 0, nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::Serial>
-              ::solve_lower_recursive_serial(sched, member, _info, _stree_roots(i), true, buf.data(), bufsize);
+              ::solve_lower_recursive_serial(member, _info, _stree_roots(i), true, buf.data(), bufsize);
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::Serial>
-              ::solve_upper_recursive_serial(sched, member, _info, _stree_roots(i), true, buf.data(), bufsize);
+              ::solve_upper_recursive_serial(member, _info, _stree_roots(i), true, buf.data(), bufsize);
           
           track_free(bufsize);
         }
@@ -534,8 +535,8 @@ namespace Tacho {
 
         timer.reset();
 
-        typedef TaskFunctor_FactorizeChol<value_type,exec_space> functor_type;
-        typedef Kokkos::Future<int,exec_space> future_type;
+        typedef TaskFunctor_FactorizeChol<value_type,scheduler_type> functor_type;
+        typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
 
         scheduler_type sched;
         {
@@ -544,21 +545,20 @@ namespace Tacho {
           const size_t estimate_max_numtasks = _sid_block_colidx.extent(0) >> 3;
           
           const size_t
-            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-            min_block_size  = 16,
+            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size;
+          const unsigned int min_block_size  = 16,
             max_block_size  = (max_functor_size + max_dep_future_size),
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
           sched = scheduler_type(typename scheduler_type::memory_space(),
-                             task_queue_capacity,
-                             min_block_size,
-                             max_block_size,
-                             superblock_size);
+                                 task_queue_capacity,
+                                 min_block_size,
+                                 max_block_size,
+                                 superblock_size);
           
           track_alloc(sched.memory()->capacity());
         }
-        
         stat.s_min_block_size  = sched.memory()->min_block_size();
         stat.s_max_block_size  = sched.memory()->max_block_size();
         stat.s_capacity        = sched.memory()->capacity();
@@ -626,7 +626,7 @@ namespace Tacho {
         const ordinal_type nroots = _stree_roots.extent(0);
         for (ordinal_type i=0;i<nroots;++i)
           Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
-                             functor_type(sched, bufpool, _info, _stree_roots(i)));
+                             functor_type(bufpool, _info, _stree_roots(i)));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
         
@@ -654,8 +654,8 @@ namespace Tacho {
 
         timer.reset();
 
-        typedef TaskFunctor_FactorizeCholPanel<value_type,exec_space> functor_type;
-        typedef Kokkos::Future<int,exec_space> future_type;
+        typedef TaskFunctor_FactorizeCholPanel<value_type,scheduler_type> functor_type;
+        typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
         
         scheduler_type sched;
         {
@@ -664,17 +664,18 @@ namespace Tacho {
           const size_t estimate_max_numtasks = _sid_block_colidx.extent(0) >> 3;
           
           const size_t
-            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size;
+          const unsigned int
             min_block_size  = 16,
             max_block_size  = (max_functor_size + max_dep_future_size),
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
           sched = scheduler_type(typename scheduler_type::memory_space(),
-                             task_queue_capacity,
-                             min_block_size,
-                             max_block_size,
-                             superblock_size);
+                                 task_queue_capacity,
+                                 min_block_size,
+                                 max_block_size,
+                                 superblock_size);
           
           track_alloc(sched.memory()->capacity());
         }
@@ -748,7 +749,7 @@ namespace Tacho {
         const ordinal_type nroots = _stree_roots.extent(0);
         for (ordinal_type i=0;i<nroots;++i)
           Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
-                             functor_type(sched, bufpool, _info, _stree_roots(i), nb));
+                             functor_type(bufpool, _info, _stree_roots(i), nb));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
         
@@ -796,9 +797,9 @@ namespace Tacho {
         {
           timer.reset();
 
-          typedef TaskFunctor_SolveLowerChol<value_type,exec_space> functor_lower_type;
-          typedef TaskFunctor_SolveUpperChol<value_type,exec_space> functor_upper_type;
-          typedef Kokkos::Future<int,exec_space> future_type;
+          typedef TaskFunctor_SolveLowerChol<value_type,scheduler_type> functor_lower_type;
+          typedef TaskFunctor_SolveUpperChol<value_type,scheduler_type> functor_upper_type;
+          typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
           
           {
             const size_t max_functor_size = 2*max(sizeof(functor_lower_type), sizeof(functor_upper_type));
@@ -814,10 +815,10 @@ namespace Tacho {
 
             if (_sched_solve_capacity < task_queue_capacity) {
               _sched_solve = scheduler_type(typename scheduler_type::memory_space(),
-                                        task_queue_capacity,
-                                        min_block_size,
-                                        max_block_size,
-                                        superblock_size);
+                                            task_queue_capacity,
+                                            min_block_size,
+                                            max_block_size,
+                                            superblock_size);
               _sched_solve_capacity = _sched_solve.memory()->capacity();
               track_alloc(_sched_solve_capacity);
             }
@@ -863,10 +864,10 @@ namespace Tacho {
           timer.reset();
           const ordinal_type nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i) {
-            auto fl = Kokkos::host_spawn(Kokkos::TaskTeam(_sched_solve, Kokkos::TaskPriority::High),
-                                         functor_lower_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
-            auto fu = Kokkos::host_spawn(Kokkos::TaskTeam(          fl, Kokkos::TaskPriority::High),
-                                         functor_upper_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
+            auto fl = Kokkos::host_spawn(Kokkos::TaskTeam(_sched_solve,     Kokkos::TaskPriority::High),
+                                         functor_lower_type(_bufpool_solve, _info, _stree_roots(i)));
+            auto fu = Kokkos::host_spawn(Kokkos::TaskTeam(_sched_solve, fl, Kokkos::TaskPriority::High),
+                                         functor_upper_type(_bufpool_solve, _info, _stree_roots(i)));
           }
           Kokkos::wait(_sched_solve);
           stat.t_solve = timer.seconds();
@@ -898,8 +899,8 @@ namespace Tacho {
 
         timer.reset();
 
-        typedef TaskFunctor_FactorizeCholByBlocks<value_type,exec_space> functor_type;
-        typedef Kokkos::Future<int,exec_space> future_type;
+        typedef TaskFunctor_FactorizeCholByBlocks<value_type,scheduler_type> functor_type;
+        typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
         
         const size_t 
           max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
@@ -913,21 +914,20 @@ namespace Tacho {
           const size_t estimate_max_numtasks = _sid_block_colidx.extent(0) >> 3;
           
           const size_t
-            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size;
+          const unsigned int 
             min_block_size  = 16,
             max_block_size  = ( max_dep_future_size + max_functor_size ),
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
           sched = scheduler_type(typename scheduler_type::memory_space(),
-                             task_queue_capacity,
-                             min_block_size,
-                             max_block_size,
-                             superblock_size);
-          
+                                 task_queue_capacity,
+                                 min_block_size,
+                                 max_block_size,
+                                 superblock_size);
           track_alloc(sched.memory()->capacity());
         }
-        
         stat.s_min_block_size  = sched.memory()->min_block_size();
         stat.s_max_block_size  = sched.memory()->max_block_size();
         stat.s_capacity        = sched.memory()->capacity();
@@ -998,7 +998,7 @@ namespace Tacho {
         const ordinal_type nroots = _stree_roots.extent(0);
         for (ordinal_type i=0;i<nroots;++i)
           Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
-                             functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
+                             functor_type(bufpool, _info, _stree_roots(i), blksize));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
 
@@ -1027,8 +1027,8 @@ namespace Tacho {
 
         timer.reset();
 
-        typedef TaskFunctor_FactorizeCholByBlocksPanel<value_type,exec_space> functor_type;
-        typedef Kokkos::Future<int,exec_space> future_type;
+        typedef TaskFunctor_FactorizeCholByBlocksPanel<value_type,scheduler_type> functor_type;
+        typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
         
         const size_t 
           max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
@@ -1042,17 +1042,18 @@ namespace Tacho {
           const size_t estimate_max_numtasks = _sid_block_colidx.extent(0) >> 3;
           
           const size_t
-            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size;
+          const unsigned int 
             min_block_size  = 16,
             max_block_size  = ( max_dep_future_size + max_functor_size ),
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
           sched = scheduler_type(typename scheduler_type::memory_space(),
-                             task_queue_capacity,
-                             min_block_size,
-                             max_block_size,
-                             superblock_size);
+                                 task_queue_capacity,
+                                 min_block_size,
+                                 max_block_size,
+                                 superblock_size);
           
           track_alloc(sched.memory()->capacity());
         }
@@ -1127,7 +1128,7 @@ namespace Tacho {
         const ordinal_type nroots = _stree_roots.extent(0);
         for (ordinal_type i=0;i<nroots;++i)
           Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
-                             functor_type(sched, bufpool, _info, _stree_roots(i), blksize, panelsize));
+                             functor_type(bufpool, _info, _stree_roots(i), blksize, panelsize));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
         

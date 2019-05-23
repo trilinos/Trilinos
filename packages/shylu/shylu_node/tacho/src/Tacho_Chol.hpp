@@ -35,7 +35,6 @@ namespace Tacho {
       typedef typename future_type::value_type value_type;
       
     private:
-      scheduler_type _sched;
       dense_block_type _A;
       
     public:
@@ -43,15 +42,13 @@ namespace Tacho {
       TaskFunctor_Chol() = delete;
       
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Chol(const scheduler_type &sched,
-                       const dense_block_type &A)
-        : _sched(sched), 
-          _A(A) {}
+      TaskFunctor_Chol(const dense_block_type &A)
+        : _A(A) {}
       
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
         const int ierr = Chol<ArgUplo,ArgAlgo>
-          ::invoke(_sched, member, _A);
+          ::invoke(member, _A);
 
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
             _A.set_future();

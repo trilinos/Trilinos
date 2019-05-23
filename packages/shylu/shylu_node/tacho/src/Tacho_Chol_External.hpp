@@ -39,13 +39,11 @@ namespace Tacho {
       }
 
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename ViewTypeA>
       inline
       static int
-      invoke(SchedulerType &sched,
-             MemberType &member,
+      invoke(MemberType &member,
              const ViewTypeA &A) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
         int r_val = 0;      
