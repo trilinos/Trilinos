@@ -40,6 +40,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Spring3::name = "spring3";
   class St_Spring3 : public ElementVariableType
   {
   public:
