@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr const char *name = "node";
+    static const char *name;
 
     static void factory();
     ~Node() override;

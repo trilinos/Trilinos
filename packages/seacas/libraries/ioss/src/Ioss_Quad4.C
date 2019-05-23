@@ -40,6 +40,7 @@
 #include <cstddef> // for nullptr
 
 namespace Ioss {
+  const char *Quad4::name = "quad4";
   class St_Quad4 : public ElementVariableType
   {
   public:
