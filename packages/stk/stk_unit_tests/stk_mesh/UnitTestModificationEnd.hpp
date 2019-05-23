@@ -545,7 +545,7 @@ void create_edges(stk::unit_test_util::BulkDataTester& stkMeshBulkData, std::vec
     stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
 
     stk::mesh::PartVector add_parts;
-    add_parts.push_back( & stkMeshBulkData.mesh_meta_data().get_cell_topology_root_part( stk::mesh::get_cell_topology( stk::topology::LINE_2 )));
+    add_parts.push_back( & stkMeshBulkData.mesh_meta_data().get_topology_root_part(stk::topology::LINE_2));
     add_parts.push_back(&edge_part);
 
     std::vector<bool> communicate_edge_for_ghosting(edgeIds.size(), false);
@@ -1673,8 +1673,6 @@ void checkItAllForThisGhostedCase(stk::unit_test_util::BulkDataTester &stkMeshBu
         check_it_all_for_proc_1_ghosted(stkMeshBulkData);
     }
 }
-
-
 
 } } } // namespace stk mesh unit_test
 
