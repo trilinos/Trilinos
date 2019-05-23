@@ -47,7 +47,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(set_shared_ids, test0, T)
   fei::SharedIDs<int>::map_type& shID_map = shared.getSharedIDs();
 
   fei::SharedIDs<int>::map_type::iterator
-    s_iter = shID_map.begin(), s_end = shID_map.end();
+    s_iter = shID_map.begin();
 
   if (localProc == 0 || localProc == numProcs-1) {
     size_t expected_num_shIDs = 2;
