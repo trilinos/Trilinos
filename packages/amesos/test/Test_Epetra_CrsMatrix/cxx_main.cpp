@@ -165,9 +165,9 @@ int main(int argc, char *argv[])
   SolverType.push_back("Amesos_Mumps");
   SolverType.push_back("Amesos_Dscpack");
   SolverType.push_back("Amesos_Scalapack");
-
+#ifndef NDEBUG
   bool res;
-
+#endif
   // If a given test fails, than the code stops, due to the assert()
   // statement.
   for (unsigned int i = 0 ; i < SolverType.size() ; ++i) 
@@ -179,7 +179,10 @@ int main(int argc, char *argv[])
       if (1) {
 	// solve with matrix
 	Teuchos::ParameterList AmesosList;
-	res = TestAmesos((char*)Solver.c_str(), AmesosList, false, 
+#ifndef NDEBUG
+	res =
+#endif
+    TestAmesos((char*)Solver.c_str(), AmesosList, false,
                          &Matrix, &LHS, &RHS);
         assert (res == true);
       }
@@ -187,7 +190,10 @@ int main(int argc, char *argv[])
 	// solve transpose with matrix
 	if (Solver != "Amesos_Superludist") {// still not implementes
 	  Teuchos::ParameterList AmesosList;
-	  res  = TestAmesos((char*)Solver.c_str(), AmesosList, true, 
+#ifndef NDEBUG
+	  res  =
+#endif
+      TestAmesos((char*)Solver.c_str(), AmesosList, true,
                             &Matrix, &LHS, &RHS);
           assert (res == true);
 	}

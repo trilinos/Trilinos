@@ -249,7 +249,8 @@ public:
 
     void my_internal_resolve_shared_modify_delete()
     {
-        this->internal_resolve_shared_modify_delete();
+        stk::mesh::EntityVector entitiesNoLongerShared;
+        this->internal_resolve_shared_modify_delete(entitiesNoLongerShared);
     }
 
     void my_internal_resolve_ghosted_modify_delete()
@@ -290,7 +291,8 @@ public:
 
     void my_internal_resolve_shared_membership()
     {
-        this->internal_resolve_shared_membership();
+        stk::mesh::EntityVector entitiesNoLongerShared;
+        this->internal_resolve_shared_membership(entitiesNoLongerShared);
     }
 
     void my_internal_regenerate_aura()

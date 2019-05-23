@@ -77,7 +77,10 @@ int main(int argc, char *argv[])
 
     std::vector<int> NumNz(NumMyElements);
 
-    int i, ierr;
+    int i;
+#ifndef NDEBUG
+    int ierr;
+#endif
     for (i=0; i<NumMyElements; i++)
     {
         if (MyGlobalElements[i]==0 ||
@@ -116,17 +119,26 @@ int main(int argc, char *argv[])
             Indices[1] = MyGlobalElements[i]+1;
             NumEntries = 2;
         }
-        ierr = A.InsertGlobalValues(MyGlobalElements[i], NumEntries,
+#ifndef NDEBUG
+        ierr =
+#endif
+        A.InsertGlobalValues(MyGlobalElements[i], NumEntries,
                         &Values[0], &Indices[0]);
         assert(ierr==0);
         // Put in the diagonal entry
-        ierr = A.InsertGlobalValues(MyGlobalElements[i], 1, &two,
+#ifndef NDEBUG
+        ierr =
+#endif
+        A.InsertGlobalValues(MyGlobalElements[i], 1, &two,
                         &MyGlobalElements[i]);
         assert(ierr==0);
     }
 
     // Finish up matrix construction
-    ierr = A.FillComplete();
+#ifndef NDEBUG
+    ierr =
+#endif
+    A.FillComplete();
     assert(ierr==0);
 
     std::cout << A << std::endl;
@@ -162,7 +174,10 @@ int main(int argc, char *argv[])
             Indices[1] = MyGlobalElements[i]+1;
             NumEntries = 2;
         }
-        ierr = G1.InsertGlobalIndices(MyGlobalElements[i], NumEntries,
+#ifndef NDEBUG
+        ierr =
+#endif
+        G1.InsertGlobalIndices(MyGlobalElements[i], NumEntries,
                         &Indices[0]);
         assert(ierr==0);
         // Put in the diagonal entry

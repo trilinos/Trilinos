@@ -39,6 +39,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Hex16::name = "hex16";
   class St_Hex16 : public ElementVariableType
   {
   public:

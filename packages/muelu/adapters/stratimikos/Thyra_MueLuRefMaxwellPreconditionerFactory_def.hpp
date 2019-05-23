@@ -309,18 +309,7 @@ namespace Thyra {
 
     } else {
       // reuse old MueLu preconditioner stored in MueLu Xpetra operator and put in new matrix
-
-      // get old MueLu preconditioner
-#if defined(HAVE_MUELU_TPETRA)
-      if (bIsTpetra) {
-
-        RCP<ThyTpLinOp> tpetr_precOp = rcp_dynamic_cast<ThyTpLinOp>(thyra_precOp);
-        // RCP<XpOp>    muelu_precOp = rcp_dynamic_cast<XpOp>(tpetr_precOp->getTpetraOperator(),true);
-        preconditioner = rcp_dynamic_cast<MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetr_precOp->getTpetraOperator(),true);
-      }
-#endif
-      // TODO add the blocked matrix case here...
-
+      preconditioner->resetMatrix(A);
     }
 
     // wrap preconditioner in thyraPrecOp

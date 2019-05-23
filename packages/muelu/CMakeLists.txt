@@ -14,6 +14,8 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
 ENDIF()
 
+ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
+ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
 ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
 ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
@@ -87,6 +89,20 @@ ENDIF ()
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
   MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
 ENDIF()
+
+
+# If you want MueLu Epetra, you need Xpetra Epetra
+ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
+IF (NOT Xpetra_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
+  MESSAGE(FATAL_ERROR "MueLu Epetra support requires Xpetra Epetra support")
+ENDIF()
+
+# If you want MueLu Epetra, you need Xpetra Tpetra
+ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
+IF (NOT Xpetra_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "MueLu Tpetra support requires Xpetra Tpetra support")
+ENDIF()
+
 
 # Disable Ifpack2 if Tpetra is off
 IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)

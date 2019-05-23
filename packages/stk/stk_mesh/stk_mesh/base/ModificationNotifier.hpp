@@ -174,16 +174,16 @@ public:
     }
 
     template<typename ObserverType>
-    std::vector<ObserverType*> get_observer_type() const
+    std::vector<std::shared_ptr<ObserverType>> get_observer_type() const
     {
-        std::vector<ObserverType*> typed_observers;
+        std::vector<std::shared_ptr<ObserverType>> typed_observers;
 
         for(const std::shared_ptr<ModificationObserver> &observer : observers)
         {
             ObserverType* typed_observer = dynamic_cast<ObserverType*>(observer.get());
             if (typed_observer != nullptr)
             {
-                typed_observers.push_back(typed_observer);
+                typed_observers.push_back(std::dynamic_pointer_cast<ObserverType>(observer));
             }
         }
 

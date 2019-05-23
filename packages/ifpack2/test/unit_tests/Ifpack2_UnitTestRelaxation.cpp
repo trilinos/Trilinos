@@ -199,7 +199,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test2, Scalar, LocalOrdinal
                 y.template getLocalView<Kokkos::HostSpace> ().data ());
 #else
   TEST_EQUALITY(x.getLocalViewHost ().data (),
-                y.template getLocalViewHost ().data ());
+                y.getLocalViewHost ().data ());
 #endif
 
   prec.apply(x, y);

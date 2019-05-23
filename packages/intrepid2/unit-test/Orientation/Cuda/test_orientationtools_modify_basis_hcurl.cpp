@@ -1,12 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
+// ************************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//                           Intrepid2 Package
+//                 Copyright (2007) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,25 +34,39 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
+
+/** \file test_01.cpp
+    \brief  Unit tests for Orientation class.
+    \author Created by Kyungjoo Kim
 */
 
-#include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
+#include "Kokkos_Core.hpp"
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
 
-#include "Tpetra_Experimental_BlockMultiVector_def.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
+#include "test_orientationtools_modify_basis_quad_hcurl.hpp"
+#include "test_orientationtools_modify_basis_hex_hcurl.hpp"
 
-namespace Tpetra {
+//#include "test_orientationtools_modify_basis_tri_hcurl.hpp"
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+int main(int argc, char *argv[]) {
 
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_INSTANT)
+  const bool verbose = (argc-1) > 0;
+  Kokkos::initialize();
+  
+  int r_val = 0;
 
-} // namespace Tpetra
+  r_val += Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HCURL<Intrepid2::Basis_HCURL_QUAD_In_FEM<Kokkos::Cuda>, Kokkos::Cuda>(verbose);
+  r_val += Intrepid2::Test::OrientationToolsModifyBasis_HEX_HCURL<Kokkos::Cuda>(verbose);
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+  //r_val += Intrepid2::Test::OrientationToolsModifyBasis_TRI_HCURL<Intrepid2::Basis_HCURL_TRI_In_FEM<Kokkos::Cuda>, Kokkos::Cuda>(verbose);  
+
+  Kokkos::finalize();
+  return r_val;
+}
+

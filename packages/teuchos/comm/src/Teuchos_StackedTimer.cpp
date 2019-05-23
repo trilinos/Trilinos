@@ -427,7 +427,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
         os << " ";
     }
 
-    if (not options.print_names_before_values) {
+    if (! options.print_names_before_values) {
       std::ostringstream tmp;
       tmp << " ";
       for (int l=0; l<level; ++l) {
@@ -467,7 +467,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
         tmp << " - "<< (sum_[i]/active_[i]- sub_time)/(sum_[i]/active_[i])*100 << "%";
         os << tmp.str();
       }
-      if (not options.print_names_before_values) {
+      if (! options.print_names_before_values) {
         {
           size_t offset = 0;
           offset += alignments_.count_;
@@ -512,7 +512,7 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
       os << "Teuchos::StackedTimer::report() - max_levels manually set to " << options.max_levels
          << ". \nTo print more levels, increase value of OutputOptions::max_levels." << std::endl;
     }
-    if (not options.print_names_before_values and not options.align_columns) {
+    if ( (! options.print_names_before_values) and (! options.align_columns)) {
       options.align_columns = true;
       if (options.print_warnings)
         os << "Teuchos::StackedTimer::report() - option print_names_before_values=false "

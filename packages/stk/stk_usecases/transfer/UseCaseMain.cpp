@@ -35,7 +35,6 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
-#include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
@@ -80,7 +79,6 @@ int main(int argc, char **argv)
 
   bopt::options_description desc("Transfer use case options");
 
-  // NOTE: Options --directory --output-log --runtest are handled/defined in UseCaseEnvironment
   desc.add_options()
     ("range_mesh",    bopt::value<std::string>(&range_mesh),
      "range mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. "

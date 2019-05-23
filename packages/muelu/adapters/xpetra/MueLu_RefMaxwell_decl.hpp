@@ -135,8 +135,8 @@ namespace MueLu {
     RefMaxwell() :
       HierarchyH_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
-      disable_addon_(true),
-      mode_("additive")
+      disable_addon_(MasterList::getDefault<bool>("refmaxwell: disable addon")),
+      mode_(MasterList::getDefault<std::string>("refmaxwell: mode"))
     {
     }
 
@@ -144,8 +144,8 @@ namespace MueLu {
     RefMaxwell(Teuchos::RCP<Hierarchy> HH, Teuchos::RCP<Hierarchy> H22) :
       HierarchyH_(HH),
       Hierarchy22_(H22),
-      disable_addon_(false),
-      mode_("additive")
+      disable_addon_(MasterList::getDefault<bool>("refmaxwell: disable addon")),
+      mode_(MasterList::getDefault<std::string>("refmaxwell: mode"))
     {
     }
 
@@ -170,12 +170,7 @@ namespace MueLu {
                bool ComputePrec = true)
     {
       initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
-
-      resetMatrix(SM_Matrix);
-
-      // compute preconditioner (optionally)
-      if(ComputePrec)
-        compute();
+      resetMatrix(SM_Matrix,ComputePrec);
     }
 
     /** Constructor without Jacobian (with add on)
@@ -216,12 +211,7 @@ namespace MueLu {
                bool ComputePrec)
     {
       initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
-
-      resetMatrix(SM_Matrix);
-
-      // compute preconditioner (optionally)
-      if(ComputePrec)
-        compute();
+      resetMatrix(SM_Matrix,ComputePrec);
     }
 
     /** Constructor without Jacobian (no add on)
@@ -261,11 +251,7 @@ namespace MueLu {
       initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
 
       if (SM_Matrix != Teuchos::null)
-        resetMatrix(SM_Matrix);
-
-      // compute preconditioner (optionally)
-      if(ComputePrec)
-        compute();
+        resetMatrix(SM_Matrix,ComputePrec);
     }
 
     //! Destructor.
@@ -286,7 +272,7 @@ namespace MueLu {
     void setParameters(Teuchos::ParameterList& list);
 
     //! Setup the preconditioner
-    void compute();
+    void compute(bool reuse=false);
 
     //! Setup the prolongator for the (1,1)-block
     void buildProlongator();
@@ -295,7 +281,7 @@ namespace MueLu {
     void formCoarseMatrix();
 
     //! Reset system matrix
-    void resetMatrix(Teuchos::RCP<Matrix> SM_Matrix_new);
+    void resetMatrix(Teuchos::RCP<Matrix> SM_Matrix_new, bool ComputePrec=true);
 
     //! Returns in Y the result of a Xpetra::Operator applied to a Xpetra::MultiVector X.
     //! \param[in]  X - MultiVector of dimension NumVectors to multiply with matrix.
@@ -366,7 +352,7 @@ namespace MueLu {
     bool useHiptmairSmoothing_;
     //! Various matrices
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, D0_T_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
-    Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_;
+    Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_, Addon_Matrix_;
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
     Kokkos::View<const bool*, typename Node::device_type> BCrowsKokkos_;

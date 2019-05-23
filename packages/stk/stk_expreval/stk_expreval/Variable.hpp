@@ -166,8 +166,6 @@ public:
    * @return			a <b>Variable</b> reference to the variable.
    */
   Variable &operator=(const double &value) {
-    m_type = this->m_type;
-    m_use = this->m_use;
     if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
       std::stringstream error;
       error << "In analytic expression evaluator, invalid use of equal on multi-component array variable '"<<m_name<<"'.  ";
@@ -190,8 +188,6 @@ public:
    * @return			a <b>Variable</b> reference to the variable.
    */
   Variable &operator=(const int &value) {
-    m_type = this->m_type;
-    m_use = this->m_use;
     if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
       std::stringstream error;
       error << "In analytic expression evaluator, invalid use of equal on multi-component variable '"<<m_name<<"'.  ";

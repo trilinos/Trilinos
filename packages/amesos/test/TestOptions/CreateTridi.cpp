@@ -58,8 +58,9 @@ int CreateTridi(Epetra_CrsMatrix& A)
 
   double *Values = new double[3];
   int *Indices = new int[3];
+#ifndef NDEBUG
   int NumEntries;
-  
+#endif
   for (int i=0; i<NumMyElements; i++)
     {
     if (MyGlobalElements[i]==0)
@@ -68,7 +69,9 @@ int CreateTridi(Epetra_CrsMatrix& A)
 	Indices[1] = 1;
 	Values[0] = 2.0;
 	Values[1] = -1.0;
+#ifndef NDEBUG
 	NumEntries = 2;
+#endif
       }
     else if (MyGlobalElements[i] == NumGlobalElements-1)
       {
@@ -76,7 +79,9 @@ int CreateTridi(Epetra_CrsMatrix& A)
 	Indices[1] = NumGlobalElements-2;
 	Values[0] = 2.0;
 	Values[1] = -1.0;
+#ifndef NDEBUG
 	NumEntries = 2;
+#endif
       }
     else
       {
@@ -86,7 +91,9 @@ int CreateTridi(Epetra_CrsMatrix& A)
 	Values[0] = -1.0; 
 	Values[1] = 2.0;
 	Values[2] = -1.0;
+#ifndef NDEBUG
 	NumEntries = 3;
+#endif
       }
     
     assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
@@ -121,8 +128,9 @@ int CreateTridiPlus(Epetra_CrsMatrix& A)
 
   double *Values = new double[3];
   int *Indices = new int[3];
+#ifndef NDEBUG
   int NumEntries;
-  
+#endif
   for (int i=0; i<NumMyElements; i++)
     {
     if (MyGlobalElements[i]==0)
@@ -133,7 +141,9 @@ int CreateTridiPlus(Epetra_CrsMatrix& A)
 	Values[0] = 2.0;
 	Values[1] = -1.0;
 	Values[2] = -0.5;
+#ifndef NDEBUG
 	NumEntries = 3;
+#endif
       }
     else if (MyGlobalElements[i] == NumGlobalElements-1)
       {
@@ -143,7 +153,9 @@ int CreateTridiPlus(Epetra_CrsMatrix& A)
 	Values[0] = 2.0;
 	Values[1] = -1.0;
 	Values[2] = -0.5;
+#ifndef NDEBUG
 	NumEntries = 3;
+#endif
       }
     else
       {
@@ -153,7 +165,9 @@ int CreateTridiPlus(Epetra_CrsMatrix& A)
 	Values[0] = -1.0; 
 	Values[1] = 2.0;
 	Values[2] = -1.0;
+#ifndef NDEBUG
 	NumEntries = 3;
+#endif
       }
     
     assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);

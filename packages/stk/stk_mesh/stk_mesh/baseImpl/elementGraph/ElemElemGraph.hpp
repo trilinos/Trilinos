@@ -183,6 +183,11 @@ public:
         return m_idMapper.local_to_entity(localId);
     }
 
+    stk::mesh::EntityId convert_negative_local_id_to_global_id(impl::LocalId localId) const
+    {
+        return m_parallelInfoForGraphEdges.convert_negative_local_id_to_remote_global_id(localId);
+    }
+
     const impl::ParallelInfo & get_parallel_info_for_graph_edge(const stk::mesh::GraphEdge& edge) const
     {
         return m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(edge);
