@@ -52,6 +52,7 @@
 /// It defines a new implementation of Chebyshev iteration.
 
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
+#include "Ifpack2_Details_ScaledDampedResidual.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -1037,7 +1038,7 @@ scaledResidual
  MV& V1 /* temp, no longer be needed once we fuse */ )
 {
   using STS = Teuchos::ScalarTraits<ScalarType>;
-  const ScalarType zero = STS::zero ();  
+  const ScalarType zero = STS::zero ();
   const ScalarType one = STS::one ();
 
   // V1 = B - A*X
@@ -1383,10 +1384,10 @@ ifpackApplyImpl (const op_type& A,
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     // mfh 22 May 2019: Tests don't actually exercise this path.
-    
+
     // W = (1/theta)*D_inv*(B-A*X)
     scaledResidual (W, one/theta, D_inv, B, X, V1);
-    X.update (one, W, one); // X = X + W    
+    X.update (one, W, one); // X = X + W
     if (debug) {
       *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
     }
@@ -1402,6 +1403,14 @@ ifpackApplyImpl (const op_type& A,
     *out_ << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
   }
 
+
+  using sdr_type = Details::ScaledDampedResidual<op_type>;
+  std::unique_ptr<sdr_type> sdr;
+  if (numIters > 1) {
+    using Teuchos::rcpFromRef;
+    sdr = std::unique_ptr<sdr_type> (new sdr_type (rcpFromRef (A)));
+  }
+
   // The rest of the iterations.
   ST rhok = one / s1;
   ST rhokp1, dtemp1, dtemp2;
@@ -1412,7 +1421,6 @@ ifpackApplyImpl (const op_type& A,
             << " - \\|B\\|_{\\infty} = " << maxNormInf (B) << endl
             << " - \\|A\\|_{\\text{frob}} = " << A_->getFrobeniusNorm () << endl
             << " - rhok = " << rhok << endl;
-      V1.putScalar (STS::zero ()); // ???????
     }
 
     rhokp1 = one / (two * s1 - rhok);
@@ -1425,11 +1433,10 @@ ifpackApplyImpl (const op_type& A,
             << " - dtemp2 = " << dtemp2 << endl;
     }
 
-    // computeResidual (V1, B, A, X); // V1 = B - A*X
-    // W.elementWiseMultiply (dtemp2, D_inv, V1, dtemp1);
-    scaledDampedResidual (W, dtemp2, D_inv, B, X, dtemp1, V1);
-    
-    X.update (one, W, one);
+    // W := dtemp2*D_inv*(B - A*X) + dtemp1*W.
+    sdr->compute (W, dtemp2, const_cast<V&> (D_inv),
+                  const_cast<MV&> (B), const_cast<MV&> (X), dtemp1);
+    X.update (one, W, one); // X := X + W
 
     if (debug) {
       *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
