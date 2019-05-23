@@ -34,6 +34,14 @@ ELSE ()
   MESSAGE(STATUS "Xpetra: Disabling deprecated code")
 ENDIF ()
 
+# Disable ETI if Tpetra isn't enabled.
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tpetra)
+IF( NOT ${${PACKAGE_NAME}_ENABLE_Tpetra} )
+  MESSAGE( STATUS "Xpetra: Disable ETI because Tpetra not enabled." )
+  UNSET(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION CACHE)
+  SET(${PACKAGE_NAME}_ENABLE_EXPLICT_INSTANTIATION OFF CACHE BOOL "Disabled by CMake because Tpetra is not enabled")
+ENDIF()
+
 # Enable experimental code
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
