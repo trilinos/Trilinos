@@ -600,6 +600,15 @@ namespace MueLu {
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
+        if (!A22_AP_reuse_data_.is_null()) {
+          coarseLevel.AddKeepFlag("AP reuse data", rapFact.get());
+          coarseLevel.Set<Teuchos::RCP<Teuchos::ParameterList> >("AP reuse data", A22_AP_reuse_data_, rapFact.get());
+        }
+        if (!A22_RAP_reuse_data_.is_null()) {
+          coarseLevel.AddKeepFlag("RAP reuse data", rapFact.get());
+          coarseLevel.Set<Teuchos::RCP<Teuchos::ParameterList> >("RAP reuse data", A22_RAP_reuse_data_, rapFact.get());
+        }
+
         RCP<TransPFactory> transPFactory;
         transPFactory = rcp(new TransPFactory());
         rapFact->SetFactory("R", transPFactory);
@@ -687,6 +696,11 @@ namespace MueLu {
             coarseLevel.Request("P", newP.get());
             coarseLevel.Request("Importer", repartFactory.get());
             coarseLevel.Request("A", newA.get());
+            if (precList22_.isType<std::string>("reuse: type") && precList22_.get<std::string>("reuse: type") != "none") {
+              if (!parameterList_.get<bool>("rap: triple product", false))
+                coarseLevel.Request("AP reuse data", rapFact.get());
+              coarseLevel.Request("RAP reuse data", rapFact.get());
+            }
             coarseLevel.Request("Coordinates", newP.get());
             rapFact->Build(fineLevel,coarseLevel);
             repartFactory->Build(coarseLevel);
@@ -696,31 +710,56 @@ namespace MueLu {
             D0_Matrix_ = coarseLevel.Get< RCP<Matrix> >("P", newP.get());
             D0_T_Matrix_ = coarseLevel.Get< RCP<Matrix> >("R", newR.get());
             A22_ = coarseLevel.Get< RCP<Matrix> >("A", newA.get());
+            if (precList22_.isType<std::string>("reuse: type") && precList22_.get<std::string>("reuse: type") != "none") {
+              if (!parameterList_.get<bool>("rap: triple product", false))
+                A22_AP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", rapFact.get());
+              A22_RAP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", rapFact.get());
+            }
             Coords_ = coarseLevel.Get< RCP<RealValuedMultiVector> >("Coordinates", newP.get());
+          } else {
+            coarseLevel.Request("A", rapFact.get());
+            if (precList22_.isType<std::string>("reuse: type") && precList22_.get<std::string>("reuse: type") != "none") {
+              coarseLevel.Request("AP reuse data", rapFact.get());
+              coarseLevel.Request("RAP reuse data", rapFact.get());
+            }
+            coarseLevel.Request("R", transPFactory.get());
+
+            A22_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
+            D0_T_Matrix_ = coarseLevel.Get< RCP<Matrix> >("R", transPFactory.get());
+            if (precList22_.isType<std::string>("reuse: type") && precList22_.get<std::string>("reuse: type") != "none") {
+              if (!parameterList_.get<bool>("rap: triple product", false))
+                A22_AP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", rapFact.get());
+              A22_RAP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", rapFact.get());
+            }
+
+            ParameterList XpetraList;
+            XpetraList.set("Restrict Communicator",true);
+            XpetraList.set("Timer Label","MueLu RefMaxwell::RebalanceA22");
+            RCP<const Map> targetMap = Importer22_->getTargetMap();
+            A22_ = MatrixFactory::Build(A22_, *Importer22_, *Importer22_, targetMap, targetMap, rcp(&XpetraList,false));
           }
         } else
 #endif // HAVE_MPI
         {
           coarseLevel.Request("A", rapFact.get());
+          if (precList22_.isType<std::string>("reuse: type") && precList22_.get<std::string>("reuse: type") != "none") {
+            coarseLevel.Request("AP reuse data", rapFact.get());
+            coarseLevel.Request("RAP reuse data", rapFact.get());
+          }
           coarseLevel.Request("R", transPFactory.get());
 
           A22_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
-          A22_->setObjectLabel("RefMaxwell (2,2)");
           D0_T_Matrix_ = coarseLevel.Get< RCP<Matrix> >("R", transPFactory.get());
+          if (precList22_.isType<std::string>("reuse: type") && precList22_.get<std::string>("reuse: type") != "none") {
+            if (!parameterList_.get<bool>("rap: triple product", false))
+              A22_AP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", rapFact.get());
+            A22_RAP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", rapFact.get());
+          }
         }
       }
 
-      if(reuse && doRebalancing) {
-        ParameterList XpetraList;
-        XpetraList.set("Restrict Communicator",true);
-        XpetraList.set("Timer Label","MueLu RefMaxwell::RebalanceA22");
-        RCP<const Map> targetMap = Importer22_->getTargetMap();
-        A22_ = MatrixFactory::Build(A22_, *Importer22_, *Importer22_, targetMap, targetMap, rcp(&XpetraList,false));
-        if (!A22_.is_null())
-          A22_->setObjectLabel("RefMaxwell (2,2)");
-      }
-
       if (!A22_.is_null()) {
+        A22_->setObjectLabel("RefMaxwell (2,2)");
         int oldRank = SetProcRankVerbose(A22_->getDomainMap()->getComm()->getRank());
         if (!reuse) {
           ParameterList& userParamList = precList22_.sublist("user data");
@@ -1413,20 +1452,53 @@ namespace MueLu {
     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse (1,1) matrix"));
     
     // coarse matrix for P11* (M1 + D1* M2 D1) P11
-    RCP<Matrix> Matrix1 = MatrixFactory::Build(P11_->getDomainMap(),0);
-    if (parameterList_.get<bool>("rap: triple product", false) == false) {
-      RCP<Matrix> C = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
-      // construct (M1 + D1* M2 D1) P11
-      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*P11_,false,*C,true,true);
-      // construct P11* (M1 + D1* M2 D1) P11
-      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*R11_,false,*C,false,*Matrix1,true,true);
-    } else {
-      Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-        MultiplyRAP(*P11_, true, *SM_Matrix_, false, *P11_, false, *Matrix1, true, true);
-    }
-    if (parameterList_.get<bool>("rap: fix zero diagonals", true)) {
-      const double threshold = parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps());
-      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Matrix1, true, GetOStream(Warnings1), threshold);
+    RCP<Matrix> Matrix1;
+    {
+      Level fineLevel, coarseLevel;
+      fineLevel.SetFactoryManager(null);
+      coarseLevel.SetFactoryManager(null);
+      coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
+      fineLevel.SetLevelID(0);
+      coarseLevel.SetLevelID(1);
+      fineLevel.Set("A",SM_Matrix_);
+      coarseLevel.Set("P",P11_);
+      coarseLevel.Set("R",R11_);
+
+      coarseLevel.setlib(SM_Matrix_->getDomainMap()->lib());
+      fineLevel.setlib(SM_Matrix_->getDomainMap()->lib());
+      coarseLevel.setObjectLabel("RefMaxwell (1,1)");
+      fineLevel.setObjectLabel("RefMaxwell (1,1)");
+
+      RCP<RAPFactory> rapFact = rcp(new RAPFactory());
+      ParameterList rapList = *(rapFact->GetValidParameterList());
+      rapList.set("transpose: use implicit", false);
+      rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
+      rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
+      rapFact->SetParameterList(rapList);
+
+      if (precList11_.isType<std::string>("reuse: type") && precList11_.get<std::string>("reuse: type") != "none") {
+        if (!parameterList_.get<bool>("rap: triple product", false))
+          coarseLevel.Request("AP reuse data", rapFact.get());
+        coarseLevel.Request("RAP reuse data", rapFact.get());
+      }
+
+      if (!AH_AP_reuse_data_.is_null()) {
+        coarseLevel.AddKeepFlag("AP reuse data", rapFact.get());
+        coarseLevel.Set<Teuchos::RCP<Teuchos::ParameterList> >("AP reuse data", AH_AP_reuse_data_, rapFact.get());
+      }
+      if (!AH_RAP_reuse_data_.is_null()) {
+        coarseLevel.AddKeepFlag("RAP reuse data", rapFact.get());
+        coarseLevel.Set<Teuchos::RCP<Teuchos::ParameterList> >("RAP reuse data", AH_RAP_reuse_data_, rapFact.get());
+      }
+
+      coarseLevel.Request("A", rapFact.get());
+
+      Matrix1 = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
+      if (precList11_.isType<std::string>("reuse: type") && precList11_.get<std::string>("reuse: type") != "none") {
+        if (!parameterList_.get<bool>("rap: triple product", false))
+          AH_AP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", rapFact.get());
+        AH_RAP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", rapFact.get());
+      }
     }
 
     if (!AH_.is_null())
