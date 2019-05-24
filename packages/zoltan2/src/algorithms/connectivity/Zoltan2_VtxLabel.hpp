@@ -142,12 +142,7 @@ namespace iceProp{
             
 	    return *this;
 	  }
-	  // addition overload
-	  /*friend vtxLabel operator+(const vtxLabel& lhs, const vtxLabel& rhs) {
-	   
-	    vtxLabel result(-1,-1,-1,-1,-1,false);
-	    return result;
-	  }*/
+	  
 	  // vtxLabel equality overload
 	  friend bool operator==(const vtxLabel& lhs, const vtxLabel& rhs) {
 	    return ((lhs.first_label == rhs.first_label)&&(lhs.first_sender == rhs.first_sender)&&(lhs.second_label == rhs.second_label)&&(lhs.second_sender == rhs.second_sender));

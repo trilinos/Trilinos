@@ -413,6 +413,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
   SOURCE_FILES
     test1.quad.msh
+    test1.mtx
     test1-borders.quad.msh
     test1-basal-friction.ascii
     test1-s4-answers.txt
@@ -420,6 +421,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
     test1-s2-answers.txt
     test1-s1-answers.txt
     ant16km.quad.msh
+    ant16km.mtx
     ant16km-borders.quad.msh
     ant16km-basal-friction.ascii
     ant16km-s4-answers.txt
@@ -427,6 +429,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
     ant16km-s2-answers.txt
     ant16km-s1-answers.txt
     ant8km.quad.msh
+    ant8km.mtx
     ant8km-borders.quad.msh
     ant8km-basal-friction.ascii
     ant8km-s4-answers.txt
@@ -434,6 +437,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
     ant8km-s2-answers.txt
     ant8km-s1-answers.txt
     ant4km.quad.msh
+    ant4km.mtx
     ant4km-borders.quad.msh
     ant4km-basal-friction.ascii
     ant4km-s4-answers.txt
@@ -455,6 +459,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
     ant1km-s2-answers.txt
     ant1km-s1-answers.txt
     bigrectangle.quad.msh
+    bigrectangle.mtx
     bigrectangle-borders.quad.msh
     bigrectangle-basal-friction.ascii
     bigrectangle-s4-answers.txt
@@ -462,10 +467,12 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
     bigrectangle-s2-answers.txt
     bigrectangle-s1-answers.txt
     chaineddoublehinge.quad.msh
+    chaineddoublehinge.mtx
     chaineddoublehinge-borders.quad.msh
     chaineddoublehinge-basal-friction.ascii
     chaineddoublehinge-answer.txt
     worstcase.quad.msh
+    worstcase.mtx
     worstcase-borders.quad.msh
     worstcase-basal-friction.ascii
     worstcase-s4-answers.txt
@@ -473,6 +480,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
     worstcase-s2-answers.txt
     worstcase-s1-answers.txt
     tictactoe.quad.msh
+    tictactoe.mtx
     tictactoe-borders.quad.msh
     tictactoe-basal-friction-all.ascii
     tictactoe-basal-friction-two.ascii

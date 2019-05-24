@@ -185,9 +185,9 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   
   int* removed = prop.propagate();
   
-  delete local_boundary_counts;
+  delete [] local_boundary_counts;
   delete g;
-  delete grounding;
+  delete [] grounding;
 
   return removed;
 }
