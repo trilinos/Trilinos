@@ -150,8 +150,8 @@ public :
   const std::shared_ptr<MeshB> meshB() const {return m_meshb;}
 
 #ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2019-05-16
-  STK_DEPRECATED const boost::shared_ptr<MeshA> mesha() const {return to_be_deprecated::make_shared_ptr(m_mesha);}
-  STK_DEPRECATED const boost::shared_ptr<MeshB> meshb() const {return to_be_deprecated::make_shared_ptr(m_meshb);}
+  STK_DEPRECATED boost::shared_ptr<MeshA> mesha() {return to_be_deprecated::make_shared_ptr(m_mesha);}
+  STK_DEPRECATED boost::shared_ptr<MeshB> meshb() {return to_be_deprecated::make_shared_ptr(m_meshb);}
 #endif
 
 protected :
