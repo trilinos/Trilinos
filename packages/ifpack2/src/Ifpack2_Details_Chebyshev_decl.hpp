@@ -51,14 +51,19 @@
 /// This file is meant for Ifpack2 developers only, not for users.
 /// It declares a new implementation of Chebyshev iteration.
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Teuchos_VerbosityLevel.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
+#include "Teuchos_Describable.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace Ifpack2 {
-
 namespace Details {
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+template<class TpetraOperatorType>
+class ScaledDampedResidual; // forward declaration
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
 /// \class Chebyshev
 /// \brief Left-scaled Chebyshev iteration.
 /// \tparam ScalarType The type of entries in the matrix and vectors.
@@ -353,6 +358,9 @@ private:
   /// nonnull input.
   Teuchos::RCP<const row_matrix_type> A_;
 
+  //! "Operator" implementing W := alpha*D_inv*(B-A*X) + beta*W.
+  Teuchos::RCP<ScaledDampedResidual<op_type>> sdr_;
+
   /// \brief The inverse of the diagonal entries of A.
   ///
   /// This is distributed using the range Map of the matrix.  If the
@@ -553,7 +561,7 @@ private:
    const MV& B,
    const MV& X,
    MV& V1 /* temp, no longer be needed once we fuse */ );
-  
+
   /// \brief W := alpha*D_inv*(B-A*X) + beta*W.
   ///
   /// We can't fuse this with X := X + W, because data dependencies in

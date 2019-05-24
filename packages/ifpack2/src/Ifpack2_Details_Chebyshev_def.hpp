@@ -299,7 +299,8 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
 
 template<class ScalarType, class MV>
 Chebyshev<ScalarType, MV>::
-Chebyshev (Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params) :
+Chebyshev (Teuchos::RCP<const row_matrix_type> A,
+           Teuchos::ParameterList& params) :
   A_ (A),
   savedDiagOffsets_ (false),
   computedLambdaMax_ (STS::nan ()),
@@ -731,6 +732,7 @@ template<class ScalarType, class MV>
 void
 Chebyshev<ScalarType, MV>::reset ()
 {
+  sdr_ = Teuchos::null;
   D_ = Teuchos::null;
   diagOffsets_ = offsets_type ();
   savedDiagOffsets_ = false;
@@ -743,13 +745,15 @@ Chebyshev<ScalarType, MV>::reset ()
 
 template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+Chebyshev<ScalarType, MV>::
+setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
   if (A.getRawPtr () != A_.getRawPtr ()) {
     if (! assumeMatrixUnchanged_) {
       reset ();
     }
     A_ = A;
+    sdr_ = Teuchos::null; // constructed on demand
 
     // The communicator may have changed, or we may not have had a
     // communicator before.  Thus, we may have to reset the debug
@@ -1384,31 +1388,24 @@ ifpackApplyImpl (const op_type& A,
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     // mfh 22 May 2019: Tests don't actually exercise this path.
-
-    // W = (1/theta)*D_inv*(B-A*X)
+    //
+    // W := (1/theta)*D_inv*(B-A*X) and X := X + W.
     scaledResidual (W, one/theta, D_inv, B, X, V1);
-    X.update (one, W, one); // X = X + W
-    if (debug) {
-      *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
-    }
+    X.update (one, W, one);
   }
   else {
-    // W = (1/theta)*D_inv*B and X = 0 + W.
+    // W := (1/theta)*D_inv*B and X := 0 + W.
     firstIterationWithZeroStartingSolution (W, one/theta, D_inv, B, X);
-    if (debug) {
-      *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
-    }
   }
+
   if (debug) {
-    *out_ << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+    *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl
+          << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
   }
 
-
-  using sdr_type = Details::ScaledDampedResidual<op_type>;
-  std::unique_ptr<sdr_type> sdr;
-  if (numIters > 1) {
-    using Teuchos::rcpFromRef;
-    sdr = std::unique_ptr<sdr_type> (new sdr_type (rcpFromRef (A)));
+  if (numIters > 1 && sdr_.is_null ()) {
+    Teuchos::RCP<const op_type> A_op = A_;
+    sdr_ = Teuchos::rcp (new ScaledDampedResidual<op_type> (A_op));
   }
 
   // The rest of the iterations.
@@ -1419,8 +1416,8 @@ ifpackApplyImpl (const op_type& A,
       *out_ << " Iteration " << deg+1 << ":" << endl
             << " - \\|D\\|_{\\infty} = " << D_->normInf () << endl
             << " - \\|B\\|_{\\infty} = " << maxNormInf (B) << endl
-            << " - \\|A\\|_{\\text{frob}} = " << A_->getFrobeniusNorm () << endl
-            << " - rhok = " << rhok << endl;
+            << " - \\|A\\|_{\\text{frob}} = " << A_->getFrobeniusNorm ()
+            << endl << " - rhok = " << rhok << endl;
     }
 
     rhokp1 = one / (two * s1 - rhok);
@@ -1434,13 +1431,13 @@ ifpackApplyImpl (const op_type& A,
     }
 
     // W := dtemp2*D_inv*(B - A*X) + dtemp1*W.
-    sdr->compute (W, dtemp2, const_cast<V&> (D_inv),
-                  const_cast<MV&> (B), const_cast<MV&> (X), dtemp1);
+    sdr_->compute (W, dtemp2, const_cast<V&> (D_inv),
+                   const_cast<MV&> (B), (X), dtemp1);
     X.update (one, W, one); // X := X + W
 
     if (debug) {
-      *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
-      *out_ << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+      *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl
+            << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
     }
   }
 }
@@ -1467,14 +1464,15 @@ powerMethodWithInitGuess (const op_type& A,
   norm = x.norm2 ();
   TEUCHOS_TEST_FOR_EXCEPTION
     (norm == zero, std::runtime_error,
-    "Ifpack2::Chebyshev::powerMethodWithInitGuess: "
-    "The initial guess has zero norm.  This could be either because Tpetra::"
-    "Vector::randomize() filled the vector with zeros (if that was used to "
-    "compute the initial guess), or because the norm2 method has a bug.  The "
-    "first is not impossible, but unlikely.");
+     "Ifpack2::Chebyshev::powerMethodWithInitGuess: The initial guess "
+     "has zero norm.  This could be either because Tpetra::Vector::"
+     "randomize filled the vector with zeros (if that was used to "
+     "compute the initial guess), or because the norm2 method has a "
+     "bug.  The first is not impossible, but unlikely.");
 
   if (debug_) {
-    *out_ << "  Original norm1(x): " << x.norm1 () << ", norm2(x): " << norm << endl;
+    *out_ << "  Original norm1(x): " << x.norm1 ()
+          << ", norm2(x): " << norm << endl;
   }
 
   x.scale (one / norm);
@@ -1492,7 +1490,8 @@ powerMethodWithInitGuess (const op_type& A,
     RQ_top = y.dot (x);
     RQ_bottom = x.dot (x);
     if (debug_) {
-      *out_ << "   RQ_top: " << RQ_top << ", RQ_bottom: " << RQ_bottom << endl;
+      *out_ << "   RQ_top: " << RQ_top
+            << ", RQ_bottom: " << RQ_bottom << endl;
     }
     lambdaMax = RQ_top / RQ_bottom;
     norm = y.norm2 ();
