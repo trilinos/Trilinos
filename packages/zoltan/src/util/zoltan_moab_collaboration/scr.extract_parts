@@ -1,0 +1,6 @@
+sed -f scr.sed atm_new.1024 > atm.computed.1024
+sed -f scr.sed atm_spherical.1024 > atm_spherical.computed.1024
+sed -f scr.sed both1.1024 > both1.computed.1024
+sed -f scr.sed both1_spherical.1024 > both1_spherical.computed.1024
+sed -f scr.sed ocn_new.1024 > ocn.computed.1024
+sed -f scr.sed ocn_spherical.1024 > ocn_spherical.computed.1024
