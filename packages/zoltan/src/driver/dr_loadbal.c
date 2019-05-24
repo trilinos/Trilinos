@@ -134,6 +134,69 @@ ZOLTAN_HG_CS_FN get_nemesis_hg;
 ZOLTAN_NUM_FIXED_OBJ_FN get_num_fixed_obj;
 ZOLTAN_FIXED_OBJ_LIST_FN get_fixed_obj_list;
 
+/* KDDKDD DO NOT COMMIT */
+
+void inferPartition(struct Zoltan_Struct *zz, int nparts, const char *basename)
+{
+  char filename[256];
+  sprintf(filename, "%s.graph", basename);
+  FILE *fp = fopen(filename, "r");
+  int i, nc;
+  fscanf(fp, "%d", &nc);
+  fclose(fp);
+
+  int *count = malloc(nparts * sizeof(int));
+  for (i = 0; i < nparts; i++) count[i] = 0;
+
+  sprintf(filename, "%s.coords", basename);
+  fp = fopen(filename, "r");
+
+  char line[256];
+  int cnt;
+  for (cnt = 0; (line[cnt] = getc(fp)) != '\n'; cnt++);
+  int ndims = 0;
+  i = 0;
+  while (line[i] != '\n') {
+    while (line[i] == ' ') i++;
+    ndims++;
+    while (line[i] != ' ' && line[i] != '\n') i++;
+  }
+  printf("KDDKDD ndims = %d\n", ndims);
+  fclose(fp);
+
+  fp = fopen(filename, "r");
+
+  sprintf(filename, "%s.inferred.%04d", basename, nparts);
+  FILE *fpout = fopen(filename, "w");
+
+  for (i = 0; i < nc; i++) {
+    double x[3] = {0.,0.,0.};
+    int part, proc;
+    if (ndims == 3) fscanf(fp, "%lf %lf %lf", &x[0], &x[1], &x[2]);
+    else fscanf(fp, "%lf %lf", &x[0], &x[1]);
+    Zoltan_LB_Point_PP_Assign(zz, x, &proc, &part);
+    fprintf(fpout, "%d\n", part);
+    count[part]++; 
+  }
+  fclose(fp);
+  fclose(fpout);
+
+  int min = count[0];
+  int max = count[0];
+  for (i = 1; i < nparts; i++) {
+    if (count[i] > max) max = count[i];
+    if (count[i] < min) min = count[i];
+  }
+
+  double avg = (double) nc / (double) Num_Global_Parts;
+  printf("%s inferred:  min/max/avg/imbal %d %d %lf %lf\n",
+          basename, min, max, avg, (double) max / avg);
+  
+  free(count);
+}
+
+
+/* KDDKDD DO NOT COMMIT */
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -629,6 +692,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
     /* Load balancing part */
 
+#ifdef KDDKDD_DO_NOT_COMMIT
     /* Evaluate the old balance */
     if (Debug_Driver > 0) {
       if (Proc == 0) printf("\nBEFORE load balancing\n");
@@ -643,6 +707,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       strcat(fname, ".before");
       Zoltan_Generate_Files(zz, fname, 1, 1, 1, 1);
     }
+#endif // KDDKDD_DO_NOT_COMMIT
 
     if (Test.Fixed_Objects)
       setup_fixed_obj(mesh, Num_Global_Parts);
@@ -668,6 +733,26 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Gen_Error(0, "fatal:  error returned from Zoltan_LB_Partition()\n");
       return 0;
     }
+
+/* KDDKDD DO NOT COMMIT */
+
+    /* Infer partitions from found partition */
+    {
+    char basename[256];
+    strcpy(basename, pio_info->pexo_fname);
+    if (basename[0] == 'a' && basename[1] == 't' && basename[2] == 'm') {
+      basename[0] = 'o'; basename[1] = 'c'; basename[2] = 'n';
+      inferPartition(zz, Num_Global_Parts, basename);
+    }
+    else if (basename[0] == 'o' && basename[1] == 'c' && basename[2] == 'n') {
+      basename[0] = 'a'; basename[1] = 't'; basename[2] = 'm';
+      inferPartition(zz, Num_Global_Parts, basename);
+    }
+    else if (basename[0] == 'b' && basename[1] == 'o' && basename[2] == 't') {
+    }
+    }
+
+/* KDDKDD DO NOT COMMIT */
 
     mytime = MPI_Wtime() - stime;
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
