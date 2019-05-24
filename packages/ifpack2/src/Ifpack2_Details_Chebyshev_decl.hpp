@@ -396,12 +396,7 @@ private:
   //! \name Cached computed data
   //@{
 
-  /// \brief In ifpackApplyImpl(): the result of A*Y.
-  ///
-  /// We cache this multivector here to avoid creating it on each call.
-  Teuchos::RCP<MV> V_;
-
-  /// \brief In ifpackApplyImpl(): Iteration update multivector.
+  /// \brief In ifpackApplyImpl(): Iteration update MultiVector.
   ///
   /// We cache this multivector here to avoid creating it on each call.
   Teuchos::RCP<MV> W_;
@@ -523,22 +518,12 @@ private:
   /// matrix to setMatrix() is the same object as A_.
   void reset ();
 
-  /// \brief Set V and W to temporary multivectors with the same Map as X.
-  ///
-  /// \param V [out]
-  /// \param W [out]
-  /// \param X [in] Multivector, whose Map to use when making V and W.
+  /// \brief Set W to temporary MultiVector with the same Map as B.
   ///
   /// This is an optimization for apply().  This method caches the
-  /// created multivectors in the class instance as V_ resp. W_.
-  /// Caching optimizes the common case of calling apply() many times.
-  ///
-  /// We call the first argument V1 instead of V, so as not to confuse
-  /// the multivector V with the typedef V (for Tpetra::Vector).
-  void
-  makeTempMultiVectors (Teuchos::RCP<MV>& V1,
-                        Teuchos::RCP<MV>& W,
-                        const MV& X);
+  /// created MultiVector as W_.  Caching optimizes the common case of
+  /// calling apply() many times.
+  Teuchos::RCP<MV> makeTempMultiVector (const MV& B);
 
   //! W = alpha*D_inv*B and X = 0 + W.
   void
@@ -548,33 +533,6 @@ private:
    const V& D_inv,
    const MV& B,
    MV& X);
-
-  /// \brief W := alpha*D_inv*(B-A*X)
-  ///
-  /// We can't fuse this with X := X + W, because data dependencies in
-  /// the input X are not elementwise (unless A is diagonal).
-  void
-  scaledResidual
-  (MV& W,
-   const ScalarType& alpha,
-   const V& D_inv,
-   const MV& B,
-   const MV& X,
-   MV& V1 /* temp, no longer be needed once we fuse */ );
-
-  /// \brief W := alpha*D_inv*(B-A*X) + beta*W.
-  ///
-  /// We can't fuse this with X := X + W, because data dependencies in
-  /// the input X are not elementwise (unless A is diagonal).
-  void
-  scaledDampedResidual
-  (MV& W,
-   const ScalarType& alpha,
-   const V& D_inv,
-   const MV& B,
-   const MV& X,
-   const ScalarType& beta,
-   MV& V1 /* temp, no longer be needed once we fuse */ );
 
   //! R = B - Op(A) * X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   static void

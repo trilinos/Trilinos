@@ -736,7 +736,6 @@ Chebyshev<ScalarType, MV>::reset ()
   D_ = Teuchos::null;
   diagOffsets_ = offsets_type ();
   savedDiagOffsets_ = false;
-  V_ = Teuchos::null;
   W_ = Teuchos::null;
   computedLambdaMax_ = STS::nan ();
   computedLambdaMin_ = STS::nan ();
@@ -1011,69 +1010,24 @@ Chebyshev<ScalarType, MV>::apply (const MV& B, MV& X)
 template<class ScalarType, class MV>
 void
 Chebyshev<ScalarType, MV>::
-print (std::ostream& out) {
-  this->describe (* (Teuchos::getFancyOStream (Teuchos::rcpFromRef (out))),
+print (std::ostream& out)
+{
+  using Teuchos::rcpFromRef;
+  this->describe (* (Teuchos::getFancyOStream (rcpFromRef (out))),
                   Teuchos::VERB_MEDIUM);
 }
 
 template<class ScalarType, class MV>
 void
 Chebyshev<ScalarType, MV>::
-firstIterationWithZeroStartingSolution
-(MV& W,
- const ScalarType& alpha,
- const V& D_inv,
- const MV& B,
- MV& X)
+firstIterationWithZeroStartingSolution (MV& W,
+                                        const ScalarType& alpha,
+                                        const V& D_inv,
+                                        const MV& B,
+                                        MV& X)
 {
   solve (W, alpha, D_inv, B); // W = alpha*D_inv*B
   Tpetra::deep_copy (X, W); // X = 0 + W
-}
-
-template<class ScalarType, class MV>
-void
-Chebyshev<ScalarType, MV>::
-scaledResidual
-(MV& W,
- const ScalarType& alpha,
- const V& D_inv,
- const MV& B,
- const MV& X,
- MV& V1 /* temp, no longer be needed once we fuse */ )
-{
-  using STS = Teuchos::ScalarTraits<ScalarType>;
-  const ScalarType zero = STS::zero ();
-  const ScalarType one = STS::one ();
-
-  // V1 = B - A*X
-  Tpetra::deep_copy (V1, B);
-  A_->apply (X, V1, Teuchos::NO_TRANS, -one, one);
-
-  // W := alpha * D_inv * V1
-  W.elementWiseMultiply (alpha, D_inv, V1, zero);
-}
-
-template<class ScalarType, class MV>
-void
-Chebyshev<ScalarType, MV>::
-scaledDampedResidual
-(MV& W,
- const ScalarType& alpha,
- const V& D_inv,
- const MV& B,
- const MV& X,
- const ScalarType& beta,
- MV& V1 /* temp, no longer be needed once we fuse */ )
-{
-  using STS = Teuchos::ScalarTraits<ScalarType>;
-  const ScalarType one = STS::one ();
-
-  // V1 = B - A*X
-  Tpetra::deep_copy (V1, B);
-  A_->apply (X, V1, Teuchos::NO_TRANS, -one, one);
-
-  // W := alpha * D_inv * V1 + beta * W
-  W.elementWiseMultiply (alpha, D_inv, V1, beta);
 }
 
 template<class ScalarType, class MV>
@@ -1345,6 +1299,7 @@ ifpackApplyImpl (const op_type& A,
   if (numIters <= 0) {
     return;
   }
+  const ST zero = static_cast<ST> (0.0);
   const ST one = static_cast<ST> (1.0);
   const ST two = static_cast<ST> (2.0);
 
@@ -1369,15 +1324,8 @@ ifpackApplyImpl (const op_type& A,
           << " s1 = " << s1 << endl;
   }
 
-  // Fetch cached temporary vectors.
-  Teuchos::RCP<MV> V_ptr, W_ptr;
-  makeTempMultiVectors (V_ptr, W_ptr, B);
-
-  // mfh 28 Jan 2013: We write V1 instead of V, so as not to confuse
-  // the multivector V with the typedef V (for Tpetra::Vector).
-  //MV V1 (B.getMap (), B.getNumVectors (), false);
-  //MV W (B.getMap (), B.getNumVectors (), false);
-  MV& V1 = *V_ptr;
+  // Fetch cached temporary (multi)vector.
+  Teuchos::RCP<MV> W_ptr = makeTempMultiVector (B);
   MV& W = *W_ptr;
 
   if (debug) {
@@ -1388,9 +1336,14 @@ ifpackApplyImpl (const op_type& A,
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     // mfh 22 May 2019: Tests don't actually exercise this path.
-    //
+
+    if (sdr_.is_null ()) {
+      Teuchos::RCP<const op_type> A_op = A_;
+      sdr_ = Teuchos::rcp (new ScaledDampedResidual<op_type> (A_op));
+    }
     // W := (1/theta)*D_inv*(B-A*X) and X := X + W.
-    scaledResidual (W, one/theta, D_inv, B, X, V1);
+    sdr_->compute (W, one/theta, const_cast<V&> (D_inv),
+                   const_cast<MV&> (B), X, zero);
     X.update (one, W, one);
   }
   else {
@@ -1591,24 +1544,20 @@ hasTransposeApply () const {
 }
 
 template<class ScalarType, class MV>
-void
+Teuchos::RCP<MV>
 Chebyshev<ScalarType, MV>::
-makeTempMultiVectors (Teuchos::RCP<MV>& V1,
-                      Teuchos::RCP<MV>& W,
-                      const MV& X)
+makeTempMultiVector (const MV& B)
 {
   // ETP 02/08/17:  We must check not only if the temporary vectors are
   // null, but also if the number of columns match, since some multi-RHS
   // solvers (e.g., Belos) may call apply() with different numbers of columns.
-  if (V_.is_null () || V_->getNumVectors () != X.getNumVectors ()) {
-    V_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), false));
-  }
+
   //W must be initialized to zero when it is used as a multigrid smoother.
-  if (W_.is_null () || W_->getNumVectors () != X.getNumVectors ()) {
-    W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), true));
+  const size_t B_numVecs = B.getNumVectors ();
+  if (W_.is_null () || W_->getNumVectors () != B_numVecs) {
+    W_ = Teuchos::rcp (new MV (B.getMap (), B_numVecs, true));
   }
-  V1 = V_;
-  W = W_;
+  return W_;
 }
 
 template<class ScalarType, class MV>
@@ -1724,10 +1673,9 @@ describe (Teuchos::FancyOStream& out,
       D_->describe (out, vl);
     }
     if (myRank == 0) {
-      // V_ and W_ are scratch space; their values are irrelevant.
+      // W_ is scratch space; its values are irrelevant.
       // All that matters is whether or not they have been set.
-      out << "V_: " << (V_.is_null () ? "unset" : "set") << endl
-          << "W_: " << (W_.is_null () ? "unset" : "set") << endl
+      out << "W_: " << (W_.is_null () ? "unset" : "set") << endl
           << "computedLambdaMax_: " << computedLambdaMax_ << endl
           << "computedLambdaMin_: " << computedLambdaMin_ << endl
           << "lambdaMaxForApply_: " << lambdaMaxForApply_ << endl
