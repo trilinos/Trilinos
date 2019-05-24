@@ -1,0 +1,9 @@
+Decomposition Method 	= rcb
+Zoltan Parameters	= num_global_parts=0016
+Zoltan Parameters	= obj_weight_dim=2
+Zoltan Parameters	= RCB_MULTICRITERIA_NORM=1
+Zoltan Parameters	= keep_cuts=1
+Zoltan Parameters	= remap=0
+File Type		= Chaco
+File Name		= both
+Parallel Disk Info	= number=0

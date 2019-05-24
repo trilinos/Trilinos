@@ -1,0 +1,21 @@
+../zdrive.exe zdrive.inp.atm.0016 > out.atm.0016
+mv atm_new.out.1.0 atm_new.0016
+../zdrive.exe zdrive.inp.ocn.0016 > out.ocn.0016
+mv ocn_new.out.1.0 ocn_new.0016
+../zdrive.exe zdrive.inp.both0.0016 > out.both0.0016
+mv both.out.1.0 both0.0016
+../zdrive.exe zdrive.inp.both1.0016 > out.both1.0016
+mv both.out.1.0 both1.0016
+../zdrive.exe zdrive.inp.both2.0016 > out.both2.0016
+mv both.out.1.0 both2.0016
+
+../zdrive.exe zdrive.inp.atm_sph.0016 > out.atm_sph.0016
+mv atm_spherical.out.1.0 atm_spherical.0016
+../zdrive.exe zdrive.inp.ocn_sph.0016 > out.ocn_sph.0016
+mv ocn_spherical.out.1.0 ocn_spherical.0016
+../zdrive.exe zdrive.inp.both0_sph.0016 > out.both0_sph.0016
+mv both_spherical.out.1.0 both0_spherical.0016
+../zdrive.exe zdrive.inp.both1_sph.0016 > out.both1_sph.0016
+mv both_spherical.out.1.0 both1_spherical.0016
+../zdrive.exe zdrive.inp.both2_sph.0016 > out.both2_sph.0016
+mv both_spherical.out.1.0 both2_spherical.0016
