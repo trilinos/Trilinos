@@ -19,16 +19,18 @@
 #include <stk_util/util/human_bytes.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/environment/WallTime.hpp>
+#include <stk_util/environment/LogWithTimeAndMemory.hpp>
 #include <stk_util/diag/StringUtil.hpp>
 #include <zoltan.h>
 #include <Zoltan2_Version.hpp>
 #include <map>
 
-#include <stk_mesh/base/SkinBoundary.hpp>
+#include "stk_mesh/base/FieldParallel.hpp"
+#include "stk_tools/mesh_tools/CustomAura.hpp"
 #include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_util/environment/Env.hpp>
-#include "stk_mesh/base/FieldParallel.hpp"
 
 namespace stk {
 namespace balance {
@@ -285,38 +287,13 @@ void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData, const stk::m
     }
 }
 
-void fill_list_of_entities_to_send_for_aura_like_ghosting(stk::mesh::BulkData& bulkData, stk::mesh::EntityProcVec &entitiesToGhost)
-{
-    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::NODE_RANK, bulkData.mesh_meta_data().globally_shared_part());
-    for(const stk::mesh::Bucket *bucket : buckets)
-    {
-        for(stk::mesh::Entity shared_node : *bucket)
-        {
-            unsigned num_elements = bulkData.num_elements(shared_node);
-            const stk::mesh::Entity* elements = bulkData.begin_elements(shared_node);
-            for(unsigned i=0;i<num_elements;++i)
-            {
-                if(bulkData.bucket(elements[i]).owned())
-                {
-                    std::vector<int> comm_shared_procs;
-                    bulkData.comm_shared_procs(bulkData.entity_key(shared_node), comm_shared_procs);
-                    for(int proc : comm_shared_procs )
-                    {
-                        entitiesToGhost.push_back(stk::mesh::EntityProc(elements[i], proc));
-                    }
-                }
-            }
-        }
-    }
-}
-
 void fill_connectivity_count_field(stk::mesh::BulkData & stkMeshBulkData, const BalanceSettings & balanceSettings)
 {
     if (balanceSettings.shouldFixSpiders()) {
         const stk::mesh::Field<int> * connectivityCountField = balanceSettings.getSpiderConnectivityCountField(stkMeshBulkData);
 
         stk::mesh::Selector beamNodesSelector(stkMeshBulkData.mesh_meta_data().locally_owned_part() &
-                                              stkMeshBulkData.mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::BEAM_2)));
+                                              stkMeshBulkData.mesh_meta_data().get_topology_root_part(stk::topology::BEAM_2));
         const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, beamNodesSelector);
 
         for (stk::mesh::Bucket * bucket : buckets) {
@@ -336,44 +313,9 @@ void fill_connectivity_count_field(stk::mesh::BulkData & stkMeshBulkData, const 
     }
 }
 
-stk::mesh::Ghosting * create_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData, const BalanceSettings & balanceSettings)
-{
-    stk::mesh::Ghosting * customAura = nullptr;
-    if (!stkMeshBulkData.is_automatic_aura_on())
-    {
-        stkMeshBulkData.modification_begin();
-
-        customAura = &stkMeshBulkData.create_ghosting("customAura");
-        stk::mesh::EntityProcVec entitiesToGhost;
-        fill_list_of_entities_to_send_for_aura_like_ghosting(stkMeshBulkData, entitiesToGhost);
-        stkMeshBulkData.change_ghosting(*customAura, entitiesToGhost);
-
-        stkMeshBulkData.modification_end();
-    }
-
-    return customAura;
-}
-
-void destroy_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData, stk::mesh::Ghosting * customAura)
-{
-    if (nullptr != customAura)
-    {
-        stkMeshBulkData.modification_begin();
-        stkMeshBulkData.destroy_ghosting(*customAura);
-        stkMeshBulkData.modification_end();
-    }
-}
-
 void logMessage(MPI_Comm communicator, const std::string &message)
 {
-    static double startTime = stk::wall_time();
-    double now = stk::wall_time();
-
-    size_t hwm_max = 0, hwm_min = 0, hwm_avg = 0;
-    stk::get_memory_high_water_mark_across_processors(communicator, hwm_max, hwm_min, hwm_avg);
-
-    sierra::Env::outputP0() << "[time:" << std::fixed << std::setprecision(3) << std::setw(10) << now-startTime << " s, hwm:"
-              << std::setfill(' ') << std::right << std::setw(8) << stk::human_bytes(hwm_avg) << "] "<< message << std::endl;
+    stk::log_with_time_and_memory(communicator, message);
 }
 
 
@@ -574,7 +516,7 @@ bool shouldOmitSpiderElement(const stk::mesh::BulkData & stkMeshBulkData,
 
 void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & stkMeshBulkData)
 {
-    stk::mesh::Ghosting * customAura = create_custom_ghosting(stkMeshBulkData, balanceSettings);
+    stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData, stkMeshBulkData.mesh_meta_data().globally_shared_part(), "customAura");
 
     stk::mesh::MetaData & meta = stkMeshBulkData.mesh_meta_data();
     const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderConnectivityCountField(stkMeshBulkData);
@@ -606,7 +548,7 @@ void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::Bul
         }
     }
 
-    destroy_custom_ghosting(stkMeshBulkData, customAura);
+    stk::tools::destroy_custom_aura(stkMeshBulkData, customAura);
 
     stkMeshBulkData.change_entity_owner(beamsToMove);
 }
@@ -775,11 +717,11 @@ void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings
     }
     else if (balanceSettings.getDecompMethod()=="parmetis" || balanceSettings.getDecompMethod()=="zoltan")
     {
-        stk::mesh::Ghosting * customAura = internal::create_custom_ghosting(stkMeshBulkData, balanceSettings);
+        stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData, stkMeshBulkData.mesh_meta_data().globally_shared_part(), "customAura");
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
         internal::fill_connectivity_count_field(stkMeshBulkData, balanceSettings);
         fill_decomp_using_parmetis(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors, localIds);
-        internal::destroy_custom_ghosting(stkMeshBulkData, customAura);
+        stk::tools::destroy_custom_aura(stkMeshBulkData, customAura);
     }
 }
 

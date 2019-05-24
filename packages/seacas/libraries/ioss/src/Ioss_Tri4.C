@@ -40,6 +40,7 @@
 // ========================================================================
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Tri4::name = "tri4";
   class St_Tri4 : public ElementVariableType
   {
   public:

@@ -40,6 +40,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Beam3::name = "bar3";
   class St_Beam3 : public ElementVariableType
   {
   public:

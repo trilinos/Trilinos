@@ -5,11 +5,9 @@
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_io/StkIoUtils.hpp"
-#include "internal/privateDeclarations.hpp"
 
 namespace stk {
-namespace balance {
-namespace internal {
+namespace transfer_utils {
 
 TransientTransferByIdForRank::TransientTransferByIdForRank(stk::mesh::MetaData &metaA,
                                                            stk::mesh::MetaData &metaB,
@@ -93,7 +91,6 @@ TransientFieldTransferById::~TransientFieldTransferById()
 
 size_t TransientFieldTransferById::transfer_and_write_transient_fields(const std::string &parallelOutputMeshName)
 {
-    internal::logMessage(mBrokerA.bulk_data().parallel(), "Writing output mesh");
     size_t outputFileIndex = setup_output_transient_fields(parallelOutputMeshName);
 
     std::vector<stk::io::QaRecord> qaRecords = mBrokerA.get_qa_records();
@@ -121,7 +118,6 @@ size_t TransientFieldTransferById::transfer_and_write_transient_fields(const std
 
     for(int iStep = 0; iStep < mBrokerA.get_num_time_steps(); iStep++)
     {
-        internal::logMessage(mBrokerA.bulk_data().parallel(), "Appending transient data for time step " + std::to_string(iStep));
         double readTime = mBrokerA.read_defined_input_fields_at_step(iStep + 1, nullptr);
 
         do_transfer();
@@ -176,6 +172,5 @@ void TransientFieldTransferById::initialize(const std::vector<stk::mesh::EntityR
     }
 }
 
-}
 }
 }

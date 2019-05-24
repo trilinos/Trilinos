@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr const char *name = "shellline2d3";
+    static const char *name;
 
     static void factory();
     ~ShellLine2D3() override;

@@ -72,7 +72,8 @@ namespace stk {
       m_parallelRank(-1),
       m_emptyString(),
       m_onString("on"),
-      m_inputFile("")
+      m_inputFile(""),
+      m_outPath("")
   {
     m_execMap[sierra::Env::EXEC_TYPE_LAG].m_master      = -1;
     m_execMap[sierra::Env::EXEC_TYPE_LAG].m_groupComm   = MPI_COMM_NULL;

@@ -121,6 +121,8 @@ public:
 
     void clear_sidesets();
 
+    void set_sideset_sync_count(unsigned syncCount);
+
     size_t size() const;
 
     std::vector<SideSet *> get_sidesets();
