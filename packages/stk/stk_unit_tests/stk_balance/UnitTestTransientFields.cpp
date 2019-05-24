@@ -4,7 +4,6 @@
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
-#include "stk_balance/internal/TransientFieldTransferById.hpp"
 #include <stk_balance/internal/balanceDefaults.hpp>
 
 #include <stk_unit_test_utils/MeshFixture.hpp>

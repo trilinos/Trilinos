@@ -55,7 +55,7 @@ public:
     static std::vector<SideSetEntry> get_skinned_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector);
     static std::vector<SideSetEntry> get_skinned_sideset_excluding_region(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector, const stk::mesh::Selector& exclusionRegionSelector);
     static std::vector<SideSetEntry> get_interior_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector);
-    static std::vector<SideSetEntry> get_all_sides_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector);
+    static std::vector<SideSetEntry> get_all_sides_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector, bool includeAuraElementSides = false);
 
 private:
     SkinMeshUtil();
@@ -64,7 +64,7 @@ private:
 
     std::vector<SideSetEntry> extract_interior_sideset();
 
-    std::vector<SideSetEntry> extract_all_sides_sideset();
+    std::vector<SideSetEntry> extract_all_sides_sideset(bool includeAuraElementSides = false);
 
     std::vector<int> get_exposed_sides(stk::mesh::impl::LocalId localId, int maxSidesThisElement);
 

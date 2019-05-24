@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr auto name = "bar3";
+    static const char *name;
 
     static void factory();
     ~Beam3() override;

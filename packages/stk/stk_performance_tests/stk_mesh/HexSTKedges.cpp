@@ -102,7 +102,7 @@ TEST(hex_edges, hex_edges)
   double total_time = mesh_create_time + create_edges_time;
 
   //quick check to make sure all nodes got induced into the edge part.
-  const stk::mesh::Part& edgePart = fixture.getBulkData().mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::LINE_2));
+  const stk::mesh::Part& edgePart = fixture.getBulkData().mesh_meta_data().get_topology_root_part(stk::topology::LINE_2);
   const stk::mesh::BucketVector& nodeBuckets = fixture.getBulkData().get_buckets(stk::topology::NODE_RANK, edgePart);
   const stk::mesh::BucketVector& allNodeBuckets = fixture.getBulkData().buckets(stk::topology::NODE_RANK);
   EXPECT_EQ(allNodeBuckets.size(), nodeBuckets.size());

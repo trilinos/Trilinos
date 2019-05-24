@@ -154,7 +154,6 @@ lib stk_expreval
     ]
     /sierra/stk_util//stk_util_environment
     /sierra/stk_util//stk_util_util
-    /tpl/boost-program-options//boost_program_options
     /mpi//mpi
   : 
     [ ifuserbuild
