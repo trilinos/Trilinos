@@ -1,6 +1,3 @@
-#ifndef IFPACK2_DETAILS_SCALEDDAMPEDRESIDUAL_HPP
-#define IFPACK2_DETAILS_SCALEDDAMPEDRESIDUAL_HPP
-
 /*
 //@HEADER
 // ***********************************************************************
@@ -42,17 +39,18 @@
 //@HEADER
 */
 
-#include "Ifpack2_config.h"
+#ifndef IFPACK2_DETAILS_SCALEDDAMPEDRESIDUAL_DEF_HPP
+#define IFPACK2_DETAILS_SCALEDDAMPEDRESIDUAL_DEF_HPP
+
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Operator.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_withLocalAccess_MultiVector.hpp"
-#include "Tpetra_Export.hpp"
-#include "Tpetra_Import.hpp"
+#include "Tpetra_Export_decl.hpp"
+#include "Tpetra_Import_decl.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_Assert.hpp"
-#include "Teuchos_RCP.hpp"
-#include <memory>
 #include <type_traits>
 
 namespace Ifpack2 {
@@ -309,213 +307,194 @@ scaled_damped_residual_vector
 
 } // namespace Impl
 
-/// \brief Compute scaled damped residual for Chebyshev.
-///
-/// This is an implementation detail of Ifpack2::Chebyshev.  Given a
-/// linear system A*X=B and an "inverse diagonal" matrix (stored as a
-/// vector) D_inv, it computes a "scaled damped" residual vector W :=
-/// alpha*D_inv*(B-A*X) + beta*W.
-///
-/// \tparam TpetraOperatorType Specialization of Tpetra::Operator.
-///
-/// \note To Ifpack2 developers: We can't fuse this with X := X + W,
-///   because data dependencies in the input X are not elementwise
-///   (unless A is diagonal).
 template<class TpetraOperatorType>
-class ScaledDampedResidual {
-private:
-  using SC = typename TpetraOperatorType::scalar_type;
-  using LO = typename TpetraOperatorType::local_ordinal_type;
-  using GO = typename TpetraOperatorType::global_ordinal_type;
-  using NT = typename TpetraOperatorType::node_type;
+ScaledDampedResidual<TpetraOperatorType>::
+ScaledDampedResidual (const Teuchos::RCP<const operator_type>& A)
+{
+  setMatrix (A);
+}
 
-  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-  using multivector_type = Tpetra::MultiVector<SC, LO, GO, NT>;
-  using operator_type = Tpetra::Operator<SC, LO, GO, NT>;
-  using vector_type = Tpetra::Vector<SC, LO, GO, NT>;
+template<class TpetraOperatorType>
+void
+ScaledDampedResidual<TpetraOperatorType>::
+setMatrix (const Teuchos::RCP<const operator_type>& A)
+{
+  if (A_op_.get () != A.get ()) {
+    A_op_ = A;
 
-public:
-  ScaledDampedResidual (const Teuchos::RCP<const operator_type>& A)
-  {
-    setMatrix (A);
-  }
+    // We'll (re)allocate these on demand.
+    X_colMap_ = std::unique_ptr<vector_type> (nullptr);
+    V1_ = std::unique_ptr<multivector_type> (nullptr);
 
-  void
-  setMatrix (const Teuchos::RCP<const operator_type>& A)
-  {
-    if (A_op_.get () != A.get ()) {
-      A_op_ = A;
-
-      // We'll (re)allocate these on demand.
-      X_colMap_ = std::unique_ptr<vector_type> (nullptr);
-      V1_ = std::unique_ptr<multivector_type> (nullptr);
-
-      using Teuchos::rcp_dynamic_cast;
-      Teuchos::RCP<const crs_matrix_type> A_crs =
-        rcp_dynamic_cast<const crs_matrix_type> (A);
-      if (A_crs.is_null ()) {
-        A_crs_ = Teuchos::null;
-        imp_ = Teuchos::null;
-        exp_ = Teuchos::null;
-      }
-      else {
-        TEUCHOS_ASSERT( A_crs->isFillComplete () );
-        A_crs_ = A_crs;
-        auto G = A_crs->getCrsGraph ();
-        imp_ = G->getImporter ();
-        exp_ = G->getExporter ();
-      }
-    }
-  }
-
-  void
-  compute (multivector_type& W,
-           const SC& alpha,
-           vector_type& D_inv,
-           multivector_type& B,
-           multivector_type& X,
-           const SC& beta)
-  {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    const size_t numVecs = B.getNumVectors ();
-
-    if (canFuse (B)) {
-      // "nonconst" here has no effect other than on the return type.
-      // We need to name these return types because Intel 17 isn't so
-      // good at type deduction.
-      RCP<vector_type> W_vec = W.getVectorNonConst (0);
-      RCP<vector_type> B_vec = B.getVectorNonConst (0);
-      RCP<vector_type> X_vec = X.getVectorNonConst (0);
-      fusedCase (*W_vec, alpha, D_inv, *B_vec, *A_crs_, *X_vec, beta);
+    using Teuchos::rcp_dynamic_cast;
+    Teuchos::RCP<const crs_matrix_type> A_crs =
+      rcp_dynamic_cast<const crs_matrix_type> (A);
+    if (A_crs.is_null ()) {
+      A_crs_ = Teuchos::null;
+      imp_ = Teuchos::null;
+      exp_ = Teuchos::null;
     }
     else {
-      unfusedCase (W, alpha, D_inv, B, *A_op_, X, beta);
+      TEUCHOS_ASSERT( A_crs->isFillComplete () );
+      A_crs_ = A_crs;
+      auto G = A_crs->getCrsGraph ();
+      imp_ = G->getImporter ();
+      exp_ = G->getExporter ();
     }
   }
+}
 
-private:
-  using import_type = Tpetra::Import<LO, GO, NT>;
-  using export_type = Tpetra::Export<LO, GO, NT>;
+template<class TpetraOperatorType>
+void
+ScaledDampedResidual<TpetraOperatorType>::
+compute (multivector_type& W,
+         const SC& alpha,
+         vector_type& D_inv,
+         multivector_type& B,
+         multivector_type& X,
+         const SC& beta)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  const size_t numVecs = B.getNumVectors ();
 
-  Teuchos::RCP<const operator_type> A_op_;
-  Teuchos::RCP<const crs_matrix_type> A_crs_;
-  Teuchos::RCP<const import_type> imp_;
-  Teuchos::RCP<const export_type> exp_;
-  std::unique_ptr<vector_type> X_colMap_;
-  std::unique_ptr<multivector_type> V1_;
-
-  // Do the Import, if needed, and return the column Map version of X.
-  vector_type&
-  importVector (vector_type& X_domMap)
-  {
-    if (imp_.is_null ()) {
-      return X_domMap;
-    }
-    else {
-      if (X_colMap_.get () == nullptr) {
-        using V = vector_type;
-        X_colMap_ = std::unique_ptr<V> (new V (imp_->getTargetMap ()));
-      }
-      X_colMap_->doImport (X_domMap, *imp_, Tpetra::REPLACE);
-      return *X_colMap_;
-    }
+  if (canFuse (B)) {
+    // "nonconst" here has no effect other than on the return type.
+    // We need to name these return types because Intel 17 isn't so
+    // good at type deduction.
+    RCP<vector_type> W_vec = W.getVectorNonConst (0);
+    RCP<vector_type> B_vec = B.getVectorNonConst (0);
+    RCP<vector_type> X_vec = X.getVectorNonConst (0);
+    TEUCHOS_ASSERT( ! A_crs_.is_null () );
+    fusedCase (*W_vec, alpha, D_inv, *B_vec, *A_crs_, *X_vec, beta);
   }
-
-  bool canFuse (const multivector_type& B) const
-  {
-    return B.getNumVectors () == size_t (1) &&
-      ! A_crs_.is_null () &&
-      exp_.is_null ();
+  else {
+    TEUCHOS_ASSERT( ! A_op_.is_null () );
+    unfusedCase (W, alpha, D_inv, B, *A_op_, X, beta);
   }
+}
 
-  void
-  unfusedCase (multivector_type& W,
-               const SC& alpha,
-               vector_type& D_inv,
-               multivector_type& B,
-               const operator_type& A,
-               multivector_type& X,
-               const SC& beta)
-  {
-    if (V1_.get () == nullptr) {
-      using MV = multivector_type;
-      const size_t numVecs = B.getNumVectors ();
-      V1_ = std::unique_ptr<MV> (new MV (B.getMap (), numVecs));
+template<class TpetraOperatorType>
+typename ScaledDampedResidual<TpetraOperatorType>::vector_type&
+ScaledDampedResidual<TpetraOperatorType>::
+importVector (vector_type& X_domMap)
+{
+  if (imp_.is_null ()) {
+    return X_domMap;
+  }
+  else {
+    if (X_colMap_.get () == nullptr) {
+      using V = vector_type;
+      X_colMap_ = std::unique_ptr<V> (new V (imp_->getTargetMap ()));
     }
-    const SC one = Teuchos::ScalarTraits<SC>::one ();
-
-    // V1 = B - A*X
-    Tpetra::deep_copy (*V1_, B);
-    A.apply (X, *V1_, Teuchos::NO_TRANS, -one, one);
-
-    // W := alpha * D_inv * V1 + beta * W
-    W.elementWiseMultiply (alpha, D_inv, *V1_, beta);
+    X_colMap_->doImport (X_domMap, *imp_, Tpetra::REPLACE);
+    return *X_colMap_;
   }
+}
 
-  void
-  fusedCase (vector_type& W,
+template<class TpetraOperatorType>
+bool
+ScaledDampedResidual<TpetraOperatorType>::
+canFuse (const multivector_type& B) const
+{
+  return B.getNumVectors () == size_t (1) &&
+    ! A_crs_.is_null () &&
+    exp_.is_null ();
+}
+
+template<class TpetraOperatorType>
+void
+ScaledDampedResidual<TpetraOperatorType>::
+unfusedCase (multivector_type& W,
              const SC& alpha,
              vector_type& D_inv,
-             vector_type& B,
-             const crs_matrix_type& A,
-             vector_type& X,
+             multivector_type& B,
+             const operator_type& A,
+             multivector_type& X,
              const SC& beta)
-  {
-    vector_type& X_colMap = importVector (X);
-
-    // Only need these aliases because we lack C++14 generic lambdas.
-    using Tpetra::with_local_access_function_argument_type;
-    using ro_lcl_vec_type =
-      with_local_access_function_argument_type<
-        decltype (readOnly (B))>;
-    using wo_lcl_vec_type =
-      with_local_access_function_argument_type<
-        decltype (writeOnly (B))>;
-    using rw_lcl_vec_type =
-      with_local_access_function_argument_type<
-        decltype (readWrite (B))>;
-
-    using Tpetra::withLocalAccess;
-    using Tpetra::readOnly;
-    using Tpetra::readWrite;
-    using Tpetra::writeOnly;
-    using Impl::scaled_damped_residual_vector;
-    using STS = Teuchos::ScalarTraits<SC>;
-
-    auto A_lcl = A.getLocalMatrix ();
-    if (beta == STS::zero ()) {
-      withLocalAccess
-        ([&] (const wo_lcl_vec_type& W_lcl,
-              const ro_lcl_vec_type& D_lcl,
-              const ro_lcl_vec_type& B_lcl,
-              const ro_lcl_vec_type& X_lcl) {
-           scaled_damped_residual_vector (alpha, W_lcl, D_lcl,
-                                          B_lcl, A_lcl, X_lcl, beta);
-         },
-         writeOnly (W),
-         readOnly (D_inv),
-         readOnly (B),
-         readOnly (X_colMap));
-    }
-    else { // need to read _and_ write W if beta != 0
-      withLocalAccess
-        ([&] (const rw_lcl_vec_type& W_lcl,
-              const ro_lcl_vec_type& D_lcl,
-              const ro_lcl_vec_type& B_lcl,
-              const ro_lcl_vec_type& X_lcl) {
-           scaled_damped_residual_vector (alpha, W_lcl, D_lcl,
-                                          B_lcl, A_lcl, X_lcl, beta);
-         },
-         readWrite (W),
-         readOnly (D_inv),
-         readOnly (B),
-         readOnly (X_colMap));
-    }
+{
+  if (V1_.get () == nullptr) {
+    using MV = multivector_type;
+    const size_t numVecs = B.getNumVectors ();
+    V1_ = std::unique_ptr<MV> (new MV (B.getMap (), numVecs));
   }
-};
+  const SC one = Teuchos::ScalarTraits<SC>::one ();
+
+  // V1 = B - A*X
+  Tpetra::deep_copy (*V1_, B);
+  A.apply (X, *V1_, Teuchos::NO_TRANS, -one, one);
+
+  // W := alpha * D_inv * V1 + beta * W
+  W.elementWiseMultiply (alpha, D_inv, *V1_, beta);
+}
+
+template<class TpetraOperatorType>
+void
+ScaledDampedResidual<TpetraOperatorType>::
+fusedCase (vector_type& W,
+           const SC& alpha,
+           vector_type& D_inv,
+           vector_type& B,
+           const crs_matrix_type& A,
+           vector_type& X,
+           const SC& beta)
+{
+  vector_type& X_colMap = importVector (X);
+
+  // Only need these aliases because we lack C++14 generic lambdas.
+  using Tpetra::with_local_access_function_argument_type;
+  using ro_lcl_vec_type =
+    with_local_access_function_argument_type<
+      decltype (readOnly (B))>;
+  using wo_lcl_vec_type =
+    with_local_access_function_argument_type<
+      decltype (writeOnly (B))>;
+  using rw_lcl_vec_type =
+    with_local_access_function_argument_type<
+      decltype (readWrite (B))>;
+
+  using Tpetra::withLocalAccess;
+  using Tpetra::readOnly;
+  using Tpetra::readWrite;
+  using Tpetra::writeOnly;
+  using Impl::scaled_damped_residual_vector;
+  using STS = Teuchos::ScalarTraits<SC>;
+
+  auto A_lcl = A.getLocalMatrix ();
+  if (beta == STS::zero ()) {
+    withLocalAccess
+      ([&] (const wo_lcl_vec_type& W_lcl,
+            const ro_lcl_vec_type& D_lcl,
+            const ro_lcl_vec_type& B_lcl,
+            const ro_lcl_vec_type& X_lcl) {
+         scaled_damped_residual_vector (alpha, W_lcl, D_lcl,
+                                        B_lcl, A_lcl, X_lcl, beta);
+       },
+       writeOnly (W),
+       readOnly (D_inv),
+       readOnly (B),
+       readOnly (X_colMap));
+  }
+  else { // need to read _and_ write W if beta != 0
+    withLocalAccess
+      ([&] (const rw_lcl_vec_type& W_lcl,
+            const ro_lcl_vec_type& D_lcl,
+            const ro_lcl_vec_type& B_lcl,
+            const ro_lcl_vec_type& X_lcl) {
+         scaled_damped_residual_vector (alpha, W_lcl, D_lcl,
+                                        B_lcl, A_lcl, X_lcl, beta);
+       },
+       readWrite (W),
+       readOnly (D_inv),
+       readOnly (B),
+       readOnly (X_colMap));
+  }
+}
 
 } // namespace Details
 } // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_SCALEDDAMPEDRESIDUAL_HPP
+#define IFPACK2_DETAILS_SCALEDDAMPEDRESIDUAL_INSTANT(SC,LO,GO,NT) \
+  template class Ifpack2::Details::ScaledDampedResidual<Tpetra::Operator<SC, LO, GO, NT> >;
+
+#endif // IFPACK2_DETAILS_SCALEDDAMPEDRESIDUAL_DEF_HPP
