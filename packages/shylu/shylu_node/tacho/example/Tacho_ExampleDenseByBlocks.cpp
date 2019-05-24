@@ -24,6 +24,8 @@ using namespace Tacho;
 #define PRINT_TIMER                                                     \
   printf("  Time \n");                                                  \
   printf("       byblocks/reference (speedup):                   %10.6f\n", t_reference/t_byblocks); \
+  printf("  Task Scheduler (%s) \n", scheduler_name);                   \
+  printf("       allocation count                                %10d\n", sched.queue().allocation_count());\
   printf("\n");                                                         
 
 /// select a kokkos task scheudler
@@ -152,7 +154,7 @@ int main (int argc, char *argv[]) {
         for (ordinal_type i=0;i<m;++i)
           mat(i,j) = random.value();
     };
-#if 0
+#if 1
     ///
     /// Chol
     ///
@@ -235,7 +237,7 @@ int main (int argc, char *argv[]) {
             t_byblocks += (iter >=0)*timer.seconds();
           }
           t_byblocks /= niter;
-          //clearFutureOfBlocks(HA);
+          clearFutureOfBlocks(HA);
         }
       }
 
@@ -271,7 +273,7 @@ int main (int argc, char *argv[]) {
     /// Trsm
     ///
     
-#if 0
+#if 1
     for (ordinal_type m=mbeg;m<=mend;m+=step) {
       t_reference = 0; t_byblocks = 0;
       auto sub_a  = Kokkos::subview(a,  range_type(0,m*m));
@@ -366,13 +368,13 @@ int main (int argc, char *argv[]) {
           const double alpha = -1.0;
           for (ordinal_type iter=dry;iter<niter;++iter) {
             timer.reset();
-            auto ff = Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                                         task_functor_trsm(alpha, DA, DB));
+            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                               task_functor_trsm(alpha, DA, DB));
             Kokkos::wait(sched);
             t_byblocks += (iter >=0)*timer.seconds();
           }
           t_byblocks /= niter;
-          //clearFutureOfBlocks(HB);
+          clearFutureOfBlocks(HB);
         }
       }
       
@@ -524,7 +526,6 @@ int main (int argc, char *argv[]) {
         {
           const double alpha = -1.0, beta = 1.0;
           for (ordinal_type iter=dry;iter<niter;++iter) {
-            printf("iter = %d\n", iter);
             timer.reset();
             Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
                                task_functor_gemm(alpha, DA, DB, beta, DC));
@@ -532,7 +533,7 @@ int main (int argc, char *argv[]) {
             t_byblocks += (iter >=0)*timer.seconds();
           }
           t_byblocks /= niter;
-          //clearFutureOfBlocks(HC);
+          clearFutureOfBlocks(HC);
         }
       }
       
@@ -563,7 +564,7 @@ int main (int argc, char *argv[]) {
     ///
     /// Herk
     ///
-#if 0
+#if 1
     for (ordinal_type m=mbeg;m<=mend;m+=step) {
       t_reference = 0; t_byblocks = 0;
       auto sub_a  = Kokkos::subview(a,  range_type(0,m*m));
@@ -665,7 +666,7 @@ int main (int argc, char *argv[]) {
             t_byblocks += (iter >=0)*timer.seconds();
           }
           t_byblocks /= niter;
-          //clearFutureOfBlocks(HC);
+          clearFutureOfBlocks(HC);
         }
       }
       

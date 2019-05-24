@@ -30,8 +30,8 @@ using namespace Tacho;
 typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
 typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
 
-typedef Kokkos::TaskSchedulerMultiple<DeviceSpaceType> scheduler_type;
-typedef Kokkos::TaskSchedulerMultiple<HostSpaceType> host_scheduler_type;
+typedef TaskSchedulerType<DeviceSpaceType> scheduler_type;
+typedef TaskSchedulerType<HostSpaceType> host_scheduler_type;
 
 TEST( Numeric, constructor ) {
   TEST_BEGIN;

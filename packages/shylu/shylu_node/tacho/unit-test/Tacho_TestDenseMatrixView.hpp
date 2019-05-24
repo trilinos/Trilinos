@@ -14,8 +14,8 @@ using namespace Tacho;
 typedef Kokkos::View<ValueType*,HostSpaceType> value_type_array_host;
 //typedef Kokkos::View<ValueType*,DeviceSpaceType> value_type_array_device;
 
-typedef Kokkos::TaskSchedulerMultiple<HostSpaceType> host_scheduler_type;
-typedef Kokkos::TaskSchedulerMultiple<DeviceSpaceType> scheduler_type;
+typedef TaskSchedulerType<HostSpaceType> host_scheduler_type;
+typedef TaskSchedulerType<DeviceSpaceType> scheduler_type;
 
 typedef DenseMatrixView<ValueType,host_scheduler_type> DenseMatrixViewHostType;
 //typedef DenseMatrixView<ValueType,scheduler_type> DenseMatrixViewDeviceType;

@@ -6,6 +6,8 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp)
 
+SET(LIBRARIES shyluchol)
+
 IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # Supernodes

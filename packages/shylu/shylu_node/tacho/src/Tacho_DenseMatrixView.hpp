@@ -96,7 +96,7 @@ namespace Tacho {
       void set_future(const future_type &f) { _future = f; }
 
       KOKKOS_INLINE_FUNCTION
-      void set_future() { _future.~future_type(); }
+      void set_future() { _future.clear(); }
       
       /// get methods
 

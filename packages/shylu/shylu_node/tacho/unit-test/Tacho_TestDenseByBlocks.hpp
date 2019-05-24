@@ -21,8 +21,8 @@ using namespace Tacho;
 typedef Kokkos::View<ValueType*,HostSpaceType>   value_type_array_host;
 typedef Kokkos::View<ValueType*,DeviceSpaceType> value_type_array;
 
-typedef Kokkos::TaskSchedulerMultiple<DeviceSpaceType> scheduler_type;
-typedef Kokkos::TaskSchedulerMultiple<HostSpaceType> host_scheduler_type;
+typedef TaskSchedulerType<DeviceSpaceType> scheduler_type;
+typedef TaskSchedulerType<HostSpaceType> host_scheduler_type;
 
 typedef ArithTraits<ValueType> ats;
 
