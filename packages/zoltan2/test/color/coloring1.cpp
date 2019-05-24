@@ -42,6 +42,10 @@
 // ***********************************************************************
 //
 // @HEADER
+#include <KokkosKernels_Handle.hpp>
+#include "KokkosGraph_Distance1Color.hpp"
+#include <KokkosGraph_Distance2Color.hpp>
+
 #include <iostream>
 #include <fstream>
 #include <limits>

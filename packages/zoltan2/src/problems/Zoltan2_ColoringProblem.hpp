@@ -201,6 +201,11 @@ void ColoringProblem<Adapter>::solve(bool newData)
       AlgSerialGreedy<Adapter> alg(this->graphModel_, this->params_,
                                    this->env_, this->comm_);
       alg.color(this->solution_);
+  } 
+  else if (method.compare("hybrid") == 0)
+  {
+      //new stuff using Kokkos and Gebremedhin-Manne-Boman framework for hybrid architectures
+      
   }
 #if 0 // TODO later
   else if (method.compare("speculative") == 0) // Gebremedhin-Manne
