@@ -155,6 +155,12 @@ bool SideSetImpl<KEY>::was_mesh_modified_since_sideset_creation() const
     return m_sideSetSyncCount != m_bulk.synchronized_count();
 }
 
+template<typename KEY>
+void SideSetImpl<KEY>::set_sideset_sync_count(unsigned syncCount)
+{
+    m_sideSetSyncCount = syncCount;
+}
+
 template class SideSetImpl<int64_t>;
 template class SideSetImpl<std::string>;
 

@@ -68,7 +68,9 @@
 
 #ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
+#include <Xpetra_TpetraOperator.hpp>
 #include <MueLu_TpetraOperator.hpp>
+#include <MueLu_CreateTpetraPreconditioner.hpp>
 namespace BelosTpetra {
 namespace Impl {
   extern void register_Cg (const bool verbose);

@@ -87,9 +87,9 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
   }
 
   const double initial_radius   = .05;
-  boost::shared_ptr<stk::transfer::MDMesh >
+  std::shared_ptr<stk::transfer::MDMesh >
     transfer_domain_mesh (new stk::transfer::MDMesh(FromValues, FromPoints, initial_radius, comm));
-  boost::shared_ptr<stk::transfer::MDMesh >
+  std::shared_ptr<stk::transfer::MDMesh >
     transfer_range_mesh  (new stk::transfer::MDMesh(  ToValues, ToPoints,   initial_radius, comm));
 
   stk::transfer::GeometricTransfer<

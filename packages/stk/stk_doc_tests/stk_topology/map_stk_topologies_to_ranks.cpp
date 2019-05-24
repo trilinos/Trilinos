@@ -72,6 +72,8 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     element_rank_topologies.push_back(stk::topology::BEAM_3);
     element_rank_topologies.push_back(stk::topology::SHELL_LINE_2);
     element_rank_topologies.push_back(stk::topology::SHELL_LINE_3);
+    element_rank_topologies.push_back(stk::topology::SPRING_2);
+    element_rank_topologies.push_back(stk::topology::SPRING_3);
 
     element_rank_topologies.push_back(stk::topology::TRI_3_2D);
     element_rank_topologies.push_back(stk::topology::TRIANGLE_3_2D);
@@ -138,7 +140,7 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     ASSERT_EQ(1u, node_rank_topologies.size());
     ASSERT_EQ(2u, edge_rank_topologies.size());
     ASSERT_EQ(12u, face_rank_topologies.size());
-    ASSERT_EQ(55u, element_rank_topologies.size());
+    ASSERT_EQ(57u, element_rank_topologies.size());
 
     for (size_t i=0;i<node_rank_topologies.size();i++)
     {

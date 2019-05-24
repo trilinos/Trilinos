@@ -39,6 +39,8 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Hex8::name = "hex8";
+
   class St_Hex8 : public ElementVariableType
   {
   public:

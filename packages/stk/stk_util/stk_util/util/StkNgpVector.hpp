@@ -137,7 +137,7 @@ private:
     DeviceType deviceVals;
     HostType hostVals;
 
-    const char *get_default_name() { return "UnnamedStkVector"; }
+    static const char *get_default_name() { return "UnnamedStkVector"; }
 
     size_t get_push_back_increase_size() const
     {

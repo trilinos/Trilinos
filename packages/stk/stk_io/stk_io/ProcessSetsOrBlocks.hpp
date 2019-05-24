@@ -186,7 +186,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::Pa
   std::vector<INT> ids;
   nb->get_field_data("ids", ids);
 
-  stk::mesh::Part& nodePart = bulk.mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+  stk::mesh::Part& nodePart = bulk.mesh_meta_data().get_topology_root_part(stk::topology::NODE);
   stk::mesh::PartVector nodeParts = {&nodePart};
 
   std::vector<stk::mesh::Entity> nodes;
@@ -218,7 +218,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
   stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
   stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
 
-  stk::mesh::Part& nodePart = bulk.mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+  stk::mesh::Part& nodePart = bulk.mesh_meta_data().get_topology_root_part(stk::topology::NODE);
   stk::mesh::PartVector nodeParts = {&nodePart};
 
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();

@@ -138,7 +138,8 @@ public:
 
             add_comm_list_entries_for_entities( modified_entities );
 
-            internal_resolve_shared_membership();
+            stk::mesh::EntityVector entitiesNoLongerShared;
+            internal_resolve_shared_membership(entitiesNoLongerShared);
 
             if ( is_automatic_aura_on() )
             {

@@ -40,6 +40,7 @@
 #include <cstddef> // for nullptr
 
 namespace Ioss {
+  const char *Node::name = "node";
   class St_Node : public ElementVariableType
   {
   public:

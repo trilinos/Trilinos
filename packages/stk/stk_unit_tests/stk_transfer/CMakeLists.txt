@@ -42,12 +42,19 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/intrepid/src/Shared)
 
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
     stk_transfer_unit_tests
     SOURCES ${SOURCES}
-    TESTONLYLIBS stk_unit_main
-    ARGS ""
     COMM serial mpi
-    NUM_MPI_PROCS 1-4
     )
+
+# TRIBITS_ADD_TEST(
+#     stk_transfer_unit_tests
+#     NAME STK_Transfer_how_to_use_copyTransfer
+#     ARGS "--gtest_filter=StkMeshHowTo.useCopyTransfer"
+#     COMM serial mpi
+#     NUM_MPI_PROCS 2
+#     PASS_REGULAR_EXPRESSION "PASS"
+#     FAIL_REGULAR_EXPRESSION "FAIL"
+#   )
 

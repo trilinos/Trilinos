@@ -87,8 +87,14 @@ public:
     template <typename ValueType>
     void add_optional(const CommandLineOption &option, const ValueType &defaultValue)
     {
+        add_optional(get_option_spec(option), option.description, defaultValue);
+    }
+
+    template <typename ValueType>
+    void add_optional(const std::string &option, const std::string &description, const ValueType &defaultValue)
+    {
         optionsDesc.add_options()
-          (get_option_spec(option).c_str(), boost::program_options::value<ValueType>()->default_value(defaultValue), option.description.c_str());
+          (option.c_str(), boost::program_options::value<ValueType>()->default_value(defaultValue), description.c_str());
     }
 
     std::string get_usage() const

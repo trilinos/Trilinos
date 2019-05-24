@@ -95,6 +95,7 @@
 #include "stk_mesh/base/Types.hpp"                   // for FieldVector, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"            // for ParallelMachine, etc
+#include "stk_util/parallel/ParallelReduceBool.hpp"
 #include "stk_util/util/ParameterList.hpp"           // for Type, etc
 #include "stk_util/diag/StringUtil.hpp"           // for Type, etc
 #include "stk_util/util/string_case_compare.hpp"
@@ -515,6 +516,7 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
         bool requires_64bit = check_integer_size_requirements() == 8;
         if (requires_64bit) {
             properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
+            properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
         }
     }
 
@@ -530,6 +532,16 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
 void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
 {
     validate_output_file_index(output_file_index);
+    if (m_bulkData->was_mesh_modified_since_sideset_creation()) {
+        std::vector<std::shared_ptr<SidesetUpdater>> updaters = m_bulkData->get_observer_type<SidesetUpdater>();
+        ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+        std::vector<size_t> values;
+        updaters[0]->fill_values_to_reduce(values);
+        std::vector<size_t> maxValues(values);
+        if(stk::parallel_machine_size(m_communicator) > 1)
+            stk::all_reduce_max(m_communicator, values.data(), maxValues.data(), maxValues.size());
+        updaters[0]->set_reduced_values(maxValues);
+    }
     m_outputFiles[output_file_index]->write_output_mesh(*m_bulkData, attributeFieldOrderingByPartOrdinal);
 }
 
@@ -751,6 +763,10 @@ void StkMeshIoBroker::populate_bulk_data()
     if(m_bulkData->is_automatic_aura_on()) {
         std::vector< const stk::mesh::FieldBase *> fields(m_metaData->get_fields().begin(), m_metaData->get_fields().end());
         stk::mesh::communicate_field_data(m_bulkData->aura_ghosting(), fields);
+    }
+
+    if(check_integer_size_requirements() == 8) {
+        m_bulkData->set_large_ids_flag(true);
     }
 }
 
@@ -1173,6 +1189,10 @@ int StkMeshIoBroker::check_integer_size_requirements()
         }
     }
 
+    if (!Teuchos::is_null(m_bulkData) && m_bulkData->supports_large_ids()) {
+        return 8;
+    }
+
     // 3. If any entity count exceeds INT_MAX, then use 64-bit integers.
     if ( !Teuchos::is_null(m_bulkData) ) {
         std::vector<size_t> entityCounts;
@@ -1184,7 +1204,28 @@ int StkMeshIoBroker::check_integer_size_requirements()
         }
     }
 
-    // 4. Should also check if the maximum node or element id exceeds INT_MAX.
+    // 4. check if the maximum id exceeds INT_MAX.
+    if ( !Teuchos::is_null(m_bulkData) ) {
+        const stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(m_bulkData->mesh_meta_data().entity_rank_count());
+        bool foundLargeId = false;
+        for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<numRanks; rank++) {
+            stk::mesh::const_entity_iterator beginIter = m_bulkData->begin_entities(rank);
+            stk::mesh::const_entity_iterator endIter = m_bulkData->end_entities(rank);
+            if (std::distance(beginIter, endIter) > 0) {
+                stk::mesh::EntityKey lastKey = (--endIter)->first;
+                if (lastKey.id() > (size_t)std::numeric_limits<int>::max()) {
+                    foundLargeId = true;
+                    break;
+                }
+            }
+        }
+        stk::ParallelMachine comm = m_bulkData->parallel();
+        bool globalFoundLargeId = (comm == MPI_COMM_NULL || comm == MPI_COMM_SELF) ? foundLargeId :
+                                   stk::is_true_on_any_proc(m_bulkData->parallel(), foundLargeId);
+        if (globalFoundLargeId) {
+            return 8;
+        }
+    }
 
     // 5. Default to 4-byte integers...
     return 4;

@@ -148,9 +148,9 @@ private:
 
     void createParts()
     {
-        node_part = &meta->get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
-        particle_part = &meta->get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::PARTICLE));
-        beam_part = &meta->get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::BEAM_2));
+        node_part = &meta->get_topology_root_part(stk::topology::NODE);
+        particle_part = &meta->get_topology_root_part(stk::topology::PARTICLE);
+        beam_part = &meta->get_topology_root_part(stk::topology::BEAM_2);
     }
 
     void createBeamOnProc1()
