@@ -356,12 +356,9 @@ compute (multivector_type& W,
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  const size_t numVecs = B.getNumVectors ();
 
   if (canFuse (B)) {
     // "nonconst" here has no effect other than on the return type.
-    // We need to name these return types because Intel 17 isn't so
-    // good at type deduction.
     RCP<vector_type> W_vec = W.getVectorNonConst (0);
     RCP<vector_type> B_vec = B.getVectorNonConst (0);
     RCP<vector_type> X_vec = X.getVectorNonConst (0);
