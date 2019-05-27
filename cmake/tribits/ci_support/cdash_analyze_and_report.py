@@ -85,6 +85,12 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
       " [default yesterday '"+yesterday+"']" )
 
   clp.add_option(
+    "--cdash-project-testing-day-start-time", dest="cdashProjectTestingDayStartTime",
+    type="string", default="00:00",
+    help="The CDash project testing day build star time in UTC in format '<hh>:<mm>'."+\
+      " [default = '00:00'" )
+
+  clp.add_option(
     "--cdash-project-name", dest="cdashProjectName", type="string", default="",
     help="CDash project name (e.g. 'Trilinos'). [REQUIRED] [default = '']" )
 
@@ -249,6 +255,7 @@ def getCmndLineOptions():
 def fwdCmndLineOptions(inOptions, lt=""):
   cmndLineOpts = \
     "  --date='"+inOptions.date+"'"+lt+\
+    "  --cdash-project-testing-day-start-time='"+inOptions.cdashProjectTestingDayStartTime+"'"+lt+\
     "  --cdash-project-name='"+inOptions.cdashProjectName+"'"+lt+\
     "  --build-set-name='"+inOptions.buildSetName+"'"+lt+\
     "  --cdash-site-url='"+inOptions.cdashSiteUrl+"'"+lt+\
@@ -356,11 +363,12 @@ class TestSetGetDataAnayzeReporter(object):
         CDQAR.foreachTransform(
           testSetSortedLimitedLOD,
           CDQAR.AddTestHistoryToTestDictFunctor(
-            self.inOptions.cdashSiteUrl,
-            self.inOptions.cdashProjectName,
-            self.inOptions.date,
-            self.inOptions.testHistoryDays,
-            self.testHistoryCacheDir,
+            cdashUrl=self.inOptions.cdashSiteUrl,
+            projectName=self.inOptions.cdashProjectName,
+            date=self.inOptions.date,
+            testingDayStartTimeUtc=self.inOptions.cdashProjectTestingDayStartTime,
+            daysOfHistory=self.inOptions.testHistoryDays,
+            testCacheDir=self.testHistoryCacheDir,
             useCachedCDashData=self.inOptions.useCachedCDashData,
             alwaysUseCacheFileIfExists=True,
             verbose=True,
@@ -820,6 +828,7 @@ if __name__ == '__main__':
           inOptions.cdashSiteUrl,
           inOptions.cdashProjectName,
           inOptions.date,
+          inOptions.cdashProjectTestingDayStartTime,
           inOptions.testHistoryDays,
           testHistoryCacheDir,
           useCachedCDashData=inOptions.useCachedCDashData,

@@ -54,6 +54,7 @@ import pprint
 from FindGeneralScriptSupport import *
 from GeneralScriptSupport import *
 
+import cdash_build_testing_date as CBTD
 
 # Validate a date YYYY-MM-DD string and return a date object for the
 # 'datetime' module.
@@ -1054,14 +1055,19 @@ def dateFromBuildStartTime(buildStartTime):
 #
 # Inputs:
 #
-#   testHistoryLOD [in]: List of test dicts for the same test.  This list nore
-#   its elements are modified in this call. (The base list object is shallow
-#   copied before it is sorted.)
+#   testHistoryLOD [in]: List of test dicts for the same test.  This input
+#   list nore its elements are modified in this call.  The base list object is
+#   shallow copied before it is sorted and returned.
 #
-#   currentTestDate [in]: The current testing day (as a string YYYY-MM-DD).
+#   currentTestDate [in]: The current testing day (as a string "YYYY-MM-DD").
 #   This is needed to define a frame of reference for interpeting if the test
 #   is currently 'Passed', 'Failed', 'Not Run', or is 'Missing' (i.e. does not
 #   have any test results for curent testing date).
+#
+#   testingDayStartTimeUtc [in]: The CDash project testing day start time
+#   "<hh>:<mm>" in UTC.  For example, if the CDash project testing day start
+#   time is 6 PM MDT (18:00 MDT), then the testing day start time is "02:00"
+#   (UTC) (which is the next calendar day).
 #
 #   daysOfHistory [in]: Number of days of history that were requested.
 #
@@ -1076,8 +1082,10 @@ def dateFromBuildStartTime(buildStartTime):
 # where:
 #
 #   sortedTestHistoryLOD: The sorted list of test dicts with most recent dict
-#   at the top.  (New list object with references to the same test dict
-#   elements.)
+#   at the top. New list object with references to the same test dict
+#   elements.  Therefore, if the list elements themselves are modified after
+#   the function returns, then the elements in the orignal list testHistoryLOD
+#   will be modifed as well.
 #
 #   testHistoryStats: Dict that gives statistics for the test with fields:
 #     - 'pass_last_x_days': Number of times test 'Passed'
@@ -1086,7 +1094,7 @@ def dateFromBuildStartTime(buildStartTime):
 #     - 'consec_pass_days': Number of times the test consecutively passed
 #     - 'consec_nopass_days': Number of times the test consecutively did not pass
 #     - 'consec_missing_days': Number of days test is missing
-#     - 'previous_nopass_date': Before current date, the previous nopass date
+#     - 'previous_nopass_date': Before current date, the previous nopass date in UTC
 #
 #   testStatus: The status of the test for the current testing day with values:
 #     - 'Passed': Most recent test 'Passed' had date matching curentTestDate
@@ -1094,12 +1102,17 @@ def dateFromBuildStartTime(buildStartTime):
 #     - 'Not Run': Most recent test 'Not Run' had date matching curentTestDate
 #     - 'Missing': Most recent test has date before matching curentTestDate
 #
-def sortTestHistoryGetStatistics(testHistoryLOD, currentTestDate, daysOfHistory):
+def sortTestHistoryGetStatistics(testHistoryLOD,
+  currentTestDate, testingDayStartTimeUtc,
+  daysOfHistory,
+  ):
 
+  # Helper functions
   def incr(testDict, key): testDict[key] = testDict[key] + 1
   def decr(testDict, key): testDict[key] = testDict[key] - 1
 
-  # Initialize outputs assuming no history (i.e. missing)
+  # Initialize outputs assuming no history (i.e. test is missing for
+  # alldaysOfHistory of history)
   sortedTestHistoryLOD = []
   testHistoryStats = {
     'pass_last_x_days': 0,
@@ -1120,16 +1133,27 @@ def sortTestHistoryGetStatistics(testHistoryLOD, currentTestDate, daysOfHistory)
   # Sort the test history by the buildstarttime (most current date at top)
   sortedTestHistoryLOD = copy.copy(testHistoryLOD)
   sortedTestHistoryLOD.sort(reverse=True, key=DictSortFunctor(['buildstarttime']))
+ 
+  # Get testing day/time helper object
+  testingDayTimeObj = CBTD.CDashProjectTestingDay(currentTestDate, testingDayStartTimeUtc)
+  currentTestDateDT = testingDayTimeObj.getCurrentTestingDayDateDT()
+  #print("currentTestDateDT = "+str(currentTestDateDT))
 
   # Top (most recent) test history data
   topTestDict = sortedTestHistoryLOD[0]
+  #print("topTestDict['buildstarttime'] = "+topTestDict['buildstarttime'])
+
+  # Get the CDash testing date of the most recent test
+  topTestDictTestingDayDT = testingDayTimeObj.getTestingDayDateFromBuildStartTimeDT(
+    topTestDict['buildstarttime'] )
+  #print("topTestDictTestingDayDT ="+str(topTestDictTestingDayDT))
 
   # testStatus (for this test based on history)
-  topTestBuildStartDate = dateFromBuildStartTime(topTestDict['buildstarttime'])
-  if topTestBuildStartDate == currentTestDate:
+  if topTestDictTestingDayDT == currentTestDateDT:
     testStatus = topTestDict['status']
   else:
     testStatus = "Missing"
+  #print("testStatus = "+testStatus)
 
   # testHistoryStats
 
@@ -1137,9 +1161,8 @@ def sortTestHistoryGetStatistics(testHistoryLOD, currentTestDate, daysOfHistory)
 
   if testStatus == "Missing":
     # The test is missing so see how many consecutive days that it is missing
-    currentTestDateObj = validateAndConvertYYYYMMDD(currentTestDate)
-    topTestDateObj = validateAndConvertYYYYMMDD(topTestBuildStartDate)
-    testHistoryStats['consec_missing_days'] = (currentTestDateObj - topTestDateObj).days
+    testHistoryStats['consec_missing_days'] = \
+      (currentTestDateDT - topTestDictTestingDayDT).days
     # There are no initial consecutive passing or nopassing days
     initialTestStatusHasChanged = True
   else:
@@ -1152,17 +1175,18 @@ def sortTestHistoryGetStatistics(testHistoryLOD, currentTestDate, daysOfHistory)
 
   previousNopassDate = None
 
-  # Loop over test history and update quantities
-  for pastTestDict in sortedTestHistoryLOD:
-    pastTestStatus = pastTestDict['status']
-    pastTestDate = dateFromBuildStartTime(pastTestDict['buildstarttime'])
-    # Count the initial consecutive streaks
+  # Loop over test history for each of the kth entries and update quantities
+  for pastTestDict_k in sortedTestHistoryLOD:
+    pastTestStatus_k = pastTestDict_k['status']
+    pastTestDateUtc_k = testingDayTimeObj.getTestingDayDateFromBuildStartTimeStr(
+      pastTestDict_k['buildstarttime'])
+    # Count the initial consecutive streaks for passing and nonpassing
     if (
-       (pastTestStatus=='Passed') == previousTestStatusPassed \
+       (pastTestStatus_k=='Passed') == previousTestStatusPassed \
        and not initialTestStatusHasChanged \
       ):
-      # The initial consecutive streak continues!
-      if pastTestStatus == 'Passed':
+      # The initial consecutive streak for passing or nonpassing continues!
+      if pastTestStatus_k == 'Passed':
         incr(testHistoryStats, 'consec_pass_days')
       else:
         incr(testHistoryStats, 'consec_nopass_days')
@@ -1170,18 +1194,18 @@ def sortTestHistoryGetStatistics(testHistoryLOD, currentTestDate, daysOfHistory)
       # The initial consecutive streak has been broken
       initialTestStatusHasChanged = True
     # Count total pass/nopass/missing tests
-    decr(testHistoryStats, 'missing_last_x_days')
-    if pastTestStatus == 'Passed':
+    decr(testHistoryStats, 'missing_last_x_days') # Test not missing this day!
+    if pastTestStatus_k == 'Passed':
       incr(testHistoryStats, 'pass_last_x_days')
     else:
       incr(testHistoryStats, 'nopass_last_x_days')
     # Find most recent previous nopass test date
     if (
         previousNopassDate == None \
-        and pastTestDate != currentTestDate \
-        and pastTestStatus != 'Passed' \
+        and pastTestDateUtc_k != currentTestDate \
+        and pastTestStatus_k != 'Passed' \
       ):
-      previousNopassDate = pastTestDate
+      previousNopassDate = pastTestDateUtc_k
       testHistoryStats['previous_nopass_date'] = previousNopassDate
 
   # Return the computed stuff
@@ -1248,8 +1272,8 @@ def checkCDashTestDictsAreSame(testDict_1, testDict_1_name,
     time_2 = testDict_2['time'] 
     rel_err = abs(time_1 - time_2) / ( (time_1 + time_2 + 1e-5)/2.0 )
     rel_err_max = 1.0  # ToDo: Make this adjustable?
-    print("rel_err = "+str(rel_err))
-    print("rel_err_max = "+str(rel_err_max))
+    #print("rel_err = "+str(rel_err))
+    #print("rel_err_max = "+str(rel_err_max))
     if rel_err <= rel_err_max:
       testDict_1_copy.pop('time', None)
       testDict_2_copy.pop('time', None)
@@ -1285,7 +1309,7 @@ class AddTestHistoryToTestDictFunctor(object):
   # By default, this wil always read the data from the cache file if that file
   # already exists.
   #
-  def __init__(self, cdashUrl, projectName, date, daysOfHistory,
+  def __init__(self, cdashUrl, projectName, date, testingDayStartTimeUtc, daysOfHistory,
     testCacheDir, useCachedCDashData=True, alwaysUseCacheFileIfExists=True,
     verbose=False, printDetails=False,
     extractCDashApiQueryData_in=extractCDashApiQueryData, # For unit testing
@@ -1293,6 +1317,7 @@ class AddTestHistoryToTestDictFunctor(object):
     self.__cdashUrl = cdashUrl
     self.__projectName = projectName
     self.__date = date
+    self.__testingDayStartTimeUtc = testingDayStartTimeUtc
     self.__daysOfHistory = daysOfHistory
     self.__testCacheDir = testCacheDir
     self.__useCachedCDashData = useCachedCDashData
@@ -1329,11 +1354,18 @@ class AddTestHistoryToTestDictFunctor(object):
     else:
       testAlreadyHasCDashData = False
 
+    # Set up object to handle CDash testing day stuff
+    currentProjectTestingDayObj = \
+      CBTD.CDashProjectTestingDay(self.__date, self.__testingDayStartTimeUtc)
+    currentTestingDayStartUtcDT = currentProjectTestingDayObj.getTestingDayStartUtcDT()
+
     # Date range for test history
     dayAfterCurrentTestDay = \
-      (testDayDate+datetime.timedelta(days=1)).isoformat()
+      CBTD.getBuildStartTimeUtcStrFromUtcDT(
+        currentTestingDayStartUtcDT + datetime.timedelta(days=1), True )
     daysBeforeCurrentTestDay = \
-      (testDayDate+datetime.timedelta(days=-1*daysOfHistory+1)).isoformat()
+      CBTD.getBuildStartTimeUtcStrFromUtcDT(
+        currentTestingDayStartUtcDT - datetime.timedelta(days=daysOfHistory-1), True)
 
     # Define queryTests.php query filters for test history
     testHistoryQueryFilters = \
@@ -1397,7 +1429,7 @@ class AddTestHistoryToTestDictFunctor(object):
     # Sort and get test history stats and update core testDict fields
 
     (testHistoryLOD, testHistoryStats, testStatus) = sortTestHistoryGetStatistics(
-      testHistoryLOD, self.__date, daysOfHistory)
+      testHistoryLOD, self.__date, self.__testingDayStartTimeUtc, daysOfHistory)
 
     # Assert and update the status 
 

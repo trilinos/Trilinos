@@ -512,7 +512,7 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
       os << "Teuchos::StackedTimer::report() - max_levels manually set to " << options.max_levels
          << ". \nTo print more levels, increase value of OutputOptions::max_levels." << std::endl;
     }
-    if ( (! options.print_names_before_values) and (! options.align_columns)) {
+    if ( (! options.print_names_before_values) && (! options.align_columns)) {
       options.align_columns = true;
       if (options.print_warnings)
         os << "Teuchos::StackedTimer::report() - option print_names_before_values=false "
