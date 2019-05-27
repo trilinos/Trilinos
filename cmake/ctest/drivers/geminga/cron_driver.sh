@@ -32,6 +32,7 @@ export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
 export TDD_HTTPS_PROXY="https://sonproxy.sandia.gov:80"
 export http_proxy="http://sonproxy.sandia.gov:80"
 export https_proxy="https://sonproxy.sandia.gov:80"
+export no_proxy='.sandia.gov'
 
 . ~/.bashrc
 
@@ -45,6 +46,7 @@ module load sems-cmake/3.10.3
 module load sems-gcc/5.3.0
 module load sems-openmpi/1.10.1
 module load sems-superlu/4.3/base
+module load sems-git/2.10.1
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
