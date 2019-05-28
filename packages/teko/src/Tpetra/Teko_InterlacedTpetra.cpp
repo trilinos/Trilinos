@@ -239,11 +239,11 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    Tpetra::CrsMatrix<ST,LO,GO,NT> localA(rcpFromRef(gRowMap),0);
    localA.doImport(*A,import,Tpetra::INSERT);
 
-   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(rcpFromRef(rowMap),0);
-
    // get entry information
    LO numMyRows = rowMap.getNodeNumElements();
    LO maxNumEntries = A->getGlobalMaxNumRowEntries();
+
+   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(rcpFromRef(rowMap),maxNumEntries);
 
    // for extraction
    std::vector<GO> indices(maxNumEntries);
