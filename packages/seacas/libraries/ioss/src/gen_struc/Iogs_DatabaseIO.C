@@ -88,16 +88,15 @@ namespace {
   void fill_transient_data(const Ioss::GroupingEntity *entity, size_t component_count, double *data,
                            INT *ids, size_t count, double offset = 0.0)
   {
-    double *rdata = static_cast<double *>(data);
     if (component_count == 1) {
       for (size_t i = 0; i < count; i++) {
-        rdata[i] = std::sqrt((double)ids[i]) + offset;
+        data[i] = std::sqrt((double)ids[i]) + offset;
       }
     }
     else {
       for (size_t i = 0; i < count; i++) {
         for (size_t j = 0; j < component_count; j++) {
-          rdata[i * component_count + j] = j + std::sqrt((double)ids[i]) + offset;
+          data[i * component_count + j] = j + std::sqrt((double)ids[i]) + offset;
         }
       }
     }

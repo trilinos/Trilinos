@@ -36,6 +36,7 @@
 #include <Ioss_Field.h>
 #include <Ioss_Property.h>
 #include <cstddef>
+#include <fmt/ostream.h>
 #include <ostream>
 #include <string>
 
@@ -64,8 +65,8 @@ Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database, const std::string 
   topology_ = ElementTopology::factory(entity_type, true);
   if (topology_ == nullptr) {
     std::ostringstream errmsg;
-    errmsg << "ERROR: The topology type '" << entity_type << "' is not supported"
-           << " on " << name() << " in file " << io_database->get_filename();
+    fmt::print(errmsg, "ERROR: The topology type '{}' is not supported on '{}' in file '{}'",
+               entity_type, name(), io_database->get_filename());
     IOSS_ERROR(errmsg);
   }
 

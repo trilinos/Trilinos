@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
     printf("ex_close failed");
   }
 
-  version = version + 0.00005;
+  version += 0.00005f;
   sprintf(cversion, "%4.2f", version);
 
   k = strlen(cversion);

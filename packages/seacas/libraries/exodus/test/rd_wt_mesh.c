@@ -223,7 +223,7 @@ int main(int argc, char **argv)
       if (rank == 0) {
         env = getenv(hints[hint]);
         if (env != NULL)
-          strcpy(hint_value, env);
+          ex_copy_string(hint_value, env, MAX_STRING_LEN);
         else
           hint_value[0] = 0;
       }
@@ -323,7 +323,7 @@ int parse_input(int argc, char *argv[], int *exodus, int *close_files, char *fil
     }
     else if (strcmp("-f", argv[arg]) == 0) {
       if (++arg < argc) {
-        strcpy(file_name, argv[arg]);
+        ex_copy_string(file_name, argv[arg], MAX_STRING_LEN);
       }
     }
     else if (strcmp("-M", argv[arg]) == 0) {
@@ -1220,7 +1220,7 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
   char cTemp[128];
 
   output[0] = '\0';
-  strcpy(output, base);
+  ex_copy_string(output, base, MAX_STRING_LEN);
   strcat(output, ".");
   strcat(output, ext);
   if (other != NULL) {

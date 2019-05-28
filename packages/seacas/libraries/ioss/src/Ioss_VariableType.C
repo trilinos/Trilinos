@@ -37,10 +37,12 @@
 #include <Ioss_VariableType.h>
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fmt/ostream.h>
 #include <map>
 #include <sstream>
 #include <string>
@@ -173,7 +175,7 @@ const Ioss::VariableType *Ioss::VariableType::factory(const std::string &raw_nam
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "ERROR: The variable type '" << raw_name << "' is not supported.\n";
+      fmt::print(errmsg, "ERROR: The variable type '{}' is not supported.\n", raw_name);
       IOSS_ERROR(errmsg);
     }
   }
@@ -190,8 +192,10 @@ const Ioss::VariableType *Ioss::VariableType::factory(const std::string &raw_nam
 
 const Ioss::VariableType *Ioss::VariableType::factory(const std::vector<Ioss::Suffix> &suffices)
 {
-  size_t                    size = suffices.size();
-  const Ioss::VariableType *ivt  = nullptr;
+  size_t size = suffices.size();
+  // Maximum suffix size is currently 5.
+  assert(size < 100000);
+  const Ioss::VariableType *ivt = nullptr;
   if (size <= 1) {
     return nullptr; // All storage types must have at least 2 components.
   }
@@ -213,32 +217,10 @@ const Ioss::VariableType *Ioss::VariableType::factory(const std::vector<Ioss::Su
     // This indicates a "component" variable type that is
     // constructed "on-the-fly" for use in Sierra
     //
-    // Maximum suffix size is currently 5.
-
-    char digits[6]; // Include trailing null
-    assert(size < 100000);
-
-    // Create a format for our use...
-    char format[5];
-    if (size < 10) {
-      Ioss::Utils::copy_string(format, "%01d");
-    }
-    else if (size < 100) {
-      Ioss::Utils::copy_string(format, "%02d");
-    }
-    else if (size < 1000) {
-      Ioss::Utils::copy_string(format, "%03d");
-    }
-    else if (size < 10000) {
-      Ioss::Utils::copy_string(format, "%04d");
-    }
-    else {
-      Ioss::Utils::copy_string(format, "%05d");
-    }
-
+    size_t width = std::floor(std::log10(size)) + 1;
     for (size_t i = 0; i < size; i++) {
-      std::sprintf(digits, format, i + 1);
-      if (std::strcmp(&suffices[i].m_data[0], &digits[0]) != 0) {
+      std::string digits = fmt::format("{:0{}}", i + 1, width);
+      if (std::strcmp(&suffices[i].m_data[0], digits.c_str()) != 0) {
         match = false;
         break;
       }
@@ -342,32 +324,16 @@ bool Ioss::VariableType::build_variable_type(const std::string &raw_type)
 
 std::string Ioss::VariableType::numeric_label(int which, int ncomp, const std::string &name)
 {
-  char digits[8];
-  // Create a format for our use...
-  char format[5];
-  if (ncomp < 10) {
-    Ioss::Utils::copy_string(format, "%01d");
-  }
-  else if (ncomp < 100) {
-    Ioss::Utils::copy_string(format, "%02d");
-  }
-  else if (ncomp < 1000) {
-    Ioss::Utils::copy_string(format, "%03d");
-  }
-  else if (ncomp < 10000) {
-    Ioss::Utils::copy_string(format, "%04d");
-  }
-  else if (ncomp < 100000) {
-    Ioss::Utils::copy_string(format, "%05d");
-  }
-  else {
+  if (ncomp >= 100000) {
     std::ostringstream errmsg;
-    errmsg << "ERROR: Variable '" << name << "' has " << ncomp
-           << " components which is larger than the current maximum"
-           << " of 100,000. Please contact developer.\n";
+    fmt::print(errmsg,
+               "ERROR: Variable '{}' has {:n} components which is larger than the current maximum"
+               " of 100,000. Please contact developer.\n",
+               name, ncomp);
     IOSS_ERROR(errmsg);
   }
 
-  std::sprintf(digits, format, which);
-  return std::string(digits);
+  size_t      width  = std::floor(std::log10(ncomp)) + 1;
+  std::string digits = fmt::format("{:0{}}", which, width);
+  return digits;
 }
