@@ -34,6 +34,8 @@
  */
 #cmakedefine HAVE_STK_Trilinos
 
+#cmakedefine STK_SHOW_DEPRECATED_WARNINGS
+
 /* Define to indicate that the STKIO subpackage is enabled */
 #cmakedefine HAVE_STKIO
 
