@@ -106,7 +106,7 @@ public:
      *  (Currently only for DragonflyRCA, and used for MultiJagged's first cut in MappingProblem)
      *  return true if group_count is available
      */
-    virtual int getGroupCount(int *grp_count) const {
+    virtual part_t getGroupCount(part_t *grp_count) const {
       return 0;
     }
 

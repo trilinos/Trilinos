@@ -93,14 +93,21 @@ public:
     actual_procCoords(NULL),
     transformed_machine_extent(NULL),
     actual_machine_extent(NULL),
+    num_unique_groups(0),
+    group_count(NULL),
     is_transformed(false), 
     pl(NULL) {
 
     actual_machine_extent = new int[actual_networkDim];
     this->getActualMachineExtent(this->actual_machine_extent);
-   
+  
+    // Number of ranks in each Dragonfly network group (i.e. RCA's X coord == Grp g)
+    group_count = new part_t[actual_machine_extent[0]];
+
     // Number of parts in each Group (i.e. RCA's X coord == Grp g)
-    group_count = new int[actual_machine_extent[0]];
+    group_count = new part_t[actual_machine_extent[0]];
+
+    memset(group_count, 0, sizeof(part_t) * actual_machine_extent[0]);
 
     // Transformed dims = 1 + N_y + N_z
     transformed_networkDim = 1 + actual_machine_extent[1] + 
@@ -123,6 +130,38 @@ public:
       actual_procCoords[i][this->myRank] = xyz[i];
     delete [] xyz;
 
+    // Gather number of ranks in each Dragonfly network group from across all ranks
+    part_t * tmp_vec = new part_t[actual_machine_extent[0]];
+    memset(tmp_vec, 0, sizeof(part_t) * actual_machine_extent[0]);
+
+    Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_SUM,
+                                    actual_machine_extent[0],
+                                    group_count,
+                                    tmp_vec);
+
+    // remove zero entries from reduced array
+    num_unique_groups = 0;
+
+    for (int i = 0; i < actual_machine_extent[0]; ++i) {
+      if (tmp_vec[i] > 0) {
+        ++num_unique_groups;
+      }
+    }
+
+    // Reset group_count array to new size
+    delete[] group_count;
+    group_count = new part_t[num_unique_groups];
+
+    int pos = 0;
+    for (int i = 0; i < actual_machine_extent[0]; ++i) {
+      if (tmp_vec[i] > 0) {
+        group_count[pos] = tmp_vec[i];
+        ++pos;
+      }
+    }
+
+    delete[] tmp_vec;
+
     // reduceAll the coordinates of each processor.
     gatherMachineCoordinates(this->actual_procCoords,
         this->actual_networkDim, comm); 
@@ -144,7 +183,6 @@ public:
    *  \param comm Communication object.
    *  \param pl   Parameter List
    */
-
   MachineDragonflyRCA(const Teuchos::Comm<int> &comm, 
              const Teuchos::ParameterList &pl_ ):
     Machine<pcoord_t,part_t>(comm),
@@ -154,6 +192,8 @@ public:
     actual_procCoords(NULL),
     transformed_machine_extent(NULL),
     actual_machine_extent(NULL),
+    num_unique_groups(0),
+    group_count(NULL),
     is_transformed(false), 
     pl(&pl_)
   {
@@ -161,14 +201,66 @@ public:
     this->getActualMachineExtent(this->actual_machine_extent);
      
     // Number of parts in each Group (i.e. RCA's X coord == Grp g)
-    group_count = new int[actual_machine_extent[0]];
-    
+    group_count = new part_t[actual_machine_extent[0]];
+   
+    memset(group_count, 0, sizeof(part_t) * actual_machine_extent[0]);
+
+    std::cout << "\nMAKE DRAGONFLY MACHINE\n";
+
     // Allocate memory for processor coords
     actual_procCoords = new pcoord_t *[actual_networkDim];
     transformed_procCoords = new pcoord_t *[transformed_networkDim];
     
     pcoord_t *xyz = new pcoord_t[actual_networkDim];
     getMyActualMachineCoordinate(xyz);
+
+    for (int i = 0; i < actual_machine_extent[0]; ++i)
+      std::cout << "\nRank: " << this->myRank << " 1group_count[" << i << "]: " << group_count[i] << "\n";
+
+    std::cout << "\nRank: " << this->myRank << " Comm size: " << comm.getSize() << "\n";
+
+    // Gather number of ranks in each Dragonfly network group from across all ranks
+    part_t * tmp_vec = new part_t[actual_machine_extent[0]];
+    memset(tmp_vec, 0, sizeof(part_t) * actual_machine_extent[0]);
+
+    Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_SUM,
+                                    actual_machine_extent[0],
+                                    group_count,
+                                    tmp_vec);
+
+    for (int i = 0; i < actual_machine_extent[0]; ++i)
+      std::cout << "\nRank: " << this->myRank << " 2group_count[" << i << "]: " << group_count[i] << "\n";
+
+    for (int i = 0; i < actual_machine_extent[0]; ++i)
+      std::cout << "\nRank: " << this->myRank << " 2tmp_vec[" << i << "]: " << tmp_vec[i] << "\n";
+
+    // remove zero entries from reduced array
+    num_unique_groups = 0;
+
+    for (int i = 0; i < actual_machine_extent[0]; ++i) {
+      if (tmp_vec[i] > 0) {
+        ++num_unique_groups;
+      }
+    }
+
+    // Reset group_count array to new size
+    delete[] group_count;
+    group_count = new part_t[num_unique_groups];
+
+    int pos = 0;
+    for (int i = 0; i < actual_machine_extent[0]; ++i) {
+      if (tmp_vec[i] > 0) {
+        group_count[pos] = tmp_vec[i];
+        ++pos;
+      }
+    }
+
+    delete[] tmp_vec;
+
+
+    for (int i = 0; i < actual_machine_extent[0]; ++i)
+      std::cout << "\nRank: " << this->myRank << " 3group_count[" << i << "]: " << group_count[i] << "\n";
+
 
     const Teuchos::ParameterEntry *pe2 = 
       this->pl->getEntryPtr("Machine_Optimization_Level");
@@ -203,32 +295,51 @@ public:
         int ny = this->actual_machine_extent[1];
         int nz = this->actual_machine_extent[2];
         
-        transformed_procCoords[0][this->myRank] = 2 * xyz[0] * ny * nz;
+        const Teuchos::ParameterEntry *pe_x =
+          this->pl->getEntryPtr("Machine_X_Stretch");
+        const Teuchos::ParameterEntry *pe_y =
+          this->pl->getEntryPtr("Machine_Y_Stretch");
+        const Teuchos::ParameterEntry *pe_z =
+          this->pl->getEntryPtr("Machine_Z_Stretch");
+
+        // Default X,Y,Z stretches
+        int x_stretch = 3;
+        int y_stretch = 2;
+        int z_stretch = 1;
+
+        if (pe_x)
+          x_stretch = pe_x->getValue<int>(&x_stretch);
+        if (pe_y)
+          y_stretch = pe_y->getValue<int>(&y_stretch);
+        if (pe_z)
+          z_stretch = pe_z->getValue<int>(&z_stretch);
+
+        transformed_procCoords[0][this->myRank] = x_stretch * xyz[0] * ny * nz;
 
         for (int i = 1; i < 1 + ny; ++i) {
           // Shift y-coord given a group, xyz[0];
           transformed_procCoords[i][this->myRank] = 0;
           // Increment in the dim where y-coord present  
           if (xyz[1] == i - 1)
-            transformed_procCoords[i][this->myRank] = 2;
+            transformed_procCoords[i][this->myRank] = y_stretch;
         }
         for (int i = 1 + ny; i < transformed_networkDim; ++i) {
           // Shift z-coord given a group, xyz[0];
           transformed_procCoords[i][this->myRank] = 0;
           // Increment in the dim where z-coord present
           if (xyz[2] == i - (1 + ny))
-            transformed_procCoords[i][this->myRank] = 1;
+            transformed_procCoords[i][this->myRank] = z_stretch;
         }
 
         this->transformed_machine_extent = new int[transformed_networkDim];
         
         // Max shifted high dim coordinate system
-        this->transformed_machine_extent[0] = 2 * (nx - 1) * ny * nz;
+        this->transformed_machine_extent[0] = x_stretch * (nx - 1) * ny * nz;
         for (int i = 1; i < 1 + ny; ++i) {
-          this->transformed_machine_extent[i] = 2;
+          this->transformed_machine_extent[i] = y_stretch;
         }
         for (int i = 1 + ny; i < transformed_networkDim; ++i) {
-          this->transformed_machine_extent[i] = 1;
+          this->transformed_machine_extent[i] = z_stretch;
         }
 
         // reduceAll the transformed coordinates of each processor.
@@ -274,7 +385,8 @@ public:
     }
     delete [] actual_procCoords;
     delete [] actual_machine_extent;
-    delete [] transformed_procCoords; 
+    delete [] transformed_procCoords;
+    delete [] group_count; 
   }
 
   bool hasMachineCoordinates() const { return true; }
@@ -322,11 +434,11 @@ public:
     return true;
   }
 
-  int getGroupCount(int *grp_count) const override {
+  part_t getGroupCount(part_t *grp_count) const override {
     
     grp_count = group_count;
 
-    return actual_machine_extent[0];
+    return num_unique_groups;
   }
 
   void printAllocation() {
@@ -392,11 +504,18 @@ public:
     if (returnval == -1) {
       return false;
     }
-    xyz[0] = node_coord.mesh_x;
-    xyz[1] = node_coord.mesh_y;
-    xyz[2] = node_coord.mesh_z;
 
-    group_count[(int)xyz[0]]++;
+    int x = node_coord.mesh_x;
+    int y = node_coord.mesh_y;
+    int z = node_coord.mesh_z;
+
+    xyz[0] = x;
+    xyz[1] = y;
+    xyz[2] = z;
+
+    std::cout << "\nGROUP: " << xyz[0] << "\n";
+
+    group_count[x]++;
 
     return true;
 #else
@@ -446,8 +565,7 @@ public:
 
   // Return (approx) hop count from rank1 to rank2. Does not account for 
   // dynamic routing.
-  bool getHopCount(int rank1, int rank2, pcoord_t &hops) override {
-    
+  bool getHopCount(int rank1, int rank2, pcoord_t &hops) override { 
     hops = 0;
 
     if (is_transformed) {     
@@ -472,7 +590,6 @@ public:
       hops /= 2;
     }
     else {
-
       // Case: ranks in different groups
       // Does not account for location of group to group connection. 
       // (Nearly all group to group messages will take 5 hops)
@@ -506,6 +623,7 @@ private:
 
   part_t *transformed_machine_extent;
   part_t *actual_machine_extent;
+  part_t num_unique_groups;
   part_t *group_count;
   bool is_transformed;
 

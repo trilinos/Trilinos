@@ -214,6 +214,8 @@ void getSolutionCenterCoordinates(
   for (lno_t i=0; i < numLocalCoords; i++) {
     part_t p = parts[i];
     
+    
+
     //add up all coordinates in each part.
     for (int j = 0; j < coordDim; ++j) {
       scalar_t c = multiJagged_coordinates[j][i];
@@ -1556,11 +1558,13 @@ public:
 
     // Optimization for Dragonfly Networks, First Cut is imbalanced to ensure
     // procs are divided by first RCA coord (a.k.a. group).
-    int num_group_count = 0;
-    int *group_count = NULL;
+    part_t num_group_count = 0;
+    part_t *group_count = NULL;
 
     num_group_count = machine->getGroupCount(group_count);
 
+
+    std::cout << "\nAbout to proc partition\n";
 
     // Do the partitioning and renumber the parts.
     env->timerStart(MACRO_TIMERS, "Mapping - Proc Partitioning");
@@ -1605,6 +1609,10 @@ public:
     for (int i = 0; i < this->task_coord_dim; ++i) {
       tcoords[i] = this->task_coords[permutation[i]];
     }
+
+
+    std::cout << "\nAbout to task partition\n";
+
 
     env->timerStart(MACRO_TIMERS, "Mapping - Task Partitioning");
     // Partitioning of Tasks
@@ -2351,6 +2359,7 @@ public:
     //number of parts.
     int coordDim = coordinateModel_->getCoordinateDim();
 
+//    int coordDim = machine_->getMachineDim();
 
     this->ntasks = soln_->getActualGlobalNumberOfParts();
     if (part_t(soln_->getTargetGlobalNumberOfParts()) > this->ntasks) {
@@ -2611,13 +2620,14 @@ public:
 //    std::vector<bool> machine_extent_wrap_around_vec(procDim, 0);
     int *machine_extent = &(machine_extent_vec[0]);
     bool *machine_extent_wrap_around = new bool[procDim];
-    machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
+//    machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
 
     // KDDKDD ASK MEHMET:  SHOULD WE GET AND USE machine_dimension HERE IF IT
     // KDDKDD ASK MEHMET:  IS PROVIDED BY THE MACHINE REPRESENTATION?
     // KDDKDD ASK MEHMET:  IF NOT HERE, THEN WHERE?
     // MD: Yes, I ADDED BELOW:
-    if (machine_->getMachineExtent(machine_extent)) {
+    if (machine_->getMachineExtent(machine_extent) &&
+        machine_->getMachineExtentWrapArounds(machine_extent_wrap_around)) {
       procCoordinates =
           this->shiftMachineCoordinates(
               procDim,
@@ -2630,6 +2640,8 @@ public:
     //get the tasks information, such as coordinate dimension,
     //number of parts.
     int coordDim = coordinateModel_->getCoordinateDim();
+
+//    int coordDim = machine_->getMachineDim();
 
 
     this->ntasks = num_parts_;
@@ -3003,7 +3015,7 @@ public:
    * \param numProcs: the number of allocated processors.
    * \param mCoords: allocated machine coordinates.
    */
-  pcoord_t **shiftMachineCoordinates(
+  pcoord_t** shiftMachineCoordinates(
       int machine_dim,
       const part_t *machine_dimensions,
       bool *machine_extent_wrap_around,

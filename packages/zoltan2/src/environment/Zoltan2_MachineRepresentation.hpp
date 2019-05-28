@@ -169,13 +169,13 @@ public:
      *  Ex, 4 ranks with coord (3, 1, 1), will return grp_count = [0, 0, 0, 4, 0, ...]
      *  (Currently only for DragonflyRCA, and used for MultiJagged's first cut in MappingProblem) 
      */ 
-    inline int getGroupCount(int *grp_count) const {
+    inline part_t getGroupCount(part_t *grp_count) const {
       return machine->getGroupCount(grp_count);
     }
 
     /*! \brief Set up validators specific to this Problem
     */
-    static void getValidParameters(Teuchos::ParameterList & pl)
+    static void getValidParameters(Teuchos::ParameterList &pl)
     {
       //TODO: This should be positive integer validator.
       pl.set("Machine_Optimization_Level", 10,
