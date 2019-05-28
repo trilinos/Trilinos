@@ -12,9 +12,7 @@
 #Operator
 #ReorderedBlockedCrsMatrix
 TpetraCrsMatrix
-#TpetraMultiVector
 ##TpetraVbrMatrix
-#TpetraVector
 ##VbrMatrix
 #Vector
 #VectorFactory

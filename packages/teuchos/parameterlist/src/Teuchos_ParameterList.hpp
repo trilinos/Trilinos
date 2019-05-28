@@ -1024,9 +1024,9 @@ void ParameterList::recursivelySetValidator(
     if (this->isSublist(entry_name) && depth > 0){
       this->sublist(entry_name).recursivelySetValidator<T>(validator, depth - 1);
     } else{
-      ParameterEntry *entry = this->getEntryPtr(entry_name);
-      if (entry->isType<T>()){
-        entry->setValidator(validator);
+      ParameterEntry *theEntry = this->getEntryPtr(entry_name);
+      if (theEntry->isType<T>()){
+        theEntry->setValidator(validator);
       }
     }
   }

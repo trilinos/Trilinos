@@ -3887,6 +3887,9 @@ namespace Tpetra {
 
   private:
     void
+    applyCrsPadding(const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding);
+
+    void
     copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                         const size_t numSameIDs,
                         const LocalOrdinal permuteToLIDs[],

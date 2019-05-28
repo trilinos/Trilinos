@@ -1316,28 +1316,26 @@ namespace Tpetra {
     applyCrsPadding (const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding);
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
-    computeCrsPadding (const RowGraph<local_ordinal_type, global_ordinal_type, Node>& source,
-                       size_t numSameIDs,
-                       const Teuchos::ArrayView<const local_ordinal_type> &permuteToLIDs,
-                       const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs);
+    computeCrsPadding (const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
+                       const size_t numSameIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs) const;
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
-    computeCrsPaddingNew (const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
-                          const size_t numSameIDs,
-                          const Kokkos::DualView<const local_ordinal_type*,
-                            buffer_device_type>& permuteToLIDs,
-                          const Kokkos::DualView<const local_ordinal_type*,
-                            buffer_device_type>& permuteFromLIDs);
+    computeCrsPadding (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
+                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID) const;
 
-    Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
-    computeCrsPadding (const Teuchos::ArrayView<const local_ordinal_type>& importLIDs,
-                       const Teuchos::ArrayView<size_t>& numPacketsPerLID);
-
-    Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
-    computeCrsPaddingNew (const Kokkos::DualView<const local_ordinal_type*,
-                            buffer_device_type>& importLIDs,
-                          Kokkos::DualView<size_t*,
-                            buffer_device_type> numPacketsPerLID) const;
+    void
+    computeCrsPaddingForSameIDs (Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
+                                 const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
+                                 const size_t numSameIDs,
+                                 const bool padAll) const;
+    void
+    computeCrsPaddingForPermutedIDs (Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding,
+                                     const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
+                                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+                                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+                                     const bool padAll) const;
 
     virtual void
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
