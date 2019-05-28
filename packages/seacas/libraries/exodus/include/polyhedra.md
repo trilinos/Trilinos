@@ -47,7 +47,7 @@ The Exodus model is created via the following calls:
   a face block, the "extended" version of the `ex_put_init_ext()` call must be used:
   ~~~~C
   ex_init_params par;
-  strcpy( par.title, "This is the title" );
+  ex_copy_string(par.title, "This is the title", MAX_LINE_LENGTH + 1);
   par.num_dim = 3;
   par.num_nodes = 14;
   par.num_edge = 0;

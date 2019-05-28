@@ -31,6 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include "fmt/color.h"
+#include "fmt/ostream.h"
 #include "util.h"
 #include <cstring> // for nullptr, memset
 #include <iostream>
@@ -71,32 +73,39 @@ namespace {
   }
 } // namespace
 
+void Error(const std::string &x)
+{
+  std::ostringstream out;
+  fmt::print(out, "exodiff: ERROR: {}", x);
+  ERR_OUT(out);
+}
+
 void ERR_OUT(std::ostringstream &buf)
 {
   if (cerr_out()) {
-    std::cerr << trmclr::red << buf.str() << trmclr::normal;
+    fmt::print(stderr, fmt::v5::fg(fmt::color::red), "{}", buf.str());
   }
   else {
-    std::cerr << buf.str();
+    fmt::print(stderr, "{}", buf.str());
   }
 }
 
-void DIFF_OUT(std::ostringstream &buf, trmclr::Style color)
+void DIFF_OUT(std::ostringstream &buf, fmt::internal::color_type color)
 {
   if (term_out()) {
-    std::cout << color << buf.str() << '\n' << trmclr::normal;
+    fmt::print(fmt::v5::fg(color), "{}\n", buf.str());
   }
   else {
-    std::cout << buf.str() << '\n';
+    fmt::print("{}\n", buf.str());
   }
 }
 
-void DIFF_OUT(const char *buf, trmclr::Style color)
+void DIFF_OUT(const std::string &buf, fmt::internal::color_type color)
 {
   if (term_out()) {
-    std::cout << color << buf << '\n' << trmclr::normal;
+    fmt::print(fmt::v5::fg(color), "{}\n", buf);
   }
   else {
-    std::cout << buf << '\n';
+    fmt::print("{}\n", buf);
   }
 }

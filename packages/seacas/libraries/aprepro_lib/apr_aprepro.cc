@@ -808,8 +808,7 @@ namespace SEAMS {
     int      maxlen  = 0;
     int      minlen  = INT_MAX;
     int      lengths[MAXLEN];
-    int      longer     = 0;
-    double   hash_ratio = 0.0;
+    int      longer = 0;
 
     Stats stats;
 
@@ -821,7 +820,6 @@ namespace SEAMS {
         chain_len++;
       }
 
-      hash_ratio += chain_len * (chain_len + 1.0);
       entries += chain_len;
       if (chain_len >= MAXLEN) {
         ++longer;
@@ -838,11 +836,8 @@ namespace SEAMS {
       }
     }
 
-    hash_ratio = hash_ratio / (static_cast<float>(entries) / HASHSIZE *
-                               static_cast<float>(entries + 2.0 * HASHSIZE - 1.0));
     (*output) << entries << " entries in " << HASHSIZE << " element hash table, " << lengths[0]
               << " (" << (static_cast<double>(lengths[0]) / HASHSIZE) * 100.0 << "%) empty.\n"
-              << "Hash ratio = " << hash_ratio << "\n"
               << "Mean (nonempty) chain length = " << stats.mean() << ", max = " << maxlen
               << ", min = " << minlen << ", deviation = " << stats.deviation() << "\n";
 
