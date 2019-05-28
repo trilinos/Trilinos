@@ -7829,7 +7829,6 @@ namespace Tpetra {
 
     if (!this->isStaticGraph() && this->getProfileType() == StaticProfile) {
       auto padding = myGraph_->computeCrsPadding(importLIDs, numPacketsPerLID);
-      // FIXME: TJF uncomment below and some tests fail
       if (padding.size() > 0)
         this->applyCrsPadding(padding);
     }
