@@ -81,10 +81,10 @@ module load sems-boost/1.58.0/base
 module load sems-python/2.7.9
 module load sems-zlib/1.2.8/base
 module load kokkos-cuda/8.0.44
-module load kokkos-openmpi/1.8.7/cuda
+module load kokkos-openmpi/2.0.1/cuda
 module load sems-superlu/4.3
-module load sems-hdf5/1.8.12/parallel
-module load sems-netcdf/4.4.1/exo_parallel
+#module load sems-hdf5/1.8.12/parallel
+#module load sems-netcdf/4.4.1/exo_parallel
 # See Trilinos github issue #2115.
 export OMPI_CXX=/home/jhu/code/trilinos-test/trilinos/packages/kokkos/bin/nvcc_wrapper
 
