@@ -226,6 +226,7 @@ int main(int narg, char** arg)
   ////// Specify problem parameters
   Teuchos::ParameterList params;
   params.set("color_choice", colorMethod);
+  params.set("color_method", "Hybrid");
   //params.set("balance_colors", balanceColors); // TODO
 
   ////// Create an input adapter for the Tpetra matrix.

@@ -135,7 +135,7 @@ public:
   {
     RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(
-        Teuchos::tuple<std::string>( "SerialGreedy" )));
+        Teuchos::tuple<std::string>( "SerialGreedy","Hybrid" )));
     pl.set("color_method", "SerialGreedy", "coloring algorithm",
      color_method_Validator);
   }
@@ -202,10 +202,14 @@ void ColoringProblem<Adapter>::solve(bool newData)
                                    this->env_, this->comm_);
       alg.color(this->solution_);
   } 
-  else if (method.compare("hybrid") == 0)
+  else if (method.compare("Hybrid") == 0)
   {
       //new stuff using Kokkos and Gebremedhin-Manne-Boman framework for hybrid architectures
-      
+      //this->inputAdapter_ is the adapter passed to this problem
+      printf("Do the hybrid algorithm\n"); 
+      AlgHybridGMB<Adapter> alg(this->inputAdapter_, this->params_,
+                                this->env_, this->comm_);
+      alg.color(this->solution_);
   }
 #if 0 // TODO later
   else if (method.compare("speculative") == 0) // Gebremedhin-Manne

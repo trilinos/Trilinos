@@ -47,5 +47,6 @@
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_AlgSerialGreedy.hpp>
+#include <Zoltan2_AlgHybridGMB.hpp>
 
 #endif
