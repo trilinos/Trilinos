@@ -97,6 +97,6 @@ int check_inp_specs(std::string &        exoII_inp_file, /* The ExodusII input F
 );
 
 /* Various defines used by the input routines */
-#define NONE -1
+#define NS_NONE -1
 
 #endif /* _ELB_INP_CONST_H_ */

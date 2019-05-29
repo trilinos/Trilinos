@@ -38,6 +38,7 @@
 #include <cstring>
 #include <exodus/Ioex_Utils.h>
 #include <exodusII_int.h>
+#include <fmt/ostream.h>
 #include <tokenize.h>
 
 namespace {
@@ -128,8 +129,8 @@ namespace Ioex {
       status = nc_put_att_double(rootid, NC_GLOBAL, "last_written_time", NC_DOUBLE, 1, &value);
       if (status != NC_NOERR) {
         ex_opts(EX_VERBOSE);
-        sprintf(errmsg, "Error: failed to define 'last_written_time' attribute to file id %d",
-                exodusFilePtr);
+        fmt::print(errmsg, "Error: failed to define 'last_written_time' attribute to file id {}",
+                   exodusFilePtr);
         ex_err_fn(exodusFilePtr, __func__, errmsg, status);
       }
     }
@@ -157,8 +158,8 @@ namespace Ioex {
       else {
         char errmsg[MAX_ERR_LENGTH];
         ex_opts(EX_VERBOSE);
-        sprintf(errmsg, "Error: failed to read last_written_time attribute from file id %d",
-                exodusFilePtr);
+        fmt::print(errmsg, "Error: failed to read last_written_time attribute from file id {}",
+                   exodusFilePtr);
         ex_err_fn(exodusFilePtr, __func__, errmsg, status);
         found = false;
       }
@@ -189,23 +190,28 @@ namespace Ioex {
       status = nc_get_att_int(exodusFilePtr, NC_GLOBAL, "processor_info", proc_info);
       if (status == NC_NOERR) {
         if (proc_info[0] != processor_count && proc_info[0] > 1) {
-          IOSS_WARNING << "Processor decomposition count in file (" << proc_info[0]
-                       << ") does not match current processor count (" << processor_count << ").\n";
+          fmt::print(IOSS_WARNING,
+                     "WARNING: Processor decomposition count in file ({}) does not match current "
+                     "processor "
+                     "count ({}).\n",
+                     proc_info[0], processor_count);
           matches = false;
         }
         if (proc_info[1] != processor_id) {
-          IOSS_WARNING << "This file was originally written on processor " << proc_info[1]
-                       << ", but is now being read on processor " << processor_id
-                       << ". This may cause problems if there is any processor-dependent data on "
-                          "the file.\n";
+          fmt::print(
+              IOSS_WARNING,
+              "WARNING: This file was originally written on processor {}, but is now being read on "
+              "processor {}.\n"
+              "This may cause problems if there is any processor-dependent data on the file.\n",
+              proc_info[1], processor_id);
           matches = false;
         }
       }
       else {
         char errmsg[MAX_ERR_LENGTH];
         ex_opts(EX_VERBOSE);
-        sprintf(errmsg, "Error: failed to read processor info attribute from file id %d",
-                exodusFilePtr);
+        fmt::print(errmsg, "Error: failed to read processor info attribute from file id {}",
+                   exodusFilePtr);
         ex_err_fn(exodusFilePtr, __func__, errmsg, status);
         return (EX_FATAL) != 0;
       }
@@ -448,11 +454,12 @@ namespace Ioex {
           std::string tmp_name = Ioss::Utils::encode_entity_name(basename, name_id);
           if (tmp_name == TOPTR(buffer)) {
             std::string new_name = Ioss::Utils::encode_entity_name(basename, id);
-            IOSS_WARNING
-                << "WARNING: The entity named '" << TOPTR(buffer) << "' has the id " << id
-                << " which does not match the embedded id " << name_id
-                << ".\n         This can cause issues later on; the entity will be renamed to '"
-                << new_name << "' (IOSS)\n\n";
+            fmt::print(IOSS_WARNING,
+                       "WARNING: The entity named '{}' has the id {} which does not match the "
+                       "embedded id {}.\n"
+                       "         This can cause issues later; the entity will be renamed to '{}' "
+                       "(IOSS)\n\n",
+                       TOPTR(buffer), id, name_id, new_name);
             db_has_name = false;
             return new_name;
           }
@@ -473,13 +480,13 @@ namespace Ioex {
     // the ex_close call.
     int status;
     ex_get_err(nullptr, nullptr, &status);
-    errmsg << "Exodus error (" << status << ") " << ex_strerror(status) << " at line " << lineno
-           << " of file '" << filename << "' in function '" << function << "'.";
+    fmt::print(errmsg, "Exodus error ({}) {} at line {} of file '{}' in function '{}'.", status,
+               ex_strerror(status), lineno, filename, function);
 
     if (!extra.empty()) {
-      errmsg << " " << extra;
+      fmt::print(errmsg, " {}", extra);
     }
-    errmsg << " Please report to gdsjaar@sandia.gov if you need help.";
+    fmt::print(errmsg, " Please report to gdsjaar@sandia.gov if you need help.");
 
     ex_err_fn(exoid, nullptr, nullptr, EX_PRTLASTMSG);
     IOSS_ERROR(errmsg);
@@ -619,9 +626,10 @@ namespace Ioex {
         int64_t elem_id = element[iel];
         if (elem_id <= 0) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: In sideset/surface '" << surface_name << "' an element with id "
-                 << elem_id << " is specified.  Element ids must be greater than zero. ("
-                 << __func__ << ")";
+          fmt::print(errmsg,
+                     "ERROR: In sideset/surface '{}' an element with id {} is specified.  Element "
+                     "ids must be greater than zero. ({})",
+                     surface_name, elem_id, __func__);
           IOSS_ERROR(errmsg);
         }
         if (block == nullptr || !block->contains(elem_id)) {

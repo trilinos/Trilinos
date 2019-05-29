@@ -35,6 +35,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <fmt/format.h>
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -49,6 +50,7 @@
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_ElementBlock.h"
 #include "Ioss_FaceGenerator.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_NodeBlock.h"
 #include "Ioss_ParallelUtils.h"
@@ -59,8 +61,6 @@
 #include <cassert>
 
 #include "skinner_interface.h"
-
-#define OUTPUT std::cout
 
 // ========================================================================
 
@@ -74,7 +74,7 @@ namespace {
 
   template <typename INT> void skinner(Skinner::Interface &interface, INT /*dummy*/);
   std::string                  codename;
-  std::string                  version = "0.6";
+  std::string                  version = "0.9";
 } // namespace
 
 int main(int argc, char *argv[])
@@ -85,26 +85,24 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
 
+  codename = Ioss::FileInfo(argv[0]).basename();
+
   Skinner::Interface interface;
-  interface.parse_options(argc, argv);
-
-  std::cout.imbue(std::locale(std::locale(), new my_numpunct));
-  std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
-
-  codename   = argv[0];
-  size_t ind = codename.find_last_of('/', codename.size());
-  if (ind != std::string::npos) {
-    codename = codename.substr(ind + 1, codename.size());
+  bool               success = interface.parse_options(argc, argv);
+  if (!success) {
+#ifdef SEACAS_HAVE_MPI
+    MPI_Finalize();
+#endif
+    return EXIT_FAILURE;
   }
 
   Ioss::Init::Initializer io;
 
   if (my_rank == 0) {
-    OUTPUT << "Input:    '" << interface.input_filename() << "', Type: " << interface.input_type()
-           << '\n';
+    fmt::print("\nInput:    '{}', Type: {}\n", interface.input_filename(), interface.input_type());
     if (!interface.no_output()) {
-      OUTPUT << "Output:   '" << interface.output_filename()
-             << "', Type: " << interface.output_type() << '\n';
+      fmt::print("Output:   '{}', Type: {}\n", interface.output_filename(),
+                 interface.output_type());
     }
   }
 
@@ -117,12 +115,12 @@ int main(int argc, char *argv[])
     }
   }
   catch (std::exception &e) {
-    std::cerr << "\n" << e.what() << "\n\nskinner terminated due to exception\n";
+    fmt::print(stderr, "\n{}\n\nskinner terminated due to exception\n", e.what());
     exit(EXIT_FAILURE);
   }
 
   if (my_rank == 0) {
-    OUTPUT << "\n" << codename << " execution successful.\n";
+    fmt::print("\n{} execution successful.\n\n", codename);
   }
 #ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
@@ -165,6 +163,7 @@ namespace {
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
+    region.output_summary(std::cerr, false);
 
     Ioss::FaceGenerator face_generator(region);
 #ifdef SEACAS_HAVE_MPI
@@ -214,19 +213,17 @@ namespace {
 
     size_t my_rank = region.get_database()->parallel_rank();
     if (my_rank == 0) {
-      OUTPUT << "Face count = " << interior + boundary - pboundary / 2
-             << "\tInterior = " << interior - pboundary / 2 << "\tBoundary = " << boundary
-             << "\tShared   = " << pboundary << "\tError = " << error << "\n"
-             << "Total Time = " << std::chrono::duration<double, std::milli>(duration).count()
-             << " ms\t"
-             << (interior + boundary - pboundary / 2) /
-                    std::chrono::duration<double>(duration).count()
-             << " faces/second\n\n";
+      fmt::print(
+          "Face count = {:n}\tInterior = {:n}\tBoundary = {:n}\tShared = {:n}\tError = {:n}\n"
+          "Total Time = {} ms\t{} faces/second\n\n",
+          interior + boundary - pboundary / 2, interior - pboundary / 2, boundary, pboundary, error,
+          std::chrono::duration<double, std::milli>(duration).count(),
+          (interior + boundary - pboundary / 2) / std::chrono::duration<double>(duration).count());
 
-      OUTPUT << "Hash Statistics: Bucket Count = " << faces.bucket_count()
-             << "\tLoad Factor = " << faces.load_factor() << "\n";
+      fmt::print("Hash Statistics: Bucket Count = {:n}\tLoad Factor = {}\n", faces.bucket_count(),
+                 faces.load_factor());
       size_t numel = region.get_property("element_count").get_int();
-      OUTPUT << "Faces/Element ratio = " << static_cast<double>(faces.size()) / numel << "\n";
+      fmt::print("Faces/Element ratio = {}\n", static_cast<double>(faces.size()) / numel);
     }
 
     if (interface.no_output()) {
@@ -317,6 +314,9 @@ namespace {
 
     // NOTE: 'output_region' owns 'dbo' pointer at this time
     Ioss::Region output_region(dbo, "skin");
+    output_region.property_add(Ioss::Property(std::string("code_name"), codename));
+    output_region.property_add(Ioss::Property(std::string("code_version"), version));
+
     output_region.begin_mode(Ioss::STATE_DEFINE_MODEL);
 
     Ioss::NodeBlock *nbo =

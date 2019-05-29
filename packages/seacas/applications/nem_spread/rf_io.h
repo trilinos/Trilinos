@@ -41,15 +41,15 @@
  *
  */
 
-char ExoFile[MAX_FNL];               /* Exodus II File containing problem definition. */
-                                     /* This name is the root name.                   */
-char Output_File_Base_Name[MAX_FNL]; /* Base name of output file. If it has a suffix, it will be
+std::string ExoFile;               /* Exodus II File containing problem definition. */
+                                   /* This name is the root name.                   */
+std::string Output_File_Base_Name; /* Base name of output file. If it has a suffix, it will be
                                         stripped */
 
-char Exo_LB_File[MAX_FNL];  /* Exodus II file containing the mesh
-                             * load-balanceinformation                       */
-char Exo_Res_File[MAX_FNL]; /* Exodus II file containing the mesh results  */
-                            /* information                                   */
+std::string Exo_LB_File;  /* Exodus II file containing the mesh
+                           * load-balanceinformation                       */
+std::string Exo_Res_File; /* Exodus II file containing the mesh results  */
+                          /* information                                   */
 
 int Debug_Flag = 1; /* Flag to specify debug info is to be printed out.
                        The value of this flag determines the level of

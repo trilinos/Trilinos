@@ -38,10 +38,12 @@
 #include <cfloat>
 #include <climits>
 #include <cmath>
+#include <copy_string_cpp.h>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
+#include <fmt/ostream.h>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -133,7 +135,7 @@ namespace {
   };
 
   unsigned int debug_level = 0;
-  const float  FILL_VALUE  = FLT_MAX;
+  const double FILL_VALUE  = FLT_MAX;
   int          rank        = 0;
   std::string  tsFormat    = "[%H:%M:%S] ";
 
@@ -144,18 +146,20 @@ namespace {
   void LOG(const std::string message)
   {
     if (debug_level & 1) {
-      std::cout << time_stamp(tsFormat);
+      fmt::print("{}", time_stamp(tsFormat));
     }
     if (rank == 0) {
-      std::cout << message;
+      fmt::print("{}", message);
     }
   }
 
   void exodus_error(int lineno)
   {
     std::ostringstream errmsg;
-    errmsg << "Exodus error (" << exerrval << ")" << ex_strerror(exerrval) << " at line " << lineno
-           << " in file epu.C. Please report to gdsjaar@sandia.gov if you need help.";
+    fmt::print(errmsg,
+               "Exodus error ({}) {} at line {} in file epu.C. Please report to gdsjaar@sandia.gov "
+               "if you need help.",
+               exerrval, ex_strerror(exerrval), lineno);
 
     ex_err(nullptr, nullptr, EX_PRTLASTMSG);
     throw std::runtime_error(errmsg.str());
@@ -360,9 +364,9 @@ int main(int argc, char *argv[])
     SystemInterface::show_version(rank);
     if (rank == 0) {
 #if ENABLE_PARALLEL_EPU
-      std::cout << "\tParallel Capability Enabled.\n";
+      fmt::print("\tParallel Capability Enabled.\n");
 #else
-      std::cout << "\tParallel Capability Not Enabled.\n";
+      fmt::print("\tParallel Capability Not Enabled.\n");
 #endif
     }
 
@@ -395,7 +399,7 @@ int main(int argc, char *argv[])
 
     int part_count = interface.part_count();
     if (part_count <= 1) {
-      std::cout << "INFO: Only one processor or part, no concatenation needed.\n";
+      fmt::print("INFO: Only one processor or part, no concatenation needed.\n");
       return (EXIT_SUCCESS);
     }
 
@@ -466,9 +470,10 @@ int main(int argc, char *argv[])
         if (((processor_count + sub_cycle_count - 1) / sub_cycle_count) < max_open_file) {
           interface.subcycle(sub_cycle_count);
           if (rank == 0) {
-            std::cout << "\tAutomatically activating subcyle mode\n\tNumber of processors ("
-                      << processor_count << ") exceeds open file limit (" << max_open_file << ").\n"
-                      << "\tUsing --subcycle=" << sub_cycle_count << "\n\n";
+            fmt::print("\tAutomatically activating subcyle mode\n\tNumber of processors ({}) "
+                       "exceeds open file limit ({}).\n"
+                       "\tUsing --subcycle={}\n\n",
+                       processor_count, max_open_file, sub_cycle_count);
           }
           interface.subcycle_join(true);
         }
@@ -589,7 +594,7 @@ int main(int argc, char *argv[])
     return (error);
   }
   catch (std::exception &e) {
-    std::cerr << e.what() << '\n';
+    fmt::print(stderr, "{}\n", e.what());
     return EXIT_FAILURE;
   }
 }
@@ -601,8 +606,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
 
   if (rank == 0) {
-    std::cout << "\nIO Word sizes: " << sizeof(T) << " bytes floating point and " << sizeof(INT)
-              << " bytes integer.\n";
+    fmt::print("\nIO Word sizes: {} bytes floating point and {} bytes integer.\n", sizeof(T),
+               sizeof(INT));
   }
   int p; // file counter p=0..part_count-1
 
@@ -740,16 +745,16 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       }
 
       if (rank == 0) {
-        std::cout << "Node Sharing information: (Part:Local Node Id)\n";
+        fmt::print("Node Sharing information: (Part:Local Node Id)\n");
         for (size_t i = 0; i < global_node_map.size(); i++) {
           if (num_shared[i] > 1) {
-            std::cout << "Global Node " << i + 1 << ": ";
+            fmt::print("Global Node {}:", i + 1);
             for (int pc = 0; pc < part_count; pc++) {
               if (shared[pc][i] >= 1) {
-                std::cout << "\t" << pc << ":" << shared[pc][i];
+                fmt::print("\t{}:{}", pc, shared[pc][i]);
               }
             }
-            std::cout << "\n";
+            fmt::print("\n");
           }
         }
       }
@@ -772,7 +777,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       LOG("\n**** GET SIDE SETS *****\n");
       get_sideset_metadata(part_count, sidesets, glob_ssets);
       if (global.count(SSET) != glob_ssets.size()) {
-        std::cerr << "\nWARNING: Invalid sidesets will not be written to output database.\n";
+        fmt::print("\nWARNING: Invalid sidesets will not be written to output database.\n");
         global.sidesetCount = glob_ssets.size();
       }
     }
@@ -784,7 +789,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       get_nodesets(part_count, global.nodeCount, local_node_to_global, nodesets, glob_nsets,
                    float_or_double);
       if (global.count(NSET) != glob_nsets.size()) {
-        std::cerr << "\nWARNING: Invalid nodesets will not be written to output database.\n";
+        fmt::print("\nWARNING: Invalid nodesets will not be written to output database.\n");
         global.nodesetCount = glob_nsets.size();
       }
     }
@@ -809,8 +814,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       if (!interface.use_netcdf4()) {
         // Check size required to store coordinates and connectivity
         if (global.nodeCount * 8 >= fourBill) {
-          std::cerr
-              << "\nINFO: Output file requires NetCDF-4 format. Setting this automatically.\n\n";
+          fmt::print(
+              stderr,
+              "\nINFO: Output file requires NetCDF-4 format. Setting this automatically.\n\n");
           interface.set_use_netcdf4();
         }
 
@@ -818,8 +824,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
           int64_t element_count = block.entity_count();
           int64_t nnpe          = block.nodesPerElement;
           if (element_count * nnpe * 4 >= fourBill) {
-            std::cerr
-                << "\nINFO: Output file requires NetCDF-4 format. Setting this automatically.\n\n";
+            fmt::print(
+                stderr,
+                "\nINFO: Output file requires NetCDF-4 format. Setting this automatically.\n\n");
             interface.set_use_netcdf4();
             break;
           }
@@ -1015,12 +1022,14 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     }
   }
   if (differ) {
-    std::cerr << "\nWARNING: The number of time steps is not the same on all input databases.\n"
-              << "         Using minimum count of " << num_time_steps << "\n\n";
+    fmt::print(stderr,
+               "\nWARNING: The number of time steps is not the same on all input databases.\n"
+               "         Using minimum count of {}\n\n",
+               num_time_steps);
   }
   else {
     if (rank == 0) {
-      std::cout << "\nNumber of time steps on input databases = " << num_time_steps << "\n\n";
+      fmt::print("\nNumber of time steps on input databases = {}\n\n", num_time_steps);
     }
   }
 
@@ -1076,8 +1085,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   }
 
   // Time steps for output file
-  int    time_step_out     = 0;
-  double min_time_to_write = -DBL_MAX;
+  int time_step_out     = 0;
+  T   sentinel          = static_cast<T>(-FLT_MAX);
+  T   min_time_to_write = sentinel;
 
   if (interface.append()) {
     // See how many steps already exist on the output database
@@ -1096,11 +1106,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   ts_max = ts_max < num_time_steps ? ts_max : num_time_steps;
   if (ts_min <= ts_max) {
     if (debug_level & 1) {
-      std::cout << time_stamp(tsFormat);
+      fmt::print("{}", time_stamp(tsFormat));
     }
     if (rank == 0) {
-      std::cout << "\tTransferring step " << ts_min << " to step " << ts_max << " by " << ts_step
-                << '\n';
+      fmt::print("\tTransferring step {} to step {} by {}\n", ts_min, ts_max, ts_step);
     }
   }
 
@@ -1126,12 +1135,13 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
         continue;
       }
 
-      if (min_time_to_write != -DBL_MAX) {
+      if (min_time_to_write != sentinel) {
         if (rank == 0) {
-          std::cout << "\tAppend Mode: Skipping " << time_step - (ts_min - 1)
-                    << " input steps to align times with already written steps on output file.\n\n";
+          fmt::print("\tAppend Mode: Skipping {} input steps to align times with already written "
+                     "steps on output file.\n\n",
+                     time_step - (ts_min - 1));
         }
-        min_time_to_write = -DBL_MAX;
+        min_time_to_write = sentinel;
       }
 
       error = ex_put_time(ExodusFile::output(), time_step_out, &time_val);
@@ -1147,15 +1157,12 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
           exodus_error(__LINE__);
         }
         if (proc_time_val != time_val) {
-          std::ios::fmtflags f(std::cerr.flags());
-          std::cerr << "ERROR: (EPU) At step " << std::setw(get_width(ts_max + 1)) << time_step + 1
-                    << ", the time on processor " << 0 + start_part << " is " << std::setw(15)
-                    << std::scientific << std::setprecision(8) << time_val
-                    << " which does not\n       match the time on processor " << p + start_part
-                    << " which is " << std::setw(15) << std::scientific << std::setprecision(8)
-                    << proc_time_val << "\n       This usually indicates a corrupt database."
-                    << '\n';
-          std::cerr.flags(f);
+          fmt::print(
+              stderr,
+              "ERROR: (EPU) At step {:{}}, the time on processor {} is {:e15.8} which does not\n"
+              "       match the time on processor {} which is {:e15.8}\n"
+              "       This usually indicates a corrupt database.\n",
+              time_step + 1, ts_max + 1, start_part, time_val, p + start_part, proc_time_val);
         }
       }
 
@@ -1164,7 +1171,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       if (global_vars.count(OUT) > 0) {
         if (debug_level & 1) {
           if (rank == 0) {
-            std::cout << time_stamp(tsFormat) << "Global Variables...\n";
+            fmt::print("{}Global Variables...\n", time_stamp(tsFormat));
           }
         }
         error = ex_get_var(id, time_step + 1, EX_GLOBAL, 0, 0, global_vars.count(),
@@ -1197,17 +1204,12 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
             }
             for (int ig = 0; ig < global_vars.count(IN); ig++) {
               if (proc_global_values[ig] != global_values[ig]) {
-                std::ios::fmtflags f(std::cerr.flags());
-                std::cerr << "At step " << std::setw(get_width(ts_max + 1)) << time_step + 1
-                          << ", Global Variable " << std::setw(get_width(global_vars.count(IN)))
-                          << ig + 1 << ", P" << std::setfill('0')
-                          << std::setw(get_width(interface.processor_count())) << 0 + start_part
-                          << " = " << std::setfill(' ') << std::setw(15) << std::scientific
-                          << std::setprecision(8) << global_values[ig] << ", P" << std::setfill('0')
-                          << std::setw(get_width(interface.processor_count())) << p + start_part
-                          << " = " << std::setfill(' ') << std::setw(15) << std::scientific
-                          << std::setprecision(8) << proc_global_values[ig] << '\n';
-                std::cerr.flags(f);
+                fmt::print(stderr,
+                           "At step {:{}}, Global Variable {:{}}, P{:0{}} = {:15.8g}, P{:0{}} = "
+                           "{:15.8g}\n",
+                           time_step + 1, ts_max + 1, ig + 1, get_width(global_vars.count(IN)),
+                           start_part, get_width(interface.processor_count()), start_part + p,
+                           get_width(interface.processor_count()), proc_global_values[ig]);
               }
             }
           }
@@ -1219,7 +1221,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // Nodal Values...
     if (debug_level & 1) {
       if (rank == 0) {
-        std::cout << time_stamp(tsFormat) << "Nodal Variables...\n";
+        fmt::print("{}Nodal Variables...\n", time_stamp(tsFormat));
       }
     }
     if (debug_level & 2) {
@@ -1247,9 +1249,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
                 size_t nodal_value = local_node_to_global[p][j];
                 if (master_nodal_values[i_out][nodal_value] != 0 &&
                     master_nodal_values[i_out][nodal_value] != values[j]) {
-                  std::cerr << "Variable " << i + 1 << ", Node " << nodal_value
-                            << ", old = " << master_nodal_values[i_out][nodal_value]
-                            << ", new = " << values[j] << '\n';
+                  fmt::print(stderr, "Variable {}, Node {}, old = {}, new = {}\n", i + 1,
+                             nodal_value, master_nodal_values[i_out][nodal_value], values[j]);
                 }
               }
             }
@@ -1291,7 +1292,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // Extracting element transient variable data
     if (debug_level & 1) {
       if (rank == 0) {
-        std::cout << time_stamp(tsFormat) << "Element Variables...\n";
+        fmt::print("{}Element Variables...\n", time_stamp(tsFormat));
       }
     }
     if (debug_level & 4) {
@@ -1319,7 +1320,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     if (!interface.omit_sidesets()) {
       if (debug_level & 1) {
         if (rank == 0) {
-          std::cout << time_stamp(tsFormat) << "Sideset Variables...\n";
+          fmt::print("{}Sideset Variables...\n", time_stamp(tsFormat));
         }
       }
       if (debug_level & 16) {
@@ -1341,7 +1342,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       // Extracting nodeset transient variable data
       if (debug_level & 1) {
         if (rank == 0) {
-          std::cout << time_stamp(tsFormat) << "Nodeset Variables...\n";
+          fmt::print("{}Nodeset Variables...\n", time_stamp(tsFormat));
         }
       }
       if (debug_level & 32) {
@@ -1359,30 +1360,26 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     }
     // ========================================================================
     if (debug_level & 1) {
-      std::cout << time_stamp(tsFormat);
+      fmt::print("{}", time_stamp(tsFormat));
     }
 
     if (subcycles > 2) {
       if (rank == 0) {
-        std::cout << cycle + 1 << "/" << subcycles << " ";
+        fmt::print("{}/{} ", cycle + 1, subcycles);
       }
     }
 
-    std::ios::fmtflags f(std::cout.flags());
-    std::cout << "Wrote step " << std::setw(2) << time_step + 1 << ", time " << std::scientific
-              << std::setprecision(4) << time_val;
     double cur_time            = seacas_timer();
     double elapsed             = cur_time - start_time;
     double time_per_step       = elapsed / time_step_out;
     double percentage_done     = (time_step_out * 100.0) / output_steps;
     double estimated_remaining = time_per_step * (output_steps - time_step_out);
-    std::cout << "\t\t[" << std::fixed << std::setw(5) << std::setprecision(1) << percentage_done
-              << "%, Elapsed=" << format_time(elapsed)
-              << ", ETA=" << format_time(estimated_remaining) << "]\r";
+    fmt::print("Wrote step {:6n}, time {:8.4e}\t\t[{:5.1f}%, Elapsed={}, ETA={}]    \r",
+               time_step + 1, time_val, percentage_done, format_time(elapsed),
+               format_time(estimated_remaining));
     if (debug_level & 1) {
-      std::cout << "\n";
+      fmt::print("\n");
     }
-    std::cout.flags(f);
   }
 
   for (int n = 0; n < nodal_vars.count(OUT); n++) {
@@ -1397,12 +1394,12 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   /*************************************************************************/
   // FINALIZE program
   if (debug_level & 1) {
-    std::cout << time_stamp(tsFormat);
+    fmt::print("{}", time_stamp(tsFormat));
   }
   if (subcycles > 2) {
-    std::cout << cycle + 1 << "/" << subcycles << " ";
+    fmt::print("{}/{} ", cycle + 1, subcycles);
   }
-  std::cout << "\n******* END *******\n";
+  fmt::print("\n******* END *******\n");
   return (0);
 }
 
@@ -1523,15 +1520,16 @@ namespace {
                            const std::vector<std::vector<INT>> &local_node_to_global,
                            T /* float_or_double */)
   {
+    T FillValue = static_cast<T>(FILL_VALUE);
     SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
     std::vector<T> x(global.nodeCount);
     std::vector<T> y(global.nodeCount);
     std::vector<T> z(global.nodeCount);
 
     if (debug_level & 8) {
-      std::fill(x.begin(), x.end(), FILL_VALUE);
-      std::fill(y.begin(), y.end(), FILL_VALUE);
-      std::fill(z.begin(), z.end(), FILL_VALUE);
+      std::fill(x.begin(), x.end(), FillValue);
+      std::fill(y.begin(), y.end(), FillValue);
+      std::fill(z.begin(), z.end(), FillValue);
     }
 
     int error = 0;
@@ -1577,7 +1575,8 @@ namespace {
                        std::vector<T> &x, std::vector<T> &y, std::vector<T> &z)
   {
     SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
-    int            error = 0;
+    T              FillValue = static_cast<T>(FILL_VALUE);
+    int            error     = 0;
     std::vector<T> local_x(num_nodes);
     std::vector<T> local_y(num_nodes);
     std::vector<T> local_z(num_nodes);
@@ -1593,19 +1592,14 @@ namespace {
       if (debug_level & 8) {
         for (size_t i = 0; i < num_nodes; i++) {
           size_t node = local_node_to_global[proc][i];
-          if (x[node] != FILL_VALUE && y[node] != FILL_VALUE && z[node] != FILL_VALUE) {
+          if (x[node] != FillValue && y[node] != FillValue && z[node] != FillValue) {
             if (x[node] != local_x[i] || y[node] != local_y[i] || z[node] != local_z[i]) {
-              std::ios::fmtflags f(std::cerr.flags());
-              std::cerr << "\nWARNING: Node " << node + 1
-                        << " has different coordinates in at least two files.\n"
-                        << "         cur value = " << std::scientific << std::setprecision(6)
-                        << std::setw(14) << x[node] << std::setw(14) << y[node] << std::setw(14)
-                        << z[node] << "\n"
-                        << "         new value = " << std::setw(14) << local_x[i] << std::setw(14)
-                        << local_y[i] << std::setw(14) << local_z[i] << " from processor " << proc
-                        << '\n';
-
-              std::cerr.flags(f);
+              fmt::print(stderr,
+                         "\nWARNING: Node {:n} has different coordinates in at least two files.\n"
+                         "         cur value = {:14.6e} {:14.6e} {:14.6e}\n"
+                         "         new value = {:14.6e} {:14.6e} {:14.6e} from processor {}\n",
+                         node + 1, x[node], y[node], z[node], local_x[i], local_y[i], local_z[i],
+                         proc);
             }
           }
         }
@@ -1625,16 +1619,13 @@ namespace {
       if (debug_level & 8) {
         for (size_t i = 0; i < num_nodes; i++) {
           size_t node = local_node_to_global[proc][i];
-          if (x[node] != FILL_VALUE && y[node] != FILL_VALUE) {
+          if (x[node] != FillValue && y[node] != FillValue) {
             if (x[node] != local_x[i] || y[node] != local_y[i]) {
-              std::ios::fmtflags f(std::cerr.flags());
-              std::cerr << "\nWARNING: Node " << node + 1
-                        << " has different coordinates in at least two files.\n"
-                        << "         cur value = " << std::scientific << std::setprecision(6)
-                        << std::setw(14) << x[node] << std::setw(14) << y[node] << "\n"
-                        << "         new value = " << std::setw(14) << local_x[i] << std::setw(14)
-                        << local_y[i] << " from processor " << proc << '\n';
-              std::cerr.flags(f);
+              fmt::print(stderr,
+                         "\nWARNING: Node {:n} has different coordinates in at least two files.\n"
+                         "         cur value = {:14.6e} {:14.6e}\n"
+                         "         new value = {:14.6e} {:14.6e} from processor {}\n",
+                         node + 1, x[node], y[node], local_x[i], local_y[i], proc);
             }
           }
         }
@@ -1653,15 +1644,12 @@ namespace {
       if (debug_level & 8) {
         for (size_t i = 0; i < num_nodes; i++) {
           size_t node = local_node_to_global[proc][i];
-          if (x[node] != FILL_VALUE && y[node] != FILL_VALUE) {
+          if (x[node] != FillValue && y[node] != FillValue) {
             if (x[node] != local_x[i]) {
-              std::ios::fmtflags f(std::cerr.flags());
-              std::cerr << "\nWARNING: Node " << node + 1
-                        << " has different coordinates in at least two files.\n"
-                        << "         cur value = " << std::scientific << std::setprecision(6)
-                        << std::setw(14) << x[node] << "\tnew value = " << std::setw(14)
-                        << local_x[i] << " from processor " << proc << '\n';
-              std::cerr.flags(f);
+              fmt::print(stderr,
+                         "\nWARNING: Node {:n} has different coordinates in at least two files.\n"
+                         "         cur value = {:14.6e}\tnew value = {:14.6e} from processor {}\n",
+                         node + 1, x[node], local_x[i], proc);
             }
           }
         }
@@ -1686,7 +1674,7 @@ namespace {
     }
 
     if (rank == 0) {
-      std::cout << "Global block count = " << global.count(EBLK) << '\n';
+      fmt::print("Global block count = {}\n", global.count(EBLK));
     }
 
     ExodusIdVector block_id(global.count(EBLK));
@@ -1705,15 +1693,17 @@ namespace {
         for (size_t b = 0; b < global.count(EBLK); b++) {
           if (blocks[0][b].id != block_id[b]) {
             std::ostringstream errmsg;
-            errmsg << "ERROR: (EPU) The internal element block id ordering for part " << p
-                   << "\n       is not consistent with the ordering for part 0." << '\n';
+            fmt::print(errmsg,
+                       "ERROR: (EPU) The internal element block id ordering for part {}\n"
+                       "       is not consistent with the ordering for part 0.\n",
+                       p);
             throw std::runtime_error(errmsg.str());
           }
         }
       }
 
       if ((debug_level & 4) != 0u) {
-        std::cout << "\nGetting element block info for processor " << p << "..." << '\n';
+        fmt::print("\nGetting element block info for processor {}...\n", p);
       }
       else {
         if (p == 0) {
@@ -1723,7 +1713,7 @@ namespace {
 
       for (size_t b = 0; b < global.count(EBLK); b++) {
         if ((debug_level & 4) != 0u) {
-          std::cout << "Block " << b << ", Id = " << block_id[b];
+          fmt::print("Block {}, Id = {}", b, block_id[b]);
         }
 
         ex_block temp_block{};
@@ -1781,10 +1771,9 @@ namespace {
           free_name_array(names, temp_block.num_attribute);
         }
         if ((debug_level & 4) != 0u) {
-          std::cout << ", Name = '" << blocks[p][b].name_;
-          std::cout << "', Elements = " << std::setw(12) << blocks[p][b].entity_count();
-          std::cout << ", Nodes/element = " << blocks[p][b].nodesPerElement;
-          std::cout << ", Attributes = " << blocks[p][b].attributeCount << '\n';
+          fmt::print(", Name = '{}', Elements = {:12n}, Nodes/element = {}, Attributes = {}\n",
+                     blocks[p][b].name_, blocks[p][b].entity_count(), blocks[p][b].nodesPerElement,
+                     blocks[p][b].attributeCount);
         }
       }
     } // end for p=0..part_count
@@ -1818,13 +1807,13 @@ namespace {
     for (int b = 0; b < global_num_blocks; b++) {
 
       if (debug_level & 4) {
-        std::cout << "\nOutput element block info for...\n";
-        std::cout << "Block " << b << ", Id = " << glob_blocks[b].id;
-        std::cout << ", Name = '" << glob_blocks[b].name_;
-        std::cout << "', Elements = " << std::setw(12) << glob_blocks[b].entity_count();
-        std::cout << ", Nodes/element = " << glob_blocks[b].nodesPerElement;
-        std::cout << ", Attributes = " << glob_blocks[b].attributeCount << '\n';
-        std::cout << "B" << b << ":\t" << std::flush;
+        fmt::print(stderr,
+                   "\nOutput element block info for...\n"
+                   "Block {}, Id = {}, Name = '{}', Elements = {:12n}, Nodes/element = {}, "
+                   "Attributes = {}\n"
+                   "B{}:\t",
+                   b, glob_blocks[b].id, glob_blocks[b].name_, glob_blocks[b].entity_count(),
+                   glob_blocks[b].nodesPerElement, glob_blocks[b].attributeCount, b);
       }
 
       size_t max_nodes = glob_blocks[b].entity_count();
@@ -1854,7 +1843,7 @@ namespace {
         if (blocks[p][b].entity_count() > 0) { // non-zero length block
 
           if (debug_level & 4) {
-            std::cout << "#" << std::flush;
+            fmt::print(stderr, "#");
           }
           size_t maximum_nodes = blocks[p][b].entity_count();
           maximum_nodes *= blocks[p][b].nodesPerElement;
@@ -1863,8 +1852,10 @@ namespace {
           ex_entity_id bid = blocks[p][b].id;
           error = ex_get_conn(id, EX_ELEM_BLOCK, bid, local_linkage.data(), nullptr, nullptr);
           if (error < 0) {
-            std::cerr << "ERROR: (EPU) Cannot get element block connectivity for block " << bid
-                      << " on part " << p + start_part << ".\n";
+            fmt::print(
+                stderr,
+                "ERROR: (EPU) Cannot get element block connectivity for block {} on part {}.\n",
+                bid, p + start_part);
             exodus_error(__LINE__);
           }
           size_t                  pos                     = 0;
@@ -1910,7 +1901,7 @@ namespace {
 
         } // end if blocks[p][b].entity_count() (non-zero length block)
         else if (debug_level & 4) {
-          std::cout << ".";
+          fmt::print(stderr, ".");
         }
       } // end for p=0..part_count-1
 
@@ -1934,10 +1925,10 @@ namespace {
         delete[] attributes[b];
       } // end for b=0..global_num_blocks-1
       if (debug_level & 4) {
-        std::cout << '\n';
+        fmt::print(stderr, "\n");
       }
     }
-    std::cout << '\n';
+    fmt::print("\n");
     delete[] linkage;
     delete[] attributes;
   }
@@ -1984,9 +1975,9 @@ namespace {
       if (global_element_map[i - 1] == global_element_map[i]) {
         // Duplicates in the element id list...
         // This is not yet handled.  Notify the user and continue for now...
-        std::cerr << "\n!!!! POSSIBLE ERROR: (EPU) There were at least 2"
-                  << " elements with duplicated ids detected.\n"
-                  << "!!!!\tThis may cause problems in the output file.\n\n";
+        fmt::print(stderr, "\n!!!! POSSIBLE ERROR: (EPU) There were at least 2"
+                           " elements with duplicated ids detected.\n"
+                           "!!!!\tThis may cause problems in the output file.\n\n");
         break;
       }
     }
@@ -1998,7 +1989,7 @@ namespace {
     bool is_contiguous = global_element_map.empty() ||
                          ((size_t)global_element_map.back() == global_element_map.size());
     if (rank == 0) {
-      std::cout << "Element id map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+      fmt::print("Element id map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
     }
 
   // Create the map that maps from a local processor element to the
@@ -2095,27 +2086,28 @@ namespace {
         if (max_id - min_id + 1 != glob_blocks[b].entity_count()) {
           if (map_ids) {
             map_ids = false;
-            std::cerr << "WARNING: The element ids are globally contiguous,\n"
-                      << "\tbut they are not consistent for element block " << glob_blocks[b].id
-                      << ".\n\tRetrying with element id mapping turned off." << '\n';
+            fmt::print(stderr,
+                       "WARNING: The element ids are globally contiguous,\n"
+                       "\tbut they are not consistent for element block {}.\n"
+                       "\tRetrying with element id mapping turned off.\n",
+                       glob_blocks[b].id);
             goto REMAP;
           }
           else {
             std::ostringstream errmsg;
-            errmsg << "ERROR: (EPU) The element ids for element block " << glob_blocks[b].id
-                   << " are not consistent." << '\n'
-                   << "Block " << b << ", Id = " << glob_blocks[b].id
-                   << " min/max id = " << min_id + 1 << "/" << max_id + 1
-                   << " size = " << glob_blocks[b].entity_count() << "\n";
+            fmt::print(errmsg,
+                       "ERROR: (EPU) The element ids for element block {} are not consistent.\n"
+                       "Block {}, Id = {} min/max id = {}/{} size = {}.\n",
+                       glob_blocks[b].id, b, glob_blocks[b].id, min_id + 1, max_id + 1,
+                       glob_blocks[b].entity_count());
             throw std::runtime_error(errmsg.str());
           }
         }
       }
       glob_blocks[b].offset_ = min_id;
       if (debug_level & 4) {
-        std::cout << "Block " << b << ", Id = " << glob_blocks[b].id
-                  << " min/max id = " << min_id + 1 << "/" << max_id + 1
-                  << " offset = " << glob_blocks[b].offset_ << "\n";
+        fmt::print("Block {}, Id = {} min/max id = {}/{} offset = {}\n", b, glob_blocks[b].id,
+                   min_id + 1, max_id + 1, glob_blocks[b].offset_);
       }
     }
   }
@@ -2170,7 +2162,7 @@ namespace {
     bool is_contiguous =
         global_node_map.empty() || ((size_t)global_node_map.back() == global_node_map.size());
     if (rank == 0) {
-      std::cout << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+      fmt::print("Node map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
     }
 
     // Create the map the maps from a local processor node to the
@@ -2222,12 +2214,14 @@ namespace {
           }
         }
         if (found) {
-          std::cerr << "\nWARNING: Variable 'processor_id' already exists on database.\n"
-                    << "         Adding 'processor_id_epu' instead.\n\n";
-          strcpy(input_name_list[num_input_vars - 1], "processor_id_epu");
+          fmt::print(stderr, "\nWARNING: Variable 'processor_id' already exists on database.\n"
+                             "         Adding 'processor_id_epu' instead.\n\n");
+          copy_string(input_name_list[num_input_vars - 1], "processor_id_epu",
+                      ExodusFile::max_name_length() + 1);
         }
         else {
-          strcpy(input_name_list[num_input_vars - 1], "processor_id");
+          copy_string(input_name_list[num_input_vars - 1], "processor_id",
+                      ExodusFile::max_name_length() + 1);
         }
       }
 
@@ -2238,7 +2232,8 @@ namespace {
       size_t maxlen = 0;
       for (int i = 0; i < num_input_vars; i++) {
         if (vars.index_[i] > 0) {
-          strcpy(output_name_list[vars.index_[i] - 1], input_name_list[i]);
+          copy_string(output_name_list[vars.index_[i] - 1], input_name_list[i],
+                      ExodusFile::max_name_length() + 1);
           if (strlen(input_name_list[i]) > maxlen) {
             maxlen = strlen(input_name_list[i]);
           }
@@ -2253,20 +2248,17 @@ namespace {
       }
 
       if (rank == 0) {
-        std::cout << "Found " << vars.count(OUT) << " " << vars.label() << " variables.\n";
+        fmt::print("Found {} {} variables.\n\t", vars.count(OUT), vars.label());
         int i    = 0;
         int ifld = 1;
-        std::cout << "\t";
-        std::ios::fmtflags f(std::cout.flags());
         while (i < vars.count(OUT)) {
-          std::cout << std::setw(maxlen) << std::left << output_name_list[i++];
+          fmt::print("{:<{}}", output_name_list[i++], maxlen);
           if (++ifld > nfield && i < vars.count(OUT)) {
-            std::cout << "\n\t";
+            fmt::print("\n\t");
             ifld = 1;
           }
         }
-        std::cout << "\n\n";
-        std::cout.flags(f); // Reset back to what it was.
+        fmt::print("\n\n");
       }
 
       if (!interface.append()) {
@@ -2371,7 +2363,7 @@ namespace {
         }
         if (!found) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: (EPU) Variable '" << elem.first << "' is not valid." << '\n';
+          fmt::print(errmsg, "ERROR: (EPU) Variable '{}' is not valid.\n", elem.first);
           throw std::runtime_error(errmsg.str());
         }
       }
@@ -2397,20 +2389,15 @@ namespace {
     // Write out Global info
 
     if (rank == 0) {
-      std::cout.imbue(std::locale(std::locale(), new my_numpunct));
-      std::cout << " Title: " << global.title << "\n\n";
-      std::cout << " Number of coordinates per node       =" << std::setw(15)
-                << global.dimensionality << "\n";
-      std::cout << " Number of nodes                      =" << std::setw(15) << global.nodeCount
-                << "\n";
-      std::cout << " Number of elements                   =" << std::setw(15) << global.elementCount
-                << "\n";
-      std::cout << " Number of element blocks             =" << std::setw(15) << global.count(EBLK)
-                << "\n\n";
-      std::cout << " Number of nodal point sets           =" << std::setw(15) << global.count(NSET)
-                << "\n";
-      std::cout << " Number of element side sets          =" << std::setw(15) << global.count(SSET)
-                << "\n\n";
+      fmt::print(" Title: {}\n\n"
+                 " Number of coordinates per node       = {:15n}\n"
+                 " Number of nodes                      = {:15n}\n"
+                 " Number of elements                   = {:15n}\n"
+                 " Number of element blocks             = {:15n}\n\n"
+                 " Number of nodal point sets           = {:15n}\n"
+                 " Number of element side sets          = {:15n}\n\n",
+                 global.title, global.dimensionality, global.nodeCount, global.elementCount,
+                 global.count(EBLK), global.count(NSET), global.count(SSET));
     }
     int id_out = ExodusFile::output();
     get_put_qa(ExodusFile(0), id_out);
@@ -2449,9 +2436,11 @@ namespace {
     }
 
     if (bad_ns != 0) {
-      std::cerr << "ERROR: (EPU) There were " << bad_ns
-                << " nodesets (counting all files) which had an id equal to "
-                << "0 which is not allowed.\n";
+      fmt::print(
+          stderr,
+          "ERROR: (EPU) There were {} nodesets (counting all files) which had an id equal to "
+          "0 which is not allowed.\n",
+          bad_ns);
     }
 
     if (set_ids.empty()) {
@@ -2504,10 +2493,11 @@ namespace {
 
         if (nodesets[p][iset].dfCount != 0 &&
             nodesets[p][iset].dfCount != nodesets[p][iset].nodeCount) {
-          std::cerr << "WARNING: Nodeset " << nodesets[p][iset].name_ << " with id "
-                    << nodesets[p][iset].id << " on processor " << p
-                    << " has an invalid distribution factor count (" << nodesets[p][iset].dfCount
-                    << "). The distribution factors will be set to 1.0 on this nodeset.\n";
+          fmt::print(stderr,
+                     "WARNING: Nodeset {} with id {} on processor {} has an invalid distribution "
+                     "factor count ({})."
+                     " The distribution factors will be set to 1.0 on this nodeset.\n",
+                     nodesets[p][iset].name_, nodesets[p][iset].id, p, nodesets[p][iset].dfCount);
           nodesets[p][iset].dfCount = 0;
         }
 
@@ -2520,7 +2510,7 @@ namespace {
         }
 
         if (debug_level & 32) {
-          std::cout << "Processor " << p << " ";
+          fmt::print("Processor {} ", p);
           nodesets[p][iset].dump();
         }
       }
@@ -2649,7 +2639,7 @@ namespace {
     int exoid = ExodusFile::output();
 
     if (debug_level & 32) {
-      std::cout << "\nOutput NodeSets:\n";
+      fmt::print("\nOutput NodeSets:\n");
     }
     for (auto &glob_set : glob_sets) {
       int error =
@@ -2706,9 +2696,10 @@ namespace {
     }
 
     if (bad_ss != 0) {
-      std::cerr
-          << "ERROR: (EPU) There were " << bad_ss
-          << " sidesets (counting all files) which had an id equal to 0 which is not allowed.\n";
+      fmt::print(stderr,
+                 "ERROR: (EPU) There were {} sidesets (counting all files) which had an id equal "
+                 "to 0 which is not allowed.\n",
+                 bad_ss);
     }
 
     if (set_ids.empty()) {
@@ -2796,7 +2787,7 @@ namespace {
           sum += sets[p][b].entity_count();
 
           if (debug_level & 16) {
-            std::cout << "Processor " << p << " ";
+            fmt::print("Processor {} ", p);
             sets[p][b].dump();
           }
         }
@@ -2866,7 +2857,7 @@ namespace {
     }
 
     if (debug_level & 16) {
-      std::cout << "\nOutput SideSets:\n";
+      fmt::print("\nOutput SideSets:\n");
       for (auto &glob_sset : glob_ssets) {
         glob_sset.dump();
       }
@@ -3010,16 +3001,18 @@ namespace {
 
         if (block == -1) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: (EPU) User-specified block id of " << variable_name.second
-                 << " for variable '" << variable_name.first << "' does not exist.\n";
+          fmt::print(
+              errmsg,
+              "ERROR: (EPU) User-specified block id of {} for variable '{}' does not exist.\n",
+              variable_name.second, variable_name.first);
           throw std::runtime_error(errmsg.str());
         }
 
         int truth_table_loc = block * vars.count(OUT) + out_position;
         if (global.truthTable[vars.objectType][truth_table_loc] == 0) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: (EPU) Variable '" << variable_name.first << "' does not exist on block "
-                 << variable_name.second << ".\n";
+          fmt::print(errmsg, "ERROR: (EPU) Variable '{}' does not exist on block {}.\n",
+                     variable_name.first, variable_name.second);
           throw std::runtime_error(errmsg.str());
         }
         else {
@@ -3104,13 +3097,13 @@ namespace {
       }
 
       if (debug_level & debug) {
-        std::cout << "Truth table for " << vars.label() << "\n";
+        fmt::print("Truth table for {}\n", vars.label());
         int k = 0;
         for (size_t b = 0; b < global.count(object_type); b++) {
           for (int j = 0; j < vars.count(OUT); j++) {
-            std::cout << global.truthTable[object_type][k++];
+            fmt::print("{}", global.truthTable[object_type][k++]);
           }
-          std::cout << '\n';
+          fmt::print("\n");
         }
       }
     }
@@ -3172,18 +3165,11 @@ namespace {
     };
     uname(&sys_info);
 
-    std::string info = "EPU: ";
-    info += sys_info.nodename;
-    info += ", OS: ";
-    info += sys_info.sysname;
-    info += " ";
-    info += sys_info.release;
-    info += ", ";
-    info += sys_info.version;
-    info += ", Machine: ";
-    info += sys_info.machine;
-    const char *sinfo = info.c_str();
-    copy_string(info_record, sinfo, size + 1);
+    std::string info =
+        fmt::format("EPU: {}, OS: {} {}, {}, Machine: {}", sys_info.nodename, sys_info.sysname,
+                    sys_info.release, sys_info.version, sys_info.machine);
+
+    copy_string(info_record, info, size + 1);
 #endif
   }
 

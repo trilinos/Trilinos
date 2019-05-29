@@ -39,6 +39,7 @@
 #include <Ioss_Region.h>
 #include <Ioss_SmartAssert.h>
 #include <Ioss_StructuredBlock.h>
+#include <fmt/ostream.h>
 
 #include <cstddef> // for size_t
 #include <numeric>
@@ -281,10 +282,9 @@ namespace Ioss {
 
   std::ostream &operator<<(std::ostream &os, const BoundaryCondition &bc)
   {
-    os << "\t\tBC Name '" << bc.m_bcName << "' owns " << bc.get_face_count() << " faces."
-       << "\n\t\t\t\tRange: [" << bc.m_rangeBeg[0] << ".." << bc.m_rangeEnd[0] << ", "
-       << bc.m_rangeBeg[1] << ".." << bc.m_rangeEnd[1] << ", " << bc.m_rangeBeg[2] << ".."
-       << bc.m_rangeEnd[2] << "]";
+    fmt::print(os, "\t\tBC Name '{}' owns {:10n} faces.\tRange: [{}..{}, {}..{}, {}..{}]",
+               bc.m_bcName, bc.get_face_count(), bc.m_rangeBeg[0], bc.m_rangeEnd[0],
+               bc.m_rangeBeg[1], bc.m_rangeEnd[1], bc.m_rangeBeg[2], bc.m_rangeEnd[2]);
     return os;
   }
 

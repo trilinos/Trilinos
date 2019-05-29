@@ -506,7 +506,7 @@ int ne_test_piinf(int fileid)
 {
   char ftype[3];
 
-  strcpy(ftype, "s");
+  ex_copy_string(ftype, "s", 3);
 
   return (ne_put_init_info(fileid, NPROC, NPROCF, ftype));
 }

@@ -39,7 +39,7 @@
 #include "Ioss_SmartAssert.h"
 #include <algorithm> // for sort, unique
 #include <cstddef>   // for size_t
-#include <iostream>  // for operator<<, basic_ostream, etc
+#include <fmt/ostream.h>
 #include <numeric>
 #include <utility> // for make_pair, pair
 
@@ -168,7 +168,7 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
   size_t max_id = global_node_map[output_node_count - 1];
 
   bool is_contiguous = max_id == output_node_count;
-  std::cout << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+  fmt::print("Node map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
 
   // Create the map that maps from a local part node to the
   // global map. This combines the mapping local part node to
@@ -187,7 +187,7 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
           auto iter = std::lower_bound(global_node_map.begin(), global_node_map.end(), global_node);
           if (iter == global_node_map.end()) {
             INT n = global_node;
-            std::cerr << n << "\n";
+            fmt::print("{:n}\n", n);
             SMART_ASSERT(iter != global_node_map.end());
           }
           cur_pos = iter;
@@ -218,8 +218,8 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
       }
     }
     if (repeat_found) {
-      std::cout << "Duplicate node ids were found. Their ids have been renumbered to remove "
-                   "duplicates.\n";
+      fmt::print("Duplicate node ids were found. Their ids have been renumbered to remove "
+                 "duplicates.\n");
     }
   }
 }

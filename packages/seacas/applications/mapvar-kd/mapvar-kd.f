@@ -531,10 +531,7 @@ C
 C
 C
       DO 50 IM = 1, IMP
-        IMOFF = IM * 3
-        IDBLKA = IA(NMAP-3+IMOFF)
-        IDBLKB = IA(NMAP-2+IMOFF)
-        ISCHEM = IA(NMAP-1+IMOFF)
+        call getval(ia(nmap), im, idblka, idblkb, ischem)
         TOLSEA = A(NMAPS+IM-1)
 
         do 15 i=1, nblksa
@@ -1566,3 +1563,11 @@ C     with a node
 C STRLMT=tolerance for isoparametric coords to lie within an element
 C
       END
+
+      subroutine getval(IMAP, IM, idblka, idblkb, ischem)
+      integer imap(3,*)
+      idblka = imap(1,im)
+      idblkb = imap(2,im)
+      ischem = imap(3,im)
+      return
+      end
