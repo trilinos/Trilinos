@@ -892,7 +892,7 @@ namespace Tpetra {
         // Construct the CrsMatrix, using the row map, with the
         // constructor specifying the number of nonzeros for each row.
         RCP<sparse_matrix_type> A =
-          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
+          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow(),
                                        StaticProfile, constructorParams));
 
         // List of the global indices of my rows.
