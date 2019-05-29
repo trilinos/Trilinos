@@ -339,10 +339,21 @@ int main( int argc, char* argv[] ) {
     if(!result) success = false;
 #endif
 
-// #ifdef HAVE_TEUCHOS_COMPLEX
-//     result = testScalarTraits<std::complex<double> >(*out);
-//     if(!result) success = false;
-// #endif
+#ifdef HAVE_TEUCHOS_COMPLEX
+    result = testScalarTraits<std::complex<double> >(*out);
+    if(!result) success = false;
+
+    result = testScalarTraits<std::complex<float> >(*out);
+    if(!result) success = false;
+#endif
+
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+    result = testScalarTraits<Kokkos::complex<double> >(*out);
+    if(!result) success = false;
+
+    result = testScalarTraits<Kokkos::complex<float> >(*out);
+    if(!result) success = false;
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
 
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
     result = testScalarTraits<__float128>(*out);
