@@ -542,7 +542,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // Received nodes
     if( (bottomBC == 0) && (frontBC == 0) && (leftBC == 0) ) {
       numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
-        + (lNodesPerDim[0] + 1)*lNodesPerDim[2]        // front face
+        + lNodesPerDim[0]*(lNodesPerDim[2] + 1)        // front face
         + (lNodesPerDim[1] + 1)*(lNodesPerDim[2] + 1); // left face
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
@@ -605,8 +605,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     // Two faces received
     } else if( (bottomBC == 0) && (frontBC == 0) ) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
-        + lNodesPerDim[0]*(lNodesPerDim[2] + 1);       // front face;
+      numReceive = lNodesPerDim[0]*(lNodesPerDim[1] + lNodesPerDim[2] + 1);
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
       receiveLIDs.resize(numReceive);
@@ -671,7 +670,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
 
     } else if( (frontBC == 0) && (leftBC == 0) ) {
-      numReceive = lNodesPerDim[2]*(lNodesPerDim[1] + lNodesPerDim[0] + 1);
+      numReceive = lNodesPerDim[2]*(lNodesPerDim[0] + lNodesPerDim[1] + 1);
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
       receiveLIDs.resize(numReceive);
@@ -813,13 +812,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       for(LO i = 0; i < lNodesPerDim[0]; ++i) {
         sendGIDs[countIDs] = i
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-          + (lNodesPerDim[0] - 1)*gNodesPerDim[0];
+          + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
         sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1];
         ++countIDs;
       }
       // Send node of top-back-right corner
       sendGIDs[countIDs] = startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-        + (lNodesPerDim[0] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+        + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
       sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1] + 1;
       ++countIDs;
 
@@ -939,7 +938,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[0]*gNodesPerDim[0];
+            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[0]*gNodesPerDim[1];
           sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
           ++countIDs;
         }
@@ -1012,7 +1011,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Using receiveGIDs, rNodesPerDim and numLocalRegionNodes, build quasi-region row map
   // This will potentially be done by the application or in a MueLu interface but for now
-  // doing it in the driver seem to avoid design hassle...
+  // doing it in the driver seems to avoid design hassle...
   LO interfaceCount = 0, compositeIdx = 0;
   Array<LO> regionIJK(3);
   for(LO nodeRegionIdx = 0; nodeRegionIdx < numLocalRegionNodes; ++nodeRegionIdx) {
