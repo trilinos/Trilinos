@@ -35,7 +35,6 @@
 
 #include "GetLongOpt.h" // for GetLongOption
 #include "Tolerance.h"  // for Tolerance, etc
-#include "terminal_color.h"
 #include "util.h"
 #include <cmath>
 #include <string>  // for string
@@ -43,13 +42,6 @@
 #include <vector>  // for vector
 
 #define DEFAULT_MAX_NUMBER_OF_NAMES 1000
-
-#define ERROR(x)                                                                                   \
-  do {                                                                                             \
-    std::ostringstream out;                                                                        \
-    out << "exodiff: ERROR: " << x;                                                                \
-    ERR_OUT(out);                                                                                  \
-  } while (0)
 
 class SystemInterface
 {

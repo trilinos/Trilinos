@@ -35,8 +35,9 @@
 
 #include "elb_err.h"
 #include <cstddef> // for size_t
-#include <cstdio>  // for fprintf, stderr
-#include <vector>  // for vector
+#include <cstdio>
+#include <fmt/ostream.h>
+#include <vector> // for vector
 
 const int MAX_ERR_MSG = 1024;
 int       error_lev   = 1;
@@ -72,19 +73,19 @@ void error_report()
     for (size_t i = 0; i < error_cnt; i++) {
       if (error_info[i].level == 0 || error_info[i].level >= error_lev) {
         if (iflag == 0) {
-          fprintf(stderr, "================================");
-          fprintf(stderr, "messages");
-          fprintf(stderr, "================================\n");
+          fmt::print(stderr, "================================");
+          fmt::print(stderr, "messages");
+          fmt::print(stderr, "================================\n");
           iflag = 1;
         }
 
-        fprintf(stderr, "\t%s\n", error_info[i].err_mesg.c_str());
+        fmt::print(stderr, "\t{}\n", error_info[i].err_mesg);
         if (error_lev >= 2) {
-          fprintf(stderr, "\t\tin file %s\n", error_info[i].filename.c_str());
+          fmt::print(stderr, "\t\tin file {}\n", error_info[i].filename);
         }
 
         if (error_lev >= 3) {
-          fprintf(stderr, "\t\t\tat line %d\n", error_info[i].line_no);
+          fmt::print(stderr, "\t\t\tat line {}\n", error_info[i].line_no);
         }
       }
     }

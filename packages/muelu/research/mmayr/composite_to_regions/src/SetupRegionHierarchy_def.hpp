@@ -1028,7 +1028,7 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
     size_t countComposites = 0, countDuplicates = 0;
     Array<LO> fineDuplicateLIDs(numFineDuplicateNodes);
     for(size_t regionIdx = 0; regionIdx < numFineRegionNodes; ++regionIdx) {
-      if(compositeToRegionLIDs[countComposites] == regionIdx) {
+      if(compositeToRegionLIDs[countComposites] == static_cast<LO>(regionIdx)) {
         ++countComposites;
       } else {
         fineDuplicateLIDs[countDuplicates] = regionIdx;

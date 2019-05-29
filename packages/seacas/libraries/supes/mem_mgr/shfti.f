@@ -60,8 +60,10 @@ C
 C
 C  PERFORM SHIFT
 C
-      DO 100 J=1,M
-      DO 100 I=I1,I2,ID
-  100 IARAY(I-INT,J)=IARAY(I,J)
+      DO J=1,M
+         DO I=I1,I2,ID
+            IARAY(I-INT,J)=IARAY(I,J)
+         end do
+      end do
       RETURN
       END

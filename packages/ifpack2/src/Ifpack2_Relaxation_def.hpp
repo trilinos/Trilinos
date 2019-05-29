@@ -213,10 +213,6 @@ Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
   this->setObjectLabel ("Ifpack2::Relaxation");
 }
 
-//==========================================================================
-template<class MatrixType>
-Relaxation<MatrixType>::~Relaxation() {
-}
 
 template<class MatrixType>
 Teuchos::RCP<const Teuchos::ParameterList>
