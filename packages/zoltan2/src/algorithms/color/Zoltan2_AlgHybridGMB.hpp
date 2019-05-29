@@ -102,12 +102,21 @@ class AlgHybridGMB : public Algorithm<Adapter>
         }
       }
       RCP<const map_t> mapWithCopies = rcp(new map_t(dummy, gids, 0, comm));
-
-      //convert edges to local ID, as I'm pretty sure Kokkos-Kernel's coloring expects this.
-      std::vector<lno_t> local_adjs_vec(nEdge);
-      for(size_t i = 0; i < nEdge; i++){
-        local_adjs_vec[i] = mapWithCopies->getLocalElement(out_edges[i]);
+      
+      /*printf("--Rank %d has global(local) verts: ",comm->getRank());
+      for(size_t i = 0; i < nVtx+nGhosts;i++){
+        printf("%u(%u) ", gids[i], mapWithCopies->getLocalElement(gids[i]));
       }
+      printf("\n");*/
+      
+      //convert edges to local ID, as I'm pretty sure Kokkos-Kernel's coloring expects this.
+      printf("--Rank %d local adjacencies\n",comm->getRank());
+      std::vector<lno_t> local_adjs_vec;
+      for(size_t i = 0; i < nEdge; i++){
+        //printf("\t%u\n",mapWithCopies->getLocalElement(out_edges[i]));
+        local_adjs_vec.push_back( mapWithCopies->getLocalElement(out_edges[i]));
+      }
+      //for(size_t i = 0; i < nEdge; i++) printf("\t%u\n",local_adjs_vec.at(i));
       ArrayView<const lno_t> local_adjs = Teuchos::arrayViewFromVector(local_adjs_vec);
       //TODO: create FEMultiVector of some type, need to figure out what is appropriate.
       //relevant lines from VtxLabel:
@@ -135,8 +144,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
     void hybridGMB(const size_t nVtx, ArrayView<const lno_t> adjs, 
                    ArrayView<const offset_t> offsets, ArrayRCP<int> colors){
       //print statements for debugging purposes:
-      printf("Inside the coloring function for HybridGMB\n");
-      
+       
       //color the interior vertices (maybe)
 
       //color boundary vertices using FEMultiVector (definitely)
