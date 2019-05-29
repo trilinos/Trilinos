@@ -33,12 +33,10 @@ if (${PACKAGE_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
 ENDIF()
 
-# Avatar goodness
-
-ASSERT_DEFINED(TPL_ENABLE_AVATARTPL)
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Avatar)
-IF( TPL_ENABLE_AVATARTPL AND ${PACKAGE_NAME}_ENABLE_Avatar)
-  MESSAGE(FATAL_ERROR "MueLu does not support Avatar being built both as a TPL and as an external package")
+# You can only get Avatar one way
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
+IF( TPL_ENABLE_AVATAR AND ${PACKAGE_NAME}_ENABLE_AvatarT)
+  MESSAGE(FATAL_ERROR "MueLu does not support Avatar being built both as a TPL and as an external package.")
 ENDIF()
 
 # JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
