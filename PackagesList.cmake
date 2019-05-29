@@ -76,7 +76,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   SCORECmds             SCOREC/mds                        ST
   SCORECparma           SCOREC/parma                      ST
   SCORECspr             SCOREC/spr                        ST
-  Avatar                packages/avatar                   EX
+  AvatarT               packages/avatart                  EX
   Zoltan                packages/zoltan                   PT
   Shards                packages/shards                   PT
   GlobiPack             packages/globipack                PT
