@@ -139,9 +139,6 @@ namespace {
       return Teuchos::ScalarTraits<Scalar>::eps ();
     }
   };
-
-
-
 } // namespace (anonymous)
 
 namespace Ifpack2 {
@@ -1252,7 +1249,9 @@ void Relaxation<MatrixType>::compute ()
               return oneOverMinDiagVal;
             }
             else {
-              return KAT::one () / d_i;
+              // For Stokhos types, operator/ returns an expression
+              // type.  Explicitly convert to IST before returning.
+              return IST (KAT::one () / d_i);
             }
           });
       }
