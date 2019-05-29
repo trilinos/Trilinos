@@ -9,6 +9,11 @@
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
 
+#include <KokkosKernels_Handle.hpp>
+#include "KokkosKernels_IOUtils.hpp"
+//#include "KokkosKernels_TestParameters.hpp"
+#include "KokkosGraph_Distance1Color.hpp"
+#include "KokkosGraph_Distance1ColorHandle.hpp"
 //////////////////////////////////////////////
 //! \file Zoltan2_AlgHybridGMB.hpp
 //! \brief A hybrid version of the framework proposed by Gebremedhin, Manne, and Boman
@@ -28,7 +33,9 @@ class AlgHybridGMB : public Algorithm<Adapter>
     typedef Tpetra::Map<lno_t, gno_t> map_t;
 
     void buildModel(modelFlag_t &flags);
-
+    template <typename ExecutionSpace, typename TempMemorySpace, typename MemorySpace>
+    void colorInterior(const size_t, ArrayView<const lno_t>, ArrayView<const offset_t>, ArrayRCP<int>);
+    
     RCP<const base_adapter_t> adapter;
     RCP<GraphModel<base_adapter_t> > model;
     RCP<Teuchos::ParameterList> pl;
@@ -46,8 +53,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
       modelFlag_t flags;
       flags.reset();
       buildModel(flags);
-      
     }
+
 
     //Main entry point for graph coloring
     void color( const RCP<ColoringSolution<Adapter> > &solution ) {
@@ -139,11 +146,19 @@ class AlgHybridGMB : public Algorithm<Adapter>
       // THESE ARGUMENTS WILL NEED TO CHANGE,
       // THESE ARE A COPY OF THE EXISTING ALGORITHM CLASS.
       hybridGMB(nVtx, local_adjs, offsets,colors);
+      //map->~Map();
+     // map = Teuchos::null;
+      //mapWithCopies->~Map();
+      //mapWithCopies = Teuchos::null;
+      
+      comm->barrier();
     }
     
     void hybridGMB(const size_t nVtx, ArrayView<const lno_t> adjs, 
                    ArrayView<const offset_t> offsets, ArrayRCP<int> colors){
-      //print statements for debugging purposes:
+      
+      //do the kokkos stuff in here
+      
        
       //color the interior vertices (maybe)
 
@@ -163,6 +178,78 @@ void AlgHybridGMB<Adapter>::buildModel(modelFlag_t &flags){
   this->model = rcp(new GraphModel<base_adapter_t>(this->adapter, this->env,
                                                    this->comm, flags));
   this->env->debug(DETAILED_STATUS, "   graph model built");
+}
+
+//This function is templated twice to avoid explicitly coding all possible
+//Execution space situations. We can just template the function call and have the compiler do that work.
+template <typename Adapter>
+template <typename ExecutionSpace, typename TempMemorySpace, typename MemorySpace>
+void AlgHybridGMB<Adapter>::colorInterior(const size_t nVtx, ArrayView<const lno_t> adjs,
+                                       ArrayView<const offset_t> offsets, ArrayRCP<int> colors){ 
+  bool use_cuda = pl->get<bool>("Hybrid_use_cuda",false);
+  bool use_openmp = pl->get<bool>("Hybrid_use_openmp",false);
+  bool use_serial = pl->get<bool>("Hybrid_use_serial",false);
+
+  //default values are taken from KokkosKernels_TestParameters.hpp
+  
+  int algorithm = pl->get<int>("Hybrid_algorithm",0);
+  int repeat = pl->get<int>("Hybrid_repeat",1); //probably not using this until we test performance
+  int chunk_size = pl->get<int>("Hybrid_chunk_size",-1); 
+  int shmemsize = pl->get<int>("Hybrid_shmemsize", 16128);
+  int team_size = pl->get<int>("Hybrid_team_size", -1);
+  int use_dynamic_scheduling = pl->get<int>("Hybrid_use_dynamic_scheduling",0);
+  int verbose = pl->get<int>("Hybrid_verbose",0);
+
+  int vector_size = pl->get<int>("Hybrid_vector_size",-1);
+
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+      <size_t, lno_t, lno_t, ExecutionSpace, TempMemorySpace, MemorySpace> KernelHandle;
+  KernelHandle kh;
+
+  kh.set_team_work_size(chunk_size);
+  kh.set_shmem_size(shmemsize);
+  kh.set_suggested_team_size(team_size);
+  kh.set_suggested_vector_size(vector_size);
+
+  kh.set_dynamic_scheduling(use_dynamic_scheduling);
+  kh.set_verbose(verbose);
+  
+  switch(algorithm) {
+    case 1:
+      kh.create_graph_coloring_handle(COLORING_DEFAULT);
+      break;
+    case 2:
+      kh.create_graph_coloring_handle(COLORING_SERIAL);
+      break;
+    case 3:
+      kh.create_graph_coloring_handle(COLORING_VB);
+      break;
+    case 4:
+      kh.create_graph_coloring_handle(COLORING_VBBIT);
+      break;
+    case 5:
+      kh.create_graph_coloring_handle(COLORING_VBCS);
+      break;
+    case 6:
+      kh.create_graph_coloring_handle(COLORING_EB);
+      break;
+    case 7:
+      kh.create_graph_coloring_handle(COLORING_VBD);
+      break;
+    case 8:
+      kh.create_graph_coloring_handle(COLORING_VBDBIT);
+      break;
+    default:
+      kh.create_graph_coloring_handle(COLORING_DEFAULT);
+  }
+   
+  graph_color_symbolic<KernelHandle,offset_t,lno_t>(&kh, nVtx,nVtx,offsets,adjs);
+  std::cout << std::endl << 
+      "Time: " << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
+      "Num colors: " << kh.get_graph_coloring_handle()->get_num_colors() << " "
+      "Num Phases: " << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
+  //std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
+
 }
 
 }//end namespace Zoltan2
