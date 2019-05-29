@@ -260,13 +260,13 @@ void IlukGraph<GraphType>::initialize()
 
   constructOverlapGraph();
 
-  L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
-                                      OverlapGraph_->getRowMap (), 0));
-  U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
-                                      OverlapGraph_->getRowMap (), 0));
-
   // Get Maximum Row length
   const int MaxNumIndices = OverlapGraph_->getNodeMaxNumRowEntries ();
+
+  L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
+                                      OverlapGraph_->getRowMap (), MaxNumIndices));
+  U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
+                                      OverlapGraph_->getRowMap (), MaxNumIndices));
 
   Array<local_ordinal_type> L (MaxNumIndices);
   Array<local_ordinal_type> U (MaxNumIndices);
