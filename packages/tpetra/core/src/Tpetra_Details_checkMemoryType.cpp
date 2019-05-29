@@ -62,28 +62,49 @@ EMemoryType getCudaMemoryType (const void* ptr)
 #ifdef HAVE_TPETRACORE_CUDA
   cudaPointerAttributes attr;
   cudaError_t err = cudaPointerGetAttributes (&attr, ptr);
-  if (err != cudaSuccess) {
-    return EMemoryType::ERROR;
+
+  if (err == cudaErrorInvalidValue) {
+    // CUDA 11.0 supports passing in an unregistered host pointer.  In
+    // that case, attr.type will be cudaMemoryTypeUnregistered.  CUDA
+    // 9.2 doesn't yet have the 'type' field in the
+    // cudaPointerAttributes struct.
+    return EMemoryType::HOST;
+  }
+  else if (err != cudaSuccess) {
+    std::string errStr;
+    if (err == cudaErrorInvalidDevice) {
+      errStr = "cudaErrorInvalidDevice";
+    }
+    else {
+      errStr = "unknown";
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::runtime_error, "Tpetra::Details::Impl::getCudaMemoryType: "
+       "cudaPointerGetAttributes returned an error code err = " << errStr
+       << " != cudaSuccess.");
   }
 
 # if 1
   // cudaPointerAttributes::type doesn't exist yet in CUDA 9.2.  We
   // must use memoryType, which does not distinguish between types of
   // device memory.
-  if (attr.memoryType == cudaMemoryTypeHost) {
+  if (attr.memoryType == cudaMemoryTypeDevice) {
+    if (attr.isManaged) {
+      return EMemoryType::CUDA_UVM;
+    }
+    else { // if (attr.hostPointer == nullptr) {
+      return EMemoryType::CUDA;
+    }
+    // else {
+    //   return EMemoryType::ERROR;
+    // }
+  }
+  else if (attr.memoryType == cudaMemoryTypeHost) {
     if (attr.devicePointer == nullptr) {
       return EMemoryType::HOST; // not device accessible
     }
     else { // device-accessible host memory is pinned
       return EMemoryType::CUDA_HOST_PINNED;
-    }
-  }
-  else if (attr.memoryType == cudaMemoryTypeDevice) {
-    if (attr.isManaged) {
-      return EMemoryType::CUDA_UVM;
-    }
-    else {
-      return EMemoryType::CUDA;
     }
   }
   else {
@@ -114,23 +135,23 @@ EMemoryType getCudaMemoryType (const void* ptr)
 
 #ifdef HAVE_TPETRACORE_CUDA
 bool
-CheckMemorySpace<Kokkos::CudaSpace>::
-inSpace (const void* ptr) {
-  return getCudaMemoryType (ptr) == EMemoryType::CUDA;
-}
-
-bool
-CheckMemorySpace<Kokkos::CudaUVMSpace>::
-inSpace (const void* ptr) {
-  return getCudaMemoryType (ptr) == EMemoryType::CUDA_UVM;
-}
-
-bool
-CheckMemorySpace<Kokkos::CudaHostPinnedSpace>::
-inSpace (const void* ptr) {
-  return getCudaMemoryType (ptr) == EMemoryType::CUDA_HOST_PINNED;
+CheckPointerAccessibility<Kokkos::Cuda>::
+accessible (const void* ptr,
+            const Kokkos::Cuda& /* space */)
+{
+  const EMemoryType type = getCudaMemoryType (ptr);
+  return type != EMemoryType::HOST && type != EMemoryType::ERROR;
 }
 #endif // HAVE_TPETRACORE_CUDA
+
+bool isHostAccessible (const void* ptr)
+{
+#ifdef HAVE_TPETRACORE_CUDA
+  return getCudaMemoryType (ptr) != EMemoryType::CUDA;
+#else
+  return true;
+#endif // HAVE_TPETRACORE_CUDA
+}
 
 } // namespace Impl
 
@@ -138,11 +159,8 @@ std::string memorySpaceName (const void* ptr)
 {
   using Impl::EMemoryType;
 
-  EMemoryType type = Impl::getCudaMemoryType (ptr);
-  if (type == EMemoryType::ERROR) {
-    return "ERROR";
-  }
-  else if (type == EMemoryType::CUDA_UVM) {
+  const EMemoryType type = Impl::getCudaMemoryType (ptr);
+  if (type == EMemoryType::CUDA_UVM) {
     return "CudaUVMSpace";
   }
   else if (type == EMemoryType::CUDA) {
@@ -153,6 +171,9 @@ std::string memorySpaceName (const void* ptr)
   }
   else if (type == EMemoryType::HOST) {
     return "HostSpace";
+  }
+  else { // EMemoryType::ERROR
+    return "ERROR";
   }
 }
 

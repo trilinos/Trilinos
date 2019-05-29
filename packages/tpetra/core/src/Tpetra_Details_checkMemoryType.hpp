@@ -50,9 +50,7 @@
 #ifdef HAVE_TPETRACORE_CUDA
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Kokkos {
-  class CudaSpace; // forward declarations
-  class CudaUVMSpace;
-  class CudaHostPinnedSpace;
+  class Cuda; // forward declaration
 } // namespace Kokkos
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 #endif // HAVE_TPETRACORE_CUDA
@@ -61,33 +59,31 @@ namespace Tpetra {
 namespace Details {
 namespace Impl {
 
-template<class MemorySpace>
-struct CheckMemorySpace {
-  static bool inSpace (const void* /* ptr */) {
-    return true;
+bool isHostAccessible (const void* ptr);
+
+template<class ExecutionSpace>
+struct CheckPointerAccessibility {
+  static bool
+  accessible (const void* ptr,
+              const ExecutionSpace& /* space */)
+  {
+    return isHostAccessible (ptr);
   }
 };
 
 #ifdef HAVE_TPETRACORE_CUDA
 template<>
-struct CheckMemorySpace<Kokkos::CudaSpace> {
-  static bool inSpace (const void* ptr);
-};
-
-template<>
-struct CheckMemorySpace<Kokkos::CudaUVMSpace> {
-  static bool inSpace (const void* ptr);
-};
-
-template<>
-struct CheckMemorySpace<Kokkos::CudaHostPinnedSpace> {
-  static bool inSpace (const void* ptr);
+struct CheckPointerAccessibility<Kokkos::Cuda> {
+  static bool
+  accessible (const void* ptr,
+              const Kokkos::Cuda& space);
 };
 #endif // HAVE_TPETRACORE_CUDA
 
 } // namespace Impl
 
-/// \brief Is \c ptr in the given memory space?
+/// \brief Is the given nonnull ptr accessible from the given
+///   execution space?
 ///
 /// This function doesn't promise exact results for anything other
 /// than CudaSpace, CudaUVMSpace, or CudaHostPinnedSpace.  The point
@@ -95,14 +91,17 @@ struct CheckMemorySpace<Kokkos::CudaHostPinnedSpace> {
 /// which users create a Kokkos::View with a raw pointer in the wrong
 /// memory space (e.g., a host pointer, when they should have used a
 /// UVM pointer).
-template<class MemorySpace>
-bool inMemorySpace (const void* ptr, const MemorySpace& /* space */)
+template<class ExecutionSpace>
+bool
+pointerAccessibleFromExecutionSpace (const void* ptr,
+                                     const ExecutionSpace& space)
 {
-  return Impl::CheckMemorySpace<MemorySpace>::inSpace (ptr);
+  using impl_type = Impl::CheckPointerAccessibility<ExecutionSpace>;
+  return impl_type::accessible (ptr, space);
 }
 
 /// \brief Return the Kokkos memory space name (without "Kokkos::")
-///   corresponding to \c ptr.
+///   corresponding to the given nonnull pointer.
 ///
 /// This function doesn't promise exact results for anything other
 /// than CudaSpace, CudaUVMSpace, or CudaHostPinnedSpace.
