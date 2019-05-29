@@ -139,6 +139,36 @@ namespace {
       return Teuchos::ScalarTraits<Scalar>::eps ();
     }
   };
+
+  // Work-around for GitHub Issue #5269.
+  template<class Scalar,
+           const bool isComplex = Teuchos::ScalarTraits<Scalar>::isComplex>
+  struct RealTraits {};
+
+  template<class Scalar>
+  struct RealTraits<Scalar, false> {
+    using val_type = Scalar;
+    using mag_type = Scalar;
+    static KOKKOS_INLINE_FUNCTION mag_type real (const val_type& z) {
+      return z;
+    }
+  };
+
+  template<class Scalar>
+  struct RealTraits<Scalar, true> {
+    using val_type = Scalar;
+    using mag_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    static KOKKOS_INLINE_FUNCTION mag_type real (const val_type& z) {
+      return Kokkos::ArithTraits<val_type>::real (z);
+    }
+  };
+
+  template<class Scalar>
+  KOKKOS_INLINE_FUNCTION typename RealTraits<Scalar>::mag_type
+  getRealValue (const Scalar& z) {
+    return RealTraits<Scalar>::real (z);
+  }
+
 } // namespace (anonymous)
 
 namespace Ifpack2 {
@@ -1132,7 +1162,9 @@ void Relaxation<MatrixType>::compute ()
            for (size_t i = 0 ; i < numMyRows; ++i) {
              const IST d_i = diag[i];
              const magnitude_type d_i_mag = KAT::abs (d_i);
-             const magnitude_type d_i_real = KAT::real (d_i);
+             // Work-around for GitHub Issue #5269.
+             //const magnitude_type d_i_real = KAT::real (d_i);
+             const auto d_i_real = getRealValue (d_i);
 
              // We can't compare complex numbers, but we can compare their
              // real parts.
