@@ -5845,7 +5845,7 @@ namespace Tpetra {
         this->getGlobalRowCopy(tgt_gid, tgt_row_inds(), check_row_length);
 
         size_t how_much_padding = 0;
-        for (const auto& src_row_ind : src_row_inds) {
+        for (auto src_row_ind : src_row_inds) {
           if (std::find(tgt_row_inds.begin(), tgt_row_inds.end(), src_row_ind) == tgt_row_inds.end()) {
             // The target row does not have space for
             how_much_padding++;
