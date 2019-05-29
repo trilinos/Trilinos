@@ -3885,10 +3885,10 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& source) override;
 
-  private:
     void
     applyCrsPadding(const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding);
 
+  private:
     void
     copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                         const size_t numSameIDs,

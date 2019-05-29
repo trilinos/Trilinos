@@ -875,7 +875,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 10;
     RCP<const Tpetra::Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
