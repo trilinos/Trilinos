@@ -64,9 +64,7 @@ public:
   size_t Id() const { return id_; }
   size_t Index() const { return index_; }
 
-  void Display_Stats(std::ostream & = std::cout);
-  void Display(std::ostream & = std::cout);
-  int  Check_State() const;
+  int Check_State() const;
 
   void initialize(int file_id, size_t id);
 

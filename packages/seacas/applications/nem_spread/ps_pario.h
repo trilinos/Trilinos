@@ -38,4 +38,4 @@ double PIO_Time_Array[26]; /* Vector for timings */
 
 struct Parallel_IO PIO_Info;
 
-char Par_Nem_File_Name[MAX_FNL]; /* The par nemesis file name. */
+std::string Par_Nem_File_Name; /* The par nemesis file name. */

@@ -322,7 +322,7 @@ C ... By default, map both nodes and elements
      *      option(:lo) .eq. '--basename') then
             CALL get_argument(i,value,  lv)
             i = i + 1
-            basenam = value(:lv)
+            basenam(:lv) = value(:lv)
 
           else if (option(:lo) .eq. '-ps_option' .or.
      *        option(:lo) .eq. '--ps_option') then

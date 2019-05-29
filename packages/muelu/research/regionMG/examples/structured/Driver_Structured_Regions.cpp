@@ -147,7 +147,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   SC zero = STS::zero(), one = STS::one();
   using real_type = typename STS::coordinateType;
   using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
-  const real_type realOne = Teuchos::ScalarTraits<real_type>::one();
 
   // =========================================================================
   // Parameters initialization
@@ -1278,7 +1277,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     /////////////////////////////////////////////////////////////////////////
 
     // define max iteration counts
-    const int maxFineIter = 20;
     const int maxCoarseIter = 100;
 
     // Prepare output of residual norm to file
@@ -1293,6 +1291,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
 
     // Richardson iterations
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni;
     for (int cycle = 0; cycle < maxIts; ++cycle) {
       // check for convergence
       {
@@ -1310,6 +1309,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
                             rowImportPerGrp, Xpetra::ADD);
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
+        if(cycle == 0) { normResIni = normRes; }
 
         // Output current residual norm to screen (on proc 0 only)
         if (myRank == 0)
@@ -1318,7 +1318,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             (*log) << cycle << "\t" << normRes << "\n";
           }
 
-        if (normRes < tol)
+        if ((normRes/normResIni) < tol)
           break;
       }
 

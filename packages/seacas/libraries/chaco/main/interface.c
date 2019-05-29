@@ -267,7 +267,5 @@ skip:
     fclose(params_file);
   }
 
-  sfree(vwgts);
-  sfree(ewgts);
   return (flag);
 }
