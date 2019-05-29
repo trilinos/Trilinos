@@ -33,6 +33,12 @@ if (${PACKAGE_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
 ENDIF()
 
+# You can only get Avatar one way
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
+IF( TPL_ENABLE_AVATAR AND ${PACKAGE_NAME}_ENABLE_AvatarT)
+  MESSAGE(FATAL_ERROR "MueLu does not support Avatar being built both as a TPL and as an external package.")
+ENDIF()
+
 # JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
 # This is redundant, since MueLu also requires Kokkos, and Kokkos requires C++11.
 # "I left a special case for CUDA because I'm not sure whether TriBITS
