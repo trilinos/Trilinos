@@ -46,7 +46,7 @@
 #ifndef XPETRA_TPETRABLOCKCRSMATRIX_DEF_HPP
 #define XPETRA_TPETRABLOCKCRSMATRIX_DEF_HPP
 
-#include "Xpetra_TpetraMap_decl.hpp"
+#include "Xpetra_TpetraBlockCrsMatrix_decl.hpp"
 
 namespace Xpetra {
 
@@ -56,8 +56,8 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          size_t maxNumEntriesPerRow, 
-                         ProfileType pftype=DynamicProfile, 
-                         const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+                         ProfileType pftype, 
+                         const Teuchos::RCP< Teuchos::ParameterList > &params)
     { 
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented"); 
     }
@@ -68,8 +68,8 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, 
-                         ProfileType pftype=DynamicProfile, 
-                         const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+                         ProfileType pftype, 
+                         const Teuchos::RCP< Teuchos::ParameterList > &params)
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }
@@ -81,8 +81,8 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, 
                          size_t maxNumEntriesPerRow, 
-                         ProfileType pftype=DynamicProfile, 
-                         const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+                         ProfileType pftype, 
+                         const Teuchos::RCP< Teuchos::ParameterList > &params)
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented"); 
     }
@@ -94,8 +94,8 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, 
                          const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, 
                          const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, 
-                         ProfileType pftype=DynamicProfile, 
-                         const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+                         ProfileType pftype, 
+                         const Teuchos::RCP< Teuchos::ParameterList > &params)
     { 
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }
@@ -105,7 +105,7 @@ namespace Xpetra {
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
-                         const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+                         const Teuchos::RCP< Teuchos::ParameterList > &params)
       : mtx_(Teuchos::rcp(new Tpetra::Experimental::BlockCrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(graph), params)))
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
@@ -127,9 +127,9 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                          const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
-                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
-                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
-                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                         const Teuchos::RCP<Teuchos::ParameterList>& params)
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }
@@ -140,9 +140,9 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                          const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
-                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
-                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
-                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                         const Teuchos::RCP<Teuchos::ParameterList>& params)
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }
@@ -189,7 +189,9 @@ namespace Xpetra {
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void 
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals)
+    insertGlobalValues(GlobalOrdinal globalRow, 
+                       const ArrayView< const GlobalOrdinal > &cols, 
+                       const ArrayView< const Scalar > &vals)
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }
@@ -199,7 +201,9 @@ namespace Xpetra {
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void 
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    insertLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals)
+    insertLocalValues(LocalOrdinal localRow, 
+                      const ArrayView< const LocalOrdinal > &cols, 
+                      const ArrayView< const Scalar > &vals)
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }
@@ -209,7 +213,9 @@ namespace Xpetra {
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void 
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    replaceGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals)
+    replaceGlobalValues(GlobalOrdinal globalRow, 
+                        const ArrayView< const GlobalOrdinal > &cols, 
+                        const ArrayView< const Scalar > &vals)
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }
@@ -271,7 +277,9 @@ namespace Xpetra {
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void 
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
+    getAllValues(ArrayRCP<const size_t>& rowptr, 
+                 ArrayRCP<const LocalOrdinal>& colind, 
+                 ArrayRCP<const Scalar>& values) const
     { 
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented"); 
     }
@@ -286,7 +294,7 @@ namespace Xpetra {
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void 
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-    resumeFill(const RCP< ParameterList > &params=null)
+    resumeFill(const RCP< ParameterList > &params)
     { 
       /*noop*/ 
     }
@@ -297,7 +305,7 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
     fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, 
                  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, 
-                 const RCP< ParameterList > &params=null)
+                 const RCP< ParameterList > &params)
     { 
       /*noop*/ 
     }
@@ -306,7 +314,7 @@ namespace Xpetra {
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void 
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-    fillComplete(const RCP< ParameterList > &params=null)
+    fillComplete(const RCP< ParameterList > &params)
     { 
       /*noop*/ 
     }
@@ -327,9 +335,9 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
     expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-                             const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
-                             const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
-                             const RCP<ParameterList> &params=Teuchos::null)
+                             const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
+                             const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
+                             const RCP<ParameterList> &params)
     { 
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }  
@@ -440,23 +448,37 @@ void TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalRowC
 { XPETRA_MONITOR("TpetraBlockCrsMatrix::getGlobalRowCopy"); mtx_->getGlobalRowCopy(GlobalRow, indices, values, numEntries); }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const
+void 
+TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, 
+                ArrayView< const Scalar > &values) const
 { XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalRowView"); mtx_->getLocalRowView(LocalRow, indices, values); }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-virtual bool TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::haveGlobalConstants() const
+bool 
+TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+haveGlobalConstants() const
 {return true;}
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const
+void TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, 
+      MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, 
+      Teuchos::ETransp mode, 
+      Scalar alpha, 
+      Scalar beta) const
 { XPETRA_MONITOR("TpetraBlockCrsMatrix::apply"); mtx_->apply(toTpetra(X), toTpetra(Y), mode, alpha, beta); }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const
+const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  
+TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+getDomainMap() const
 { XPETRA_MONITOR("TpetraBlockCrsMatrix::getDomainMap"); return toXpetra(mtx_->getDomainMap()); }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const
+const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  
+TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+getRangeMap() const
 { XPETRA_MONITOR("TpetraBlockCrsMatrix::getRangeMap"); return toXpetra(mtx_->getRangeMap()); }
 
 
@@ -470,8 +492,12 @@ description() const
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void 
 TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
-{ XPETRA_MONITOR("TpetraBlockCrsMatrix::describe"); mtx_->describe(out, verbLevel); }
+describe(Teuchos::FancyOStream &out, 
+         const Teuchos::EVerbosityLevel verbLevel) const
+{ 
+  XPETRA_MONITOR("TpetraBlockCrsMatrix::describe"); 
+  mtx_->describe(out, verbLevel); 
+}
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -629,7 +655,19 @@ getMap() const
         throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }
 
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    template<class Node2>
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
+    XPETRA_DEPRECATED 
+    TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+    clone(const RCP<Node2> &node2) const
+    {
+      return RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
+              (new TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(mtx_->clone(node2)));
+    }
+#endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
+/* WCMCLEN-SCAFFOLDING 
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
@@ -640,7 +678,7 @@ getMap() const
       return RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(mtx_->clone(node2)));
   }
 #endif  // XPETRA_ENABLE_DEPRECATED_CODE
-
+*/
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool 
@@ -678,6 +716,8 @@ getTpetra_BlockCrsMatrixNonConst() const
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
+
+using local_matrix_type = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 local_matrix_type 
@@ -800,7 +840,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     }
 
     //! Destructor.
-    virtual ~TpetraBlockCrsMatrix() {  }
+    ~TpetraBlockCrsMatrix() {  }
 
 
     //! @name Insertion/Removal Methods
@@ -937,7 +977,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const {  }
 
     //! Returns true if globalConstants have been computed; false otherwise
-    virtual bool haveGlobalConstants() const {return false;}
+    bool haveGlobalConstants() const {return false;}
 
 
     //! @name Methods implementing Operator
@@ -1141,7 +1181,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     {XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );}
 
     //! Destructor.
-    virtual ~TpetraBlockCrsMatrix() {  }
+    ~TpetraBlockCrsMatrix() {  }
 
 
     //! @name Insertion/Removal Methods
@@ -1278,7 +1318,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const {  }
 
     //! Returns true if globalConstants have been computed; false otherwise
-    virtual bool haveGlobalConstants() const {return true;}
+    bool haveGlobalConstants() const {return true;}
 
 
     //! @name Methods implementing Operator

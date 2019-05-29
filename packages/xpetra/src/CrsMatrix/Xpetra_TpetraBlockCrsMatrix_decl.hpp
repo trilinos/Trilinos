@@ -160,7 +160,50 @@ namespace Xpetra {
     //! @name Insertion/Removal Methods
 
 
-    //! Insert matrix entries, using global IDs (not implemented)    void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals);
+    //! Insert matrix entries, using global IDs (not implemented)    
+    void insertGlobalValues(GlobalOrdinal globalRow, 
+                            const ArrayView< const GlobalOrdinal > &cols, 
+                            const ArrayView< const Scalar > &vals);
+
+
+    //! Insert matrix entries, using local IDs (not implemented)
+    void insertLocalValues(LocalOrdinal localRow, 
+                           const ArrayView< const LocalOrdinal > &cols, 
+                           const ArrayView< const Scalar > &vals);
+
+    //! Replace matrix entries, using global IDs (not implemented)
+    void replaceGlobalValues(GlobalOrdinal globalRow, 
+                            const ArrayView< const GlobalOrdinal > &cols, 
+                            const ArrayView< const Scalar > &vals);
+
+
+    //! Replace matrix entries, using local IDs.
+    void replaceLocalValues (LocalOrdinal localRow,
+                             const ArrayView<const LocalOrdinal> &cols,
+                             const ArrayView<const Scalar> &vals);
+
+    //! Set all matrix entries equal to scalarThis.
+    void setAllToScalar(const Scalar &alpha);
+
+    //! Scale the current values of a matrix, this = alpha*this (not implemented)
+    void scale(const Scalar &alpha);
+
+    //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+    //** \warning This is an expert-only routine and should not be called from user code. (not implemented)
+    void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, 
+                           ArrayRCP<LocalOrdinal> & colind, 
+                           ArrayRCP<Scalar> & values);
+
+    //! Sets the 1D pointer arrays of the graph (not impelmented)
+    void setAllValues(const ArrayRCP<size_t> & rowptr, 
+                      const ArrayRCP<LocalOrdinal> & colind, 
+                      const ArrayRCP<Scalar> & values);
+
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    void getAllValues(ArrayRCP<const size_t>& rowptr, 
+                      ArrayRCP<const LocalOrdinal>& colind, 
+                      ArrayRCP<const Scalar>& values)  const;
+
 
     //! @name Transformational Methods
 
@@ -332,7 +375,8 @@ namespace Xpetra {
 
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const;
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED 
+    clone(const RCP<Node2> &node2) const;
 #endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
@@ -341,7 +385,8 @@ namespace Xpetra {
     bool hasMatrix() const;
 
     //! TpetraBlockCrsMatrix constructor to wrap a Tpetra::BlockCrsMatrix object
-    TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) : mtx_(mtx);
+//    TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) : mtx_(mtx);
+    TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx);
 
     //! Get the underlying Tpetra matrix
     RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrix() const;
@@ -351,7 +396,8 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+    //using local_matrix_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+    using local_matrix_type = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
 
     local_matrix_type getLocalMatrix () const;
 
