@@ -37,7 +37,7 @@
 // ************************************************************************
 // @HEADER
 
-#include "Tpetra_Details_checkMemoryType.hpp"
+#include "Tpetra_Details_checkPointer.hpp"
 #include "Kokkos_Core.hpp"
 #include "Teuchos_TestForException.hpp"
 #ifdef HAVE_TPETRACORE_CUDA
@@ -67,7 +67,8 @@ EMemoryType getCudaMemoryType (const void* ptr)
     // CUDA 11.0 supports passing in an unregistered host pointer.  In
     // that case, attr.type will be cudaMemoryTypeUnregistered.  CUDA
     // 9.2 doesn't yet have the 'type' field in the
-    // cudaPointerAttributes struct.
+    // cudaPointerAttributes struct, and this function just returns
+    // this error code if given an unregistered host pointer.
     return EMemoryType::HOST;
   }
   else if (err != cudaSuccess) {

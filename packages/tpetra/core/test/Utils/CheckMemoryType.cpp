@@ -42,7 +42,7 @@
 */
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_Details_checkMemoryType.hpp"
+#include "Tpetra_Details_checkPointer.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_Core.hpp"
 

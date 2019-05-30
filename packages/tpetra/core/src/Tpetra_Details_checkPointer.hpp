@@ -37,13 +37,15 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_DETAILS_CHECKMEMORYTYPE_HPP
-#define TPETRA_DETAILS_CHECKMEMORYTYPE_HPP
+#ifndef TPETRA_DETAILS_CHECKPOINTER_HPP
+#define TPETRA_DETAILS_CHECKPOINTER_HPP
 
-/// \file Tpetra_Details_checkMemoryType.hpp
+/// \file Tpetra_Details_checkPointer.hpp
 /// \brief Declaration of functions for checking whether a given
-///   Kokkos::View has a pointer that matches the claimed memory
-///   space.
+///   pointer is accessible from a given Kokkos execution space.
+///
+/// \warning This header file and its contents are implementation
+///   details of Tpetra.
 
 #include "TpetraCore_config.h"
 
@@ -110,4 +112,4 @@ std::string memorySpaceName (const void* ptr);
 } // namespace Details
 } // namespace Tpetra
 
-#endif // TPETRA_DETAILS_CHECKMEMORYTYPE_HPP
+#endif // TPETRA_DETAILS_CHECKPOINTER_HPP
