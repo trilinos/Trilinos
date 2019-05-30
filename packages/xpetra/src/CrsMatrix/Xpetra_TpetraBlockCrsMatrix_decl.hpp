@@ -317,8 +317,10 @@ namespace Xpetra {
 
     //! @name Overridden from Teuchos::Describable
 
+
     //! A simple one-line description of this object.
     std::string description() const;
+
 
     //! Print the object with some verbosity level to an FancyOStream object.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
@@ -327,19 +329,29 @@ namespace Xpetra {
     //! @name Overridden from Teuchos::LabeledObject
     void setObjectLabel( const std::string &objectLabel );
 
-    //! Deep copy constructor
+
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    //! Deep copy constructor
+    // This probably never compiled but also never got called... 
+    // We're leaving this in the decl file for now as part of the ETI work
+    // just to maintain status-quo but it'll go away anyhow with deprecations
+    // soon.
     TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix);
 #endif  // XPETRA_ENABLE_DEPRECATED_CODE
+
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices 
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const;
 
+
+    //! Get a copy of the diagonal entries owned by this node, with local row indices.
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, 
+                          const Teuchos::ArrayView<const size_t> &offsets) const;
+
+
     //! Get offsets of the diagonal entries in the matrix.
     void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const;
 
-    //! Get a copy of the diagonal entries owned by this node, with local row indices.
-    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const;
 
     void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag);
 

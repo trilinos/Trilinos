@@ -106,7 +106,8 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
                          const Teuchos::RCP< Teuchos::ParameterList > &params)
-      : mtx_(Teuchos::rcp(new Tpetra::Experimental::BlockCrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(graph), params)))
+        // : mtx_(Teuchos::rcp(new Tpetra::Experimental::BlockCrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(graph), params)))
+        // * there is no Tpetra::Experimental::BlockCrsMatrix(graph, params) c'tor.  We throw anyways here so no need to set mtx_.
     {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
     }
@@ -117,9 +118,8 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
                          const LocalOrdinal blockSize)
-      : mtx_(Teuchos::rcp(new Tpetra::Experimental::BlockCrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node>(toTpetra(graph), blockSize))) 
-    {  
-    }
+      : mtx_(Teuchos::rcp(new Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*toTpetra(graph), blockSize))) 
+    { }
 
 
     //! Constructor for a fused import ( not implemented )
@@ -569,14 +569,18 @@ namespace Xpetra {
         mtx_->setObjectLabel(objectLabel);
     }
 
-
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
     //! Deep copy constructor
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix)
-      : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode())) 
-    { }
+    //  : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode())) 
+    { 
+        // This won't compile because there is no Tpetra::Experimental::BlockCrsMatrix::clone() 
+        // so just throwing an error... it'll go away anyhow with deprecations.
+        // But seriously, pre ETI how did this ever actually compile!?
+        throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function is deprecated.");
+    }
 #endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
 
@@ -586,9 +590,24 @@ namespace Xpetra {
     getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const
     {
         XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalDiagCopy");
-        XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraBlockCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
+        XPETRA_DYNAMIC_CAST(TpetraVectorClass, 
+                            diag, 
+                            tDiag, 
+                            "Xpetra::TpetraBlockCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
         mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector());
     }
+
+
+    //! Get a copy of the diagonal entries owned by this node, with local row indices.
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void 
+    TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+    getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, 
+                     const Teuchos::ArrayView<const size_t> &offsets) const
+    {
+        throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
+    }
+
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
