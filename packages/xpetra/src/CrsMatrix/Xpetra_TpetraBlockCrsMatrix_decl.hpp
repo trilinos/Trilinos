@@ -375,8 +375,13 @@ namespace Xpetra {
 
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED 
-    clone(const RCP<Node2> &node2) const;
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > 
+    XPETRA_DEPRECATED 
+    clone(const RCP<Node2> &node2) const
+    {
+      return RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
+        (new TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(mtx_->clone(node2)));
+    }
 #endif  // XPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
@@ -385,7 +390,6 @@ namespace Xpetra {
     bool hasMatrix() const;
 
     //! TpetraBlockCrsMatrix constructor to wrap a Tpetra::BlockCrsMatrix object
-//    TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) : mtx_(mtx);
     TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx);
 
     //! Get the underlying Tpetra matrix
