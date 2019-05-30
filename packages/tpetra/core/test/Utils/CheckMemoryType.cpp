@@ -89,8 +89,8 @@ namespace { // (anonymous)
     out << "Starting CheckMemoryType test" << endl;
     Teuchos::OSTab tab1 (out);
 
-    Kokkos::DefaultHostExecutionSpace hostExecSpace;
 #ifdef HAVE_TPETRACORE_CUDA
+    Kokkos::DefaultHostExecutionSpace hostExecSpace;
     Kokkos::Cuda cudaExecSpace;
 #endif // HAVE_TPETRACORE_CUDA
 

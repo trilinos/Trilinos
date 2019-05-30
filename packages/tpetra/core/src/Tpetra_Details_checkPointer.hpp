@@ -48,6 +48,7 @@
 ///   details of Tpetra.
 
 #include "TpetraCore_config.h"
+#include <string>
 
 #ifdef HAVE_TPETRACORE_CUDA
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
