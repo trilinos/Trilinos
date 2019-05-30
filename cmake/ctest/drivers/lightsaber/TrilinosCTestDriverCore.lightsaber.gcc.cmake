@@ -54,33 +54,76 @@
 # @HEADER
 
 
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+
 #
-# List of extra repositories that contain extra Trilinos packages.
-#
-# See documentation for the function
-# TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES() in the TriBITS Guide and
-# Reference:
-#
-#  https://tribits.org/doc/TribitsDevelopersGuide.html#tribits-project-define-extra-repositories
+# Platform/compiler specific options for rocketman using gcc
 #
 
-IF (NOT "$ENV{Trilinos_REPOS_URL_BASE}" STREQUAL "")
-  SET(Trilinos_REPOS_URL_BASE  $ENV{Trilinos_REPOS_URL_BASE}
-    CACHE STRING "Set from env var Trilinos_REPOS_URL_BASE" FORCE)
-ELSE()
-  SET(Trilinos_REPOS_URL_BASE_DEFAULT git@github.com:trilinos/)
-  SET(Trilinos_REPOS_URL_BASE  ${Trilinos_REPOS_URL_BASE_DEFAULT}
-    CACHE STRING "Base URL to Trilinos repos <url-base><repo-name>")
-ENDIF()
-MARK_AS_ADVANCED(Trilinos_REPOS_URL_BASE)
+MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
-TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
-  MOOCHO_repo  packages/moocho  GIT  ${Trilinos_REPOS_URL_BASE}moocho  NOPACKAGES  Nightly
-  CTrilinos_repo  packages/CTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}CTrilinos  NOPACKAGES  Nightly
-  ForTrilinos_repo  packages/ForTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}ForTrilinos  NOPACKAGES  EX
-  Optika_repo  packages/optika  GIT  ${Trilinos_REPOS_URL_BASE}optika  NOPACKAGES  Nightly
-  Mesquite_repo  packages/mesquite  GIT  ${Trilinos_REPOS_URL_BASE}mesquite  NOPACKAGES  Nightly
-  Avatar_repo packages/avatar GIT gitlab.sandia.gov/mhoemme/avatar.git NOPACKAGES EX 
-  preCopyrightTrilinos  ""  GIT  software.sandia.gov:/space/git/preCopyrightTrilinos  ""  Continuous
-  TerminalApplication  ""  GIT  software.sandia.gov:/space/git/TerminalApplication  ""   EX 
-  )
+  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+
+  IF(COMM_TYPE STREQUAL MPI)
+    string(TOUPPER $ENV{SEMS_MPI_NAME} UC_MPI_NAME)
+    SET(BUILD_DIR_NAME ${UC_MPI_NAME}-$ENV{SEMS_MPI_VERSION}_${BUILD_TYPE}_${BUILD_NAME_DETAILS})
+  ELSE()
+    SET(BUILD_DIR_NAME ${COMM_TYPE}-${BUILD_TYPE}_${BUILD_NAME_DETAILS})
+  ENDIF()
+
+
+  SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+  SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
+  SET(CTEST_BUILD_FLAGS     "-j14 -i" )
+
+  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "14" )
+  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
+  SET(Trilinos_CTEST_DO_ALL_AT_ONCE FALSE)
+  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
+
+  SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
+    "-DBUILD_SHARED_LIBS=ON"
+    "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
+    "-DCMAKE_VERBOSE_MAKEFILE=ON"
+
+    "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
+    "-DTrilinos_ENABLE_Fortran=OFF"
+
+    "-DSuperLU_INCLUDE_DIRS=$ENV{SEMS_SUPERLU_INCLUDE_PATH}"
+    "-DSuperLU_LIBRARY_DIRS=$ENV{SEMS_SUPERLU_LIBRARY_PATH}"
+    "-DSuperLU_LIBRARY_NAMES=superlu"
+
+    ### PACKAGE CONFIGURATION ###
+
+    ### MISC ###
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+    )
+
+  SET_DEFAULT(COMPILER_VERSION "$ENV{SEMS_COMPILER_NAME}-$ENV{SEMS_COMPILER_VERSION}")
+
+  # Ensure that MPI is on for all parallel builds that might be run.
+  IF(COMM_TYPE STREQUAL MPI)
+
+    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
+        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+        "-DTPL_ENABLE_MPI=ON"
+            "-DMPI_BASE_DIR:PATH=$ENV{SEMS_OPENMPI_ROOT}"
+            "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket"
+       )
+
+    SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
+        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+
+  ELSE()
+
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+      "-DCMAKE_CXX_COMPILER=$ENV{SEMS_COMPILER_ROOT}/bin/g++"
+      "-DCMAKE_C_COMPILER=$ENV{SEMS_COMPILER_ROOT}/bin/gcc"
+      )
+
+  ENDIF()
+
+  TRILINOS_CTEST_DRIVER()
+
+ENDMACRO()
