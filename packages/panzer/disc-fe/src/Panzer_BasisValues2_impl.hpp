@@ -779,54 +779,29 @@ evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,vo
 
 }
 
+template <typename Scalar>
+void panzer::BasisValues2<Scalar>::
+evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
+                 const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
+                 const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+                 const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv)
+{
 
+  PHX::MDField<Scalar,Cell,NODE,Dim> vertex_coordinates;
+  const int in_num_cells = jac.extent(0);
+  evaluateValuesCV(cub_points,jac,jac_det,jac_inv,vertex_coordinates,false,in_num_cells);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
 evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cell_cub_points,
                  const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
                  const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-                 const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv)
+                 const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+                 const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+                 bool use_vertex_coordinates,
+                 const int in_num_cells)
 {
   MDFieldArrayFactory af("",ddims_,true);
 
@@ -1060,6 +1035,11 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
     else { TEUCHOS_ASSERT(false); }
 
   } // cell loop
+
+  if(use_vertex_coordinates) {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(elmtspace == PureBasis::CONST,"panzer::BasisValues2::evaluateValues : Const basis cannot have basis coordinates.");
+    evaluateBasisCoordinates(vertex_coordinates);
+  }
 
 }
 
