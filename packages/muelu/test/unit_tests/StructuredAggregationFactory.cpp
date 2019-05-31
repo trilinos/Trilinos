@@ -70,11 +70,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -157,13 +158,12 @@ namespace MueLuTests {
     coarseLevel.Release("Nullspace",TentativePFact.get());
 
     // check normalization and orthogonality of prolongator columns
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Ptent,true,*Ptent,false,out);
-    Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
+    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,Node> > PtentTPtent = Xpetra::MatrixMatrix<SC,LO,GO,Node>::Multiply(*Ptent,true,*Ptent,false,out);
+    Teuchos::RCP<Xpetra::Vector<SC,LO,GO,Node> > diagVec = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative1D
@@ -174,11 +174,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -264,9 +265,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative2D
@@ -277,11 +277,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -367,9 +368,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative3D
@@ -380,11 +380,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -472,9 +473,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative1D
@@ -485,11 +485,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -577,9 +578,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative2D
@@ -590,11 +590,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -683,9 +684,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative3D
@@ -696,11 +696,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -796,9 +797,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // UncoupledLocalLexiTentative1D
@@ -809,11 +809,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -909,9 +910,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // UncoupledLocalLexiTentative2D
@@ -922,11 +922,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -1023,9 +1024,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // UncoupledLocalLexiTentative3D
@@ -1039,7 +1039,7 @@ namespace MueLuTests {
 
     using magnitude_type        = typename Teuchos::ScalarTraits<SC>::magnitudeType;
     using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType ;
-    using RealValuedMultiVector = typename Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -1224,7 +1224,7 @@ namespace MueLuTests {
 
     using TST                   = Teuchos::ScalarTraits<SC>;
     using real_type             = typename TST::coordinateType;
-    using RealValuedMultiVector = typename Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
     using test_factory          = TestHelpers::TestFactory<SC, LO, GO, Node>;
 
     out << "version: " << MueLu::Version() << std::endl;

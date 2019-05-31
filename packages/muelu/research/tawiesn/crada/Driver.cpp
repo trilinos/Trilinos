@@ -90,11 +90,14 @@
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class ExportVTK : public MueLu::VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
+    using real_type = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+    using RealValuedMultiVector = typename Xpetra::MultiVector<real_type, LocalOrdinal, GlobalOrdinal, Node>;
+
     ExportVTK() {};
 
   public:
 
-    void writeFile(std::ofstream& fout, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& coordinates, Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& sol)
+    void writeFile(std::ofstream& fout, Teuchos::RCP<RealValuedMultiVector>& coordinates, Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& sol)
     {
       using namespace std;
       typedef MueLu::VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> VH;
@@ -111,13 +114,13 @@
         geomSize.push_back(1);
       }
 
-      Teuchos::ArrayRCP<const double> xCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(0));
-      Teuchos::ArrayRCP<const double> yCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(1));
-      Teuchos::ArrayRCP<const double> zCoords = Teuchos::null;
+      Teuchos::ArrayRCP<const real_type> xCoords = Teuchos::arcp_reinterpret_cast<const real_type>(coordinates->getData(0));
+      Teuchos::ArrayRCP<const real_type> yCoords = Teuchos::arcp_reinterpret_cast<const real_type>(coordinates->getData(1));
+      Teuchos::ArrayRCP<const real_type> zCoords = Teuchos::null;
       if(coordinates->getNumVectors() == 3) {
-        zCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(2));
+        zCoords = Teuchos::arcp_reinterpret_cast<const real_type>(coordinates->getData(2));
       }
-      Teuchos::ArrayRCP<const double> solData = Teuchos::arcp_reinterpret_cast<const double>(sol->getData(0));
+      Teuchos::ArrayRCP<const Scalar> solData = Teuchos::arcp_reinterpret_cast<const Scalar>(sol->getData(0));
 
       std::vector<int> uniqueFine = this->makeUnique(vertices);
       this->writeFileVTKOpening(fout, uniqueFine, geomSize);

@@ -264,7 +264,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         Btpetra = rcp(& Xpetra::toTpetra(*B),false);
       }
 #endif
-#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
+#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT) && !defined(HAVE_MUELU_INST_FLOAT_INT_INT)
       Teuchos::RCP<const Epetra_CrsMatrix> Aepetra;
       Teuchos::RCP<Epetra_MultiVector> Xepetra,Bepetra;
       if(lib==Xpetra::UseEpetra) {
@@ -287,7 +287,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
 #if defined(HAVE_MUELU_TPETRA)
       if(lib==Xpetra::UseTpetra) Atpetra->apply(*Btpetra,*Xtpetra);
 #endif
-#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
+#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT) && !defined(HAVE_MUELU_INST_FLOAT_INT_INT)
       if(lib==Xpetra::UseEpetra) Aepetra->Apply(*Bepetra,*Xepetra);
 #endif
       //clear the cache (and don't time it)
