@@ -5792,8 +5792,7 @@ namespace Tpetra {
     computeCrsPaddingForSameIDs(padding, source, numSameIDs, false);
     computeCrsPaddingForPermutedIDs(padding, source, permuteToLIDs, permuteFromLIDs, false);
 
-    using execution_space = typename device_type::execution_space;
-    execution_space::fence ();  // Make sure device sees changes made by host
+    Kokkos::fence ();  // Make sure device sees changes made by host
     TEUCHOS_TEST_FOR_EXCEPTION
       (padding.failed_insert(), std::runtime_error,
        "failed to insert one or more indices in to padding map");
@@ -5811,17 +5810,14 @@ namespace Tpetra {
   {
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
-    using execution_space = typename device_type::execution_space;
     const char tfecfFuncName[] = "computeCrsPaddingForSameIds: ";
 
-    execution_space::fence ();
+    Kokkos::fence ();
 
     using insert_result =
       typename Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>::insert_result;
 
     // Compute extra capacity needed to accommodate incoming data
-    Teuchos::Array<GO> src_row_inds;
-    Teuchos::Array<GO> tgt_row_inds;
     const map_type& src_row_map = * (source.getRowMap ());
     for (LO tgt_lid = 0; tgt_lid < static_cast<LO> (numSameIDs); ++tgt_lid) {
       const GO src_gid = src_row_map.getGlobalElement(tgt_lid);
@@ -5837,12 +5833,14 @@ namespace Tpetra {
       }
       else {
         size_t check_row_length = 0;
-        src_row_inds.resize(num_src_entries);
-        source.getGlobalRowCopy(src_gid, src_row_inds(), check_row_length);
+        std::vector<GO> src_row_inds(num_src_entries);
+        Teuchos::ArrayView<GO> src_row_inds_view(src_row_inds.data(), src_row_inds.size());
+        source.getGlobalRowCopy(src_gid, src_row_inds_view, check_row_length);
 
         auto num_tgt_entries = this->getNumEntriesInGlobalRow(tgt_gid);
-        tgt_row_inds.resize(num_tgt_entries);
-        this->getGlobalRowCopy(tgt_gid, tgt_row_inds(), check_row_length);
+        std::vector<GO> tgt_row_inds(num_tgt_entries);
+        Teuchos::ArrayView<GO> tgt_row_inds_view(tgt_row_inds.data(), tgt_row_inds.size());
+        this->getGlobalRowCopy(tgt_gid, tgt_row_inds_view, check_row_length);
 
         size_t how_much_padding = 0;
         for (auto src_row_ind : src_row_inds) {
@@ -5874,12 +5872,9 @@ namespace Tpetra {
   {
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
-    using execution_space = typename device_type::execution_space;
     const char tfecfFuncName[] = "computeCrsPaddingForPermutedIds: ";
-    execution_space::fence ();
+    Kokkos::fence ();
 
-    Teuchos::Array<GO> src_row_inds;
-    Teuchos::Array<GO> tgt_row_inds;
     const map_type& src_row_map = * (source.getRowMap ());
 
     using insert_result =
@@ -5901,16 +5896,18 @@ namespace Tpetra {
       }
       else {
         size_t check_row_length = 0;
-        src_row_inds.resize(num_src_entries);
-        source.getGlobalRowCopy(src_gid, src_row_inds(), check_row_length);
+        std::vector<GO> src_row_inds(num_src_entries);
+        Teuchos::ArrayView<GO> src_row_inds_view(src_row_inds.data(), src_row_inds.size());
+        source.getGlobalRowCopy(src_gid, src_row_inds_view, check_row_length);
 
         const GO tgt_gid = rowMap_->getGlobalElement (tgt_lid);
         auto num_tgt_entries = this->getNumEntriesInGlobalRow(tgt_gid);
-        tgt_row_inds.resize(num_tgt_entries);
-        this->getGlobalRowCopy(tgt_gid, tgt_row_inds(), check_row_length);
+        std::vector<GO> tgt_row_inds(num_tgt_entries);
+        Teuchos::ArrayView<GO> tgt_row_inds_view(tgt_row_inds.data(), tgt_row_inds.size());
+        this->getGlobalRowCopy(tgt_gid, tgt_row_inds_view, check_row_length);
 
         size_t how_much_padding = 0;
-        for (const auto& src_row_ind : src_row_inds) {
+        for (auto src_row_ind : src_row_inds) {
           if (std::find(tgt_row_inds.begin(), tgt_row_inds.end(), src_row_ind) == tgt_row_inds.end()) {
             // The target row does not have space for
             how_much_padding++;
@@ -5936,11 +5933,10 @@ namespace Tpetra {
                      buffer_device_type>& importLIDs,
                      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID) const
   {
-    using execution_space = typename device_type::execution_space;
     const char tfecfFuncName[] = "computeCrsPadding: ";
 
     // Creating padding for each new incoming index
-    execution_space::fence ();  // Make sure device sees changes made by host
+    Kokkos::fence ();  // Make sure device sees changes made by host
     using padding_type = Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>;
     padding_type padding (importLIDs.extent (0));
     auto numEnt = static_cast<size_t> (importLIDs.extent (0));
