@@ -41,6 +41,9 @@
 // @HEADER
 
 #include "PanzerDofMgr_config.hpp"
+
+#ifdef PANZER_HAVE_EPETRA
+
 #include "Panzer_GlobalIndexer_EpetraUtilities.hpp"
 
 namespace panzer {
@@ -236,3 +239,5 @@ getFieldMapEpetra(int fieldNum,const Epetra_IntVector & fieldTVector)
 }
 
 } // end namespace panzer
+
+#endif //end PANZER_HAVE_EPETRA
