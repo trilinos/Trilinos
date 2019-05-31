@@ -199,7 +199,7 @@ namespace Tacho {
 
               future_type *dep = NULL;
               Kokkos::single(Kokkos::PerTeam(member), [&](future_type *&val) {                  
-                  val = (future_type*)sched.memory()->allocate(depsize);
+                  val = (future_type*)sched.queue().get_memory_pool().allocate(depsize);
                 }, dep);
               TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
               clear(member, (char*)dep, depsize);
@@ -213,7 +213,7 @@ namespace Tacho {
               Kokkos::single(Kokkos::PerTeam(member), [&]() {
                   Kokkos::respawn(this, sched.when_all(dep, bn2), Kokkos::TaskPriority::Regular);
                   for (ordinal_type k=0;k<static_cast<ordinal_type>(bn2);++k) (dep+k)->~future_type();
-                  sched.memory()->deallocate((void*)dep, depsize);
+                  sched.queue().get_memory_pool().deallocate((void*)dep, depsize);
                 });
             } else {
               Kokkos::single(Kokkos::PerTeam(member), [&]() {
@@ -236,7 +236,7 @@ namespace Tacho {
               future_type *dep = NULL, depbuf[MaxDependenceSize];
               size_t depbuf_size = _s.nchildren > MaxDependenceSize ? _s.nchildren*sizeof(future_type) : 0;
               if (depbuf_size) {
-                dep = (future_type*)sched.memory()->allocate(depbuf_size);
+                dep = (future_type*)sched.queue().get_memory_pool().allocate(depbuf_size);
                 clear((char*)dep, depbuf_size);
               } else {
                 dep = &depbuf[0];
@@ -269,7 +269,7 @@ namespace Tacho {
 
                 if (depbuf_size) {
                   for (ordinal_type i=0;i<_s.nchildren;++i) (dep+i)->~future_type();
-                  sched.memory()->deallocate(dep, depbuf_size);
+                  sched.queue().get_memory_pool().deallocate(dep, depbuf_size);
                 }
               }
             });

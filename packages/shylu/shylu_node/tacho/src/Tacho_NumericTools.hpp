@@ -557,12 +557,12 @@ namespace Tacho {
                                  max_block_size,
                                  superblock_size);
           
-          track_alloc(sched.memory()->capacity());
+          track_alloc(sched.queue().get_memory_pool().capacity());
         }
-        stat.s_min_block_size  = sched.memory()->min_block_size();
-        stat.s_max_block_size  = sched.memory()->max_block_size();
-        stat.s_capacity        = sched.memory()->capacity();
-        stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
+        stat.s_min_block_size  = sched.queue().get_memory_pool().min_block_size();
+        stat.s_max_block_size  = sched.queue().get_memory_pool().max_block_size();
+        stat.s_capacity        = sched.queue().get_memory_pool().capacity();
+        stat.s_num_superblocks = sched.queue().get_memory_pool().capacity()/sched.queue().get_memory_pool().max_block_size();
         
         memory_pool_type bufpool;
         {
@@ -631,7 +631,7 @@ namespace Tacho {
         stat.t_factor = timer.seconds();
         
         track_free(bufpool.capacity());
-        track_free(sched.memory()->capacity());
+        track_free(sched.queue().get_memory_pool().capacity());
 
         // reset solve scheduler and bufpool
         _sched_solve_capacity = 0;
@@ -677,13 +677,13 @@ namespace Tacho {
                                  max_block_size,
                                  superblock_size);
           
-          track_alloc(sched.memory()->capacity());
+          track_alloc(sched.queue().get_memory_pool().capacity());
         }
 
-        stat.s_min_block_size  = sched.memory()->min_block_size();
-        stat.s_max_block_size  = sched.memory()->max_block_size();
-        stat.s_capacity        = sched.memory()->capacity();
-        stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
+        stat.s_min_block_size  = sched.queue().get_memory_pool().min_block_size();
+        stat.s_max_block_size  = sched.queue().get_memory_pool().max_block_size();
+        stat.s_capacity        = sched.queue().get_memory_pool().capacity();
+        stat.s_num_superblocks = sched.queue().get_memory_pool().capacity()/sched.queue().get_memory_pool().max_block_size();
         
         memory_pool_type bufpool;
         const ordinal_type nb = panelsize > 0 ? panelsize : _info.max_schur_size;
@@ -754,7 +754,7 @@ namespace Tacho {
         stat.t_factor = timer.seconds();
         
         track_free(bufpool.capacity());
-        track_free(sched.memory()->capacity());
+        track_free(sched.queue().get_memory_pool().capacity());
 
         // reset solve scheduler and bufpool
         _sched_solve_capacity = 0;
@@ -819,7 +819,7 @@ namespace Tacho {
                                             min_block_size,
                                             max_block_size,
                                             superblock_size);
-              _sched_solve_capacity = _sched_solve.memory()->capacity();
+              _sched_solve_capacity = _sched_solve.queue().get_memory_pool().capacity();
               track_alloc(_sched_solve_capacity);
             }
           }
@@ -926,12 +926,12 @@ namespace Tacho {
                                  min_block_size,
                                  max_block_size,
                                  superblock_size);
-          track_alloc(sched.memory()->capacity());
+          track_alloc(sched.queue().get_memory_pool().capacity());
         }
-        stat.s_min_block_size  = sched.memory()->min_block_size();
-        stat.s_max_block_size  = sched.memory()->max_block_size();
-        stat.s_capacity        = sched.memory()->capacity();
-        stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
+        stat.s_min_block_size  = sched.queue().get_memory_pool().min_block_size();
+        stat.s_max_block_size  = sched.queue().get_memory_pool().max_block_size();
+        stat.s_capacity        = sched.queue().get_memory_pool().capacity();
+        stat.s_num_superblocks = sched.queue().get_memory_pool().capacity()/sched.queue().get_memory_pool().max_block_size();
         
         memory_pool_type bufpool;
         {
@@ -1003,7 +1003,7 @@ namespace Tacho {
         stat.t_factor = timer.seconds();
 
         track_free(bufpool.capacity());
-        track_free(sched.memory()->capacity());
+        track_free(sched.queue().get_memory_pool().capacity());
 
         // reset solve scheduler and bufpool
         _sched_solve_capacity = 0;
@@ -1055,13 +1055,13 @@ namespace Tacho {
                                  max_block_size,
                                  superblock_size);
           
-          track_alloc(sched.memory()->capacity());
+          track_alloc(sched.queue().get_memory_pool().capacity());
         }
         
-        stat.s_min_block_size  = sched.memory()->min_block_size();
-        stat.s_max_block_size  = sched.memory()->max_block_size();
-        stat.s_capacity        = sched.memory()->capacity();
-        stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
+        stat.s_min_block_size  = sched.queue().get_memory_pool().min_block_size();
+        stat.s_max_block_size  = sched.queue().get_memory_pool().max_block_size();
+        stat.s_capacity        = sched.queue().get_memory_pool().capacity();
+        stat.s_num_superblocks = sched.queue().get_memory_pool().capacity()/sched.queue().get_memory_pool().max_block_size();
         
         memory_pool_type bufpool;
         {
@@ -1133,7 +1133,7 @@ namespace Tacho {
         stat.t_factor = timer.seconds();
         
         track_free(bufpool.capacity());
-        track_free(sched.memory()->capacity());
+        track_free(sched.queue().get_memory_pool().capacity());
 
         // reset solve scheduler and bufpool
         _sched_solve_capacity = 0;

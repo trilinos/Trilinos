@@ -12,20 +12,20 @@ IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # Supernodes
   # 
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCholSupernodesDeprecatedTaskScheduler
-    TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleCholSupernodes.cpp
-    COMM serial mpi
-  )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCholSupernodesDeprecatedTaskSchedulerMultiple
-    TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleCholSupernodes.cpp
-    COMM serial mpi
-  )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   Tacho_ExampleCholSupernodesDeprecatedTaskScheduler
+  #   TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER
+  #   NOEXEPREFIX
+  #   SOURCES Tacho_ExampleCholSupernodes.cpp
+  #   COMM serial mpi
+  # )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   Tacho_ExampleCholSupernodesDeprecatedTaskSchedulerMultiple
+  #   TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE
+  #   NOEXEPREFIX
+  #   SOURCES Tacho_ExampleCholSupernodes.cpp
+  #   COMM serial mpi
+  # )
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleCholSupernodesTaskScheduler
     TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
@@ -51,20 +51,20 @@ IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # Solver
   #
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleSolverDoubleDeprecatedTaskScheduler
-    TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleSolver_double.cpp
-    COMM serial mpi
-  )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleSolverDoubleDeprecatedTaskSchedulerMultiple
-    TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleSolver_double.cpp
-    COMM serial mpi
-  )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   Tacho_ExampleSolverDoubleDeprecatedTaskScheduler
+  #   TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER
+  #   NOEXEPREFIX
+  #   SOURCES Tacho_ExampleSolver_double.cpp
+  #   COMM serial mpi
+  # )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   Tacho_ExampleSolverDoubleDeprecatedTaskSchedulerMultiple
+  #   TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE
+  #   NOEXEPREFIX
+  #   SOURCES Tacho_ExampleSolver_double.cpp
+  #   COMM serial mpi
+  # )
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleSolverDoubleTaskScheduler
     TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
@@ -86,20 +86,20 @@ IF (TACHO_HAVE_KOKKOS_TASK)
     SOURCES Tacho_ExampleSolver_double.cpp
     COMM serial mpi
   )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleSolverDoubleComplexDeprecatedTaskScheduler
-    TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleSolver_dcomplex.cpp
-    COMM serial mpi
-  )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleSolverDoubleComplexDeprecatedTaskSchedulerMultiple
-    TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleSolver_dcomplex.cpp
-    COMM serial mpi
-  )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   Tacho_ExampleSolverDoubleComplexDeprecatedTaskScheduler
+  #   TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER
+  #   NOEXEPREFIX
+  #   SOURCES Tacho_ExampleSolver_dcomplex.cpp
+  #   COMM serial mpi
+  # )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   Tacho_ExampleSolverDoubleComplexDeprecatedTaskSchedulerMultiple
+  #   TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE
+  #   NOEXEPREFIX
+  #   SOURCES Tacho_ExampleSolver_dcomplex.cpp
+  #   COMM serial mpi
+  # )
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleSolverDoubleComplexTaskScheduler
     TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
@@ -125,20 +125,20 @@ IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # DenseByBlocks 
   #
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseByBlocksDeprecatedTaskScheduler
-    TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleDenseByBlocks.cpp
-    COMM serial mpi
-  )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseByBlocksDeprecatedTaskSchedulerMultiple
-    TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleDenseByBlocks.cpp
-    COMM serial mpi
-  )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   Tacho_ExampleDenseByBlocksDeprecatedTaskScheduler
+  #   TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER
+  #   NOEXEPREFIX
+  #   SOURCES Tacho_ExampleDenseByBlocks.cpp
+  #   COMM serial mpi
+  # )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   Tacho_ExampleDenseByBlocksDeprecatedTaskSchedulerMultiple
+  #   TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE
+  #   NOEXEPREFIX
+  #   SOURCES Tacho_ExampleDenseByBlocks.cpp
+  #   COMM serial mpi
+  # )
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleDenseByBlocksTaskScheduler
     TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
@@ -173,20 +173,20 @@ IF (TACHO_HAVE_KOKKOS_TASK)
         COMM serial mpi
       )
     ENDIF()
-    TRIBITS_ADD_EXECUTABLE(
-      Tacho_ExamplePerfTestDeprecatedTaskScheduler
-      TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER
-      NOEXEPREFIX
-      SOURCES Tacho_ExamplePerfTest.cpp
-      COMM serial mpi
-    )
-    TRIBITS_ADD_EXECUTABLE(
-      Tacho_ExamplePerfTestDeprecatedTaskSchedulerMultiple
-      TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE
-      NOEXEPREFIX
-      SOURCES Tacho_ExamplePerfTest.cpp
-      COMM serial mpi
-    )
+    # TRIBITS_ADD_EXECUTABLE(
+    #   Tacho_ExamplePerfTestDeprecatedTaskScheduler
+    #   TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER
+    #   NOEXEPREFIX
+    #   SOURCES Tacho_ExamplePerfTest.cpp
+    #   COMM serial mpi
+    # )
+    # TRIBITS_ADD_EXECUTABLE(
+    #   Tacho_ExamplePerfTestDeprecatedTaskSchedulerMultiple
+    #   TARGET_DEFINES -DTACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE
+    #   NOEXEPREFIX
+    #   SOURCES Tacho_ExamplePerfTest.cpp
+    #   COMM serial mpi
+    # )
     TRIBITS_ADD_EXECUTABLE(
       Tacho_ExamplePerfTestTaskScheduler
       TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER

@@ -110,7 +110,7 @@ namespace Tacho {
                 future_type *dep = NULL, depbuf[MaxDependenceSize];
                 size_t depbuf_size = _s.nchildren > MaxDependenceSize ? _s.nchildren*sizeof(future_type) : 0;
                 if (depbuf_size) {
-                  dep = (future_type*)sched.memory()->allocate(depbuf_size);
+                  dep = (future_type*)sched.queue().get_memory_pool().allocate(depbuf_size);
                   clear((char*)dep, depbuf_size);
                 } else {
                   dep = &depbuf[0];
@@ -133,7 +133,7 @@ namespace Tacho {
                   
                   if (depbuf_size) {
                     for (ordinal_type i=0;i<_s.nchildren;++i) (dep+i)->~future_type();
-                    sched.memory()->deallocate(dep, depbuf_size);
+                    sched.queue().get_memory_pool().deallocate(dep, depbuf_size);
                   }
                 }
               });
