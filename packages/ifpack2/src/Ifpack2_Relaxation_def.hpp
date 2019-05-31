@@ -1147,7 +1147,7 @@ void Relaxation<MatrixType>::compute ()
            // doesn't work if scalar_type is a built-in integer type.
            // Thus, we have to start by reading the first diagonal
            // entry redundantly.
-           if (numMyRows > 0) {
+           if (numMyRows != 0) {
              const magnitude_type d_0_mag = KAT::abs (diag[0]);
              minMagDiagEntryMag = d_0_mag;
              maxMagDiagEntryMag = d_0_mag;
@@ -1159,7 +1159,7 @@ void Relaxation<MatrixType>::compute ()
            // those too small in magnitude, replace them with
            // 1/MinDiagonalValue_ (or 1/eps if MinDiagonalValue_
            // happens to be zero).
-           for (size_t i = 0 ; i < numMyRows; ++i) {
+           for (LO i = 0; i < numMyRows; ++i) {
              const IST d_i = diag[i];
              const magnitude_type d_i_mag = KAT::abs (d_i);
              // Work-around for GitHub Issue #5269.
