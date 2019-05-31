@@ -1203,6 +1203,7 @@ struct ScalarTraits<
   static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); }
   static inline ComplexT pi() { return ScalarTraits<T>::pi(); }
 };
+#endif //  HAVE_TEUCHOS_COMPLEX
 
 #ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
 // Partial specialization for Kokkos::complex<T>
@@ -1272,7 +1273,6 @@ struct ScalarTraits<
 };
 #endif // HAVE_TEUCHOSCORE_KOKKOSCORE
 
-#endif //  HAVE_TEUCHOS_COMPLEX
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // Teuchos namespace

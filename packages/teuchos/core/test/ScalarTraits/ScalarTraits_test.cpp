@@ -134,7 +134,7 @@ bool testScalarTraits(
   out << "Type chain (ascending) : "; TYPE_CHAIN_A<Scalar>(out); out << "\n";
   out << "Type chain (descending): "; TYPE_CHAIN_D<Scalar>(out); out << "\n";
 
-  TEUCHOS_TEST_EQUALITY_CONST(ST::isnaninf(1.0), false, out, success);
+  TEUCHOS_TEST_EQUALITY_CONST(ST::isnaninf(ST::one()), false, out, success);
 
   out << "\nTesting that squareroot(NaN) == NaN! ...\n";
   {
@@ -345,7 +345,7 @@ int main( int argc, char* argv[] ) {
 
     result = testScalarTraits<std::complex<float> >(*out);
     if(!result) success = false;
-#endif
+#endif // HAVE_TEUCHOS_COMPLEX
 
 #ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
     result = testScalarTraits<Kokkos::complex<double> >(*out);
