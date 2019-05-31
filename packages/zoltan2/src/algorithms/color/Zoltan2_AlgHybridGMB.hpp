@@ -37,9 +37,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
 
     void buildModel(modelFlag_t &flags);
     
-    //template <typename ExecutionSpace, typename TempMemorySpace, typename MemorySpace>
-    //void colorInterior(const size_t, Teuchos::ArrayView<const lno_t>, 
-    //                   Teuchos::ArrayView<const offset_t>, Teuchos::ArrayRCP<int>);
     //This function is templated twice to avoid explicitly coding all possible
     //Execution space situations. We can just template the function call and have the compiler do that work.
     template <typename ExecutionSpace, typename TempMemorySpace, typename MemorySpace>
@@ -198,7 +195,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       printf("\n");*/
       
       //convert edges to local ID, as I'm pretty sure Kokkos-Kernel's coloring expects this.
-      printf("--Rank %d local adjacencies\n",comm->getRank());
+      //printf("--Rank %d local adjacencies\n",comm->getRank());
       std::vector<lno_t> local_adjs_vec;
       for(size_t i = 0; i < nEdge; i++){
         //printf("\t%u\n",mapWithCopies->getLocalElement(out_edges[i]));
@@ -206,6 +203,66 @@ class AlgHybridGMB : public Algorithm<Adapter>
       }
       //for(size_t i = 0; i < nEdge; i++) printf("\t%u\n",local_adjs_vec.at(i));
       ArrayView<const lno_t> local_adjs = Teuchos::arrayViewFromVector(local_adjs_vec);
+      
+      //reorder the local vertices
+      unsigned nVtxInterior = 0;
+      bool interior_flags[nVtx];
+      for(size_t i = 0; i < nVtx; i++){
+        bool interior = true;
+        for(size_t j = offsets[i]; j < offsets[i+1]; j++){
+          if(local_adjs[j] >= nVtx) interior = false;
+        }
+        if(interior){
+          interior_flags[i] = true;
+          nVtxInterior++;
+        } else {
+          interior_flags[i] = false;
+        }
+      }      
+      printf("--Rank %d has %u interior vertices\n",comm->getRank(), nVtxInterior);
+      
+      std::vector<lno_t> reorderToLocal(nVtx+nGhosts);
+      unsigned interiorCount = 0;
+      unsigned boundaryCount = 0;
+      for(size_t i = 0; i < nVtx; i++){
+        if(interior_flags[i]){
+          reorderToLocal[interiorCount++] = i;
+        } else {
+          reorderToLocal[nVtxInterior+boundaryCount] = i;
+          boundaryCount++;
+        }
+      }
+      for(int i = nVtx; i < nVtx+nGhosts; i++){
+        reorderToLocal[i] = i;
+      }
+      printf("\treorder vtx IDs: ");
+      for(int i = 0; i < reorderToLocal.size(); i++){
+        printf("%u ",i);
+      }
+      printf("\n\tlocal vtx IDs: ");
+      for(int i = 0; i < reorderToLocal.size(); i++){
+        printf("%u ", reorderToLocal[i]);
+      }
+      printf("\n");
+      
+      //create TPetra map for these id conversions?
+
+      std::vector<offset_t> reorderOffsets(nVtx+1);
+      std::vector<lno_t>    reorderAdjs(nEdge);
+      reorderOffsets[0] = 0;
+      for(size_t i = 0; i < nVtx; i++){
+        reorderOffsets[i+1] = reorderOffsets[i] + (offsets[reorderToLocal[i]+1] - offsets[reorderToLocal[i]]);
+      }
+      printf("--Rank %d done with reorderOffsets\n",comm->getRank());
+      for(size_t i = 0; i < nVtx; i++){
+        for(size_t j = 0; j < reorderOffsets[i+1] - reorderOffsets[i]; j++){
+          reorderAdjs[reorderOffsets[i]+j] = local_adjs[offsets[reorderToLocal[i]]+j];
+        } 
+      }
+      //so now the adjacencies are in the correct spots, but they're still using local IDs, not reordered IDs
+      //need to create a TPetra mapWithGhosts for converting the adjacency list over.
+      
+            
       //TODO: create FEMultiVector of some type, need to figure out what is appropriate.
       //relevant lines from VtxLabel:
       //   typedef Tpetra::Import<lno_t, gno_t> import_t;
@@ -234,11 +291,10 @@ class AlgHybridGMB : public Algorithm<Adapter>
     void hybridGMB(const size_t nVtx, Teuchos::ArrayView<const lno_t> adjs, 
                    Teuchos::ArrayView<const offset_t> offsets, Teuchos::ArrayRCP<int> colors){
       
-      //need to create a subgraph that has only interior vertices.
-      //this graph should get passed to the Kokkos calls.
-      //Need to have a map from the interior ID to the local ID, so that the colors can be
-      //put in the colors array correctly.
-      
+      //must reorder the graph so that boundary verts appear after interior verts.
+      //Also need to create separate Arrays for interior-only vertices, for Kokkos.
+      //Should be able to do that at the same time.
+
        
       bool use_cuda = pl->get<bool>("Hybrid_use_cuda",false);
       bool use_openmp = pl->get<bool>("Hybrid_use_openmp",false);
