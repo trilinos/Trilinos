@@ -164,12 +164,24 @@ public:
       return machine->getHopCount(rank1, rank2, hops);
     }
 
+    /*! \brief getNumUniqueGroups function
+     *  return the number of unique Dragonfly network groups in provided allocation.
+     *
+     *  Equals the length of group_count member data, if available
+     */
+    inline part_t getNumUniqueGroups() const {
+      return machine->getNumUniqueGroups();
+    }
+
     /*! \brief return counter for the number of ranks in first dim (a.k.a. groups) 
      *
-     *  Ex, 4 ranks with coord (3, 1, 1), will return grp_count = [0, 0, 0, 4, 0, ...]
-     *  (Currently only for DragonflyRCA, and used for MultiJagged's first cut in MappingProblem) 
+     *  Ex, 4 ranks with coord (3, 1, 1), will return 
+     *  grp_count = [0, 0, 0, 4, 0, ...]
+     *  
+     *  (Currently only for DragonflyRCA, and used for MultiJagged's 
+     *  first cut in MappingProblem) 
      */ 
-    inline part_t getGroupCount(part_t *grp_count) const {
+    inline bool getGroupCount(part_t *grp_count) const {
       return machine->getGroupCount(grp_count);
     }
 

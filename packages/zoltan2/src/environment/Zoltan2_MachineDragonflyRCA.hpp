@@ -434,11 +434,21 @@ public:
     return true;
   }
 
-  part_t getGroupCount(part_t *grp_count) const override {
-    
-    grp_count = group_count;
+  part_t getNumUniqueGroups() const override{
+    return this->num_unique_groups;
+  }
 
-    return num_unique_groups;
+  bool getGroupCount(part_t *grp_count) const override {
+   
+    if (group_count != NULL) {
+      for (int i = 0; i < num_unique_groups; ++i) { 
+        grp_count[i] = this->group_count[i];
+      }
+
+      return true;
+    }
+    else 
+      return false;
   }
 
   void printAllocation() {

@@ -155,11 +155,11 @@ public:
     pcoord_t *xyz = new pcoord_t[actual_networkDim];
     getMyActualMachineCoordinate(xyz);
 
-    for (int i = 0; i < actual_machine_extent[0]; ++i)
-      std::cout << "\nRank: " << this->myRank << " 1group_count[" << i << "]: " << group_count[i] << "\n";
+//    for (int i = 0; i < actual_machine_extent[0]; ++i)
+//      std::cout << "\nRank: " << this->myRank << " 1group_count[" << i << "]: " << group_count[i] << "\n";
 
 
-    std::cout << "\nRank: " << this->myRank << " Comm size: " << comm.getSize() << "\n";
+//    std::cout << "\nRank: " << this->myRank << " Comm size: " << comm.getSize() << "\n";
 
 
     // Gather number of ranks in each Dragonfly network group from across all ranks
@@ -170,11 +170,11 @@ public:
                                         actual_machine_extent[0], 
                                         group_count, tmp_vec);
 
-    for (int i = 0; i < actual_machine_extent[0]; ++i)
-      std::cout << "\nRank: " << this->myRank << " 2group_count[" << i << "]: " << group_count[i] << "\n";
+//    for (int i = 0; i < actual_machine_extent[0]; ++i)
+//      std::cout << "\nRank: " << this->myRank << " 2group_count[" << i << "]: " << group_count[i] << "\n";
 
-    for (int i = 0; i < actual_machine_extent[0]; ++i)
-      std::cout << "\nRank: " << this->myRank << " 2tmp_vec[" << i << "]: " << tmp_vec[i] << "\n";
+//    for (int i = 0; i < actual_machine_extent[0]; ++i)
+//      std::cout << "\nRank: " << this->myRank << " 2tmp_vec[" << i << "]: " << tmp_vec[i] << "\n";
     
 
     // remove zero entries from reduced vector
@@ -200,8 +200,8 @@ public:
     } 
     delete[] tmp_vec;
 
-    for (int i = 0; i < num_unique_groups; ++i)
-      std::cout << "\nRank: " << this->myRank << " 3new_group_count[" << i << "]: " << group_count[i] << "\n";
+//    for (int i = 0; i < num_unique_groups; ++i)
+//      std::cout << "\nRank: " << this->myRank << " 3new_group_count[" << i << "]: " << group_count[i] << "\n";
      
     const Teuchos::ParameterEntry *pe2 = 
       this->pl->getEntryPtr("Machine_Optimization_Level");
@@ -389,11 +389,21 @@ public:
     return true;
   }
 
-  part_t getGroupCount(part_t *grp_count) const override {
-    
-    grp_count = group_count;
+  part_t getNumUniqueGroups() const override{
+    return this->num_unique_groups;
+  }
 
-    return num_unique_groups; 
+  bool getGroupCount(part_t *grp_count) const override {
+        
+    if (group_count != NULL) {
+      for (int i = 0; i < num_unique_groups; ++i) { 
+        grp_count[i] = this->group_count[i];
+      }
+
+      return true;
+    }
+    else 
+      return false;
   }
 
   void printAllocation() {

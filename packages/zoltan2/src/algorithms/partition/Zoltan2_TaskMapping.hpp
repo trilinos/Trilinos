@@ -138,13 +138,13 @@ void getGridCommunicationGraph(part_t taskCount,
       prevDimMul *= grid_dims[j];
   
       if (lNeighbor >= 0 &&  
-          lNeighbor/ prevDimMul == i / prevDimMul && 
+          lNeighbor / prevDimMul == i / prevDimMul && 
           lNeighbor < taskCount) {
         task_comm_adj[neighBorIndex++] = lNeighbor;
       }
 
       if (rNeighbor >= 0 && 
-          rNeighbor/ prevDimMul == i / prevDimMul && 
+          rNeighbor / prevDimMul == i / prevDimMul && 
           rNeighbor < taskCount) {
         task_comm_adj[neighBorIndex++] = rNeighbor;
       }
@@ -208,13 +208,10 @@ void getSolutionCenterCoordinates(
     }
 */
 
-
   envConst->timerStart(MACRO_TIMERS, "Mapping - Center Calculation");
 
-  for (lno_t i=0; i < numLocalCoords; i++) {
+  for (lno_t i = 0; i < numLocalCoords; i++) {
     part_t p = parts[i];
-    
-    
 
     //add up all coordinates in each part.
     for (int j = 0; j < coordDim; ++j) {
@@ -226,8 +223,7 @@ void getSolutionCenterCoordinates(
 
   //get global number of points in each part.
   reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_SUM,
-      ntasks, point_counts, global_point_counts
-  );
+                        ntasks, point_counts, global_point_counts);
 
   for (int j = 0; j < coordDim; ++j) {
     for (part_t i = 0; i < ntasks; ++i) {
@@ -238,8 +234,7 @@ void getSolutionCenterCoordinates(
   scalar_t *tmpCoords = allocMemory<scalar_t>(ntasks);
   for (int j = 0; j < coordDim; ++j) {
     reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM,
-                             ntasks, partCenters[j], tmpCoords
-    );
+                             ntasks, partCenters[j], tmpCoords);
 
     scalar_t *tmp = partCenters[j];
     partCenters[j] = tmpCoords;
@@ -1559,12 +1554,29 @@ public:
     // Optimization for Dragonfly Networks, First Cut is imbalanced to ensure
     // procs are divided by first RCA coord (a.k.a. group).
     part_t num_group_count = 0;
-    part_t *group_count = NULL;
+  
+    num_group_count = machine->getNumUniqueGroups();
 
-    num_group_count = machine->getGroupCount(group_count);
+    std::cout << "\nNum_group_count: " << num_group_count << "\n";
+
+
+    part_t *group_count = new part_t[num_group_count];
+    
+    memset(group_count, 0, sizeof(part_t) * num_group_count);
+      
+    if (num_group_count > 0 && machine->getGroupCount(group_count)) {
+
+      std::cout << "\nGroup_Count_Dist: ";
+      for (int i = 0; i < num_group_count; ++i) {
+        std::cout << " " << group_count[i]; 
+      }
+      std::cout << std::endl;
+    }
 
 
     std::cout << "\nAbout to proc partition\n";
+
+
 
     // Do the partitioning and renumber the parts.
     env->timerStart(MACRO_TIMERS, "Mapping - Proc Partitioning");
@@ -2321,8 +2333,10 @@ public:
     //std::vector<bool> machine_extent_wrap_around_vec(procDim, 0);
     int *machine_extent = &(machine_extent_vec[0]);
     bool *machine_extent_wrap_around = new bool[procDim];
-    for (int i = 0; i < procDim; ++i)machine_extent_wrap_around[i] = false;
-//    machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
+    for (int i = 0; i < procDim; ++i)
+      machine_extent_wrap_around[i] = false;
+
+    //    machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
 
     // KDDKDD ASK MEHMET:  SHOULD WE GET AND USE machine_dimension HERE IF IT
     // KDDKDD ASK MEHMET:  IS PROVIDED BY THE MACHINE REPRESENTATION?
@@ -2346,7 +2360,7 @@ public:
 
     for (int i = 0; i < this->nprocs; ++i)
     {
-      std::cout << "\nMyRank: " << comm_->getRank() << " Rank: " << nprocs << " Coords: ";
+      std::cout << "\nMyRank: " << comm_->getRank() << " nprocs: " << nprocs << " Coords: ";
       for (int j = 0; j < procDim; ++j)
       {
         std::cout << procCoordinates[j][i] << " ";

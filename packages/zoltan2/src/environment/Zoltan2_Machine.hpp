@@ -99,6 +99,15 @@ public:
       return false;
     }
 
+    /*! \brief getNumUniqueGroups function
+     *  return the number of unique Dragonfly network groups in provided allocation.
+     *
+     *  Equals the length of group_count member data, if available
+     */
+    virtual part_t getNumUniqueGroups() const {
+      return 0;
+    }
+
     /*! \brief getGroupCount function
      *  set counter for the number of ranks in first dim (a.k.a. groups)
      *
@@ -106,8 +115,8 @@ public:
      *  (Currently only for DragonflyRCA, and used for MultiJagged's first cut in MappingProblem)
      *  return true if group_count is available
      */
-    virtual part_t getGroupCount(part_t *grp_count) const {
-      return 0;
+    virtual bool getGroupCount(part_t *grp_count) const {
+      return false;
     }
 
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
