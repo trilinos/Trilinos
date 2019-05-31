@@ -464,6 +464,8 @@ void ILUT<MatrixType>::compute ()
     const scalar_type one  = STS::one ();
 
     const local_ordinal_type myNumRows = A_local_->getNodeNumRows ();
+    L_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 0));
+    U_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 0));
 
     // CGB: note, this caching approach may not be necessary anymore
     // We will store ArrayView objects that are views of the rows of U, so that
@@ -494,11 +496,6 @@ void ILUT<MatrixType>::compute ()
     // row, half in L and half in U.
     size_type fillL = static_cast<size_type>(fill_ceil);
     size_type fillU = static_cast<size_type>(fill_ceil);
-
-    L_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 
-                                   A_local_->getGlobalMaxNumRowEntries () + fillL));
-    U_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 
-                                   A_local_->getGlobalMaxNumRowEntries () + fillU));
 
     Array<scalar_type> InvDiagU (myNumRows, zero);
 
