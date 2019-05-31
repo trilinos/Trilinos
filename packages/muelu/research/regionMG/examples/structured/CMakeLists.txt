@@ -47,5 +47,37 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     NUM_MPI_PROCS 4
     )
 
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Brick3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Brick3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Linear_Brick3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Linear_Brick3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
 ENDIF()
 
