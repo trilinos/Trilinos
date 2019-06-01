@@ -230,7 +230,7 @@ void StepperExplicitRK<Scalar>::setObserver(
       Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> >
       (obs));
   }
-  
+
 }
 
 
@@ -246,9 +246,9 @@ void StepperExplicitRK<Scalar>::initialize()
     "Error - Need to set the model, setModel(), before calling "
     "StepperExplicitRK::initialize()\n");
 
-  //this->setTableau(stepperPL_);
-  //this->setParameterList(stepperPL_);
-  //this->setObserver();
+  this->setTableau(this->stepperPL_);
+  this->setParameterList(this->stepperPL_);
+  this->setObserver();
 
   // Initialize the stage vectors
   int numStages = ERK_ButcherTableau_->numStages();
@@ -290,8 +290,6 @@ void StepperExplicitRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
-
-  //throw(std::runtime_error("Tempus::takeStep!!!"));
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExplicitRK::takeStep()");
   {
