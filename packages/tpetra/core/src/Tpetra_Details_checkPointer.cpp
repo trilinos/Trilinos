@@ -39,11 +39,9 @@
 
 #include "Tpetra_Details_checkPointer.hpp"
 #include "Kokkos_Core.hpp"
-#include "Teuchos_TestForException.hpp"
 #ifdef HAVE_TPETRACORE_CUDA
 # include "cuda_runtime_api.h"
 #endif // HAVE_TPETRACORE_CUDA
-#include <stdexcept>
 
 namespace Tpetra {
 namespace Details {
@@ -61,7 +59,8 @@ EMemoryType getCudaMemoryType (const void* ptr)
 {
 #ifdef HAVE_TPETRACORE_CUDA
   cudaPointerAttributes attr;
-  cudaError_t err = cudaPointerGetAttributes (&attr, ptr);
+  const cudaError_t err = cudaPointerGetAttributes (&attr, ptr);
+  (void) cudaGetLastError (); // reset error state for future CUDA ops
 
   if (err == cudaErrorInvalidValue) {
     // CUDA 11.0 supports passing in an unregistered host pointer.  In
@@ -72,17 +71,7 @@ EMemoryType getCudaMemoryType (const void* ptr)
     return EMemoryType::HOST;
   }
   else if (err != cudaSuccess) {
-    std::string errStr;
-    if (err == cudaErrorInvalidDevice) {
-      errStr = "cudaErrorInvalidDevice";
-    }
-    else {
-      errStr = "unknown";
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (true, std::runtime_error, "Tpetra::Details::Impl::getCudaMemoryType: "
-       "cudaPointerGetAttributes returned an error code err = " << errStr
-       << " != cudaSuccess.");
+    return EMemoryType::ERROR;
   }
 
 # if 1
