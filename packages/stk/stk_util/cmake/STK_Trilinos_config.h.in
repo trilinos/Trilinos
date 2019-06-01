@@ -36,7 +36,6 @@
 
 #cmakedefine STK_SHOW_DEPRECATED_WARNINGS
 
-/* Define to indicate that the STKIO subpackage is enabled */
 #cmakedefine STK_HAVE_BOOST
 #cmakedefine STK_HAVE_BOOSTLIB
 
