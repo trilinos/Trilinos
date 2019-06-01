@@ -83,7 +83,7 @@ TEST(stkMeshHowTo, simdSimdTest)
     stk::simd::store(&solution[n],zl);
   }  
 
-  const double epsilon = std::numeric_limits<double>::epsilon();
+  const double epsilon = 1.e-14;
   for (int n=0; n < N; ++n) {
     EXPECT_NEAR( std::abs(x[n]) * std::exp(y[n]), solution[n], epsilon );
   }

@@ -37,7 +37,15 @@
 #define stk_util_config_h
 
 #ifdef STK_BUILT_IN_SIERRA
+
 #define STK_HAS_MPI
+#define STK_HAVE_BOOST
+#define STK_HAVE_BOOSTLIB
+#define STK_HAVE_KOKKOSCORE
+#define STK_HAVE_STKMESH
+#define STK_HAVE_STKIO
+#define STK_HAVE_STKNGP_TEST
+
 #else
 // This file gets created by cmake during a Trilinos build
 // and will not be present in a sierra build using bjam or associated wrappers

@@ -42,6 +42,12 @@ INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/stk_util)
 
 FILE(GLOB SOURCES diag/*.cpp environment/*.cpp util/*.cpp *.cpp)
 
+IF(NOT TPL_ENABLE_BoostLib)
+IF(NOT ${PACKAGE_NAME}_ENABLE_BoostLib)
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/schedulerTest.cpp")
+ENDIF()
+ENDIF()
+
 if ( TPL_ENABLE_MPI )
   APPEND_SET( SOURCES
     UnitTestParallel.cpp

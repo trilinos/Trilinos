@@ -7,7 +7,7 @@
 #include <stk_simd_view/simd_while.hpp>
 #include <cmath>
 #include <algorithm>
-#include <unit_tests/StkSimdViewFixture.hpp>
+#include <StkSimdViewFixture.hpp>
 
 
 stk::simd::View<double*[3]> create_velocity_field(int numNodes) {
