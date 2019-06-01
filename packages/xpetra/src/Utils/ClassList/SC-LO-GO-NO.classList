@@ -11,6 +11,7 @@
 #MultiVectorFactory
 #Operator
 #ReorderedBlockedCrsMatrix
+TpetraBlockCrsMatrix
 TpetraCrsMatrix
 ##TpetraVbrMatrix
 ##VbrMatrix
