@@ -223,12 +223,12 @@ void StepperExplicitRK<Scalar>::setObserver(
       stepperExplicitRKObserver_->addObserver(stepperExplicitRKObserver);
       stepperObserver_->addObserver(
         Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-	(stepperExplicitRKObserver));
+	(stepperExplicitRKObserver, true));
   } else {
     stepperObserver_->addObserver(obs);
     stepperExplicitRKObserver_->addObserver(
       Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> >
-      (obs));
+      (obs, true));
   }
 
 }
