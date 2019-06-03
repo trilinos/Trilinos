@@ -320,7 +320,7 @@ namespace MueLuTests {
 
     RHS->putScalar( (Scalar) 0.0);
 
-    int iterations=10;
+    int iterations=15;
     H.Iterate(*RHS, *X, iterations);
 
     X->norm2(norms);
@@ -430,7 +430,7 @@ namespace MueLuTests {
 
     RHS->putScalar( (Scalar) 0.0);
 
-    int iterations=10;
+    int iterations=15;
     H.Iterate(*RHS, *X, iterations);
 
     X->norm2(norms);
