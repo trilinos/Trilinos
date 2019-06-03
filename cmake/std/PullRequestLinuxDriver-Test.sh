@@ -280,6 +280,20 @@ elif [ "Trilinos_pullrequest_intel_17.0.1" == "${JOB_BASE_NAME:?}" ] ; then
         echo -e "There was an issue loading the intel environment. The error code was: $ierror"
         exit $ierror
     fi
+elif [ "Trilinos_pullrequest_python_2" == "${JOB_BASE_NAME:?}" ]; then
+    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestPython2TestingEnv.sh
+    ierror=$?
+    if [[ $ierror != 0 ]]; then
+        echo -e "There was an issue loading the python2 environment. The error code was: $ierror"
+        exit $ierror
+    fi
+elif [ "Trilinos_pullrequest_python_3" == "${JOB_BASE_NAME:?}" ]; then
+    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestPython3TestingEnv.sh
+    ierror=$?
+    if [[ $ierror != 0 ]]; then
+        echo -e "There was an issue loading the python3 environment. The error code was: $ierror"
+        exit $ierror
+    fi
 else
     ierror=42
     echo -e "ERROR: Unable to find matching environment for job: ${JOB_BASE_NAME:?}"
