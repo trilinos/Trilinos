@@ -85,15 +85,16 @@ C************************************************************************
 C
 C  Zero matrix
 C
-      DO 10 I = 1,3
-      DO 10 J = 1,3
-        S(I,J) = 0.D+00
-   10 CONTINUE
+      DO I = 1,3
+         DO J = 1,3
+            S(I,J) = 0.D+00
+         end do
+      end do
 C
 C  Set up matrix for linear fit
 C
       S(1,1) = DBLE(INVLEN)
-      DO 20 I = 1, INVLEN
+      DO I = 1, INVLEN
         S(1,2) = S(1,2) + DBLE(XA(IGLND) - CNTRA(INVCN(I,NOD),1))
         S(1,3) = S(1,3) + DBLE(YA(IGLND) - CNTRA(INVCN(I,NOD),2))
         S(2,2) = S(2,2) + DBLE((XA(IGLND) - CNTRA(INVCN(I,NOD),1)) *
@@ -102,7 +103,7 @@ C
      &                    (XA(IGLND) - CNTRA(INVCN(I,NOD),1)))
         S(3,3) = S(3,3) + DBLE((YA(IGLND) - CNTRA(INVCN(I,NOD),2)) *
      &                    (YA(IGLND) - CNTRA(INVCN(I,NOD),2)))
-   20 CONTINUE
+      end do
       S(2,1) = S(1,2)
       S(3,1) = S(1,3)
       S(3,2) = S(2,3)
@@ -113,18 +114,18 @@ C
 C
 C  Set up load vectors - number of element variables
 C
-      DO 30 IVAR = 1, NVAREL
+      DO IVAR = 1, NVAREL
         IF (ITT(IVAR,iblk) .EQ. 0)GO TO 30
         F(1) = 0.D+00
         F(2) = 0.D+00
         F(3) = 0.D+00
-        DO 40 I = 1, INVLEN
+        DO I = 1, INVLEN
           F(1) = F(1) + DBLE(SOLEA(INVCN(I,NOD),IVAR))
           F(2) = F(2) + DBLE(SOLEA(INVCN(I,NOD),IVAR) *
      &                  (XA(IGLND) - CNTRA(INVCN(I,NOD),1)))
           F(3) = F(3) + DBLE(SOLEA(INVCN(I,NOD),IVAR) *
      &                  (YA(IGLND) - CNTRA(INVCN(I,NOD),2)))
-   40   CONTINUE
+       end do
 C
 C  Back substitution (Kincaid pg. 223) (double precision)
 C
@@ -136,6 +137,7 @@ C        interpolated to (IGLND), thus X and Y are zero in the eq.
 C        Value = X(1) + X(2) * X + X(3) * Y
 C
         SOLENA(IGLND,IVAR) = SNGL(X(1))
+      end do
    30 CONTINUE
       RETURN
       END

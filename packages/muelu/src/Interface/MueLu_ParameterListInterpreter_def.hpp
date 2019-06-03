@@ -1,4 +1,3 @@
-
 //
 // ***********************************************************************
 //
@@ -1059,6 +1058,8 @@ namespace MueLu {
     } else {
       RAP = rcp(new RAPFactory());
     }
+
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: relative diagonal floor", Teuchos::Array<double>, RAPparams);
 
     if (paramList.isSublist("matrixmatrix: kernel params"))
       RAPparams.sublist("matrixmatrix: kernel params", false) = paramList.sublist("matrixmatrix: kernel params");

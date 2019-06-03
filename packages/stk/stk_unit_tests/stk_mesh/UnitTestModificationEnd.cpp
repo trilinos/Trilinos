@@ -66,6 +66,7 @@
 #include "stk_mesh/base/SkinMesh.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include <stk_unit_test_utils/BulkDataTester.hpp>
+#include "stk_unit_test_utils/TextMesh.hpp"
 #include "UnitTestModificationEnd.hpp"
 
 #include <stdio.h> // getline
@@ -960,6 +961,118 @@ TEST(ModEndForEntityCreation, DISABLED_promotion_of_ghosted_to_shared)
     EXPECT_EQ( 4u, localCounts[stk::topology::EDGE_RANK]);
     EXPECT_EQ( 1u, localCounts[stk::topology::FACE_RANK]);
     EXPECT_EQ( 0u, localCounts[stk::topology::ELEM_RANK]);
+}
+
+TEST(TestModificationEnd, destroySharedNode_twoSharers_deinducePartMembership)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  stk::mesh::MetaData meta(2);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
+                         "1,2,QUAD_4_2D,2,3,6,5,block_2";
+  std::vector<double> coordinates;
+  if (bulk.parallel_rank() == 0) {
+    coordinates = { 0,0, 1,0, 0,1, 1,1 };
+  }
+  else {
+    coordinates = { 1,0, 2,0, 1,1, 2,1 };
+  }
+  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+
+  bulk.modification_begin();
+  if (bulk.parallel_rank() == 1) {
+    bulk.destroy_entity(bulk.get_entity(stk::topology::ELEM_RANK, 2));
+    bulk.destroy_entity(bulk.get_entity(stk::topology::NODE_RANK, 2));
+    bulk.destroy_entity(bulk.get_entity(stk::topology::NODE_RANK, 3));
+    bulk.destroy_entity(bulk.get_entity(stk::topology::NODE_RANK, 6));
+    bulk.destroy_entity(bulk.get_entity(stk::topology::NODE_RANK, 5));
+  }
+  bulk.modification_end();
+
+  if (bulk.parallel_rank() == 0) {
+    const stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+    const stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
+    const stk::mesh::Part & block1 = *meta.get_part("BLOCK_1");
+    const stk::mesh::Part & block2 = *meta.get_part("BLOCK_2");
+
+    EXPECT_TRUE (bulk.bucket(node2).member(block1));
+    EXPECT_FALSE(bulk.bucket(node2).member(block2));
+
+    EXPECT_TRUE (bulk.bucket(node5).member(block1));
+    EXPECT_FALSE(bulk.bucket(node5).member(block2));
+  }
+}
+
+TEST(TestModificationEnd, destroySharedNode_threeSharers_deinducePartMembership)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 3) return;
+
+  stk::mesh::MetaData meta(2);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
+                         "1,2,QUAD_4_2D,2,3,6,5,block_2\n"
+                         "2,3,QUAD_4_2D,4,5,8,7,block_3";
+  std::vector<double> coordinates;
+  if (bulk.parallel_rank() == 0) {
+    coordinates = { 0,0, 1,0, 0,1, 1,1 };
+  }
+  else if (bulk.parallel_rank() == 1) {
+    coordinates = { 1,0, 2,0, 1,1, 2,1 };
+  }
+  else if (bulk.parallel_rank() == 2) {
+    coordinates = { 0,1, 1,1, 0,2, 1,2 };
+  }
+  stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, bulk);
+
+  bulk.modification_begin();
+  if (bulk.parallel_rank() == 2) {
+    bulk.destroy_entity(bulk.get_entity(stk::topology::ELEM_RANK, 3));
+    bulk.destroy_entity(bulk.get_entity(stk::topology::NODE_RANK, 4));
+    bulk.destroy_entity(bulk.get_entity(stk::topology::NODE_RANK, 5));
+    bulk.destroy_entity(bulk.get_entity(stk::topology::NODE_RANK, 7));
+    bulk.destroy_entity(bulk.get_entity(stk::topology::NODE_RANK, 8));
+  }
+  bulk.modification_end();
+
+  if (bulk.parallel_rank() == 0) {
+    const stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+    const stk::mesh::Entity node4 = bulk.get_entity(stk::topology::NODE_RANK, 4);
+    const stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
+    const stk::mesh::Part & block1 = *meta.get_part("BLOCK_1");
+    const stk::mesh::Part & block2 = *meta.get_part("BLOCK_2");
+    const stk::mesh::Part & block3 = *meta.get_part("BLOCK_3");
+
+    EXPECT_TRUE(bulk.bucket(node2).member(block1));
+    EXPECT_TRUE(bulk.bucket(node2).member(block2));
+
+    EXPECT_TRUE (bulk.bucket(node4).member(block1));
+    EXPECT_FALSE(bulk.bucket(node4).member(block3));
+
+    EXPECT_TRUE (bulk.bucket(node5).member(block1));
+    EXPECT_TRUE (bulk.bucket(node5).member(block2));
+    EXPECT_FALSE(bulk.bucket(node5).member(block3));
+  }
+  else if (bulk.parallel_rank() == 1) {
+    const stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+    const stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
+    const stk::mesh::Part & block1 = *meta.get_part("BLOCK_1");
+    const stk::mesh::Part & block2 = *meta.get_part("BLOCK_2");
+    const stk::mesh::Part & block3 = *meta.get_part("BLOCK_3");
+
+    EXPECT_TRUE(bulk.bucket(node2).member(block1));
+    EXPECT_TRUE(bulk.bucket(node2).member(block2));
+
+    EXPECT_TRUE (bulk.bucket(node5).member(block1));
+    EXPECT_TRUE (bulk.bucket(node5).member(block2));
+    EXPECT_FALSE(bulk.bucket(node5).member(block3));
+  }
+  else if (bulk.parallel_rank() == 2) {
+    const stk::mesh::Entity node4 = bulk.get_entity(stk::topology::NODE_RANK, 4);
+    const stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
+    EXPECT_FALSE(bulk.is_valid(node4));
+    EXPECT_FALSE(bulk.is_valid(node5));
+  }
 }
 
 } } } // namespace stk mesh unit_test

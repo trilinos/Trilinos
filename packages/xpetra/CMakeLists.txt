@@ -14,9 +14,16 @@ DUAL_SCOPE_SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PACKAGE_SOURCE_DIR}/cmak
 # B) Set up package-specific options
 #
 
-TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
+# ETI requires that Tpetra is enabled.
+IF( DEFINED ${PROJECT_NAME}_ENABLE_Tpetra AND ${${PACKAGE_NAME}_ENABLE_Tpetra} )
+  TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+ELSE()
+  MESSAGE( STATUS "Xpetra: Skipping ETI check because Tpetra is not enabled." )
+  SET( HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION OFF BOOL "Set to OFF by CMake because Tpetra isn't enabled" )
+ENDIF()
 
 # Deperecation stuff
 SET (${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE_DEFAULT ON)
@@ -113,6 +120,7 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
   # Does Tpetra provide LocalOrdinal = int and GlobalOrdinal = long long?
   ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
+  ASSERT_DEFINED(Tpetra_INST_INT_INT)
   GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG ${Tpetra_INST_INT_LONG_LONG})
 ELSE () # Tpetra NOT enabled
   IF (${PACKAGE_NAME}_ENABLE_Epetra)
@@ -131,10 +139,26 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
   IF(NOT ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
     MESSAGE("-- Xpetra support for 32 bit Epetra enabled.")
     MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
+    
+    # Tpetra and Epetra need to match GO types
+    IF(${PACKAGE_NAME}_ENABLE_Tpetra)
+      IF(NOT Tpetra_INST_INT_INT)
+        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 32-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_INT")
+      ENDIF()
+    ENDIF()
+
   ENDIF()
   IF(NOT ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
     MESSAGE("-- Xpetra support for 64 bit Epetra enabled.")
     MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
+
+    # Tpetra and Epetra need to match GO types
+    IF(${PACKAGE_NAME}_ENABLE_Tpetra)
+      IF(NOT Tpetra_INST_INT_LONG_LONG)
+        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 64-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_LONG_LONG")
+      ENDIF()
+    ENDIF()
+
   ENDIF()
 ENDIF()
 

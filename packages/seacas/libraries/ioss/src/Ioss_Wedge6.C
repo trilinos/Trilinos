@@ -40,6 +40,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Wedge6::name = "wedge6";
   class St_Wedge6 : public ElementVariableType
   {
   public:

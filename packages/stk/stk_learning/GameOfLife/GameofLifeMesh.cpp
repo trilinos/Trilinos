@@ -184,7 +184,7 @@ void TwoDimGameofLifeMesh::share_node_with_this_id_to_this_processor(unsigned no
 TriGameofLifeMesh::TriGameofLifeMesh(stk::ParallelMachine comm, unsigned width,
                                          unsigned height,
                                          stk::mesh::BulkData::AutomaticAuraOption auraOption)
-:TwoDimGameofLifeMesh(comm, stk::topology::TRIANGLE_3, width, height, auraOption)
+:TwoDimGameofLifeMesh(comm, stk::topology::TRI_3_2D, width, height, auraOption)
 {
     m_elemsPerRow = 2*m_width;
     m_elemProcOffset = m_procRank*m_elemsPerRow*m_rowsPerProc;
@@ -240,7 +240,7 @@ void TriGameofLifeMesh::declare_node_ids_of_this_element(unsigned index)
 //Quad Game of Life Mesh
 QuadGameofLifeMesh::QuadGameofLifeMesh(stk::ParallelMachine comm, unsigned width, unsigned height,
                                  stk::mesh::BulkData::AutomaticAuraOption auraOption)
-:TwoDimGameofLifeMesh(comm, stk::topology::QUAD_4, width, height, auraOption)
+:TwoDimGameofLifeMesh(comm, stk::topology::QUAD_4_2D, width, height, auraOption)
 {
     m_elemsPerRow = m_width;
     if (m_numProcs - 1 == m_procRank)

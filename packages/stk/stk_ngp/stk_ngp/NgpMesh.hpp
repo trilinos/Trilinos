@@ -816,7 +816,7 @@ private:
 
     void set_bucket_entity_offsets(const stk::mesh::BulkData& bulk_in)
     {
-        stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
+        const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
         for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
         {
             const stk::mesh::BucketVector& stkBuckets = bulk_in.buckets(rank);
@@ -982,7 +982,7 @@ private:
     void copy_bucket_entity_offsets_to_device()
     {
         stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
-        for(stk::mesh::EntityRank rank=stk::topology::EDGE_RANK; rank<endRank; rank++)
+        for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
         {
             Kokkos::deep_copy(bucketEntityOffsets[rank], hostBucketEntityOffsets[rank]);
         }

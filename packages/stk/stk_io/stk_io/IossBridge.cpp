@@ -2997,6 +2997,22 @@ namespace stk {
         write_file_for_subdomain(out_region, bulkData, nodeSharingInfo, numSteps, timeStep);
     }
 
+
+    const stk::mesh::Part* get_parent_element_block_by_adjacency(const stk::mesh::BulkData& bulk,
+                                                                 const std::string& name,
+                                                                 const stk::mesh::Part* parent_element_block)
+    {
+      const stk::mesh::Part* part = bulk.mesh_meta_data().get_part(name);
+      if (part != nullptr) {
+        std::vector<const stk::mesh::Part*> touching_parts = bulk.mesh_meta_data().get_blocks_touching_surface(part);
+        if (touching_parts.size() == 1) {
+          parent_element_block = touching_parts[0];
+        }
+      }
+      return parent_element_block;
+    }
+
+
     const stk::mesh::Part* get_parent_element_block(const stk::mesh::BulkData &bulk,
                                                     const Ioss::Region &ioRegion,
                                                     const std::string& name)
@@ -3035,17 +3051,11 @@ namespace stk {
                             parent_element_block = elementBlock;
                     }
                 } else {
-                    const stk::mesh::Part* part = bulk.mesh_meta_data().get_part(name);
-
-                    if(part != nullptr) {
-                        std::vector<const stk::mesh::Part*> touching_parts =
-                                bulk.mesh_meta_data().get_blocks_touching_surface(part);
-
-                        if(touching_parts.size() == 1) {
-                            parent_element_block = touching_parts[0];
-                        }
-                    }
+                    parent_element_block = get_parent_element_block_by_adjacency(bulk, name, parent_element_block);
                 }
+            }
+            else {
+                parent_element_block = get_parent_element_block_by_adjacency(bulk, name, parent_element_block);
             }
         }
         return parent_element_block;

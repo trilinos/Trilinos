@@ -36,16 +36,16 @@ ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
 if ( TPL_ENABLE_MPI )
   ADD_SUBDIRECTORY(parallel)
+  FILE(GLOB SOURCES diag/*.cpp environment/*.cpp util/*.cpp *.cpp)
+ELSE()
+  FILE(GLOB SOURCES util/*.cpp)
 ENDIF()
 
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/stk_util)
 
-FILE(GLOB SOURCES diag/*.cpp environment/*.cpp util/*.cpp *.cpp)
 
-if ( TPL_ENABLE_MPI )
-  APPEND_SET( SOURCES
-    UnitTestParallel.cpp
-  )
+IF(NOT TPL_ENABLE_BoostLib)
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/schedulerTest.cpp")
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

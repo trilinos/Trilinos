@@ -188,13 +188,11 @@ public:
 
   // Misc functions:
 
-  virtual void Display(std::ostream & /*s*/ = std::cout) const;
-  virtual void Display_Maps(std::ostream & /*s*/ = std::cout) const;
-  virtual int  Check_State() const;                           // Checks state of obj (not the file).
-  int          File_ID() const { return file_id; }            // This is temporary.
-  std::string  Global_to_Block_Local(size_t  global_elmt_num, // 1-offset
-                                     int &   block_index,     // 0-offset
-                                     size_t &local_elmt_index) const; // 0-offset
+  virtual int Check_State() const;                           // Checks state of obj (not the file).
+  int         File_ID() const { return file_id; }            // This is temporary.
+  std::string Global_to_Block_Local(size_t  global_elmt_num, // 1-offset
+                                    int &   block_index,     // 0-offset
+                                    size_t &local_elmt_index) const; // 0-offset
 
 protected:
   std::string file_name;

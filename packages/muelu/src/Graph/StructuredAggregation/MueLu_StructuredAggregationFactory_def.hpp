@@ -305,6 +305,7 @@ namespace MueLu {
       myStructuredAlgorithm = rcp(new AggregationStructuredAlgorithm(graphFact));
 
     if(interpolationOrder == 0 && outputAggregates){
+      // Create aggregates for prolongation
       RCP<Aggregates> aggregates = rcp(new Aggregates(graph->GetDomainMap()));
       aggregates->setObjectLabel("ST");
       aggregates->SetIndexManager(geoData);
@@ -323,7 +324,7 @@ namespace MueLu {
       Set(currentLevel, "Aggregates", aggregates);
 
     } else {
-      // Create Coarse Data
+      // Create the graph of the prolongator
       RCP<CrsGraph> myGraph;
       myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph,
                                         coarseCoordinatesFineMap, coarseCoordinatesMap);

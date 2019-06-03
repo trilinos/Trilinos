@@ -33,6 +33,9 @@
 #ifndef STK_PARALLEL_GTEST_OUTPUT_H
 #define STK_PARALLEL_GTEST_OUTPUT_H
 
+#include <stk_util/stk_config.h>
+
+#ifdef STK_HAS_MPI
 #include "mpi.h"
 
 namespace stk
@@ -46,5 +49,6 @@ void create_parallel_output_with_comm(int procId, MPI_Comm comm);
 }
 }
 
+#endif
 
 #endif

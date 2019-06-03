@@ -31,6 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include "iqsort.h"
+#if defined(DEBUG_QSORT)
+#include <fmt/ostream.h>
+#endif
 
 namespace {
   template <typename INT> void swap_(INT v[], size_t i, size_t j);
@@ -155,7 +158,7 @@ namespace {
   template <typename T, typename INT> void check(const T v[], INT iv[], size_t N)
   {
 #if defined(DEBUG_QSORT)
-    std::cerr << "Checking sort of " << N + 1 << " values\n";
+    fmt::print(stderr, "Checking sort of {:n} values\n", N + 1);
     size_t i;
     for (i = 1; i < N; i++) {
       SMART_ASSERT(v[iv[i - 1]] <= v[iv[i]]);

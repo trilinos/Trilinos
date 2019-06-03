@@ -223,12 +223,9 @@ MockModelEval_A_Tpetra::createInArgs() const
 
 void
 MockModelEval_A_Tpetra::reportFinalPoint(
-    const Thyra::ModelEvaluatorBase::InArgs<double>& finalPoint,
-    const bool wasSolved) {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      true,
-      Teuchos::Exceptions::InvalidParameter,
-      "Calling reportFinalPoint in " << __FILE__ << " line " << __LINE__ << std::endl);
+    const Thyra::ModelEvaluatorBase::InArgs<double>& /* finalPoint */,
+    const bool /* wasSolved */) {
+  // Do nothing  
 }
 
 Thyra::ModelEvaluatorBase::OutArgs<double>
