@@ -67,13 +67,13 @@ function framework_tests_only()
     pkg_file=${1:?}
     framework_enables="
 MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
-  MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
-  SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in packageEnables.cmake")
+  MESSAGE(\"-- Setting ${VAR_NAME} = ${VAR_VAL}\")
+  SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL \"Set in packageEnables.cmake\")
 ENDMACRO()
 
 PR_ENABLE_BOOL(Trilinos_ENABLE_TrilinosFrameworkTests ON)
 "
-    cat ${framework_enables} > ${pkg_file}
+    echo ${framework_enables} > ${pkg_file}
 }
 
 
