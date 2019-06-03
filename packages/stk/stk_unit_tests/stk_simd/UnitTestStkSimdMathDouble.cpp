@@ -832,14 +832,15 @@ TEST(StkSimd, SimdLog)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real Log took " << t0 << " seconds" <<  std::endl;
 
+  const double epsilon = 1.e-14;
   double maxerr = 0.0;
   for (int n=0; n < N; ++n) {
     double err = stk::math::abs(out1[n]-out2[n]);
-    ASSERT_NEAR( err, 0.0, 2*std::numeric_limits<double>::epsilon()) << "n = " << n;
+    ASSERT_NEAR( err, 0.0, epsilon) << "n = " << n;
     maxerr = stk::math::max(err, maxerr);
   }
 
-  ASSERT_NEAR( maxerr, 0.0, 2*std::numeric_limits<double>::epsilon() ); 
+  ASSERT_NEAR( maxerr, 0.0, epsilon); 
 }
 
 TEST(StkSimd, SimdExp) 

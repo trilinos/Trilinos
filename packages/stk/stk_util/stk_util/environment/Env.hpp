@@ -71,6 +71,25 @@ std::string format_time(double t, const char *format = "%b %e %Y %H:%M:%S");
 ///
 namespace Env {
 
+/**
+ * @ingroup EnvRuntimeInformationDetail
+ * @brief Member function <b>wall_now</b> returns the epoch as a double precision
+ * value in seconds to "millisecond" accuracy.
+ *
+ * @return a <b>double</b> ...
+ */
+double wall_now();
+
+
+/**
+ * @ingroup EnvRuntimeInformationDetail
+ * @brief Member function <b>cpu_now</b> returns the accumlated cpu time for the
+ * process as a double precision value in seconds to "millisecond" accuracy.
+ *
+ * @return a <b>double</b> ...
+ */
+double cpu_now();
+
 static const std::string PARAM_ON = "on";  ///< Option value when command line option specified without a parameter
 
 ///
@@ -189,25 +208,6 @@ const std::string &startup_date();
  */
 double start_time();
 
-
-/**
- * @ingroup EnvRuntimeInformationDetail
- * @brief Member function <b>wall_now</b> returns the epoch as a double precision
- * value in seconds to "millisecond" accuracy.
- *
- * @return a <b>double</b> ...
- */
-double wall_now();
-
-
-/**
- * @ingroup EnvRuntimeInformationDetail
- * @brief Member function <b>cpu_now</b> returns the accumlated cpu time for the
- * process as a double precision value in seconds to "millisecond" accuracy.
- *
- * @return a <b>double</b> ...
- */
-double cpu_now();
 
 
 /**

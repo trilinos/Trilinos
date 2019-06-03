@@ -334,6 +334,7 @@ template<typename T>
 void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
                               std::vector< std::vector<T> > &recv_lists,
                               MPI_Comm &mpi_communicator ) {
+#ifdef STK_HAS_MPI
   //
   //  Determine the number of processors involved in this communication
   //
@@ -379,6 +380,7 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
       MPI_Wait( &recv_handles[iproc], &status );
     }
   }
+#endif
 }
 
 //

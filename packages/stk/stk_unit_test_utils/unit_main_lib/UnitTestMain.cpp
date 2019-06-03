@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include <stk_util/stk_config.h>
 #include <gtest/gtest.h>                // for InitGoogleTest, etc
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_unit_test_utils/ParallelGtestOutput.hpp>
@@ -49,8 +50,10 @@ int main(int argc, char **argv)
     gl_argc = argc;
     gl_argv = argv;
 
+#ifdef STK_HAS_MPI
     int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);
     stk::unit_test_util::create_parallel_output(procId);
+#endif
 
     int returnVal = testEnv.run_all_tests();
 

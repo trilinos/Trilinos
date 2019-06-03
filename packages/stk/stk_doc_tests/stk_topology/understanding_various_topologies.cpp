@@ -31,6 +31,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <stk_util/stk_config.h>
+
+#ifdef STK_HAVE_STKIO
+
 #include <gtest/gtest.h>
 #include <stk_topology/topology.hpp>
 #include <Ioss_Utils.h>
@@ -123,3 +127,6 @@ TEST(Understanding, sierra_topologies)
 //End documentation test here
 
 }
+
+#endif
+
