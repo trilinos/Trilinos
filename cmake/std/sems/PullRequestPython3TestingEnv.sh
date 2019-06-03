@@ -36,7 +36,12 @@ module load atdm-ninja_fortran/1.7.2
 # the boost module above for whaever reason - reset it
 # to one that has the proper sym-links from python -> python3
 module unload sems-python
-module load sierra-python/3.6.3
+# module load sierra-python/3.6.3 - permissions do not allow this, but the execs are ok
+PATH=/projects/sierra/linux_rh7/install/Python/3.6..3/bin:${PATH}
+PATH=/projects/sierra/linux_rh7/install/Python/extras/bin:${PATH}
+PYTHONPATH=/projects/sierra/linux_rh7/install/Python/extras/lib/python3.6/site-packages:${PYTHONPATH}
+MANPATH=/projects/sierra/linux_rh7/install/Python/3.6.3/share/man:${MANPATH}
+unset PYTHONHOME 
 
 # add the OpenMP environment variable we need
 export OMP_NUM_THREADS=2
