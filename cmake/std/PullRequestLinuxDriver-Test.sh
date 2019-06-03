@@ -62,6 +62,20 @@ function test_pr_constraints_master()
 }
 
 
+function framework_tests_only()
+{
+    pkg_file=${1:?}
+    framework_enables="
+MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
+  MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
+  SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in packageEnables.cmake")
+ENDMACRO()
+
+PR_ENABLE_BOOL(Trilinos_ENABLE_TrilinosFrameworkTests ON)
+"
+    cat ${framework_enables} > ${pkg_file}
+}
+
 
 # This script expects to start out in the root level of the Jenkins workspace.
 # Let's make sure we're there.
@@ -380,6 +394,12 @@ else
         CONFIG_SCRIPT=PullRequestLinuxGCC7.3.0TestingSettings.cmake
     elif [ "Trilinos_pullrequest_cuda_9.2" == "${JOB_BASE_NAME:?}" ]; then
         CONFIG_SCRIPT=PullRequestLinuxCuda9.2TestingSettings.cmake
+    elif [ "Trilinos_pullrequest_python_2" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxPython2.cmake
+        framework_tests_only ../packageEnables.cmake
+    elif [ "Trilinos_pullrequest_python_3" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxPython3.cmake
+        framework_tests_only ../packageEnables.cmake
     fi
 fi
 
