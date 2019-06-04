@@ -65,7 +65,7 @@ else
 fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
-<<<<<<< HEAD
+
   SPACK_GCC_COMPILER_TO_LOAD=`module avail 2>&1 | grep spack-gcc/7.2.0`
   module load ${SPACK_GCC_COMPILER_TO_LOAD}
   export OMPI_CXX=`which g++`
@@ -94,24 +94,6 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
   module load gcc-7.2.0/spack-cgns/snl-atdm
   module load gcc-7.2.0/spack-superlu-dist/6.1.0
 
-=======
-    SPACK_GCC_COMPILER_TO_LOAD=`module avail 2>&1 | grep spack-gcc/7.2.0`
-    module load ${SPACK_GCC_COMPILER_TO_LOAD}
-    module load gcc-7.2.0/spack-binutils/2.31.1
-    export OMPI_CXX=`which g++`
-
-    module load gcc-7.2.0/spack-netlib-lapack/3.8.0
-    export BLAS_ROOT=$NETLIB_LAPACK_ROOT
-    export LAPACK_ROOT=$NETLIB_LAPACK_ROOT
-
-#    export LAPACK_ROOT=/usr/lib64/atlas
-    export OMPI_CC=`which gcc`
-    export OMPI_FC=`which gfortran`
-#    export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-#    export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
-    export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib64;-llapack"
-    export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib64;-lblas"
->>>>>>> ecd3c8e... Load gcc@7.2.0 built with native compiler, comment out debug echos
 else
   echo
   echo "***"
