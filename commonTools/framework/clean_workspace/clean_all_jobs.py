@@ -23,7 +23,7 @@ class CleanReference(object):
         """Run the actual routine in clean_sentinel"""
         try:
             set_reference_date()
-        except StandardError as e:
+        except BaseException as e:
             print(e.args, file=sys.stderr)
             sys.exit()
         except pickle.PicklingError:

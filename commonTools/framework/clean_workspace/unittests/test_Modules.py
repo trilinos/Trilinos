@@ -9,8 +9,16 @@ sys.dont_write_bytecode = True
 
 import os
 import unittest
-import mock
-from cStringIO import StringIO
+try:
+    import mock
+except ImportError:
+    import unittest.mock as mock
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), os.pardir))
 import Modules
@@ -23,15 +31,29 @@ class TestModules(unittest.TestCase):
         modules_home = {'MODULESHOME': '/dummy/path/1'}
         which_side_effects = ['/path/to/modulecmd', None, None]
         find_side_effects = [None, '/fake/path/modules/init/python.py']
-        with mock.patch.dict(os.environ, modules_home), \
-                mock.patch('Modules.which',
-                           side_effect=which_side_effects), \
-                mock.patch('Modules.find_first_binary',
-                           return_value='/fake/path/modulecmd'), \
-                mock.patch('Modules.find_file_in_list',
-                           side_effect=find_side_effects), \
-                mock.patch('__builtin__.execfile'):
-            self.module_obj = Modules.Module()
+        major_version = sys.version_info[0]
+        if major_version is 3:
+            with mock.patch.dict(os.environ, modules_home), \
+                    mock.patch('Modules.which',
+                               side_effect=which_side_effects), \
+                    mock.patch('Modules.find_first_binary',
+                               return_value='/fake/path/modulecmd'), \
+                    mock.patch('Modules.find_file_in_list',
+                               side_effect=find_side_effects), \
+                    mock.patch('Modules.open'), \
+                    mock.patch('Modules.compile', return_value=''):
+                self.module_obj = Modules.Module()
+        elif major_version is 2:
+            with mock.patch.dict(os.environ, modules_home), \
+                    mock.patch('Modules.which',
+                               side_effect=which_side_effects), \
+                    mock.patch('Modules.find_first_binary',
+                               return_value='/fake/path/modulecmd'), \
+                    mock.patch('Modules.find_file_in_list',
+                               side_effect=find_side_effects), \
+                    mock.patch('Modules.open'), \
+                    mock.patch('Modules.compile', return_value=''):
+                self.module_obj = Modules.Module()
 
     def test_module_setup(self):
         """Test ability to instantiate the class"""
@@ -45,9 +67,10 @@ class TestModules(unittest.TestCase):
                            return_value='/fake/path/modulecmd'), \
                 mock.patch('Modules.find_file_in_list',
                            side_effect=find_side_effects), \
-                mock.patch('__builtin__.execfile') as mock_exec:
+                mock.patch('Modules.open') as mock_open, \
+                mock.patch('Modules.compile', return_value=""):
             result = Modules.Module()
-        mock_exec.assert_called_once_with(find_side_effects[-1])
+        mock_open.assert_called_once_with(find_side_effects[-1], 'r')
         self.assertEqual('/fake/path/modulecmd', result.command)
         self.assertEqual('modulecmd', result.command_name)
         self.assertEqual('/fake/path/modules/init/python.py', result.init_file)
@@ -64,9 +87,10 @@ class TestModules(unittest.TestCase):
                            return_value='/fake/path/lmodcmd'), \
                 mock.patch('Modules.find_file_in_list',
                            side_effect=find_side_effects), \
-                mock.patch('__builtin__.execfile') as mock_exec:
+                mock.patch('Modules.open') as mock_open, \
+                mock.patch('Modules.compile', return_value=""):
             result = Modules.Module()
-        mock_exec.assert_not_called()
+        mock_open.assert_not_called()
         self.assertEqual('lmodcmd', result.command)
         self.assertEqual('lmodcmd', result.command_name)
         self.assertEqual(None, result.init_file)
