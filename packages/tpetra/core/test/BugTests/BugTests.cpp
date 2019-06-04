@@ -99,15 +99,12 @@ namespace {
   TEUCHOS_UNIT_TEST( readHBMatrix, Bug5072_ReadOneRowMPI )
   {
     // failure reading 1x4 matrix under MPI
-    // typedef int                       LO;
-    // typedef int                       GO;
     typedef Tpetra::Map<> map_type;
     typedef map_type::local_ordinal_type LO;
     typedef map_type::global_ordinal_type GO;
     typedef Tpetra::CrsMatrix<> crs_matrix_type;
     typedef typename crs_matrix_type::scalar_type SC;
 
-    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     RCP<const crs_matrix_type> readMatrix, testMatrix;
@@ -116,7 +113,7 @@ namespace {
       // this is what the file looks like: 1 3 4 9
       RCP<const map_type> rng = Tpetra::createUniformContigMap<LO, GO>(1,comm);
       RCP<const map_type> dom = Tpetra::createUniformContigMap<LO, GO>(4,comm);
-      RCP<crs_matrix_type> A = Tpetra::createCrsMatrix<SC, LO, GO>(rng);
+      RCP<crs_matrix_type> A = rcp (new crs_matrix_type (rng, 4));
       if (myImageID == 0) {
         A->insertGlobalValues( 0, Teuchos::tuple<GO>(0,1,2,3), Teuchos::tuple<SC>(1.0,3.0,4.0,9.0) );
       }
@@ -174,7 +171,7 @@ namespace {
   {
     // test bug where map test checks that maps are the same object, instead of checking that maps are equivalent
 
-    using std::endl;    
+    using std::endl;
     // mfh 06 Aug 2017: There was no obvious reason why this test
     // required LO=int and GO=int, nor did the original Bug 5129 bug
     // report depend on specific LO or GO types, so I relaxed this
@@ -188,7 +185,7 @@ namespace {
     // this still has to be bigger than LO
     typedef int GO;
 #endif // 1
-    
+
     RCP<const Comm<int> > comm = getDefaultComm();
     const bool verbose = Tpetra::Details::Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
@@ -207,7 +204,7 @@ namespace {
       os << *prefix << "Create Maps" << endl;
       std::cerr << os.str ();
     }
-    
+
     RCP<const Map<LO,GO> > mapImportIn  = Tpetra::createUniformContigMap<LO,GO>(numGlobal, comm);
     RCP<const Map<LO,GO> > mapImportOut = Tpetra::createUniformContigMap<LO,GO>(numGlobal, comm);
     RCP<const Map<LO,GO> > mapIn        = Tpetra::createUniformContigMap<LO,GO>(numGlobal, comm);

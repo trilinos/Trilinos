@@ -49,17 +49,18 @@
 namespace {
 
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::Comm;
   using Teuchos::tuple;
 
   TEUCHOS_UNIT_TEST(CrsMatrix, BlankRowImport)
   {
-    typedef Tpetra::Map<>                     map_type;
-    typedef map_type::local_ordinal_type      LO;
-    typedef map_type::global_ordinal_type     GO;
-    typedef Tpetra::CrsMatrix<>::scalar_type  SC;
-    typedef Tpetra::CrsMatrix<>               crs_matrix_type;
-    typedef Tpetra::Import<LO, GO>            import_type;
+    using map_type = Tpetra::Map<>;
+    using LO = map_type::local_ordinal_type;
+    using GO = map_type::global_ordinal_type;
+    using crs_matrix_type = Tpetra::CrsMatrix<>;
+    using SC = crs_matrix_type::scalar_type;
+    using import_type = Tpetra::Import<LO, GO>;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     // We run this test explicitly in MPI mode with 2 processors as described in
@@ -76,7 +77,7 @@ namespace {
     }
     destRowMap = Tpetra::createNonContigMap<LO, GO> (tuple<GO> (0, 1), comm);
 
-    RCP<crs_matrix_type> srcMat = Tpetra::createCrsMatrix<SC>(sourceRowMap);
+    RCP<crs_matrix_type> srcMat = rcp (new crs_matrix_type (sourceRowMap, 1));
     if (rank == 0) {
       srcMat->insertGlobalValues (static_cast<GO> (0), tuple<GO> (0), tuple<SC> (1.0));
     }

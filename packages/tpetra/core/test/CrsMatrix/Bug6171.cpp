@@ -127,7 +127,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug6171, SC, LO, GO, NT)
     ! rowMap->isOneToOne (), std::logic_error,
     "In this test, the row Map is supposed to be one to one.");
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   RCP<CrsMatrixType> matrix = rcp (new CrsMatrixType (rowMap, 0));
+#else
+  RCP<CrsMatrixType> matrix = rcp (new CrsMatrixType (rowMap, 2));
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   for (size_t i = 0; i < static_cast<size_t> (globalIDs.size ()); ++i) {
     matrix->insertGlobalValues (globalIDs[i],
                                 ArrayView<const GO> (indices[i]),

@@ -584,10 +584,14 @@ namespace {
 
         RCP<row_graph_type> test_row;
         {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
           // allocate with no space
           RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 0));
           // invalid, because none are allocated yet
           TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV );
+#else
+          RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 1));
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
           if (myRank != 1) {
             test_crs->insertGlobalIndices (map->getMinGlobalIndex (),
                                            tuple<GO> (map->getMinGlobalIndex ()));

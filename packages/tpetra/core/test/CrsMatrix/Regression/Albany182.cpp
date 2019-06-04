@@ -372,78 +372,107 @@ namespace { // (anonymous)
 
   template<class CrsMatrixType>
   void
-  insertIntoOverlappingCrsMatrix (CrsMatrixType& A)
+  insertIntoOverlappingCrsMatrix (bool& success,
+                                  Teuchos::FancyOStream& out,
+                                  CrsMatrixType& A)
   {
-    typedef typename CrsMatrixType::scalar_type ST;
-    typedef typename CrsMatrixType::local_ordinal_type LO;
-    typedef typename CrsMatrixType::global_ordinal_type GO;
-    //typedef typename CrsMatrixType::map_type map_type;
+    using std::endl;
+    using ST = typename CrsMatrixType::scalar_type;
+    using LO = typename CrsMatrixType::local_ordinal_type;
+    using GO = typename CrsMatrixType::global_ordinal_type;
     static_assert (std::is_same<ST, double>::value,
                    "CrsMatrixType::scalar_type must be double "
                    "in order for this test to work.");
 
     const int myRank = A.getMap ()->getComm ()->getRank ();
-    if (myRank == 0) {
-      const GO gblRow = 0;
-      constexpr LO numEnt = 5;
-      const GO inds[numEnt] = {0, 1, 3, 4, 5};
-      const ST vals[numEnt] = {0.0, 1.0, 3.0, 4.0, 5.0};
-      A.insertGlobalValues (gblRow, numEnt, vals, inds);
+    try {
+      if (myRank == 0) {
+        const GO gblRow = 0;
+        constexpr LO numEnt = 5;
+        const GO inds[numEnt] = {0, 1, 3, 4, 5};
+        const ST vals[numEnt] = {0.0, 1.0, 3.0, 4.0, 5.0};
+        A.insertGlobalValues (gblRow, numEnt, vals, inds);
+      }
+      else if (myRank == 1) {
+        const GO gblRow = 0;
+        constexpr LO numEnt = 4;
+        const GO inds[numEnt] = {1, 2, 3, 5};
+        const ST vals[numEnt] = {1.0, 2.0, 3.0, 5.0};
+        A.insertGlobalValues (gblRow, numEnt, vals, inds);
+      }
+      else if (myRank == 2) {
+        const GO gblRow = 1;
+        constexpr LO numEnt = 5;
+        const GO inds[numEnt] = {3, 4, 6, 7, 8};
+        const ST vals[numEnt] = {3.0, 4.0, 6.0, 7.0, 8.0};
+        A.insertGlobalValues (gblRow, numEnt, vals, inds);
+      }
+      else if (myRank == 3) {
+        const GO gblRow = 1;
+        constexpr LO numEnt = 5;
+        const GO inds[numEnt] = {4, 5, 6, 8, 9};
+        const ST vals[numEnt] = {4.0, 5.0, 6.0, 8.0, 9.0};
+        A.insertGlobalValues (gblRow, numEnt, vals, inds);
+      }
     }
-    else if (myRank == 1) {
-      const GO gblRow = 0;
-      constexpr LO numEnt = 4;
-      const GO inds[numEnt] = {1, 2, 3, 5};
-      const ST vals[numEnt] = {1.0, 2.0, 3.0, 5.0};
-      A.insertGlobalValues (gblRow, numEnt, vals, inds);
+    catch (std::exception& e) {
+      TEST_ASSERT( false );
+      out << "A.insertGlobalValues(...) threw an exception: "
+          << e.what () << endl;
     }
-    else if (myRank == 2) {
-      const GO gblRow = 1;
-      constexpr LO numEnt = 5;
-      const GO inds[numEnt] = {3, 4, 6, 7, 8};
-      const ST vals[numEnt] = {3.0, 4.0, 6.0, 7.0, 8.0};
-      A.insertGlobalValues (gblRow, numEnt, vals, inds);
-    }
-    else if (myRank == 3) {
-      const GO gblRow = 1;
-      constexpr LO numEnt = 5;
-      const GO inds[numEnt] = {4, 5, 6, 8, 9};
-      const ST vals[numEnt] = {4.0, 5.0, 6.0, 8.0, 9.0};
-      A.insertGlobalValues (gblRow, numEnt, vals, inds);
+    catch (...) {
+      TEST_ASSERT( false );
+      out << "A.insertGlobalValues(...) threw an exception not a "
+        "subclass of std::exception" << endl;
     }
   }
 
   template<class CrsGraphType>
   void
-  insertIntoOverlappingCrsGraph (CrsGraphType& G)
+  insertIntoOverlappingCrsGraph (bool& success,
+                                 Teuchos::FancyOStream& out,
+                                 CrsGraphType& G)
   {
+    using std::endl;
     typedef typename CrsGraphType::local_ordinal_type LO;
     typedef typename CrsGraphType::global_ordinal_type GO;
 
     const int myRank = G.getMap ()->getComm ()->getRank ();
-    if (myRank == 0) {
-      const GO gblRow = 0;
-      constexpr LO numEnt = 5;
-      const GO inds[numEnt] = {0, 1, 3, 4, 5};
-      G.insertGlobalIndices (gblRow, numEnt, inds);
+    try {
+      if (myRank == 0) {
+        const GO gblRow = 0;
+        constexpr LO numEnt = 5;
+        const GO inds[numEnt] = {0, 1, 3, 4, 5};
+        G.insertGlobalIndices (gblRow, numEnt, inds);
+      }
+      else if (myRank == 1) {
+        const GO gblRow = 0;
+        constexpr LO numEnt = 4;
+        const GO inds[numEnt] = {1, 2, 3, 5};
+        G.insertGlobalIndices (gblRow, numEnt, inds);
+      }
+      else if (myRank == 2) {
+        const GO gblRow = 1;
+        constexpr LO numEnt = 5;
+        const GO inds[numEnt] = {3, 4, 6, 7, 8};
+        G.insertGlobalIndices (gblRow, numEnt, inds);
+      }
+      else if (myRank == 3) {
+        const GO gblRow = 1;
+        constexpr LO numEnt = 5;
+        const GO inds[numEnt] = {4, 5, 6, 8, 9};
+        G.insertGlobalIndices (gblRow, numEnt, inds);
+      }
     }
-    else if (myRank == 1) {
-      const GO gblRow = 0;
-      constexpr LO numEnt = 4;
-      const GO inds[numEnt] = {1, 2, 3, 5};
-      G.insertGlobalIndices (gblRow, numEnt, inds);
+    catch (std::exception& e) {
+      TEST_ASSERT( false );
+      out << "G.insertGlobalIndices(...) threw an exception: "
+          << e.what () << endl;
     }
-    else if (myRank == 2) {
-      const GO gblRow = 1;
-      constexpr LO numEnt = 5;
-      const GO inds[numEnt] = {3, 4, 6, 7, 8};
-      G.insertGlobalIndices (gblRow, numEnt, inds);
-    }
-    else if (myRank == 3) {
-      const GO gblRow = 1;
-      constexpr LO numEnt = 5;
-      const GO inds[numEnt] = {4, 5, 6, 8, 9};
-      G.insertGlobalIndices (gblRow, numEnt, inds);
+    catch (...) {
+      TEST_ASSERT( false );
+      out << "G.insertGlobalIndices(...) threw an exception not a "
+        "subclass of std::exception" << endl;
     }
   }
 
@@ -648,8 +677,8 @@ namespace { // (anonymous)
 
   template<class CrsMatrixType>
   Teuchos::RCP<CrsMatrixType>
-  buildOverlappingCrsMatrix (Teuchos::FancyOStream& out,
-                             bool& success,
+  buildOverlappingCrsMatrix (bool& success,
+                             Teuchos::FancyOStream& out,
                              const bool staticGraph,
                              const bool verbose,
                              const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
@@ -667,14 +696,29 @@ namespace { // (anonymous)
 
     RCP<CrsMatrixType> A;
     if (! staticGraph) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       A = rcp (new CrsMatrixType (rowMap, 0));
-      insertIntoOverlappingCrsMatrix (*A);
+#else
+      // mfh 04 Jun 2019: 5 is a magic number here, the maximum number
+      // of column indices on any process, on any row, that
+      // insertIntoOverlappingCrsMatrix will insert.
+      A = rcp (new CrsMatrixType (rowMap, 5));
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+      insertIntoOverlappingCrsMatrix (success, out, *A);
     }
     else {
       using Teuchos::rcp_const_cast;
-      typedef typename CrsMatrixType::crs_graph_type crs_graph_type;
+      using crs_graph_type = typename CrsMatrixType::crs_graph_type;
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       RCP<crs_graph_type> G (new crs_graph_type (rowMap, 0));
-      insertIntoOverlappingCrsGraph (*G);
+#else
+      // mfh 04 Jun 2019: 5 is a magic number here, the maximum number
+      // of column indices on any process, on any row, that
+      // insertIntoOverlappingCrsGraph will insert.
+      RCP<crs_graph_type> G (new crs_graph_type (rowMap, 5));
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+      insertIntoOverlappingCrsGraph (success, out, *G);
       G->fillComplete (domainMap, rangeMap);
       // typedef typename CrsMatrixType::device_type::execution_space execution_space;
       // execution_space::fence ();
@@ -1026,8 +1070,34 @@ namespace { // (anonymous)
         rcp (new CrsMatrixType (rowMap_nonoverlapping, colMap_expected,
                                 maxNumEntPerRow, profileType));
       export_type exp (A_overlapping.getRowMap (), rowMap_nonoverlapping);
-      A_nonoverlapping->doExport (A_overlapping, exp, Tpetra::ADD);
-      A_nonoverlapping->fillComplete (domMap, ranMap);
+      try {
+        A_nonoverlapping->doExport (A_overlapping, exp, Tpetra::ADD);
+      }
+      catch (std::exception& e) {
+        TEST_ASSERT( false );
+        out << "A_nonoverlapping->doExport(A_overlapping,exp,ADD) "
+          "threw an exception: " << e.what () << endl;
+      }
+      catch (...) {
+        TEST_ASSERT( false );
+        out << "A_nonoverlapping->doExport(A_overlapping,exp,ADD) "
+          "threw an exception not a subclass of std::exception" << endl;
+      }
+
+      try {
+        A_nonoverlapping->fillComplete (domMap, ranMap);
+      }
+      catch (std::exception& e) {
+        TEST_ASSERT( false );
+        out << "A_nonoverlapping->fillComplete(domMap,ranMap) "
+          "threw an exception: " << e.what () << endl;
+      }
+      catch (...) {
+        TEST_ASSERT( false );
+        out << "A_nonoverlapping->fillComplete(domMap,ranMap) "
+          "threw an exception not a subclass of std::exception" << endl;
+      }
+
       //execution_space::fence ();
       const map_type* colMapPtr = A_nonoverlapping->getColMap ().getRawPtr ();
       const bool colMapsSame =
@@ -1142,11 +1212,17 @@ namespace { // (anonymous)
     for (bool staticGraph : {true, false}) {
       out << "Source matrix: staticGraph=" << (staticGraph ? "true" : "false")
           << endl;
-      RCP<crs_matrix_type> A_overlapping =
-        buildOverlappingCrsMatrix<crs_matrix_type> (out, success,
-                                                    staticGraph,
-                                                    verbose,
-                                                    comm);
+      RCP<crs_matrix_type> A_overlapping;
+      try {
+        using CRS = crs_matrix_type;
+        A_overlapping =
+          buildOverlappingCrsMatrix<CRS> (success, out, staticGraph,
+                                          verbose, comm);
+      }
+      catch (...) {
+        out << "buildOverlappingCrsMatrix threw an exception" << endl;
+        TEST_ASSERT( false );
+      }
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0; // output argument
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
