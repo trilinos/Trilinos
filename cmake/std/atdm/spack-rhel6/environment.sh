@@ -93,7 +93,7 @@ module load gcc-7.2.0/spack-boost/1.59.0
 module load gcc-7.2.0/spack-netcdf/4.4.1
 module load gcc-7.2.0/spack-parallel-netcdf/1.11.0
 module load gcc-7.2.0/spack-superlu/4.3
-module load gcc-7.2.0/spack-hdf5/1.8.20
+module load gcc-7.2.0/spack-hdf5/1.8.21
 module load gcc-7.2.0/spack-zlib/1.2.11
 
 module load gcc-7.2.0/spack-metis/5.1.0
