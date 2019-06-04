@@ -8,7 +8,6 @@ source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
 module load sems-gcc/7.2.0
 module load sems-openmpi/1.10.1
-module load sems-python/2.7.9
 module load sems-git/2.10.1
 module load sems-boost/1.63.0/base
 module load sems-zlib/1.2.8/base
@@ -32,6 +31,17 @@ module load sems-cmake/3.10.3
 # compile and link times.
 module load atdm-env
 module load atdm-ninja_fortran/1.7.2
+
+# we will have implicitly gotten the sems python from
+# the boost module above for whaever reason - reset it
+# to one that has the proper sym-links from python -> python3
+module unload sems-python
+# module load sierra-python/3.6.3 - permissions do not allow this, but the execs are ok
+PATH=/projects/sierra/linux_rh7/install/Python/3.6..3/bin:${PATH}
+PATH=/projects/sierra/linux_rh7/install/Python/extras/bin:${PATH}
+PYTHONPATH=/projects/sierra/linux_rh7/install/Python/extras/lib/python3.6/site-packages:${PYTHONPATH}
+MANPATH=/projects/sierra/linux_rh7/install/Python/3.6.3/share/man:${MANPATH}
+unset PYTHONHOME 
 
 # add the OpenMP environment variable we need
 export OMP_NUM_THREADS=2

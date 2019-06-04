@@ -131,7 +131,7 @@ namespace Xpetra {
 
 
 
-#if ((!defined(HAVE_TPETRA_INST_SERIAL)) && (!defined(HAVE_TPETRA_INST_INT_INT)))
+#if ((!defined(HAVE_TPETRA_INST_SERIAL)) && (!defined(HAVE_TPETRA_INST_INT_INT)) && defined(HAVE_XPETRA_EPETRA))
   // specialization for Tpetra Map on EpetraNode and GO=int
   template <>
   class TpetraOperator<double, int, int, EpetraNode>

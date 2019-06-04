@@ -48,8 +48,6 @@ C   color, interactive, black-white interchange         799.8
 C   color, batch, black background                      799.9
 C   color, interactive, black background                799.11
 C
-C                                                 last mod 6/20/90 slt
-C
 C     Note that there are several parameters to set depending on how
 C     the package is to be used. Most are in routine pstsel routine
 C     which is called at the first of this routine (viinit.) Two other
@@ -3447,8 +3445,6 @@ C
 C     EXIT CONDITIONS  - istr contains decimal-string equivalent of int
 C     (ndigits left-justified in istr)
 C     
-C     NARRATIVE        - This routine modified 10/89  S.L.Thompson
-C     
 C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
       INTEGER INT,NDIGIT
       CHARACTER ISTR*(*)
@@ -3625,7 +3621,6 @@ C GET THE TIME AND DATE
       KJDATE(2)=0
       KJDATE(3)=0
 C
-999   RETURN
       END
       SUBROUTINE PSTSEL(KARG)
 C

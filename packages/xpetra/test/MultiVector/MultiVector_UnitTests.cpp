@@ -538,18 +538,22 @@ namespace {
     TEST_EQUALITY( mvec.getGlobalLength(), numRanks*numLocal );
 
     // Norms are not computed by Epetra_IntMultiVector so far
-    if(!is_same<typename MV::node_type, Xpetra::EpetraNode>::value &&
-       !(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value)) {
-      std::cout << "Running the norm tests!" << std::endl;
-      // we zeroed it out in the constructor; all norms should be zero
-      Array<Magnitude> norms(numVecs), zeros(numVecs);
-      std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
-      mvec.norm2(norms);
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
-      mvec.norm1(norms);
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
-      mvec.normInf(norms);
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+    #ifdef HAVE_XPETRA_EPETRA
+    if(!is_same<typename MV::node_type, Xpetra::EpetraNode>::value)
+    #endif
+    {
+      if(!(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value)) {
+        std::cout << "Running the norm tests!" << std::endl;
+        // we zeroed it out in the constructor; all norms should be zero
+        Array<Magnitude> norms(numVecs), zeros(numVecs);
+        std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
+        mvec.norm2(norms);
+        TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+        mvec.norm1(norms);
+        TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+        mvec.normInf(norms);
+        TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+      }
     }
 
     Scalar testValue = 2, sumValue = 3;

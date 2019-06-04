@@ -8,10 +8,16 @@ sys.dont_write_bytecode = True
 import os
 sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
 
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import unittest
-import mock
+try:
+    import mock
+except ImportError:
+    import unittest.mock as mock
 
 import pickle
 
@@ -21,11 +27,11 @@ from clean_all_jobs import CleanReference
 class TestRun(unittest.TestCase):
 
     def test_clean_run(self):
-        """If there is no dir attribute in the args raise SystemExit"""
+        """A clean run should call set_reference_date"""
         cleanRefInst = CleanReference()
         with mock.patch('clean_all_jobs.set_reference_date') as refDate:
             cleanRefInst.run()
-        refDate.assert_called_once()
+        refDate.assert_called_once_with()
 
     def test_pickling_exception(self):
         """A Pickling exception should give an error and exit"""
