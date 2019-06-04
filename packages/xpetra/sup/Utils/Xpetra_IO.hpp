@@ -281,9 +281,12 @@ namespace Xpetra {
     static void Write(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
 
       Write("rowmap_"    + fileName, *(Op.getRowMap()));
-      Write("colmap_"    + fileName, *(Op.getColMap()));
-      Write("domainmap_" + fileName, *(Op.getDomainMap()));
-      Write("rangemap_"  + fileName, *(Op.getRangeMap()));
+      if ( !Op.getDomainMap()->isSameAs(*(Op.getRowMap())) )
+        Write("domainmap_" + fileName, *(Op.getDomainMap()));
+      if ( !Op.getRangeMap()->isSameAs(*(Op.getRowMap())) )
+        Write("rangemap_"  + fileName, *(Op.getRangeMap()));
+      if ( !Op.getColMap()->isSameAs(*(Op.getDomainMap())) )
+        Write("colmap_"    + fileName, *(Op.getColMap()));
 
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
           dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
@@ -852,9 +855,12 @@ namespace Xpetra {
     static void Write(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
 
       Write("rowmap_"    + fileName, *(Op.getRowMap()));
-      Write("colmap_"    + fileName, *(Op.getColMap()));
-      Write("domainmap_" + fileName, *(Op.getDomainMap()));
-      Write("rangemap_"  + fileName, *(Op.getRangeMap()));
+      if ( !Op.getDomainMap()->isSameAs(*(Op.getRowMap())) )
+        Write("domainmap_" + fileName, *(Op.getDomainMap()));
+      if ( !Op.getRangeMap()->isSameAs(*(Op.getRowMap())) )
+        Write("rangemap_"  + fileName, *(Op.getRangeMap()));
+      if ( !Op.getColMap()->isSameAs(*(Op.getDomainMap())) )
+        Write("colmap_"    + fileName, *(Op.getColMap()));
 
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
           dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
