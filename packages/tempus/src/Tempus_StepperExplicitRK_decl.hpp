@@ -182,19 +182,19 @@ public:
 
 protected:
 
-  Teuchos::RCP<const RKButcherTableau<Scalar> >          ERK_ButcherTableau_;
+  Teuchos::RCP<const RKButcherTableau<Scalar> >              ERK_ButcherTableau_;
 
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >     stageXDot_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >                   stageX_;
 
-  Teuchos::RCP<StepperObserverComposite<Scalar> >    stepperObserver_;
+  Teuchos::RCP<StepperObserverComposite<Scalar> >            stepperObserver_;
   Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >  stepperExplicitRKObserver_;
 
   // For Embedded RK
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >                   ee_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >                   abs_u0;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >                   abs_u;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >                   sc;
 
 };
 

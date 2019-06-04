@@ -133,20 +133,16 @@ template<class Scalar>
 void StepperDIRK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (this->stepperObserver_ == Teuchos::null) {
-      stepperDIRKObserver_ =
-        Teuchos::rcp(new StepperDIRKObserver<Scalar>());
-      this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperDIRKObserver_);
-     }
-  } else {
-    this->stepperObserver_ = obs;
-    stepperDIRKObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperDIRKObserver<Scalar> >(this->stepperObserver_);
-  }
+
+  if (this->stepperObserver_ == Teuchos::null)
+    this->stepperObserver_  =
+      Teuchos::rcp(new StepperObserverComposite<Scalar>());
+
+  if (obs == Teuchos::null)
+    obs = Teuchos::rcp(new StepperDIRKObserver<Scalar>());
+
+  this->stepperObserver_->addObserver(
+      Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> > (obs, true) );
 }
 
 
