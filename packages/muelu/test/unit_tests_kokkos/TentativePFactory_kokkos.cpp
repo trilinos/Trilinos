@@ -86,6 +86,9 @@ namespace MueLuTests {
 
     out << "Test QR with user-supplied nullspace" << std::endl;
 
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
+
     Level fineLevel, coarseLevel;
     TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
@@ -143,11 +146,11 @@ namespace MueLuTests {
     //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
     diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
 
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
+    Teuchos::Array<magnitude_type> norms(NSdim);
     diff->norm2(norms);
     for (LO i=0; i<NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-      TEST_EQUALITY(norms[i]<1e-12, true);
+      TEST_EQUALITY(norms[i] < 100*TMT::eps(), true);
     }
 
     Teuchos::ArrayRCP<const double> col1 = coarseNullSpace->getData(0);
@@ -162,7 +165,10 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
-    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    using STS            = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
 
     if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
       out << "skipping test for linAlgebra==UseEpetra" << std::endl;
@@ -239,7 +245,7 @@ namespace MueLuTests {
     diff->norm2(norms);
     for (LO i = 0; i < NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-      TEST_EQUALITY(norms[i] < 1e-12, true);
+      TEST_EQUALITY(norms[i] < 100*TMT::eps(), true);
     }
 
     // Check normalization and orthogonality of prolongator columns by
@@ -249,7 +255,7 @@ namespace MueLuTests {
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
       TEST_EQUALITY(diagVec->norm1(),                     diagVec->getGlobalLength());
-    TEST_EQUALITY(diagVec->normInf()-1 < 1e-12,         true);
+    TEST_EQUALITY(diagVec->normInf()-1 < 100*TMT::eps(),         true);
     if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
     TEST_EQUALITY(diagVec->meanValue(),                 1.0);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(),   diagVec->getGlobalLength());
@@ -260,7 +266,10 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
-    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    using STS            = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
 
     if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
       out << "skipping test for linAlgebra==UseEpetra" << std::endl;
@@ -339,10 +348,10 @@ namespace MueLuTests {
     // diff = fineNS - (P*coarseNS)
     diff->update(1.0, *fineNullSpace, -1.0, *PtN, 0.0);
 
-    Array<typename STS::magnitudeType> norms(NSdim);
+    Array<magnitude_type> norms(NSdim);
     diff->norm2(norms);
     for (decltype(NSdim) i = 0; i < NSdim; ++i)
-      TEST_EQUALITY(norms[i] < 1e-12, true);
+      TEST_EQUALITY(norms[i] < 100*TMT::eps(), true);
 
     // Check normalization and orthogonality of prolongator columns by
     // making sure that P^T*P = I
@@ -350,10 +359,10 @@ namespace MueLuTests {
     RCP<Vector> diagVec     = VectorFactory::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(STS::magnitude(diagVec->norm1() - diagVec->getGlobalLength()) < 1e-13, true);
-    TEST_EQUALITY(STS::magnitude(diagVec->normInf() - 1.0) < 1e-12, true);
+      TEST_EQUALITY(STS::magnitude(diagVec->norm1() - diagVec->getGlobalLength()) < 100*TMT::eps(), true);
+    TEST_EQUALITY(STS::magnitude(diagVec->normInf() - 1.0) < 100*TMT::eps(), true);
     if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(Teuchos::ScalarTraits<SC>::magnitude(diagVec->meanValue() - 1.0) < 1e-14, true);
+      TEST_EQUALITY(Teuchos::ScalarTraits<SC>::magnitude(diagVec->meanValue() - 1.0) < 100*TMT::eps(), true);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
   }
 
@@ -362,7 +371,10 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
-    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    using STS            = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
 
     if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
       out << "skipping test for linAlgebra==UseEpetra" << std::endl;
@@ -431,10 +443,10 @@ namespace MueLuTests {
     //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
     diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
 
-    Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
+    Teuchos::Array<magnitude_type> norms(NSdim);
     diff->norm2(norms);
     for (LO i=0; i<NSdim; ++i)
-      TEST_EQUALITY(norms[i] < 1e-12, true);
+      TEST_EQUALITY(norms[i] < 100*TMT::eps(), true);
 
   } //MakeTentativeUsingDefaultNullSpace
 

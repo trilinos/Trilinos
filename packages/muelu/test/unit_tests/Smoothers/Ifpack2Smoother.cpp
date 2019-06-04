@@ -160,6 +160,9 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
+      using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+      using TMT            = Teuchos::ScalarTraits<magnitude_type>;
+
       if (Teuchos::ScalarTraits<Scalar>::name().find("complex") != std::string::npos) {
         out << "Skipping Tpetra for SC type \"complex\"" << std::endl;
         return;
@@ -175,7 +178,7 @@ namespace MueLuTests {
 
       typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
       const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 5.269156e-01;
-      TEST_FLOATING_EQUALITY(residualNorms, expectedNorm, 1e-7);  // Compare to residual reported by ML
+      TEST_FLOATING_EQUALITY(residualNorms, expectedNorm, (1e-7 < TMT::eps() ? 10*TMT::eps() : 1e-7));  // Compare to residual reported by ML
 
     }
   } // Chebyshev
@@ -189,15 +192,16 @@ namespace MueLuTests {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       //FIXME this will probably fail in parallel b/c it becomes block Jacobi
+      using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
       Teuchos::ParameterList paramList;
       Ifpack2Smoother smoother("ILUT",paramList);
 
-      typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
+      magnitude_type residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       if (comm->getSize() == 1) {
-        TEST_EQUALITY(residualNorms < 1e-10, true);
+        TEST_EQUALITY(residualNorms < 100*Teuchos::ScalarTraits<magnitude_type>::eps(), true);
       } else {
         out << "Pass/Fail is only checked in serial." << std::endl;
       }

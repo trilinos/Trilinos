@@ -231,10 +231,11 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    typedef typename Teuchos::ScalarTraits<Scalar> TST;
-
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    using TST                   = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -257,7 +258,7 @@ namespace MueLuTests {
 
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
     nullSpace->putScalar( (Scalar) 1.0);
-    Teuchos::Array<typename TST::magnitudeType> norms(1);
+    Teuchos::Array<magnitude_type> norms(1);
     nullSpace->norm1(norms);
 
     MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> H;
@@ -319,7 +320,7 @@ namespace MueLuTests {
 
     RHS->putScalar( (Scalar) 0.0);
 
-    int iterations=10;
+    int iterations=15;
     H.Iterate(*RHS, *X, iterations);
 
     X->norm2(norms);
@@ -328,7 +329,7 @@ namespace MueLuTests {
 
     norms = Utilities::ResidualNorm(*Op, *X, *RHS);
     out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
-    TEST_EQUALITY(norms[0]<1e-10, true);
+    TEST_EQUALITY(norms[0] < 100*TMT::eps(), true);
 
   } //Iterate
 
@@ -344,11 +345,11 @@ namespace MueLuTests {
 #   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
-
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    using TST                   = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     //matrix
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -429,7 +430,7 @@ namespace MueLuTests {
 
     RHS->putScalar( (Scalar) 0.0);
 
-    int iterations=10;
+    int iterations=15;
     H.Iterate(*RHS, *X, iterations);
 
     X->norm2(norms);
@@ -438,7 +439,7 @@ namespace MueLuTests {
 
     norms = Utilities::ResidualNorm(*Op, *X, *RHS);
     out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
-    TEST_EQUALITY(norms[0]<1e-10, true);
+    TEST_EQUALITY(norms[0] < 100*TMT::eps(), true);
 
   } //Iterate
 
@@ -896,14 +897,15 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    using TST                   = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO nx = 30;
     RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
-    typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", nx);
@@ -964,7 +966,7 @@ namespace MueLuTests {
     Teuchos::Array<typename TST::magnitudeType> norms(1);
     diff->norm2(norms);
     out << "||diff|| = " << norms[0] << std::endl;
-    TEST_EQUALITY(norms[0]<1e-15, true);
+    TEST_EQUALITY(norms[0] < 100*TMT::eps(), true);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)

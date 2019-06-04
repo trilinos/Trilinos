@@ -386,17 +386,12 @@ setParameters (Teuchos::ParameterList& plist)
   // ParameterList interaction.  This makes the method satisfy the
   // strong exception guarantee.
 
-  if (plist.isParameter ("debug")) {
-    try { // a bool
-      debug = plist.get<bool> ("debug");
-    }
-    catch (Teuchos::Exceptions::InvalidParameterType&) {}
-
-    try { // an int instead of a bool
-      int debugInt = plist.get<bool> ("debug");
-      debug = debugInt != 0;
-    }
-    catch (Teuchos::Exceptions::InvalidParameterType&) {}
+  if (plist.isType<bool> ("debug")) {
+    debug = plist.get<bool> ("debug");
+  }
+  else if (plist.isType<int> ("debug")) {
+    const int debugInt = plist.get<bool> ("debug");
+    debug = debugInt != 0;
   }
 
   // Get the user-supplied inverse diagonal.
@@ -408,90 +403,41 @@ setParameters (Teuchos::ParameterList& plist)
   // latter two cases ("const V" or "V") specially (copy them into
   // userInvDiagCopy first, which is otherwise null at the end of the
   // long if-then chain) to avoid an extra copy.
-  if (plist.isParameter ("chebyshev: operator inv diagonal")) {
+
+  const char opInvDiagLabel[] = "chebyshev: operator inv diagonal";
+  if (plist.isParameter (opInvDiagLabel)) {
     // Pointer to the user's Vector, if provided.
     RCP<const V> userInvDiag;
 
-    try { // Could the type be const V*?
+    if (plist.isType<const V*> (opInvDiagLabel)) {
       const V* rawUserInvDiag =
-        plist.get<const V*> ("chebyshev: operator inv diagonal");
+        plist.get<const V*> (opInvDiagLabel);
       // Nonowning reference (we'll make a deep copy below)
       userInvDiag = rcp (rawUserInvDiag, false);
-    } catch (Teuchos::Exceptions::InvalidParameterType&) {
     }
-    if (userInvDiag.is_null ()) {
-      try { // Could the type be V*?
-        V* rawUserInvDiag = plist.get<V*> ("chebyshev: operator inv diagonal");
-        // Nonowning reference (we'll make a deep copy below)
-        userInvDiag = rcp (const_cast<const V*> (rawUserInvDiag), false);
-      } catch (Teuchos::Exceptions::InvalidParameterType&) {
-      }
+    else if (plist.isType<const V*> (opInvDiagLabel)) {
+      V* rawUserInvDiag = plist.get<V*> (opInvDiagLabel);
+      // Nonowning reference (we'll make a deep copy below)
+      userInvDiag = rcp (const_cast<const V*> (rawUserInvDiag), false);
     }
-    if (userInvDiag.is_null ()) {
-      try { // Could the type be RCP<const V>?
-        userInvDiag =
-          plist.get<RCP<const V> > ("chebyshev: operator inv diagonal");
-      } catch (Teuchos::Exceptions::InvalidParameterType&) {
-      }
+    else if (plist.isType<RCP<const V>> (opInvDiagLabel)) {
+      userInvDiag = plist.get<RCP<const V> > (opInvDiagLabel);
     }
-    if (userInvDiag.is_null ()) {
-      try { // Could the type be RCP<V>?
-        RCP<V> userInvDiagNonConst =
-          plist.get<RCP<V> > ("chebyshev: operator inv diagonal");
-        userInvDiag = rcp_const_cast<const V> (userInvDiagNonConst);
-      } catch (Teuchos::Exceptions::InvalidParameterType&) {
-      }
+    else if (plist.isType<RCP<V>> (opInvDiagLabel)) {
+      RCP<V> userInvDiagNonConst =
+        plist.get<RCP<V> > (opInvDiagLabel);
+      userInvDiag = rcp_const_cast<const V> (userInvDiagNonConst);
     }
-    if (userInvDiag.is_null ()) {
-#ifndef _MSC_VER
-      try { // Could the type be const V?
-        // ParameterList::get() returns by reference.  Thus, we don't
-        // have to invoke Vector's copy constructor here.  It's good
-        // practice not to make an RCP to this reference, even though
-        // it should be valid as long as the ParameterList that holds
-        // it is valid.  Thus, we make our deep copy here, rather than
-        // waiting to do it below.
-        const V& userInvDiagRef =
-          plist.get<const V> ("chebyshev: operator inv diagonal");
-        userInvDiagCopy = rcp (new V (userInvDiagRef, Teuchos::Copy));
-        // Tell the if-chain below not to keep trying.
-        userInvDiag = userInvDiagCopy;
-      } catch (Teuchos::Exceptions::InvalidParameterType&) {
-      }
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::runtime_error,
-      "Ifpack2::Chebyshev::setParameters: \"chebyshev: operator inv diagonal\" "
-      "plist.get<const V> does not compile around return held == other_held "
-      "in Teuchos::any in Visual Studio.  Can't fix it now, so throwing "
-      "in case someone builds there.");
-#endif
+    else if (plist.isType<const V> (opInvDiagLabel)) {
+      const V& userInvDiagRef = plist.get<const V> (opInvDiagLabel);
+      userInvDiagCopy = rcp (new V (userInvDiagRef, Teuchos::Copy));
+      userInvDiag = userInvDiagCopy;
     }
-    if (userInvDiag.is_null ()) {
-#ifndef _MSC_VER
-      try { // Could the type be V?
-        // ParameterList::get() returns by reference.  Thus, we don't
-        // have to invoke Vector's copy constructor here.  It's good
-        // practice not to make an RCP to this reference, even though
-        // it should be valid as long as the ParameterList that holds
-        // it is valid.  Thus, we make our deep copy here, rather than
-        // waiting to do it below.
-        V& userInvDiagNonConstRef =
-          plist.get<V> ("chebyshev: operator inv diagonal");
-        const V& userInvDiagRef = const_cast<const V&> (userInvDiagNonConstRef);
-        userInvDiagCopy = rcp (new V (userInvDiagRef, Teuchos::Copy));
-        // Tell the if-chain below not to keep trying.
-        userInvDiag = userInvDiagCopy;
-      } catch (Teuchos::Exceptions::InvalidParameterType&) {
-      }
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::runtime_error,
-      "Ifpack2::Chebyshev::setParameters: \"chebyshev: operator inv diagonal\" "
-      "plist.get<V> does not compile around return held == other_held "
-      "in Teuchos::any in Visual Studio.  Can't fix it now, so throwing "
-      "in case someone builds there.");
-#endif
+    else if (plist.isType<V> (opInvDiagLabel)) {
+      V& userInvDiagNonConstRef = plist.get<V> (opInvDiagLabel);
+      const V& userInvDiagRef = const_cast<const V&> (userInvDiagNonConstRef);
+      userInvDiagCopy = rcp (new V (userInvDiagRef, Teuchos::Copy));
+      userInvDiag = userInvDiagCopy;
     }
 
     // NOTE: If the user's parameter has some strange type that we
@@ -650,21 +596,21 @@ setParameters (Teuchos::ParameterList& plist)
   // Test for Ifpack parameters that we won't ever implement here.
   // Be careful to use the one-argument version of get(), since the
   // two-argment version adds the parameter if it's not there.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    plist.isParameter ("chebyshev: use block mode") &&
-    ! plist.get<bool> ("chebyshev: use block mode"),
-    std::invalid_argument,
-    "Ifpack2::Chebyshev requires that if you supply the Ifpack parameter "
-    "\"chebyshev: use block mode\", it must be set to false.  Ifpack2's "
-    "Chebyshev does not implement Ifpack's block mode.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    plist.isParameter ("chebyshev: solve normal equations") &&
-    ! plist.get<bool> ("chebyshev: solve normal equations"),
-    std::invalid_argument,
-    "Ifpack2::Chebyshev does not and will never implement the Ifpack "
-    "parameter \"chebyshev: solve normal equations\".  If you want to solve "
-    "the normal equations, construct a Tpetra::Operator that implements "
-    "A^* A, and use Chebyshev to solve A^* A x = A^* b.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (plist.isType<bool> ("chebyshev: use block mode") &&
+     ! plist.get<bool> ("chebyshev: use block mode"),
+     std::invalid_argument,
+     "Ifpack2::Chebyshev requires that if you set \"chebyshev: use "
+     "block mode\" at all, you must set it to false.  "
+     "Ifpack2::Chebyshev does not implement Ifpack's block mode.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (plist.isType<bool> ("chebyshev: solve normal equations") &&
+     ! plist.get<bool> ("chebyshev: solve normal equations"),
+     std::invalid_argument,
+     "Ifpack2::Chebyshev does not and will never implement the Ifpack "
+     "parameter \"chebyshev: solve normal equations\".  If you want to "
+     "solve the normal equations, construct a Tpetra::Operator that "
+     "implements A^* A, and use Chebyshev to solve A^* A x = A^* b.");
 
   // Test for Ifpack parameters that we haven't implemented yet.
   //
@@ -717,8 +663,9 @@ setParameters (Teuchos::ParameterList& plist)
       out_ = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
     }
     else {
-      Teuchos::RCP<Teuchos::oblackholestream> blackHole (new Teuchos::oblackholestream ());
-      out_ = Teuchos::getFancyOStream (blackHole); // print nothing on other processes
+      using Teuchos::oblackholestream; // prints nothing
+      RCP<oblackholestream> blackHole (new oblackholestream ());
+      out_ = Teuchos::getFancyOStream (blackHole);
     }
   }
   else { // NOT debug
@@ -1513,8 +1460,8 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
   // implementation (that builds, but whose constructor throws).
   if (STS::real (lambdaMax) < STS::real (zero)) {
     if (debug_) {
-      *out_ << "real(lambdaMax) = " << STS::real (lambdaMax) << " < 0; try "
-        "again with a different random initial guess" << endl;
+      *out_ << "real(lambdaMax) = " << STS::real (lambdaMax) << " < 0; "
+        "try again with a different random initial guess" << endl;
     }
     // Max eigenvalue estimate was negative.  Perhaps we got unlucky
     // with the random initial guess.  Try again with a different (but

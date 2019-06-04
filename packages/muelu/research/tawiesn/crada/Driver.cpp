@@ -90,11 +90,14 @@
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class ExportVTK : public MueLu::VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
+    using real_type = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+    using RealValuedMultiVector = typename Xpetra::MultiVector<real_type, LocalOrdinal, GlobalOrdinal, Node>;
+
     ExportVTK() {};
 
   public:
 
-    void writeFile(std::ofstream& fout, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& coordinates, Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& sol)
+    void writeFile(std::ofstream& fout, Teuchos::RCP<RealValuedMultiVector>& coordinates, Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& sol)
     {
       using namespace std;
       typedef MueLu::VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> VH;
@@ -111,13 +114,13 @@
         geomSize.push_back(1);
       }
 
-      Teuchos::ArrayRCP<const double> xCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(0));
-      Teuchos::ArrayRCP<const double> yCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(1));
-      Teuchos::ArrayRCP<const double> zCoords = Teuchos::null;
+      Teuchos::ArrayRCP<const real_type> xCoords = Teuchos::arcp_reinterpret_cast<const real_type>(coordinates->getData(0));
+      Teuchos::ArrayRCP<const real_type> yCoords = Teuchos::arcp_reinterpret_cast<const real_type>(coordinates->getData(1));
+      Teuchos::ArrayRCP<const real_type> zCoords = Teuchos::null;
       if(coordinates->getNumVectors() == 3) {
-        zCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(2));
+        zCoords = Teuchos::arcp_reinterpret_cast<const real_type>(coordinates->getData(2));
       }
-      Teuchos::ArrayRCP<const double> solData = Teuchos::arcp_reinterpret_cast<const double>(sol->getData(0));
+      Teuchos::ArrayRCP<const Scalar> solData = Teuchos::arcp_reinterpret_cast<const Scalar>(sol->getData(0));
 
       std::vector<int> uniqueFine = this->makeUnique(vertices);
       this->writeFileVTKOpening(fout, uniqueFine, geomSize);
@@ -166,7 +169,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
-  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+  using TST       = Teuchos::ScalarTraits<SC>;
+  using MT        = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  using real_type = typename Teuchos::ScalarTraits<SC>::coordinateType;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
   // =========================================================================
   // MPI initialization using Teuchos
   // =========================================================================
@@ -179,7 +185,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // =========================================================================
     // Convenient definitions
     // =========================================================================
-    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+    SC zero = TST::zero(), one = TST::one();
 
     // Instead of checking each time for rank, create a rank 0 stream
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -306,7 +312,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       }
     }
 
-    RCP<MultiVector> coordinates = Teuchos::null; //MultiVectorFactory::Build(A->getDomainMap(),1);
+    RCP<RealValuedMultiVector> coordinates = Teuchos::null; //MultiVectorFactory::Build(A->getDomainMap(),1);
     if (cooFileName != "") {
       TEUCHOS_TEST_FOR_EXCEPTION(map->getNodeNumElements() % A->GetFixedBlockSize() != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs on proc " << comm->getRank() << " is " << map->getNodeNumElements() << " and not divisible by 3.");
 
@@ -332,7 +338,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       RCP<const Map> myCoordMap = MapFactory::Build (xpetraParameters.GetLib(),gCntGIDs,nodeList(),indexBase,comm);
 
       fancyout << "Read fine level coordinates from file " << cooFileName << std::endl;
-      coordinates = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(cooFileName), myCoordMap);
+      coordinates = Xpetra::IO<real_type,LO,GO,Node>::ReadMultiVector(std::string(cooFileName), myCoordMap);
       fancyout << "Found " << coordinates->getNumVectors() << " coordinate vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
       /*TEUCHOS_TEST_FOR_EXCEPTION(myCoordMap->getMinGlobalIndex() != map->getMinGlobalIndex() / blkSize, MueLu::Exceptions::RuntimeError,
           "Driver: Inconsistent minGlobalIndex on proc " << comm->getRank());
@@ -504,8 +510,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       A = bOp;
 
       // split coordinate vector
-      RCP<MultiVector> coordinates1 = Teuchos::null;
-      RCP<MultiVector> coordinates2 = Teuchos::null;
+      RCP<RealValuedMultiVector> coordinates1 = Teuchos::null;
+      RCP<RealValuedMultiVector> coordinates2 = Teuchos::null;
       if (coordinates != Teuchos::null) {
         TEUCHOS_TEST_FOR_EXCEPTION( myStridedNonSpecialMap->getNodeNumElements() % 3 != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs of non-special map on proc " << comm->getRank() << " is " << myStridedNonSpecialMap->getNodeNumElements() << " and cannot divided by 3");
         TEUCHOS_TEST_FOR_EXCEPTION( myStridedSpecialMap->getNodeNumElements() % 3 != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs of special map on proc " << comm->getRank() << " is " << myStridedSpecialMap->getNodeNumElements() << " and cannot divided by 3");
@@ -538,7 +544,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         nodexmaps.push_back(myNonSpecialCoordsMap);
         nodexmaps.push_back(mySpecialCoordsMap);
 
-        Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nodemap_extractor = Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(coordinates->getMap(),nodexmaps);
+        Teuchos::RCP<const Xpetra::MapExtractor<real_type,LO,GO,NO> > nodemap_extractor = Xpetra::MapExtractorFactory<real_type,LO,GO,NO>::Build(coordinates->getMap(),nodexmaps);
 
         // split coordinate vectors
         coordinates1 = nodemap_extractor->ExtractVector(coordinates,0);
@@ -553,15 +559,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         H->GetLevel(0)->Set("A",            Teuchos::rcp_dynamic_cast<Matrix>(bOp));
         H->GetLevel(0)->Set("Nullspace1",   nullspace1);
         H->GetLevel(0)->Set("Nullspace2",   nullspace2);
-        H->GetLevel(0)->Set("Coordinates", coordinates); // TODO split coordinates for rebalancing! (or provide the full vector in the right map and split it in the factories!)
+        H->GetLevel(0)->Set("Coordinates",  coordinates); // TODO split coordinates for rebalancing! (or provide the full vector in the right map and split it in the factories!)
         H->GetLevel(0)->Set("Coordinates1", coordinates1);
         H->GetLevel(0)->Set("Coordinates2", coordinates2);
         if(mySpecialMap!=Teuchos::null) H->GetLevel(0)->Set("map SpecialMap", mySpecialMap);
       } else {
         // use Thyra style GIDs
-        RCP<MultiVector> nsp1shrinked   = Xpetra::MatrixUtils<Scalar,LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*nullspace1);
-        RCP<MultiVector> nsp2shrinked   = Xpetra::MatrixUtils<Scalar,LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*nullspace2);
-        RCP<MultiVector> coordsshrinked = Xpetra::MatrixUtils<Scalar,LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*coordinates);
+        RCP<MultiVector> nsp1shrinked             = Xpetra::MatrixUtils<SC,LO,GO,NO>::xpetraGidNumbering2ThyraGidNumbering(*nullspace1);
+        RCP<MultiVector> nsp2shrinked             = Xpetra::MatrixUtils<SC,LO,GO,NO>::xpetraGidNumbering2ThyraGidNumbering(*nullspace2);
+        RCP<RealValuedMultiVector> coordsshrinked = Xpetra::MatrixUtils<real_type,LO,GO,NO>::xpetraGidNumbering2ThyraGidNumbering(*coordinates);
         H->GetLevel(0)->Set("A",           Teuchos::rcp_dynamic_cast<Matrix>(bOp));
         H->GetLevel(0)->Set("Nullspace1",  nsp1shrinked);
         H->GetLevel(0)->Set("Nullspace2",  nsp2shrinked);

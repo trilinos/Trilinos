@@ -1562,11 +1562,11 @@ namespace Ioex {
         if (myProcessor == 0) {
           fmt::print(
               IOSS_WARNING,
-              "WARNING: There are variables names whose name length ({}) exceeds the current "
-              "maximum name length ({})\n         set for this database ({}).\n"
+              "WARNING: There are variables names whose name length ({0}) exceeds the current "
+              "maximum name length ({1})\n         set for this database ({2}).\n"
               "         You should either reduce the length of the variable name, or "
               "set the 'MAXIMUM_NAME_LENGTH' property\n"
-              "         to at least {}.\n         Contact gdsjaar@sandia.gov for more "
+              "         to at least {0}.\n         Contact gdsjaar@sandia.gov for more "
               "information.\n\n",
               name_length, maximumNameLength, get_filename());
         }
