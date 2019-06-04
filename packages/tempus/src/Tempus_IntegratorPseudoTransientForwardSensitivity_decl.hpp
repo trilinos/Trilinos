@@ -111,7 +111,7 @@ public:
   /// Get current time
   virtual Scalar getTime() const override;
   /// Get current index
-  virtual Scalar getIndex() const override;
+  virtual int getIndex() const override;
   /// Get Status
   virtual Status getStatus() const override;
   /// Get the Stepper

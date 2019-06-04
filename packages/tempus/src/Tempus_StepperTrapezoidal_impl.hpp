@@ -73,13 +73,13 @@ void StepperTrapezoidal<Scalar>::setObserver(
         Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>());
       this->stepperObserver_ =
         Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperTrapObserver_,true);
+          (stepperTrapObserver_, true);
      }
   } else {
     this->stepperObserver_ = obs;
     stepperTrapObserver_ =
       Teuchos::rcp_dynamic_cast<StepperTrapezoidalObserver<Scalar> >
-        (this->stepperObserver_,true);
+        (this->stepperObserver_, true);
   }
 }
 

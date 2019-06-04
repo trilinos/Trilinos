@@ -128,7 +128,7 @@ public:
   virtual Scalar getTime() const override
     { return integrator_->getTime(); }
   /// Get current index
-  virtual Scalar getIndex() const override
+  virtual int getIndex() const override
     { return integrator_->getIndex(); }
   /// Get Status
   virtual Status getStatus() const override

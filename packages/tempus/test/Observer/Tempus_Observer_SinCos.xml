@@ -47,7 +47,13 @@
     <ParameterList name="Demo Stepper">
       <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
       <Parameter name="Use FSAL"       type="bool" value="true"/>
+  </ParameterList>
+
+    <ParameterList name="Demo RK Stepper">
+      <Parameter name="Stepper Type" type="string" value="RK Explicit 4 Stage"/>
+      <!--<Parameter name="Use FSAL"       type="bool" value="true"/>-->
     </ParameterList>
+
 
   </ParameterList>
 
