@@ -260,8 +260,7 @@ namespace Tpetra {
         using Teuchos::null;
         using std::cerr;
         using std::endl;
-        // Typedef to make certain type declarations shorter.
-        typedef global_ordinal_type GO;
+        using GO = global_ordinal_type;
 
         // The row pointer array always has at least one entry, even
         // if the matrix has zero rows.  myNumEntriesPerRow, myColInd,
@@ -284,8 +283,7 @@ namespace Tpetra {
         // Construct the CrsMatrix, using the row map, with the
         // constructor specifying the number of nonzeros for each row.
         RCP<sparse_matrix_type> A =
-          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow (),
-                                       DynamicProfile));
+          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow ()));
 
         // List of the global indices of my rows.
         // They may or may not be contiguous.
@@ -563,10 +561,10 @@ namespace Tpetra {
       generate_miniFE_matrix (int nx,
                               const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
                               const bool callFillComplete=true,
-                              const bool debug = false) 
+                              const bool debug = false)
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
       {
-        return generate_miniFE_matrix(nx, pComm, Teuchos::null, callFillComplete, 
+        return generate_miniFE_matrix(nx, pComm, Teuchos::null, callFillComplete,
                                       debug);
       }
 
@@ -606,7 +604,7 @@ namespace Tpetra {
         dims[1] = nrows;
         dims[2] = nnz;
 
-        Teuchos::RCP<const map_type> pRangeMap = makeRangeMap (pComm, 
+        Teuchos::RCP<const map_type> pRangeMap = makeRangeMap (pComm,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
                                                                pNode,
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
@@ -757,7 +755,7 @@ namespace Tpetra {
        generate_miniFE_vector(
            int nx,
            const Teuchos::RCP<const Teuchos::Comm<int> >& pComm
-       ) 
+       )
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
        {
          return generate_miniFE_vector(nx, pComm, Teuchos::null);
@@ -772,7 +770,7 @@ namespace Tpetra {
            int nx,
            const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
            const Teuchos::RCP<node_type>& pNode
-       ) 
+       )
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
        {
          using Teuchos::ArrayRCP;

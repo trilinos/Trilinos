@@ -527,7 +527,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const size_t maxNumEntriesPerRow,
-	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
@@ -549,7 +549,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
-	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -586,7 +586,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const size_t maxNumEntPerRow,
-	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -614,7 +614,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
-	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -5033,13 +5033,16 @@ namespace Tpetra {
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  createCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
+  createCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
                    size_t maxNumEntriesPerRow = 0,
                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
-    typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-    return Teuchos::rcp (new matrix_type (map, maxNumEntriesPerRow,
-                                          DynamicProfile, params));
+    using Teuchos::rcp;
+    using matrix_type = CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    const ProfileType profileType = TPETRA_DEFAULT_PROFILE_TYPE;
+    return rcp (new matrix_type (map, maxNumEntriesPerRow,
+                                 profileType, params));
   }
 
   template<class CrsMatrixType>

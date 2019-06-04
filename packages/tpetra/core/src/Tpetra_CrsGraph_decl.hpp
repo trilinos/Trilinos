@@ -349,7 +349,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const size_t maxNumEntriesPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a (possibly different) upper
@@ -371,7 +371,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a (possibly different) upper
@@ -394,7 +394,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::ArrayView<const size_t>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -402,7 +402,7 @@ namespace Tpetra {
     TPETRA_DEPRECATED
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-	      const ProfileType pftype = DynamicProfile,
+              const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -430,7 +430,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const size_t maxNumEntriesPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -454,7 +454,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries
@@ -479,7 +479,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayView<const size_t>& numEntPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -488,7 +488,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-	      const ProfileType pftype = DynamicProfile,
+              const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -2571,13 +2571,16 @@ namespace Tpetra {
   /// \relatesalso CrsGraph
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
-  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
+  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
                   size_t maxNumEntriesPerRow = 0,
                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
     using Teuchos::rcp;
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
-    return rcp (new graph_type (map, maxNumEntriesPerRow, DynamicProfile, params));
+    using graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+
+    const ProfileType profileType = TPETRA_DEFAULT_PROFILE_TYPE;
+    return rcp (new graph_type (map, maxNumEntriesPerRow,
+                                profileType, params));
   }
 
   /// \brief Nonmember CrsGraph constructor that fuses Import and fillComplete().
