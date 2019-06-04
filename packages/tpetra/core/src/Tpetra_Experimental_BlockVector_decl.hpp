@@ -141,6 +141,30 @@ public:
   //! \name Constructors
   //@{
 
+  /// \brief Default constructor.
+  ///
+  /// Creates an empty BlockVector.  An empty BlockVector has zero
+  /// rows, and block size zero.
+  BlockVector ();
+
+  //! Copy constructor (shallow copy).
+  BlockVector (const BlockVector<Scalar, LO, GO, Node>&) = default;
+
+  //! Move constructor (shallow move).
+  BlockVector (BlockVector<Scalar, LO, GO, Node>&&) = default;
+
+  //! Copy assigment (shallow copy).
+  BlockVector<Scalar, LO, GO, Node>&
+  operator= (const BlockVector<Scalar, LO, GO, Node>&) = default;
+
+  //! Move assigment (shallow move).
+  BlockVector<Scalar, LO, GO, Node>&
+  operator= (BlockVector<Scalar, LO, GO, Node>&&) = default;
+
+  //! "Copy constructor" with option to deep copy.
+  BlockVector (const BlockVector<Scalar, LO, GO, Node>& in,
+               const Teuchos::DataAccess copyOrView);
+
   /// \brief Constructor that takes a mesh Map and a block size.
   ///
   /// \param meshMap [in] Map that describes the distribution of mesh
@@ -229,12 +253,6 @@ public:
   BlockVector (const BlockVector<Scalar, LO, GO, Node>& X,
                const map_type& newMeshMap,
                const size_t offset = 0);
-
-  /// \brief Default constructor.
-  ///
-  /// Creates an empty BlockVector.  An empty BlockVector has zero
-  /// rows, and block size zero.
-  BlockVector ();
 
   //@}
   //! \name Access to Maps, the block size, and a Vector view.
