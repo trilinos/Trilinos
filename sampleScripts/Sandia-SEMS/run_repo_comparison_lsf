@@ -34,8 +34,8 @@ echo "ulimit -c 0; ctest" &> test_submitted_command
 chmod a+x test_submitted_command
 
 echo "bsub -J ${JOBNAME}-Conf1 -W 01:00 -Is -n 16 -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
-echo "bsub -J ${JOBNAME}-Build1 -W 06:00 -Is -n 16 -q ${QUEUE} make -j 30 -k  &> build.output" &> build_command
-echo "bsub -J ${JOBNAME}-Test1 -W 02:00 -Is -n 16 -q ${QUEUE} ./test_submitted_command &> test.output" &> test_command
+echo "bsub -J ${JOBNAME}-Build1 -W 07:00 -Is -n 16 -q ${QUEUE} make -j 30 -k  &> build.output" &> build_command
+echo "bsub -J ${JOBNAME}-Test1 -W 04:00 -Is -n 16 -q ${QUEUE} ./test_submitted_command &> test.output" &> test_command
 
 chmod a+x *_command
 echo ""
@@ -88,8 +88,8 @@ echo "ulimit -c 0; ctest" &> test_submitted_command
 chmod a+x test_submitted_command
 
 echo "bsub -J ${JOBNAME}-Conf2 -W 01:00 -Is -n 16 -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
-echo "bsub -J ${JOBNAME}-Build2 -W 06:00 -Is -n 16 -q ${QUEUE} make -j 30 -k  &> build.output" &> build_command
-echo "bsub -J ${JOBNAME}-Test2 -W 02:00 -Is -n 16 -q ${QUEUE} ./test_submitted_command &> test.output" &> test_command
+echo "bsub -J ${JOBNAME}-Build2 -W 07:00 -Is -n 16 -q ${QUEUE} make -j 30 -k  &> build.output" &> build_command
+echo "bsub -J ${JOBNAME}-Test2 -W 04:00 -Is -n 16 -q ${QUEUE} ./test_submitted_command &> test.output" &> test_command
 
 
 chmod a+x *_command
@@ -141,6 +141,10 @@ grep "(Failed)" build_pristine/test.output | cut -d " " -f 3- | sort -u &> prist
 grep "(Failed)" build_updated/test.output | cut -d " " -f 3- | sort -u &> updated_test.failed || true
 grep "(Not Run)" build_pristine/test.output | cut -d " " -f 3- | sort -u &> pristine_test.notrun || true
 grep "(Not Run)" build_updated/test.output | cut -d " " -f 3- | sort -u &> updated_test.notrun || true
+
+touch pristine_ctestcomplete.check updated_ctestcomplete.check
+awk '/Label/ { if ($0 == "Label Time Summary:") { print "ctest completed"; } else { print "time out: ctest aborted";} }' build_pristine/test.output &> pristine_ctestcomplete.check || true
+awk '/Label/ { if ($0 == "Label Time Summary:") { print "ctest completed"; } else { print "time out: ctest aborted";} }' build_updated/test.output &> updated_ctestcomplete.check || true
 
 DIFF_ERRORS=`diff pristine_build.error updated_build.error | wc -l`
 DIFF_FAILED=`diff pristine_test.failed updated_test.failed | wc -l`
