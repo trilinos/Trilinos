@@ -47,6 +47,8 @@
 
 #include <stk_unit_test_utils/getOption.h>
 
+#include <iomanip>
+
 typedef stk::search::IdentProc<int,int> Ident;
 typedef stk::search::Point<double> Point;
 typedef stk::search::Sphere<double> Sphere;
