@@ -95,7 +95,6 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;

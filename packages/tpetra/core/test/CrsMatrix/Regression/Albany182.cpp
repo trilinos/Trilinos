@@ -1003,15 +1003,20 @@ namespace { // (anonymous)
     }
 
     using Tpetra::ProfileType;
-    using Tpetra::DynamicProfile;
     using Tpetra::StaticProfile;
-    for (ProfileType profileType : {DynamicProfile, StaticProfile}) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    using Tpetra::DynamicProfile;
+    const ProfileType profileTypes[2] = {DynamicProfile, StaticProfile};
+#else
+    const ProfileType profileTypes[1] = {StaticProfile};
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    for (ProfileType profileType : profileTypes) {
       out << ">>> Target matrix is {";
-      if (profileType == Tpetra::DynamicProfile) {
-        out << "DynamicProfile";
+      if (profileType == Tpetra::StaticProfile) {
+        out << "StaticProfile";
       }
       else {
-        out << "StaticProfile";
+        out << "DynamicProfile";
       }
       out << ", locally indexed}" << endl;
       Teuchos::OSTab tab2 (out);

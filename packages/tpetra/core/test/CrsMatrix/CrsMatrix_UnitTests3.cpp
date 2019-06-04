@@ -141,7 +141,6 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -220,14 +219,16 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       matrix.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
       // create dynamic-profile matrix, fill-complete without inserting (and therefore, without allocating)
-      MAT matrix(map,1,DynamicProfile);
+      MAT matrix(map, 1, Tpetra::DynamicProfile);
       matrix.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
@@ -236,14 +237,16 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
       // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph(map,1,DynamicProfile);
+      GRPH graph(map,1,Tpetra::DynamicProfile);
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   }
 
   ////
@@ -281,54 +284,64 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     Array<Scalar> vals(ginds.size(),ST::one());
     RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm) );
     RCP<ParameterList> params = parameterList();
-    for (int T=0; T<4; ++T) {
-      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
-      params->set("Optimize Storage",((T & 2) == 2));
-      MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
-      RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
-      Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
-      ArrayView<const GO> CGView; ArrayView<const LO> CLView; ArrayView<const Scalar> CSView;
-      size_t numentries;
-      // at this point, the graph has not allocated data as global or local, so we can do views/copies for either local or global
-      matrix.getLocalRowCopy(0,LCopy,SCopy,numentries);
-      matrix.getLocalRowView(0,CLView,CSView);
-      matrix.getGlobalRowCopy(myrowind,GCopy,SCopy,numentries);
-      matrix.getGlobalRowView(myrowind,CGView,CSView);
-      // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
-      for (size_t j=0; j<(size_t)ginds.size(); ++j) {
-        matrix.insertGlobalValues(myrowind,ginds(j,1),tuple(ST::one()));
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    const ProfileType profileTypes[2] =
+      {Tpetra::DynamicProfile, StaticProfile};
+#else
+    const ProfileType profileTypes[1] = {StaticProfile};
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+    for (ProfileType pftype : profileTypes) {
+      for (bool optimizeStorage : {false, true}) {
+        params->set("Optimize Storage", optimizeStorage);
+
+        MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
+        RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
+        Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
+        ArrayView<const GO> CGView; ArrayView<const LO> CLView; ArrayView<const Scalar> CSView;
+        size_t numentries;
+        // at this point, the graph has not allocated data as global or local, so we can do views/copies for either local or global
+        matrix.getLocalRowCopy(0,LCopy,SCopy,numentries);
+        matrix.getLocalRowView(0,CLView,CSView);
+        matrix.getGlobalRowCopy(myrowind,GCopy,SCopy,numentries);
+        matrix.getGlobalRowView(myrowind,CGView,CSView);
+        // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
+        for (size_t j=0; j<(size_t)ginds.size(); ++j) {
+          matrix.insertGlobalValues(myrowind,ginds(j,1),tuple(ST::one()));
+        }
+        TEST_EQUALITY( matrix.getNumEntriesInLocalRow(0), matrix.getCrsGraph()->getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
+        // Before Mar 2019, insertion in to a matrix (graph) would append new indices/values
+        // to the appropriate row. The result was that insertion would result in duplicate
+        // indices (which would later be compressed out at fillComplete). A side-effect was
+        // that insertion would throw if the total number of inserted indices exceeded the
+        // space allocated - not just the number of unique indices. The current behavior now
+        // checks if an index exists the graph and only inserts if it doesn't. Thus, the
+        // following test needs to be modified to insert another *unique* index and not a
+        // repeat.
+        if (pftype == StaticProfile) {
+          TEST_THROW( matrix.insertGlobalValues(myrowind, tuple(myrowind+5), tuple(ST::one())), std::runtime_error );
+        }
+        matrix.fillComplete(params);
+        // check for throws and no-throws/values
+        TEST_THROW( matrix.getGlobalRowView(myrowind,CGView,CSView), std::runtime_error );
+        TEST_THROW( matrix.getLocalRowCopy(    0       ,LCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
+        TEST_THROW( matrix.getGlobalRowCopy(myrowind,GCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
+        //
+        TEST_NOTHROW( matrix.getLocalRowView(0,CLView,CSView) );
+        TEST_COMPARE_ARRAYS( CLView, linds );
+        TEST_COMPARE_ARRAYS( CSView, vals  );
+        //
+        TEST_NOTHROW( matrix.getLocalRowCopy(0,LCopy,SCopy,numentries) );
+        TEST_COMPARE_ARRAYS( LCopy(0,numentries), linds );
+        TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
+        //
+        TEST_NOTHROW( matrix.getGlobalRowCopy(myrowind,GCopy,SCopy,numentries) );
+        TEST_COMPARE_ARRAYS( GCopy(0,numentries), ginds );
+        TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
+        //
+        STD_TESTS(rowmatrix);
       }
-      TEST_EQUALITY( matrix.getNumEntriesInLocalRow(0), matrix.getCrsGraph()->getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
-      // Before Mar 2019, insertion in to a matrix (graph) would append new indices/values
-      // to the appropriate row. The result was that insertion would result in duplicate
-      // indices (which would later be compressed out at fillComplete). A side-effect was
-      // that insertion would throw if the total number of inserted indices exceeded the
-      // space allocated - not just the number of unique indices. The current behavior now
-      // checks if an index exists the graph and only inserts if it doesn't. Thus, the
-      // following test needs to be modified to insert another *unique* index and not a
-      // repeat.
-      if (pftype == StaticProfile) {
-        TEST_THROW( matrix.insertGlobalValues(myrowind, tuple(myrowind+5), tuple(ST::one())), std::runtime_error );
-      }
-      matrix.fillComplete(params);
-      // check for throws and no-throws/values
-      TEST_THROW( matrix.getGlobalRowView(myrowind,CGView,CSView), std::runtime_error );
-      TEST_THROW( matrix.getLocalRowCopy(    0       ,LCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
-      TEST_THROW( matrix.getGlobalRowCopy(myrowind,GCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
-      //
-      TEST_NOTHROW( matrix.getLocalRowView(0,CLView,CSView) );
-      TEST_COMPARE_ARRAYS( CLView, linds );
-      TEST_COMPARE_ARRAYS( CSView, vals  );
-      //
-      TEST_NOTHROW( matrix.getLocalRowCopy(0,LCopy,SCopy,numentries) );
-      TEST_COMPARE_ARRAYS( LCopy(0,numentries), linds );
-      TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
-      //
-      TEST_NOTHROW( matrix.getGlobalRowCopy(myrowind,GCopy,SCopy,numentries) );
-      TEST_COMPARE_ARRAYS( GCopy(0,numentries), ginds );
-      TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
-      //
-      STD_TESTS(rowmatrix);
     }
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -416,7 +429,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // call fillComplete()
     out << "Call fillComplete on the matrix" << endl;
-    TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TEST_ASSERT( A.getProfileType() == Tpetra::DynamicProfile );
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
     A.fillComplete (lclmap, rowmap);
     A.describe (out, VERB_LOW);
 

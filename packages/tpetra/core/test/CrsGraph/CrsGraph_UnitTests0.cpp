@@ -64,7 +64,6 @@ namespace {
     return determineLocalTriangularStructure (G_lcl, lclRowMap, lclColMap, true);
   }
 
-  using Tpetra::DynamicProfile;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Teuchos::arcp;
@@ -303,8 +302,12 @@ namespace {
         params->set ("compute local triangular constants", true);
       }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph (map, 3, DynamicProfile);
+      GRPH graph (map, 3, Tpetra::DynamicProfile);
+#else
+      GRPH graph (map, 3);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       for (GO i = map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
         graph.insertGlobalIndices (i, tuple<GO> (i));
       }
@@ -442,50 +445,58 @@ namespace {
         params->set ("compute local triangular constants", true);
       }
 
-      for (int T=0; T<4; ++T) {
-        ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
-        params->set("Optimize Storage",((T & 2) == 2));
-        GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
-        Array<GO> GCopy(4); Array<LO> LCopy(4);
-        ArrayView<const GO> GView;
-        ArrayView<const LO> LView;
-        size_t numindices;
-        // at this point, there are no global or local indices, but views and copies should succeed
-        trigraph.getLocalRowCopy(0,LCopy,numindices);
-        trigraph.getLocalRowView(0,LView);
-        trigraph.getGlobalRowCopy(myrowind,GCopy,numindices);
-        trigraph.getGlobalRowView(myrowind,GView);
-        // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
-        typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
-        for (size_type j=0; j < ginds.size(); ++j) {
-          trigraph.insertGlobalIndices(myrowind,ginds(j,1));
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      const ProfileType profileTypes[2] =
+        {Tpetra::DynamicProfile, StaticProfile};
+#else
+      const ProfileType profileTypes[1] = {StaticProfile};
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+      for (ProfileType pftype : profileTypes) {
+        for (bool optimizeStorage : {false, true}) {
+          params->set("Optimize Storage", optimizeStorage);
+          GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
+          Array<GO> GCopy(4); Array<LO> LCopy(4);
+          ArrayView<const GO> GView;
+          ArrayView<const LO> LView;
+          size_t numindices;
+          // at this point, there are no global or local indices, but views and copies should succeed
+          trigraph.getLocalRowCopy(0,LCopy,numindices);
+          trigraph.getLocalRowView(0,LView);
+          trigraph.getGlobalRowCopy(myrowind,GCopy,numindices);
+          trigraph.getGlobalRowView(myrowind,GView);
+          // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
+          typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
+          for (size_type j=0; j < ginds.size(); ++j) {
+            trigraph.insertGlobalIndices(myrowind,ginds(j,1));
+          }
+          TEST_EQUALITY( trigraph.getNumEntriesInLocalRow(0), trigraph.getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
+          // If StaticProfile, then attempt to insert one additional entry
+          // in my row that is not already in the row, and verify that it
+          // throws an exception.
+          if (pftype == StaticProfile) {
+            TEST_THROW( trigraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+2)), std::runtime_error );
+          }
+          trigraph.fillComplete(params);
+          // check that inserting global entries throws (inserting local entries is still allowed)
+          {
+            Array<GO> zero(0);
+            TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
+          }
+          // check for throws and no-throws/values
+          TEST_THROW( trigraph.getGlobalRowView(myrowind,GView), std::runtime_error );
+          TEST_THROW( trigraph.getLocalRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
+          TEST_THROW( trigraph.getGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
+          TEST_NOTHROW( trigraph.getLocalRowView(0,LView) );
+          TEST_COMPARE_ARRAYS( LView, linds );
+          TEST_NOTHROW( trigraph.getLocalRowCopy(0,LCopy,numindices) );
+          TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
+          TEST_NOTHROW( trigraph.getGlobalRowCopy(myrowind,GCopy,numindices) );
+          TEST_COMPARE_ARRAYS( GCopy(0,numindices), ginds );
+          STD_TESTS(trigraph);
         }
-        TEST_EQUALITY( trigraph.getNumEntriesInLocalRow(0), trigraph.getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
-        // If StaticProfile, then attempt to insert one additional entry
-        // in my row that is not already in the row, and verify that it
-        // throws an exception.
-        if (pftype == StaticProfile) {
-          TEST_THROW( trigraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+2)), std::runtime_error );
-        }
-        trigraph.fillComplete(params);
-        // check that inserting global entries throws (inserting local entries is still allowed)
-        {
-          Array<GO> zero(0);
-          TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
-        }
-        // check for throws and no-throws/values
-        TEST_THROW( trigraph.getGlobalRowView(myrowind,GView), std::runtime_error );
-        TEST_THROW( trigraph.getLocalRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
-        TEST_THROW( trigraph.getGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
-        TEST_NOTHROW( trigraph.getLocalRowView(0,LView) );
-        TEST_COMPARE_ARRAYS( LView, linds );
-        TEST_NOTHROW( trigraph.getLocalRowCopy(0,LCopy,numindices) );
-        TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
-        TEST_NOTHROW( trigraph.getGlobalRowCopy(myrowind,GCopy,numindices) );
-        TEST_COMPARE_ARRAYS( GCopy(0,numindices), ginds );
-        STD_TESTS(trigraph);
       }
-      // All procs fail if any node fails
+      // Check whether any process failed
       int globalSuccess_int = -1;
       reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
       TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -836,61 +847,70 @@ namespace {
     RCP<const map_type> map = rcp (new map_type (INVALID, numLocal, 0, comm));
     GO mymiddle = map->getGlobalElement(1);  // get my middle row
 
-    for (int T=0; T<4; ++T) {
-      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
-      RCP<ParameterList> params = parameterList ();
-      params->set("Optimize Storage",((T & 2) == 2));
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    const ProfileType profileTypes[2] =
+      {Tpetra::DynamicProfile, StaticProfile};
+#else
+    const ProfileType profileTypes[1] = {StaticProfile};
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
-      // Test (GitHub Issue) #2565 fix, while we're at it.
-      //
-      // clts == 0: Don't set "compute local triangular constants"
-      // clts == 1: Set "compute local triangular constants" to false
-      // clts == 2: Set "compute local triangular constants" to true
-      for (int clts : {0, 1, 2}) {
-        if (clts == 1) {
-          params->set ("compute local triangular constants", false);
-        }
-        else if (clts == 2) {
-          params->set ("compute local triangular constants", true);
-        }
-        // create a diagonal graph, but where only my middle row has an entry
-        ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
-        GRAPH ddgraph(map, toalloc (), pftype);
-        ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
-        // before globalAssemble(), there should be one local entry on middle, none on the others
-        ArrayView<const GO> myrow_gbl;
-        ddgraph.getGlobalRowView(mymiddle-1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
-        ddgraph.getGlobalRowView(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
-        ddgraph.getGlobalRowView(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
-        if (pftype == StaticProfile) { // no room for more, on any row
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle+1)), std::runtime_error );
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle+1)), std::runtime_error );
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,tuple<GO>(mymiddle+1)), std::runtime_error );
-        }
-        ddgraph.fillComplete(params);
-        // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
-        ArrayView<const LO> myrow_lcl;
-        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(0), 0 );
-        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(2), 0 );
-        ddgraph.getLocalRowView(1,myrow_lcl);
-        TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
-        if (myrow_lcl.size() == 1) {
-          TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
-        }
-        // also, the row map and column map should be equivalent
-        TEST_EQUALITY( ddgraph.getGlobalNumCols(), static_cast<GST> (3*numProcs) );
-        TEST_EQUALITY( ddgraph.getGlobalNumRows(), ddgraph.getGlobalNumCols() );
+    for (ProfileType pftype : profileTypes) {
+      for (bool optimizeStorage : {false, true}) {
 
-        auto lclTri = getLocalTriangularStructure (ddgraph);
-        TEST_EQUALITY( lclTri.diagCount, static_cast<LO> (1) );
-        GO gblDiagCount = 0;
-        reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
-        TEST_EQUALITY( gblDiagCount, static_cast<GO> (numProcs) );
+        RCP<ParameterList> params = parameterList ();
+        params->set("Optimize Storage", optimizeStorage);
 
-        STD_TESTS(ddgraph);
+        // Test (GitHub Issue) #2565 fix, while we're at it.
+        //
+        // clts == 0: Don't set "compute local triangular constants"
+        // clts == 1: Set "compute local triangular constants" to false
+        // clts == 2: Set "compute local triangular constants" to true
+        for (int clts : {0, 1, 2}) {
+          if (clts == 1) {
+            params->set ("compute local triangular constants", false);
+          }
+          else if (clts == 2) {
+            params->set ("compute local triangular constants", true);
+          }
+          // create a diagonal graph, but where only my middle row has an entry
+          ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
+          GRAPH ddgraph(map, toalloc (), pftype);
+          ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
+          // before globalAssemble(), there should be one local entry on middle, none on the others
+          ArrayView<const GO> myrow_gbl;
+          ddgraph.getGlobalRowView(mymiddle-1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+          ddgraph.getGlobalRowView(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
+          ddgraph.getGlobalRowView(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+          if (pftype == StaticProfile) { // no room for more, on any row
+            TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle+1)), std::runtime_error );
+            TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle+1)), std::runtime_error );
+            TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,tuple<GO>(mymiddle+1)), std::runtime_error );
+          }
+          ddgraph.fillComplete(params);
+          // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
+          ArrayView<const LO> myrow_lcl;
+          TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(0), 0 );
+          TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(2), 0 );
+          ddgraph.getLocalRowView(1,myrow_lcl);
+          TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
+          if (myrow_lcl.size() == 1) {
+            TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
+          }
+          // also, the row map and column map should be equivalent
+          TEST_EQUALITY( ddgraph.getGlobalNumCols(), static_cast<GST> (3*numProcs) );
+          TEST_EQUALITY( ddgraph.getGlobalNumRows(), ddgraph.getGlobalNumCols() );
+
+          auto lclTri = getLocalTriangularStructure (ddgraph);
+          TEST_EQUALITY( lclTri.diagCount, static_cast<LO> (1) );
+          GO gblDiagCount = 0;
+          reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
+          TEST_EQUALITY( gblDiagCount, static_cast<GO> (numProcs) );
+
+          STD_TESTS(ddgraph);
+        }
       }
     }
-    // All procs fail if any node fails
+    // Check whether any process failed
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -937,7 +957,14 @@ namespace {
       }
       Teuchos::OSTab tab1 (out);
 
-      for (ProfileType pftype : {StaticProfile, DynamicProfile}) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      const ProfileType profileTypes[2] =
+        {Tpetra::DynamicProfile, StaticProfile};
+#else
+      const ProfileType profileTypes[1] = {StaticProfile};
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+      for (ProfileType pftype : profileTypes) {
         out << "ProfileType: "
             << (pftype == StaticProfile ? "StaticProfile" : "DynamicProfile")
             << endl;
@@ -1043,7 +1070,7 @@ namespace {
             ArrayView<const GO> myrow_gbl;
             ngraph.getGlobalRowView (myrowind, myrow_gbl);
             TEST_EQUALITY_CONST( myrow_gbl.size(),
-                                ( numProcs == 1 && pftype == DynamicProfile ? 3 : 1 ));
+                                ( numProcs == 1 && pftype != StaticProfile ? 3 : 1 ));
 
             // after globalAssemble(), storage should be maxed out
             out << "Calling globalAssemble()" << endl;
