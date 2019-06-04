@@ -65,42 +65,41 @@ else
 fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
-    SPACK_GCC_COMPILER_TO_LOAD=`module avail 2>&1 | grep spack-gcc/7.2.0`
-    module load ${SPACK_GCC_COMPILER_TO_LOAD}
-    module load gcc-7.2.0/spack-binutils/2.31.1
-    export OMPI_CXX=`which g++`
+  SPACK_GCC_COMPILER_TO_LOAD=`module avail 2>&1 | grep spack-gcc/7.2.0`
+  module load ${SPACK_GCC_COMPILER_TO_LOAD}
+  export OMPI_CXX=`which g++`
 
-    module load gcc-7.2.0/spack-netlib-lapack/3.8.0
-    export BLAS_ROOT=$NETLIB_LAPACK_ROOT
-    export LAPACK_ROOT=$NETLIB_LAPACK_ROOT
+  module load gcc-7.2.0/spack-netlib-lapack/3.8.0
+  export BLAS_ROOT=$NETLIB_LAPACK_ROOT
+  export LAPACK_ROOT=$NETLIB_LAPACK_ROOT
 
-#    export LAPACK_ROOT=/usr/lib64/atlas
-    export OMPI_CC=`which gcc`
-    export OMPI_FC=`which gfortran`
-#    export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-#    export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
-    export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib64;-llapack"
-    export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib64;-lblas"
+  export OMPI_CC=`which gcc`
+  export OMPI_FC=`which gfortran`
+  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib64;-llapack"
+  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib64;-lblas"
+
+  module load gcc-7.2.0/spack-binutils/2.31.1
+  module load gcc-7.2.0/spack-gettext/0.19.8.1 # for binutils
+  module load gcc-7.2.0/spack-libiconv/1.15 # for gettext 
+  module load gcc-7.2.0/spack-openmpi/1.10.1
+  module load gcc-7.2.0/spack-boost/1.59.0
+  module load gcc-7.2.0/spack-netcdf/4.4.1
+  module load gcc-7.2.0/spack-parallel-netcdf/1.11.0
+  module load gcc-7.2.0/spack-superlu/4.3
+  module load gcc-7.2.0/spack-hdf5/1.8.21
+  module load gcc-7.2.0/spack-zlib/1.2.11
+  module load gcc-7.2.0/spack-metis/5.1.0
+  module load gcc-7.2.0/spack-parmetis/4.0.3
+  module load gcc-7.2.0/spack-cgns/snl-atdm
+  module load gcc-7.2.0/spack-superlu-dist/6.1.0
+
 else
-    echo
-    echo "***"
-    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
-    echo "***"
-    return
+  echo
+  echo "***"
+  echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
+  echo "***"
+  return
 fi
-
-module load gcc-7.2.0/spack-openmpi/1.10.1
-module load gcc-7.2.0/spack-boost/1.59.0
-module load gcc-7.2.0/spack-netcdf/4.4.1
-module load gcc-7.2.0/spack-parallel-netcdf/1.11.0
-module load gcc-7.2.0/spack-superlu/4.3
-module load gcc-7.2.0/spack-hdf5/1.8.21
-module load gcc-7.2.0/spack-zlib/1.2.11
-
-module load gcc-7.2.0/spack-metis/5.1.0
-module load gcc-7.2.0/spack-parmetis/4.0.3
-module load gcc-7.2.0/spack-cgns/snl-atdm
-module load gcc-7.2.0/spack-superlu-dist/6.1.0
 
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
   ATDM_CONFIG_TPL_LIB_EXT=so
@@ -132,11 +131,13 @@ export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NET
 # NOTE: SEMS does not provide the correct *.so files for NetCDF so we can't
 # use them in a shared lib build :-(
 
-export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.so;${BINUTILS_ROOT}/lib64/libiberty.a"
+export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.so;${BINUTILS_ROOT}/lib64/libiberty.a;${GETTEXT_ROOT}/lib/libintl.a;${LIBICONV_ROOT}/lib/libiconv.so"
 # NOTE: Above, we have to explicitly set the libs to use libbdf.so instead of
 # libbdf.a because the former works and the latter does not and TriBITS is set
 # up to only find static libs by default!
 unset BINUTILS_ROOT
+# NOTE: Above, you have to unset this or the configure dues in in the compiler
+# check.  What the heck?
 
 # SuperLUDist
 if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
