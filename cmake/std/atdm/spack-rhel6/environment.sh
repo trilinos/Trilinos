@@ -65,8 +65,9 @@ else
 fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
+    SPACK_GCC_COMPILER_TO_LOAD=`module avail 2>&1 | grep spack-gcc/7.2.0`
+    module load ${SPACK_GCC_COMPILER_TO_LOAD}
     module load gcc-7.2.0/spack-binutils/2.31.1
-    module load gcc-7.2.0/spack-gcc/7.2.0
     export OMPI_CXX=`which g++`
 
     module load gcc-7.2.0/spack-netlib-lapack/3.8.0
@@ -110,12 +111,12 @@ fi
 export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=-lhwloc
 
-echo BOOST_ROOT=${BOOST_ROOT}
-echo HDF5_ROOT=${HDF5_ROOT}
-echo NETCDF_ROOT=${NETCDF_ROOT}
+#echo BOOST_ROOT=${BOOST_ROOT}
+#echo HDF5_ROOT=${HDF5_ROOT}
+#echo NETCDF_ROOT=${NETCDF_ROOT}
 
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a;-ldl"
-echo ATDM_CONFIG_HDF5_LIBS=$ATDM_CONFIG_HDF5_LIBS
+#echo ATDM_CONFIG_HDF5_LIBS=$ATDM_CONFIG_HDF5_LIBS
 
 export PNETCDF_ROOT=${PARALLEL_NETCDF_ROOT}
 
