@@ -84,22 +84,6 @@ typedef std::pair<const void*, RCPNodeInfo> VoidPtrNodeRCPInfoPair_t;
 
 typedef std::multimap<const void*, RCPNodeInfo> rcp_node_list_t;
 
-
-class RCPNodeInfoListPred {
-public:
-  bool operator()(const rcp_node_list_t::value_type &v1,
-    const rcp_node_list_t::value_type &v2
-    ) const
-    {
-#ifdef TEUCHOS_DEBUG
-      return v1.second.nodePtr->insertion_number() < v2.second.nodePtr->insertion_number();
-#else
-      return v1.first < v2.first;
-#endif
-    }
-};
-
-
 //
 // Local static functions returning references to local static objects to
 // ensure objects are initilaized.
@@ -234,6 +218,7 @@ void RCPNode::set_extra_data(
   ,bool force_unique
   )
 {
+  (void)force_unique;
   if(extra_data_map_==NULL) {
     extra_data_map_ = new extra_data_map_t;
   }
@@ -396,7 +381,16 @@ void RCPNodeTracer::printActiveRCPNodes(std::ostream &out)
       // debug-mode build.
       typedef std::vector<VoidPtrNodeRCPInfoPair_t> rcp_node_vec_t;
       rcp_node_vec_t rcp_node_vec(rcp_node_list()->begin(), rcp_node_list()->end());
-      std::sort(rcp_node_vec.begin(), rcp_node_vec.end(), RCPNodeInfoListPred());
+      std::sort(rcp_node_vec.begin(), rcp_node_vec.end(),
+          [] (const rcp_node_list_t::value_type &v1, const rcp_node_list_t::value_type &v2)
+          {
+#ifdef TEUCHOS_DEBUG
+            return v1.second.nodePtr->insertion_number() < v2.second.nodePtr->insertion_number();
+#else
+            return v1.first < v2.first;
+#endif
+          }
+      );
       // Print the RCPNode objects sorted by insertion number
       typedef rcp_node_vec_t::const_iterator itr_t;
       int i = 0;

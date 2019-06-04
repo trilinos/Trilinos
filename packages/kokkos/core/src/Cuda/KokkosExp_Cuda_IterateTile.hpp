@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -45,7 +45,7 @@
 #define KOKKOS_CUDA_EXP_ITERATE_TILE_HPP
 
 #include <Kokkos_Macros.hpp>
-#if defined( __CUDACC__ ) && defined( KOKKOS_HAVE_CUDA )
+#if defined( __CUDACC__ ) && defined( KOKKOS_ENABLE_CUDA )
 
 #include <iostream>
 #include <algorithm>

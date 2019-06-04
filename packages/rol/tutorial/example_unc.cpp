@@ -52,7 +52,7 @@
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdObjective.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 
@@ -91,32 +91,32 @@ public:
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
 
   typedef double RealT;
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
 
   int errorFlag   = 0;
 
   try {
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     parlist.sublist("General").sublist("Secant").set("Use as Hessian",false);
     parlist.sublist("Step").set("Type","Trust Region");
     parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
 
-    RCP<std::vector<RealT> > x_rcp  = rcp( new std::vector<RealT>(2) );
-    RCP<ROL::Vector<RealT> > x      = rcp( new ROL::StdVector<RealT>(x_rcp) );
-    (*x_rcp)[0] = static_cast<RealT>(-3);
-    (*x_rcp)[1] = static_cast<RealT>(-4);
+    ROL::Ptr<std::vector<RealT> > x_ptr  = ROL::makePtr<std::vector<RealT>>(2);
+    ROL::Ptr<ROL::Vector<RealT> > x      = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
+    (*x_ptr)[0] = static_cast<RealT>(-3);
+    (*x_ptr)[1] = static_cast<RealT>(-4);
 
-    RCP<ROL::Objective<RealT> > obj = rcp( new ObjectiveRosenbrock<RealT>() );
+    ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ObjectiveRosenbrock<RealT>>();
 
     ROL::OptimizationProblem<RealT> problem( obj, x );
     problem.check(*outStream);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     ROL::OptimizationSolver<RealT> solver( problem, parlist );
     solver.solve(*outStream); 
 
-    *outStream << "x_opt = [" << (*x_rcp)[0] << ", " << (*x_rcp)[1] << "]" << std::endl;
+    *outStream << "x_opt = [" << (*x_ptr)[0] << ", " << (*x_ptr)[1] << "]" << std::endl;
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

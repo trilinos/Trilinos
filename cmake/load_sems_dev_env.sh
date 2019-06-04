@@ -18,8 +18,8 @@
 #   "default" (see the default listed below).
 #
 #   <cmake-and-version> is the SEMS module name for the CMake and its version,
-#   e.g. 'sems-cmake/3.5.2'.  To use the default just pass in "default" (see
-#   the default listed below).
+#   e.g. 'sems-cmake/3.5.2' or 'atdm-cmake/3.11.1'.  To use the default just
+#   pass in "default" (see the default listed below).
 #
 # Once sourced, this script also loads the SEMS modules for all of the TPLs
 # and tools that Trilinos can use that are provided by SEMS (see below for the
@@ -69,6 +69,13 @@ called=$_
 #[[ $called != $0 ]] && echo "Script is being sourced" || echo "Script is being run"
 #echo "\$BASH_SOURCE ${BASH_SOURCE[@]}"
 _SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
+
+# Try a different approach if the above failed
+# (happens if we are not in bash).
+if [ "$_SCRIPT_DIR" = "" ] ; then
+    _SCRIPT_DIR=$(cd -P -- "$(dirname -- "$0")" && printf '%s\n' "$(pwd -P)/$(basename -- "$0")")
+    _SCRIPT_DIR=`echo $_SCRIPT_DIR | sed "s/\(.*\)\/.*\.sh/\1/g"`
+fi
 #echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
 
 if [ "$4" != "" ] ; then
@@ -83,24 +90,22 @@ source $_SCRIPT_DIR/std/sems/get_default_modules.sh
 #
 
 sems_compiler_and_version_load=$1
-if [ "$sems_compiler_and_version_load" == "" ] || [ "$sems_compiler_and_version_load" == "default" ] ; then
+if [ "$sems_compiler_and_version_load" = "" ] || [ "$sems_compiler_and_version_load" = "default" ] ; then
   sems_compiler_and_version_load=$sems_compiler_and_version_default
 fi
 #echo "sems_compiler_and_version_load = $sems_compiler_and_version_load"
 
 sems_mpi_and_version_load=$2
-if [ "$sems_mpi_and_version_load" == "" ] || [ "$sems_mpi_and_version_load" == "default" ] ; then
+if [ "$sems_mpi_and_version_load" = "" ] || [ "$sems_mpi_and_version_load" = "default" ] ; then
   sems_mpi_and_version_load=$sems_mpi_and_version_default
 fi
 #echo "sems_mpi_and_version_load = $sems_mpi_and_version_load"
 
 sems_cmake_and_version_load=$3
-if [ "$sems_cmake_and_version_load" == "" ] || [ "$sems_cmake_and_version_load" == "default" ] ; then
+if [ "$sems_cmake_and_version_load" = "" ] || [ "$sems_cmake_and_version_load" = "default" ] ; then
   sems_cmake_and_version_load=$sems_cmake_and_version_default
 fi
 #echo "sems_cmake_and_version_load = $sems_cmake_and_version_load"
-
-TRILINOS_SEMS_DEV_ENV_TO_LOAD="$sems_compiler_and_version_load $sems_mpi_and_version_load $sems_cmake_and_version_load"
 
 #
 # B) Purge the current set of modules
@@ -115,7 +120,19 @@ module purge
 module load sems-env
 module load $sems_python_and_version_default
 module load $sems_cmake_and_version_load
+module load $sems_ninja_and_version_default
 module load $sems_git_and_version_default
+
+# The SEMS Intel modules point to an unsupported version of GCC.
+# until this is fixed, the workaround is below.
+# Please see https://github.com/trilinos/Trilinos/issues/2142
+# for updates regarding the right solution.
+if [[ $sems_compiler_and_version_load = "sems-intel/17.0.1" ]]; then
+  module load sems-gcc/4.9.3
+elif [[ $sems_compiler_and_version_load = "sems-intel/"* ]]; then
+  module load sems-gcc/4.8.4
+fi
+
 module load $sems_compiler_and_version_load
 module load $sems_mpi_and_version_load
 module load $sems_boost_and_version_default
@@ -126,12 +143,5 @@ module load $sems_parmetis_and_version_default
 module load $sems_scotch_and_version_default
 module load $sems_superlu_and_version_default
 
-if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
-  module list
-fi
-
-#
-# D) Remember the loaded SEMS Dev Env
-#
-
-export TRILINOS_SEMS_DEV_ENV_LOADED="$TRILINOS_SEMS_DEV_ENV_TO_LOAD"
+export OMP_NUM_THREADS=2
+# This was the agreement for the OpenMP builds as per #2317

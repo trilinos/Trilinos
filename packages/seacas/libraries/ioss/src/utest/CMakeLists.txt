@@ -21,6 +21,31 @@ TRIBITS_ADD_TEST(
 	NUM_MPI_PROCS 1
 )
 
+TRIBITS_ADD_EXECUTABLE(
+ Utst_map
+ SOURCES Utst_map.C
+)
+
+TRIBITS_ADD_TEST(
+	Utst_map
+	NAME Utst_map
+	NUM_MPI_PROCS 1
+)
+
+IF (TPL_ENABLE_CGNS)
+SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp.C PROPERTIES COMPILE_FLAGS -O0)
+TRIBITS_ADD_EXECUTABLE(
+ Utst_structured_decomp
+ SOURCES Utst_structured_decomp.C
+)
+
+TRIBITS_ADD_TEST(
+	Utst_structured_decomp
+	NAME Utst_structured_decomp
+	NUM_MPI_PROCS 1
+)
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_SEACASExodus)
 TRIBITS_ADD_EXECUTABLE(
  Utst_superelement
@@ -31,7 +56,6 @@ TRIBITS_ADD_TEST(
 	Utst_superelement
 	NAME Utst_superelement
 	NUM_MPI_PROCS 1
-	COMM serial
 	ARGS ${CMAKE_CURRENT_SOURCE_DIR}/cbr2.ncf
 )
 ENDIF()

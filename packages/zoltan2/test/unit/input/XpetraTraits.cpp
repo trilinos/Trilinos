@@ -54,7 +54,6 @@
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <string>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -68,7 +67,6 @@
 #include <Xpetra_EpetraUtils.hpp>
 #endif
 
-using namespace std;
 using std::string;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
@@ -147,10 +145,11 @@ ArrayRCP<zgno_t> roundRobinMap(const Xpetra::Map<zlno_t, zgno_t, znode_t> &xmap)
   return roundRobinMapShared(proc, nprocs, basegid, maxgid, nglobalrows);
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
   bool aok = true;
 
@@ -170,10 +169,12 @@ int main(int argc, char *argv[])
   // Create object that can give us test Tpetra and Xpetra input.
 
   RCP<UserInputForTests> uinput;
+  Teuchos::ParameterList params;
+  params.set("input file", "simple");
+  params.set("file type", "Chaco");
 
   try{
-    uinput =
-      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
+    uinput = rcp(new UserInputForTests(params, comm));
   }
   catch(std::exception &e){
     aok = false;
@@ -539,26 +540,12 @@ int main(int argc, char *argv[])
   typedef Epetra_MultiVector emvector_t;
   typedef Epetra_BlockMap emap_t;
 
-  // Create object that can give us test Epetra input.
-
-  RCP<UserInputForTests> euinput;
-
-  try{
-    euinput =
-      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
-  }
-  catch(std::exception &e){
-    aok = false;
-    std::cout << e.what() << std::endl;
-  }
-  TEST_FAIL_AND_EXIT(*comm, aok, "epetra input ", 1);
-
   // XpetraTraits<Epetra_CrsMatrix>
   {
     RCP<ematrix_t> M;
 
     try{
-      M = euinput->getUIEpetraCrsMatrix();
+      M = uinput->getUIEpetraCrsMatrix();
     }
     catch(std::exception &e){
       aok = false;
@@ -599,7 +586,7 @@ int main(int argc, char *argv[])
     RCP<egraph_t> G;
 
     try{
-      G = euinput->getUIEpetraCrsGraph();
+      G = uinput->getUIEpetraCrsGraph();
     }
     catch(std::exception &e){
       aok = false;
@@ -640,7 +627,7 @@ int main(int argc, char *argv[])
     RCP<evector_t> V;
 
     try{
-      V = rcp(new Epetra_Vector(euinput->getUIEpetraCrsGraph()->RowMap()));
+      V = rcp(new Epetra_Vector(uinput->getUIEpetraCrsGraph()->RowMap()));
       V->Random();
     }
     catch(std::exception &e){
@@ -683,7 +670,7 @@ int main(int argc, char *argv[])
 
     try{
       MV =
-        rcp(new Epetra_MultiVector(euinput->getUIEpetraCrsGraph()->RowMap(),3));
+        rcp(new Epetra_MultiVector(uinput->getUIEpetraCrsGraph()->RowMap(),3));
       MV->Random();
     }
     catch(std::exception &e){

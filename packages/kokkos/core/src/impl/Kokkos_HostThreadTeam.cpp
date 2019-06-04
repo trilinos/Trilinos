@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -212,6 +212,11 @@ int HostThreadTeamData::get_work_stealing() noexcept
 {
   pair_int_t w( -1 , -1 );
 
+  // TODO DJS 3-17-2018:
+  // Discover why the work stealing algorithm only works when called
+  // by the master thread of the team.  If we can refactor this section to
+  // remove that requirement we should be able to remove the split_master_wait
+  // behavior in the team and pool rendezvous algorithms
   if ( 1 == m_team_size || team_rendezvous() ) {
 
     // Attempt first from beginning of my work range

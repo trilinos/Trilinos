@@ -41,21 +41,22 @@
 // @HEADER
 
 #include "Panzer_SubcellConnectivity.hpp"
-
 #include "Panzer_LocalMeshInfo.hpp"
 
 namespace panzer
 {
 
 void
-FaceConnectivity::setup(const panzer::LocalMeshPartition<int,int> & partition)
+FaceConnectivity::
+setup(const panzer::LocalMeshPartition<int,panzer::Ordinal64> & partition)
 {
-  const int num_cells = partition.cell_to_faces.dimension_0();
-  const int num_faces = partition.face_to_cells.dimension_0();
-  const int num_faces_per_cell = partition.cell_to_faces.dimension_1();
+  const int num_cells = partition.cell_to_faces.extent(0);
+  const int num_faces = partition.face_to_cells.extent(0);
+  const int num_faces_per_cell = partition.cell_to_faces.extent(1);
   const int num_cells_per_face = 2;
 
   _num_subcells = num_faces;
+  _num_cells = num_cells;
 
   _subcell_to_cells_adj = Kokkos::View<int*>("subcell_to_cells_adj", num_faces+1);
   _subcell_to_cells = Kokkos::View<int*>("subcell_to_cells", num_faces*num_cells_per_face);

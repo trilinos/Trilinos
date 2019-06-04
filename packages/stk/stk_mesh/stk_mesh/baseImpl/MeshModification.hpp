@@ -48,7 +48,7 @@ class MeshModification
 {
 public:
     enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
-    enum modification_optimization {MOD_END_COMPRESS_AND_SORT , MOD_END_SORT };
+    enum modification_optimization {MOD_END_SORT };
 
     MeshModification(stk::mesh::BulkData& bulkData) : m_bulkData(bulkData), m_entity_states(),
             m_sync_state(MODIFIABLE), m_sync_count(0), m_did_any_shared_entity_change_parts(false)
@@ -69,19 +69,13 @@ public:
 
     bool modification_begin(const std::string description);
 
-// Deprecated 2015-06-10
-    bool modification_end_with_compress()
-    {
-        return this->internal_modification_end( MOD_END_COMPRESS_AND_SORT );
-    }
-
     bool modification_end();
     bool resolve_node_sharing();
     bool modification_end_after_node_sharing_resolution();
 
     void change_entity_owner( const EntityProcVec & arg_change);
 
-    void internal_resolve_shared_modify_delete();
+    void internal_resolve_shared_modify_delete(stk::mesh::EntityVector & entitiesNoLongerShared);
 
     bool did_any_shared_entity_change_parts () const { return m_did_any_shared_entity_change_parts; }
     void set_shared_entity_changed_parts() { m_did_any_shared_entity_change_parts = true; }
@@ -110,7 +104,7 @@ private:
     bool internal_modification_end_after_node_sharing_resolution(modification_optimization opt);
 
     stk::mesh::BulkData &m_bulkData;
-    std::vector<uint16_t> m_entity_states;
+    std::vector<stk::mesh::EntityState> m_entity_states;
     BulkDataSyncState m_sync_state;
     size_t m_sync_count;
     bool m_did_any_shared_entity_change_parts;

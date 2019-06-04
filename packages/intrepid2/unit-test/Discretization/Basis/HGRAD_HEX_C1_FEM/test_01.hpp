@@ -138,7 +138,7 @@ namespace Intrepid2 {
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const auto numFields = hexBasis.getCardinality();
-        const auto numPoints = hexNodes.dimension(0);
+        const auto numPoints = hexNodes.extent(0);
         const auto spaceDim  = hexBasis.getBaseCellTopology().getDimension();
         const auto D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
 
@@ -248,7 +248,7 @@ namespace Intrepid2 {
         const auto allTags = hexBasis.getAllDofTags();
 
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const auto dofTagSize = allTags.dimension(0);
+        const auto dofTagSize = allTags.extent(0);
         for (size_type i=0;i<dofTagSize;++i) {
           const auto bfOrd = hexBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
@@ -543,7 +543,7 @@ namespace Intrepid2 {
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const auto numFields = hexBasis.getCardinality();
-        const auto numPoints = hexNodes.dimension(0);
+        const auto numPoints = hexNodes.extent(0);
         const auto spaceDim  = hexBasis.getBaseCellTopology().getDimension();
         const auto D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
         const auto D10Cardin = getDkCardinality(OPERATOR_D10, spaceDim);

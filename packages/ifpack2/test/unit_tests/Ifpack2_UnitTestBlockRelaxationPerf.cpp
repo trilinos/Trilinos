@@ -4,7 +4,6 @@
 #include <cstdio>
 #include <stdexcept>
 
-#include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Time.hpp>
 
@@ -12,21 +11,23 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_SerialComm.h"
+#if defined(EPETRA_MPI)
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif // defined(EPETRA_MPI)
 
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
 
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_CrsMatrix_def.hpp>
+#include <Tpetra_Core.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MultiVector_def.hpp>
 #include <Tpetra_Vector_def.hpp>
 #include <Tpetra_RowMatrix_def.hpp>
 #include <Tpetra_Experimental_BlockMultiVector.hpp>
 #include <Tpetra_Experimental_BlockCrsMatrix.hpp>
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Ifpack2_Version.hpp>
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_BlockRelaxation.hpp>
 #include <Ifpack2_SparseContainer.hpp>
@@ -38,7 +39,6 @@
 #include <Ifpack2_LinePartitioner.hpp>
 #include <Ifpack2_ILUT.hpp>
 #include <Ifpack2_Factory.hpp>
-#include "Ifpack2_ETIHelperMacros.h"
 
 namespace
 {
@@ -47,33 +47,33 @@ using std::vector;
 using std::string;
 using Teuchos::RCP;
 using Teuchos::rcp;
-typedef unsigned long long u64;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NO;
-typedef Tpetra::CrsMatrix<double,int,int,NO> TMat;
-typedef Tpetra::Map<int,int,NO> TMap;
+using tpetra_crs_matrix_type = Tpetra::CrsMatrix<double>;
+using tpetra_map_type = Tpetra::Map<>;
 
 /**************************************************************
  * Create a Tpetra 2D laplacian matrix for testing relaxation *
  **************************************************************/
 
-RCP<const TMat> create_testmat_t(const RCP<const TMap>& rowmap)
+RCP<const tpetra_crs_matrix_type> create_testmat_t(const RCP<const tpetra_map_type>& rowmap)
 {
+  using GO = tpetra_map_type::global_ordinal_type;
+
   //tile this over each diagonal element:
   // 0 -1  0
   //-1  4 -1
   // 0 -1  0
-  RCP<TMat> crsmatrix = rcp(new TMat(rowmap, 3));
-  int numRows = rowmap->getGlobalNumElements();
+  RCP<tpetra_crs_matrix_type> crsmatrix = rcp(new tpetra_crs_matrix_type(rowmap, 3));
+  GO numRows = rowmap->getGlobalNumElements();
   double tile[3] = {-2, 4, -2};
-  int firstCols[] = {0, 1};
+  GO firstCols[] = {0, 1};
   crsmatrix->insertGlobalValues(0, 2, tile + 1, firstCols);
-  for(int row = 1; row < numRows - 1; row++)
+  for(GO row = 1; row < numRows - GO(1); row++)
   {
-    int cols[] = {row - 1, row, row + 1};
+    GO cols[] = {row - 1, row, row + 1};
     crsmatrix->insertGlobalValues(row, 3, tile, cols);
   }
-  int lastCols[] = {numRows - 2, numRows - 1};
-  crsmatrix->insertGlobalValues(numRows - 1, 2, tile, lastCols);
+  GO lastCols[] = {numRows - GO(2), numRows - GO(1)};
+  crsmatrix->insertGlobalValues(numRows - GO(1), 2, tile, lastCols);
   crsmatrix->fillComplete();
   return crsmatrix;
 }
@@ -106,33 +106,95 @@ RCP<const Epetra_CrsMatrix> create_testmat_e(const Epetra_Map& rowmap)
 
 TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
 {
+  constexpr bool debug = true;
+  auto myOutPtr = debug ?
+    Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+    Teuchos::rcpFromRef (out);
+  auto& myOut = *myOutPtr;
+
+  myOut << "Ifpack2 BlockRelaxation performance comparison: Epetra vs. Tpetra"
+        << std::endl;
+
   using Teuchos::ArrayRCP;
   //use the same types as epetra for fair comparison
-  auto tcomm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  decltype (Tpetra::getDefaultComm()) tcomm;
+  try {
+    tcomm = Tpetra::getDefaultComm();
+  }
+  catch (std::exception& e) {
+    myOut << "Tpetra::getDefaultComm() threw an exception: " << e.what () << std::endl;
+    TEST_ASSERT( false );
+    return;
+  }
+  catch (...) {
+    myOut << "Tpetra::getDefaultComm() threw an exception "
+      "not a subclass of std::exception" << std::endl;
+    TEST_ASSERT( false );
+    return;
+  }
+
   if(tcomm->getSize() == 1)
   {
     //Configure ranges of testing
     const vector<int> blockSizes = {2, 4, 5, 8, 10, 20, 50};
     string container = "TriDi";
-    const int localRows = 5000;
-    auto tmap = rcp(new TMap(localRows, 0, tcomm));
+    using GO = tpetra_map_type::global_ordinal_type;
+    const GO localRows = 5000;
+
+    myOut << "Create Tpetra test matrix" << std::endl;
+
+    auto tmap = rcp(new tpetra_map_type(localRows, 0, tcomm));
     auto tmat = create_testmat_t(tmap);
-#ifdef EPETRA_MPI
+
+    myOut << "Create Epetra test matrix" << std::endl;
+#if defined(EPETRA_MPI)
     Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 #else
     Epetra_SerialComm ecomm;
 #endif
-    Epetra_Map emap(localRows, 0, ecomm);
-    auto emat = create_testmat_e(emap);
+    Epetra_Map emap(static_cast<int> (localRows), 0, ecomm);
+    Teuchos::RCP<const Epetra_CrsMatrix> emat;
+    try {
+      // mfh 26 Jul 2018: This function call throws.  That means the
+      // test is broken; I didn't write that code.  This blocks #3139,
+      // so I'm going to just let this test build for now, but not
+      // actually run it.
+      emat = create_testmat_e(emap);
+    }
+    catch (std::exception& e) {
+      myOut << "create_testmat_e threw an exception: " << e.what () << std::endl;
+      TEST_ASSERT( false );
+      return;
+    }
+    catch (...) {
+      myOut << "create_testmat_e threw an exception "
+        "not a subclass of std::exception" << std::endl;
+      TEST_ASSERT( false );
+      return;
+    }
+
+    myOut << "Create and fill Tpetra Vector(s)" << std::endl;
+
     //set up matrix
-    typedef Tpetra::RowMatrix<double,int,int,NO> ROW;
-    typedef Tpetra::Vector<double,int,int,NO> TVec;
+    typedef Tpetra::RowMatrix<double> ROW;
+    typedef Tpetra::Vector<double> TVec;
     TVec lhs(tmap);
     TVec rhs(tmap);
     rhs.putScalar(2.0);
+
+    myOut << "Open output file" << std::endl;
+
     //set up output file
     FILE* csv = fopen("BlockRelax.csv", "w");
+    if (csv == nullptr) {
+      TEST_ASSERT( false );
+      myOut << "Failed to open output file \"BlockRelax.csv\"!" << std::endl;
+      return;
+    }
     fputs("lib,blockSize,setup,apply\n", csv);
+
+    myOut << "Benchmark Ifpack2" << std::endl;
     //////////////////////
     //-- Ifpack2 test --//
     //////////////////////
@@ -142,7 +204,7 @@ TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
     ilist.set("relaxation: type", "Gauss-Seidel");
     int* partMap = new int[localRows];
     Teuchos::Time timer("");
-    out << "Testing Ifpack2 block G-S\n";
+    myOut << "Testing Ifpack2 block G-S\n";
     //target for total running time
     const double maxTotalTime = 6.0;
     //proportion of total time to spend on ifpack2
@@ -152,7 +214,7 @@ TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
     const double mlTimePerSet = ((1.0 - ifpack2TimeProportion) * maxTotalTime) / blockSizes.size();
     for(auto blockSize : blockSizes)
     {
-      out << "    Testing block size: " << blockSize << '\n';
+      myOut << "    Testing block size: " << blockSize << '\n';
       for(int i = 0; i < localRows; i++)
         partMap[i] = i / blockSize;
       ArrayRCP<int> PMrcp(partMap, 0, localRows, false);
@@ -173,15 +235,17 @@ TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
       }
       while(timer.totalElapsedTime(true) < ifpack2TimePerSet);
       timer.stop();
-      out << '(' << trials << " trials)\n";
+      myOut << '(' << trials << " trials)\n";
       double applyTime = timer.totalElapsedTime() / trials;
       fprintf(csv, "Ifpack2,%i,%f\n", blockSize, applyTime);
     }
     delete[] partMap;
+
+    myOut << "Benchmark ML" << std::endl;
     /////////////////
     //-- ML test --//
     /////////////////
-    out << "Testing ML block gs\n";
+    myOut << "Testing ML block gs\n";
     {
       using ML_Epetra::MultiLevelPreconditioner;
       Epetra_Vector X(emap);
@@ -207,7 +271,7 @@ TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
         prec.ComputePreconditioner();
         auto ml = prec.GetML();
         auto sm = ml->pre_smoother;
-        out << "    Testing block size: " << blockSize << '\n';
+        myOut << "    Testing block size: " << blockSize << '\n';
         timer.reset();
         timer.start();
         int trials = 0;
@@ -218,16 +282,15 @@ TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
         }
         while(timer.totalElapsedTime(true) < mlTimePerSet);
         timer.stop();
-        out << '(' << trials << " trials)\n";
+        myOut << '(' << trials << " trials)\n";
         double applyTime = timer.totalElapsedTime() / trials;
         fprintf(csv,"ML,%i,%f\n", blockSize, applyTime);
       }
     }
-    out << "Done with performance testing: data written to BlockRelax.csv\n";
+    myOut << "Done with performance testing: data written to BlockRelax.csv"
+          << std::endl;
     fclose(csv);
   }
 }
-
-IFPACK2_ETI_MANGLING_TYPEDEFS()
 
 } //anonymous namespace

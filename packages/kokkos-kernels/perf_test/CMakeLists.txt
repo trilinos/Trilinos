@@ -1,7 +1,7 @@
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/common)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
 
 # At some point, we may wish to make this into real "performance
 # tests," in the sense that they can pass or fail.  At that point, use
@@ -12,5 +12,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/common)
 
 ADD_SUBDIRECTORIES(graph)
 ADD_SUBDIRECTORIES(sparse)
-ADD_SUBDIRECTORIES(common)
+ADD_SUBDIRECTORIES(performance)
+#ADD_SUBDIRECTORIES(common)
 

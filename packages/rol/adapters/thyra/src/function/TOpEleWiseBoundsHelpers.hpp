@@ -201,7 +201,7 @@ namespace Thyra {
       RTOpPack::TOpEleWiseBound<Scalar> ele_wise_bound_op;
       ::Thyra::applyOp<Scalar> (ele_wise_bound_op,
                                 tuple (ptrInArg (x_lo), ptrInArg (x_up)), tuple (x),
-                                null);
+                                Teuchos::null);
     }
 
   /** \brief Element-wise prune lower:
@@ -222,7 +222,7 @@ namespace Thyra {
       RTOpPack::TOpEleWisePruneLower_3_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_lo), ptrInArg (g)), tuple (v),
-                                null);
+                                Teuchos::null);
     }
 
   /** \brief Element-wise prune lower:
@@ -242,7 +242,7 @@ namespace Thyra {
       RTOpPack::TOpEleWisePruneLower_2_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_lo)), tuple (v),
-                                null);
+                                Teuchos::null);
     }
 
   /** \brief Element-wise prune lower:
@@ -263,7 +263,7 @@ namespace Thyra {
       RTOpPack::TOpEleWisePruneUpper_3_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_up), ptrInArg (g)), tuple (v),
-                                null);
+                                Teuchos::null);
     }
 
   /** \brief Element-wise prune lower:
@@ -284,7 +284,7 @@ namespace Thyra {
       RTOpPack::TOpEleWisePruneUpper_2_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_up)), tuple (v),
-                                null);
+                                Teuchos::null);
     }
 
 }

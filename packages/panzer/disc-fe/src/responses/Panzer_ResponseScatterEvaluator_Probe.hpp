@@ -110,9 +110,6 @@ public:
     const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> >& indexer,
     const Teuchos::RCP<ProbeScatterBase> & probeScatter);
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
   void evaluateFields(typename Traits::EvalData d);
 
   void preEvaluate(typename Traits::PreEvalData d);

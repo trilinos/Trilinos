@@ -120,26 +120,15 @@ ProjectToEdges(
 template<typename EvalT,typename Traits>
 void panzer::ProjectToEdges<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData  d, 
-		      PHX::FieldManager<Traits>& fm)
+		      PHX::FieldManager<Traits>& /* fm */)
 {
   orientations = d.orientations_;
 
-  // setup the field data object
-  this->utils.setFieldData(result,fm);
-  for(unsigned qp = 0; qp < vector_values.size(); ++qp)
-    this->utils.setFieldData(vector_values[qp],fm);
-  this->utils.setFieldData(tangents,fm);
+  num_pts = vector_values[0].extent(1);
+  num_dim = vector_values[0].extent(2);
 
-  if(quad_degree > 0){
-    this->utils.setFieldData(dof_orientation,fm);
-    this->utils.setFieldData(gatherFieldTangents,fm);
-  }
-
-  num_pts = vector_values[0].dimension(1);
-  num_dim = vector_values[0].dimension(2);
-
-  TEUCHOS_ASSERT(vector_values[0].dimension(1) == tangents.dimension(1));
-  TEUCHOS_ASSERT(vector_values[0].dimension(2) == tangents.dimension(2));
+  TEUCHOS_ASSERT(vector_values[0].extent(1) == tangents.extent(1));
+  TEUCHOS_ASSERT(vector_values[0].extent(2) == tangents.extent(2));
 }
 
 // **********************************************************************
@@ -204,10 +193,10 @@ evaluateFields(typename Traits::EvalData workset)
     int subcell_dim = 1;
 
     // to compute tangents at qps (copied from GatherTangents)
-    int numEdges = gatherFieldTangents.dimension(1);
-    Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"refEdgeTan",numEdges,num_dim);
+    int numEdges = gatherFieldTangents.extent(1);
+    Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refEdgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"refEdgeTan",numEdges,num_dim);
     for(int i=0;i<numEdges;i++) {
-      Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",num_dim);
+      Kokkos::DynRankView<double,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refEdgeTan_local("refEdgeTan_local",num_dim);
       Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
 
       for(int d=0;d<num_dim;d++)
@@ -218,7 +207,7 @@ evaluateFields(typename Traits::EvalData workset)
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
       // get nodal coordinates for this cell 
-      Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.dimension(1),num_dim);
+      Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.extent(1),num_dim);
       for (int point(0); point < vertex_coords.extent_int(1); ++point)
       {
         for (int ict(0); ict < num_dim; ict++)

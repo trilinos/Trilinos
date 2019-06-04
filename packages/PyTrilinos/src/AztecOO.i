@@ -47,7 +47,7 @@
 PyTrilinos.AztecOO is the python interface to the Trilinos iterative
 linear solver package AztecOO:
 
-    http://trilinos.sandia.gov/packages/aztecoo
+    https://trilinos.org/docs/dev/packages/aztecoo/doc/html/index.html
 
 AztecOO is the object-oriented interface to Aztec, Sandia's venerable
 Krylov-space linear system solver package.  Note that the C++ version
@@ -106,37 +106,22 @@ struct OperatorData
 #endif
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_SYS_TIME_H
-#undef HAVE_SYS_TIME_H
-#endif
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 #include "AztecOO_ConfigDefs.h"
 
 // Optional Teuchos support
 #ifdef HAVE_AZTECOO_TEUCHOS
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_Teuchos_Headers.hpp"
 #endif
 
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -144,10 +129,8 @@ struct OperatorData
 #include "numpy_include.hpp"
 #endif
 
-// AztecOO includes
-#include "AztecOO.h"
-#include "AztecOO_Version.h"
-
+// AztecOO include files
+#include "PyTrilinos_AztecOO_Headers.hpp"
 %}
 
 // Auto-documentation feature
@@ -179,7 +162,7 @@ struct OperatorData
 %include "exception.i"
 
 // External Trilinos interface imports
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %import "Epetra.i"
 #endif
 #ifdef HAVE_AZTECOO_TEUCHOS

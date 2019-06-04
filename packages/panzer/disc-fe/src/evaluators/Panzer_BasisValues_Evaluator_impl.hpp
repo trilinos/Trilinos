@@ -50,7 +50,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(BasisValues_Evaluator,p)
+template<typename EvalT, typename Traits>
+BasisValues_Evaluator<EvalT, Traits>::
+BasisValues_Evaluator(
+  const Teuchos::ParameterList& p)
   : derivativesRequired_(true)
 {
   Teuchos::RCP<const panzer::PointRule> pointRule 
@@ -97,7 +100,7 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
   int space_dim = basis->dimension();
 
   // setup all fields to be evaluated and constructed
-  pointValues = PointValues2<ScalarT>(pointRule->getName()+"_",false);
+  pointValues = PointValues2<double>(pointRule->getName()+"_",false);
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
@@ -111,7 +114,7 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
 
   // setup all fields to be evaluated and constructed
   Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis,*pointRule));
-  basisValues = Teuchos::rcp(new BasisValues2<ScalarT>(basis->name()+"_"+pointRule->getName()+"_",false));
+  basisValues = Teuchos::rcp(new BasisValues2<double>(basis->name()+"_"+pointRule->getName()+"_",false));
   basisValues->setupArrays(layout,derivativesRequired_);
 
   // the field manager will allocate all of these field
@@ -155,7 +158,12 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator, sd, fm)
+template<typename EvalT, typename Traits>
+void
+BasisValues_Evaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  sd,
+  PHX::FieldManager<Traits>&  fm)
 {
   int space_dim = basis->dimension();
 
@@ -208,13 +216,18 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator, sd, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(BasisValues_Evaluator, workset)
+template<typename EvalT, typename Traits>
+void
+BasisValues_Evaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  workset)
 { 
   // evaluate the point values (construct jacobians etc...)
   basisValues->evaluateValues(pointValues.coords_ref,
                               pointValues.jac,
                               pointValues.jac_det,
-                              pointValues.jac_inv);
+                              pointValues.jac_inv,
+                              (int) workset.num_cells);
 
   // this can be over-ridden in basisValues e.g., DG element setting
   if(basis->requiresOrientations()) {
@@ -224,7 +237,7 @@ PHX_EVALUATE_FIELDS(BasisValues_Evaluator, workset)
     for (index_t c=0;c<workset.num_cells;++c)
       ortPerWorkset.push_back((*orientations)[details.cell_local_ids[c]]);
     
-    basisValues->applyOrientations(ortPerWorkset);
+    basisValues->applyOrientations(ortPerWorkset, (int) workset.num_cells);
   }
 }
 

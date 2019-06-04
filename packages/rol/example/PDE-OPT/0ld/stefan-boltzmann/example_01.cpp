@@ -46,11 +46,11 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
@@ -74,18 +74,18 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
   }
 
   int errorFlag  = 0;
@@ -99,45 +99,46 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    Teuchos::RCP<StefanBoltzmannData<RealT> > data = Teuchos::rcp(new StefanBoltzmannData<RealT>(comm, parlist, outStream));
+    ROL::Ptr<StefanBoltzmannData<RealT> > data = ROL::makePtr<StefanBoltzmannData<RealT>>(comm, parlist, outStream);
 
     /*** Build vectors and dress them up as ROL vectors. ***/
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > c_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_c, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > Eu_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > Vu_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    ROL::Ptr<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
+    ROL::Ptr<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
+    ROL::Ptr<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > z_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > c_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_c, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > dz_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > Eu_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > Vu_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
     // Set all values to 1 in u, z and c.
-    u_rcp->putScalar(1.0);
-    z_rcp->putScalar(1.0);
-    c_rcp->putScalar(1.0);
+    u_ptr->putScalar(1.0);
+    z_ptr->putScalar(1.0);
+    c_ptr->putScalar(1.0);
     // Randomize d vectors.
-    du_rcp->randomize();
-    dz_rcp->randomize();
+    du_ptr->randomize();
+    dz_ptr->randomize();
     // Create ROL::TpetraMultiVectors.
-    Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > cp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(c_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > Eup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(Eu_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > Vup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(Vu_rcp));
+    ROL::Ptr<ROL::Vector<RealT> > up = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(u_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > zp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(z_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > cp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(c_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dup = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(du_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dzp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(dz_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > Eup = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(Eu_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > Vup = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(Vu_ptr);
     // Create ROL SimOpt vectors.
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     /*** Build objective function, constraint and reduced objective function. ***/
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj =
-      Teuchos::rcp(new Objective_PDEOPT_StefanBoltzmann<RealT>(data, parlist));
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con =
-      Teuchos::rcp(new EqualityConstraint_PDEOPT_StefanBoltzmann<RealT>(data, parlist));
-    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
-      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, up));
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj =
+      ROL::makePtr<Objective_PDEOPT_StefanBoltzmann<RealT>>(data, parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con =
+      ROL::makePtr<EqualityConstraint_PDEOPT_StefanBoltzmann<RealT>>(data, parlist);
+    con->setSolveParameters(*parlist);
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
+      ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, up);
 
     /*** Build stochastic functionality. ***/
     int sdim = parlist->sublist("Problem").get("Stochastic Dimension",4);
@@ -145,10 +146,10 @@ int main(int argc, char *argv[]) {
     int nsamp = parlist->sublist("Problem").get("Number of Monte Carlo Samples",100);
     std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<RealT> > bounds(sdim,tmp);
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman
-      = Teuchos::rcp(new ROL::BatchManager<RealT>());
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,bounds,bman,false,false,100));
+    ROL::Ptr<ROL::BatchManager<RealT> > bman
+      = ROL::makePtr<ROL::BatchManager<RealT>>();
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman,false,false,100);
     // Build stochastic problem
     ROL::OptimizationProblem<RealT> opt(objReduced,zp);
     opt.setStochasticObjective(*parlist,sampler);
@@ -176,12 +177,12 @@ int main(int argc, char *argv[]) {
 
     *outStream << " Solution Statistic: S(z) = " << opt.getSolutionStatistic() << "\n";
 
-    data->outputTpetraVector(z_rcp, "control.txt");
+    data->outputTpetraVector(z_ptr, "control.txt");
 
     RealT w = 0.0, tol = 1.e-8;
     ROL::Elementwise::Power<RealT> sqr(2.0);
     Eup->zero(); Vup->zero();
-    Teuchos::RCP<ROL::Vector<RealT> > up2 = up->clone();
+    ROL::Ptr<ROL::Vector<RealT> > up2 = up->clone();
     for (int i = 0; i < sampler->numMySamples(); i++) {
       // Get samples and weights
       par = sampler->getMyPoint(i);
@@ -200,8 +201,8 @@ int main(int argc, char *argv[]) {
     if (sampler->numMySamples() > 1) {
       Vup->scale((RealT)sampler->numMySamples()/(RealT)(sampler->numMySamples()-1));
     }
-    data->outputTpetraVector(Eu_rcp, "expected_value_state.txt");
-    data->outputTpetraVector(Vu_rcp, "variance_state.txt");
+    data->outputTpetraVector(Eu_ptr, "expected_value_state.txt");
+    data->outputTpetraVector(Vu_ptr, "variance_state.txt");
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

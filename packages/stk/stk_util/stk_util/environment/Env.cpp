@@ -34,6 +34,7 @@
  */
 
 #include <stk_util/stk_config.h>
+
 #include <stk_util/environment/Env.hpp>
 #include <time.h>                       // for localtime, strftime, time_t
 #include <limits.h>                     // for PATH_MAX
@@ -46,15 +47,11 @@
 #include <map>                          // for map<>::mapped_type
 #include <sstream>                      // for basic_ostream, operator<<, etc
 #include <stk_util/util/Signal.hpp>     // for HUP_received
-#include <stk_util/environment/EnvData.hpp>  // for EnvData, etc
-#include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/environment/RuntimeMessage.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
 #include <string>                       // for string, operator<<, etc
-#include "boost/program_options/detail/parsers.hpp"
-#include "boost/program_options/errors.hpp"  // for program_options
-#include "boost/program_options/variables_map.hpp"  // for variables_map, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 
 #if defined(__GNUC__)
 #include <cstdlib>
@@ -62,7 +59,17 @@
 #include <sys/resource.h>
 #endif
 
+#ifdef STK_HAVE_BOOSTLIB
+
+#include <stk_util/environment/EnvData.hpp>  // for EnvData, etc
+#include <stk_util/environment/ProgramOptions.hpp>
+#include "boost/program_options/detail/parsers.hpp"
+#include "boost/program_options/errors.hpp"  // for program_options
+#include "boost/program_options/variables_map.hpp"  // for variables_map, etc
+
 namespace boost { namespace program_options { class options_description; } }
+
+#endif
 
 using namespace std;
 
@@ -82,6 +89,33 @@ format_time(
 }
 
 namespace Env {
+
+double
+wall_now()
+{
+  timeval tp;
+  struct timezone tz;
+  gettimeofday(&tp, &tz);
+  return (tp.tv_sec + ((static_cast<double>(tp.tv_usec))/1000000.0));
+}
+
+
+double
+cpu_now()
+{
+#if ! defined(__PGI)
+  struct rusage my_rusage;
+
+  getrusage(RUSAGE_SELF, &my_rusage);
+
+  return static_cast<double>(my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec) +
+    static_cast<double>(my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec)*1.0e-6;
+#else
+  return 0;
+#endif
+}
+
+#ifdef STK_HAVE_BOOSTLIB
 
 const std::string &
 product_name()
@@ -193,31 +227,6 @@ subsection_separator()
   return s_subsectionSeparator;
 }
 
-
-double
-wall_now()
-{
-  timeval tp;
-  struct timezone tz;
-  gettimeofday(&tp, &tz);
-  return (tp.tv_sec + ((static_cast<double>(tp.tv_usec))/1000000.0));
-}
-
-
-double
-cpu_now()
-{
-#if ! defined(__PGI)
-  struct rusage my_rusage;
-
-  getrusage(RUSAGE_SELF, &my_rusage);
-
-  return static_cast<double>(my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec) +
-    static_cast<double>(my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec)*1.0e-6;
-#else
-  return 0;
-#endif
-}
 
 std::string
 section_title(
@@ -370,5 +379,19 @@ set_param(
   delete [] s;
 }
 
+void set_mpi_communicator(MPI_Comm communicator)
+{
+  stk::EnvData &env_data = stk::EnvData::instance();
+  if (communicator != MPI_COMM_NULL) {
+    env_data.m_parallelComm = communicator;
+
+    MPI_Comm_size(env_data.m_parallelComm, &env_data.m_parallelSize);
+    MPI_Comm_rank(env_data.m_parallelComm, &env_data.m_parallelRank);
+  }
+}
+
+#endif
+
 } // namespace Env
 } // namespace sierra
+

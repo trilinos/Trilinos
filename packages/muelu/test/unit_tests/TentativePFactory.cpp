@@ -55,8 +55,6 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
-#include <Galeri_XpetraMaps.hpp>
-
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
@@ -92,8 +90,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real                  = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC,LO,GO,NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
@@ -103,14 +105,21 @@ namespace MueLuTests {
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel.SetFactoryManager(Teuchos::null);
 
-    RCP<Matrix> A = test_factory::Build1DPoisson(/*199*/29);
+    GO nx = 29;
+    RCP<Matrix> A = test_factory::Build1DPoisson(nx);
     A->SetFixedBlockSize(1);
-    fineLevel.Set("A",A);
+    fineLevel.Set("A", A);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates
+      = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+    fineLevel.Set("Coordinates", coordinates);
 
     LocalOrdinal NSdim = 2;
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
     nullSpace->randomize();
-    fineLevel.Set("Nullspace",nullSpace);
+    fineLevel.Set("Nullspace", nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
@@ -159,7 +168,7 @@ namespace MueLuTests {
     diff->norm2(norms);
     for (LocalOrdinal i=0; i<NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-      TEST_EQUALITY(norms[i]<1e-12, true);
+      TEST_EQUALITY(norms[i] < 100*TMT::eps(), true);
     }
 
     Teuchos::ArrayRCP<const Scalar> col1 = coarseNullSpace->getData(0);
@@ -174,8 +183,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real                  = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
@@ -185,9 +198,15 @@ namespace MueLuTests {
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel.SetFactoryManager(Teuchos::null);
 
-    RCP<Matrix> A = test_factory::Build1DPoisson(199);
+    GO nx = 199;
+    RCP<Matrix> A = test_factory::Build1DPoisson(nx);
     fineLevel.Request("A");
     fineLevel.Set("A",A);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+    fineLevel.Set("Coordinates", coordinates);
 
     // only one NS vector -> exercises manual orthogonalization
     LocalOrdinal NSdim = 1;
@@ -239,7 +258,7 @@ namespace MueLuTests {
     diff->norm2(norms);
     for (LocalOrdinal i=0; i<NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-      TEST_EQUALITY(norms[i]<1e-12, true);
+      TEST_EQUALITY(norms[i] < 100*TMT::eps(), true);
     }
 
     // check normalization and orthogonality of prolongator columns
@@ -248,9 +267,9 @@ namespace MueLuTests {
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
       TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
-    TEST_EQUALITY(diagVec->normInf()-1 < 1e-12, true);
+    TEST_EQUALITY(diagVec->normInf()-1 < 100*TMT::eps(), true);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->meanValue(), 1.0);
+      TEST_EQUALITY(diagVec->meanValue(), TST::one());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } //MakeTentative
@@ -261,8 +280,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real                  = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
@@ -270,9 +293,16 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel;
     test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Matrix> A = test_factory::Build1DPoisson(199);
+    GO nx = 199;
+    RCP<Matrix> A = test_factory::Build1DPoisson(nx);
 
     fineLevel.Set("A", A);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+
+    fineLevel.Set("Coordinates", coordinates);
 
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
 
@@ -308,7 +338,7 @@ namespace MueLuTests {
     diff->norm2(norms);
     for (LocalOrdinal i=0; i<NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-      TEST_EQUALITY(norms[i]<1e-12, true);
+      TEST_EQUALITY(norms[i] < 100*TMT::eps(), true);
     }
 
   } //MakeTentativeUsingDefaultNullSpace
@@ -319,8 +349,12 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef Teuchos::ScalarTraits<Scalar> TST;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real                  = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test option that skips local QR factorizations" << std::endl;
@@ -347,6 +381,7 @@ namespace MueLuTests {
       Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
     RCP<Matrix> A = Pr->BuildMatrix();
     A->SetFixedBlockSize(2);
+    RCP<RealValuedMultiVector> coordinates = Pr->BuildCoords();
 
     Level fineLevel, coarseLevel;
     test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -355,11 +390,12 @@ namespace MueLuTests {
 
     fineLevel.Request("A");
     fineLevel.Set("A",A);
+    fineLevel.Set("Coordinates", coordinates);
 
     LocalOrdinal NSdim = 3;
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
     nullSpace->randomize();
-    fineLevel.Set("Nullspace",nullSpace);
+    fineLevel.Set("Nullspace", nullSpace);
     fineLevel.Set("DofsPerNode",2);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
@@ -405,7 +441,7 @@ namespace MueLuTests {
     diff->norm2(norms);
     for (LocalOrdinal i=0; i<NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-      TEST_EQUALITY(norms[i]<1e-12, true);
+      TEST_EQUALITY(norms[i] < 100*TMT::eps(), true);
     }
 
   } //NoQR
@@ -515,8 +551,8 @@ namespace MueLuTests {
     CoupledAggFact->SetOrdering("natural");
     CoupledAggFact->SetPhase3AggCreation(0.5);
 
-    RCP<TentativePFactory> Pfact = rcp(new TentativePFactory());
-    RCP<Factory>          Rfact = rcp( new TransPFactory() );
+    RCP<TentativePFactory> Pfact  = rcp( new TentativePFactory() );
+    RCP<Factory>           Rfact  = rcp( new TransPFactory() );
     RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
     H->SetMaxCoarseSize(1);
 
@@ -530,6 +566,7 @@ namespace MueLuTests {
     Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
@@ -598,21 +635,25 @@ namespace MueLuTests {
 
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, PtentEpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
 
-    typedef Teuchos::ScalarTraits<Scalar> TST;
+    using TST            = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
+    using real           = typename TST::coordinateType;
+    typedef Xpetra::MultiVector<real,LO,GO,NO> RealValuedMultiVector;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    Teuchos::Array<typename TST::magnitudeType> results(2);
+    Teuchos::Array<magnitude_type> results(2);
 
     // run test only on 1 proc
     if(comm->getSize() == 1)
@@ -635,11 +676,12 @@ namespace MueLuTests {
         RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
           Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap,MultiVector>("Laplace1D", map, matrixParameters);
         RCP<Matrix> Op = Pr->BuildMatrix();
+        RCP<RealValuedMultiVector> coordinates = Pr->BuildCoords();
 
         // build nullspace
         RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
-        nullSpace->putScalar( (Scalar) 1.0);
-        Teuchos::Array<typename TST::magnitudeType> norms(1);
+        nullSpace->putScalar(TST::one());
+        Teuchos::Array<magnitude_type> norms(1);
         nullSpace->norm1(norms);
         if (comm->getRank() == 0)
           out << "||NS|| = " << norms[0] << std::endl;
@@ -652,6 +694,7 @@ namespace MueLuTests {
         Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
         Finest->Set("A",Op);                      // set fine level matrix
         Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
+        // Finest->Set("Coordinates", coordinates);  // set coordinates for finest level
 
         // define transfer operators
         RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
@@ -660,8 +703,8 @@ namespace MueLuTests {
         CoupledAggFact->SetOrdering("natural");
         CoupledAggFact->SetPhase3AggCreation(0.5);
 
-        RCP<TentativePFactory> Pfact = rcp(new TentativePFactory());
-        RCP<Factory>          Rfact = rcp( new TransPFactory() );
+        RCP<TentativePFactory> Pfact  = rcp( new TentativePFactory() );
+        RCP<Factory>           Rfact  = rcp( new TransPFactory() );
         RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
         H->SetMaxCoarseSize(1);
 
@@ -669,7 +712,7 @@ namespace MueLuTests {
         Teuchos::ParameterList smootherParamList;
         smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
         smootherParamList.set("relaxation: sweeps", (LocalOrdinal) 1);
-        smootherParamList.set("relaxation: damping factor", (Scalar) 1.0);
+        smootherParamList.set("relaxation: damping factor", TST::one());
         RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
         RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
         Acfact->setVerbLevel(Teuchos::VERB_HIGH);
@@ -677,6 +720,7 @@ namespace MueLuTests {
         RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
         FactoryManager M;
+        M.SetKokkosRefactor(false);
         M.SetFactory("P", Pfact);
         M.SetFactory("R", Rfact);
         M.SetFactory("A", Acfact);
@@ -684,6 +728,7 @@ namespace MueLuTests {
         M.SetFactory("Aggregates", CoupledAggFact);
         M.SetFactory("Smoother", SmooFact);
         M.SetFactory("CoarseSolver", coarseSolveFact);
+        // M.SetFactory("Coordinates", Pfact);
 
         H->Setup(M, 0, maxLevels);
 
@@ -706,9 +751,9 @@ namespace MueLuTests {
         Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*P1,true,*P1,false,out);
         Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
         PtentTPtent->getLocalDiagCopy(*diagVec);
-        TEST_EQUALITY(diagVec->norm1()-diagVec->getGlobalLength() < 1e-12, true);
-        TEST_EQUALITY(diagVec->normInf()-1.0 < 1.0e-12, true);
-        TEST_EQUALITY(TST::magnitude(diagVec->meanValue()-1.0) < 1.0e-12, true);
+        TEST_EQUALITY(diagVec->norm1()-diagVec->getGlobalLength() < 100*TMT::eps(), true);
+        TEST_EQUALITY(diagVec->normInf()-TMT::one() < 100*TMT::eps(), true);
+        TEST_EQUALITY(TST::magnitude(diagVec->meanValue())-TMT::one() < 100*TMT::eps(), true);
         TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
         // Define RHS
@@ -735,7 +780,7 @@ namespace MueLuTests {
         }
       }
 
-      TEST_FLOATING_EQUALITY(results[0], results[1], 1e-14); // check results of EPETRA vs TPETRA
+      TEST_FLOATING_EQUALITY(results[0], results[1], 100*TMT::eps()); // check results of EPETRA vs TPETRA
     } // comm->getSize == 1
 
 #   else
@@ -750,8 +795,8 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentative,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentativeUsingDefaultNullSpace,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,NoQROption,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, NonStandardMaps,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,EpetraVsTpetra,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,NonStandardMaps,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,PtentEpetraVsTpetra,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

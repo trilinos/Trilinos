@@ -12,6 +12,7 @@
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 #include "Tempus_StepperBackwardEulerObserver.hpp"
+#include "Tempus_StepperOptimizationInterface.hpp"
 
 
 namespace Tempus {
@@ -25,13 +26,27 @@ namespace Tempus {
  *  <b> Algorithm </b>
  *  The single-timestep algorithm for Backward Euler is simply,
  *   - Solve \f$f(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0\f$ for \f$x_n\f$
- *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n\f$ [Optional]
- *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
+ *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n\f$
+ *
+ *  The First-Step-As-Last (FSAL) principle is not needed with Backward Euler.
+ *  The default is to set useFSAL=false, however useFSAL=true will also work
+ *  but have no affect (i.e., no-op).
  */
 template<class Scalar>
-class StepperBackwardEuler : virtual public Tempus::StepperImplicit<Scalar>
+class StepperBackwardEuler :
+    virtual public Tempus::StepperImplicit<Scalar>,
+    virtual public Tempus::StepperOptimizationInterface<Scalar>
 {
 public:
+
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperBackwardEuler();
 
   /// Constructor
   StepperBackwardEuler(
@@ -40,22 +55,8 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return wrapperModel_->getAppModel();}
-
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-      { return solver_; }
     virtual void setObserver(
-      Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Set the predictor
     void setPredictor(std::string predictorName);
@@ -63,6 +64,10 @@ public:
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -80,7 +85,14 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
+
+    /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const { return Scalar(1.0)/dt; }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
   /// Compute predictor given the supplied stepper
   virtual void computePredictor(
@@ -102,19 +114,52 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  /// \name Implementation of StepperOptimizationInterface
+  //@{
+    virtual int stencilLength() const;
+    virtual void computeStepResidual(
+      Thyra::VectorBase<Scalar>& residual,
+      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t,
+      const Thyra::VectorBase<Scalar>& p,
+      const int param_index) const;
+    virtual void computeStepJacobian(
+      Thyra::LinearOpBase<Scalar>& jacobian,
+      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t,
+      const Thyra::VectorBase<Scalar>& p,
+      const int param_index,
+      const int deriv_index) const;
+    virtual void computeStepParamDeriv(
+      Thyra::LinearOpBase<Scalar>& deriv,
+      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t,
+      const Thyra::VectorBase<Scalar>& p,
+      const int param_index) const;
+    virtual void computeStepSolver(
+      Thyra::LinearOpWithSolveBase<Scalar>& jacobian_solver,
+      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t,
+      const Thyra::VectorBase<Scalar>& p,
+      const int param_index) const;
+  //@}
+
 private:
 
-  /// Default Constructor -- not allowed
-  StepperBackwardEuler();
+  /// Implementation of computeStep*() methods
+  void computeStepResidDerivImpl(
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
+    const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+    const Teuchos::Array<Scalar>& t,
+    const Thyra::VectorBase<Scalar>& p,
+    const int param_index,
+    const int deriv_index = 0) const;
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluator<Scalar> >       wrapperModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  solver_;
-  Teuchos::RCP<Stepper<Scalar> >                     predictorStepper_;
-
+  Teuchos::RCP<Stepper<Scalar> >                      predictorStepper_;
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
+
 };
 
 /** \brief Time-derivative interface for Backward Euler.

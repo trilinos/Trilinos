@@ -67,7 +67,7 @@ class RKButcherTableau :
     /** \brief Return the vector of quadrature weights for embedded methods */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& bstar() const
       { return bstar_ ; }
-    /** \brief Reutrn the vectir of stage positions */
+    /** \brief Return the vector of stage positions */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& c() const
       { return c_; }
     /** \brief Return the order */
@@ -156,6 +156,11 @@ class RKButcherTableau :
         pl->setName("Default Stepper - " + this->description());
         pl->set<std::string>("Description", this->getDescription());
         pl->set<std::string>("Stepper Type", this->description());
+        pl->set<bool>("Use Embedded", false);
+        pl->set<bool>("Use FSAL", false);
+        pl->set<std::string>("Initial Condition Consistency", "None");
+        pl->set<bool>("Initial Condition Consistency Check", true);
+
         return pl;
       }
     //@}
@@ -315,20 +320,20 @@ class General_RKButcherTableau :
       A.shape(as<int>(numStages),as<int>(numStages));
 
       // fill the rows
-      for(std::size_t r=0;r<numStages;r++) {
+      for(std::size_t row=0;row<numStages;row++) {
         // parse the row (tokenize on space)
         std::vector<std::string> tokens;
-        Tempus::StringTokenizer(tokens,A_row_tokens[r]," ",true);
+        Tempus::StringTokenizer(tokens,A_row_tokens[row]," ",true);
 
         std::vector<double> values;
         Tempus::TokensToDoubles(values,tokens);
 
         TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
-          "Error parsing A matrix, wrong number of stages in row " << r << "\n"
-           + this->description());
+          "Error parsing A matrix, wrong number of stages in row "
+          << row << "\n" + this->description());
 
-        for(std::size_t c=0;c<numStages;c++)
-          A(r,c) = values[c];
+        for(std::size_t col=0;col<numStages;col++)
+          A(row,col) = values[col];
       }
     }
 
@@ -469,6 +474,10 @@ class GeneralExplicit_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "Consistent");
+    pl->set<bool>("Initial Condition Consistency Check", true);
 
     // Tableau ParameterList
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
@@ -512,6 +521,26 @@ class BackwardEuler_RKBT :
                 << "c = [ 1 ]'\n"
                 << "A = [ 1 ]\n"
                 << "b = [ 1 ]'" << std::endl;
+
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
+
+  virtual std::string description() const { return "RK Backward Euler"; }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+
     typedef Teuchos::ScalarTraits<Scalar> ST;
     Teuchos::SerialDenseMatrix<int,Scalar> A(1,1);
     A(0,0) = ST::one();
@@ -521,9 +550,27 @@ class BackwardEuler_RKBT :
     c(0) = ST::one();
     int order = 1;
 
-    this->initialize(A,b,c,order,Description.str());
+    this->initialize(A,b,c,order,this->getDescription());
+    this->setMyParamList(pl);
+    this->rkbtPL_ = pl;
   }
-  virtual std::string description() const { return "RK Backward Euler"; }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
+    pl->set<std::string>("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
+
+    return pl;
+  }
 };
 
 
@@ -660,6 +707,199 @@ class Explicit4Stage4thOrder_RKBT :
   virtual std::string description() const { return "RK Explicit 4 Stage"; }
 };
 
+
+// ----------------------------------------------------------------------------
+/** \brief Explicit RK Bogacki-Shampine Butcher Tableau
+ *
+ *  The tableau (order=3(2)) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  0  & 0    &     &     & \\
+ *                        1/3 & 1/2  & 0   &     & \\
+ *                        2/3 & 0    & 3/4 & 0   & \\
+ *                         1  & 2/9  & 1/3 & 4/9 & 0 \\ \hline
+ *                            & 2/9  & 1/3 & 4/9 & 0 \\
+ *                            & 7/24 & 1/4 & 1/3 & 1/8 \end{array}
+ *  \f]
+ *  Reference:  P. Bogacki and L.F. Shampine.
+ *              A 3(2) pair of Runge–Kutta formulas.
+ *              Applied Mathematics Letters, 2(4):321 – 325, 1989.
+ *
+ */
+template<class Scalar>
+class ExplicitBogackiShampine32_RKBT :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  ExplicitBogackiShampine32_RKBT()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "P. Bogacki and L.F. Shampine.\n"
+                << "A 3(2) pair of Runge–Kutta formulas.\n"
+                << "Applied Mathematics Letters, 2(4):321 – 325, 1989.\n"
+                << "c =     [ 0     1/3  2/3   1  ]'\n"
+                << "A =     [ 0                   ]\n"
+                << "        [ 1/2    0            ]\n"
+                << "        [  0    3/4   0       ]\n"
+                << "        [ 2/9   1/3  4/9   0  ]\n"
+                << "b     = [ 2/9   1/3  4/9   0  ]\n"
+                << "bstar = [ 7/24  1/4  1/3  1/8 ]\n" << std::endl;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    int NumStages = 4;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> bstar(NumStages);
+
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+
+    // Fill A:
+    A(0,0) = zero;
+    A(0,1) = zero;
+    A(0,2) = zero;
+    A(0,3) = zero;
+
+    A(1,0) = as<Scalar>(one/(2*one));
+    A(1,1) = zero;
+    A(1,2) = zero;
+    A(1,3) = zero;
+
+    A(2,0) = zero;
+    A(2,1) = as<Scalar>(3*one/(4*one));
+    A(2,2) = zero;
+    A(2,3) = zero;
+
+    A(3,0) = as<Scalar>(2*one/(9*one));
+    A(3,1) = as<Scalar>(1*one/(3*one));
+    A(3,2) = as<Scalar>(4*one/(9*one));
+    A(3,3) = zero;
+
+    // Fill b:
+    b(0) = A(3,0);
+    b(1) = A(3,1);
+    b(2) = A(3,2);
+    b(3) = A(3,3);
+
+    // Fill c:
+    c(0) = zero;
+    c(1) = as<Scalar>(1*one/(3*one));
+    c(2) = as<Scalar>(2*one/(3*one));
+    c(3) = one;
+
+    // Fill bstar
+    bstar(0) = as<Scalar>(7.0*one/(24*one));
+    bstar(1) = as<Scalar>(1*one/(4*one));
+    bstar(2) = as<Scalar>(1*one/(3*one));
+    bstar(3) = as<Scalar>(1*one/(8*one));
+    int order = 3;
+
+    this->initialize(A,b,c,order,Description.str(),true,bstar);
+  }
+  virtual std::string description() const { return "Bogacki-Shampine 3(2) Pair"; }
+};
+
+
+// ----------------------------------------------------------------------------
+/** \brief Explicit RK Merson Butcher Tableau
+ *
+ *  The tableau (order=4(5)) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|ccccc}  0 & 0    &     &      &     & \\
+ *                        1/3 & 1/3  & 0   &      &     & \\
+ *                        1/3 & 1/6  & 1/6 & 0    &     & \\
+ *                        1/2 & 1/8  & 0   & 3/8  &     & \\
+ *                         1  & 1/2  & 0   & -3/2 & 2   & \\ \hline
+ *                            & 1/6  & 0   & 0    & 2/3 & 1/6 \\
+ *                            & 1/10 & 0   & 3/10 & 2/5 & 1/5 \end{array}
+ *  \f]
+ *  Reference:  E. Hairer, S.P. Norsett, G. Wanner,
+ *              "Solving Ordinary Differential Equations I:
+ *              Nonstiff Problems", 2nd Revised Edition,
+ *              Table 4.1, pg 167.
+ *
+ */
+template<class Scalar>
+class ExplicitMerson45_RKBT :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  ExplicitMerson45_RKBT()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "Solving Ordinary Differential Equations I:\n"
+                << "Nonstiff Problems, 2nd Revised Edition\n"
+                << "E. Hairer, S.P. Norsett, G. Wanner\n"
+                << "Table 4.1, pg 167\n"
+                << "c =     [  0    1/3  1/3  1/2   1  ]'\n"
+                << "A =     [  0                       ]\n"
+                << "        [ 1/3    0                 ]\n"
+                << "        [ 1/6   1/6   0            ]\n"
+                << "        [ 1/8    0   3/8   0       ]\n"
+                << "        [ 1/2    0  -3/2   2    0  ]\n"
+                << "b     = [ 1/6    0    0   2/3  1/6 ]\n"
+                << "bstar = [ 1/10   0  3/10  2/5  1/5 ]\n" << std::endl;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    int NumStages = 5;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages, true);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages, true);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages, true);
+    Teuchos::SerialDenseVector<int,Scalar> bstar(NumStages, true);
+
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+
+    // Fill A:
+    A(1,0) = as<Scalar>(one/(3*one));;
+
+    A(2,0) = as<Scalar>(one/(6*one));;
+    A(2,1) = as<Scalar>(one/(6*one));;
+
+    A(3,0) = as<Scalar>(one/(8*one));;
+    A(3,2) = as<Scalar>(3*one/(8*one));;
+
+    A(4,0) = as<Scalar>(one/(2*one));;
+    A(4,2) = as<Scalar>(-3*one/(2*one));;
+    A(4,3) = 2*one;
+
+    // Fill b:
+    b(0) = as<Scalar>(one/(6*one));
+    b(3) = as<Scalar>(2*one/(3*one));
+    b(4) = as<Scalar>(one/(6*one));
+
+    // Fill c:
+    c(0) = zero;
+    c(1) = as<Scalar>(1*one/(3*one));
+    c(2) = as<Scalar>(1*one/(3*one));
+    c(3) = as<Scalar>(1*one/(2*one));
+    c(4) = one;
+
+    // Fill bstar
+    bstar(0) = as<Scalar>(1*one/(10*one));
+    bstar(2) = as<Scalar>(3*one/(10*one));
+    bstar(3) = as<Scalar>(2*one/(5*one));
+    bstar(4) = as<Scalar>(1*one/(5*one));
+    int order = 4;
+
+    this->initialize(A,b,c,order,Description.str(),true,bstar);
+  }
+  virtual std::string description() const { return "Merson 4(5) Pair"; }
+};
 
 // ----------------------------------------------------------------------------
 /** \brief Explicit RK 3/8th Rule Butcher Tableau
@@ -1421,11 +1661,16 @@ class GeneralDIRK_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
 
     // Tableau ParameterList
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    std::string gamma = std::to_string((2.0 - ST::squareroot(2.0))/(2.0));
-    std::string one_gamma = std::to_string(1.0-(2.0-ST::squareroot(2.0))/(2.0));
+    const Scalar one = ST::one();
+    std::string gamma = std::to_string(Teuchos::as<Scalar>((2*one-ST::squareroot(2*one))/(2*one)));
+    std::string one_gamma = std::to_string(Teuchos::as<Scalar>(one-(2*one-ST::squareroot(2*one))/(2*one)));
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
     tableauPL->set<std::string>("A", gamma + " 0.0; " + one_gamma + " "+gamma);
     tableauPL->set<std::string>("b", one_gamma + " " + gamma);
@@ -1505,6 +1750,10 @@ class SDIRK1Stage1stOrder_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -1578,7 +1827,7 @@ class SDIRK2Stage2ndOrder_RKBT :
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
 
-    gamma_ = pl->get<double>("gamma");
+    gamma_ = pl->get<double>("gamma", gamma_default_);
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
     int NumStages = 2;
@@ -1611,6 +1860,10 @@ class SDIRK2Stage2ndOrder_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
     pl->set<double>("gamma",gamma_default_,
@@ -1757,6 +2010,10 @@ class SDIRK2Stage3rdOrder_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
     pl->set<bool>("3rd Order A-stable",thirdOrderAStable_default_,
@@ -1875,6 +2132,10 @@ class EDIRK2Stage3rdOrder_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -2098,7 +2359,8 @@ class IRK1StageTheta_RKBT :
     // Can not validate because optional parameters (e.g., Solver Name).
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
     TEUCHOS_TEST_FOR_EXCEPTION(
-      pl->get<std::string>("Stepper Type") != this->description()
+      pl->get<std::string>("Stepper Type") != this->description() and
+      pl->get<std::string>("Stepper Type") != "Implicit Midpoint"
       ,std::runtime_error,
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
@@ -2130,11 +2392,15 @@ class IRK1StageTheta_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
     pl->set<double>("theta",theta_default_,
       "Valid values are 0 <= theta <= 1, where theta = 0 "
-      "implies Forward Euler, theta = 1/2 implies midpoint "
+      "implies Forward Euler, theta = 1/2 implies implicit midpoint "
       "method (default), and theta = 1 implies Backward Euler. "
       "For theta != 1/2, this method is first-order accurate, "
       "and with theta = 1/2, it is second-order accurate.  "
@@ -2151,11 +2417,11 @@ class IRK1StageTheta_RKBT :
 
 // ----------------------------------------------------------------------------
 template<class Scalar>
-class IRK2StageTheta_RKBT :
+class EDIRK2StageTheta_RKBT :
   virtual public RKButcherTableau<Scalar>
 {
   public:
-  IRK2StageTheta_RKBT()
+  EDIRK2StageTheta_RKBT()
   {
     std::ostringstream Description;
     Description << this->description() << "\n"
@@ -2225,12 +2491,16 @@ class IRK2StageTheta_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
     pl->set<double>("theta",theta_default_,
       "Valid values are 0 < theta <= 1, where theta = 0 "
       "implies Forward Euler, theta = 1/2 implies trapezoidal "
-      "method, and theta = 1 implies Backward Euler. "
+      "method (default), and theta = 1 implies Backward Euler. "
       "For theta != 1/2, this method is first-order accurate, "
       "and with theta = 1/2, it is second-order accurate.  "
       "This method is A-stable, but becomes L-stable with theta=1.");
@@ -2238,7 +2508,7 @@ class IRK2StageTheta_RKBT :
     return pl;
   }
 
-  virtual std::string description() const { return "IRK 2 Stage Theta Method"; }
+  virtual std::string description() const {return "EDIRK 2 Stage Theta Method";}
 
   private:
     Scalar theta_default_;
@@ -2984,16 +3254,16 @@ class Implicit4Stage6thOrderLobattoB_RKBT :
     const Scalar zero = ST::zero();
     const Scalar one = ST::one();
     A(0,0) = as<Scalar>( one/(12*one) );
-    A(0,1) = as<Scalar>( (-one-ST::squareroot(5))/(24*one) );
-    A(0,2) = as<Scalar>( (-one+ST::squareroot(5))/(24*one) );
+    A(0,1) = as<Scalar>( (-one-ST::squareroot(5*one))/(24*one) );
+    A(0,2) = as<Scalar>( (-one+ST::squareroot(5*one))/(24*one) );
     A(0,3) = zero;
     A(1,0) = as<Scalar>( one/(12*one) );
-    A(1,1) = as<Scalar>( (25*one+ST::squareroot(5))/(120*one) );
-    A(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5))/(120*one) );
+    A(1,1) = as<Scalar>( (25*one+ST::squareroot(5*one))/(120*one) );
+    A(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5*one))/(120*one) );
     A(1,3) = zero;
     A(2,0) = as<Scalar>( one/(12*one) );
-    A(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5))/(120*one) );
-    A(2,2) = as<Scalar>( (25*one-ST::squareroot(5))/(120*one) );
+    A(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5*one))/(120*one) );
+    A(2,2) = as<Scalar>( (25*one-ST::squareroot(5*one))/(120*one) );
     A(2,3) = zero;
     A(3,0) = as<Scalar>( one/(12*one) );
     A(3,1) = as<Scalar>( (11*one-ST::squareroot(5*one))/(24*one) );
@@ -3316,6 +3586,10 @@ class SDIRK5Stage5thOrder_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -3441,6 +3715,10 @@ class SDIRK5Stage4thOrder_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -3537,6 +3815,116 @@ class SDIRK3Stage4thOrder_RKBT :
     pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
+    pl->set<std::string>("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
+
+    return pl;
+  }
+};
+
+// ----------------------------------------------------------------------------
+/** \brief SDIRK 2(1) pair
+ *
+ *  The tableau (order=2(1)) is
+ *  \f[
+ *  \begin{array}{c|c}
+ *    c & A \\ \hline
+ *      & b^T \\ \hline
+ *      & \hat{b}^T
+ *  \end{array}
+ *  \;\;\;\;\mbox{ where }\;\;\;\;
+ *  \begin{array}{c|cccc}  0 & 0   & \\
+ *                         1 & -1  & 1 \\ \hline
+ *                           & 1/2 & 1/2 \\
+ *                           & 1   & 0 \end{array}
+ *  \f]
+ *
+ */
+template<class Scalar>
+class SDIRK21_RKBT :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  SDIRK21_RKBT()
+  {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "c =     [  1  0   ]'\n"
+                << "A =     [  1      ]\n"
+                << "        [ -1  1   ]\n"
+                << "b     = [ 1/2 1/2 ]\n"
+                << "bstar = [  1  0   ]\n" << std::endl;
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
+
+  virtual std::string description() const { return "SDIRK 2(1) Pair"; }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::as;
+    int NumStages = 2;
+    Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
+    Teuchos::SerialDenseVector<int,Scalar> bstar(NumStages);
+
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+
+    // Fill A:
+    A(0,0) = one;
+    A(0,1) = zero;
+
+    //A(1,0) =
+    A(1,0) = -one;
+    A(1,1) =  one;
+
+    // Fill b:
+    b(0) = as<Scalar>(one/(2*one));
+    b(1) = as<Scalar>(one/(2*one));
+
+    // Fill c:
+    c(0) = one;
+    c(1) = zero;
+
+    // Fill bstar
+    bstar(0) = one;
+    bstar(1) = zero;
+    int order = 2;
+
+    this->initialize(A,b,c,order,this->getDescription(),true,bstar);
+    this->setMyParamList(pl);
+    this->rkbtPL_ = pl;
+  }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 

@@ -1,3 +1,5 @@
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/function)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/sol)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_01

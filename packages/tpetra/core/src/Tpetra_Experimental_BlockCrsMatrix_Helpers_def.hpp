@@ -44,9 +44,16 @@
 
 /// \file Tpetra_Experimental_BlockCrsMatrix_Helpers_def.hpp
 
-#include <Tpetra_Experimental_BlockCrsMatrix_Helpers_decl.hpp>
-#include <Tpetra_HashTable.hpp>
-
+#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_HashTable.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include <ctime>
+#include <fstream>
 
 namespace Tpetra {
 namespace Experimental {
@@ -193,7 +200,7 @@ namespace Experimental {
   template<class Scalar, class LO, class GO, class Node>
   void writeMatrixStrip(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::ostream &os, Teuchos::ParameterList const &params) {
     using Teuchos::RCP;
-    typedef Tpetra::Map<LO, GO, Node>                      map_type;
+    using map_type = Tpetra::Map<LO, GO, Node>;
 
     size_t numRows = A.getGlobalNumRows();
     RCP<const map_type> rowMap = A.getRowMap();

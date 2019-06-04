@@ -1,4 +1,3 @@
-
 #include "RTC_FunctionRTC.hh"
 #include "RTC_RegistrarRTC.hh"
 #include "RTC_TokenizerRTC.hh"
@@ -78,7 +77,7 @@ int main( int argc, char* argv[] )
 
   Registrar::setupStandardFunctions();
 
-  Function function(6);
+  Function function(9);
 
   function.addVar("double[]", "arrayOne"     );
   function.addVar("double[]", "arrayTwo"     );
@@ -86,22 +85,17 @@ int main( int argc, char* argv[] )
   function.addVar("double"  , "plainValTwo"  );
   function.addVar("long"    , "plainValThree");
   function.addVar("char"    , "testChar"     );
+  function.addVar("double[]", "testCol1"     );
+  function.addVar("double[]", "testCol2"     );
+  function.addVar("double[]", "testCol3"     );
 
-  double arrayOne[9];
-  double arrayOneReal[9];
-  for (int i = 0; i < 9; i++) {
-    arrayOne[i]     = 0.0;
-    arrayOneReal[i] = 0.0;
-  }
+  double arrayOne[9] = {0.0};
+  double arrayOneReal[9] = {0.0};
 
   function.arrayAddrFill(0, arrayOne, 9);
 
-  double arrayTwo[9];
-  double arrayTwoReal[9];
-  for (int i = 0; i < 9; i++) {
-    arrayTwo[i]     = 5.0;
-    arrayTwoReal[i] = 5.0;
-  }
+  double arrayTwo[9] = {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0};
+  double arrayTwoReal[9] = {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0};
 
   function.arrayAddrFill(1, arrayTwo, 9);
 
@@ -119,6 +113,18 @@ int main( int argc, char* argv[] )
 
   char testChar = 'A';
   function.varValueFill(5, testChar);
+
+  double testCol1[3] = {0.0};
+
+  function.arrayAddrFill(6, testCol1, 3);
+
+  double testCol2[3] = {0.0};
+
+  function.arrayAddrFill(7, testCol2, 3);
+
+  double testCol3[3] = {0.0};
+
+  function.arrayAddrFill(8, testCol3, 3);
 
   string program = "int i; \n\
     for (i = 0; i < 9; i = i + 1) { \n\
@@ -178,6 +184,16 @@ int main( int argc, char* argv[] )
   /* tes *(&^&*(^ sdfkjs 32 kjs f  * \n\
    *    * /  *                     */ \n\
   printf(\"One:% Two:% Three:% \", 5-4, 2.0e0, 'c');\n\
+  int numRead = 0; \n\
+  int index = 0; \n\
+  while (numRead != -1) { \n\
+    char buffer[256]; \n\
+    numRead = readline(\"table.dat\", buffer); \n\
+    if (numRead != -1) { \n\
+      scanf(buffer, testCol1[index], testCol2[index], testCol3[index]); \n\
+    } \n\
+    index = index + 1; \n\
+  }\n\
 ";
 
   function.addBody(program);
@@ -192,32 +208,38 @@ int main( int argc, char* argv[] )
 
   for (int i = 0; i < 9; i++) {
     arrayOne[i]     = 0.0;
-    arrayOneReal[i] = 0.0;
+    arrayTwo[i]     = 5.0;
   }
 
   function.arrayAddrFill(0, arrayOne, 9);
 
-  for (int i = 0; i < 9; i++) {
-    arrayTwo[i]     = 5.0;
-    arrayTwoReal[i] = 5.0;
-  }
-
   function.arrayAddrFill(1, arrayTwo, 9);
 
   plainValOne     = 0;
-  plainValOneReal = 0;
   function.varAddrFill(2, &plainValOne);
 
   plainValTwo     = 5;
-  plainValTwoReal = 5;
   function.varAddrFill(3, &plainValTwo);
 
   plainValThree = 0;
-  plainValThreeReal = 0;
   function.varAddrFill(4, &plainValThree);
 
   testChar = 'A';
   function.varValueFill(5, testChar);
+
+  for (int i = 0; i < 3; ++i) {
+    assert(testCol1[i] == 1.0 + i/10.0);
+    assert(testCol2[i] == 2.0 + i/10.0);
+    assert(testCol3[i] == 3.0 + i/10.0);
+
+    testCol1[i] = 0.0;
+    testCol2[i] = 0.0;
+    testCol3[i] = 0.0;
+  }
+
+  function.arrayAddrFill(6, testCol1, 3);
+  function.arrayAddrFill(7, testCol2, 3);
+  function.arrayAddrFill(8, testCol3, 3);
 
   function.execute();
   cout << function.getErrors() << endl;
@@ -226,6 +248,12 @@ int main( int argc, char* argv[] )
   cout << "############################################################" << endl;
   cout << "Second run done" << endl;
   cout << "############################################################" << endl;
+
+  for (int i = 0; i < 3; ++i) {
+    assert(testCol1[i] == 1.0 + i/10.0);
+    assert(testCol2[i] == 2.0 + i/10.0);
+    assert(testCol3[i] == 3.0 + i/10.0);
+  }
 
   realProgram(arrayOneReal, arrayTwoReal, plainValOneReal,
               plainValTwoReal, plainValThreeReal, testChar);

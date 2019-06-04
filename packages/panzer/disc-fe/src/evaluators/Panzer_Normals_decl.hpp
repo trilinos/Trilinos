@@ -67,7 +67,29 @@ namespace panzer {
   * the determinant of the side jacobian built in thus they correspond to a
   * differential on the side.
   */
-PANZER_EVALUATOR_CLASS(Normals)
+template<typename EvalT, typename Traits>
+class Normals
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    Normals(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
   int side_id;
   int quad_order, quad_index;
@@ -82,7 +104,8 @@ public:
   const PHX::FieldTag & getFieldTag() const 
   { return normals.fieldTag(); }
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class Normals
+
 
 }
 

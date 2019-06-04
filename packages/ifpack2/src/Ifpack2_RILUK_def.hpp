@@ -183,6 +183,21 @@ RILUK<MatrixType>::getU () const
 
 
 template<class MatrixType>
+size_t RILUK<MatrixType>::getNodeSmootherComplexity() const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::getNodeSmootherComplexity: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix, then call compute(), before calling this method.");
+  // RILUK methods cost roughly one apply + the nnz in the upper+lower triangles
+  if(!L_.is_null() && !U_.is_null())
+    return A_->getNodeNumEntries() + L_->getNodeNumEntries() + U_->getNodeNumEntries();
+  else 
+    return 0;
+}
+
+
+
+template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename RILUK<MatrixType>::local_ordinal_type,
                                typename RILUK<MatrixType>::global_ordinal_type,
                                typename RILUK<MatrixType>::node_type> >
@@ -870,18 +885,6 @@ void RILUK<MatrixType>::compute ()
   // always one-to-one?
   L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
   U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
-
-  // Validate that the L and U factors are actually lower and upper triangular
-
-  //18-Aug-2016 The following two Teuchos tests-for-exceptions were changed by Massimiliano Lupo Pasini
-  TEUCHOS_TEST_FOR_EXCEPTION(
-                             0 < L_->getNodeNumRows() &&
-                             ! L_->isLowerTriangular (), std::runtime_error,
-                             "Ifpack2::RILUK::compute: L isn't lower triangular.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-                             0 < U_->getNodeNumRows() &&
-                             ! U_->isUpperTriangular (), std::runtime_error,
-                             "Ifpack2::RILUK::compute: U isn't lower triangular.");
 
   // If L_solver_ or U_solver store modified factors internally, we need to reset those
   L_solver_->setMatrix (L_);

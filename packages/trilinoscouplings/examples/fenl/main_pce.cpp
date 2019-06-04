@@ -21,6 +21,9 @@
 
 //----------------------------------------------------------------------------
 
+// For unit-testing
+#include "Teuchos_TestingHelpers.hpp"
+
 template< class Device >
 bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           const CMD & cmd)
@@ -30,9 +33,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   try {
 
   const int comm_rank = comm->getRank();
-
-  // Create Tpetra Node -- do this first as it initializes host/device
-  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , *comm );
 
   // Set up stochastic discretization
   using Teuchos::Array;
@@ -173,7 +173,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   Perf perf;
   if ( cmd.USE_FIXTURE_QUADRATIC  )
     perf = fenl< Scalar , Device , BoxElemPart::ElemQuadratic >
-      ( comm , node , cmd.USE_FENL_XML_FILE ,
+      ( comm , cmd.USE_FENL_XML_FILE ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,
@@ -182,7 +182,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         response, response_gradient, qd );
   else
     perf = fenl< Scalar , Device , BoxElemPart::ElemLinear >
-      ( comm , node , cmd.USE_FENL_XML_FILE ,
+      ( comm , cmd.USE_FENL_XML_FILE ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,
@@ -208,6 +208,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   //std::cout << std::endl << response << std::endl;
 
+  Kokkos::setGlobalCijkTensor(typename Scalar::cijk_type());
+
   if ( 0 == comm_rank ) {
     print_perf_value( std::cout , cmd , widths , perf );
   }
@@ -215,6 +217,16 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   if ( cmd.SUMMARIZE  ) {
     Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
     print_memory_usage(std::cout, *comm);
+  }
+
+  // If we are running as a unit-test, check mean and variance
+  if (cmd.UNIT_TEST) {
+    TEUCHOS_TEST_FLOATING_EQUALITY( perf.response_mean, cmd.TEST_MEAN, cmd.TEST_TOL, std::cout, success );
+    TEUCHOS_TEST_FLOATING_EQUALITY( perf.response_std_dev, cmd.TEST_STD_DEV, cmd.TEST_TOL, std::cout, success );
+    if (success)
+      std::cout << "Test Passed!" << std::endl;
+    else
+      std::cout << "Test Failed!" << std::endl;
   }
 
   }
@@ -237,6 +249,9 @@ int main( int argc , char ** argv )
   //--------------------------------------------------------------------------
   CMD cmdline;
   clp_return_type rv = parse_cmdline( argc, argv, cmdline, *comm, true );
+
+  {
+  Kokkos::initialize(argc, argv);
 
   // Print a warning if we are using the non-mean-based preconditioner
   if (cmdline.USE_MUELU && !cmdline.USE_MEANBASED &&
@@ -265,6 +280,11 @@ int main( int argc , char ** argv )
 
   if ( ! cmdline.ERROR  && ! cmdline.ECHO  ) {
 
+    // If execution space not specified, use the default
+    if (!cmdline.USE_SERIAL && !cmdline.USE_THREADS && !cmdline.USE_OPENMP &&
+        !cmdline.USE_CUDA)
+      run< Kokkos::DefaultExecutionSpace >( comm , cmdline );
+
 #if defined( HAVE_TPETRA_SERIAL )
     if ( cmdline.USE_SERIAL ) {
       run< Kokkos::Serial >( comm , cmdline );
@@ -290,6 +310,9 @@ int main( int argc , char ** argv )
 #endif
 
   }
+
+  }
+  Kokkos::finalize();
 
   //--------------------------------------------------------------------------
 

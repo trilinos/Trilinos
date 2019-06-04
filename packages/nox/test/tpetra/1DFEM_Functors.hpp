@@ -21,7 +21,7 @@ struct MeshFillFunctor
                   const Scalar& zMin,
                   const Scalar& dz,
                   const GO& minGID) :
-    coordsView_(coords.getDualView().d_view),
+    coordsView_(coords.getLocalViewDevice()),
     zMin_(zMin),
     dz_(dz),
     minGID_(minGID)
@@ -59,26 +59,26 @@ struct RowCountsFunctor
   void operator() (const LO localRow, std::size_t& curNumLocalEntries) const
   {
     // Add a diagonal matrix entry
-    Kokkos::atomic_fetch_add(&counts_(localRow), 1);
+    Kokkos::atomic_increment(&counts_(localRow));
     ++curNumLocalEntries;
     // Contribute a matrix entry to the previous row
     if (localRow > 0) {
-      Kokkos::atomic_fetch_add(&counts_(localRow-1), 1);
+      Kokkos::atomic_increment(&counts_(localRow-1));
       ++curNumLocalEntries;
     }
     // Contribute a matrix entry to the next row
     if (localRow < numMyNodes_-1) {
-      Kokkos::atomic_fetch_add(&counts_(localRow+1), 1);
+      Kokkos::atomic_increment(&counts_(localRow+1));
       ++curNumLocalEntries;
     }
     // MPI process to the left sends us an entry
     if ((myRank_ > 0) && (localRow == 0)) {
-      Kokkos::atomic_fetch_add(&counts_(localRow), 1);
+      Kokkos::atomic_increment(&counts_(localRow));
       ++curNumLocalEntries;
     }
     // MPI process to the right sends us an entry
     if ((myRank_ < numProcs_-1) && (localRow == numMyNodes_-1)) {
-      Kokkos::atomic_fetch_add(&counts_(localRow), 1);
+      Kokkos::atomic_increment(&counts_(localRow));
       ++curNumLocalEntries;
     }
   }
@@ -272,9 +272,9 @@ struct ResidualEvaluatorFunctor
                            const TpetraVectorType& x,
                            const TpetraVectorType& u,
                            const int& myRank) :
-    f_view_(f.getDualView().d_view),
-    x_view_(x.getDualView().d_view),
-    u_view_(u.getDualView().d_view),
+    f_view_(f.getLocalViewDevice()),
+    x_view_(x.getLocalViewDevice()),
+    u_view_(u.getLocalViewDevice()),
     row_map_(f.getMap()->getLocalMap()),
     col_map_(u.getMap()->getLocalMap()),
     myRank_(myRank)
@@ -348,8 +348,8 @@ struct JacobianEvaluatorFunctor
                            const TpetraVectorType& u,
                            const int& myRank) :
     J_local_(J.getLocalMatrix()),
-    x_view_(x.getDualView().d_view),
-    u_view_(u.getDualView().d_view),
+    x_view_(x.getLocalViewDevice()),
+    u_view_(u.getLocalViewDevice()),
     row_map_(J.getRowMap()->getLocalMap()),
     col_map_(J.getColMap()->getLocalMap()),
     myRank_(myRank)
@@ -434,8 +434,8 @@ struct PreconditionerEvaluatorFunctor
                                  const TpetraVectorType& u,
                                  const int& myRank) :
     M_local_(M.getLocalMatrix()),
-    x_view_(x.getDualView().d_view),
-    u_view_(u.getDualView().d_view),
+    x_view_(x.getLocalViewDevice()),
+    u_view_(u.getLocalViewDevice()),
     row_map_(M.getRowMap()->getLocalMap()),
     col_map_(M.getColMap()->getLocalMap()),
     myRank_(myRank)

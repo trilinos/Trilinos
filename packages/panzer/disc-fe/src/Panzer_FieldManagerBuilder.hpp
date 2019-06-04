@@ -55,7 +55,7 @@
 // Forward Declarations
 namespace panzer {
   struct Traits;
-  struct Workset;
+  class Workset;
   struct EquationSetFactory;
   struct BCStrategyFactory;
   class PhysicsBlock;

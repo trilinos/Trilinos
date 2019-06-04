@@ -1,0 +1,3 @@
+<ParameterList name="MueLu">
+  <Parameter name="problem: type"     type="string"   value="Elasticity-3D-complex"/>
+</ParameterList>

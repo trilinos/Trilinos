@@ -31,7 +31,6 @@
 #ifndef __TrilinosCouplings_TpetraIntrepidPoissonExample_hpp
 #define __TrilinosCouplings_TpetraIntrepidPoissonExample_hpp
 
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_FancyOStream.hpp"
@@ -83,7 +82,7 @@ namespace TpetraIntrepidPoissonExample {
 typedef double ST;
 typedef int    LO;
 typedef int    GO;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+typedef Tpetra::Map<>::node_type  Node;
 
 //
 // mfh 19 Apr 2012: If you want to change the template parameters of
@@ -160,9 +159,12 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<vector_type>& B,
                             Teuchos::RCP<vector_type>& X_exact,
                             Teuchos::RCP<vector_type>& X,
+                            Teuchos::RCP<multivector_type> & coords,
+                            Teuchos::RCP<vector_type>& node_sigma,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
+                            Teuchos::ParameterList & inputList,
+                            Teuchos::ParameterList & problemStatistics,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose = false,
@@ -174,9 +176,12 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type>& B,
                             Teuchos::RCP<multivector_type>& X_exact,
                             Teuchos::RCP<multivector_type>& X,
+                            Teuchos::RCP<multivector_type> & coords,
+                            Teuchos::RCP<vector_type>& node_sigma,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
+                            Teuchos::ParameterList & inputList,
+                            Teuchos::ParameterList & problemStatistics,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose = false,

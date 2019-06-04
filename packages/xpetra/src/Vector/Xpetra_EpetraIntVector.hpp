@@ -59,6 +59,14 @@
 
 namespace Xpetra {
 
+// TODO: move that elsewhere
+template<class GlobalOrdinal, class Node>
+Epetra_IntVector & toEpetra(Vector<int, int, GlobalOrdinal, Node> &);
+
+template<class GlobalOrdinal, class Node>
+const Epetra_IntVector & toEpetra(const Vector<int, int, GlobalOrdinal, Node> &);
+//
+
   // stub implementation for EpetraIntVectorT
   template<class EpetraGlobalOrdinal, class Node>
   class EpetraIntVectorT
@@ -251,6 +259,9 @@ namespace Xpetra {
 
     //! Returns the global vector length of vectors in the multi-vector.
     global_size_t getGlobalLength() const {  return 0; }
+   
+    //! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { return false; }
 
     //@}
 
@@ -373,8 +384,7 @@ namespace Xpetra {
       //! Sets all vector entries to zero.
       explicit EpetraIntVectorT(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true)
       {
-        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
-        vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
+        vec_ = rcp(new Epetra_IntVector(toEpetra<GlobalOrdinal,Node>(map), zeroOut));
       }
 
       //! Destructor.
@@ -386,7 +396,7 @@ namespace Xpetra {
       //@{
 
       //! TODO missing comment
-      int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(-1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
+      int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &/* a */) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(-1, Xpetra::Exceptions::NotImplemented, "TODO"); TEUCHOS_UNREACHABLE_RETURN(-1); }
 
 
       //! Return 1-norm of this Vector.
@@ -412,27 +422,27 @@ namespace Xpetra {
       //@{
 
       //! Replace current value at the specified location with specified value.
-      void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceGlobalValue(GlobalOrdinal /* globalRow */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Adds specified value to existing value at the specified location.
-      void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoGlobalValue(GlobalOrdinal /* globalRow */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Replace current value at the specified location with specified values.
-      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue");(*vec_)[myRow] = value; }
 
       //! Adds specified value to existing value at the specified location.
-      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); (*vec_)[myRow] += value;}
 
       //! Initialize all values in a multi-vector with specified value.
       void putScalar(const int &value) {  vec_->PutValue(value); }
 
       //! Set multi-vector values to random numbers.
-      void randomize(bool bUseXpetraImplementation = true) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionnality not available in Epetra"); }
+      void randomize(bool /* bUseXpetraImplementation */ = true) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionnality not available in Epetra"); }
 
 
       //! Set seed for Random function.
       /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
-      void setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionnality not available in Epetra"); }
+      void setSeed(unsigned int /* seed */) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionnality not available in Epetra"); }
 
 
       //@}
@@ -441,18 +451,18 @@ namespace Xpetra {
       //@{
 
       //! Return a Vector which is a const view of column j.
-      Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVector(size_t j) const {
+      Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVector(size_t /* j */) const {
          TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
        }
 
       //! Return a Vector which is a nonconst view of column j.
-      Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVectorNonConst(size_t j) {
+      Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVectorNonConst(size_t /* j */) {
         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
       }
 
       //! Const Local vector access function.
       //! View of the local values in a particular vector of this multi-vector.
-      Teuchos::ArrayRCP<const int> getData(size_t j) const {
+      Teuchos::ArrayRCP<const int> getData(size_t /* j */) const {
         XPETRA_MONITOR("EpetraIntVectorT::getData");
 
         int * data = vec_->Values();
@@ -463,7 +473,7 @@ namespace Xpetra {
 
       //! Local vector access function.
       //! View of the local values in a particular vector of this multi-vector.
-      Teuchos::ArrayRCP<int> getDataNonConst(size_t j) {
+      Teuchos::ArrayRCP<int> getDataNonConst(size_t /* j */) {
         XPETRA_MONITOR("EpetraIntVectorT::getDataNonConst");
 
         int * data = vec_->Values();
@@ -477,7 +487,7 @@ namespace Xpetra {
       //! @name Mathematical methods
       //@{
       //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-      void dot(const MultiVector<int,int,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<int> &dots) const {
+      void dot(const MultiVector<int,int,GlobalOrdinal,Node> &/* A */, const Teuchos::ArrayView<int> &/* dots */) const {
         XPETRA_MONITOR("EpetraIntVectorT::dot");
 
         //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
@@ -485,7 +495,7 @@ namespace Xpetra {
       }
 
       //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
-      void abs(const MultiVector<int,int,GlobalOrdinal,Node> &A) {
+      void abs(const MultiVector<int,int,GlobalOrdinal,Node> &/* A */) {
         XPETRA_MONITOR("EpetraIntVectorT::abs");
 
         //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
@@ -493,7 +503,7 @@ namespace Xpetra {
       }
 
       //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-      void reciprocal(const MultiVector<int,int,GlobalOrdinal,Node> &A) {
+      void reciprocal(const MultiVector<int,int,GlobalOrdinal,Node> &/* A */) {
         XPETRA_MONITOR("EpetraIntVectorT::reciprocal");
 
         //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
@@ -501,19 +511,19 @@ namespace Xpetra {
       }
 
       //! Scale the current values of a multi-vector, this = alpha*this.
-      void scale(const int &alpha) {
+      void scale(const int &/* alpha */) {
         XPETRA_MONITOR("EpetraIntVectorT::scale");
         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
       }
 
       //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
-      void scale (Teuchos::ArrayView< const int > alpha) {
+      void scale (Teuchos::ArrayView< const int > /* alpha */) {
         XPETRA_MONITOR("EpetraIntVectorT::scale");
         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
       }
 
       //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-      void update(const int &alpha, const MultiVector<int,int,GlobalOrdinal,Node> &A, const int &beta) {
+      void update(const int &/* alpha */, const MultiVector<int,int,GlobalOrdinal,Node> &/* A */, const int &/* beta */) {
         XPETRA_MONITOR("EpetraIntVectorT::update");
 
         // XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
@@ -521,7 +531,7 @@ namespace Xpetra {
       }
 
       //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-      void update(const int &alpha, const MultiVector<int,int,GlobalOrdinal,Node> &A, const int &beta, const MultiVector<int,int,GlobalOrdinal,Node> &B, const int &gamma) {
+      void update(const int &/* alpha */, const MultiVector<int,int,GlobalOrdinal,Node> &/* A */, const int &/* beta */, const MultiVector<int,int,GlobalOrdinal,Node> &/* B */, const int &/* gamma */) {
         XPETRA_MONITOR("EpetraIntVectorT::update");
 
         //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
@@ -530,25 +540,25 @@ namespace Xpetra {
       }
 
       //! Compute 1-norm of each vector in multi-vector.
-      void norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &/* norms */) const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Compute 2-norm of each vector in multi-vector.
-      void norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &/* norms */) const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Compute Inf-norm of each vector in multi-vector.
-      void normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &/* norms */) const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Compute mean (average) value of each vector in multi-vector.
-      void meanValue(const Teuchos::ArrayView<int> &means) const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void meanValue(const Teuchos::ArrayView<int> &/* means */) const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Compute max value of each vector in multi-vector.
-      void maxValue(const Teuchos::ArrayView<int> &maxs) const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void maxValue(const Teuchos::ArrayView<int> &/* maxs */) const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-      void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,GlobalOrdinal,Node> &A, const MultiVector<int,int,GlobalOrdinal,Node> &B, const int &beta) { XPETRA_MONITOR("EpetraIntVectorT::multiply"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Not available in Epetra"); }
+      void multiply(Teuchos::ETransp /* transA */, Teuchos::ETransp /* transB */, const int &/* alpha */, const MultiVector<int,int,GlobalOrdinal,Node> &/* A */, const MultiVector<int,int,GlobalOrdinal,Node> &/* B */, const int &/* beta */) { XPETRA_MONITOR("EpetraIntVectorT::multiply"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Not available in Epetra"); }
 
       //! Element-wise multiply of a Vector A with a EpetraMultiVector B.
-      void elementWiseMultiply(int scalarAB, const Vector<int,int,GlobalOrdinal,Node> &A, const MultiVector<int,int,GlobalOrdinal,Node> &B, int scalarThis) {
+      void elementWiseMultiply(int /* scalarAB */, const Vector<int,int,GlobalOrdinal,Node> &/* A */, const MultiVector<int,int,GlobalOrdinal,Node> &/* B */, int /* scalarThis */) {
           XPETRA_MONITOR("EpetraIntVectorT::elementWiseMultiply");
           TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra_EpetraIntVector: elementWiseMultiply not implemented because Epetra_IntVector does not support this operation");
         }
@@ -559,16 +569,16 @@ namespace Xpetra {
       //@{
 
       //! Replace value, using global (row) index.
-      void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceGlobalValue(GlobalOrdinal /* globalRow */, size_t /* vectorIndex */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Add value to existing value, using global (row) index.
-      void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoGlobalValue(GlobalOrdinal /* globalRow */, size_t /* vectorIndex */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Replace value, using local (row) index.
-      void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceLocalValue(LocalOrdinal /* myRow */, size_t /* vectorIndex */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Add value to existing value, using local (row) index.
-      void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoLocalValue(LocalOrdinal /* myRow */, size_t /* vectorIndex */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //@}
 
@@ -584,6 +594,15 @@ namespace Xpetra {
 
       //! Returns the global vector length of vectors in the multi-vector.
       global_size_t getGlobalLength() const {  return vec_->GlobalLength64(); }
+
+      //! Checks to see if the local length, number of vectors and size of Scalar type match
+      bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { 
+        XPETRA_MONITOR("EpetraIntVectorT::isSameSize"); 
+        const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *asvec = dynamic_cast<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *>(&vec);
+        if(!asvec) return false;
+        auto vv = toEpetra(*asvec); 
+        return ( (vec_->MyLength() == vv.MyLength()) && (getNumVectors() == vec.getNumVectors()));
+      }
 
       //@}
 
@@ -682,7 +701,7 @@ namespace Xpetra {
         TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
       }
 
-      void replaceMap(const RCP<const Map<int, GlobalOrdinal, Node> >& map) {
+      void replaceMap(const RCP<const Map<int, GlobalOrdinal, Node> >& /* map */) {
         // do nothing
       }
 
@@ -804,8 +823,7 @@ namespace Xpetra {
       //! Sets all vector entries to zero.
       explicit EpetraIntVectorT(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true)
       {
-        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
-        vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
+        vec_ = rcp(new Epetra_IntVector(toEpetra<GlobalOrdinal,Node>(map), zeroOut));
       }
 
       //! Destructor.
@@ -817,7 +835,7 @@ namespace Xpetra {
       //@{
 
       //! TODO missing comment
-      int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
+      int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &/* a */) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
 
       //! Return 1-norm of this Vector.
@@ -842,27 +860,27 @@ namespace Xpetra {
       //@{
 
       //! Replace current value at the specified location with specified value.
-      void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceGlobalValue(GlobalOrdinal /* globalRow */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Adds specified value to existing value at the specified location.
-      void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoGlobalValue(GlobalOrdinal /* globalRow */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Replace current value at the specified location with specified values.
-      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue");(*vec_)[myRow] = value;}
 
       //! Adds specified value to existing value at the specified location.
-      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); (*vec_)[myRow] += value;}
 
       //! Initialize all values in a multi-vector with specified value.
       void putScalar(const int &value) {  vec_->PutValue(value); }
 
       //! Set multi-vector values to random numbers.
-      void randomize(bool bUseXpetraImplementation = true) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionnality not available in Epetra"); }
+      void randomize(bool /* bUseXpetraImplementation */ = true) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionnality not available in Epetra"); }
 
 
       //! Set seed for Random function.
       /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
-      void setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionnality not available in Epetra"); }
+      void setSeed(unsigned int /* seed */) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionnality not available in Epetra"); }
 
 
       //@}
@@ -871,18 +889,18 @@ namespace Xpetra {
       //@{
 
       //! Return a Vector which is a const view of column j.
-      Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVector(size_t j) const {
+      Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVector(size_t /* j */) const {
          TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
        }
 
       //! Return a Vector which is a nonconst view of column j.
-      Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVectorNonConst(size_t j) {
+      Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVectorNonConst(size_t /* j */) {
         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
       }
 
       //! Const Local vector access function.
       //! View of the local values in a particular vector of this multi-vector.
-      Teuchos::ArrayRCP<const int> getData(size_t j) const {
+      Teuchos::ArrayRCP<const int> getData(size_t /* j */) const {
         XPETRA_MONITOR("EpetraIntVectorT::getData");
 
         int * data = vec_->Values();
@@ -893,7 +911,7 @@ namespace Xpetra {
 
       //! Local vector access function.
       //! View of the local values in a particular vector of this multi-vector.
-      Teuchos::ArrayRCP<int> getDataNonConst(size_t j) {
+      Teuchos::ArrayRCP<int> getDataNonConst(size_t /* j */) {
         XPETRA_MONITOR("EpetraIntVectorT::getDataNonConst");
 
         int * data = vec_->Values();
@@ -907,7 +925,7 @@ namespace Xpetra {
       //! @name Mathematical methods
       //@{
       //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-      void dot(const MultiVector<int,int,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<int> &dots) const {
+      void dot(const MultiVector<int,int,GlobalOrdinal,Node> &/* A */, const Teuchos::ArrayView<int> &/* dots */) const {
         XPETRA_MONITOR("EpetraIntVectorT::dot");
 
         //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
@@ -915,7 +933,7 @@ namespace Xpetra {
       }
 
       //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
-      void abs(const MultiVector<int,int,GlobalOrdinal,Node> &A) {
+      void abs(const MultiVector<int,int,GlobalOrdinal,Node> &/* A */) {
         XPETRA_MONITOR("EpetraIntVectorT::abs");
 
         //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
@@ -923,7 +941,7 @@ namespace Xpetra {
       }
 
       //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-      void reciprocal(const MultiVector<int,int,GlobalOrdinal,Node> &A) {
+      void reciprocal(const MultiVector<int,int,GlobalOrdinal,Node> &/* A */) {
         XPETRA_MONITOR("EpetraIntVectorT::reciprocal");
 
         //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
@@ -931,19 +949,19 @@ namespace Xpetra {
       }
 
       //! Scale the current values of a multi-vector, this = alpha*this.
-      void scale(const int &alpha) {
+      void scale(const int &/* alpha */) {
         XPETRA_MONITOR("EpetraIntVectorT::scale");
         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
       }
 
       //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
-      void scale (Teuchos::ArrayView< const int > alpha) {
+      void scale (Teuchos::ArrayView< const int > /* alpha */) {
         XPETRA_MONITOR("EpetraIntVectorT::scale");
         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
       }
 
       //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-      void update(const int &alpha, const MultiVector<int,int,GlobalOrdinal,Node> &A, const int &beta) {
+      void update(const int &/* alpha */, const MultiVector<int,int,GlobalOrdinal,Node> &/* A */, const int &/* beta */) {
         XPETRA_MONITOR("EpetraIntVectorT::update");
 
         // XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
@@ -951,7 +969,7 @@ namespace Xpetra {
       }
 
       //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-      void update(const int &alpha, const MultiVector<int,int,GlobalOrdinal,Node> &A, const int &beta, const MultiVector<int,int,GlobalOrdinal,Node> &B, const int &gamma) {
+      void update(const int &/* alpha */, const MultiVector<int,int,GlobalOrdinal,Node> &/* A */, const int &/* beta */, const MultiVector<int,int,GlobalOrdinal,Node> &/* B */, const int &/* gamma */) {
         XPETRA_MONITOR("EpetraIntVectorT::update");
 
         //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
@@ -960,25 +978,25 @@ namespace Xpetra {
       }
 
       //! Compute 1-norm of each vector in multi-vector.
-      void norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &/* norms */) const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Compute 2-norm of each vector in multi-vector.
-      void norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &/* norms */) const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Compute Inf-norm of each vector in multi-vector.
-      void normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &/* norms */) const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Compute mean (average) value of each vector in multi-vector.
-      void meanValue(const Teuchos::ArrayView<int> &means) const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void meanValue(const Teuchos::ArrayView<int> &/* means */) const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Compute max value of each vector in multi-vector.
-      void maxValue(const Teuchos::ArrayView<int> &maxs) const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void maxValue(const Teuchos::ArrayView<int> &/* maxs */) const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-      void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,GlobalOrdinal,Node> &A, const MultiVector<int,int,GlobalOrdinal,Node> &B, const int &beta) { XPETRA_MONITOR("EpetraIntVectorT::multiply"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Not available in Epetra"); }
+      void multiply(Teuchos::ETransp /* transA */, Teuchos::ETransp /* transB */, const int &/* alpha */, const MultiVector<int,int,GlobalOrdinal,Node> &/* A */, const MultiVector<int,int,GlobalOrdinal,Node> &/* B */, const int &/* beta */) { XPETRA_MONITOR("EpetraIntVectorT::multiply"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Not available in Epetra"); }
 
       //! Element-wise multiply of a Vector A with a EpetraMultiVector B.
-      void elementWiseMultiply(int scalarAB, const Vector<int,int,GlobalOrdinal,Node> &A, const MultiVector<int,int,GlobalOrdinal,Node> &B, int scalarThis) {
+      void elementWiseMultiply(int /* scalarAB */, const Vector<int,int,GlobalOrdinal,Node> &/* A */, const MultiVector<int,int,GlobalOrdinal,Node> &/* B */, int /* scalarThis */) {
           XPETRA_MONITOR("EpetraIntVectorT::elementWiseMultiply");
           TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra_EpetraIntVector: elementWiseMultiply not implemented because Epetra_IntVector does not support this operation");
         }
@@ -989,16 +1007,16 @@ namespace Xpetra {
       //@{
 
       //! Replace value, using global (row) index.
-      void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceGlobalValue(GlobalOrdinal /* globalRow */, size_t /* vectorIndex */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Add value to existing value, using global (row) index.
-      void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoGlobalValue(GlobalOrdinal /* globalRow */, size_t /* vectorIndex */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Replace value, using local (row) index.
-      void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceLocalValue(LocalOrdinal /* myRow */, size_t /* vectorIndex */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Add value to existing value, using local (row) index.
-      void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoLocalValue(LocalOrdinal /* myRow */, size_t /* vectorIndex */, const Scalar &/* value */) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //@}
 
@@ -1015,6 +1033,15 @@ namespace Xpetra {
       //! Returns the global vector length of vectors in the multi-vector.
       global_size_t getGlobalLength() const {  return vec_->GlobalLength64(); }
 
+
+      //! Checks to see if the local length, number of vectors and size of Scalar type match
+      bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { 
+        XPETRA_MONITOR("EpetraIntVectorT::isSameSize"); 
+        const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  *asvec = dynamic_cast<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>* >(&vec);
+        if(!asvec) return false;
+        auto vv = toEpetra(*asvec); 
+        return ( (vec_->MyLength() == vv.MyLength()) && (getNumVectors() == vec.getNumVectors()));
+      }
       //@}
 
       //! @name Overridden from Teuchos::Describable
@@ -1112,7 +1139,7 @@ namespace Xpetra {
         TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
       }
 
-      void replaceMap(const RCP<const Map<int, GlobalOrdinal, Node> >& map) {
+      void replaceMap(const RCP<const Map<int, GlobalOrdinal, Node> >& /* map */) {
         // do nothing
       }
 

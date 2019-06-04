@@ -59,7 +59,19 @@ class IntegrateSourceTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
   PHX::MDField<ScalarT,CELL,BASIS> residual;
 
 public:
-  struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
+
+  struct MyDevEvalResidual : public PHX::DeviceEvaluator<Traits> {
+    PHX::View<const ScalarT**> source;
+    PHX::AtomicView<ScalarT**> residual;
+    KOKKOS_FUNCTION MyDevEvalResidual(const PHX::View<const ScalarT**>& in_source,
+			      const PHX::View<ScalarT**>& in_residual) :
+      source(in_source), residual(in_residual) {}
+    KOKKOS_FUNCTION MyDevEvalResidual(const MyDevEvalResidual& src) = default;
+    KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
+                                  const typename Traits::EvalData data) override;
+  };
+
+  struct MyDevEvalJacobian : public PHX::DeviceEvaluator<Traits> {
     PHX::View<const ScalarT**> source;
 #ifdef PHX_ENABLE_KOKKOS_AMT
     // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
@@ -67,10 +79,10 @@ public:
 #else
     PHX::View<ScalarT**> residual;
 #endif
-    KOKKOS_FUNCTION MyDevEval(const PHX::View<const ScalarT**>& in_source,
+    KOKKOS_FUNCTION MyDevEvalJacobian(const PHX::View<const ScalarT**>& in_source,
 			      const PHX::View<ScalarT**>& in_residual) :
       source(in_source), residual(in_residual) {}
-    KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
+    KOKKOS_FUNCTION MyDevEvalJacobian(const MyDevEvalJacobian& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
                                   const typename Traits::EvalData data) override;
   };

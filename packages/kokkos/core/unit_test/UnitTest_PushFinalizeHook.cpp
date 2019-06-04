@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -133,7 +133,7 @@ int main( int argc, char *argv[] ) {
          << "  Expected output:" << endl
          << expectedOutput << endl
          << "  Actual output:" << endl
-         << hookOutput << endl;
+         << hookOutput.str() << endl;
   }
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

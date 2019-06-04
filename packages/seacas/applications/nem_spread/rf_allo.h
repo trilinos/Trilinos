@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,6 +35,6 @@
 
 /* function declarations for dynamic array allocation */
 
-extern double *array_alloc(const char *file, int lineno, int numdim, ...);
+extern void *array_alloc(const char *file, int lineno, int numdim, ...);
 
 extern void safe_free(void **ptr);

@@ -45,8 +45,8 @@
     \brief Test default Constraint_SimOpt solve.
 */
 
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_Stream.hpp"
+
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -73,12 +73,12 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
   bool print = (iprint>0);
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (print)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -92,34 +92,34 @@ int main(int argc, char *argv[]) {
     RealT nl    = 1.0;   // Nonlinearity parameter (1 = Burgers, 0 = linear).
     RealT cH1   = 1.0;   // Scale for derivative term in H1 norm.
     RealT cL2   = 0.0;   // Scale for mass term in H1 norm.
-    Teuchos::RCP<BurgersFEM<RealT> > fem
-      = Teuchos::rcp(new BurgersFEM<RealT>(nx,nl,cH1,cL2));
+    ROL::Ptr<BurgersFEM<RealT> > fem
+      = ROL::makePtr<BurgersFEM<RealT>>(nx,nl,cH1,cL2);
     fem->test_inverse_mass(*outStream);
     fem->test_inverse_H1(*outStream);
     /*************************************************************************/
     /************* INITIALIZE SIMOPT CONSTRAINT ******************************/
     /*************************************************************************/
     bool hess = true;
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
-      = Teuchos::rcp(new Constraint_BurgersControl<RealT>(fem,hess));
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+      = ROL::makePtr<Constraint_BurgersControl<RealT>>(fem,hess);
     /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
     /*************************************************************************/
     // INITIALIZE CONTROL VECTORS
-    Teuchos::RCP<std::vector<RealT> > z_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx+2, 0.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > zp
-      = Teuchos::rcp(new PrimalControlVector(z_rcp,fem));
+    ROL::Ptr<std::vector<RealT> > z_ptr
+      = ROL::makePtr<std::vector<RealT>>(nx+2, 0.0);
+    ROL::Ptr<ROL::Vector<RealT> > zp
+      = ROL::makePtr<PrimalControlVector>(z_ptr,fem);
     // INITIALIZE STATE VECTORS
-    Teuchos::RCP<std::vector<RealT> > u_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new PrimalStateVector(u_rcp,fem));
+    ROL::Ptr<std::vector<RealT> > u_ptr
+      = ROL::makePtr<std::vector<RealT>>(nx, 1.0);
+    ROL::Ptr<ROL::Vector<RealT> > up
+      = ROL::makePtr<PrimalStateVector>(u_ptr,fem);
     // INITIALIZE CONSTRAINT VECTORS
-    Teuchos::RCP<std::vector<RealT> > c_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > cp
-      = Teuchos::rcp(new PrimalConstraintVector(c_rcp,fem));
+    ROL::Ptr<std::vector<RealT> > c_ptr
+      = ROL::makePtr<std::vector<RealT>>(nx, 1.0);
+    ROL::Ptr<ROL::Vector<RealT> > cp
+      = ROL::makePtr<PrimalConstraintVector>(c_ptr,fem);
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/

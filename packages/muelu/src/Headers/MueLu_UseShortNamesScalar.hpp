@@ -23,6 +23,9 @@ typedef MueLu::BlackBoxPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlackBox
 #ifdef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 typedef MueLu::BlockedCoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCoarseMapFactory;
 #endif
+#ifdef MUELU_BLOCKEDCOORDINATESTRANSFERFACTORY_SHORT
+typedef MueLu::BlockedCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCoordinatesTransferFactory;
+#endif
 #ifdef MUELU_BLOCKEDDIRECTSOLVER_SHORT
 typedef MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedDirectSolver;
 #endif
@@ -112,6 +115,12 @@ typedef MueLu::GeneralGeometricPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> 
 #endif
 #ifdef MUELU_GENERICRFACTORY_SHORT
 typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRFactory;
+#endif
+#ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_SHORT
+typedef MueLu::GeometricInterpolationPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricInterpolationPFactory;
+#endif
+#ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_SHORT
+typedef MueLu::GeometricInterpolationPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricInterpolationPFactory_kokkos;
 #endif
 #ifdef MUELU_GMRESSOLVER_SHORT
 typedef MueLu::GMRESSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> GMRESSolver;
@@ -218,6 +227,9 @@ typedef MueLu::ReorderBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Reor
 #ifdef MUELU_REPARTITIONFACTORY_SHORT
 typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionFactory;
 #endif
+#ifdef MUELU_REPARTITIONBLOCKDIAGONALFACTORY_SHORT
+typedef MueLu::RepartitionBlockDiagonalFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionBlockDiagonalFactory;
+#endif
 #ifdef MUELU_REPARTITIONHEURISTICFACTORY_SHORT
 typedef MueLu::RepartitionHeuristicFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionHeuristicFactory;
 #endif
@@ -262,6 +274,9 @@ typedef MueLu::SolverBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> SolverBase;
 #endif
 #ifdef MUELU_STEEPESTDESCENTSOLVER_SHORT
 typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> SteepestDescentSolver;
+#endif
+#ifdef MUELU_STRUCTUREDAGGREGATIONFACTORY_SHORT
+typedef MueLu::StructuredAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> StructuredAggregationFactory;
 #endif
 #ifdef MUELU_STRUCTUREDLINEDETECTIONFACTORY_SHORT
 typedef MueLu::StructuredLineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> StructuredLineDetectionFactory;
@@ -334,6 +349,9 @@ typedef MueLu::ZoltanInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> ZoltanInt
 #endif
 #ifdef MUELU_ZOLTAN2INTERFACE_SHORT
 typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2Interface;
+#endif
+#ifdef MUELU_NODEPARTITIONINTERFACE_SHORT
+typedef MueLu::NodePartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> NodePartitionInterface;
 #endif
 #ifdef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT
 typedef MueLu::AdaptiveSaMLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> AdaptiveSaMLParameterListInterpreter;

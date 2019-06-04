@@ -48,7 +48,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(ScalarToVector,p)
+template<typename EvalT, typename Traits>
+ScalarToVector<EvalT, Traits>::
+ScalarToVector(
+  const Teuchos::ParameterList& p)
 {
   Teuchos::RCP<PHX::DataLayout> scalar_dl = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout Scalar");
@@ -78,7 +81,37 @@ PHX_EVALUATOR_CTOR(ScalarToVector,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(ScalarToVector, /* worksets */, fm)
+
+template<typename EvalT, typename Traits>				\
+ScalarToVector<EvalT,Traits>::
+ScalarToVector(const std::vector<PHX::Tag<ScalarT>> & input,
+               const PHX::FieldTag & output)
+{
+  // setup the fields
+  vector_field = output;
+
+  scalar_fields.resize(input.size());
+  for(std::size_t i=0;i<input.size();i++) 
+    scalar_fields[i] = input[i];
+
+  // add dependent/evaluate fields
+  this->addEvaluatedField(vector_field);
+  
+  for (std::size_t i=0; i < scalar_fields.size(); ++i)
+    this->addDependentField(scalar_fields[i]);
+  
+  // name array
+  std::string n = "ScalarToVector: " + vector_field.fieldTag().name();
+  this->setName(n);
+}
+
+//**********************************************************************
+template<typename EvalT, typename Traits>
+void
+ScalarToVector<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   internal_scalar_fields = Kokkos::View<KokkosScalarFields_t*>("ScalarToVector::internal_scalar_fields", scalar_fields.size());
   for (std::size_t i=0; i < scalar_fields.size(); ++i) {
@@ -96,9 +129,9 @@ KOKKOS_INLINE_FUNCTION
 void ScalarToVector<EvalT, TRAITS>::operator()(const size_t &cell) const {
   typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
   // Loop over points
-  for (size_type pt = 0; pt < vector_field.dimension(1); ++pt) {
+  for (size_type pt = 0; pt < vector_field.extent(1); ++pt) {
     // Loop over scalars
-    for (std::size_t sc = 0; sc < internal_scalar_fields.dimension(0); ++sc) {
+    for (std::size_t sc = 0; sc < internal_scalar_fields.extent(0); ++sc) {
       vector_field(cell,pt,sc) = internal_scalar_fields(sc)(cell,pt);
 
     }
@@ -106,7 +139,11 @@ void ScalarToVector<EvalT, TRAITS>::operator()(const size_t &cell) const {
 
 }
 //**********************************************************************
-PHX_EVALUATE_FIELDS(ScalarToVector,workset)
+template<typename EvalT, typename Traits>
+void
+ScalarToVector<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
 
   // Loop over cells

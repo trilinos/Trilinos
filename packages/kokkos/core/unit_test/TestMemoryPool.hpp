@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -626,7 +626,9 @@ TEST_F( TEST_CATEGORY, memory_pool )
   TestMemoryPool::test_host_memory_pool_stats<>();
   TestMemoryPool::test_memory_pool_v2< TEST_EXECSPACE >(false,false);
   TestMemoryPool::test_memory_pool_corners< TEST_EXECSPACE >(false,false);
+#ifdef KOKKOS_ENABLE_LARGE_MEM_TESTS
   TestMemoryPool::test_memory_pool_huge< TEST_EXECSPACE >();
+#endif
 }
 
 }

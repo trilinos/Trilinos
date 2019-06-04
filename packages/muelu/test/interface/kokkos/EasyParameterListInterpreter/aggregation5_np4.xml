@@ -1,0 +1,4 @@
+<ParameterList name="MueLu">
+  <Parameter name="aggregation: type"           type="string"   value="brick"/>
+  <Parameter name="aggregation: brick x size"   type="int"      value="3"/>
+</ParameterList>

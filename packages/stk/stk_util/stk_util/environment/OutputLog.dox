@@ -53,8 +53,8 @@
 /// For example, the output streams header which would be included wherever output logging is desired.
 ///
 /// \code
-///     #ifndef SIERRA_Slib_Output_Log_h
-///     #define SIERRA_Slib_Output_Log_h
+///     #ifndef SIERRA_Output_Log_h
+///     #define SIERRA_Output_Log_h
 ///     
 ///     #include <iosfwd>
 ///     
@@ -69,7 +69,7 @@
 ///     
 ///     } // namespace sierra
 ///     
-///     #endif // SIERRA_Slib_Output_Log_h
+///     #endif // SIERRA_Output_Log_h
 /// \endcode
 ///
 /// The corresponding implementation file.

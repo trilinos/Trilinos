@@ -42,7 +42,7 @@
 // @HEADER
 
 #ifndef PHX_PROJECT_VALUE_TO_QP_HPP
-#define PHX_PROEJCT_VALUE_TO_QP_HPP
+#define PHX_PROJECT_VALUE_TO_QP_HPP
 
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
@@ -60,13 +60,25 @@ class ProjectValueToQP : public PHX::EvaluatorWithBaseImpl<Traits>,
   PHX::MDField<ScalarT,CELL,QP> field_at_qp;
   
 public:
-  struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
+
+  struct MyDevEvalResidual : public PHX::DeviceEvaluator<Traits> {
     PHX::View<const ScalarT**> field_at_basis;
     PHX::View<ScalarT**> field_at_qp;
-    KOKKOS_FUNCTION MyDevEval(const PHX::View<const ScalarT**>& in_field_at_basis,
-			      const PHX::View<ScalarT**>& in_field_at_qp) :
+    KOKKOS_FUNCTION MyDevEvalResidual(const PHX::View<const ScalarT**>& in_field_at_basis,
+				      const PHX::View<ScalarT**>& in_field_at_qp) :
       field_at_basis(in_field_at_basis), field_at_qp(in_field_at_qp) {}
-    KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
+    KOKKOS_FUNCTION MyDevEvalResidual(const MyDevEvalResidual& src) = default;
+    KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
+                                  typename Traits::EvalData workset) override;
+  };
+
+  struct MyDevEvalJacobian : public PHX::DeviceEvaluator<Traits> {
+    PHX::View<const ScalarT**> field_at_basis;
+    PHX::View<ScalarT**> field_at_qp;
+    KOKKOS_FUNCTION MyDevEvalJacobian(const PHX::View<const ScalarT**>& in_field_at_basis,
+				      const PHX::View<ScalarT**>& in_field_at_qp) :
+      field_at_basis(in_field_at_basis), field_at_qp(in_field_at_qp) {}
+    KOKKOS_FUNCTION MyDevEvalJacobian(const MyDevEvalJacobian& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
                                   typename Traits::EvalData workset) override;
   };

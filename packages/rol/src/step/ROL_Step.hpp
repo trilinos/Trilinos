@@ -51,7 +51,7 @@
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_Types.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
     \class ROL::Step
@@ -68,10 +68,10 @@ class Algorithm;
 template <class Real>
 class Step {
 private:
-  Teuchos::RCP<StepState<Real> > state_;
+  ROL::Ptr<StepState<Real> > state_;
 
 protected:
-  Teuchos::RCP<StepState<Real> > getState(void) {
+  ROL::Ptr<StepState<Real> > getState(void) {
     return state_;
   }
 
@@ -80,7 +80,7 @@ public:
   virtual ~Step() {}
 
   Step(void) { 
-    state_ = Teuchos::rcp( new StepState<Real> );
+    state_ = ROL::makePtr<StepState<Real>>();
   }
 
 
@@ -113,7 +113,7 @@ public:
     obj.gradient(*(state_->gradientVec),x,tol);
     algo_state.ngrad++;
     if ( con.isActivated() ) {
-      Teuchos::RCP<Vector<Real> > xnew = x.clone();
+      ROL::Ptr<Vector<Real> > xnew = x.clone();
       xnew->set(x);
       xnew->axpy(-one,(Step<Real>::state_->gradientVec)->dual());
       con.project(*xnew);
@@ -195,24 +195,24 @@ public:
 
   void initialize( OptimizationProblem<Real> &opt, AlgorithmState<Real> &algo_state ) {
 
-    using Teuchos::RCP;
+    
 
-    RCP<Objective<Real> >          obj = opt.getObjective();
-    RCP<Vector<Real> >             x   = opt.getSolutionVector();
-    RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    RCP<Constraint<Real> >         con = opt.getConstraint();
-    RCP<Vector<Real> >             l   = opt.getMultiplierVector();
+    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
+    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
+    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
+    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
+    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
 
-    if( con == Teuchos::null ) { // has no equality constraint
-      if( bnd == Teuchos::null ) { // has no bound constraint or inactive
-        bnd = Teuchos::rcp(new BoundConstraint<Real> );
+    if( con == ROL::nullPtr ) { // has no equality constraint
+      if( bnd == ROL::nullPtr ) { // has no bound constraint or inactive
+        bnd = ROL::makePtr<BoundConstraint<Real>>();
         bnd->deactivate();
       }
       initialize(*x, x->dual(), *obj, *bnd, algo_state);
     }
     else { // has equality constraint 
 
-      if( bnd == Teuchos::null ) {
+      if( bnd == ROL::nullPtr ) {
         initialize(*x,x->dual(),*l,l->dual(),*obj,*con,algo_state );
       }
       initialize(*x,x->dual(),*l,l->dual(),*obj,*con,*bnd,algo_state);
@@ -220,23 +220,23 @@ public:
   }
 
   void compute( Vector<Real> &s, OptimizationProblem<Real> &opt, AlgorithmState<Real> &algo_state ) {
-    using Teuchos::RCP;
+    
 
-    RCP<Objective<Real> >          obj = opt.getObjective();
-    RCP<Vector<Real> >             x   = opt.getSolutionVector();
-    RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    RCP<Constraint<Real> >         con = opt.getConstraint();
-    RCP<Vector<Real> >             l   = opt.getMultiplierVector();
+    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
+    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
+    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
+    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
+    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
 
-    if( con == Teuchos::null ) { // has no equality constraint
-      if( bnd == Teuchos::null ) { // has no bound constraint
-        bnd = Teuchos::rcp(new BoundConstraint<Real> );
+    if( con == ROL::nullPtr ) { // has no equality constraint
+      if( bnd == ROL::nullPtr ) { // has no bound constraint
+        bnd = ROL::makePtr<BoundConstraint<Real>>();
         bnd->deactivate();
       }
       compute(s,*x, *obj, *bnd, algo_state);
     }
     else { // has equality constraint 
-      if( bnd == Teuchos::null ) {
+      if( bnd == ROL::nullPtr ) {
         compute(s,*x,*l,*obj,*con,algo_state);
       }
       compute(s,*x,*l,*obj,*con,*bnd,algo_state);
@@ -245,23 +245,23 @@ public:
   }
 
   void update( OptimizationProblem<Real> &opt, const Vector<Real> &s, AlgorithmState<Real> &algo_state ) {
-    using Teuchos::RCP;
+    
 
-    RCP<Objective<Real> >          obj = opt.getObjective();
-    RCP<Vector<Real> >             x   = opt.getSolutionVector();
-    RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    RCP<Constraint<Real> >         con = opt.getConstraint();
-    RCP<Vector<Real> >             l   = opt.getMultiplierVector();
+    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
+    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
+    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
+    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
+    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
 
-    if( con == Teuchos::null ) { // has no equality constraint
-      if( bnd == Teuchos::null ) { // has no bound constraint
-        bnd = Teuchos::rcp(new BoundConstraint<Real> );
+    if( con == ROL::nullPtr ) { // has no equality constraint
+      if( bnd == ROL::nullPtr ) { // has no bound constraint
+        bnd = ROL::makePtr<BoundConstraint<Real>>();
         bnd->deactivate();
       }
       update(*x, s, *obj, *bnd, algo_state);
     }
     else { // has equality constraint
-      if( bnd == Teuchos::null ) {
+      if( bnd == ROL::nullPtr ) {
         update(*x,*l,s,*obj,*con,algo_state);
       }
       update(*x,*l,s,*obj,*con,*bnd,algo_state);
@@ -290,7 +290,7 @@ public:
 
   /** \brief Get state for step object.
   */
-  const Teuchos::RCP<const StepState<Real> > getStepState(void) const {
+  const ROL::Ptr<const StepState<Real> > getStepState(void) const {
     return state_;
   }
 

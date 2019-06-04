@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -70,13 +70,12 @@ protected:
   static void SetUpTestCase()
   {
     std::cout << std::setprecision(5) << std::scientific;
-    Kokkos::HostSpace::execution_space::initialize();
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
+    Kokkos::InitArguments args(-1, -1, 0);
+    Kokkos::initialize(args);
   }
   static void TearDownTestCase()
   {
-    Kokkos::Cuda::finalize();
-    Kokkos::HostSpace::execution_space::finalize();
+    Kokkos::finalize();
   }
 };
 

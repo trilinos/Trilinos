@@ -38,7 +38,7 @@
 #include <functional>                   // for equal_to, binary_function
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <stdexcept>                    // for runtime_error
-#include <stk_util/environment/ReportHandler.hpp>  // for report
+#include <stk_util/util/ReportHandler.hpp>  // for report
 #include <stk_util/util/Bootstrap.hpp>  // for Bootstrap
 #include <stk_util/util/Marshal.hpp>    // for Marshal, operator<<, etc
 #include <string>                       // for string, char_traits, etc
@@ -231,6 +231,9 @@ unsigned
 increment_message_count(
   unsigned              message_type)
 {
+  if ( (message_type & MSG_SYMMETRIC) && stk::parallel_machine_rank(MPI_COMM_WORLD) != 0 ) {
+    return get_message_type_info(message_type).m_count;
+  }
   return ++get_message_type_info(message_type).m_count;
 }
 
@@ -295,7 +298,8 @@ report_message(
         report(message, message_type);
 
         std::ostringstream s;
-        s << "Maximum count for this " << get_message_name(message_type) << " has been exceeded and will no longer be displayed";
+        s << "Maximum count for this " << get_message_name(message_type) << " (previous message)"
+          << " has been exceeded and will no longer be displayed";
         report(s.str().c_str(), MSG_WARNING | MSG_SYMMETRIC);
       }
     

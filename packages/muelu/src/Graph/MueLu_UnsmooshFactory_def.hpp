@@ -102,7 +102,6 @@ namespace MueLu {
     Teuchos::Array<char> dofStatus;
     if(fineLevel.GetLevelID() == 0) {
       dofStatus = Get<Teuchos::Array<char> >(fineLevel, "DofStatus");
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(dofStatus.size()) == Teuchos::as<size_t>(unamalgA->getRowMap()->getNodeNumElements()), MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: User provided dofStatus on level 0 does not fit to size of unamalgamted A");
     } else {
       // dof status is the dirichlet information of unsmooshed/unamalgamated A (fine level)
       dofStatus = Teuchos::Array<char>(unamalgA->getRowMap()->getNodeNumElements() /*amalgP->getRowMap()->getNodeNumElements() * maxDofPerNode*/,'s');
@@ -216,7 +215,8 @@ namespace MueLu {
     size_t nColCoarseDofs = Teuchos::as<size_t>(amalgP->getColMap()->getNodeNumElements() * maxDofPerNode);
     Teuchos::Array<GlobalOrdinal> unsmooshColMapGIDs(nColCoarseDofs);
     for(size_t c = 0; c < amalgP->getColMap()->getNodeNumElements(); ++c) {
-      GlobalOrdinal gid = amalgP->getColMap()->getGlobalElement(c) * maxDofPerNode;
+      GlobalOrdinal gid = (amalgP->getColMap()->getGlobalElement(c)-indexBase) * maxDofPerNode + indexBase;
+
       for(int i = 0; i < maxDofPerNode; ++i) {
         unsmooshColMapGIDs[c * maxDofPerNode + i] = gid + i;
       }

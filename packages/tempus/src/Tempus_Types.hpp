@@ -22,14 +22,18 @@ enum Status {
 
 /** \brief Convert Status to string. */
 inline
-const char* toString(const Status status)
+const std::string toString(const Status status)
 {
+  std::string s = "Invalid Status!";
   switch(status) {
-    case PASSED:  return "PASSED";
-    case FAILED:  return "FAILED";
-    case WORKING: return "WORKING";
-    default:      TEUCHOS_TEST_FOR_EXCEPT("Invalid Status!");
+    case PASSED:  { s = "PASSED";          break; }
+    case FAILED:  { s = "FAILED";          break; }
+    case WORKING: { s = "WORKING";         break; }
+    default:      { s = "Invalid Status!"; break; }
   }
+  TEUCHOS_TEST_FOR_EXCEPTION(s == "Invalid Status!", std::logic_error,
+   "Error - Invalid status = " << status << "\n");
+  return s;
 }
 
 

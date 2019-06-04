@@ -1,6 +1,10 @@
 #include <gtest/gtest.h>
+#include <stk_unit_test_utils/ioUtils.hpp>
 #include "stk_mesh/base/GetEntities.hpp"
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include "stk_unit_test_utils/ReadWriteSidesetTester.hpp"
+#include "stk_unit_test_utils/FaceTestingUtils.hpp"
 
 TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
 {
@@ -21,11 +25,9 @@ TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
     }
 }
 
-TEST(StkIo, DISABLED_read_write_and_compare_exo_files_with_sidesets_because_PMR_for_coincident_not_implemented_yet)
+TEST(StkIo, read_write_and_compare_exo_files_with_sidesets_because_PMR_for_coincident_not_implemented_yet)
 {
-    std::vector<std::string> filesToTest = {
-                                            "ALefRA.e"
-    };
+    std::vector<std::string> filesToTest = { "ALefRA.e" };
 
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     if ( stk::parallel_machine_size(comm) == 2)
@@ -107,13 +109,13 @@ void create_new_sideset_and_faces(stk::unit_test_util::sideset::BulkDataTester &
                                   stk::mesh::PartVector &parts,
                                   const stk::unit_test_util::sideset::ElemIdSideVector &newSideSet)
 {
-  stk::mesh::SideSet &sideSet = bulk.create_sideset(1);
+  stk::mesh::SideSet &sideSet = bulk.create_sideset(stk::io::get_sideset_parent(*parts[0]));
 
   for(unsigned i=0; i<newSideSet.size(); ++i)
   {
     stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEMENT_RANK, static_cast<stk::mesh::EntityId>(newSideSet[i].elem_id));
     EXPECT_TRUE(bulk.is_valid(element));
-    sideSet.push_back({element, static_cast<stk::mesh::ConnectivityOrdinal>(newSideSet[i].side_ordinal)});
+    sideSet.add({element, static_cast<stk::mesh::ConnectivityOrdinal>(newSideSet[i].side_ordinal)});
   }
 
   bulk.create_side_entities(sideSet, parts);
@@ -142,7 +144,7 @@ stk::mesh::PartVector create_parts(stk::mesh::MetaData &meta)
 void load_mesh_with_no_sidesets(stk::mesh::BulkData &bulk, const std::string &inputFileName)
 {
   stk::unit_test_util::sideset::read_exo_file(bulk, inputFileName, stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
-  EXPECT_TRUE(bulk.get_sideset_ids().empty());
+  EXPECT_TRUE(bulk.get_number_of_sidesets() == 0);
 }
 
 void test_create_and_write_new_sideset(stk::ParallelMachine pm, const std::string &inputFileName, const std::string &outputFileName, const stk::unit_test_util::sideset::ElemIdSideVector &newSideSet)
@@ -188,10 +190,12 @@ void delete_sides_from_sideset(stk::unit_test_util::sideset::BulkDataTester& bul
                                const stk::unit_test_util::sideset::ElemIdSideVector& deletedElemIdSides)
 {
     stk::mesh::SideSet deletedSideset = stk::unit_test_util::sideset::get_stk_side_set(bulk, deletedElemIdSides);
-    stk::mesh::SideSet& sideSet = bulk.get_sideset(inputId);
+    stk::mesh::Part *surface_part = stk::unit_test_util::get_surface_part_with_id(bulk.mesh_meta_data(), inputId);
+    ThrowRequire(nullptr != surface_part);
+    stk::mesh::SideSet& sideSet = bulk.get_sideset(*surface_part);
     for(const stk::mesh::SideSetEntry &entry : deletedSideset)
     {
-        stk::mesh::SideSet::iterator iter = std::find(sideSet.begin(), sideSet.end(), entry);
+        auto iter = std::find(sideSet.begin(), sideSet.end(), entry);
         EXPECT_TRUE(iter != sideSet.end());
         sideSet.erase(iter);
     }
@@ -243,12 +247,12 @@ TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA)
       stk::mesh::PartVector parts = create_parts(meta);
       load_mesh_with_no_sidesets(bulk, "AA.e");
 
-      stk::mesh::SideSet &sideSet = bulk.create_sideset(1);
+      stk::mesh::SideSet &sideSet = bulk.create_sideset(*parts[0]);
 
       if(bulk.parallel_rank() == 0)
-          sideSet.push_back({bulk.get_entity(stk::topology::ELEMENT_RANK, 1u), 5});
+          sideSet.add({bulk.get_entity(stk::topology::ELEMENT_RANK, 1u), 5});
       else
-          sideSet.push_back({bulk.get_entity(stk::topology::ELEMENT_RANK, 2u), 4});
+          sideSet.add({bulk.get_entity(stk::topology::ELEMENT_RANK, 2u), 4});
 
       bulk.create_side_entities(sideSet, parts);
       test_output_sideset(bulk,"modified_ADA.e", stk::unit_test_util::sideset::READ_ALREADY_DECOMPOSED);

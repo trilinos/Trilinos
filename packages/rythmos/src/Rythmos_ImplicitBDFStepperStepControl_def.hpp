@@ -393,8 +393,8 @@ void ImplicitBDFStepperStepControl<Scalar>::nextStepSize(const StepperBase<Scala
 
 template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::setCorrection(
-     const StepperBase<Scalar>& stepper
-    ,const RCP<const Thyra::VectorBase<Scalar> >& soln
+     const StepperBase<Scalar>& /* stepper */
+    ,const RCP<const Thyra::VectorBase<Scalar> >& /* soln */
     ,const RCP<const Thyra::VectorBase<Scalar> >& ee
     ,int solveStatus)
 {
@@ -549,7 +549,7 @@ void ImplicitBDFStepperStepControl<Scalar>::completeStep(const StepperBase<Scala
 }
 
 template<class Scalar>
-AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const StepperBase<Scalar>& stepper)
+AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const StepperBase<Scalar>& /* stepper */)
 {
   TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
 

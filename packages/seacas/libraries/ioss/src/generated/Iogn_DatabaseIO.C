@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -53,26 +53,12 @@
 #include <algorithm>              // for copy
 #include <cassert>                // for assert
 #include <cmath>                  // for sqrt
+#include <fmt/ostream.h>
 #include <generated/Iogn_DatabaseIO.h>
 #include <generated/Iogn_GeneratedMesh.h> // for GeneratedMesh
-#include <iostream>                       // for ostringstream, operator<<, etc
+#include <iostream>                       // for ostringstream
 #include <string>                         // for string, operator==, etc
 #include <utility>                        // for pair
-namespace Ioss {
-  class EdgeBlock;
-} // namespace Ioss
-namespace Ioss {
-  class EdgeSet;
-} // namespace Ioss
-namespace Ioss {
-  class ElementSet;
-} // namespace Ioss
-namespace Ioss {
-  class FaceBlock;
-} // namespace Ioss
-namespace Ioss {
-  class FaceSet;
-} // namespace Ioss
 
 namespace {
   template <typename INT>
@@ -86,36 +72,35 @@ namespace {
 
   template <typename INT>
   void fill_transient_data(const Ioss::GroupingEntity *entity, size_t component_count, double *data,
-                           INT *ids, size_t count)
+                           INT *ids, size_t count, double offset = 0.0)
   {
-    double *rdata = static_cast<double *>(data);
     if (component_count == 1) {
       for (size_t i = 0; i < count; i++) {
-        rdata[i] = std::sqrt((double)ids[i]);
+        data[i] = std::sqrt((double)ids[i]) + offset;
       }
     }
     else {
       for (size_t i = 0; i < count; i++) {
         for (size_t j = 0; j < component_count; j++) {
-          rdata[i * component_count + j] = j + std::sqrt((double)ids[i]);
+          data[i * component_count + j] = j + std::sqrt((double)ids[i]) + offset;
         }
       }
     }
   }
 
   void fill_transient_data(const Ioss::GroupingEntity *entity, const Ioss::Field &field, void *data,
-                           void *id_data, size_t count)
+                           void *id_data, size_t count, double offset = 0.0)
   {
     const Ioss::Field &ids = entity->get_fieldref("ids");
     if (ids.is_type(Ioss::Field::INTEGER)) {
       fill_transient_data(entity, field.raw_storage()->component_count(),
-                          reinterpret_cast<double *>(data), reinterpret_cast<int *>(id_data),
-                          count);
+                          reinterpret_cast<double *>(data), reinterpret_cast<int *>(id_data), count,
+                          offset);
     }
     else {
       fill_transient_data(entity, field.raw_storage()->component_count(),
                           reinterpret_cast<double *>(data), reinterpret_cast<int64_t *>(id_data),
-                          count);
+                          count, offset);
     }
   }
 
@@ -151,17 +136,14 @@ namespace Iogn {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
-      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), m_generatedMesh(nullptr),
-        spatialDimension(3), nodeCount(0), elementCount(0), elementBlockCount(0), nodesetCount(0),
-        sidesetCount(0), nodeMap("node", filename, myProcessor),
-        elemMap("elem", filename, myProcessor), m_useVariableDf(true)
+      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props)
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "Generated mesh option is only valid for input mesh.";
+      fmt::print(errmsg, "Generated mesh option is only valid for input mesh.");
       IOSS_ERROR(errmsg);
     }
     if (props.exists("USE_CONSTANT_DF")) {
@@ -171,19 +153,13 @@ namespace Iogn {
 
   DatabaseIO::~DatabaseIO() { delete m_generatedMesh; }
 
-  void DatabaseIO::release_memory__()
-  {
-    nodeMap.release_memory();
-    elemMap.release_memory();
-  }
-
   void DatabaseIO::read_meta_data__()
   {
     if (m_generatedMesh == nullptr) {
       if (get_filename() == "external") {
         std::ostringstream errmsg;
-        errmsg << "ERROR: (generated mesh) 'external' specified for mesh, but "
-               << "getGeneratedMesh was not called to set the external mesh.\n";
+        fmt::print(errmsg, "ERROR: (generated mesh) 'external' specified for mesh, but "
+                           "getGeneratedMesh was not called to set the external mesh.\n");
         IOSS_ERROR(errmsg);
       }
       else {
@@ -194,10 +170,26 @@ namespace Iogn {
 
     assert(m_generatedMesh != nullptr);
 
-    Ioss::Region *this_region = get_region();
-    this_region->property_add(Ioss::Property("global_node_count", m_generatedMesh->node_count()));
-    this_region->property_add(
-        Ioss::Property("global_element_count", m_generatedMesh->element_count()));
+    Ioss::Region *this_region     = get_region();
+    auto          glob_node_count = m_generatedMesh->node_count();
+    auto          glob_elem_count = m_generatedMesh->element_count();
+
+    this_region->property_add(Ioss::Property("global_node_count", glob_node_count));
+    this_region->property_add(Ioss::Property("global_element_count", glob_elem_count));
+
+    const int64_t two_billion = 2ll << 30;
+    if ((glob_node_count > two_billion || glob_elem_count > two_billion) &&
+        int_byte_size_api() == 4) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: The node count is {:n} and the element count is {:n}.\n"
+                 "       This exceeds the capacity of the 32-bit integers ({:n})\n"
+                 "       which are being requested by the client.\n"
+                 "       The mesh requires 64-bit integers which can be requested by setting the "
+                 "`INTEGER_SIZE_API=8` property.",
+                 glob_node_count, glob_elem_count, two_billion);
+      IOSS_ERROR(errmsg);
+    }
 
     spatialDimension  = 3;
     nodeCount         = m_generatedMesh->node_count_proc();
@@ -223,13 +215,9 @@ namespace Iogn {
 
   bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::begin_state__(Ioss::Region * /*region*/, int /* state */, double /*time*/)
+  bool DatabaseIO::begin_state__(int /* state */, double time)
   {
-    return true;
-  }
-
-  bool DatabaseIO::end_state__(Ioss::Region * /* region */, int /* state */, double /* time */)
-  {
+    currentTime = time;
     return true;
   }
 
@@ -259,10 +247,10 @@ namespace Iogn {
         m_generatedMesh->owning_processor(owner, num_to_get);
       }
       else if (field.get_name() == "connectivity") {
-        // Do nothing, just handles an idiosyncracy of the GroupingEntity
+        // Do nothing, just handles an idiosyncrasy of the GroupingEntity
       }
       else if (field.get_name() == "connectivity_raw") {
-        // Do nothing, just handles an idiosyncracy of the GroupingEntity
+        // Do nothing, just handles an idiosyncrasy of the GroupingEntity
       }
       else {
         num_to_get = Ioss::Utils::field_warning(nb, field, "input");
@@ -273,7 +261,7 @@ namespace Iogn {
     const Ioss::Field &id_fld = nb->get_fieldref("ids");
     std::vector<char>  ids(id_fld.get_size());
     get_field_internal(nb, id_fld, ids.data(), id_fld.get_size());
-    fill_transient_data(nb, field, data, ids.data(), num_to_get);
+    fill_transient_data(nb, field, data, ids.data(), num_to_get, currentTime);
 
     return num_to_get;
   }
@@ -295,7 +283,7 @@ namespace Iogn {
     size_t num_to_get = field.verify(data_size);
 
     int64_t               id            = eb->get_property("id").get_int();
-    int64_t               element_count = eb->get_property("entity_count").get_int();
+    int64_t               element_count = eb->entity_count();
     Ioss::Field::RoleType role          = field.get_role();
 
     if (role == Ioss::Field::MESH) {
@@ -350,7 +338,7 @@ namespace Iogn {
       const Ioss::Field &id_fld = eb->get_fieldref("ids");
       std::vector<char>  ids(id_fld.get_size());
       get_field_internal(eb, id_fld, ids.data(), id_fld.get_size());
-      fill_transient_data(eb, field, data, ids.data(), num_to_get);
+      fill_transient_data(eb, field, data, ids.data(), num_to_get, currentTime);
     }
     else if (role == Ioss::Field::REDUCTION) {
       num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
@@ -364,10 +352,10 @@ namespace Iogn {
     size_t num_to_get = field.verify(data_size);
 
     int64_t id           = ef_blk->get_property("id").get_int();
-    size_t  entity_count = ef_blk->get_property("entity_count").get_int();
+    size_t  entity_count = ef_blk->entity_count();
     if (num_to_get != entity_count) {
       std::ostringstream errmsg;
-      errmsg << "Partial field input not implemented for side blocks";
+      fmt::print(errmsg, "Partial field input not implemented for side blocks");
       IOSS_ERROR(errmsg);
     }
 
@@ -444,7 +432,7 @@ namespace Iogn {
       const Ioss::Field &id_fld = ef_blk->get_fieldref("ids");
       std::vector<char>  ids(id_fld.get_size());
       get_field_internal(ef_blk, id_fld, ids.data(), id_fld.get_size());
-      fill_transient_data(ef_blk, field, data, ids.data(), num_to_get);
+      fill_transient_data(ef_blk, field, data, ids.data(), num_to_get, currentTime);
     }
     return num_to_get;
   }
@@ -493,7 +481,7 @@ namespace Iogn {
       const Ioss::Field &id_fld = ns->get_fieldref("ids");
       std::vector<char>  ids(id_fld.get_size());
       get_field_internal(ns, id_fld, ids.data(), id_fld.get_size());
-      fill_transient_data(ns, field, data, ids.data(), num_to_get);
+      fill_transient_data(ns, field, data, ids.data(), num_to_get, currentTime);
     }
     return num_to_get;
   }
@@ -538,9 +526,9 @@ namespace Iogn {
   int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
-    size_t num_to_get = field.verify(data_size);
-
-    size_t entity_count = cs->get_property("entity_count").get_int();
+    size_t num_to_get   = field.verify(data_size);
+    size_t entity_count = cs->entity_count();
+    assert(num_to_get == entity_count);
 
     // Return the <entity (node or face), processor> pair
     if (field.get_name() == "entity_processor" || field.get_name() == "entity_processor_raw") {
@@ -560,6 +548,7 @@ namespace Iogn {
 
           size_t j = 0;
           for (size_t i = 0; i < entity_count; i++) {
+            assert(entities[i] > 0);
             entity_proc[j++] = entities[i];
             entity_proc[j++] = procs[i];
           }
@@ -573,6 +562,7 @@ namespace Iogn {
 
           size_t j = 0;
           for (size_t i = 0; i < entity_count; i++) {
+            assert(entities[i] > 0);
             entity_proc[j++] = entities[i];
             entity_proc[j++] = procs[i];
           }
@@ -584,12 +574,12 @@ namespace Iogn {
       }
       else {
         std::ostringstream errmsg;
-        errmsg << "Invalid commset type " << type;
+        fmt::print(errmsg, "Invalid commset type {}", type);
         IOSS_ERROR(errmsg);
       }
     }
     else if (field.get_name() == "ids") {
-      // Do nothing, just handles an idiosyncracy of the GroupingEntity
+      // Do nothing, just handles an idiosyncrasy of the GroupingEntity
     }
     else {
       num_to_get = Ioss::Utils::field_warning(cs, field, "input");
@@ -676,54 +666,23 @@ namespace Iogn {
     // Allocate space for node number map and read it in...
     // Can be called multiple times, allocate 1 time only
     if (nodeMap.map().empty()) {
-      nodeMap.map().resize(nodeCount + 1);
+      nodeMap.set_size(nodeCount);
       std::vector<int64_t> map;
       m_generatedMesh->node_map(map);
-
-      // Map needed for Ioss starts at position 1 since the
-      // sequential/non-sequential flag is at position 0...
-      std::copy(map.begin(), map.end(), &nodeMap.map()[1]);
-
-      // Check for sequential node map.
-      // If not, build the reverse G2L node map...
-      nodeMap.map()[0] = -1;
-      for (int64_t i = 1; i < nodeCount + 1; i++) {
-        if (i != nodeMap.map()[i]) {
-          nodeMap.map()[0] = 1;
-          break;
-        }
-      }
-      nodeMap.build_reverse_map();
+      nodeMap.set_map(map.data(), map.size(), 0, true);
     }
     return nodeMap;
   }
 
   const Ioss::Map &DatabaseIO::get_element_map() const
   {
-    // Allocate space for elemente number map and read it in...
+    // Allocate space for element number map and read it in...
     // Can be called multiple times, allocate 1 time only
     if (elemMap.map().empty()) {
-      elemMap.map().resize(elementCount + 1);
+      elemMap.set_size(elementCount);
       std::vector<int64_t> map;
       m_generatedMesh->element_map(map);
-
-      // Map needed for Ioss starts at position 1 since the
-      // sequential/non-sequential flag is at position 0...
-      std::copy(map.begin(), map.end(), &elemMap.map()[1]);
-
-      // Check for sequential element map.
-      // If not, build the reverse G2L element map...
-      elemMap.map()[0] = -1;
-      for (int64_t i = 1; i < elementCount + 1; i++) {
-        if (i != elemMap.map()[i]) {
-          elemMap.map()[0] = 1;
-          break;
-        }
-      }
-
-      if (elemMap.map()[0] == 1) {
-        elemMap.build_reverse_map();
-      }
+      elemMap.set_map(map.data(), map.size(), 0, true);
     }
     return elemMap;
   }
@@ -733,6 +692,7 @@ namespace Iogn {
     std::string block_name = "nodeblock_1";
     auto block = new Ioss::NodeBlock(this, block_name, m_generatedMesh->node_count_proc(), 3);
     block->property_add(Ioss::Property("id", 1));
+    block->property_add(Ioss::Property("guid", util().generate_guid(1)));
     get_region()->add(block);
     add_transient_fields(block);
   }
@@ -765,9 +725,9 @@ namespace Iogn {
       auto        block         = new Ioss::ElementBlock(this, name, type, element_count);
 
       block->property_add(Ioss::Property("id", i + 1));
-
-      // Maintain block order on output database...
+      block->property_add(Ioss::Property("guid", util().generate_guid(i + 1)));
       block->property_add(Ioss::Property("original_block_order", i));
+
       block->property_add(
           Ioss::Property("global_entity_count", m_generatedMesh->element_count(i + 1)));
 
@@ -803,6 +763,7 @@ namespace Iogn {
       std::string name    = Ioss::Utils::encode_entity_name("nodelist", ins + 1);
       auto        nodeset = new Ioss::NodeSet(this, name, number_nodes);
       nodeset->property_add(Ioss::Property("id", ins + 1));
+      nodeset->property_add(Ioss::Property("guid", util().generate_guid(ins + 1)));
       get_region()->add(nodeset);
       add_transient_fields(nodeset);
     }
@@ -816,6 +777,7 @@ namespace Iogn {
       m_sideset_names.push_back(name);
       auto sideset = new Ioss::SideSet(this, name);
       sideset->property_add(Ioss::Property("id", ifs + 1));
+      sideset->property_add(Ioss::Property("guid", util().generate_guid(ifs + 1)));
       get_region()->add(sideset);
 
       std::vector<std::string> touching_blocks = m_generatedMesh->sideset_touching_blocks(ifs + 1);
@@ -829,6 +791,7 @@ namespace Iogn {
             new Ioss::SideBlock(this, ef_block_name, side_topo_name, elem_topo_name, number_faces);
         sideset->add(ef_block);
         ef_block->property_add(Ioss::Property("id", ifs + 1));
+        ef_block->property_add(Ioss::Property("guid", util().generate_guid(ifs + 1)));
 
         std::string storage = "Real[";
         storage += std::to_string(4);
@@ -852,6 +815,7 @@ namespace Iogn {
                                               number_faces);
           sideset->add(ef_block);
           ef_block->property_add(Ioss::Property("id", ifs + 1));
+          ef_block->property_add(Ioss::Property("guid", util().generate_guid(ifs + 1)));
 
           std::string storage = "Real[";
           storage += std::to_string(4);
@@ -876,6 +840,7 @@ namespace Iogn {
       // Create a single node commset
       Ioss::CommSet *commset = new Ioss::CommSet(this, "commset_node", "node", my_node_count);
       commset->property_add(Ioss::Property("id", 1));
+      commset->property_add(Ioss::Property("guid", util().generate_guid(1)));
       get_region()->add(commset);
     }
   }
@@ -888,7 +853,7 @@ namespace Iogn {
   void DatabaseIO::add_transient_fields(Ioss::GroupingEntity *entity)
   {
     Ioss::EntityType type         = entity->type();
-    size_t           entity_count = entity->get_property("entity_count").get_int();
+    size_t           entity_count = entity->entity_count();
     size_t           var_count    = m_generatedMesh->get_variable_count(type);
     for (size_t i = 0; i < var_count; i++) {
       std::string var_name = entity->type_string() + "_" + std::to_string(i + 1);

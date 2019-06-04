@@ -202,16 +202,16 @@ namespace Intrepid2 {
         TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
         auto dofData = triBasis.getAllDofOrdinal();
         
-      for (unsigned d=0;d<dofData.dimension(0);d++) {
+      for (unsigned d=0;d<dofData.extent(0);d++) {
       std::cout << "Dimension " << d << "\n";
-      for (unsigned f=0;f<dofData.dimension(1);f++) {
+      for (unsigned f=0;f<dofData.extent(1);f++) {
         int print=-1;
-        for (unsigned n=0;n<dofData.dimension(2);n++)
+        for (unsigned n=0;n<dofData.extent(2);n++)
           print = std::max(print,dofData(d,f,n));
         if(print == -1) continue;
         std::cout << "\tFacet number " << f << "\n";
         std::cout << "\t\tDOFS:\n";
-        for (unsigned n=0;n<dofData.dimension(2);n++) {
+        for (unsigned n=0;n<dofData.extent(2);n++) {
           if(dofData(d,f,n)>=0)
           std::cout << "\t\t\t" << dofData(d,f,n) << "\n";
         }

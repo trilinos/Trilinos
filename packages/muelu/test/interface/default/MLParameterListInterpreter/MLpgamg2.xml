@@ -1,0 +1,3 @@
+<ParameterList name="MueLu">
+  <Parameter name="energy minimization: enable" type="bool" value="false"/>
+</ParameterList>

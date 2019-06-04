@@ -59,11 +59,11 @@ class Bundle_AS : public Bundle<Real> {
 /***********************************************************************************************/
 private:
 
-  Teuchos::RCP<Vector<Real> > tG_;
-  Teuchos::RCP<Vector<Real> > eG_;
-  Teuchos::RCP<Vector<Real> > yG_;
-  Teuchos::RCP<Vector<Real> > gx_;
-  Teuchos::RCP<Vector<Real> > ge_;
+  ROL::Ptr<Vector<Real> > tG_;
+  ROL::Ptr<Vector<Real> > eG_;
+  ROL::Ptr<Vector<Real> > yG_;
+  ROL::Ptr<Vector<Real> > gx_;
+  ROL::Ptr<Vector<Real> > ge_;
 
   std::set<unsigned> workingSet_;
   std::set<unsigned> nworkingSet_;

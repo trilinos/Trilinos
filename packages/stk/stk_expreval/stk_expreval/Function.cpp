@@ -56,6 +56,7 @@ extern "C" {
   typedef double (*CExtern2)(double, double);
   typedef double (*CExtern3)(double, double, double);
   typedef double (*CExtern4)(double, double, double, double);
+  typedef double (*CExtern8)(double, double, double, double, double, double, double, double);
 }
 
 static int sRandomRangeHighValue = 3191613;
@@ -193,12 +194,38 @@ private:
   Signature m_function;
 };
 
+template <>
+class CFunction<CExtern8> : public CFunctionBase
+{
+public:
+  typedef CExtern8 Signature;
+
+  explicit CFunction<Signature>(Signature function)
+    : CFunctionBase(8),
+      m_function(function)
+  {}
+
+  virtual ~CFunction()
+  {}
+
+  virtual double operator()(int argc, const double *argv)
+  {
+#ifndef NDEBUG
+    if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 8 arguments"); }
+#endif
+    return (*m_function)(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7]);
+  }
+
+private:
+  Signature m_function;
+};
+
 typedef CFunction<CExtern0> CFunction0;
 typedef CFunction<CExtern1> CFunction1;
 typedef CFunction<CExtern2> CFunction2;
 typedef CFunction<CExtern3> CFunction3;
 typedef CFunction<CExtern4> CFunction4;
-
+typedef CFunction<CExtern8> CFunction8;
 
 extern "C" {
   double cycloidal_ramp(double t, double t1, double t2)
@@ -259,7 +286,7 @@ extern "C" {
   /// Sets x as the "seed" for the pseudo-random number generator.
   void random_seed(double x) 
   {
-    int y = static_cast<int>(x);
+    int y = std::hash<double>{}(x);
     sRandomRangeHighValue =  y;
     sRandomRangeLowValue  = ~y;
   }
@@ -279,6 +306,32 @@ extern "C" {
   {
     random_seed(seed);
     return random0();
+  }
+
+  /// Non-platform specific (pseudo) random number generator that
+  /// is deterministic for a given point in time and space
+  double time_space_random(double t, double x, double y, double z)
+  {
+    double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
+    random_seed(ts);
+    return random0();
+  }
+
+  double time_space_normal(double t, double x, double y, double z, double mu, double sigma, double minR, double maxR)
+  {
+    double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
+    random_seed(ts);
+
+    static const double epsilon = std::numeric_limits<double>::min();
+
+    // Box-Muller transformation from two uniform random numbers
+    // to a gaussian distribution
+    double u1 = std::max(epsilon, random0());
+    double u2 = std::max(epsilon, random0());
+
+    double z0 = std::sqrt(-2.0 * std::log(u1)) * std::cos(two_pi() * u2);
+
+    return std::max(minR, std::min(maxR, z0*sigma + mu));
   }
 
   /// Returns the angle (input in radians) in degrees.
@@ -447,76 +500,78 @@ CFunctionMap::CFunctionMap()
 {
   /// These random number functions support calls to
   /// the ANSI C random number generator.
-  (*this).insert(std::make_pair("rand",         new CFunction0(real_rand)));
-  (*this).insert(std::make_pair("srand",        new CFunction1(real_srand)));
+  (*this).emplace("rand",         new CFunction0(real_rand));
+  (*this).emplace("srand",        new CFunction1(real_srand));
 
   /// These random number functions support a platform
   /// independent random number function.
-  (*this).insert(std::make_pair("random",          new CFunction0(random0)));
-  (*this).insert(std::make_pair("random",          new CFunction1(random1)));
-  (*this).insert(std::make_pair("time",            new CFunction0(current_time)));
+  (*this).emplace("random",          new CFunction0(random0));
+  (*this).emplace("random",          new CFunction1(random1));
+  (*this).emplace("time",            new CFunction0(current_time));
+  (*this).emplace("ts_random",       new CFunction4(time_space_random));
+  (*this).emplace("ts_normal",       new CFunction8(time_space_normal));
 
-  (*this).insert(std::make_pair("exp",             new CFunction1(std::exp)));
-  (*this).insert(std::make_pair("ln",              new CFunction1(std::log)));
-  (*this).insert(std::make_pair("log",             new CFunction1(std::log)));
-  (*this).insert(std::make_pair("log10",           new CFunction1(std::log10)));
-  (*this).insert(std::make_pair("pow",             new CFunction2(std::pow)));
-  (*this).insert(std::make_pair("sqrt",            new CFunction1(std::sqrt)));
-  (*this).insert(std::make_pair("erfc",            new CFunction1(erfc)));
-  (*this).insert(std::make_pair("erf",             new CFunction1(erf)));
+  (*this).emplace("exp",             new CFunction1(std::exp));
+  (*this).emplace("ln",              new CFunction1(std::log));
+  (*this).emplace("log",             new CFunction1(std::log));
+  (*this).emplace("log10",           new CFunction1(std::log10));
+  (*this).emplace("pow",             new CFunction2(std::pow));
+  (*this).emplace("sqrt",            new CFunction1(std::sqrt));
+  (*this).emplace("erfc",            new CFunction1(erfc));
+  (*this).emplace("erf",             new CFunction1(erf));
 
-  (*this).insert(std::make_pair("acos",            new CFunction1(std::acos)));
-  (*this).insert(std::make_pair("asin",            new CFunction1(std::asin)));
-  (*this).insert(std::make_pair("asinh",           new CFunction1(std::asinh)));
-  (*this).insert(std::make_pair("atan",            new CFunction1(std::atan)));
-  (*this).insert(std::make_pair("atan2",           new CFunction2(std::atan2)));
-  (*this).insert(std::make_pair("atanh",           new CFunction1(std::atanh)));
-  (*this).insert(std::make_pair("ceil",            new CFunction1(std::ceil)));
-  (*this).insert(std::make_pair("cos",             new CFunction1(std::cos)));
-  (*this).insert(std::make_pair("cosh",            new CFunction1(std::cosh)));
-  (*this).insert(std::make_pair("acosh",           new CFunction1(std::acosh)));
-  (*this).insert(std::make_pair("floor",           new CFunction1(std::floor)));
-  (*this).insert(std::make_pair("sin",             new CFunction1(std::sin)));
-  (*this).insert(std::make_pair("sinh",            new CFunction1(std::sinh)));
-  (*this).insert(std::make_pair("tan",             new CFunction1(std::tan)));
-  (*this).insert(std::make_pair("tanh",            new CFunction1(std::tanh)));
+  (*this).emplace("acos",            new CFunction1(std::acos));
+  (*this).emplace("asin",            new CFunction1(std::asin));
+  (*this).emplace("asinh",           new CFunction1(std::asinh));
+  (*this).emplace("atan",            new CFunction1(std::atan));
+  (*this).emplace("atan2",           new CFunction2(std::atan2));
+  (*this).emplace("atanh",           new CFunction1(std::atanh));
+  (*this).emplace("ceil",            new CFunction1(std::ceil));
+  (*this).emplace("cos",             new CFunction1(std::cos));
+  (*this).emplace("cosh",            new CFunction1(std::cosh));
+  (*this).emplace("acosh",           new CFunction1(std::acosh));
+  (*this).emplace("floor",           new CFunction1(std::floor));
+  (*this).emplace("sin",             new CFunction1(std::sin));
+  (*this).emplace("sinh",            new CFunction1(std::sinh));
+  (*this).emplace("tan",             new CFunction1(std::tan));
+  (*this).emplace("tanh",            new CFunction1(std::tanh));
 
-  (*this).insert(std::make_pair("abs",             new CFunction1(std::fabs)));
-  (*this).insert(std::make_pair("fabs",            new CFunction1(std::fabs)));
-  (*this).insert(std::make_pair("deg",             new CFunction1(deg)));
-  (*this).insert(std::make_pair("mod",             new CFunction2(std::fmod)));
-  (*this).insert(std::make_pair("fmod",            new CFunction2(std::fmod)));
-  (*this).insert(std::make_pair("ipart",           new CFunction1(ipart)));
-  (*this).insert(std::make_pair("fpart",           new CFunction1(fpart)));
-  (*this).insert(std::make_pair("max",             new CFunction2(max_2)));
-  (*this).insert(std::make_pair("max",             new CFunction3(max_3)));
-  (*this).insert(std::make_pair("max",             new CFunction4(max_4)));
-  (*this).insert(std::make_pair("min",             new CFunction2(min_2)));
-  (*this).insert(std::make_pair("min",             new CFunction3(min_3)));
-  (*this).insert(std::make_pair("min",             new CFunction4(min_4)));
-  (*this).insert(std::make_pair("poltorectx",      new CFunction2(poltorectx)));
-  (*this).insert(std::make_pair("poltorecty",      new CFunction2(poltorecty)));
-  (*this).insert(std::make_pair("rad",             new CFunction1(rad)));
-  (*this).insert(std::make_pair("recttopola",      new CFunction2(recttopola)));
-  (*this).insert(std::make_pair("recttopolr",      new CFunction2(recttopolr)));
+  (*this).emplace("abs",             new CFunction1(std::fabs));
+  (*this).emplace("fabs",            new CFunction1(std::fabs));
+  (*this).emplace("deg",             new CFunction1(deg));
+  (*this).emplace("mod",             new CFunction2(std::fmod));
+  (*this).emplace("fmod",            new CFunction2(std::fmod));
+  (*this).emplace("ipart",           new CFunction1(ipart));
+  (*this).emplace("fpart",           new CFunction1(fpart));
+  (*this).emplace("max",             new CFunction2(max_2));
+  (*this).emplace("max",             new CFunction3(max_3));
+  (*this).emplace("max",             new CFunction4(max_4));
+  (*this).emplace("min",             new CFunction2(min_2));
+  (*this).emplace("min",             new CFunction3(min_3));
+  (*this).emplace("min",             new CFunction4(min_4));
+  (*this).emplace("poltorectx",      new CFunction2(poltorectx));
+  (*this).emplace("poltorecty",      new CFunction2(poltorecty));
+  (*this).emplace("rad",             new CFunction1(rad));
+  (*this).emplace("recttopola",      new CFunction2(recttopola));
+  (*this).emplace("recttopolr",      new CFunction2(recttopolr));
 
-  (*this).insert(std::make_pair("cos_ramp",        new CFunction1(cosine_ramp1)));
-  (*this).insert(std::make_pair("cos_ramp",        new CFunction2(cosine_ramp2)));
-  (*this).insert(std::make_pair("cos_ramp",        new CFunction3(cosine_ramp3)));
-  (*this).insert(std::make_pair("cosine_ramp",     new CFunction1(cosine_ramp1)));
-  (*this).insert(std::make_pair("cosine_ramp",     new CFunction2(cosine_ramp2)));
-  (*this).insert(std::make_pair("cosine_ramp",     new CFunction3(cosine_ramp3)));
-  (*this).insert(std::make_pair("haversine_pulse", new CFunction3(haversine_pulse)));
-  (*this).insert(std::make_pair("cycloidal_ramp",  new CFunction3(cycloidal_ramp)));
+  (*this).emplace("cos_ramp",        new CFunction1(cosine_ramp1));
+  (*this).emplace("cos_ramp",        new CFunction2(cosine_ramp2));
+  (*this).emplace("cos_ramp",        new CFunction3(cosine_ramp3));
+  (*this).emplace("cosine_ramp",     new CFunction1(cosine_ramp1));
+  (*this).emplace("cosine_ramp",     new CFunction2(cosine_ramp2));
+  (*this).emplace("cosine_ramp",     new CFunction3(cosine_ramp3));
+  (*this).emplace("haversine_pulse", new CFunction3(haversine_pulse));
+  (*this).emplace("cycloidal_ramp",  new CFunction3(cycloidal_ramp));
 
-  (*this).insert(std::make_pair("sign",            new CFunction1(sign)));
-  (*this).insert(std::make_pair("unit_step",       new CFunction3(unit_step3)));
+  (*this).emplace("sign",            new CFunction1(sign));
+  (*this).emplace("unit_step",       new CFunction3(unit_step3));
 
-  (*this).insert(std::make_pair("weibull_pdf",     new CFunction3(weibull_pdf)));
-  (*this).insert(std::make_pair("normal_pdf",      new CFunction3(normal_pdf)));
-  (*this).insert(std::make_pair("gamma_pdf",       new CFunction3(gamma_pdf)));
-  (*this).insert(std::make_pair("log_uniform_pdf", new CFunction3(log_uniform_pdf)));
-  (*this).insert(std::make_pair("exponential_pdf", new CFunction2(exponential_pdf)));
+  (*this).emplace("weibull_pdf",     new CFunction3(weibull_pdf));
+  (*this).emplace("normal_pdf",      new CFunction3(normal_pdf));
+  (*this).emplace("gamma_pdf",       new CFunction3(gamma_pdf));
+  (*this).emplace("log_uniform_pdf", new CFunction3(log_uniform_pdf));
+  (*this).emplace("exponential_pdf", new CFunction2(exponential_pdf));
 }
 
 CFunctionMap::~CFunctionMap()

@@ -57,7 +57,7 @@
 
 namespace Intrepid2 {
 
-#if defined(KOKKOS_OPT_RANGE_AGGRESSIVE_VECTORIZATION) && defined(KOKKOS_HAVE_PRAGMA_IVDEP) && !defined(__CUDA_ARCH__)
+#if defined(KOKKOS_OPT_RANGE_AGGRESSIVE_VECTORIZATION) && defined(KOKKOS_ENABLE_PRAGMA_IVDEP) && !defined(__CUDA_ARCH__)
 #define INTREPID2_USE_IVDEP
 #endif
 
@@ -196,7 +196,7 @@ namespace Intrepid2 {
   KOKKOS_FORCEINLINE_FUNCTION
   static void 
   unrollIndex(IdxType &i, IdxType &j, 
-              const DimType dim0,
+              const DimType /* dim0 */,
               const DimType dim1,
               const IterType iter) {
     // left index
@@ -296,7 +296,7 @@ namespace Intrepid2 {
   KOKKOS_INLINE_FUNCTION
   constexpr typename
   std::enable_if< std::is_pod<T>::value, unsigned >::type
-  dimension_scalar(const Kokkos::DynRankView<T, P...> view) {return 1;}
+  dimension_scalar(const Kokkos::DynRankView<T, P...> /* view */) {return 1;}
 
   template<typename T, typename ...P>
   KOKKOS_INLINE_FUNCTION

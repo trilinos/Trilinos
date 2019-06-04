@@ -1,10 +1,20 @@
 #ifndef KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 #define KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 
+#include "Teuchos_config.h"
 #include "TeuchosKokkosCompat_config.h"
-#include "KokkosCompat_View.hpp" // why do we need to include this?
 #include "Kokkos_Core.hpp"
-#include "Teuchos_ParameterList.hpp"
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+//
+// Dear users: These are just forward declarations.  Please skip
+// over them and go down to KokkosDeviceWrapperNode below.  Thank
+// you.
+//
+namespace Teuchos {
+  class ParameterList;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Kokkos {
 namespace Compat {
@@ -34,39 +44,48 @@ public:
   /// release.  This Node type is safe to use.
   static constexpr bool classic = false;
 
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE) || !defined(TEUCHOS_HIDE_DEPRECATED_CODE)
   /// \brief Constructor (that takes a Teuchos::ParameterList).
   ///
   /// \param [in/out] params List of Node configuration parameters.
   ///   If empty, we use defaults.
-  KokkosDeviceWrapperNode (Teuchos::ParameterList& params);
+  KokkosDeviceWrapperNode (Teuchos::ParameterList& /* params */) {}
 
   //! Default constructor (sets default parameters).
-  KokkosDeviceWrapperNode ();
+  TEUCHOS_DEPRECATED KokkosDeviceWrapperNode () {}
+#else
+  KokkosDeviceWrapperNode (Teuchos::ParameterList& /* params */) = delete;
+  KokkosDeviceWrapperNode () = delete;
+#endif
 
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
   //! Get a filled-in set of parameters for Node, with their default values.
-  static Teuchos::ParameterList getDefaultParameters ();
+  static TEUCHOS_DEPRECATED Teuchos::ParameterList getDefaultParameters ();
 
-  void sync () const;
+  void TEUCHOS_DEPRECATED sync () const {
+    execution_space::fence ();
+  }
+#endif // !TEUCHOS_HIDE_DEPRECATED_CODE
 
   //! Human-readable name of this Node.
   static std::string name ();
 };
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef KokkosDeviceWrapperNode<Kokkos::Cuda> KokkosCudaWrapperNode;
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   typedef KokkosDeviceWrapperNode<Kokkos::OpenMP> KokkosOpenMPWrapperNode;
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
   typedef KokkosDeviceWrapperNode<Kokkos::Threads> KokkosThreadsWrapperNode;
 #endif
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef KokkosDeviceWrapperNode<Kokkos::Serial> KokkosSerialWrapperNode;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   // The above definitions / initializations of class (static)
   // variables need to precede the first use of these variables.

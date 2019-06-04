@@ -42,73 +42,24 @@
 // ***********************************************************************
 // @HEADER
 
-%define %teuchos_docstring
+%define %teuchos_base_importcode
 "
-PyTrilinos.Teuchos is the python interface to the Trilinos tools and
-utilities package Teuchos:
-
-    http://trilinos.sandia.gov/packages/teuchos
-
-The purpose of Teuchos is to provide a number of utilities often
-needed by numerical applications, but that are not necessarily
-numerical by nature.  The python version of the Teuchos package
-supports the following classes:
-
-    * SerialComm              - Serial communicator
-    * MpiComm                 - MPI communicator
-    * DefaultComm             - Default communicator facility
-    * ParameterList           - List of arbitrarily-typed values,
-                                keyed by strings
-    * XMLObject               - Object-oriented interface to XML
-                                objects
-    * XMLParameterListReader  - ParameterList input from XML
-    * XMLParameterListWriter  - ParameterList output to XML
-    * XMLInputSource          - Base class for converting a stream
-                                to XML
-    * FileInputSource         - Class for converting file contents
-                                to XML
-    * StringInputSource       - Class for converting string contents
-                                to XML
-    * ScalarTraits            - Function factory for ScalarTraits<...>
-                                classes
-    * Time                    - Wall-clock timer class
-
-The ParameterList class matches string keys to arbitrarily-typed
-values.  In python, the Teuchos.ParameterList is tightly integrated
-with python dictionaries -- PyTrilinos methods that expect a
-ParameterList will accept a python dictionary.
+from . import _Base
 "
 %enddef
 
-%module(package      = "PyTrilinos",
+%module(package      = "PyTrilinos.Teuchos",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring    = %teuchos_docstring) Teuchos
+        moduleimport = %teuchos_base_importcode) Base
 
-// Includes
+// Include Files
 %{
-// Configuration includes
-#include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_DLLExportMacro.h"
-#include "Teuchos_iostream_helpers.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos includes
-#include "Teuchos_Version.hpp"
-#include "Teuchos_NullIteratorTraits.hpp"
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_ParameterListExceptions.hpp"
-#include "Teuchos_Time.hpp"
-#include "Teuchos_DataAccess.hpp"
-
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
@@ -190,9 +141,9 @@ using std::string;
 // Teuchos::RCP support.  If a class is ever passed to or from a
 // function or method wrapped by a Teuchos::RCP<>, then it should be
 // stored internally as a Teuchos::RCP<> as well.  This is
-// accomplished by %include-ing Teuchos_RCP.i and calling the provided
-// macro %teuchos_rcp() on the class.
-%include "Teuchos_RCP.i"
+// accomplished by %include-ing Teuchos_RCP_typemaps.i and calling the
+// provided macro %teuchos_rcp() on the class.
+%include "Teuchos_RCP_typemaps.i"
 %include "Teuchos_RCP_DAP.i"
 %teuchos_rcp(std::basic_ostream)
 %teuchos_rcp(std::ostream)
@@ -203,7 +154,7 @@ using std::string;
 %import "Teuchos_TypeNameTraits.hpp"
 %import "Teuchos_NullIteratorTraits.hpp"
 
-// Teuchos includes
+// Teuchos include files
 %include "Teuchos_Traits.i"
 %include "Teuchos_Comm.i"
 %include "Teuchos_ParameterList.i"

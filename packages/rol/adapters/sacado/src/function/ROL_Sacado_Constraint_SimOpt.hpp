@@ -155,37 +155,37 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyJacobian_1AD(Vector<ScalarT> &j
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
 
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast; 
+           
+     
 
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
-    RCP<vector> jvp = dyn_cast<SV>(jv).getVector(); 
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<vector> jvp = dynamic_cast<SV&>(jv).getVector(); 
 
     int n = up->size();
     int m = zp->size();
     
-    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
 
-    c_fad_rcp->reserve(n);
-    u_fad_rcp->reserve(n);
-    z_fad_rcp->reserve(m);
+    c_fad_ptr->reserve(n);
+    u_fad_ptr->reserve(n);
+    z_fad_ptr->reserve(m);
 
     for(int i=0; i<n; ++i) {
-        c_fad_rcp->push_back(0);
-        u_fad_rcp->push_back(FadType(n,i,(*up)[i]));
+        c_fad_ptr->push_back(0);
+        u_fad_ptr->push_back(FadType(n,i,(*up)[i]));
     }
 
     for(int j=0; j<m; ++j) {
-        z_fad_rcp->push_back((*zp)[j]); 
+        z_fad_ptr->push_back((*zp)[j]); 
     }
 
-    StdVector<FadType> c_fad(c_fad_rcp);
-    StdVector<FadType> u_fad(u_fad_rcp);
-    StdVector<FadType> z_fad(z_fad_rcp);
+    StdVector<FadType> c_fad(c_fad_ptr);
+    StdVector<FadType> u_fad(u_fad_ptr);
+    StdVector<FadType> z_fad(z_fad_ptr);
   
     // Evaluate constraint 
     constr_.value(c_fad,u_fad,z_fad,tol);
@@ -193,7 +193,7 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyJacobian_1AD(Vector<ScalarT> &j
     for(int i=0; i<n; ++i) {
         (*jvp)[i] = 0; 
         for(int j=0; j<n; ++j) {
-            (*jvp)[i] += (*vp)[j]*(*c_fad_rcp)[i].dx(j);
+            (*jvp)[i] += (*vp)[j]*(*c_fad_ptr)[i].dx(j);
         }
     } 
 }
@@ -210,37 +210,37 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyJacobian_2AD(Vector<ScalarT> &j
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
 
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;
+           
+    
 
-    RCP<vector> jvp = dyn_cast<SV>(jv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
+    ROL::Ptr<vector> jvp = dynamic_cast<SV&>(jv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
 
     int n = up->size();
     int m = zp->size(); 
     
-    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
 
-    c_fad_rcp->reserve(n);
-    u_fad_rcp->reserve(n);
-    z_fad_rcp->reserve(m);
+    c_fad_ptr->reserve(n);
+    u_fad_ptr->reserve(n);
+    z_fad_ptr->reserve(m);
 
     for(int i=0; i<n; ++i) {
-        c_fad_rcp->push_back(0);
-        u_fad_rcp->push_back((*up)[i]); 
+        c_fad_ptr->push_back(0);
+        u_fad_ptr->push_back((*up)[i]); 
     }
 
     for(int j=0; j<m; ++j) {
-        z_fad_rcp->push_back(FadType(n,j,(*zp)[j]));
+        z_fad_ptr->push_back(FadType(n,j,(*zp)[j]));
     }
 
-    StdVector<FadType> c_fad(c_fad_rcp);
-    StdVector<FadType> u_fad(u_fad_rcp);
-    StdVector<FadType> z_fad(z_fad_rcp);
+    StdVector<FadType> c_fad(c_fad_ptr);
+    StdVector<FadType> u_fad(u_fad_ptr);
+    StdVector<FadType> z_fad(z_fad_ptr);
   
     // Evaluate constraint 
     constr_.value(c_fad,u_fad,z_fad,tol);
@@ -248,7 +248,7 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyJacobian_2AD(Vector<ScalarT> &j
     for(int i=0; i<n; ++i) {
         (*jvp)[i] = 0; 
         for(int j=0; j<n; ++j) {
-            (*jvp)[i] += (*vp)[j]*(*c_fad_rcp)[i].dx(j);
+            (*jvp)[i] += (*vp)[j]*(*c_fad_ptr)[i].dx(j);
         }
     } 
  
@@ -267,37 +267,37 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointJacobian_1AD(Vector<Scal
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
 
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  
+           
+      
 
-    RCP<vector> ajvp = dyn_cast<SV>(ajv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
+    ROL::Ptr<vector> ajvp = dynamic_cast<SV&>(ajv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
     
     int n = up->size();
     int m = zp->size();
     
-    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
 
-    c_fad_rcp->reserve(n);
-    u_fad_rcp->reserve(n);
-    z_fad_rcp->reserve(m);
+    c_fad_ptr->reserve(n);
+    u_fad_ptr->reserve(n);
+    z_fad_ptr->reserve(m);
 
     for(int i=0; i<n; ++i) {
-        c_fad_rcp->push_back(0);
-        u_fad_rcp->push_back(FadType(n,i,(*up)[i]));
+        c_fad_ptr->push_back(0);
+        u_fad_ptr->push_back(FadType(n,i,(*up)[i]));
     }
 
     for(int j=0; j<m; ++j) {
-        z_fad_rcp->push_back((*zp)[j]); 
+        z_fad_ptr->push_back((*zp)[j]); 
     }
 
-    StdVector<FadType> c_fad(c_fad_rcp);
-    StdVector<FadType> u_fad(u_fad_rcp);
-    StdVector<FadType> z_fad(z_fad_rcp);
+    StdVector<FadType> c_fad(c_fad_ptr);
+    StdVector<FadType> u_fad(u_fad_ptr);
+    StdVector<FadType> z_fad(z_fad_ptr);
   
     // Evaluate constraint 
     constr_.value(c_fad,u_fad,z_fad,tol);
@@ -305,7 +305,7 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointJacobian_1AD(Vector<Scal
     FadType vdotc = 0;
 
     for(int i=0;i<n;++i) {
-        vdotc += (*c_fad_rcp)[i]*(*vp)[i]; 
+        vdotc += (*c_fad_ptr)[i]*(*vp)[i]; 
     } 
 
     for(int i=0;i<n;++i) {
@@ -328,37 +328,37 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointJacobian_2AD(Vector<Scal
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
 
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  
+           
+      
 
-    RCP<vector> ajvp = dyn_cast<SV>(ajv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();   
-    RCP<const vector> up = dyn_cast<const SV>(u).getVector();   
-    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();   
+    ROL::Ptr<vector> ajvp = dynamic_cast<SV&>(ajv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();   
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();   
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();   
 
     int n = up->size();
     int m = zp->size();
     
-    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
 
-    c_fad_rcp->reserve(n);
-    u_fad_rcp->reserve(n);
-    z_fad_rcp->reserve(m);
+    c_fad_ptr->reserve(n);
+    u_fad_ptr->reserve(n);
+    z_fad_ptr->reserve(m);
 
     for(int i=0; i<n; ++i) {
-        c_fad_rcp->push_back(0);
-        u_fad_rcp->push_back((*up)[i]); 
+        c_fad_ptr->push_back(0);
+        u_fad_ptr->push_back((*up)[i]); 
     }
 
     for(int j=0; j<m; ++j) {
-        z_fad_rcp->push_back(FadType(n,j,(*zp)[j]));
+        z_fad_ptr->push_back(FadType(n,j,(*zp)[j]));
     }
 
-    StdVector<FadType> c_fad(c_fad_rcp);
-    StdVector<FadType> u_fad(u_fad_rcp);
-    StdVector<FadType> z_fad(z_fad_rcp);
+    StdVector<FadType> c_fad(c_fad_ptr);
+    StdVector<FadType> u_fad(u_fad_ptr);
+    StdVector<FadType> z_fad(z_fad_ptr);
   
     // Evaluate constraint 
     constr_.value(c_fad,u_fad,z_fad,tol);
@@ -366,7 +366,7 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointJacobian_2AD(Vector<Scal
     FadType vdotc = 0;
 
     for(int i=0;i<n;++i) {
-        vdotc += (*c_fad_rcp)[i]*(*vp)[i]; 
+        vdotc += (*c_fad_ptr)[i]*(*vp)[i]; 
     } 
 
     for(int j=0;j<m;++j) {
@@ -388,49 +388,49 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointHessian_11AD(Vector<Scal
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
 
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast; 
+           
+     
 
-    RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
-    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
+    ROL::Ptr<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> wp = dynamic_cast<const SV&>(w).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
 
-    RCP<Fadvector> v_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> jv_fad_rcp = rcp( new Fadvector );
+    ROL::Ptr<Fadvector> v_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> jv_fad_ptr = ROL::makePtr<Fadvector>();
 
-    v_fad_rcp->reserve(n);
-    u_fad_rcp->reserve(n);
-    z_fad_rcp->reserve(m);
-    jv_fad_rcp->reserve(n);
+    v_fad_ptr->reserve(n);
+    u_fad_ptr->reserve(n);
+    z_fad_ptr->reserve(m);
+    jv_fad_ptr->reserve(n);
 
     for(int i=0; i<n; ++i) {
-        v_fad_rcp->push_back((*vp)[i]);
-        u_fad_rcp->push_back(FadType(n,i,(*up)[i]));
-        jv_fad_rcp->push_back(0);
+        v_fad_ptr->push_back((*vp)[i]);
+        u_fad_ptr->push_back(FadType(n,i,(*up)[i]));
+        jv_fad_ptr->push_back(0);
     }
 
     for(int j=0; j<m; ++j) {
-        z_fad_rcp->push_back((*zp)[j]);    
+        z_fad_ptr->push_back((*zp)[j]);    
     }
 
-    StdVector<FadType> v_fad(v_fad_rcp);     
-    StdVector<FadType> u_fad(u_fad_rcp);     
-    StdVector<FadType> z_fad(z_fad_rcp);     
-    StdVector<FadType> jv_fad(jv_fad_rcp);     
+    StdVector<FadType> v_fad(v_fad_ptr);     
+    StdVector<FadType> u_fad(u_fad_ptr);     
+    StdVector<FadType> z_fad(z_fad_ptr);     
+    StdVector<FadType> jv_fad(jv_fad_ptr);     
 
     this->applyJacobian_1AD(jv_fad,v_fad,u_fad,z_fad,tol);
  
     FadType wjv_fad = 0;
    
     for(int i=0; i<n; ++i) {
-        wjv_fad += (*wp)[i]*(*jv_fad_rcp)[i];
+        wjv_fad += (*wp)[i]*(*jv_fad_ptr)[i];
     }
 
     for(int i=0; i<n; ++i) {
@@ -453,49 +453,49 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointHessian_12AD(Vector<Scal
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
 
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  
+           
+      
 
-    RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
-    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
+    ROL::Ptr<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> wp = dynamic_cast<const SV&>(w).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
 
-    RCP<Fadvector> v_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> jv_fad_rcp = rcp( new Fadvector );
+    ROL::Ptr<Fadvector> v_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> jv_fad_ptr = ROL::makePtr<Fadvector>();
 
-    v_fad_rcp->reserve(n);
-    u_fad_rcp->reserve(n);
-    z_fad_rcp->reserve(m);
-    jv_fad_rcp->reserve(n);
+    v_fad_ptr->reserve(n);
+    u_fad_ptr->reserve(n);
+    z_fad_ptr->reserve(m);
+    jv_fad_ptr->reserve(n);
 
     for(int i=0; i<n; ++i) {
-        v_fad_rcp->push_back((*vp)[i]);
-        u_fad_rcp->push_back((*up)[i]);
-        jv_fad_rcp->push_back(0);
+        v_fad_ptr->push_back((*vp)[i]);
+        u_fad_ptr->push_back((*up)[i]);
+        jv_fad_ptr->push_back(0);
     }
 
     for(int j=0; j<m; ++j) {
-        z_fad_rcp->push_back(FadType(m,j,(*zp)[j]));    
+        z_fad_ptr->push_back(FadType(m,j,(*zp)[j]));    
     }
 
-    StdVector<FadType> v_fad(v_fad_rcp);     
-    StdVector<FadType> u_fad(u_fad_rcp);     
-    StdVector<FadType> z_fad(z_fad_rcp);     
-    StdVector<FadType> jv_fad(jv_fad_rcp);     
+    StdVector<FadType> v_fad(v_fad_ptr);     
+    StdVector<FadType> u_fad(u_fad_ptr);     
+    StdVector<FadType> z_fad(z_fad_ptr);     
+    StdVector<FadType> jv_fad(jv_fad_ptr);     
 
     this->applyJacobian_1AD(jv_fad,v_fad,u_fad,z_fad,tol);
     
     FadType wjv_fad = 0;
 
     for(int i=0; i<n; ++i) {
-        wjv_fad += (*wp)[i]*(*jv_fad_rcp)[i]; 
+        wjv_fad += (*wp)[i]*(*jv_fad_ptr)[i]; 
     }
  
     for(int j=0; j<m; ++j) {
@@ -516,49 +516,49 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointHessian_21AD(Vector<Scal
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
 
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast; 
+           
+     
 
-    RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
-    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
+    ROL::Ptr<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> wp = dynamic_cast<const SV&>(w).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
 
-    RCP<Fadvector> v_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> jv_fad_rcp = rcp( new Fadvector );
+    ROL::Ptr<Fadvector> v_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> jv_fad_ptr = ROL::makePtr<Fadvector>();
 
-    v_fad_rcp->reserve(m);
-    u_fad_rcp->reserve(n);
-    z_fad_rcp->reserve(m);
-    jv_fad_rcp->reserve(n);
+    v_fad_ptr->reserve(m);
+    u_fad_ptr->reserve(n);
+    z_fad_ptr->reserve(m);
+    jv_fad_ptr->reserve(n);
 
     for(int i=0; i<n; ++i) {
-        u_fad_rcp->push_back(FadType(1,(*up)[i]));
-        jv_fad_rcp->push_back(0);
+        u_fad_ptr->push_back(FadType(1,(*up)[i]));
+        jv_fad_ptr->push_back(0);
     }
 
     for(int j=0; j<m; ++j) {
-        v_fad_rcp->push_back((*vp)[j]);
-        z_fad_rcp->push_back((*zp)[j]);    
+        v_fad_ptr->push_back((*vp)[j]);
+        z_fad_ptr->push_back((*zp)[j]);    
     }
 
-    StdVector<FadType> v_fad(v_fad_rcp);     
-    StdVector<FadType> u_fad(u_fad_rcp);     
-    StdVector<FadType> z_fad(z_fad_rcp);     
-    StdVector<FadType> jv_fad(jv_fad_rcp);     
+    StdVector<FadType> v_fad(v_fad_ptr);     
+    StdVector<FadType> u_fad(u_fad_ptr);     
+    StdVector<FadType> z_fad(z_fad_ptr);     
+    StdVector<FadType> jv_fad(jv_fad_ptr);     
 
     this->applyJacobian_2AD(jv_fad,v_fad,u_fad,z_fad,tol);
 
     FadType wjv_fad = 0;
 
     for(int i=0; i<n; ++i) {
-        wjv_fad += (*wp)[i]*(*jv_fad_rcp)[i];
+        wjv_fad += (*wp)[i]*(*jv_fad_ptr)[i];
     }
 
     for(int i=0; i<n; ++i) {
@@ -579,49 +579,49 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointHessian_22AD(Vector<Scal
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
 
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast; 
+           
+     
 
-    RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
-    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
+    ROL::Ptr<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> wp = dynamic_cast<const SV&>(w).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
  
     int n = up->size();
     int m = zp->size();
 
-    RCP<Fadvector> v_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
-    RCP<Fadvector> jv_fad_rcp = rcp( new Fadvector );
+    ROL::Ptr<Fadvector> v_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> jv_fad_ptr = ROL::makePtr<Fadvector>();
 
-    v_fad_rcp->reserve(m);
-    u_fad_rcp->reserve(n);
-    z_fad_rcp->reserve(m);
-    jv_fad_rcp->reserve(n);
+    v_fad_ptr->reserve(m);
+    u_fad_ptr->reserve(n);
+    z_fad_ptr->reserve(m);
+    jv_fad_ptr->reserve(n);
 
     for(int i=0; i<n; ++i) {
-        u_fad_rcp->push_back((*up)[i]);
-        jv_fad_rcp->push_back(0);
+        u_fad_ptr->push_back((*up)[i]);
+        jv_fad_ptr->push_back(0);
     }
 
     for(int j=0; j<m; ++j) {
-        v_fad_rcp->push_back((*vp)[j]);
-        z_fad_rcp->push_back(FadType(m,j,(*zp)[j]));    
+        v_fad_ptr->push_back((*vp)[j]);
+        z_fad_ptr->push_back(FadType(m,j,(*zp)[j]));    
     }
 
-    StdVector<FadType> v_fad(v_fad_rcp);     
-    StdVector<FadType> u_fad(u_fad_rcp);     
-    StdVector<FadType> z_fad(z_fad_rcp);     
-    StdVector<FadType> jv_fad(jv_fad_rcp);     
+    StdVector<FadType> v_fad(v_fad_ptr);     
+    StdVector<FadType> u_fad(u_fad_ptr);     
+    StdVector<FadType> z_fad(z_fad_ptr);     
+    StdVector<FadType> jv_fad(jv_fad_ptr);     
 
     this->applyJacobian_2AD(jv_fad,v_fad,u_fad,z_fad,tol);
  
     FadType wjv_fad = 0;
 
     for(int i=0; i<n; ++i) {
-        wjv_fad += (*wp)[i]*(*jv_fad_rcp)[i];
+        wjv_fad += (*wp)[i]*(*jv_fad_ptr)[i];
     }
 
     for(int j=0; j<m; ++j) {

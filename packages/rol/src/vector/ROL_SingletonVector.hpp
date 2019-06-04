@@ -65,7 +65,7 @@ private:
   Real value_;
 
   Real getValueX( const V& x ) const { 
-    return Teuchos::dyn_cast<const SingletonVector<Real> >(x).getValue(); 
+    return dynamic_cast<const SingletonVector<Real>&>(x).getValue(); 
   }
 
 public:
@@ -101,12 +101,15 @@ public:
     return std::abs(value_);
   }
   
-  Teuchos::RCP<V> clone() const {
-    return Teuchos::rcp( new SingletonVector(0) );
+  ROL::Ptr<V> clone() const {
+    return ROL::makePtr<SingletonVector>(0);
   }
   
-  Teuchos::RCP<V> basis() const {
-    return Teuchos::rcp( new SingletonVector(1) );
+  ROL::Ptr<V> basis(const int i) const {
+    ROL_TEST_FOR_EXCEPTION( i >= 1 || i < 0,
+                                std::invalid_argument,
+                                "Error: Basis index must be between 0 and vector dimension." );
+    return ROL::makePtr<SingletonVector>(1);
   }
 
   int dimension() const { return 1; };
@@ -121,6 +124,17 @@ public:
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     return value_;
+  }
+
+  void setScalar( const Real C ) {
+    value_ = C;
+  }
+
+  void randomize( const Real l=0.0, const Real u=1.0 ) {
+    Real a = (u-l);
+    Real b = l;
+    Real x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+    value_ = a*x + b;
   }
 
   void print( std::ostream& os ) const {

@@ -12,7 +12,7 @@
   @param[in]    r        right-hand-side     ( length N   )
   @param[out]   x        solution vector     ( length N   )   */
 template<class Real>
-void trisolve(Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
+void trisolve(ROL::Ptr<Teuchos::LAPACK<int,Real> > lapack,
               const std::vector<Real>& a,
               const std::vector<Real>& b,
               const std::vector<Real>& c,
@@ -47,7 +47,7 @@ void trisolve(Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
   @param[in]    X        vector of column-stacked solution matrix elements ( length N*M ) 
  */
 template<class Real>
-void lusolve(Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
+void lusolve(ROL::Ptr<Teuchos::LAPACK<int,Real> > lapack,
              const std::vector<Real> &A,
              const std::vector<Real> &B,
                    std::vector<Real> &X) {
@@ -78,7 +78,7 @@ void lusolve(Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
   @param[in]    X        vector of column-stacked solution matrix elements ( length N*M ) 
  */
 template<class Real>
-void cholsolve(Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
+void cholsolve(ROL::Ptr<Teuchos::LAPACK<int,Real> > lapack,
                const std::vector<Real> &A,
                const std::vector<Real> &B,
                      std::vector<Real> &X) {

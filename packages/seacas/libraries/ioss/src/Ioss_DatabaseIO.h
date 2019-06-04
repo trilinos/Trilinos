@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -35,19 +35,21 @@
 
 #include <Ioss_BoundingBox.h>
 #include <Ioss_CodeTypes.h>
-#include <Ioss_DBUsage.h>         // for DatabaseUsage, etc
-#include <Ioss_DataSize.h>        // for DataSize
-#include <Ioss_EntityType.h>      // for EntityType
+#include <Ioss_DBUsage.h>    // for DatabaseUsage, etc
+#include <Ioss_DataSize.h>   // for DataSize
+#include <Ioss_EntityType.h> // for EntityType
+#include <Ioss_Map.h>
 #include <Ioss_ParallelUtils.h>   // for ParallelUtils
 #include <Ioss_PropertyManager.h> // for PropertyManager
 #include <Ioss_State.h>           // for State, State::STATE_INVALID
 #include <Ioss_SurfaceSplit.h>    // for SurfaceSplitType
-#include <cstddef>                // for size_t, nullptr
-#include <cstdint>                // for int64_t
-#include <map>                    // for map
-#include <string>                 // for string
-#include <utility>                // for pair
-#include <vector>                 // for vector
+#include <chrono>
+#include <cstddef> // for size_t, nullptr
+#include <cstdint> // for int64_t
+#include <map>     // for map
+#include <string>  // for string
+#include <utility> // for pair
+#include <vector>  // for vector
 namespace Ioss {
   class CommSet;
   class EdgeBlock;
@@ -150,6 +152,12 @@ namespace Ioss {
      */
     std::string get_filename() const { return DBFilename; }
 
+    /** \brief Get a file-per-processor filename associated with the database.
+     *
+     * \ returns The file-per-processor name for a file on this processor.
+     */
+    const std::string &decoded_filename() const;
+
     /** \brief Determine whether the database is an input database.
      *
      *  \returns True if the database is an input database. False otherwise.
@@ -162,7 +170,7 @@ namespace Ioss {
      */
     Ioss::DatabaseUsage usage() const { return dbUsage; }
 
-    /** \brief Determine whether the database needs information about proces ownership of nodes.
+    /** \brief Determine whether the database needs information about process ownership of nodes.
      *
      *  \returns True if database needs information about process ownership of nodes.
      */
@@ -264,16 +272,9 @@ namespace Ioss {
       return end__(state);
     }
 
-    bool begin_state(Region *region, int state, double time)
-    {
-      IOSS_FUNC_ENTER(m_);
-      return begin_state__(region, state, time);
-    }
-    bool end_state(Region *region, int state, double time)
-    {
-      IOSS_FUNC_ENTER(m_);
-      return end_state__(region, state, time);
-    }
+    bool begin_state(int state, double time);
+    bool end_state(int state, double time);
+
     // Metadata-related functions.
     void read_meta_data()
     {
@@ -297,14 +298,14 @@ namespace Ioss {
      *  \returns The informative strings.
      */
     const std::vector<std::string> &get_information_records() const { return informationRecords; }
-    void add_information_records(const std::vector<std::string> &info);
-    void add_information_record(const std::string &info);
+    void                            add_information_records(const std::vector<std::string> &info);
+    void                            add_information_record(const std::string &info);
 
     // QA Records:
 
     /** \brief Get all QA records, each of which consists of 4 strings, from the database
      *
-     *  The 4 strings that make up a databse QA record are:
+     *  The 4 strings that make up a database QA record are:
      *
      *  1. A descriptive code name, such as the application that modified the database.
      *
@@ -371,12 +372,15 @@ namespace Ioss {
      *
      *  \returns The length, or 0 for unlimited.
      */
-    virtual int maximum_symbol_length() const { return 0; } // Default is unlimited...
-    virtual void
-    set_maximum_symbol_length(int /* requested_symbol_size */){}; // Default does nothing...
+    virtual int  maximum_symbol_length() const { return 0; } // Default is unlimited...
+    virtual void set_maximum_symbol_length(int /* requested_symbol_size */) {
+    } // Default does nothing...
 
-    char get_field_separator() const;
+    char get_field_separator() const { return fieldSeparator; }
+    bool get_field_recognition() const { return enableFieldRecognition; }
     void set_field_separator(char separator);
+    void set_field_recognition(bool yes_no) { enableFieldRecognition = yes_no; }
+
     void set_lower_case_variable_names(bool true_false) const
     {
       lowerCaseVariableNames = true_false;
@@ -390,7 +394,8 @@ namespace Ioss {
     void set_surface_split_type(Ioss::SurfaceSplitType split_type) { splitType = split_type; }
     Ioss::SurfaceSplitType get_surface_split_type() const { return splitType; }
 
-    void set_block_omissions(const std::vector<std::string> &omissions);
+    void set_block_omissions(const std::vector<std::string> &omissions,
+                             const std::vector<std::string> &inclusions = {});
 
     void get_block_adjacencies(const Ioss::ElementBlock *eb,
                                std::vector<std::string> &block_adjacency) const
@@ -401,14 +406,14 @@ namespace Ioss {
     void compute_block_membership(Ioss::SideBlock *         efblock,
                                   std::vector<std::string> &block_membership) const
     {
-      IOSS_FUNC_ENTER(m_);
       return compute_block_membership__(efblock, block_membership);
     }
 
     AxisAlignedBoundingBox get_bounding_box(const Ioss::ElementBlock *eb) const;
     AxisAlignedBoundingBox get_bounding_box(const Ioss::StructuredBlock *sb) const;
 
-    int          int_byte_size_api() const; //! Returns 4 or 8
+    virtual int  int_byte_size_db() const = 0; //! Returns 4 or 8
+    int          int_byte_size_api() const;    //! Returns 4 or 8
     virtual void set_int_byte_size_api(Ioss::DataSize size) const;
 
     /*!
@@ -418,7 +423,7 @@ namespace Ioss {
 
     /*!
      *     The overlay_count specifies the number of restart outputs
-     *     which will be overlayed on top of the currently written
+     *     which will be overlaid on top of the currently written
      *     step before advancing to the next step on the restart
      *     database.
      *
@@ -460,12 +465,16 @@ namespace Ioss {
      *     use set_cycle_count(1)
      */
     void set_cycle_count(int count) const { cycleCount = count; }
+    int  get_cycle_count() const { return cycleCount; }
     void set_overlay_count(int count) const { overlayCount = count; }
+    int  get_overlay_count() const { return overlayCount; }
+    void set_file_per_state(bool yes_no) const { filePerState = yes_no; }
+    bool get_file_per_state() const { return filePerState; }
 
     void set_time_scale_factor(double factor) { timeScaleFactor = factor; }
 
-    const Ioss::ParallelUtils &util() const { return util_; }
-
+    const Ioss::ParallelUtils &  util() const { return util_; }
+    const Ioss::PropertyManager &get_property_manager() const { return properties; }
     /** \brief Get the processor that this mesh database is on.
      *
      *  \returns The processor that this mesh database is on.
@@ -473,6 +482,13 @@ namespace Ioss {
     int  parallel_rank() const { return myProcessor; }
     int  parallel_size() const { return util().parallel_size(); }
     bool is_parallel() const { return isParallel; }
+
+    void progress(const std::string &output) const
+    {
+      if (m_enableTracing) {
+        util().progress(output);
+      }
+    }
 
   protected:
     DatabaseIO(Region *region, std::string filename, Ioss::DatabaseUsage db_usage,
@@ -508,7 +524,7 @@ namespace Ioss {
      * individually.
      */
     void             set_common_side_topology() const;
-    ElementTopology *commonSideTopology;
+    ElementTopology *commonSideTopology{nullptr};
 
     template <typename T>
     void create_groups(const std::string &property_name, EntityType type,
@@ -528,12 +544,17 @@ namespace Ioss {
      * run since the passed in filename is just the basename, not the
      * processor-specific filename.
      */
-    std::string DBFilename;
+    std::string         originalDBFilename;
+    std::string         DBFilename;
+    mutable std::string decodedFilename;
 
-    mutable Ioss::State dbState;
+    mutable Ioss::State dbState{STATE_INVALID};
 
-    bool isParallel;  //!< true if running in parallel
-    int  myProcessor; //!< number of processor this database is for
+    bool isParallel{false}; //!< true if running in parallel
+    int  myProcessor{0};    //!< number of processor this database is for
+
+    int64_t nodeCount{0};
+    int64_t elementCount{0};
 
     /*!
      * Check the topology of all face/element pairs in the model and
@@ -554,9 +575,16 @@ namespace Ioss {
      * the convention that times be monotonically increasing on an exodusII file.
      * Used by derived classes if they support this capability...
      */
-    mutable int cycleCount;
+    mutable int cycleCount{0};
 
-    mutable int overlayCount;
+    mutable int overlayCount{0};
+
+    /*! EXPERIMENTAL If this is true, then each state (timestep)
+     *  output will be directed to a separate file.  Currently this is
+     *  only implemented for the exodus (parallel or serial, single
+     *  file or fpp) database type.
+     */
+    mutable bool filePerState{false};
 
     /*! Scale the time read/written from/to the file by the specified
       scaleFactor.  If the datbase times are 0.1, 0.2, 0.3 and the
@@ -566,24 +594,35 @@ namespace Ioss {
       If specified for an output database, then the analysis time
       is divided by the scaleFactor time prior to output.
     */
-    double timeScaleFactor;
+    double timeScaleFactor{1.0};
 
-    Ioss::SurfaceSplitType splitType;
+    Ioss::SurfaceSplitType splitType{SPLIT_BY_TOPOLOGIES};
     Ioss::DatabaseUsage    dbUsage;
-    mutable Ioss::DataSize dbIntSizeAPI;
-    mutable bool           lowerCaseVariableNames;
-    bool                   usingParallelIO;
+    mutable Ioss::DataSize dbIntSizeAPI{USE_INT32_API};
+    mutable bool           lowerCaseVariableNames{true};
+    bool                   usingParallelIO{false};
 
-    // List of element blocks that should be omitted from this model.
-    // Surfaces will take this into account while splitting;
-    // however, node and nodesets will not be filtered
-    // (perhaps this will be done at a later time...)
-    // NOTE: All local element ids and offsets are still calculated
-    //       assuming that the blocks exist in the model...
+    // List of element blocks that should be omitted or included from
+    // this model.  Surfaces will take this into account while
+    // splitting; however, node and nodesets will not be filtered
+    // (perhaps this will be done at a later time...)  NOTE: All local
+    // element ids and offsets are still calculated assuming that the
+    // blocks exist in the model...
+    // Only one of these can have values and the other must be empty.
     std::vector<std::string> blockOmissions;
+    std::vector<std::string> blockInclusions;
 
     std::vector<std::string> informationRecords;
     std::vector<std::string> qaRecords;
+
+    //---Node Map -- Maps internal (1..NUMNP) ids to global ids used on the
+    //               application side.   global = nodeMap[local]
+    mutable Ioss::Map nodeMap{"node", DBFilename, myProcessor};
+    mutable Ioss::Map edgeMap{"edge", DBFilename, myProcessor};
+    mutable Ioss::Map faceMap{"face", DBFilename, myProcessor};
+    mutable Ioss::Map elemMap{"element", DBFilename, myProcessor};
+
+    mutable std::vector<std::vector<bool>> blockAdjacency;
 
   private:
     virtual bool ok__(bool write_message, std::string *error_message, int *bad_count) const
@@ -594,10 +633,24 @@ namespace Ioss {
       return dbState != Ioss::STATE_INVALID;
     }
 
-    virtual int64_t node_global_to_local__(int64_t global, bool must_exist) const = 0;
-    virtual int64_t element_global_to_local__(int64_t global) const = 0;
+    virtual int64_t node_global_to_local__(int64_t global, bool must_exist) const
+    {
+      return nodeMap.global_to_local(global, must_exist);
+    }
 
-    virtual void release_memory__() {}
+    virtual int64_t element_global_to_local__(int64_t global) const
+    {
+      return elemMap.global_to_local(global);
+    }
+
+    virtual void release_memory__()
+    {
+      nodeMap.release_memory();
+      edgeMap.release_memory();
+      faceMap.release_memory();
+      elemMap.release_memory();
+    }
+
     virtual void openDatabase__() const {}
     virtual void closeDatabase__() const {}
     virtual void flush_database__() const {}
@@ -610,17 +663,18 @@ namespace Ioss {
     virtual void read_meta_data__() = 0;
     virtual void get_step_times__() {}
 
-    virtual bool begin_state__(Region *region, int state, double time);
-    virtual bool end_state__(Region *region, int state, double time);
+    virtual bool begin_state__(int state, double time);
+    virtual bool end_state__(int state, double time);
 
-    virtual void get_block_adjacencies__(const Ioss::ElementBlock *eb,
-                                         std::vector<std::string> &block_adjacency) const
-    {
-    }
+    void get_block_adjacencies__(const Ioss::ElementBlock *eb,
+                                 std::vector<std::string> &block_adjacency) const;
+
     virtual void compute_block_membership__(Ioss::SideBlock *         efblock,
                                             std::vector<std::string> &block_membership) const
     {
     }
+
+    void compute_block_adjacencies() const;
 
     void verify_and_log(const GroupingEntity *ge, const Field &field, int in_out) const;
 
@@ -697,20 +751,30 @@ namespace Ioss {
 
   private:
 #endif
-    Region *region_;
+    Region *region_{nullptr};
+    char    fieldSeparator{'_'};
+    bool    enableFieldRecognition{true};
     bool    isInput;
-    bool    isParallelConsistent; // True if application will make field data get/put calls parallel
-                                  // consistently.
-                                  // True is default and required for parallel-io databases.
+    bool    isParallelConsistent{
+        true}; // True if application will make field data get/put calls parallel
+                  // consistently.
+                  // True is default and required for parallel-io databases.
     // Even if false, metadata operations must be called by all processors
 
-    bool singleProcOnly; // True if history or heartbeat which is only written from proc 0...
-    bool doLogging;      // True if logging field input/output
-    bool
-        useGenericCanonicalName; // True if "block_id" is used as canonical name instead of the name
+    bool singleProcOnly;   // True if history or heartbeat which is only written from proc 0...
+    bool doLogging{false}; // True if logging field input/output
+    bool useGenericCanonicalName{
+        false}; // True if "block_id" is used as canonical name instead of the name
     // given on the mesh file e.g. "fireset".  Both names are still aliases.
-    bool ignoreDatabaseNames; // True if "block_{id}" used as canonical name; ignore any names on
-                              // database.
+    bool ignoreDatabaseNames{false}; // True if "block_{id}" used as canonical name; ignore any
+                                     // names on database.
+    mutable bool blockAdjacenciesCalculated{false}; // True if the lazy creation of
+    // block adjacencies has been calculated.
+
+    bool m_timeStateInOut{false};
+    bool m_enableTracing{false};
+    std::chrono::time_point<std::chrono::high_resolution_clock>
+        m_stateStart; // Used for optional output step timing.
   };
 } // namespace Ioss
 #endif

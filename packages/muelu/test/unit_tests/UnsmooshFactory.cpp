@@ -51,28 +51,6 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
-// declare content from Galeri_XpetraMaps.hpp
-// we cannot include the header file, since it
-// is already included for the Repartition.cpp
-// unit tests
-//#include <Galeri_XpetraMaps.hpp>
-namespace Galeri {
-  namespace Xpetra {
-
-    using Teuchos::RCP;
-
-    //! Map creation function (for Tpetra, Epetra, Xpetra::TpetraMap and Xpetra::EpetraMap)
-    template <class LocalOrdinal, class GlobalOrdinal, class Map>
-    RCP<Map> CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
-
-#ifdef HAVE_GALERI_XPETRA
-    //! Map creation function (for Xpetra::Map with an UnderlyingLib parameter)
-    template <class LocalOrdinal, class GlobalOrdinal, class Node>
-    RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
-#endif
-  }
-}
-
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
@@ -103,7 +81,7 @@ namespace MueLuTests {
 
     GlobalOrdinal nx = 6, ny = 6;
 
-    typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
     typedef Xpetra::MultiVectorFactory<double,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
 
     // Describes the initial layout of matrix rows across processors.
@@ -165,6 +143,7 @@ namespace MueLuTests {
     TentativePFactory Pfact;
     UnsmooshFactory unsmooFact;
     FactoryManager innerFactManager;
+    innerFactManager.SetKokkosRefactor(false);
     innerFactManager.SetFactory("A", Teuchos::rcpFromRef(lapFact));
     innerFactManager.SetFactory("UnAmalgamationInfo", Teuchos::rcpFromRef(amalgFact));
     innerFactManager.SetFactory("Graph", Teuchos::rcpFromRef(coalFact));

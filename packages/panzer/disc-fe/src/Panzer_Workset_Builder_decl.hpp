@@ -54,8 +54,8 @@
 
 namespace panzer {
   
-  struct Workset;
-  struct WorksetDetails;
+  class Workset;
+  class WorksetDetails;
 
   template<typename ArrayT>
   Teuchos::RCP<std::vector<Workset> > 

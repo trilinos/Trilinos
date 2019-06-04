@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -103,8 +103,6 @@ public:
 void TaskQueueSpecialization< Kokkos::OpenMP >::execute
   ( TaskQueue< Kokkos::OpenMP > * const queue )
 {
-  using execution_space = Kokkos::OpenMP ;
-  using queue_type      = TaskQueue< execution_space > ;
   using task_root_type  = TaskBase< void , void , void > ;
   using Member          = Impl::HostThreadTeamMember< execution_space > ;
 
@@ -116,7 +114,11 @@ void TaskQueueSpecialization< Kokkos::OpenMP >::execute
     HostThreadTeamDataSingleton::singleton();
 
   Impl::OpenMPExec * instance = t_openmp_instance;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   const int pool_size = OpenMP::thread_pool_size();
+#else
+  const int pool_size = OpenMP::impl_thread_pool_size();
+#endif
 
   const int team_size = 1;  // Threads per core
   instance->resize_thread_data( 0 /* global reduce buffer */
@@ -209,12 +211,15 @@ void TaskQueueSpecialization< Kokkos::OpenMP >::
   iff_single_thread_recursive_execute
     ( TaskQueue< Kokkos::OpenMP > * const queue )
 {
-  using execution_space = Kokkos::OpenMP ;
-  using queue_type      = TaskQueue< execution_space > ;
   using task_root_type  = TaskBase< void , void , void > ;
   using Member          = Impl::HostThreadTeamMember< execution_space > ;
 
-  if ( 1 == OpenMP::thread_pool_size() ) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+  if ( 1 == OpenMP::thread_pool_size() )
+#else
+  if ( 1 == OpenMP::impl_thread_pool_size() )
+#endif
+  {
 
     task_root_type * const end = (task_root_type *) task_root_type::EndTag ;
 

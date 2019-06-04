@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <boost/shared_ptr.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -50,8 +49,6 @@
 #include "STKNode.hpp"
 #include "LinearInterpolate.hpp"
 #include <stk_transfer/GeometricTransfer.hpp>
-
-namespace bopt = boost::program_options;
 
 typedef stk::mesh::Field<double>                       ScalarField ;
 typedef stk::mesh::Field<double, stk::mesh::Cartesian> CartesianField ;
@@ -92,9 +89,10 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
 
 
   const std::string data_field_name = "Sum_Of_Coordinates";
-  ScalarField &range_coord_sum_field = stk::mesh::put_field(
+  ScalarField &range_coord_sum_field = stk::mesh::put_field_on_mesh(
                         range_meta_data.declare_field<ScalarField>(stk::topology::NODE_RANK, data_field_name),
-                        range_meta_data.universal_part() );
+                        range_meta_data.universal_part(),
+                        nullptr);
 
   range_meta_data.commit();
   range_mesh_data.populate_bulk_data();
@@ -112,9 +110,10 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   stk::mesh::Part & block_skin       = domain_meta_data.declare_part("skin", side_rank);
   stk::mesh::set_topology( block_skin, stk::topology::QUAD_4 );
 
-  ScalarField &domain_coord_sum_field = stk::mesh::put_field(
+  ScalarField &domain_coord_sum_field = stk::mesh::put_field_on_mesh(
                         domain_meta_data.declare_field<ScalarField>(stk::topology::NODE_RANK, data_field_name),
-                        domain_meta_data.universal_part() );
+                        domain_meta_data.universal_part(),
+                        nullptr);
   domain_meta_data.commit();
 
   domain_mesh_data.populate_bulk_data();
@@ -160,11 +159,11 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
 
   const double radius=.25;
   const std::vector<stk::mesh::FieldBase*> from_fields(1, &domain_coord_sum_field);
-  boost::shared_ptr<stk::transfer::STKNode >
+  std::shared_ptr<stk::transfer::STKNode >
     transfer_domain_mesh (new stk::transfer::STKNode(domain_entities, domain_coord_field, from_fields, radius));
 
   const std::vector<stk::mesh::FieldBase*> to_fields  (1, &range_coord_sum_field);
-  boost::shared_ptr<stk::transfer::STKNode >
+  std::shared_ptr<stk::transfer::STKNode >
     transfer_range_mesh (new stk::transfer::STKNode(range_entities, range_coord_field, to_fields, radius));
 
 

@@ -73,12 +73,12 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false;
   bool success = false;
+  bool verbose = false;
   try {
-    bool proc_verbose = false;
     bool badRes = false;
-    bool pseudo = false;   // use pseudo block GMRES to solve this linear system.
+    bool proc_verbose = false;
+    bool pseudo = false;   // use pseudo block Gmres to solve this linear system.
     int frequency = -1;
     int blocksize = 1;
     int numrhs = 1;
@@ -90,13 +90,13 @@ int main(int argc, char *argv[]) {
 
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-    cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
+    cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block Gmres to solve the linear systems.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-    cmdp.setOption("ortho",&ortho,"Orthogonalization routine used by GMRES solver.");
-    cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
-    cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
-    cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
+    cmdp.setOption("ortho",&ortho,"Orthogonalization routine used by Gmres solver.");
+    cmdp.setOption("tol",&tol,"Relative residual tolerance used by Gmres solver.");
+    cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for Gmres solver.");
+    cmdp.setOption("blocksize",&blocksize,"Block size used by Gmres.");
     cmdp.setOption("maxiters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
     // Get the number of iterations for this solve.
     //
     numIters = solver->getNumIters();
-    std::cout << "Number of iterations performed for this solve (manager reset(Belos::Problem)): " << numIters << std::endl;
+    std::cout << "Number of iterations performed for this solve (manager reset): " << numIters << std::endl;
 
     if (ret!=Belos::Converged) {
       if (proc_verbose)
@@ -214,16 +214,20 @@ int main(int argc, char *argv[]) {
     // Compute actual residuals.
     //
     std::vector<double> actual_resids2( numrhs );
-    OPT::Apply( *A, *X, resid );
-    MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
-    MVT::MvNorm( resid, actual_resids2 );
+    Epetra_MultiVector resid2(Map, numrhs);
+    OPT::Apply( *A, *X, resid2 );
+    MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 );
+    MVT::MvNorm( resid2, actual_resids );
+    MVT::MvAddMv( -1.0, resid2, 1.0, resid, resid2 );
+    MVT::MvNorm( resid2, actual_resids2 );
     MVT::MvNorm( *B, rhs_norm );
     if (proc_verbose) {
-      std::cout<< "---------- Actual Residuals (manager reset(Belos::Problem)) ----------"<<std::endl<<std::endl;
+      std::cout<< "---------- Actual Residuals (manager reset) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
-        std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
-        if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) {
+        std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
       }
     }
@@ -257,16 +261,19 @@ int main(int argc, char *argv[]) {
     //
     // Compute actual residuals.
     //
-    OPT::Apply( *A, *X, resid );
-    MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
-    MVT::MvNorm( resid, actual_resids2 );
+    OPT::Apply( *A, *X, resid2 );
+    MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 );
+    MVT::MvNorm( resid2, actual_resids );
+    MVT::MvAddMv( -1.0, resid2, 1.0, resid, resid2 );
+    MVT::MvNorm( resid2, actual_resids2 );
     MVT::MvNorm( *B, rhs_norm );
     if (proc_verbose) {
       std::cout<< "---------- Actual Residuals (manager setProblem()) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
-        std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
-        if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) {
+        std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
       }
     }
@@ -299,16 +306,19 @@ int main(int argc, char *argv[]) {
     //
     // Compute actual residuals.
     //
-    OPT::Apply( *A, *X, resid );
-    MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
-    MVT::MvNorm( resid, actual_resids2 );
+    OPT::Apply( *A, *X, resid2 );
+    MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 );
+    MVT::MvNorm( resid2, actual_resids );
+    MVT::MvAddMv( -1.0, resid2, 1.0, resid, resid2 );
+    MVT::MvNorm( resid2, actual_resids2 );
     MVT::MvNorm( *B, rhs_norm );
     if (proc_verbose) {
       std::cout<< "---------- Actual Residuals (label reset) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
-        std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
-        if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) {
+        std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
       }
     }
@@ -367,18 +377,20 @@ int main(int argc, char *argv[]) {
     //
     // Compute actual residuals.
     //
-    Epetra_MultiVector resid2(Map, numrhs);
     OPT::Apply( *A, *X2, resid2 );
     MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 );
+    MVT::MvNorm( resid2, actual_resids );
+    MVT::MvAddMv( -1.0, resid2, 1.0, resid, resid2 );
     MVT::MvNorm( resid2, actual_resids2 );
     MVT::MvNorm( *B, rhs_norm );
     if (proc_verbose) {
       std::cout<< "---------- Actual Residuals (new solver) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
-        std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
-        if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) {
+        std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
-        }
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
+        } 
       }
     }
     //
@@ -389,8 +401,7 @@ int main(int argc, char *argv[]) {
       std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
       std::cout << "Number of right-hand sides: " << numrhs << std::endl;
       std::cout << "Block size used by solver: " << blocksize << std::endl;
-      std::cout << "Number of restarts allowed: " << maxrestarts << std::endl;
-      std::cout << "Max number of Gmres iterations per restart cycle: " << maxiters << std::endl;
+      std::cout << "Max number of Gmres iterations: " << maxiters << std::endl;
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
     }
@@ -405,7 +416,7 @@ int main(int argc, char *argv[]) {
         std::cout << "End Result: TEST FAILED" << std::endl;
     }
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return success ? EXIT_SUCCESS : EXIT_FAILURE;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } // end test_resolve_gmres_hb.cpp

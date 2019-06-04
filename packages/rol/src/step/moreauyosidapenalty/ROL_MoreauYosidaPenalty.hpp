@@ -48,7 +48,7 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include <iostream>
 
 /** @ingroup func_group
@@ -64,22 +64,22 @@ namespace ROL {
 template <class Real>
 class MoreauYosidaPenalty : public Objective<Real> {
 private:
-  const Teuchos::RCP<Objective<Real> > obj_;
-  const Teuchos::RCP<BoundConstraint<Real> > con_;
+  const ROL::Ptr<Objective<Real> > obj_;
+  const ROL::Ptr<BoundConstraint<Real> > con_;
 
-  Teuchos::RCP<Vector<Real> > g_;
-  Teuchos::RCP<Vector<Real> > l_;
-  Teuchos::RCP<Vector<Real> > u_;
-  Teuchos::RCP<Vector<Real> > l1_;
-  Teuchos::RCP<Vector<Real> > u1_;
-  Teuchos::RCP<Vector<Real> > dl1_;
-  Teuchos::RCP<Vector<Real> > du1_;
-  Teuchos::RCP<Vector<Real> > xlam_;
-  Teuchos::RCP<Vector<Real> > v_;
-  Teuchos::RCP<Vector<Real> > dv_;
-  Teuchos::RCP<Vector<Real> > dv2_;
-  Teuchos::RCP<Vector<Real> > lam_;
-  Teuchos::RCP<Vector<Real> > tmp_;
+  ROL::Ptr<Vector<Real> > g_;
+  ROL::Ptr<Vector<Real> > l_;
+  ROL::Ptr<Vector<Real> > u_;
+  ROL::Ptr<Vector<Real> > l1_;
+  ROL::Ptr<Vector<Real> > u1_;
+  ROL::Ptr<Vector<Real> > dl1_;
+  ROL::Ptr<Vector<Real> > du1_;
+  ROL::Ptr<Vector<Real> > xlam_;
+  ROL::Ptr<Vector<Real> > v_;
+  ROL::Ptr<Vector<Real> > dv_;
+  ROL::Ptr<Vector<Real> > dv2_;
+  ROL::Ptr<Vector<Real> > lam_;
+  ROL::Ptr<Vector<Real> > tmp_;
 
   Real mu_;
   Real fval_;
@@ -130,7 +130,7 @@ private:
   }
 
   void initialize(const ROL::Vector<Real> &x,
-                  const Teuchos::RCP<ROL::BoundConstraint<Real> > &con) {
+                  const ROL::Ptr<ROL::BoundConstraint<Real> > &con) {
     g_    = x.dual().clone();
     l_    = x.clone();
     l1_   = x.clone();
@@ -157,8 +157,8 @@ private:
 public:
   ~MoreauYosidaPenalty() {}
 
-  MoreauYosidaPenalty(const Teuchos::RCP<Objective<Real> > &obj,
-                      const Teuchos::RCP<BoundConstraint<Real> > &con, 
+  MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
+                      const ROL::Ptr<BoundConstraint<Real> > &con, 
                       const ROL::Vector<Real> &x,
                       const Real mu = 1e1)
     : obj_(obj), con_(con), mu_(mu),
@@ -167,29 +167,29 @@ public:
     initialize(x,con);
   }
 
-  MoreauYosidaPenalty(const Teuchos::RCP<Objective<Real> > &obj,
-                      const Teuchos::RCP<BoundConstraint<Real> > &con, 
+  MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
+                      const ROL::Ptr<BoundConstraint<Real> > &con, 
                       const ROL::Vector<Real> &x,
-                      Teuchos::ParameterList &parlist)
+                      ROL::ParameterList &parlist)
     : obj_(obj), con_(con),
       fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0) {
     initialize(x,con);
-    Teuchos::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
+    ROL::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     updateMultiplier_ = list.get("Update Multiplier",true);
     updatePenalty_    = list.get("Update Penalty",true);
     mu_               = list.get("Initial Penalty Parameter",1e1);
   }
 
-  MoreauYosidaPenalty(const Teuchos::RCP<Objective<Real> > &obj,
-                      const Teuchos::RCP<BoundConstraint<Real> > &con, 
+  MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
+                      const ROL::Ptr<BoundConstraint<Real> > &con, 
                       const ROL::Vector<Real> &x,
                       const ROL::Vector<Real> &lam,
-                      Teuchos::ParameterList &parlist)
+                      ROL::ParameterList &parlist)
     : obj_(obj), con_(con),
       fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0) {
     initialize(x,con);
     lam_->set(lam);
-    Teuchos::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
+    ROL::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     updateMultiplier_ = list.get("Update Multiplier",true);
     updatePenalty_    = list.get("Update Penalty",true);
     mu_               = list.get("Initial Penalty Parameter",1e1);
@@ -246,7 +246,7 @@ public:
     return fval_;
   }
 
-  Teuchos::RCP<Vector<Real> > getGradient(void) const {
+  ROL::Ptr<Vector<Real> > getGradient(void) const {
     return g_;
   }
 

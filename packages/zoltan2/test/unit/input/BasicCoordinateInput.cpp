@@ -48,14 +48,12 @@
 #include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
 using Teuchos::RCP;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 using Teuchos::Array;
 
 typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
@@ -114,10 +112,11 @@ int checkBasicCoordinate(
 }
   
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
   int fail = 0;
 
@@ -125,10 +124,12 @@ int main(int argc, char *argv[])
 
   typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> mv_t;
   RCP<UserInputForTests> uinput;
-  std::string fname("simple");
+  Teuchos::ParameterList params;
+  params.set("input file", "simple");
+  params.set("file type", "Chaco");
 
   try{
-    uinput = rcp(new UserInputForTests(testDataFilePath, fname, comm, true));
+    uinput = rcp(new UserInputForTests(params, comm));
   }
   catch(std::exception &e){
     fail=1;

@@ -186,6 +186,25 @@ TEST_F(TestTextMesh, twoHexesSerial)
     }
 }
 
+TEST_F(TestTextMesh, twoTet10Serial)
+{
+    std::string meshDesc =
+        "0,1,TET_10,1,2,3,4,5,6,7,8,9,10\n\
+         0,2,TET_10,2,11,3,4,12,13,6,9,14,10";
+    if (get_bulk().parallel_size() == 1)
+    {
+  //                                         1       2      3        4          5          6         7           8 
+        std::vector<double> coordinates = { 0,0,0, 1,0,0, 0.5,1,0, 0.5,0.5,1, 0.5,0,0, 0.75,0.5,0, 0.25,0.5,0, 0.25,0.25,0.5,
+//                                           9              10            11         12           13        14
+                                           0.75,0.25,0.5, 0.5,0.75,0.5, 1.5,0.5,0, 1.25,0.25,0, 1,0.75,0, 1,0.5,0.5 };
+        stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, get_bulk());
+        EXPECT_EQ(1,get_bulk().parallel_size());
+        verify_single_element(get_bulk(), 1u, stk::topology::TET_10, stk::mesh::EntityIdVector{1,2,3,4,5,6,7,8,9,10});
+        verify_single_element(get_bulk(), 2u, stk::topology::TET_10, stk::mesh::EntityIdVector{2,11,3,4,12,13,6,9,14,10});
+        stk::io::write_mesh("twoTet10s.g", get_bulk());
+    }
+}
+
 TEST_F(TestTextMesh, twoHexesParallel)
 {
     std::string meshDesc =
@@ -224,6 +243,18 @@ TEST_F(TestTextMesh2d, singleQuad)
     {
         stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
         verify_single_element(get_bulk(), 1u, stk::topology::QUAD_4_2D, stk::mesh::EntityIdVector{1,2,3,4});
+    }
+}
+
+TEST_F(TestTextMesh2d, twoSprings)
+{
+    std::string meshDesc = "0,1,SPRING_2,1,2\n"
+                           "0,2,SPRING_2,2,3";
+    if (get_bulk().parallel_size() == 1)
+    {
+        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+        verify_single_element(get_bulk(), 1u, stk::topology::SPRING_2, stk::mesh::EntityIdVector{1,2});
+        verify_single_element(get_bulk(), 2u, stk::topology::SPRING_2, stk::mesh::EntityIdVector{2,3});
     }
 }
 

@@ -40,7 +40,7 @@ namespace stk
 namespace mesh
 {
 
-class GraphEdge;
+struct GraphEdge;
 
 class GraphEdgesForElement
 {
@@ -60,11 +60,15 @@ public:
     {
         return graphEdges.size();
     }
+    void reserve(size_t size)
+    {
+        graphEdges.reserve(size);
+    }
     const GraphEdge & get_edge_at_index(impl::LocalId elem) const
     {
         return graphEdges[elem];
     }
-    void push_back(const GraphEdge &graphEdge)
+    void emplace_back(const GraphEdge &graphEdge)
     {
         graphEdges.push_back(graphEdge);
     }
@@ -92,6 +96,7 @@ public:
     const GraphEdgesForElement& get_edges_for_element(impl::LocalId elem) const;
     std::vector<GraphEdge> get_edges_for_element_side(impl::LocalId elem, int side) const;
 
+    void reserve_edges(impl::LocalId localElemId, size_t numEdges);
     void add_edge(const GraphEdge &graphEdge);
     void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
     void delete_edge(const GraphEdge &graphEdge);

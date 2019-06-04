@@ -50,6 +50,8 @@
 
 // Kokkos includes
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_MultiVector_fwd.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
@@ -118,11 +120,11 @@ template <typename Node>
 struct DeviceForNode2 {
   // Prefer Serial execution space as the default, but if that's not
   // available, use the Host memory space's default execution space.
-#if defined(KOKKOS_HAVE_SERIAL)
+#if defined(KOKKOS_ENABLE_SERIAL)
   typedef Kokkos::Serial type;
 #else
   typedef Kokkos::HostSpace::execution_space type;
-#endif // defined(KOKKOS_HAVE_SERIAL)
+#endif // defined(KOKKOS_ENABLE_SERIAL)
 };
 
 template <typename Device>
@@ -309,34 +311,31 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
 } // namespace Details
 } // namespace Tpetra
 
-namespace Tpetra {
-  template <class S, class L, class G, class N, bool> class MultiVector;
-  template <class S, class L, class G, class N, bool> class Vector;
-}
-
 namespace Kokkos {
-  template <class S, class L, class G, class N, bool c>
-  size_t dimension_scalar(const Tpetra::MultiVector<S,L,G,N,c>& mv) {
-    typedef Tpetra::MultiVector<S,L,G,N,c> MV;
-    typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev device_type;
-    typedef typename dual_view_type::t_host host_type;
-    dual_view_type dual_view = mv.getDualView();
-    if (dual_view.modified_host() > dual_view.modified_device())
-      return dimension_scalar(dual_view.template view<device_type>());
-    return dimension_scalar(dual_view.template view<host_type>());
+  template <class S, class L, class G, class N>
+  size_t dimension_scalar(const Tpetra::MultiVector<S,L,G,N>& mv) {
+    if ( mv.need_sync_device() ) {
+      // NOTE (mfh 02 Apr 2019) This doesn't look right.  Shouldn't I
+      // want the most recently updated View, which in this case would
+      // be the host View?  However, this is what I found when I
+      // changed these lines not to call deprecated code, so I'm
+      // leaving it.
+      return dimension_scalar(mv.getLocalViewDevice());
+    }
+    return dimension_scalar(mv.getLocalViewHost());
   }
 
-  template <class S, class L, class G, class N, bool c>
-  size_t dimension_scalar(const Tpetra::Vector<S,L,G,N,c>& v) {
-    typedef Tpetra::Vector<S,L,G,N,c> V;
-    typedef typename V::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev device_type;
-    typedef typename dual_view_type::t_host host_type;
-    dual_view_type dual_view = v.getDualView();
-    if (dual_view.modified_host() > dual_view.modified_device())
-      return dimension_scalar(dual_view.template view<device_type>());
-    return dimension_scalar(dual_view.template view<host_type>());
+  template <class S, class L, class G, class N>
+  size_t dimension_scalar(const Tpetra::Vector<S,L,G,N>& v) {
+    if ( v.need_sync_device() ) {
+      // NOTE (mfh 02 Apr 2019) This doesn't look right.  Shouldn't I
+      // want the most recently updated View, which in this case would
+      // be the host View?  However, this is what I found when I
+      // changed these lines not to call deprecated code, so I'm
+      // leaving it.
+      return dimension_scalar(v.getLocalViewDevice());
+    }
+    return dimension_scalar(v.getLocalViewHost());
   }
 }
 

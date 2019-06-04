@@ -46,13 +46,15 @@
 
 #include "Tpetra_CrsMatrix_def.hpp"
 
-namespace Tpetra {
+// These are macros; the code isn't compiled here, so we don't need to
+// say here what namespace the code is in.  We _do_ need to put the
+// code in the correct namespace when we use the macro.
 
 #define TPETRA_CRSMATRIX_UQ_PCE_SPEC(Scalar,LocalOrdinal,GlobalOrdinal,Node) \
   template<>                                                            \
-  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> > \
-  CrsMatrix<Scalar , LocalOrdinal, GlobalOrdinal, Node, false>::        \
-  getColumnMapMultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>& X_domainMap, \
+  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > \
+  CrsMatrix<Scalar , LocalOrdinal, GlobalOrdinal, Node>::        \
+  getColumnMapMultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X_domainMap, \
                            const bool force) const                      \
   {                                                                     \
     using Teuchos::null;                                                \
@@ -92,9 +94,9 @@ namespace Tpetra {
   }                                                                     \
                                                                         \
   template <>                                                           \
-  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> > \
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::       \
-  getRowMapMultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>& Y_rangeMap, \
+  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > \
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::       \
+  getRowMapMultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y_rangeMap, \
                         const bool force) const                         \
   {                                                                     \
     using Teuchos::null;                                                \
@@ -126,7 +128,5 @@ namespace Tpetra {
     }                                                                   \
     return Y_rowMap;                                                    \
   }
-
-} // namespace Tpetra
 
 #endif // STOKHOS_TPETRA_UQ_PCE_DEF_HPP

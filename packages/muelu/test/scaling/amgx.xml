@@ -1,0 +1,6 @@
+<ParameterList name="MueLu">
+  <Parameter name="use external multigrid package" type="string" value="amgx"/>
+  <ParameterList name="amgx:params">
+    <Parameter name="json file" type="string" value="amgx.json"/>
+  </ParameterList>
+</ParameterList>

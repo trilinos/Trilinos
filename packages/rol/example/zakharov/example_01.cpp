@@ -53,10 +53,10 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_ParameterListConverters.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
 
@@ -73,13 +73,7 @@ int main(int argc, char *argv[]) {
   GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
-  else
-    outStream = Teuchos::rcp(&bhs, false);
+  auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
 
   int errorFlag  = 0;
 
@@ -89,42 +83,41 @@ int main(int argc, char *argv[]) {
 
     int dim = 10; // Set problem dimension. 
 
-    RCP<ParameterList> parlist = rcp(new ParameterList());
     std::string paramfile = "parameters.xml";
-    updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile( paramfile );
 
    // Define algorithm.
     ROL::Algorithm<RealT> algo("Trust-Region",*parlist);
 
     // Iteration vector.
-    RCP<vector> x_rcp = rcp( new vector(dim, 0.0) );
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);
 
     // Vector of natural numbers.
-    RCP<vector> k_rcp = rcp( new vector(dim, 0.0) );
+    ROL::Ptr<vector> k_ptr = ROL::makePtr<vector>(dim, 0.0);
 
     // For gradient and Hessian checks. 
-    RCP<vector> xtest_rcp = rcp( new vector(dim, 0.0) );
-    RCP<vector> d_rcp     = rcp( new vector(dim, 0.0) );
-    RCP<vector> v_rcp     = rcp( new vector(dim, 0.0) );
-    RCP<vector> hv_rcp    = rcp( new vector(dim, 0.0) );
-    RCP<vector> ihhv_rcp  = rcp( new vector(dim, 0.0) );
+    ROL::Ptr<vector> xtest_ptr = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> d_ptr     = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> v_ptr     = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> hv_ptr    = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> ihhv_ptr  = ROL::makePtr<vector>(dim, 0.0);
   
 
     RealT left = -1e0, right = 1e0; 
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i]   = 2;
-      (*k_rcp)[i]   = i+1.0;
+      (*x_ptr)[i]   = 2;
+      (*k_ptr)[i]   = i+1.0;
     }
 
-    RCP<V> k = rcp(new SV(k_rcp) );
-    SV x(x_rcp);
+    ROL::Ptr<V> k = ROL::makePtr<SV>(k_ptr);
+    SV x(x_ptr);
 
     // Check gradient and Hessian.
-    SV xtest(xtest_rcp);
-    SV d(d_rcp);
-    SV v(v_rcp);
-    SV hv(hv_rcp);
-    SV ihhv(ihhv_rcp);
+    SV xtest(xtest_ptr);
+    SV d(d_ptr);
+    SV v(v_ptr);
+    SV hv(hv_ptr);
+    SV ihhv(ihhv_ptr);
 
     ROL::RandomizeVector( xtest, left, right );
     ROL::RandomizeVector( d, left, right );
@@ -149,8 +142,8 @@ int main(int argc, char *argv[]) {
     algo.run(x, obj, true, *outStream);
 
     // Get True Solution
-    RCP<vector> xtrue_rcp = rcp( new vector(dim, 0.0) );
-    SV xtrue(xtrue_rcp);
+    ROL::Ptr<vector> xtrue_ptr = ROL::makePtr<vector>(dim, 0.0);
+    SV xtrue(xtrue_ptr);
 
         
     // Compute Error

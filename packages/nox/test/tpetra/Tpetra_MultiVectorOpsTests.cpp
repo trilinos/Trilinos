@@ -290,7 +290,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Update_3)
 
   // Create matrix for the update
   NOX::Abstract::MultiVector::DenseMatrix mat(5, numCols);
-  for (int j = 0; j < numCols; ++j) {
+  for (int j = 0; j < static_cast<int>(numCols); ++j) {
     for (int i = 0; i < 5; ++i) {
       mat(i,j) = j;
     }
@@ -414,15 +414,15 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Multiply)
   Teuchos::RCP<TMV> x = Teuchos::rcp(new TMV(map, numCols));
   Teuchos::RCP<TMV> y = Teuchos::rcp(new TMV(map, numCols));
 
-  for (int i = 0; i < numCols; ++i) {
+  for (int i = 0; i < static_cast<int>(numCols); ++i) {
     x->getVectorNonConst(i)->putScalar(i*ST::one());
     y->getVectorNonConst(i)->putScalar(2.0*i*ST::one());
   }
 
   // Perform operation with Tpetra directly
   NOX::Abstract::MultiVector::DenseMatrix dots_tpetra(numCols, numCols);
-  for (int j = 0; j < numCols; ++j) {
-    for (int i = 0; i < numCols; ++i) {
+  for (int j = 0; j < static_cast<int>(numCols); ++j) {
+    for (int i = 0; i < static_cast<int>(numCols); ++i) {
       dots_tpetra(i, j) = y->getVector(j)->dot(*(x->getVector(i)));
     }
   }
@@ -439,8 +439,8 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Multiply)
   // Check for correct answer
   // REMINDER: SerialDenseMatrix is column-major
   Teuchos::Tuple<Scalar, numCols*numCols> ans;
-  for (int j = 0; j < numCols; ++j) {
-    for (int i = 0; i < numCols; ++i) {
+  for (int j = 0; j < static_cast<int>(numCols); ++j) {
+    for (int i = 0; i < static_cast<int>(numCols); ++i) {
       ans[i + j*numCols] = (2.0*i*j)*numGlobalElements;
     }
   }

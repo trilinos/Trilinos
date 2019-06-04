@@ -48,7 +48,7 @@ PyTrilinos.LOCA.Hopf.MinimallyAugmented is the python interface to
 namespace Hopf::MinimallyAugmented of the Trilinos continuation
 algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Hopf.MinimallyAugmented is to provide groups and
 vectors for locating Hopf bifurcations using the minimally augmented
@@ -72,58 +72,64 @@ supports the following classes:
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.Hopf",
-        directors = "1",
-        docstring = %loca_hopf_minimallyaugmented_docstring) MinimallyAugmented
+%define %loca_hopf_minimallyaugmented_importcode
+"
+from . import _MinimallyAugmented
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import BorderedSystem
+from PyTrilinos.LOCA import Extended
+from PyTrilinos.LOCA import MultiContinuation
+from PyTrilinos.LOCA import TimeDependent
+from PyTrilinos.LOCA import TurningPoint
+from . import MooreSpence
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA.Hopf",
+        directors    = "1",
+        moduleimport = %loca_hopf_minimallyaugmented_importcode,
+        docstring    = %loca_hopf_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// NOX-Epetra includes
-#ifdef HAVE_NOX_EPETRA
+// NOX-Epetra include files
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
 //#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
 #endif
 
-// NOX-PETSc includes
+// NOX-PETSc include files
 #include "NOX_Abstract_Vector.H"
-#ifdef HAVE_NOX_PETSC
+#ifdef HAVE_PYTRILINOS_NOX_PETSC
 #include "NOX_Petsc_Vector.H"
 #endif
 
-// LOCA includes
-#include "LOCA.H"
-#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
-#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
+#include "PyTrilinos_LOCA_Hopf_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
 
 // PETSc4Py support
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_PETSC
+#ifdef HAVE_PYTRILINOS_NOX_PETSC
 %include "petsc4py/petsc4py.i"
 #endif
 
@@ -165,13 +171,6 @@ supports the following classes:
 %teuchos_rcp(LOCA::Hopf::MooreSpence::FiniteDifferenceGroup)
 
 // Base class support
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 %import "NOX.Abstract.i"
 %import(module="BorderedSystem") "LOCA_BorderedSystem_AbstractGroup.H"
 %warnfilter(473) LOCA::MultiContinuation::AbstractGroup;

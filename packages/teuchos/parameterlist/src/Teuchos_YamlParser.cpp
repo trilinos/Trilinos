@@ -42,9 +42,6 @@
 //
 // @HEADER
 
-#ifndef TEUCHOS_YAMLPARSER_DEF_H_
-#define TEUCHOS_YAMLPARSER_DEF_H_
-
 #include <iostream>
 #include <iomanip>
 #include <ios>
@@ -94,6 +91,17 @@ bool is_parseable_as(std::string const& text) {
   return ss.eof() && !ss.fail();
 }
 
+template <>
+bool is_parseable_as<int>(std::string const& text) {
+  std::istringstream ss(text);
+  using LL = long long;
+  LL val;
+  ss >> std::noskipws >> val;
+  return ss.eof() && !ss.fail() &&
+    (val >= LL(std::numeric_limits<int>::min())) &&
+    (val <= LL(std::numeric_limits<int>::max()));
+}
+
 template <typename T>
 T parse_as(std::string const& text) {
   std::istringstream ss(text);
@@ -114,7 +122,8 @@ static bool my_isdigit(char ch)
   return std::isdigit(static_cast<unsigned char>(ch));
 }
 
-bool is_parseable_as_bool(std::string const& text) {
+template <>
+bool is_parseable_as<bool>(std::string const& text) {
   std::string lower;
   for (std::size_t i = 0; i < text.size(); ++i) {
     lower.push_back(my_tolower(text[i]));
@@ -123,7 +132,8 @@ bool is_parseable_as_bool(std::string const& text) {
          lower == "false" || lower == "no";
 }
 
-bool parse_as_bool(std::string const& text) {
+template <>
+bool parse_as<bool>(std::string const& text) {
   std::string lower;
   for (std::size_t i = 0; i < text.size(); ++i) {
     lower.push_back(my_tolower(text[i]));
@@ -147,8 +157,9 @@ struct Scalar {
   enum Type {
     STRING = 0,
     DOUBLE = 1,
-    INT    = 2,
-    BOOL   = 3
+    LONG_LONG = 2,
+    INT    = 3,
+    BOOL   = 4
   };
   int source;
   int tag_type;
@@ -160,11 +171,14 @@ struct Scalar {
     if (source != RAW) {
       return STRING;
     }
-    if (is_parseable_as_bool(text)) {
+    if (is_parseable_as<bool>(text)) {
       return BOOL;
     }
     if (is_parseable_as<int>(text)) {
       return INT;
+    }
+    if (is_parseable_as<long long>(text)) {
+      return LONG_LONG;
     }
     if (is_parseable_as<double>(text)) {
       return DOUBLE;
@@ -173,11 +187,14 @@ struct Scalar {
   }
 };
 
-bool operator==(PLPair const&, PLPair const&) { return false; }
-std::ostream& operator<<(std::ostream& os, PLPair const&) { return os; }
-
 bool operator==(Scalar const&, Scalar const&) { return false; }
 std::ostream& operator<<(std::ostream& os, Scalar const&) { return os; }
+
+void safe_set_entry(ParameterList& list, std::string const& name_in, ParameterEntry const& entry_in) {
+  TEUCHOS_TEST_FOR_EXCEPTION(list.isParameter(name_in), ParserFail,
+      "Parameter \"" << name_in << "\" already exists in list \"" << list.name() << "\"\n");
+  list.setEntry(name_in, entry_in);
+}
 
 namespace YAMLParameterList {
 
@@ -240,7 +257,8 @@ class Reader : public Teuchos::Reader {
         }
         break;
       }
-      case Teuchos::YAML::PROD_BMAP_FIRST: {
+      case Teuchos::YAML::PROD_BMAP_FIRST:
+      case Teuchos::YAML::PROD_FMAP_FIRST: {
         TEUCHOS_ASSERT(rhs.at(0).type() == typeid(PLPair));
         map_first_item(result_any, rhs.at(0));
         TEUCHOS_ASSERT(result_any.type() == typeid(ParameterList));
@@ -250,7 +268,14 @@ class Reader : public Teuchos::Reader {
         map_next_item(result_any, rhs.at(0), rhs.at(1));
         break;
       }
-      case Teuchos::YAML::PROD_BMAP_SCALAR: {
+      case Teuchos::YAML::PROD_FMAP_NEXT: {
+        map_next_item(result_any, rhs.at(0), rhs.at(3));
+        break;
+      }
+      case Teuchos::YAML::PROD_BMAP_SCALAR:
+      case Teuchos::YAML::PROD_FMAP_SCALAR:
+      case Teuchos::YAML::PROD_FMAP_FMAP:
+      case Teuchos::YAML::PROD_FMAP_FSEQ: {
         int scalar_type = interpret_tag(rhs.at(3));
         map_item(result_any, rhs.at(0), rhs.at(4), scalar_type);
         break;
@@ -278,7 +303,7 @@ class Reader : public Teuchos::Reader {
       }
       case Teuchos::YAML::PROD_BMAP_FSEQ: {
         TEUCHOS_ASSERT(rhs.at(4).type() == typeid(Array<Scalar>) ||
-            rhs.at(4).type() == typeid(Array<Array<Scalar> >));
+            rhs.at(4).type() == typeid(Array<Array<Scalar>>));
         int scalar_type = interpret_tag(rhs.at(3));
         map_item(result_any, rhs.at(0), rhs.at(4), scalar_type);
         break;
@@ -329,7 +354,7 @@ class Reader : public Teuchos::Reader {
       case Teuchos::YAML::PROD_FSEQ: {
         swap(result_any, rhs.at(2));
         TEUCHOS_ASSERT(result_any.type() == typeid(Array<Scalar>) ||
-            result_any.type() == typeid(Array<Array<Scalar> >));
+            result_any.type() == typeid(Array<Array<Scalar>>));
         break;
       }
       case Teuchos::YAML::PROD_FSEQ_EMPTY: {
@@ -599,14 +624,14 @@ class Reader : public Teuchos::Reader {
     ParameterList& list = make_any_ref<ParameterList>(result_any);
     TEUCHOS_ASSERT(!first_item.empty());
     PLPair& pair = any_ref_cast<PLPair>(first_item);
-    list.setEntry(pair.key, pair.value);
+    safe_set_entry(list, pair.key, pair.value);
   }
   void map_next_item(any& result_any, any& items, any& next_item) {
     using std::swap;
     swap(result_any, items);
     ParameterList& list = any_ref_cast<ParameterList>(result_any);
     PLPair& pair = any_ref_cast<PLPair>(next_item);
-    list.setEntry(pair.key, pair.value);
+    safe_set_entry(list, pair.key, pair.value);
   }
   void map_item(any& result_any, any& key_any, any& value_any, int scalar_type = -1) {
     using std::swap;
@@ -622,6 +647,9 @@ class Reader : public Teuchos::Reader {
     } else if (value_any.type() == typeid(int)) {
       int value = any_cast<int>(value_any);
       result.value = ParameterEntry(value);
+    } else if (value_any.type() == typeid(long long)) {
+      long long value = any_cast<long long>(value_any);
+      result.value = ParameterEntry(value);
     } else if (value_any.type() == typeid(double)) {
       double value = any_cast<double>(value_any);
       result.value = ParameterEntry(value);
@@ -631,6 +659,9 @@ class Reader : public Teuchos::Reader {
     } else if (value_any.type() == typeid(Array<int>)) {
       Array<int>& value = any_ref_cast<Array<int> >(value_any);
       result.value = ParameterEntry(value);
+    } else if (value_any.type() == typeid(Array<long long>)) {
+      Array<long long>& value = any_ref_cast<Array<long long> >(value_any);
+      result.value = ParameterEntry(value);
     } else if (value_any.type() == typeid(Array<double>)) {
       Array<double>& value = any_ref_cast<Array<double> >(value_any);
       result.value = ParameterEntry(value);
@@ -639,6 +670,9 @@ class Reader : public Teuchos::Reader {
       result.value = ParameterEntry(value);
     } else if (value_any.type() == typeid(TwoDArray<int>)) {
       TwoDArray<int>& value = any_ref_cast<TwoDArray<int> >(value_any);
+      result.value = ParameterEntry(value);
+    } else if (value_any.type() == typeid(TwoDArray<long long>)) {
+      TwoDArray<long long>& value = any_ref_cast<TwoDArray<long long> >(value_any);
       result.value = ParameterEntry(value);
     } else if (value_any.type() == typeid(TwoDArray<double>)) {
       TwoDArray<double>& value = any_ref_cast<TwoDArray<double> >(value_any);
@@ -667,9 +701,11 @@ class Reader : public Teuchos::Reader {
         scalar_type = scalar_value.infer_type();
       }
       if (scalar_type == Scalar::BOOL) {
-        value_any = parse_as_bool(scalar_value.text);
+        value_any = parse_as<bool>(scalar_value.text);
       } else if (scalar_type == Scalar::INT) {
         value_any = parse_as<int>(scalar_value.text);
+      } else if (scalar_type == Scalar::LONG_LONG) {
+        value_any = parse_as<long long>(scalar_value.text);
       } else if (scalar_type == Scalar::DOUBLE) {
         value_any = parse_as<double>(scalar_value.text);
       } else {
@@ -695,6 +731,12 @@ class Reader : public Teuchos::Reader {
           result[i] = parse_as<int>(scalars[i].text);
         }
         value_any = result;
+      } else if (scalar_type == Scalar::LONG_LONG) {
+        Array<long long> result(scalars.size());
+        for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
+          result[i] = parse_as<long long>(scalars[i].text);
+        }
+        value_any = result;
       } else if (scalar_type == Scalar::DOUBLE) {
         Array<double> result(scalars.size());
         for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
@@ -708,8 +750,8 @@ class Reader : public Teuchos::Reader {
         }
         value_any = result;
       }
-    } else if (value_any.type() == typeid(Array<Array<Scalar> >)) {
-      Array<Array<Scalar> >& scalars = any_ref_cast<Array<Array<Scalar> > >(value_any);
+    } else if (value_any.type() == typeid(Array<Array<Scalar>>)) {
+      Array<Array<Scalar>>& scalars = any_ref_cast<Array<Array<Scalar>> >(value_any);
       if (scalar_type == -1) {
         if (scalars.size() == 0) {
           throw ParserFail("implicitly typed 2D arrays can't be empty\n"
@@ -737,6 +779,14 @@ class Reader : public Teuchos::Reader {
         for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
           for (Teuchos_Ordinal j = 0; j < scalars[0].size(); ++j) {
             result(i, j) = parse_as<int>(scalars[i][j].text);
+          }
+        }
+        value_any = result;
+      } else if (scalar_type == Scalar::LONG_LONG) {
+        TwoDArray<long long> result(scalars.size(), scalars[0].size());
+        for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
+          for (Teuchos_Ordinal j = 0; j < scalars[0].size(); ++j) {
+            result(i, j) = parse_as<long long>(scalars[i][j].text);
           }
         }
         value_any = result;
@@ -781,7 +831,7 @@ class Reader : public Teuchos::Reader {
       a.push_back(Scalar());
       swap(a.back(), v);
     } else if (first_any.type() == typeid(Array<Scalar>)) {
-      Array<Array<Scalar> >& a = make_any_ref<Array<Array<Scalar> > >(result_any);
+      Array<Array<Scalar>>& a = make_any_ref<Array<Array<Scalar>> >(result_any);
       Array<Scalar>& v = any_ref_cast<Array<Scalar> >(first_any);
       a.push_back(Array<Scalar>());
       swap(a.back(), v);
@@ -798,8 +848,8 @@ class Reader : public Teuchos::Reader {
       Scalar& val = any_ref_cast<Scalar>(next_item);
       a.push_back(Scalar());
       swap(a.back(), val);
-    } else if (result_any.type() == typeid(Array<Array<Scalar> >)) {
-      Array<Array<Scalar> >& a = any_ref_cast<Array<Array<Scalar> > >(result_any);
+    } else if (result_any.type() == typeid(Array<Array<Scalar>>)) {
+      Array<Array<Scalar>>& a = any_ref_cast<Array<Array<Scalar>> >(result_any);
       Array<Scalar>& v = any_ref_cast<Array<Scalar> >(next_item);
       a.push_back(Array<Scalar>());
       swap(a.back(), v);
@@ -916,6 +966,9 @@ void updateParametersFromYamlFile(const std::string& yamlFileName,
 {
   //load the YAML file in as a new param list
   Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlFile(yamlFileName);
+  if (paramList->name() == "ANONYMOUS") {
+    paramList->setName(updated->name());
+  }
   //now update the original list (overwriting values with same key)
   paramList->setParameters(*updated);
 }
@@ -927,6 +980,9 @@ void updateParametersFromYamlCString(const char* const data,
   Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(data, "CString");
   if(overwrite)
   {
+    if (paramList->name() == "ANONYMOUS") {
+      paramList->setName(updated->name());
+    }
     paramList->setParameters(*updated);
   }
   else
@@ -943,6 +999,9 @@ void updateParametersFromYamlString(const std::string& yamlData,
   Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(yamlData, name);
   if(overwrite)
   {
+    if (paramList->name() == "ANONYMOUS") {
+      paramList->setName(updated->name());
+    }
     paramList->setParameters(*updated);
   }
   else
@@ -1065,7 +1124,7 @@ void writeYamlStream(std::ostream& yaml, const Teuchos::ParameterList& pl)
     popFlags = true;
   }
   yaml << "%YAML 1.1\n---\n";
-  yaml << "ANONYMOUS:";         //original top-level list name is not stored by ParameterList
+  yaml << pl.name() << ':';
   if(pl.numParams() == 0)
   {
     yaml << " { }\n";
@@ -1177,6 +1236,16 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
           yaml << ", ";
       }
     }
+    if(entry.isType<Teuchos::Array<long long> >())
+    {
+      Teuchos::Array<long long>& arr = Teuchos::getValue<Teuchos::Array<long long> >(entry);
+      for(int i = 0; i < arr.size(); i++)
+      {
+        yaml << arr[i];
+        if(i != arr.size() - 1)
+          yaml << ", ";
+      }
+    }
     else if(entry.isType<Teuchos::Array<double> >())
     {
       Teuchos::Array<double>& arr = Teuchos::getValue<Teuchos::Array<double> >(entry);
@@ -1206,6 +1275,11 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
       writeYamlTwoDArray<int>(
           Teuchos::getValue<Teuchos::TwoDArray<int> >(entry), yaml);
     }
+    if(entry.isType<Teuchos::TwoDArray<long long> >())
+    {
+      writeYamlTwoDArray<long long>(
+          Teuchos::getValue<Teuchos::TwoDArray<long long> >(entry), yaml);
+    }
     else if(entry.isType<Teuchos::TwoDArray<double> >())
     {
       writeYamlTwoDArray<double>(
@@ -1220,6 +1294,10 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
   else if(entry.isType<int>())
   {
     yaml << Teuchos::getValue<int>(entry);
+  }
+  else if(entry.isType<long long>())
+  {
+    yaml << Teuchos::getValue<long long>(entry);
   }
   else if(entry.isType<double>())
   {
@@ -1306,13 +1384,12 @@ bool stringNeedsQuotes(const std::string& s)
 {
   return s.empty() ||
          containsSpecialCharacters(s) ||
-         is_parseable_as_bool(s) ||
+         is_parseable_as<bool>(s) ||
          is_parseable_as<int>(s) ||
+         is_parseable_as<long long>(s) ||
          is_parseable_as<double>(s);
 }
 
 } //namespace YAMLParameterList
 
 } //namespace Teuchos
-
-#endif

@@ -55,6 +55,10 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#include "Kokkos_Complex.hpp"
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+
 #ifdef HAVE_TEUCHOS_ARPREC
 #include <arprec/mp_real.h>
 #endif
@@ -156,6 +160,7 @@ struct ScalarTraits<char>
   typedef char magnitudeType;
   typedef char halfPrecision;
   typedef char doublePrecision;
+  typedef char coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -192,6 +197,7 @@ struct ScalarTraits<short int>
   typedef short int magnitudeType;
   typedef short int halfPrecision;
   typedef short int doublePrecision;
+  typedef short int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -227,6 +233,7 @@ struct ScalarTraits<unsigned short int>
   typedef unsigned short int magnitudeType;
   typedef unsigned short int halfPrecision;
   typedef unsigned short int doublePrecision;
+  typedef unsigned short int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -263,6 +270,7 @@ struct ScalarTraits<int>
   typedef int magnitudeType;
   typedef int halfPrecision;
   typedef int doublePrecision;
+  typedef int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -299,6 +307,7 @@ struct ScalarTraits<unsigned int>
   typedef unsigned int magnitudeType;
   typedef unsigned int halfPrecision;
   typedef unsigned int doublePrecision;
+  typedef unsigned int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -335,6 +344,7 @@ struct ScalarTraits<long int>
   typedef long int magnitudeType;
   typedef long int halfPrecision;
   typedef long int doublePrecision;
+  typedef long int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -373,6 +383,7 @@ struct ScalarTraits<long unsigned int>
   typedef long unsigned int magnitudeType;
   typedef long unsigned int halfPrecision;
   typedef long unsigned int doublePrecision;
+  typedef long unsigned int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -405,13 +416,13 @@ struct ScalarTraits<long unsigned int>
 };
 
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template<>
 struct ScalarTraits<long long int>
 {
   typedef long long int magnitudeType;
   typedef long long int halfPrecision;
   typedef long long int doublePrecision;
+  typedef long long int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -449,6 +460,7 @@ struct ScalarTraits<unsigned long long int>
   typedef unsigned long long int magnitudeType;
   typedef unsigned long long int halfPrecision;
   typedef unsigned long long int doublePrecision;
+  typedef unsigned long long int coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -479,7 +491,6 @@ struct ScalarTraits<unsigned long long int>
   static inline unsigned long long int log(unsigned long long int x) { return static_cast<unsigned long long int> (std::log (static_cast<double> (x))); }
   static inline unsigned long long int log10(unsigned long long int x) { return static_cast<unsigned long long int> (std::log10 (static_cast<double> (x))); }
 };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 #ifdef HAVE_TEUCHOS___INT64
@@ -490,6 +501,7 @@ struct ScalarTraits<__int64>
   typedef __int64 magnitudeType;
   typedef __int64 halfPrecision;
   typedef __int64 doublePrecision;
+  typedef __int64 coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -526,6 +538,7 @@ struct ScalarTraits<unsigned __int64>
   typedef unsigned __int64 magnitudeType;
   typedef unsigned __int64 halfPrecision;
   typedef unsigned __int64 doublePrecision;
+  typedef unsigned __int64 coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -570,6 +583,7 @@ struct ScalarTraits<float>
   typedef float magnitudeType;
   typedef float halfPrecision; // should become IEEE754-2008 binary16 or fp16 later, perhaps specified at configure according to architectural support
   typedef double doublePrecision;
+  typedef float coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -682,6 +696,7 @@ struct ScalarTraits<double>
 #else
   typedef double doublePrecision;     // don't double "double" in this case
 #endif
+  typedef double coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -778,6 +793,7 @@ struct ScalarTraits<__float128> {
   // cause unforeseen issues.
   typedef __float128 doublePrecision;
   typedef double halfPrecision;
+  typedef __float128 coordinateType;
 
   static const bool isComplex = false;
   static const bool isOrdinal = false;
@@ -891,6 +907,7 @@ struct ScalarTraits<dd_real>
   typedef dd_real magnitudeType;
   typedef double halfPrecision;
   typedef qd_real doublePrecision;
+  typedef dd_real coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -953,6 +970,7 @@ struct ScalarTraits<qd_real>
   typedef qd_real magnitudeType;
   typedef dd_real halfPrecision;
   typedef qd_real doublePrecision;
+  typedef qd_real coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -1040,6 +1058,7 @@ struct ScalarTraits<mpf_class>
   typedef mpf_class magnitudeType;
   typedef mpf_class halfPrecision;
   typedef mpf_class doublePrecision;
+  typedef mpf_class coordinateType;
   static const bool isComplex = false;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
@@ -1075,6 +1094,7 @@ struct ScalarTraits<mp_real>
   typedef mp_real magnitudeType;
   typedef double halfPrecision;
   typedef mp_real doublePrecision;
+  typedef mp_real coordinateType;
   static const bool isComplex = false;
   static const bool isComparable = true;
   static const bool isOrdinal = false;
@@ -1116,6 +1136,7 @@ struct ScalarTraits<
   typedef std::complex<typename ScalarTraits<T>::halfPrecision> halfPrecision;
   typedef std::complex<typename ScalarTraits<T>::doublePrecision> doublePrecision;
   typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
+  typedef typename ScalarTraits<T>::coordinateType coordinateType;
   static const bool isComplex = true;
   static const bool isOrdinal = ScalarTraits<T>::isOrdinal;
   static const bool isComparable = false;
@@ -1182,8 +1203,76 @@ struct ScalarTraits<
   static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); }
   static inline ComplexT pi() { return ScalarTraits<T>::pi(); }
 };
-
 #endif //  HAVE_TEUCHOS_COMPLEX
+
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+// Partial specialization for Kokkos::complex<T>
+template<class T>
+struct ScalarTraits<
+  Kokkos::complex<T>
+>
+{
+  typedef Kokkos::complex<T>  ComplexT;
+  typedef Kokkos::complex<typename ScalarTraits<T>::halfPrecision> halfPrecision;
+  typedef Kokkos::complex<typename ScalarTraits<T>::doublePrecision> doublePrecision;
+  typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
+  typedef typename ScalarTraits<T>::coordinateType coordinateType;
+  static const bool isComplex = true;
+  static const bool isOrdinal = ScalarTraits<T>::isOrdinal;
+  static const bool isComparable = false;
+  static const bool hasMachineParameters = true;
+  static inline magnitudeType eps()          { return ScalarTraits<magnitudeType>::eps(); }
+  static inline magnitudeType sfmin()        { return ScalarTraits<magnitudeType>::sfmin(); }
+  static inline magnitudeType base()         { return ScalarTraits<magnitudeType>::base(); }
+  static inline magnitudeType prec()         { return ScalarTraits<magnitudeType>::prec(); }
+  static inline magnitudeType t()            { return ScalarTraits<magnitudeType>::t(); }
+  static inline magnitudeType rnd()          { return ScalarTraits<magnitudeType>::rnd(); }
+  static inline magnitudeType emin()         { return ScalarTraits<magnitudeType>::emin(); }
+  static inline magnitudeType rmin()         { return ScalarTraits<magnitudeType>::rmin(); }
+  static inline magnitudeType emax()         { return ScalarTraits<magnitudeType>::emax(); }
+  static inline magnitudeType rmax()         { return ScalarTraits<magnitudeType>::rmax(); }
+  static magnitudeType magnitude(ComplexT a)
+    {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
+#endif
+      return std::abs(std::complex<T>(a));
+    }
+  static inline ComplexT zero()              { return ComplexT(ScalarTraits<magnitudeType>::zero(),ScalarTraits<magnitudeType>::zero()); }
+  static inline ComplexT one()               { return ComplexT(ScalarTraits<magnitudeType>::one(),ScalarTraits<magnitudeType>::zero()); }
+  static inline ComplexT conjugate(ComplexT a){ return ComplexT(a.real(),-a.imag()); }
+  static inline magnitudeType real(ComplexT a) { return a.real(); }
+  static inline magnitudeType imag(ComplexT a) { return a.imag(); }
+  static inline ComplexT nan()               { return ComplexT(ScalarTraits<magnitudeType>::nan(),ScalarTraits<magnitudeType>::nan()); }
+  static inline bool isnaninf(ComplexT x)    { return ScalarTraits<magnitudeType>::isnaninf(x.real()) || ScalarTraits<magnitudeType>::isnaninf(x.imag()); }
+  static inline void seedrandom(unsigned int s) { ScalarTraits<magnitudeType>::seedrandom(s); }
+  static inline ComplexT random()
+    {
+      const T rnd1 = ScalarTraits<magnitudeType>::random();
+      const T rnd2 = ScalarTraits<magnitudeType>::random();
+      return ComplexT(rnd1,rnd2);
+    }
+  static inline std::string name() { return std::string("Kokkos::complex<")+std::string(ScalarTraits<magnitudeType>::name())+std::string(">"); }
+  // This will only return one of the square roots of x, the other can be obtained by taking its conjugate
+  static inline ComplexT squareroot(ComplexT x)
+    {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
+#endif
+      typedef ScalarTraits<magnitudeType>  STMT;
+      const T r  = x.real(), i = x.imag(), zero = STMT::zero(), two = 2.0;
+      const T a  = STMT::squareroot((r*r)+(i*i));
+      const T nr = STMT::squareroot((a+r)/two);
+      const T ni = ( i == zero ? zero : STMT::squareroot((a-r)/two) );
+      return ComplexT(nr,ni);
+    }
+  static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(std::complex<T>(x), std::complex<T>(y)); }
+  static inline ComplexT pi() { return ScalarTraits<T>::pi(); }
+};
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // Teuchos namespace

@@ -100,3 +100,63 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2-10
   STANDARD_PASS_OUTPUT
   )
+
+# Tests demonstrating Teuchos problems causing issue #3331
+TRIBITS_ADD_EXECUTABLE(
+  waterman_mpi
+  SOURCES waterman_mpi.cpp
+  COMM mpi
+)
+
+TRIBITS_ADD_TEST(
+  waterman_mpi
+  NAME waterman_mpi_without_comm_duplicate
+  ARGS "N"
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+)
+
+TRIBITS_ADD_TEST(
+  waterman_mpi
+  NAME waterman_mpi_with_comm_duplicate
+  ARGS "Y"
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+)
+
+TRIBITS_ADD_EXECUTABLE(
+  waterman_teuchoscomm
+  SOURCES waterman_teuchoscomm.cpp
+  COMM mpi 
+)
+
+TRIBITS_ADD_TEST(
+  waterman_teuchoscomm
+  NAME waterman_teuchoscomm_with_comm_duplicate
+  ARGS "Y"
+  COMM mpi 
+  PASS_REGULAR_EXPRESSION "PASS"
+)
+
+TRIBITS_ADD_TEST(
+  waterman_teuchoscomm
+  NAME waterman_teuchoscomm_without_comm_duplicate
+  ARGS "N"
+  COMM mpi 
+  PASS_REGULAR_EXPRESSION "PASS"
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  subcommTestTeuchosComm
+  SOURCES subcommTestTeuchosComm.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  subcommTestMpi
+  SOURCES subcommTestMpi.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+)
+

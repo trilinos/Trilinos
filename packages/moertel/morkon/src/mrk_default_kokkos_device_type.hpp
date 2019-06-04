@@ -52,20 +52,20 @@
    Determine default device type and necessary includes
 
    Compiled device type is mutually exclusive, can be MORKON_CUDA, MORKON_THREADS, MORKON_OPENMP, or nothing (SERIAL).
-   Kokkos library supports KOKKOS_HAVE_CUDA, KOKKOS_HAVE_PTHREAD, KOKKOS_HAVE_OPENMP, or nothing (serial)
+   Kokkos library supports KOKKOS_ENABLE_CUDA, KOKKOS_ENABLE_THREADS, KOKKOS_ENABLE_OPENMP, or nothing (serial)
 
 */
 
 #include <Kokkos_Macros.hpp>
 
 // All the below may or may not use HWLOC
-#if defined( KOKKOS_HAVE_HWLOC )
+#if defined( KOKKOS_ENABLE_HWLOC )
 #    include <Kokkos_hwloc.hpp>
 #endif
 
 #include <Kokkos_Serial.hpp>
 
-#if defined( KOKKOS_HAVE_CUDA ) && defined(MORKON_CUDA)
+#if defined( KOKKOS_ENABLE_CUDA ) && defined(MORKON_CUDA)
 
 #ifdef _OPENMP
   #include <Kokkos_OpenMP.hpp>
@@ -78,12 +78,12 @@
 #   include <cuda_runtime.h>
 typedef typename Kokkos::Cuda default_kokkos_device_t;
 
-#elif defined( KOKKOS_HAVE_OPENMP) && defined(MORKON_OPENMP)
+#elif defined( KOKKOS_ENABLE_OPENMP) && defined(MORKON_OPENMP)
 
 #   include <Kokkos_OpenMP.hpp>
 typedef typename Kokkos::OpenMP default_kokkos_device_t;
 
-#elif defined( KOKKOS_HAVE_PTHREAD ) && defined(MORKON_THREADS)
+#elif defined( KOKKOS_ENABLE_THREADS ) && defined(MORKON_THREADS)
 
 #   include <Kokkos_Threads.hpp>
 typedef typename Kokkos::Threads default_kokkos_device_t;

@@ -96,6 +96,11 @@ typedef struct {
   int       max_level;
   int**     filter;
   int       filter_size;
+
+  /* For tracking the filtered vs. unfiltered number of nonzeros */
+  int filtered_nnz;
+  int unfiltered_nnz;
+
 } ML_Aux_Data;
 
 void ML_Aux_Data_Create(ML_Aux_Data** ptr);

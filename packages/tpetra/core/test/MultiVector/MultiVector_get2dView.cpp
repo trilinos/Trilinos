@@ -83,9 +83,7 @@ namespace { // (anonymous)
     out << "Test Tpetra::MultiVector::get2dView and get2dViewNonConst" << endl;
     Teuchos::OSTab tab1 (out);
 
-    // For later user
     Scalar curVal = STS::zero ();
-    mag_type curMagVal = STM::zero ();
 
     // Create a Map with enough rows that we can view a noncontiguous
     // subset of columns without the ratio of rows to columns being
@@ -114,7 +112,6 @@ namespace { // (anonymous)
     // of 0, because 0 is the default fill value.
     out << "Fill X" << endl;
     curVal = STS::one ();
-    curMagVal = STM::zero (); // for later use
     X.template sync<device_type> ();
     X.template modify<device_type> ();
     for (size_t j = 0; j < numCols; ++j) {
@@ -213,7 +210,6 @@ namespace { // (anonymous)
 
       MV X_copy (X, Teuchos::Copy); // make a "backup" of X
       curVal = STS::one ();
-      curMagVal = STM::one ();
       for (size_t j = 0; j < numColsSubset; ++j) {
         const size_t col = colsSubset[j];
         auto X_col_orig = X.getVectorNonConst (col);
@@ -251,21 +247,21 @@ namespace { // (anonymous)
 
       Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > viewsConst =
         X_noncontig->get2dView ();
-      TEST_ASSERT( ! X_noncontig->template need_sync<Kokkos::HostSpace> () );
+      TEST_ASSERT( ! X_noncontig->need_sync_host () );
     }
 
     out << "Test X_noncontig->get2dViewNonConst()" << endl;
     {
       Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > viewsNonConst =
         X_noncontig->get2dViewNonConst ();
-      TEST_ASSERT( ! X_noncontig->template need_sync<Kokkos::HostSpace> () );
+      TEST_ASSERT( ! X_noncontig->need_sync_host () );
 
       // get2dViewNonConst is supposed to mark the host data as
       // modified.  Thus, the device data need a sync, if host and
       // device are actually different data.
       if (! std::is_same<typename MV::dual_view_type::t_dev::memory_space,
                          typename MV::dual_view_type::t_host::memory_space>::value) {
-        TEST_ASSERT( X_noncontig->template need_sync<device_type> () );
+        TEST_ASSERT( X_noncontig->need_sync_device () );
       }
 
       TEST_EQUALITY( static_cast<size_t> (viewsNonConst.size ()), numColsSubset );

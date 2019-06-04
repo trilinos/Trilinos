@@ -36,6 +36,7 @@
 #ifndef BULKDATA_INLINED_METHODS_HPP
 #define BULKDATA_INLINED_METHODS_HPP
 
+// IWYU pragma: private, include "stk_mesh/base/BulkData.hpp"
 
 namespace stk {
 namespace mesh {
@@ -50,26 +51,28 @@ bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
       m_mesh->entity_rank(lhs) == m_sideRank &&
       m_mesh->entity_rank(rhs) == m_sideRank)
   {
-      unsigned num_nodes_lhs = m_mesh->num_nodes(lhs);
-      unsigned num_nodes_rhs = m_mesh->num_nodes(rhs);
+      unsigned num_nodes_lhs = m_mesh->count_valid_connectivity(lhs, stk::topology::NODE_RANK);
+      unsigned num_nodes_rhs = m_mesh->count_valid_connectivity(rhs, stk::topology::NODE_RANK);
       if (num_nodes_lhs != num_nodes_rhs)
       {
           result = num_nodes_lhs < num_nodes_rhs;
       }
+      else if (num_nodes_lhs == 0) {
+          result = m_mesh->identifier(lhs) < m_mesh->identifier(rhs);
+      }
       else
       {
-          std::vector<stk::mesh::EntityId> nodes_lhs(num_nodes_lhs);
-          std::vector<stk::mesh::EntityId> nodes_rhs(num_nodes_rhs);
           const stk::mesh::Entity* nodes_lhs_ptr = m_mesh->begin_nodes(lhs);
           const stk::mesh::Entity* nodes_rhs_ptr = m_mesh->begin_nodes(rhs);
-          for(unsigned i=0;i<num_nodes_lhs;++i)
+          unsigned i=0;
+          while(i<num_nodes_lhs &&
+                (m_mesh->identifier(nodes_lhs_ptr[i]) == m_mesh->identifier(nodes_rhs_ptr[i])))
           {
-              nodes_lhs[i] = m_mesh->identifier(nodes_lhs_ptr[i]);
-              nodes_rhs[i] = m_mesh->identifier(nodes_rhs_ptr[i]);
+            ++i;
           }
-          std::sort(nodes_lhs.begin(), nodes_lhs.end());
-          std::sort(nodes_rhs.begin(), nodes_rhs.end());
-          result = nodes_lhs < nodes_rhs;
+          result = (i<num_nodes_lhs) ?
+                     (m_mesh->identifier(nodes_lhs_ptr[i]) < m_mesh->identifier(nodes_rhs_ptr[i]))
+                   : false;
       }
   }
   else
@@ -641,14 +644,6 @@ inline void BulkData::copy_entity_fields( Entity src, Entity dst)
                        src_mesh_idx.bucket_ordinal);
 }
 
-inline Entity BulkData::get_entity( EntityRank ent_rank , EntityId entity_id ) const
-{
-  if (!is_good_rank_and_id(ent_rank, entity_id)) {
-      return Entity();
-  }
-  return m_entity_repo.get_entity( EntityKey(ent_rank, entity_id));
-}
-
 inline bool BulkData::relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id )
 {
   bool found = false;
@@ -691,7 +686,7 @@ inline bool BulkData::element_side_polarity( const Entity elem ,
             : elem_top.sub_topology( stk::topology::EDGE_RANK, local_side_id );
 
     std::vector<unsigned> side_map(side_top.num_nodes());
-    elem_top.side_node_ordinals( local_side_id, side_map.begin());
+    elem_top.side_node_ordinals( local_side_id, side_map.data());
 
     Entity const *elem_nodes = begin_nodes(elem);
     Entity const *side_nodes = begin_nodes(side);
@@ -749,28 +744,36 @@ inline MeshIndex& BulkData::mesh_index(Entity entity)
 
 inline EntityId BulkData::identifier(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return m_entity_keys[entity.local_offset()].id();
 }
 
 inline EntityRank BulkData::entity_rank(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return m_entity_keys[entity.local_offset()].rank();
 }
 
 inline EntityKey BulkData::entity_key(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return m_entity_keys[entity.local_offset()];
 }
 
 inline EntityState BulkData::state(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
   return m_meshModification.get_entity_state(entity.local_offset());
 }
 
@@ -791,35 +794,45 @@ inline bool BulkData::internal_add_node_sharing_called() const
 
 inline Bucket & BulkData::bucket(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return *mesh_index(entity).bucket;
 }
 
 inline Bucket * BulkData::bucket_ptr(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return mesh_index(entity).bucket;
 }
 
 inline Bucket::size_type BulkData::bucket_ordinal(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return mesh_index(entity).bucket_ordinal;
 }
 
 inline int BulkData::parallel_owner_rank(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return bucket(entity).parallel_owner_rank(bucket_ordinal(entity));
 }
 
 inline unsigned BulkData::local_id(Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return m_local_ids[entity.local_offset()];
 }
@@ -827,7 +840,9 @@ inline unsigned BulkData::local_id(Entity entity) const
 #ifdef SIERRA_MIGRATION
 inline BulkData::FmwkId BulkData::global_id(stk::mesh::Entity entity) const
 {
+#ifndef NDEBUG
   entity_getter_debug_check(entity);
+#endif
 
   return m_fmwk_global_ids[entity.local_offset()];
 }
@@ -854,7 +869,7 @@ inline RelationVector& BulkData::aux_relations(Entity entity)
   return *m_fmwk_aux_relations[entity.local_offset()];
 }
 
-inline void BulkData::set_global_id(stk::mesh::Entity entity, int id)
+inline void BulkData::set_global_id(stk::mesh::Entity entity, BulkData::FmwkId id)
 {
   entity_setter_debug_check(entity);
 

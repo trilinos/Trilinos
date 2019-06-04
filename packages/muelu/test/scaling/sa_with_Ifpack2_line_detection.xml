@@ -1,0 +1,36 @@
+<ParameterList name="MueLu">
+
+  <!--
+    For a generic symmetric scalar problem, these are the recommended settings for MueLu.
+  -->
+
+  <!-- ===========  GENERAL ================ -->
+    <Parameter        name="verbosity"                            type="string"   value="high"/>
+    <Parameter        name="coarse: max size"                     type="int"      value="1000"/>
+    <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
+
+    <!-- reduces setup cost for symmetric problems -->
+    <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
+
+    <!-- start of default values for general options (can be omitted) -->
+    <Parameter        name="max levels"                	        type="int"      value="10"/>
+    <Parameter        name="number of equations"                  type="int"      value="1"/>
+    <Parameter        name="sa: use filtered matrix"              type="bool"     value="true"/>
+    <!-- end of default values -->
+
+  <!-- ===========  AGGREGATION  =========== -->
+    <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
+    <Parameter        name="aggregation: drop scheme"             type="string"   value="classical"/>
+    <!-- Uncomment the next line to enable dropping of weak connections, which can help AMG convergence
+         for anisotropic problems.  The exact value is problem dependent. -->
+    <!-- <Parameter        name="aggregation: drop tol"                type="double"   value="0.02"/> -->
+
+  <!-- ===========  SMOOTHING  =========== -->
+    <Parameter name="smoother: type"                    type="string" value="BLOCKRELAXATION"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type"                  type="string" value="Jacobi"/>
+      <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
+      <Parameter name="partitioner: type"                 type="string" value="line"/>
+    </ParameterList>
+
+</ParameterList>

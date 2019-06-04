@@ -37,6 +37,9 @@
 #include "Sacado_Traits.hpp"
 #if defined(HAVE_SACADO_KOKKOSCORE)
 #include "Kokkos_Core.hpp"
+#if defined(KOKKOS_ENABLE_CUDA)
+#include "Cuda/Kokkos_Cuda_Vectorization.hpp"
+#endif
 #if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS)
 #include "Kokkos_MemoryPool.hpp"
 #endif
@@ -55,7 +58,7 @@ namespace Sacado {
   template <typename ExecSpace>
   void destroyGlobalMemoryPool(const ExecSpace& space) {}
 
-#if 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_HAVE_OPENMP)
+#if 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
   namespace Impl {
     extern const Kokkos::MemoryPool<Kokkos::OpenMP>* global_sacado_openmp_memory_pool;
   }
@@ -83,13 +86,13 @@ namespace Sacado {
   }
 #endif
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDACC__)
+#if defined(HAVE_SACADO_KOKKOSCORE) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
 
   namespace Impl {
 
     extern const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_host;
     extern const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_device;
-#ifdef KOKKOS_HAVE_CUDA_RDC
+#ifdef KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE
     extern __device__ const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device;
 #else
     __device__ const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device = 0;
@@ -139,7 +142,7 @@ namespace Sacado {
 
 #endif
 
-#if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDACC__)
+#if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
 
   namespace Impl {
 
@@ -201,7 +204,7 @@ namespace Sacado {
       }
       m = warpBcast(m,0);
       m += warpScan(sz);
-#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_HAVE_OPENMP)
+#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_ENABLE_OPENMP)
       T* m = 0;
       if (sz > 0) {
         if (global_sacado_openmp_memory_pool != 0) {
@@ -234,7 +237,7 @@ namespace Sacado {
       if (total_sz > 0 && lane == 0) {
         global_sacado_cuda_memory_pool_on_device->deallocate((void*) m, total_sz*sizeof(T));
       }
-#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_HAVE_OPENMP)
+#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_ENABLE_OPENMP)
       if (sz > 0) {
         if (global_sacado_openmp_memory_pool != 0)
           global_sacado_openmp_memory_pool->deallocate((void*) m, sz*sizeof(T));
@@ -495,11 +498,9 @@ namespace Sacado {
     //! Copy array from \c src to \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void strided_copy(const T* src, int src_stride,
-                                    T* dest, int dest_stride, int sz) {
+                             T* dest, int dest_stride, int sz) {
       for (int i=threadIdx.x; i<sz; i+=blockDim.x) {
-        *(dest) = *(src);
-        dest += dest_stride;
-        src += src_stride;
+        dest[i*dest_stride] = src[i*src_stride];
       }
     }
 
@@ -515,8 +516,7 @@ namespace Sacado {
     KOKKOS_INLINE_FUNCTION
     static void strided_zero(T* dest, int stride, int sz) {
       for (int i=threadIdx.x; i<sz; i+=blockDim.x) {
-        *(dest) = T(0.);
-        dest += stride;
+        dest[i*stride] = T(0.);
       }
     }
 
@@ -766,7 +766,7 @@ namespace Sacado {
     //! Copy array from \c src to \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
-      if (sz > 0)
+      if (sz > 0 && dest != NULL && src != NULL)
 #ifdef __CUDACC__
         for (int i=0; i<sz; ++i)
           dest[i] = src[i];
@@ -789,7 +789,7 @@ namespace Sacado {
     //! Zero out array \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
-      if (sz > 0)
+      if (sz > 0 && dest != NULL)
 #ifdef __CUDACC__
         for (int i=0; i<sz; ++i)
           dest[i] = T(0.);

@@ -58,57 +58,57 @@ extern template class Assembler<double>;
 template <class Real>
 class PDE_Objective : public ROL::Objective_SimOpt<Real> {
 private:
-  std::vector<Teuchos::RCP<QoI<Real> > > qoi_vec_;
-  const Teuchos::RCP<ROL::StdObjective<Real> > std_obj_;
-  const Teuchos::RCP<Assembler<Real> > assembler_;
+  std::vector<ROL::Ptr<QoI<Real> > > qoi_vec_;
+  const ROL::Ptr<ROL::StdObjective<Real> > std_obj_;
+  const ROL::Ptr<Assembler<Real> > assembler_;
 
-  std::vector<Teuchos::RCP<ROL::Objective_SimOpt<Real> > > obj_vec_;
-  Teuchos::RCP<ROL::Objective_SimOpt<Real> > obj_;
+  std::vector<ROL::Ptr<ROL::Objective_SimOpt<Real> > > obj_vec_;
+  ROL::Ptr<ROL::Objective_SimOpt<Real> > obj_;
 
 public:
-  PDE_Objective(const std::vector<Teuchos::RCP<QoI<Real> > > &qoi_vec,
-                const Teuchos::RCP<ROL::StdObjective<Real> > &std_obj,
-                const Teuchos::RCP<Assembler<Real> > &assembler)
+  PDE_Objective(const std::vector<ROL::Ptr<QoI<Real> > > &qoi_vec,
+                const ROL::Ptr<ROL::StdObjective<Real> > &std_obj,
+                const ROL::Ptr<Assembler<Real> > &assembler)
     : qoi_vec_(qoi_vec), std_obj_(std_obj), assembler_(assembler) {
     int size = qoi_vec_.size();
-    obj_vec_.clear(); obj_vec_.resize(size,Teuchos::null);
+    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPtr);
     for (int i = 0; i < size; ++i) {
-      obj_vec_[i] = Teuchos::rcp(new IntegralObjective<Real>(qoi_vec[i],assembler));
+      obj_vec_[i] = ROL::makePtr<IntegralObjective<Real>>(qoi_vec[i],assembler);
     }
-    obj_ = Teuchos::rcp(new ROL::CompositeObjective_SimOpt<Real>(obj_vec_,std_obj_));
+    obj_ = ROL::makePtr<ROL::CompositeObjective_SimOpt<Real>>(obj_vec_,std_obj_);
   }
 
-  PDE_Objective(const std::vector<Teuchos::RCP<QoI<Real> > > &qoi_vec,
-                const Teuchos::RCP<Assembler<Real> > &assembler)
-    : qoi_vec_(qoi_vec), std_obj_(Teuchos::null), assembler_(assembler) {
+  PDE_Objective(const std::vector<ROL::Ptr<QoI<Real> > > &qoi_vec,
+                const ROL::Ptr<Assembler<Real> > &assembler)
+    : qoi_vec_(qoi_vec), std_obj_(ROL::nullPtr), assembler_(assembler) {
     int size = qoi_vec_.size();
-    obj_vec_.clear(); obj_vec_.resize(size,Teuchos::null);
+    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPtr);
     for (int i = 0; i < size; ++i) {
-      obj_vec_[i] = Teuchos::rcp(new IntegralObjective<Real>(qoi_vec[i],assembler));
+      obj_vec_[i] = ROL::makePtr<IntegralObjective<Real>>(qoi_vec[i],assembler);
     }
-    obj_ = Teuchos::rcp(new ROL::LinearCombinationObjective_SimOpt<Real>(obj_vec_));
+    obj_ = ROL::makePtr<ROL::LinearCombinationObjective_SimOpt<Real>>(obj_vec_);
   }
 
-  PDE_Objective(const std::vector<Teuchos::RCP<QoI<Real> > > &qoi_vec,
+  PDE_Objective(const std::vector<ROL::Ptr<QoI<Real> > > &qoi_vec,
                 const std::vector<Real> &weights,
-                const Teuchos::RCP<Assembler<Real> > &assembler)
-    : qoi_vec_(qoi_vec), std_obj_(Teuchos::null), assembler_(assembler) {
+                const ROL::Ptr<Assembler<Real> > &assembler)
+    : qoi_vec_(qoi_vec), std_obj_(ROL::nullPtr), assembler_(assembler) {
     int size = qoi_vec_.size();
-    obj_vec_.clear(); obj_vec_.resize(size,Teuchos::null);
+    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPtr);
     for (int i = 0; i < size; ++i) {
-      obj_vec_[i] = Teuchos::rcp(new IntegralObjective<Real>(qoi_vec[i],assembler));
+      obj_vec_[i] = ROL::makePtr<IntegralObjective<Real>>(qoi_vec[i],assembler);
     }
-    obj_ = Teuchos::rcp(new ROL::LinearCombinationObjective_SimOpt<Real>(weights,obj_vec_));
+    obj_ = ROL::makePtr<ROL::LinearCombinationObjective_SimOpt<Real>>(weights,obj_vec_);
   }
 
-  PDE_Objective(const Teuchos::RCP<QoI<Real> > &qoi,
-                const Teuchos::RCP<Assembler<Real> > &assembler)
-    : std_obj_(Teuchos::null), assembler_(assembler) {
+  PDE_Objective(const ROL::Ptr<QoI<Real> > &qoi,
+                const ROL::Ptr<Assembler<Real> > &assembler)
+    : std_obj_(ROL::nullPtr), assembler_(assembler) {
     int size = 1;
-    qoi_vec_.clear(); qoi_vec_.resize(size,Teuchos::null);
-    obj_vec_.clear(); obj_vec_.resize(size,Teuchos::null);
+    qoi_vec_.clear(); qoi_vec_.resize(size,ROL::nullPtr);
+    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPtr);
     qoi_vec_[0] = qoi;
-    obj_vec_[0] = Teuchos::rcp(new IntegralObjective<Real>(qoi_vec_[0],assembler));
+    obj_vec_[0] = ROL::makePtr<IntegralObjective<Real>>(qoi_vec_[0],assembler);
     obj_ = obj_vec_[0];
   }
 

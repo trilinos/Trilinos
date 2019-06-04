@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -42,7 +42,7 @@ int maxmatch5(struct vtx_data **graph, /* array of vtx data for graph */
               int *             mflag, /* flag indicating vtx selected or not */
               int               igeom, /* geometric dimensionality */
               float **          coords /* coordinates of each vertex */
-              )
+)
 {
   extern double DOUBLE_MAX; /* largest floating point value */
   double        dist;       /* distance to free neighbor */

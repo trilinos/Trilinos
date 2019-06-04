@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,14 +31,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_EntityType.h> // for EntityType, etc
+#include <Ioss_Hex8.h>
+#include <Ioss_Shell4.h>
 #include <algorithm>
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
-#include <cstdlib> // for strtod, nullptr, strtol, exit, etc
+#include <cstdlib> // for nullptr, exit, etc
 #include <cstring> // for memcpy
+#include <fmt/ostream.h>
 #include <generated/Iogn_GeneratedMesh.h>
-#include <iomanip>  // for operator<<, setw
-#include <iostream> // for operator<<, basic_ostream, etc
+#include <iostream>
 #include <numeric>
 #include <string>
 #include <string>      // for string, operator==, etc
@@ -71,15 +73,17 @@ namespace Iogn {
     // First 'group' is the interval specification -- IxJxK
     auto tokens = Ioss::tokenize(groups[0], "x");
     assert(tokens.size() == 3);
-    numX = std::strtol(tokens[0].c_str(), nullptr, 10);
-    numY = std::strtol(tokens[1].c_str(), nullptr, 10);
-    numZ = std::strtol(tokens[2].c_str(), nullptr, 10);
+    numX = std::stoull(tokens[0]);
+    numY = std::stoull(tokens[1]);
+    numZ = std::stoull(tokens[2]);
 
     if (numX <= 0 || numY <= 0 || numZ <= 0) {
       if (myProcessor == 0) {
-        std::cerr << "ERROR: (Iogn::GeneratedMesh::GeneratedMesh)\n"
-                  << "       All interval counts must be greater than 0.\n"
-                  << "       numX = " << numX << ", numY = " << numY << ", numZ = " << numZ << "\n";
+        fmt::print(stderr,
+                   "ERROR: (Iogn::GeneratedMesh::GeneratedMesh)\n"
+                   "       All interval counts must be greater than 0.\n"
+                   "       numX = {}, numY = {}, numZ = {}\n",
+                   numX, numY, numZ);
       }
       std::exit(EXIT_FAILURE);
     }
@@ -101,12 +105,13 @@ namespace Iogn {
   {
     if (processorCount > numZ) {
       if (myProcessor == 0) {
-        std::cerr << "ERROR: (Iogn::GeneratedMesh::initialize)\n"
-                  << "       The number of mesh intervals in the Z direction (" << numZ << ")\n"
-                  << "       must be at least as large as the number of processors ("
-                  << processorCount << ").\n"
-                  << "       The current parameters do not meet that requirement. Execution will "
-                     "terminate.\n";
+        fmt::print(stderr,
+                   "ERROR: (Iogn::GeneratedMesh::initialize)\n"
+                   "       The number of mesh intervals in the Z direction ({})\n"
+                   "       must be at least as large as the number of processors ({}).\n"
+                   "       The current parameters do not meet that requirement. Execution will "
+                   "terminate.\n",
+                   numZ, processorCount);
       }
       std::exit(EXIT_FAILURE);
     }
@@ -181,9 +186,11 @@ namespace Iogn {
     // desired bounding box.
     if (numX == 0 || numY == 0 || numZ == 0) {
       if (myProcessor == 0) {
-        std::cerr << "ERROR: (Iogn::GeneratedMesh::set_bbox)\n"
-                  << "       All interval counts must be greater than 0.\n"
-                  << "       numX = " << numX << ", numY = " << numY << ", numZ = " << numZ << "\n";
+        fmt::print(stderr,
+                   "ERROR: (Iogn::GeneratedMesh::set_bbox)\n"
+                   "       All interval counts must be greater than 0.\n"
+                   "       numX = {}, numY = {}, numZ = {}\n",
+                   numX, numY, numZ);
       }
       std::exit(EXIT_FAILURE);
     }
@@ -233,7 +240,7 @@ namespace Iogn {
           case 'Y': add_shell_block(PY); break;
           case 'z': add_shell_block(MZ); break;
           case 'Z': add_shell_block(PZ); break;
-          default: std::cerr << "ERROR: Unrecognized shell location option '" << opt << "'.";
+          default: fmt::print(stderr, "ERROR: Unrecognized shell location option '{}'.", opt);
           }
         }
       }
@@ -249,7 +256,7 @@ namespace Iogn {
           case 'Y': add_nodeset(PY); break;
           case 'z': add_nodeset(MZ); break;
           case 'Z': add_nodeset(PZ); break;
-          default: std::cerr << "ERROR: Unrecognized nodeset location option '" << opt << "'.";
+          default: fmt::print(stderr, "ERROR: Unrecognized nodeset location option '{}'.", opt);
           }
         }
       }
@@ -265,7 +272,7 @@ namespace Iogn {
           case 'Y': add_sideset(PY); break;
           case 'z': add_sideset(MZ); break;
           case 'Z': add_sideset(PZ); break;
-          default: std::cerr << "ERROR: Unrecognized sideset location option '" << opt << "'.";
+          default: fmt::print(stderr, "ERROR: Unrecognized sideset location option '{}'.", opt);
           }
         }
       }
@@ -273,18 +280,18 @@ namespace Iogn {
         // Option of the form  "scale:xs,ys,zs
         auto tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == 3);
-        sclX = std::strtod(tokens[0].c_str(), nullptr);
-        sclY = std::strtod(tokens[1].c_str(), nullptr);
-        sclZ = std::strtod(tokens[2].c_str(), nullptr);
+        sclX = std::stod(tokens[0]);
+        sclY = std::stod(tokens[1]);
+        sclZ = std::stod(tokens[2]);
       }
 
       else if (option[0] == "offset") {
         // Option of the form  "offset:xo,yo,zo
         auto tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == 3);
-        offX = std::strtod(tokens[0].c_str(), nullptr);
-        offY = std::strtod(tokens[1].c_str(), nullptr);
-        offZ = std::strtod(tokens[2].c_str(), nullptr);
+        offX = std::stod(tokens[0]);
+        offY = std::stod(tokens[1]);
+        offZ = std::stod(tokens[2]);
       }
 
       else if (option[0] == "zdecomp") {
@@ -298,7 +305,7 @@ namespace Iogn {
         Ioss::Int64Vector Zs;
         numZ = 0;
         for (size_t j = 0; j < processorCount; j++) {
-          Zs.push_back(std::strtol(tokens[j].c_str(), nullptr, 10));
+          Zs.push_back(std::stoull(tokens[j]));
           numZ += Zs[j];
         }
         myNumZ   = Zs[myProcessor];
@@ -312,12 +319,12 @@ namespace Iogn {
         // Bounding-Box Option of the form  "bbox:xmin,ymin,zmin,xmax,ymax,zmaxo
         auto tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == 6);
-        double xmin = std::strtod(tokens[0].c_str(), nullptr);
-        double ymin = std::strtod(tokens[1].c_str(), nullptr);
-        double zmin = std::strtod(tokens[2].c_str(), nullptr);
-        double xmax = std::strtod(tokens[3].c_str(), nullptr);
-        double ymax = std::strtod(tokens[4].c_str(), nullptr);
-        double zmax = std::strtod(tokens[5].c_str(), nullptr);
+        double xmin = std::stod(tokens[0]);
+        double ymin = std::stod(tokens[1]);
+        double zmin = std::stod(tokens[2]);
+        double xmax = std::stod(tokens[3]);
+        double ymax = std::stod(tokens[4]);
+        double zmax = std::stod(tokens[5]);
 
         set_bbox(xmin, ymin, zmin, xmax, ymax, zmax);
       }
@@ -328,13 +335,13 @@ namespace Iogn {
         assert(tokens.size() % 2 == 0);
         for (size_t ir = 0; ir < tokens.size();) {
           std::string axis         = tokens[ir++];
-          double      angle_degree = std::strtod(tokens[ir++].c_str(), nullptr);
+          double      angle_degree = std::stod(tokens[ir++]);
           set_rotation(axis, angle_degree);
         }
       }
 
       else if (option[0] == "times") {
-        timestepCount = std::strtol(option[1].c_str(), nullptr, 10);
+        timestepCount = std::stoull(option[1]);
       }
 
       else if (option[0] == "tets") {
@@ -347,7 +354,7 @@ namespace Iogn {
         assert(tokens.size() % 2 == 0);
         for (size_t ir = 0; ir < tokens.size();) {
           std::string type  = tokens[ir++];
-          int         count = std::strtol(tokens[ir++].c_str(), nullptr, 10);
+          int         count = std::stoull(tokens[ir++]);
           set_variable_count(type, count);
         }
         if (timestepCount == 0) {
@@ -356,22 +363,22 @@ namespace Iogn {
       }
 
       else if (option[0] == "help") {
-        std::cerr << "\nValid Options for GeneratedMesh parameter string:\n"
-                  << "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
-                  << "\toffset:xoff, yoff, zoff\n"
-                  << "\tscale: xscl, yscl, zscl\n"
-                  << "\tzdecomp:n1,n2,n3,...,n#proc\n"
-                  << "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
-                  << "\trotate: axis,angle,axis,angle,...\n"
-                  << "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
-                  << "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
-                  << "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
-                  << "\ttets (split each hex into 6 tets)\n"
-                  << "\tvariables:type,count,...  "
-                     "type=global|element|node|nodal|nodeset|sideset|surface\n"
-                  << "\ttimes:count (number of timesteps to generate)\n"
-                  << "\tshow -- show mesh parameters\n"
-                  << "\thelp -- show this list\n\n";
+        fmt::print(stderr, "\nValid Options for GeneratedMesh parameter string:\n"
+                           "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
+                           "\toffset:xoff, yoff, zoff\n"
+                           "\tscale: xscl, yscl, zscl\n"
+                           "\tzdecomp:n1,n2,n3,...,n#proc\n"
+                           "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
+                           "\trotate: axis,angle,axis,angle,...\n"
+                           "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
+                           "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
+                           "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
+                           "\ttets (split each hex into 6 tets)\n"
+                           "\tvariables:type,count,...  "
+                           "type=global|element|node|nodal|nodeset|sideset|surface\n"
+                           "\ttimes:count (number of timesteps to generate)\n"
+                           "\tshow -- show mesh parameters\n"
+                           "\thelp -- show this list\n\n");
       }
 
       else if (option[0] == "show") {
@@ -379,7 +386,7 @@ namespace Iogn {
       }
 
       else {
-        std::cerr << "ERROR: Unrecognized option '" << option[0] << "'.  It will be ignored.\n";
+        fmt::print(stderr, "ERROR: Unrecognized option '{}'.  It will be ignored.\n", option[0]);
       }
     }
   }
@@ -387,29 +394,32 @@ namespace Iogn {
   void GeneratedMesh::show_parameters() const
   {
     if (myProcessor == 0) {
-      std::cerr << "\nMesh Parameters:\n"
-                << "\tIntervals: " << numX << " by " << numY << " by " << numZ << "\n"
-                << "\tX = " << sclX << " * (0.." << numX << ") + " << offX << "\tRange: " << offX
-                << " <= X <= " << offX + numX * sclX << "\n"
-                << "\tY = " << sclY << " * (0.." << numY << ") + " << offY << "\tRange: " << offY
-                << " <= Y <= " << offY + numY * sclY << "\n"
-                << "\tZ = " << sclZ << " * (0.." << numZ << ") + " << offZ << "\tRange: " << offZ
-                << " <= Z <= " << offZ + numZ * sclZ << "\n\n"
-                << "\tNode Count (total)    = " << std::setw(9) << node_count() << "\n"
-                << "\tElement Count (total) = " << std::setw(9) << element_count() << "\n"
-                << "\tBlock Count           = " << std::setw(9) << block_count() << "\n"
-                << "\tNodeset Count         = " << std::setw(9) << nodeset_count() << "\n"
-                << "\tSideset Count         = " << std::setw(9) << sideset_count() << "\n\n"
-                << "\tTimestep Count        = " << std::setw(9) << timestep_count() << "\n\n";
+      fmt::print(stderr,
+                 "\nMesh Parameters:\n"
+                 "\tIntervals: {} by {} by {}\n"
+                 "\tX = {} * (0..{}) + {}\tRange: {} <= X <= {}\n"
+                 "\tY = {} * (0..{}) + {}\tRange: {} <= Y <= {}\n"
+                 "\tZ = {} * (0..{}) + {}\tRange: {} <= Z <= {}\n\n"
+                 "\tNode Count (total)    = {:12n}\n"
+                 "\tElement Count (total) = {:12n}\n"
+                 "\tBlock Count           = {:12n}\n"
+                 "\tNodeSet Count         = {:12n}\n"
+                 "\tSideSet Count         = {:12n}\n"
+                 "\tTimestep Count        = {:12n}\n\n",
+                 numX, numY, numZ, sclX, numX, offX, offX, offX + numX * sclX, sclY, numY, offY,
+                 offY, offY + numY * sclY, sclZ, numZ, offZ, offZ, offZ + numZ * sclZ, node_count(),
+                 element_count(), block_count(), nodeset_count(), sideset_count(),
+                 timestep_count());
+
       if (doRotation) {
-        std::cerr << "\tRotation Matrix: \n\t" << std::scientific;
+        fmt::print(stderr, "\tRotation Matrix: \n\t");
         for (auto &elem : rotmat) {
           for (double jj : elem) {
-            std::cerr << std::setw(14) << jj << "\t";
+            fmt::print("{:14.e}\t", jj);
           }
-          std::cerr << "\n\t";
+          fmt::print("\n\t");
         }
-        std::cerr << std::fixed << "\n";
+        fmt::print("\n");
       }
     }
   }
@@ -608,9 +618,9 @@ namespace Iogn {
     }
 
     if (block_number == 1) {
-      return std::make_pair(std::string("hex8"), 8);
+      return std::make_pair(std::string(Ioss::Hex8::name), 8);
     }
-    return std::make_pair(std::string("shell4"), 4);
+    return std::make_pair(std::string(Ioss::Shell4::name), 4);
   }
 
   void GeneratedMesh::node_map(Ioss::Int64Vector &map) const
@@ -651,17 +661,14 @@ namespace Iogn {
     }
   }
 
-  int64_t GeneratedMesh::build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc,
-                                        int64_t slab, size_t slabOffset, size_t adjacentProc,
-                                        int64_t startIndex)
+  void GeneratedMesh::build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc, int64_t slab,
+                                     size_t slabOffset, size_t adjacentProc, size_t index)
   {
-    int64_t index  = startIndex;
     int64_t offset = (myStartZ + slabOffset) * (numX + 1) * (numY + 1);
     for (int64_t i = 0; i < slab; i++) {
       map[index]    = offset + i + 1;
       proc[index++] = static_cast<int>(adjacentProc);
     }
-    return index;
   }
 
   void GeneratedMesh::node_communication_map(Ioss::Int64Vector &map, std::vector<int> &proc)
@@ -677,12 +684,13 @@ namespace Iogn {
     map.resize(count);
     proc.resize(count);
 
-    int64_t j = 0;
+    size_t offset = 0;
     if (!isFirstProc) {
-      j = build_node_map(map, proc, slab, 0, myProcessor - 1, j);
+      build_node_map(map, proc, slab, 0, myProcessor - 1, offset);
+      offset += slab;
     }
     if (!isLastProc) {
-      j = build_node_map(map, proc, slab, myNumZ, myProcessor + 1, j);
+      build_node_map(map, proc, slab, myNumZ, myProcessor + 1, offset);
     }
   }
 
@@ -998,14 +1006,12 @@ namespace Iogn {
     y.reserve(count);
     z.reserve(count);
 
-    int64_t k = 0;
     for (size_t m = myStartZ; m < myStartZ + myNumZ + 1; m++) {
       for (size_t i = 0; i < numY + 1; i++) {
         for (size_t j = 0; j < numX + 1; j++) {
           x.push_back(sclX * static_cast<double>(j) + offX);
           y.push_back(sclY * static_cast<double>(i) + offY);
           z.push_back(sclZ * static_cast<double>(m) + offZ);
-          ++k;
         }
       }
     }
@@ -1166,7 +1172,7 @@ namespace Iogn {
         INT    tet_vert[][3] = {{0, 3, 2}, {0, 2, 1}};
         INT    hex_vert[4];
         switch (loc) {
-        case MX: // Minumum X Face
+        case MX: // Minimum X Face
           for (size_t i = 0; i < myNumZ; i++) {
             size_t layer_off = i * xp1yp1;
             for (size_t j = 0; j < numY; j++) {
@@ -1202,7 +1208,7 @@ namespace Iogn {
             }
           }
           break;
-        case MY: // Minumum Y Face
+        case MY: // Minimum Y Face
           for (size_t i = 0; i < myNumZ; i++) {
             size_t layer_off = i * xp1yp1;
             for (size_t j = 0; j < numX; j++) {
@@ -1238,7 +1244,7 @@ namespace Iogn {
             }
           }
           break;
-        case MZ: // Minumum Z Face
+        case MZ: // Minimum Z Face
           if (myProcessor == 0) {
             for (size_t i = 0, k = 0; i < numY; i++) {
               for (size_t j = 0; j < numX; j++, k++) {
@@ -1282,7 +1288,7 @@ namespace Iogn {
         // Hex shells
         size_t cnt = 0;
         switch (loc) {
-        case MX: // Minumum X Face
+        case MX: // Minimum X Face
           for (size_t i = 0; i < myNumZ; i++) {
             size_t layer_off = i * xp1yp1;
             for (size_t j = 0; j < numY; j++) {
@@ -1306,7 +1312,7 @@ namespace Iogn {
             }
           }
           break;
-        case MY: // Minumum Y Face
+        case MY: // Minimum Y Face
           for (size_t i = 0; i < myNumZ; i++) {
             size_t layer_off = i * xp1yp1;
             for (size_t j = 0; j < numX; j++) {
@@ -1330,7 +1336,7 @@ namespace Iogn {
             }
           }
           break;
-        case MZ: // Minumum Z Face
+        case MZ: // Minimum Z Face
           if (myProcessor == 0) {
             for (size_t i = 0, k = 0; i < numY; i++) {
               for (size_t j = 0; j < numX; j++, k++) {
@@ -1375,7 +1381,7 @@ namespace Iogn {
     size_t k      = 0;
 
     switch (loc) {
-    case MX: // Minumum X Face
+    case MX: // Minimum X Face
       for (size_t i = 0; i < myNumZ + 1; i++) {
         size_t layer_off = myStartZ * xp1yp1 + i * xp1yp1;
         for (size_t j = 0; j < numY + 1; j++) {
@@ -1391,7 +1397,7 @@ namespace Iogn {
         }
       }
       break;
-    case MY: // Minumum Y Face
+    case MY: // Minimum Y Face
       for (size_t i = 0; i < myNumZ + 1; i++) {
         size_t layer_off = myStartZ * xp1yp1 + i * xp1yp1;
         for (size_t j = 0; j < numX + 1; j++) {
@@ -1407,7 +1413,7 @@ namespace Iogn {
         }
       }
       break;
-    case MZ: // Minumum Z Face
+    case MZ: // Minimum Z Face
       if (myProcessor == 0) {
         for (size_t i = 0; i < (numY + 1) * (numX + 1); i++) {
           nodes[i] = i + 1;
@@ -1488,9 +1494,11 @@ namespace Iogn {
       variableCount[Ioss::SIDEBLOCK] = count;
     }
     else {
-      std::cerr << "ERROR: (Iogn::GeneratedMesh::set_variable_count)\n"
-                << "       Unrecognized variable type '" << type << "'. Valid types are:\n"
-                << "       global, element, node, nodal, nodeset, surface, sideset.\n";
+      fmt::print(stderr,
+                 "ERROR: (Iogn::GeneratedMesh::set_variable_count)\n"
+                 "       Unrecognized variable type '{}'. Valid types are:\n"
+                 "       global, element, node, nodal, nodeset, surface, sideset.\n",
+                 type);
     }
   }
 
@@ -1521,8 +1529,8 @@ namespace Iogn {
       n3 = 2;
     }
     else {
-      std::cerr << "\nInvalid axis specification '" << axis
-                << "'. Valid options are 'x', 'y', or 'z'\n";
+      fmt::print(stderr, "\nInvalid axis specification '{}'. Valid options are 'x', 'y', or 'z'\n",
+                 axis);
       return;
     }
 
@@ -1531,7 +1539,7 @@ namespace Iogn {
     double sinang = std::sin(ang);
 
     assert(n1 >= 0 && n2 >= 0 && n3 >= 0);
-    double by[3][3];
+    std::array<std::array<double, 3>, 3> by;
     by[n1][n1] = cosang;
     by[n2][n1] = -sinang;
     by[n1][n3] = 0.0;
@@ -1542,21 +1550,12 @@ namespace Iogn {
     by[n3][n2] = 0.0;
     by[n3][n3] = 1.0;
 
-    double res[3][3];
+    std::array<std::array<double, 3>, 3> res;
     for (int i = 0; i < 3; i++) {
       res[i][0] = rotmat[i][0] * by[0][0] + rotmat[i][1] * by[1][0] + rotmat[i][2] * by[2][0];
       res[i][1] = rotmat[i][0] * by[0][1] + rotmat[i][1] * by[1][1] + rotmat[i][2] * by[2][1];
       res[i][2] = rotmat[i][0] * by[0][2] + rotmat[i][1] * by[1][2] + rotmat[i][2] * by[2][2];
     }
-
-#if 1
-    std::memcpy(rotmat, res, 9 * sizeof(double));
-#else
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        rotmat[i][j] = res[i][j];
-      }
-    }
-#endif
+    rotmat = res;
   }
 } // namespace Iogn

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,33 +33,32 @@
  *
  */
 /*****************************************************************************
-*
-* testwt - test write an ExodusII database file
-*
-* author - Sandia National Laboratories
-*          Larry A. Schoof - Original
-*          Vic Yarberry    - Added headers and error logging
-*               7/7/93          Modified for use with Exodus 2.00
-*
-*
-* environment - UNIX
-*
-* entry conditions -
-*
-* exit conditions -
-*
-* revision history -
-*
-*  This is a test program for the C binding of the EXODUS II
-*  database write routines.
-*
-*
-*****************************************************************************/
+ *
+ * testwt - test write an ExodusII database file
+ *
+ * author - Sandia National Laboratories
+ *          Larry A. Schoof - Original
+ *          Vic Yarberry    - Added headers and error logging
+ *               7/7/93          Modified for use with Exodus 2.00
+ *
+ *
+ * environment - UNIX
+ *
+ * entry conditions -
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *  This is a test program for the C binding of the EXODUS II
+ *  database write routines.
+ *
+ *
+ *****************************************************************************/
 
+#include "exodusII.h"
 #include <stdio.h>
 #include <stdlib.h>
-/* #include "netcdf.h" */
-#include "exodusII.h"
 
 int main(int argc, char **argv)
 {
@@ -1026,7 +1025,7 @@ int main(int argc, char **argv)
   qa_record[0][1] = "testwt";
   qa_record[0][2] = "07/07/93";
   qa_record[0][3] = "15:41:33";
-  qa_record[1][0] = "";
+  qa_record[1][0] = "Thirty-Two character QA Record|";
   qa_record[1][1] = "                            ";
   qa_record[1][2] = "";
   qa_record[1][3] = "                        ";
@@ -1045,7 +1044,7 @@ int main(int argc, char **argv)
 
   info[0] = "This is the first information record.";
   info[1] = "";
-  info[2] = "                                     ";
+  info[2] = "This info record is exactly 80 characters long.  last character should be pipe |";
 
   error = ex_put_info(exoid, num_info, info);
   printf("after ex_put_info, error = %d\n", error);

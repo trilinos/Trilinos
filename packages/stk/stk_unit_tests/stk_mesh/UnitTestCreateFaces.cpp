@@ -521,7 +521,8 @@ void heterogeneous_create_faces_test(stk::mesh::BulkData::AutomaticAuraOption au
   stk::mesh::MetaData meta_data(3);
   stk::mesh::fixtures::VectorFieldType & node_coord =
     meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
-  stk::mesh::put_field( node_coord , meta_data.universal_part() , 3);
+  stk::mesh::put_field_on_mesh( node_coord , meta_data.universal_part() , 3,
+                                (stk::mesh::FieldTraits<stk::mesh::fixtures::VectorFieldType>::data_type*) nullptr);
 
   stk::mesh::fixtures::heterogeneous_mesh_meta_data( meta_data , node_coord );
   meta_data.commit();
@@ -613,7 +614,8 @@ TEST ( UnitTestCreateFaces, Degenerate )
   stk::mesh::MetaData meta_data(3);
   stk::mesh::fixtures::VectorFieldType & node_coord =
     meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
-  stk::mesh::put_field( node_coord , meta_data.universal_part() , 3);
+  stk::mesh::put_field_on_mesh( node_coord , meta_data.universal_part() , 3,
+                                (stk::mesh::FieldTraits<stk::mesh::fixtures::VectorFieldType>::data_type*) nullptr);
 
   stk::mesh::fixtures::degenerate_mesh_meta_data( meta_data , node_coord );
   meta_data.commit();

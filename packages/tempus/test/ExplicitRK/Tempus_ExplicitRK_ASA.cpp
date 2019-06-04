@@ -98,8 +98,16 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
       if (RKMethods[m] == "General ERK") {
         pl->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper 2");
+        pl->sublist("Demo Stepper 2").set("Initial Condition Consistency",
+                                          "None");
+        pl->sublist("Demo Stepper 2").set("Initial Condition Consistency Check",
+                                          false);
       } else {
         pl->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
+        pl->sublist("Demo Stepper").set("Initial Condition Consistency",
+                                        "None");
+        pl->sublist("Demo Stepper").set("Initial Condition Consistency Check",
+                                        false);
       }
 
 
@@ -133,7 +141,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
       for (int i=0; i<num_param; ++i)
         Thyra::assign(DxDp0->col(i).ptr(),
                       *(model->getExactSensSolution(i, t0).get_x()));
-      integrator->setInitialState(t0, x0, Teuchos::null, Teuchos::null,
+      integrator->initializeSolutionHistory(t0, x0, Teuchos::null, Teuchos::null,
                                   DxDp0, Teuchos::null, Teuchos::null);
 
       // Integrate to timeMax
@@ -180,7 +188,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
         for (int i=0; i<solutionHistory->getNumStates(); i++) {
           RCP<const SolutionState<double> > solutionState =
             (*solutionHistory)[i];
-          const double time = solutionState->getTime();
+          const double time_i = solutionState->getTime();
           RCP<const DPV> x_prod_plot =
             Teuchos::rcp_dynamic_cast<const DPV>(solutionState->getX());
           RCP<const Thyra::VectorBase<double> > x_plot =
@@ -190,9 +198,9 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
           RCP<const Thyra::MultiVectorBase<double> > adjoint_plot =
             adjoint_prod_plot->getMultiVector();
           RCP<const Thyra::VectorBase<double> > x_exact_plot =
-            model->getExactSolution(time).get_x();
+            model->getExactSolution(time_i).get_x();
           ftmp << std::fixed << std::setprecision(7)
-               << time
+               << time_i
                << std::setw(11) << get_ele(*(x_plot), 0)
                << std::setw(11) << get_ele(*(x_plot), 1)
                << std::setw(11) << get_ele(*(adjoint_plot->col(0)), 0)

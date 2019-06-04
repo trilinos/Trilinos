@@ -16,6 +16,12 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
+#include "Tempus_TimeStepControlStrategyComposite.hpp"
+
+#include <iostream>
+#include <iterator>
+#include <sstream>
+
 
 namespace Tempus {
 
@@ -41,17 +47,17 @@ class TimeStepControl
 {
 public:
 
-  /** \brief Default constructor. */
-  TimeStepControl();
-
-  /** \brief Construct from ParameterList */
-  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList);
+  /// Constructor
+  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// This is a copy constructor
   TimeStepControl(const TimeStepControl<Scalar>& tsc);
 
   /// Destructor
   virtual ~TimeStepControl() {}
+
+  virtual void initialize(Teuchos::RCP<Teuchos::ParameterList> pList =
+    Teuchos::null) { this->setParameterList(pList); }
 
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(
@@ -64,7 +70,11 @@ public:
   /** \brief Check if time step index is within minimum and maximum index. */
   virtual bool indexInRange(const int iStep) const;
 
-  /// \name Overridden from Teuchos::ParameterListAcceptor
+  /** \brief Set the TimeStepControlStrategy. */
+  virtual void setTimeStepControlStrategy(
+        Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs = Teuchos::null);
+
+  /// \name Overridden from Teuchos::ParameterListAccepto{}
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -105,24 +115,10 @@ public:
       { return tscPL_->get<int>   ("Initial Order"); }
     virtual int getMaxOrder() const
       { return tscPL_->get<int>   ("Maximum Order"); }
-    virtual Scalar getAmplFactor() const { 
-      Scalar rho = tscPL_->get<double>("Amplification Factor"); 
-      TEUCHOS_TEST_FOR_EXCEPTION(rho <= 1.0, std::out_of_range,
-          "Error - Invalid valid of Amplification Factor = " << rho << "!  \n" 
-          << "Amplification Factor must be > 1.0.\n"); 
-      return rho; }
-    virtual Scalar getReductFactor() const {
-      Scalar sigma = tscPL_->get<double>("Reduction Factor");  
-      TEUCHOS_TEST_FOR_EXCEPTION(sigma >= 1.0, std::out_of_range,
-          "Error - Invalid valid of Reduction Factor = " << sigma << "!  \n" 
-          << "Reduction Factor must be < 1.0.\n"); 
-      return sigma; }
-    virtual Scalar getMinEta() const
-      { return tscPL_->get<double>   ("Minimum Value Monitoring Function"); }
-    virtual Scalar getMaxEta() const
-      { return tscPL_->get<double>   ("Maximum Value Monitoring Function"); }
     virtual std::string getStepType() const
       { return tscPL_->get<std::string>("Integrator Step Type"); }
+    virtual bool getOutputExactly() const
+      { return tscPL_->get<bool>("Output Exactly On Output Times"); }
     virtual std::vector<int> getOutputIndices() const
       { return outputIndices_; }
     virtual std::vector<Scalar> getOutputTimes() const
@@ -134,6 +130,8 @@ public:
                get<int>("Maximum Number of Consecutive Stepper Failures"); }
     virtual int getNumTimeSteps() const
       { return tscPL_->get<int>("Number of Time Steps"); }
+    virtual Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>>
+       getTimeStepControlStrategy() const { return stepControlStrategy_;}
   //@}
 
   /// \name Set ParameterList values
@@ -164,20 +162,33 @@ public:
       { tscPL_->set<int>   ("Maximum Order"            , MaxOrder    ); }
     virtual void setStepType(std::string StepType)
       { tscPL_->set<std::string>("Integrator Step Type", StepType    ); }
+    virtual void setOutputExactly(bool OutputExactly)
+      { tscPL_->get<bool>("Output Exactly On Output Times", OutputExactly); }
     virtual void setOutputIndices(std::vector<int> OutputIndices)
-      { outputIndices_ = OutputIndices; }
+      { outputIndices_ = OutputIndices;
+        std::ostringstream ss;
+        std::copy(OutputIndices.begin(), OutputIndices.end()-1,
+                  std::ostream_iterator<int>(ss, ","));
+        ss << OutputIndices.back();
+        tscPL_->set<std::string>("Output Index List", ss.str());
+      }
     virtual void setOutputTimes(std::vector<Scalar> OutputTimes)
-      { outputTimes_ = OutputTimes; }
+      { outputTimes_ = OutputTimes;
+        std::ostringstream ss;
+        std::copy(OutputTimes.begin(), OutputTimes.end()-1,
+                  std::ostream_iterator<Scalar>(ss, ","));
+        ss << OutputTimes.back();
+        tscPL_->set<std::string>("Output Time List", ss.str());
+      }
     virtual void setMaxFailures(int MaxFailures)
       { tscPL_->set<int>("Maximum Number of Stepper Failures", MaxFailures); }
     virtual void setMaxConsecFailures(int MaxConsecFailures)
       { tscPL_->set<int>
         ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
     virtual void setNumTimeSteps(int numTimeSteps);
-    virtual Scalar computeEta(const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory); 
   //@}
 
-private:
+protected:
 
   Teuchos::RCP<Teuchos::ParameterList> tscPL_;
 
@@ -186,6 +197,8 @@ private:
 
   bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
   Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
+
+  Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> stepControlStrategy_;
 
 };
 } // namespace Tempus

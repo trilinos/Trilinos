@@ -73,7 +73,7 @@ TEST(MiniTensor_ROL, Paraboloid)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -137,7 +137,7 @@ TEST(MiniTensor_ROL, Rosenbrock)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -210,7 +210,7 @@ TEST(MiniTensor_ROL, NLLS01)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -271,8 +271,8 @@ TEST(MiniTensor_ROL, NLLS01)
   ROL::MiniTensorVector<Real, NUM_VAR>
   sol(solval);
 
-  Teuchos::RCP<ROL::EqualityConstraint<Real>>
-  pconstr = Teuchos::rcp(&constr, false);
+  ROL::Ptr<ROL::EqualityConstraint<Real>>
+  pconstr = &constr, false;
 
   // Define algorithm.
   Teuchos::ParameterList

@@ -671,7 +671,7 @@ buildGhostedGraph() const
 
    const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> >
      colGidProvider = hasColProvider_ ? colGidProvider_ : gidProvider_;
-   const Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > conn_mgr = colGidProvider->getConnManagerBase();
+   const Teuchos::RCP<const ConnManager> conn_mgr = colGidProvider->getConnManager();
    const bool han = conn_mgr.is_null() ? false : conn_mgr->hasAssociatedNeighbors();
 
    // graph information about the mesh

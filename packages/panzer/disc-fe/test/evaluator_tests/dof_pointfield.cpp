@@ -84,10 +84,31 @@ namespace panzer {
 typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
 
 //**********************************************************************
-PHX_EVALUATOR_CLASS(DummyFieldEvaluator)
+template<typename EvalT, typename Traits>
+class DummyFieldEvaluator
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    DummyFieldEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<ScalarT,Cell,panzer::BASIS> fieldValue;
-PHX_EVALUATOR_CLASS_END
-PHX_EVALUATOR_CTOR(DummyFieldEvaluator,p)
+}; // end of class DummyFieldEvaluator
+
+template<typename EvalT, typename Traits>
+DummyFieldEvaluator<EvalT, Traits>::
+DummyFieldEvaluator(
+  const Teuchos::ParameterList& p)
 {
   // Read from parameters
   const std::string name = p.get<std::string>("Name");
@@ -102,9 +123,11 @@ PHX_EVALUATOR_CTOR(DummyFieldEvaluator,p)
   std::string n = "DummyFieldEvaluator: " + name;
   this->setName(n);
 }
-PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator, /* sd */, fm)
-{ this->utils.setFieldData(fieldValue,fm); }
-PHX_EVALUATE_FIELDS(DummyFieldEvaluator, /* workset */)
+template<typename EvalT, typename Traits>
+void
+DummyFieldEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 { 
   int i = 0;
   for(int cell=0;cell<fieldValue.extent_int(0);cell++) {
@@ -115,13 +138,34 @@ PHX_EVALUATE_FIELDS(DummyFieldEvaluator, /* workset */)
   }
 }
 //**********************************************************************
-PHX_EVALUATOR_CLASS(RefCoordEvaluator)
+template<typename EvalT, typename Traits>
+class RefCoordEvaluator
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    RefCoordEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<ScalarT,panzer::Point,panzer::Dim> fieldValue;
   Teuchos::RCP<panzer::IntegrationValues2<double> > quadValues;
 public:
   Teuchos::RCP<PHX::DataLayout> coordsLayout;
-PHX_EVALUATOR_CLASS_END
-PHX_EVALUATOR_CTOR(RefCoordEvaluator,p)
+}; // end of class RefCoordEvaluator
+
+template<typename EvalT, typename Traits>
+RefCoordEvaluator<EvalT, Traits>::
+RefCoordEvaluator(
+  const Teuchos::ParameterList& p)
 {
   // Read from parameters
   const std::string name = p.get<std::string>("Name");
@@ -137,9 +181,11 @@ PHX_EVALUATOR_CTOR(RefCoordEvaluator,p)
   std::string n = "RefCoordEvaluator: " + name;
   this->setName(n);
 }
-PHX_POST_REGISTRATION_SETUP(RefCoordEvaluator, /* sd */, fm)
-{ this->utils.setFieldData(fieldValue,fm); }
-PHX_EVALUATE_FIELDS(RefCoordEvaluator, /* workset */)
+template<typename EvalT, typename Traits>
+void
+RefCoordEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 { 
   for(int cell=0;cell<fieldValue.extent_int(0);cell++)
     for(int pt=0;pt<fieldValue.extent_int(1);pt++)
@@ -203,20 +249,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
      = Teuchos::rcp(new panzer::BasisValues2<double>("",true,true));
   basisValues->setupArrays(basisLayout);
   basisValues->evaluateValues(quadValues->cub_points,quadValues->jac,quadValues->jac_det,quadValues->jac_inv,quadValues->weighted_measure,coords);
-
-  {
-    Kokkos::DynRankView<double,PHX::Device> coords("coords",numCells,numVerts,dim);
-
-    coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
-    coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
-    coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
-    coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
-  
-    coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
-    coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
-    coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
-    coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
-  }
 
   // construct workset
   workset->cell_local_ids.push_back(0); workset->cell_local_ids.push_back(1);

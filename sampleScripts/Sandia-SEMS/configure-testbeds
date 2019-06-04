@@ -23,15 +23,17 @@ export COMPLEX=OFF
 # others have been tested.)
 
 #Intel SandyBridge / IvyBridge
-#export ARCH_CXX_FLAG="-mavx"
-#export ARCH_C_FLAG="-mavx"
-#export BLAS_LIBRARIES="-lblas"
-#export LAPACK_LIBRARIES="-llapack" 
+export ARCH="SNB"
+export ARCH_CXX_FLAG="-mavx"
+export ARCH_C_FLAG="-mavx"
+export BLAS_LIBRARIES="-lblas"
+export LAPACK_LIBRARIES="-llapack" 
 
 # If you want Intel Haswell, uncomment the lines below (up to but not
 # including "Intel KNL"), if they are not already uncommented.
 
 #Intel Haswell
+#export ARCH="HSW"
 #export ARCH_CXX_FLAG="-xCORE-AVX2 -mkl"
 #export ARCH_C_FLAG="-xCORE-AVX2 -mkl"
 #export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_intel_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
@@ -41,16 +43,18 @@ export COMPLEX=OFF
 # "IBM Power8"), if they are not already uncommented.
 
 #Intel KNL
-export ARCH_CXX_FLAG="-xMIC-AVX512 -mkl"
-export ARCH_C_FLAG="-xMIC-AVX512 -mkl"
-export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/mic/libmkl_intel_lp64.a;${MKLROOT}/lib/mic/libmkl_intel_thread.a;${MKLROOT}/lib/mic/libmkl_core.a"
-export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+#export ARCH="KNL"
+#export ARCH_CXX_FLAG="-xMIC-AVX512 -mkl"
+#export ARCH_C_FLAG="-xMIC-AVX512 -mkl"
+#export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/mic/libmkl_intel_lp64.a;${MKLROOT}/lib/mic/libmkl_intel_thread.a;${MKLROOT}/lib/mic/libmkl_core.a"
+#export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
 
 # If you want IBM Power8 withOUT GPUs, uncomment the lines below (up
 # to but not including "IBM Power8 + NVIDIA K80"), if they are not
 # already uncommented.
 
 #IBM Power8:
+#export ARCH="Power8"
 #export ARCH_CXX_FLAG="-mcpu=power8"
 #export ARCH_C_FLAG="-mcpu=power8"
 #export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
@@ -61,6 +65,7 @@ export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
 # already uncommented.
 
 #IBM Power8 + NVIDIA K80
+#export ARCH="Power8;Kepler37"
 #export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
 #export ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_37"
 #export ARCH_C_FLAG="-mcpu=power8"
@@ -72,6 +77,7 @@ export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
 # already uncommented.
 
 #IBM Power8 + NVIDIA P100
+#export ARCH="Power8;Pascal60"
 #export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
 #export ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_60"
 #export ARCH_C_FLAG="-mcpu=power8"
@@ -107,6 +113,7 @@ export JENKINS_DO_PTHREAD=${PTHREAD}
 export JENKINS_DO_SERIAL=${SERIAL}
 export JENKINS_DO_COMPLEX=${COMPLEX}
 
+export JENKINS_ARCH=${ARCH}
 export JENKINS_ARCH_CXX_FLAG=${ARCH_CXX_FLAG}
 export JENKINS_ARCH_C_FLAG=${ARCH_C_FLAG}
 

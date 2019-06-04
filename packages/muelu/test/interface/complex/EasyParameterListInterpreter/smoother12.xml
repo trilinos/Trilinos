@@ -1,0 +1,23 @@
+<ParameterList name="MueLu">
+  <Parameter        name="coarse: max size"                     type="int"      value="100"/>
+
+  <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
+  <ParameterList    name="smoother: params">
+    <Parameter      name="relaxation: type"                     type="string"   value="Symmetric Gauss-Seidel"/>
+  </ParameterList>
+
+  <ParameterList    name="level 1">
+    <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
+    <ParameterList    name="smoother: params">
+      <Parameter      name="relaxation: type"                     type="string"   value="Symmetric Gauss-Seidel"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList    name="level 2">
+    <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
+    <ParameterList    name="smoother: params">
+      <Parameter      name="relaxation: type"                     type="string"   value="Symmetric Gauss-Seidel"/>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

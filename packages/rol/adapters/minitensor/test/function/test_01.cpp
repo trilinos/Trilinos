@@ -70,7 +70,7 @@ TEST(MiniTensor_ROL, MT_Basics)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -114,7 +114,7 @@ TEST(MiniTensor_ROL, Objective)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -195,7 +195,7 @@ TEST(MiniTensor_ROL, EqualityConstraintId)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -277,7 +277,7 @@ TEST(MiniTensor_ROL, EqualityConstraint01)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -359,7 +359,7 @@ TEST(MiniTensor_ROL, BoundConstraint)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &

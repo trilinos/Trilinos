@@ -45,7 +45,7 @@
 // Devices
 #include "Kokkos_Core.hpp"
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
 template void performance_test_driver< double, int, Kokkos::Threads>(
   const int nGrid, const int nIter,  const int ensemble_min,
   const int ensemble_max, const int ensemble_step);

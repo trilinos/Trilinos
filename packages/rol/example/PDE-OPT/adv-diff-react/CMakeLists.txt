@@ -6,6 +6,8 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
    ${PROJECT_NAME}_ENABLE_Amesos2  AND
    ${PROJECT_NAME}_ENABLE_Tpetra )
 
+  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/sol)
+
   # Need ROL_TpetraMultiVector.hpp
   INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/vector)
 
@@ -37,10 +39,16 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    example_05
+    SOURCES example_05.cpp
+    ADD_DIR_TO_NAME
+  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     StochAdvDiffDataCopy
     SOURCE_FILES
-      input.xml input_ex04.xml plotresults.m plotresults_ex02.m
+      input.xml input_ex04.xml input_ex05.xml plotresults.m plotresults_ex02.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

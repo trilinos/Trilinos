@@ -131,7 +131,7 @@ struct NrmInf<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "RMV is not rank 0.");
     static_assert (XMV::rank == 1, "KokkosBlas::Impl::NrmInf<1-D>: "
                    "XMV is not rank 1.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::nrminf[ETI]":"KokkosBlas::nrminf[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::nrminf<> ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
@@ -139,7 +139,7 @@ struct NrmInf<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
       printf("KokkosBlas1::nrminf<> non-ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
     }
     #endif
-    const size_type numRows = X.dimension_0 ();
+    const size_type numRows = X.extent(0);
 
     if (numRows < static_cast<size_type> (INT_MAX) ) {
       V_NrmInf_Invoke<RMV, XMV, int> (R, X);
@@ -148,6 +148,7 @@ struct NrmInf<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
       typedef std::int64_t index_type;
       V_NrmInf_Invoke<RMV, XMV, index_type> (R, X);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -166,7 +167,7 @@ struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                    "RV is not rank 1.");
     static_assert (XMV::rank == 2, "KokkosBlas::Impl::NrmInf<2-D>: "
                    "XMV is not rank 2.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::nrminf[ETI]":"KokkosBlas::nrminf[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::nrminf<> ETI specialization for < %s , %s >\n",typeid(RV).name(),typeid(XMV).name());
@@ -175,8 +176,8 @@ struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     }
     #endif
 
-    const size_type numRows = X.dimension_0 ();
-    const size_type numCols = X.dimension_1 ();
+    const size_type numRows = X.extent(0);
+    const size_type numCols = X.extent(1);
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       MV_NrmInf_Invoke<RV, XMV, int> (R, X);
@@ -185,6 +186,7 @@ struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       typedef std::int64_t index_type;
       MV_NrmInf_Invoke<RV, XMV, index_type> (R, X);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif

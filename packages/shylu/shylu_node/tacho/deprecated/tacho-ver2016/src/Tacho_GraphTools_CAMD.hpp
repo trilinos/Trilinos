@@ -136,25 +136,25 @@ namespace Tacho {
       TACHO_CHOLMOD(camd_defaults)(_control);
       TACHO_CHOLMOD(camd_control)(_control);
 
-      ordinal_type *rptr = reinterpret_cast<ordinal_type*>(_rptr.ptr_on_device());
-      ordinal_type *cidx = reinterpret_cast<ordinal_type*>(_cidx.ptr_on_device());
-      ordinal_type *cnst = reinterpret_cast<ordinal_type*>(_cnst.ptr_on_device());
+      ordinal_type *rptr = reinterpret_cast<ordinal_type*>(_rptr.data());
+      ordinal_type *cidx = reinterpret_cast<ordinal_type*>(_cidx.data());
+      ordinal_type *cnst = reinterpret_cast<ordinal_type*>(_cnst.data());
 
-      ordinal_type *next = reinterpret_cast<ordinal_type*>(_next.ptr_on_device());
-      ordinal_type *perm = reinterpret_cast<ordinal_type*>(_perm.ptr_on_device());
+      ordinal_type *next = reinterpret_cast<ordinal_type*>(_next.data());
+      ordinal_type *perm = reinterpret_cast<ordinal_type*>(_perm.data());
 
       // length array
       ordinal_type_array lwork("CAMD::LWorkArray", _m);
-      ordinal_type *lwork_ptr = reinterpret_cast<ordinal_type*>(lwork.ptr_on_device());
+      ordinal_type *lwork_ptr = reinterpret_cast<ordinal_type*>(lwork.data());
       for (ordinal_type i=0;i<_m;++i)
         lwork_ptr[i] = rptr[i+1] - rptr[i];
 
       // workspace
       const size_type swlen = _nnz + _nnz/5 + 5*(_m+1);;
       ordinal_type_array swork("CAMD::SWorkArray", swlen);
-      ordinal_type *swork_ptr = reinterpret_cast<ordinal_type*>(swork.ptr_on_device());
+      ordinal_type *swork_ptr = reinterpret_cast<ordinal_type*>(swork.data());
 
-      ordinal_type *pe_ptr = reinterpret_cast<ordinal_type*>(_pe.ptr_on_device()); // 1) Pe
+      ordinal_type *pe_ptr = reinterpret_cast<ordinal_type*>(_pe.data()); // 1) Pe
       size_type pfree = 0;
       for (ordinal_type i=0;i<_m;++i) {
         pe_ptr[i] = pfree;
@@ -162,9 +162,9 @@ namespace Tacho {
       }
       TACHO_TEST_FOR_ABORT( _nnz != pfree, ">> nnz in the graph does not match to nnz count (pfree)");
 
-      ordinal_type *nv_ptr = reinterpret_cast<ordinal_type*>(_nv.ptr_on_device()); // 2) Nv
+      ordinal_type *nv_ptr = reinterpret_cast<ordinal_type*>(_nv.data()); // 2) Nv
       ordinal_type *hd_ptr = swork_ptr; swork_ptr += (_m+1);   // 3) Head
-      ordinal_type *el_ptr = reinterpret_cast<ordinal_type*>(_el.ptr_on_device()); // 4) Elen
+      ordinal_type *el_ptr = reinterpret_cast<ordinal_type*>(_el.data()); // 4) Elen
       ordinal_type *dg_ptr = swork_ptr; swork_ptr += _m;       // 5) Degree
       ordinal_type *wk_ptr = swork_ptr; swork_ptr += (_m+1);   // 6) W
       ordinal_type *bk_ptr = swork_ptr; swork_ptr += _m;       // 7) BucketSet

@@ -24,7 +24,7 @@
         <Parameter name="Final Time"             type="double" value="3.0"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="500000"/>
-        <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
+        <Parameter name="Minimum Time Step"      type="double" value="1.0e-08"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
         <Parameter name="Minimum Order"          type="int"    value="1"/>
@@ -39,16 +39,26 @@
         <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
         <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
-        <Parameter name="Reduction Factor" type="double" value="0.5"/>
-        <Parameter name="Amplification Factor" type="double" value="1.75"/>
-        <Parameter name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
-        <Parameter name="Maximum Value Monitoring Function" type="double" value="5.0e-1"/>
+        <ParameterList name="Time Step Control Strategy">
+            <Parameter name="Time Step Control Strategy List"  type="string" value="basic_vs"/>
+            <ParameterList name="basic_vs">
+                <Parameter name="Name" type="string" value="Basic VS"/>
+                <Parameter name="Reduction Factor" type="double" value="0.5"/>
+                <Parameter name="Amplification Factor" type="double" value="1.75"/>
+                <Parameter name="Minimum Value Monitoring Function" type="double" value="0.0"/>
+                <Parameter name="Maximum Value Monitoring Function" type="double" value="1.0e+10"/>
+            </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Demo Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="Backward Euler"/>
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Predictor Name" type="string" value="Demo Predictor"/>
 

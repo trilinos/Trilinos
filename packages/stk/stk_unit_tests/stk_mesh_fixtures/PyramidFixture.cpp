@@ -36,7 +36,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityIdVector
 #include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
 #include "stk_mesh/base/Field.hpp"      // for Field
@@ -78,10 +78,11 @@ PyramidFixture::PyramidFixture(   MetaData& meta
   owns_mesh(false)
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 }
 
 PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
@@ -89,7 +90,7 @@ PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
               , size_t ny
               , size_t nz
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(2*nx),
@@ -102,7 +103,7 @@ PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map)
+                )
                ),
     m_meta(*m_meta_p),
     m_bulk_data(*m_bulk_p),
@@ -112,10 +113,11 @@ PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
 {
 
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
 }
 
@@ -125,7 +127,7 @@ PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
               , size_t nz
               , std::string coordinate_name
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(2*nx),
@@ -138,7 +140,7 @@ PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map)
+                )
                ),
     m_meta(*m_meta_p),
     m_bulk_data(*m_bulk_p),
@@ -148,10 +150,11 @@ PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
 {
 
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
 }
 

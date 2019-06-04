@@ -23,6 +23,10 @@ SET(BDIR ${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${DIR})
 INCLUDE_DIRECTORIES(${DIR}/Graph)
 INCLUDE_DIRECTORIES(${DIR}/Graph/BrickAggregation)
+INCLUDE_DIRECTORIES(${DIR}/Graph/HybridAggregation)
+INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation)
+INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/coupled)
+INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/uncoupled)
 INCLUDE_DIRECTORIES(${DIR}/Graph/UncoupledAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/UserAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Headers)
@@ -47,6 +51,7 @@ INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/User)
 INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
+INCLUDE_DIRECTORIES(${DIR}/../adapters/xpetra)
 if (${PACKAGE_NAME}_ENABLE_Epetra)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/epetra)
 ENDIF()
@@ -197,7 +202,8 @@ ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
 ## MUELU_ETI_CPP_SOURCES collects all filenames of the MueLu ETI *.cpp files
 ## These are later added to the gloabl list of source files (SOURCES)
 ##
-SET(MUELU_ETI_CPP_SOURCES "")
+SET(MUELU_ETI_CPP_SOURCES_SLGN "")
+SET(MUELU_ETI_CPP_SOURCES_LGN "")
 
 ##
 ## only build ETI *.cpp files if ETI is enabled.
@@ -225,7 +231,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_SC_LO_GO_NO_SRC
     0)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES_SLGN ${MueLu_ETI_SC_LO_GO_NO_SRC})
   
   MUELU_PROCESS_ETI_TEMPLATE(
     "Utils/ExplicitInstantiation"
@@ -233,7 +239,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_LO_GO_NO_SRC
     1)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES_LGN ${MueLu_ETI_LO_GO_NO_SRC})
 ENDIF()
 
 ELSE() # do not split cpp files
@@ -289,7 +295,8 @@ ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
 ## MUELU_ETI_CPP_SOURCES collects all filenames of the MueLu ETI *.cpp files
 ## These are later added to the gloabl list of source files (SOURCES)
 ##
-SET(MUELU_ETI_CPP_SOURCES "")
+SET(MUELU_ETI_CPP_SOURCES_SLGN "")
+SET(MUELU_ETI_CPP_SOURCES_LGN "")
 
 ##
 ## only build ETI *.cpp files if ETI is enabled.
@@ -316,14 +323,14 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_SC_LO_GO_NO_SRC)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES_SLGN ${MueLu_ETI_SC_LO_GO_NO_SRC})
   
   MUELU_PROCESS_ETI_TEMPLATE(
     "${MUELU_LO_GO_NO_ETI_CLASSES}"
     Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_LO_GO_NO_SRC)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES_LGN ${MueLu_ETI_LO_GO_NO_SRC})
 ENDIF()
 
 ENDIF() # split ETI files
@@ -337,34 +344,36 @@ APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
 APPEND_GLOB(HEADERS */*/*/*.hpp)
 
-# Remove everything in the interface directory and add it to a list for muelu-interface instead
-# NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
 SET(HEADERS_INTERFACE "")
-APPEND_GLOB(HEADERS_INTERFACE Interface//*.hpp)
+APPEND_GLOB(HEADERS_INTERFACE Interface/*.hpp)
 APPEND_GLOB(HEADERS_INTERFACE Interface/FacadeClasses/*.hpp)
 LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 
 
 ###############################################
-SET(SOURCES ${MUELU_ETI_CPP_SOURCES})
+SET(SOURCES ${MUELU_ETI_CPP_SOURCES_SLGN})
 APPEND_GLOB(SOURCES */*.cpp)
+LIST(REMOVE_ITEM SOURCES ${DIR}/Graph/MueLu_LinkedList.cpp)
+SET(SOURCES_LGN ${MUELU_ETI_CPP_SOURCES_LGN})
+APPEND_GLOB(SOURCES_LGN ${DIR}/Graph/MueLu_LinkedList.cpp)
 
 #APPEND_GLOB(SOURCES ${MUELU_ETI_CPP_SOURCES})  # append ETI cpp sources (if any)
 
 ## TODO are the following lines necessary???
 #APPEND_GLOB(SOURCES */*/*.cpp) -> ExplicitInstantiation files must be included only if explicit instantiation is enabled
-APPEND_GLOB(SOURCES Smoothers/BlockedSmoothers/*.cpp)
-APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
-APPEND_GLOB(SOURCES Transfers/BlackBox/*.cpp)
-APPEND_GLOB(SOURCES Transfers/BlockedTransfers/*.cpp)
-APPEND_GLOB(SOURCES Transfers/Energy-Minimization/*.cpp)
-APPEND_GLOB(SOURCES Transfers/Energy-Minimization/Solvers/*.cpp)
-APPEND_GLOB(SOURCES Transfers/GeneralGeometric/*.cpp)
-APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
-APPEND_GLOB(SOURCES Transfers/Geometric-Interpolation/*.cpp)
-APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
-APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
-APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
+# JHU 2019-Apr-12 None of the following directories have *.cpp files.
+#APPEND_GLOB(SOURCES Smoothers/BlockedSmoothers/*.cpp)
+#APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
+#APPEND_GLOB(SOURCES Transfers/BlackBox/*.cpp)
+#APPEND_GLOB(SOURCES Transfers/BlockedTransfers/*.cpp)
+#APPEND_GLOB(SOURCES Transfers/Energy-Minimization/*.cpp)
+#APPEND_GLOB(SOURCES Transfers/Energy-Minimization/Solvers/*.cpp)
+#APPEND_GLOB(SOURCES Transfers/GeneralGeometric/*.cpp)
+#APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
+#APPEND_GLOB(SOURCES Transfers/Geometric-Interpolation/*.cpp)
+#APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
+#APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
+#APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
 
 #MESSAGE("ETI_SOURCES = ${MUELU_ETI_CPP_SOURCES}")
 #MESSAGE("SOURCES = ${SOURCES}")
@@ -377,6 +386,10 @@ APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
 # TODO: make a loop
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/BrickAggregation NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/HybridAggregation NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation/coupled NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation/uncoupled NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UncoupledAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UserAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface NOSIERRABJAM)
@@ -399,6 +412,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Smoothed-Aggregation NO
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/User NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/SemiCoarsen NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Utils NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/xpetra NOSIERRABJAM)
 if (${PACKAGE_NAME}_ENABLE_Tpetra)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
 ENDIF()
@@ -416,9 +430,8 @@ INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
 # Remove everything in the interface directory and add it to a list for muelu-interface instead
-# NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
 SET(SOURCES_INTERFACE "")
-APPEND_GLOB(SOURCES_INTERFACE Interface//*.cpp)
+APPEND_GLOB(SOURCES_INTERFACE Interface/*.cpp)
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
@@ -429,6 +442,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
 LIST(REMOVE_ITEM SOURCES ${SOURCES_INTERFACE})
+LIST(REMOVE_ITEM SOURCES_LGN ${SOURCES_INTERFACE})
 
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
@@ -448,11 +462,35 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
+  muelu_lgn
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES_LGN}
+  )
+
+TRIBITS_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEPLIBS muelu_lgn
   )
 
+
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

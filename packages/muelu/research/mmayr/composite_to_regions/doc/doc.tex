@@ -3,7 +3,9 @@
 \usepackage{amsmath}
 
 \usepackage[usenames,svgnames,table]{xcolor}
-\usepackage{algorithm,algorithmicx,algpseudocode}
+\usepackage{algorithm}
+% \usepackage{algorithmicx}
+% \usepackage{algpseudocode}
 
 \usepackage{listings}
 \definecolor{hellgelb} {rgb}{1.0,1.0,0.8}
@@ -367,6 +369,63 @@ this ghost GID does not have a {\sf myRegionalLID()} because it is owned
 by another processor (that also owns my one region).
 
 \section{Algorithmic building blocks and implementation}
+
+\subsection{Splitting of the composite matrix into region matrices}
+
+To enable a non-invasive solver that exploits the partial structure of the grid
+we start from the composite matrix, i.e. a matrix that has been fully assembled
+by the application code. However, decomposing this matrix into region submatrices
+that correspond to the structured portions of the grid is not a unique operation.
+We'd like to design a software interface that
+\begin{itemize}
+\item provides generic decomposition strategies
+\item allows the user to provide additional information and strategies
+\end{itemize}
+
+\subsubsection{A generic splitting scheme: edge-based splitting}
+
+We utilize two interpretations of matrix entries:
+\begin{itemize}
+\item off-diagonal entries~$a_{ij}$ for~$i \neq j$:
+A matrix contribution~$a_{ij}$ for~$i \neq j$ can be viewed as an edge between node~$i$ and node~$j$.
+Although $a_{ij}$ really comes about as a sum of element contributions from neighboring elements,
+our hope is that we don't have to worry about element information and so this simple edge view is sufficient.
+\item diagonal entries~$a_{ii}$:
+A matrix contribution at~$a_{ii}$ should \emph{not} be viewed as an edge between node~$i$ and node~$i$.
+Instead, the value of~$a_{ii}$ is really some kind of sum of contributions from all the $(i,j)$ edges
+and, thus, this is how it should be treated in any splitting code. We aim at choosing the diagonal values
+such that the nullspace of each region submatrix is preserved in comparison to the composite matrix.
+\end{itemize}
+We process off-diagonal entries and diagonal entries differently.
+
+For any edge, it is known, to which regions its nodes~$i$ and~$j$ belong to, namely:
+\begin{itemize}
+\item If nodes~$i$ and~$j$ belong to one and the same region, this is an interior edge.
+\item If nodes~$i$ and~$j$ belong to the same two regions, this is an interface edge.
+\end{itemize}
+
+The generic edge-based splitting algorithm consists of two steps:
+\begin{enumerate}
+\item Process off-diagonals: Interior edges don't need to be changed.
+Interface edges are shared by $n$ regions and, thus, need to be splitted (divided by $n$).
+We denote the resulting matrix by~$\tilde{A}$.
+\item Process diagonal entries: Diagonal entries need to be chosen to preserve
+nullspace properties for region matrices. Assuming~$v \in nsp(A)$, we compute~$z = Av$.
+Per definition of the nullspace, values~$z_i = 0$ for nodes that are not on the Dirichlet boundary.
+On the Dirichlet boundary, values~$z_i \neq 0$.
+We want the regional matrices to preserve~$z$ in a regional layout.
+
+The composite experssion~$Av = z$ is represented in region layout as~$A^{(k)}v^{(k)} = z^{(k)}$,
+where~$z^{(k)}$ is obtained by moving it to the regional layout \emph{and}
+dividing each entry~$z^{(k)}_i$ by the number of regions that node~$i$ belongs to.
+The matrix can be decomposed into~$\tilde{A}^{(k)} + D^{(k)}$ with~$\tilde{A}^{(k)}$ being
+the result of processing the off-diagonal entries and~$D^{(k)}$ being an yet to be determined
+correction to the diagonal entries, yielding~$[\tilde{A}^{(k)} + D^{(k)}]v^{(k)} = z^{(k)}$.
+This can be rearranged to~$D^{(k)}v^{(k)} = z^{(k)} - \tilde{A}^{(k)}v^{(k)}$
+and be used to fix the diagonal values.
+
+\end{enumerate}
+
 \subsection{Groups}
 The notion of a group is introduced primarily to handle the case when
 processors are assigned multiple regions (and so no region spans
@@ -417,16 +476,16 @@ We use three data layouts which can be transferred from one into each other.
 It is usually used by the application and the matrix as well as the right-hand side and initial guess are provided using this layout.
 The outer Krylov solver operates on this layout. Hence, this layout is passed to the preconditioner and needs to be returned from the preconditioner
 to the Krylov solver despite the layout used internally by the preconditioner.
-\item {\bf regional layout:} In this layout, every region is represented by a unique set of GIDs. 
+\item {\bf regional layout:} In this layout, every region is represented by a unique set of GIDs.
 This required duplicated, but unique DOFs at interfaces between regions.
-\item {\bf quasiRegional layout:} This auxiliary layout uses duplicated DOFs at region interfaces, 
+\item {\bf quasiRegional layout:} This auxiliary layout uses duplicated DOFs at region interfaces,
 but still only the original GIDs of the composite layout.
 It is never used for computations, just as an intermediate step to transfer matrices and vectors from the composite to the regional layout.
-Specifically, the quasiRegional form refers to matrices and vectors 
+Specifically, the quasiRegional form refers to matrices and vectors
 where the local representation of the data is correct for
 regional computations, but the maps are not correct in terms of
 representing shared nodes distinctly. That is, data is replicated properly
-to represent a regional matrix, but the GIDs in the maps still refer to the composite form of the data, 
+to represent a regional matrix, but the GIDs in the maps still refer to the composite form of the data,
 implying that the maps are not correct.
 \end{itemize}
 
@@ -461,84 +520,97 @@ We also need to transform vectors from the regional layout back to the composite
 Applying a Jacobi smoother in region layout exhibits two major difficulties, namely
 \begin{itemize}
 \item the recovery of true diagonal matrix entries (c.f. Section~\ref{sec:RecoveryTrueDiagonal})
-\item the Matrix-vector multiplication in region layout (c.f. Section~\ref{sec:RegionalMatVec})
+\item the residual calculation in region layout (c.f. Section~\ref{sec:CalcRegionalResidual})
 \end{itemize}
 
 \subsubsection{Recovery of true diagonal matrix entries}
 \label{sec:RecoveryTrueDiagonal}
 
-At region interfaces, matrix entries associated with nodes on the interface 
-have been obtained by some form of splitting operation. This is especially true for the diagonal element~$a^{reg}_{ii}$ of interface nodes. 
-To recover mathematical equivalence of a region-wise Jacobi method with one applied in a composite layout, 
+At region interfaces, matrix entries associated with nodes on the interface
+have been obtained by some form of splitting operation. This is especially true for the diagonal element~$a^{reg}_{ii}$ of interface nodes.
+To recover mathematical equivalence of a region-wise Jacobi method with one applied in a composite layout,
 the true diagonal values (as in the composite problem) needs to be recovered.
 
-For general cases, true diagonal values need to be recovered by summation of the diagonal entries of all duplicated rows 
-that are associated with a particular node in the composite layout. 
-This might require communication if the region interface coincides with a processor interface 
+For general cases, true diagonal values need to be recovered by summation of the diagonal entries of all duplicated rows
+that are associated with a particular node in the composite layout.
+This might require communication if the region interface coincides with a processor interface
 and, thus, duplicated GIDs reside on different processors.
 
 In case of the basic splitting, i.e. dividing matrix entries by the number~$n_{reg}$ of adjacent regions to this node, it is guaranteed
-that the diagonal element in each duplicated row has the same value~$a^{reg}_{ii} = \frac{1}{n_{reg}}a^{comp}_{ii}$. 
-The true diagonal value can then be recovered via multiplication with~$n_{reg}$. 
+that the diagonal element in each duplicated row has the same value~$a^{reg}_{ii} = \frac{1}{n_{reg}}a^{comp}_{ii}$.
+The true diagonal value can then be recovered via multiplication with~$n_{reg}$.
 Implementation-wise, this can be realized by tracking the necessary scaling factors in a region vector {\sf regScaling},
 which is obtained as follows:
 \begin{enumerate}
 \item Create vector {\sf regScaling} in region layout and populate with~$1.0$ in every entry.
-\item Transfer {\sf regScaling} back to the composite layout and use an appropriate {\sf Add} operation as combine mode in the {\sf Export()} operation. 
+\item Transfer {\sf regScaling} back to the composite layout and use an appropriate {\sf Add} operation as combine mode in the {\sf Export()} operation.
 This will not affect region-interior nodes, but will result in entries of value~$n_{reg}$ for every DOF on the region interface.
-\item Transfer the result from the composite layout back to the region layout. This will not change the vector's values, 
+\item Transfer the result from the composite layout back to the region layout. This will not change the vector's values,
 but will copy the interface-related entries into the interface-related DOFs in the region layout.
 \end{enumerate}
 The true diagonal values can now be recovered an element-wise multiplication of the diagonal with {\sf regScaling}.
 
-\subsubsection{Matrix-vector multiplication in region layout}
-\label{sec:RegionalMatVec}
+\subsubsection{Residual evaluation in region layout}
+\label{sec:CalcRegionalResidual}
 
-The matrix-vector multiplication in the residual is performed region-wise. 
-Hence, the interface DOFs are multiplied with the 'splitted' values only, i.e. the true residual value needs to be recovered 
+The matrix-vector multiplication in the residual calculation is performed region-wise.
+Hence, the interface DOFs are multiplied with the 'splitted' values only, i.e. the true residual value needs to be recovered
 by exchanging these values between the duplicated DOFs and adding them into each of them.
 
 There are multiple ways to do that:
 \begin{itemize}
-\item {\bf Using {\sf Export()} to composite layout:} First, the matrix vector product {\sf vectorAX = matrixA $\cdot$ vectorX} is computed in the region layout. Then, the vector~{\sf vectorAX} is transferred to the composite layout. This includes an {\sf Export()} operation with a {\sf combineMode} that adds interface values. Finally, moving it back to the region layout transfers the summed values into the interface entries, yielding the 'true' residual. The major drawback of this approach is copying the full region vector to the composite layout and back, although operations are only necessary on the interface entries. Details on transferring data back and forth between regional and composite layouts are given in section~\ref{sec:TransferDataLayouts}.
-\item {\bf Using a data manager:} Using a data manager, that keeps track of interface and non-interface nodes as well as the duplication of interface nodes, could enable a targeted exchange of information, reducing the communication to only those values necessary.
+\item {\bf Using {\sf Export()} to composite layout:}
+\begin{enumerate}
+ \item The matrix vector product {\sf vectorAX = matrixA $\cdot$ vectorX} is computed in the region layout.
+ \item The vector~{\sf vectorAX} is transferred to the composite layout. This includes an {\sf Export()} operation with a {\sf combineMode}
+ that adds interface values. To allow for the scneario {\sf MultipleRegionsPerProc}, the {\sf combineMode} has to be chosen
+ as {\sf Epetra\_AddLocalAlso} such that the values of the duplicated interface nodes, that reside in the interior of a processor's subdomain,
+ are also summed.
+ \item Moving back to the region layout transfers the summed values into the interface entries, yielding the 'true' residual.
+\end{enumerate}
+
+The major drawback of this approach is copying the full region vector to the composite layout and back,
+although operations are only necessary on the interface entries.
+Details on transferring data back and forth between regional and composite layouts are given in section~\ref{sec:TransferDataLayouts}.
+\item {\bf Using a data manager:} Using a data manager, that keeps track of interface and non-interface nodes as well as the duplication of interface nodes,
+could enable a targeted exchange of information, reducing the communication to only those values necessary.
 \end{itemize}
 
 \subsubsection{An exemplary implementation of Jacobi in a region layout}
 
 \begin{lstlisting}[language=c++]
-	Xpetra::Vector regScaling = ... // scaling factors per DOF that are 
+	Xpetra::Vector regScaling = ... // scaling factors per DOF that are
 	                                // required to recover the true diagonal
 
   function RegionJacobi(regA, regB, regU, regScaling, omega, maxIters) {
-    // We assume that the initial solution is zero 
+    // We assume that the initial solution is zero
     // and that the initial composite residual is known
-    
+
     Xpetra::Vector regInvDiag = regA->getDiag(); // Extract diagonal
     for(int dof = 0; dof < regInvDiag.size() ++dof) {
       // Invert and rescale diagonal
       regInvDiag[dof] = 1.0 / (regInvDiag[dof]*regScaling[dof]);
     }
-    
+
     // Create work vectors
     Xpetra::Vector regRes(regB);
     Xpetra::Vector regAU(regB);
     Xpetra::Vector regUIncrement(regB);
     for(int iter = 0; iter < maxIters; ++iter) { // Iteration loop
-      
+
       // Compute A*U
       regAU->setScalar(0.0);  // Reset A*U vector
       regA->apply(regU, regAU); // Multiply regA with regU
       regAU->synchronize(); // Synchronize regAU to update interface
-      
+
       // Compute residual
       regRes->add(1.0, regB, -1.0, regAU);
-      
+
       // Compute solution increment
       for(int dof = 0; dof < regInvDiag.size() ++dof) {
         regUIncrement[dof] = regInvDiag[dof]*regRes[dof];
       }
-      
+
       // Update solution
       regU->add(omega, regUIncrement, 1.0, regU);
     }
@@ -550,28 +622,28 @@ There are multiple ways to do that:
 \subsubsection{Setup of the hierarchy}
 
 We want to use multigrid V-cycles as preconditioners in an outer Krylov method. Starting from the composite matrix,
-we first generate region matrices by the {\em basic splitting} approach. 
-This duplicates all interface DOFs and assigns unique GIDs. 
-Then, the multigrid hierarchy is constructed in a region-oriented fashion, i.e. by computing transfer operators for each region. 
-We exploit the fact that a region-wise~$RAP$ is mathematically equivalent to the composite~$RAP$ 
+we first generate region matrices by the {\em basic splitting} approach.
+This duplicates all interface DOFs and assigns unique GIDs.
+Then, the multigrid hierarchy is constructed in a region-oriented fashion, i.e. by computing transfer operators for each region.
+We exploit the fact that a region-wise~$RAP$ is mathematically equivalent to the composite~$RAP$
 if the transfer operators match on the region interfaces.
 
 \subsubsection{V-cycle algorithm}
 
-The V-cycle algorithm is the usual with only one exception: 
+The V-cycle algorithm is the usual with only one exception:
 During the restriction of the fine grid residual one needs to account for duplicated nodes due to the region layout.
 
-We assume the existence of region-wise restriction operator~$R^{(r)}$ and a fine-grid vector~$v^{(r)}_f$ in region layout. 
+We assume the existence of region-wise restriction operator~$R^{(r)}$ and a fine-grid vector~$v^{(r)}_f$ in region layout.
 We refer to the result of the restriction as~$v^{(r)}_c$ being a coarse-grid vector in region-layout.
 Restriction operations are performed as follows:
 \begin{enumerate}
-\item In anticipation of the duplication of interface values, scale all vector entries~$v^{(r)}_{f,\Gamma}$ 
+\item In anticipation of the duplication of interface values, scale all vector entries~$v^{(r)}_{f,\Gamma}$
 associated with region-interface nodes by $1/n_r$ with $n_r$ being the number of regions that share this particular node.
 \item Perform restriction~$v^{(r)}_c = R^{(r)} v^{(r)}_f$ separately for each region.
-\item Exchange and add region-interface entries~$v^{(r)}_{c,\Gamma}$.
+\item Exchange and add region-interface entries~$v^{(r)}_{c,\Gamma}$. Note: Use a {\sf combineMode} that also sums local values to account for cases where region interfaces reside in the interior of processor subdomains, i.e. the scenario {\sf MultipleRegionsPerProc}.
 \end{enumerate}
 
-Note that the prolongation of a vector uses a region-wise prolongation operator~$P^{(r)}$ 
+Note that the prolongation of a vector uses a region-wise prolongation operator~$P^{(r)}$
 and is performed without any special interface treatments, i.e. $v^{(r)}_f = P^{(r)}v^{(r)}_c$.
 
 Level smoothers as well as residual calculations require special techniques due to the region layout, cf. section~\ref{sec:RegionJacobi}.
@@ -580,18 +652,18 @@ Level smoothers as well as residual calculations require special techniques due 
 
 \subsection{Direct solve on coarse level}
 
-The composite matrix as provided by the application is well-posed since Dirichlet boundary conditions have been applied to it. 
+The composite matrix as provided by the application is well-posed since Dirichlet boundary conditions have been applied to it.
 When extracting regional matrices, only those sub-matrices associated with Dirichlet boundary conditions are non-singular
-in the region layout. In particular, matrices from the interior of the domain are very likely to be free-floating and singular. 
+in the region layout. In particular, matrices from the interior of the domain are very likely to be free-floating and singular.
 This prevents a direct solver on the coarse level. Possible remedies are:
 \begin{itemize}
-\item Merge coarse level region matrices into a composite matrix and apply direct solver to the composite matrix. 
-Drawback: merging into composite layout is expensive and requires a dual setup of the hierarchy, 
+\item Merge coarse level region matrices into a composite matrix and apply direct solver to the composite matrix.
+Drawback: merging into composite layout is expensive and requires a dual setup of the hierarchy,
 i.e. also composite maps need to be provided on coarse levels.
 \item Use ILU on region matrices
 \item Use relaxation-based smoothers on coarse level
 \end{itemize}
-So far, no clear strategy to use a direct solver on the coarse level came to mind. 
+So far, no clear strategy to use a direct solver on the coarse level came to mind.
 We maybe can use projection methods to deal with rigid body modes.
 
 \section{Future Direction Thoughts}
@@ -649,114 +721,20 @@ and {\sf composite2Region()} when performing matvecs within the Krylov solver.
 \appendix
 
 \section{Matlab interaction}
-To test Trilinos functionality, a combination of Matlab and a Trilinos
-C++ driver was constructed. The basic idea is to use Matlab for ``hard''
-things that do not ultimately affect Trilinos-like design decisions while
-restricting the C++ code to aspects that do affect the Trilinos-like design.
-The way this is implemented is that one first runs the Matlab program in the source folder.
-Then, establish a symbolic link to the C++ executable, but execute it also in the source
-folder, since it relies on files written to the source folder by Matlab.
 
-The Matlab program creates a series of myData\_k files where $ 0 \le k < nProcs$.
-The file should contain a basic command and optionally some data associated
-with that command. After the Matlab program has created a set of these
-myData\_k files it waits (loops with a sleep) until they are removed by
-the C++ program before proceeding. One executes the C++ via mpirun across
-multiple procs. The program first opens a myData\_k file. This very first
-myData\_k file should contain three entries separated by a single space
-corresponding to {\sf maxRegPerGID}, {\sf maxRegPerProc}, and {\sf whichCase}.
-The last entry is a string that should be either {\sf RegionsSpanProcs} or
-{\sf MultipleRegionsPerProc}. The myData\_k file is deleted (so that Matlab
-knows
-to proceed) and then the program enters a big infinite while loop. This loop
-opens a myData\_k file and executes one command per loop iteration.
-Specifically, each loop iteration waits (inner loop with a sleep) for the
-new myData\_k file.  Once it sees this file, it reads the command header.
-The body of the main loop basically has a bunch of `if statements'
-corresponding to the
-different commands and so {\sf myRank} reads the rest of the data and
-performs the associated task. The C++ file never needs to communicate
-any data back to the Matlab program, but it indicates that it is finished
-with the file by deleting it (signaling Matlab to proceed). Not sure if there
-is some chance that the C++ program starts reading a myData\_k file before
-the Matlab program has finished writing to it. This hasn't happened in my
-tests. Some of the myData\_k commands are
-\vskip .1in
+As of May 22, 2018, the Matlab interface has been redesigned.
+The last commit with the old interface is \texttt{commit 657d5544cee8dbb8bf8bfed5a8e93fb64a51eff3}.
 
-\optionbox{LoadCompositeMap}{load the composite GIDs and the non-ghosted portion of {\sf regionsPerGID}. Each line that follows the command line corresponds to one entry of the composite GID. Later communication will be employed in the C++ program so that myRank has ghosted version of this information.}
+To run the region code, two steps are required:
+\begin{enumerate}
+ \item Run the Matlab script {\sf createInput.m} to create the problem and write it to the disk.
+ \item Run the executable {\sf /packages/muelu/research/mmayr/composite\_to\_regions/src/MueLu\_composite\_to\_region\_driver.exe} from the source directory.
+\end{enumerate}
 
-\optionbox{LoadAndCommRegAssignments}{load non-ghosted portion of {\sf regionsPerGID}. Each jth line that follows the command line corresponds to all the regions in  the jth row of {\sf regionsPerGID} separated by spaces. The C++ program performs communication so that it has the ghosted version of this information.}
+The Matlab program creates a series of {\sf my*\_k} files where $ 0 \le k < nProcs$.
+These files contain various input information about the problem, the region layout, etc.
 
-\optionbox{ReadMatrix}{read the file Amat.mm that contains the composite matrix}
-
-\optionbox{LoadRegions}{load the {\sf myRegions} list which appears
-                    immediately after the command (one region per line).}
-
-\optionbox{MakeGrpRegRowMaps}{directs C++ program to make the new row maps.}
-
-\optionbox{MakeGrpRegColMaps}{directs C++ program to make the new col maps.}
-
-\optionbox{MakeExtendedRegGrpMaps}{directs C++ program to make the extended form of the domain and column maps. This extended form includes new GID numbers to address the replication of shared nodes in multiple regions.}
-
-\optionbox{MakeQuasiRegionMatrices}{directs C++ program to extract regional matrices from the composite matrix. Results in correct data, but wrong maps.}
-
-\optionbox{MakeRegMatrices}{directs C++ program to call expertStaticFillComplete on the extended region matrices in order to 'insert' correct range/domain maps into region matrices.}
-
-\optionbox{LoadAppDataForLIDregion()}{loads data associated with the minimum and maximum nodes that myRank will own for each region. Here, `will own' refers to nodes that will be owned by myRank in the regional form of the matrices. However, the min/max values correspond to composite GIDs  Specifically, the $k$th line following the command line provides two numbers. The first number is the minimum associated with {\sf myRegions[~k~]} while the second number is the maximum.}
-
-\optionbox{ComputeMatVecs}{direct C++ program to perform matrix-vector-multiplication in composite and regional form and to compare the results.}
-
-\optionbox{PrintGrpRegRowMaps}{direct C++ program to print new row maps.}
-
-\optionbox{PrintGrpRegColMaps}{directs C++ program to print new col maps.}
-
-\optionbox{PrintGrpRegDomMaps}{directs C++ program to print new extended domain maps.}
-
-\optionbox{PrintRevisedColMaps}{directs C++ program to print new extended col maps.}
-
-\optionbox{PrintQuasiRegionMatrices}{directs C++ program to print quasiRegional matrices.}
-
-\optionbox{PrintRegionMatrices}{directs C++ program to print regional matrices.}
-
-\optionbox{PrintRegionMatrixRowMap}{directs C++ programm to print row map of region matrices.}
-
-\optionbox{PrintRegionMatrixColMap}{directs C++ programm to print col map of region matrices.}
-
-\optionbox{PrintRegionMatrixRangeMap}{directs C++ programm to print range map of region matrices.}
-
-\optionbox{PrintRegionMatrixDomainMap}{directs C++ programm to print domain map of region matrices.}
-
-\optionbox{PrintCompositeMap}{directs C++ program to print composite map.}
-
-\optionbox{PrintRegionAssignments}{directs C++ program to print {\sf regionsPerGID}.}
-
-\optionbox{PrintCompositeVectorX}{directs C++ program to print the composite input vector.}
-
-\optionbox{PrintCompositeVectorY}{directs C++ program to print the composite result vector.}
-
-\optionbox{PrintQuasiRegVectorX}{directs C++ program to print the quasiRegion input vector.}
-
-\optionbox{PrintQuasiRegVectorY}{directs C++ program to print the quasiRegion result vector.}
-
-\optionbox{PrintRegVectorX}{directs C++ program to print the region input vector.}
-
-\optionbox{PrintRegVectorY}{directs C++ program to print the region result vector.}
-
-\optionbox{PrintRegVectorYComp}{directs C++ program to print the composite result vector that is reconstructed from the region result vector.}
-
-\optionbox{Terminate}{C++ program exits.}
-
-For some of the `Make*' commands, the Matlab program is also able to construct the same information and so this can be compared with the C++ program.
-The original intention was that there would be some additional commands to
-initialize vectors, convert from composite to regional views, and do matvecs ...but this is not done right now.
-\REMOVE{Some of these commands appeared in an earlier
-version (that was based on a different composite/region philosophy that
-was deemed not scalable).
-}
-
-
-
-
+The executable reads these files, creates matrices and a MueLu hierarchy and runs a V-cycle. The MueLu configuration is passed in as command line argument \texttt{--xml=PATH/XML\_FILE\_NAME}.
 
 \end{document}
 

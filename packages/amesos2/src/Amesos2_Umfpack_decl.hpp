@@ -209,6 +209,8 @@ private:
   Teuchos::Array<umfpack_type> xvals_;  int ldx_;
   /// Persisting 1D store for B
   Teuchos::Array<umfpack_type> bvals_;  int ldb_;
+
+  bool is_contiguous_;
 };                              // End class Umfpack
 
 

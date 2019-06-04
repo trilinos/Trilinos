@@ -155,7 +155,7 @@ public:
   typedef Kokkos::View< const unsigned *     , Device > send_nodeid_type ;
 
   KOKKOS_INLINE_FUNCTION
-  unsigned node_count() const { return m_node_grid.dimension_0(); }
+  unsigned node_count() const { return m_node_grid.extent(0); }
 
   KOKKOS_INLINE_FUNCTION
   unsigned node_count_owned() const { return m_box_part.owns_node_count(); }
@@ -164,7 +164,7 @@ public:
   unsigned node_count_global() const { return m_box_part.global_node_count(); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned elem_count() const { return m_elem_node.dimension_0(); }
+  unsigned elem_count() const { return m_elem_node.extent(0); }
 
   KOKKOS_INLINE_FUNCTION
   unsigned elem_count_global() const { return m_box_part.global_elem_count(); }
@@ -278,11 +278,11 @@ public:
     }
 
     const size_t nwork = 
-      std::max( m_recv_node.dimension_0() ,
-      std::max( m_send_node.dimension_0() ,
-      std::max( m_send_node_id.dimension_0() ,
-      std::max( m_node_grid.dimension_0() ,
-                m_elem_node.dimension_0() * m_elem_node.dimension_1() ))));
+      std::max( m_recv_node.extent(0) ,
+      std::max( m_send_node.extent(0) ,
+      std::max( m_send_node_id.extent(0) ,
+      std::max( m_node_grid.extent(0) ,
+                m_elem_node.extent(0) * m_elem_node.extent(1) ))));
 
     Kokkos::parallel_for( nwork , *this );
   }
@@ -293,7 +293,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( size_t i ) const
   {
-    if ( i < m_elem_node.dimension_0() * m_elem_node.dimension_1() ) {
+    if ( i < m_elem_node.extent(0) * m_elem_node.extent(1) ) {
 
       const size_t ielem = i / ElemNode ;
       const size_t inode = i % ElemNode ;
@@ -313,7 +313,7 @@ public:
       m_elem_node(ielem,inode) = m_box_part.local_node_id( node_grid );
     }
 
-    if ( i < m_node_grid.dimension_0() ) {
+    if ( i < m_node_grid.extent(0) ) {
       unsigned node_grid[SpaceDim] ;
       m_box_part.local_node_coord( i , node_grid );
       m_node_grid(i,0) = node_grid[0] ;
@@ -328,17 +328,17 @@ public:
                    m_node_coord(i,2) );
     }
 
-    if ( i < m_recv_node.dimension_0() ) {
+    if ( i < m_recv_node.extent(0) ) {
       m_recv_node(i,0) = m_box_part.recv_node_rank(i);
       m_recv_node(i,1) = m_box_part.recv_node_count(i);
     }
 
-    if ( i < m_send_node.dimension_0() ) {
+    if ( i < m_send_node.extent(0) ) {
       m_send_node(i,0) = m_box_part.send_node_rank(i);
       m_send_node(i,1) = m_box_part.send_node_count(i);
     }
 
-    if ( i < m_send_node_id.dimension_0() ) {
+    if ( i < m_send_node_id.extent(0) ) {
       m_send_node_id(i) = m_box_part.send_node_id(i);
     }
   }

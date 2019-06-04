@@ -297,7 +297,7 @@ namespace ROL {
       if (growth==GROWTH_SLOWLIN||
           growth==GROWTH_SLOWLINODD||
           growth==GROWTH_MODLIN) {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>> (ROL::growthRule1D): Specified Growth Rule Not Permitted!");
         return 0;
       }
@@ -486,7 +486,7 @@ namespace ROL {
       if (growth==GROWTH_SLOWLIN||
           growth==GROWTH_SLOWLINODD||
           growth==GROWTH_MODLIN) {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>> (ROL::growthRule1D): Specified Growth Rule Not Permitted!");
         return 0;
       }

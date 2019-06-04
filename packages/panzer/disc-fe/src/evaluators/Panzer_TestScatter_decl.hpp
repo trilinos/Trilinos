@@ -50,14 +50,37 @@
 
 namespace panzer {
 
-PANZER_EVALUATOR_CLASS(TestScatter)
+template<typename EvalT, typename Traits>
+class TestScatter
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    TestScatter(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<ScalarT,Cell,NODE> scatter_value;
   PHX::MDField<const ScalarT,Cell,NODE> value;
   int localOffset;
 
   std::size_t num_nodes;
   static int offset;
-PANZER_EVALUATOR_CLASS_END
+}; // end of class TestScatter
+
 
 }
 

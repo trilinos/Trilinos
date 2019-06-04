@@ -13,6 +13,7 @@ namespace KokkosBatched {
     ///
     /// Serial Impl
     /// ===========
+    /// CompactMKL does not exist on Gemv
 
     ///
     /// Implemented:
@@ -43,34 +44,38 @@ namespace KokkosBatched {
            const ScalarType beta,
            const yViewType &y) {
       typedef typename yViewType::value_type vector_type;
-      typedef typename vector_type::value_type value_type;
+      //typedef typename vector_type::value_type value_type;
 
       const int
         m = A.dimension(0),
         n = 1,
-        k = A.dimension(1),
-        vl = vector_type::vector_length;
+        k = A.dimension(1);
+
+      static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+      static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
+                    "AVX, AVX2 and AVX512 is supported");
+      const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
       // no error check
       int r_val = 0;
       if (A.stride_0() == 1) {
-        cblas_dgemm_compact(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                            m, n, k, 
-                            alpha, 
-                            (const double*)A.data(), A.stride_1(), 
-                            (const double*)x.data(), x.stride_0(), 
-                            beta,
-                            (double*)y.data(), y.stride_0(),
-                            (MKL_INT)vl, (MKL_INT)1);
+        mkl_dgemm_compact(MKL_COL_MAJOR, MKL_NOTRANS, MKL_NOTRANS,
+                          m, n, k, 
+                          alpha, 
+                          (const double*)A.data(), A.stride_1(), 
+                          (const double*)x.data(), x.stride_0(),
+                          beta,
+                          (double*)y.data(), y.stride_0(),
+                          format, (MKL_INT)vector_type::vector_length);
       } else if (A.stride_1() == 1) {
-        cblas_dgemm_compact(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                            m, n, k, 
-                            alpha, 
-                            (const double*)A.data(), A.stride_0(), 
-                            (const double*)x.data(), x.stride_0(), 
-                            beta,
-                            (double*)y.data(), y.stride_0(),
-                            (MKL_INT)vl, (MKL_INT)1);
+        mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_NOTRANS,
+                          m, n, k, 
+                          alpha, 
+                          (const double*)A.data(), A.stride_0(), 
+                          (const double*)x.data(), x.stride_0(),
+                          beta,
+                          (double*)y.data(), y.stride_0(),
+                          format, (MKL_INT)vector_type::vector_length);
       } else {
         r_val = -1;
       }
@@ -92,7 +97,7 @@ namespace KokkosBatched {
            const ScalarType beta,
            const yViewType &y) {
       return SerialGemvInternal<Algo::Gemv::Unblocked>::
-        invoke(A.dimension_0(), A.dimension_1(),
+        invoke(A.extent(0), A.extent(1),
                alpha, 
                A.data(), A.stride_0(), A.stride_1(),
                x.data(), x.stride_0(),
@@ -114,7 +119,7 @@ namespace KokkosBatched {
            const ScalarType beta,
            const yViewType &y) {
       return SerialGemvInternal<Algo::Gemv::Blocked>::
-        invoke(A.dimension_0(), A.dimension_1(),
+        invoke(A.extent(0), A.extent(1),
                alpha, 
                A.data(), A.stride_0(), A.stride_1(),
                x.data(), x.stride_0(),
@@ -143,37 +148,42 @@ namespace KokkosBatched {
            const ScalarType beta,
            const yViewType &y) {
       typedef typename yViewType::value_type vector_type;
-      typedef typename vector_type::value_type value_type;
+      //typedef typename vector_type::value_type value_type;
 
       const int
         m = A.dimension(0),
         n = 1,
-        k = A.dimension(1),
-        vl = vector_type::vector_length;
+        k = A.dimension(1);
+
+      static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+      static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
+                    "AVX, AVX2 and AVX512 is supported");
+      const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
       // no error check
       int r_val = 0;
       if (A.stride_0() == 1) {
-        cblas_dgemm_compact(CblasColMajor, CblasTrans, CblasNoTrans,
-                            m, n, k, 
-                            alpha, 
-                            (const double*)A.data(), A.stride_1(), 
-                            (const double*)x.data(), x.stride_0(), 
-                            beta,
-                            (double*)y.data(), y.stride_0(),
-                            (MKL_INT)vl, (MKL_INT)1);
+        mkl_dgemm_compact(MKL_COL_MAJOR, MKL_TRANS, MKL_NOTRANS,
+                          m, n, k, 
+                          alpha, 
+                          (const double*)A.data(), A.stride_1(), 
+                          (const double*)x.data(), x.stride_0(),
+                          beta,
+                          (double*)y.data(), y.stride_0(),
+                          format, (MKL_INT)vector_type::vector_length);
       } else if (A.stride_1() == 1) {
-        cblas_dgemm_compact(CblasRowMajor, CblasTrans, CblasNoTrans,
-                            m, n, k, 
-                            alpha, 
-                            (const double*)A.data(), A.stride_0(), 
-                            (const double*)x.data(), x.stride_0(), 
-                            beta,
-                            (double*)y.data(), y.stride_0(),
-                            (MKL_INT)vl, (MKL_INT)1);
+        mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_NOTRANS,
+                          m, n, k, 
+                          alpha, 
+                          (const double*)A.data(), A.stride_0(), 
+                          (const double*)x.data(), x.stride_0(),
+                          beta,
+                          (double*)y.data(), y.stride_0(),
+                          format, (MKL_INT)vector_type::vector_length);
       } else {
         r_val = -1;
       }
+      return r_val;
     }
 #endif
 
@@ -191,7 +201,7 @@ namespace KokkosBatched {
            const ScalarType beta,
            const yViewType &y) {
       return SerialGemvInternal<Algo::Gemv::Unblocked>::
-        invoke(A.dimension_1(), A.dimension_0(),
+        invoke(A.extent(1), A.extent(0),
                alpha, 
                A.data(), A.stride_1(), A.stride_0(),
                x.data(), x.stride_0(),
@@ -213,7 +223,7 @@ namespace KokkosBatched {
            const ScalarType beta,
            const yViewType &y) {
       return SerialGemvInternal<Algo::Gemv::Blocked>::
-        invoke(A.dimension_1(), A.dimension_0(),
+        invoke(A.extent(1), A.extent(0),
                alpha, 
                A.data(), A.stride_1(), A.stride_0(),
                x.data(), x.stride_0(),

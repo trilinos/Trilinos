@@ -5,6 +5,7 @@
 #include "ml_config.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT)
 #include <iostream>
+#include<fstream>
 #include <vector>
 #include <string.h>
 #include "ml_RefMaxwell.h"
@@ -173,7 +174,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ReComputePreconditioner() {
 
 // ================================================ ====== ==== ==== == =
 // Computes the preconditioner
-int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckFiltering)
+int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* CheckFiltering */)
 {
 #ifdef ML_TIMING
   double t_time_start, t_time_curr, t_diff[7];
@@ -223,6 +224,19 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   int numBCnodes=0;
   for(int i=0;i<Nn;i++){
     if((*BCnodes)[i]) numBCnodes++;
+  }
+
+  if (print_hierarchy) {
+  std::ofstream outBCrows("BCrows.dat");
+  for(int i=0;i<numBCrows;i++)
+    outBCrows<<BCrows[i]<<"\n";
+  outBCrows.close();
+
+  std::ofstream outBCnodes("BCnodes.dat");
+  for(int i=0;i<Nn;i++ )
+    if ((*BCnodes)[i])
+      outBCnodes<<i<<"\n";
+  outBCnodes.close();
   }
 
   /* Sanity Check: We have at least some Dirichlet nodes */
@@ -518,6 +532,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& 
   if(mode=="212") rv=ApplyInverse_Implicit_212(B,X);
   else if(mode=="additive") rv=ApplyInverse_Implicit_Additive(B,X);
   else if(mode=="121") rv=ApplyInverse_Implicit_121(B,X);
+  else if(mode=="none") rv=ApplyInverse_Implicit_OnlySmoothing(B,X);
   else {fprintf(stderr,"%s","RefMaxwellPreconditioner ERROR: Invalid ApplyInverse mode set in Teuchos list");ML_CHK_ERR(-2);}
   ML_CHK_ERR(rv);
 
@@ -754,6 +769,51 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
 
   return 0;
 }
+
+
+// ================================================ ====== ==== ==== == =
+//! Implicitly applies in the inverse with sommothing only
+int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_OnlySmoothing(const Epetra_MultiVector& B, Epetra_MultiVector& X) const
+{
+#ifdef ML_TIMING
+  double t_time,t_diff;
+  StartTimer(&t_time);
+#endif
+
+  int NumVectors=B.NumVectors();
+  Epetra_MultiVector TempE1(X.Map(),NumVectors,false);
+  Epetra_MultiVector TempE2(X.Map(),NumVectors,true);
+  Epetra_MultiVector TempN1(*NodeMap_,NumVectors,false);
+  Epetra_MultiVector TempN2(*NodeMap_,NumVectors,true);
+  Epetra_MultiVector Resid(B.Map(),NumVectors);
+
+  /* Pre-Smoothing */
+#ifdef HAVE_ML_IFPACK
+  if(IfSmoother) {ML_CHK_ERR(IfSmoother->ApplyInverse(B,X));}
+  else
+#endif
+  if(PreEdgeSmoother) ML_CHK_ERR(PreEdgeSmoother->ApplyInverse(B,X));
+
+  /* Post-Smoothing */
+#ifdef HAVE_ML_IFPACK
+  if(IfSmoother) {ML_CHK_ERR(IfSmoother->ApplyInverse(B,X));}
+  else
+#endif
+    if(PostEdgeSmoother) ML_CHK_ERR(PostEdgeSmoother->ApplyInverse(B,X));
+
+
+#ifdef ML_TIMING
+  StopTimer(&t_time,&t_diff);
+  /* Output */
+  ML_Comm *comm_;
+  ML_Comm_Create(&comm_);
+  this->ApplicationTime_+= t_diff;
+  ML_Comm_Destroy(&comm_);
+#endif
+
+  return 0;
+}
+
 
 // ================================================ ====== ==== ==== == =
 //! Implicitly applies in the inverse in an 1-2-1 format

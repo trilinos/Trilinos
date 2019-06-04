@@ -44,9 +44,9 @@
 #ifndef _KOKKOSSPGEMMCUSPARSE_HPP
 #define _KOKKOSSPGEMMCUSPARSE_HPP
 
-//#define KERNELS_HAVE_CUSPARSE
+//#define KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
 #endif
 namespace KokkosSparse{
@@ -75,7 +75,7 @@ namespace Impl{
       cin_row_index_view_type row_mapC
       ){
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
     typedef typename ain_row_index_view_type::device_type device1;
     typedef typename ain_nonzero_index_view_type::device_type device2;
@@ -96,17 +96,17 @@ namespace Impl{
 
     if (Kokkos::Impl::is_same<idx, int>::value){
 
-      const idx *a_xadj = (int *)row_mapA.ptr_on_device();
-      const idx *b_xadj = (int *)row_mapB.ptr_on_device();
-      idx *c_xadj = (int *)row_mapC.ptr_on_device();
+      const idx *a_xadj = (int *)row_mapA.data();
+      const idx *b_xadj = (int *)row_mapB.data();
+      idx *c_xadj = (int *)row_mapC.data();
 
-      const idx *a_adj = entriesA.ptr_on_device();
-      const idx *b_adj = entriesB.ptr_on_device();
+      const idx *a_adj = entriesA.data();
+      const idx *b_adj = entriesB.data();
       handle->create_cuSPARSE_Handle(transposeA, transposeB);
       typename KernelHandle::SPGEMMcuSparseHandleType *h = handle->get_cuSparseHandle();
 
-      int nnzA = entriesA.dimension_0();
-      int nnzB = entriesB.dimension_0();
+      int nnzA = entriesA.extent(0);
+      int nnzB = entriesB.extent(0);
 
       int baseC, nnzC;
       int *nnzTotalDevHostPtr = &nnzC;
@@ -180,7 +180,7 @@ namespace Impl{
       cin_nonzero_index_view_type entriesC,
       cin_nonzero_value_view_type valuesC){
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     typedef typename KernelHandle::nnz_lno_t idx;
     typedef ain_row_index_view_type idx_array_type;
 
@@ -208,23 +208,23 @@ namespace Impl{
 
 
     if (Kokkos::Impl::is_same<idx, int>::value){
-      int *a_xadj = (int *)row_mapA.ptr_on_device();
-      int *b_xadj = (int *)row_mapB.ptr_on_device();
-      int *c_xadj = (int *)row_mapC.ptr_on_device();
+      int *a_xadj = (int *)row_mapA.data();
+      int *b_xadj = (int *)row_mapB.data();
+      int *c_xadj = (int *)row_mapC.data();
 
-      int *a_adj = (int *)entriesA.ptr_on_device();
-      int *b_adj = (int *)entriesB.ptr_on_device();
-      int *c_adj = (int *)entriesC.ptr_on_device();
+      int *a_adj = (int *)entriesA.data();
+      int *b_adj = (int *)entriesB.data();
+      int *c_adj = (int *)entriesC.data();
 
 
       typename KernelHandle::SPGEMMcuSparseHandleType *h = handle->get_cuSparseHandle();
 
-      int nnzA = entriesA.dimension_0();
-      int nnzB = entriesB.dimension_0();
+      int nnzA = entriesA.extent(0);
+      int nnzB = entriesB.extent(0);
 
-      value_type *a_ew = valuesA.ptr_on_device();
-      value_type *b_ew = valuesB.ptr_on_device();
-      value_type *c_ew = valuesC.ptr_on_device();
+      value_type *a_ew = (value_type *)valuesA.data();
+      value_type *b_ew = (value_type *)valuesB.data();
+      value_type *c_ew = (value_type *)valuesC.data();
 
       if (Kokkos::Impl::is_same<value_type, float>::value){
         cusparseScsrgemm(

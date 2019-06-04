@@ -84,7 +84,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    RebalanceBlockRestrictionFactory() { }
+    RebalanceBlockRestrictionFactory():UseSingleSourceImporters_(false) { }
 
     //! Destructor.
     virtual ~RebalanceBlockRestrictionFactory() { }
@@ -106,6 +106,9 @@ namespace MueLu {
     //! Add a factory manager
     void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
 
+    //! Get the importers from a single source
+    void SetSingleSourceImporters(bool value){UseSingleSourceImporters_=value;}
+
     //@}
 
     //! @name Build methods.
@@ -116,9 +119,13 @@ namespace MueLu {
 
     //@}
 
+  
   private:
+
     //! Input factories
     std::vector<Teuchos::RCP<const FactoryManagerBase> > FactManager_;
+    
+    bool UseSingleSourceImporters_;
 
   }; // class RebalanceBlockTransferFactory
 

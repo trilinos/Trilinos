@@ -92,8 +92,8 @@ namespace Intrepid2 {
         const auto grad = Kokkos::subview(_grads,       Kokkos::ALL(), pt, Kokkos::ALL());
         const auto dofs = Kokkos::subview(_workset, cl, Kokkos::ALL(),     Kokkos::ALL());
 
-        const ordinal_type card = dofs.dimension(0);
-        const ordinal_type dim = dofs.dimension(1);
+        const ordinal_type card = dofs.extent(0);
+        const ordinal_type dim = dofs.extent(1);
         
         // temporary values
         Kokkos::View<vector_type**, Kokkos::Impl::ActiveExecutionMemorySpace> 
@@ -173,8 +173,8 @@ namespace Intrepid2 {
         const auto basis_grad = Kokkos::subview(_basis_grads, Kokkos::ALL(), pt, Kokkos::ALL());
         
         {
-          const ordinal_type card = basis_grad.dimension(0);
-          const ordinal_type dim = basis_grad.dimension(1);
+          const ordinal_type card = basis_grad.extent(0);
+          const ordinal_type dim = basis_grad.extent(1);
           for (ordinal_type bf=0;bf<card;++bf)
             for (ordinal_type i=0;i<dim;++i) {
               weighted_grad(bf, i) = 0;
@@ -193,7 +193,7 @@ namespace Intrepid2 {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cl) const {
-        const ordinal_type npts = _basis_values.dimension(1);
+        const ordinal_type npts = _basis_values.extent(1);
         for (ordinal_type pt=0;pt<npts;++pt) 
           apply(cl, pt);
       }

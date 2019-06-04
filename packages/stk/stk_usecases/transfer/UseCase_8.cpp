@@ -32,8 +32,6 @@
 // 
 
 #include <Intrepid_FieldContainer.hpp>
-#include <boost/shared_ptr.hpp>
-
 
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -53,8 +51,6 @@
 #include "MDMesh.hpp"
 #include "FEInterpolation.hpp"
 #include <stk_transfer/GeometricTransfer.hpp>
-
-namespace bopt = boost::program_options;
 
 typedef stk::mesh::Field<double>                       ScalarField ;
 typedef stk::mesh::Field<double, stk::mesh::Cartesian> CartesianField ;
@@ -106,9 +102,10 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
   stk::mesh::set_topology( domain_block,  stk::topology::HEX_8 );
   stk::mesh::set_topology( block_skin,    stk::topology::QUAD_4 );
 
-  ScalarField &domain_coord_sum_field = stk::mesh::put_field(
+  ScalarField &domain_coord_sum_field = stk::mesh::put_field_on_mesh(
                         domain_meta_data.declare_field<ScalarField>(stk::topology::NODE_RANK, data_field_name),
-                        domain_meta_data.universal_part() );
+                        domain_meta_data.universal_part(),
+                        nullptr);
   domain_meta_data.commit();
 
   domain_mesh_data.populate_bulk_data();
@@ -144,9 +141,9 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
 
   const double radius=.25;
   const std::vector<stk::mesh::FieldBase*> from_fields(1, &domain_coord_sum_field);
-  boost::shared_ptr<stk::transfer::STKElem >
+  std::shared_ptr<stk::transfer::STKElem >
     transfer_domain_mesh (new stk::transfer::STKElem(domain_entities, domain_coord_field, from_fields));
-  boost::shared_ptr<stk::transfer:: MDMesh >
+  std::shared_ptr<stk::transfer:: MDMesh >
     transfer_range_mesh  (new stk::transfer:: MDMesh(ToValues, ToPoints,   radius, comm));
 
 

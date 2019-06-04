@@ -11,10 +11,17 @@ IF (Tpetra_INST_DOUBLE)
     )
 ENDIF()
 
-IF(Ifpack2_ENABLE_QD AND Tpetra_INST_INT_INT)
+IF(Ifpack2_ENABLE_QD)
   TRIBITS_ADD_EXECUTABLE(
     tif_extprec_belos
     SOURCES belos_extprec_solve.cpp
+  )
+ENDIF()
+
+IF (Tpetra_INST_DOUBLE)
+  TRIBITS_ADD_EXECUTABLE(
+    tif_tpetra_native
+    SOURCES tpetra_native.cpp
   )
 ENDIF()
 
@@ -24,6 +31,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_Jacobi_calore1_mm.xml 
   test_Jacobi_calore1_mm_constGraph.xml 
   test_GS_calore1_mm.xml
+  test_MTGS_calore1_mm.xml
   test_RILUK_calore1_mm.xml 
   test_Cheby_calore1_mm.xml
   test_FILU_calore1_mm.xml
@@ -39,6 +47,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_4_RILUK_nos1_hb.xml
   test_4_RILUK_HTS_nos1_hb.xml
   test_SGS_calore1_mm.xml 
+  test_MTSGS_calore1_mm.xml
   calore1.mtx 
   test_pseudoblockcg_small_sym_mm.xml
   test_Jacobi_small_sym_mm.xml 
@@ -68,8 +77,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_FIC_small_sym_sing.xml
   test_FILDL_small_sym_sing.xml
   small_sym_sing.mtx consist_rhs.vec small_null.vec
-  test_SGS_wathen_mm.xml
-  test_MTSGS_wathen_mm.xml
+  mueluMatrix.mtx
+  test_4_GS_muelu.xml
+  test_4_MTGS_muelu.xml
+  test_4_SGS_muelu.xml
+  test_4_MTSGS_muelu.xml
+  # test_SGS_wathen_mm.xml
+  # test_MTSGS_wathen_mm.xml
 
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
@@ -429,7 +443,62 @@ TRIBITS_ADD_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-)
+  )
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME MTGS_belos
+  ARGS "--xml_file=test_MTGS_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME MTSGS_belos
+  ARGS "--xml_file=test_MTSGS_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME GS_belos_muelu
+  ARGS "--xml_file=test_4_GS_muelu.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME MTGS_belos_muelu
+  ARGS "--xml_file=test_4_MTGS_muelu.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME SGS_belos_muelu
+  ARGS "--xml_file=test_4_SGS_muelu.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME MTSGS_belos_muelu
+  ARGS "--xml_file=test_4_MTSGS_muelu.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
 
 TRIBITS_ADD_TEST(
   tif_belos
@@ -456,6 +525,33 @@ TRIBITS_ADD_TEST(
   ARGS "--xml_file=test_bordered_DIAG_small.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_tpetra_native
+  NAME Tpetra_Native_GMRES_SINGLE_REDUCE
+  ARGS "--matrixFilename=calore1.mtx --convergenceTolerances=1e-8 --solverTypes=\"TPETRA GMRES SINGLE REDUCE\""
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_tpetra_native
+  NAME Tpetra_Native_GMRES_PIPELINE
+  ARGS "--matrixFilename=calore1.mtx --convergenceTolerances=1e-8 --solverTypes=\"TPETRA GMRES PIPELINE\""
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_tpetra_native
+  NAME Tpetra_Native_GMRES_S_STEP
+  ARGS "--matrixFilename=calore1.mtx --convergenceTolerances=1e-8 --solverTypes=\"TPETRA GMRES S-STEP\""
+  COMM serial mpi
+  NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
 )
 

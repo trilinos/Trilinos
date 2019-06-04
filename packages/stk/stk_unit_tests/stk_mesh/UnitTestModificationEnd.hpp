@@ -542,13 +542,10 @@ void create_edges(stk::unit_test_util::BulkDataTester& stkMeshBulkData, std::vec
 {
     //============== Create one edge between elements 2 and 3 (nodes 9 and 10) with edge id 100
 
-    stk::mesh::OrdinalVector ordinal_scratch;
-    ordinal_scratch.reserve(64);
-    stk::mesh::PartVector part_scratch;
-    part_scratch.reserve(64);
+    stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
 
     stk::mesh::PartVector add_parts;
-    add_parts.push_back( & stkMeshBulkData.mesh_meta_data().get_cell_topology_root_part( stk::mesh::get_cell_topology( stk::topology::LINE_2 )));
+    add_parts.push_back( & stkMeshBulkData.mesh_meta_data().get_topology_root_part(stk::topology::LINE_2));
     add_parts.push_back(&edge_part);
 
     std::vector<bool> communicate_edge_for_ghosting(edgeIds.size(), false);
@@ -568,7 +565,7 @@ void create_edges(stk::unit_test_util::BulkDataTester& stkMeshBulkData, std::vec
                 stk::mesh::EntityKey nodeEntityKey(stk::topology::NODE_RANK,nodeIdsForEdge[edge_index][n]);
                 stk::mesh::Entity node = stkMeshBulkData.get_entity(nodeEntityKey);
                 ASSERT_TRUE(stkMeshBulkData.is_valid(node));
-                stkMeshBulkData.declare_relation(edge, node,n, perm, ordinal_scratch, part_scratch);
+                stkMeshBulkData.declare_relation(edge, node,n, perm, scratch1, scratch2, scratch3);
                 EXPECT_TRUE(stkMeshBulkData.bucket(node).member(edge_part));
                 nodes[n] = node;
             }
@@ -1270,15 +1267,15 @@ void checkEntityRelationsGhosted(int procId, stk::mesh::BulkData& stkMeshBulkDat
     std::vector<std::pair<int, stk::mesh::Entity> > element2edge;
     if ( procId == 0 )
     {
-        element2edge.push_back(std::make_pair(1, edge1));
-        element2edge.push_back(std::make_pair(2, edge1));
-        element2edge.push_back(std::make_pair(3, edge2));
+        element2edge.emplace_back(1, edge1);
+        element2edge.emplace_back(2, edge1);
+        element2edge.emplace_back(3, edge2);
     }
     else
     {
-        element2edge.push_back(std::make_pair(2, edge1));
-        element2edge.push_back(std::make_pair(3, edge2));
-        element2edge.push_back(std::make_pair(4, edge2));
+        element2edge.emplace_back(2, edge1);
+        element2edge.emplace_back(3, edge2);
+        element2edge.emplace_back(4, edge2);
     }
 
     {
@@ -1676,8 +1673,6 @@ void checkItAllForThisGhostedCase(stk::unit_test_util::BulkDataTester &stkMeshBu
         check_it_all_for_proc_1_ghosted(stkMeshBulkData);
     }
 }
-
-
 
 } } } // namespace stk mesh unit_test
 

@@ -310,14 +310,25 @@ public:
   /** @name Vector Cloning */
   //@{
 
-  /** \brief Returns a cloned copy of <tt>*this</tt> vector.
+  /** \brief Returns a seprate cloned copy of <tt>*this</tt> vector with the
+   * same values but different storage.
+   *
+   * This function performs a deep copy and assigns the values to the returned
+   * copy.  It basically performs:
+   *
+   \code
+   auto copy = Thyra::createMember(this->space());
+   Thyra::assign<Scalar>(copy.ptr(), *this);
+   return copy;
+   \endcode
    *
    * This function exists to be consistent with the clone functions
    * <tt>clone()</tt> which creates a <tt>LinearOpBase</tt> object and
    * <tt>clone_mv()</tt> which creates a <tt>MultiVectorBase</tt> object.
-   * However, this function is not really necessary because this capability is
-   * already present by using the <tt>VectorSpaceBase</tt> returned from
-   * <tt>this->space()</tt>.
+   * However, this function is not really necessary because the capability to
+   * create a new vector object is already present in the
+   * <tt>VectorSpaceBase</tt> object returned from <tt>this->space()</tt>
+   * followed by the assignment function as shown above.
    *
    * Subclasses should only consider overriding this function if there they
    * want to be very sophisticated and implement some form of lazy evaluation

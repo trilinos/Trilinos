@@ -48,9 +48,11 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_MultiVector.hpp>
 #include <Xpetra_BlockedMultiVector.hpp>
 #include <Xpetra_BlockedVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_Aggregates_decl.hpp"
 #include "MueLu_Graph.hpp"
@@ -63,7 +65,7 @@ namespace MueLu {
   Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const GraphBase & graph) {
     nAggregates_  = 0;
 
-    vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
+    vertex2AggId_ = LOMultiVectorFactory::Build(graph.GetImportMap(), 1);
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
 
     procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
@@ -80,7 +82,7 @@ namespace MueLu {
   Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const RCP<const Map> & map) {
     nAggregates_ = 0;
 
-    vertex2AggId_ = LOVectorFactory::Build(map);
+    vertex2AggId_ = LOMultiVectorFactory::Build(map, 1);
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
 
     procWinner_ = LOVectorFactory::Build(map);

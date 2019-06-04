@@ -52,14 +52,13 @@
 
 #include <Tpetra_Details_FixedHashTable.hpp>
 #include <Tpetra_HashTable.hpp>
-
+#include "Teuchos_Comm.hpp"
 
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
-#ifdef HAVE_MPI
+#ifdef HAVE_TPETRACORE_MPI
 #  include <mpi.h>
-#endif // HAVE_MPI
+#endif // HAVE_TPETRACORE_MPI
 // FIXME (mfh 16 Apr 2013) GIANT HACK ABOVE
-
 
 namespace Tpetra {
   namespace Details {
@@ -122,7 +121,7 @@ namespace Tpetra {
     template<class LO, class GO, class NT>
     bool
     ReplicatedDirectory<LO, GO, NT>::
-    isOneToOne (const Teuchos::Comm<int>& comm) const
+    isOneToOne (const Teuchos::Comm<int>& /* comm */) const
     {
       // A locally replicated Map is one-to-one only if there is no
       // replication, that is, only if the Map's communicator only has
@@ -327,7 +326,7 @@ namespace Tpetra {
       // MPI_Allgather does.  Matt Bettencourt reports Valgrind issues
       // (memcpy with overlapping data) with MpiComm<int>::gatherAll,
       // which could relate either to this, or to OpenMPI.
-#ifdef HAVE_MPI
+#ifdef HAVE_TPETRACORE_MPI
       MPI_Datatype rawMpiType = MPI_INT;
       bool useRawMpi = true;
       if (typeid (GO) == typeid (int)) {
@@ -358,9 +357,9 @@ namespace Tpetra {
       } else {
         gatherAll<int, GO> (*comm, 1, &minMyGID, numProcs, allMinGIDs_.getRawPtr ());
       }
-#else // NOT HAVE_MPI
+#else // NOT HAVE_TPETRACORE_MPI
       gatherAll<int, GO> (*comm, 1, &minMyGID, numProcs, allMinGIDs_.getRawPtr ());
-#endif // HAVE_MPI
+#endif // HAVE_TPETRACORE_MPI
       // FIXME (mfh 16 Apr 2013) GIANT HACK ABOVE
 
       //gatherAll<int, GO> (*comm, 1, &minMyGID, numProcs, allMinGIDs_.getRawPtr ());
@@ -582,7 +581,7 @@ namespace Tpetra {
       // the index base.  The index base should be separate from the
       // minimum GID.
       directoryMap_ = rcp (new map_type (numGlobalEntries, minAllGID, comm,
-                                         GloballyDistributed, map.getNode ()));
+                                         GloballyDistributed));
       // The number of Directory elements that my process owns.
       const size_t dir_numMyEntries = directoryMap_->getNodeNumElements ();
 
@@ -610,7 +609,7 @@ namespace Tpetra {
       // switch to a hash table - based implementation.
       const size_t inverseSparsityThreshold = 10;
       useHashTables_ =
-        dir_numMyEntries >= inverseSparsityThreshold * map.getNodeNumElements ();
+        (dir_numMyEntries >= inverseSparsityThreshold * map.getNodeNumElements());
 
       // Get list of process IDs that own the directory entries for the
       // Map GIDs.  These will be the targets of the sends that the
@@ -794,31 +793,33 @@ namespace Tpetra {
           //
           // FIXME (mfh 23 Mar 2014) How do I know that i is the same
           // as the directory Map LID?
-          const size_type numPairs =
-            static_cast<size_type> (ownedPidLidPairs.size ());
-          for (size_type i = 0; i < numPairs; ++i) {
-            const LO dirMapLid = static_cast<LO> (i);
-            const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
+          // KDD 21 Mar 2018:  It isn't, especially if the user's IDs are not
+          // contiguous, but the directory map is.  Need to set tablePids[i]
+          // and tableLids[i], so need to loop over numReceives (as that is
+          // how those arrays are allocated).  FIXED
+
+          for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
+            const LO dirMapLid = tableKeys[i];
             const std::vector<std::pair<int, LO> >& pidLidList =
-              ownedPidLidPairs[i];
-            const size_t listLen = pidLidList.size ();
-            if (listLen > 0) {
-              if (listLen > 1) {
-                locallyOneToOne_ = false;
-              }
-              // If there is some (PID,LID) pair for the current input
-              // Map LID, then it makes sense to invoke the TieBreak
-              // object to arbitrate between the options.  Even if
-              // there is only one (PID,LID) pair, we still want to
-              // give the TieBreak object a chance to do whatever it
-              // likes to do, in terms of side effects (e.g., track
-              // (PID,LID) pairs).
-              const size_type index =
-                static_cast<size_type> (tie_break->selectedIndex (dirMapGid,
-                                                                  pidLidList));
-              tablePids[i] = pidLidList[index].first;
-              tableLids[i] = pidLidList[index].second;
+                                                    ownedPidLidPairs[dirMapLid];
+            const size_t listLen = pidLidList.size();
+            if (listLen == 0) continue;  // KDD This will never happen
+            const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
+            if (listLen > 1) {
+              locallyOneToOne_ = false;
             }
+            // If there is some (PID,LID) pair for the current input
+            // Map LID, then it makes sense to invoke the TieBreak
+            // object to arbitrate between the options.  Even if
+            // there is only one (PID,LID) pair, we still want to
+            // give the TieBreak object a chance to do whatever it
+            // likes to do, in terms of side effects (e.g., track
+            // (PID,LID) pairs).
+            const size_type index =
+              static_cast<size_type> (tie_break->selectedIndex (dirMapGid,
+                                                                pidLidList));
+            tablePids[i] = pidLidList[index].first;
+            tableLids[i] = pidLidList[index].second;
           }
 
           // Set up the hash tables.
@@ -895,32 +896,33 @@ namespace Tpetra {
           //
           // FIXME (mfh 23 Mar 2014) How do I know that i is the same
           // as the directory Map LID?
-          const size_type numPairs =
-            static_cast<size_type> (ownedPidLidPairs.size ());
-          for (size_type i = 0; i < numPairs; ++i) {
-            const LO dirMapLid = static_cast<LO> (i);
-            const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
+          // KDD 21 Mar 2018:  It isn't, especially if the user's IDs are not
+          // contiguous.  Loop over all ownedPidLidPairs; skip those that have
+          // empty lists.  FIXED
+
+          for (size_t i = 0; i < dir_numMyEntries; ++i) {
             const std::vector<std::pair<int, LO> >& pidLidList =
               ownedPidLidPairs[i];
-            const size_t listLen = pidLidList.size ();
-            if (listLen > 0) {
-              if (listLen > 1) {
-                locallyOneToOne_ = false;
-              }
-              // If there is some (PID,LID) pair for the current input
-              // Map LID, then it makes sense to invoke the TieBreak
-              // object to arbitrate between the options.  Even if
-              // there is only one (PID,LID) pair, we still want to
-              // give the TieBreak object a chance to do whatever it
-              // likes to do, in terms of side effects (e.g., track
-              // (PID,LID) pairs).
-              const size_type index =
-                static_cast<size_type> (tie_break->selectedIndex (dirMapGid,
-                                                                  pidLidList));
-              PIDs_[i] = pidLidList[index].first;
-              LIDs_[i] = pidLidList[index].second;
+            const size_t listLen = pidLidList.size();
+            if (listLen == 0) continue;  // KDD will happen for GIDs not in
+                                         // KDD the user's source map
+            const LO dirMapLid = static_cast<LO> (i);
+            const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
+            if (listLen > 1) {
+              locallyOneToOne_ = false;
             }
-            // else no GID specified by source map
+            // If there is some (PID,LID) pair for the current input
+            // Map LID, then it makes sense to invoke the TieBreak
+            // object to arbitrate between the options.  Even if
+            // there is only one (PID,LID) pair, we still want to
+            // give the TieBreak object a chance to do whatever it
+            // likes to do, in terms of side effects (e.g., track
+            // (PID,LID) pairs).
+            const size_type index =
+              static_cast<size_type> (tie_break->selectedIndex (dirMapGid,
+                                                                pidLidList));
+            PIDs_[i] = pidLidList[index].first;
+            LIDs_[i] = pidLidList[index].second;
           }
         }
       }

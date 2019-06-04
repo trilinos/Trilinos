@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -44,8 +44,8 @@
 #ifndef GUARD_CORE_KOKKOS_ROCM_CONFIG_HPP
 #define GUARD_CORE_KOKKOS_ROCM_CONFIG_HPP
 
-#ifndef KOKKOS_ROCM_HAS_WORKAROUNDS
-#define KOKKOS_ROCM_HAS_WORKAROUNDS 1
+#ifndef KOKKOS_IMPL_ROCM_CLANG_WORKAROUND
+#define KOKKOS_IMPL_ROCM_CLANG_WORKAROUND 1
 #endif
 
 #endif

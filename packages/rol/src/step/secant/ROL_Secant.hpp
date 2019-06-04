@@ -48,7 +48,7 @@
     \brief Provides interface for and implements limited-memory secant operators.
 */
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_LinearOperator.hpp"
 #include "ROL_Types.hpp"
 
@@ -56,9 +56,9 @@ namespace ROL {
 
 template<class Real>
 struct SecantState {
-  Teuchos::RCP<Vector<Real> >               iterate;
-  std::vector<Teuchos::RCP<Vector<Real> > > iterDiff; // Step Storage
-  std::vector<Teuchos::RCP<Vector<Real> > > gradDiff; // Gradient Storage
+  ROL::Ptr<Vector<Real> >               iterate;
+  std::vector<ROL::Ptr<Vector<Real> > > iterDiff; // Step Storage
+  std::vector<ROL::Ptr<Vector<Real> > > gradDiff; // Gradient Storage
   std::vector<Real>                         product;  // Step-Gradient Inner Product Storage
   std::vector<Real>                         product2; // Step-Gradient Inner Product Storage
   int storage;                                        // Storage Size
@@ -70,7 +70,7 @@ template<class Real>
 class Secant : public LinearOperator<Real> {
 private:
 
-  Teuchos::RCP<SecantState<Real> > state_; // Secant State
+  ROL::Ptr<SecantState<Real> > state_; // Secant State
   bool isInitialized_;
 
 public:
@@ -79,14 +79,14 @@ public:
 
   // Constructor
   Secant( int M = 10 ) : isInitialized_(false) {
-    state_ = Teuchos::rcp( new SecantState<Real> ); 
+    state_ = ROL::makePtr<SecantState<Real>>(); 
     state_->storage = M;
     state_->current = -1;
     state_->iter    = 0;
   }
 
-  Teuchos::RCP<SecantState<Real> >& get_state() { return state_; }
-  const Teuchos::RCP<SecantState<Real> >& get_state() const { return state_; }
+  ROL::Ptr<SecantState<Real> >& get_state() { return state_; }
+  const ROL::Ptr<SecantState<Real> >& get_state() const { return state_; }
 
   // Update Secant Approximation
   virtual void updateStorage( const Vector<Real> &x,  const Vector<Real> &grad,
@@ -99,7 +99,7 @@ public:
     }
     state_->iterate->set(x);
     state_->iter = iter;
-    Teuchos::RCP<Vector<Real> > gradDiff = grad.clone();
+    ROL::Ptr<Vector<Real> > gradDiff = grad.clone();
     gradDiff->set(grad);
     gradDiff->axpy(-one,gp);
 
@@ -147,9 +147,9 @@ public:
 
   // Test Secant Approximations 
   void test( const Vector<Real> &x, const Vector<Real> &s ) const {
-    Teuchos::RCP<Vector<Real> > vec  = x.clone();
-    Teuchos::RCP<Vector<Real> > Hvec = x.clone();
-    Teuchos::RCP<Vector<Real> > Bvec = x.clone();
+    ROL::Ptr<Vector<Real> > vec  = x.clone();
+    ROL::Ptr<Vector<Real> > Hvec = x.clone();
+    ROL::Ptr<Vector<Real> > Bvec = x.clone();
     Real one(1);
   
     // Print BHv -> Should be v

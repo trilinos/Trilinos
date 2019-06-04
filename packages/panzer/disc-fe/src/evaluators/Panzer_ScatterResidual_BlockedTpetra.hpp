@@ -59,8 +59,9 @@
 
 namespace panzer {
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class BlockedDOFManager; //forward declaration
+// Forward declarations
+template <typename LocalOrdinalT,typename GlobalOrdinalT> class BlockedDOFManager;
+template <typename LocalOrdinalT,typename GlobalOrdinalT> class UniqueGlobalIndexer;
 
 /** \brief Pushes residual values into the residual vector for a 
            Newton-based solve
@@ -134,17 +135,24 @@ private:
   typedef Tpetra::Import<LO,GO,NodeT> ImportType;
   typedef Tpetra::Export<LO,GO,NodeT> ExportType;
 
-  // dummy field so that the evaluator will have something to do
+  //! Dummy evalauted field so that the evaluator will have something to do
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
-  // fields that need to be scattered will be put in this vector
+  //! Fields that need to be scattered will be put in this vector
   std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
+  //! Maps the local (field,element,basis) triplet to a global ID for scattering
   Teuchos::RCP<const BlockedDOFManager<LO,GO> > globalIndexer_;
 
-  std::vector<int> fieldIds_; // field IDs needing mapping
+  //! Vector of global indexers, one for each scattered field respectively
+  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO>>> fieldGlobalIndexers_;
+
+  //! Field IDs in the local product vector block (not global field id)
+  std::vector<int> fieldIds_;
+
+  //! Returns the index into the Thyra ProductVector sub-block. Size
+  //! of number of fields to scatter
+  std::vector<int> productVectorBlockIndex_;
 
   // This maps the scattered field names to the DOF manager field
   // For instance a Navier-Stokes map might look like
@@ -154,6 +162,12 @@ private:
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const BlockedTpetraLinearObjContainer<RealType,LO,GO,NodeT> > blockedContainer_;
+
+  //! Local indices for unknowns
+  Kokkos::View<LO**,PHX::Device> worksetLIDs_;
+
+  //! Offset into the cell lids for each field
+  std::vector<Kokkos::View<int*,PHX::Device>> fieldOffsets_;
 
   ScatterResidual_BlockedTpetra();
 };
@@ -229,6 +243,10 @@ private:
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
+  //! Returns the index into the Thyra ProductVector sub-block. Size
+  //! of number of fields to scatter
+  std::vector<int> productVectorBlockIndex_;
+
   // This maps the scattered field names to the DOF manager field
   // For instance a Navier-Stokes map might look like
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
@@ -237,6 +255,15 @@ private:
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const BlockedTpetraLinearObjContainer<RealType,LO,GO,NodeT> > blockedContainer_;
+
+  //! Local indices for unknowns
+  Kokkos::View<LO**,PHX::Device> worksetLIDs_;
+
+  //! Offset into the cell lids for each field. Size of number of fields to scatter.
+  std::vector<Kokkos::View<int*,PHX::Device>> fieldOffsets_;
+
+  //! The offset values of the blocked DOFs per element. Size of number of blocks in the product vector + 1. The plus one is a sentinel.
+  Kokkos::View<LO*,PHX::Device> blockOffsets_;
 
   ScatterResidual_BlockedTpetra();
 };

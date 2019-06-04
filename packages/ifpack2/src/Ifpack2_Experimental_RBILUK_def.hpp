@@ -43,20 +43,20 @@
 #ifndef IFPACK2_EXPERIMENTAL_CRSRBILUK_DEF_HPP
 #define IFPACK2_EXPERIMENTAL_CRSRBILUK_DEF_HPP
 
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
-#include<Ifpack2_OverlappingRowMatrix.hpp>
-#include<Ifpack2_LocalFilter.hpp>
-#include <Ifpack2_Experimental_RBILUK.hpp>
-#include <Ifpack2_Utilities.hpp>
-#include <Ifpack2_RILUK.hpp>
+#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
+#include "Ifpack2_OverlappingRowMatrix.hpp"
+#include "Ifpack2_LocalFilter.hpp"
+#include "Ifpack2_Utilities.hpp"
+#include "Ifpack2_RILUK.hpp"
 
 //#define IFPACK2_RBILUK_INITIAL
 #define IFPACK2_RBILUK_INITIAL_NOKK
 
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
-#include <KokkosBatched_Gemm_Decl.hpp>
-#include <KokkosBatched_Gemm_Serial_Impl.hpp>
-#include <KokkosBatched_Util.hpp>
+#include "KokkosBatched_Gemm_Decl.hpp"
+#include "KokkosBatched_Gemm_Serial_Impl.hpp"
+#include "KokkosBatched_Util.hpp"
 #endif
 
 namespace Ifpack2 {
@@ -320,6 +320,7 @@ initAllValues (const block_crs_matrix_type& A)
   // NOTE (mfh 27 May 2016) The factorization below occurs entirely on
   // host, so sync to host first.  The const_cast is unfortunate but
   // is our only option to make this correct.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   const_cast<block_crs_matrix_type&> (A).template sync<Kokkos::HostSpace> ();
   L_block_->template sync<Kokkos::HostSpace> ();
   U_block_->template sync<Kokkos::HostSpace> ();
@@ -328,6 +329,16 @@ initAllValues (const block_crs_matrix_type& A)
   L_block_->template modify<Kokkos::HostSpace> ();
   U_block_->template modify<Kokkos::HostSpace> ();
   D_block_->template modify<Kokkos::HostSpace> ();
+#else
+  const_cast<block_crs_matrix_type&> (A).sync_host ();
+  L_block_->sync_host ();
+  U_block_->sync_host ();
+  D_block_->sync_host ();
+  // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
+  L_block_->modify_host ();
+  U_block_->modify_host ();
+  D_block_->modify_host ();
+#endif
 
   RCP<const map_type> rowMap = L_block_->getRowMap ();
 
@@ -473,8 +484,13 @@ void RBILUK<MatrixType>::compute ()
   if (! A_block_.is_null ()) {
     Teuchos::RCP<block_crs_matrix_type> A_nc =
       Teuchos::rcp_const_cast<block_crs_matrix_type> (A_block_);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     A_nc->template sync<Kokkos::HostSpace> ();
+#else
+    A_nc->sync_host ();
+#endif
   }
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   L_block_->template sync<Kokkos::HostSpace> ();
   U_block_->template sync<Kokkos::HostSpace> ();
   D_block_->template sync<Kokkos::HostSpace> ();
@@ -482,6 +498,15 @@ void RBILUK<MatrixType>::compute ()
   L_block_->template modify<Kokkos::HostSpace> ();
   U_block_->template modify<Kokkos::HostSpace> ();
   D_block_->template modify<Kokkos::HostSpace> ();
+#else
+  L_block_->sync_host ();
+  U_block_->sync_host ();
+  D_block_->sync_host ();
+  // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
+  L_block_->modify_host ();
+  U_block_->modify_host ();
+  D_block_->modify_host ();
+#endif
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
@@ -613,7 +638,7 @@ void RBILUK<MatrixType>::compute ()
         Tpetra::Experimental::GEMM ("N", "N", STS::one (), currentVal, dmatInverse,
                                     STS::zero (), matTmp);
 #endif
-        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (matTmp.ptr_on_device ()), blockSize_);
+        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.data ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.data ()), reinterpret_cast<impl_scalar_type*> (matTmp.data ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::Experimental::COPY (matTmp, currentVal);
 
@@ -638,7 +663,7 @@ void RBILUK<MatrixType>::compute ()
               Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
 #endif
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.data ()), reinterpret_cast<impl_scalar_type*> (uumat.data ()), reinterpret_cast<impl_scalar_type*> (kkval.data ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -659,7 +684,7 @@ void RBILUK<MatrixType>::compute ()
               Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
 #endif
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(kkval.data ()), blockSize_, -STM::one(), STM::one());
             }
             else {
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
@@ -672,7 +697,7 @@ void RBILUK<MatrixType>::compute ()
               Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), diagModBlock);
 #endif
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.data ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -731,7 +756,7 @@ void RBILUK<MatrixType>::compute ()
         Tpetra::Experimental::GEMM ("N", "N", STS::one (), dmat, currentVal,
                                     STS::zero (), matTmp);
 #endif
-        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(matTmp.ptr_on_device ()), blockSize_);
+        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.data ()), reinterpret_cast<impl_scalar_type*>(currentVal.data ()), reinterpret_cast<impl_scalar_type*>(matTmp.data ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::Experimental::COPY (matTmp, currentVal);
       }

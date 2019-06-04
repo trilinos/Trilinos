@@ -11,9 +11,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(tutorial_generateTutorial
     SOURCE_FILES prepareTexTutorial.py main.tex definitions.tex bookstyle.tex
-    ../src/Challenge.cpp
-    ../src/MLParameterList.cpp
-    ../src/laplace2d.cpp
     pics/1level_100jac09.png   
     pics/1level_1000jac09.png  
     pics/3level_1jac09.png       

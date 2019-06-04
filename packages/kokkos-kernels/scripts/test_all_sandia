@@ -14,24 +14,44 @@ PROCESSOR=`uname -p`
 
 if [[ "$HOSTNAME" =~ (white|ride).* ]]; then
   MACHINE=white
-elif [[ "$HOSTNAME" =~ .*bowman.* ]]; then
+  module load git
+fi
+
+if [[ "$HOSTNAME" =~ .*bowman.* ]]; then
   MACHINE=bowman
-elif [[ "$HOSTNAME" =~ node.* ]]; then # Warning: very generic name
-  if [[ "$PROCESSOR" = "aarch64" ]]; then
-    MACHINE=sullivan
-  else
-    MACHINE=shepard
-  fi
-elif [[ "$HOSTNAME" =~ apollo ]]; then
+  module load git
+fi
+
+if [[ "$HOSTNAME" == *blake* ]]; then
+  MACHINE=blake
+  module load git
+fi
+
+if [[ "$HOSTNAME" == apollo\.* ]]; then
   MACHINE=apollo
-elif [[ "$HOSTNAME" =~ sullivan ]]; then
-  MACHINE=sullivan
-elif [ ! -z "$SEMS_MODULEFILES_ROOT" ]; then
-  MACHINE=sems
-else
+fi
+
+if [[ "$HOSTNAME" == mayer\.* ]]; then
+  MACHINE=mayer
+#  module load git
+fi
+if [[ "$HOSTNAME" == cn* ]]; then # Warning: very generic name
+  MACHINE=mayer
+fi
+
+if [ ! -z "$SEMS_MODULEFILES_ROOT" ]; then
+  if [[ "$MACHINE" = "" ]]; then
+    MACHINE=sems
+    module load sems-git
+  fi
+fi
+
+if [[ "$MACHINE" = "" ]]; then
   echo "Unrecognized machine" >&2
   exit 1
 fi
+
+echo "Running on machine: $MACHINE"
 
 GCC_BUILD_LIST="OpenMP,Pthread,Serial,OpenMP_Serial,Pthread_Serial"
 IBM_BUILD_LIST="OpenMP,Serial,OpenMP_Serial"
@@ -45,7 +65,8 @@ GCC_WARNING_FLAGS="-Werror,-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits
 IBM_WARNING_FLAGS="-Werror,-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
 CLANG_WARNING_FLAGS="-Werror,-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
 INTEL_WARNING_FLAGS="-Werror,-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
-CUDA_WARNING_FLAGS="-Werror,-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+CUDA_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+PGI_WARNING_FLAGS=""
 
 # Default. Machine specific can override.
 DEBUG=False
@@ -54,13 +75,15 @@ CUSTOM_BUILD_LIST=""
 QTHREADS_PATH=""
 DRYRUN=False
 BUILD_ONLY=False
-declare -i NUM_JOBS_TO_RUN_IN_PARALLEL=3
+declare -i NUM_JOBS_TO_RUN_IN_PARALLEL=2
 TEST_SCRIPT=False
 SKIP_HWLOC=False
 SPOT_CHECK=False
 
 PRINT_HELP=False
 OPT_FLAG=""
+CXX_FLAGS_EXTRA=""
+LD_FLAGS_EXTRA=""
 KOKKOS_OPTIONS=""
 
 #
@@ -114,6 +137,30 @@ do
     --with-cuda-options*)
       KOKKOS_CUDA_OPTIONS="--with-cuda-options=${key#*=}"
       ;;
+    --with-kokkos-options*)
+      KOKKOS_OPTIONS="--with-kokkos-options=${key#*=}"
+      ;;
+    --cxxflags-extra*)
+      CXX_FLAGS_EXTRA="${key#*=}"
+      ;;
+    --cxxstandard*)
+      CXX_STANDARD="${key#*=}"
+      ;;
+    --ldflags-extra*)
+      LD_FLAGS_EXTRA="${key#*=}"
+      ;;
+    --with-scalars*)
+      KOKKOSKERNELS_SCALARS="${key#*=}"
+      ;;
+    --with-ordinals*)
+      KOKKOSKERNELS_ORDINALS="${key#*=}"
+      ;;
+    --with-offsets*)
+      KOKKOSKERNELS_OFFSETS="${key#*=}"
+      ;;
+    --with-layouts*)
+      KOKKOSKERNELS_LAYOUTS="${key#*=}"
+      ;;
     --with-tpls*)
       KOKKOSKERNELS_ENABLE_TPLS="${key#*=}"
       ;;
@@ -154,7 +201,7 @@ fi
 if [ "$MACHINE" = "sems" ]; then
   source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
-  BASE_MODULE_LIST="sems-env,kokkos-env,sems-<COMPILER_NAME>/<COMPILER_VERSION>,kokkos-hwloc/1.10.1/base"
+  BASE_MODULE_LIST="sems-env,kokkos-env,kokkos-hwloc/1.10.1/base,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
   CUDA_MODULE_LIST="sems-env,kokkos-env,kokkos-<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/4.8.4,kokkos-hwloc/1.10.1/base"
   CUDA8_MODULE_LIST="sems-env,kokkos-env,kokkos-<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/5.3.0,kokkos-hwloc/1.10.1/base"
 
@@ -164,30 +211,29 @@ if [ "$MACHINE" = "sems" ]; then
 
   if [ "$SPOT_CHECK" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/4.7.2 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
-               "gcc/5.1.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
-               "intel/16.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
-               "clang/3.9.0 $BASE_MODULE_LIST "Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
+    COMPILERS=("gcc/5.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/17.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
+               "clang/4.0.1 $BASE_MODULE_LIST "Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
                "cuda/8.0.44 $CUDA8_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/4.7.2 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "gcc/4.8.4 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+    COMPILERS=("gcc/4.8.4 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/4.9.3 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/5.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/6.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "intel/14.0.4 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "intel/15.0.2 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "intel/16.0.1 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
                "intel/16.0.3 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "intel/17.0.1 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
                "clang/3.6.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
                "clang/3.7.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
                "clang/3.8.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
                "clang/3.9.0 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
-               "cuda/7.0.28 $CUDA_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/config/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/7.5.18 $CUDA_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/config/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/8.0.44 $CUDA8_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/config/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "clang/4.0.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+               "cuda/7.5.18 $CUDA_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/8.0.44 $CUDA8_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   fi
 elif [ "$MACHINE" = "white" ]; then
@@ -196,24 +242,39 @@ elif [ "$MACHINE" = "white" ]; then
   export SLURM_TASKS_PER_NODE=32
 
   BASE_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>"
-  IBM_MODULE_LIST="<COMPILER_NAME>/xl/<COMPILER_VERSION>"
-  CUDA_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>,gcc/5.4.0"
+  IBM_MODULE_LIST="<COMPILER_NAME>/xl/<COMPILER_VERSION>,gcc/7.2.0"
+  CUDA_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,ibm/xl/16.1.0"
+  CUDA10_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,ibm/xl/16.1.0"
+
+  module load netlib/3.8.0/gcc
+  export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a"
+  # blas is compiled by gcc so use single underscore and power8 use return complex
+  KOKKOS_OPTIONS="eti-only,blas-mangle_,blas-return-complex"
 
   # Don't do pthread on white.
   GCC_BUILD_LIST="OpenMP,Serial,OpenMP_Serial"
 
-  # Format: (compiler module-list build-list exe-name warning-flag)
-  COMPILERS=("gcc/5.4.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-             "ibm/13.1.5 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
-             "ibm/13.1.6-BETA $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
-             "cuda/8.0.44 $CUDA_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-  )
+  if [ "$SPOT_CHECK" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/6.4.0 $BASE_MODULE_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "ibm/16.1.0 $IBM_MODULE_LIST "Serial" xlC $IBM_WARNING_FLAGS"
+               "cuda/9.2.88 $CUDA_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )
+  else
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/6.4.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "ibm/16.1.0 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
+               "ibm/16.1.1 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
+               "cuda/9.2.88 $CUDA_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/10.0.130 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )
+  fi
 
   if [ -z "$ARCH_FLAG" ]; then
     ARCH_FLAG="--arch=Power8,Kepler37"
   fi
-
-  NUM_JOBS_TO_RUN_IN_PARALLEL=2
 
 elif [ "$MACHINE" = "bowman" ]; then
   source /etc/profile.d/modules.sh
@@ -225,51 +286,61 @@ elif [ "$MACHINE" = "bowman" ]; then
   OLD_INTEL_BUILD_LIST="Pthread,Serial,Pthread_Serial"
 
   # Format: (compiler module-list build-list exe-name warning-flag)
-  COMPILERS=("intel/16.2.181 $BASE_MODULE_LIST $OLD_INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-             "intel/17.0.098 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+  COMPILERS=("intel/16.4.258 $BASE_MODULE_LIST $OLD_INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+             "intel/17.2.174 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+             "intel/18.2.199 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
   )
 
   if [ -z "$ARCH_FLAG" ]; then
     ARCH_FLAG="--arch=KNL"
   fi
 
-  NUM_JOBS_TO_RUN_IN_PARALLEL=2
-
-elif [ "$MACHINE" = "sullivan" ]; then
-  source /etc/profile.d/modules.sh
+elif [ "$MACHINE" = "mayer" ]; then
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=96
 
   BASE_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>"
+  ARM_MODULE_LIST="<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
 
   # Format: (compiler module-list build-list exe-name warning-flag)
-  COMPILERS=("gcc/6.1.0 $BASE_MODULE_LIST $ARM_GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS")
+  COMPILERS=("gcc/7.2.0 $BASE_MODULE_LIST $ARM_GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+             "arm/18.4.0 $ARM_MODULE_LIST $ARM_GCC_BUILD_LIST armclang++ $CLANG_WARNING_FLAGS"
+  )
 
   if [ -z "$ARCH_FLAG" ]; then
-    ARCH_FLAG="--arch=ARMv8-ThunderX"
+    ARCH_FLAG="--arch=ARMv8-TX2"
   fi
 
-  NUM_JOBS_TO_RUN_IN_PARALLEL=2
-
-elif [ "$MACHINE" = "shepard" ]; then
+elif [ "$MACHINE" = "blake" ]; then
   source /etc/profile.d/modules.sh
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=32
 
-  INTEL_MODULE_LIST="<COMPILER_NAME>/compilers/<COMPILER_VERSION>,openblas"
-  GCC_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>,openblas"
+  BASE_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>,openblas"
+  BASE_MODULE_LIST_INTEL="<COMPILER_NAME>/compilers/<COMPILER_VERSION>,openblas"
 
   BLAS_PATH=${BLAS_ROOT}
-
-  # Format: (compiler module-list build-list exe-name warning-flag)
-  COMPILERS=("gcc/4.9.3 $GCC_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-             "intel/17.4.196 $INTEL_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-  )
-
-  if [ -z "$ARCH_FLAG" ]; then
-    ARCH_FLAG="--arch=HSW"
+  if [ "$SPOT_CHECK" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+    )
+    if [ -z "$ARCH_FLAG" ]; then
+      ARCH_FLAG="--arch=SKX"
+    fi
+  else
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/4.9.3 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/5.5.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/6.4.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/8.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+    )
+    if [ -z "$ARCH_FLAG" ]; then
+      ARCH_FLAG="--arch=SNB"
+    fi
   fi
-  NUM_JOBS_TO_RUN_IN_PARALLEL=2
 
 elif [ "$MACHINE" = "apollo" ]; then
   source /projects/sems/modulefiles/utils/sems-modules-init.sh
@@ -283,11 +354,11 @@ elif [ "$MACHINE" = "apollo" ]; then
 
   SKIP_HWLOC=True
 
-  BASE_MODULE_LIST="sems-env,kokkos-env,sems-<COMPILER_NAME>/<COMPILER_VERSION>,kokkos-hwloc/1.10.1/base"
-  CUDA_MODULE_LIST="sems-env,kokkos-env,kokkos-<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/4.8.4,kokkos-hwloc/1.10.1/base"
-  CUDA8_MODULE_LIST="sems-env,kokkos-env,kokkos-<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/5.3.0,kokkos-hwloc/1.10.1/base"
+  BASE_MODULE_LIST="sems-env,kokkos-env,kokkos-hwloc/1.10.1/base,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
+  CUDA_MODULE_LIST="sems-env,kokkos-env,kokkos-<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/5.3.0,kokkos-hwloc/1.10.1/base"
 
-  CLANG_MODULE_LIST="sems-env,kokkos-env,sems-git,sems-cmake/3.5.2,<COMPILER_NAME>/<COMPILER_VERSION>,cuda/8.0.44"
+  CLANG_MODULE_LIST="sems-env,kokkos-env,sems-git,sems-cmake/3.5.2,<COMPILER_NAME>/<COMPILER_VERSION>,cuda/9.0.69"
+  CLANG7_MODULE_LIST="sems-env,kokkos-env,sems-git,sems-cmake/3.5.2,<COMPILER_NAME>/<COMPILER_VERSION>,cuda/9.1"
   NVCC_MODULE_LIST="sems-env,kokkos-env,sems-git,sems-cmake/3.5.2,<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/5.3.0"
 
   BUILD_LIST_CUDA_NVCC="Cuda_Serial,Cuda_OpenMP"
@@ -296,37 +367,34 @@ elif [ "$MACHINE" = "apollo" ]; then
 
   if [ "$SPOT_CHECK" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/4.9.3 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
+    COMPILERS=("gcc/4.8.4 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
                "gcc/5.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
-               "intel/17.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
+               "intel/16.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
                "clang/3.9.0 $BASE_MODULE_LIST "Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
-               "clang/4.0.0 $CLANG_MODULE_LIST "Cuda_Pthread" clang++ $CUDA_WARNING_FLAGS"
-               "cuda/8.0.44 $CUDA8_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "clang/6.0 $CLANG_MODULE_LIST "Cuda_Pthread" clang++ $CUDA_WARNING_FLAGS"
+               "cuda/9.1 $CUDA_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("cuda/8.0.44 $CUDA8_MODULE_LIST $BUILD_LIST_CUDA_NVCC $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "clang/4.0.0 $CLANG_MODULE_LIST $BUILD_LIST_CUDA_CLANG clang++ $CUDA_WARNING_FLAGS"
+    COMPILERS=("cuda/9.1 $CUDA_MODULE_LIST $BUILD_LIST_CUDA_NVCC $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "clang/6.0 $CLANG_MODULE_LIST $BUILD_LIST_CUDA_CLANG clang++ $CUDA_WARNING_FLAGS"
+               "clang/7.0 $CLANG7_MODULE_LIST $BUILD_LIST_CUDA_CLANG clang++ $CUDA_WARNING_FLAGS"
                "clang/3.9.0 $CLANG_MODULE_LIST $BUILD_LIST_CLANG clang++ $CLANG_WARNING_FLAGS"
                "gcc/4.8.4 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/4.9.3 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/5.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/6.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "intel/15.0.2 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
                "intel/16.0.1 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
                "intel/17.0.1 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "clang/3.5.2 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
                "clang/3.6.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
-               "clang/3.9.0 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
-               "clang/4.0.0 $CLANG_MODULE_LIST "Cuda_Pthread" clang++ $CLANG_WARNING_FLAGS"
-               "cuda/7.5.18 $CUDA_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/8.0.44 $CUDA8_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   fi
 
   if [ -z "$ARCH_FLAG" ]; then
-    ARCH_FLAG="--arch=SNB,Kepler35"
+    ARCH_FLAG="--arch=SNB,Volta70"
   fi
-
-  NUM_JOBS_TO_RUN_IN_PARALLEL=1
 
 else
   echo "Unhandled machine $MACHINE" >&2
@@ -341,10 +409,14 @@ RESULT_ROOT_PREFIX=TestAll
 
 if [ "$PRINT_HELP" = "True" ]; then
   echo "test_all_sandia <ARGS> <OPTIONS>:"
+  echo ""
+  echo "OPTIONS: list of flag options for non-default testing"
+  echo ""
   echo "--kokkoskernels-path=/Path/To/Kokkos: Path to the KokkosKernels root directory"
   echo "    Defaults to root repo containing this script"
   echo "--kokkos-path=/Path/To/Kokkos: Path to the Kokkos root directory"
   echo "    Defaults to KokkosKernelsPath/../kokkos"
+  echo ""
   echo "--debug: Run tests in debug. Defaults to False"
   echo "--test-script: Test this script, not Kokkos"
   echo "--skip-hwloc: Do not do hwloc tests"
@@ -352,9 +424,38 @@ if [ "$PRINT_HELP" = "True" ]; then
   echo "--spot-check: Minimal test set to issue pull request"
   echo "--dry-run: Just print what would be executed"
   echo "--build-only: Just do builds, don't run anything"
-  echo "--opt-flag=FLAG: Optimization flag (default: -O3)"
+  echo ""
   echo "--arch=ARCHITECTURE: overwrite architecture flags"
+  echo ""
+  echo "--with-kokkos-options=OPT: set KOKKOS_OPTIONS"
   echo "--with-cuda-options=OPT: set KOKKOS_CUDA_OPTIONS"
+  echo ""
+  echo "--opt-flag=FLAG: Optimization flag (default: -O3)"
+  echo "--cxxflags-extra=FLAG(S): append extra flags to cxxflags"
+  echo "--ldflags-extra=FLAG(S): append extra ldflags to ldflags"
+  echo "--cxxstandard=STD: set KOKKOS_CXX_STANDARD"
+  echo ""
+  echo "--with-scalars=SCALARS: set KOKKOSKERNELS_SCALARS"
+  echo "    Provide a comma-separated list scalar types"
+  echo "    Valid items:"
+  echo "      float, complex<float>, double, complex<double>"
+  echo "        Example: SCALARS='double,\"complex\<double\>\"'"
+  echo ""
+  echo "--with-ordinals=ORDS: set KOKKOSKERNELS_ORDINALS"
+  echo "    Provide a comma-separated list ordinal types"
+  echo "    Valid items:"
+  echo "      int, int64_t"
+  echo ""
+  echo "--with-offsets=OFFS: set KOKKOSKERNELS_OFFSETS"
+  echo "    Provide a comma-separated list offset types"
+  echo "    Valid items:"
+  echo "      int, size_t"
+  echo ""
+  echo "--with-layouts=LAYOUTS: set KOKKOSKERNELS_LAYOUTS"
+  echo "    Provide a comma-separated list layouts"
+  echo "    Valid items:"
+  echo "      LayoutLeft,LayoutRight"
+  echo ""
   echo "--build-list=BUILD,BUILD,BUILD..."
   echo "    Provide a comma-separated list of builds instead of running all builds"
   echo "    Valid items:"
@@ -378,14 +479,14 @@ if [ "$PRINT_HELP" = "True" ]; then
   echo "  Run all gcc tests"
   echo "  % test_all_sandia gcc"
   echo ""
-  echo "  Run all gcc/4.7.2 and all intel tests"
-  echo "  % test_all_sandia gcc/4.7.2 intel"
+  echo "  Run all gcc/4.8.4 and all intel tests"
+  echo "  % test_all_sandia gcc/4.8.4 intel"
   echo ""
   echo "  Run all tests in debug"
   echo "  % test_all_sandia --debug"
   echo ""
-  echo "  Run gcc/4.7.2 and only do OpenMP and OpenMP_Serial builds"
-  echo "  % test_all_sandia gcc/4.7.2 --build-list=OpenMP,OpenMP_Serial"
+  echo "  Run gcc/4.8.4 and only do OpenMP and OpenMP_Serial builds"
+  echo "  % test_all_sandia gcc/4.8.4 --build-list=OpenMP,OpenMP_Serial"
   echo ""
   echo "If you want to kill the tests, do:"
   echo "  hit ctrl-z"
@@ -583,17 +684,30 @@ single_build_and_test() {
   if [[ "$build_type" = *debug* ]]; then
     local extra_args="$extra_args --debug"
     local cxxflags="-g $compiler_warning_flags"
+    local ldflags="-g"
   else
     local cxxflags="$OPT_FLAG $compiler_warning_flags"
+    local ldflags="${OPT_FLAG}"
   fi
+
+  local cxxflags="${cxxflags} ${CXX_FLAGS_EXTRA}"
+  local ldflags="${ldflags} ${LD_FLAGS_EXTRA}"
+
+  local cxx_standard="${CXX_STANDARD}"
 
   if [[ "$KOKKOS_CUDA_OPTIONS" != "" ]]; then
     local extra_args="$extra_args $KOKKOS_CUDA_OPTIONS"
   fi
+  if [[ "$KOKKOS_OPTIONS" != "" ]]; then
+    local extra_args="$extra_args $KOKKOS_OPTIONS"
+  fi    
 
   echo "  Starting job $desc"
 
   local comment="no_comment"
+
+  # Keep variable wrapped in single quotes so complex<scalar> passed correctly to generate_makefile
+  local kk_scalars=\'${KOKKOSKERNELS_SCALARS}\'
 
   if [ "$TEST_SCRIPT" = "True" ]; then
     local rand=$[ 1 + $[ RANDOM % 10 ]]
@@ -603,7 +717,7 @@ single_build_and_test() {
       run_cmd ls fake_problem >& ${desc}.configure.log || { report_and_log_test_result 1 $desc configure && return 0; }
     fi
   else
-    run_cmd ${KOKKOSKERNELS_PATH}/scripts/generate_makefile.bash --with-devices=$build $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" $extra_args --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-tpls=${KOKKOSKERNELS_ENABLE_TPLS} &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
+    run_cmd ${KOKKOSKERNELS_PATH}/scripts/generate_makefile.bash --with-devices=$build $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $extra_args --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} --with-tpls=${KOKKOSKERNELS_ENABLE_TPLS} &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
     local -i build_start_time=$(date +%s)
     run_cmd make -j 32 build-test >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
     local -i build_end_time=$(date +%s)

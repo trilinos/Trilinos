@@ -247,7 +247,7 @@ typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 dimension(const iType& ord) const
 { 
-  return m_field_data.dimension(ord);
+  return m_field_data.extent(ord);
 }
 
 //**********************************************************************
@@ -265,7 +265,7 @@ dimensions(std::vector<iType>& dims)
 
   dims.resize(m_field_data.Rank);
   for ( size_type i = 0 ; i <  m_field_data.Rank; ++i ) 
-    dims[i] = static_cast<iType>(m_field_data.dimension(i));  // dangerous
+    dims[i] = static_cast<iType>(m_field_data.extent(i));  // dangerous
 }
 
 //**********************************************************************
@@ -319,7 +319,7 @@ setFieldData(const PHX::any& a)
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
     m_field_data = tmp;
   }
-  catch (std::exception& e) {
+  catch (std::exception& ) {
     std::cout << "\n\nError in compiletime PHX::MDField::setFieldData() in PHX::any_cast. Tried to cast the field \"" 
 	      << this->fieldTag().name()  << "\" with the identifier \"" << this->fieldTag().identifier() 
 	      << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name()) 
@@ -366,7 +366,7 @@ print(std::ostream& os,	bool printValues) const
   for (std::size_t i=0; i < dim_names.size(); ++i) {
     if (i > 0)
       os << ",";
-    os << m_field_data.dimension(i);
+    os << m_field_data.extent(i);
   }
   os << "): ";
   

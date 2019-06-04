@@ -90,6 +90,8 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                double t_init)
   : t_init_(t_init)
   , num_me_parameters_(0)
+  , do_fd_dfdp_(false)
+  , fd_perturb_size_(1e-7)
   , require_in_args_refresh_(true)
   , require_out_args_refresh_(true)
   , responseLibrary_(rLibrary)
@@ -141,6 +143,8 @@ ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>
                bool build_transient_support,double t_init)
   : t_init_(t_init)
   , num_me_parameters_(0)
+  , do_fd_dfdp_(false)
+  , fd_perturb_size_(1e-7)
   , require_in_args_refresh_(true)
   , require_out_args_refresh_(true)
   , global_data_(global_data)
@@ -786,6 +790,7 @@ addParameter(const Teuchos::Array<std::string> & names,
 
   require_in_args_refresh_ = true;
   require_out_args_refresh_ = true;
+  this->resetDefaultBase();
 
   return parameter_index;
 }
@@ -806,6 +811,7 @@ addDistributedParameter(const std::string & key,
 
   require_in_args_refresh_ = true;
   require_out_args_refresh_ = true;
+  this->resetDefaultBase();
 
   return parameter_index;
 }
@@ -948,6 +954,10 @@ evalModel_D2gDx2(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2gDx2;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -993,6 +1003,11 @@ evalModel_D2gDxDp(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2gDxDp;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1042,6 +1057,11 @@ evalModel_D2gDp2(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2gDp2;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1091,6 +1111,11 @@ evalModel_D2gDpDx(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2gDpDx;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1188,6 +1213,9 @@ evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2fDx2;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1288,6 +1316,10 @@ evalModel_D2fDxDp(int pIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2fDxDp;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1335,6 +1367,10 @@ evalModel_D2fDpDx(int pIndex,
   rLibrary.addResponsesToInArgs<Traits::Hessian>(ae_inargs);
   rLibrary.evaluate<Traits::Hessian>(ae_inargs);
 #else
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2fDpDx;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1382,6 +1418,10 @@ evalModel_D2fDp2(int pIndex,
   rLibrary.addResponsesToInArgs<Traits::Hessian>(ae_inargs);
   rLibrary.evaluate<Traits::Hessian>(ae_inargs);
 #else
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2fDp2;
   TEUCHOS_ASSERT(false);
 #endif
 }

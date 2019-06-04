@@ -151,7 +151,7 @@ create_LocallyReplicatedVectorSpace(
 RCP<VectorBase<double> >
 create_Vector(
   const RCP<Epetra_Vector> &epetra_v,
-  const RCP<const VectorSpaceBase<double> > &space
+  const RCP<const VectorSpaceBase<double> > &space = Teuchos::null
   );
 
 
@@ -180,7 +180,7 @@ create_Vector(
 RCP<const VectorBase<double> >
 create_Vector(
   const RCP<const Epetra_Vector> &epetra_v,
-  const RCP<const VectorSpaceBase<double> > &space
+  const RCP<const VectorSpaceBase<double> > &space = Teuchos::null
   );
 
 
@@ -210,7 +210,7 @@ create_Vector(
 RCP<MultiVectorBase<double> >
 create_MultiVector(
   const RCP<Epetra_MultiVector> &epetra_mv,
-  const RCP<const VectorSpaceBase<double> > &range,
+  const RCP<const VectorSpaceBase<double> > &range = Teuchos::null,
   const RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
   );
 
@@ -243,7 +243,7 @@ create_MultiVector(
 RCP<const MultiVectorBase<double> >
 create_MultiVector(
   const RCP<const Epetra_MultiVector> &epetra_mv,
-  const RCP<const VectorSpaceBase<double> > &range,
+  const RCP<const VectorSpaceBase<double> > &range = Teuchos::null,
   const RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
   );
 
@@ -278,6 +278,11 @@ get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm);
 RCP<const Epetra_Map>
 get_Epetra_Map(const VectorSpaceBase<double>& vs, const RCP<const Epetra_Comm>& comm);
 
+// Almost like the above one, but working on an RCP vs as input, we can check for the
+// presence of RCP<const Epetra_Map> in the RCP extra data, to save us time.
+RCP<const Epetra_Map>
+get_Epetra_Map(const RCP<const VectorSpaceBase<double>>& vs,
+               const RCP<const Epetra_Comm>& comm = Teuchos::null);
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_Vector</tt> view from a
  * non-<tt>const</tt> <tt>VectorBase</tt> object if possible.
@@ -307,6 +312,14 @@ get_Epetra_Vector(
   const RCP<VectorBase<double> > &v
   );
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<Epetra_Vector>)
+RCP<Epetra_Vector>
+get_Epetra_Vector(
+  const RCP<VectorBase<double> > &v,
+  const RCP<const Epetra_Map>& map = Teuchos::null
+  );
+
 
 /** \brief Get a <tt>const</tt> <tt>Epetra_Vector</tt> view from a
  * <tt>const</tt> <tt>VectorBase</tt> object if possible.
@@ -333,6 +346,13 @@ get_Epetra_Vector(
   const RCP<const VectorBase<double> > &v
   );
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<const Epetra_Vector>)
+RCP<const Epetra_Vector>
+get_Epetra_Vector(
+  const RCP<const VectorBase<double> > &v,
+  const RCP<const Epetra_Map>& map = Teuchos::null
+  );
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
  * non-<tt>const</tt> <tt>MultiVectorBase</tt> object if possible.
@@ -363,6 +383,14 @@ get_Epetra_MultiVector(
   const RCP<MultiVectorBase<double> > &mv
   );
 
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<Epetra_MultiVector>)
+RCP<Epetra_MultiVector>
+get_Epetra_MultiVector(
+  const RCP<MultiVectorBase<double> > &mv,
+  const RCP<const Epetra_Map>& map = Teuchos::null
+  );
+
 
 /** \brief Get a <tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
  * <tt>const</tt> <tt>MultiVectorBase</tt> object if possible.
@@ -387,6 +415,14 @@ RCP<const Epetra_MultiVector>
 get_Epetra_MultiVector(
   const Epetra_Map &map, 
   const RCP<const MultiVectorBase<double> > &mv
+  );
+
+// Same as above, except allows to not pass the map (in case the RCP of v
+// already has an attached RCP<const Epetra_MultiVector>)
+RCP<const Epetra_MultiVector>
+get_Epetra_MultiVector(
+  const RCP<const MultiVectorBase<double> > &mv,
+  const RCP<const Epetra_Map>& map = Teuchos::null
   );
 
 

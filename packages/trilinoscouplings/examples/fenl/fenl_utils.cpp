@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <cstdlib>
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 #include <cuda_runtime_api.h>
 #endif
 
@@ -100,6 +100,10 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("print", "no-print",        &cmdline.PRINT,  "print detailed test output");
   clp.setOption("print-its", "no-print-its",&cmdline.PRINT_ITS,  "print solver iterations after each sample");
   clp.setOption("summarize", "no-summarize",&cmdline.SUMMARIZE,  "summarize Teuchos timers at end of run");
+  clp.setOption("unit-test", "no-unit-test",&cmdline.UNIT_TEST,  "whether code is running as a unit-test and should check values");
+  clp.setOption("test-mean",                &cmdline.TEST_MEAN,  "test value for mean when running as unit-test");
+  clp.setOption("test-std-dev",             &cmdline.TEST_STD_DEV,  "test value for standard deviation when running as unit-test");
+  clp.setOption("test-tol",                 &cmdline.TEST_TOL,  "tolerance for unit testing");
 
   bool doDryRun = false;
   clp.setOption("echo", "no-echo",          &doDryRun,  "dry-run only");
@@ -111,7 +115,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   // Set CUDA device based on local node rank
   if (cmdline.USE_CUDA && cmdline.USE_CUDA_DEV == -1) {
     int local_rank = 0;

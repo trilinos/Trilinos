@@ -84,41 +84,56 @@ namespace Xpetra {
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>(); // TODO fix this
-    }
-
     //! @name Constructors and destructor
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     EpetraMapT(global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               LocalGlobal lg,
+               const Teuchos::RCP< Node > &/*node*/) 
+      : EpetraMapT(numGlobalElements, indexBase, comm, lg)
+    {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    EpetraMapT(global_size_t numGlobalElements,
+               GlobalOrdinal indexBase,
+               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
+               LocalGlobal lg=GloballyDistributed)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=defaultArgNode()) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) 
+      : EpetraMapT(numGlobalElements, numLocalElements, indexBase, comm)
+    {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     EpetraMapT(global_size_t numGlobalElements,
         const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
         GlobalOrdinal indexBase,
         const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-        const Teuchos::RCP< Node > &node = defaultArgNode()) {
+        const Teuchos::RCP< Node > &node) 
+     :  EpetraMapT(numGlobalElements, elementList, indexBase, comm)
+    {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    EpetraMapT(global_size_t numGlobalElements,
+        const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
+        GlobalOrdinal indexBase,
+        const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
@@ -156,13 +171,13 @@ namespace Xpetra {
     GlobalOrdinal getMaxAllGlobalIndex() const { return 0; }
 
     //! The local index corresponding to the given global index.
-    LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { return 0; }
+    LocalOrdinal getLocalElement(GlobalOrdinal /* globalIndex */) const { return 0; }
 
     //! Return the process ranks and corresponding local indices for the given global indices.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const { return Xpetra::IDNotPresent; }
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &/* GIDList */, const Teuchos::ArrayView< int > &/* nodeIDList */, const Teuchos::ArrayView< LocalOrdinal > &/* LIDList */) const { return Xpetra::IDNotPresent; }
 
     //! Return the process ranks for the given global indices.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { return Xpetra::IDNotPresent; }
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &/* GIDList */, const Teuchos::ArrayView< int > &/* nodeIDList */) const { return Xpetra::IDNotPresent; }
 
     //! Return a view of the global indices owned by this process.
     //Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const;
@@ -174,10 +189,10 @@ namespace Xpetra {
     //@{
 
     //! Whether the given local index is valid for this Map on this process.
-    bool isNodeLocalElement(LocalOrdinal localIndex) const { return false; }
+    bool isNodeLocalElement(LocalOrdinal /* localIndex */) const { return false; }
 
     //! Whether the given global index is valid for this Map on this process.
-    bool isNodeGlobalElement(GlobalOrdinal globalIndex) const { return false; }
+    bool isNodeGlobalElement(GlobalOrdinal /* globalIndex */) const { return false; }
 
     //! True if this Map is distributed contiguously, else false.
     bool isContiguous() const { return false; }
@@ -186,10 +201,10 @@ namespace Xpetra {
     bool isDistributed() const { return false; }
 
     //! True if and only if map is compatible with this Map.
-    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return false; }
+    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &/* map */) const { return false; }
 
     //! True if and only if map is identical to this Map.
-    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return false; }
+    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &/* map */) const { return false; }
 
     //@}
 
@@ -199,11 +214,13 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { return Teuchos::null; }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>(); // TODO fix this (just returns Teuchos::null)
+      return Teuchos::rcp (new Node);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -214,7 +231,7 @@ namespace Xpetra {
     std::string description() const { return std::string(""); }
 
     //! Print this object with the given verbosity level to the given Teuchos::FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {  }
+    void describe(Teuchos::FancyOStream &/* out */, const Teuchos::EVerbosityLevel /* verbLevel */=Teuchos::Describable::verbLevel_default) const {  }
 
     //@}
 
@@ -225,12 +242,12 @@ namespace Xpetra {
     RCP<const Map<int,GlobalOrdinal,Node> > removeEmptyProcesses() const { return Teuchos::null; }
 
     //! Replace this Map's communicator with a subset communicator.
-    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const { return Teuchos::null; }
+    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &/* newComm */) const { return Teuchos::null; }
 
     //@}
 
     //! Return the global index for a given local index.  Note that this returns -1 if not found on this processor.  (This is different than Epetra's behavior!)
-    GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const { return -1; }
+    GlobalOrdinal getGlobalElement(LocalOrdinal /* localIndex */) const { return -1; }
 
     //! @name Xpetra specific
     //@{
@@ -258,9 +275,7 @@ namespace Xpetra {
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
-        "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
-      TEUCHOS_UNREACHABLE_RETURN(local_map_type());
+      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented.");
     }
 #else
 #ifdef __GNUC__
@@ -291,24 +306,24 @@ namespace Xpetra {
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
     //! @name Constructors and destructor
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     EpetraMapT(global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               LocalGlobal lg,
+               const Teuchos::RCP< Node > &/* node */)
+      : EpetraMapT(numGlobalElements, indexBase, comm, lg)
+    {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    EpetraMapT(global_size_t numGlobalElements,
+               GlobalOrdinal indexBase,
+               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
+               LocalGlobal lg=GloballyDistributed)
     {
       // This test come from Tpetra (Epetra doesn't check if numGlobalElements,indexBase are equivalent across images).
       // In addition, for the test TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument), only one node throw an exception and there is a dead lock.
@@ -360,7 +375,13 @@ namespace Xpetra {
     }
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=defaultArgNode())
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &/* node */) 
+      : EpetraMapT(numGlobalElements, numLocalElements, indexBase, comm)
+    {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
       // This test come from Tpetra
       using Teuchos::outArg;
@@ -460,11 +481,20 @@ namespace Xpetra {
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     EpetraMapT(global_size_t numGlobalElements,
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               const Teuchos::RCP< Node > &/* node */)
+      : EpetraMapT(numGlobalElements, elementList, indexBase, comm)
+    {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    EpetraMapT(global_size_t numGlobalElements,
+               const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
+               GlobalOrdinal indexBase,
+               const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
     {
       if (numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
         IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(-1, static_cast<int>(elementList.size()), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
@@ -547,11 +577,13 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { XPETRA_MONITOR("EpetraMapT::getComm"); return toXpetra(map_->Comm()); }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>(); // TODO fix this
+      return Teuchos::rcp (new Node);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -668,7 +700,7 @@ namespace Xpetra {
     }
 
     //! Replace this Map's communicator with a subset communicator.
-    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const {
+    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &/* newComm */) const {
       throw std::runtime_error("Xpetra::EpetraMapT::replaceCommWithSubset has not yet been implemented.");
       TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
@@ -711,94 +743,11 @@ namespace Xpetra {
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
-      if (isInitializedLocalMap_)
-        return localMap_;
-
-      typedef GlobalOrdinal GO;
-      typedef LocalOrdinal  LO;
-
-      typedef typename Node::device_type DeviceType;
-
-      typedef Tpetra::Details::FixedHashTable<GO, LO, DeviceType>   glMapType;
-      typedef ::Kokkos::View<GO*, ::Kokkos::LayoutLeft, DeviceType> lgMapType;
-
-      GO   indexBase  = getIndexBase();
-      GO   myMinGID   = getMinGlobalIndex();
-      GO   myMaxGID   = getMaxGlobalIndex();
-      bool contiguous = isContiguous();
-
-      size_t numLocalElements = map_->NumMyElements();
-
-      GO firstContiguousGID, lastContiguousGID;
-      glMapType glMap;
-      lgMapType lgMap;
-      if (numLocalElements) {
-        if (contiguous) {
-          // Don't need to initialize glMap and lgMap
-          firstContiguousGID = myMinGID;
-          lastContiguousGID  = myMaxGID+1;
-
-        } else {
-
-          auto GIDs = getNodeElementList();
-
-          lgMap = lgMapType("lgMap", numLocalElements);
-
-          firstContiguousGID = GIDs[0];
-          lastContiguousGID  = firstContiguousGID+1;
-
-          size_t i = 1;
-          lgMap(0) = firstContiguousGID;
-          for ( ; i < numLocalElements; ++i) {
-            const GO curGID = GIDs[i];
-            const LO curLid = Teuchos::as<LO> (i);
-
-            if (lastContiguousGID != curGID)
-              break;
-
-            // Add the entry to the LID->GID table only after we know that
-            // the current GID is in the initial contiguous sequence, so
-            // that we don't repeat adding it in the first iteration of
-            // the loop below over the remaining noncontiguous GIDs.
-            lgMap(curLid) = curGID;
-            ++lastContiguousGID;
-          }
-          --lastContiguousGID;
-
-          ::Kokkos::View<GO*, ::Kokkos::LayoutLeft, DeviceType>
-            nonContigGIDs ("nonContigGIDs", numLocalElements-i);
-          // FIXME_KOKKOS: relies on UVM
-          for (size_t idx = 0; idx < numLocalElements - i; idx++)
-            nonContigGIDs(idx) = GIDs[i+idx];
-
-          glMap = glMapType (nonContigGIDs,
-                             firstContiguousGID,
-                             lastContiguousGID,
-                             static_cast<LO> (i));
-
-          for ( ; i < numLocalElements; ++i) {
-            const GO curGID = GIDs[i];
-            const LO curLid = Teuchos::as<LO> (i);
-
-            lgMap(curLid) = curGID;
-          }
-        }
-
-      } else {
-        // No elements
-        firstContiguousGID = indexBase+1;
-        lastContiguousGID  = indexBase;
-      }
-      localMap_ = local_map_type(glMap, lgMap, indexBase, myMinGID, myMaxGID, firstContiguousGID, lastContiguousGID, numLocalElements, contiguous);
-
-      isInitializedLocalMap_ = true;
-
-      return localMap_;
+      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented.");
     }
 
   private:
     mutable local_map_type localMap_;
-    mutable bool isInitializedLocalMap_ = false; // It's OK to use C++11 when Tpetra is enabled
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -827,24 +776,25 @@ namespace Xpetra {
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
     //! @name Constructors and destructor
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     EpetraMapT(global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = defaultArgNode()) {
+               LocalGlobal lg,
+               const Teuchos::RCP< Node > &/* node */)
+      : EpetraMapT(numGlobalElements, indexBase, comm, lg)
+    {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    EpetraMapT(global_size_t numGlobalElements,
+               GlobalOrdinal indexBase,
+               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
+               LocalGlobal lg=GloballyDistributed)
+    {
       // This test come from Tpetra (Epetra doesn't check if numGlobalElements,indexBase are equivalent across images).
       // In addition, for the test TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument), only one node throw an exception and there is a dead lock.
       std::string errPrefix;
@@ -895,7 +845,13 @@ namespace Xpetra {
     }
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=defaultArgNode()) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &/* node */) 
+      : EpetraMapT(numGlobalElements, numLocalElements, indexBase, comm)
+    {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       // This test come from Tpetra
       using Teuchos::outArg;
 
@@ -994,11 +950,21 @@ namespace Xpetra {
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     EpetraMapT(global_size_t numGlobalElements,
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = defaultArgNode()) {
+               const Teuchos::RCP< Node > &/* node */)
+      :  EpetraMapT(numGlobalElements, elementList, indexBase, comm)
+    {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    EpetraMapT(global_size_t numGlobalElements,
+               const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
+               GlobalOrdinal indexBase,
+               const Teuchos::RCP< const Teuchos::Comm< int > > &comm) 
+    {
       if (numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
         IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(-1, elementList.size(), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
       } else {
@@ -1080,11 +1046,13 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { XPETRA_MONITOR("EpetraMapT::getComm"); return toXpetra(map_->Comm()); }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>();
+      return Teuchos::rcp (new Node);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -1201,7 +1169,7 @@ namespace Xpetra {
     }
 
     //! Replace this Map's communicator with a subset communicator.
-    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const {
+    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &/* newComm */) const {
       throw std::runtime_error("Xpetra::EpetraMapT::replaceCommWithSubset has not yet been implemented.");
       // return Teuchos::null; // unreachable
     }
@@ -1242,94 +1210,11 @@ namespace Xpetra {
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
-      if (isInitializedLocalMap_)
-        return localMap_;
-
-      typedef GlobalOrdinal GO;
-      typedef LocalOrdinal  LO;
-
-      typedef typename Node::device_type DeviceType;
-
-      typedef Tpetra::Details::FixedHashTable<GO, LO, DeviceType>   glMapType;
-      typedef ::Kokkos::View<GO*, ::Kokkos::LayoutLeft, DeviceType> lgMapType;
-
-      GO   indexBase  = getIndexBase();
-      GO   myMinGID   = getMinGlobalIndex();
-      GO   myMaxGID   = getMaxGlobalIndex();
-      bool contiguous = isContiguous();
-
-      size_t numLocalElements = map_->NumMyElements();
-
-      GO firstContiguousGID, lastContiguousGID;
-      glMapType glMap;
-      lgMapType lgMap;
-      if (numLocalElements) {
-        if (contiguous) {
-          // Don't need to initialize glMap and lgMap
-          firstContiguousGID = myMinGID;
-          lastContiguousGID  = myMaxGID+1;
-
-        } else {
-
-          auto GIDs = getNodeElementList();
-
-          lgMap = lgMapType("lgMap", numLocalElements);
-
-          firstContiguousGID = GIDs[0];
-          lastContiguousGID  = firstContiguousGID+1;
-
-          size_t i = 1;
-          lgMap(0) = firstContiguousGID;
-          for ( ; i < numLocalElements; ++i) {
-            const GO curGID = GIDs[i];
-            const LO curLid = Teuchos::as<LO> (i);
-
-            if (lastContiguousGID != curGID)
-              break;
-
-            // Add the entry to the LID->GID table only after we know that
-            // the current GID is in the initial contiguous sequence, so
-            // that we don't repeat adding it in the first iteration of
-            // the loop below over the remaining noncontiguous GIDs.
-            lgMap(curLid) = curGID;
-            ++lastContiguousGID;
-          }
-          --lastContiguousGID;
-
-          ::Kokkos::View<GO*, ::Kokkos::LayoutLeft, DeviceType>
-            nonContigGIDs ("nonContigGIDs", numLocalElements-i);
-          // FIXME_KOKKOS: relies on UVM
-          for (size_t idx = 0; idx < numLocalElements - i; idx++)
-            nonContigGIDs(idx) = GIDs[i+idx];
-
-          glMap = glMapType (nonContigGIDs,
-                             firstContiguousGID,
-                             lastContiguousGID,
-                             static_cast<LO> (i));
-
-          for ( ; i < numLocalElements; ++i) {
-            const GO curGID = GIDs[i];
-            const LO curLid = Teuchos::as<LO> (i);
-
-            lgMap(curLid) = curGID;
-          }
-        }
-
-      } else {
-        // No elements
-        firstContiguousGID = indexBase+1;
-        lastContiguousGID  = indexBase;
-      }
-      localMap_ = local_map_type(glMap, lgMap, indexBase, myMinGID, myMaxGID, firstContiguousGID, lastContiguousGID, numLocalElements, contiguous);
-
-      isInitializedLocalMap_ = true;
-
-      return localMap_;
+      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented.");
     }
 
   private:
     mutable local_map_type localMap_;
-    mutable bool isInitializedLocalMap_ = false; // It's OK to use C++11 when Tpetra is enabled
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."

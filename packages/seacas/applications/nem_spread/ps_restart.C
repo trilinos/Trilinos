@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,19 +32,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include "exodusII.h"       // for ex_close, etc
+#include "exodusII.h" // for ex_close, etc
+#include "fmt/ostream.h"
 #include "nem_spread.h"     // for NemSpread, etc
 #include "pe_common.h"      // for MAX_CHUNK_SIZE
 #include "ps_pario_const.h" // for PIO_Info, etc
 #include "rf_allo.h"        // for array_alloc, safe_free
-#include "rf_format.h"
-#include "rf_io_const.h" // for Exo_Res_File, ExoFile, etc
-#include <cassert>       // for assert
-#include <climits>       // for INT_MAX
-#include <cstddef>       // for size_t
-#include <cstdio>        // for fprintf, stderr, nullptr, etc
-#include <cstdlib>       // for exit, free, malloc
-#include <cstring>       // for strrchr, memset, etc
+#include "rf_io_const.h"    // for Exo_Res_File, ExoFile, etc
+#include <cassert>          // for assert
+#include <climits>          // for INT_MAX
+#include <cstddef>          // for size_t
+#include <cstdio>           // for stderr, nullptr, etc
+#include <cstdlib>          // for exit, free, malloc
 #include <string>
 #include <unistd.h> // for sysconf, _SC_OPEN_MAX
 #include <vector>   // for vector
@@ -56,12 +55,6 @@ namespace {
   size_t find_gnode_inter(INT *intersect, size_t num_g_nodes, INT *glob_vec, size_t num_int_nodes,
                           size_t num_bor_nodes, size_t num_ext_nodes, INT *loc_vec);
 } // namespace
-
-#if __cplusplus > 199711L
-#define TOPTR(x) x.data()
-#else
-#define TOPTR(x) (x.empty() ? nullptr : &x[0])
-#endif
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -84,15 +77,13 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_params(
  * compare_mesh_param -- function which checks that parameters in
  *                       the restart EXODUS II file are the same as in
  *                       the mesh EXODUS II file
- * read_var_param -- function which reads the time indicies, number
+ * read_var_param -- function which reads the time indices, number
  *                   of variables, and their names from the restart file
  *
  *----------------------------------------------------------------------------
  */
 
 {
-  const char *yo = "read_restart_params";
-
   int   exoid, cpu_ws = 0;
   float vers;
   int   max_name_length = 0;
@@ -100,8 +91,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_params(
   /* Open the ExodusII file */
   cpu_ws   = io_ws;
   int mode = EX_READ | int64api;
-  if ((exoid = ex_open(Exo_Res_File, mode, &cpu_ws, &io_ws, &vers)) < 0) {
-    fprintf(stderr, "%s: Could not open file %s for restart info\n", yo, Exo_Res_File);
+  if ((exoid = ex_open(Exo_Res_File.c_str(), mode, &cpu_ws, &io_ws, &vers)) < 0) {
+    fmt::print(stderr, "{}: Could not open file {} for restart info\n", __func__,
+               Exo_Res_File.c_str());
     exit(1);
   }
 
@@ -113,18 +105,19 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_params(
    * in the results file are the same as the mesh parameters in the
    * mesh file.
    */
-  if (strcmp(ExoFile, Exo_Res_File) != 0) {
+  if (ExoFile != Exo_Res_File) {
     if (!compare_mesh_param(exoid)) {
-      fprintf(stderr, "%s: Mesh parameters in mesh and result files"
-                      " differ\n",
-              yo);
+      fmt::print(stderr,
+                 "{}: Mesh parameters in mesh and result files"
+                 " differ\n",
+                 __func__);
       exit(1);
     }
   }
 
   /* get the time, and the variable names */
   if (read_var_param(exoid, max_name_length) < 0) {
-    fprintf(stderr, "%s: Error occured while reading variable parameters\n", yo);
+    fmt::print(stderr, "{}: Error occurred while reading variable parameters\n", __func__);
     exit(1);
   }
 
@@ -158,8 +151,6 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
  */
 
 {
-  const char *yo = "read_restart_data";
-
   /* need to get the element block ids and counts */
   std::vector<INT> eb_ids_global(globals.Num_Elem_Blk);
   std::vector<INT> eb_cnts_global(globals.Num_Elem_Blk);
@@ -192,8 +183,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
   {
     cpu_ws   = io_ws;
     int mode = EX_READ | int64api;
-    if ((exoid = ex_open(Exo_Res_File, mode, &cpu_ws, &io_ws, &vers)) < 0) {
-      fprintf(stderr, "%s: Could not open file %s for restart info\n", yo, Exo_Res_File);
+    if ((exoid = ex_open(Exo_Res_File.c_str(), mode, &cpu_ws, &io_ws, &vers)) < 0) {
+      fmt::print(stderr, "{}: Could not open file {} for restart info\n", __func__,
+                 Exo_Res_File.c_str());
       exit(1);
     }
   }
@@ -226,8 +218,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
      */
 
     /* Get the Element Block IDs from the input file */
-    if (ex_get_ids(exoid, EX_ELEM_BLOCK, TOPTR(eb_ids_global)) < 0) {
-      fprintf(stderr, "%s: unable to get element block IDs", yo);
+    if (ex_get_ids(exoid, EX_ELEM_BLOCK, eb_ids_global.data()) < 0) {
+      fmt::print(stderr, "{}: unable to get element block IDs", __func__);
       exit(1);
     }
 
@@ -236,8 +228,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
       char blk_name[MAX_STR_LENGTH];
       if (ex_get_block(exoid, EX_ELEM_BLOCK, eb_ids_global[cnt], blk_name, &(eb_cnts_global[cnt]),
                        nullptr, nullptr, nullptr, nullptr) < 0) {
-        fprintf(stderr, "%s: unable to get element count for block id " ST_ZU "", yo,
-                (size_t)eb_ids_global[cnt]);
+        fmt::print(stderr, "{}: unable to get element count for block id {}", __func__,
+                   (size_t)eb_ids_global[cnt]);
         exit(1);
       }
     }
@@ -251,13 +243,13 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     eb_map_ptr = (INT ***)array_alloc(__FILE__, __LINE__, 2, Proc_Info[2], globals.Num_Elem_Blk,
                                       sizeof(INT *));
     if (!eb_map_ptr) {
-      fprintf(stderr, "[%s]: ERROR, insufficient memory!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, insufficient memory!\n", __func__);
       exit(1);
     }
     eb_cnts_local =
         (INT **)array_alloc(__FILE__, __LINE__, 2, Proc_Info[2], globals.Num_Elem_Blk, sizeof(INT));
     if (!eb_cnts_local) {
-      fprintf(stderr, "[%s]: ERROR, insufficient memory!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, insufficient memory!\n", __func__);
       exit(1);
     }
 
@@ -329,8 +321,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
      */
 
     /* Get the Sideset IDs from the input file */
-    if (ex_get_ids(exoid, EX_SIDE_SET, TOPTR(ss_ids_global)) < 0) {
-      fprintf(stderr, "%s: unable to get sideset IDs", yo);
+    if (ex_get_ids(exoid, EX_SIDE_SET, ss_ids_global.data()) < 0) {
+      fmt::print(stderr, "{}: unable to get sideset IDs", __func__);
       exit(1);
     }
 
@@ -338,8 +330,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     for (int cnt = 0; cnt < globals.Num_Side_Set; cnt++) {
       if (ex_get_set_param(exoid, EX_SIDE_SET, ss_ids_global[cnt], &(ss_cnts_global[cnt]),
                            nullptr) < 0) {
-        fprintf(stderr, "%s: unable to get element count for sideset id " ST_ZU "", yo,
-                (size_t)ss_ids_global[cnt]);
+        fmt::print(stderr, "{}: unable to get element count for sideset id {}", __func__,
+                   (size_t)ss_ids_global[cnt]);
         exit(1);
       }
     }
@@ -369,8 +361,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
      */
 
     /* Get the Nodeset IDs from the input file */
-    if (ex_get_ids(exoid, EX_NODE_SET, TOPTR(ns_ids_global)) < 0) {
-      fprintf(stderr, "%s: unable to get nodeset IDs", yo);
+    if (ex_get_ids(exoid, EX_NODE_SET, ns_ids_global.data()) < 0) {
+      fmt::print(stderr, "{}: unable to get nodeset IDs", __func__);
       exit(1);
     }
 
@@ -378,8 +370,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     for (int cnt = 0; cnt < globals.Num_Node_Set; cnt++) {
       if (ex_get_set_param(exoid, EX_NODE_SET, ns_ids_global[cnt], &(ns_cnts_global[cnt]),
                            nullptr) < 0) {
-        fprintf(stderr, "%s: unable to get element count for nodeset id " ST_ZU "", yo,
-                (size_t)ns_ids_global[cnt]);
+        fmt::print(stderr, "{}: unable to get element count for nodeset id {}", __func__,
+                   (size_t)ns_ids_global[cnt]);
         exit(1);
       }
     }
@@ -393,23 +385,24 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
 
   par_exoid = (int *)malloc(Proc_Info[2] * sizeof(int));
   if (par_exoid == nullptr) {
-    fprintf(stderr, "[%s]: ERROR, insufficient memory!\n", yo);
+    fmt::print(stderr, "[{}]: ERROR, insufficient memory!\n", __func__);
     exit(1);
   }
 
   /* See if any '/' in the name.  IF present, isolate the basename of the file */
-  if (strrchr(Output_File_Base_Name, '/') != nullptr) {
+  size_t found = Output_File_Base_Name.find_last_of('/');
+  if (found != std::string::npos) {
     /* There is a path separator.  Get the portion after the
      * separator
      */
-    cTemp = strrchr(Output_File_Base_Name, '/') + 1;
+    cTemp = Output_File_Base_Name.substr(found + 1);
   }
   else {
     /* No separator; this is already just the basename... */
     cTemp = Output_File_Base_Name;
   }
 
-  if (strlen(PIO_Info.Exo_Extension) == 0) {
+  if (PIO_Info.Exo_Extension.empty()) {
     cTemp += ".par";
   }
   else {
@@ -418,24 +411,23 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
 
   int open_file_count = get_free_descriptor_count();
   if (open_file_count > Proc_Info[5]) {
-    printf("All output files opened simultaneously.\n");
+    fmt::print("All output files opened simultaneously.\n");
     for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
-      std::string Parallel_File_Name =
-          gen_par_filename(cTemp.c_str(), Proc_Ids[iproc], Proc_Info[0]);
+      std::string Parallel_File_Name = gen_par_filename(cTemp, Proc_Ids[iproc], Proc_Info[0]);
 
       /* Open the parallel Exodus II file for writing */
       cpu_ws   = io_ws;
       int mode = EX_WRITE | int64api | int64db;
       if ((par_exoid[iproc] = ex_open(Parallel_File_Name.c_str(), mode, &cpu_ws, &io_ws, &vers)) <
           0) {
-        fprintf(stderr, "[%d] %s Could not open parallel Exodus II file: %s\n", iproc, yo,
-                Parallel_File_Name.c_str());
+        fmt::print(stderr, "[{}] {} Could not open parallel Exodus II file: {}\n", iproc, __func__,
+                   Parallel_File_Name.c_str());
         exit(1);
       }
     }
   }
   else {
-    printf("All output files opened one-at-a-time.\n");
+    fmt::print("All output files opened one-at-a-time.\n");
   }
 
   /* Now loop over the number of time steps */
@@ -444,29 +436,28 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     double start_t = second();
 
     /* read and distribute the variables for this time step */
-    if (read_vars(exoid, Restart_Info.Time_Idx[time_idx], TOPTR(eb_ids_global),
-                  TOPTR(eb_cnts_global), eb_map_ptr, eb_cnts_local, TOPTR(ss_ids_global),
-                  TOPTR(ss_cnts_global), TOPTR(ns_ids_global), TOPTR(ns_cnts_global)) < 0) {
-      fprintf(stderr, "%s: Error occured while reading variables\n", yo);
+    if (read_vars(exoid, Restart_Info.Time_Idx[time_idx], eb_ids_global.data(),
+                  eb_cnts_global.data(), eb_map_ptr, eb_cnts_local, ss_ids_global.data(),
+                  ss_cnts_global.data(), ns_ids_global.data(), ns_cnts_global.data()) < 0) {
+      fmt::print(stderr, "{}: Error occurred while reading variables\n", __func__);
       exit(1);
     }
     double end_t = second() - start_t;
-    printf("\tTime to read  vars for timestep %d: %f (sec.)\n", (time_idx + 1), end_t);
+    fmt::print("\tTime to read  vars for timestep {}: {} (sec.)\n", (time_idx + 1), end_t);
 
     start_t = second();
     for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
       if (open_file_count < Proc_Info[5]) {
-        std::string Parallel_File_Name =
-            gen_par_filename(cTemp.c_str(), Proc_Ids[iproc], Proc_Info[0]);
+        std::string Parallel_File_Name = gen_par_filename(cTemp, Proc_Ids[iproc], Proc_Info[0]);
 
         /* Open the parallel Exodus II file for writing */
         cpu_ws   = io_ws;
         int mode = EX_WRITE | int64api | int64db;
         if ((par_exoid[iproc] = ex_open(Parallel_File_Name.c_str(), mode, &cpu_ws, &io_ws, &vers)) <
             0) {
-          fprintf(stderr, "[%d] %s Could not open parallel Exodus II file: %s\n", iproc, yo,
-                  Parallel_File_Name.c_str());
+          fmt::print(stderr, "[{}] {} Could not open parallel Exodus II file: {}\n", iproc,
+                     __func__, Parallel_File_Name.c_str());
           exit(1);
         }
       }
@@ -475,26 +466,27 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
        * Write out the variable data for the time steps in this
        * block to each parallel file.
        */
-      write_var_timestep(par_exoid[iproc], iproc, (time_idx + 1), TOPTR(eb_ids_global),
-                         TOPTR(ss_ids_global), TOPTR(ns_ids_global));
+      write_var_timestep(par_exoid[iproc], iproc, (time_idx + 1), eb_ids_global.data(),
+                         ss_ids_global.data(), ns_ids_global.data());
 
       if (iproc % 10 == 0 || iproc == Proc_Info[2] - 1) {
-        printf("%d", iproc);
+        fmt::print("{}", iproc);
       }
       else {
-        printf(".");
+        fmt::print(".");
       }
 
       if (open_file_count < Proc_Info[5]) {
         if (ex_close(par_exoid[iproc]) == -1) {
-          fprintf(stderr, "[%d] %s Could not close the parallel Exodus II file.\n", iproc, yo);
+          fmt::print(stderr, "[{}] {} Could not close the parallel Exodus II file.\n", iproc,
+                     __func__);
           exit(1);
         }
       }
     } /* End "for (iproc=0; iproc <Proc_Info[2]; iproc++)" */
 
     end_t = second() - start_t;
-    printf("\n\tTime to write vars for timestep %d: %f (sec.)\n", (time_idx + 1), end_t);
+    fmt::print("\n\tTime to write vars for timestep {}: {} (sec.)\n", (time_idx + 1), end_t);
   }
   if (Restart_Info.NVar_Elem > 0) {
     safe_free((void **)&eb_map_ptr);
@@ -503,7 +495,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
 
   /* Close the restart exodus II file */
   if (ex_close(exoid) == -1) {
-    fprintf(stderr, "%sCould not close the restart Exodus II file\n", yo);
+    fmt::print(stderr, "{}Could not close the restart Exodus II file\n", __func__);
     exit(1);
   }
 
@@ -511,22 +503,19 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
       /* Close the parallel exodus II file */
       if (ex_close(par_exoid[iproc]) == -1) {
-        fprintf(stderr, "[%d] %s Could not close the parallel Exodus II file.\n", iproc, yo);
+        fmt::print(stderr, "[{}] {} Could not close the parallel Exodus II file.\n", iproc,
+                   __func__);
         exit(1);
       }
     }
   }
-  if (par_exoid != nullptr) {
-    free(par_exoid);
-    par_exoid = nullptr;
-  }
+  free(par_exoid);
+  par_exoid = nullptr;
 }
 
 template <typename T, typename INT>
 int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
 {
-  const char *yo = "read_var_param";
-
   /* Get the number of time indices contained in the file */
   int ret_int = ex_inquire_int(exoid, EX_INQ_TIME);
 
@@ -545,7 +534,7 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
     }
   }
   else {
-    /* Check to see if the requested indeces are valid */
+    /* Check to see if the requested indices are valid */
     for (int cnt = 0; cnt < Restart_Info.Num_Times; cnt++) {
 
       /* if the user wants the last time, then set it */
@@ -554,10 +543,10 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
       }
 
       if (Restart_Info.Time_Idx[cnt] > ret_int) {
-        fprintf(stderr, "%s: Requested time index, %d, out of range.\n", yo,
-                Restart_Info.Time_Idx[cnt]);
-        fprintf(stderr, "%s: Valid time indices in %s are from 1 to %d.\n", yo, Exo_Res_File,
-                ret_int);
+        fmt::print(stderr, "{}: Requested time index, {}, out of range.\n", __func__,
+                   Restart_Info.Time_Idx[cnt]);
+        fmt::print(stderr, "{}: Valid time indices in {} are from 1 to {}.\n", __func__,
+                   Exo_Res_File.c_str(), ret_int);
         return -1;
       }
     }
@@ -574,7 +563,7 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
 
   /***************** Global Variables ********************/
   if (ex_get_variable_param(exoid, EX_GLOBAL, &(Restart_Info.NVar_Glob)) < 0) {
-    fprintf(stderr, "%s: Could not get global variable parameter from file\n", yo);
+    fmt::print(stderr, "{}: Could not get global variable parameter from file\n", __func__);
     return -1;
   }
 
@@ -585,14 +574,14 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
 
     /* get the global variable names */
     if (ex_get_variable_names(exoid, EX_GLOBAL, Restart_Info.NVar_Glob, Restart_Info.GV_Name) < 0) {
-      fprintf(stderr, "%s: Could not get global variable names from file\n", yo);
+      fmt::print(stderr, "{}: Could not get global variable names from file\n", __func__);
       return -1;
     }
   }
 
   /***************** Elemental Variables ********************/
   if (ex_get_variable_param(exoid, EX_ELEM_BLOCK, &(Restart_Info.NVar_Elem)) < 0) {
-    fprintf(stderr, "%s: Could not get elemental variable param from file\n", yo);
+    fmt::print(stderr, "{}: Could not get elemental variable param from file\n", __func__);
     return -1;
   }
 
@@ -604,7 +593,7 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
     /* get the elemental variable names */
     if (ex_get_variable_names(exoid, EX_ELEM_BLOCK, Restart_Info.NVar_Elem, Restart_Info.EV_Name) <
         0) {
-      fprintf(stderr, "%s: Could not get elemental variable names from file\n", yo);
+      fmt::print(stderr, "{}: Could not get elemental variable names from file\n", __func__);
       return -1;
     }
 
@@ -612,13 +601,13 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
     Restart_Info.GElem_TT.resize(globals.Num_Elem_Blk * Restart_Info.NVar_Elem);
 
     check_exodus_error(ex_get_truth_table(exoid, EX_ELEM_BLOCK, globals.Num_Elem_Blk,
-                                          Restart_Info.NVar_Elem, TOPTR(Restart_Info.GElem_TT)),
+                                          Restart_Info.NVar_Elem, Restart_Info.GElem_TT.data()),
                        "ex_get_truth_table");
   }
 
   /******************* Nodal Variables **********************/
   if (ex_get_variable_param(exoid, EX_NODAL, &(Restart_Info.NVar_Node)) < 0) {
-    fprintf(stderr, "%s: Could not get nodal variable param from file\n", yo);
+    fmt::print(stderr, "{}: Could not get nodal variable param from file\n", __func__);
     return -1;
   }
 
@@ -629,14 +618,14 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
 
     /* get the nodal variable names */
     if (ex_get_variable_names(exoid, EX_NODAL, Restart_Info.NVar_Node, Restart_Info.NV_Name) < 0) {
-      fprintf(stderr, "%s: Could not get nodal variable names from file\n", yo);
+      fmt::print(stderr, "{}: Could not get nodal variable names from file\n", __func__);
       return -1;
     }
   }
 
   /******************* Sideset Variables **********************/
   if (ex_get_variable_param(exoid, EX_SIDE_SET, &(Restart_Info.NVar_Sset)) < 0) {
-    fprintf(stderr, "%s: Could not get sideset variable param from file\n", yo);
+    fmt::print(stderr, "{}: Could not get sideset variable param from file\n", __func__);
     return -1;
   }
 
@@ -648,7 +637,7 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
     /* get the variable names */
     if (ex_get_variable_names(exoid, EX_SIDE_SET, Restart_Info.NVar_Sset, Restart_Info.SSV_Name) <
         0) {
-      fprintf(stderr, "%s: Could not get sideset variable names from file\n", yo);
+      fmt::print(stderr, "{}: Could not get sideset variable names from file\n", __func__);
       return -1;
     }
 
@@ -656,13 +645,13 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
     Restart_Info.GSset_TT.resize(globals.Num_Side_Set * Restart_Info.NVar_Sset);
 
     check_exodus_error(ex_get_truth_table(exoid, EX_SIDE_SET, globals.Num_Side_Set,
-                                          Restart_Info.NVar_Sset, TOPTR(Restart_Info.GSset_TT)),
+                                          Restart_Info.NVar_Sset, Restart_Info.GSset_TT.data()),
                        "ex_get_truth_table");
   }
 
   /******************* Nodeset Variables **********************/
   if (ex_get_variable_param(exoid, EX_NODE_SET, &(Restart_Info.NVar_Nset)) < 0) {
-    fprintf(stderr, "%s: Could not get nodeset variable param from file\n", yo);
+    fmt::print(stderr, "{}: Could not get nodeset variable param from file\n", __func__);
     return -1;
   }
 
@@ -674,7 +663,7 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
     /* get the variable names */
     if (ex_get_variable_names(exoid, EX_NODE_SET, Restart_Info.NVar_Nset, Restart_Info.NSV_Name) <
         0) {
-      fprintf(stderr, "%s: Could not get nodeset variable names from file\n", yo);
+      fmt::print(stderr, "{}: Could not get nodeset variable names from file\n", __func__);
       return -1;
     }
 
@@ -682,25 +671,25 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
     Restart_Info.GNset_TT.resize(globals.Num_Node_Set * Restart_Info.NVar_Nset);
 
     check_exodus_error(ex_get_truth_table(exoid, EX_NODE_SET, globals.Num_Node_Set,
-                                          Restart_Info.NVar_Nset, TOPTR(Restart_Info.GNset_TT)),
+                                          Restart_Info.NVar_Nset, Restart_Info.GNset_TT.data()),
                        "ex_get_var_tab");
   }
 
 #ifdef DEBUG
   if (Debug_Flag >= 2) {
-    printf("\n\nRestart Parameters:\n");
-    printf("\tNumber of time indices: %d\n", Restart_Info.Num_Times);
+    fmt::print("\n\nRestart Parameters:\n");
+    fmt::print("\tNumber of time indices: {}\n", Restart_Info.Num_Times);
     for (int cnt = 0; cnt < Restart_Info.Num_Times; cnt++)
-      printf("\t\tTime index: %d\n", Restart_Info.Time_Idx[cnt]);
-    printf("\tNumber of global variables: %d\n", Restart_Info.NVar_Glob);
+      fmt::print("\t\tTime index: {}\n", Restart_Info.Time_Idx[cnt]);
+    fmt::print("\tNumber of global variables: {}\n", Restart_Info.NVar_Glob);
     for (int cnt = 0; cnt < Restart_Info.NVar_Glob; cnt++)
-      printf("\t\tGlobal variable %d: %s\n", (cnt + 1), Restart_Info.GV_Name[cnt]);
-    printf("\tNumber of elental variables: %d\n", Restart_Info.NVar_Elem);
+      fmt::print("\t\tGlobal variable {}: {}\n", (cnt + 1), Restart_Info.GV_Name[cnt]);
+    fmt::print("\tNumber of elental variables: {}\n", Restart_Info.NVar_Elem);
     for (int cnt = 0; cnt < Restart_Info.NVar_Elem; cnt++)
-      printf("\t\tElemental variable %d: %s\n", (cnt + 1), Restart_Info.EV_Name[cnt]);
-    printf("\tNumber of nodal variables: %d\n", Restart_Info.NVar_Node);
+      fmt::print("\t\tElemental variable {}: {}\n", (cnt + 1), Restart_Info.EV_Name[cnt]);
+    fmt::print("\tNumber of nodal variables: {}\n", Restart_Info.NVar_Node);
     for (int cnt = 0; cnt < Restart_Info.NVar_Node; cnt++)
-      printf("\t\tNodal variable %d: %s\n", (cnt + 1), Restart_Info.NV_Name[cnt]);
+      fmt::print("\t\tNodal variable {}: {}\n", (cnt + 1), Restart_Info.NV_Name[cnt]);
   }
 #endif
 
@@ -712,11 +701,9 @@ int NemSpread<T, INT>::read_vars(int exoid, int index, INT *eb_ids, INT *eb_cnts
                                  INT **eb_cnts_local, INT *ss_ids, INT *ss_cnts, INT *ns_ids,
                                  INT *ns_cnts)
 {
-  const char *yo = "read_vars";
-
   /* first read the time */
   if (ex_get_time(exoid, index, &Restart_Info.Time) < 0) {
-    fprintf(stderr, "%s: ERROR, unable to get time for restart index %d!\n", yo, index);
+    fmt::print(stderr, "{}: ERROR, unable to get time for restart index {}!\n", __func__, index);
     return -1;
   }
 
@@ -725,40 +712,40 @@ int NemSpread<T, INT>::read_vars(int exoid, int index, INT *eb_ids, INT *eb_cnts
   if (Restart_Info.NVar_Glob > 0) {
     /* get the global variables */
     if (ex_get_var(exoid, index, EX_GLOBAL, 1, 1, Restart_Info.NVar_Glob,
-                   TOPTR(Restart_Info.Glob_Vals)) < 0) {
-      fprintf(stderr, "%s: Could not get global variables from file\n", yo);
+                   Restart_Info.Glob_Vals.data()) < 0) {
+      fmt::print(stderr, "{}: Could not get global variables from file\n", __func__);
       return -1;
     }
   }
 
   if (Restart_Info.NVar_Elem > 0) {
-    printf("Reading %d element variables...\n", Restart_Info.NVar_Elem);
+    fmt::print("Reading {} element variables...\n", Restart_Info.NVar_Elem);
     if (read_elem_vars(exoid, index, eb_ids, eb_cnts, eb_map_ptr, eb_cnts_local) < 0) {
-      fprintf(stderr, "%s: Error distributing elemental variables.\n", yo);
+      fmt::print(stderr, "{}: Error distributing elemental variables.\n", __func__);
       return -1;
     }
   }
 
   if (Restart_Info.NVar_Node > 0) {
-    printf("Reading %d nodal variables...\n", Restart_Info.NVar_Node);
+    fmt::print("Reading {} nodal variables...\n", Restart_Info.NVar_Node);
     if (read_nodal_vars(exoid, index) < 0) {
-      fprintf(stderr, "%s: Error distributing nodal variables.\n", yo);
+      fmt::print(stderr, "{}: Error distributing nodal variables.\n", __func__);
       return -1;
     }
   }
 
   if (Restart_Info.NVar_Sset > 0) {
-    printf("Reading %d sideset variables...\n", Restart_Info.NVar_Sset);
+    fmt::print("Reading {} sideset variables...\n", Restart_Info.NVar_Sset);
     if (read_sset_vars(exoid, index, ss_ids, ss_cnts) < 0) {
-      fprintf(stderr, "%s: Error distributing sideset variables.\n", yo);
+      fmt::print(stderr, "{}: Error distributing sideset variables.\n", __func__);
       return -1;
     }
   }
 
   if (Restart_Info.NVar_Nset > 0) {
-    printf("Reading %d nodeset variables...\n", Restart_Info.NVar_Nset);
+    fmt::print("Reading {} nodeset variables...\n", Restart_Info.NVar_Nset);
     if (read_nset_vars(exoid, index, ns_ids, ns_cnts) < 0) {
-      fprintf(stderr, "%s: Error distributing nodeset variables.\n", yo);
+      fmt::print(stderr, "{}: Error distributing nodeset variables.\n", __func__);
       return -1;
     }
   }
@@ -778,7 +765,7 @@ int NemSpread<T, INT>::read_elem_vars(int exoid, int index, INT *eb_ids, INT *eb
   INT eb_offset = 0;
   for (int iblk = 0; iblk < globals.Num_Elem_Blk; iblk++) {
     read_elem_vars_1(exoid, index, eb_ids, eb_cnts, eb_map_ptr, eb_cnts_local, iblk, eb_offset,
-                     TOPTR(local_offset));
+                     local_offset.data());
 
     /* need to keep track of this for the element number map */
     eb_offset += eb_cnts[iblk];
@@ -799,7 +786,7 @@ int NemSpread<T, INT>::read_elem_vars_1(int exoid, int index, INT *eb_ids, INT *
                                         int eb_offset, INT *local_offset)
 {
   /* Allocate memory for temporary storage */
-  T *vals = (T *)array_alloc(__FILE__, __LINE__, 1, eb_cnts[iblk], sizeof(T));
+  std::vector<T> vals(eb_cnts[iblk]);
 
   /* now loop over each variable */
   for (int ivar = 0; ivar < Restart_Info.NVar_Elem; ivar++) {
@@ -812,9 +799,9 @@ int NemSpread<T, INT>::read_elem_vars_1(int exoid, int index, INT *eb_ids, INT *
        * global FEM element numbers.
        */
 
-      check_exodus_error(
-          ex_get_var(exoid, index, EX_ELEM_BLOCK, (ivar + 1), eb_ids[iblk], eb_cnts[iblk], vals),
-          "ex_get_var");
+      check_exodus_error(ex_get_var(exoid, index, EX_ELEM_BLOCK, (ivar + 1), eb_ids[iblk],
+                                    eb_cnts[iblk], vals.data()),
+                         "ex_get_var");
 
       /*
        * Find out which FEM elements belong on this processor and copy
@@ -841,7 +828,6 @@ int NemSpread<T, INT>::read_elem_vars_1(int exoid, int index, INT *eb_ids, INT *
       }
     } /* End "if (Restart_Info.GElem_TT[...])" */
   }
-  safe_free((void **)&vals);
   return 0;
 }
 
@@ -859,7 +845,7 @@ template <typename T, typename INT>
 int NemSpread<T, INT>::read_sset_vars_1(int exoid, int index, INT *ss_ids, INT *ss_cnts, int iset)
 {
   /* Allocate memory for temporary storage */
-  T *vals = (T *)array_alloc(__FILE__, __LINE__, 1, ss_cnts[iset], sizeof(T));
+  std::vector<T> vals(ss_cnts[iset]);
 
   /* now loop over each variable */
   for (int ivar = 0; ivar < Restart_Info.NVar_Sset; ivar++) {
@@ -868,9 +854,9 @@ int NemSpread<T, INT>::read_sset_vars_1(int exoid, int index, INT *ss_ids, INT *
     if (Restart_Info.GSset_TT[iset * Restart_Info.NVar_Sset + ivar]) {
 
       /* Read in the specified variable values */
-      check_exodus_error(
-          ex_get_var(exoid, index, EX_SIDE_SET, (ivar + 1), ss_ids[iset], ss_cnts[iset], vals),
-          "ex_get_var");
+      check_exodus_error(ex_get_var(exoid, index, EX_SIDE_SET, (ivar + 1), ss_ids[iset],
+                                    ss_cnts[iset], vals.data()),
+                         "ex_get_var");
 
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
         size_t ss_offset  = 0;
@@ -891,7 +877,6 @@ int NemSpread<T, INT>::read_sset_vars_1(int exoid, int index, INT *ss_ids, INT *
       }
     }
   }
-  safe_free((void **)&vals);
   return 0;
 }
 
@@ -909,7 +894,7 @@ template <typename T, typename INT>
 int NemSpread<T, INT>::read_nset_vars_1(int exoid, int index, INT *ns_ids, INT *ns_cnts, int iset)
 {
   /* Allocate memory for temporary storage */
-  T *vals = (T *)array_alloc(__FILE__, __LINE__, 1, ns_cnts[iset], sizeof(T));
+  std::vector<T> vals(ns_cnts[iset]);
 
   /* now loop over each variable */
   for (int ivar = 0; ivar < Restart_Info.NVar_Nset; ivar++) {
@@ -918,9 +903,9 @@ int NemSpread<T, INT>::read_nset_vars_1(int exoid, int index, INT *ns_ids, INT *
     if (Restart_Info.GNset_TT[iset * Restart_Info.NVar_Nset + ivar]) {
 
       /* Read in the specified variable values */
-      check_exodus_error(
-          ex_get_var(exoid, index, EX_NODE_SET, (ivar + 1), ns_ids[iset], ns_cnts[iset], vals),
-          "ex_get_nset_var");
+      check_exodus_error(ex_get_var(exoid, index, EX_NODE_SET, (ivar + 1), ns_ids[iset],
+                                    ns_cnts[iset], vals.data()),
+                         "ex_get_nset_var");
 
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
         size_t ns_offset  = 0;
@@ -941,14 +926,13 @@ int NemSpread<T, INT>::read_nset_vars_1(int exoid, int index, INT *ns_ids, INT *
       }
     }
   }
-  safe_free((void **)&vals);
   return 0;
 }
 
 template <typename T, typename INT> int NemSpread<T, INT>::read_nodal_vars(int exoid, int index)
 {
   /* Allocate memory for temporary storage */
-  T *vals = (T *)array_alloc(__FILE__, __LINE__, 1, globals.Num_Node, sizeof(T));
+  std::vector<T> vals(globals.Num_Node);
 
   /* Loop over each auxiliary variable */
   for (int var_num = 0; var_num < Restart_Info.NVar_Node; var_num++) {
@@ -956,8 +940,9 @@ template <typename T, typename INT> int NemSpread<T, INT>::read_nodal_vars(int e
      * Read in the specified nodal variable values and their associated
      * global FEM node numbers.
      */
-    check_exodus_error(ex_get_var(exoid, index, EX_NODAL, (var_num + 1), 1, globals.Num_Node, vals),
-                       "ex_get_var");
+    check_exodus_error(
+        ex_get_var(exoid, index, EX_NODAL, (var_num + 1), 1, globals.Num_Node, vals.data()),
+        "ex_get_var");
 
     /*
      * Find out which FEM nodes belong on this processor and copy
@@ -978,8 +963,6 @@ template <typename T, typename INT> int NemSpread<T, INT>::read_nodal_vars(int e
     }
 
   } /* End "for (var_num = 0; var_num < Restart_Info.NVar_Node; var_num++)" */
-
-  safe_free((void **)&vals);
   return 0;
 }
 

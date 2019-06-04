@@ -35,6 +35,7 @@
 #define STK_SEARCH_SPHERE_HPP
 
 #include <stk_search/Point.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace stk { namespace search {
 
@@ -46,16 +47,21 @@ public:
   typedef Point<value_type> point_type;
   static const int Dim = 3;
 
-  Sphere( point_type const& x_center = point_type(), value_type const& x_radius = static_cast<value_type>(-1))
+  KOKKOS_FORCEINLINE_FUNCTION Sphere( point_type const& x_center = point_type(), value_type const& x_radius = static_cast<value_type>(-1))
     : m_center(x_center)
     , m_radius(x_radius)
   {}
 
-  point_type const& center() const { return m_center; }
-  point_type      & center()       { return m_center; }
+  KOKKOS_FORCEINLINE_FUNCTION void set_box(const Sphere &val) {
+    m_center = val.m_center;
+    m_radius = val.m_radius;
+  }
 
-  value_type const& radius() const { return m_radius; }
-  value_type      & radius()       { return m_radius; }
+  KOKKOS_FORCEINLINE_FUNCTION point_type const& center() const { return m_center; }
+  KOKKOS_FORCEINLINE_FUNCTION point_type      & center()       { return m_center; }
+
+  KOKKOS_FORCEINLINE_FUNCTION value_type const& radius() const { return m_radius; }
+  KOKKOS_FORCEINLINE_FUNCTION value_type      & radius()       { return m_radius; }
 
   void set_center(point_type const& c) { m_center = c; }
   void set_radius(value_type const& r) { m_radius = r; }
@@ -66,12 +72,12 @@ public:
   bool operator!=(Sphere<value_type> const& s) const
   { return !(*this == s); }
 
-  value_type get_x_min() const { return m_center[0] - m_radius; }
-  value_type get_y_min() const { return m_center[1] - m_radius; }
-  value_type get_z_min() const { return m_center[2] - m_radius; }
-  value_type get_x_max() const { return m_center[0] + m_radius; }
-  value_type get_y_max() const { return m_center[1] + m_radius; }
-  value_type get_z_max() const { return m_center[2] + m_radius; }
+  KOKKOS_FORCEINLINE_FUNCTION value_type get_x_min() const { return m_center[0] - m_radius; }
+  KOKKOS_FORCEINLINE_FUNCTION value_type get_y_min() const { return m_center[1] - m_radius; }
+  KOKKOS_FORCEINLINE_FUNCTION value_type get_z_min() const { return m_center[2] - m_radius; }
+  KOKKOS_FORCEINLINE_FUNCTION value_type get_x_max() const { return m_center[0] + m_radius; }
+  KOKKOS_FORCEINLINE_FUNCTION value_type get_y_max() const { return m_center[1] + m_radius; }
+  KOKKOS_FORCEINLINE_FUNCTION value_type get_z_max() const { return m_center[2] + m_radius; }
 
   friend std::ostream& operator<<(std::ostream & out, Sphere<value_type> const& s)
   {

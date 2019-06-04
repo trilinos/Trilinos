@@ -35,8 +35,7 @@ namespace fei {
       int len = setsize > lenList ? lenList : setsize;
 
       typename SET_TYPE::const_iterator
-        s_iter = set_obj.begin(),
-               s_end = set_obj.end();
+        s_iter = set_obj.begin();
       for(int i=0; i<len; ++i, ++s_iter) {
         list[i] = *s_iter;
       }

@@ -273,6 +273,11 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
 
     //! Destructor.
     virtual ~GCRODRSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+      return Teuchos::rcp(new GCRODRSolMgr<ScalarType,MV,OP,true>);
+    }
     //@}
 
     //! @name Accessor methods
@@ -280,17 +285,17 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
 
     /*! \brief Get current linear problem being solved for in this object.
      */
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
       return *problem_;
     }
 
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override {
       return params_;
     }
 
@@ -308,18 +313,18 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     /// This is the maximum over all right-hand sides' achieved
     /// convergence tolerances, and is set whether or not the solve
     /// actually managed to achieve the desired convergence tolerance.
-    MagnitudeType achievedTol() const {
+    MagnitudeType achievedTol() const override {
       return achievedTol_;
     }
 
     //! Get the iteration count for the most recent call to \c solve().
-    int getNumIters() const {
+    int getNumIters() const override {
       return numIters_;
     }
 
     /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
      */
-    bool isLOADetected() const { return false; }
+    bool isLOADetected() const override { return false; }
 
     //@}
 
@@ -327,12 +332,12 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     //@{
 
     //! Set the linear problem that needs to be solved.
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) {
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override {
       problem_ = problem;
     }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
     //@}
 
@@ -342,7 +347,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
      *  of the iterative solver strategy.
      */
-    void reset( const ResetType type ) {
+    void reset( const ResetType type ) override {
       if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) {
         bool set = problem_->setProblem();
         if  (!set)
@@ -383,14 +388,14 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
      *   - ::Unconverged: the linear problem was not solved to the
      *     specification desired by the solver manager.
      */
-    ReturnType solve();
+    ReturnType solve() override;
 
     //@}
     //! \name Implementation of Teuchos::Describable
     //@{
 
     //! Return a one-line description of this object.
-    std::string description() const;
+    std::string description() const override;
 
     //@}
 
@@ -452,21 +457,20 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     Teuchos::RCP<Teuchos::ParameterList> params_;
 
     // Default solver values.
-    static const MagnitudeType convTol_default_;
-    static const MagnitudeType orthoKappa_default_;
-    static const int maxRestarts_default_;
-    static const int maxIters_default_;
-    static const int numBlocks_default_;
-    static const int blockSize_default_;
-    static const int recycledBlocks_default_;
-    static const int verbosity_default_;
-    static const int outputStyle_default_;
-    static const int outputFreq_default_;
-    static const std::string impResScale_default_;
-    static const std::string expResScale_default_;
-    static const std::string label_default_;
-    static const std::string orthoType_default_;
-    static const Teuchos::RCP<std::ostream> outputStream_default_;
+    static constexpr double orthoKappa_default_ = 0.0;
+    static constexpr int maxRestarts_default_ = 100;
+    static constexpr int maxIters_default_ = 1000;
+    static constexpr int numBlocks_default_ = 50;
+    static constexpr int blockSize_default_ = 1;
+    static constexpr int recycledBlocks_default_ = 5;
+    static constexpr int verbosity_default_ = Belos::Errors;
+    static constexpr int outputStyle_default_ = Belos::General;
+    static constexpr int outputFreq_default_ = -1;
+    static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
+    static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
+    static constexpr const char * label_default_ = "Belos";
+    static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     // Current solver values.
     MagnitudeType convTol_, orthoKappa_, achievedTol_;
@@ -520,56 +524,6 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
   };
 
 
-// Default solver values.
-template<class ScalarType, class MV, class OP>
-const typename GCRODRSolMgr<ScalarType,MV,OP,true>::MagnitudeType
-GCRODRSolMgr<ScalarType,MV,OP,true>::convTol_default_ = 1e-8;
-
-template<class ScalarType, class MV, class OP>
-const typename GCRODRSolMgr<ScalarType,MV,OP,true>::MagnitudeType
-GCRODRSolMgr<ScalarType,MV,OP,true>::orthoKappa_default_ = 0.0;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::maxRestarts_default_ = 100;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::maxIters_default_ = 5000;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::numBlocks_default_ = 50;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::blockSize_default_ = 1;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::recycledBlocks_default_ = 5;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::verbosity_default_ = Belos::Errors;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::outputStyle_default_ = Belos::General;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::outputFreq_default_ = -1;
-
-template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::expResScale_default_ = "Norm of Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::label_default_ = "Belos";
-
-template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::orthoType_default_ = "DGKS";
-
-template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream>
-GCRODRSolMgr<ScalarType,MV,OP,true>::outputStream_default_ = Teuchos::rcpFromRef (std::cout);
-
-
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 GCRODRSolMgr<ScalarType,MV,OP,true>::GCRODRSolMgr():
@@ -612,8 +566,8 @@ GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
 // Common instructions executed in all constructors
 template<class ScalarType, class MV, class OP>
 void GCRODRSolMgr<ScalarType,MV,OP,true>::init () {
-  outputStream_ = outputStream_default_;
-  convTol_ = convTol_default_;
+  outputStream_ = Teuchos::rcp(outputStream_default_,false);
+  convTol_ = DefaultSolverParameters::convTol;
   orthoKappa_ = orthoKappa_default_;
   maxRestarts_ = maxRestarts_default_;
   maxIters_ = maxIters_default_;
@@ -988,8 +942,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // may have been specified in "Orthogonalization Parameters".  We
   // retain this behavior for backwards compatibility.
   if (params->isParameter ("Orthogonalization Constant")) {
-    const MagnitudeType orthoKappa =
-      params->get ("Orthogonalization Constant", orthoKappa_default_);
+    MagnitudeType orthoKappa = orthoKappa_default_;
+    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
+      orthoKappa = params->get ("Orthogonalization Constant", orthoKappa);
+    }
+    else {
+      orthoKappa = params->get ("Orthogonalization Constant", orthoKappa_default_);
+    }
+
     if (orthoKappa > 0) {
       orthoKappa_ = orthoKappa;
       // Update parameter in our list.
@@ -1013,7 +973,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convTol_ = params->get ("Convergence Tolerance", convTol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convTol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convTol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set ("Convergence Tolerance", convTol_);
@@ -1155,46 +1121,46 @@ GCRODRSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     RCP<ParameterList> pl = parameterList ();
 
     // Set all the valid parameters and their default values.
-    pl->set("Convergence Tolerance", convTol_default_,
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
-    pl->set("Maximum Restarts", maxRestarts_default_,
+    pl->set("Maximum Restarts", static_cast<int>(maxRestarts_default_),
       "The maximum number of cycles allowed for each\n"
       "set of RHS solved.");
-    pl->set("Maximum Iterations", maxIters_default_,
+    pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of iterations allowed for each\n"
       "set of RHS solved.");
     // mfh 25 Oct 2010: "Block Size" must be 1 because GCRODR is
     // currently not a block method: i.e., it does not work on
     // multiple right-hand sides at once.
-    pl->set("Block Size", blockSize_default_,
+    pl->set("Block Size", static_cast<int>(blockSize_default_),
       "Block Size Parameter -- currently must be 1 for GCRODR");
-    pl->set("Num Blocks", numBlocks_default_,
+    pl->set("Num Blocks", static_cast<int>(numBlocks_default_),
       "The maximum number of vectors allowed in the Krylov subspace\n"
       "for each set of RHS solved.");
-    pl->set("Num Recycled Blocks", recycledBlocks_default_,
+    pl->set("Num Recycled Blocks", static_cast<int>(recycledBlocks_default_),
       "The maximum number of vectors in the recycled subspace." );
-    pl->set("Verbosity", verbosity_default_,
+    pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Style", outputStyle_default_,
+    pl->set("Output Style", static_cast<int>(outputStyle_default_),
       "What style is used for the solver information outputted\n"
       "to the output stream.");
-    pl->set("Output Frequency", outputFreq_default_,
+    pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Stream", outputStream_default_,
+    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
-    pl->set("Implicit Residual Scaling", impResScale_default_,
+    pl->set("Implicit Residual Scaling", static_cast<const char *>(impResScale_default_),
       "The type of scaling used in the implicit residual convergence test.");
-    pl->set("Explicit Residual Scaling", expResScale_default_,
+    pl->set("Explicit Residual Scaling", static_cast<const char *>(expResScale_default_),
       "The type of scaling used in the explicit residual convergence test.");
-    pl->set("Timer Label", label_default_,
+    pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
     {
       OrthoManagerFactory<ScalarType, MV, OP> factory;
-      pl->set("Orthogonalization", orthoType_default_,
+      pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
               "The type of orthogonalization to use.  Valid options: " +
               factory.validNamesString());
       RCP<const ParameterList> orthoParams =
@@ -1202,7 +1168,7 @@ GCRODRSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
       pl->set ("Orthogonalization Parameters", *orthoParams,
                "Parameters specific to the type of orthogonalization used.");
     }
-    pl->set("Orthogonalization Constant", orthoKappa_default_,
+    pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(orthoKappa_default_),
             "When using DGKS orthogonalization: the \"depTol\" constant, used "
             "to determine whether another step of classical Gram-Schmidt is "
             "necessary.  Otherwise ignored.");
@@ -2094,7 +2060,6 @@ int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs1(int m,
   int i, j;
   bool xtraVec = false;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-  //ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
   // Real and imaginary eigenvalue components
   std::vector<MagnitudeType> wr(m), wi(m);
@@ -2107,11 +2072,6 @@ int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs1(int m,
 
   // Sorted order of harmonic Ritz values, also used for DGEEV
   std::vector<int> iperm(m);
-
-  // Size of workspace and workspace for DGEEV
-  int lwork = 4*m;
-  std::vector<ScalarType> work(lwork);
-  std::vector<MagnitudeType> rwork(lwork);
 
   // Output info
   int info = 0;
@@ -2128,16 +2088,27 @@ int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs1(int m,
 
   // Compute H_m + d*H_m^{-H}*e_m*e_m^H
   ScalarType d = HH(m, m-1) * HH(m, m-1);
-  Teuchos::SerialDenseMatrix<int, ScalarType> harmHH( Teuchos::Copy, HH, HH.numRows(), HH.numCols() );
+  Teuchos::SerialDenseMatrix<int, ScalarType> harmHH( Teuchos::Copy, HH, m, m );
   for( i=0; i<m; ++i )
     harmHH(i, m-1) += d * e_m[i];
 
   // Revise to do query for optimal workspace first
   // Create simple storage for the left eigenvectors, which we don't care about.
-  const int ldvl = m;
+  const int ldvl = 1;
   ScalarType* vl = 0;
-  //lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
-  //            vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &info);
+
+  // Size of workspace and workspace for DGEEV
+  int lwork = -1;
+  std::vector<ScalarType> work(1);
+  std::vector<MagnitudeType> rwork(2*m);
+
+  // First query GEEV for the optimal workspace size
+  lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
+              vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &rwork[0], &info);
+
+  lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work[0])));
+  work.resize( lwork );
+
   lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
               vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &rwork[0], &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");

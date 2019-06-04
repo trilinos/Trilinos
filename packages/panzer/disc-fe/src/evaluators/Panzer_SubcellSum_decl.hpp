@@ -77,7 +77,24 @@ namespace panzer {
     </ParameterList>
   \endverbatim
   */
-PANZER_EVALUATOR_CLASS(SubcellSum)
+template<typename EvalT, typename Traits>
+class SubcellSum
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    SubcellSum(
+      const Teuchos::ParameterList& p);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT,Cell> outField;  // result
     
@@ -99,7 +116,8 @@ private:
   // evalaute on the "closure" of the indicated sub-cells
   bool evaluateOnClosure_;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class SubcellSum
+
 
 }
 

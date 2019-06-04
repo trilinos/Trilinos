@@ -53,7 +53,7 @@
 #include <Ifpack2_Version.hpp>
 #include <iostream>
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
@@ -83,8 +83,7 @@ static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalO
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int nx = 2;
   size_t numElementsPerProc = nx*nx;

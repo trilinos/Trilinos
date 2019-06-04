@@ -80,34 +80,34 @@ struct blas3_right_2_N_N
   {
 size_type jj=jjblocknum*block_size;
 
-for(size_type i=0;i<c.dimension_0();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+for(size_type i=0;i<c.extent(0);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+	for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
                                 c(i,j) = beta*c(i,j);
                                 }
 }
 
 
-        for(size_type kk=0;kk<a.dimension_1();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(1);kk+= block_size){
           
-	      for(size_type i=0;i<c.dimension_0();i++){
+	      for(size_type i=0;i<c.extent(0);i++){
                                
-                     for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
+                     for(size_type k = kk; k<((kk+block_size)>a.extent(1)?a.extent(1):(kk+block_size)); k++){
 AMat::const_value_type alpha_a=alpha*a(i,k);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
 			        
 				c(i,j) +=alpha_a*b(k,j);
                                
@@ -141,32 +141,32 @@ struct blas3_right_2_N_T
   {
 size_type jj=jjblocknum*block_size;
 
-for(size_type i=0;i<c.dimension_0();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+for(size_type i=0;i<c.extent(0);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+	for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
                                 c(i,j) = beta*c(i,j);
                                 }
 }
 
 
-        for(size_type kk=0;kk<a.dimension_1();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(1);kk+= block_size){
           
-	      for(size_type i=0;i<c.dimension_0();i++){
+	      for(size_type i=0;i<c.extent(0);i++){
                                
                                 
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
 CMat::non_const_value_type temp=0;
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
 
-			        for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
+			        for(size_type k = kk; k<((kk+block_size)>a.extent(1)?a.extent(1):(kk+block_size)); k++){
 
 				temp +=alpha*a(i,k)*b(j,k);
                                
@@ -201,35 +201,35 @@ struct blas3_right_2_T_N
   {
 size_type jj=jjblocknum*block_size;
 
-for(size_type i=0;i<c.dimension_0();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+for(size_type i=0;i<c.extent(0);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+	for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
                                 c(i,j) = beta*c(i,j);
                                 }
 }
 
 
-        for(size_type kk=0;kk<a.dimension_0();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(0);kk+= block_size){
           
                                
-                     for(size_type k = kk; k<((kk+block_size)>a.dimension_0()?a.dimension_0():(kk+block_size)); k++){
+                     for(size_type k = kk; k<((kk+block_size)>a.extent(0)?a.extent(0):(kk+block_size)); k++){
 
-                          for(size_type i=0;i<c.dimension_0();i++){
+                          for(size_type i=0;i<c.extent(0);i++){
 AMat::const_value_type alpha_a=alpha*a(k,i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
 			        
 				c(i,j) +=alpha_a*b(k,j);
                                
@@ -263,34 +263,34 @@ struct blas3_right_2_T_T
   {
 size_type jj=jjblocknum*block_size;
 
-for(size_type i=0;i<c.dimension_0();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+for(size_type i=0;i<c.extent(0);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+	for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
                                 c(i,j) = beta*c(i,j);
                                 }
 }
 
 
-        for(size_type kk=0;kk<a.dimension_0();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(0);kk+= block_size){
           
-	      for(size_type i=0;i<c.dimension_0();i++){
+	      for(size_type i=0;i<c.extent(0);i++){
                                
-                     for(size_type k = kk; k<((kk+block_size)>a.dimension_0()?a.dimension_0():(kk+block_size)); k++){
+                     for(size_type k = kk; k<((kk+block_size)>a.extent(0)?a.extent(0):(kk+block_size)); k++){
  AMat::const_value_type alpha_a=alpha*a(k,i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
 			        
 				c(i,j) +=alpha_a*b(j,k);
                                
@@ -325,35 +325,35 @@ struct blas3_left_2_N_N
 size_type jj=jjblocknum*block_size;
 
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+	for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif 
-                 for(size_type i=0;i<c.dimension_0();i++){                
+                 for(size_type i=0;i<c.extent(0);i++){                
                      c(i,j) = beta*c(i,j);
                           
                  }
           }
 
 
-        for(size_type kk=0;kk<a.dimension_1();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(1);kk+= block_size){
           
                                
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
 
-                                for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
+                                for(size_type k = kk; k<((kk+block_size)>a.extent(1)?a.extent(1):(kk+block_size)); k++){
  BMat::const_value_type alpha_b=alpha*b(k,j);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                       
-                                        for(size_type i=0;i<c.dimension_0();i++){		        
+                                        for(size_type i=0;i<c.extent(0);i++){		        
                                      c(i,j) +=alpha_b*a(i,k);
                                 
 				 }
@@ -387,36 +387,36 @@ struct blas3_left_2_N_T
 size_type jj=jjblocknum*block_size;
 
 
-        for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+        for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-                 for(size_type i=0;i<c.dimension_0();i++){
+                 for(size_type i=0;i<c.extent(0);i++){
                      c(i,j) = beta*c(i,j);
 
                  }
           }
 
 
-        for(size_type kk=0;kk<a.dimension_1();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(1);kk+= block_size){
 
 
-                                for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
+                                for(size_type k = kk; k<((kk+block_size)>a.extent(1)?a.extent(1):(kk+block_size)); k++){
 
-                                        for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+                                        for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
 
  BMat::const_value_type alpha_b=alpha*b(j,k);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-                                        for(size_type i=0;i<c.dimension_0();i++){
+                                        for(size_type i=0;i<c.extent(0);i++){
                                      c(i,j) +=alpha_b*a(i,k);
 
                                  }
@@ -451,32 +451,32 @@ struct blas3_left_2_T_N
 size_type jj=jjblocknum*block_size;
 
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+	for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-                       for(size_type i=0;i<c.dimension_0();i++){
+                       for(size_type i=0;i<c.extent(0);i++){
     
                             c(i,j) = beta*c(i,j);
                                 }
 }
 
 
-        for(size_type kk=0;kk<a.dimension_0();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(0);kk+= block_size){
 
-              for(size_type i=0;i<c.dimension_0();i++){
+              for(size_type i=0;i<c.extent(0);i++){
 
 
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
 CMat::non_const_value_type temp=0;
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
 
-                                for(size_type k = kk; k<((kk+block_size)>a.dimension_0()?a.dimension_0():(kk+block_size)); k++){
+                                for(size_type k = kk; k<((kk+block_size)>a.extent(0)?a.extent(0):(kk+block_size)); k++){
 
                                 temp +=alpha*a(k,i)*b(k,j);
 
@@ -512,35 +512,35 @@ struct blas3_left_2_T_T
 size_type jj=jjblocknum*block_size;
 
 
-        for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+        for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-                 for(size_type i=0;i<c.dimension_0();i++){
+                 for(size_type i=0;i<c.extent(0);i++){
                      c(i,j) = beta*c(i,j);
 
                  }
           }
 
 
-        for(size_type kk=0;kk<a.dimension_0();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(0);kk+= block_size){
 
 
-                                for(size_type k = kk; k<((kk+block_size)>a.dimension_0()?a.dimension_0():(kk+block_size)); k++){
+                                for(size_type k = kk; k<((kk+block_size)>a.extent(0)?a.extent(0):(kk+block_size)); k++){
 
-                                     for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
+                                     for(size_type j = jj; j<((jj+block_size)>c.extent(1)?c.extent(1):(jj+block_size)); j++){
  BMat::const_value_type alpha_b=alpha*b(j,k);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-                                        for(size_type i=0;i<c.dimension_0();i++){
+                                        for(size_type i=0;i<c.extent(0);i++){
                                      c(i,j) +=alpha_b*a(k,i);
 
                                  }
@@ -572,35 +572,35 @@ struct blas3_right_3_N_N
   operator() (const size_type &matnum) const
   {
 
-for(size_type jj=0;jj<c.dimension_2();jj+= block_size){
-	for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+for(size_type jj=0;jj<c.extent(2);jj+= block_size){
+	for(size_type i=0;i<c.extent(1);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+	for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
                                 c(matnum,i,j) = beta*c(matnum,i,j);
                                 }
 }
 
 
-        for(size_type kk=0;kk<a.dimension_2();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(2);kk+= block_size){
           
-	      for(size_type i=0;i<c.dimension_1();i++){
+	      for(size_type i=0;i<c.extent(1);i++){
                                
-                     for(size_type k = kk; k<((kk+block_size)>a.dimension_2()?a.dimension_2():(kk+block_size)); k++){
+                     for(size_type k = kk; k<((kk+block_size)>a.extent(2)?a.extent(2):(kk+block_size)); k++){
 AMat::const_value_type alpha_a=alpha*a(matnum,i,k);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
 			        
 				c(matnum,i,j) +=alpha_a*b(matnum,k,j);
                                
@@ -632,34 +632,34 @@ struct blas3_right_3_N_T
   KOKKOS_FORCEINLINE_FUNCTION void
   operator() (const size_type &matnum) const
   {
-for(size_type jj=0;jj<c.dimension_2();jj+= block_size){
+for(size_type jj=0;jj<c.extent(2);jj+= block_size){
 
-for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+for(size_type i=0;i<c.extent(1);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-        for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+        for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
                                 c(matnum,i,j) = beta*c(matnum,i,j);
                                 }
 }
 
 
-        for(size_type kk=0;kk<a.dimension_2();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(2);kk+= block_size){
 
-              for(size_type i=0;i<c.dimension_1();i++){
+              for(size_type i=0;i<c.extent(1);i++){
 
 
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
 CMat::non_const_value_type temp=0;
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
 
-                                for(size_type k = kk; k<((kk+block_size)>a.dimension_2()?a.dimension_2():(kk+block_size)); k++){
+                                for(size_type k = kk; k<((kk+block_size)>a.extent(2)?a.extent(2):(kk+block_size)); k++){
 
                                 temp +=alpha*a(matnum,i,k)*b(matnum,j,k);
 
@@ -692,37 +692,37 @@ struct blas3_right_3_T_N
   KOKKOS_FORCEINLINE_FUNCTION void
   operator() (const size_type &matnum) const
   {
-for(size_type jj=0;jj<c.dimension_2();jj+= block_size){
+for(size_type jj=0;jj<c.extent(2);jj+= block_size){
 
-for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+for(size_type i=0;i<c.extent(1);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+	for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
                                 c(matnum,i,j) = beta*c(matnum,i,j);
                                 }
 }
 
 
-        for(size_type kk=0;kk<a.dimension_1();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(1);kk+= block_size){
           
                                
-                     for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
+                     for(size_type k = kk; k<((kk+block_size)>a.extent(1)?a.extent(1):(kk+block_size)); k++){
 
-                          for(size_type i=0;i<c.dimension_1();i++){
+                          for(size_type i=0;i<c.extent(1);i++){
 AMat::const_value_type alpha_a=alpha*a(matnum,k,i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
 			        
 				c(matnum,i,j) +=alpha_a*b(matnum,k,j);
                                
@@ -754,36 +754,36 @@ struct blas3_right_3_T_T
   KOKKOS_FORCEINLINE_FUNCTION void
   operator() (const size_type &matnum) const
   {
-for(size_type jj=0;jj<c.dimension_2();jj+= block_size){
+for(size_type jj=0;jj<c.extent(2);jj+= block_size){
 
-for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+for(size_type i=0;i<c.extent(1);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+	for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
                                 c(matnum,i,j) = beta*c(matnum,i,j);
                                 }
 }
 
 
-        for(size_type kk=0;kk<a.dimension_1();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(1);kk+= block_size){
           
-	      for(size_type i=0;i<c.dimension_1();i++){
+	      for(size_type i=0;i<c.extent(1);i++){
                                
-                     for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
+                     for(size_type k = kk; k<((kk+block_size)>a.extent(1)?a.extent(1):(kk+block_size)); k++){
  AMat::const_value_type alpha_a=alpha*a(k,i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
 			        
 				c(i,j) +=alpha_a*b(j,k);
                                
@@ -818,16 +818,16 @@ struct blas3_left_3_N_N
 size_type jj=jjblocknum*block_size;
 
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+	for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
 
-                 for(size_type i=0;i<c.dimension_1();i++){            
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+                 for(size_type i=0;i<c.extent(1);i++){            
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-                    for(size_type matnum=0;matnum<c.dimension_0();matnum++){
+                    for(size_type matnum=0;matnum<c.extent(0);matnum++){
     
                      c(matnum,i,j) = beta*c(matnum,i,j);
                         }  
@@ -835,21 +835,21 @@ size_type jj=jjblocknum*block_size;
           }
 
 
-        for(size_type kk=0;kk<a.dimension_2();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(2);kk+= block_size){
           
                                
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
 
-                                for(size_type k = kk; k<((kk+block_size)>a.dimension_2()?a.dimension_2():(kk+block_size)); k++){
+                                for(size_type k = kk; k<((kk+block_size)>a.extent(2)?a.extent(2):(kk+block_size)); k++){
                                       
-                                        for(size_type i=0;i<c.dimension_1();i++){		        
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+                                        for(size_type i=0;i<c.extent(1);i++){		        
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-                    for(size_type matnum=0;matnum<c.dimension_0();matnum++){
+                    for(size_type matnum=0;matnum<c.extent(0);matnum++){
 
                                      c(matnum,i,j) +=alpha*b(matnum,k,j)*a(matnum,i,k);
                          }       
@@ -884,39 +884,39 @@ struct blas3_left_3_N_T
 size_type jj=jjblocknum*block_size;
 
 
-        for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+        for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
 
-                 for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+                 for(size_type i=0;i<c.extent(1);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-                    for(size_type matnum=0;matnum<c.dimension_0();matnum++){   
+                    for(size_type matnum=0;matnum<c.extent(0);matnum++){   
                   c(matnum,i,j) = beta*c(matnum,i,j);
 
                  }
           }
 }
 
-        for(size_type kk=0;kk<a.dimension_2();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(2);kk+= block_size){
 
 
-                                for(size_type k = kk; k<((kk+block_size)>a.dimension_2()?a.dimension_2():(kk+block_size)); k++){
+                                for(size_type k = kk; k<((kk+block_size)>a.extent(2)?a.extent(2):(kk+block_size)); k++){
 
-                                        for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+                                        for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
 
 
-                                        for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+                                        for(size_type i=0;i<c.extent(1);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-                                               for(size_type matnum=0;matnum<c.dimension_0();matnum++){ 
+                                               for(size_type matnum=0;matnum<c.extent(0);matnum++){ 
                                     c(matnum,i,j) +=alpha*b(matnum,j,k)*a(matnum,i,k);
 
                                  }
@@ -951,37 +951,37 @@ struct blas3_left_3_T_N
 size_type jj=jjblocknum*block_size;
 
 
-	for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
-                       for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+	for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
+                       for(size_type i=0;i<c.extent(1);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-                           for(size_type matnum=0;matnum<c.dimension_0();matnum++){    
+                           for(size_type matnum=0;matnum<c.extent(0);matnum++){    
                             c(matnum,i,j) = beta*c(matnum,i,j);
                                 }
                 }
 }
 
-        for(size_type kk=0;kk<a.dimension_1();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(1);kk+= block_size){
 
-              for(size_type i=0;i<c.dimension_1();i++){
+              for(size_type i=0;i<c.extent(1);i++){
 
 
-                        for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+                        for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
 
-                                for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+                                for(size_type k = kk; k<((kk+block_size)>a.extent(1)?a.extent(1):(kk+block_size)); k++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-                                    for(size_type matnum=0;matnum<c.dimension_0();matnum++){
+                                    for(size_type matnum=0;matnum<c.extent(0);matnum++){
                                 c(matnum,i,j) +=alpha*a(matnum,k,i)*b(matnum,k,j);
 
                                  }
@@ -1016,39 +1016,39 @@ struct blas3_left_3_T_T
 size_type jj=jjblocknum*block_size;
 
 
-        for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
-                 for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+        for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
+                 for(size_type i=0;i<c.extent(1);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-                                    for(size_type matnum=0;matnum<c.dimension_0();matnum++){
+                                    for(size_type matnum=0;matnum<c.extent(0);matnum++){
                      c(matnum,i,j) = beta*c(matnum,i,j);
 
                  }
           }
 
 
-        for(size_type kk=0;kk<a.dimension_1();kk+= block_size){
+        for(size_type kk=0;kk<a.extent(1);kk+= block_size){
 
 
-                                for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
+                                for(size_type k = kk; k<((kk+block_size)>a.extent(1)?a.extent(1):(kk+block_size)); k++){
 
-                                     for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
+                                     for(size_type j = jj; j<((jj+block_size)>c.extent(2)?c.extent(2):(jj+block_size)); j++){
 
 
-                                        for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+                                        for(size_type i=0;i<c.extent(1);i++){
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
-                                    for(size_type matnum=0;matnum<c.dimension_0();matnum++){ 
+                                    for(size_type matnum=0;matnum<c.extent(0);matnum++){ 
                                      c(matnum,i,j) +=alpha*b(matnum,j,k)*a(matnum,k,i);
 
                                  }
@@ -1073,34 +1073,34 @@ struct MultiGemm<ScalarA,ScalarB,ScalarC,eSpace,LayoutA,LayoutB,LayoutC,sizetype
           ScalarC beta, Kokkos::View<ScalarB**,LayoutC,eSpace> C){
 if((transA=='n'||transA=='N') && (transB=='n'||transB=='N')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_right_2_N_N<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarC**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }else if((transA=='n'||transA=='N') && (transB=='t'||transB=='T')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_right_2_N_T<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarC**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }else if((transA=='t'||transA=='T') && (transB=='n'||transB=='N')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_right_2_T_N<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarC**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }else if((transA=='t'||transA=='T') && (transB=='t'||transB=='T')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_right_2_T_T<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarC**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }
@@ -1117,19 +1117,19 @@ struct MultiGemm<ScalarA,ScalarB,ScalarC,eSpace,LayoutA,LayoutB,LayoutC,sizetype
           ScalarC beta, Kokkos::View<ScalarC***,LayoutC,eSpace> C){
 if((transA=='n'||transA=='N') && (transB=='n'||transB=='N')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_right_3_N_N<Kokkos::View<ScalarA***,LayoutA,eSpace>,Kokkos::View<ScalarB***,LayoutB,eSpace>,Kokkos::View<ScalarC***,LayoutC,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_right_3_N_N<Kokkos::View<ScalarA***,LayoutA,eSpace>,Kokkos::View<ScalarB***,LayoutB,eSpace>,Kokkos::View<ScalarC***,LayoutC,eSpace> >(alpha,A,B,beta,C));
 
 }else if((transA=='n'||transA=='N') && (transB=='t'||transB=='T')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_right_3_N_T<Kokkos::View<ScalarA***,LayoutA,eSpace>,Kokkos::View<ScalarB***,LayoutB,eSpace>,Kokkos::View<ScalarC***,LayoutC,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_right_3_N_T<Kokkos::View<ScalarA***,LayoutA,eSpace>,Kokkos::View<ScalarB***,LayoutB,eSpace>,Kokkos::View<ScalarC***,LayoutC,eSpace> >(alpha,A,B,beta,C));
 
 }else if((transA=='t'||transA=='T') && (transB=='n'||transB=='N')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_right_3_T_N<Kokkos::View<ScalarA***,LayoutA,eSpace>,Kokkos::View<ScalarB***,LayoutB,eSpace>,Kokkos::View<ScalarC***,LayoutC,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_right_3_T_N<Kokkos::View<ScalarA***,LayoutA,eSpace>,Kokkos::View<ScalarB***,LayoutB,eSpace>,Kokkos::View<ScalarC***,LayoutC,eSpace> >(alpha,A,B,beta,C));
 
 }else if((transA=='t'||transA=='T') && (transB=='t'||transB=='T')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_right_3_T_T<Kokkos::View<ScalarA***,LayoutA,eSpace>,Kokkos::View<ScalarB***,LayoutB,eSpace>,Kokkos::View<ScalarC***,LayoutC,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_right_3_T_T<Kokkos::View<ScalarA***,LayoutA,eSpace>,Kokkos::View<ScalarB***,LayoutB,eSpace>,Kokkos::View<ScalarC***,LayoutC,eSpace> >(alpha,A,B,beta,C));
 
 }
 
@@ -1142,34 +1142,34 @@ struct MultiGemm<ScalarA,ScalarB,ScalarC,eSpace,Kokkos::LayoutRight,Kokkos::Layo
           ScalarC beta, Kokkos::View<ScalarC**,Kokkos::LayoutRight,eSpace> C){
 if((transA=='n'||transA=='N') && (transB=='n'||transB=='N')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_right_2_N_N<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarB**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }else if((transA=='n'||transA=='N') && (transB=='t'||transB=='T')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_right_2_N_T<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarB**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }else if((transA=='t'||transA=='T') && (transB=='n'||transB=='N')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_right_2_T_N<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarB**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }else if((transA=='t'||transA=='T') && (transB=='t'||transB=='T')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_right_2_T_T<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarB**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }
@@ -1184,19 +1184,19 @@ struct MultiGemm<ScalarA,ScalarB,ScalarC,eSpace,Kokkos::LayoutRight,Kokkos::Layo
           ScalarC beta, Kokkos::View<ScalarC***,Kokkos::LayoutRight,eSpace> C){
 if((transA=='n'||transA=='N') && (transB=='n'||transB=='N')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_right_3_N_N<Kokkos::View<ScalarA***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutRight,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_right_3_N_N<Kokkos::View<ScalarA***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutRight,eSpace> >(alpha,A,B,beta,C));
 
 }else if((transA=='n'||transA=='N') && (transB=='t'||transB=='T')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_right_3_N_T<Kokkos::View<ScalarA***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutRight,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_right_3_N_T<Kokkos::View<ScalarA***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutRight,eSpace> >(alpha,A,B,beta,C));
 
 }else if((transA=='t'||transA=='T') && (transB=='n'||transB=='N')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_right_3_T_N<Kokkos::View<ScalarA***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutRight,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_right_3_T_N<Kokkos::View<ScalarA***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutRight,eSpace> >(alpha,A,B,beta,C));
 
 }else if((transA=='t'||transA=='T') && (transB=='t'||transB=='T')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_right_3_T_T<Kokkos::View<ScalarA***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutRight,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_right_3_T_T<Kokkos::View<ScalarA***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutRight,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutRight,eSpace> >(alpha,A,B,beta,C));
 
 }
 
@@ -1210,34 +1210,34 @@ struct MultiGemm<ScalarA,ScalarB,ScalarC,eSpace,Kokkos::LayoutLeft,Kokkos::Layou
           ScalarC beta, Kokkos::View<ScalarC**,Kokkos::LayoutLeft,eSpace> C){
 if((transA=='n'||transA=='N') && (transB=='n'||transB=='N')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_left_2_N_N<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarB**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }else if((transA=='n'||transA=='N') && (transB=='t'||transB=='T')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_left_2_N_T<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarB**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }else if((transA=='t'||transA=='T') && (transB=='n'||transB=='N')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_left_2_T_N<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarB**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }else if((transA=='t'||transA=='T') && (transB=='t'||transB=='T')){
 sizetype jblocks=0;
-if(C.dimension_1()%block_size==0){
-jblocks=C.dimension_1()/block_size;
+if(C.extent(1)%block_size==0){
+jblocks=C.extent(1)/block_size;
 }else{
-jblocks=C.dimension_1()/block_size+1;
+jblocks=C.extent(1)/block_size+1;
 }
 Kokkos::parallel_for(jblocks,blas3_left_2_T_T<Kokkos::View<ScalarA**,LayoutA,eSpace>,Kokkos::View<ScalarB**,LayoutB,eSpace>,Kokkos::View<ScalarB**,LayoutC,eSpace> >(alpha,A,B,beta,C));
 }
@@ -1252,19 +1252,19 @@ struct MultiGemm<ScalarA,ScalarB,ScalarC,eSpace,Kokkos::LayoutLeft,Kokkos::Layou
           ScalarC beta, Kokkos::View<ScalarC***,Kokkos::LayoutLeft,eSpace> C){
 if((transA=='n'||transA=='N') && (transB=='n'||transB=='N')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_left_3_N_N<Kokkos::View<ScalarA***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutLeft,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_left_3_N_N<Kokkos::View<ScalarA***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutLeft,eSpace> >(alpha,A,B,beta,C));
 
 }else if((transA=='n'||transA=='N') && (transB=='t'||transB=='T')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_left_3_N_T<Kokkos::View<ScalarA***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutLeft,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_left_3_N_T<Kokkos::View<ScalarA***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutLeft,eSpace> >(alpha,A,B,beta,C));
 
 }else if((transA=='t'||transA=='T') && (transB=='n'||transB=='N')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_left_3_T_N<Kokkos::View<ScalarA***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutLeft,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_left_3_T_N<Kokkos::View<ScalarA***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutLeft,eSpace> >(alpha,A,B,beta,C));
 
 }else if((transA=='t'||transA=='T') && (transB=='t'||transB=='T')){
 
-Kokkos::parallel_for(C.dimension_0(),blas3_left_3_T_T<Kokkos::View<ScalarA***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutLeft,eSpace> >(alpha,A,B,beta,C));
+Kokkos::parallel_for(C.extent(0),blas3_left_3_T_T<Kokkos::View<ScalarA***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarB***,Kokkos::LayoutLeft,eSpace>,Kokkos::View<ScalarC***,Kokkos::LayoutLeft,eSpace> >(alpha,A,B,beta,C));
 
 }
 
@@ -1278,13 +1278,13 @@ struct MultiGemm<double,double,double,Kokkos::Serial,Kokkos::LayoutRight,Kokkos:
         static void GEMM(const char transA, const char transB, double alpha,
           Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::Serial> A, Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::Serial> B,
           double beta, Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::Serial> C){
-const int m=C.dimension_0(); 
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();	  
+const int m=C.extent(0); 
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);	  
 const int lda=(transA == 'N'||transA == 'n') ? k : m;
 const int ldb=(transA == 'N'||transA == 'n') ? n : k;
 const int ldc= n; 
-cblas_dgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_dgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 }
 };
 
@@ -1292,13 +1292,13 @@ struct MultiGemm<double,double,double,Kokkos::OpenMP,Kokkos::LayoutRight,Kokkos:
         static void GEMM(const char transA, const char transB, double alpha,
           Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::OpenMP> A, Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::OpenMP> B,
           double beta, Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::OpenMP> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? k : m;
 const int ldb=(transA == 'N'||transA == 'n') ? n : k;
 const int ldc= n;       
-cblas_dgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_dgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 }
 };
@@ -1307,13 +1307,13 @@ struct MultiGemm<double,double,double,Kokkos::Serial,Kokkos::LayoutLeft,Kokkos::
         static void GEMM(const char transA, const char transB, double alpha,
           Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Serial> A, Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Serial> B,
           double beta, Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Serial> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? m : k;
 const int ldb=(transA == 'N'||transA == 'n') ? k : n;
 const int ldc= m;
-cblas_dgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_dgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 }
 };
@@ -1322,13 +1322,13 @@ struct MultiGemm<double,double,double,Kokkos::OpenMP,Kokkos::LayoutLeft,Kokkos::
         static void GEMM(const char transA, const char transB, double alpha,
           Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::OpenMP> A, Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::OpenMP> B,
           double beta, Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::OpenMP> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? m : k;
 const int ldb=(transA == 'N'||transA == 'n') ? k : n;
 const int ldc= m;
-cblas_dgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_dgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 
 }
@@ -1339,13 +1339,13 @@ struct MultiGemm<float,float,float,Kokkos::Serial,Kokkos::LayoutRight,Kokkos::La
         static void GEMM(const char transA, const char transB, float alpha,
           Kokkos::View<float**,Kokkos::LayoutRight,Kokkos::Serial> A, Kokkos::View<float**,Kokkos::LayoutRight,Kokkos::Serial> B,
           float beta, Kokkos::View<float**,Kokkos::LayoutRight,Kokkos::Serial> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? k : m;
 const int ldb=(transA == 'N'||transA == 'n') ? n : k;
 const int ldc= n;       
-cblas_sgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_sgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 }
 };
@@ -1354,13 +1354,13 @@ struct MultiGemm<float,float,float,Kokkos::OpenMP,Kokkos::LayoutRight,Kokkos::La
         static void GEMM(const char transA, const char transB, float alpha,
           Kokkos::View<float**,Kokkos::LayoutRight,Kokkos::OpenMP> A, Kokkos::View<float**,Kokkos::LayoutRight,Kokkos::OpenMP> B,
           float beta, Kokkos::View<float**,Kokkos::LayoutRight,Kokkos::OpenMP> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? k : m;
 const int ldb=(transA == 'N'||transA == 'n') ? n : k;
 const int ldc= n;
-cblas_sgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_sgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 }
 };
@@ -1369,13 +1369,13 @@ struct MultiGemm<float,float,float,Kokkos::Serial,Kokkos::LayoutLeft,Kokkos::Lay
         static void GEMM(const char transA, const char transB, float alpha,
           Kokkos::View<float**,Kokkos::LayoutLeft,Kokkos::Serial> A, Kokkos::View<float**,Kokkos::LayoutLeft,Kokkos::Serial> B,
           float beta, Kokkos::View<float**,Kokkos::LayoutLeft,Kokkos::Serial> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? m : k;
 const int ldb=(transA == 'N'||transA == 'n') ? k : n;
 const int ldc= m;
-cblas_sgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_sgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 
 }
@@ -1385,13 +1385,13 @@ struct MultiGemm<float,float,float,Kokkos::OpenMP,Kokkos::LayoutLeft,Kokkos::Lay
         static void GEMM(const char transA, const char transB, float alpha,
           Kokkos::View<float**,Kokkos::LayoutLeft,Kokkos::OpenMP> A, Kokkos::View<float**,Kokkos::LayoutLeft,Kokkos::OpenMP> B,
           float beta, Kokkos::View<float**,Kokkos::LayoutLeft,Kokkos::OpenMP> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? m : k;
 const int ldb=(transA == 'N'||transA == 'n') ? k : n;
 const int ldc= m;
-cblas_sgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_sgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 
 }
@@ -1401,13 +1401,13 @@ struct MultiGemm<int,int,int,Kokkos::Serial,Kokkos::LayoutRight,Kokkos::LayoutRi
         static void GEMM(const char transA, const char transB, int alpha,
           Kokkos::View<int**,Kokkos::LayoutRight,Kokkos::Serial> A, Kokkos::View<int**,Kokkos::LayoutRight,Kokkos::Serial> B,
           int beta, Kokkos::View<int**,Kokkos::LayoutRight,Kokkos::Serial> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? k : m;
 const int ldb=(transA == 'N'||transA == 'n') ? n : k;
 const int ldc= n;
-cblas_zgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_zgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 }
 };
@@ -1416,13 +1416,13 @@ struct MultiGemm<int,int,int,Kokkos::OpenMP,Kokkos::LayoutRight,Kokkos::LayoutRi
         static void GEMM(const char transA, const char transB, int alpha,
           Kokkos::View<int**,Kokkos::LayoutRight,Kokkos::OpenMP> A, Kokkos::View<int**,Kokkos::LayoutRight,Kokkos::OpenMP> B,
           int beta, Kokkos::View<int**,Kokkos::LayoutRight,Kokkos::OpenMP> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? k : m;
 const int ldb=(transA == 'N'||transA == 'n') ? n : k;
 const int ldc= n;
-cblas_zgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_zgemm (CblasRowMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 }
 };
@@ -1431,13 +1431,13 @@ struct MultiGemm<int,int,int,Kokkos::Serial,Kokkos::LayoutLeft,Kokkos::LayoutLef
         static void GEMM(const char transA, const char transB, int alpha,
           Kokkos::View<int**,Kokkos::LayoutLeft,Kokkos::Serial> A, Kokkos::View<int**,Kokkos::LayoutLeft,Kokkos::Serial> B,
           int beta, Kokkos::View<int**,Kokkos::LayoutLeft,Kokkos::Serial> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? m : k;
 const int ldb=(transA == 'N'||transA == 'n') ? k : n;
 const int ldc= m;
-cblas_zgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_zgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 
 }
@@ -1447,13 +1447,13 @@ struct MultiGemm<int,int,int,Kokkos::OpenMP,Kokkos::LayoutLeft,Kokkos::LayoutLef
         static void GEMM(const char transA, const char transB, int alpha,
           Kokkos::View<int**,Kokkos::LayoutLeft,Kokkos::OpenMP> A, Kokkos::View<int**,Kokkos::LayoutLeft,Kokkos::OpenMP> B,
           int beta, Kokkos::View<int**,Kokkos::LayoutLeft,Kokkos::OpenMP> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? m : k;
 const int ldb=(transA == 'N'||transA == 'n') ? k : n;
 const int ldc= m;
-cblas_zgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cblas_zgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 
 }
@@ -1468,13 +1468,13 @@ struct MultiGemm<double,double,double,Kokkos::Cuda,Kokkos::LayoutRight,Kokkos::L
         static void GEMM(const char transA, const char transB, double alpha,
           Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::Cuda> A, Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::Cuda> B,
           double beta, Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::Cuda> C){
-const int m=C.dimension_0(); 
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();	  
+const int m=C.extent(0); 
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);	  
 const int lda=(transA == 'N'||transA == 'n') ? k : m;
 const int ldb=(transA == 'N'||transA == 'n') ? n : k;
 const int ldc= n; 
-cublasDgemm(transB,transA, n, m, k, alpha, B.ptr_on_device(), ldb, A.ptr_on_device(), lda, beta, C.ptr_on_device(), ldc);
+cublasDgemm(transB,transA, n, m, k, alpha, B.data(), ldb, A.data(), lda, beta, C.data(), ldc);
 
 }
 };
@@ -1484,13 +1484,13 @@ struct MultiGemm<double,double,double,Kokkos::Cuda,Kokkos::LayoutLeft,Kokkos::La
         static void GEMM(const char transA, const char transB, double alpha,
           Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> A, Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> B,
           double beta, Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? m : k;
 const int ldb=(transA == 'N'||transA == 'n') ? k : n;
 const int ldc= m;
-cublasDgemm (transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cublasDgemm (transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 }
 };
@@ -1501,13 +1501,13 @@ struct MultiGemm<float,float,float,Kokkos::Cuda,Kokkos::LayoutRight,Kokkos::Layo
         static void GEMM(const char transA, const char transB, float alpha,
           Kokkos::View<float**,Kokkos::LayoutRight,Kokkos::Cuda> A, Kokkos::View<float**,Kokkos::LayoutRight,Kokkos::Cuda> B,
           float beta, Kokkos::View<float**,Kokkos::LayoutRight,Kokkos::Cuda> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? k : m;
 const int ldb=(transA == 'N'||transA == 'n') ? n : k;
 const int ldc= n;
-cublasSgemm(transB,transA, n, m, k, alpha, B.ptr_on_device(), ldb, A.ptr_on_device(), lda, beta, C.ptr_on_device(), ldc);
+cublasSgemm(transB,transA, n, m, k, alpha, B.data(), ldb, A.data(), lda, beta, C.data(), ldc);
 
 }
 };
@@ -1517,13 +1517,13 @@ struct MultiGemm<float,float,float,Kokkos::Cuda,Kokkos::LayoutLeft,Kokkos::Layou
         static void GEMM(const char transA, const char transB, float alpha,
           Kokkos::View<float**,Kokkos::LayoutLeft,Kokkos::Cuda> A, Kokkos::View<float**,Kokkos::LayoutLeft,Kokkos::Cuda> B,
           float beta, Kokkos::View<float**,Kokkos::LayoutLeft,Kokkos::Cuda> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? m : k;
 const int ldb=(transA == 'N'||transA == 'n') ? k : n;
 const int ldc= m;
-cublasSgemm ( transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cublasSgemm ( transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 
 }
@@ -1534,13 +1534,13 @@ struct MultiGemm<int,int,int,Kokkos::Cuda,Kokkos::LayoutRight,Kokkos::LayoutRigh
         static void GEMM(const char transA, const char transB, int alpha,
           Kokkos::View<int**,Kokkos::LayoutRight,Kokkos::Cuda> A, Kokkos::View<int**,Kokkos::LayoutRight,Kokkos::Cuda> B,
           int beta, Kokkos::View<int**,Kokkos::LayoutRight,Kokkos::Cuda> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? k : m;
 const int ldb=(transA == 'N'||transA == 'n') ? n : k;
 const int ldc= n;
-cublasZgemm(transB,transA, n, m, k, alpha, B.ptr_on_device(), ldb, A.ptr_on_device(), lda, beta, C.ptr_on_device(), ldc);
+cublasZgemm(transB,transA, n, m, k, alpha, B.data(), ldb, A.data(), lda, beta, C.data(), ldc);
 
 }
 };
@@ -1550,13 +1550,13 @@ struct MultiGemm<int,int,int,Kokkos::Cuda,Kokkos::LayoutLeft,Kokkos::LayoutLeft,
         static void GEMM(const char transA, const char transB, int alpha,
           Kokkos::View<int**,Kokkos::LayoutLeft,Kokkos::Cuda> A, Kokkos::View<int**,Kokkos::LayoutLeft,Kokkos::Cuda> B,
           int beta, Kokkos::View<int**,Kokkos::LayoutLeft,Kokkos::Cuda> C){
-const int m=C.dimension_0();
-const int n=C.dimension_1();
-const int k= (transA == 'N'||transA == 'n') ? A.dimension_1 () : A.dimension_0 ();
+const int m=C.extent(0);
+const int n=C.extent(1);
+const int k= (transA == 'N'||transA == 'n') ? A.extent(1) : A.extent(0);
 const int lda=(transA == 'N'||transA == 'n') ? m : k;
 const int ldb=(transA == 'N'||transA == 'n') ? k : n;
 const int ldc= m;
-cublasZgemm ( transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+cublasZgemm ( transA, transB, m, n, k, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
 
 
 }

@@ -11,14 +11,20 @@ namespace Teuchos {
 namespace MathExpr {
 
 enum {
+  PROD_PROGRAM,
+  PROD_NO_STATEMENTS,
+  PROD_NEXT_STATEMENT,
+  PROD_ASSIGN,
+  PROD_NO_EXPR,
+  PROD_YES_EXPR,
   PROD_EXPR,
   PROD_TERNARY_DECAY,
   PROD_OR_DECAY,
   PROD_AND_DECAY,
   PROD_ADD_SUB_DECAY,
   PROD_MUL_DIV_DECAY,
-  PROD_POW_DECAY,
   PROD_NEG_DECAY,
+  PROD_POW_DECAY,
   PROD_TERNARY,
   PROD_OR,
   PROD_AND,
@@ -68,10 +74,12 @@ enum {
   TOK_EQ,
   TOK_AND,
   TOK_OR,
-  TOK_CONST
+  TOK_CONST,
+  TOK_SEMICOLON,
+  TOK_ASSIGN
 };
 
-enum { NTOKS = TOK_CONST + 1 };
+enum { NTOKS = TOK_ASSIGN + 1 };
 
 Language make_language();
 
@@ -92,6 +100,9 @@ class SymbolSetReader : public Reader {
 };
 
 std::set<std::string> get_variables_used(std::string const& expr);
+std::set<std::string> get_symbols_used(std::string const& expr);
+
+Reader* new_calc_reader();
 
 }  // end namespace MathExpr
 

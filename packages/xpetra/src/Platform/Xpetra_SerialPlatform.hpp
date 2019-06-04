@@ -55,11 +55,6 @@
 namespace Xpetra {
 
   //! \brief A implementation of the Platform class for serial platforms.
-  /*!
-    This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal.
-    The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal
-    type, if omitted, defaults to the \c LocalOrdinal type.
-  */
   template<class Node=KokkosClassic::DefaultNode::DefaultNodeType>
   class SerialPlatform : public Teuchos::Describable {
   public:
@@ -82,8 +77,10 @@ namespace Xpetra {
     //! Comm Instance
     const Teuchos::RCP< const Teuchos::SerialComm<int> > getComm() const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get Get a node for parallel computation.
     const Teuchos::RCP<Node> getNode() const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
   private:
@@ -92,15 +89,12 @@ namespace Xpetra {
   protected:
     //! Teuchos::Comm object instantiated for the platform.
     Teuchos::RCP<const Teuchos::SerialComm<int> > comm_;
-    //! Node object instantiated for the platform.
-    Teuchos::RCP<Node> node_;
   };
 
   template<class Node>
-  SerialPlatform<Node>::SerialPlatform(const Teuchos::RCP<Node> &node)
-    : node_(node) {
-    comm_ = Teuchos::rcp(new Teuchos::SerialComm<int>() );
-  }
+  SerialPlatform<Node>::SerialPlatform(const Teuchos::RCP<Node>& /* node */) :
+    comm_ (Teuchos::rcp(new Teuchos::SerialComm<int>()))
+  {}
 
   template<class Node>
   SerialPlatform<Node>::~SerialPlatform() {  }
@@ -111,11 +105,13 @@ namespace Xpetra {
     return comm_;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Node>
   const Teuchos::RCP< Node >
   SerialPlatform<Node>::getNode() const {
-    return node_;
+    return Teuchos::null;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 } // namespace Xpetra
 

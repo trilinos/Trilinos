@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -65,7 +65,7 @@ namespace Ioss {
   class SideSet;
   class EntityBlock;
   class StructuredBlock;
-}
+} // namespace Ioss
 
 /** \brief A namespace for the CGNS database format.
  */
@@ -90,16 +90,11 @@ namespace Iocgns {
 
     ~DatabaseIO() override;
 
+    // This isn't quite true since a CGNS library with cgsize_t == 64-bits can read
+    // a file with 32-bit ints. However,...
+    int int_byte_size_db() const override { return CG_SIZEOF_SIZE; }
+
     bool node_major() const override { return false; }
-
-    void openDatabase__() const override;
-    void closeDatabase__() const override;
-
-    bool begin__(Ioss::State state) override;
-    bool end__(Ioss::State state) override;
-
-    bool begin_state__(Ioss::Region *region, int state, double time) override;
-    bool end_state__(Ioss::Region *region, int state, double time) override;
 
     // Metadata-related functions.
     void read_meta_data__() override;
@@ -107,13 +102,24 @@ namespace Iocgns {
     void write_results_meta_data();
 
   private:
-    void create_structured_block(cgsize_t base, cgsize_t zone, size_t &num_node, size_t &num_cell);
+    void openDatabase__() const override;
+    void closeDatabase__() const override;
+
+    bool begin__(Ioss::State state) override;
+    bool end__(Ioss::State state) override;
+
+    bool begin_state__(int state, double time) override;
+    bool end_state__(int state, double time) override;
+    void flush_database__() const override;
+
+    bool   check_valid_file_open(int status) const;
+    void   create_structured_block(int base, int zone, size_t &num_node);
+    void   create_structured_block_fpp(int base, int zone, size_t &num_node);
     size_t finalize_structured_blocks();
     void   finalize_database() override;
     void   get_step_times__() override;
 
-    void create_unstructured_block(cgsize_t base, cgsize_t zone, size_t &num_node,
-                                   size_t &num_elem);
+    void create_unstructured_block(int base, int zone, size_t &num_node);
     void write_adjacency_data();
 
     int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
@@ -175,23 +181,10 @@ namespace Iocgns {
     const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, int64_t file_offset,
                              int64_t file_count, entity_type type) const;
 
-    // Bulk Data
+    int         get_file_pointer() const;
+    mutable int m_cgnsFilePtr{-1};
 
-    // MAPS -- Used to convert from local exodusII ids/names to Sierra
-    // database global ids/names
-
-    //---Node Map -- Maps internal (1..NUMNP) ids to global ids used on the
-    //               sierra side.   global = nodeMap[local]
-    // nodeMap[0] contains: -1 if sequential, 0 if ordering unknown, 1
-    // if nonsequential
-
-    mutable Ioss::Map nodeMap;
-    mutable Ioss::Map elemMap;
-
-    mutable int cgnsFilePtr;
-    size_t      nodeCount;
-    size_t      elementCount;
-
+    int m_flushInterval{0}; // Default is no flushing after each timestep
     int m_currentVertexSolutionIndex     = 0;
     int m_currentCellCenterSolutionIndex = 0;
 
@@ -203,5 +196,5 @@ namespace Iocgns {
     std::map<std::string, int>         m_zoneNameMap;
     mutable std::map<int, Ioss::Map *> m_globalToBlockLocalNodeMap;
   };
-}
+} // namespace Iocgns
 #endif

@@ -70,9 +70,12 @@ TRIBITS_ADD_ETI_SUPPORT()
 #This replaces an option that was reusing an existing name.
 SET(HAVE_${PACKAGE_NAME}_QD "${PACKAGE_NAME}_ENABLE_QD")
 
-#Adding a define for when MPI is enabled.
-#This replaces an option that was reusing an existing name.
-SET(HAVE_${PACKAGE_NAME}_MPI "${${PACKAGE_NAME}_ENABLE_MPI}")
+#Adding an option and define when MPI is enabled.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_MPI
+  HAVE_IFPACK2_MPI
+  "Enable MPI build of Ifpack2."
+  ${TPL_ENABLE_MPI} )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Lemon)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
@@ -115,6 +118,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
   "Turn on timers in Ifpack2::BlockTriDiContainer."
   NO )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_BlockTriDiContainer_Small_Scalar
+  HAVE_IFPACK2_BLOCKTRIDICONTAINER_SMALL_SCALAR
+  "Enable small scalar in Ifpack2::BlockTriDiContainer."
+  OFF )
 
 #
 # C) Add the libraries, tests, and examples

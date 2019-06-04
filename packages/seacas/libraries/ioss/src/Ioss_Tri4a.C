@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,6 +40,7 @@
 // ========================================================================
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Tri4a::name = "tri4a";
   class St_Tri4a : public ElementVariableType
   {
   public:

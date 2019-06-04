@@ -99,6 +99,8 @@
 
 #cmakedefine HAVE_TEUCHOS_DOUBLE_TO_ARPREC
 
+#cmakedefine HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+
 #cmakedefine HAVE_TEUCHOS_COMM_TIMERS
 
 #cmakedefine HAVE_TEUCHOS_FLOAT
@@ -107,7 +109,8 @@
 
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
-#cmakedefine HAVE_TEUCHOS_LONG_LONG_INT
+// This exists only for backwards compatibility.
+#define HAVE_TEUCHOS_LONG_LONG_INT 1
 
 #cmakedefine HAVE_TEUCHOS_DEBUG
 
@@ -138,6 +141,8 @@
 #cmakedefine HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS
 
 #cmakedefine HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+
+#cmakedefine HAVE_TEUCHOS_KOKKOS_PROFILING
 
 /* template qualifier required for calling template methods from non-template
    code */

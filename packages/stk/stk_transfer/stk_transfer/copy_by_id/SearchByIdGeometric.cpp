@@ -71,7 +71,7 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
       {
         center[i] = static_cast<float>(coords[i]);
       }
-      source_bbox_vector.push_back(std::make_pair( Sphere(center,m_radius), MeshIDProc(source_ids[id_index],p_rank)));
+      source_bbox_vector.emplace_back(Sphere(center,m_radius), MeshIDProc(source_ids[id_index],p_rank));
     }
   }
   {
@@ -86,7 +86,7 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
         meshb.centroid(target_ids[id_index],coords);
         Point center;
         for (int i=0 ; i<3 ; ++i) { center[i] = coords[i]; }
-        target_bbox_vector.push_back(std::make_pair( Sphere(center,m_radius), MeshIDProc(target_ids[id_index],p_rank)));
+        target_bbox_vector.emplace_back(Sphere(center,m_radius), MeshIDProc(target_ids[id_index],p_rank));
       }
     }
   }

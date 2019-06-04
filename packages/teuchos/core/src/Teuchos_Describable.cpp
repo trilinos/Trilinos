@@ -62,7 +62,7 @@ std::string Describable::description () const
 
 void
 Describable::describe (FancyOStream& out_arg,
-                       const EVerbosityLevel verbLevel) const
+                       const EVerbosityLevel /* verbLevel */) const
 {
   RCP<FancyOStream> out = rcpFromRef (out_arg);
   OSTab tab (out);

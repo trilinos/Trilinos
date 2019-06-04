@@ -48,6 +48,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 #include "ROL_Vector.hpp"
 
 #include <exception>
@@ -91,6 +92,7 @@ private:
 
         return flatVec;
       }
+
 
       // it must be a product vector then
       Ptr<const Thyra::ProductVectorBase<Real> > prod_vec = ptr_dynamic_cast<const Thyra::ProductVectorBase<Real> >(ptrFromRef(vec));
@@ -233,7 +235,7 @@ private:
       std::stringstream ss;
       ss << "Block identifier b= " << b << " is too large for i=" << i << " on array with " << getLocalSize() <<
             " and " << flatVec_.size() << " blocks.";
-      TEUCHOS_TEST_FOR_EXCEPTION(b>=flatVec_.size(),std::logic_error, ss.str());
+      ROL_TEST_FOR_EXCEPTION(b>=flatVec_.size(),std::logic_error, ss.str());
 
       return flatVec_[b][i-sum];
     }
@@ -247,7 +249,7 @@ public:
   /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
   */
   void plus( const Vector<Real> &x ) {
-    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
     ::Thyra::Vp_V( thyra_vec_.ptr(), *ex.getVector());
   }
 
@@ -260,7 +262,7 @@ public:
   /** \brief Returns \f$ \langle y,x \rangle \f$ where \f$y = \mbox{*this}\f$.
   */
   Real dot( const Vector<Real> &x ) const {
-    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
     return ::Thyra::dot<Real>(*thyra_vec_, *ex.thyra_vec_);
   }
 
@@ -275,13 +277,13 @@ public:
   */
   Teuchos::RCP<Vector<Real> > clone() const{
     Teuchos::RCP<Thyra::VectorBase<Real> > tv = thyra_vec_->clone_v();
-    return Teuchos::rcp(new ThyraVector(tv)); 
+    return Teuchos::rcp( new ThyraVector(tv) ); 
   }
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
   */
   void axpy( const Real alpha, const Vector<Real> &x ) {
-    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
     ::Thyra::Vp_StV( thyra_vec_.ptr(), alpha, *ex.getVector());
   }
 
@@ -290,6 +292,18 @@ public:
   void zero() {
     ::Thyra::put_scalar(0.0, thyra_vec_.ptr());
   }
+
+  /**  \brief Set all entries of the vector to alpha.
+    */
+  void setScalar(const Real C) {
+      ::Thyra::put_scalar(C, thyra_vec_.ptr());
+    }
+
+  /**  \brief Set entries of the vector to uniform random between l and u.
+    */
+  void randomize(const Real l=0.0, const Real u=1.0) {
+      ::Thyra::randomize(l, u, thyra_vec_.ptr());
+    }
 
   /**  \brief Set all entries of the vector to alpha.
     */
@@ -312,10 +326,11 @@ public:
   /** \brief Return i-th basis vector.
     */
   Teuchos::RCP<Vector<Real> > basis( const int i ) const {
-    Teuchos::RCP<Thyra::VectorBase<Real> > basisThyraVec = thyra_vec_->clone_v(); 
+    Teuchos::RCP<Vector<Real> > e = clone();
+    Teuchos::RCP<Thyra::VectorBase<Real> > basisThyraVec = (Teuchos::rcp_static_cast<ThyraVector>(e))->getVector();
     ::Thyra::put_scalar(0.0, basisThyraVec.ptr());
     ::Thyra::set_ele(i,1.0, basisThyraVec.ptr());
-    return Teuchos::rcp(new ThyraVector(basisThyraVec));
+    return e;
   }
 
   /** \brief Return dimension of the vector space.
@@ -327,7 +342,7 @@ public:
   /** \brief Set \f$y \leftarrow x\f$ where \f$y = \mathtt{*this}\f$.
     */
   void set(const Vector<Real> &x ) {
-    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
     ::Thyra::copy( *ex.getVector(), thyra_vec_.ptr() );
   }
 
@@ -348,7 +363,7 @@ public:
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
-    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
     Teuchos::RCP< const Thyra::VectorBase<Real> > xp = ex.getVector();
 
     SetGetEleAccelerator thisAccel(thyra_vec_);

@@ -340,8 +340,8 @@ main(
     } // end loop over physicsBlocks
 
     // Build the connection manager, which is an abstraction of the mesh.
-    const RCP<ConnManager<int, int>> connManager =
-      rcp(new STKConnManager<int>(mesh));
+    const RCP<ConnManager> connManager =
+      rcp(new STKConnManager(mesh));
 
     // Build the degree of freedom manager and the linear object factory, which
     // creates the linear algebra objects (vectors/matrices) for the problem.

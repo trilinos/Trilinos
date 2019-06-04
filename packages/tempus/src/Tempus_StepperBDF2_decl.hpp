@@ -21,29 +21,44 @@ namespace Tempus {
  *  For the implicit ODE system, \f$f(\dot{x},x,t) = 0\f$,
  *  the solution, \f$\dot{x}\f$ and \f$x\f$, is determined using a
  *  solver (e.g., a non-linear solver, like NOX).  This stepper allows
- *  for a variable time-step \f$dt\f$.  It is a 3-step method.
+ *  for a variable time-step, \f$\Delta t\f$.  It is a 2-step method.
  *
  *  <b> Algorithm </b>
- *   - Select initial guess \f$x_n\f$ for \f$n\f$.
- *   - Compute \f$x_n\f$ for n=1 using some time-integration scheme,
- *     e.g., Backward Euler or RK4.
- *   - Solve
- *   \f[
- *   f\left(\dot{x} = \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}
- *                 + \left(\frac{1}{\tau_{n-1}-\tau_n} \right)
- *                   \left(\frac{x_n-x_{n-1}}{\tau_{n-1} + \tau_n}
- *                         - \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right)
- *                  (2\tau_n + \tau_{n-1}), x_n, t_n\right) = 0
- *   \f]
- *   for \f$x_n\f$ (n > 1) where
- *   \f[
- *   \tau_n = t_n - t_{n-1}.
- *   \f]
+ *   - For \f$n=0\f$, set the initial condition, \f$x_0\f$.
+ *   - For \f$n=1\f$, use a one-step startup stepper, e.g., Backward Euler
+ *     or RK4.  The default startup stepper is 'IRK 1 Stage Theta Method'
+ *     which second order.
+ *   - For \f$n>1\f$, solve for \f$x_n\f$ via
+ *       \f$ f\left(x_n, \dot{x}_n, t_n\right) = 0\f$
+ *  where \f$
+ *    \dot{x}_{n} = \frac{2\tau_n + \tau_{n-1}}{\tau_n + \tau_{n-1}}
+ *                  \left[ \frac{x_n-x_{n-1}}{\tau_n}\right]
+ *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
+ *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right], \f$
+ *  and \f$\Delta t_n = \tau_n = t_n - t_{n-1}\f$.
+ *   - \f$\dot{x}_n \leftarrow
+ *    \dot{x}_{n} = \frac{2\tau_n + \tau_{n-1}}{\tau_n + \tau_{n-1}}
+ *                  \left[ \frac{x_n-x_{n-1}}{\tau_n}\right]
+ *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
+ *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right], \f$
+ *
+ *  The First-Step-As-Last (FSAL) principle is not needed BDF2.
+ *  The default is to set useFSAL=false, however useFSAL=true will also work
+ *  but have no affect (i.e., no-op).
  */
 template<class Scalar>
 class StepperBDF2 : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
+
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperBDF2();
 
   /// Constructor
   StepperBDF2(
@@ -52,22 +67,8 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return wrapperModel_->getAppModel();}
-
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-      { return solver_; }
     virtual void setObserver(
-      Teuchos::RCP<StepperBDF2Observer<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Set the stepper to use in first step
     void setStartUpStepper(std::string startupStepperName);
@@ -75,6 +76,10 @@ public:
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -92,7 +97,16 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return false;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
+
+  /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const {return getAlpha(dt,dt);}
+  virtual Scalar getAlpha(const Scalar dt, const Scalar dtOld) const
+    { return (Scalar(2.0)*dt + dtOld)/(dt*(dt + dtOld)); }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
   /// Compute the first time step given the supplied startup stepper
   virtual void computeStartUp(
@@ -116,29 +130,19 @@ public:
 
 private:
 
-  /// Default Constructor -- not allowed
-  StepperBDF2();
-
-private:
-
-  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluator<Scalar> >       wrapperModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  solver_;
-  Teuchos::RCP<Stepper<Scalar> >                     startUpStepper_;
-
+  Teuchos::RCP<Stepper<Scalar> >             startUpStepper_;
   Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
-  Scalar                                             order_;
+  Scalar                                     order_;
 };
 
 /** \brief Time-derivative interface for BDF2.
  *
- *  Given the state \f$x\f$, compute the BDF2 time-derivative,
+ *  Given the state \f$x_n\f$, compute the BDF2 time-derivative,
  *  \f[
- *    \dot{x}_{n} = \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}
- *                + \left(\frac{1}{\tau_{n-1}-\tau_n} \right)
- *                  \left(\frac{x_n-x_{n-1}}{\tau_{n-1} + \tau_n}
- *                        - \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right)
- *                  (2\tau_n + \tau_{n-1})
+ *    \dot{x}_{n} = \frac{2\tau_n + \tau_{n-1}}{\tau_n + \tau_{n-1}}
+ *                  \left[ \frac{x_n-x_{n-1}}{\tau_n}\right]
+ *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
+ *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right]
  *  \f]
  *  where
  *  \f[
@@ -169,16 +173,11 @@ public:
   {
     xDotDot = Teuchos::null;
     // Calculate the BDF2 x dot vector
-    const Scalar a = (1.0/(dt_ + dtOld_))*(2.0*dt_ + dtOld_)/dt_;
-    const Scalar b = (1.0/(dt_ + dtOld_))*(dt_/dtOld_);
-    //xDot = a*(x_n-x_{n-1})
-    Thyra::V_StVpStV(xDot.ptr(),a,*x,-a,*xOld_);
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > tmp =
-      Thyra::createMember<Scalar>(x->space());
-    //tmp = b*(x_{n-1} - x_{n-2})
-    Thyra::V_StVpStV(tmp.ptr(),b,*xOld_,-b,*xOldOld_);
-    //xDot = xDot - tmp;
-    Thyra::Vp_StV(xDot.ptr(), -1.0, *tmp);
+    const Scalar a = ((Scalar(2.0)*dt_ + dtOld_)/(dt_ + dtOld_))/dt_;
+    const Scalar b = (                       dt_/(dt_ + dtOld_))/dtOld_;
+    //xDot = a*(x_n - x_{n-1}) - b*(x_{n-1} - x_{n-2})
+    Thyra::V_StVpStV(xDot.ptr(), a, *x, -(a+b), *xOld_);
+    Thyra::Vp_StV(xDot.ptr(), b, *xOldOld_);
   }
 
   virtual void initialize(Scalar dt, Scalar dtOld,
@@ -191,7 +190,7 @@ private:
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld_;
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOldOld_;
   Scalar                                         dt_;    // = t_n - t_{n-1}
-  Scalar                                         dtOld_;    // = t_{n-1} - t_{n-2}
+  Scalar                                         dtOld_; // = t_{n-1} - t_{n-2}
 };
 
 

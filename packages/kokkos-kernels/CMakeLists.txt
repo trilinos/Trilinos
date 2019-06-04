@@ -75,6 +75,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
     LIST(APPEND DEVICE_LIST "<Cuda,CudaUVMSpace>")
   ENDIF()
 
+  IF( Trilinos_ENABLE_COMPLEX_DOUBLE AND ((NOT DEFINED CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS) OR (NOT CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS)) )
+    MESSAGE( WARNING "The CMake option CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS is either undefined or OFF.  Please set CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON when building with CUDA and complex double enabled.")
+  ENDIF()
+
 ENDIF()
 
 IF(${Kokkos_ENABLE_Serial} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_OpenMP})
@@ -282,6 +286,57 @@ IF (KokkosKernels_INST_OFFSET_SIZE_T)
   LIST(APPEND OFFSET_LIST "size_t")
 ENDIF()
 
+# ==================================================================
+# Enable Third Party Libraries
+# ==================================================================
+
+IF (TPL_ENABLE_BLAS)
+  SET(KOKKOSKERNELS_ENABLE_TPL_BLAS ${TPL_ENABLE_BLAS})
+ENDIF()
+IF (TPL_ENABLE_MKL)
+  SET(KOKKOSKERNELS_ENABLE_TPL_MKL ${TPL_ENABLE_MKL})
+ENDIF()
+
+IF(${Kokkos_ENABLE_Cuda})
+  IF (NOT KOKKOSKERNELS_ENABLE_TPL_BLAS)
+    SET(KOKKOSKERNELS_ENABLE_TPL_BLAS ON)
+    LIST(APPEND TPL_LIST "BLAS")
+  ENDIF()
+  # CUBLAS is ON by default when CUDA is enabled
+  SET(KOKKOSKERNELS_ENABLE_TPL_CUBLAS ON)
+  # Tribit provides TPL mechanism for CUSPARSE; thus, use it
+  IF (TPL_ENABLE_CUSPARSE)
+    SET(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE ${TPL_ENABLE_CUSPARSE})
+  ENDIF()
+ENDIF()
+
+IF (KOKKOSKERNELS_ENABLE_TPL_BLAS)
+  LIST(APPEND TPL_LIST "BLAS")
+ENDIF()
+IF (KOKKOSKERNELS_ENABLE_TPL_MKL)
+  LIST(APPEND TPL_LIST "MKL")
+ENDIF()
+IF (KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+  LIST(APPEND TPL_LIST "CUSPARSE")
+ENDIF()
+IF (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+  LIST(APPEND TPL_LIST "CUBLAS")
+ENDIF()
+
+# ==================================================================
+# Fortran Complex BLAS
+# ==================================================================
+
+IF (KOKKOSKERNELS_ENABLE_TPL_BLAS OR KOKKOSKERNELS_ENABLE_TPL_MKL)
+  INCLUDE(CheckHostBlasReturnComplex.cmake)
+  CHECK_HOST_BLAS_RETURN_COMPLEX(KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX)
+ENDIF()
+
+# ==================================================================
+# CMake Summary
+# ==================================================================
+
+
 MESSAGE("")
 MESSAGE("=======================")
 MESSAGE("KokkosKernels ETI Types")
@@ -289,6 +344,9 @@ MESSAGE("   Devices:  ${DEVICE_LIST}")
 MESSAGE("   Scalars:  ${SCALAR_LIST}")
 MESSAGE("   Ordinals: ${ORDINAL_LIST}")
 MESSAGE("   Offsets:  ${OFFSET_LIST}")
+MESSAGE("")
+MESSAGE("KokkosKernels TPLs")
+MESSAGE("   ${TPL_LIST}")
 MESSAGE("=======================")
 MESSAGE("")
 
@@ -298,6 +356,7 @@ MESSAGE("")
 
 ADD_SUBDIRECTORY(src)
 
+TRIBITS_ADD_TEST_DIRECTORIES(test_common)
 TRIBITS_ADD_TEST_DIRECTORIES(perf_test)
 TRIBITS_ADD_TEST_DIRECTORIES(unit_test)
 #TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)

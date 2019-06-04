@@ -3,16 +3,16 @@
 #include <stk_util/stk_config.h>
 
 // restrict this file to only build if KokkosCore is enabled
-#ifdef HAVE_STK_KokkosCore
+#ifdef STK_HAVE_KOKKOSCORE
 
 #include <Kokkos_Core.hpp>
 
 #include <iostream>
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 #define KOKKOS_DEVICE Kokkos::Cuda
 #define CALL_KOKKOS_SAXPY_FUNCTION call_kokkos_saxpy_cuda
-#elif defined(KOKKOS_HAVE_OPENMP)
+#elif defined(KOKKOS_ENABLE_OPENMP)
 #define KOKKOS_DEVICE Kokkos::OpenMP
 #define CALL_KOKKOS_SAXPY_FUNCTION call_kokkos_saxpy_openmp
 #else
@@ -27,7 +27,7 @@
 TEST(stk_exp_kokkos, kokkos_saxpy)
 {
   KOKKOS_DEVICE::initialize();
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   KOKKOS_DEVICE::print_configuration(std::cout);
 #endif
   const size_t N = 1000000;

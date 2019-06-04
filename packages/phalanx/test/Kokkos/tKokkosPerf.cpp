@@ -86,7 +86,7 @@ namespace phalanx_test {
     KOKKOS_INLINE_FUNCTION
     void operator () (const int i) const
     {
-      for (int ip = 0; ip < static_cast<int>(rho_.dimension_1()); ++ip) {
+      for (int ip = 0; ip < static_cast<int>(rho_.extent(1)); ++ip) {
 	rho_(i,ip) = k_(0) * P_(i,ip) / T_(i,ip);
       }
     }
@@ -136,11 +136,11 @@ namespace phalanx_test {
     // using DevLayout = Kokkos::LayoutRight;
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
 
-#if defined(KOKKOS_HAVE_CUDA)
-    std::cout << "\n\nKOKKOS_HAVE_CUDA = true" << std::endl;
+#if defined(KOKKOS_ENABLE_CUDA)
+    std::cout << "\n\nKOKKOS_ENABLE_CUDA = true" << std::endl;
     const static int FadStride = 32;
 #else
-    std::cout << "KOKKOS_HAVE_CUDA = false" << std::endl;
+    std::cout << "KOKKOS_ENABLE_CUDA = false" << std::endl;
     const static int FadStride = 1;
 #endif
 
@@ -207,11 +207,11 @@ namespace phalanx_test {
       PHX::Device::fence();
     }
 
-    timer = Teuchos::TimeMonitor::getNewTimer("Jacobian Hierarchic (team=8,warp=32)");
+    timer = Teuchos::TimeMonitor::getNewTimer("Jacobian Hierarchic (team=AUTO(),warp=32)");
     PHX::Device::fence();
     for (int i=0; i < num_samples; ++i) {
       Teuchos::TimeMonitor tm(*timer);
-      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(num_cells,8,32),
+      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(num_cells,Kokkos::AUTO(),32),
 			   ComputeRhoHierarchic<FadType,DevLayout,PHX::Device>(rho, P, T, k));
       PHX::Device::fence();
     }
@@ -245,11 +245,11 @@ namespace phalanx_test {
       Kokkos::deep_copy(phx_T, phx_host_T);
       Kokkos::deep_copy(phx_k, phx_host_k);
       PHX::Device::fence();
-      timer = Teuchos::TimeMonitor::getNewTimer("Jacobian Hierarchic <PHX::View> (team=8,warp=32)");
+      timer = Teuchos::TimeMonitor::getNewTimer("Jacobian Hierarchic <PHX::View> (team=AUTO(),warp=32)");
       PHX::Device::fence();
       for (int i=0; i < num_samples; ++i) {
 	Teuchos::TimeMonitor tm(*timer);
-	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(num_cells,8,32),
+	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(num_cells,Kokkos::AUTO(),32),
 			     ComputeRhoHierarchic<FadType,typename PHX::DevLayout<FadType>::type,PHX::Device>(phx_rho, phx_P, phx_T, phx_k));
 	PHX::Device::fence();
       }

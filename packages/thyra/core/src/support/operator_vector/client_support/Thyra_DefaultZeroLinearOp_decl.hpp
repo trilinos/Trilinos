@@ -193,11 +193,11 @@ protected:
   { return true; }
  
   /** \brief . */ // Meaningless operation
-  virtual void scaleLeftImpl(const VectorBase< Scalar > &row_scaling)
+  virtual void scaleLeftImpl(const VectorBase< Scalar > &/* row_scaling */)
   { }
 
   /** \brief . */ // Meaningless operation
-  virtual void scaleRightImpl(const VectorBase< Scalar > &col_scaling)
+  virtual void scaleRightImpl(const VectorBase< Scalar > &/* col_scaling */)
   { }
 
   //@}

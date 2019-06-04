@@ -37,9 +37,9 @@ cd ..
 
 if [ -n $KOKKOS_UPDATE_BRANCH ]
 then
-  python ${TRILINOS_PRISTINE_PATH}/packages/kokkos/config/snapshot.py ${KOKKOS_PATH} ${TRILINOS_UPDATED_PATH}/packages
+  python ${TRILINOS_PRISTINE_PATH}/packages/kokkos/scripts/snapshot.py ${KOKKOS_PATH} ${TRILINOS_UPDATED_PATH}/packages
 fi
-python ${TRILINOS_PRISTINE_PATH}/packages/kokkos/config/snapshot.py ${KOKKOSKERNELS_PATH} ${TRILINOS_UPDATED_PATH}/packages
+python ${TRILINOS_PRISTINE_PATH}/packages/kokkos/scripts/snapshot.py ${KOKKOSKERNELS_PATH} ${TRILINOS_UPDATED_PATH}/packages
 
 
 cd ${TRILINOS_UPDATED_PATH}

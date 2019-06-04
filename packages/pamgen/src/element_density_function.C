@@ -7,7 +7,7 @@ namespace PAMGEN_NEVADA {
   /*****************************************************************************/
   void Element_Density_Function::Display_Class(
       std::ostream& s,
-      const std::string &indent
+      const std::string &/* indent */
       )
   {
     s << std::endl

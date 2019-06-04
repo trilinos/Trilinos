@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -148,7 +148,7 @@ static int input_assign_inv(FILE *finassign,    /* input assignment file */
                             char *inassignname, /* name of input assignment file */
                             int   nvtxs,        /* number of vertices to output */
                             int * assignment    /* values to be printed */
-                            )
+)
 {
   extern int DEBUG_TRACE; /* trace main execution path */
   int        set;         /* set number being read */

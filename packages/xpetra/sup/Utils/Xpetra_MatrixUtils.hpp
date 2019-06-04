@@ -59,6 +59,13 @@
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
+#include "Xpetra_MatrixMatrix.hpp"
+
+#include "Xpetra_IO.hpp"
+
+#ifdef HAVE_XPETRA_TPETRA
+#include <Tpetra_RowMatrixTransposer.hpp>
+#endif
 
 namespace Xpetra {
 
@@ -72,9 +79,9 @@ namespace Xpetra {
 
 */
 template <class Scalar,
-         class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node>
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class MatrixUtils {
 #undef XPETRA_MATRIXUTILS_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -431,7 +438,166 @@ public:
       }
     }
     return bA;
+  } // SplitMatrix
+
+  /** Given a matrix A, detect too small diagonals and replace any found with ones. */
+
+  static void CheckRepairMainDiagonal(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ac,
+                                 bool const &repairZeroDiagonals, Teuchos::FancyOStream &fos,
+                                 const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero())
+  {
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    Scalar one = TST::one();
+
+    Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
+    p->set("DoOptimizeStorage", true);
+
+    RCP<const Map> rowMap = Ac->getRowMap();
+    RCP<Vector> diagVec = VectorFactory::Build(rowMap);
+    Ac->getLocalDiagCopy(*diagVec);
+
+    LocalOrdinal lZeroDiags = 0;
+    Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
+
+    for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
+      if (TST::magnitude(diagVal[i]) <= threshold) {
+        lZeroDiags++;
+      }
+    }
+    GlobalOrdinal gZeroDiags;
+    Teuchos::reduceAll(*(rowMap->getComm()), Teuchos::REDUCE_SUM, Teuchos::as<GlobalOrdinal>(lZeroDiags),
+                       Teuchos::outArg(gZeroDiags));
+
+    if (repairZeroDiagonals && gZeroDiags > 0) {
+      /*
+        TAW: If Ac has empty rows, put a 1 on the diagonal of Ac. Be aware that Ac might have empty rows AND
+        columns.  The columns might not exist in the column map at all.  It would be nice to add the entries
+        to the original matrix Ac. But then we would have to use insertLocalValues. However we cannot add
+        new entries for local column indices that do not exist in the column map of Ac (at least Epetra is
+        not able to do this).  With Tpetra it is also not possible to add new entries after the FillComplete
+        call with a static map, since the column map already exists and the diagonal entries are completely
+        missing.  Here we build a diagonal matrix with zeros on the diagonal and ones on the diagonal for
+        the rows where Ac has empty rows We have to build a new matrix to be able to use insertGlobalValues.
+        Then we add the original matrix Ac to our new block diagonal matrix and use the result as new
+        (non-singular) matrix Ac.  This is very inefficient.
+
+        If you know something better, please let me know.
+      */
+      RCP<Matrix> fixDiagMatrix = MatrixFactory::Build(rowMap, 1);
+      Teuchos::Array<GlobalOrdinal> indout(1);
+      Teuchos::Array<Scalar> valout(1);
+      for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
+        if (TST::magnitude(diagVal[r]) <= threshold) {
+          GlobalOrdinal grid = rowMap->getGlobalElement(r);
+          indout[0] = grid;
+          valout[0] = one;
+          fixDiagMatrix->insertGlobalValues(grid,indout(), valout());
+        }
+      }
+      {
+        Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete1"));
+        fixDiagMatrix->fillComplete(Ac->getDomainMap(),Ac->getRangeMap());
+      }
+
+      RCP<Matrix> newAc;
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, false, 1.0, newAc, fos);
+      if (Ac->IsView("stridedMaps"))
+        newAc->CreateView("stridedMaps", Ac);
+
+      Ac = Teuchos::null;  // free singular matrix
+      fixDiagMatrix = Teuchos::null;
+      Ac = newAc;          // set fixed non-singular matrix
+
+      // call fillComplete with optimized storage option set to true
+      // This is necessary for new faster Epetra MM kernels.
+      {
+        Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete2"));
+        Ac->fillComplete(p);
+      }
+    } // end repair
+
+
+
+    // print some output
+    fos << "CheckRepairMainDiagonal: " << (repairZeroDiagonals ? "repaired " : "found ")
+              << gZeroDiags << " too small entries on main diagonal of Ac." << std::endl;
+
+#ifdef HAVE_XPETRA_DEBUG // only for debugging
+    // check whether Ac has been repaired...
+    Ac->getLocalDiagCopy(*diagVec);
+    Teuchos::ArrayRCP< Scalar > diagVal2 = diagVec->getDataNonConst(0);
+    for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
+      if (TST::magnitude(diagVal[r]) <= threshold) {
+        fos << "Error: there are too small entries left on diagonal after repair..." << std::endl;
+        break;
+      }
+    }
+#endif
+  } //CheckRepairMainDiagonal
+
+
+
+  /** Given a matrix A, boost the diagonal to a relative floor.  Multiple PDEs will be scaled differently.
+      Each PDE can be given its own relative threshold, or a single threshold can be used for all PDEs
+      NOTE: This is not Kokkos-ized
+      Precondition: A->GetFixedBlockSize() == relativeThreshold.size()  OR relativeThreshold.size() == 1
+  **/
+
+  static void RelativeDiagonalBoost(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+                                    const Teuchos::ArrayView<const double> & relativeThreshold, Teuchos::FancyOStream &fos)
+  {
+    Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("RelativeDiagonalBoost"));
+
+    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != relativeThreshold.size()  && relativeThreshold.size() != 1,Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::RelativeDiagonal Boost:  Either A->GetFixedBlockSize() != relativeThreshold.size() OR relativeThreshold.size() == 1");
+    
+    LocalOrdinal numPDEs = A->GetFixedBlockSize();
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    Scalar zero = TST::zero();
+    Scalar one = TST::one();
+    
+    // Get the diagonal
+    RCP<Vector> diag = VectorFactory::Build(A->getRowMap());
+    A->getLocalDiagCopy(*diag);
+    Teuchos::ArrayRCP< const Scalar > dataVal = diag->getData(0);
+    size_t N = A->getRowMap()->getNodeNumElements();
+
+    // Compute the diagonal maxes for each PDE
+    std::vector<MT> l_diagMax(numPDEs), g_diagMax(numPDEs);
+    for(size_t i=0; i<N; i++) {
+      int pde = (int) (i % numPDEs);
+      if((int)i < numPDEs) 
+        l_diagMax[pde] = TST::magnitude(dataVal[i]);
+      else
+        l_diagMax[pde] = std::max(l_diagMax[pde],TST::magnitude(dataVal[i]));
+    }
+    Teuchos::reduceAll(*A->getRowMap()->getComm(), Teuchos::REDUCE_MAX, numPDEs, l_diagMax.data(), g_diagMax.data() );
+
+    // Apply the diagonal maxes via matrix-matrix addition
+    RCP<Matrix> boostMatrix = MatrixFactory::Build(A->getRowMap(),1);
+    Teuchos::Array<GlobalOrdinal> index(1);
+    Teuchos::Array<Scalar> value(1);
+    for (size_t i = 0; i<N; i++) {
+      GlobalOrdinal GRID = A->getRowMap()->getGlobalElement(i);
+      int pde = (int) (i % numPDEs);
+      index[0] = GRID;
+      if (TST::magnitude(dataVal[i]) < relativeThreshold[pde] * g_diagMax[pde]) 
+        value[0] = relativeThreshold[pde] * g_diagMax[pde] - TST::magnitude(dataVal[i]);
+      else
+        value[0] =zero;
+      boostMatrix->insertGlobalValues(GRID,index(),value());      
+    }
+    boostMatrix->fillComplete(A->getDomainMap(),A->getRangeMap());
+
+    // FIXME: We really need an add that lets you "add into"
+    RCP<Matrix> newA;
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*A,false,one, *boostMatrix,false,one,newA,fos);
+    if (A->IsView("stridedMaps"))
+      newA->CreateView("stridedMaps", A);
+    A = newA;
+    A->fillComplete();
   }
+
 };
 
 } // end namespace Xpetra

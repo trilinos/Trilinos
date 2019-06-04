@@ -48,20 +48,21 @@
 
 #define USE_HESSVEC 1
 
+#include "ROL_Bounds.hpp"
 #include "ROL_PoissonControl.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_PrimalDualActiveSetStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_oblackholestream.hpp"
+
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_Bounds.hpp"
 
 
 template <class Real>
@@ -107,18 +108,18 @@ int main(int argc, char *argv[]) {
  
   typedef typename vector::size_type uint;
   
-  using Teuchos::RCP;  using Teuchos::rcp;
+    
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -129,28 +130,27 @@ int main(int argc, char *argv[]) {
     RealT alpha = 1.e-4;
     ROL::ZOO::Objective_PoissonControl<RealT> obj(alpha);
 
-    RCP<vector> l_rcp = rcp( new vector(dim) );
-    RCP<vector> u_rcp = rcp( new vector(dim) );
+    ROL::Ptr<vector> l_ptr = ROL::makePtr<vector>(dim);
+    ROL::Ptr<vector> u_ptr = ROL::makePtr<vector>(dim);
 
-    RCP<V> lo = rcp( new SV(l_rcp) );
-    RCP<V> up = rcp( new SV(u_rcp) );
+    ROL::Ptr<V> lo = ROL::makePtr<SV>(l_ptr);
+    ROL::Ptr<V> up = ROL::makePtr<SV>(u_ptr);
 
     for ( uint i = 0; i < dim; i++ ) {
       if ( i < dim/3.0  ||  i > 2*dim/3.0 ) {
-        (*l_rcp)[i] = 0.0; 
-        (*u_rcp)[i] = 0.25;
+        (*l_ptr)[i] = 0.0; 
+        (*u_ptr)[i] = 0.25;
       }
       else {
-        (*l_rcp)[i] = 0.75;
-        (*u_rcp)[i] = 1.0;
+        (*l_ptr)[i] = 0.75;
+        (*u_ptr)[i] = 1.0;
       }
     }
     ROL::Bounds<RealT> icon(lo,up);
 
     // Primal dual active set.
     std::string filename = "input.xml";
-    RCP<Teuchos::ParameterList> parlist = rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     // Krylov parameters.
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-4);
@@ -169,11 +169,11 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     // Define algorithm.
-    RCP<ROL::Algorithm<RealT> > algo = rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
+    auto algo = ROL::makePtr<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
 
     // Iteration vector.
-    RCP<vector> x_rcp = rcp( new vector(dim, 0.0) );
-    SV x(x_rcp);
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);
+    SV x(x_ptr);
 
     // Run algorithm.
     x.zero();
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     file.open("control_PDAS.txt");
 
     for ( uint i = 0; i < dim; i++ ) {
-      file << (*x_rcp)[i] << "\n";
+      file << (*x_ptr)[i] << "\n";
     }
     file.close();
 
@@ -190,10 +190,10 @@ int main(int argc, char *argv[]) {
     // re-load parameters
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Set algorithm.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
     // Iteration vector.
-    RCP<vector> y_rcp = rcp( new vector(dim, 0.0) );
-    SV y(y_rcp);
+    ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(dim, 0.0);
+    SV y(y_ptr);
 
     // Run Algorithm
     y.zero();
@@ -202,11 +202,11 @@ int main(int argc, char *argv[]) {
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
     for ( uint i = 0; i < dim; i++ ) {
-      file_tr << (*y_rcp)[i] << "\n";
+      file_tr << (*y_ptr)[i] << "\n";
     }
     file_tr.close();
    
-    RCP<V> error = x.clone();
+    ROL::Ptr<V> error = x.clone();
     error->set(x);
     error->axpy(-1.0,y);
     *outStream << "\nError between PDAS solution and TR solution is " << error->norm() << "\n";

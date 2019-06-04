@@ -255,7 +255,7 @@ public:
                      const vector_type & x,
                      const vector_type & y )
   {
-    const size_type fem_rows = A.graph.row_map.dimension_0() - 1;
+    const size_type fem_rows = A.graph.row_map.extent(0) - 1;
     const size_type stoch_rows = A.block.dimension();
     const size_type stoch_entries = A.block.entry_count();
     const size_type warp_size = Kokkos::Impl::CudaTraits::WarpSize;
@@ -291,7 +291,7 @@ public:
 
 #if 0
     //std::cout << std::endl << A.block << std::endl;
-    const size_type fem_nnz = A.values.dimension_1();
+    const size_type fem_nnz = A.values.extent(1);
     std::cout << "Multiply< BlockCrsMatrix< CooProductTensor ... > >::apply"
               << std::endl
               << "  grid(" << dGrid.x << "," << dGrid.y << ")" << std::endl

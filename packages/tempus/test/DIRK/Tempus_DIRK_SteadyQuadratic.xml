@@ -1,4 +1,4 @@
-<ParameterList name="ExplicitRK_SinCos">
+<ParameterList name="DIRK_SteadyQuadratic">
   <ParameterList name="SteadyQuadraticModel">
     <Parameter name="Coeff b" type="double" value="1.0"/>
   </ParameterList>
@@ -39,6 +39,10 @@
 
     <ParameterList name="Default Stepper">
       <Parameter name="Stepper Type" type="string" value="SDIRK 5 Stage 5th order"/>
+      <Parameter name="Use FSAL"       type="bool" value="true"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
 
       <ParameterList name="Default Solver">

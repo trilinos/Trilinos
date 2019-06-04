@@ -79,8 +79,8 @@ struct ViewFactory {
               const CtorProp& prop,
               const Dims ... dims) {
 
-    using value_type = typename ResultView::non_const_value_type;
-    constexpr bool is_scalar = Sacado::IsScalarType<value_type>::value;
+    using nc_value_type = typename ResultView::non_const_value_type;
+    constexpr bool is_scalar = Sacado::IsScalarType<nc_value_type>::value;
     constexpr bool is_dyn_rank = is_dyn_rank_view<ResultView>::value;
 
     // rank == number of arguments
@@ -104,7 +104,7 @@ struct ViewFactory {
     // Reconstruct layout for dynamic rank
     if (is_dyn_rank) {
       constexpr unsigned r = is_scalar ? rank : rank + 1;
-      layout = Experimental::Impl::reconstructLayout(layout, r);
+      layout = Impl::reconstructLayout(layout, r);
     }
 
     return ResultView(prop, layout);

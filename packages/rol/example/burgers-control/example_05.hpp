@@ -41,15 +41,14 @@
 // ************************************************************************
 // @HEADER
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
+#include "ROL_ParameterList.hpp"
 // ROL_Types contains predefined constants and objects
 #include "ROL_Types.hpp"
 // ROL algorithmic information
@@ -194,32 +193,32 @@ public:
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, 
                   const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > cp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(c)).getVector());
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<std::vector<Real> > cp =
+      dynamic_cast<ROL::StdVector<Real>&>(c).getVector();
+    ROL::Ptr<const std::vector<Real> > up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     compute_residual(*cp,*up,*zp);
   }
 
   void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > up =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(u)).getVector());
+    ROL::Ptr<std::vector<Real> > up =
+      ROL::constPtrCast<std::vector<Real> >((dynamic_cast<ROL::StdVector<Real>&>(u)).getVector());
     up->assign(up->size(),static_cast<Real>(1));
     ROL::Constraint_SimOpt<Real>::solve(c,u,z,tol);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                        const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<std::vector<Real> > jvp =
+      dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp =
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real> > up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     const std::vector<Real> param =
       ROL::Constraint_SimOpt<Real>::getParameter();
     Real nu = std::pow(10.0,param[0]-2.0);
@@ -245,14 +244,14 @@ public:
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<std::vector<Real> > jvp =
+      dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
+    ROL::Ptr<const std::vector<Real>> vp =
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real>> up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real>> zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     for (int i=0; i<nx_; i++) {
       // Contribution from control
       (*jvp)[i] = -dx_/6.0*((*vp)[i]+4.0*(*vp)[i+1]+(*vp)[i+2]);
@@ -261,14 +260,14 @@ public:
 
   void applyInverseJacobian_1(ROL::Vector<Real> &ijv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > ijvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(ijv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<std::vector<Real> > ijvp =
+      dynamic_cast<ROL::StdVector<Real>&>(ijv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp =
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real> > up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // Get PDE Jacobian
     std::vector<Real> d(nx_,0.0);
     std::vector<Real> dl(nx_-1,0.0);
@@ -280,14 +279,14 @@ public:
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(ajv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<std::vector<Real> > jvp =
+      dynamic_cast<ROL::StdVector<Real>&>(ajv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp =
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real> > up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     const std::vector<Real> param =
       ROL::Constraint_SimOpt<Real>::getParameter();
     Real nu = std::pow(10.0,param[0]-2.0);
@@ -313,14 +312,14 @@ public:
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<std::vector<Real> > jvp =
+      dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp =
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real> > up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     for (int i=0; i<nx_+2; i++) {
       if ( i == 0 ) {
         (*jvp)[i] = -dx_/6.0*(*vp)[i];
@@ -342,12 +341,12 @@ public:
 
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &iajv, const ROL::Vector<Real> &v,
                                      const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > iajvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(iajv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    ROL::Ptr<std::vector<Real> > iajvp =
+      dynamic_cast<ROL::StdVector<Real>&>(iajv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp =
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real>> up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
     // Get PDE Jacobian
     std::vector<Real> d(nx_,0.0);
     std::vector<Real> du(nx_-1,0.0);
@@ -359,16 +358,16 @@ public:
 
   void applyAdjointHessian_11(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > ahwvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(ahwv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > wp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(w))).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<std::vector<Real> > ahwvp =
+      dynamic_cast<ROL::StdVector<Real>&>(ahwv).getVector();
+    ROL::Ptr<const std::vector<Real> > wp =
+      dynamic_cast<const ROL::StdVector<Real>&>(w).getVector();
+    ROL::Ptr<const std::vector<Real> > vp =
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real> > up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     for (int i=0; i<nx_; i++) {
       // Contribution from nonlinear term
       (*ahwvp)[i] = 0.0;
@@ -463,10 +462,10 @@ public:
   using ROL::Objective_SimOpt<Real>::value;
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<const std::vector<Real> > up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // COMPUTE RESIDUAL
     Real res1 = 0.0, res2 = 0.0, res3 = 0.0;
     Real valu = 0.0, valz = dot(*zp,*zp);
@@ -493,13 +492,13 @@ public:
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     // Unwrap g
-    Teuchos::RCP<std::vector<Real> > gup = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(g)).getVector());
+    ROL::Ptr<std::vector<Real> > gup = 
+      dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
     // Unwrap x
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<const std::vector<Real> > up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // COMPUTE GRADIENT WRT U
     std::vector<Real> diff(nx_,0.0);
     for (int i=0; i<nx_; i++) {
@@ -510,13 +509,13 @@ public:
 
   void gradient_2( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     // Unwrap g
-    Teuchos::RCP<std::vector<Real> > gzp = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(g)).getVector());
+    ROL::Ptr<std::vector<Real> > gzp = 
+      dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
     // Unwrap x
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<const std::vector<Real> > up =
+      dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // COMPUTE GRADIENT WRT Z
     for (int i=0; i<nx_+2; i++) {
       if (i==0) {
@@ -533,11 +532,11 @@ public:
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvup = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(hv)).getVector());
+    ROL::Ptr<std::vector<Real> > hvup =
+      dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
     // Unwrap v
-    Teuchos::RCP<const std::vector<Real> > vup =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    ROL::Ptr<const std::vector<Real> > vup =
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     // COMPUTE GRADIENT WRT U
     apply_mass(*hvup,*vup);
   }
@@ -554,11 +553,11 @@ public:
 
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvzp = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(hv)).getVector());
+    ROL::Ptr<std::vector<Real> > hvzp =
+      dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
     // Unwrap v
-    Teuchos::RCP<const std::vector<Real> > vzp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    ROL::Ptr<const std::vector<Real> > vzp =
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     // COMPUTE GRADIENT WRT Z
     for (int i=0; i<nx_+2; i++) {
       if (i==0) {

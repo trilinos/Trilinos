@@ -86,7 +86,7 @@ public:
     void initialize_status_field()
     {
         int val = 0;
-        stk::mesh::put_field(m_statusField, m_bulkData.mesh_meta_data().universal_part(), &val);
+        stk::mesh::put_field_on_mesh(m_statusField, m_bulkData.mesh_meta_data().universal_part(), &val);
     }
 
     void create_output_mesh()
@@ -101,12 +101,6 @@ public:
     {
         stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
         *stk::mesh::field_data(m_statusField, elem) = 1;
-    }
-
-    void activate_element(stk::mesh::EntityId elemId)
-    {
-        stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
-        *stk::mesh::field_data(m_statusField, elem) = 0;
     }
 
     void animate(const std::vector<stk::mesh::EntityId> elemIds, int numSteps)
@@ -145,7 +139,7 @@ void declare_animation_field(stk::mesh::MetaData &metaData, std::string &animati
     {
       ScalarIntField &deathField = metaData.declare_field<ScalarIntField>(stk::topology::ELEMENT_RANK, "death");
       int val = 0;
-      stk::mesh::put_field(deathField, metaData.universal_part(), &val);
+      stk::mesh::put_field_on_mesh(deathField, metaData.universal_part(), &val);
     }
 }
 

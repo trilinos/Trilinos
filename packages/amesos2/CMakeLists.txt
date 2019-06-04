@@ -13,11 +13,7 @@ SET(${PACKAGE_NAME_UC}_RELEASE_DATE "07/28/2011")
 #
 
 IF (NOT Tpetra_INST_INT_INT)
-
-   MESSAGE(WARNING "*****Amesos2 will not provide Epetra Matrix Support with Tpetra_INST_INT_INT OFF.*****")
    MESSAGE(WARNING "*****Amesos2 will not provide MUMPS Support with Tpetra_INST_INT_INT OFF.*****")
-
-
 ENDIF ()
 
 IF (Amesos2_ENABLE_UMFPACK)
@@ -99,17 +95,29 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Basker
    OFF
 )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MUMPS
-        HAVE_AMESOS2_MUMPS
-        "Enable MUMPS in Amesos2"
-        OFF
+IF (Trilinos_ENABLE_ShyLU_NodeBasker AND Kokkos_ENABLE_OpenMP AND NOT Kokkos_ENABLE_Cuda)
+  SET(Amesos2_HAVE_SHYLUBASKER ON)
+ELSE()
+  SET(Amesos2_HAVE_SHYLUBASKER OFF)
+ENDIF()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ShyLU_NodeBasker
+  HAVE_AMESOS2_SHYLUBASKER
+  "Enable ShyLUBasker in Amesos2"
+  ${Amesos2_HAVE_SHYLUBASKER}
 )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Experimental
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MUMPS
+  HAVE_AMESOS2_MUMPS
+  "Enable MUMPS in Amesos2"
+  OFF
+)
+
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Experimental
   HAVE_AMESOS2_EXPERIMENTAL
   "Enable building and installation of experimental Amesos2 features."
-  NO )
+  NO 
+)
 
 TRIBITS_ADD_DEBUG_OPTION()
 

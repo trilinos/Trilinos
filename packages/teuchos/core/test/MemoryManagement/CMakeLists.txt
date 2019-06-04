@@ -130,6 +130,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ArrayView_UnitTests.cpp
     ArrayRCP_UnitTests.cpp
     ArrayConversions_UnitTests.cpp
+    Any_UnitTests.cpp
     TestClasses.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
@@ -382,6 +383,7 @@ TRIBITS_ADD_EXECUTABLE( testTeuchosTestForTermination
 TRIBITS_ADD_ADVANCED_TEST( testTeuchosTestForTermination
   TEST_0
     EXEC testTeuchosTestForTermination
+    ARGS --teuchos-suppress-startup-banner  # Avoid manging multi-proc output
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION
       "Bingo, we are terminating on procid == terminate_on_procid = 0"
@@ -410,6 +412,7 @@ FOREACH(PID RANGE ${testTeuchosTestForTermination_NP_m_1})
       MESSAGE "Call TEUCHOS_TEST_FOR_TERMINATION(true) only on PID=${PID} which should terminate all processes"
       EXEC testTeuchosTestForTermination
       ARGS --terminate-on-procid=${PID}
+        --teuchos-suppress-startup-banner  # Avoid manging multi-proc output
       NUM_MPI_PROCS ${testTeuchosTestForTermination_NP}
       PASS_REGULAR_EXPRESSION_ALL
         "p=${PID}: .*/testTeuchosTestForTermination.cpp"
@@ -430,6 +433,7 @@ IF (${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
   TRIBITS_ADD_ADVANCED_TEST( testTeuchosRCPNodeImplDestructTerminate
     TEST_0
       EXEC testTeuchosRCPNodeImplDestructTerminate
+      ARGS --teuchos-suppress-startup-banner  # Avoid manging multi-proc output
       NUM_MPI_PROCS 1
       PASS_REGULAR_EXPRESSION
         "Error, the underlying object must be explicitly deleted before deleting the node object"

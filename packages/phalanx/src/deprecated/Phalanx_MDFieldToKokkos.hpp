@@ -129,12 +129,12 @@ struct MDFieldKokkos{
     return view1(i0);
    if (rank==2)
      return view2(1,0);
-   // return view2(i0/view2.dimension_1(),i0%view2.dimension_1());
+   // return view2(i0/view2.extent(1),i0%view2.extent(1));
    if (rank==3)
     return view3(1,0,0);
-//    return view3((i0/(view3.dimension_1()*view3.dimension_2()))
-//                 (i0/(view3.dimension_2())%dimension_1(),
-//                 (i0)%dimension_2());
+//    return view3((i0/(view3.extent(1)*view3.extent(2)))
+//                 (i0/(view3.extent(2))%extent(1),
+//                 (i0)%extent(2));
    if (rank==4)
     return view4(1,0,0,0);
    if (rank==5)
@@ -151,97 +151,97 @@ struct MDFieldKokkos{
  int dimension(int i)
  {
   if (rank==1)
-   return view1.dimension_0();
+   return view1.extent(0);
 
   if (rank==2){
     if (i==0)
-      return view2.dimension_0();
+      return view2.extent(0);
     if (i==1)
-      return view2.dimension_1();
+      return view2.extent(1);
   }
 
   if (rank==3){
     if (i==0)
-      return view3.dimension_0();
+      return view3.extent(0);
     if (i==1)
-      return view3.dimension_1();
+      return view3.extent(1);
     if (i==2)
-     return view3.dimension_2();
+     return view3.extent(2);
   }
 
   if (rank==4){
     if (i==0)
-      return view4.dimension_0();
+      return view4.extent(0);
     if (i==1)
-      return view4.dimension_1();
+      return view4.extent(1);
     if (i==2)
-     return view4.dimension_2();
+     return view4.extent(2);
     if (i==3)
-     return view4.dimension_3();
+     return view4.extent(3);
   }
 
   if (rank==5){
     if (i==0)
-      return view5.dimension_0();
+      return view5.extent(0);
     if (i==1)
-      return view5.dimension_1();
+      return view5.extent(1);
     if (i==2)
-     return view5.dimension_2();
+     return view5.extent(2);
     if (i==3)
-     return view5.dimension_3();
+     return view5.extent(3);
     if (i==4)
-     return view5.dimension_4(); 
+     return view5.extent(4); 
   }
 
  if (rank==6){
     if (i==0)
-      return view6.dimension_0();
+      return view6.extent(0);
     if (i==1)
-      return view6.dimension_1();
+      return view6.extent(1);
     if (i==2)
-     return view6.dimension_2();
+     return view6.extent(2);
     if (i==3)
-     return view6.dimension_3();
+     return view6.extent(3);
     if (i==4)
-     return view6.dimension_4();
+     return view6.extent(4);
     if (i==5)
-     return view6.dimension_5();
+     return view6.extent(5);
   }
  
   if (rank==7){
     if (i==0)
-      return view7.dimension_0();
+      return view7.extent(0);
     if (i==1)
-      return view7.dimension_1();
+      return view7.extent(1);
     if (i==2)
-     return view7.dimension_2();
+     return view7.extent(2);
     if (i==3)
-     return view7.dimension_3();
+     return view7.extent(3);
     if (i==4)
-     return view7.dimension_4();
+     return view7.extent(4);
     if (i==5)
-     return view7.dimension_5();
+     return view7.extent(5);
     if (i==6)
-     return view7.dimension_6();
+     return view7.extent(6);
   }
 
   if (rank==8){
     if (i==0)
-      return view8.dimension_0();
+      return view8.extent(0);
     if (i==1)
-      return view8.dimension_1();
+      return view8.extent(1);
     if (i==2)
-     return view8.dimension_2();
+     return view8.extent(2);
     if (i==3)
-     return view8.dimension_3();
+     return view8.extent(3);
     if (i==4)
-     return view8.dimension_4();
+     return view8.extent(4);
     if (i==5)
-     return view8.dimension_5();
+     return view8.extent(5);
     if (i==6)
-     return view8.dimension_6();
+     return view8.extent(6);
     if (i==7)
-     return view8.dimension_7();
+     return view8.extent(7);
   }
 
   // Should never get here

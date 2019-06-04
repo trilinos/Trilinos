@@ -82,8 +82,10 @@ namespace Xpetra {
     //! Returns the communicator.
     virtual const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const = 0;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Returns the underlying node.
     virtual Teuchos::RCP< Node > getNode() const = 0;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Returns the Map that describes the row distribution in this graph.
     virtual const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const = 0;
@@ -130,12 +132,6 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    virtual global_size_t getGlobalNumDiags() const = 0;
-
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    virtual size_t getNodeNumDiags() const = 0;
-
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
@@ -144,12 +140,6 @@ namespace Xpetra {
 
     //! Indicates whether the graph has a well-defined column map.
     virtual bool hasColMap() const = 0;
-
-    //! Indicates whether the graph is lower triangular.
-    virtual bool isLowerTriangular() const = 0;
-
-    //! Indicates whether the graph is upper triangular.
-    virtual bool isUpperTriangular() const = 0;
 
     //! If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */.
     virtual bool isLocallyIndexed() const = 0;

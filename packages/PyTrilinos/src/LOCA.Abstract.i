@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Abstract is the python interface to namespace Abstract
 of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Abstract is to provide abstract continuation
 problem base classes.  The python version of LOCA.Abstract supports
@@ -62,41 +62,48 @@ the following classes:
 "
 %enddef
 
+%define %loca_abstract_importcode
+"
+from . import _Abstract
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import MultiContinuation
+from PyTrilinos.LOCA import Homotopy
+from PyTrilinos.LOCA import TimeDependent
+from PyTrilinos.LOCA import TurningPoint
+from PyTrilinos.LOCA import Pitchfork
+from PyTrilinos.LOCA import Hopf
+from PyTrilinos.LOCA import PhaseTransition
+"
+%enddef
+
 %module(package      = "PyTrilinos.LOCA",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %loca_abstract_importcode,
 	docstring    = %loca_abstract_docstring) Abstract
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// LOCA includes
-#include "LOCA.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
-#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
-#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
+#include "PyTrilinos_LOCA_Hopf_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}

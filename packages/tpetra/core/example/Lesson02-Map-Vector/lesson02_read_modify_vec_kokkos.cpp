@@ -47,11 +47,10 @@
 \ref Tpetra_Lesson02 explains this example in detail.
 */
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Version.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 void
 exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -67,11 +66,15 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
 
+  const int myRank = comm->getRank ();
+
   // Print out the Tpetra software version information.
-  out << Tpetra::version () << endl << endl;
+  if (myRank == 0) {
+    out << Tpetra::version () << endl << endl;
+  }
 
   // Type of the Tpetra::Map specialization to use.
-  typedef Tpetra::Map<> map_type;
+  using map_type = Tpetra::Map<>;
 
   // The type of the Tpetra::Vector specialization to use.  The first
   // template parameter is the Scalar type.  The "Scalar" type is the
@@ -79,16 +82,16 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // Tpetra::Vector<>::scalar_type to get the default Scalar type.  We
   // will assume that it's double.
   //
-  // typedef Tpetra::Vector<>::scalar_type scalar_type;
-  typedef Tpetra::Vector<double> vector_type;
+  // using scalar_type = Tpetra::Vector<>::scalar_type;
+  using vector_type = Tpetra::Vector<double>;
 
   // The "LocalOrdinal" (LO) type is the type of "local" indices.
   // The typedef is commented out to avoid "unused typedef" warnings.
   //
-  //typedef vector_type::local_ordinal_type local_ordinal_type;
+  //using local_ordinal_type = vector_type::local_ordinal_type;
 
   // The "GlobalOrdinal" (GO) type is the type of "global" indices.
-  typedef vector_type::global_ordinal_type global_ordinal_type;
+  using global_ordinal_type = vector_type::global_ordinal_type;
 
   //////////////////////////////////////////////////////////////////////
   // Create a Tpetra Map
@@ -126,15 +129,21 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // Set all entries of x to 42.0.
   x.putScalar (42.0);
 
-  // Print the norm of x.
-  out << "Norm of x (all entries are 42.0): " << x.norm2 () << endl;
+  // norm2() is a collective, so we need to call it on all processes
+  // in the Vector's communicator.
+  auto x_norm2 = x.norm2 ();
+  if (myRank == 0) {
+    out << "Norm of x (all entries are 42.0): " << x_norm2 << endl;
+  }
 
   // Set the entries of x to (pseudo)random numbers.  Please don't
   // consider this a good parallel pseudorandom number generator.
   x.randomize ();
 
-  // Print the norm of x.
-  out << "Norm of x (random numbers): " << x.norm2 () << endl;
+  x_norm2 = x.norm2 ();
+  if (myRank == 0) {
+    out << "Norm of x (random numbers): " << x_norm2 << endl;
+  }
 
   //////////////////////////////////////////////////////////////////////
   // Read the entries of the Vector
@@ -156,13 +165,13 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // We want a _host_ View.  Vector implements "dual view"
     // semantics.  This is really only relevant for architectures with
     // two memory spaces.
-    x.sync<Kokkos::HostSpace> ();
-    auto x_2d = x.getLocalView<Kokkos::HostSpace> ();
+    x.sync_host ();
+    auto x_2d = x.getLocalViewHost ();
     // getLocalView returns a 2-D View by default.  We want a 1-D
     // View, so we take a subview.
     auto x_1d = Kokkos::subview (x_2d, Kokkos::ALL (), 0);
 
-    // x_data.dimension_0 () may be longer than the number of local
+    // x_data.extent (0) may be longer than the number of local
     // rows in the Vector, so be sure to ask the Vector for its
     // dimensions, rather than the ArrayRCP.
     const size_t localLength = x.getLocalLength ();
@@ -186,9 +195,11 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // Find the total number of entries less than 0.5, over all
     // processes in the Vector's communicator.  Note the trick for
     // pluralizing the word "entry" conditionally on globalCount.
-    out << "x has " << globalCount << " entr"
-        << (globalCount != 1 ? "ies" : "y")
-        << " less than 0.5." << endl;
+    if (myRank == 0) {
+      out << "x has " << globalCount << " entr"
+          << (globalCount != 1 ? "ies" : "y")
+          << " less than 0.5." << endl;
+    }
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -203,14 +214,14 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // away.  If you create two nonconst persisting views of the same
     // Vector, and modify the entries of one view during the lifetime
     // of the other view, the entries of the other view are undefined.
-    x.sync<Kokkos::HostSpace> ();
-    auto x_2d = x.getLocalView<Kokkos::HostSpace> ();
+    x.sync_host ();
+    auto x_2d = x.getLocalViewHost ();
     auto x_1d = Kokkos::subview (x_2d, Kokkos::ALL (), 0);
     // We're going to modify the data on host.
-    x.modify<Kokkos::HostSpace> ();
+    x.modify_host ();
 
     // Use local indices to access the entries of x_data.
-    // x_data.dimension_0 () may be longer than the number of local
+    // x_data.extent (0) may be longer than the number of local
     // rows in the Vector, so be sure to ask the Vector for its
     // dimensions.
     const size_t localLength = x.getLocalLength ();
@@ -219,14 +230,15 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
       // as a function to convert k (an integer) to double.
       x_1d(k) += double (k);
     }
-    // Vector now has a device_type typedef that you could use
-    // instead of node_type here.
-    typedef vector_type::node_type::memory_space memory_space;
+    using memory_space = vector_type::device_type::memory_space;
     x.sync<memory_space> ();
   }
 
   // Print the norm of x.
-  out << "Norm of x (modified random numbers): " << x.norm2 () << endl;
+  x_norm2 = x.norm2 ();
+  if (myRank == 0) {
+    out << "Norm of x (modified random numbers): " << x_norm2 << endl;
+  }
 }
 
 //
@@ -235,23 +247,14 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 int
 main (int argc, char *argv[])
 {
-  using std::endl;
-  using Teuchos::RCP;
-
-  Teuchos::oblackholestream blackHole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-
-  const int myRank = comm->getRank ();
-  std::ostream& out = (myRank == 0) ? std::cout : blackHole;
-
-  exampleRoutine (comm, out); // This is where the action takes place.
-
-  // This tells the Trilinos test framework that the test passed.
-  if (myRank == 0) {
-    std::cout << "End Result: TEST PASSED" << std::endl;
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  {
+    auto comm = Tpetra::getDefaultComm ();
+    exampleRoutine (comm, std::cout);
+    // Tell the Trilinos test framework that the test passed.
+    if (comm->getRank () == 0) {
+      std::cout << "End Result: TEST PASSED" << std::endl;
+    }
   }
-
   return 0;
 }

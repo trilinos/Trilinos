@@ -40,19 +40,17 @@
 // ************************************************************************
 // @HEADER
 */
-#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "TpetraExt_TripleMatrixMultiply.hpp"
 #include "Tpetra_MatrixIO.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
-#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
@@ -64,14 +62,12 @@
 #include <cmath>
 
 namespace {
-  static const double defaultEpsilon = 1e-10;
   bool verbose = false;
   std::string matnamesFile;
 
   using Tpetra::MatrixMarket::Reader;
   using Tpetra::CrsMatrix;
   using Tpetra::CrsMatrixMultiplyOp;
-  using Tpetra::DefaultPlatform;
   using Tpetra::global_size_t;
   using Tpetra::Map;
   using Tpetra::Import;
@@ -170,7 +166,11 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
   return identityMatrix;
 }
 
-
+template<class Matrix_t>
+RCP<Matrix_t>
+copyMatrix(const RCP<Matrix_t> &A) {
+  return rcp(new Matrix_t(*A,Teuchos::Copy));
+}
 
 typedef struct add_test_results_struct{
   double correctNorm;
@@ -569,6 +569,63 @@ mult_test_results multiply_RAP_test_autofc(
 }
 
 template<class Matrix_t>
+mult_test_results multiply_RAP_reuse_test(
+  const std::string& name,
+  RCP<Matrix_t> R,
+  RCP<Matrix_t> A,
+  RCP<Matrix_t> P,
+  bool RT,
+  bool AT,
+  bool PT,
+  RCP<Matrix_t> Ac,
+  RCP<const Comm<int> > comm,
+  FancyOStream& out)
+{
+  typedef typename Matrix_t::scalar_type SC;
+  typedef typename Matrix_t::local_ordinal_type LO;
+  typedef typename Matrix_t::global_ordinal_type GO;
+  typedef typename Matrix_t::node_type NT;
+  typedef Map<LO,GO,NT> Map_t;
+
+  RCP<const Map_t> map = Ac->getRowMap();
+
+  RCP<Matrix_t> computedC1 = rcp( new Matrix_t(map, 0));
+  SC one = Teuchos::ScalarTraits<SC>::one();
+
+  // First cut
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC1);  
+
+  if(!Ac->getDomainMap()->isSameAs(*computedC1->getDomainMap())) throw std::runtime_error("Domain map mismatch");
+  if(!Ac->getRangeMap()->isSameAs(*computedC1->getRangeMap())) throw std::runtime_error("Range map mismatch");
+  if(!Ac->getRowMap()->isSameAs(*computedC1->getRowMap())) throw std::runtime_error("Row map mismatch");
+
+  RCP<Matrix_t> computedC2 = rcp( new Matrix_t(computedC1->getCrsGraph()) );
+  computedC2->fillComplete(computedC2->getDomainMap(), computedC2->getRangeMap());
+  computedC2->resumeFill();
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC2);  
+
+  // Only check the second "reuse" matrix
+  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(map,0);
+  Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedC2, false, one, diffMatrix);
+  diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
+
+  mult_test_results results;
+  results.cNorm    = Ac->getFrobeniusNorm ();
+  results.compNorm = diffMatrix->getFrobeniusNorm ();
+  results.epsilon  = results.compNorm/results.cNorm;
+
+  if(results.epsilon > 1e-3) {    
+    if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
+  }
+
+
+  return results;
+}
+
+
+
+
+template<class Matrix_t>
 mult_test_results multiply_reuse_test(
   const std::string& name,
   RCP<Matrix_t> A,
@@ -609,21 +666,17 @@ mult_test_results multiply_reuse_test(
   computedC1->leftScale (*leftScaling);
   computedC1->rightScale(*rightScaling);
 
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = map->getNode ();
-
   // As = leftScaling * op(A) =
   //   leftScaling * A, if AT=false
   //   A*leftScaling,   if AT=true
-  RCP<Matrix_t> As = A->clone(node);
+  RCP<Matrix_t> As = copyMatrix(A);
   if (AT == false) As->leftScale (*leftScaling);
   else             As->rightScale(*leftScaling);
 
   // Bs = op(B) * rightScaling =
   //   B * rightScaling, if BT=false
   //   rightScaling*B,   if BT=true
-  RCP<Matrix_t> Bs = B->clone(node);
+  RCP<Matrix_t> Bs = copyMatrix(B);
   if (BT == false) Bs->rightScale(*rightScaling);
   else             Bs->leftScale (*rightScaling);
 
@@ -669,26 +722,49 @@ mult_test_results jacobi_test(
   typedef Vector<SC,LO,GO,NT> Vector_t;
   typedef Map<LO,GO,NT> Map_t;
   RCP<const Map_t> map = A->getRowMap();
-
+  SC one = Teuchos::ScalarTraits<SC>::one();
   SC omega=Teuchos::ScalarTraits<SC>::one();
   Vector_t Dinv(B->getRowMap());
   Dinv.putScalar(1.0);
+
 
   // Jacobi version
   RCP<Matrix_t> C = rcp(new Matrix_t(B->getRowMap(),0));
   Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C);
 
   // Multiply + Add version
-  Dinv.putScalar(omega);
-  RCP<Matrix_t> AB = rcp(new Matrix_t(B->getRowMap(),0));
-  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(),0));
-  Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
-  AB->leftScale(Dinv);
-  SC one = Teuchos::ScalarTraits<SC>::one();
-  Tpetra::MatrixMatrix::Add(*AB,false,-one,*B,false,one,C_check);
+  RCP<Matrix_t> C2 = rcp(new Matrix_t(B->getRowMap(),0));
+  bool done=false;
+#ifdef HAVE_TPETRA_INST_OPENMP
+    if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
+      Teuchos::ParameterList p;
+      p.set("openmp: jacobi algorithm","MSAK");
+      Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
+      done=true;
+    }
+#endif
+#ifdef HAVE_TPETRA_INST_CUDA
+    if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
+      Teuchos::ParameterList p;
+      p.set("cuda: jacobi algorithm","MSAK");
+      Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
+      done=true;
+    }
+#endif
+    // Fallback
+    if(!done) {
+      Dinv.putScalar(omega);
+      RCP<Matrix_t> AB = rcp(new Matrix_t(B->getRowMap(),0));
+
+      Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
+      AB->leftScale(Dinv);
+      Tpetra::MatrixMatrix::Add(*AB,false,-one,*B,false,one,C2);
+      if(!C2->isFillComplete()) C2->fillComplete(C->getDomainMap(),C->getRangeMap());
+    }
 
   // Check the difference
-  Tpetra::MatrixMatrix::Add(*C, false, -one, *C_check, one);
+  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(),0));
+  Tpetra::MatrixMatrix::Add(*C, false, -one, *C2, false,one,C_check);
   C_check->fillComplete(B->getDomainMap(),B->getRangeMap());
 
   // Error Check
@@ -737,11 +813,7 @@ mult_test_results jacobi_reuse_test(
   computedC1->rightScale(*rightScaling);
 
   // Bs = B * rightScaling
-
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = map->getNode ();
-  RCP<Matrix_t> Bs = B->clone(node);
+  RCP<Matrix_t> Bs = copyMatrix(B);
   Bs->rightScale(*rightScaling);
 
   // computedC2 = (I - Dinv*A)*Bs
@@ -764,7 +836,7 @@ mult_test_results jacobi_reuse_test(
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT)  {
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
   // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
@@ -789,7 +861,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
   newOut << "Get parameters from XML file" << endl;
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
     Teuchos::getParametersFromXmlFile(matnamesFile);
-
 
   for (Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
        it != matrixSystems->end();
@@ -836,7 +907,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
     if(numProcs > 0 && comm->getSize() != numProcs) continue;
 
 
-    double epsilon = currentSystem.get<double> ("epsilon", defaultEpsilon);
+    double epsilon = currentSystem.get<double> ("epsilon",
+                                       100. * Teuchos::ScalarTraits<SC>::eps());
     std::string op = currentSystem.get<std::string> ("op");
 
     RCP<Matrix_t> A, B, C, D;
@@ -999,37 +1071,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       newOut << "\tComputed norm: " << results.computedNorm << endl;
       newOut << "\tEpsilon: " << results.epsilon << endl;
 
-      B = Reader<Matrix_t >::readSparseFile(B_file, comm, false);
+      B = Reader<Matrix_t >::readSparseFile(B_file, comm, true, false, false);
+      //declare E with enough entries to receive A + B
+      size_t n = 0;
+      for (size_t i = 0; i < B->getNodeNumRows(); i++) {
+	if (n < B->getNumEntriesInLocalRow(i))
+	  n = B->getNumEntriesInLocalRow(i);
+      }
+      n += A->getNodeMaxNumRowEntries();
+
+      RCP<const map_type> rm = B->getRowMap();
+      RCP<Matrix_t> E = rcp (new Matrix_t(rm, n, Tpetra::StaticProfile));
+      auto one = Teuchos::ScalarTraits<MT>::one();
+      Tpetra::MatrixMatrix::Add(*B, BT, one, *E, one);
 
       if (! BT) {
         if (verbose)
           newOut << "Running 2-argument add test for "
                  << currentSystem.name() << endl;
 
-        results = add_into_test(A,B,AT,C,comm);
+        results = add_into_test(A,E,AT,C,comm);
         TEST_COMPARE(results.epsilon, <, epsilon)
         newOut << "Add Into Test Results: " << endl;
         newOut << "\tCorrect Norm: " << results.correctNorm << endl;
         newOut << "\tComputed norm: " << results.computedNorm << endl;
         newOut << "\tEpsilon: " << results.epsilon << endl;
       }
+      newOut << "Add tests complete" << endl;
     }
     else if (op == "RAP") {
-      // if (verbose)
-      //   newOut << "Running RAP multiply test (manual FC) for " << currentSystem.name() << endl;
-
-      // mult_test_results results = multiply_RAP_test_manualfc(name, A, B, C, AT, BT, CT, D, comm, newOut);
-
-      // if (verbose) {
-      //   newOut << "Results:"     << endl;
-      //   newOut << "\tEpsilon: "  << results.epsilon  << endl;
-      //   newOut << "\tcNorm: "    << results.cNorm    << endl;
-      //   newOut << "\tcompNorm: " << results.compNorm << endl;
-      // }
-      // TEST_COMPARE(results.epsilon, <, epsilon);
-
       if (verbose)
-        newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
+        newOut << "Running multiply RAP test for " << currentSystem.name() << endl;
 
       mult_test_results results = multiply_RAP_test_autofc(name, A, B, C, AT, BT, CT, D, comm, newOut);
 
@@ -1041,18 +1113,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
 
-      // if (verbose)
-      //   newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
+      if (verbose)
+        newOut << "Running multiply RAP reuse test for " << currentSystem.name() << endl;
 
-      // results = multiply_reuse_test(name, A, B, AT, BT, C, comm, newOut);
+      results = multiply_RAP_reuse_test(name, A, B, C, AT, BT, CT, D, comm, newOut);
 
-      // if (verbose) {
-      //   newOut << "Results:"     << endl;
-      //   newOut << "\tEpsilon: "  << results.epsilon  << endl;
-      //   newOut << "\tcNorm: "    << results.cNorm    << endl;
-      //   newOut << "\tcompNorm: " << results.compNorm << endl;
-      // }
-      // TEST_COMPARE(results.epsilon, <, epsilon);
+      if (verbose) {
+        newOut << "Results:"     << endl;
+        newOut << "\tEpsilon: "  << results.epsilon  << endl;
+        newOut << "\tcNorm: "    << results.cNorm    << endl;
+        newOut << "\tcompNorm: " << results.compNorm << endl;
+      }
+      TEST_COMPARE(results.epsilon, <, epsilon);
     }
   }
 
@@ -1075,7 +1147,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)  {
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   typedef Map<LO,GO,NT>         Map_t;
   typedef CrsMatrix<SC,LO,GO,NT> Matrix_t;
 
@@ -1107,9 +1179,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   RCP<Matrix_t > dummy =
     getIdentityMatrix<SC,LO,GO,NT> (newOut, globalNumRows, comm);
 
-  // This is just to fulfill syntax requirements.  It could even be null.
-  RCP<NT> node = dummy->getNode ();
-
 //Create "B"
   Array<GO> myRows = tuple<GO>(
     rank*numRowsPerProc,
@@ -1134,12 +1203,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
 
   newOut << "Create row, range, and domain Maps of B" << endl;
   RCP<const Map_t > bRowMap =
-    Tpetra::createNonContigMapWithNode<LO,GO,NT>(myRows, comm, node);
+    Tpetra::createNonContigMapWithNode<LO,GO,NT>(myRows, comm);
   RCP<const Map_t > bRangeMap =
-    Tpetra::createNonContigMapWithNode<LO,GO,NT>(rangeElements, comm, node);
+    Tpetra::createNonContigMapWithNode<LO,GO,NT>(rangeElements, comm);
   //We divide by 2 to make the matrix tall and "skinny"
   RCP<const Map_t > bDomainMap =
-    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2, comm, node);
+    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2, comm);
 
   newOut << "Create identityMatrix" << endl;
   RCP<Matrix_t > identityMatrix =
@@ -1179,6 +1248,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
     newOut << "\tcNorm: " << results.cNorm << endl;
     newOut << "\tcompNorm: " << results.compNorm << endl;
   }
+  const double defaultEpsilon = 100. * Teuchos::ScalarTraits<SC>::eps();
   TEST_COMPARE(results.epsilon, <, defaultEpsilon);
 
   newOut << "Create identity2" << endl;
@@ -1204,9 +1274,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   newOut << bTransRangeElements << endl;
 
   RCP<const Map_t > bTransRangeMap =
-    Tpetra::createNonContigMapWithNode<LO,GO,NT>(bTransRangeElements, comm, node);
+    Tpetra::createNonContigMapWithNode<LO,GO,NT>(bTransRangeElements, comm);
   RCP<const Map_t > bTransDomainMap =
-    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows, comm, node);
+    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows, comm);
 
   newOut << "Compute identity * transpose(bTrans)" << endl;
   Tpetra::MatrixMatrix::Multiply(*identity2,false,*bMatrix, true, *bTrans, false);
@@ -1274,7 +1344,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
  * KLN 23/06/2011
  */
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT)  {
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   typedef Map<LO,GO,NT>          Map_t;
   typedef CrsMatrix<SC,LO,GO,NT> Matrix_t;
 
@@ -1307,10 +1377,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
   RCP<Matrix_t> identityMatrix =
     getIdentityMatrix<SC,LO,GO,NT> (newOut, globalNumRows, comm);
 
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = identityMatrix->getNode ();
-
   newOut << "Create Maps for matrix aMat" << endl;
   Array<GO> aMyRows = tuple<GO>(
     rank*numRowsPerProc,
@@ -1318,9 +1384,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
     rank*numRowsPerProc+2,
     rank*numRowsPerProc+3);
   RCP<const Map_t> aRowMap =
-    Tpetra::createNonContigMapWithNode<LO,GO,NT>(aMyRows, comm, node);
+    Tpetra::createNonContigMapWithNode<LO,GO,NT>(aMyRows, comm);
   RCP<const Map_t> aDomainMap =
-    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2, comm, node);
+    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2, comm);
   Array<GO> aRangeElements;
   if(rank == 0){
     aRangeElements = tuple<GO>(
@@ -1337,7 +1403,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
       (rank-1)*numRowsPerProc+3);
   }
   RCP<const Map<LO,GO,NT> > aRangeMap =
-    Tpetra::createNonContigMapWithNode<LO,GO,NT>(aRangeElements, comm, node);
+    Tpetra::createNonContigMapWithNode<LO,GO,NT>(aRangeElements, comm);
 
   newOut << "Create matrix aMat" << endl;
   RCP<Matrix_t> aMat =
@@ -1379,6 +1445,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
     newOut << "\tcNorm: " << results.cNorm << endl;
     newOut << "\tcompNorm: " << results.compNorm << endl;
   }
+  const double defaultEpsilon = 100. * Teuchos::ScalarTraits<SC>::eps();
   TEST_COMPARE(results.epsilon, <, defaultEpsilon);
 
   const int lclSuccess = success ? 1 : 0;
@@ -1393,7 +1460,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT)
 {
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   using Teuchos::RCP;
   //First, make two local, random, sorted Kokkos sparse matrices
   size_t nrows = 1000;
@@ -1472,7 +1539,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   ISC one(1);
   Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
   for(size_t i = 0; i < nrows; i++)
   {
@@ -1508,7 +1575,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
 {
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   using Teuchos::RCP;
   //First, make two local, random, unsorted Kokkos sparse matrices
   size_t nrows = 1000;
@@ -1586,7 +1653,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   ISC one(1);
   Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
   for(size_t i = 0; i < nrows; i++)
   {
@@ -1629,7 +1696,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
  * KLN 28/06/2011
  */
 /*TEUCHOS_UNIT_TEST(Tpetra_MatMat, Multiple_row_owners){
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   ParameterList defaultParameters;
   RCP<Matrix_t > A = Reader<Matrix_t >::readSparseFile("matrices/denserATa.mtx", comm);
   RCP<Matrix_t > C = Reader<Matrix_t >::readSparseFile("matrices/denserATc.mtx", comm, true, true);

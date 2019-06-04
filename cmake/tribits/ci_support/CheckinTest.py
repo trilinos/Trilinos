@@ -293,7 +293,7 @@ def getReposStats(inOptions, tribitsGitRepos):
     repoStatTableDirName = getRepoStatTableDirName(inOptions, gitRepo.repoDir)
     repoStatTable.insertRepoStat(repoStatTableDirName, gitRepo.gitRepoStats, repoIdx)
     repoIdx += 1
-  print(gitdist.createAsciiTable(repoStatTable.getTableData()))
+  print(gitdist.createTable(repoStatTable.getTableData()))
   return hasChangesToPush
   # NOTE: Above, we could just call 'gitdist dist-repo-status' but by
   # printing the table here with the actualy gitRepoStat data, we ensure
@@ -846,7 +846,7 @@ def getCurrentDiffOutputAndLogModified(inOptions, gitRepo, baseTestDir):
 
 def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_inout,
   gitRepo, enablePackagesList_inout, verbose=True,
-  projectDependenciesLocal=None ) \
+  projectDependenciesLocal=None, projectChangeLogic=DefaultProjectCiFileChangeLogic() ) \
   :
 
   if not projectDependenciesLocal:
@@ -859,7 +859,7 @@ def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_in
 
     # Only look for global rebuild files in the master repo (not in extra repos)
     if gitRepo.repoName == '' and \
-      isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath) \
+      projectChangeLogic.isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath) \
       :
       if inOptions_inout.enableAllPackages == 'auto':
         if verbose:
@@ -1326,6 +1326,8 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   cmakePkgOptions = []
   enablePackagesList = []
   gitRepoList = tribitsGitRepos.gitRepoList()
+  projectChangeLogic=getProjectCiFileChangeLogic(inOptions.srcDir)
+
   enableAllPackages = False
 
   if inOptions.enableAllPackages == "on":
@@ -1349,8 +1351,8 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
       if os.path.exists(diffOutFileName):
         changedFileDiffOutputStr = open(diffOutFileName, 'r').read()
         #print("\nchangedFileDiffOutputStr:\n", changedFileDiffOutputStr)
-        extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions, gitRepo,
-          enablePackagesList, verbose)
+        extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions,
+          gitRepo, enablePackagesList, verbose, projectChangeLogic=projectChangeLogic)
       else:
         if verbose:
           print("\nThe file " + diffOutFileName + " does not exist!\n")
@@ -1460,11 +1462,12 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
     # A.1) Set the base options
   
     cmakeBaseOptions = []
+    if inOptions.useNinja:
+      cmakeBaseOptions.append("-GNinja")
     if inOptions.extraCmakeOptions:
       cmakeBaseOptions.extend(commandLineOptionsToList(inOptions.extraCmakeOptions))
-  
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
-      "TRIBITS_DIR:PATH", inOptions.tribitsDir))
+    "TRIBITS_DIR:PATH", inOptions.tribitsDir))
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
       "ENABLE_TESTS:BOOL", "ON"))
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
@@ -1576,7 +1579,10 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
   
     if inOptions.doBuild and configurePassed:
   
-      cmnd = "make"
+      if inOptions.useNinja:
+        cmnd = "ninja"
+      else:
+        cmnd = "make"
       if inOptions.makeOptions:
         cmnd += " " + inOptions.makeOptions
   
@@ -1700,6 +1706,28 @@ def cleanBuildTestCaseOutputFiles(runBuildTestCaseBool, inOptions, baseTestDir, 
       removeIfExists(getEmailBodyFileName())
       removeIfExists(getEmailSuccessFileName())
       echoChDir("..")
+
+def cleanBuildTestCaseSuccessFiles(runBuildTestCaseBool, inOptions, baseTestDir, \
+  buildTestCaseName \
+  ):
+
+  removeIfExists(buildTestCaseName+"/"+getConfigureSuccessFileName())
+  removeIfExists(buildTestCaseName+"/"+getBuildSuccessFileName())
+  removeIfExists(buildTestCaseName+"/"+getTestSuccessFileName())
+  removeIfExists(buildTestCaseName+"/"+getEmailSuccessFileName())
+  removeIfExists(buildTestCaseName+"/"+getEmailBodyFileName())
+  # NOTE: ABove, we need to delete the 'email.out' file otherwise it will get
+  # picked up in a later run of just a status check.  But this info is not
+  # really last because it is duplicated in the file
+  # commitStatusEmailBody.out.
+
+
+def cleanSuccessFiles(buildTestCaseList, inOptions, baseTestDir):
+  print("\nRemoving *.success files ...\n")
+  removeIfExists(getInitialPullSuccessFileName())
+  for buildTestCase in buildTestCaseList:
+    cleanBuildTestCaseSuccessFiles(
+      buildTestCase.runBuildTestCase, inOptions, baseTestDir, buildTestCase.name)
 
 
 def runBuildTestCaseDriver(inOptions, tribitsGitRepos, baseTestDir, buildTestCase, timings):
@@ -2083,6 +2111,8 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
   assertPackageNames("--disable-packages", inOptions.disablePackages)
 
   success = True
+
+  didAtLeastOnePush = False
 
   timings = Timings()
 
@@ -2572,7 +2602,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
           abortedCommitPush = True
       else:
         okayToPush = False
-  
+
       if okayToPush:
         print("\n  => A PUSH IS READY TO BE PERFORMED!")
       else:
@@ -2779,8 +2809,6 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
         #print("debugSkipPush =", debugSkipPush)
         #debugSkipPush = True
 
-        didAtLeastOnePush = False
-
         repoIdx = 0
         for gitRepo in tribitsGitRepos.gitRepoList():
   
@@ -2922,9 +2950,13 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
           success = False
       else:
         if okayToPush:
-          subjectLine = "READY TO PUSH"
+          subjectLine = "PASSED (READY TO PUSH)"
         else:
-          subjectLine = "NOT READY TO PUSH"
+          if success:
+            subjectLine = "PASSED"
+          else:
+            subjectLine = "FAILED"
+          subjectLine += " (NOT READY TO PUSH)"
 
       #
       print("\n9.b) Create and send out push (or readiness status) notification email ...")
@@ -2985,6 +3017,8 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
       print("\nNot performing push or sending out push readiness status on "
             "request!")
 
+    if pushPassed and didAtLeastOnePush and didPush:
+      cleanSuccessFiles(buildTestCaseList, inOptions, baseTestDir)
   
     print("\n***")
     print("*** 10) Run execute extra command on ready to push  ...")

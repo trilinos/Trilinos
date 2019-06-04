@@ -1,7 +1,15 @@
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include <stk_io/AttributeFields.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include "IossBridge.hpp"
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include "IossBridge.hpp"               // for get_field_role, etc
+#include "Ioss_Field.h"                 // for Field, Field::RoleType, etc
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Types.hpp"      // for FieldVector
+#include "stk_topology/topology.hpp"    // for topology, etc
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
 namespace io {

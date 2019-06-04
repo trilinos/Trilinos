@@ -470,7 +470,7 @@ test_product_flat_commuted_matrix(
   matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
     std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entries.dimension_0();
+  const size_t flat_graph_length = matrix.graph.entries.extent(0);
 
   matrix.values = matrix_values_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), flat_graph_length );
 
@@ -625,7 +625,7 @@ test_product_flat_original_matrix(
 
   matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entries.dimension_0();
+  const size_t flat_graph_length = matrix.graph.entries.extent(0);
 
   matrix.values = matrix_values_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), flat_graph_length );
 
@@ -1675,7 +1675,7 @@ void performance_test_driver_poly( const int pdeg ,
 
     std::vector<double> perf_original_mat_free_block;
 #if defined(HAVE_STOKHOS_KOKKOSLINALG)
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     enum { is_cuda = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value };
 #else
     enum { is_cuda = false };

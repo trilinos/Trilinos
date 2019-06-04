@@ -1,6 +1,6 @@
 #include "BalanceTestUtilities.hpp"
-#include <gtest/gtest.h>
 #include <iomanip>
+#include <unistd.h>
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
@@ -85,8 +85,6 @@ void clearFiles(const std::string &baseFilename, int numProcs)
         unlink(getFilename(baseFilename, numProcs, i).c_str());
     }
 }
-
-
 
 }
 

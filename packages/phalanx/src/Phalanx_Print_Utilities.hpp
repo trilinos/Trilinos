@@ -60,7 +60,7 @@ namespace PHX {
   // Specialization for "void" types - the default value for Array parameters
   template<typename Array>
   struct PrintDimension<void,Array> {
-    void addName(std::vector<const char*>& names) { }
+    void addName(std::vector<const char*>& /* names */) { }
   };
 
 } 

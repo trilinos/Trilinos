@@ -82,6 +82,7 @@
 
 #ifdef HAVE_MUELU_PAMGEN
 #include "RTC_FunctionRTC.hh"
+#include <MueLu_TestHelpers_Common.hpp>
 #endif
 
 // This example demonstrates how to reuse some parts of a classical SA multigrid setup between runs.
@@ -107,16 +108,21 @@ public:
 #ifdef HAVE_MUELU_PAMGEN
   Tensor(const std::string& rtcString, bool is3D = true) : useSigmaRTC_(true), is3D_(is3D) {
     sigmaRTC_ = Teuchos::rcp(new PG_RuntimeCompiler::Function);
+    std::string variableType;
+    if (TYPE_EQUAL(Scalar, float) || TYPE_EQUAL(Scalar, std::complex<float>))
+      variableType = "float";
+    else
+      variableType = "double";
 
-    if (!sigmaRTC_->addVar("double", "x"))          throw std::runtime_error("Error setting RTC input argument \"x\"");
-    if (!sigmaRTC_->addVar("double", "y"))          throw std::runtime_error("Error setting RTC input argument \"y\"");
+    if (!sigmaRTC_->addVar(variableType, "x"))          throw std::runtime_error("Error setting RTC input argument \"x\"");
+    if (!sigmaRTC_->addVar(variableType, "y"))          throw std::runtime_error("Error setting RTC input argument \"y\"");
     if (is3D_ &&
-        !sigmaRTC_->addVar("double", "z"))          throw std::runtime_error("Error setting RTC input argument \"z\"");
-    if (!sigmaRTC_->addVar("double", "t"))          throw std::runtime_error("Error setting RTC input argument \"t\"");
-    if (!sigmaRTC_->addVar("double", "sigmax"))     throw std::runtime_error("Error setting RTC input argument \"sigmax\"");
-    if (!sigmaRTC_->addVar("double", "sigmay"))     throw std::runtime_error("Error setting RTC input argument \"sigmay\"");
+        !sigmaRTC_->addVar(variableType, "z"))          throw std::runtime_error("Error setting RTC input argument \"z\"");
+    if (!sigmaRTC_->addVar(variableType, "t"))          throw std::runtime_error("Error setting RTC input argument \"t\"");
+    if (!sigmaRTC_->addVar(variableType, "sigmax"))     throw std::runtime_error("Error setting RTC input argument \"sigmax\"");
+    if (!sigmaRTC_->addVar(variableType, "sigmay"))     throw std::runtime_error("Error setting RTC input argument \"sigmay\"");
     if (is3D_ &&
-        !sigmaRTC_->addVar("double", "sigmaz"))     throw std::runtime_error("Error setting RTC input argument \"sigmaz\"");
+        !sigmaRTC_->addVar(variableType, "sigmaz"))     throw std::runtime_error("Error setting RTC input argument \"sigmaz\"");
 
     if (!sigmaRTC_->addBody(rtcString))             throw std::runtime_error("Error in RTC function compilation");
   }
@@ -185,13 +191,14 @@ private:
 };
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Map, class Matrix, class MultiVector>
-Teuchos::RCP<Matrix> BuildMatrix(bool is3D, const Tensor<Scalar>& tensor, Teuchos::ParameterList& list,
+Teuchos::RCP<Matrix> BuildMatrix(bool is3D, const Tensor<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& tensor, Teuchos::ParameterList& list,
                                  const Teuchos::RCP<const Map>& map, const Teuchos::RCP<const MultiVector>& coords) {
   typedef GlobalOrdinal GO;
   typedef LocalOrdinal  LO;
   typedef Scalar        SC;
   using Teuchos::ArrayView;
   using Teuchos::ArrayRCP;
+  typedef typename MultiVector::scalar_type Real;
 
   GO nx = list.get("nx", (GO) -1);
   GO ny = list.get("ny", (GO) -1);
@@ -235,9 +242,9 @@ Teuchos::RCP<Matrix> BuildMatrix(bool is3D, const Tensor<Scalar>& tensor, Teucho
   std::vector<GO> inds(nnz);
   std::vector<SC> vals(nnz);
 
-  ArrayRCP<const SC> x = coords->getData(0);
-  ArrayRCP<const SC> y = coords->getData(1);
-  ArrayRCP<const SC> z = (is3D ? coords->getData(2) : Teuchos::null);
+  ArrayRCP<const Real> x = coords->getData(0);
+  ArrayRCP<const Real> y = coords->getData(1);
+  ArrayRCP<const Real> z = (is3D ? coords->getData(2) : Teuchos::null);
 
   //    e
   //  b a c
@@ -327,11 +334,11 @@ Teuchos::RCP<Matrix> BuildMatrix(bool is3D, const Tensor<Scalar>& tensor, Teucho
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ConstructData(bool is3D, const Tensor<Scalar>& tensor, const std::string& matrixType, Teuchos::ParameterList& galeriList,
+void ConstructData(bool is3D, const Tensor<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& tensor, const std::string& matrixType, Teuchos::ParameterList& galeriList,
                    Xpetra::UnderlyingLib lib, Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                    Teuchos::RCP<Xpetra::Matrix      <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                    Teuchos::RCP<const Xpetra::Map   <LocalOrdinal,GlobalOrdinal, Node> >&       map,
-                   Teuchos::RCP<Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& coordinates,
+                   Teuchos::RCP<Xpetra::MultiVector <typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> >& coordinates,
                    Teuchos::RCP<Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& nullspace) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
@@ -339,19 +346,22 @@ void ConstructData(bool is3D, const Tensor<Scalar>& tensor, const std::string& m
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
 
   if (is3D) {
     // 3D
     map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
 
   } else {
     // 2D
     map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
   }
 
-  A = BuildMatrix<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(is3D, tensor, galeriList, map, coordinates);
+  A = BuildMatrix<SC,LO,GO,Map,CrsMatrixWrap,RealValuedMultiVector>(is3D, tensor, galeriList, map, coordinates);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -388,7 +398,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
 
   std::string xmlFileName = "reuse_seq.xml";    clp.setOption("xml",    &xmlFileName, "read parameters from a file");
   std::string solveType   = "cg";               clp.setOption("solver", &solveType,   "solve type: (none | cg | standalone)");
-  double      tol         = 1e-6;               clp.setOption("tol",    &tol,         "solver convergence tolerance");
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType      tol         = 1e-6;               clp.setOption("tol",    &tol,         "solver convergence tolerance");
   int         maxIts      = 200;                clp.setOption("its",    &maxIts,      "maximum number of solver iterations");
   int         dim         = 3;                  clp.setOption("dim",    &dim,         "space dimension");
 
@@ -429,13 +439,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
   if (xmlFileName != "")
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
-  Tensor<SC> tensor;
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+  Tensor<real_type> tensor;
   if (paramList.isParameter("sigma")) {
     std::string sigmaString = paramList.get<std::string>("sigma");
     paramList.remove("sigma");
 #ifdef HAVE_MUELU_PAMGEN
     out << "Switching to RTC" << std::endl;
-    tensor = Tensor<SC>(sigmaString, is3D);
+    tensor = Tensor<real_type>(sigmaString, is3D);
 #else
     (void)sigmaString; // fix compiler warning
 #endif
@@ -465,9 +477,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
 
     paramList.set("reuse: type", reuseTypes[k]);
 
-    RCP<Matrix>       A;
-    RCP<const Map>    map;
-    RCP<MultiVector>  coordinates, nullspace;
+    RCP<Matrix>           A;
+    RCP<const Map>        map;
+    RCP<RealValuedMultiVector> coordinates;
+    RCP<MultiVector>      nullspace;
 
     tensor.setT(0);
 
@@ -480,7 +493,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
     RCP<Vector> B = VectorFactory::Build(map);
     A->apply(*X, *B);
 
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
+    Teuchos::ParameterList userParamList = paramList.sublist("user data");
+    userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A, paramList);
 
     for (size_t t = 1; t < numSteps; t++) {
       out << thinSeparator << " Step " << t << " " << thinSeparator << std::endl;
@@ -492,7 +507,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
 
       tc = high_resolution_clock::now();
       if (solveType == "none")
-        H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
+        H = MueLu::CreateXpetraPreconditioner(A, paramList);
       else
         MueLu::ReuseXpetraPreconditioner(A, H);
       setup_time[k*numSteps + t] = duration_cast<duration<double>>(high_resolution_clock::now() - tc);
@@ -592,5 +607,3 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
 int main(int argc, char *argv[]) {
   return Automatic_Test_ETI(argc,argv);
 }
-
-

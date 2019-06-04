@@ -118,6 +118,7 @@ namespace Xpetra {
     BlockedCrsMatrix(const Teuchos::RCP<const BlockedMap>& rangeMaps,
                      const Teuchos::RCP<const BlockedMap>& domainMaps,
                      size_t npr, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
+      is_diagonal_ = true;
       domainmaps_ = Teuchos::rcp(new MapExtractor(domainMaps));
       rangemaps_  = Teuchos::rcp(new MapExtractor(rangeMaps));
       bRangeThyraMode_  = rangeMaps->getThyraMode();
@@ -146,7 +147,7 @@ namespace Xpetra {
     BlockedCrsMatrix(Teuchos::RCP<const MapExtractor>& rangeMaps,
                      Teuchos::RCP<const MapExtractor>& domainMaps,
                      size_t npr, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
-    : domainmaps_(domainMaps), rangemaps_(rangeMaps)
+      : is_diagonal_(true), domainmaps_(domainMaps), rangemaps_(rangeMaps)
     {
       bRangeThyraMode_  = rangeMaps->getThyraMode();
       bDomainThyraMode_ = domainMaps->getThyraMode();
@@ -170,8 +171,8 @@ namespace Xpetra {
      * \param npr extimated number of entries per row in each block(!)
      * \param pftype Xpetra profile type
      */
-    BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
-    : thyraOp_(thyraOp)
+    BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& /* comm */)
+      : is_diagonal_(true), thyraOp_(thyraOp)
     {
       // extract information from Thyra blocked operator and rebuilt information
       const Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar> > productRangeSpace  = thyraOp->productRange();
@@ -190,6 +191,7 @@ namespace Xpetra {
             Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
                             Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(const_op);
             subRangeMaps[r] = xop->getRangeMap();
+	    if(r!=c) is_diagonal_ = false;
             break;
           }
         }
@@ -492,7 +494,7 @@ namespace Xpetra {
         for (size_t c = 0; c < Cols(); ++c) {
           if(getMatrix(r,c) != Teuchos::null) {
             Teuchos::RCP<Matrix> Ablock = getMatrix(r,c);
-
+	    if(r!=c) is_diagonal_ = false;
             if (Ablock != Teuchos::null && !Ablock->isFillComplete())
               Ablock->fillComplete(getDomainMap(c, bDomainThyraMode_), getRangeMap(r, bRangeThyraMode_), params);
           }
@@ -623,29 +625,12 @@ namespace Xpetra {
       if (Rows() == 1 && Cols () == 1) {
         return getMatrix(0,0)->getNumEntriesInLocalRow(localRow);
       }
-      throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow not supported by BlockedCrsMatrix");
-    }
-
-    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-    */
-    global_size_t getGlobalNumDiags() const {
-      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalNumDiags");
-      if (Rows() == 1 && Cols () == 1) {
-        return getMatrix(0,0)->getGlobalNumDiags();
+      else if(is_diagonal_){      
+	GlobalOrdinal gid = this->getRowMap()->getGlobalElement(localRow);
+	size_t row = getBlockedRangeMap()->getMapIndexForGID(gid);
+	return getMatrix(row,row)->getNumEntriesInLocalRow(getMatrix(row,row)->getRowMap()->getLocalElement(gid));	
       }
-      throw Xpetra::Exceptions::RuntimeError("getGlobalNumDiags() not supported by BlockedCrsMatrix");
-    }
-
-    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-    */
-    size_t getNodeNumDiags() const {
-      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNodeNumDiags");
-      if (Rows() == 1 && Cols () == 1) {
-        return getMatrix(0,0)->getNodeNumDiags();
-      }
-      throw Xpetra::Exceptions::RuntimeError("getNodeNumDiags() not supported by BlockedCrsMatrix");
+      throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow() not supported by BlockedCrsMatrix");
     }
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
@@ -782,6 +767,13 @@ namespace Xpetra {
       if (Rows() == 1 && Cols () == 1) {
         getMatrix(0,0)->getLocalRowView(LocalRow, indices, values);
         return;
+      }
+      else if(is_diagonal_) {
+	//CMS
+	GlobalOrdinal gid = this->getRowMap()->getGlobalElement(LocalRow);
+	size_t row = getBlockedRangeMap()->getMapIndexForGID(gid);
+	getMatrix(row,row)->getLocalRowView(getMatrix(row,row)->getRowMap()->getLocalElement(gid),indices,values);
+	return;
       }
       throw Xpetra::Exceptions::RuntimeError("getLocalRowView not supported by BlockedCrsMatrix");
     }
@@ -1254,6 +1246,27 @@ namespace Xpetra {
         }
     }
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    void setObjectLabel( const std::string &objectLabel ) { 
+      XPETRA_MONITOR("TpetraBlockedCrsMatrix::setObjectLabel"); 
+      for (size_t r = 0; r < Rows(); ++r)
+        for (size_t c = 0; c < Cols(); ++c) {
+          if(getMatrix(r,c)!=Teuchos::null) {
+            std::ostringstream oss; oss<< objectLabel << "(" << r << "," << c << ")";
+            getMatrix(r,c)->setObjectLabel(oss.str());
+          }
+        }   
+    }
+    //@}
+
+
+    //! Supports the getCrsGraph() call
+    bool hasCrsGraph() const {
+      if (Rows() == 1 && Cols () == 1) return true;
+      else return false;
+    }
+
     //! Returns the CrsGraph associated with this matrix.
     RCP<const CrsGraph> getCrsGraph() const {
       XPETRA_MONITOR("XpetraBlockedCrsMatrix::getCrsGraph");
@@ -1267,6 +1280,8 @@ namespace Xpetra {
 
     //! @name Block matrix access
     //@{
+
+    virtual bool isDiagonal() const {return is_diagonal_;}
 
     /// number of row blocks
     virtual size_t Rows() const                                       { XPETRA_MONITOR("XpetraBlockedCrsMatrix::Rows"); return rangemaps_->NumMaps(); }
@@ -1311,9 +1326,9 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big");
 
       // transfer strided/blocked map information
-      if (blocks_[r*Cols()+c] != Teuchos::null &&
+      /*      if (blocks_[r*Cols()+c] != Teuchos::null &&
           blocks_[r*Cols()+c]->IsView("stridedMaps") == false)
-        blocks_[r*Cols()+c]->CreateView("stridedMaps", getRangeMap(r,bRangeThyraMode_), getDomainMap(c,bDomainThyraMode_));
+          blocks_[r*Cols()+c]->CreateView("stridedMaps", getRangeMap(r,bRangeThyraMode_), getDomainMap(c,bDomainThyraMode_));*/
       return blocks_[r*Cols()+c];
     }
 
@@ -1325,7 +1340,7 @@ namespace Xpetra {
 
       TEUCHOS_TEST_FOR_EXCEPTION(r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big");
       TEUCHOS_TEST_FOR_EXCEPTION(c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big");
-
+      if(!mat.is_null() && r!=c) is_diagonal_ = false;
       // set matrix
       blocks_[r*Cols() + c] = mat;
     }
@@ -1546,7 +1561,9 @@ namespace Xpetra {
       this->currentViewLabel_ = this->GetDefaultViewLabel();
     }
 
+
   private:
+    bool is_diagonal_;   // If we're diagonal a bunch of the extraction stuff should work
     Teuchos::RCP<const MapExtractor>      domainmaps_;        // full        domain map together with all partial domain maps
     Teuchos::RCP<const MapExtractor>      rangemaps_;         // full         range map together with all partial domain maps
 

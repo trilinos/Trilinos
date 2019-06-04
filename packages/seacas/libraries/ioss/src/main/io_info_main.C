@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,25 +32,31 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "fmt/format.h"
 #include "io_info.h"
 
 // ========================================================================
 
 namespace {
   std::string codename;
-  std::string version = "1.0";
+  std::string version = "1.05";
 } // namespace
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
 
   Info::Interface interface;
   interface.parse_options(argc, argv);
 
-  std::string in_type = "exodusII";
+  Ioss::Init::Initializer io;
+
+  if (interface.show_config()) {
+    Ioss::IOFactory::show_configuration();
+    exit(EXIT_SUCCESS);
+  }
 
   codename   = argv[0];
   size_t ind = codename.find_last_of('/', codename.size());
@@ -58,13 +64,7 @@ int main(int argc, char *argv[])
     codename = codename.substr(ind + 1, codename.size());
   }
 
-  Ioss::Init::Initializer io;
-#ifndef NO_XDMF_SUPPORT
-  Ioxf::Initializer ioxf;
-#endif
-
-  OUTPUT << "Input:    '" << interface.filename() << "', Type: " << interface.type() << '\n';
-  OUTPUT << '\n';
+  fmt::print("Input: '{}', Type: {}\n\n", interface.filename(), interface.type());
 
   if (interface.list_groups()) {
     Ioss::io_info_group_info(interface);
@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
     Ioss::io_info_file_info(interface);
   }
 
-  OUTPUT << "\n" << codename << " execution successful.\n";
-#ifdef HAVE_MPI
+  fmt::print("\n{} execution successful.\n", codename);
+#ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;

@@ -71,8 +71,8 @@ public:
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), curl_basis(in_curl_basis)
   {
-    numFields = curl_basis.dimension(1);
-    numPoints = curl_basis.dimension(2);
+    numFields = curl_basis.extent(1);
+    numPoints = curl_basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -97,9 +97,9 @@ void evaluateCurl_withSens_vector(int numCells,
 { 
   if(numCells>0) {
     // evaluate at quadrature points
-    int numFields = curl_basis.dimension(1);
-    int numPoints = curl_basis.dimension(2);
-    int spaceDim  = curl_basis.dimension(3);
+    int numFields = curl_basis.extent(1);
+    int numPoints = curl_basis.extent(2);
+    int spaceDim  = curl_basis.extent(3);
 
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {
@@ -133,8 +133,8 @@ public:
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), curl_basis(in_curl_basis)
   {
-    numFields = curl_basis.dimension(1);
-    numPoints = curl_basis.dimension(2);
+    numFields = curl_basis.extent(1);
+    numPoints = curl_basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -157,8 +157,8 @@ void evaluateCurl_withSens_scalar(int numCells,
 { 
   if(numCells>0) {
     // evaluate at quadrature points
-    int numFields = curl_basis.dimension(1);
-    int numPoints = curl_basis.dimension(2);
+    int numFields = curl_basis.extent(1);
+    int numPoints = curl_basis.extent(2);
 
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {
@@ -192,8 +192,8 @@ public:
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), offsets(in_offsets), curl_basis(in_curl_basis)
   {
-    numFields = curl_basis.dimension(1);
-    numPoints = curl_basis.dimension(2);
+    numFields = curl_basis.extent(1);
+    numPoints = curl_basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -220,9 +220,9 @@ void evaluateCurl_fastSens_vector(int numCells,
                            const ArrayT & curl_basis)
 { 
   if(numCells>0) {
-    int numFields = curl_basis.dimension(1);
-    int numPoints = curl_basis.dimension(2);
-    int spaceDim  = curl_basis.dimension(3);
+    int numFields = curl_basis.extent(1);
+    int numPoints = curl_basis.extent(2);
+    int spaceDim  = curl_basis.extent(3);
 
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {
@@ -261,8 +261,8 @@ public:
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), offsets(in_offsets), curl_basis(in_curl_basis)
   {
-    numFields = curl_basis.dimension(1);
-    numPoints = curl_basis.dimension(2);
+    numFields = curl_basis.extent(1);
+    numPoints = curl_basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -287,8 +287,8 @@ void evaluateCurl_fastSens_scalar(int numCells,
                            const ArrayT & curl_basis)
 { 
   if(numCells>0) {
-    int numFields = curl_basis.dimension(1);
-    int numPoints = curl_basis.dimension(2);
+    int numFields = curl_basis.extent(1);
+    int numPoints = curl_basis.extent(2);
 
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {
@@ -317,6 +317,7 @@ void evaluateCurl_fastSens_scalar(int numCells,
 template<typename EvalT, typename TRAITS>                   
 DOFCurl<EvalT, TRAITS>::
 DOFCurl(const Teuchos::ParameterList & p) :
+  use_descriptors_(false),
   dof_value( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
@@ -354,6 +355,42 @@ DOFCurl(const Teuchos::ParameterList & p) :
 
 //**********************************************************************
 template<typename EvalT, typename TRAITS>                   
+DOFCurl<EvalT, TRAITS>::
+DOFCurl(const PHX::FieldTag & input,
+        const PHX::FieldTag & output,
+        const panzer::BasisDescriptor & bd,
+        const panzer::IntegrationDescriptor & id,
+        int basis_dim)
+  : use_descriptors_(true)
+  , bd_(bd) 
+  , id_(id) 
+  , dof_value(input)
+{
+  TEUCHOS_ASSERT(bd_.getType()=="HCurl");
+
+  basis_dimension = basis_dim; // user specified
+
+  // build dof_curl
+  if(basis_dimension==2) {
+     dof_curl_scalar = output;
+     this->addEvaluatedField(dof_curl_scalar);
+  }
+  else if(basis_dimension==3) {
+     dof_curl_vector = output;
+     this->addEvaluatedField(dof_curl_vector);
+  }
+  else
+  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
+
+  // add to evaluation graph
+  this->addDependentField(dof_value);
+  
+  std::string n = "DOFCurl: " + (basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name())+ " ()";
+  this->setName(n);
+}
+
+//**********************************************************************
+template<typename EvalT, typename TRAITS>                   
 void DOFCurl<EvalT, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData sd,
                       PHX::FieldManager<TRAITS>& fm)
@@ -364,7 +401,8 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   else
     this->utils.setFieldData(dof_curl_scalar,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
+  if(not use_descriptors_)
+    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -372,7 +410,8 @@ template<typename EvalT, typename TRAITS>
 void DOFCurl<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
+  const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
+                                                                      : *this->wda(workset).bases[basis_index];
 
   if(basis_dimension==3) {
     EvaluateCurlWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,basisValues.curl_basis_vector);
@@ -394,6 +433,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 template<typename TRAITS>                   
 DOFCurl<typename TRAITS::Jacobian, TRAITS>::
 DOFCurl(const Teuchos::ParameterList & p) :
+  use_descriptors_(false),
   dof_value( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
@@ -448,6 +488,44 @@ DOFCurl(const Teuchos::ParameterList & p) :
 
 //**********************************************************************
 template<typename TRAITS>                   
+DOFCurl<typename TRAITS::Jacobian, TRAITS>::
+DOFCurl(const PHX::FieldTag & input,
+        const PHX::FieldTag & output,
+        const panzer::BasisDescriptor & bd,
+        const panzer::IntegrationDescriptor & id,
+        int basis_dim)
+  : use_descriptors_(true)
+  , bd_(bd) 
+  , id_(id) 
+  , dof_value(input)
+{
+  TEUCHOS_ASSERT(bd_.getType()=="HCurl");
+
+  basis_dimension = basis_dim; // user specified
+
+  accelerate_jacobian = false; // don't short cut for identity matrix
+
+  // build dof_curl
+  if(basis_dimension==2) {
+     dof_curl_scalar = output;
+     this->addEvaluatedField(dof_curl_scalar);
+  }
+  else if(basis_dimension==3) {
+     dof_curl_vector = output;
+     this->addEvaluatedField(dof_curl_vector);
+  }
+  else
+  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
+
+  // add to evaluation graph
+  this->addDependentField(dof_value);
+  
+  std::string n = "DOFCurl: " + (basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name())+ " (Jacobian)";
+  this->setName(n);
+}
+
+//**********************************************************************
+template<typename TRAITS>                   
 void DOFCurl<typename TRAITS::Jacobian, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData sd,
                       PHX::FieldManager<TRAITS>& fm)
@@ -458,14 +536,16 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   else
     this->utils.setFieldData(dof_curl_scalar,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
+  if(not use_descriptors_) 
+    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 template<typename TRAITS>                   
 void DOFCurl<typename TRAITS::Jacobian,TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
+  const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
+                                                                      : *this->wda(workset).bases[basis_index];
 
   if(!accelerate_jacobian) {
     if(basis_dimension==3) {

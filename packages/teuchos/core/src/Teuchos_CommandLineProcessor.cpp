@@ -49,7 +49,10 @@
 //#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
-
+#ifndef _WIN32
+#include "Teuchos_Array.hpp"
+#include "unistd.h"
+#endif
 
 namespace {
 
@@ -197,7 +200,6 @@ void CommandLineProcessor::setOption(
     );
 }
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 void CommandLineProcessor::setOption(
   const char     option_name[]
   ,long long int *option_val
@@ -214,8 +216,6 @@ void CommandLineProcessor::setOption(
       any(option_val))
     );
 }
-#endif
-
 
 void CommandLineProcessor::setOption(
   const char     option_name[]
@@ -234,6 +234,22 @@ void CommandLineProcessor::setOption(
     );
 }
 
+void CommandLineProcessor::setOption(
+  const char     option_name[]
+  ,float         *option_val
+  ,const char    documentation[]
+  ,const bool    required
+  )
+{
+  add_extra_output_setup_options();
+  TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
+  options_list_[std::string(option_name)]
+    = opt_val_val_t(OPT_FLOAT,any(option_val),required);
+  options_documentation_list_.push_back(
+    opt_doc_t(OPT_FLOAT, option_name, "", std::string(documentation?documentation:""),
+      any(option_val))
+    );
+}
 
 void CommandLineProcessor::setOption(
   const char     option_name[]
@@ -302,6 +318,15 @@ CommandLineProcessor::parse(
       continue;
     }
     if( opt_name == pause_opt ) {
+#ifndef _WIN32
+      Array<int> pids;
+      pids.resize(GlobalMPISession::getNProc());
+      int rank_pid = getpid();
+      GlobalMPISession::allGather(rank_pid,pids());
+      if(procRank == 0)
+        for (int k=0; k<GlobalMPISession::getNProc(); k++)
+          std::cerr << "Rank " << k << " has PID " << pids[k] << std::endl;
+#endif
       if(procRank == 0) {
         std::cerr << "\nType 0 and press enter to continue : ";
         int dummy_int = 0;
@@ -340,13 +365,14 @@ CommandLineProcessor::parse(
       case OPT_SIZE_T:
         *(any_cast<size_t *>(opt_val_val.opt_val)) = asSafe<size_t> (opt_val_str);
         break;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
       case OPT_LONG_LONG_INT:
         *(any_cast<long long int*>(opt_val_val.opt_val)) = asSafe<long long int> (opt_val_str);
         break;
-#endif
       case OPT_DOUBLE:
         *(any_cast<double*>(opt_val_val.opt_val)) = asSafe<double> (opt_val_str);
+        break;
+      case OPT_FLOAT:
+        *(any_cast<float*>(opt_val_val.opt_val)) = asSafe<float> (opt_val_str);
         break;
       case OPT_STRING:
         *(any_cast<std::string*>(opt_val_val.opt_val)) = remove_quotes(opt_val_str);
@@ -520,10 +546,9 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
         case OPT_INT:
         case OPT_LONG_INT:
         case OPT_SIZE_T:
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
         case OPT_LONG_LONG_INT:
-#endif
         case OPT_DOUBLE:
+        case OPT_FLOAT:
         case OPT_STRING:
         case OPT_ENUM_INT:
           out << "--" << itr->opt_name;
@@ -543,13 +568,14 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
         case OPT_SIZE_T:
           out << "=" << (*(any_cast<size_t*>(itr->default_val)));
           break;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
         case OPT_LONG_LONG_INT:
           out << "=" << (*(any_cast<long long int*>(itr->default_val)));
           break;
-#endif
         case OPT_DOUBLE:
           out <<  "=" << (*(any_cast<double*>(itr->default_val)));
+          break;
+        case OPT_FLOAT:
+          out <<  "=" << (*(any_cast<float*>(itr->default_val)));
           break;
         case OPT_STRING:
           out <<  "=" << add_quotes(*(any_cast<std::string*>(itr->default_val)));

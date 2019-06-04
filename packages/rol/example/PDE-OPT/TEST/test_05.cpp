@@ -47,7 +47,7 @@
 
 #include "ROL_Types.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -65,12 +65,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
     MeshManager_Brick<RealT> meshmgr(*parlist);
-    Teuchos::RCP<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
-    Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
+    ROL::Ptr<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
+    ROL::Ptr<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
 
     Intrepid::FieldContainer<RealT> &nodes = *nodesPtr;
     Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
@@ -94,13 +94,13 @@ int main(int argc, char *argv[]) {
     *outStream << "Number of cells = " << meshmgr.getNumCells() << std::endl;
     *outStream << "Number of edges = " << meshmgr.getNumEdges() << std::endl;
 
-    Teuchos::RCP<MeshManager<RealT> > meshmgrPtr = Teuchos::rcpFromRef(meshmgr);
+    ROL::Ptr<MeshManager<RealT> > meshmgrPtr = ROL::makePtrFromRef(meshmgr);
 
     // Basis.
-    Teuchos::RCP<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > >    basis =
-      Teuchos::rcp(new Intrepid::Basis_HCURL_HEX_I1_FEM<RealT, Intrepid::FieldContainer<RealT> >);
+    ROL::Ptr<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > >    basis =
+      ROL::makePtr<Intrepid::Basis_HCURL_HEX_I1_FEM<RealT, Intrepid::FieldContainer<RealT> >>();
     // Cubature.
-    Teuchos::RCP<Intrepid::Cubature<RealT, Intrepid::FieldContainer<RealT> > > cubature;
+    ROL::Ptr<Intrepid::Cubature<RealT, Intrepid::FieldContainer<RealT> > > cubature;
     shards::CellTopology cellType = basis->getBaseCellTopology();                        // get the cell type from any basis
     Intrepid::DefaultCubatureFactory<RealT> cubFactory;                                  // create cubature factory
     int cubDegree = 4;                                                                   // set cubature degree, e.g., 2
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
       }
     }
     // FE object.
-    FE_CURL<RealT> fe(Teuchos::rcpFromRef(cellNodes), basis, cubature);
+    FE_CURL<RealT> fe(ROL::makePtrFromRef(cellNodes), basis, cubature);
 
     // Check integration.
     Intrepid::FieldContainer<RealT> feVals1(meshmgr.getNumCells(), cubature->getNumPoints(), cubature->getDimension());
@@ -132,9 +132,9 @@ int main(int argc, char *argv[]) {
       feCoeffs1(i, 0) = static_cast<RealT>(1);
       feCoeffs2(i, 0) = static_cast<RealT>(1);
     }
-    fe.evaluateValue(Teuchos::rcpFromRef(feVals1), Teuchos::rcpFromRef(feCoeffs1));
-    fe.evaluateValue(Teuchos::rcpFromRef(feVals2), Teuchos::rcpFromRef(feCoeffs2));
-    fe.computeIntegral(Teuchos::rcpFromRef(feIntegral), Teuchos::rcpFromRef(feVals1), Teuchos::rcpFromRef(feVals2));
+    fe.evaluateValue(ROL::makePtrFromRef(feVals1), ROL::makePtrFromRef(feCoeffs1));
+    fe.evaluateValue(ROL::makePtrFromRef(feVals2), ROL::makePtrFromRef(feCoeffs2));
+    fe.computeIntegral(ROL::makePtrFromRef(feIntegral), ROL::makePtrFromRef(feVals1), ROL::makePtrFromRef(feVals2));
     RealT valval(0);
     for (int i=0; i<meshmgr.getNumCells(); ++i) {
       valval += feIntegral(i);
@@ -143,9 +143,9 @@ int main(int argc, char *argv[]) {
       errorFlag = -1;
     }
     // curls
-    fe.evaluateCurl(Teuchos::rcpFromRef(feCurls1), Teuchos::rcpFromRef(feCoeffs1));
-    fe.evaluateCurl(Teuchos::rcpFromRef(feCurls2), Teuchos::rcpFromRef(feCoeffs2));
-    fe.computeIntegral(Teuchos::rcpFromRef(feIntegral), Teuchos::rcpFromRef(feCurls1), Teuchos::rcpFromRef(feCurls2));
+    fe.evaluateCurl(ROL::makePtrFromRef(feCurls1), ROL::makePtrFromRef(feCoeffs1));
+    fe.evaluateCurl(ROL::makePtrFromRef(feCurls2), ROL::makePtrFromRef(feCoeffs2));
+    fe.computeIntegral(ROL::makePtrFromRef(feIntegral), ROL::makePtrFromRef(feCurls1), ROL::makePtrFromRef(feCurls2));
     RealT curlcurl(0);
     for (int i=0; i<meshmgr.getNumCells(); ++i) {
       curlcurl += feIntegral(i);

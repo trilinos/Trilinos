@@ -50,6 +50,7 @@
 #include "Epetra_Import.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_HashTable.h"
+#include "Epetra_Util.h"
 
 #include <stdexcept>
 
@@ -133,7 +134,7 @@ int TPackAndPrepareWithOwningPIDs(const Epetra_CrsMatrix & A,
       intptr[0] = FromRow;
       values    = valptr;
       Indices   = intptr + 2;
-      EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumEntries, NumEntries, values, MyIndices.size() ? &MyIndices[0] : 0));
+      EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumEntries, NumEntries, values, Epetra_Util_data_ptr(MyIndices)));
       for (int j = 0; j < NumEntries; ++j) {
         Indices[2*j]   = (int_type) colMap.GID64(MyIndices[j]);   // convert to GIDs
         Indices[2*j+1] = pids[MyIndices[j]];                      // PID owning the entry.
@@ -188,11 +189,11 @@ template<typename int_type>
 int TUnpackWithOwningPIDsCount(const Epetra_CrsMatrix& SourceMatrix,
                                int NumSameIDs,
                                int NumRemoteIDs,
-                               const int * RemoteLIDs,
+                               const int * /* RemoteLIDs */,
                                int NumPermuteIDs,
-                               const int *PermuteToLIDs,
+                               const int */* PermuteToLIDs */,
                                const int *PermuteFromLIDs,
-                               int LenImports,
+                               int /* LenImports */,
                                char* Imports)
 {
   int i,nnz=0;
@@ -265,7 +266,7 @@ int TUnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
                                   int NumPermuteIDs,
                                   const int *PermuteToLIDs,
                                   const int *PermuteFromLIDs,
-                                  int LenImports,
+                                  int /* LenImports */,
                                   char* Imports,
                                   int TargetNumRows,
                                   int TargetNumNonzeros,
@@ -581,7 +582,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
   int NumListsLL =0;
   int * IntSortLists[2];
   long long * LLSortLists[2];
-  int * RemotePermuteIDs_ptr = RemotePermuteIDs.size() ? &RemotePermuteIDs[0] : 0;
+  int * RemotePermuteIDs_ptr = Epetra_Util_data_ptr(RemotePermuteIDs);
   if(!UseLL) {
     // int version
     IntSortLists[0] = (int*) RemoteColIndices;
@@ -595,7 +596,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
     NumListsInt     = NumListsLL = 1;
   }
 
-  int * PIDList_ptr = PIDList.size() ? &PIDList[0] : 0;
+  int * PIDList_ptr = Epetra_Util_data_ptr(PIDList);
   Epetra_Util::Sort(true, NumRemoteColGIDs, PIDList_ptr, 0, 0, NumListsInt, IntSortLists,NumListsLL,LLSortLists);
 
   // Stash the RemotePIDs
@@ -638,7 +639,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 
   if(NumLocalColGIDs == domainMap.NumMyElements()) {
     if(NumLocalColGIDs > 0) {
-      domainMap.MyGlobalElements(ColIndices.size() ? &ColIndices[0] : 0); // Load Global Indices into first numMyBlockCols elements column GID list
+      domainMap.MyGlobalElements(Epetra_Util_data_ptr(ColIndices)); // Load Global Indices into first numMyBlockCols elements column GID list
     }
   }
   else {
@@ -660,7 +661,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
   if (LocalGIDs!=0) delete [] LocalGIDs;
 
   // Make Column map with same element sizes as Domain map
-  int_type * ColIndices_ptr  = ColIndices.size() ? &ColIndices[0] : 0;
+  int_type * ColIndices_ptr  = Epetra_Util_data_ptr(ColIndices);
   MapType2 temp((int_type)(-1), numMyBlockCols, ColIndices_ptr, (int_type)domainMap.IndexBase64(), domainMap.Comm());
   NewColMap = temp;
 

@@ -101,9 +101,9 @@ namespace Intrepid2 {
 
       int errorFlag = 0;
       try {
-        const ordinal_type numCells = cellCoords.dimension(0);
-        //const auto numVerts = cellCoords.dimension(1);
-        const ordinal_type spaceDim = cellCoords.dimension(2);
+        const ordinal_type numCells = cellCoords.extent(0);
+        //const auto numVerts = cellCoords.extent(1);
+        const ordinal_type spaceDim = cellCoords.extent(2);
         
         const bool isCubatureSide = std::string(cubature.getName()) == std::string("CubatureControlVolumeSide");
 
@@ -210,9 +210,9 @@ namespace Intrepid2 {
 
       int errorFlag = 0;
       try {
-        const ordinal_type numCells = cellCoords.dimension(0);
-        //const ordinal_type numVerts = cellCoords.dimension(1);
-        const ordinal_type spaceDim = cellCoords.dimension(2);
+        const ordinal_type numCells = cellCoords.extent(0);
+        //const ordinal_type numVerts = cellCoords.extent(1);
+        const ordinal_type spaceDim = cellCoords.extent(2);
         
         CubatureControlVolumeType CubatureControlVolume(cellTopo);
         *outStream << " --- Testing sum of subcontrol volumes: " << CubatureControlVolume.getName() << "\n";

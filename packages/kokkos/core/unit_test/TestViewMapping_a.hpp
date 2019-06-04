@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -708,7 +708,7 @@ void test_view_mapping()
 
     ASSERT_EQ( C::Rank, 1 );
 
-    ASSERT_EQ( vr1.dimension_0(), N );
+    ASSERT_EQ( vr1.extent(0), N );
 
     if ( Kokkos::Impl::SpaceAccessibility< Kokkos::HostSpace, typename Space::memory_space >::accessible ) {
       for ( int i = 0; i < N; ++i ) data[i] = i + 1;
@@ -751,7 +751,7 @@ void test_view_mapping()
     ASSERT_TRUE( ( std::is_same< typename T::reference_type, int & >::value ) );
     ASSERT_EQ( T::Rank, 1 );
 
-    ASSERT_EQ( vr1.dimension_0(), N );
+    ASSERT_EQ( vr1.extent(0), N );
 
     if ( Kokkos::Impl::SpaceAccessibility< Kokkos::HostSpace, typename Space::memory_space >::accessible ) {
       for ( int i = 0; i < N; ++i ) vr1( i ) = i + 1;
@@ -778,8 +778,8 @@ void test_view_mapping()
     T vr1( "vr1", N );
     C cr1( vr1 );
 
-    ASSERT_EQ( vr1.dimension_0(), 0 );
-    ASSERT_EQ( cr1.dimension_0(), 0 );
+    ASSERT_EQ( vr1.extent(0), 0 );
+    ASSERT_EQ( cr1.extent(0), 0 );
   }
 
   // Testing using space instance for allocation.
@@ -881,12 +881,12 @@ void test_view_mapping()
     Kokkos::realloc( c, 5, 6 );
     Kokkos::realloc( d, 5, 6 );
 
-    ASSERT_EQ( b.dimension_0(), 5 );
-    ASSERT_EQ( b.dimension_1(), 6 );
-    ASSERT_EQ( c.dimension_0(), 5 );
-    ASSERT_EQ( c.dimension_1(), 6 );
-    ASSERT_EQ( d.dimension_0(), 5 );
-    ASSERT_EQ( d.dimension_1(), 6 );
+    ASSERT_EQ( b.extent(0), 5 );
+    ASSERT_EQ( b.extent(1), 6 );
+    ASSERT_EQ( c.extent(0), 5 );
+    ASSERT_EQ( c.extent(1), 6 );
+    ASSERT_EQ( d.extent(0), 5 );
+    ASSERT_EQ( d.extent(1), 6 );
 
     layout_type layout( 7, 8 );
     Kokkos::resize( b, layout );
@@ -912,12 +912,12 @@ void test_view_mapping()
     Kokkos::realloc( c, layout );
     Kokkos::realloc( d, layout );
 
-    ASSERT_EQ( b.dimension_0(), 7 );
-    ASSERT_EQ( b.dimension_1(), 8 );
-    ASSERT_EQ( c.dimension_0(), 7 );
-    ASSERT_EQ( c.dimension_1(), 8 );
-    ASSERT_EQ( d.dimension_0(), 7 );
-    ASSERT_EQ( d.dimension_1(), 8 );
+    ASSERT_EQ( b.extent(0), 7 );
+    ASSERT_EQ( b.extent(1), 8 );
+    ASSERT_EQ( c.extent(0), 7 );
+    ASSERT_EQ( c.extent(1), 8 );
+    ASSERT_EQ( d.extent(0), 7 );
+    ASSERT_EQ( d.extent(1), 8 );
   }
 
   {
@@ -967,12 +967,12 @@ void test_view_mapping()
     Kokkos::realloc( c, layout );
     Kokkos::realloc( d, layout );
 
-    ASSERT_EQ( b.dimension_0(), 7 );
-    ASSERT_EQ( b.dimension_1(), 8 );
-    ASSERT_EQ( c.dimension_0(), 7 );
-    ASSERT_EQ( c.dimension_1(), 8 );
-    ASSERT_EQ( d.dimension_0(), 7 );
-    ASSERT_EQ( d.dimension_1(), 8 );
+    ASSERT_EQ( b.extent(0), 7 );
+    ASSERT_EQ( b.extent(1), 8 );
+    ASSERT_EQ( c.extent(0), 7 );
+    ASSERT_EQ( c.extent(1), 8 );
+    ASSERT_EQ( d.extent(0), 7 );
+    ASSERT_EQ( d.extent(1), 8 );
 
   }
 
@@ -1043,19 +1043,27 @@ struct TestViewMapOperator {
   static_assert( ViewType::reference_type_is_lvalue_reference
                , "Test only valid for lvalue reference type" );
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   const ViewType v;
+#else
+  ViewType v;
+#endif
 
   KOKKOS_INLINE_FUNCTION
   void test_left( size_t i0, long & error_count ) const
   {
+#ifdef KOKKOS_ENABLE_DEPPRECATED_CODE
     typename ViewType::value_type * const base_ptr = & v( 0, 0, 0, 0, 0, 0, 0, 0 );
-    const size_t n1 = v.dimension_1();
-    const size_t n2 = v.dimension_2();
-    const size_t n3 = v.dimension_3();
-    const size_t n4 = v.dimension_4();
-    const size_t n5 = v.dimension_5();
-    const size_t n6 = v.dimension_6();
-    const size_t n7 = v.dimension_7();
+#else
+    typename ViewType::value_type * const base_ptr = & v.access( 0, 0, 0, 0, 0, 0, 0, 0 );
+#endif
+    const size_t n1 = v.extent(1);
+    const size_t n2 = v.extent(2);
+    const size_t n3 = v.extent(3);
+    const size_t n4 = v.extent(4);
+    const size_t n5 = v.extent(5);
+    const size_t n6 = v.extent(6);
+    const size_t n7 = v.extent(7);
 
     long offset = 0;
 
@@ -1067,8 +1075,12 @@ struct TestViewMapOperator {
     for ( size_t i2 = 0; i2 < n2; ++i2 )
     for ( size_t i1 = 0; i1 < n1; ++i1 )
     {
-      const long d = & v( i0, i1, i2, i3, i4, i5, i6, i7 ) - base_ptr;
-      if ( d < offset ) ++error_count;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+        const long d = & v( i0, i1, i2, i3, i4, i5, i6, i7 ) - base_ptr;
+#else
+        const long d = & v.access( i0, i1, i2, i3, i4, i5, i6, i7 ) - base_ptr;
+#endif
+        if ( d < offset ) ++error_count;
       offset = d;
     }
 
@@ -1078,14 +1090,18 @@ struct TestViewMapOperator {
   KOKKOS_INLINE_FUNCTION
   void test_right( size_t i0, long & error_count ) const
   {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     typename ViewType::value_type * const base_ptr = & v( 0, 0, 0, 0, 0, 0, 0, 0 );
-    const size_t n1 = v.dimension_1();
-    const size_t n2 = v.dimension_2();
-    const size_t n3 = v.dimension_3();
-    const size_t n4 = v.dimension_4();
-    const size_t n5 = v.dimension_5();
-    const size_t n6 = v.dimension_6();
-    const size_t n7 = v.dimension_7();
+#else
+    typename ViewType::value_type * const base_ptr = & v.access( 0, 0, 0, 0, 0, 0, 0, 0 );
+#endif
+    const size_t n1 = v.extent(1);
+    const size_t n2 = v.extent(2);
+    const size_t n3 = v.extent(3);
+    const size_t n4 = v.extent(4);
+    const size_t n5 = v.extent(5);
+    const size_t n6 = v.extent(6);
+    const size_t n7 = v.extent(7);
 
     long offset = 0;
 
@@ -1097,8 +1113,12 @@ struct TestViewMapOperator {
     for ( size_t i6 = 0; i6 < n6; ++i6 )
     for ( size_t i7 = 0; i7 < n7; ++i7 )
     {
-      const long d = & v( i0, i1, i2, i3, i4, i5, i6, i7 ) - base_ptr;
-      if ( d < offset ) ++error_count;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+        const long d = & v( i0, i1, i2, i3, i4, i5, i6, i7 ) - base_ptr;
+#else
+        const long d = & v.access( i0, i1, i2, i3, i4, i5, i6, i7 ) - base_ptr;
+#endif
+        if ( d < offset ) ++error_count;
       offset = d;
     }
 
@@ -1125,31 +1145,72 @@ struct TestViewMapOperator {
   enum { N6 = 4 };
   enum { N7 = 3 };
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   TestViewMapOperator() : v( "Test", N0, N1, N2, N3, N4, N5, N6, N7 ) {}
 
+ #else
+  TestViewMapOperator() {
+
+    const size_t dyn_rank = v.rank_dynamic;
+    const std::string label("Test");
+    switch(dyn_rank) {
+      case 0:
+        v = ViewType(label);
+        break;
+      case 1:
+        v = ViewType(label, N0);
+        break;
+      case 2:
+        v = ViewType(label, N0, N1);
+        break;
+      case 3:
+        v = ViewType(label, N0, N1, N2);
+        break;
+      case 4:
+        v = ViewType(label, N0, N1, N2, N3);
+        break;
+      case 5:
+        v = ViewType(label, N0, N1, N2, N3, N4);
+        break;
+      case 6:
+        v = ViewType(label, N0, N1, N2, N3, N4, N5);
+        break;
+      case 7:
+        v = ViewType(label, N0, N1, N2, N3, N4, N5, N6);
+        break;
+      case 8:
+      default:
+        v = ViewType(label, N0, N1, N2, N3, N4, N5, N6, N7);
+
+    }
+
+  }
+
+
+#endif
   void run()
   {
-    ASSERT_EQ( v.dimension_0(), ( 0 < ViewType::rank ? TestViewMapOperator<ViewType>::N0 : 1 ) );
-    ASSERT_EQ( v.dimension_1(), ( 1 < ViewType::rank ? TestViewMapOperator<ViewType>::N1 : 1 ) );
-    ASSERT_EQ( v.dimension_2(), ( 2 < ViewType::rank ? TestViewMapOperator<ViewType>::N2 : 1 ) );
-    ASSERT_EQ( v.dimension_3(), ( 3 < ViewType::rank ? TestViewMapOperator<ViewType>::N3 : 1 ) );
-    ASSERT_EQ( v.dimension_4(), ( 4 < ViewType::rank ? TestViewMapOperator<ViewType>::N4 : 1 ) );
-    ASSERT_EQ( v.dimension_5(), ( 5 < ViewType::rank ? TestViewMapOperator<ViewType>::N5 : 1 ) );
-    ASSERT_EQ( v.dimension_6(), ( 6 < ViewType::rank ? TestViewMapOperator<ViewType>::N6 : 1 ) );
-    ASSERT_EQ( v.dimension_7(), ( 7 < ViewType::rank ? TestViewMapOperator<ViewType>::N7 : 1 ) );
+    ASSERT_EQ( v.extent(0), ( 0 < ViewType::rank ? TestViewMapOperator<ViewType>::N0 : 1 ) );
+    ASSERT_EQ( v.extent(1), ( 1 < ViewType::rank ? TestViewMapOperator<ViewType>::N1 : 1 ) );
+    ASSERT_EQ( v.extent(2), ( 2 < ViewType::rank ? TestViewMapOperator<ViewType>::N2 : 1 ) );
+    ASSERT_EQ( v.extent(3), ( 3 < ViewType::rank ? TestViewMapOperator<ViewType>::N3 : 1 ) );
+    ASSERT_EQ( v.extent(4), ( 4 < ViewType::rank ? TestViewMapOperator<ViewType>::N4 : 1 ) );
+    ASSERT_EQ( v.extent(5), ( 5 < ViewType::rank ? TestViewMapOperator<ViewType>::N5 : 1 ) );
+    ASSERT_EQ( v.extent(6), ( 6 < ViewType::rank ? TestViewMapOperator<ViewType>::N6 : 1 ) );
+    ASSERT_EQ( v.extent(7), ( 7 < ViewType::rank ? TestViewMapOperator<ViewType>::N7 : 1 ) );
 
-    ASSERT_LE( v.dimension_0() *
-               v.dimension_1() *
-               v.dimension_2() *
-               v.dimension_3() *
-               v.dimension_4() *
-               v.dimension_5() *
-               v.dimension_6() *
-               v.dimension_7()
+    ASSERT_LE( v.extent(0) *
+               v.extent(1) *
+               v.extent(2) *
+               v.extent(3) *
+               v.extent(4) *
+               v.extent(5) *
+               v.extent(6) *
+               v.extent(7)
              , v.span() );
 
     long error_count;
-    Kokkos::RangePolicy< typename ViewType::execution_space > range( 0, v.dimension_0() );
+    Kokkos::RangePolicy< typename ViewType::execution_space > range( 0, v.extent(0) );
     Kokkos::parallel_reduce( range, *this, error_count );
     ASSERT_EQ( 0, error_count );
 }
@@ -1182,6 +1243,13 @@ void test_view_mapping_operator()
 TEST_F( TEST_CATEGORY , view_mapping_operator )
 {
   test_view_mapping_operator< TEST_EXECSPACE >();
+}
+
+TEST_F( TEST_CATEGORY , static_extent )
+{
+  using T = Kokkos::View<double*[2][3]>;
+  ASSERT_EQ( T::static_extent(1), 2 );
+  ASSERT_EQ( T::static_extent(2), 3 );
 }
 
 }

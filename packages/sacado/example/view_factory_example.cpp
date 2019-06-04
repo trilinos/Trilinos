@@ -44,6 +44,7 @@
 #if !defined(__CUDACC__)
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_ViewFactory.hpp"
+#include "Teuchos_Assert.hpp"
 
 // Example to demonstrate the use of Kokkos::ViewFactory for constructing
 // view's of Fad's without explicitly referencing the sacado dimension
@@ -64,8 +65,8 @@ my_func(const View1& v1, const View2& v2)
   static_assert( unsigned(View1::rank) == 2, "" );
   static_assert( unsigned(View2::rank) == 1, "" );
 
-  const size_type m = v1.dimension_0();
-  const size_type n = v1.dimension_1();
+  const size_type m = v1.extent(0);
+  const size_type n = v1.extent(1);
   ViewTmp vtmp = ViewFac::template create_view<ViewTmp>(v1,v2,"tmp",m);
 
   Kokkos::parallel_for(m, KOKKOS_LAMBDA (const size_type i) {
@@ -95,8 +96,8 @@ my_func_dynamic(const View1& v1, const View2& v2)
   TEUCHOS_ASSERT( v1.rank() == 2 );
   TEUCHOS_ASSERT( v2.rank() == 1 );
 
-  const size_type m = v1.dimension_0();
-  const size_type n = v1.dimension_1();
+  const size_type m = v1.extent(0);
+  const size_type n = v1.extent(1);
   ViewTmp vtmp = ViewFac::template create_view<ViewTmp>(v1,v2,"tmp",m);
 
   Kokkos::parallel_for(m, KOKKOS_LAMBDA (const size_type i) {

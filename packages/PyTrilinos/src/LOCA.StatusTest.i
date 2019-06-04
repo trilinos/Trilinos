@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.StatusTest is the python interface to namespace *** of
 the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.StatusTest is to provide status checkers.  The
 python version of LOCA.StatusTest supports the following classes:
@@ -64,17 +64,12 @@ python version of LOCA.StatusTest supports the following classes:
 
 %{
 // Teuchos include
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// LOCA includes
-#include "LOCA.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}

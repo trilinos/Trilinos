@@ -61,30 +61,30 @@ class LinearOperatorSum : public LinearOperator<Real>  {
   typedef Vector<Real>         V;
   typedef LinearOperator<Real> OP;
  
-  typedef typename std::vector<Teuchos::RCP<OP> >::size_type size_type;
+  typedef typename std::vector<ROL::Ptr<OP> >::size_type size_type;
 
 private:
 
-  Teuchos::RCP<std::vector<Teuchos::RCP<OP> > > ops_;
-  Teuchos::RCP<V> scratch_;
+  ROL::Ptr<std::vector<ROL::Ptr<OP> > > ops_;
+  ROL::Ptr<V> scratch_;
 
 public:
 
-  LinearOperatorSum( Teuchos::RCP<OP> &A, 
-                     Teuchos::RCP<OP> &B, 
-                     Teuchos::RCP<V> & scratch ) :
+  LinearOperatorSum( ROL::Ptr<OP> &A, 
+                     ROL::Ptr<OP> &B, 
+                     ROL::Ptr<V> & scratch ) :
     scratch_(scratch) {
-    ops_ = Teuchos::rcp(new std::vector<OP> > );
+    ops_ = ROL::makePtr<std::vector<OP> >>();
     ops_->push_back(A);
     ops_->push_back(B);
   }
 
-  LinearOperatorSum( Teuchos::RCP<OP> &A, 
-                     Teuchos::RCP<OP> &B, 
-                     Teuchos::RCP<OP> &C, 
-                     Teuchos::RCP<V> & scratch ) :
+  LinearOperatorSum( ROL::Ptr<OP> &A, 
+                     ROL::Ptr<OP> &B, 
+                     ROL::Ptr<OP> &C, 
+                     ROL::Ptr<V> & scratch ) :
     scratch_(scratch) {
-    ops_ = Teuchos::rcp(new std::vector<OP> > );
+    ops_ = ROL::makePtr<std::vector<OP> >>();
     ops_->push_back(A);
     ops_->push_back(B);
     ops_->push_back(C);
@@ -107,7 +107,7 @@ public:
   }
 
   virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+      ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                                   ">>> ERROR (ROL_LinearOperatorSum, applyInverse): "
                                   "Inverse is not defined for general sum of operators.");     
   }

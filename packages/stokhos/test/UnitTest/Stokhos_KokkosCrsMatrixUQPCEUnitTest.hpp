@@ -179,8 +179,8 @@ bool compare_rank_2_views(const array_type& y,
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
-  size_type num_rows = y.dimension_0();
-  size_type num_cols = y.dimension_1();
+  size_type num_rows = y.extent(0);
+  size_type num_cols = y.extent(1);
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
@@ -216,7 +216,7 @@ bool compareRank1(const vector_type& y,
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
-  size_type num_rows = y.dimension_0();
+  size_type num_rows = y.extent(0);
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<Kokkos::dimension_scalar(y); ++j) {
@@ -251,8 +251,8 @@ bool compareRank2(const vector_type& y,
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
-  size_type num_rows = y.dimension_0();
-  size_type num_cols = y.dimension_1();
+  size_type num_rows = y.extent(0);
+  size_type num_cols = y.extent(1);
   bool success = true;
 
  for (size_type col = 0; col < num_cols; ++col){
@@ -342,7 +342,6 @@ struct ReplaceDiagonalValuesKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type pce_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
     value_type val_expected(Kokkos::cijk(matrix.values));
     for (ordinal_type row=0; row<nrow; ++row) {
@@ -392,7 +391,6 @@ struct AddDiagonalValuesKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type pce_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
     value_type val_expected(Kokkos::cijk(matrix.values));
     for (ordinal_type row=0; row<nrow; ++row) {
@@ -443,7 +441,6 @@ struct AddDiagonalValuesAtomicKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type pce_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
     value_type val_expected(Kokkos::cijk(matrix.values));
     for (ordinal_type row=0; row<nrow; ++row) {

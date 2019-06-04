@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,7 @@ void merge_goals(double *         goal,         /* desired set sizes */
                  int              cube_or_mesh, /* 0=> hypercube, d=> d-dimensional mesh */
                  int              mesh_dims[3], /* shape of mesh */
                  double           vwgt_sum      /* actual sum of vertex weights */
-                 )
+)
 {
   struct set_info *set;        /* set of processors still clumped together */
   double           total_goal; /* total of desired goals */

@@ -198,7 +198,7 @@ namespace Anasazi {
     /// \param mv [in] Multivector to view (shallow const copy)
     /// \param index [in] Inclusive index range of columns of mv
     /// \return Reference-counted pointer to the const view of specified columns of mv
-    static Teuchos::RCP<MV> CloneView( MV& mv, const Teuchos::Range1D& index )
+    static Teuchos::RCP<const MV> CloneView( const MV& mv, const Teuchos::Range1D& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }
 
     //@}

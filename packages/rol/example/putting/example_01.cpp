@@ -55,12 +55,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -69,8 +69,7 @@ int main(int argc, char *argv[]) {
   try {
     // Read in parameterlist
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     // Physical parameters
     RealT g  = 9.834;   // Acceleration due to gravity (m/s^2)
@@ -86,99 +85,99 @@ int main(int argc, char *argv[]) {
     int    n = parlist->sublist("Problem").get("Number of time steps", 50); // Number of time steps
 
     // Initialize iteration vectors.
-    Teuchos::RCP<std::vector<RealT> > u_rcp    = Teuchos::rcp(new std::vector<RealT>(9*n+10));
-    Teuchos::RCP<std::vector<RealT> > ulb_rcp  = Teuchos::rcp(new std::vector<RealT>(9*n+10));
-    Teuchos::RCP<std::vector<RealT> > uub_rcp  = Teuchos::rcp(new std::vector<RealT>(9*n+10));
-    Teuchos::RCP<std::vector<RealT> > z_rcp    = Teuchos::rcp(new std::vector<RealT>(2));
-    Teuchos::RCP<std::vector<RealT> > zlb_rcp  = Teuchos::rcp(new std::vector<RealT>(2));
-    Teuchos::RCP<std::vector<RealT> > zub_rcp  = Teuchos::rcp(new std::vector<RealT>(2));
-    Teuchos::RCP<std::vector<RealT> > emul_rcp = Teuchos::rcp(new std::vector<RealT>(9*n+10));
-    Teuchos::RCP<std::vector<RealT> > imul_rcp = Teuchos::rcp(new std::vector<RealT>(n+1));
-    Teuchos::RCP<std::vector<RealT> > ilb_rcp  = Teuchos::rcp(new std::vector<RealT>(n+1));
-    Teuchos::RCP<std::vector<RealT> > iub_rcp  = Teuchos::rcp(new std::vector<RealT>(n+1));
-    Teuchos::RCP<ROL::Vector<RealT> > up       = Teuchos::rcp(new ROL::StdVector<RealT>(u_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > ulbp     = Teuchos::rcp(new ROL::StdVector<RealT>(ulb_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > uubp     = Teuchos::rcp(new ROL::StdVector<RealT>(uub_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > zp       = Teuchos::rcp(new ROL::StdVector<RealT>(z_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > zlbp     = Teuchos::rcp(new ROL::StdVector<RealT>(zlb_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > zubp     = Teuchos::rcp(new ROL::StdVector<RealT>(zub_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > emul     = Teuchos::rcp(new ROL::StdVector<RealT>(emul_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > imul     = Teuchos::rcp(new ROL::StdVector<RealT>(imul_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > ilbp     = Teuchos::rcp(new ROL::StdVector<RealT>(ilb_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > iubp     = Teuchos::rcp(new ROL::StdVector<RealT>(iub_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > x        = Teuchos::rcp(new ROL::Vector_SimOpt<RealT>(up,zp));
+    ROL::Ptr<std::vector<RealT> > u_ptr    = ROL::makePtr<std::vector<RealT>>(9*n+10);
+    ROL::Ptr<std::vector<RealT> > ulb_ptr  = ROL::makePtr<std::vector<RealT>>(9*n+10);
+    ROL::Ptr<std::vector<RealT> > uub_ptr  = ROL::makePtr<std::vector<RealT>>(9*n+10);
+    ROL::Ptr<std::vector<RealT> > z_ptr    = ROL::makePtr<std::vector<RealT>>(2);
+    ROL::Ptr<std::vector<RealT> > zlb_ptr  = ROL::makePtr<std::vector<RealT>>(2);
+    ROL::Ptr<std::vector<RealT> > zub_ptr  = ROL::makePtr<std::vector<RealT>>(2);
+    ROL::Ptr<std::vector<RealT> > emul_ptr = ROL::makePtr<std::vector<RealT>>(9*n+10);
+    ROL::Ptr<std::vector<RealT> > imul_ptr = ROL::makePtr<std::vector<RealT>>(n+1);
+    ROL::Ptr<std::vector<RealT> > ilb_ptr  = ROL::makePtr<std::vector<RealT>>(n+1);
+    ROL::Ptr<std::vector<RealT> > iub_ptr  = ROL::makePtr<std::vector<RealT>>(n+1);
+    ROL::Ptr<ROL::Vector<RealT> > up       = ROL::makePtr<ROL::StdVector<RealT>>(u_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > ulbp     = ROL::makePtr<ROL::StdVector<RealT>>(ulb_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > uubp     = ROL::makePtr<ROL::StdVector<RealT>>(uub_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > zp       = ROL::makePtr<ROL::StdVector<RealT>>(z_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > zlbp     = ROL::makePtr<ROL::StdVector<RealT>>(zlb_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > zubp     = ROL::makePtr<ROL::StdVector<RealT>>(zub_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > emul     = ROL::makePtr<ROL::StdVector<RealT>>(emul_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > imul     = ROL::makePtr<ROL::StdVector<RealT>>(imul_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > ilbp     = ROL::makePtr<ROL::StdVector<RealT>>(ilb_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > iubp     = ROL::makePtr<ROL::StdVector<RealT>>(iub_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > x        = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(up,zp);
 
     // Fill initial state
     RealT N(n), one(1), T(1.5);
     for (int i = 0; i < n+1; ++i) {
       RealT I(i);
-      (*u_rcp)[i]         = I/N * x0 + (one-I/N) * xn;
-      (*u_rcp)[n+1+i]     = I/N * y0 + (one-I/N) * yn;
-      (*u_rcp)[3*n+3+i]   = (xn - x0)/T;
-      (*u_rcp)[4*n+4+i]   = (yn - y0)/T;
+      (*u_ptr)[i]         = I/N * x0 + (one-I/N) * xn;
+      (*u_ptr)[n+1+i]     = I/N * y0 + (one-I/N) * yn;
+      (*u_ptr)[3*n+3+i]   = (xn - x0)/T;
+      (*u_ptr)[4*n+4+i]   = (yn - y0)/T;
     }
-    (*u_rcp)[9*n+9] = T;
-    (*z_rcp)[0] = (xn - x0)/T;
-    (*z_rcp)[1] = (yn - y0)/T;
+    (*u_ptr)[9*n+9] = T;
+    (*z_ptr)[0] = (xn - x0)/T;
+    (*z_ptr)[1] = (yn - y0)/T;
 
     // Fill bounds
     for (int i = 0; i < 9*n+10; ++i) {
-      (*ulb_rcp)[i] = ROL::ROL_NINF<RealT>();
-      (*uub_rcp)[i] = ROL::ROL_INF<RealT>();
+      (*ulb_ptr)[i] = ROL::ROL_NINF<RealT>();
+      (*uub_ptr)[i] = ROL::ROL_INF<RealT>();
     }
-    (*ulb_rcp)[9*n+9] = static_cast<RealT>(0);
+    (*ulb_ptr)[9*n+9] = static_cast<RealT>(0);
     for (int i = 0; i < 2; ++i) {
-      (*zlb_rcp)[i] = ROL::ROL_NINF<RealT>();
-      (*zub_rcp)[i] = ROL::ROL_INF<RealT>();
+      (*zlb_ptr)[i] = ROL::ROL_NINF<RealT>();
+      (*zub_ptr)[i] = ROL::ROL_INF<RealT>();
     }
     for (int i = 0; i < n+1; ++i) {
-      (*ilb_rcp)[i] = static_cast<RealT>(0);
-      (*iub_rcp)[i] = Rg*Rg;
+      (*ilb_ptr)[i] = static_cast<RealT>(0);
+      (*iub_ptr)[i] = Rg*Rg;
     }
 
     // Initialize bound constraints
-    Teuchos::RCP<ROL::Bounds<RealT> > ubnd
-      = Teuchos::rcp(new ROL::Bounds<RealT>(ulbp,uubp));
-    Teuchos::RCP<ROL::Bounds<RealT> > zbnd
-      = Teuchos::rcp(new ROL::Bounds<RealT>(zlbp,zubp));
+    ROL::Ptr<ROL::Bounds<RealT> > ubnd
+      = ROL::makePtr<ROL::Bounds<RealT>>(ulbp,uubp);
+    ROL::Ptr<ROL::Bounds<RealT> > zbnd
+      = ROL::makePtr<ROL::Bounds<RealT>>(zlbp,zubp);
     zbnd->deactivate();
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > xbnd
-      = Teuchos::rcp(new ROL::BoundConstraint_SimOpt<RealT>(ubnd,zbnd));
-    Teuchos::RCP<ROL::Bounds<RealT> > ibnd
-      = Teuchos::rcp(new ROL::Bounds<RealT>(ilbp,iubp));
+    ROL::Ptr<ROL::BoundConstraint<RealT> > xbnd
+      = ROL::makePtr<ROL::BoundConstraint_SimOpt<RealT>>(ubnd,zbnd);
+    ROL::Ptr<ROL::Bounds<RealT> > ibnd
+      = ROL::makePtr<ROL::Bounds<RealT>>(ilbp,iubp);
 
     // Dynamic constraints
-    Teuchos::RCP<PuttingConstraint<RealT> > econ
-      = Teuchos::rcp(new PuttingConstraint<RealT>(g,m,x0,y0,xn,yn,mu));
+    ROL::Ptr<PuttingConstraint<RealT> > econ
+      = ROL::makePtr<PuttingConstraint<RealT>>(g,m,x0,y0,xn,yn,mu);
 
     // Green constraints
-    Teuchos::RCP<GreenConstraint<RealT> > icon
-      = Teuchos::rcp(new GreenConstraint<RealT>());
+    ROL::Ptr<GreenConstraint<RealT> > icon
+      = ROL::makePtr<GreenConstraint<RealT>>();
 
     // Final speed objective
     RealT target = sf*sf;
-    Teuchos::RCP<PuttingObjective<RealT> > obj
-      = Teuchos::rcp(new PuttingObjective<RealT>(target));
+    ROL::Ptr<PuttingObjective<RealT> > obj
+      = ROL::makePtr<PuttingObjective<RealT>>(target);
 
     // Initialize optimization problem
-    Teuchos::RCP<ROL::OptimizationProblem<RealT> > problem;
+    ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
     bool useReduced = parlist->sublist("Problem").get("Use reduced space",false);
     if (!useReduced) {
       bool useGreenCon = parlist->sublist("Problem").get("Use green constraint",false);
       if (!useGreenCon) {
-        problem = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(obj,x,xbnd,econ,emul));
+        problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(obj,x,xbnd,econ,emul);
       }
       else {
-        problem = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(obj,x,xbnd,econ,emul,icon,imul,ibnd));
+        problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(obj,x,xbnd,econ,emul,icon,imul,ibnd);
       }
     }
     else {
       econ->setSolveParameters(*parlist);
-      Teuchos::RCP<ROL::SimController<RealT> > stateStore
-        = Teuchos::rcp(new ROL::SimController<RealT>());
-      Teuchos::RCP<ROL::Objective<RealT> > robj
-        = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj,econ,stateStore,up,zp,emul,true,false));
-      problem = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(robj,zp));
+      ROL::Ptr<ROL::SimController<RealT> > stateStore
+        = ROL::makePtr<ROL::SimController<RealT>>();
+      ROL::Ptr<ROL::Objective<RealT> > robj
+        = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj,econ,stateStore,up,zp,emul,true,false);
+      problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(robj,zp);
     }
 
     // Check derivatives
@@ -194,9 +193,9 @@ int main(int argc, char *argv[]) {
     solver.solve(*outStream);
 
     // Print optimal control (initial velocity vector)
-    *outStream << "Initial x-velocity: " << (*z_rcp)[0]     << std::endl;
-    *outStream << "Initial y-velocity: " << (*z_rcp)[1]     << std::endl;
-    *outStream << "Final time: "         << (*u_rcp)[9*n+9] << std::endl;
+    *outStream << "Initial x-velocity: " << (*z_ptr)[0]     << std::endl;
+    *outStream << "Initial y-velocity: " << (*z_ptr)[1]     << std::endl;
+    *outStream << "Final time: "         << (*u_ptr)[9*n+9] << std::endl;
 
     // Print optimal trajectory
     bool printTrajectory = parlist->sublist("Problem").get("Print trajectory",true);
@@ -207,11 +206,11 @@ int main(int argc, char *argv[]) {
       aFile.open("acceleration.txt");
       for (int i = 0; i < n+1; ++i) {
         xFile << std::scientific << std::setprecision(8) << std::setw(12) << std::left;
-        xFile << (*u_rcp)[i]       << "  " << (*u_rcp)[n+1+i]   << "  " << (*u_rcp)[2*n+2+i] << std::endl;
+        xFile << (*u_ptr)[i]       << "  " << (*u_ptr)[n+1+i]   << "  " << (*u_ptr)[2*n+2+i] << std::endl;
         vFile << std::scientific << std::setprecision(8) << std::setw(12) << std::left;
-        vFile << (*u_rcp)[3*n+3+i] << "  " << (*u_rcp)[4*n+4+i] << "  " << (*u_rcp)[5*n+5+i] << std::endl;
+        vFile << (*u_ptr)[3*n+3+i] << "  " << (*u_ptr)[4*n+4+i] << "  " << (*u_ptr)[5*n+5+i] << std::endl;
         aFile << std::scientific << std::setprecision(8) << std::setw(12) << std::left;
-        aFile << (*u_rcp)[6*n+6+i] << "  " << (*u_rcp)[7*n+7+i] << "  " << (*u_rcp)[8*n+8+i] << std::endl;
+        aFile << (*u_ptr)[6*n+6+i] << "  " << (*u_ptr)[7*n+7+i] << "  " << (*u_ptr)[8*n+8+i] << std::endl;
       }
       xFile.close();
       vFile.close();
@@ -222,7 +221,7 @@ int main(int argc, char *argv[]) {
     RealT tol(1e-8);
     std::ofstream jacFile;
     jacFile.open("jacobian.txt");
-    Teuchos::RCP<ROL::Vector<RealT> > jv = emul->clone();
+    ROL::Ptr<ROL::Vector<RealT> > jv = emul->clone();
     for (int i = 0; i < 9*n+10; ++i) {
       jacFile << std::scientific << std::setprecision(8) << std::setw(12) << std::left;
       for (int j = 0; j < 9*n+10; ++j) {
@@ -233,7 +232,7 @@ int main(int argc, char *argv[]) {
     }
     jacFile.close();
 
-    Teuchos::RCP<ROL::Vector<RealT> > ajv = up->clone();
+    ROL::Ptr<ROL::Vector<RealT> > ajv = up->clone();
     std::ofstream ajacFile;
     ajacFile.open("adjoint-jacobian.txt");
     for (int j = 0; j < 9*n+10; ++j) {

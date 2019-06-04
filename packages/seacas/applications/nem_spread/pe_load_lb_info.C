@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -34,15 +34,16 @@
  */
 #include <cassert>
 #include <cstddef> // for size_t
-#include <cstdio>  // for printf, fprintf, stderr, etc
+#include <cstdio>  // for stderr, etc
 #include <cstdlib> // for exit, malloc
+#include <string>
 
-#include "exodusII.h"   // for ex_inquire, ex_opts, etc
-#include "globals.h"    // for ELEM_COMM_MAP, etc
-#include "nem_spread.h" // for NemSpread, etc
-#include "pe_common.h"  // for PEX_MAX
-#include "rf_allo.h"    // for array_alloc, safe_free
-#include "rf_format.h"
+#include "exodusII.h" // for ex_inquire, ex_opts, etc
+#include "fmt/ostream.h"
+#include "globals.h"     // for ELEM_COMM_MAP, etc
+#include "nem_spread.h"  // for NemSpread, etc
+#include "pe_common.h"   // for PEX_MAX
+#include "rf_allo.h"     // for array_alloc, safe_free
 #include "rf_io_const.h" // for Debug_Flag, Exo_LB_File
 #include "rf_util.h"     // for print_line
 #include "sort_utils.h"  // for gds_qsort
@@ -96,27 +97,26 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
  */
 {
 
-  int         lb_exoid      = 0;
-  INT         cmap_max_size = 0, *comm_vec;
-  const char *yo            = "load_lb_info";
-  char        Title[MAX_LINE_LENGTH + 1];
-  float       version;
+  int   lb_exoid      = 0;
+  INT   cmap_max_size = 0, *comm_vec;
+  char  Title[MAX_LINE_LENGTH + 1];
+  float version;
 
   int cpu_ws = 0;
 
   /******************************** START EXECUTION ****************************/
   if (Debug_Flag != 0) {
-    printf("\nStart to read in and distribute the load balance info\n");
+    fmt::print("\nStart to read in and distribute the load balance info\n");
   }
 
   /* Open the Load Balance exoII file for reading */
 
-  printf("EXODUS II load-balance file: %s\n", Exo_LB_File);
+  fmt::print("EXODUS II load-balance file: {}\n", Exo_LB_File.c_str());
   cpu_ws     = io_ws;
   int mode   = EX_READ | int64api;
   int iio_ws = 0; // Don't interfere with exodus files; this is the nemesis file.
-  if ((lb_exoid = ex_open(Exo_LB_File, mode, &cpu_ws, &iio_ws, &version)) == -1) {
-    fprintf(stderr, "%sERROR: Couldn\'t open lb file, %s\n", yo, Exo_LB_File);
+  if ((lb_exoid = ex_open(Exo_LB_File.c_str(), mode, &cpu_ws, &iio_ws, &version)) == -1) {
+    fmt::print(stderr, "[{}] ERROR: Couldn\'t open lb file, {}\n", __func__, Exo_LB_File.c_str());
     exit(1);
   }
 
@@ -153,10 +153,12 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
                Bor_Elem_Num, Node_Comm_Num, Elem_Comm_Num, Title);
 
   /* Allocate memory for the communication map arrays */
-  globals.N_Comm_Map = (NODE_COMM_MAP<INT> **)malloc(Proc_Info[2] * sizeof(NODE_COMM_MAP<INT> *));
-  globals.E_Comm_Map = (ELEM_COMM_MAP<INT> **)malloc(Proc_Info[2] * sizeof(ELEM_COMM_MAP<INT> *));
+  globals.N_Comm_Map =
+      static_cast<NODE_COMM_MAP<INT> **>(malloc(Proc_Info[2] * sizeof(NODE_COMM_MAP<INT> *)));
+  globals.E_Comm_Map =
+      static_cast<ELEM_COMM_MAP<INT> **>(malloc(Proc_Info[2] * sizeof(ELEM_COMM_MAP<INT> *)));
   if (!globals.N_Comm_Map || !globals.E_Comm_Map) {
-    fprintf(stderr, "ERROR: Insufficient memory!\n");
+    fmt::print(stderr, "[{}] ERROR: Insufficient memory!\n", __func__);
     exit(1);
   }
 
@@ -168,18 +170,19 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
      * elemental communication map is supported.
      */
     if (globals.Num_N_Comm_Maps[iproc] > 1 || globals.Num_E_Comm_Maps[iproc] > 1) {
-      fprintf(stderr, "%s: ERROR. Only 1 nodal and elemental comm map "
-                      "is supported\n",
-              yo);
+      fmt::print(stderr,
+                 "[{}] ERROR. Only 1 nodal and elemental comm map "
+                 "is supported\n",
+                 __func__);
       exit(1);
     }
     else {
 
       /* Always allocate at least one and initialize the counts to 0 */
-      globals.N_Comm_Map[iproc] = (NODE_COMM_MAP<INT> *)malloc(
-          PEX_MAX(1, globals.Num_N_Comm_Maps[iproc]) * sizeof(NODE_COMM_MAP<INT>));
+      globals.N_Comm_Map[iproc] = static_cast<NODE_COMM_MAP<INT> *>(
+          malloc(PEX_MAX(1, globals.Num_N_Comm_Maps[iproc]) * sizeof(NODE_COMM_MAP<INT>)));
       if (globals.N_Comm_Map[iproc] == nullptr && globals.Num_N_Comm_Maps[iproc] > 0) {
-        fprintf(stderr, "%s: ERROR. Insufficient memory for nodal comm. map!\n", yo);
+        fmt::print(stderr, "[{}] ERROR. Insufficient memory for nodal comm. map!\n", __func__);
         exit(1);
       }
 
@@ -187,10 +190,10 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
         ((globals.N_Comm_Map[iproc]) + ijump)->node_cnt = 0;
       }
 
-      globals.E_Comm_Map[iproc] = (ELEM_COMM_MAP<INT> *)malloc(
-          PEX_MAX(1, globals.Num_E_Comm_Maps[iproc]) * sizeof(ELEM_COMM_MAP<INT>));
+      globals.E_Comm_Map[iproc] = static_cast<ELEM_COMM_MAP<INT> *>(
+          malloc(PEX_MAX(1, globals.Num_E_Comm_Maps[iproc]) * sizeof(ELEM_COMM_MAP<INT>)));
       if (globals.E_Comm_Map[iproc] == nullptr && globals.Num_E_Comm_Maps[iproc] > 0) {
-        fprintf(stderr, "%s: ERROR. Insufficient memory for elemental comm. map!\n", yo);
+        fmt::print(stderr, "[{}] ERROR. Insufficient memory for elemental comm. map!\n", __func__);
         exit(1);
       }
 
@@ -225,7 +228,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
     if (ex_get_processor_node_maps(
             lb_exoid, &Integer_Vector[0], &Integer_Vector[Int_Node_Num[iproc]],
             &Integer_Vector[Int_Node_Num[iproc] + Bor_Node_Num[iproc]], iproc) < 0) {
-      fprintf(stderr, "%s: ERROR, failed to get node map for Proc %d!\n", yo, iproc);
+      fmt::print(stderr, "[{}] ERROR, failed to get node map for Proc {}!\n", __func__, iproc);
       exit(1);
     }
 
@@ -234,7 +237,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
     /* Get the element map for processor number "iproc" */
     if (ex_get_processor_elem_maps(lb_exoid, &Integer_Vector[vec_indx],
                                    &Integer_Vector[vec_indx + Int_Elem_Num[iproc]], iproc) < 0) {
-      fprintf(stderr, "%s: ERROR, failed to get element map for Proc %d!\n", yo, iproc);
+      fmt::print(stderr, "[{}] ERROR, failed to get element map for Proc {}!\n", __func__, iproc);
       exit(1);
     }
 
@@ -245,11 +248,12 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
                            &Integer_Vector[vec_indx + comm_vec[ijump + 1]], iproc) < 0) {
         /*
          * If there are disconnected mesh pieces, then it is
-         * possible that there is no comminication between the
+         * possible that there is no communication between the
          * pieces and there will be no communication maps.  Normally
          * this is a problem, so output a warning, but don't abort.
          */
-        fprintf(stderr, "%s: WARNING. Failed to get nodal comm map for Proc %d!\n", yo, iproc);
+        fmt::print(stderr, "[{}] WARNING. Failed to get nodal comm map for Proc {}!\n", __func__,
+                   iproc);
       }
     }
 
@@ -259,7 +263,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
       if (ex_get_elem_cmap(lb_exoid, comm_vec[ijump + 2], &Integer_Vector[vec_indx],
                            &Integer_Vector[vec_indx + comm_vec[ijump + 3]],
                            &Integer_Vector[vec_indx + 2 * comm_vec[ijump + 3]], iproc) < 0) {
-        fprintf(stderr, "%s: ERROR. Failed to get elemental comm map for Proc %d!\n", yo, iproc);
+        fmt::print(stderr, "[{}] ERROR. Failed to get elemental comm map for Proc {}!\n", __func__,
+                   iproc);
         exit(1);
       }
     }
@@ -285,7 +290,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
 
   /* Close the load balance file - we are finished with it */
   if (ex_close(lb_exoid) == -1) {
-    fprintf(stderr, "%sERROR: Error in closing load balance file\n", yo);
+    fmt::print(stderr, "[{}] ERROR: Error in closing load balance file\n", __func__);
     exit(1);
   }
 
@@ -315,104 +320,103 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
   for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
     if (globals.Num_Internal_Nodes[iproc] == 0 && globals.Num_Border_Nodes[iproc] == 0 &&
         globals.Num_External_Nodes[iproc] == 0) {
-      fprintf(stderr, "\n%s: WARNING, Processor %d has no nodes!\n", yo, iproc);
+      fmt::print(stderr, "\n[{}] WARNING, Processor {} has no nodes!\n", __func__, iproc);
     }
     if (globals.Num_Internal_Elems[iproc] == 0 && globals.Num_Border_Elems[iproc] == 0) {
-      fprintf(stderr, "\n%s: WARNING, Processor %d has no elements!\n", yo, iproc);
+      fmt::print(stderr, "\n[{}] WARNING, Processor {} has no elements!\n", __func__, iproc);
     }
   }
 
   /*========================================================================*/
 
   if (Debug_Flag != 0) {
-    printf("\nFinished distributing load balance info\n");
+    fmt::print("\nFinished distributing load balance info\n");
   }
 
-  /* Output Detailed timing information for the progam */
+  /* Output Detailed timing information for the program */
   /*
    * Print out a Large table of Load Balance Information if the debug_flag
    * setting is large enough
    */
 
   if (Debug_Flag >= 7) {
-    printf("\n\n");
+    fmt::print("\n\n");
     print_line("=", 79);
     for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
-      printf("\n\t***For Processor %d***\n", Proc_Ids[iproc]);
-      printf("\tInternal nodes owned by the current processor\n\t");
+      fmt::print("\n\t***For Processor {}***\n", Proc_Ids[iproc]);
+      fmt::print("\tInternal nodes owned by the current processor\n\t");
       for (INT i = 0; i < globals.Num_Internal_Nodes[iproc]; i++) {
-        printf(" " ST_ZU "", (size_t)globals.GNodes[iproc][i]);
+        fmt::print(" ", (size_t)globals.GNodes[iproc][i]);
       }
 
-      printf("\n");
+      fmt::print("\n");
 
-      printf("\tBorder nodes owned by the current processor\n\t");
+      fmt::print("\tBorder nodes owned by the current processor\n\t");
       for (INT i = 0; i < globals.Num_Border_Nodes[iproc]; i++) {
-        printf(" " ST_ZU "", (size_t)globals.GNodes[iproc][i + globals.Num_Internal_Nodes[iproc]]);
+        fmt::print(" ", (size_t)globals.GNodes[iproc][i + globals.Num_Internal_Nodes[iproc]]);
       }
 
-      printf("\n");
+      fmt::print("\n");
 
       if (globals.Num_External_Nodes[iproc] > 0) {
-        printf("\tExternal nodes needed by the current processor\n\t");
+        fmt::print("\tExternal nodes needed by the current processor\n\t");
         for (INT i = 0; i < globals.Num_External_Nodes[iproc]; i++) {
-          printf(" " ST_ZU "", (size_t)globals.GNodes[iproc][i + globals.Num_Internal_Nodes[iproc] +
-                                                             globals.Num_Border_Nodes[iproc]]);
+          fmt::print(" {}", (size_t)globals.GNodes[iproc][i + globals.Num_Internal_Nodes[iproc] +
+                                                          globals.Num_Border_Nodes[iproc]]);
         }
 
-        printf("\n");
+        fmt::print("\n");
       }
 
-      printf("\tInternal elements owned by the current processor\n\t");
+      fmt::print("\tInternal elements owned by the current processor\n\t");
       for (INT i = 0; i < globals.Num_Internal_Elems[iproc]; i++) {
-        printf(" " ST_ZU "", (size_t)globals.GElems[iproc][i]);
+        fmt::print(" {}", (size_t)globals.GElems[iproc][i]);
       }
 
-      printf("\n");
+      fmt::print("\n");
 
       if (globals.Num_Border_Elems[iproc] > 0) {
-        printf("\tBorder elements owned by the current processor\n\t");
+        fmt::print("\tBorder elements owned by the current processor\n\t");
         for (INT i = 0; i < globals.Num_Border_Elems[iproc]; i++) {
-          printf(" " ST_ZU "",
-                 (size_t)globals.GElems[iproc][i + globals.Num_Internal_Elems[iproc]]);
+          fmt::print(" {}", (size_t)globals.GElems[iproc][i + globals.Num_Internal_Elems[iproc]]);
         }
 
-        printf("\n");
+        fmt::print("\n");
       }
 
       if (globals.Num_N_Comm_Maps[iproc] > 0) {
-        printf("\tNodal Comm Map for the current processor\n");
-        printf("\t\tnode IDs:");
+        fmt::print("\tNodal Comm Map for the current processor\n");
+        fmt::print("\t\tnode IDs:");
         for (size_t i = 0; i < globals.N_Comm_Map[iproc]->node_cnt; i++) {
-          printf(" " ST_ZU "", (size_t)globals.N_Comm_Map[iproc]->node_ids[i]);
+          fmt::print(" {}", (size_t)globals.N_Comm_Map[iproc]->node_ids[i]);
         }
-        printf("\n\t\tproc IDs:");
+        fmt::print("\n\t\tproc IDs:");
         for (size_t i = 0; i < globals.N_Comm_Map[iproc]->node_cnt; i++) {
-          printf(" " ST_ZU "", (size_t)globals.N_Comm_Map[iproc]->proc_ids[i]);
+          fmt::print(" {}", (size_t)globals.N_Comm_Map[iproc]->proc_ids[i]);
         }
 
-        printf("\n");
+        fmt::print("\n");
       }
 
       if (globals.Num_E_Comm_Maps[iproc] > 0) {
-        printf("\tElemental Comm Map for the current processor\n");
-        printf("\t\telement IDs:");
+        fmt::print("\tElemental Comm Map for the current processor\n");
+        fmt::print("\t\telement IDs:");
         for (size_t i = 0; i < globals.E_Comm_Map[iproc]->elem_cnt; i++) {
-          printf(" " ST_ZU "", (size_t)globals.E_Comm_Map[iproc]->elem_ids[i]);
+          fmt::print(" {}", (size_t)globals.E_Comm_Map[iproc]->elem_ids[i]);
         }
-        printf("\n\t\tside IDs:");
+        fmt::print("\n\t\tside IDs:");
         for (size_t i = 0; i < globals.E_Comm_Map[iproc]->elem_cnt; i++) {
-          printf(" " ST_ZU "", (size_t)globals.E_Comm_Map[iproc]->side_ids[i]);
+          fmt::print(" {}", (size_t)globals.E_Comm_Map[iproc]->side_ids[i]);
         }
-        printf("\n\t\tproc IDs:");
+        fmt::print("\n\t\tproc IDs:");
         for (size_t i = 0; i < globals.E_Comm_Map[iproc]->elem_cnt; i++) {
-          printf(" " ST_ZU "", (size_t)globals.E_Comm_Map[iproc]->proc_ids[i]);
+          fmt::print(" {}", (size_t)globals.E_Comm_Map[iproc]->proc_ids[i]);
         }
 
-        printf("\n");
+        fmt::print("\n");
       }
     }
-    printf("\n");
+    fmt::print("\n");
     print_line("=", 79);
   }
 
@@ -424,17 +428,17 @@ template <typename T, typename INT>
 void NemSpread<T, INT>::process_lb_data(INT *Integer_Vector, int indx)
 
 /*
-*       Function which reads the load balance information from the processor's
-*       communication buffer.
-*
-*       Author:          Scott Hutchinson (1421)
-*       Date:            11 March 1993
-*       Revised:         11 March 1993
-*
-* int *Integer_Vector;   Data structure for sending int data to processors
-*               (ptr to vector of length, length_int)
-*
-*/
+ *       Function which reads the load balance information from the processor's
+ *       communication buffer.
+ *
+ *       Author:          Scott Hutchinson (1421)
+ *       Date:            11 March 1993
+ *       Revised:         11 March 1993
+ *
+ * int *Integer_Vector;   Data structure for sending int data to processors
+ *               (ptr to vector of length, length_int)
+ *
+ */
 {
   /* Local variables */
   int icount = 0, itotal_nodes, itotal_elems, ig_count = 0;
@@ -450,11 +454,11 @@ void NemSpread<T, INT>::process_lb_data(INT *Integer_Vector, int indx)
   itotal_elems = globals.Num_Internal_Elems[indx] + globals.Num_Border_Elems[indx];
 
   /* Allocate Permament Arrays on the current processor */
-  globals.GNodes[indx] =
-      (INT *)array_alloc(__FILE__, __LINE__, 1, itotal_nodes + 2 * itotal_elems +
-                                                    2 * (globals.N_Comm_Map[indx]->node_cnt) +
-                                                    3 * (globals.E_Comm_Map[indx]->elem_cnt),
-                         sizeof(INT));
+  globals.GNodes[indx] = (INT *)array_alloc(__FILE__, __LINE__, 1,
+                                            itotal_nodes + 2 * itotal_elems +
+                                                2 * (globals.N_Comm_Map[indx]->node_cnt) +
+                                                3 * (globals.E_Comm_Map[indx]->elem_cnt),
+                                            sizeof(INT));
 
   globals.GElems[indx]               = globals.GNodes[indx] + itotal_nodes;
   globals.Elem_Map[indx]             = globals.GElems[indx] + itotal_elems;
@@ -560,11 +564,9 @@ void NemSpread<T, INT>::read_proc_init(int lb_exoid, int proc_info[], int **proc
  *
  */
 {
-  const char *yo = "read_proc_init";
-
   char ftype[2];
   if (ex_get_init_info(lb_exoid, &proc_info[0], &proc_info[1], ftype) < 0) {
-    fprintf(stderr, "%s: ERROR, could not get init info!\n", yo);
+    fmt::print(stderr, "[{}] ERROR, could not get init info!\n", __func__);
     exit(1);
   }
 
@@ -599,8 +601,6 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
  *
  */
 {
-  const char *yo = "read_lb_init";
-
   /*********************BEGIN EXECUTABLE STATEMENTS****************************/
 
   /* Read Set-up information from the load-balance file on Proc 0 */
@@ -609,8 +609,9 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
    * If debugging is not on go ahead and report errors from init. This
    * will show version mismatch information by default.
    */
+  int old_opt = 0;
   if (Debug_Flag == 0) {
-    ex_opts(EX_VERBOSE);
+    old_opt = ex_opts(EX_VERBOSE);
   }
 
   /* Read the title of the LB File and about the size of the mesh */
@@ -621,27 +622,28 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
   check_exodus_error(error, "ex_get_init");
 
   if (Debug_Flag == 0) {
-    ex_opts(!EX_VERBOSE);
+    ex_opts(old_opt);
   }
 
 #ifdef DEBUG
   if (Debug_Flag >= 2) {
-    printf("---------------------------------------------------------\n");
-    printf("\t\tLoad balance file global information\n");
-    printf("---------------------------------------------------------\n");
-    printf("\tNumber of nodes: %d\n", num_nodes);
-    printf("\tNumber of elements: %d\n", num_elem);
-    printf("\tNumber of element blocks: %d\n", num_elem_blk);
-    printf("---------------------------------------------------------\n");
+    fmt::print("---------------------------------------------------------\n"
+               "\t\tLoad balance file global information\n"
+               "---------------------------------------------------------\n"
+               "\tNumber of nodes:          {:n}\n"
+               "\tNumber of elements:       {:n}\n"
+               "\tNumber of element blocks: {:n}\n"
+               "---------------------------------------------------------\n",
+               num_nodes, num_elem, num_elem_blk);
   }
 #endif
 
   /* Cross-check the load balance file info against the mesh info */
   if (((size_t)num_nodes != globals.Num_Node) || ((size_t)num_elem != globals.Num_Elem) ||
       (num_elem_blk != globals.Num_Elem_Blk)) {
-    fprintf(stderr, "%s: ERROR: Problem dimensions in the LB File don't match with those \
+    fmt::print(stderr, "[{}] ERROR: Problem dimensions in the LB File don't match with those \
 in mesh file",
-            yo);
+               __func__);
     exit(1);
   }
 
@@ -679,26 +681,28 @@ in mesh file",
     if (ex_get_loadbal_param(lb_exoid, &Int_Node_Num[i], &Bor_Node_Num[i], &Ext_Node_Num[i],
                              &Int_Elem_Num[i], &Bor_Elem_Num[i], &Node_Comm_Num[i],
                              &Elem_Comm_Num[i], i) < 0) {
-      fprintf(stderr, "%s: ERROR, could not get load balance params!\n", yo);
+      fmt::print(stderr, "[{}] ERROR, could not get load balance params!\n", __func__);
       exit(1);
     }
 
 #ifdef DEBUG
     if (Debug_Flag >= 5) {
       if (i == 0) {
-        printf("--------------------------------------------------------\n");
-        printf("\t\tLoad balance parameters as read by Processor 0\n");
-        printf("--------------------------------------------------------\n");
+        fmt::print("--------------------------------------------------------\n"
+                   "\t\tLoad balance parameters as read by Processor 0\n"
+                   "--------------------------------------------------------\n");
       }
-      printf("Read on processor 0 for processor %d:\n", i);
-      printf("\tNumber internal nodes: %d\n", Int_Node_Num[i]);
-      printf("\tNumber border nodes: %d\n", Bor_Node_Num[i]);
-      printf("\tNumber external nodes: %d\n", Ext_Node_Num[i]);
-      printf("\tNumber internal elements: %d\n", Int_Elem_Num[i]);
-      printf("\tNumber border elements: %d\n", Bor_Elem_Num[i]);
-      printf("\tNumber of nodal comm maps: %d\n", Node_Comm_Num[i]);
-      printf("\tNumber of elemental comm maps: %d\n", Elem_Comm_Num[i]);
-      printf("--------------------------------------------------------\n");
+      fmt::print("Read on processor 0 for processor  {:n}\n"
+                 "\tNumber internal nodes:         {:n}\n"
+                 "\tNumber border nodes:           {:n}\n"
+                 "\tNumber external nodes:         {:n}\n"
+                 "\tNumber internal elements:      {:n}\n"
+                 "\tNumber border elements:       {:n}\n"
+                 "\tNumber of nodal comm maps:     {:n}\n"
+                 "\tNumber of elemental comm maps: {:n}\n"
+                 "--------------------------------------------------------\n",
+                 i, Int_Node_Num[i], Bor_Node_Num[i], Ext_Node_Num[i], Int_Elem_Num[i],
+                 Bor_Elem_Num[i], Node_Comm_Num[i], Elem_Comm_Num[i]);
     }
 #endif /* DEBUG */
 
@@ -723,20 +727,20 @@ in mesh file",
    */
   if (Debug_Flag >= 3) {
     print_line("=", 79);
-    printf("\n\t\tTABLE OF LOAD BALANCE STATISTICS\n\n");
-    printf("%s%s\n", "globals. Int_Nodes Bor_Nodes Ext_Nodes",
-           " Int_Elems Bor_Elems N_Comm_Maps E_Comm_Maps");
+    fmt::print("\n\t\tTABLE OF LOAD BALANCE STATISTICS\n\n");
+    fmt::print("{}{}\n", "globals. Int_Nodes Bor_Nodes Ext_Nodes",
+               " Int_Elems Bor_Elems N_Comm_Maps E_Comm_Maps");
     print_line("-", 79);
-    printf("\n");
+    fmt::print("\n");
     for (int i = 0; i < Proc_Info[2]; i++) {
-      printf("%6lu  %6lu  %6lu   %6lu    %6lu    %6lu     %6lu     %6lu\n", (size_t)Proc_Ids[i],
-             (size_t)globals.Num_Internal_Nodes[i], (size_t)globals.Num_Border_Nodes[i],
-             (size_t)globals.Num_External_Nodes[i], (size_t)globals.Num_Internal_Elems[i],
-             (size_t)globals.Num_Border_Elems[i], (size_t)globals.Num_N_Comm_Maps[i],
-             (size_t)globals.Num_E_Comm_Maps[i]);
+      fmt::print("{:6d}  {:6d}  {:6d}   {:6d}    {:6d}    {:6d}     {:6d}     {:6d}\n",
+                 (size_t)Proc_Ids[i], (size_t)globals.Num_Internal_Nodes[i],
+                 (size_t)globals.Num_Border_Nodes[i], (size_t)globals.Num_External_Nodes[i],
+                 (size_t)globals.Num_Internal_Elems[i], (size_t)globals.Num_Border_Elems[i],
+                 (size_t)globals.Num_N_Comm_Maps[i], (size_t)globals.Num_E_Comm_Maps[i]);
     }
     print_line("=", 79);
-    printf("\n\n");
+    fmt::print("\n\n");
   }
 
 } /* END of read_lb_init () **************************************************/
@@ -754,13 +758,11 @@ void NemSpread<T, INT>::read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *
  * read_cmap_params:
  *
  *	This function reads the parameters for the communication maps.
- * Processor 0 reads each processors paramters and then a broadcast of
+ * Processor 0 reads each processors parameters and then a broadcast of
  * this information is performed and each processor extracts it's
  * information.
  */
 {
-  const char *yo = "read_cmap_params";
-
   /*
    * Calculate the length of the longest vector needed. There is a
    * factor of 2 here, one for the counts, and one for the IDs.
@@ -790,7 +792,7 @@ void NemSpread<T, INT>::read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *
     /* Read the communication map IDs for processor "iproc" */
     if (ex_get_cmap_params(lb_exoid, node_cm_ids, node_cm_cnts, elem_cm_ids, elem_cm_cnts, iproc) <
         0) {
-      fprintf(stderr, "%s: ERROR, unable to read communication map params\n", yo);
+      fmt::print(stderr, "[{}] ERROR, unable to read communication map params\n", __func__);
       exit(1);
     }
 
@@ -840,8 +842,8 @@ void NemSpread<T, INT>::read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *
 
   if (Debug_Flag >= 4) {
     print_line("=", 79);
-    printf("\t\tCOMMUNICATION MAP INFORMATION\n");
-    printf("\t\t   largest cmap = " ST_ZU " integers\n", (size_t)*cmap_max_size);
+    fmt::print("\t\tCOMMUNICATION MAP INFORMATION\n");
+    fmt::print("\t\t   largest cmap = {} integers\n", (size_t)*cmap_max_size);
     print_line("=", 79);
 
     int bprnt_n = 0;
@@ -857,28 +859,28 @@ void NemSpread<T, INT>::read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *
     }
 
     if (bprnt_n > 0) {
-      printf("\tFor Proc\tNode Map ID\tNode Count\n");
-      printf("\t------------------------------------------------\n");
+      fmt::print("\tFor Proc\tNode Map ID\tNode Count\n");
+      fmt::print("\t------------------------------------------------\n");
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
         if (globals.Num_N_Comm_Maps[iproc] > 0) {
           for (int i1 = 0; i1 < globals.Num_N_Comm_Maps[iproc]; i1++) {
-            printf("\t     " ST_ZU "\t\t    " ST_ZU "\t\t    " ST_ZU "\n", (size_t)Proc_Ids[iproc],
-                   (size_t)(N_Comm_Map[iproc] + i1)->map_id,
-                   (size_t)(N_Comm_Map[iproc] + i1)->node_cnt);
+            fmt::print("\t     {}\t\t    {}\t\t    {}\n", (size_t)Proc_Ids[iproc],
+                       (size_t)(N_Comm_Map[iproc] + i1)->map_id,
+                       (size_t)(N_Comm_Map[iproc] + i1)->node_cnt);
           }
         }
       }
     }
 
     if (bprnt_e > 0) {
-      printf("\tFor Proc\tElem Map ID\tElem Count\n");
-      printf("\t------------------------------------------------\n");
+      fmt::print("\tFor Proc\tElem Map ID\tElem Count\n");
+      fmt::print("\t------------------------------------------------\n");
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
         if (globals.Num_E_Comm_Maps[iproc] > 0) {
           for (int i1 = 0; i1 < globals.Num_E_Comm_Maps[iproc]; i1++) {
-            printf("\t     " ST_ZU "\t\t    " ST_ZU "\t\t    " ST_ZU "\n", (size_t)Proc_Ids[iproc],
-                   (size_t)(E_Comm_Map[iproc] + i1)->map_id,
-                   (size_t)(E_Comm_Map[iproc] + i1)->elem_cnt);
+            fmt::print("\t     {}\t\t    {}\t\t    {}\n", (size_t)Proc_Ids[iproc],
+                       (size_t)(E_Comm_Map[iproc] + i1)->map_id,
+                       (size_t)(E_Comm_Map[iproc] + i1)->elem_cnt);
           }
         }
       }

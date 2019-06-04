@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -72,23 +72,21 @@ struct Parallel_IO
   int NoSubdirectory;
 
   /* The root location of the parallel disks */
-  char Par_Dsk_Root[MAX_FNL];
+  std::string Par_Dsk_Root;
 
   /* The subdirectory to write files to */
-  char Par_Dsk_SubDirec[MAX_FNL];
+  std::string Par_Dsk_SubDirec;
 
   /* The filename extension for the parallel files */
-  char Exo_Extension[MAX_FNL];
+  std::string Exo_Extension;
 
-  char Staged_Writes[5];
+  bool Staged_Writes;
 };
 
 extern struct Parallel_IO PIO_Info;
 
-extern char Par_Nem_File_Name[]; /* The parallel nemesis file name */
+extern std::string Par_Nem_File_Name; /* The parallel nemesis file name */
 
-int  read_pexoII_info(const char *);
-void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int proc, int nproc);
-std::string gen_par_filename(const char *scalar_fname, int proc_for, int nprocs);
-void add_fname_ext(char *cOrigFile, const char *cExt);
+void        gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int proc, int nproc);
+std::string gen_par_filename(const std::string &scalar_fname, int proc_for, int nprocs);
 #endif

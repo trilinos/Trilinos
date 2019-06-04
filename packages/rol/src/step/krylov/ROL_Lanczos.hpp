@@ -48,8 +48,7 @@
 #include "ROL_LinearOperator.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_LAPACK.hpp"
 
 namespace ROL {
 
@@ -64,7 +63,7 @@ namespace ROL {
 template<class Real>
 class Lanczos { 
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
+  template <typename T> using ROL::Ptr = ROL::Ptr<T>;
   template <typename T> using vector = std::vector<T>;
 
   template typename vector<Real> size_type uint;
@@ -72,13 +71,13 @@ class Lanczos {
   typedef Vector<Real>         V;
   typedef LinearOperator<Real> OP;
 
-  typedef Teuchos::ParameterList PL;
+  typedef ROL::ParameterList PL;
 
 private:
 
-  Teuchos::LAPACK<int,Real> lapack_;
+  ROL::LAPACK<int,Real> lapack_;
 
-  vector<RCP<V> > Q_;     // Orthogonal basis
+  vector<ROL::Ptr<V> > Q_;     // Orthogonal basis
   vector<Real>    alpha_; // Diagonal recursion coefficients
   vector<Real>    beta_;  // Sub/super-diagonal recursion coefficients
   
@@ -92,7 +91,7 @@ private:
   vector<Real> work_;     // Scratch space for eigenvalue decomposition
   vector<int>  ipiv_;     // Pivots for LU
 
-  RCP<V> u_;              // An auxilliary vector
+  ROL::Ptr<V> u_;              // An auxilliary vector
 
   Real max_beta_;          // maximum beta encountered
   Real tol_beta_;          // relative smallest beta allowed
@@ -149,7 +148,7 @@ public:
   };
  
 
-  Lanczos( Teuchos::ParameterList &PL ) {
+  Lanczos( ROL::ParameterList &PL ) {
     PL &krylovList = parlist.sublist("General").sublist("Krylov");
     PL &lanczosList = krylovList.sublist("Lanczos");
 

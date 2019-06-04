@@ -47,49 +47,40 @@
 PyTrilinos.Isorropia.Epetra is the python interface to namespace Epetra for
 the Trilinos package Isorropia:
 
-    http://trilinos.sandia.gov/packages/isorropia
+    https://trilinos.org/docs/dev/packages/isorropia/doc/html/index.html
 
 The purpose of Isorropia.Epetra is to ....
+"
+%enddef
+
+%define %isorropia_epetra_importcode
+"
+from . import _Epetra
 "
 %enddef
 
 %module(package      = "PyTrilinos.Isorropia",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring    = %isorropia_epetra_docstring) IsorropiaEpetra
+        moduleimport = %isorropia_epetra_importcode,
+	docstring    = %isorropia_epetra_docstring) Epetra
 
 %{
 // Configuration
 #include "PyTrilinos_config.h"
 
-// Teuchos includes
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// Isorropia includes
-#include "Isorropia_EpetraOperator.hpp"
-#include "Isorropia_EpetraColorer.hpp"
-#include "Isorropia_EpetraPartitioner.hpp"
-#include "Isorropia_EpetraPartitioner2D.hpp"
-#include "Isorropia_EpetraRedistributor.hpp"
-#include "Isorropia_EpetraCostDescriber.hpp"
-#include "Isorropia_EpetraOrderer.hpp"
-#include "Isorropia_EpetraLevelScheduler.hpp"
+// Isorropia include files
+#include "PyTrilinos_Isorropia_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
-#define SWIG_FILE_WITH_INIT
 #include "numpy_include.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_Epetra_Util.hpp"
 %}
 
 // Configuration
@@ -133,7 +124,7 @@ The purpose of Isorropia.Epetra is to ....
   }
 }
 
-// Include Isorropia documentation (same as for Isorropia.__init__.i)
+// Include Isorropia documentation (same as for Isorropia.i)
 %include "Isorropia_dox.i"
 
 // General ignore directives
@@ -141,41 +132,47 @@ The purpose of Isorropia.Epetra is to ....
 %ignore *::operator<<;
 %ignore operator<<;
 
+// Configuration
+%include "PyTrilinos_config.h"
+%include "Isorropia_config.h"
+%include "Isorropia_ConfigDefs.hpp"
+
 // Teuchos interface import
 %import "Teuchos.i"
 
 // numpy interface import
 %include "numpy.i"
 
-
 // Epetra interface import
 %import "Epetra.i"
 
-// Allow import from the current directory
+// The %import directives that follow generate an 'import Base' python
+// command that does not work in python 3.  Add the current directory
+// to the search path so that it does work.
 %pythoncode
 %{
 import sys, os.path as op
 thisDir = op.dirname(op.abspath(__file__))
-if not thisDir   in sys.path: sys.path.append(thisDir  )
+if not thisDir in sys.path: sys.path.append(thisDir)
 del sys, op
 %}
 
 // Isorropia import (let SWIG know about the base classes that will be
 // needed for the derived classes below)
 %teuchos_rcp(Isorropia::Operator)
-%import(module="__init__") "Isorropia_Operator.hpp"
+%import(module="Base") "Isorropia_Operator.hpp"
 %teuchos_rcp(Isorropia::Colorer)
-%import(module="__init__") "Isorropia_Colorer.hpp"
+%import(module="Base") "Isorropia_Colorer.hpp"
 %teuchos_rcp(Isorropia::Partitioner)
-%import(module="__init__") "Isorropia_Partitioner.hpp"
+%import(module="Base") "Isorropia_Partitioner.hpp"
 %teuchos_rcp(Isorropia::Redistributor)
-%import(module="__init__") "Isorropia_Redistributor.hpp"
+%import(module="Base") "Isorropia_Redistributor.hpp"
 %teuchos_rcp(Isorropia::CostDescriber)
-%import(module="__init__") "Isorropia_CostDescriber.hpp"
+%import(module="Base") "Isorropia_CostDescriber.hpp"
 %teuchos_rcp(Isorropia::Orderer)
-%import(module="__init__") "Isorropia_Orderer.hpp"
+%import(module="Base") "Isorropia_Orderer.hpp"
 %teuchos_rcp(Isorropia::LevelScheduler)
-%import(module="__init__") "Isorropia_LevelScheduler.hpp"
+%import(module="Base") "Isorropia_LevelScheduler.hpp"
 
 /////////////////////////////////////////
 // Isorropia::Epetra::Operator support //
@@ -203,8 +200,6 @@ del sys, op
 //////////////////////////////////////////////
 // Isorropia::Epetra::Partitioner2D support //
 //////////////////////////////////////////////
-//%teuchos_rcp(Isorropia::Epetra::Partioner2D)
-//%include "Isorropia_EpetraPartitioner2D.hpp"
 
 //////////////////////////////////////////////
 // Isorropia::Epetra::Redistributor support //

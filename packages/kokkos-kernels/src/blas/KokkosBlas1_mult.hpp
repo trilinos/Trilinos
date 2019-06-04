@@ -73,14 +73,14 @@ mult (typename YMV::const_value_type& gamma,
   static_assert (AV::rank == 1, "KokkosBlas::mult: A must have rank 1.");
 
   // Check compatibility of dimensions at run time.
-  if (Y.dimension_0 () != A.dimension_0 () ||
-      Y.dimension_0 () != X.dimension_0 () ||
-      Y.dimension_1 () != X.dimension_1 ()) {
+  if (Y.extent(0) != A.extent(0) ||
+      Y.extent(0) != X.extent(0) ||
+      Y.extent(1) != X.extent(1)) {
     std::ostringstream os;
     os << "KokkosBlas::mult: Dimensions do not match: "
-       << "Y: " << Y.dimension_0 () << " x " << Y.dimension_1 ()
-       << ", A: " << A.dimension_0 () << " x " << A.dimension_0 ()
-       << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ();
+       << "Y: " << Y.extent(0) << " x " << Y.extent(1)
+       << ", A: " << A.extent(0) << " x " << A.extent(0)
+       << ", X: " << X.extent(0) << " x " << X.extent(1);
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 

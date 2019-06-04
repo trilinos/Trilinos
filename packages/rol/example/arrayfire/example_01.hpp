@@ -74,7 +74,7 @@ public:
   Real value(const ROL::Vector<Real> &x, Real &tol) {
 
     const ROL::ArrayFireVector<Real, Element> &ex = dynamic_cast<const ROL::ArrayFireVector<Real, Element>&>(x);
-    Teuchos::RCP<const af::array> afVector = ex.getVector();
+    ROL::Ptr<const af::array> afVector = ex.getVector();
 
     Element one(1);
 
@@ -89,8 +89,8 @@ public:
 
     const ROL::ArrayFireVector<Real, Element> &ex = dynamic_cast<const ROL::ArrayFireVector<Real, Element>&>(x);
     ROL::ArrayFireVector<Real, Element> &eg = dynamic_cast<ROL::ArrayFireVector<Real, Element>&>(g);
-    Teuchos::RCP<const af::array> afx = ex.getVector();
-    Teuchos::RCP<af::array> afg = eg.getVector();
+    ROL::Ptr<const af::array> afx = ex.getVector();
+    ROL::Ptr<af::array> afg = eg.getVector();
 
     Element one(1), two(2), four(4);
 
@@ -114,10 +114,10 @@ public:
   /* needs reimplementing
 		void hessVec(Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
 
-			using Teuchos::RCP;
-			RCP<const vector> xp = getVector<XPrim>(x);
-			RCP<const vector> vp = getVector<XPrim>(v);
-			RCP<vector> hvp = getVector<XDual>(hv);
+			
+			ROL::Ptr<const vector> xp = getVector<XPrim>(x);
+			ROL::Ptr<const vector> vp = getVector<XPrim>(v);
+			ROL::Ptr<vector> hvp = getVector<XDual>(hv);
 
 			uint n = xp->size();
 			for (uint i = 0; i<n / 2; i++) {

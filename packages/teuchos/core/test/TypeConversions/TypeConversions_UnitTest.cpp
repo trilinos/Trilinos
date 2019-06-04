@@ -73,10 +73,21 @@ typedef unsigned short unsigned_short_type;
 typedef unsigned int unsigned_int_type;
 typedef unsigned long unsigned_long_type;
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 typedef long long long_long_type;
 typedef unsigned long long unsigned_long_long_type;
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+
+template <class T>
+std::string valToString(const T &val)
+{
+  const int precision = std::numeric_limits<T>::digits10 + 10; // Be super safe!
+  //std::cout << "precision = " << precision << "\n";
+  std::ostringstream os;
+  os.precision(precision);
+  os << val;
+  return os.str();
+}
+
 
 //
 // Tests for conversions between built-in floating-point types.
@@ -279,9 +290,15 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   const float minusOneF = -1;
   const float maxF = std::numeric_limits<float>::max ();
 
+  out << "minF = " << minF << "\n";
+  out << "maxF = " << maxF << "\n";
+
   const double minD = -std::numeric_limits<double>::max ();
   const double minusOneD = -1;
   const double maxD = std::numeric_limits<double>::max ();
+
+  out << "minD = " << minD << "\n";
+  out << "maxD = " << maxD << "\n";
 
   // mfh 26 Nov 2012: C89 does not mandate that "long double"
   // implement the extended-precision 80-bit format of IEEE 754.  In
@@ -308,12 +325,15 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   const long double minusOneLD = -1;
   const long double maxLD = std::numeric_limits<long double>::max ();
 
+  out << "minLD = " << minLD << "\n";
+  out << "maxLD = " << maxLD << "\n";
+
   float valF = 0;
   double valD = 0;
   long double valLD = 0;
 
   //
-  // Test string -> float conversions.
+  out << "Testing string -> float conversions ...\n";
   //
   {
     std::ostringstream os;
@@ -358,7 +378,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
 
   //
-  // Test string -> float conversions that should throw.
+  out << "Testing string -> float conversions that should throw ...\n";
   //
   {
     std::ostringstream os;
@@ -374,7 +394,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
 
   //
-  // Test string -> double conversions.
+  out << "Testing string -> double conversions ...\n";
   //
   {
     std::ostringstream os;
@@ -395,12 +415,9 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
     TEST_EQUALITY_CONST(valD, maxD);
   }
   {
-    std::ostringstream os;
-    os.precision (17);
-    os << minusOneD;
-    TEST_NOTHROW(valD = asSafe<double> (os.str ()));
+    TEST_NOTHROW(valD = asSafe<double> (valToString(minusOneD)));
     TEST_EQUALITY_CONST(valD, minusOneD);
-    TEST_NOTHROW(valD = as<double> (os.str ()));
+    TEST_NOTHROW(valD = as<double> (valToString(minusOneD)));
     TEST_EQUALITY_CONST(valD, minusOneD);
   }
 
@@ -408,23 +425,54 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   // Test string -> double conversions that should throw,
   // if sizeof(long double) > sizeof(double).
   //
-  if (sizeof (long double) > sizeof (double)) {
+  const int sizeof_long_double = sizeof(long double);
+  const int sizeof_double = sizeof(double);
+  const int max_exponent10_long_double = std::numeric_limits<long double>::max_exponent10;
+  const int max_exponent10_double = std::numeric_limits<double>::max_exponent10;
+
+  out << "sizeof_long_double = " << sizeof_long_double << "\n";
+  out << "sizeof_double = " << sizeof_double << "\n";
+  out << "max_exponent10_long_double = " << max_exponent10_long_double << "\n";
+  out << "max_exponent10_double = " << max_exponent10_double << "\n";
+ 
+  if (sizeof_long_double > sizeof_double
+    && max_exponent10_long_double > max_exponent10_double)
+  {
+    out << "Testing converting from 'long double' to 'double' that does not fit ...\n";
+
+    const long double maxTooBigLD_for_D = static_cast<long double>(maxD) * 10.0;
+    const long double minTooBigLD_for_D = static_cast<long double>(minD) * 10.0;
+    out << "maxTooBigLD_for_D = " << maxTooBigLD_for_D << "\n";
+    out << "minTooBigLD_for_D = " << minTooBigLD_for_D << "\n";
+
     {
-      std::ostringstream os;
-      os.precision (36);
-      os << minLD;
-      TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
+      TEST_THROW(valD = asSafe<double>(valToString(minTooBigLD_for_D)), std::range_error);
+      out << "valD = " << valD << "\n";
     }
     {
       std::ostringstream os;
       os.precision (36);
-      os << maxLD;
-      TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
+      TEST_THROW(valD = asSafe<double>(valToString(maxTooBigLD_for_D)), std::range_error);
+      out << "valD = " << valD << "\n";
     }
+
+    // NOTE: The above test avoids using std::numeric_limits<long
+    // double>::max() because with the CUDA compiler on shiller/hansen it
+    // returns 'inf'.  That completely breaks the test since "inf" is a valid
+    // value to read into a 'double'.
+    //
+    // This updated test takes std::numeric_limits<double>::max() * 10.0,
+    // writes to a string and then tries to read that back in as a 'dobule'.
+    // That cathces the bad conversion and thowns an exception as it should.
+    // This will work on any system where std::numeric_limits<long
+    // double>::max_expoent10 > std::numeric_limits<double>::max_expoent10
+    // (and this test is only run in cases where that is true).  See Trilinos
+    // GitHub issue #2407.
+
   }
 
   //
-  // Test string -> long double conversions.
+  out << "Testing string -> long double conversions ...\n";
   //
   {
     std::ostringstream os;
@@ -588,18 +636,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, doubl
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, int )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, long )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, unsigned_short_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, double, unsigned_int_type )
 // mfh 16,19 Nov 2012: See note above on formerly disabled tests.
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, double, unsigned_long_type )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, double, unsigned_long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // Instantiations of templated tests for conversions from float to
@@ -610,9 +654,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, int )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, long )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, unsigned_short_type )
 // mfh 16,19 Nov 2012: See note above on formerly disabled tests.
@@ -620,9 +662,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, flo
 // mfh 16,19 Nov 2012: See note above on formerly disabled tests.
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, float, unsigned_long_type )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, float, unsigned_long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 //
@@ -790,7 +830,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long, unsigned_int_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_type, unsigned_int_type )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 //
 // 3. "long long", "unsigned long long" tests
 //
@@ -832,7 +871,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long_long
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_long_type, unsigned_short_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long_long_type, unsigned_short_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_long_type, short )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // Instantiations of templated tests for conversions from signed to
@@ -844,9 +882,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, sh
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, int, unsigned_int_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, long, unsigned_long_type )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, long_long_type, unsigned_long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // Instantiations of templated tests for conversions between two
@@ -864,7 +900,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, sh
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, int )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, long )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, short, long_long_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, int, long_long_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, long_long_type )
@@ -872,7 +907,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_lon
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_long_type, int )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_long_type, long )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_long_type, long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // Tests for conversions from std::string to built-in integer types.
@@ -1016,14 +1050,12 @@ UNIT_TEST_GROUP_ANY_INTEGER( unsigned_int_type )
 //UNIT_TEST_GROUP_ANY_INTEGER( unsigned long )
 UNIT_TEST_GROUP_ANY_INTEGER( unsigned_long_type )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 //UNIT_TEST_GROUP_ANY_INTEGER( long long )
 UNIT_TEST_GROUP_ANY_INTEGER( long_long_type )
 //UNIT_TEST_GROUP_SIGNED_INTEGER( long long )
 UNIT_TEST_GROUP_SIGNED_INTEGER( long_long_type )
 //UNIT_TEST_GROUP_ANY_INTEGER( unsigned long long )
 UNIT_TEST_GROUP_ANY_INTEGER( unsigned_long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 } // namespace (anonymous)
 

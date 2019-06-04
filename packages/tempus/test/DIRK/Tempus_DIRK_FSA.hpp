@@ -40,34 +40,51 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-void test_sincos_fsa(const bool use_combined_method,
+void test_sincos_fsa(const std::string& method_name,
+                     const bool use_combined_method,
                      const bool use_dfdp_as_tangent,
                      Teuchos::FancyOStream &out, bool &success)
 {
   std::vector<std::string> RKMethods;
+  RKMethods.push_back("RK Backward Euler");
+  RKMethods.push_back("IRK 1 Stage Theta Method");
   RKMethods.push_back("SDIRK 1 Stage 1st order");
   RKMethods.push_back("SDIRK 2 Stage 2nd order");
   RKMethods.push_back("SDIRK 2 Stage 3rd order");
   RKMethods.push_back("EDIRK 2 Stage 3rd order");
+  RKMethods.push_back("EDIRK 2 Stage Theta Method");
   RKMethods.push_back("SDIRK 3 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
 
+  // Check that method_name is valid
+  if (method_name != "") {
+    auto it = std::find(RKMethods.begin(), RKMethods.end(), method_name);
+    TEUCHOS_TEST_FOR_EXCEPTION(it == RKMethods.end(), std::logic_error,
+                               "Invalid RK method name " << method_name);
+  }
+
   std::vector<double> RKMethodErrors;
   if (use_combined_method) {
+    RKMethodErrors.push_back(0.0428449);
+    RKMethodErrors.push_back(0.000297933);
     RKMethodErrors.push_back(0.0428449);
     RKMethodErrors.push_back(0.000144507);
     RKMethodErrors.push_back(8.65434e-06);
     RKMethodErrors.push_back(1.3468e-06);
+    RKMethodErrors.push_back(0.000297933);
     RKMethodErrors.push_back(5.44037e-07);
     RKMethodErrors.push_back(2.77342e-09);
     RKMethodErrors.push_back(1.21689e-10);
   }
   else {
     RKMethodErrors.push_back(0.0428449);
+    RKMethodErrors.push_back(0.000221049);
+    RKMethodErrors.push_back(0.0428449);
     RKMethodErrors.push_back(0.000125232);
     RKMethodErrors.push_back(4.79475e-06);
     RKMethodErrors.push_back(9.63899e-07);
+    RKMethodErrors.push_back(0.0141323);
     RKMethodErrors.push_back(2.9362e-07);
     RKMethodErrors.push_back(9.20081e-08);
     RKMethodErrors.push_back(9.16252e-08);
@@ -81,6 +98,10 @@ void test_sincos_fsa(const bool use_combined_method,
   my_out->setOutputToRootOnly(0);
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
+
+    // If we were given a method to run, skip this method if it doesn't match
+    if (method_name != "" && RKMethods[m] != method_name)
+      continue;
 
     std::string RKMethod_ = RKMethods[m];
     std::replace(RKMethod_.begin(), RKMethod_.end(), ' ', '_');
@@ -134,10 +155,14 @@ void test_sincos_fsa(const bool use_combined_method,
         Tempus::integratorForwardSensitivity<double>(pl, model);
       order = integrator->getStepper()->getOrder();
 
+      // Fixme - order should be 2, but only gets first order?
+      if (use_combined_method == false &&
+          RKMethods[m] == "EDIRK 2 Stage Theta Method") order = 1.0;
+
       // Initial Conditions
       // During the Integrator construction, the initial SolutionState
       // is set by default to model->getNominalVales().get_x().  However,
-      // the application can set it also by integrator->setInitialState.
+      // the application can set it also by integrator->initializeSolutionHistory.
       RCP<Thyra::VectorBase<double> > x0 =
         model->getNominalValues().get_x()->clone_v();
       const int num_param = model->get_p_space(0)->dim();
@@ -146,7 +171,7 @@ void test_sincos_fsa(const bool use_combined_method,
       for (int i=0; i<num_param; ++i)
         Thyra::assign(DxDp0->col(i).ptr(),
                       *(model->getExactSensSolution(i, 0.0).get_x()));
-      integrator->setInitialState(0.0, x0, Teuchos::null, Teuchos::null,
+      integrator->initializeSolutionHistory(0.0, x0, Teuchos::null, Teuchos::null,
                                   DxDp0, Teuchos::null, Teuchos::null);
 
       // Integrate to timeMax
@@ -183,7 +208,7 @@ void test_sincos_fsa(const bool use_combined_method,
         for (int i=0; i<solutionHistory->getNumStates(); i++) {
           RCP<const SolutionState<double> > solutionState =
             (*solutionHistory)[i];
-          double time = solutionState->getTime();
+          double time_i = solutionState->getTime();
           RCP<const DMVPV> x_prod_plot =
             Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());
           RCP<const Thyra::VectorBase<double> > x_plot =
@@ -191,12 +216,12 @@ void test_sincos_fsa(const bool use_combined_method,
           RCP<const Thyra::MultiVectorBase<double> > DxDp_plot =
             x_prod_plot->getMultiVector()->subView(Teuchos::Range1D(1,num_param));
           RCP<const Thyra::VectorBase<double> > x_exact_plot =
-            model->getExactSolution(time).get_x();
+            model->getExactSolution(time_i).get_x();
           for (int j=0; j<num_param; ++j)
             Thyra::assign(DxDp_exact_plot->col(j).ptr(),
-                          *(model->getExactSensSolution(j, time).get_x()));
+                          *(model->getExactSensSolution(j, time_i).get_x()));
           ftmp << std::fixed << std::setprecision(7)
-               << time
+               << time_i
                << std::setw(11) << get_ele(*(x_plot), 0)
                << std::setw(11) << get_ele(*(x_plot), 1);
           for (int j=0; j<num_param; ++j)

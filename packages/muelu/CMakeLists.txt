@@ -9,17 +9,20 @@ TRIBITS_PACKAGE(MueLu ENABLE_SHADOWING_WARNINGS)
 #
 # B) Set up package-specific options
 #
-IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7"))
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
-ENDIF()
 
 IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
 ENDIF()
 
+ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
+ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
 ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
 ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
+IF (${PACKAGE_NAME}_ENABLE_KokkosCore AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "MueLu requires that if Kokkos is enabled, Tpetra must also be enabled.")
+ENDIF()
+
 if (${PACKAGE_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Tpetra_INST_DOUBLE)
   ASSERT_DEFINED(Tpetra_INST_INT_INT)
@@ -28,6 +31,12 @@ if (${PACKAGE_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
   ASSERT_DEFINED(Tpetra_INST_FLOAT)
   ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
+ENDIF()
+
+# You can only get Avatar one way
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
+IF( TPL_ENABLE_AVATAR AND ${PACKAGE_NAME}_ENABLE_AvatarT)
+  MESSAGE(FATAL_ERROR "MueLu does not support Avatar being built both as a TPL and as an external package.")
 ENDIF()
 
 # JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
@@ -41,6 +50,10 @@ IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
   MESSAGE(FATAL_ERROR "MueLu requires that C++11 support in Trilinos be enabled.  This should happen automatically if your compiler is C++11 compliant.")
 ENDIF ()
 
+IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7") AND NOT TPL_ENABLE_CUDA)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
+ENDIF()
+
 # The following Tribits macro sets MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # to be true if ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION is true.
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
@@ -52,9 +65,50 @@ ENDIF()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE
+  HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE
+  "Whether MueLu enables deprecated code (that is, anything marked with the MUELU_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled).  If OFF, then deprecated code does not exist."
+  YES
+)
+IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE)
+  MESSAGE(STATUS "MueLu: Enabling deprecated code")
+ELSE ()
+  MESSAGE(STATUS "MueLu: Disabling deprecated code")
+ENDIF ()
+
+IF (NOT ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE AND ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS)
+  MESSAGE(FATAL_ERROR "MueLu: You cannot enable deprecated tests when deprecated codes is disabled!")
+ENDIF ()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS
+  HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS
+  "Whether MueLu compiles and run tests (or areas of a test) that contain deprecated code (that is, anything marked with the MUELU_DEPRECATED macro).  Default is OFF (deprecated tests disabled).  If ON, then deprecated tests are compiled and tested."
+  NO
+)
+
+IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS)
+  MESSAGE(STATUS "MueLu: Enabling deprecated tests")
+ENDIF ()
+
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
   MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
 ENDIF()
+
+
+# If you want MueLu Epetra, you need Xpetra Epetra
+ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
+IF (NOT Xpetra_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
+  MESSAGE(FATAL_ERROR "MueLu Epetra support requires Xpetra Epetra support")
+ENDIF()
+
+# If you want MueLu Epetra, you need Xpetra Tpetra
+ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
+IF (NOT Xpetra_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "MueLu Tpetra support requires Xpetra Tpetra support")
+ENDIF()
+
 
 # Disable Ifpack2 if Tpetra is off
 IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -171,10 +225,27 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
   OFF)
 
 # Define option to enable code that is refactored to use Kokkos
+# This is ON by default when Kokkos is enabled.
+IF (${PACKAGE_NAME}_ENABLE_KokkosCore)
+  SET(Kokkos_Refactor_On_By_Default ON)
+  MESSAGE(STATUS "MueLu: Kokkos_Refactor ON by default")
+ELSE()
+  SET(Kokkos_Refactor_On_By_Default OFF)
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
   HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
-  "Enable MueLu code refactored to use Kokkos."
+  "Enable Xpetra code refactored to use Kokkos."
+  ${Kokkos_Refactor_On_By_Default})
+
+# Define option to use code that is refactored to use Kokkos by
+# default. This is useful for running all non-unit tests with Kokkos
+# without having to set "use kokkos refactor" in all parameter lists.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default
+  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR_USE_BY_DEFAULT
+  "Use MueLu code refactored to use Kokkos by default."
   NO)
 
 
@@ -244,6 +315,15 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ELSE()
     GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT OFF)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT OFF)
+  ENDIF()
+
+  # <complex, int, long long int>
+  IF(Tpetra_INST_COMPLEX_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
+    GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG ON)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_LONG_LONG ON)
+  ELSE()
+    GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG OFF)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_LONG_LONG OFF)
   ENDIF()
 
   # <float, int, int>
@@ -357,6 +437,11 @@ if(TPL_ENABLE_MATLAB)
   IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra OR NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
       MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PACKAGE_NAME}_ENABLE_Epetra:BOOL=ON\" and \"-D${PACKAGE_NAME}_ENABLE_Tpetra:BOOL=ON\".")
   ENDIF()
+
+  IF(NOT Tpetra_INST_INT_INT OR  Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
+    MESSAGE(FATAL_ERROR "Muemex interfaces require that Tpetra only be instantiated with Tpetra_INST_INT_INT, not Tpetra_INST_INT_LONG or Tpetra_INST_INT_LONG_LONG")
+  ENDIF()
+
 ENDIF()
 
 if(TPL_ENABLE_MATLAB)

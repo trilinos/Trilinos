@@ -223,7 +223,7 @@ void PHX::Field<DataT,Rank>::setFieldData(const PHX::any& a)
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
     m_field_data = tmp;
   }
-  catch (std::exception& e) {
+  catch (std::exception& ) {
     std::cout << "\n\nError in compiletime PHX::Field::setFieldData() in PHX::any_cast. Tried to cast the field \""
 	      << this->fieldTag().name()  << "\" with the identifier \"" << this->fieldTag().identifier()
 	      << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
@@ -241,7 +241,7 @@ void PHX::Field<DataT,Rank>::print(std::ostream& os, bool printValues) const
   for (int i=0; i < Rank; ++i) {
     if (i > 0)
       os << ",";
-    os << m_field_data.dimension(i);
+    os << m_field_data.extent(i);
   }
   os << "): ";
 

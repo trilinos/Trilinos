@@ -51,6 +51,12 @@
 
 #include <MueLu.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
+#include <MueLu_Utilities.hpp>
+#include <MueLu_AmalgamationFactory.hpp>
+#include <MueLu_CoalesceDropFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
+#include <MueLu_CoarseMapFactory.hpp>
+#include <MueLu_TentativePFactory.hpp>
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
@@ -63,6 +69,9 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void createTwoLevelHierarchy(MueLu::Level& fineLevel, MueLu::Level& coarseLevel,
+                             Teuchos::RCP<typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A);
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
@@ -73,14 +82,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   using Teuchos::tuple;
   using Teuchos::TimeMonitor;
 
-  typedef Tpetra::Map<> map_type;
-  typedef Tpetra::CrsMatrix<> crs_matrix_type;
+  typedef Tpetra::Map<LO,GO,NO> map_type;
+  typedef Tpetra::CrsMatrix<SC,LO,GO,NO> crs_matrix_type;
 
-  typedef Tpetra::CrsMatrix<>::scalar_type scalar_type;
-  typedef Tpetra::CrsMatrix<>::local_ordinal_type local_ordinal_type;
-  typedef Tpetra::CrsMatrix<>::global_ordinal_type global_ordinal_type;
-  typedef Tpetra::CrsMatrix<>::node_type node_type;
-  typedef Tpetra::CrsMatrix<>::mag_type magnitude_type;
+  typedef typename crs_matrix_type::scalar_type scalar_type;
+  typedef typename crs_matrix_type::local_ordinal_type local_ordinal_type;
+  typedef typename crs_matrix_type::global_ordinal_type global_ordinal_type;
+  typedef typename crs_matrix_type::node_type node_type;
+  typedef typename crs_matrix_type::mag_type magnitude_type;
 
   bool success = false;
   bool verbose = true;
@@ -116,9 +125,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     }
 
     global_ordinal_type gNumCompFineGIDs = 10, lCompFineGIDOffset = 0;
-    global_ordinal_type gNumRegFineGIDs  = 11, lRegFineGIDOffset  = 0;
+    global_ordinal_type lRegFineGIDOffset = 0; // gNumRegFineGIDs  = 11,
     local_ordinal_type  lNumCompFineGIDs =  0, lNumRegFineGIDs = 0;
-    local_ordinal_type  lNumCompCoarseGIDs =  0, lNumRegCoarseGIDs = 0;
+    local_ordinal_type lNumRegCoarseGIDs = 0; // lNumCompCoarseGIDs =  0,
     if(myRank == 0) {
       lNumCompFineGIDs = 7;
       lNumRegFineGIDs  = 7;
@@ -126,7 +135,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       lCompFineGIDOffset = 0;
       lRegFineGIDOffset  = 0;
 
-      lNumCompCoarseGIDs = 3;
+      // lNumCompCoarseGIDs = 3;
       lNumRegCoarseGIDs  = 3;
     } else if(myRank == 1) {
       lNumCompFineGIDs = 3;
@@ -135,7 +144,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       lCompFineGIDOffset = 7;
       lRegFineGIDOffset  = 6;
 
-      lNumCompCoarseGIDs = 1;
+      // lNumCompCoarseGIDs = 1;
       lNumRegCoarseGIDs  = 2;
     }
 
@@ -244,6 +253,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     out << std::endl << "Forming the prolongator" << std::endl;
 
+    MueLu::Level fineLevel, coarseLevel;
+    RCP<Xpetra::Matrix<SC,LO,GO,NO> > matA = MueLu::TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(regA);
+    createTwoLevelHierarchy<SC,LO,GO,NO>(fineLevel, coarseLevel, matA);
+
     // Now the prolongator needs to be created
     Array<global_ordinal_type> coarseRegGIDs (lNumRegCoarseGIDs);
     if(myRank == 0) {
@@ -304,6 +317,57 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } //main
 
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void createTwoLevelHierarchy(MueLu::Level& fineLevel, MueLu::Level& coarseLevel,
+                             Teuchos::RCP<typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A) {
+#include <MueLu_UseShortNames.hpp>
+  using Teuchos::RCP; using Teuchos::rcp;
+  RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+  fineLevel.SetFactoryManager(factoryHandler);
+  coarseLevel.SetFactoryManager(factoryHandler);
+
+  coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
+
+  fineLevel.SetLevelID(0);
+  coarseLevel.SetLevelID(1);
+
+  fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+  coarseLevel.SetFactoryManager(Teuchos::null);
+
+  A->SetFixedBlockSize(1);
+  fineLevel.Request("A");
+  fineLevel.Set("A", A);
+  fineLevel.Set("DofsPerNode",2);
+
+  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), 1);
+  nullSpace->randomize();
+  fineLevel.Set("Nullspace",nullSpace);
+
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+  dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+  RCP<UncoupledAggregationFactory> UnCoupledAggFact = rcp(new UncoupledAggregationFactory());
+  UnCoupledAggFact->SetFactory("Graph", dropFact);
+
+  RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+  coarseMapFact->SetFactory("Aggregates", UnCoupledAggFact);
+  RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+  TentativePFact->SetFactory("Aggregates", UnCoupledAggFact);
+  TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+  TentativePFact->SetFactory("CoarseMap", coarseMapFact);
+
+  coarseLevel.Request("P",TentativePFact.get());  // request Ptent
+  coarseLevel.Request("Nullspace",TentativePFact.get());
+  coarseLevel.Request(*TentativePFact);
+  Teuchos::ParameterList paramList;
+  paramList.set("tentative: calculate qr",       false);
+  TentativePFact->SetParameterList(paramList);
+  TentativePFact->Build(fineLevel,coarseLevel);
+
+  RCP<Matrix> Ptent;
+  coarseLevel.Get("P",Ptent,TentativePFact.get());
+}
 
 //- -- --------------------------------------------------------
 #define MUELU_AUTOMATIC_TEST_ETI_NAME main_

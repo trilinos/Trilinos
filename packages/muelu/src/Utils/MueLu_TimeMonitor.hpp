@@ -54,6 +54,10 @@
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_VerboseObject.hpp"
 #include "MueLu_MutuallyExclusiveTime.hpp"
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+#include "Teuchos_StackedTimer.hpp"
+#include <sstream>
+#endif
 
 namespace MueLu {
 
@@ -65,39 +69,16 @@ namespace MueLu {
 
   public:
 
-    TimeMonitor(const BaseClass& object, const std::string& msg, MsgType timerLevel = Timings0) {
-      // Inherit props from 'object'
-      SetVerbLevel      (object.GetVerbLevel());
-      SetProcRankVerbose(object.GetProcRankVerbose());
+    TimeMonitor(const BaseClass& object, const std::string& msg, MsgType timerLevel = Timings0);
 
-      if (IsPrint(timerLevel) &&
-          /* disable timer if never printed: */ (IsPrint(RuntimeTimings) || (!IsPrint(NoTimeReport)))) {
-
-        if (!IsPrint(NoTimeReport)) {
-          // TODO: there is no function to register a timer in Teuchos::TimeMonitor after the creation of the timer. But would be useful...
-          timer_ = Teuchos::TimeMonitor::getNewTimer("MueLu: " + msg);
-        } else {
-          timer_ = rcp(new Teuchos::Time("MueLu: " + msg));
-        }
-
-        // Start the timer (this is what is done by Teuchos::TimeMonitor)
-        timer_->start();
-        timer_->incrementNumCalls();
-      }
-    }
-
-    ~TimeMonitor() {
-      // Stop the timer if present
-      if (timer_ != Teuchos::null)
-        timer_->stop();
-    }
+    ~TimeMonitor();
 
   protected:
-    TimeMonitor() { }
+    TimeMonitor();
 
   private:
     RCP<Teuchos::Time> timer_;
-  };
+  }; //class TimeMonitor
 
   //TODO: code duplication MutuallyExclusiveTimeMonitor / TimeMonitor
 
@@ -148,6 +129,9 @@ namespace MueLu {
   private:
     RCP<MutuallyExclusiveTime<TagName> > timer_; // keep a reference on the timer to print stats if RuntimeTimings=ON //TODO:use base class instead
   };
+
+  extern template class MutuallyExclusiveTimeMonitor<FactoryBase>;
+  extern template class MutuallyExclusiveTimeMonitor<Level>;
 
 } // namespace MueLu
 

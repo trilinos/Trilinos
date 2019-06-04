@@ -100,6 +100,25 @@ namespace Intrepid2 {
       setSubcellParametrization( subcellParamData_.lineEdges,  1, line );
     }
 
+    Kokkos::push_finalize_hook( [=] {
+      subcellParamData_.dummy = subcellParamViewType();
+      subcellParamData_.lineEdges = subcellParamViewType();
+      subcellParamData_.triEdges = subcellParamViewType();
+      subcellParamData_.quadEdges = subcellParamViewType();
+      subcellParamData_.shellTriEdges = subcellParamViewType();
+      subcellParamData_.shellQuadEdges = subcellParamViewType();
+      subcellParamData_.tetEdges = subcellParamViewType();
+      subcellParamData_.hexEdges = subcellParamViewType();
+      subcellParamData_.pyrEdges = subcellParamViewType();
+      subcellParamData_.wedgeEdges = subcellParamViewType();
+      subcellParamData_.shellTriFaces = subcellParamViewType();
+      subcellParamData_.shellQuadFaces = subcellParamViewType();
+      subcellParamData_.tetFaces = subcellParamViewType();
+      subcellParamData_.hexFaces = subcellParamViewType();
+      subcellParamData_.pyrFaces = subcellParamViewType();
+      subcellParamData_.wedgeFaces = subcellParamViewType();
+    });
+
     isReferenceNodeDataSet_ = true;
   }
 

@@ -50,14 +50,14 @@
 #include "ROL_HouseholderReflector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_RandomVector.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 template<class Real> 
 void printVector( const ROL::Vector<Real> &x, std::ostream &outStream ) {
 
-  Teuchos::RCP<const std::vector<Real> > xp = 
-    Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
+  ROL::Ptr<const std::vector<Real> > xp = 
+    dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
 
   outStream << "Standard Vector" << std::endl;
   for( size_t i=0; i<xp->size(); ++i ) {
@@ -74,18 +74,18 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>    V;
   typedef ROL::StdVector<RealT> SV;
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -95,12 +95,11 @@ int main(int argc, char *argv[]) {
 
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());  
 
+    ROL::Ptr<V> v   = ROL::makePtr<SV>( ROL::makePtr<std::vector<RealT>>(dim) );
+    ROL::Ptr<V> Hv  = v->clone();
+    ROL::Ptr<V> HHv = v->clone();
 
-    RCP<V> v   = rcp( new SV( rcp( new std::vector<RealT>(dim) ) ) );
-    RCP<V> Hv  = v->clone();
-    RCP<V> HHv = v->clone();
-
-    RCP<V> e0 = v->basis(0);
+    ROL::Ptr<V> e0 = v->basis(0);
 
     RandomizeVector(*v);
 
@@ -118,8 +117,6 @@ int main(int argc, char *argv[]) {
     H.apply(*HHv, *Hv, tol);
   
     printVector(*HHv,*outStream);
-
-
 
   }
   

@@ -46,9 +46,6 @@
 
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include <iostream>
 
 /** @ingroup func_group

@@ -51,7 +51,6 @@
  *         parameters are specified by an input XML file.
  */
 
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TestingHelpers.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -63,7 +62,7 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Comm.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -192,18 +191,15 @@ bool test_tpetra(const string& mm_file,
                  ParameterList solve_params);
 
 
-typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-typedef Platform::NodeType DefaultNode;
+typedef Tpetra::Map<>::node_type DefaultNode;
 
 int main(int argc, char*argv[])
 {
-  Teuchos::GlobalMPISession mpisession(&argc,&argv,&std::cout);
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
   TimeMonitor TotalTimer(*total_timer);
 
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform
-    = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int root = 0;
 
@@ -897,16 +893,14 @@ bool do_tpetra_test_with_types(const string& mm_file,
 
   bool transpose = solve_params.get<bool>("Transpose", false);
 
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Comm<int> > comm = platform.getComm();
-  RCP<Node>             node = platform.getNode();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
   if (verbosity > 2) {
     *fos << endl << "      Reading matrix from " << mm_file << " ... " << flush;
   }
   std::string path = filedir + mm_file;
   RCP<MAT> A =
-    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile (path, comm, node);
+    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile (path, comm);
 
   if (verbosity > 2) {
     *fos << "done" << endl;
@@ -972,11 +966,12 @@ bool do_tpetra_test_with_types(const string& mm_file,
     }
 
     // Make a deep copy of the entire CrsMatrix.
-    A2 = A->template clone<Node> (A->getNode ());
+    // originalNode can be null; only needed for type deduction.
+    A2 = rcp(new MAT(*A,Teuchos::Copy));
 
     // // There isn't a really nice way to get a deep copy of an entire
     // // CrsMatrix, so we just read the file again.
-    // A2 = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path, comm, node);
+    // A2 = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path, comm);
 
     // perturb the values just a bit (element-wise square of first row)
     size_t l_fst_row_nnz = A2->getNumEntriesInLocalRow(0);
@@ -1105,504 +1100,265 @@ bool test_tpetra(const string& mm_file,
       success &= run_success
 
 
+      using default_go_type = Tpetra::Map<>::global_ordinal_type;
+
       // I can't think of any better way to do the types as
       // specified in the parameter list at runtime but to branch
       // out on all possibilities, sorry...  Note: we're going to
       // ignore the `node' parameter for now
-#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_FLOAT))
       if( scalar == "float" ){
+#ifdef HAVE_TPETRA_INST_FLOAT
         if( lo == "int" ){
-
           if( go == "default" ){
+            AMESOS2_SOLVER_TPETRA_TEST(float,int,default_go_type,DN);
+          }
+          else if( go == "int" ){
 #ifdef HAVE_TPETRA_INST_INT_INT
             AMESOS2_SOLVER_TPETRA_TEST(float,int,int,DN);
-#endif
-          }
-#ifdef HAVE_TPETRA_INST_INT_INT
-          else if( go == "int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(float,int,int,DN);
-          }
-#endif
-#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-#ifdef  HAVE_TPETRA_INST_INT_LONG
-          else if( go == "long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(float,int,long int,DN);
-          }
-#endif
-#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-          else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(float,int,long long int,DN);
-          }
-#endif
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-        }
-#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-        else if( lo == "long int" ){
-
-          if( go == "default" ){
-            AMESOS2_SOLVER_TPETRA_TEST(float,long int,long int,DN);
-          }
-          else if( go == "int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+#else // NOT HAVE_TPETRA_INST_INT_INT
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_INT_INT
           }
           else if( go == "long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(float,long int,long int,DN);
-          }
-
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-          else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(float,long int,long long int,DN);
-          }
-#endif
-        }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-        else if( lo == "long long int" ){
-          if( go == "default" ){
-            AMESOS2_SOLVER_TPETRA_TEST(float,long long int,long long int,DN);
-          }
-          else if( go == "int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-          }
-          else if( go == "long int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-          }
-          else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(float,long long int,long long int,DN);
-          }
-        }
-#endif
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-      } // end scalar == "float"
-#endif  // HAVE_TPETRA_INST_FLOAT
-#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_DOUBLE))
-      if( scalar == "double" ){
-        if( lo == "int" ){
-          if( go == "default" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
-            AMESOS2_SOLVER_TPETRA_TEST(double,int,int,DN);
-#endif
-          }
-#ifdef HAVE_TPETRA_INST_INT_INT
-          else if( go == "int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(double,int,int,DN);
-          }
-#endif
-#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-#ifdef  HAVE_TPETRA_INST_INT_LONG
-          else if( go == "long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(double,int,long int,DN);
-          }
-#endif
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-          else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(double,int,long long int,DN);
-          }
-#endif
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-        }
-#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-        else if( lo == "long int" ){
-
-          if( go == "default" ){
-            AMESOS2_SOLVER_TPETRA_TEST(double,long int,long int,DN);
-          }
-          else if( go == "int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-          }
-          else if( go == "long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(double,long int,long int,DN);
-          }
-
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-          else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(double,long int,long long int,DN);
-          }
-#endif
-        }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-        else if( lo == "long long int" ){
-          if( go == "default" ){
-            AMESOS2_SOLVER_TPETRA_TEST(double,long long int,long long int,DN);
-          }
-          else if( go == "int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-          }
-          else if( go == "long int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-          }
-          else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(double,long long int,long long int,DN);
-          }
-        }
-#endif
-#endif    // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-      } // end scalar == "double"
-#endif    // HAVE_TPETRA_INST_DOUBLE
-#if (defined HAVE_TEUCHOS_QD) && !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION)
-      if( scalar == "double double" ){
-        if( lo == "int" ){
-
-          if( go == "default" ){
-#ifdef HAVE_TPETRA_INST_INT_INST
-            AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,int,DN);
-#endif
-          }
-#ifdef HAVE_TPETRA_INST_INT_INT
-          else if( go == "int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,int,DN);
-          }
-#endif
 #ifdef HAVE_TPETRA_INST_INT_LONG
-          else if( go == "long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,long int,DN);
+            AMESOS2_SOLVER_TPETRA_TEST(float,int,long int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_LONG
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_INT_LONG
           }
-#endif
-#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,long long int,DN);
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+            AMESOS2_SOLVER_TPETRA_TEST(float,int,long long int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_LONG_LONG
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_INT_LONG_LONG
           }
-#endif
         }
         else if( lo == "long int" ){
-          if( go == "default" ){
-            AMESOS2_SOLVER_TPETRA_TEST(dd_real,long int,long int,DN);
-          }
-          else if( go == "int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-          }
-          else if( go == "long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(dd_real,long int,long int,DN);
-          }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-          else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(dd_real,long int,long long int,DN);
-          }
-#endif
+          *fos << "Trilinos does not currently support LO=" << lo << std::endl;
         }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
         else if( lo == "long long int" ){
-          if( go == "default" ){
-            AMESOS2_SOLVER_TPETRA_TEST(dd_real,long long int,long long int,DN);
-          }
-          else if( go == "int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-          }
-          else if( go == "long int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-          }
-          else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(dd_real,long long int,long long int,DN);
-          }
+          *fos << "Trilinos does not currently support LO=" << lo << std::endl;
         }
-#endif
-      } // end scalar == "double double"
-      if( scalar == "quad" || scalar == "quad double" ){
-        if( lo == "int" ){
+#else // NOT HAVE_TPETRA_INST_FLOAT
+        *fos << "Scalar=float was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_FLOAT
+      } // end scalar == "float"
 
+      if( scalar == "double" ){
+#ifdef HAVE_TPETRA_INST_DOUBLE
+        if( lo == "int" ){
           if( go == "default" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
-            AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,int,DN);
-#endif
+            AMESOS2_SOLVER_TPETRA_TEST(double,int,default_go_type,DN);
           }
-#ifdef HAVE_TPETRA_INST_INT_INT
           else if( go == "int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,int,DN);
+#ifdef HAVE_TPETRA_INST_INT_INT
+            AMESOS2_SOLVER_TPETRA_TEST(double,int,int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_INT
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_INT_INT
           }
-#endif
-#ifdef HAVE_TPETAR_INST_INT_LONG
           else if( go == "long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,long int,DN);
+#ifdef HAVE_TPETRA_INST_INT_LONG
+            AMESOS2_SOLVER_TPETRA_TEST(double,int,long int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_LONG
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_INT_LONG
           }
-#endif
-#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,long long int,DN);
+#ifdef HAVE_TPETRA_INT_LONG_LONG
+            AMESOS2_SOLVER_TPETRA_TEST(double,int,long long int,DN);
+#else // NOT HAVE_TPETRA_INT_LONG_LONG
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INT_LONG_LONG
           }
-#endif
         }
         else if( lo == "long int" ){
-          if( go == "default" ){
-            AMESOS2_SOLVER_TPETRA_TEST(qd_real,long int,long int,DN);
-          }
-          else if( go == "int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-          }
-          else if( go == "long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(qd_real,long int,long int,DN);
-          }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-          else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(qd_real,long int,long long int,DN);
-          }
-#endif
+          *fos << "Trilinos does not currently support LO=" << lo << std::endl;
         }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
         else if( lo == "long long int" ){
+          *fos << "Trilinos does not currently support LO=" << lo << std::endl;
+        }
+#else // NOT HAVE_TPETRA_INST_DOUBLE
+        *fos << "Scalar=double was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_DOUBLE
+      } // end scalar == "double"
+
+      if( scalar == "double double" ){
+#ifdef HAVE_TPETRA_INST_DD_REAL
+        if( lo == "int" ){
           if( go == "default" ){
-            AMESOS2_SOLVER_TPETRA_TEST(qd_real,long long int,long long int,DN);
+            AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,default_go_type,DN);
           }
           else if( go == "int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+#ifdef HAVE_TPETRA_INST_INT_INT
+            AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_INT
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_INT_INT
           }
           else if( go == "long int" ){
-            *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+#ifdef HAVE_TPETRA_INST_INT_LONG
+            AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,long int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_LONG
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_INT_LONG
           }
           else if( go == "long long int" ){
-            AMESOS2_SOLVER_TPETRA_TEST(qd_real,long long int,long long int,DN);
+#ifdef HAVE_TPETRA_INT_LONG_LONG
+            AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,long long int,DN);
+#else // NOT HAVE_TPETRA_INT_LONG_LONG
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INT_LONG_LONG
           }
         }
-#endif
+        else if( lo == "long int" ){
+          *fos << "Trilinos does not currently support LO=" << lo << std::endl;
+        }
+        else if( lo == "long long int" ){
+          *fos << "Trilinos does not currently support LO=" << lo << std::endl;
+        }
+#else // NOT HAVE_TPETRA_INST_DD_REAL
+        *fos << "Scalar=dd_real was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_DD_REAL
+      } // end scalar == "double double"
+
+      if( scalar == "quad" || scalar == "quad double" ){
+#ifdef HAVE_TPETRA_INST_QD_REAL
+        if( lo == "int" ){
+          if( go == "default" ){
+            AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,default_go_type,DN);
+          }
+          else if( go == "int" ){
+#ifdef HAVE_TPETRA_INST_INT_INT
+            AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_INT
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_INT_INT
+          }
+          else if( go == "long int" ){
+#ifdef HAVE_TPETRA_INST_INT_LONG
+            AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,long int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_LONG
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_INT_LONG
+          }
+          else if( go == "long long int" ){
+#ifdef HAVE_TPETRA_INT_LONG_LONG
+            AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,long long int,DN);
+#else // NOT HAVE_TPETRA_INT_LONG_LONG
+            *fos << "GO=" << go << " was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INT_LONG_LONG
+          }
+        }
+        else if( lo == "long int" ){
+          *fos << "Trilinos does not currently support LO=" << lo << std::endl;
+        }
+        else if( lo == "long long int" ){
+          *fos << "Trilinos does not currently support LO=" << lo << std::endl;
+        }
+#else // NOT HAVE_TPETRA_INST_QD_REAL
+        *fos << "Scalar=qd_real was not enabled at configure time" << std::endl;
+#endif // HAVE_TPETRA_INST_QD_REAL
       } // end scalar == "quad double"
-#endif    // HAVE_TEUCHOS_QD
-#ifdef HAVE_TEUCHOS_COMPLEX
+
       if( scalar == "complex" ){
-#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_COMPLEX_FLOAT) && !(defined HAVE_AMESOS2_KLU2))
         if( mag == "float" ){
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
           typedef std::complex<float> cmplx;
           if( lo == "int" ){
             if( go == "default" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,int,DN);
-#endif
+              AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,default_go_type,DN);
             }
-#ifdef HAVE_TPETRA_INST_INT_INT
             else if( go == "int" ){
+#ifdef HAVE_TPETRA_INST_INT_INT
               AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_INT
+              *fos << "GO=" << go << " was not enabled at configure time"
+                   << std::endl;
+#endif // HAVE_TPETRA_INST_INT_INT
             }
-#endif
-#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+            else if( go == "long int" ){
 #ifdef HAVE_TPETRA_INST_INT_LONG
-            else if( go == "long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,long int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_LONG
+              *fos << "GO=" << go << " was not enabled at configure time"
+                   << std::endl;
+#endif // HAVE_TPETRA_INST_INT_LONG
             }
-#endif
-#ifdef HAVE_TPETRA_INT_LONG_LONG
             else if( go == "long long int" ){
+#ifdef HAVE_TPETRA_INT_LONG_LONG
               AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,long long int,DN);
+#else // NOT HAVE_TPETRA_INT_LONG_LONG
+              *fos << "GO=" << go << " was not enabled at configure time"
+                   << std::endl;
+#endif // HAVE_TPETRA_INT_LONG_LONG
             }
-#endif
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
           }
-#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
           else if( lo == "long int" ){
-            if( go == "default" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx,long int,long int,DN);
-            }
-            else if( go == "int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx,long int,long int,DN);
-            }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-            else if( go == "long long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx,long int,long long int,DN);
-            }
-#endif
+            *fos << "Trilinos does not currently support LO=" << lo << std::endl;
           }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( lo == "long long int" ){
-            if( go == "default" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx,long long int,long long int,DN);
-            }
-            else if( go == "int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx,long long int,long long int,DN);
-            }
+            *fos << "Trilinos does not currently support LO=" << lo << std::endl;
           }
-#endif
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#else // NOT HAVE_TPETRA_INST_COMPLEX_FLOAT
+          *fos << "Scalar=complex<float> was not enabled at configure time"
+               << std::endl;
+#endif // HAVE_TPETRA_INST_COMPLEX_FLOAT
         }
-#endif
-#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_COMPLEX_DOUBLE))
+
         if( mag == "double" ){
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
           typedef std::complex<double> cmplx_double;
           if( lo == "int" ){
-
             if( go == "default" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,int,DN);
-#endif
+              AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,default_go_type,DN);
             }
-#ifdef HAVE_TPETRA_INST_INT_INT
             else if( go == "int" ){
+#ifdef HAVE_TPETRA_INST_INT_INT
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_INT
+              *fos << "GO=" << go << " was not enabled at configure time"
+                   << std::endl;
+#endif // HAVE_TPETRA_INST_INT_INT
             }
-#endif
-#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-#ifdef  HAVE_TPETRA_INST_INT_LONG
             else if( go == "long int" ){
+#ifdef HAVE_TPETRA_INST_INT_LONG
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,long int,DN);
+#else // NOT HAVE_TPETRA_INST_INT_LONG
+              *fos << "GO=" << go << " was not enabled at configure time"
+                   << std::endl;
+#endif // HAVE_TPETRA_INST_INT_LONG
             }
-#endif
-#ifdef HAVE_TPETRA_INT_LONG_LONG
             else if( go == "long long int" ){
+#ifdef HAVE_TPETRA_INT_LONG_LONG
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,long long int,DN);
+#else // NOT HAVE_TPETRA_INT_LONG_LONG
+              *fos << "GO=" << go << " was not enabled at configure time"
+                   << std::endl;
+#endif // HAVE_TPETRA_INT_LONG_LONG
             }
-#endif
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
           }
-#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
           else if( lo == "long int" ){
-            if( go == "default" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long int,long int,DN);
-            }
-            else if( go == "int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long int,long int,DN);
-            }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-            else if( go == "long long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long int,long long int,DN);
-            }
-#endif
+            *fos << "Trilinos does not currently support LO=" << lo << std::endl;
           }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( lo == "long long int" ){
-            if( go == "default" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long long int,long long int,DN);
-            }
-            else if( go == "int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long long int,long long int,DN);
-            }
+            *fos << "Trilinos does not currently support LO=" << lo << std::endl;
           }
-#endif
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#else // NOT HAVE_TPETRA_INST_COMPLEX_DOUBLE
+          *fos << "Scalar=complex<double> was not enabled at configure time"
+               << std::endl;
+#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
         } // end mag == "double"
-#endif
-#if (defined HAVE_TEUCHOS_QD) && !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION)
-        if( mag == "double double" ){
-          typedef std::complex<dd_real> cmplx_dd;
-          if( lo == "int" ){
 
-            if( go == "default" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,int,DN);
-#endif
-            }
-#ifdef HAVE_TPETRA_INST_INT_INT
-            else if( go == "int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,int,DN);
-            }
-#endif
-#ifdef HAVE_TPETRA_INST_INT_LONG
-            else if( go == "long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,long int,DN);
-            }
-#endif
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-            else if( go == "long long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,long long int,DN);
-            }
-#endif
-          }
-          else if( lo == "long int" ){
-            if( go == "default" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long int,long int,DN);
-            }
-            else if( go == "int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long int,long int,DN);
-            }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-            else if( go == "long long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long int,long long int,DN);
-            }
-#endif
-          }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-          else if( lo == "long long int" ){
-            if( go == "default" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long long int,long long int,DN);
-            }
-            else if( go == "int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long long int,long long int,DN);
-            }
-          }
-#endif
-        } // end scalar == "double double"
-        else if( mag == "quad" || mag == "quad double" ){
-          typedef std::complex<qd_real> cmplx_qd;
-          if( lo == "int" ){
+        // mfh 15 Jan 2019: The code used to test
+        // Scalar=std::complex<dd_real> and std::complex<qd_real>
+        // here.  The C++ Standard does not permit portable use of
+        // std::complex<T> for T != float, double, or long double.
+        // Thus, I deleted those cases, which almost certainly were
+        // never tested, even if they ever built.
 
-            if( go == "default" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,int,DN);
-#endif
-            }
-#ifdef HAVE_TPETRA_INST_INT_INT
-            else if( go == "int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,int,DN);
-            }
-#endif
-#ifdef HAVE_TPETRA_INST_INT_LONG
-            else if( go == "long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,long int,DN);
-            }
-#endif
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-            else if( go == "long long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,long long int,DN);
-            }
-#endif
-          }
-          else if( lo == "long int" ){
-            if( go == "default" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long int,long int,DN);
-            }
-            else if( go == "int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long int,long int,DN);
-            }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-            else if( go == "long long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long int,long long int,DN);
-            }
-#endif
-          }
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-          else if( lo == "long long int" ){
-            if( go == "default" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long long int,long long int,DN);
-            }
-            else if( go == "int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long int" ){
-              *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-            }
-            else if( go == "long long int" ){
-              AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long long int,long long int,DN);
-            }
-          }
-#endif
-        } // end scalar == "quad double"
-#endif    // HAVE_TEUCHOS_QD
-      } // end if( scalar == "complex" )
-#endif  // HAVE_TEUCHOS_COMPLEX
+      } // scalar == "complex"
 
       if( !test_done && verbosity > 1 ){
         *fos << "type parameters not recognized or enabled" << std::endl;

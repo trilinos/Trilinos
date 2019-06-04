@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -66,7 +66,7 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
              int               max_dev,    /* largest allowed deviation from balance */
              int **            bndy_list,  /* list of vertices on boundary (0 ends) */
              double *          weightsum   /* sum of vweights in each set (in and out) */
-             )
+)
 {
   struct bilist **to_buckets;           /* buckets I'm moving to */
   struct bilist **from_buckets;         /* buckets I'm moving from */

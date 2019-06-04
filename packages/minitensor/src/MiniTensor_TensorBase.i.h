@@ -478,7 +478,7 @@ TensorBase<T, ST>::fill(
   number_components = get_number_components();
 
   Index const
-  rank = number_components / data.dimension(0);
+  rank = number_components / data.extent(0);
 
   switch (rank) {
 
@@ -517,7 +517,7 @@ TensorBase<T, ST>::fill(
   sub_dimension = number_components;
 
   Index const
-  dim = data.dimension(1);
+  dim = data.extent(1);
 
   while (sub_dimension != 1) {
 
@@ -568,7 +568,7 @@ TensorBase<T, ST>::fill(
   number_components = get_number_components();
 
   Index const
-  dim = data.dimension(2);
+  dim = data.extent(2);
 
   Index
   rank = 0;
@@ -636,7 +636,7 @@ TensorBase<T, ST>::fill(
   number_components = get_number_components();
 
   Index const
-  dim = data.dimension(2);
+  dim = data.extent(2);
 
   Index
   rank = 0;
@@ -718,7 +718,7 @@ TensorBase<T, ST>::fill(
   number_components = get_number_components();
 
   Index const
-  dim = data.dimension(2);
+  dim = data.extent(2);
 
   Index
   rank = 0;
@@ -816,7 +816,7 @@ TensorBase<T, ST>::fill(
   number_components = get_number_components();
 
   Index const
-  dim = data.dimension(2);
+  dim = data.extent(2);
 
   Index
   rank = 0;

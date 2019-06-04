@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,6 +32,7 @@
 
 #include <Ioss_Tracer.h>
 #include <cassert>
+#include <fmt/ostream.h>
 #include <iostream>
 
 namespace Ioss {
@@ -39,7 +40,7 @@ namespace Ioss {
 
   Tracer::Tracer(const char *function)
   {
-    std::cerr << "Entering Function: " << function << " at level " << ++level << "\n";
+    fmt::print(stderr, "Entering Function: {} at level {}\n", function, ++level);
     assert(level == 1);
   }
 

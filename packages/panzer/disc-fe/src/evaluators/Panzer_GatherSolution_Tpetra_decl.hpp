@@ -140,6 +140,9 @@ private:
   bool has_tangent_fields_;
   std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
 
+  Kokkos::View<int**,PHX::Device> scratch_lids_;
+  std::vector<Kokkos::View<int*,PHX::Device> > scratch_offsets_;
+
   GatherSolution_Tpetra();
 };
 

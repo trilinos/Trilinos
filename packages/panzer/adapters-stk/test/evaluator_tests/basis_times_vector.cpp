@@ -95,8 +95,8 @@ namespace panzer {
     virtual void evaluateContainer(const PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & points,
                                    PHX::MDField<panzer::Traits::Residual::ScalarT> & field) const
     {
-       int num_cells = field.dimension(0);
-       int num_qp = points.dimension(1);
+       int num_cells = field.extent(0);
+       int num_qp = points.extent(1);
 
        for(int i=0;i<num_cells;i++) {
           for(int j=0;j<num_qp;j++) {
@@ -138,7 +138,7 @@ namespace panzer {
     Teuchos::RCP<panzer::BasisIRLayout> layout_qedge1 = Teuchos::rcp(new panzer::BasisIRLayout(basis_qedge1,*ir));
 
     // build connection manager and field manager
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
     RCP<panzer::DOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
     dofManager->addField(fieldName_q1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
     dofManager->addField(fieldName_qedge1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_qedge1->getIntrepid2Basis())));
@@ -223,8 +223,8 @@ namespace panzer {
 
     fm.getFieldData<panzer::Traits::Residual>(fieldData_qedge1);
 
-    TEST_EQUALITY(fieldData_qedge1.dimension(0),1);
-    TEST_EQUALITY(fieldData_qedge1.dimension(1),4);
+    TEST_EQUALITY(fieldData_qedge1.extent(0),1);
+    TEST_EQUALITY(fieldData_qedge1.extent(1),4);
 
     // Transformation is [x,y] = F[x_ref,y_ref] = 0.5*[1,1]+0.5*[1,0;0,1]*[x_ref,y_ref]
     // therefore transformation matrix is DF^{-T} = 2*[1,0;0,1]

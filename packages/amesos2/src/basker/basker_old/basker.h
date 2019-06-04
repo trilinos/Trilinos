@@ -48,12 +48,12 @@ long basker_basker_l
 #include "mex.h"
 
 #ifdef DEBUG
-#define ASSERT(a) mxAssert(a, "")
+#define BASKERASSERT(a) mxAssert(a, "")
 #else
-#define ASSERT(a)
+#define BASKERASSERT(a)
 #endif
 
-#define REALLOC(ptr, size) mxRealloc(ptr, size)
+#define BASKERREALLOC(ptr, size) mxRealloc(ptr, size)
 
 #else /* MATLAB_MEX_FILE */
 
@@ -61,12 +61,12 @@ long basker_basker_l
 #include <assert.h>
 
 #ifdef DEBUG
-#define ASSERT(a) assert(a)
+#define BASKERASSERT(a) assert(a)
 #else
-#define ASSERT(a)
+#define BASKERASSERT(a)
 #endif
 
-#define REALLOC(ptr, size) realloc(ptr, size)
+#define BASKERREALLOC(ptr, size) realloc(ptr, size)
 
 #endif /* MATLAB_MEX_FILE */
 

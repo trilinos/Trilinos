@@ -51,22 +51,31 @@
 #include "Tpetra_CrsMatrix_decl.hpp" // Don't need the definition here
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include <type_traits>
-
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 #include <KokkosKernels_Handle.hpp>
-#endif
+
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Ifpack2 {
+namespace Details {
+
+template<class TpetraOperatorType>
+class ScaledDampedResidual; // forward declaration
+
+} // namespace Details
+} // namespace Ifpack2
 
 namespace Teuchos {
   // forward declarations
   class ParameterList;
   class Time;
 } // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Ifpack2 {
 
 /** \class Relaxation
-\brief Relaxation preconditioners for Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
-\author Michael A. Heroux (Sandia)
+\brief Relaxation preconditioners for Tpetra::RowMatrix and
+  Tpetra::CrsMatrix sparse matrices.
 \tparam MatrixType A specialization of Tpetra::RowMatrix.
 
 \section Ifpack_Relaxation_Summary Summary
@@ -126,11 +135,8 @@ preconditioner.
 ...
 using Teuchos::ParameterList;
 using Teuchos::RCP;
-typedef double ST;
-typedef int    LO;
-typedef int    GO;
-typedef Tpetra::CrsMatrix<ST, LO, GO> crs_matrix_type;
-typedef Ifpack2::Preconditioner<ST, LO, GO> precond_type;
+typedef Tpetra::CrsMatrix<double> crs_matrix_type;
+typedef Ifpack2::Preconditioner<double> precond_type;
 ...
 
 // Create the sparse matrix A somehow.  It must be fill complete
@@ -224,14 +230,16 @@ same thing holds for the backward sweep.
 */
 template<class MatrixType>
 class Relaxation :
-  virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                         typename MatrixType::local_ordinal_type,
-                                         typename MatrixType::global_ordinal_type,
-                                         typename MatrixType::node_type>,
-  virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                     typename MatrixType::local_ordinal_type,
-                                                                     typename MatrixType::global_ordinal_type,
-                                                                     typename MatrixType::node_type> >
+  virtual public Ifpack2::Preconditioner<
+    typename MatrixType::scalar_type,
+    typename MatrixType::local_ordinal_type,
+    typename MatrixType::global_ordinal_type,
+    typename MatrixType::node_type>,
+  virtual public Ifpack2::Details::CanChangeMatrix<
+    Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                      typename MatrixType::local_ordinal_type,
+                      typename MatrixType::global_ordinal_type,
+                      typename MatrixType::node_type> >
 {
 public:
   //! @name Typedefs
@@ -270,14 +278,11 @@ public:
   ///   here.
   ///
   /// The results of apply() are undefined if you change the diagonal
-  /// entries of the sparse matrix after invoking this constructor.
-  /// In particular, the compute() method may extract the diagonal
-  /// entries and precompute their inverses, in order to speed up
-  /// Gauss-Seidel or to implement the L1 version of various
-  /// relaxation methods.  If you plan to change the diagonal entries
-  /// of the matrix after making a Relaxation instance with that
-  /// matrix, you must destroy the old Relaxation instance and create
-  /// a new one after changing the diagonal entries.
+  /// entries of the sparse matrix after invoking this constructor,
+  /// without first calling compute().  In particular, the compute()
+  /// method may extract the diagonal entries and precompute their
+  /// inverses, in order to speed up any of the relaxation methods that
+  /// this class implements.
   ///
   /// The "explicit" keyword just means that you must invoke the
   /// Relaxation constructor explicitly; you aren't allowed to use it
@@ -298,7 +303,7 @@ public:
   explicit Relaxation (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor.
-  virtual ~Relaxation();
+  virtual ~Relaxation () = default;
 
   //@}
   //! @name Preconditioner computation methods
@@ -387,14 +392,7 @@ public:
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters () const;
 
-  /// \brief Initialize the preconditioner.
-  ///
-  /// You may call this method before calling compute().  If you call
-  /// compute() before initialize() has been called on this object,
-  /// compute() will call initialize() for you.  If you have already
-  /// called compute() and you call initialize(), you must call
-  /// compute() again before you may use the preconditioner (by
-  /// calling apply()).
+  //! Initialize the preconditioner ("symbolic setup").
   void initialize ();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
@@ -402,19 +400,12 @@ public:
     return isInitialized_;
   }
 
-  /// \brief Compute the preconditioner.
-  ///
-  /// You must call this method before calling apply().  You must also
-  /// call this method if the matrix's structure or values have
-  /// changed since the last time compute() has been called.  If
-  /// initialize() has not yet been called, this method will call
-  /// initialize() for you.
+  //! Compute the preconditioner ("numeric setup");
   void compute ();
-
 
   //! Return true if compute() has been called.
   inline bool isComputed() const {
-    return(IsComputed_);
+    return IsComputed_;
   }
 
   //@}
@@ -480,24 +471,27 @@ public:
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
   getRangeMap () const;
 
-  //! Whether apply() and applyMat() let you apply the transpose or conjugate transpose.
+  /// \brief Whether apply() and applyMat() let you apply the
+  ///   transpose or conjugate transpose.
   bool hasTransposeApply () const;
 
-  /// \brief Apply the preconditioner to X, returning the result in Y.
-  ///
-  /// This method computes Y = M*X, where M*X represents the action of
-  /// the preconditioner on the input multivector X.
+  /// \brief Apply the input matrix to X, returning the result in Y.
   ///
   /// \param X [in] The multivector input of the preconditioner.
   /// \param Y [in/out] The multivector output of the preconditioner.
   /// \param mode [in] Whether to apply the transpose or conjugate
-  ///   transpose of the preconditioner.  Not all preconditioners
-  ///   support options other than the default (no transpose); please
-  ///   call hasTransposeApply() to determine whether nondefault
-  ///   options are supported.
+  ///   transpose of the matrix.
   void
-  applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+  applyMat (const Tpetra::MultiVector<
+              scalar_type,
+              local_ordinal_type,
+              global_ordinal_type,
+              node_type>& X,
+            Tpetra::MultiVector<
+              scalar_type,
+              local_ordinal_type,
+              global_ordinal_type,
+              node_type>& Y,
             Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
@@ -536,7 +530,7 @@ public:
 
   //! Get a rough estimate of cost per iteration
   size_t getNodeSmootherComplexity() const;
-    
+
   //@}
   //! @name Implementation of Teuchos::Describable interface
   //@{
@@ -595,7 +589,6 @@ private:
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_multivector_type;
 
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 
   //@}
   //! \name Implementation of multithreaded Gauss-Seidel.
@@ -612,7 +605,6 @@ private:
       <typename lno_row_view_t::const_value_type, local_ordinal_type,typename scalar_nonzero_view_t::value_type,
       MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > mt_kernel_handle_type;
   Teuchos::RCP<mt_kernel_handle_type> mtKernelHandle_;
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
@@ -683,14 +675,9 @@ private:
                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   void MTGaussSeidel (
-      const crs_matrix_type* crsMat,
-      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
-      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
-      const scalar_type& dampingFactor,
-      const Tpetra::ESweepDirection direction,
-      const int numSweeps,
-      const bool zeroInitialGuess) const;
+      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+      const Tpetra::ESweepDirection direction) const;
 
   //! Apply symmetric Gauss-Seidel for a Tpetra::RowMatrix specialization.
   void ApplyInverseSGS_RowMatrix(
@@ -711,6 +698,9 @@ private:
 
   void computeBlockCrs ();
 
+  //! A service routine for updating the cached MultiVector
+  void updateCachedMultiVector(const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& map, size_t numVecs) const;
+
 
   //@}
   //! @name Internal data and parameters
@@ -726,13 +716,13 @@ private:
 
   //! The matrix for which to construct the preconditioner or smoother.
   Teuchos::RCP<const row_matrix_type> A_;
-  //! Time object to track timing.
-  Teuchos::RCP<Teuchos::Time> Time_;
+  //! Time object to track timing (setup).
   //! Importer for parallel Gauss-Seidel and symmetric Gauss-Seidel.
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c A_.
   Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
-
+  //! MultiVector for caching purposes (so apply doesn't need to allocate one on each call)
+  mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedMV_;
 
   typedef Kokkos::View<typename block_crs_matrix_type::impl_scalar_type***,
                        typename block_crs_matrix_type::device_type> block_diag_type;
@@ -850,4 +840,3 @@ private:
 }//namespace Ifpack2
 
 #endif // IFPACK2_RELAXATION_DECL_HPP
-

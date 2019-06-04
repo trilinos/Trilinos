@@ -1,0 +1,87 @@
+<!--////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ REQUIRED BLOCKS:
+ 1. Input parameters
+ 2. Problem parameters
+ 
+ OPTIONAL Blocks:
+ 3. Comparison
+ 
+ SUPPORTED INPUT FILE TYPES:
+ 1. Geometric Generator
+ 2. Pamgen
+ 3. Chaco
+ 4. Matrix Market
+ 
+ SUPPORTED PROBLEM TYPES:
+ 1. partitioning
+ 
+ SUPPORTED INPUT DATA TYPES:
+ 1. coordinates
+ 2. (x,t,e)petra_crs_matrix
+ 3. (x,t,e)petra_crs_graph
+ 4. (x,t,e)petra_vector
+ 5. (x,t,e)petra_multivector
+ 
+ SUPPORTED INPUT ADAPTERS:
+ 1. BasicIdentifier
+ 2. XpetraMultiVector
+ 3. XpetraCrsGraph
+ 4. XpetraCrsMatrix
+ 5. BasicVector
+ 5. PamgenMesh
+ 
+ ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////-->
+
+<ParameterList name="zoltanWithGraphAdapter">
+  
+  <ParameterList name="InputParameters">
+    <Parameter name="distribute input" type="bool" value="True"/>
+    <Parameter name="input path" type="string" value="./"/>
+    <Parameter name="input file" type="string" value="simple"/>
+    <Parameter name="file type" type="string" value="Chaco"/>
+  </ParameterList>
+  
+  <ParameterList name="withGraphAdapter">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="xpetra_crs_graph"/>
+      <Parameter name="input adapter" type="string" value="XpetraCrsGraph"/>
+    </ParameterList>    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="phg"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
+      <Parameter name="num_global_parts" type="string" value="8"/>
+    </ParameterList>  
+    <ParameterList name="Metrics"> 
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="upper" type="double" value="1.28"/>
+      </ParameterList>    
+    </ParameterList>    
+  </ParameterList>
+
+  <ParameterList name="withMatrixAdapter">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="xpetra_crs_matrix"/>
+      <Parameter name="input adapter" type="string" value="XpetraCrsMatrix"/>
+    </ParameterList>    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="phg"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
+      <Parameter name="num_global_parts" type="string" value="8"/>
+    </ParameterList>    
+    <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="upper" type="double" value="1.28"/>
+      </ParameterList>  
+    </ParameterList>    
+  </ParameterList>
+
+</ParameterList>

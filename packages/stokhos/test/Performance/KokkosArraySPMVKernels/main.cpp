@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 {
   // Defaults
   bool test_host = true;
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   bool test_cuda = true;
   int device = 0;
 #endif
@@ -71,13 +71,13 @@ int main(int argc, char *argv[])
   bool symmetric = true;
   bool single = false;
   bool mkl = false;
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   bool serial = true;
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   bool omp = true;
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
   bool threads = true;
 #endif
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
       test_host = true;
     else if (s == "no-host")
       test_host = false;
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     else if (s == "cuda")
       test_cuda = true;
     else if (s == "no-cuda")
@@ -132,19 +132,19 @@ int main(int argc, char *argv[])
       single = true;
     else if (s == "double")
       single = false;
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     else if (s == "serial")
       serial = true;
     else if (s == "no-serial")
       serial = false;
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     else if (s == "omp")
       omp = true;
     else if (s == "no-omp")
       omp = false;
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     else if (s == "threads")
       threads = true;
     else if (s == "no-threads")
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 
   if (test_host) {
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     if (serial) {
       if (single)
         mainHost<float,Kokkos::Serial>(
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       if (single)
         mainHost<float,Kokkos::Threads>(
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (omp) {
       if (single)
         mainHost<float,Kokkos::OpenMP>(
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 
   }
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   if (test_cuda) {
     if (single)
       mainCuda<float>(test_flat, test_orig, test_lin, test_block, symmetric, device);

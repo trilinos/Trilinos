@@ -73,7 +73,7 @@ using Teuchos::rcpFromRef;
 namespace panzer {
 namespace unit_test {
 
-typedef CartesianConnManager<int,Ordinal64>::Triplet<Ordinal64> Triplet;
+using Triplet = CartesianConnManager::Triplet<panzer::Ordinal64>;
 
 template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
@@ -85,7 +85,7 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 }
 
 std::string getElementBlock(const Triplet & element,
-                                    const CartesianConnManager<int,Ordinal64> & connManager)
+                            const CartesianConnManager & connManager)
                                     
 {
   int localElmtId = connManager.computeLocalElementIndex(element); 
@@ -94,8 +94,8 @@ std::string getElementBlock(const Triplet & element,
 
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef panzer::DOFManager<int,Ordinal64> DOFManager;
+  using CCM = CartesianConnManager;
+  using DOFManager = panzer::DOFManager<int,Ordinal64>;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -315,6 +315,26 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
 
       for(std::size_t i=0;i<gid_sub_r.size();i++)
         TEST_EQUALITY(gid_sub_r[i],gid_remote[i]);
+    }
+  }
+
+  // Test the kokkos version of field offsets
+  {
+    const int fieldNumber = dofManager->getFieldNum("B");
+    std::vector<std::string> elementBlockNames;
+    dofManager->getElementBlockIds(elementBlockNames);
+    TEST_ASSERT(elementBlockNames.size() > 0);
+    TEST_ASSERT(fieldNumber >= 0);
+    const auto& hostOffsetsStdVector = dofManager->getGIDFieldOffsets(elementBlockNames[0],fieldNumber);
+    TEST_EQUALITY(hostOffsetsStdVector.size(),6);
+    const auto kokkosOffsets = dofManager->getGIDFieldOffsetsKokkos(elementBlockNames[0],fieldNumber);
+    const auto hostKokkosOffsets = Kokkos::create_mirror_view(kokkosOffsets);
+    Kokkos::deep_copy(hostKokkosOffsets,kokkosOffsets);
+    PHX::Device::fence();
+
+    TEST_EQUALITY(hostOffsetsStdVector.size(),hostKokkosOffsets.size());
+    for (size_t i=0; i < hostOffsetsStdVector.size(); ++i) {
+      TEST_EQUALITY(hostOffsetsStdVector[i],hostKokkosOffsets(i));
     }
   }
     

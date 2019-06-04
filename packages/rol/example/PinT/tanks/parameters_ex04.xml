@@ -1,0 +1,46 @@
+<ParameterList name="Tanks">
+  <!--===================================================================================================================--> 
+  <!-- Tank Array Numbers                                                                                                --> 
+  <Parameter name="Number of Rows"               type="int"      value="3"                                                />
+  <Parameter name="Number of Columns"            type="int"      value="3"                                                />
+  <Parameter name="Number of Pass-Throughs"      type="int"      value="2"            unit="number"                       />
+  <Parameter name="Pass-Through Rows"            type="string"   value="{1,2}"        unit="int array"  symbol="pt_row"   />
+  <Parameter name="Pass-Through Columns"         type="string"   value="{1,2}"        unit="int array"  symbol="pt_col"   />
+  <Parameter name="Number of Boundary Controls"  type="int"      value="5"            unit="number"                       />
+  <Parameter name="Boundary Control Rows"        type="string"   value="{0,0,0,1,2}"  unit="int array"  symbol="ctrl_row" />
+  <Parameter name="Boundary Control Columns"     type="string"   value="{0,1,2,0,0}"  unit="int array"  symbol="ctrl_col" />
+  <!--=========================================================================================================--> 
+  <!-- Physical Parameters                                                                                     --> 
+  <Parameter name="Valve Constant"           type="double"   value="1.0e-2" unit="m^3/(s Pa)" symbol="Cv"       />
+  <Parameter name="Density of Fluid"         type="double"   value="1.0e3"  unit="kg/m^3"     symbol="rho"      />
+  <Parameter name="Initial Fluid Level"      type="double"   value="2.0"    unit="m"          symbol="h0"       />
+  <Parameter name="Height of Tank"           type="double"   value="10.0"   unit="m"          symbol="H"        />
+  <Parameter name="Cross-sectional Area"     type="double"   value="10.0"   unit="m^2"        symbol="A"        />
+  <Parameter name="Gravity Constant"         type="double"   value="9.8"    unit="m/s^2"      symbol="g"        />
+  <Parameter name="Corner Inflow"            type="double"   value="100"    unit="m^3/s"      symbol="Qin00"    />
+  <Parameter name="Target Fluid Level"       type="double"   value="0.5"    unit="m^3/s"      symbol="htarg"    />
+  <!--=========================================================================================================--> 
+  <!-- Time Discretization                                                                                     --> 
+  <Parameter name="Total Time"               type="double"   value="20.0"   unit="s"          symbol="T"        />
+  <Parameter name="Number of Time Steps"     type="int"      value="100"                      symbol="Nt"       />
+  <Parameter name="Theta"                    type="double"   value="0.5"                      symbol="theta"    />
+  <!--================================================================================-->
+  <!-- Penalty parameters                                                             --> 
+  <ParameterList name="Penalty Parameters">
+    <Parameter name="Final State"          type="double"  value="0.0"  symbol="alpha"  />
+    <Parameter name="Distributed State"    type="double"  value="1.0"  symbol="beta"   />
+    <Parameter name="Distributed Control"  type="double"  value="0.0"  symbol="gamma"  />
+  </ParameterList>
+  <!--================================================================================--> 
+  <!-- Sketching Parameters                                                           --> 
+  <ParameterList name="Reduced Dynamic Objective">
+    <Parameter name="Use Sketching"         type="bool"     value="false" />
+    <Parameter name="State Rank"            type="int"      value="10"    />
+    <Parameter name="Adjoint Rank"          type="int"      value="10"    />
+    <Parameter name="State Sensitvity Rank" type="int"      value="10"    />
+    <Parameter name="Use Hessian"           type="bool"     value="true"  />
+  </ParameterList>
+  <!--================================================================================-->
+</ParameterList>
+
+

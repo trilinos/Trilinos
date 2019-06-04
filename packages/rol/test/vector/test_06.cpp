@@ -48,68 +48,67 @@
 #include "ROL_ProfiledVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
-#include "ROL_Algorithm.hpp" 
+#include "ROL_Algorithm.hpp"
 
 
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_oblackholestream.hpp"
+
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 typedef int    OrdinalT;
 typedef double RealT;
 
 template<>
-ROL::VectorFunctionCalls<int> 
+ROL::VectorFunctionCalls<int>
 ROL::ProfiledVector<int,RealT>::functionCalls_ = ROL::VectorFunctionCalls<int>();
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP; using Teuchos::rcp;
-  using Teuchos::ParameterList;
+
+  using ROL::ParameterList;
 
   typedef std::vector<RealT>                  vector;
 
   typedef ROL::Vector<RealT>                  V;
-  typedef ROL::StdVector<RealT>               SV; 
+  typedef ROL::StdVector<RealT>               SV;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
 
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
   try {
     // Dimension of the optimization vector
-    int dim = 10; 
+    int dim = 10;
 
-    RCP<ParameterList> parlist = rcp(new ParameterList());
     std::string paramfile = "parameters.xml";
-    updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile(paramfile);
 
     // Define algorithm.
-    ROL::Algorithm<RealT> algo("Trust-Region",*parlist);    
+    ROL::Algorithm<RealT> algo("Trust-Region",*parlist);
 
-    RCP<vector> x_rcp = rcp( new vector(dim,1.0) );
-    RCP<vector> k_rcp = rcp( new vector(dim) );
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim,1.0);
+    ROL::Ptr<vector> k_ptr = ROL::makePtr<vector>(dim);
 
-    for(int i=0;i<dim;++i) {  
-      (*k_rcp)[i] = 1.0 + i;
+    for(int i=0;i<dim;++i) {
+      (*k_ptr)[i] = 1.0 + i;
     }
 
-    RCP<V> xs = rcp( new SV(x_rcp) );
-    RCP<V> ks = rcp( new SV(k_rcp) );
+    ROL::Ptr<V> xs = ROL::makePtr<SV>(x_ptr);
+    ROL::Ptr<V> ks = ROL::makePtr<SV>(k_ptr);
 
     // Create ProfiledVector objects
     ROL::ProfiledVector<int,RealT> xpf(xs);
-    RCP<V> kpf = rcp( new ROL::ProfiledVector<int,RealT>(ks) );
+    ROL::Ptr<V> kpf = ROL::makePtr<ROL::ProfiledVector<int,RealT>>(ks);
 
-    ROL::ZOO::Objective_Zakharov<RealT> obj(kpf);    
+    ROL::ZOO::Objective_Zakharov<RealT> obj(kpf);
 
     // Run algorithm.
     algo.run(xpf, obj, true, *outStream);

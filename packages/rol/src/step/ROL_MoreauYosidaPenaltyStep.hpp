@@ -45,13 +45,12 @@
 #define ROL_MOREAUYOSIDAPENALTYSTEP_H
 
 #include "ROL_MoreauYosidaPenalty.hpp"
-#include "ROL_Vector.hpp"
-#include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
-#include "ROL_Constraint.hpp"
 #include "ROL_Types.hpp"
+#include "ROL_AugmentedLagrangianStep.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_FletcherStep.hpp"
 #include "ROL_Algorithm.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
     \class ROL::MoreauYosidaPenaltyStep
@@ -120,11 +119,11 @@ namespace ROL {
 template <class Real>
 class MoreauYosidaPenaltyStep : public Step<Real> {
 private:
-  Teuchos::RCP<Algorithm<Real> >       algo_;
-  Teuchos::RCP<Vector<Real> >          x_; 
-  Teuchos::RCP<Vector<Real> >          g_; 
-  Teuchos::RCP<Vector<Real> >          l_; 
-  Teuchos::RCP<BoundConstraint<Real> > bnd_;
+  ROL::Ptr<Algorithm<Real> >       algo_;
+  ROL::Ptr<Vector<Real> >          x_; 
+  ROL::Ptr<Vector<Real> >          g_; 
+  ROL::Ptr<Vector<Real> >          l_; 
+  ROL::Ptr<BoundConstraint<Real> > bnd_;
 
   Real compViolation_;
   Real gLnorm_;
@@ -132,18 +131,21 @@ private:
   bool print_;
   bool updatePenalty_;
 
-  Teuchos::ParameterList parlist_;
+  ROL::ParameterList parlist_;
   int subproblemIter_;
   bool hasEquality_;
+
+  EStep stepType_;
+  std::string stepname_;
 
   void updateState(const Vector<Real> &x, const Vector<Real> &l,
                    Objective<Real> &obj,
                    Constraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state) {
     MoreauYosidaPenalty<Real> &myPen
-      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
+      = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
     Real zerotol = std::sqrt(ROL_EPSILON<Real>());
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     // Update objective and constraint.
     myPen.update(x,true,algo_state.iter);
     con.update(x,true,algo_state.iter);
@@ -169,9 +171,9 @@ private:
                    BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state) {
     MoreauYosidaPenalty<Real> &myPen
-      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
+      = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
     Real zerotol = std::sqrt(ROL_EPSILON<Real>());
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     // Update objective and constraint.
     myPen.update(x,true,algo_state.iter);
     // Compute norm of the gradient of the Lagrangian
@@ -195,14 +197,14 @@ public:
 
   ~MoreauYosidaPenaltyStep() {}
 
-  MoreauYosidaPenaltyStep(Teuchos::ParameterList &parlist)
-    : Step<Real>(), algo_(Teuchos::null),
-      x_(Teuchos::null), g_(Teuchos::null), l_(Teuchos::null),
+  MoreauYosidaPenaltyStep(ROL::ParameterList &parlist)
+    : Step<Real>(), algo_(ROL::nullPtr),
+      x_(ROL::nullPtr), g_(ROL::nullPtr), l_(ROL::nullPtr),
       tau_(10), print_(false), parlist_(parlist), subproblemIter_(0),
       hasEquality_(false) {
     // Parse parameters
     Real ten(10), oem6(1.e-6), oem8(1.e-8);
-    Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
+    ROL::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     Step<Real>::getState()->searchSize = steplist.get("Initial Penalty Parameter",ten);
     tau_ = steplist.get("Penalty Parameter Growth Factor",ten);
     updatePenalty_ = steplist.get("Update Penalty",true);
@@ -216,6 +218,9 @@ public:
     parlist_.sublist("Status Test").set("Constraint Tolerance", ctol);
     parlist_.sublist("Status Test").set("Step Tolerance",       stol);
     parlist_.sublist("Status Test").set("Iteration Limit",      maxit);
+    // Get step name from parameterlist
+    stepname_ = steplist.sublist("Subproblem").get("Step Type","Composite Step");
+    stepType_ = StringToEStep(stepname_);
   }
 
   /** \brief Initialize step with equality constraint.
@@ -225,7 +230,7 @@ public:
                    AlgorithmState<Real> &algo_state ) {
     hasEquality_ = true;
     // Initialize step state
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
     state->constraintVec = c.clone();
@@ -250,7 +255,7 @@ public:
                    Objective<Real> &obj, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
     // Initialize step state
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
     // Initialize additional storage
@@ -266,7 +271,7 @@ public:
     algo_state.ngrad = 0;
     updateState(x,obj,bnd,algo_state);
 
-    bnd_ = Teuchos::rcp(new BoundConstraint<Real>());
+    bnd_ = ROL::makePtr<BoundConstraint<Real>>();
     bnd_->deactivate();
   }
 
@@ -276,12 +281,30 @@ public:
                 Objective<Real> &obj, Constraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
+    //MoreauYosidaPenalty<Real> &myPen
+    //  = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
     Real one(1);
-    MoreauYosidaPenalty<Real> &myPen
-      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
-    algo_ = Teuchos::rcp(new Algorithm<Real>("Composite Step",parlist_,false));
+    Ptr<Objective<Real>> penObj;
+    if (stepType_ == STEP_AUGMENTEDLAGRANGIAN) {
+      Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
+      Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
+      Ptr<StepState<Real>>  state   = Step<Real>::getState();
+      penObj = makePtr<AugmentedLagrangian<Real>>(raw_obj,raw_con,l,one,x,*(state->constraintVec),parlist_);
+    }
+    else if (stepType_ == STEP_FLETCHER) {
+      Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
+      Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
+      Ptr<StepState<Real>>  state   = Step<Real>::getState();
+      penObj = makePtr<Fletcher<Real>>(raw_obj,raw_con,x,*(state->constraintVec),parlist_);
+    }
+    else {
+      penObj = makePtrFromRef(obj);
+      stepname_ = "Composite Step";
+      stepType_ = STEP_COMPOSITESTEP;
+    }
+    algo_ = ROL::makePtr<Algorithm<Real>>(stepname_,parlist_,false);
     x_->set(x); l_->set(l);
-    algo_->run(*x_,*l_,myPen,con,print_);
+    algo_->run(*x_,*l_,*penObj,con,print_);
     s.set(*x_); s.axpy(-one,x);
     subproblemIter_ = (algo_->getState())->iter;
   }
@@ -293,8 +316,8 @@ public:
                         AlgorithmState<Real> &algo_state ) {
     Real one(1);
     MoreauYosidaPenalty<Real> &myPen
-      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
-    algo_ = Teuchos::rcp(new Algorithm<Real>("Trust Region",parlist_,false));
+      = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
+    algo_ = ROL::makePtr<Algorithm<Real>>("Trust Region",parlist_,false);
     x_->set(x);
     algo_->run(*x_,myPen,*bnd_,print_);
     s.set(*x_); s.axpy(-one,x);
@@ -309,8 +332,9 @@ public:
                BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
     MoreauYosidaPenalty<Real> &myPen
-      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+      = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    state->SPiter = subproblemIter_;
     state->descentVec->set(s);
     // Update iterate and Lagrange multiplier
     x.plus(s);
@@ -340,8 +364,8 @@ public:
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
     MoreauYosidaPenalty<Real> &myPen
-      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+      = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     state->descentVec->set(s);
     // Update iterate and Lagrange multiplier
     x.plus(s);

@@ -80,8 +80,8 @@ public:
    * @param xmlObj The XMLObject to which any special traits should be added.
    */
   virtual void getSpecialSimpleFunctionXMLTraits(
-    const RCP<const SimpleFunctionObject<OperandType> > functionObject,
-    XMLObject& xmlObj) const{}
+    const RCP<const SimpleFunctionObject<OperandType> > /* functionObject */,
+    XMLObject& /* xmlObj */) const{}
 
   //@}
 

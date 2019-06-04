@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -43,7 +43,7 @@ void splarax(double *          result, /* result of matrix vector multiplication
              double *          vec,    /* vector being multiplied by matrix */
              double *          vwsqrt, /* square roots of vertex weights */
              double *          work    /* work vector from 1-n */
-             )
+)
 {
   extern int       PERTURB;     /* perturb matrix? */
   extern int       NPERTURB;    /* if so, number of edges to perturb */
@@ -92,13 +92,11 @@ void splarax(double *          result, /* result of matrix vector multiplication
     }
   }
   else { /* Vertex weights */
-    if (vwsqrt != NULL) {
-      wrkpntr  = work;
-      vecpntr  = vec;
-      vwsqpntr = vwsqrt;
-      for (i = n; i; i--) {
-        *(++wrkpntr) = *(++vecpntr) / *(++vwsqpntr);
-      }
+    wrkpntr  = work;
+    vecpntr  = vec;
+    vwsqpntr = vwsqrt;
+    for (i = n; i; i--) {
+      *(++wrkpntr) = *(++vecpntr) / *(++vwsqpntr);
     }
 
     if (mat[1]->ewgts == NULL) { /* No edge weights. */
@@ -131,12 +129,10 @@ void splarax(double *          result, /* result of matrix vector multiplication
       perturb(result, work);
     }
 
-    if (vwsqrt != NULL) {
-      respntr  = result;
-      vwsqpntr = vwsqrt;
-      for (i = n; i; i--) {
-        *(++respntr) /= *(++vwsqpntr);
-      }
+    respntr  = result;
+    vwsqpntr = vwsqrt;
+    for (i = n; i; i--) {
+      *(++respntr) /= *(++vwsqpntr);
     }
   }
 }
@@ -148,7 +144,7 @@ void splarax_float(float *           result, /* result of matrix vector multipli
                    float *           vec,    /* vector being multiplied by matrix */
                    float *           vwsqrt, /* square roots of vertex weights */
                    float *           work    /* work vector from 1-n */
-                   )
+)
 {
   extern int       PERTURB;     /* perturb matrix? */
   extern int       NPERTURB;    /* if so, number of edges to perturb */
@@ -197,13 +193,11 @@ void splarax_float(float *           result, /* result of matrix vector multipli
     }
   }
   else { /* Vertex weights */
-    if (vwsqrt != NULL) {
-      wrkpntr  = work;
-      vecpntr  = vec;
-      vwsqpntr = vwsqrt;
-      for (i = n; i; i--) {
-        *(++wrkpntr) = *(++vecpntr) / *(++vwsqpntr);
-      }
+    wrkpntr  = work;
+    vecpntr  = vec;
+    vwsqpntr = vwsqrt;
+    for (i = n; i; i--) {
+      *(++wrkpntr) = *(++vecpntr) / *(++vwsqpntr);
     }
 
     if (mat[1]->ewgts == NULL) { /* No edge weights. */
@@ -236,12 +230,10 @@ void splarax_float(float *           result, /* result of matrix vector multipli
       perturb_float(result, work);
     }
 
-    if (vwsqrt != NULL) {
-      respntr  = result;
-      vwsqpntr = vwsqrt;
-      for (i = n; i; i--) {
-        *(++respntr) /= *(++vwsqpntr);
-      }
+    respntr  = result;
+    vwsqpntr = vwsqrt;
+    for (i = n; i; i--) {
+      *(++respntr) /= *(++vwsqpntr);
     }
   }
 }

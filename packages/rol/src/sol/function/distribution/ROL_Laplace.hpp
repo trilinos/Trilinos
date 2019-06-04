@@ -45,7 +45,7 @@
 #define ROL_LAPLACE_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -70,7 +70,7 @@ public:
   Laplace(const Real mean = 0., const Real scale = 1.)
     : mean_(mean), scale_(scale) {}
 
-  Laplace(Teuchos::ParameterList &parlist) {
+  Laplace(ROL::ParameterList &parlist) {
     mean_  = parlist.sublist("SOL").sublist("Distribution").sublist("Laplace").get("Mean",0.);
     scale_ = parlist.sublist("SOL").sublist("Distribution").sublist("Laplace").get("Scale",1.);
     scale_ = (scale_ > 0.) ? scale_ : 1.;

@@ -122,6 +122,10 @@ public:
       const size_type nid = blockDim.x * blockDim.y;
       const size_type tid = threadIdx.x + blockDim.x * threadIdx.y;
 
+      // Mask used for shuffle/warp-sync operations
+      const int mask = blockDim.x == 32 ? 0xffffffff :
+        ((1<<blockDim.x)-1)<<(threadIdx.y%(32/blockDim.x))*blockDim.x;
+
       // Zero y
       for ( size_type i = tid; i < dim; i += nid ) {
         sh_y[i] = 0.0;
@@ -184,19 +188,24 @@ public:
 
           // Reduction of 'y' within 'blockDim.x'
 #if HAVE_CUDA_SHUFFLE
-          if (blockDim.x >= 2) y += shfl_down(y, 1, blockDim.x);
-          if (blockDim.x >= 4) y += shfl_down(y, 2, blockDim.x);
-          if (blockDim.x >= 8) y += shfl_down(y, 4, blockDim.x);
-          if (blockDim.x >= 16) y += shfl_down(y, 8, blockDim.x);
-          if (blockDim.x >= 32) y += shfl_down(y, 16, blockDim.x);
+          if (blockDim.x >= 2) y += shfl_down(y, 1, blockDim.x, mask);
+          if (blockDim.x >= 4) y += shfl_down(y, 2, blockDim.x, mask);
+          if (blockDim.x >= 8) y += shfl_down(y, 4, blockDim.x, mask);
+          if (blockDim.x >= 16) y += shfl_down(y, 8, blockDim.x, mask);
+          if (blockDim.x >= 32) y += shfl_down(y, 16, blockDim.x, mask);
           if ( threadIdx.x == 0 ) sh_y[i] += y;
 #else
           sh_t[ tid ] = y;
           if (threadIdx.x+16 < blockDim.x) sh_t[tid] += sh_t[tid+16];
+          sync_warp(mask);
           if (threadIdx.x+ 8 < blockDim.x) sh_t[tid] += sh_t[tid+ 8];
+          sync_warp(mask);
           if (threadIdx.x+ 4 < blockDim.x) sh_t[tid] += sh_t[tid+ 4];
+          sync_warp(mask);
           if (threadIdx.x+ 2 < blockDim.x) sh_t[tid] += sh_t[tid+ 2];
+          sync_warp(mask);
           if (threadIdx.x+ 1 < blockDim.x) sh_t[tid] += sh_t[tid+ 1];
+          sync_warp(mask);
           if (threadIdx.x == 0) sh_y[i] += sh_t[tid];
 #endif
 
@@ -247,6 +256,10 @@ public:
 
       const size_type nid = blockDim.x * blockDim.y;
       const size_type tid = threadIdx.x + blockDim.x * threadIdx.y;
+
+      // Mask used for shuffle/warp-sync operations
+      const int mask = blockDim.x == 32 ? 0xffffffff :
+        ((1<<blockDim.x)-1)<<(threadIdx.y%(32/blockDim.x))*blockDim.x;
 
       // Zero y
       for ( size_type i = tid; i < dim; i += nid ) {
@@ -314,19 +327,24 @@ public:
 
           // Reduction of 'y' within 'blockDim.x'
 #if HAVE_CUDA_SHUFFLE
-          if (blockDim.x >= 2) y += shfl_down(y, 1, blockDim.x);
-          if (blockDim.x >= 4) y += shfl_down(y, 2, blockDim.x);
-          if (blockDim.x >= 8) y += shfl_down(y, 4, blockDim.x);
-          if (blockDim.x >= 16) y += shfl_down(y, 8, blockDim.x);
-          if (blockDim.x >= 32) y += shfl_down(y, 16, blockDim.x);
+          if (blockDim.x >= 2) y += shfl_down(y, 1, blockDim.x, mask);
+          if (blockDim.x >= 4) y += shfl_down(y, 2, blockDim.x, mask);
+          if (blockDim.x >= 8) y += shfl_down(y, 4, blockDim.x, mask);
+          if (blockDim.x >= 16) y += shfl_down(y, 8, blockDim.x, mask);
+          if (blockDim.x >= 32) y += shfl_down(y, 16, blockDim.x, mask);
           if ( threadIdx.x == 0 ) sh_y[i] += y;
 #else
           sh_t[ tid ] = y;
           if (threadIdx.x+16 < blockDim.x) sh_t[tid] += sh_t[tid+16];
+          sync_warp(mask);
           if (threadIdx.x+ 8 < blockDim.x) sh_t[tid] += sh_t[tid+ 8];
+          sync_warp(mask);
           if (threadIdx.x+ 4 < blockDim.x) sh_t[tid] += sh_t[tid+ 4];
+          sync_warp(mask);
           if (threadIdx.x+ 2 < blockDim.x) sh_t[tid] += sh_t[tid+ 2];
+          sync_warp(mask);
           if (threadIdx.x+ 1 < blockDim.x) sh_t[tid] += sh_t[tid+ 1];
+          sync_warp(mask);
           if (threadIdx.x == 0) sh_y[i] += sh_t[tid];
 #endif
 
@@ -357,7 +375,7 @@ public:
                      const vector_type & x,
                      const vector_type & y )
   {
-    const size_type row_count = A.graph.row_map.dimension_0() - 1;
+    const size_type row_count = A.graph.row_map.extent(0) - 1;
     const size_type tensor_dimension = A.block.dimension();
     const size_type tensor_align = tensor_dimension;
     const size_type avg_tensor_entries_per_row = A.block.avg_entries_per_row();

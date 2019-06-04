@@ -69,7 +69,7 @@ TEST( UnitTestChangeEntityId, change_id_small )
 
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  Part &quad4_part = meta_data.declare_part_with_topology("quad4_Part", stk::topology::QUAD_4);
+  Part &quad4_part = meta_data.declare_part_with_topology("quad4_Part", stk::topology::QUAD_4_2D);
   meta_data.commit();
 
   BulkData mesh(meta_data, pm);
@@ -130,7 +130,8 @@ TEST( UnitTestChangeEntityId, change_id_large )
 
   Field<int> & simple_nodal_field = hf.m_meta.declare_field<Field<int> >(stk::topology::NODE_RANK, "simple_nodal_field");
 
-  put_field( simple_nodal_field, *hf.m_elem_parts[0]);
+  put_field_on_mesh( simple_nodal_field, *hf.m_elem_parts[0],
+                     (stk::mesh::FieldTraits<Field<int> >::data_type*) nullptr);
 
   //create nodal field on hex topo
 

@@ -44,7 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
@@ -143,7 +143,7 @@ generate_test_matrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, GO, NT)
 {
-  typedef Tpetra::CrsMatrix<SC, LO, GO, NT, false> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
   typedef typename NT::device_type device_type;
   typedef typename device_type::execution_space execution_space;
 
@@ -208,12 +208,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
   B->setAllToScalar(static_cast<SC>(0.));
   B->fillComplete();
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef typename device_type::execution_space ES;
   const bool atomic_updates = ! std::is_same<ES, Kokkos::Serial>::value;
 #else
   const bool atomic_updates = true;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   out << "Calling unpackCrsMatrixAndCombine with "
       << "CombineMode=Tpetra::REPLACE" << endl;
@@ -397,7 +397,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
 {
 
-  typedef Tpetra::CrsMatrix<SC, LO, GO, NT, false> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
 
   RCP<const Comm<int> > comm = getDefaultComm();
   const int world_rank = comm->getRank();
@@ -505,7 +505,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
 // caused existing code to fail.  See Issues #1374 and #1408
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
 {
-  typedef Tpetra::CrsMatrix<SC, LO, GO, NT, false> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
   typedef typename NT::device_type device_type;
   typedef typename device_type::execution_space execution_space;
 
@@ -571,12 +571,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
   B->setAllToScalar(static_cast<SC>(0.));
   B->fillComplete();
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef typename device_type::execution_space ES;
   const bool atomic_updates = ! std::is_same<ES, Kokkos::Serial>::value;
 #else
   const bool atomic_updates = true;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   out << "Calling unpackCrsMatrixAndCombine with "
       << "CombineMode=Tpetra::REPLACE" << endl;

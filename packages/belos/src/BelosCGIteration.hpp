@@ -162,6 +162,16 @@ class CGIteration : virtual public Iteration<ScalarType,MV,OP> {
   virtual CGIterationState<ScalarType,MV> getState() const = 0;
   //@}
 
+
+  //! Sets whether or not to store the diagonal for condition estimation
+  virtual void setDoCondEst(bool val) = 0;
+
+  //! Gets the diagonal for condition estimation
+  virtual Teuchos::ArrayView<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getDiag() = 0;
+
+  //! Gets the off-diagonal for condition estimation 
+  virtual Teuchos::ArrayView<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getOffDiag() = 0;
+
 };
 
 } // end Belos namespace

@@ -140,7 +140,7 @@ int ML_Epetra::LevelWrap::GenerateSmoother() {
 
 
 // Computes the preconditioner
-int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
+int ML_Epetra::LevelWrap::ComputePreconditioner(const bool /* CheckFiltering */){
 #ifdef ML_TIMING
   double t_time,t_diff;
   StartTimer(&t_time);
@@ -304,7 +304,7 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
 
 
 // Print the individual operators in the multigrid hierarchy.
-void ML_Epetra::LevelWrap::Print(int level){
+void ML_Epetra::LevelWrap::Print(int /* level */){
   if(A1prec_!=Teuchos::null) A1prec_->Print(-1);
 }
 

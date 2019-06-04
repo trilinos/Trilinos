@@ -85,7 +85,15 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     TRILINOS_DISABLE_PACKAGE_REQUIRING_CXX11("Tpetra")
   ENDIF()
     
-  IF (NOT ${PROJECT_NAME}_ENABLE_Fortran)
+  IF (
+      NOT ${PROJECT_NAME}_ENABLE_Fortran
+      AND
+      (
+        "${${PROJECT_NAME}_ENABLE_ForTrilinos}" STREQUAL ""
+        OR
+        ${PROJECT_NAME}_ENABLE_ForTrilinos
+      )
+    )
     MESSAGE(
       "\n***"
       "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_ForTrilinos=OFF"
@@ -95,7 +103,15 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     SET(${PROJECT_NAME}_ENABLE_ForTrilinos OFF)
   ENDIF()
 
-  IF ("${${PROJECT_NAME}_ENABLE_PyTrilinos}" STREQUAL "" AND NOT BUILD_SHARED_LIBS)
+  IF (
+      NOT BUILD_SHARED_LIBS
+      AND
+      (
+        "${${PROJECT_NAME}_ENABLE_PyTrilinos}" STREQUAL ""
+        OR
+        ${PROJECT_NAME}_ENABLE_PyTrilinos
+      )
+    )
     MESSAGE(
       "\n***"
       "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_PyTrilinos=OFF"
@@ -105,7 +121,15 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     SET(${PROJECT_NAME}_ENABLE_PyTrilinos OFF)
   ENDIF()
 
-  IF (NOT EXISTS "${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota")
+  IF (
+      NOT EXISTS "${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota"
+      AND
+      (
+        "${${PROJECT_NAME}_ENABLE_TriKota}" STREQUAL ""
+        OR
+        ${PROJECT_NAME}_ENABLE_TriKota
+      )
+    )
     MESSAGE("-- " "Setting ${PROJECT_NAME}_ENABLE_TriKota=OFF"
       " because '${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota' does not exist!")
     SET(${PROJECT_NAME}_ENABLE_TriKota OFF)

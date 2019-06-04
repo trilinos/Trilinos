@@ -36,7 +36,7 @@
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/Part.hpp>       // for Part, contain, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include <vector>                       // for vector, etc
 #include "stk_mesh/baseImpl/PartImpl.hpp"  // for PartImpl
 #include "stk_topology/topology.hpp"    // for topology, etc

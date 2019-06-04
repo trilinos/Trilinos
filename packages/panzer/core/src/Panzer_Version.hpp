@@ -47,7 +47,7 @@
 #include "PanzerCore_config.hpp"
 
 namespace panzer {
-  
+
   std::string version();
 
 }

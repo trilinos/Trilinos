@@ -46,10 +46,11 @@
 \brief Ifpack2 Unit and performance test for the BlockTriDiContainter template.
 */
 
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_DefaultComm.hpp>
+
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Tpetra_Core.hpp>
+
 #ifdef HAVE_TEUCHOS_COMPLEX
 # include <complex>
 #endif
@@ -70,7 +71,7 @@ struct Input {
   double tol;
   bool use_seq_method, use_overlap_comm, jacobi;
 
-  Input (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) { init(comm); }
+  Input (const Teuchos::RCP<const Teuchos::Comm<int> >& icomm) { init(icomm); }
 
   Input (int argc, char** argv, const Teuchos::RCP<const Teuchos::Comm<int> >& icomm) {
     init(icomm);
@@ -132,7 +133,7 @@ struct Input {
        << " bs " << bs
        << " nrhs " << nrhs
        << " isplit " << isplit << " jsplit " << jsplit;
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     os << " nthreads " << omp_get_max_threads();
 #endif
     if (nonuniform_lines) os << " nonuniform-lines";
@@ -169,7 +170,9 @@ private:
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 // Configure with Ifpack2_ENABLE_BlockTriDiContainer_Timers:BOOL=ON to get timer
 // output for each piece of the computation.
-template <typename Scalar, typename LO, typename GO>
+template <typename Scalar,
+          typename LO = Tpetra::Map<>::local_ordinal_type,
+          typename GO = Tpetra::Map<>::global_ordinal_type>
 static void run_performance_test (const Input& in) {
   typedef LO Int;
   typedef tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO> bcmm;
@@ -209,14 +212,12 @@ static void run_performance_test (const Input& in) {
     const auto n0 = T->getNorms0();
     const auto nf = T->getNormsFinal();
     bool ok = true;
-    if (n0.size() > 0) {
+    if (n0 > 0) {
       std::stringstream ss;
       ss << "Norm reduction:";
-      for (int i = 0; i < n0.size(); ++i) {
-        const auto r = nf[i] / n0[i];
-        ss << " " << r;
-        if (r > in.tol && sweep != in.iterations) ok = false;
-      }
+      const auto r = nf / n0;
+      ss << " " << r;
+      if (r > in.tol && sweep != in.iterations) ok = false;
       ss << "\n";
       if (in.verbose)
         std::cout << ss.str();
@@ -270,7 +271,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
       }
       for (const bool jacobi : {false, true})
         for (const bool seq_method : {false, true})
-          for (const bool overlap_comm : {false, true}) {
+          for (const bool overlap_comm : {false, true}) { // temporary disabling overlap comm version
             if (seq_method && overlap_comm) continue;
             for (const bool nonuniform_lines : {false, true}) {
               if (jacobi && nonuniform_lines) continue;
@@ -294,6 +295,9 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
                 } catch (const std::exception& e) {
                   threw = true;
                 }
+                if (threw)
+                  printf("Exception threw from rank %d, %s\n", in.comm->getRank(), details.c_str());
+
                 TEUCHOS_TEST(ne == 0 && ! threw, details);
               }
             }
@@ -306,7 +310,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockTriDi, Unit, Scalar, LO, GO) {
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-  Input in(Teuchos::DefaultComm<int>::getComm());
+  Input in(Tpetra::getDefaultComm());
   run_teuchos_tests<Scalar, LO, GO>(in, out, success);
 #endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 }
@@ -318,39 +322,49 @@ IFPACK2_ETI_MANGLING_TYPEDEFS()
 IFPACK2_INSTANTIATE_SLG(UNIT_TEST_GROUP_SC_LO_GO)
 
 static Teuchos::RCP<const Teuchos::Comm<int> > make_comm () {
-  return Teuchos::DefaultComm<int>::getComm();
+  return Tpetra::getDefaultComm();
 }
 
 int main (int argc, char** argv) {
-  int ret = 0;
-  Teuchos::GlobalMPISession mpi_session(&argc, &argv, nullptr); {
-    Kokkos::initialize(argc, argv);
-    do {
-      Teuchos::RCP<const Teuchos::Comm<int> > comm;
-      std::shared_ptr<Input> in;
-      try {
-        comm = make_comm();
-        in = std::make_shared<Input>(argc, argv, comm);
-      } catch (const std::exception& e) {
-        if (comm.is_null() || comm->getRank() == 0)
-          std::cerr << e.what() << "\n";
-        ret = -1;
-        break;
-      }
-      try {
-        if (in->teuchos_test)
-          Teuchos::UnitTestRepository::runUnitTestsFromMain(1, argv);
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-        if (in->repeat)
-          run_performance_test<double, int, int>(*in);
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+  cudaProfilerStop();
 #endif
-      } catch (const std::exception& e) {
+
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+
+  int ret = 0;
+  do {
+    Teuchos::RCP<const Teuchos::Comm<int> > comm;
+    std::shared_ptr<Input> in;
+    try {
+      comm = make_comm();
+      in = std::make_shared<Input>(argc, argv, comm);
+    } catch (const std::exception& e) {
+      if (comm.is_null() || comm->getRank() == 0) {
         std::cerr << e.what() << "\n";
-        ret = -1;
-        break;
       }
-    } while (0);
-    Kokkos::finalize();
-  }
+      ret = -1;
+      break;
+    }
+    try {
+      if (comm->getRank() == 0) {
+        const bool detail = false;
+        Kokkos::print_configuration(std::cout, detail);
+      }
+      if (in->teuchos_test) {
+        Teuchos::UnitTestRepository::runUnitTestsFromMain(1, argv);
+      }
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+      if (in->repeat) {
+        run_performance_test<double>(*in);
+      }
+#endif
+    } catch (const std::exception& e) {
+      std::cerr << e.what() << "\n";
+      ret = -1;
+      break;
+    }
+  } while (0);
+
   return ret;
 }

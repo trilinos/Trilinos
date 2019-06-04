@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -53,25 +53,19 @@ public:
   std::string Free_Connectivity();
 
   // Access functions:
-
   const std::string &Elmt_Type() const { return elmt_type; }
   size_t             Num_Nodes_per_Elmt() const { return num_nodes_per_elmt; }
 
   // Block description access functions:
-
   const INT *Connectivity() const { return conn; }  // 1-offset connectivity
   const INT *Connectivity(size_t elmt_index) const; // 1-offset connectivity
 
-  std::string Give_Connectivity(size_t &num_e,      // Moves connectivity matrix
-                                size_t &npe,        // to conn pointer and sets
+  std::string Give_Connectivity(size_t &num_e,    // Moves connectivity matrix
+                                size_t &npe,      // to conn pointer and sets
                                 INT *&  recv_conn); // its own to null.
 
   // Misc:
-
   int Check_State() const;
-
-  void Display_Stats(std::ostream & /*s*/ = std::cout) const;
-  void Display(std::ostream & /*s*/ = std::cout) const;
 
 private:
   Exo_Block(const Exo_Block &);                  // Not written.

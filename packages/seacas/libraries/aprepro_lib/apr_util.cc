@@ -1,4 +1,4 @@
-// Copyright (c) 2014 National Technology & Engineering Solutions
+// Copyright (c) 2014-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -39,7 +39,7 @@
 #include <cmath>            // for math_errhandling, etc
 #include <cstdio>           // for perror
 #include <cstdlib>          // for mkstemp
-#include <cstring>          // for strlen, strcpy, memcpy, etc
+#include <cstring>          // for strlen, memcpy, etc
 #include <iostream>         // for operator<<, cerr, ostream
 #include <string>           // for allocator, operator+, etc
 #include <sys/stat.h>       // for stat, S_ISDIR
@@ -60,6 +60,28 @@
 
 namespace {
   std::vector<char *> allocations;
+
+  void copy_string(char *dest, const char *source, long int elements)
+  {
+    char *d;
+    for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+      *d = *source;
+    }
+    *d = '\0';
+  }
+
+  void copy_string(char *dest, const std::string &source, long int elements)
+  {
+    copy_string(dest, source.c_str(), elements);
+  }
+
+  void new_string_int(const char *from, char **to)
+  {
+    int len = strlen(from);
+    *to     = new char[len + 1];
+    copy_string(*to, from, len + 1);
+    allocations.push_back(*to);
+  }
 } // namespace
 
 namespace SEAMS {
@@ -95,20 +117,16 @@ namespace SEAMS {
     }
   }
 
-  void new_string(const char *from, char **to)
-  {
-    int len = strlen(from);
-    *to     = new char[len + 1];
-    std::memcpy(*to, from, len + 1);
-    allocations.push_back(*to);
-  }
+  void new_string(const std::string &from, char **to) { new_string_int(from.c_str(), to); }
+  void new_string(const char *from, char **to) { new_string_int(from, to); }
 
   void concat_string(const char *from1, const char *from2, char **to)
   {
-    int len = strlen(from1) + strlen(from2);
+    std::string tmp{from1};
+    tmp += from2;
+    int len = tmp.length();
     *to     = new char[len + 1];
-    std::strcpy(*to, from1);
-    std::strcat(*to, from2);
+    copy_string(*to, tmp, len + 1);
     allocations.push_back(*to);
   }
 
@@ -120,17 +138,16 @@ namespace SEAMS {
   char *get_temp_filename()
   {
     static char tmp_name[] = "./aprepro_temp_XXXXXX";
-    int         fd;
 
-    std::strcpy(tmp_name, "./aprepro_temp_XXXXXX");
+    copy_string(tmp_name, "./aprepro_temp_XXXXXX", strlen(tmp_name) + 1);
 #if defined(__CYGWIN__) && defined(__NO_CYGWIN_OPTION__)
-    fd = mkstemps(tmp_name, 0);
+    int fd = mkstemps(tmp_name, 0);
     if (fd >= 0)
       close(fd);
 #elif defined(_WIN32)
-    std::strcpy(tmp_name, _mktemp(tmp_name));
+    copy_string(tmp_name, _mktemp(tmp_name), strlen(tmp_name) + 1);
 #else
-    fd = mkstemp(tmp_name);
+    int fd = mkstemp(tmp_name);
     if (fd >= 0) {
       close(fd);
     }
@@ -149,7 +166,7 @@ namespace SEAMS {
   void undefined_error(const SEAMS::Aprepro &apr, const std::string &var)
   {
     if (!apr.inIfdefGetvar) {
-      apr.error("Undefined variable '" + var + "'");
+      apr.warning("Undefined variable '" + var + "'");
     }
     else {
       apr.inIfdefGetvar = false;

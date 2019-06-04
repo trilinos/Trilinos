@@ -74,9 +74,9 @@ getValues(       outputViewType output,
 
   constexpr ordinal_type spaceDim = 3;
   const ordinal_type
-  cardPn = coeffs.dimension(0)/spaceDim,
-  card = coeffs.dimension(1),
-  npts = input.dimension(0);
+  cardPn = coeffs.extent(0)/spaceDim,
+  card = coeffs.extent(1),
+  npts = input.extent(0);
 
   // compute order
   ordinal_type order = 0;
@@ -102,9 +102,9 @@ getValues(       outputViewType output,
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
         for (ordinal_type d=0;d<spaceDim;++d) {
-          output(i,j,d) = 0.0;
+          output.access(i,j,d) = 0.0;
           for (ordinal_type k=0;k<cardPn;++k)
-            output(i,j,d) += coeffs(k+d*cardPn,i) * phis(k,j);
+            output.access(i,j,d) += coeffs(k+d*cardPn,i) * phis(k,j);
         }
     break;
   }
@@ -119,10 +119,10 @@ getValues(       outputViewType output,
     for (ordinal_type i=0;i<card;++i) {
       for (ordinal_type j=0;j<npts;++j) {
         for (ordinal_type d=0; d< spaceDim; ++d) {
-          output(i,j,d) = 0.0;
+          output.access(i,j,d) = 0.0;
           ordinal_type d1 = (d+1) % spaceDim, d2 = (d+2) % spaceDim;
           for (ordinal_type k=0; k<cardPn; ++k)   //\sum_k (coeffs_k, coeffs_{k+cardPn}, coeffs_{k+2 cardPn}) \times phis_kj  (cross product)
-            output(i,j,d) += coeffs(k+d2*cardPn,i)*phis(k,j,d1)
+            output.access(i,j,d) += coeffs(k+d2*cardPn,i)*phis(k,j,d1)
             -coeffs(k+d1*cardPn,i)*phis(k,j,d2);
         }
       }
@@ -152,14 +152,14 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
   // loopSize corresponds to cardinality
-  const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
-  const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+  const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
+  const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
   const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
   Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
   typedef typename inputPointViewType::value_type inputPointType;
 
-  const ordinal_type cardinality = outputValues.dimension(0);
+  const ordinal_type cardinality = outputValues.extent(0);
   const ordinal_type spaceDim = 3;
 
   auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
@@ -167,14 +167,14 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
 
   switch (operatorType) {
   case OPERATOR_VALUE: {
-    workViewType  work(Kokkos::view_alloc("Basis_HCURL_TET_In_FEM::getValues::work", vcprop), cardinality, inputPoints.dimension(0));
+    workViewType  work(Kokkos::view_alloc("Basis_HCURL_TET_In_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_VALUE,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );
     break;
   }
   case OPERATOR_CURL: {
-    workViewType  work(Kokkos::view_alloc("Basis_HCURL_TET_In_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.dimension(0));
+    workViewType  work(Kokkos::view_alloc("Basis_HCURL_TET_In_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_CURL,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );
@@ -183,7 +183,6 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   default: {
     INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
         ">>> ERROR (Basis_HCURL_TET_In_FEM): Operator type not implemented" );
-    break;
   }
   }
 }
@@ -289,8 +288,8 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
 
   lapack.GESVD( 'A',
       'N',
-      V1.dimension(0) ,
-      V1.dimension(1) ,
+      V1.extent(0) ,
+      V1.extent(1) ,
       V1.data() ,
       V1.stride_1() ,
       S.data() ,
@@ -428,20 +427,21 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
       for (ordinal_type j=0;j<numPtsPerFace;j++) {
 
         const ordinal_type i_card = numEdges*numPtsPerEdge+2*numPtsPerFace*i+2*j;
+        const ordinal_type i_card_p1 =  i_card+1; // creating a temp otherwise nvcc gets confused
 
         // loop over orthonormal basis functions (columns of V2)
         for (ordinal_type k=0;k<cardPn;k++)
           for (ordinal_type d=0;d<spaceDim;d++)  {
             V2(i_card,k+d*cardPn) = faceTan1(d) * phisAtFacePoints(k,j);
-            V2(i_card+1,k+d*cardPn) = faceTan2(d) * phisAtFacePoints(k,j);
+            V2(i_card_p1,k+d*cardPn) = faceTan2(d) * phisAtFacePoints(k,j);
           }
 
         //save dof coordinates
         for(ordinal_type k=0; k<spaceDim; ++k) {
           dofCoords(i_card,k) = facePts(j,k);
-          dofCoords(i_card+1,k) = facePts(j,k);
+          dofCoords(i_card_p1,k) = facePts(j,k);
           dofCoeffs(i_card,k) = faceTan1(k);
-          dofCoeffs(i_card+1,k) = faceTan2(k);
+          dofCoeffs(i_card_p1,k) = faceTan2(k);
         }
 
         tags[i_card][0] = 2; // face dof
@@ -449,10 +449,10 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
         tags[i_card][2] = 2*j; // local face id
         tags[i_card][3] = 2*numPtsPerFace; // total face dof
 
-        tags[i_card+1][0] = 2; // face dof
-        tags[i_card+1][1] = i; // face id
-        tags[i_card+1][2] = 2*j+1; // local face id
-        tags[i_card+1][3] = 2*numPtsPerFace; // total face dof
+        tags[i_card_p1][0] = 2; // face dof
+        tags[i_card_p1][1] = i; // face id
+        tags[i_card_p1][2] = 2*j+1; // local face id
+        tags[i_card_p1][3] = 2*numPtsPerFace; // total face dof
 
       }
     }
@@ -476,24 +476,24 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
     // copy values into right positions of V2
     for (ordinal_type j=0;j<numPtsPerCell;j++) {
 
-      const ordinal_type i_card = numEdges*numPtsPerEdge+2*numFaces*numPtsPerFace+j;
+      const ordinal_type i_card = numEdges*numPtsPerEdge+2*numFaces*numPtsPerFace+spaceDim*j;
 
       for (ordinal_type k=0;k<cardPn;k++)
         for (ordinal_type d=0;d<spaceDim;d++)
-          V2(i_card+d*numPtsPerCell,d*cardPn+k) = phisAtCellPoints(k,j);
+          V2(i_card+d,d*cardPn+k) = phisAtCellPoints(k,j);
 
 
       //save dof coordinates
       for(ordinal_type d=0; d<spaceDim; ++d) {
         for(ordinal_type dim=0; dim<spaceDim; ++dim) {
-          dofCoords(i_card+d*numPtsPerCell,dim) = cellPoints(j,dim);
-          dofCoeffs(i_card+d*numPtsPerCell,dim) = (d==dim);
+          dofCoords(i_card+d,dim) = cellPoints(j,dim);
+          dofCoeffs(i_card+d,dim) = (d==dim);
         }
 
-        tags[i_card+d*numPtsPerCell][0] = spaceDim; // elem dof
-        tags[i_card+d*numPtsPerCell][1] = 0; // elem id
-        tags[i_card+d*numPtsPerCell][2] = spaceDim*j+d; // local dof id
-        tags[i_card+d*numPtsPerCell][3] = spaceDim*numPtsPerCell; // total vert dof
+        tags[i_card+d][0] = spaceDim; // elem dof
+        tags[i_card+d][1] = 0; // elem id
+        tags[i_card+d][2] = spaceDim*j+d; // local dof id
+        tags[i_card+d][3] = spaceDim*numPtsPerCell; // total vert dof
       }
     }
   }

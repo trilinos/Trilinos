@@ -1,8 +1,5 @@
 netcdf testcp {
 dimensions:
-	len_string = 33 ;
-	len_line = 81 ;
-	four = 4 ;
 	len_name = 256 ;
 	time_step = UNLIMITED ; // (0 currently)
 	num_dim = 3 ;

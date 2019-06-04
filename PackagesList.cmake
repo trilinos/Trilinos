@@ -58,8 +58,8 @@
 # Define the Trilinos packages
 #
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+  TrilinosFrameworkTests  commonTools/framework           PT
   Gtest                 commonTools/gtest                 PT
-  ThreadPool            packages/ThreadPool               PT # Depends on Pthreads
   Kokkos                packages/kokkos                   PT
   Teuchos               packages/teuchos                  PT
   KokkosKernels         packages/kokkos-kernels           PT
@@ -67,6 +67,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Sacado                packages/sacado                   PT
   MiniTensor            packages/minitensor               PT
   Epetra                packages/epetra                   PT
+  SCOREClion            SCOREC/lion                       ST
   SCORECpcu             SCOREC/pcu                        ST
   SCORECgmi             SCOREC/gmi                        ST
   SCORECgmi_sim         SCOREC/gmi_sim                    ST
@@ -75,13 +76,14 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   SCORECmds             SCOREC/mds                        ST
   SCORECparma           SCOREC/parma                      ST
   SCORECspr             SCOREC/spr                        ST
+  AvatarT               packages/avatart                  EX
   Zoltan                packages/zoltan                   PT
   Shards                packages/shards                   PT
   GlobiPack             packages/globipack                PT
   Triutils              packages/triutils                 PT
+  EpetraExt             packages/epetraext                PT	
   Tpetra                packages/tpetra                   PT
   TrilinosSS            packages/common/auxiliarySoftware/SuiteSparse PT # Auxiliary software.
-  EpetraExt             packages/epetraext                PT
   Domi                  packages/domi                     PT
   Thyra                 packages/thyra                    PT
   Xpetra                packages/xpetra                   PT
@@ -129,7 +131,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   ROL                   packages/rol                      PT
   Piro                  packages/piro                     PT
   Panzer                packages/panzer                   PT
-  Sundance              packages/Sundance                 ST # Could be PT based on deps (BUG: 4669)
   CTrilinos             packages/CTrilinos                ST # Switched to ST to speed up checkin testing
 #  ForTrilinos           packages/ForTrilinos              EX
   PyTrilinos            packages/PyTrilinos               ST
@@ -137,15 +138,15 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
   Mesquite              packages/mesquite                 ST
-  MeshingGenie          packages/meshinggenie             EX
   TrilinosCouplings     packages/trilinoscouplings        PT
   Pike                  packages/pike                     PT
   xSDKTrilinos          packages/xSDKTrilinos             ST
   )
 
 # Allow builds even if some packages are missing
-
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(AvatarT)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCOREC)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCOREClion)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECgmi)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECgmi_sim)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECpcu)
@@ -158,6 +159,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_stk)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_zoltan)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECma)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECpumi)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Avatar)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MOOCHO)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Sundance)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(CTrilinos)
@@ -186,9 +188,8 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Pamgen Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(STK Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(SEACAS Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Anasazi Windows)
-TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Isorropia Windows)
-
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Mesquite AIX)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Trios Windows)

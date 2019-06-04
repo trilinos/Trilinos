@@ -47,7 +47,7 @@
 PyTrilinos.Domi is the python interface to the Trilinos structured,
 multi-dimensional, distrivuted linear algebra servise package Domi:
 
-    http://trilinos.sandia.gov/packages/domi
+    https://trilinos.org/docs/dev/packages/domi/doc/html/index.html
 
 Domi supports the structured decomposition of structured vectors
 (arrays), maps, and communicators.  It also supports the conversion of
@@ -62,52 +62,26 @@ other Trilinos solver technologies.
         docstring = %domi_docstring) Domi
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
-#include "PyTrilinos_config.h"
-#ifdef HAVE_SYS_TIME_H
-#undef HAVE_SYS_TIME_H
-#endif
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Domi_ConfigDefs.hpp"
-#include "PyTrilinos_PythonException.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos includes
-#include "Teuchos_CommHelpers.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
-
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-#ifdef HAVE_TPETRA
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
+// Tpetra include files
+#ifdef HAVE_PYTRILINOS_TPETRA
+#include "PyTrilinos_Tpetra_Headers.hpp"
 #endif
 
-// Domi includes
-#include "Domi_Utils.hpp"
-#include "Domi_Version.hpp"
-#include "Domi_getValidParameters.hpp"
-#include "Domi_Slice.hpp"
-#include "Domi_MDArrayView.hpp"
-#include "Domi_MDArray.hpp"
-#include "Domi_MDArrayRCP.hpp"
-#include "Domi_MDComm.hpp"
-#include "Domi_MDMap.hpp"
-#include "Domi_MDVector.hpp"
-#include "PyTrilinos_Domi_Util.hpp"
+// Domi include files
+#include "PyTrilinos_Domi_Headers.hpp"
 
 %}
 
@@ -133,7 +107,7 @@ other Trilinos solver technologies.
 // Include Domi documentation
 %include "Domi_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Include the NumPy typemaps
@@ -154,12 +128,12 @@ import numpy
 %teuchos_array_typemaps(Domi::size_type, NPY_LONG)
 
 // External Epetra interface imports
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %import "Epetra.i"
 #endif
 
 // External Tpetra interface imports
-#ifdef HAVE_TPETRA
+#ifdef HAVE_PYTRILINOS_TPETRA
 %import "Tpetra.i"
 
 // Define shortcuts for the default Tpetra template types
@@ -398,9 +372,10 @@ import numpy
 ////////////////////////
 // Domi MDMap support //
 ////////////////////////
-%extend Domi::MDMap< Node >
+%teuchos_rcp(Domi::MDMap)
+%extend Domi::MDMap
 {
-  Domi::MDMap< Node > __getitem__(PyObject * indexes)
+  Domi::MDMap __getitem__(PyObject * indexes)
   {
     // If 'indexes' is not a sequence, it might be an integer or
     // slice.  So wrap it in a tuple, and we'll check its type below.
@@ -417,7 +392,7 @@ import numpy
     if (numIndexes > self->numDims()) numIndexes = self->numDims();
 
     // Initialize the new MDMap as a copy of this MDMap
-    Domi::MDMap< Node > newMdMap(*self);
+    Domi::MDMap newMdMap(*self);
 
     // 'domiAxis' will be the index for the new MDMap as we construct
     // it.  'axis' will be the index for the sequence of indexes.
@@ -431,7 +406,7 @@ import numpy
         if (PyInt_Check(index))
         {
           int axisRank = (int) PyInt_AsLong(index);
-          newMdMap = Domi::MDMap< Node >(newMdMap, domiAxis, axisRank);
+          newMdMap = Domi::MDMap(newMdMap, domiAxis, axisRank);
           // Do not increment domiAxis, because the new MDMap has one
           // fewer dimension!
         }
@@ -440,7 +415,7 @@ import numpy
           PySliceObject * pySlice = (PySliceObject*) index;
           Py_ssize_t dim = (Py_ssize_t) newMdMap.getGlobalDim(domiAxis);
           Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, dim);
-          newMdMap = Domi::MDMap< Node >(newMdMap, domiAxis, slice);
+          newMdMap = Domi::MDMap(newMdMap, domiAxis, slice);
           domiAxis++;
         }
         else
@@ -457,27 +432,39 @@ import numpy
   }
 }
 %include "Domi_MDMap.hpp"
-#ifdef HAVE_TPETRA
-%template(getTpetraMap) Domi::MDMap::getTpetraMap< PYTRILINOS_LOCAL_ORD,
-                                                   PYTRILINOS_GLOBAL_ORD,
-                                                   DefaultNodeType >;
-%template(getTpetraAxisMap) Domi::MDMap::getTpetraAxisMap< PYTRILINOS_LOCAL_ORD,
-                                                           PYTRILINOS_GLOBAL_ORD,
-                                                           DefaultNodeType >;
-#endif
-%teuchos_rcp(Domi::MDMap< Domi::DefaultNode::DefaultNodeType >)
-%template(MDMap_default) Domi::MDMap< Domi::DefaultNode::DefaultNodeType >;
-%pythoncode
+#ifdef HAVE_PYTRILINOS_TPETRA
+%extend Domi::MDMap
 {
-MDMap = MDMap_default
+  Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                   PYTRILINOS_GLOBAL_ORD,
+                                   DefaultNodeType > >
+  getTpetraMap(bool withCommPad=true)
+  {
+    return self->template getTpetraMap< PYTRILINOS_LOCAL_ORD,
+                                        PYTRILINOS_GLOBAL_ORD,
+                                        DefaultNodeType >(withCommPad);
+  }
+
+  Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                   PYTRILINOS_GLOBAL_ORD,
+                                   DefaultNodeType > >
+  getTpetraAxisMap(int axis,
+                   bool withCommPad=true)
+  {
+    return self->template getTpetraAxisMap< PYTRILINOS_LOCAL_ORD,
+                                            PYTRILINOS_GLOBAL_ORD,
+                                            DefaultNodeType >(axis,
+                                                              withCommPad);
+  }
 }
+#endif
 
 ///////////////////////////
 // Domi MDVector support //
 ///////////////////////////
 %extend Domi::MDVector
 {
-  Domi::MDVector< Scalar, Node > __getitem__(PyObject * indexes)
+  Domi::MDVector< Scalar > __getitem__(PyObject * indexes)
   {
     // If 'indexes' is not a sequence, it might be an integer or
     // slice.  So wrap it in a tuple, and we will check its type below.
@@ -494,7 +481,7 @@ MDMap = MDMap_default
     if (numIndexes > self->numDims()) numIndexes = self->numDims();
 
     // Initialize the new MDVector as a view of this MDVector
-    Domi::MDVector< Scalar, Node > newMdVector(*self, Teuchos::View);
+    Domi::MDVector< Scalar > newMdVector(*self, Teuchos::View);
 
     // 'domiAxis' will be the index for the new MDVector as we construct
     // it.  'axis' will be the index for the sequence of indexes.
@@ -508,7 +495,7 @@ MDMap = MDMap_default
         if (PyInt_Check(index))
         {
           int axisRank = (int) PyInt_AsLong(index);
-          newMdVector = Domi::MDVector< Scalar, Node >(newMdVector,
+          newMdVector = Domi::MDVector< Scalar >(newMdVector,
                                                        domiAxis,
                                                        axisRank);
           // Do not increment domiAxis, because the new MDVector has one
@@ -519,7 +506,7 @@ MDMap = MDMap_default
           PySliceObject * pySlice = (PySliceObject*) index;
           Py_ssize_t dim = (Py_ssize_t) newMdVector.getGlobalDim(domiAxis);
           Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, dim);
-          newMdVector = Domi::MDVector< Scalar, Node >(newMdVector,
+          newMdVector = Domi::MDVector< Scalar >(newMdVector,
                                                        domiAxis,
                                                        slice);
           domiAxis++;
@@ -557,10 +544,10 @@ MDMap = MDMap_default
 %ignore Domi::MDVector::getDataNonConst(bool includePadding = true);
 %ignore Domi::MDVector::getData(bool includePadding = true) const;
 %include "Domi_MDVector.hpp"
-%teuchos_rcp(Domi::MDVector< int      , Domi::DefaultNode::DefaultNodeType >)
-%teuchos_rcp(Domi::MDVector< long long, Domi::DefaultNode::DefaultNodeType >)
-%teuchos_rcp(Domi::MDVector< double   , Domi::DefaultNode::DefaultNodeType >)
-//%teuchos_rcp(Domi::MDVector< float    , Domi::DefaultNode::DefaultNodeType >)
+%teuchos_rcp(Domi::MDVector< int       >)
+%teuchos_rcp(Domi::MDVector< long long >)
+%teuchos_rcp(Domi::MDVector< double    >)
+// %teuchos_rcp(Domi::MDVector< float     >)
 %pythoncode
 %{
   def MDVector_getattr(self, name):
@@ -590,44 +577,26 @@ MDMap = MDMap_default
       class_array_add_comp(cls)
 
 %}
-#ifdef HAVE_TPETRA
-%template(getTpetraVectorView)
-    Domi::MDVector::getTpetraVectorView< PYTRILINOS_LOCAL_ORD,
-                                         PYTRILINOS_GLOBAL_ORD,
-                                         DefaultNodeType >;
-%template(getTpetraVectorCopy)
-    Domi::MDVector::getTpetraVectorCopy< PYTRILINOS_LOCAL_ORD,
-                                         PYTRILINOS_GLOBAL_ORD,
-                                         DefaultNodeType >;
-%template(getTpetraMultiVectorView)
-    Domi::MDVector::getTpetraMultiVectorView< PYTRILINOS_LOCAL_ORD,
-                                              PYTRILINOS_GLOBAL_ORD,
-                                              DefaultNodeType >;
-%template(getTpetraMultiVectorCopy)
-    Domi::MDVector::getTpetraMultiVectorCopy< PYTRILINOS_LOCAL_ORD,
-                                              PYTRILINOS_GLOBAL_ORD,
-                                              DefaultNodeType >;
-#endif
-%template(MDVector_int   )
-  Domi::MDVector< int      , Domi::DefaultNode::DefaultNodeType >;
+%template(MDVector_int)
+  Domi::MDVector< int >;
 %pythoncode
 %{
   upgradeMDVectorClass(MDVector_int)
 %}
-%template(MDVector_long  )
-  Domi::MDVector< long long, Domi::DefaultNode::DefaultNodeType >;
+%template(MDVector_long)
+  Domi::MDVector< long long >;
 %pythoncode
 %{
   upgradeMDVectorClass(MDVector_long)
 %}
 %template(MDVector_double)
-  Domi::MDVector< double   , Domi::DefaultNode::DefaultNodeType >;
+  Domi::MDVector< double >;
 %pythoncode
 %{
   upgradeMDVectorClass(MDVector_double)
 %}
 // %template(MDVector_float )
-//   Domi::MDVector< float    , Domi::DefaultNode::DefaultNodeType >;
+//   Domi::MDVector< float >;
 // %pythoncode
 // %{
 //   upgradeMDVectorClass(MDVector_float)
@@ -639,7 +608,7 @@ MDMap = MDMap_default
 %inline
 {
 template< class Scalar >
-Teuchos::RCP< Domi::MDVector< Scalar, Domi::DefaultNode::DefaultNodeType > >
+Teuchos::RCP< Domi::MDVector< Scalar > >
 from_DistArray(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                PyObject * distArrayObj)
 {
@@ -658,7 +627,7 @@ from_DistArray(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 %template(from_DistArray_int   ) from_DistArray< int       >;
 %template(from_DistArray_long  ) from_DistArray< long long >;
 %template(from_DistArray_double) from_DistArray< double    >;
-//%template(from_DistArray_float ) from_DistArray< float     >;
+// %template(from_DistArray_float ) from_DistArray< float     >;
 %pythoncode
 %{
 def from_DistArray(comm, distarray):
@@ -691,7 +660,7 @@ def from_DistArray(comm, distarray):
 #         trailingDim = kwargs.get("trailingDim", 0      )
 #         if type(dtype) == str:
 #             dtype = numpy.dtype(dtype)
-# 
+#
 #         # Factory for arg is MDMap
 #         if isinstance(args[0], MDMap):
 #             if dtype.type is numpy.int32:
@@ -717,21 +686,21 @@ def from_DistArray(comm, distarray):
 #             else:
 #                 raise TypeError("Unsupported or unrecognized dtype = %s" %
 #                                 str(dtype))
-# 
+#
 #         # Factory for arg is DistArray
 #         elif hasattr(arg, '__distarray__'):
 #             self._vector = from_DistArray(*args)
-# 
+#
 #         self.dtype = dtype
-# 
+#
 #     def __getattribute__(self, name):
 #         if name in ('__class__', '__dir__', '__getitem__', '_vector', 'dtype'):
 #             return object.__getattribute__(self, name)
 #         return getattr(object.__getattribute__(self, '_vector'), name)
-# 
+#
 #     def __dir__(self):
 #         return sorted(set(dir(self._vector) + dir(MDVector)))
-# 
+#
 #     def __getitem__(self, args):
 #         return self._vector.__getitem__(args)
 

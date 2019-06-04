@@ -109,7 +109,7 @@ namespace MueLu {
 
     const std::string prefix = "MueLu::SaPFactory(" + levelIDs + "): ";
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+    typedef typename Teuchos::ScalarTraits<SC>::coordinateType Coordinate;
 
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
@@ -131,11 +131,9 @@ namespace MueLu {
     RCP<Matrix> finalP;
 
     // Reuse pattern if available
-    RCP<ParameterList> APparams;
+    RCP<ParameterList> APparams = rcp(new ParameterList);;
     if(pL.isSublist("matrixmatrix: kernel params"))
-      APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-    else
-      APparams= rcp(new ParameterList);
+      APparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
     if (coarseLevel.IsAvailable("AP reuse data", this)) {
       GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
@@ -160,7 +158,7 @@ namespace MueLu {
         lambdaMax = A->GetMaxEigenvalueEstimate();
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations << ")" << std::endl;
-          Magnitude stopTol = 1e-4;
+          Coordinate stopTol = 1e-4;
           lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
@@ -174,6 +172,7 @@ namespace MueLu {
         Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
 
         SC omega = dampingFactor / lambdaMax;
+        TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,
@@ -187,8 +186,9 @@ namespace MueLu {
     // Level Set
     if (!restrictionMode_) {
       // The factory is in prolongation mode
+      if(!finalP.is_null()) {std::ostringstream oss; oss << "P_" << coarseLevel.GetLevelID(); finalP->setObjectLabel(oss.str());}
       Set(coarseLevel, "P",             finalP);
-
+    
       APparams->set("graph", finalP);
       Set(coarseLevel, "AP reuse data", APparams);
 
@@ -209,6 +209,7 @@ namespace MueLu {
       {
         SubFactoryMonitor m2(*this, "Transpose P", coarseLevel);
         R = Utilities::Transpose(*finalP, true);
+        if(!R.is_null()) {std::ostringstream oss; oss << "R_" << coarseLevel.GetLevelID(); R->setObjectLabel(oss.str());}
       }
 
       Set(coarseLevel, "R", R);

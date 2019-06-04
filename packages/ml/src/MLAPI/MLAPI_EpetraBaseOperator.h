@@ -63,7 +63,7 @@ public:
   }
 
   //! Sets the use of tranpose (NOT IMPLEMENTED).
-  virtual int SetUseTranspose(bool UseTransposeFlag)
+  virtual int SetUseTranspose(bool /* UseTransposeFlag */)
   {
     ML_CHK_ERR(-1);
   }
@@ -163,7 +163,7 @@ private:
   { }
 
   //! operator= (should not be used).
-  EpetraBaseOperator& operator=(const EpetraBaseOperator& rhs)
+  EpetraBaseOperator& operator=(const EpetraBaseOperator& /* rhs */)
   {
     return(*this);
   }

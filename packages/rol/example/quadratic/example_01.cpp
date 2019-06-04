@@ -52,7 +52,7 @@
 #include "ROL_QuadraticObjective.hpp"
 #include "ROL_StdVector.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -69,10 +69,10 @@ public:
   matrix(const int dim) : dim_(dim) {}
 
   void apply( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
-    Teuchos::RCP<std::vector<Real> > Hvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(Hv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp
-      = (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    ROL::Ptr<std::vector<Real> > Hvp =
+      dynamic_cast<ROL::StdVector<Real>&>(Hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp
+      = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     for (int i = 0; i < dim_; i++) {
       (*Hvp)[i] = 2.0*(*vp)[i];
       if ( i > 0 ) {
@@ -94,20 +94,20 @@ public:
   precond(const int dim) : dim_(dim) {}
 
   void apply( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
-    Teuchos::RCP<std::vector<Real> > Hvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(Hv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp
-      = (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    ROL::Ptr<std::vector<Real> > Hvp =
+      dynamic_cast<ROL::StdVector<Real>&>(Hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp
+      = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     for (int i = 0; i < dim_; i++) {
       (*Hvp)[i] = 2.0*(*vp)[i];
     }
   }
 
   void applyInverse( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
-    Teuchos::RCP<std::vector<Real> > Hvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(Hv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp
-      = (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    ROL::Ptr<std::vector<Real> > Hvp =
+      dynamic_cast<ROL::StdVector<Real>&>(Hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp
+      = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     for (int i = 0; i < dim_; i++) {
       (*Hvp)[i] = 0.5*(*vp)[i];
     }
@@ -119,12 +119,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -134,35 +134,38 @@ int main(int argc, char *argv[]) {
 
     // Set up problem data
     int dim = 10; // Set problem dimension. 
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT>(dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > g_rcp = Teuchos::rcp( new std::vector<RealT>(dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT>(dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > v_rcp = Teuchos::rcp( new std::vector<RealT>(dim, 0.0) );
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > d_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > v_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
-      (*g_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
-      (*d_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
-      (*v_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*g_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*d_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*v_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
-    Teuchos::RCP<ROL::Vector<RealT> > x = Teuchos::rcp( new ROL::StdVector<RealT>(x_rcp) );
-    Teuchos::RCP<ROL::Vector<RealT> > g = Teuchos::rcp( new ROL::StdVector<RealT>(g_rcp) );
-    Teuchos::RCP<ROL::Vector<RealT> > d = Teuchos::rcp( new ROL::StdVector<RealT>(d_rcp) );
-    Teuchos::RCP<ROL::Vector<RealT> > v = Teuchos::rcp( new ROL::StdVector<RealT>(v_rcp) );
-    Teuchos::RCP<ROL::LinearOperator<RealT> > op = Teuchos::rcp(new matrix<RealT>(dim));
-    Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::rcp(new ROL::QuadraticObjective<RealT>(op,g));
+
+    ROL::Ptr<ROL::Vector<RealT> > x = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > g = ROL::makePtr<ROL::StdVector<RealT>>(g_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > d = ROL::makePtr<ROL::StdVector<RealT>>(d_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > v = ROL::makePtr<ROL::StdVector<RealT>>(v_ptr);
+    ROL::Ptr<ROL::LinearOperator<RealT> > op = ROL::makePtr<matrix<RealT>>(dim);
+    ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ROL::QuadraticObjective<RealT>>(op,g);
 
    // Define algorithm
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp(new Teuchos::ParameterList());
     std::string paramfile = "input.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile(paramfile);
+
     ROL::Algorithm<RealT> algo("Trust-Region",*parlist);
 
     // Test objective
     obj->checkGradient(*x, *d, true, *outStream);
     *outStream << "\n"; 
+
     obj->checkHessVec(*x, *v, true, *outStream);
     *outStream << "\n";
+
     obj->checkHessSym(*x, *d, *v, true, *outStream);
     *outStream << "\n";
 
@@ -172,9 +175,9 @@ int main(int argc, char *argv[]) {
     // Solve using Krylov
     RealT absTol = 1.e-4, relTol = 1.e-2;
     int iter = 2*dim+1;
-    Teuchos::RCP<ROL::Krylov<RealT> > kv
-      = Teuchos::rcp( new ROL::ConjugateGradients<RealT>(absTol,relTol,iter,false));
-    Teuchos::RCP<ROL::LinearOperator<RealT> > M = Teuchos::rcp(new precond<RealT>(dim));
+    ROL::Ptr<ROL::Krylov<RealT> > kv
+      = ROL::makePtr<ROL::ConjugateGradients<RealT>>(absTol,relTol,iter,false);
+    ROL::Ptr<ROL::LinearOperator<RealT> > M = ROL::makePtr<precond<RealT>>(dim);
     int iterCG = 0, flagCG = 0;
     kv->run(*v,*op,*g,*M,iterCG,flagCG);
     v->scale(-1.0);

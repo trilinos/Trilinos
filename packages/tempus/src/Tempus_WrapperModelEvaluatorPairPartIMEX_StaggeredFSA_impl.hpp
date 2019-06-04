@@ -136,6 +136,9 @@ getIMEXVector(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & full) const
   // cast it to a product multi-vector, extract the IMEX block, then
   // create a DMVPV from it.
 
+  if(full == Teuchos::null)
+    return Teuchos::null;
+
   if (this->numExplicitOnlyBlocks_==0)
     return full;
 
@@ -173,6 +176,9 @@ getIMEXVector(const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const
   // part of the vector, cast it to DMVPV,  extract the multi-vector,
   // cast it to a product multi-vector, extract the IMEX block, then
   // create a DMVPV from it.
+
+  if(full == Teuchos::null)
+    return Teuchos::null;
 
   if (this->numExplicitOnlyBlocks_==0)
     return full;
@@ -215,6 +221,9 @@ getExplicitOnlyVector(
   // cast it to a product multi-vector, extract the explicit block, then
   // create a DMVPV from it.
 
+  if(full == Teuchos::null)
+    return Teuchos::null;
+
   if (this->numExplicitOnlyBlocks_==0)
     return full;
 
@@ -253,6 +262,9 @@ getExplicitOnlyVector(
   // part of the vector, cast it to DMVPV,  extract the multi-vector,
   // cast it to a product multi-vector, extract the explicit block, then
   // create a DMVPV from it.
+
+  if(full == Teuchos::null)
+    return Teuchos::null;
 
   if (this->numExplicitOnlyBlocks_==0)
     return full;

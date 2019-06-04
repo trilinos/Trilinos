@@ -135,7 +135,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
 
 int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
                   Teuchos::ParameterList& List,
-                  const Epetra_Comm& Comm,
+                  const Epetra_Comm& /* Comm */,
                   Ifpack_Handle_Type ** Ifpack_Handle,
                   int reuseSymbolic)
 {

@@ -44,6 +44,8 @@
 #ifndef ROL_QUADRATURE1D_HPP
 #define ROL_QUADRATURE1D_HPP
 
+#include <vector>
+
 namespace ROL {
 
 template<class Real>
@@ -63,11 +65,6 @@ public:
   Quadrature1D() {}
 
   void get(std::vector<Real> &pts, std::vector<Real> &wts) const {
-    pts.clear(); pts.assign(pts_.begin(),pts_.end());
-    wts.clear(); wts.assign(wts_.begin(),wts_.end());
-  }
-
-  void get(Teuchos::Array<Real> &pts, Teuchos::Array<Real> &wts) const {
     pts.clear(); pts.assign(pts_.begin(),pts_.end());
     wts.clear(); wts.assign(wts_.begin(),wts_.end());
   }

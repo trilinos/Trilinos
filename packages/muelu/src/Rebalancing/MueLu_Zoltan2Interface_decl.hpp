@@ -74,7 +74,7 @@ namespace MueLu {
     @ingroup Rebalancing
 
     This interface provides access to partitioning methods in Zoltan2.
-    Currently, it supports the RCB algorithm only.
+    Currently, it supports RCB and multijagged as well as all graph partitioning algorithms from Zoltan2.
 
     ## Input/output of Zoltan2Interface ##
 
@@ -82,7 +82,7 @@ namespace MueLu {
     Parameter | type | default | master.xml | validated | requested | description
     ----------|------|---------|:----------:|:---------:|:---------:|------------
     | A                                      | Factory | null  |   | * | * | Generating factory of the matrix A used during the prolongator smoothing process |
-    | Coordinates                            | Factory | null  |   | * | * | Factory generating coordinates vector used for rebalancing (RCB algorithm)
+    | Coordinates                            | Factory | null  |   | * | (*) | Factory generating coordinates vector used for rebalancing. The coordinates are only needed when the chosen algorithm is 'multijagged' or 'rcb'.
     | ParameterList                          | ParamterList | null |  | * |  | Zoltan2 parameters
     | number of partitions                   | GO      | - |  |  |  | Short-cut parameter set by RepartitionFactory. Avoid repartitioning algorithms if only one partition is necessary (see details below)
 
@@ -166,6 +166,9 @@ namespace MueLu {
 #undef MUELU_ZOLTAN2INTERFACE_SHORT
 #include "MueLu_UseShortNames.hpp"
   public:
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     Zoltan2Interface() {
       level_           = rcp(new Level());
       zoltanInterface_ = rcp(new ZoltanInterface());
@@ -189,17 +192,25 @@ namespace MueLu {
     void DeclareInput(Level& currentLevel) const {
       Input(currentLevel, "A");
       Input(currentLevel, "number of partitions");
-      Input(currentLevel, "Coordinates");
+      const ParameterList& pL = GetParameterList();
+      // We do this dance, because we don't want "ParameterList" to be marked as used.
+      // Is there a better way?
+      Teuchos::ParameterEntry entry = pL.getEntry("ParameterList");
+      RCP<const Teuchos::ParameterList> providedList = Teuchos::any_cast<RCP<const Teuchos::ParameterList> >(entry.getAny(false));
+      if (providedList != Teuchos::null && providedList->isType<std::string>("algorithm")) {
+        const std::string algo = providedList->get<std::string>("algorithm");
+        if (algo == "multijagged" || algo == "rcb")
+          Input(currentLevel, "Coordinates");
+      } else
+        Input(currentLevel, "Coordinates");
     };
     void Build(Level& currentLevel) const {
       this->GetOStream(Warnings0) << "Tpetra does not support <double,int,int,EpetraNode> instantiation, "
           "switching Zoltan2Interface to ZoltanInterface" << std::endl;
 
-      typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> dMultiVector;
-
       // Put the data into a fake level
       level_->Set("A",                    Get<RCP<Matrix> >      (currentLevel, "A"));
-      level_->Set("Coordinates",          Get<RCP<dMultiVector> >(currentLevel, "Coordinates"));
+      level_->Set("Coordinates",          Get<RCP<RealValuedMultiVector> >(currentLevel, "Coordinates"));
       level_->Set("number of partitions", currentLevel.Get<GO>("number of partitions"));
 
       level_->Request("Partition", zoltanInterface_.get());

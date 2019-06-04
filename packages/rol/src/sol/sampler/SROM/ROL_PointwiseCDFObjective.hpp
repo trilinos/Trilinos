@@ -48,7 +48,7 @@
 #include "ROL_BatchManager.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Distribution.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include <math.h>
 
 namespace ROL {
@@ -56,8 +56,8 @@ namespace ROL {
 template <class Real>
 class PointwiseCDFObjective : public Objective<Real> {
 private:
-  std::vector<Teuchos::RCP<Distribution<Real> > > dist_;
-  Teuchos::RCP<BatchManager<Real> > bman_;
+  std::vector<ROL::Ptr<Distribution<Real> > > dist_;
+  ROL::Ptr<BatchManager<Real> > bman_;
   const Real scale_;
   const Real sqrt2_;
   const Real sqrtpi_;
@@ -105,14 +105,14 @@ private:
   }
 
 public:
-  PointwiseCDFObjective(const std::vector<Teuchos::RCP<Distribution<Real> > > &dist,
-                              Teuchos::RCP<BatchManager<Real> >               &bman,
+  PointwiseCDFObjective(const std::vector<ROL::Ptr<Distribution<Real> > > &dist,
+                              ROL::Ptr<BatchManager<Real> >               &bman,
                         const Real scale = 1.e-2)
     : Objective<Real>(), dist_(dist), bman_(bman), scale_(scale),
-      sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(Teuchos::ScalarTraits<Real>::pi())) {}
+      sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(ROL::ScalarTraits<Real>::pi())) {}
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const SROMVector<Real> &ex = dynamic_cast<const SROMVector<Real>&>(x);
     const int dimension  = ex.getDimension();
     const int numSamples = ex.getNumSamples();
     Real val = 0., diff = 0., xpt = 0., sum = 0.;
@@ -128,8 +128,8 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    SROMVector<Real> &eg = Teuchos::dyn_cast<SROMVector<Real> >(g);
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    SROMVector<Real> &eg = dynamic_cast<SROMVector<Real>&>(g);
+    const SROMVector<Real> &ex = dynamic_cast<const SROMVector<Real>&>(x);
     const int dimension  = ex.getDimension();
     const int numSamples = ex.getNumSamples();
     std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);

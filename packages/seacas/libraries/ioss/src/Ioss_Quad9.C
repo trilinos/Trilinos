@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,6 +40,7 @@
 #include <cstddef> // for nullptr
 
 namespace Ioss {
+  const char *Quad9::name = "quad9";
   class St_Quad9 : public ElementVariableType
   {
   public:

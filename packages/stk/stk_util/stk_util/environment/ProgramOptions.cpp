@@ -31,6 +31,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <stk_util/stk_config.h>
+
+#ifdef STK_HAVE_BOOSTLIB
+
 #include <stk_util/environment/ProgramOptions.hpp>
 #include "boost/program_options/options_description.hpp"
 #include "boost/program_options/variables_map.hpp"  // for variables_map
@@ -54,3 +58,6 @@ get_variables_map()
 }
 
 } // namespace stk
+
+#endif
+

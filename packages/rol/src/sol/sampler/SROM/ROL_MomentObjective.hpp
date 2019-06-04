@@ -57,7 +57,7 @@ template <class Real>
 class MomentObjective : public Objective<Real> {
 private:
   std::vector<std::vector<std::pair<int, Real> > > moments_;
-  Teuchos::RCP<BatchManager<Real> > bman_;
+  ROL::Ptr<BatchManager<Real> > bman_;
   int dimension_;
   int numMoments_;
   const bool optProb_;
@@ -140,7 +140,7 @@ private:
 
 public:
   MomentObjective(const std::vector<std::vector<std::pair<int, Real> > > &moments,
-                  const Teuchos::RCP<BatchManager<Real> > &bman,
+                  const ROL::Ptr<BatchManager<Real> > &bman,
                   const bool optProb = true, const bool optAtom = true)
     : Objective<Real>(), moments_(moments), bman_(bman),
       optProb_(optProb), optAtom_(optAtom) {
@@ -148,9 +148,9 @@ public:
     numMoments_ = moments_[0].size();
   }
 
-  MomentObjective(const std::vector<Teuchos::RCP<Distribution<Real> > > &dist,
+  MomentObjective(const std::vector<ROL::Ptr<Distribution<Real> > > &dist,
                   const std::vector<int>                             &order,
-                  const Teuchos::RCP<BatchManager<Real> > &bman,
+                  const ROL::Ptr<BatchManager<Real> > &bman,
                   const bool optProb = true, const bool optAtom = true)
     : Objective<Real>(), bman_(bman), optProb_(optProb), optAtom_(optAtom) {
     numMoments_ = order.size();
@@ -166,7 +166,7 @@ public:
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const SROMVector<Real> &ex = dynamic_cast<const SROMVector<Real>&>(x);
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     Real val(0);
@@ -182,7 +182,7 @@ public:
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     g.zero();
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const SROMVector<Real> &ex = dynamic_cast<const SROMVector<Real>&>(x);
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     int numSamples = prob.getNumMyAtoms();
@@ -201,7 +201,7 @@ public:
         }
       }
     }
-    SROMVector<Real> &eg = Teuchos::dyn_cast<SROMVector<Real> >(g);
+    SROMVector<Real> &eg = dynamic_cast<SROMVector<Real>&>(g);
     ProbabilityVector<Real> &gprob = *(eg.getProbabilityVector());
     AtomVector<Real> &gatom = *(eg.getAtomVector());
     for (int k = 0; k < numSamples; k++) {
@@ -216,10 +216,10 @@ public:
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     hv.zero();
-    const SROMVector<Real> &ev = Teuchos::dyn_cast<const SROMVector<Real> >(v);
+    const SROMVector<Real> &ev = dynamic_cast<const SROMVector<Real>&>(v);
     const ProbabilityVector<Real> &vprob = *(ev.getProbabilityVector());
     const AtomVector<Real> &vatom = *(ev.getAtomVector());
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const SROMVector<Real> &ex = dynamic_cast<const SROMVector<Real>&>(x);
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     const int numSamples = prob.getNumMyAtoms();
@@ -240,7 +240,7 @@ public:
         }
       }
     }
-    SROMVector<Real> &ehv = Teuchos::dyn_cast<SROMVector<Real> >(hv);
+    SROMVector<Real> &ehv = dynamic_cast<SROMVector<Real>&>(hv);
     ProbabilityVector<Real> &hprob = *(ehv.getProbabilityVector());
     AtomVector<Real> &hatom = *(ehv.getAtomVector());
     for (int k = 0; k < numSamples; k++) {

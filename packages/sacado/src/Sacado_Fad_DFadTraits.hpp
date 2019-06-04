@@ -89,10 +89,16 @@ namespace Sacado {
     static const bool value = true;
   };
 
-  //! Specialization of %IsADType to DFad types
+  //! Specialization of %IsScalarType to DFad types
   template <typename ValueT>
   struct IsScalarType< Fad::DFad<ValueT> > {
     static const bool value = false;
+  };
+
+  //! Specialization of %IsSimdType to DFad types
+  template <typename ValueT>
+  struct IsSimdType< Fad::DFad<ValueT> > {
+    static const bool value = IsSimdType<ValueT>::value;
   };
 
   //! Specialization of %Value to DFad types
@@ -145,16 +151,14 @@ namespace Sacado {
 
 } // namespace Sacado
 
+//
 // Define Teuchos traits classes
-#ifdef HAVE_SACADO_TEUCHOS
+//
+
+// Promotion traits
+#ifdef HAVE_SACADO_TEUCHOSNUMERICS
 #include "Teuchos_PromotionTraits.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Sacado_Fad_ScalarTraitsImp.hpp"
-#include "Teuchos_SerializationTraits.hpp"
-
 namespace Teuchos {
-
-  //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename ValueT>
   struct PromotionTraits< Sacado::Fad::DFad<ValueT>,
                           Sacado::Fad::DFad<ValueT> > {
@@ -163,35 +167,42 @@ namespace Teuchos {
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename ValueT, typename R>
   struct PromotionTraits< Sacado::Fad::DFad<ValueT>, R > {
     typedef typename Sacado::Promote< Sacado::Fad::DFad<ValueT>, R >::type
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename L, typename ValueT>
   struct PromotionTraits< L, Sacado::Fad::DFad<ValueT> > {
   public:
     typedef typename Sacado::Promote< L, Sacado::Fad::DFad<ValueT> >::type
     promote;
   };
+}
+#endif
 
-  //! Specializtion of %Teuchos::ScalarTraits
+// Scalar traits
+#ifdef HAVE_SACADO_TEUCHOSCORE
+#include "Sacado_Fad_ScalarTraitsImp.hpp"
+namespace Teuchos {
   template <typename ValueT>
   struct ScalarTraits< Sacado::Fad::DFad<ValueT> > :
     public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::DFad<ValueT> >
   {};
+}
+#endif
 
-  //! Specialization of %Teuchos::SerializationTraits
+// Serialization traits
+#ifdef HAVE_SACADO_TEUCHOSCOMM
+#include "Sacado_Fad_SerializationTraitsImp.hpp"
+namespace Teuchos {
   template <typename Ordinal, typename ValueT>
   struct SerializationTraits<Ordinal, Sacado::Fad::DFad<ValueT> > :
     public Sacado::Fad::SerializationTraitsImp< Ordinal,
                                                 Sacado::Fad::DFad<ValueT> >
   {};
 
-  //! Specialization of %Teuchos::ValueTypeSerializer
   template <typename Ordinal, typename ValueT>
   struct ValueTypeSerializer<Ordinal, Sacado::Fad::DFad<ValueT> > :
     public Sacado::Fad::SerializerImp< Ordinal,
@@ -206,7 +217,12 @@ namespace Teuchos {
       Base(vs, sz) {}
   };
 }
-#endif // HAVE_SACADO_TEUCHOS
+#endif
+
+// KokkosComm
+#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#include "KokkosExp_View_Fad.hpp"
+#endif
 
 #endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 

@@ -105,7 +105,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
     Input(fineLevel, "A");
     Input(fineLevel, "Nullspace");
     Input(fineLevel, "Coordinates");
@@ -148,7 +148,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     // Obtain general variables
-    using xdMV = Xpetra::MultiVector<double,LO,GO,NO>;
+    using xdMV = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>;
     RCP<Matrix>      A             = Get< RCP<Matrix> >      (fineLevel, "A");
     RCP<MultiVector> fineNullspace = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
     RCP<xdMV>        fineCoords    = Get< RCP<xdMV> >(fineLevel, "Coordinates");
@@ -329,7 +329,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  MeshLayoutInterface(const int interpolationOrder, const LO blkSize, RCP<const Map> fineCoordsMap,
+  MeshLayoutInterface(const int /* interpolationOrder */, const LO /* blkSize */, RCP<const Map> fineCoordsMap,
                       RCP<GeometricData> myGeo, RCP<NodesIDs> ghostedCoarseNodes,
                       Array<Array<GO> >& lCoarseNodesGIDs) const{
     // The goal here is to produce maps that globally labels the mesh lexicographically.
@@ -564,7 +564,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetCoarsePoints(const int interpolationOrder, const LO blkSize, RCP<const Map> fineCoordsMap,
+  GetCoarsePoints(const int /* interpolationOrder */, const LO /* blkSize */, RCP<const Map> fineCoordsMap,
                   RCP<GeometricData> myGeo, RCP<NodesIDs> ghostedCoarseNodes,
                   Array<Array<GO> >& lCoarseNodesGIDs) const{
     // Assuming perfect global lexicographic ordering of the mesh, produce two arrays:
@@ -776,10 +776,10 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MakeGeneralGeometricP(RCP<GeometricData> myGeo,
-                        const RCP<Xpetra::MultiVector<double,LO,GO,Node> >& fineCoords,
+                        const RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,Node> >& fineCoords,
                         const LO nnzP, const LO dofsPerNode,
                         RCP<const Map>& stridedDomainMapP,RCP<Matrix> & Amat, RCP<Matrix>& P,
-                        RCP<Xpetra::MultiVector<double,LO,GO,Node> >& coarseCoords,
+                        RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,Node> >& coarseCoords,
                         RCP<NodesIDs> ghostedCoarseNodes, Array<Array<GO> > coarseNodesGIDs,
                         int interpolationOrder) const {
 
@@ -801,7 +801,7 @@ namespace MueLu {
      *    So far nothing...
      */
 
-    using xdMV                 = Xpetra::MultiVector<double,LO,GO,NO>;
+    using xdMV                 = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>;
     Xpetra::global_size_t OTI  = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
     LO myRank          = Amat->getRowMap()->getComm()->getRank();
@@ -882,7 +882,7 @@ namespace MueLu {
 
     RCP<const Import> coarseImporter = ImportFactory::Build(fineCoords->getMap(),
                                                             coarseCoordsFineMap);
-    coarseCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordsFineMap,
+    coarseCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Build(coarseCoordsFineMap,
                                                                       myGeo->numDimensions);
     coarseCoords->doImport(*fineCoords, *coarseImporter, Xpetra::INSERT);
     coarseCoords->replaceMap(coarseCoordsMap);
@@ -894,7 +894,7 @@ namespace MueLu {
                                                                fineCoords->getMap()->getIndexBase(),
                                                                fineCoords->getMap()->getComm());
     RCP<const Import> ghostImporter = ImportFactory::Build(fineCoords->getMap(), ghostMap);
-    RCP<xdMV> ghostCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(ghostMap,
+    RCP<xdMV> ghostCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Build(ghostMap,
                                                                               myGeo->numDimensions);
     ghostCoords->doImport(*fineCoords, *ghostImporter, Xpetra::INSERT);
 
@@ -912,9 +912,9 @@ namespace MueLu {
     ArrayView<SC>     val = valP();
     ia[0] = 0;
 
-    Array<ArrayRCP<double> > ghostedCoords(3);
+    Array<ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType> > ghostedCoords(3);
     {
-      ArrayRCP<double> tmp(ghostCoords->getLocalLength(),  0.0);
+      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType> tmp(ghostCoords->getLocalLength(),  0.0);
       for(int dim = 0; dim < 3; ++dim) {
         if(dim < myGeo->numDimensions) {
           ghostedCoords[dim] = ghostCoords->getDataNonConst(dim);
@@ -926,9 +926,9 @@ namespace MueLu {
 
     // Declaration and assignment of fineCoords which holds the coordinates of the fine nodes in 3D.
     // To do so we pull the nD coordinates from fineCoords and pad the rest with zero vectors...
-    RCP<Xpetra::Vector<double,LO,GO,NO> > zeros
-      = Xpetra::VectorFactory<double,LO,GO,NO>::Build(fineCoords->getMap(), true);
-    ArrayRCP< ArrayRCP<double> > lFineCoords(3);
+    RCP<Xpetra::Vector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> > zeros
+      = Xpetra::VectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Build(fineCoords->getMap(), true);
+    ArrayRCP< ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType> > lFineCoords(3);
     for(int dim = 0; dim < 3; ++dim) {
       if(dim < myGeo->numDimensions) {
         lFineCoords[dim] = fineCoords->getDataNonConst(dim);
@@ -941,7 +941,7 @@ namespace MueLu {
     for(int currentIndex = 0; currentIndex < myGeo->lNumFineNodes; ++currentIndex) {
       Array<GO> ghostedIndices(3), firstInterpolationIndices(3);
       Array<LO> interpolationPIDs(8), interpolationLIDs(8), interpolationGIDs(8);
-      Array<Array<double> > interpolationCoords(9);
+      Array<Array<typename Teuchos::ScalarTraits<Scalar>::coordinateType> > interpolationCoords(9);
       interpolationCoords[0].resize(3);
       GO firstInterpolationNodeIndex;
       int nStencil = 0;
@@ -1126,7 +1126,7 @@ namespace MueLu {
 
   // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   // void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetGeometricData(
-  //                       RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coordinates, const Array<LO> coarseRate,
+  //                       RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> >& coordinates, const Array<LO> coarseRate,
   //                       const Array<GO> gFineNodesPerDir, const Array<LO> lFineNodesPerDir, const LO BlkSize,
   //                       Array<GO>& gIndices, Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
   //                       Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir, Array<GO>& ghostGIDs,
@@ -1507,7 +1507,7 @@ namespace MueLu {
   //         firstCoarseNodeInds[dim] = coarseRate[dim] - myOffset[dim];
   //       }
   //     }
-  //     Array<ArrayRCP<const double> > fineNodes(numDimensions);
+  //     Array<ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> > fineNodes(numDimensions);
   //     for(LO dim = 0; dim < numDimensions; ++dim) {fineNodes[dim] = coordinates->getData(dim);}
   //     for(LO k = 0; k < lCoarseNodesPerDir[2]; ++k) {
   //       for(LO j = 0; j < lCoarseNodesPerDir[1]; ++j) {
@@ -1603,7 +1603,7 @@ namespace MueLu {
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeStencil(
                                 const LO numDimensions, const Array<GO> currentNodeIndices,
                                 const Array<GO> coarseNodeIndices, const LO rate[3],
-                                const Array<Array<double> > coord, const int interpolationOrder,
+                                const Array<Array<typename Teuchos::ScalarTraits<Scalar>::coordinateType> > coord, const int interpolationOrder,
                                 std::vector<double>& stencil) const {
 
     TEUCHOS_TEST_FOR_EXCEPTION((interpolationOrder > 1) || (interpolationOrder < 0),
@@ -1641,11 +1641,11 @@ namespace MueLu {
     }
     stencil[0] = coarseNode;
 
-  }
+  } // ComputeConstantInterpolationStencil
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  ComputeLinearInterpolationStencil(const LO numDimensions, const Array<Array<double> > coord,
+  ComputeLinearInterpolationStencil(const LO numDimensions, const Array<Array<typename Teuchos::ScalarTraits<Scalar>::coordinateType> > coord,
                                     std::vector<double>& stencil)
     const {
 
@@ -1730,7 +1730,7 @@ namespace MueLu {
       stencil[i] = functions[0][i];
     }
 
-  }
+  } // End ComputeLinearInterpolationStencil
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1795,7 +1795,7 @@ namespace MueLu {
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
-                const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const
+                const typename Teuchos::Array<LocalOrdinal>::iterator& /* last2 */) const
   {
     typedef typename std::iterator_traits<typename Teuchos::Array<LocalOrdinal>::iterator>::difference_type DT;
     DT n = last1 - first1;
@@ -1822,7 +1822,7 @@ namespace MueLu {
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
                 const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
-                const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const
+                const typename Teuchos::Array<LocalOrdinal>::iterator& /* last2 */) const
   {
     typedef typename std::iterator_traits<typename Teuchos::Array<LocalOrdinal>::iterator>::difference_type DT;
     DT n = last1 - first1;
@@ -1849,7 +1849,7 @@ namespace MueLu {
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GetGIDLocalLexicographic(const GO i, const GO j, const GO k,
                            const Array<LO> coarseNodeFineIndices, const RCP<GeometricData> myGeo,
-                           const LO myRankIndex, const LO pi, const LO pj, const LO pk,
+                           const LO myRankIndex, const LO pi, const LO pj, const LO /* pk */,
                            const typename std::vector<std::vector<GO> >::iterator blockStart,
                            const typename std::vector<std::vector<GO> >::iterator blockEnd,
                            GO& myGID, LO& myPID, LO& myLID) const {

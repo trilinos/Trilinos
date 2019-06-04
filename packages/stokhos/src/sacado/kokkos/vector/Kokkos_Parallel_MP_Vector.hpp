@@ -73,7 +73,7 @@ struct MPVectorWorkConfig {
 
 namespace Impl {
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
 // Specialization of ParallelFor<> for MPVectorWorkConfig and Threads
 // The default implementation ignores the team size and uses the standard
 // work-range implementation.  In the future maybe we should try and use
@@ -94,7 +94,7 @@ public:
 };
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 // Specialization of ParallelFor<> for MPVectorWorkConfig and OpenMP
 // The default implementation ignores the team size and uses the standard
 // work-range implementation.  In the future maybe we should try and use
@@ -115,7 +115,7 @@ public:
 };
 #endif
 
-#if defined(KOKKOS_HAVE_SERIAL)
+#if defined(KOKKOS_ENABLE_SERIAL)
 // Specialization of ParallelFor<> for MPVectorWorkConfig and Serial
 // The default implementation ignores the team size and uses the standard
 // work-range implementation.  In the future maybe we should try and use
@@ -134,9 +134,9 @@ public:
     ParallelFor< FunctorType , Policy >( functor ,
                                          Policy( 0, work_config.range ) ) {}
 };
-#endif // defined(KOKKOS_HAVE_SERIAL)
+#endif // defined(KOKKOS_ENABLE_SERIAL)
 
-#if defined( KOKKOS_HAVE_CUDA ) && defined( __CUDACC__ )
+#if defined( KOKKOS_ENABLE_CUDA ) && defined( __CUDACC__ )
 
 // Specialization of ParallelFor<> for MPVectorWorkConfig on Cuda
 // Here we use threadIdx.x for each entry in the specified team-size

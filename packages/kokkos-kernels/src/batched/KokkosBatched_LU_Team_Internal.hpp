@@ -5,7 +5,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-
+#include "KokkosBatched_Vector.hpp"
 #include "KokkosBatched_InnerLU_Serial_Impl.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 
@@ -27,7 +27,8 @@ namespace KokkosBatched {
       static int 
       invoke(const MemberType &member,
              const int m, const int n,
-             ValueType *__restrict__ A, const int as0, const int as1);
+             ValueType *__restrict__ A, const int as0, const int as1,
+             const typename MagnitudeScalarType<ValueType>::type tiny);
     };
 
     template<>
@@ -37,24 +38,39 @@ namespace KokkosBatched {
     TeamLU_Internal<Algo::LU::Unblocked>::
     invoke(const MemberType &member, 
            const int m, const int n,
-           ValueType *__restrict__ A, const int as0, const int as1) {
+           ValueType *__restrict__ A, const int as0, const int as1,
+           const typename MagnitudeScalarType<ValueType>::type tiny) {
 
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
 
+      const auto       abs_tiny =  tiny > 0 ? tiny : -tiny;
+      const auto minus_abs_tiny = -abs_tiny;
+
       for (int p=0;p<k;++p) {
-        const int iend = m-p-1, jend = n-p-1;
+        // Made this non-const in order to WORKAROUND issue #349
+        int iend = m-p-1;
+        int jend = n-p-1;
 
         const ValueType 
-          // inv_alpha11 = 1.0/A(p,p),
-          alpha11 = A[p*as0+p*as1],
           *__restrict__ a12t = A+(p  )*as0+(p+1)*as1;
 
         ValueType
           *__restrict__ a21  = A+(p+1)*as0+(p  )*as1,
           *__restrict__ A22  = A+(p+1)*as0+(p+1)*as1;
-            
+
+        if (tiny != 0) {
+          if (member.team_rank() == 0) {
+            ValueType &alpha11_reference = A[p*as0+p*as1];
+            const auto alpha11_real = Kokkos::Details::ArithTraits<ValueType>::real(alpha11_reference);
+            alpha11_reference += minus_abs_tiny*ValueType(alpha11_real <  0);
+            alpha11_reference +=       abs_tiny*ValueType(alpha11_real >= 0);
+          }
+        }
+
         member.team_barrier();
+        const ValueType
+          alpha11 = A[p*as0+p*as1];
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend),[&](const int &i) {
             // a21[i*as0] *= inv_alpha11; 
             a21[i*as0] /= alpha11;
@@ -62,13 +78,8 @@ namespace KokkosBatched {
             
         member.team_barrier();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend*jend),[&](const int &ij) {
-#if							\
-  defined (KOKKOS_ENABLE_CUDA) &&				\
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-            const int i = ij%iend, j = ij/iend;
-#else
+            // assume layout right for batched computation
             const int i = ij/jend, j = ij%jend;
-#endif
             A22[i*as0+j*as1] -= a21[i*as0] * a12t[j*as1];
           });
       }
@@ -82,7 +93,8 @@ namespace KokkosBatched {
     TeamLU_Internal<Algo::LU::Blocked>::
     invoke(const MemberType &member, 
            const int m, const int n,
-           ValueType *__restrict__ A, const int as0, const int as1) {
+           ValueType *__restrict__ A, const int as0, const int as1,
+           const typename MagnitudeScalarType<ValueType>::type tiny) {
 
       enum : int {
         mbAlgo = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
@@ -91,7 +103,7 @@ namespace KokkosBatched {
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
 
-      const typename Kokkos::Details::ArithTraits<ValueType>::mag_type one(1.0), minus_one(-1.0);
+      const typename MagnitudeScalarType<ValueType>::type one(1.0), minus_one(-1.0);
 
       InnerLU<mbAlgo> lu(as0, as1);
           
@@ -101,9 +113,10 @@ namespace KokkosBatched {
                               const int jb,
                               ValueType *__restrict__ AA) {
         const int tsize = member.team_size();
-        const int mb = mbAlgo;
-        const int nb = ((jb-mb) + (ib-mb)) > 0?
-                       ((jb-mb) + (ib-mb))/tsize + (((jb-mb) + (ib-mb))%tsize > 0):
+        // Made this non-const in order to WORKAROUND issue #349
+        int mb = mbAlgo;
+        int nb = ((jb-mb) + (ib-mb)) > 0?
+                 ((jb-mb) + (ib-mb))/tsize + (((jb-mb) + (ib-mb))%tsize > 0):
                        1;
         const int kb = ib < jb ? ib : jb; 
 
@@ -119,7 +132,8 @@ namespace KokkosBatched {
             lu.serial_invoke(pb, Ap);
           member.team_barrier();
 
-          const int 
+          // Made this non-const in order to WORKAROUND issue #349
+          int 
             m_abr  = ib-p-mb,               n_abr  = jb-p-mb,
             mp_abr = m_abr%nb,              np_abr = n_abr%nb,
             mq_abr = (m_abr/nb)+(mp_abr>0), nq_abr = (n_abr/nb)+(np_abr>0);

@@ -48,7 +48,7 @@
 
 #include "ROL_ScaledStdVector.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 typedef double RealT;
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
 
   int iprint = argc - 1;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   std::ostream& outStream = (iprint > 0) ? std::cout : bhs;
 
   int errorFlag = 0;
@@ -72,22 +72,22 @@ int main(int argc, char *argv[]) {
     int dim = 10; 
 
     // Create Tpetra::MultiVectors (single vectors) 
-    Teuchos::RCP<std::vector<ElementT> > x_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim) ); 
-    Teuchos::RCP<std::vector<ElementT> > y_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim) ); 
-    Teuchos::RCP<std::vector<ElementT> > W_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim,static_cast<ElementT>(2)) ); 
+    ROL::Ptr<std::vector<ElementT> > x_ptr
+      = ROL::makePtr<std::vector<ElementT>>(dim); 
+    ROL::Ptr<std::vector<ElementT> > y_ptr
+      = ROL::makePtr<std::vector<ElementT>>(dim); 
+    ROL::Ptr<std::vector<ElementT> > W_ptr
+      = ROL::makePtr<std::vector<ElementT>>(dim,static_cast<ElementT>(2)); 
 
     // Random elements
     for (int i = 0; i < dim; i++) {
-      (*x_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
-      (*y_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
+      (*x_ptr)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
+      (*y_ptr)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
     }
 
     // Create ROL vectors
-    ROL::PrimalScaledStdVector<RealT,ElementT> x(x_rcp,W_rcp);
-    ROL::DualScaledStdVector<RealT,ElementT>   y(y_rcp,W_rcp);
+    ROL::PrimalScaledStdVector<RealT,ElementT> x(x_ptr,W_ptr);
+    ROL::DualScaledStdVector<RealT,ElementT>   y(y_ptr,W_ptr);
 
     RealT xy = x.dot(y.dual());
     RealT yx = y.dot(x.dual());
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     }
 
     // clone z from x, deep copy x into z, norm of z
-    Teuchos::RCP<ROL::Vector<RealT> > z = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > z = x.clone();
     z->set(x);
     RealT znorm = z->norm();
     outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
       outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }
-    Teuchos::RCP<ROL::Vector<RealT> > w = y.clone();
+    ROL::Ptr<ROL::Vector<RealT> > w = y.clone();
     w = y.clone();
     w->set(y);
     RealT wnorm = w->norm();
@@ -142,27 +142,27 @@ int main(int argc, char *argv[]) {
     }
 
     // Standard tests.
-    Teuchos::RCP<std::vector<ElementT> > x1_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim) );
-    Teuchos::RCP<std::vector<ElementT> > y1_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim) );
-    Teuchos::RCP<std::vector<ElementT> > z1_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim) );
+    ROL::Ptr<std::vector<ElementT> > x1_ptr
+      = ROL::makePtr<std::vector<ElementT>>(dim);
+    ROL::Ptr<std::vector<ElementT> > y1_ptr
+      = ROL::makePtr<std::vector<ElementT>>(dim);
+    ROL::Ptr<std::vector<ElementT> > z1_ptr
+      = ROL::makePtr<std::vector<ElementT>>(dim);
 
     // Random elements
     for (int i = 0; i < dim; i++) {
-      (*x1_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
-      (*y1_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
-      (*z1_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
+      (*x1_ptr)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
+      (*y1_ptr)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
+      (*z1_ptr)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
     }
 
     // Create ROL vectors
-    ROL::PrimalScaledStdVector<RealT,ElementT> x1(x1_rcp,W_rcp);
-    ROL::PrimalScaledStdVector<RealT,ElementT> y1(y1_rcp,W_rcp);
-    ROL::PrimalScaledStdVector<RealT,ElementT> z1(z1_rcp,W_rcp);
+    ROL::PrimalScaledStdVector<RealT,ElementT> x1(x1_ptr,W_ptr);
+    ROL::PrimalScaledStdVector<RealT,ElementT> y1(y1_ptr,W_ptr);
+    ROL::PrimalScaledStdVector<RealT,ElementT> z1(z1_ptr,W_ptr);
 
     std::vector<RealT> consistency = x1.checkVector(y1, z1, true, outStream);
-    ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
+    ROL::StdVector<RealT> checkvec( ROL::makePtrFromRef(consistency) );
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }

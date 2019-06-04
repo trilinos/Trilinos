@@ -198,7 +198,7 @@ namespace PHX {
        for during DAG construction.
 
        This is intended for the use case where a user wants to reuse
-       an evalautor with hard coded field names but would like to
+       an evaluator with hard coded field names but would like to
        rename the evaluated fields without adding naming logic to the
        evaluator.
 
@@ -219,7 +219,7 @@ namespace PHX {
        for during DAG construction.
 
        This is intended for the use case where a user wants to reuse
-       an evalautor with hard coded field names but would like to
+       an evaluator with hard coded field names but would like to
        rename the evaluated fields without adding naming logic to the
        evaluator.
 
@@ -322,9 +322,18 @@ namespace PHX {
     const std::vector<Teuchos::RCP<PHX::FieldTag>>&
     getFieldTagsForSizing();
 
+    /** \brief Print to user specified ostream when each evaluator
+        starts and stops. Useful for debugging. Enabled only in debug
+        builds.
+
+        @param [in] ostr RCP to output stream. If set to null, this disables printing.
+    */
+    template<typename EvalT>
+    void printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr);
+
   private:
 
-    typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
+    using SCTM = PHX::EvaluationContainer_TemplateManager<Traits>;
 
     std::size_t m_num_evaluation_types;
 

@@ -2,6 +2,12 @@
 
 TRIBITS_PACKAGE(OptiPack)
 
+
+# OptiPack package is deprecated April 2019; to be removed May 2019
+MESSAGE(WARNING "***** WARNING:  Package OptiPack is deprecated in April 2019; it will be removed in May 2019 *****")
+
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 ADD_SUBDIRECTORY(src)

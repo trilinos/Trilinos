@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -51,7 +51,6 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Cuda Texture fetches can be performed for 4, 8 and 16 byte objects (int,int2,int4)
@@ -214,7 +213,6 @@ struct CudaLDGFetch {
 #endif
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -248,7 +246,7 @@ class ViewDataHandle< Traits ,
 {
 public:
 
-  using track_type  = Kokkos::Experimental::Impl::SharedAllocationTracker ;
+  using track_type  = Kokkos::Impl::SharedAllocationTracker ;
 
   using value_type  = typename Traits::const_value_type ;
   using return_type = typename Traits::const_value_type ; // NOT a reference
@@ -261,9 +259,9 @@ public:
                      >::type ;
 
 #if defined( KOKKOS_ENABLE_CUDA_LDG_INTRINSIC )
-  using handle_type = Kokkos::Experimental::Impl::CudaLDGFetch< value_type , alias_type > ;
+  using handle_type = Kokkos::Impl::CudaLDGFetch< value_type , alias_type > ;
 #else
-  using handle_type = Kokkos::Experimental::Impl::CudaTextureFetch< value_type , alias_type > ;
+  using handle_type = Kokkos::Impl::CudaTextureFetch< value_type , alias_type > ;
 #endif
 
   KOKKOS_INLINE_FUNCTION
@@ -281,6 +279,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   static handle_type assign( value_type * arg_data_ptr, track_type const & arg_tracker )
     {
+      if(arg_data_ptr == NULL) return handle_type();
+
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       // Assignment of texture = non-texture requires creation of a texture object
       // which can only occur on the host.  In addition, 'get_record' is only valid

@@ -55,18 +55,15 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 
@@ -116,7 +113,7 @@ int verifyInputAdapter(
       ia.getLocalNumEdges() != graph.getNodeNumEntries())
       fail = 6;
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   const zgno_t *vtxIds=NULL, *edgeIds=NULL;
   const offset_t *offsets=NULL;
@@ -131,7 +128,7 @@ int verifyInputAdapter(
     if (nvtx != graph.getNodeNumRows())
       fail = 8;
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (gfail == 0){
       printGraph<offset_t>(comm, nvtx, vtxIds, offsets, edgeIds);
@@ -143,10 +140,11 @@ int verifyInputAdapter(
   return fail;
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
   int fail = 0, gfail=0;
   bool aok = true;
@@ -155,10 +153,12 @@ int main(int argc, char *argv[])
   // and Epetra graphs for testing.
 
   RCP<UserInputForTests> uinput;
+  Teuchos::ParameterList params;
+  params.set("input file", "simple");
+  params.set("file type", "Chaco");
 
   try{
-    uinput =
-      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
+    uinput = rcp(new UserInputForTests(params, comm));
   }
   catch(std::exception &e){
     aok = false;
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 
     fail = verifyInputAdapter<tgraph_t>(*tGInput, *tG);
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (!gfail){
       tgraph_t *mMigrate = NULL;
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
         fail = 11;
       }
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
 
       if (!gfail){
         RCP<const tgraph_t> cnewG = rcp_const_cast<const tgraph_t>(newG);
@@ -244,11 +244,11 @@ int main(int argc, char *argv[])
         }
         fail = verifyInputAdapter<tgraph_t>(*newInput, *newG);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 
     fail = verifyInputAdapter<xgraph_t>(*xGInput, *tG);
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (!gfail){
       xgraph_t *mMigrate =NULL;
@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
         fail = 11;
       }
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
 
       if (!gfail){
         RCP<const xgraph_t> cnewG(mMigrate);
@@ -307,11 +307,11 @@ int main(int argc, char *argv[])
         }
         fail = verifyInputAdapter<xgraph_t>(*newInput, *newG);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
     if (goodAdapter) {
       fail = verifyInputAdapter<egraph_t>(*eGInput, *tG);
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
 
       if (!gfail){
         egraph_t *mMigrate =NULL;
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
           fail = 11;
         }
 
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
 
         if (!gfail){
           RCP<const egraph_t> cnewG(mMigrate, true);
@@ -386,11 +386,11 @@ int main(int argc, char *argv[])
           }
           fail = verifyInputAdapter<egraph_t>(*newInput, *newG);
           if (fail) fail += 100;
-          gfail = globalFail(comm, fail);
+          gfail = globalFail(*comm, fail);
         }
       }
       if (gfail){
-        printFailureCode(comm, fail);
+        printFailureCode(*comm, fail);
       }
     }
   }

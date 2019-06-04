@@ -76,33 +76,27 @@ public:
 
   FaceToElement();
 
-  FaceToElement(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn);
+  FaceToElement(panzer::ConnManager & conn);
 
   /** Build the mapping from a mesh topology.
     */
-  void initialize(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn);
+  void initialize(panzer::ConnManager & conn);
 
-  KOKKOS_INLINE_FUNCTION
   GlobalOrdinal getLeftElem (GlobalOrdinal face_id) const 
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return elems_by_face_(lid,0);}
 
-  KOKKOS_INLINE_FUNCTION
   GlobalOrdinal getRightElem(GlobalOrdinal face_id) const 
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return elems_by_face_(lid,1);}
 
-  KOKKOS_INLINE_FUNCTION
   int getLeftBlock (GlobalOrdinal face_id) const 
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return blocks_by_face_(lid,0);}
 
-  KOKKOS_INLINE_FUNCTION
   int getRightBlock(GlobalOrdinal face_id) const 
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return blocks_by_face_(lid,1);}
 
-  KOKKOS_INLINE_FUNCTION
   int getLeftProc  (GlobalOrdinal face_id) const 
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return procs_by_face_(lid,0);}
 
-  KOKKOS_INLINE_FUNCTION
   int getRightProc (GlobalOrdinal face_id) const 
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return procs_by_face_(lid,1);}
 

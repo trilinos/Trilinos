@@ -38,7 +38,7 @@
 #include <stk_mesh/base/ModificationObserver.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequire
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequire
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <vector>                       // for allocator, vector
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket

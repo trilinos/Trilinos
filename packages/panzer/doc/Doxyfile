@@ -20,7 +20,7 @@ OUTPUT_DIRECTORY       = .
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../disc-fe/src ../adapters-stk/src ../core/src ../dof-mgr/src ./Panzer_DoxygenDocumentation.hpp
+INPUT                  = ../disc-fe/src ../adapters-stk/src ../core/src ../dof-mgr/src ../expr-eval/src ./Panzer_DoxygenDocumentation.hpp
 #FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 

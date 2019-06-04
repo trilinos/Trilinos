@@ -110,6 +110,7 @@ namespace MueLu {
 
   public:
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+    typedef Xpetra::MultiVector<Magnitude,LO,GO,NO> RealValuedMultiVector;
 
 #ifdef HAVE_MUELU_EPETRA
     //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
@@ -252,7 +253,28 @@ namespace MueLu {
 
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
-    static Kokkos::View<const bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero());
+    static Kokkos::View<const bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
+
+    /*! @brief Detect Dirichlet columns based on Dirichlet rows
+
+        The routine finds all column indices that are in Dirichlet rows, where Dirichlet rows are described by dirichletRows,
+        as returned by DetectDirichletRows.
+
+        @param[in] A matrix
+        @param[in] dirichletRows array of Dirichlet rows.
+
+        @return boolean array.  The ith entry is true iff row i is a Dirichlet column.
+    */
+    static Kokkos::View<const bool*, typename NO::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows);
+
+
+    static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static void ZeroDirichletRows(RCP<MultiVector>& X, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletCols, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static RCP<MultiVector> RealValuedToScalarMultiVector(RCP<RealValuedMultiVector> X);
 
     /*! @brief Set seed for random number generator.
 
@@ -274,7 +296,7 @@ namespace MueLu {
       return Utilities::Transpose(Op, optimizeTranspose, label);
     }
 
-    static RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
+    static RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
       return Utilities::ExtractCoordinatesFromParameterList(paramList);
     }
 
@@ -297,6 +319,7 @@ namespace MueLu {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+    typedef Xpetra::MultiVector<Magnitude,LocalOrdinal,GlobalOrdinal,Node> RealValuedMultiVector;
 
   private:
 #undef MUELU_UTILITIES_KOKKOS_SHORT
@@ -381,7 +404,17 @@ namespace MueLu {
     }
 
     // todo: move this to UtilitiesBase::kokkos
-    static Kokkos::View<const bool*, typename Node::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero());
+    static Kokkos::View<const bool*, typename Node::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
+
+    static Kokkos::View<const bool*, typename Node::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
+
+    static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static void ZeroDirichletRows(RCP<MultiVector>& X, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static RCP<MultiVector> RealValuedToScalarMultiVector(RCP<RealValuedMultiVector> X);
 
     static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true, LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
       return UtilitiesBase::PowerMethod(A,scaleByDiag,niters,tolerance,verbose,seed);
@@ -529,7 +562,7 @@ namespace MueLu {
       Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
       In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
      */
-    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false, const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
+    static RCP<Matrix> Transpose(Matrix& Op, bool /* optimizeTranspose */ = false, const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
       switch (Op.getRowMap()->lib()) {
       case Xpetra::UseTpetra:
       {
@@ -600,8 +633,8 @@ namespace MueLu {
 
     /*! @brief Extract coordinates from parameter list and return them in a Xpetra::MultiVector
     */
-    static RCP<Xpetra::MultiVector<double,LO,GO,NO> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
-      RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
+    static RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
+      RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates = Teuchos::null;
 
       // check whether coordinates are contained in parameter list
       if(paramList.isParameter ("Coordinates") == false)
@@ -652,7 +685,7 @@ namespace MueLu {
         doubleEpCoords = paramList.get<RCP<Epetra_MultiVector> >("Coordinates");
         paramList.remove("Coordinates");
         RCP<Xpetra::EpetraMultiVectorT<GO,NO> > epCoordinates = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(doubleEpCoords));
-        coordinates = rcp_dynamic_cast<Xpetra::MultiVector<double,LO,GO,NO> >(epCoordinates);
+        coordinates = rcp_dynamic_cast<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >(epCoordinates);
         TEUCHOS_TEST_FOR_EXCEPT(doubleEpCoords->NumVectors() != Teuchos::as<int>(coordinates->getNumVectors()));
       }
 #endif

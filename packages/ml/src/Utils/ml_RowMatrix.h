@@ -137,8 +137,8 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,
-		      Epetra_MultiVector& Y) const
+    virtual int Solve(bool /* Upper */, bool /* Trans */, bool /* UnitDiagonal */, const Epetra_MultiVector& /* X */,
+		      Epetra_MultiVector& /* Y */) const
     {
       ML_RETURN(-1); // not implemented
     }
@@ -149,8 +149,8 @@ class RowMatrix : public virtual Epetra_RowMatrix {
       ML_RETURN(Multiply(false,X,Y));
     }
 
-    virtual int ApplyInverse(const Epetra_MultiVector& X,
-			     Epetra_MultiVector& Y) const
+    virtual int ApplyInverse(const Epetra_MultiVector& /* X */,
+			     Epetra_MultiVector& /* Y */) const
     {
       ML_RETURN(-1);
     }
@@ -165,7 +165,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int InvRowSums(Epetra_Vector& x) const
+    virtual int InvRowSums(Epetra_Vector& /* x */) const
     {
       ML_RETURN(-1); // not implemented
     }
@@ -178,7 +178,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int LeftScale(const Epetra_Vector& x)
+    virtual int LeftScale(const Epetra_Vector& /* x */)
     {
       ML_RETURN(-1); // not implemented
     }
@@ -194,7 +194,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int InvColSums(Epetra_Vector& x) const
+    virtual int InvColSums(Epetra_Vector& /* x */) const
     {
       ML_RETURN(-1); // not implemented
     }
@@ -208,7 +208,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int RightScale(const Epetra_Vector& x)
+    virtual int RightScale(const Epetra_Vector& /* x */)
     {
       ML_RETURN(-1); // not implemented
     }
@@ -295,10 +295,10 @@ class RowMatrix : public virtual Epetra_RowMatrix {
   // following functions are required to derive Epetra_RowMatrix objects.
 
   //! Sets ownership.
-  int SetOwnership(bool ownership){return(-1);};
+  int SetOwnership(bool /* ownership */){return(-1);};
 
   //! Sets use transpose (not implemented).
-  int SetUseTranspose(bool UseTransposeFlag){return(-1);}
+  int SetUseTranspose(bool /* UseTransposeFlag */){return(-1);}
 
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(false);};

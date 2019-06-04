@@ -67,12 +67,9 @@ using Teuchos::Comm;
 using Teuchos::RCP;
 using Teuchos::ParameterList;
 using Teuchos::Time;
-using std::cout;
-using std::endl;
 using std::string;
 using std::map;
 using std::pair;
-using std::ostringstream;
 using Teuchos::reduceAll;
 using namespace Zoltan2_TestingFramework;
 
@@ -206,7 +203,7 @@ private:
                        const MetricAnalyzerInfo & metric,
                        const MetricAnalyzerInfo &ref_metric,
                        const Teuchos::ParameterList & metricPlist,
-                       ostringstream &msg);
+                       std::ostringstream &msg);
   
   /* \brief Method that compares two timers and returns a pass/fail message.
    * \param[in] comm is the process communicator
@@ -222,7 +219,7 @@ private:
                       const double time,
                       const double ref_time,
                       const Teuchos::ParameterList & metricPlist,
-                      ostringstream &msg);
+                      std::ostringstream &msg);
   
   /* \brief Method for inserting data from all timers to a map of clocked times
    * param[in] timers a map of timers
@@ -264,19 +261,19 @@ bool ComparisonHelper::Compare(const ParameterList &pList,
     string pA = pList.get<string>("A");
     if(this->sources.find(pA) == this->sources.end())
     {
-      cout << "\nProblem: " + pA + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error ";
-      cout << "occurred while running the problem.";
-      cout << "\nSolution comparison FAILED." << endl;
+      std::cout << "\nProblem: " + pA + ", was not saved for comparison.";
+      std::cout << "\nThis typically indicates that an error ";
+      std::cout << "occurred while running the problem.";
+      std::cout << "\nSolution comparison FAILED." << std::endl;
       return false;
     }
     
     string pB = pList.get<string>("B");
     if(this->sources.find(pB) == this->sources.end()) {
-      cout << "\nProblem: " + pB + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error ";
-      cout << "occurred while running the problem.";
-      cout << "\nSolution comparison FAILED." << endl;
+      std::cout << "\nProblem: " + pB + ", was not saved for comparison.";
+      std::cout << "\nThis typically indicates that an error ";
+      std::cout << "occurred while running the problem.";
+      std::cout << "\nSolution comparison FAILED." << std::endl;
       return false;
     }
     
@@ -287,19 +284,19 @@ bool ComparisonHelper::Compare(const ParameterList &pList,
     // comparing metrics/timers
     string prb = pList.get<string>("Problem");
     if(this->sources.find(prb) == this->sources.end()) {
-      cout << "\nProblem: " + prb + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error ";
-      cout << "occurred while running the problem.";
-      cout << "\nMetric comparison FAILED." << endl;
+      std::cout << "\nProblem: " + prb + ", was not saved for comparison.";
+      std::cout << "\nThis typically indicates that an error ";
+      std::cout << "occurred while running the problem.";
+      std::cout << "\nMetric comparison FAILED." << std::endl;
       return false;
     }
     
     string ref = pList.get<string>("Reference");
     if(this->sources.find(ref) == this->sources.end()) {
-      cout << "\nReference: " + ref + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error ";
-      cout << "occurred while running the problem.";
-      cout << "\nMetric comparison FAILED." << endl;
+      std::cout << "\nReference: " + ref + ", was not saved for comparison.";
+      std::cout << "\nThis typically indicates that an error ";
+      std::cout << "occurred while running the problem.";
+      std::cout << "\nMetric comparison FAILED." << std::endl;
       return false;
     }
     
@@ -310,20 +307,20 @@ bool ComparisonHelper::Compare(const ParameterList &pList,
   {
     if(comm->getRank() == 0)
     {
-      cout << "Problem A or Problem B is not specified -- check input.";
-      cout <<"\nSolution comparison FAILED." << endl;
+      std::cout << "Problem A or Problem B is not specified -- check input.";
+      std::cout <<"\nSolution comparison FAILED." << std::endl;
     }
   }
   else if (pList.isParameter("Problem") || pList.isParameter("Reference")) {
     if(comm->getRank() == 0) {
-      cout << "Problem or reference is not specified -- check input.";
-      cout <<"\nMetric comparison FAILED." << endl;
+      std::cout << "Problem or reference is not specified -- check input.";
+      std::cout <<"\nMetric comparison FAILED." << std::endl;
     }
   }
   else {
     if (comm->getRank() == 0) {
-      cout << "ComparisonHelper did not understand how to read the xml. ";
-      cout << "Test FAILED." << endl;
+      std::cout << "ComparisonHelper did not understand how to read the xml. ";
+      std::cout << "Test FAILED." << std::endl;
     }
   }
   return false;
@@ -338,8 +335,8 @@ bool ComparisonHelper::CompareSolutions(const string &p1,
   auto A = this->sources[p1];
   auto B = this->sources[p2];
   if(A->problemFactory->getProblemName() != B->problemFactory->getProblemName()) {
-    cout << "Problem A and B are of a different kind and cannot be compared.";
-    cout <<"\nSolution comparison FAILED." << endl;
+    std::cout << "Problem A and B are of a different kind and cannot be compared.";
+    std::cout <<"\nSolution comparison FAILED." << std::endl;
   }
   else {
     if(A->problemFactory->getProblemName() == "partitioning") {
@@ -352,9 +349,9 @@ bool ComparisonHelper::CompareSolutions(const string &p1,
       return this->CompareOrderingSolutions(A.getRawPtr(), B.getRawPtr(), comm);
     }
     else {
-      cout << "Problem kind: " << A->problemFactory->getProblemName() <<
+      std::cout << "Problem kind: " << A->problemFactory->getProblemName() <<
         " not recognized.  Check spelling.";
-      cout <<"\nSolution comparison FAILED." << endl;
+      std::cout <<"\nSolution comparison FAILED." << std::endl;
     }
   }
   return false;
@@ -388,7 +385,7 @@ bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
                                                  const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
-  ostringstream status;
+  std::ostringstream status;
   int failed = 0;
 
   if(sourceA->adapterFactory->getMainAdapter()->getLocalNumIDs()
@@ -420,7 +417,7 @@ bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
   }
   
   if(rank == 0) {
-    cout << status.str() << endl;
+    std::cout << status.str() << std::endl;
   }
   return (failed == 0);
 }
@@ -431,7 +428,7 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
                                                 const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
-  ostringstream status;
+  std::ostringstream status;
   int failed = 0;
 
   // TO DO - implement coloring comparison
@@ -478,7 +475,7 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
   }
   
   if (rank == 0) {
-    cout << status.str() << endl;
+    std::cout << status.str() << std::endl;
   }
   return (failed == 0);
 }
@@ -488,7 +485,7 @@ bool ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
                                                 const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
-  ostringstream status;
+  std::ostringstream status;
   int failed = 0;
   
   // TO DO - implement ordering comparison
@@ -499,7 +496,7 @@ bool ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
   }
   
   if(rank == 0) {
-    cout << status.str() << endl;
+    std::cout << status.str() << std::endl;
   }
   return (failed == 0);
 }
@@ -544,8 +541,8 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
   const string prb_name = metricsPlist.get<string>("Problem");
   const string ref_name = metricsPlist.get<string>("Reference");
   if(rank == 0) {
-    cout  << "\nMetric/Timer comparison of: " << prb_name << " and ";
-    cout << ref_name <<" (reference source)\n";
+    std::cout  << "\nMetric/Timer comparison of: " << prb_name << " and ";
+    std::cout << ref_name <<" (reference source)\n";
   }
   
   // get sources
@@ -565,7 +562,7 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
   
   while(!metrics.empty()) {
     // print their names...
-    ostringstream msg;
+    std::ostringstream msg;
     metric_name = metrics.front().name();
 
     if (metric_name == "Metrics") { // special key word means compare the metrics list
@@ -583,24 +580,24 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
           all_tests_pass = 0;
         }
         if(rank == 0) {
-          cout << msg.str() << endl;
+          std::cout << msg.str() << std::endl;
         }
       }
     }
     else if(prb_timers.find(metric_name) != prb_timers.end() && ref_timers.find(metric_name) != ref_timers.end()) {
-      if(rank == 0) cout << "\ncomparing timer: " << metric_name << endl;
+      if(rank == 0) std::cout << "\ncomparing timer: " << metric_name << std::endl;
       if(!ComparisonHelper::timerComparisonTest(comm,
                                                 prb_timers.at(metric_name),
                                                 ref_timers.at(metric_name),
                                                 metrics.front(), msg)) {
         all_tests_pass = 0;
         if (rank == 0) {
-          cout << "timer comparison test caused a FAILED event." << endl;
+          std::cout << "timer comparison test caused a FAILED event." << std::endl;
         }
       }
       
       if(rank == 0) {
-        cout << msg.str() << endl;
+        std::cout << msg.str() << std::endl;
       }
     }
 
@@ -609,10 +606,10 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
   
   if(rank == 0) {
     if(all_tests_pass == 1) {
-      cout << "\nAll metric/timer comparisons PASSED." << endl;
+      std::cout << "\nAll metric/timer comparisons PASSED." << std::endl;
     }
     else {
-      cout << "\nMetric/timer metric comparisons FAILED." << endl;
+      std::cout << "\nMetric/timer metric comparisons FAILED." << std::endl;
     }
   }
 
@@ -633,7 +630,7 @@ bool ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
                                        const MetricAnalyzerInfo & metric,
                                        const MetricAnalyzerInfo & ref_metric,
                                        const Teuchos::ParameterList & metricPlist,
-                                       ostringstream &msg)
+                                       std::ostringstream &msg)
 {
   // run a comparison of min and max against a given metric
   // return an error message on failure
@@ -680,7 +677,7 @@ bool ComparisonHelper::timerComparisonTest(const RCP<const Comm<int> > &comm,
                                            const double time,
                                            const double ref_time,
                                            const Teuchos::ParameterList & metricPlist,
-                                           ostringstream &msg)
+                                           std::ostringstream &msg)
 {
   // Reduce time from test
   double global_time;

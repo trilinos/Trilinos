@@ -41,8 +41,8 @@ namespace stk {
 
 typedef size_t MemorySize;
 
-std::string formatMemorySize(double time);
-std::string formatMemorySize(MemorySize time);
+std::string format_memory_size(double time);
+std::string format_memory_size(MemorySize time);
 
 } // namespace stk
 

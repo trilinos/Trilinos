@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -42,7 +42,7 @@ void input_queries(FILE **fin,           /* input file */
                    char * geomname,      /* name of geometry input file */
                    char * inassignname,  /* name of assignment input file */
                    char * outassignname, /* name of assignment output file */
-                   char * outfilename,   /* name of file for outputing run results */
+                   char * outfilename,   /* name of file for outputting run results */
                    int *  architecture,  /* 0=> hypercube, d=> d-dimensional mesh */
                    int *  ndims_tot,     /* target number of hypercube dimensions */
                    int    mesh_dims[3],  /* mesh dimensions */
@@ -51,7 +51,7 @@ void input_queries(FILE **fin,           /* input file */
                    int *  rqi_flag,      /* should I use multilevel eigensolver? */
                    int *  vmax,          /* if so, how far should I coarsen? */
                    int *  ndims          /* number of divisions at each stage */
-                   )
+)
 {
   extern int SEQUENCE;      /* sequence instead of partition graph? */
   extern int ARCHITECTURE;  /* 0=> hypercube, d=> d-dimensional mesh */
@@ -77,7 +77,7 @@ void input_queries(FILE **fin,           /* input file */
     if (PROMPT) {
       printf("Graph input file: ");
     }
-    (void)scanf("%s", inname);
+    (void)scanf("%256s", inname);
 
     *fin = fopen(inname, "r");
     if (*fin == NULL) {
@@ -90,7 +90,7 @@ void input_queries(FILE **fin,           /* input file */
     if (PROMPT) {
       printf("Assignment output file: ");
     }
-    (void)scanf("%s", outassignname);
+    (void)scanf("%256s", outassignname);
   }
 
   /* Name output results file. */
@@ -98,7 +98,7 @@ void input_queries(FILE **fin,           /* input file */
     if (PROMPT) {
       printf("File name for saving run results: ");
     }
-    (void)scanf("%s", outfilename);
+    (void)scanf("%256s", outfilename);
   }
 
   /* Initialize the method flags */
@@ -132,7 +132,7 @@ void input_queries(FILE **fin,           /* input file */
       if (PROMPT) {
         printf("Assignment input file: ");
       }
-      (void)scanf("%s", inassignname);
+      (void)scanf("%256s", inassignname);
 
       *finassign = fopen(inassignname, "r");
       if (*finassign == NULL) {
@@ -146,7 +146,7 @@ void input_queries(FILE **fin,           /* input file */
       if (PROMPT) {
         printf("Geometry input file name: ");
       }
-      (void)scanf("%s", geomname);
+      (void)scanf("%256s", geomname);
 
       *fingeom = fopen(geomname, "r");
       if (*fingeom == NULL) {
@@ -170,7 +170,7 @@ void input_queries(FILE **fin,           /* input file */
           if (PROMPT) {
             printf("Geometry input file name: ");
           }
-          (void)scanf("%s", geomname);
+          (void)scanf("%256s", geomname);
 
           *fingeom = fopen(geomname, "r");
           if (*fingeom == NULL) {
@@ -194,7 +194,7 @@ void input_queries(FILE **fin,           /* input file */
         if (PROMPT) {
           printf("Geometry input file name: ");
         }
-        (void)scanf("%s", geomname);
+        (void)scanf("%256s", geomname);
 
         *fingeom = fopen(geomname, "r");
         if (*fingeom == NULL) {

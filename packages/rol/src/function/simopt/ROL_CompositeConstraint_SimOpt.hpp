@@ -75,17 +75,17 @@ template <class Real>
 class CompositeConstraint_SimOpt : public Constraint_SimOpt<Real> {
 private:
   // Constraints
-  const Teuchos::RCP<Constraint_SimOpt<Real> > conVal_;
-  const Teuchos::RCP<Constraint_SimOpt<Real> > conRed_;
+  const ROL::Ptr<Constraint_SimOpt<Real> > conVal_;
+  const ROL::Ptr<Constraint_SimOpt<Real> > conRed_;
   // Additional vector storage for solve
-  Teuchos::RCP<Vector<Real> > Sz_;
-  Teuchos::RCP<Vector<Real> > primRed_;
-  Teuchos::RCP<Vector<Real> > dualRed_;
-  Teuchos::RCP<Vector<Real> > primZ_;
-  Teuchos::RCP<Vector<Real> > dualZ_;
-  Teuchos::RCP<Vector<Real> > dualZ1_;
+  ROL::Ptr<Vector<Real> > Sz_;
+  ROL::Ptr<Vector<Real> > primRed_;
+  ROL::Ptr<Vector<Real> > dualRed_;
+  ROL::Ptr<Vector<Real> > primZ_;
+  ROL::Ptr<Vector<Real> > dualZ_;
+  ROL::Ptr<Vector<Real> > dualZ1_;
   // State storage through SimController interface
-  Teuchos::RCP<SimController<Real> > stateStore_;
+  ROL::Ptr<SimController<Real> > stateStore_;
   // Update information
   bool updateFlag_;
   int updateIter_;
@@ -135,8 +135,8 @@ private:
   }
 
 public:
-  CompositeConstraint_SimOpt(const Teuchos::RCP<Constraint_SimOpt<Real> > &conVal,
-                             const Teuchos::RCP<Constraint_SimOpt<Real> > &conRed,
+  CompositeConstraint_SimOpt(const ROL::Ptr<Constraint_SimOpt<Real> > &conVal,
+                             const ROL::Ptr<Constraint_SimOpt<Real> > &conRed,
                              const Vector<Real> &cVal, const Vector<Real> &cRed,
                              const Vector<Real> &u, const Vector<Real> &Sz, const Vector<Real> &z,
                              const bool storage = true, const bool isConRedParametrized = false)
@@ -149,7 +149,7 @@ public:
     primZ_   = z.clone();
     dualZ_   = z.dual().clone();
     dualZ1_  = z.dual().clone();
-    stateStore_ = Teuchos::rcp(new SimController<Real>());
+    stateStore_ = ROL::makePtr<SimController<Real>>();
   }
 
   void update(const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {

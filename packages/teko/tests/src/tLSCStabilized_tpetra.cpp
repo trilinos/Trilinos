@@ -125,12 +125,13 @@ int tLSCStabilized_tpetra::runTest(int verbosity,std::ostream & stdstrm,std::ost
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
-*/
+
    status = test_strategy(verbosity,failstrm);
    Teko_TEST_MSG(stdstrm,1,"   \"strategy\" ... PASSED","   \"strategy\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
+*/
 
    status = allTests;
    if(verbosity >= 10) {
@@ -554,6 +555,9 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
 
       // test alpha*inv(D)
       ss.str("");
+
+#ifndef TEKO_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D
+
       // result = tester.compare( *aiD, *iStrat.getInvAlphaD(blkA,state), &fos );
       result = tester.compare( *aiD, *iStrat.getOuterStabilization(blkA,state), Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
@@ -561,6 +565,8 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
                       << " : Comparing alpha*inv(D) operators");
       if(not result || verbosity>=10) 
          os << ss.str(); 
+
+#endif
 
       // test full op
       ss.str("");

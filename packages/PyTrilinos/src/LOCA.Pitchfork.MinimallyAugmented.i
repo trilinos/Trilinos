@@ -48,7 +48,7 @@ PyTrilinos.LOCA.Pitchfork.MinimallyAugmented is the python interface
 to namespace Pitchfork::MinimallyAugmented of the Trilinos
 continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Pitchfork.MinimallyAugmented is to provide ***.
 The python version of LOCA.Pitchfork.MinimallyAugmented supports the
@@ -59,31 +59,40 @@ following classes:
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.Pitchfork",
-        directors = "1",
-        docstring = %loca_pitchfork_minimallyaugmented_docstring) MinimallyAugmented
+%define %loca_pitchfork_minimallyaugmented_importcode
+"
+from . import _MinimallyAugmented
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import MultiContinuation
+from PyTrilinos.LOCA import TurningPoint
+from . import MooreSpence
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA.Pitchfork",
+        directors    = "1",
+        moduleimport = %loca_pitchfork_minimallyaugmented_importcode,
+        docstring    = %loca_pitchfork_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// LOCA includes
-#include "LOCA.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
@@ -109,13 +118,6 @@ following classes:
 %teuchos_rcp(LOCA::Pitchfork::MinimallyAugmented::AbstractGroup)
 
 // Base class support
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 %import "NOX.Abstract.i"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
 %import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"

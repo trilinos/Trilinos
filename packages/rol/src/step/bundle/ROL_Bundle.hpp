@@ -47,7 +47,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_Vector.hpp"
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 
 #include <vector>
 #include <set>
@@ -64,17 +64,17 @@ class Bundle {
 /***************** BUNDLE STORAGE **************************************************************/
 /***********************************************************************************************/
 private: 
-  std::vector<Teuchos::RCP<Vector<Real> > > subgradients_;
+  std::vector<ROL::Ptr<Vector<Real> > > subgradients_;
   std::vector<Real> linearizationErrors_;
   std::vector<Real> distanceMeasures_;
 
   std::vector<Real> dualVariables_;
 
-  Teuchos::RCP<Vector<Real> > tG_;
-  Teuchos::RCP<Vector<Real> > eG_;
-  Teuchos::RCP<Vector<Real> > yG_;
-  Teuchos::RCP<Vector<Real> > gx_;
-  Teuchos::RCP<Vector<Real> > ge_;
+  ROL::Ptr<Vector<Real> > tG_;
+  ROL::Ptr<Vector<Real> > eG_;
+  ROL::Ptr<Vector<Real> > yG_;
+  ROL::Ptr<Vector<Real> > gx_;
+  ROL::Ptr<Vector<Real> > ge_;
 
   unsigned size_;
 
@@ -134,7 +134,7 @@ public:
     coeff_ = std::max(static_cast<Real>(0),coeff_);
     omega_ = std::max(static_cast<Real>(1),omega_);
     subgradients_.clear();
-    subgradients_.assign(maxSize,Teuchos::null);
+    subgradients_.assign(maxSize,ROL::nullPtr);
     linearizationErrors_.clear();
     linearizationErrors_.assign(maxSize_,ROL_OVERFLOW<Real>());
     distanceMeasures_.clear();

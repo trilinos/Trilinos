@@ -66,7 +66,7 @@ namespace PHX {
     this->addDependentField(tag_d,d);
   }
 
-  PHX_POST_REGISTRATION_SETUP(EvalUnmanaged,data,fm)
+  PHX_POST_REGISTRATION_SETUP(EvalUnmanaged,/* data */,fm)
   {
     this->utils.setFieldData(tag_a,a,fm);
     this->utils.setFieldData(tag_b,b,fm);
@@ -74,7 +74,7 @@ namespace PHX {
     this->utils.setFieldData(tag_d,d,fm);
   }
 
-  PHX_EVALUATE_FIELDS(EvalUnmanaged,data)
+  PHX_EVALUATE_FIELDS(EvalUnmanaged,/* data */)
   {
     Kokkos::deep_copy(a,b);
     Kokkos::deep_copy(c,d);
@@ -94,13 +94,13 @@ namespace PHX {
     this->addEvaluatedField(tag_d,d);
   }
 
-  PHX_POST_REGISTRATION_SETUP(EvalDummy,data,fm)
+  PHX_POST_REGISTRATION_SETUP(EvalDummy,/* data */,fm)
   {
     this->utils.setFieldData(tag_b,b,fm);
     this->utils.setFieldData(tag_d,d,fm);
   }
 
-  PHX_EVALUATE_FIELDS(EvalDummy,data)
+  PHX_EVALUATE_FIELDS(EvalDummy,/* data */)
   {
     // do nothing - they are unmanaged - data values are set by user
   }

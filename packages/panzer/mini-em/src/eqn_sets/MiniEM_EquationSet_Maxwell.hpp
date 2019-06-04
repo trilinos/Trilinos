@@ -28,9 +28,9 @@ namespace mini_em {
       std::string BFieldName() const {return m_Bfield_dof_name;}
   private:
       int dimension;
-      double eps, mu;
       std::string m_Efield_dof_name;
       std::string m_Bfield_dof_name;
+      std::string permittivity_, conductivity_, inverse_permeability_;
  };
 
 }

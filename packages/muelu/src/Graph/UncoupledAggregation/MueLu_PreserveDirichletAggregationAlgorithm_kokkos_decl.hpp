@@ -96,7 +96,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    PreserveDirichletAggregationAlgorithm_kokkos(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    PreserveDirichletAggregationAlgorithm_kokkos(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~PreserveDirichletAggregationAlgorithm_kokkos() { }

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_CodeTypes.h>
-#include <Ioss_CodeTypes.h>
 #include <Ioss_CommSet.h>
 #include <Ioss_DBUsage.h>
 #include <Ioss_DatabaseIO.h>
@@ -46,6 +45,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <fmt/format.h>
 #include <functional>
 #include <random>
 #include <utility>
@@ -95,7 +95,7 @@ namespace {
   void resolve_parallel_faces(Ioss::Region &region, Ioss::FaceUnorderedSet &faces,
                               const std::vector<size_t> &hash_ids, INT /*dummy*/)
   {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
     size_t proc_count = region.get_database()->util().parallel_size();
 
     if (proc_count > 1) {
@@ -148,7 +148,7 @@ namespace {
           // On 'boundary' -- try to determine whether on processor or exterior
           // boundary
           std::map<int, int> shared_nodes;
-          int face_node_count = 0;
+          int                face_node_count = 0;
           for (auto &gnode : face.connectivity_) {
             if (gnode > 0) {
               auto node = region.get_database()->node_global_to_local(gnode, true) - 1;
@@ -181,7 +181,7 @@ namespace {
           // On 'boundary' -- try to determine whether on processor or exterior
           // boundary
           std::map<int, int> shared_nodes;
-          int face_node_count = 0;
+          int                face_node_count = 0;
           for (auto &gnode : face.connectivity_) {
             if (gnode > 0) {
               auto node = region.get_database()->node_global_to_local(gnode, true) - 1;
@@ -245,7 +245,7 @@ namespace {
       // of this processors faces...  If so, then mark as shared and
       // add the element...
       for (size_t i = 0; i < check_faces.size(); i += values_per_face) {
-        size_t id = check_faces[i + 0];
+        size_t                id = check_faces[i + 0];
         std::array<size_t, 4> conn{};
         conn[0]            = check_faces[i + 1];
         conn[1]            = check_faces[i + 2];
@@ -297,9 +297,11 @@ namespace Ioss {
 
     size_t numel = region_.get_property("element_count").get_int();
 
-    faces_.reserve(3.3 * numel);
+    size_t reserve = 3.2 * numel;
+    faces_.reserve(reserve);
+    fmt::print("\nInitial Hash Reserve = {:n}\t{:n}\n", reserve, faces_.bucket_count());
 
-    Ioss::ElementBlockContainer ebs = region_.get_element_blocks();
+    const Ioss::ElementBlockContainer &ebs = region_.get_element_blocks();
     for (auto eb : ebs) {
       const Ioss::ElementTopology *topo = eb->topology();
 
@@ -324,7 +326,7 @@ namespace Ioss {
       }
 
       int    num_node_per_elem = topo->number_nodes();
-      size_t num_elem          = eb->get_property("entity_count").get_int();
+      size_t num_elem          = eb->entity_count();
 
       for (size_t elem = 0, offset = 0; elem < num_elem; elem++, offset += num_node_per_elem) {
         for (int face = 0; face < num_face_per_elem; face++) {
@@ -348,26 +350,24 @@ namespace Ioss {
 
     auto diffh = endh - starth;
     auto difff = endf - endh;
-    std::cout << "Node ID hash time:   \t"
-              << std::chrono::duration<double, std::milli>(diffh).count() << " ms\t"
-              << hash_ids.size() / std::chrono::duration<double>(diffh).count()
-              << " nodes/second\n";
-    std::cout << "Face generation time:\t"
-              << std::chrono::duration<double, std::milli>(difff).count() << " ms\t"
-              << faces_.size() / std::chrono::duration<double>(difff).count() << " faces/second.\n";
-#ifdef HAVE_MPI
+    fmt::print("Node ID hash time:   \t{} ms\t{} nodes/second\n"
+               "Face generation time:\t{} ms\t{} faces/second.\n",
+               std::chrono::duration<double, std::milli>(diffh).count(),
+               hash_ids.size() / std::chrono::duration<double>(diffh).count(),
+               std::chrono::duration<double, std::milli>(difff).count(),
+               faces_.size() / std::chrono::duration<double>(difff).count());
+#ifdef SEACAS_HAVE_MPI
     auto   diffp      = endp - endf;
     size_t proc_count = region_.get_database()->util().parallel_size();
 
     if (proc_count > 1) {
-      std::cout << "Parallel time:       \t"
-                << std::chrono::duration<double, std::milli>(diffp).count() << " ms\t"
-                << faces_.size() / std::chrono::duration<double>(diffp).count()
-                << " faces/second.\n";
+      fmt::print("Parallel time:       \t{} ms\t{} faces/second.\n",
+                 std::chrono::duration<double, std::milli>(diffp).count(),
+                 faces_.size() / std::chrono::duration<double>(diffp).count());
     }
 #endif
-    std::cout << "Total time:          \t"
-              << std::chrono::duration<double, std::milli>(endp - starth).count() << " ms\n\n";
+    fmt::print("Total time:          \t{} ms\n\n",
+               std::chrono::duration<double, std::milli>(endp - starth).count());
   }
 } // namespace Ioss
 

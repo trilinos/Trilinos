@@ -126,10 +126,6 @@ int main(int argc, char *argv[])
       throw "NOX Error";
     }
 
-    if (verbose)
-      if (MyPID == 0)
-        std::cout << "\n" << NOX::version() << std::endl;
-
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
     Teuchos::RCP<Interface> interface =
@@ -342,6 +338,10 @@ int main(int argc, char *argv[])
       if (ppo2.getNumRunPreSolve() != 1)
         status = 4;
       if (ppo2.getNumRunPostSolve() != 1)
+        status = 4;
+      if (ppo2.getNumRunPreLineSearch() != 10)
+        status = 4;
+      if (ppo2.getNumRunPostLineSearch() != 10)
         status = 4;
     }
 

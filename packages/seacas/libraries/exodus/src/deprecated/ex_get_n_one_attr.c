@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -37,7 +37,8 @@
 #include <stdint.h>   // for int64_t
 
 /*!
- * \deprecated Use ex_get_partial_one_attr() instead.
+ * \deprecated Use ex_get_partial_one_attr()(exoid, obj_type, obj_id, start_num, num_ent,
+ * attrib_index, attrib) instead.
  *
  * reads the specified attribute for a subsect of a block
  * \param      exoid         exodus file id

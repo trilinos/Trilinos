@@ -61,44 +61,6 @@ namespace Details {
 //
 namespace FHT {
 
-// Is it worth actually using building the FixedHashTable using
-// parallel threads, instead of just counting in a sequential loop?
-//
-// The parallel version of FixedHashTable construction isn't just a
-// parallelization of the sequential loops.  It incurs additional
-// overheads.  For example, the CountBuckets kernel uses atomic update
-// instructions to count the number of "buckets" per offsets array
-// (ptr) entry.  Atomic updates have overhead, even if only one thread
-// issues them.  The Kokkos kernels are still correct in that case,
-// but I would rather not incur overhead then.  It might make sense to
-// set the minimum number of threads to something greater than 1, but
-// we would need experiments to find out.
-//
-// FixedHashTable code should call the nonmember function below, that
-// has the same name but starts with a lower-case w.
-template<class ExecSpace>
-struct WorthBuildingFixedHashTableInParallel {
-  typedef typename ExecSpace::execution_space execution_space;
-
-  static bool isWorth () {
-    // NOTE: Kokkos::Cuda does NOT have this method.  That's why we
-    // need the partial specialization below.
-    return execution_space::max_hardware_threads () > 1;
-  }
-};
-
-#ifdef KOKKOS_HAVE_CUDA
-template<>
-struct WorthBuildingFixedHashTableInParallel<Kokkos::Cuda> {
-  // There could be more complicated expressions for whether this is
-  // actually worthwhile, but for now I'll just say that with Cuda, we
-  // will ALWAYS count buckets in parallel (that is, run a Kokkos
-  // parallel kernel).
-  static bool isWorth () {
-    return true;
-  }
-};
-#endif // KOKKOS_HAVE_CUDA
 
 // Is it worth actually using building the FixedHashTable using
 // parallel threads, instead of just counting in a sequential loop?
@@ -114,7 +76,7 @@ struct WorthBuildingFixedHashTableInParallel<Kokkos::Cuda> {
 // we would need experiments to find out.
 template<class ExecSpace>
 bool worthBuildingFixedHashTableInParallel () {
-  return WorthBuildingFixedHashTableInParallel<ExecSpace>::isWorth ();
+  return ExecSpace::concurrency() > 1;
 }
 
 // If the input kokkos::View<const KeyType*, ArrayLayout,
@@ -157,7 +119,7 @@ struct DeepCopyIfNeeded<KeyType, ArrayLayout, InputExecSpace, OutputExecSpace, t
     typedef typename output_view_type::non_const_type NC;
 
     NC dst (Kokkos::ViewAllocateWithoutInitializing (src.tracker ().label ()),
-            src.dimension_0 ());
+            src.extent (0));
     Kokkos::deep_copy (dst, src);
     return output_view_type (dst);
   }
@@ -240,7 +202,7 @@ public:
     typedef typename hash_type::result_type hash_value_type;
 
     const hash_value_type hashVal = hash_type::hashFunc (keys_[i], size_);
-    Kokkos::atomic_fetch_add (&counts_[hashVal], 1);
+    Kokkos::atomic_increment (&counts_[hashVal]);
   }
 
 private:
@@ -381,7 +343,7 @@ public:
     counts_ (counts),
     ptr_ (ptr),
     keys_ (keys),
-    size_ (counts.dimension_0 ()),
+    size_ (counts.extent (0)),
     startingValue_ (startingValue),
     initMinKey_ (::Kokkos::Details::ArithTraits<key_type>::max ()),
     initMaxKey_ (::Kokkos::Details::ArithTraits<key_type>::is_integer ?
@@ -418,7 +380,7 @@ public:
     counts_ (counts),
     ptr_ (ptr),
     keys_ (keys),
-    size_ (counts.dimension_0 ()),
+    size_ (counts.extent (0)),
     startingValue_ (startingValue),
     initMinKey_ (initMinKey),
     initMaxKey_ (initMaxKey)
@@ -455,6 +417,7 @@ public:
     typedef typename hash_type::result_type hash_value_type;
     typedef typename offsets_view_type::non_const_value_type offset_type;
     typedef typename pair_type::second_type val_type;
+    typedef typename std::remove_reference< decltype( counts_[0] ) >::type atomic_incr_type;
 
     const key_type key = keys_[i];
     if (key > dst.maxKey_) {
@@ -467,7 +430,7 @@ public:
     const hash_value_type hashVal = hash_type::hashFunc (key, size_);
 
     // Return the old count; decrement afterwards.
-    const offset_type count = Kokkos::atomic_fetch_add (&counts_[hashVal], -1);
+    const offset_type count = Kokkos::atomic_fetch_add (&counts_[hashVal], atomic_incr_type(-1));
     if (count == 0) {
       dst.success_ = false; // FAILURE!
     }
@@ -537,9 +500,9 @@ public:
                          const offsets_view_type& ptr) :
     pairs_ (pairs),
     ptr_ (ptr),
-    size_ (ptr_.dimension_0 () == 0 ?
+    size_ (ptr_.extent (0) == 0 ?
            size_type (0) :
-           ptr_.dimension_0 () - 1)
+           ptr_.extent (0) - 1)
   {}
 
   //! Set the initial value of the reduction result.
@@ -610,7 +573,7 @@ hasKeys () const {
   // FIXME (31 May 2015) This only works because vals_ contains no
   // padding.  If we ever pad within a "row" of vals_, we'll have to
   // change this.
-  return keys_.dimension_0 () == val_.dimension_0 ();
+  return keys_.extent (0) == val_.extent (0);
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -707,7 +670,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                                keys.size ());
   using Kokkos::ViewAllocateWithoutInitializing;
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
-                             keys_k.dimension_0 ());
+                             keys_k.extent (0));
   Kokkos::deep_copy (keys_d, keys_k);
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
@@ -718,10 +681,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
 #ifdef HAVE_TPETRA_DEBUG
     typedef typename keys_type::size_type size_type;
     TEUCHOS_TEST_FOR_EXCEPTION
-      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+      (keys_.extent (0) != static_cast<size_type> (keys.size ()),
        std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
-       "keepKeys is true, but on return, keys_.dimension_0() = " <<
-       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       "keepKeys is true, but on return, keys_.extent(0) = " <<
+       keys_.extent (0) << " != keys.size() = " << keys.size () <<
        ".  Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
   }
@@ -761,7 +724,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                                keys.size ());
   using Kokkos::ViewAllocateWithoutInitializing;
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
-                             keys_k.dimension_0 ());
+                             keys_k.extent (0));
   Kokkos::deep_copy (keys_d, keys_k);
 
   const KeyType initMinKey = ::Kokkos::Details::ArithTraits<KeyType>::max ();
@@ -787,10 +750,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
 #ifdef HAVE_TPETRA_DEBUG
     typedef typename keys_type::size_type size_type;
     TEUCHOS_TEST_FOR_EXCEPTION
-      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+      (keys_.extent (0) != static_cast<size_type> (keys.size ()),
        std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
-       "keepKeys is true, but on return, keys_.dimension_0() = " <<
-       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       "keepKeys is true, but on return, keys_.extent(0) = " <<
+       keys_.extent (0) << " != keys.size() = " << keys.size () <<
        ".  Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
   }
@@ -844,10 +807,10 @@ FixedHashTable (const keys_type& keys,
 #ifdef HAVE_TPETRA_DEBUG
     typedef typename keys_type::size_type size_type;
     TEUCHOS_TEST_FOR_EXCEPTION
-      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+      (keys_.extent (0) != static_cast<size_type> (keys.size ()),
        std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
-       "keepKeys is true, but on return, keys_.dimension_0() = " <<
-       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       "keepKeys is true, but on return, keys_.extent(0) = " <<
+       keys_.extent (0) << " != keys.size() = " << keys.size () <<
        ".  Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
   }
@@ -887,7 +850,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                                keys.size ());
   using Kokkos::ViewAllocateWithoutInitializing;
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
-                             keys_k.dimension_0 ());
+                             keys_k.extent (0));
   Kokkos::deep_copy (keys_d, keys_k);
 
   const KeyType initMinKey = ::Kokkos::Details::ArithTraits<KeyType>::max ();
@@ -913,10 +876,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
 #ifdef HAVE_TPETRA_DEBUG
     typedef typename keys_type::size_type size_type;
     TEUCHOS_TEST_FOR_EXCEPTION
-      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+      (keys_.extent (0) != static_cast<size_type> (keys.size ()),
        std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
-       "keepKeys is true, but on return, keys_.dimension_0() = " <<
-       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       "keepKeys is true, but on return, keys_.extent(0) = " <<
+       keys_.extent (0) << " != keys.size() = " << keys.size () <<
        ".  Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
   }
@@ -1035,16 +998,16 @@ init (const keys_type& keys,
   using Kokkos::subview;
   using Kokkos::ViewAllocateWithoutInitializing;
   using Teuchos::TypeNameTraits;
-  typedef typename std::decay<decltype (keys.dimension_0 ()) >::type size_type;
+  typedef typename std::decay<decltype (keys.extent (0)) >::type size_type;
   const char prefix[] = "Tpetra::Details::FixedHashTable: ";
 
-  const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
+  const offset_type numKeys = static_cast<offset_type> (keys.extent (0));
   {
     const offset_type theMaxVal = ::Kokkos::Details::ArithTraits<offset_type>::max ();
     const size_type maxValST = static_cast<size_type> (theMaxVal);
     TEUCHOS_TEST_FOR_EXCEPTION
-      (keys.dimension_0 () > maxValST, std::invalid_argument, prefix << "The "
-       "number of keys " << keys.dimension_0 () << " does not fit in "
+      (keys.extent (0) > maxValST, std::invalid_argument, prefix << "The "
+       "number of keys " << keys.extent (0) << " does not fit in "
        "offset_type = " << TypeNameTraits<offset_type>::name () << ", whose "
        "max value is " << theMaxVal << ".  This means that it is not possible to "
        "use this constructor.");
@@ -1297,7 +1260,7 @@ init (const host_input_keys_type& keys,
       KeyType initMinKey,
       KeyType initMaxKey)
 {
-  const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
+  const offset_type numKeys = static_cast<offset_type> (keys.extent (0));
   TEUCHOS_TEST_FOR_EXCEPTION
     (static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (::Kokkos::Details::ArithTraits<ValueType>::max ()),
      std::invalid_argument, "Tpetra::Details::FixedHashTable: The number of "
@@ -1452,7 +1415,7 @@ description () const
   oss << "FixedHashTable<"
       << Teuchos::TypeNameTraits<KeyType>::name () << ","
       << Teuchos::TypeNameTraits<ValueType>::name () << ">: "
-      << "{ numKeys: " << val_.dimension_0 ()
+      << "{ numKeys: " << val_.extent (0)
       << ", tableSize: " << this->getSize () << " }";
   return oss.str();
 }
@@ -1502,7 +1465,7 @@ describe (Teuchos::FancyOStream& out,
       }
 
       const offset_type tableSize = this->getSize ();
-      const offset_type numKeys = val_.dimension_0 ();
+      const offset_type numKeys = val_.extent (0);
 
       out << "Table parameters:" << endl;
       {

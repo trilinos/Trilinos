@@ -63,7 +63,8 @@ struct Histogram{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &ii) const {
-    Kokkos::atomic_fetch_add(&(outview(inview(ii))),1);
+    typedef typename std::remove_reference< decltype(outview(0)) >::type atomic_incr_type;
+    Kokkos::atomic_fetch_add(&(outview(inview(ii))), atomic_incr_type(1));
   }
 };
 
@@ -84,7 +85,7 @@ inline void kk_get_histogram(
     in_lno_view_t in_view,
     out_lno_view_t histogram /*must be initialized with 0s*/){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, in_elements), Histogram<in_lno_view_t, out_lno_view_t>(in_view, histogram));
+  Kokkos::parallel_for( "KokkosKernels::Common::GetHistogram", my_exec_space(0, in_elements), Histogram<in_lno_view_t, out_lno_view_t>(in_view, histogram));
   MyExecSpace::fence();
 }
 
@@ -101,7 +102,7 @@ inline void kk_print_1Dview(idx_array_type view, bool print_all = false, size_t 
   typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view (view);
   Kokkos::deep_copy (host_view , view);
-  idx nr = host_view.dimension_0();
+  idx nr = host_view.extent(0);
   if (!print_all){
 
 

@@ -65,11 +65,13 @@ private:
   Real sum_ng2_;
   
   const bool useDist_;
-  const std::vector<Teuchos::RCP<Distribution<Real> > > dist_;
+  const std::vector<ROL::Ptr<Distribution<Real> > > dist_;
+
+  const int seed_;
 
   Real ierf(Real input) const {
     std::vector<Real> coeff;
-    Real pi = Teuchos::ScalarTraits<Real>::pi(), zero(0), one(1), two(2), tol(1e-4);
+    Real pi = ROL::ScalarTraits<Real>::pi(), zero(0), one(1), two(2), tol(1e-4);
     Real c(1);
     Real tmp = c * (std::sqrt(pi)/two * input);
     Real val = tmp;
@@ -94,7 +96,7 @@ private:
   }
 
   std::vector<std::vector<Real> > sample(int nSamp, bool store = true) {
-    srand(123454321);
+    srand(seed_);
     const Real zero(0), one(1), two(2), tol(0.1);
     int rank = SampleGenerator<Real>::batchID();
     const int dim = (!useDist_ ? data_.size() : dist_.size());
@@ -155,11 +157,12 @@ private:
 
 public:
   MonteCarloGenerator(const int nSamp,
-                      const std::vector<Teuchos::RCP<Distribution<Real> > > &dist, 
-                      const Teuchos::RCP<BatchManager<Real> > &bman, 
+                      const std::vector<ROL::Ptr<Distribution<Real> > > &dist, 
+                      const ROL::Ptr<BatchManager<Real> > &bman, 
                       const bool use_SA = false,
                       const bool adaptive = false,
-                      const int numNewSamps = 0)
+                      const int numNewSamps = 0,
+                      const int seed = 123454321)
     : SampleGenerator<Real>(bman),
       nSamp_(nSamp),
       use_normal_(false),
@@ -171,19 +174,21 @@ public:
       sum_ng_(0),
       sum_ng2_(0), 
       useDist_(true),
-      dist_(dist) {
+      dist_(dist),
+      seed_(seed) {
     int nProc = SampleGenerator<Real>::numBatches();
-    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     sample();
   }
 
   MonteCarloGenerator(const int nSamp,
                             std::vector<std::vector<Real> > &bounds, 
-                      const Teuchos::RCP<BatchManager<Real> > &bman,  
+                      const ROL::Ptr<BatchManager<Real> > &bman,  
                       const bool use_SA = false,
                       const bool adaptive = false,
-                      const int numNewSamps = 0)
+                      const int numNewSamps = 0,
+                      const int seed = 123454321)
     : SampleGenerator<Real>(bman),
       nSamp_(nSamp),
       use_normal_(false),
@@ -194,9 +199,10 @@ public:
       sum_val2_(0),
       sum_ng_(0),
       sum_ng2_(0),
-      useDist_(false) {
+      useDist_(false),
+      seed_(seed) {
     int nProc = SampleGenerator<Real>::numBatches();
-    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     unsigned dim = bounds.size();
     data_.clear();
@@ -216,10 +222,11 @@ public:
   MonteCarloGenerator(const int nSamp,
                       const std::vector<Real> &mean,
                       const std::vector<Real> &std, 
-                      const Teuchos::RCP<BatchManager<Real> > &bman,
+                      const ROL::Ptr<BatchManager<Real> > &bman,
                       const bool use_SA = false,
                       const bool adaptive = false,
-                      const int numNewSamps = 0 )
+                      const int numNewSamps = 0,
+                      const int seed = 123454321)
     : SampleGenerator<Real>(bman),
       nSamp_(nSamp),
       use_normal_(true),
@@ -230,9 +237,10 @@ public:
       sum_val2_(0),
       sum_ng_(0),
       sum_ng2_(0), 
-      useDist_(false) {
+      useDist_(false),
+      seed_(seed) {
     int nProc = SampleGenerator<Real>::numBatches();
-    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     unsigned dim = mean.size();
     data_.clear();
@@ -284,7 +292,7 @@ public:
     }
   }
 
-  Real computeError( std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x ) {
+  Real computeError( std::vector<ROL::Ptr<Vector<Real> > > &vals, const Vector<Real> &x ) {
     if ( adaptive_ && !use_SA_ ) {
       Real zero(0), one(1), tol(1e-4);
       // Compute unbiased sample variance
@@ -330,6 +338,10 @@ public:
       SampleGenerator<Real>::setPoints(pts);
       SampleGenerator<Real>::setWeights(wts);
     }
+  }
+
+  int numGlobalSamples(void) const {
+    return nSamp_;
   }
 
 };

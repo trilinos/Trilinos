@@ -183,6 +183,11 @@ public:
         return m_idMapper.local_to_entity(localId);
     }
 
+    stk::mesh::EntityId convert_negative_local_id_to_global_id(impl::LocalId localId) const
+    {
+        return m_parallelInfoForGraphEdges.convert_negative_local_id_to_remote_global_id(localId);
+    }
+
     const impl::ParallelInfo & get_parallel_info_for_graph_edge(const stk::mesh::GraphEdge& edge) const
     {
         return m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(edge);
@@ -228,7 +233,11 @@ protected:
     stk::topology get_topology_of_remote_element(const GraphEdge &graphEdge);
 
     void add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<stk::mesh::GraphEdge> &graphEdges,
-                                        std::vector<stk::mesh::GraphEdge> &coincidentGraphEdges, bool only_consider_upper_symmetry = true) const;
+                                        std::vector<stk::mesh::GraphEdge> &coincidentGraphEdges,
+                                        stk::mesh::EntityVector& scratchEntityVector,
+                                        stk::mesh::EntityVector& side_nodes,
+                                        impl::SerialElementDataVector& connectedElementDataVector,
+                                        bool only_consider_upper_symmetry = true) const;
 
     void fill_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
                                                stk::mesh::EntityId elementId,
@@ -299,7 +308,12 @@ private:
                                                  stk::mesh::Entity element,
                                                  const stk::mesh::PartVector& skin_parts,
                                                  std::vector<stk::mesh::sharing_info> &shared_modified);
-    void add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id);
+
+    void add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id,
+                         stk::mesh::EntityVector& scratchEntityVector,
+                         stk::mesh::EntityVector& side_nodes,
+                         impl::SerialElementDataVector& connectedElementDataVector);
+
     template <typename GraphType>
     void add_new_local_edges_to_graph(GraphType &graph, const std::vector<stk::mesh::GraphEdge> &newGraphEdges);
 
@@ -360,7 +374,7 @@ inline
 stk::mesh::OrdinalAndPermutation flip_shell_to_get_opposing_normal(const stk::mesh::OrdinalAndPermutation &connectedOrdAndPerm,
                                                                         stk::topology topology)
 {
-    ThrowRequireWithSierraHelpMsg(connectedOrdAndPerm.second < topology.num_positive_permutations());
+    ThrowRequireWithSierraHelpMsg(static_cast<unsigned>(connectedOrdAndPerm.second) < topology.num_positive_permutations());
     unsigned sideOrdinal = connectedOrdAndPerm.first == 0u ? 1u : 0u;
     unsigned perm = connectedOrdAndPerm.second + topology.num_positive_permutations();
     return stk::mesh::OrdinalAndPermutation(static_cast<stk::mesh::ConnectivityOrdinal>(sideOrdinal),

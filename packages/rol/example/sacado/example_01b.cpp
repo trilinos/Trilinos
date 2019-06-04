@@ -54,10 +54,10 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_StatusTest.hpp"
+#include "ROL_ParameterList.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "example_01b.hpp"
 
@@ -71,12 +71,12 @@ int main(int argc, char **argv)
 
     // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
     int iprint     = argc - 1;
-    Teuchos::RCP<std::ostream> outStream;
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::Ptr<std::ostream> outStream;
+    ROL::nullstream bhs; // outputs nothing
     if (iprint > 0)
-        outStream = Teuchos::rcp(&std::cout, false);
+        outStream = ROL::makePtrFromRef(std::cout);
     else
-        outStream = Teuchos::rcp(&bhs, false);
+        outStream = ROL::makePtrFromRef(bhs);
 
     int errorFlag  = 0;
 
@@ -89,28 +89,27 @@ int main(int argc, char **argv)
         int dim = 10; // Set problem dimension. 
 
         // Load optimizer parameters form XML file
-        Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
         std::string paramfile = "parameters.xml";
-        Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
+        auto parlist = ROL::getParametersFromXmlFile(paramfile);
 
         // Define algorithm.
         Algorithm<RealT> algo("Line Search",*parlist);
 
         // Iteration Vector
-        Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+        ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
         // Set Initial Guess
         for (int i=0; i<dim; i++) {
-            (*x_rcp)[i]   = 2;
+            (*x_ptr)[i]   = 2;
         }
 
-        StdVector<RealT> x(x_rcp);
+        StdVector<RealT> x(x_ptr);
 
         // Run Algorithm
         algo.run(x, obj, true, *outStream);
 
         // Get True Solution
-        Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-        StdVector<RealT> xtrue(xtrue_rcp);
+        ROL::Ptr<std::vector<RealT> > xtrue_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+        StdVector<RealT> xtrue(xtrue_ptr);
 
         
         // Compute Error

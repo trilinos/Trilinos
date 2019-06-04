@@ -46,6 +46,18 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor AND ${PROJEC
         COMM serial mpi
         TESTONLYLIBS fenl
         )
+
+      IF(TrilinosCouplings_ENABLE_Belos AND TrilinosCouplings_ENABLE_MueLu)
+        TRIBITS_ADD_TEST(
+          fenl_ensemble
+          NAME "fenl_ensemble_8x8x8_belos_muelu"
+          COMM serial mpi
+          NUM_MPI_PROCS 4
+          ARGS "--fixture=8x8x8 --belos --muelu --ensemble=${Stokhos_ETI_Default_Ensemble_Size} --print-its --unit-test --test-mean=2.0599472 --test-std-dev=8.9771555e-3"
+          PASS_REGULAR_EXPRESSION "Test Passed"
+          )
+      ENDIF()
+
     ENDIF()
 
     IF(Stokhos_ENABLE_PCE_Scalar_Type)
@@ -55,6 +67,17 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor AND ${PROJEC
         COMM serial mpi
         TESTONLYLIBS fenl
         )
+
+      IF(TrilinosCouplings_ENABLE_Belos AND TrilinosCouplings_ENABLE_MueLu)
+        TRIBITS_ADD_TEST(
+          fenl_pce
+          NAME "fenl_pce_8x8x8_belos_muelu_mean_based"
+          COMM serial mpi
+          NUM_MPI_PROCS 4
+          ARGS "--fixture=8x8x8 --belos --muelu --mean-based --print-its --unit-test --test-mean=2.0599472 --test-std-dev=8.9771555e-3"
+          PASS_REGULAR_EXPRESSION "Test Passed"
+          )
+      ENDIF()
     ENDIF()
 
   ENDIF()

@@ -10,87 +10,79 @@
 #define Tempus_StepperForwardEuler_impl_hpp
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 
 namespace Tempus {
 
-// StepperForwardEuler definitions:
+template<class Scalar>
+StepperForwardEuler<Scalar>::StepperForwardEuler()
+{
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
+}
+
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
-}
 
-template<class Scalar>
-void StepperForwardEuler<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->validExplicitODE(appModel);
-  appModel_ = appModel;
-
-  inArgs_  = appModel_->getNominalValues();
-  outArgs_ = appModel_->createOutArgs();
-}
-
-template<class Scalar>
-void StepperForwardEuler<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->setModel(appModel);
-}
-
-template<class Scalar>
-void StepperForwardEuler<Scalar>::setSolver(std::string solverName)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setSolver()");
-  *out << "Warning -- No solver to set for StepperForwardEuler "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
-void StepperForwardEuler<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> solverPL)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setSolver()");
-  *out << "Warning -- No solver to set for StepperForwardEuler "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
-void StepperForwardEuler<Scalar>::setSolver(
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setSolver()");
-  *out << "Warning -- No solver to set for StepperForwardEuler "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 template<class Scalar>
 void StepperForwardEuler<Scalar>::setObserver(
-  Teuchos::RCP<StepperForwardEulerObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperFEObserver_ == Teuchos::null) {
+    if (this->stepperObserver_ == Teuchos::null) {
       stepperFEObserver_ =
         Teuchos::rcp(new StepperForwardEulerObserver<Scalar>());
+      this->stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperFEObserver_);
     }
   } else {
-    stepperFEObserver_ = obs;
+    this->stepperObserver_ = obs;
+    stepperFEObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperForwardEulerObserver<Scalar> >
+        (this->stepperObserver_);
   }
+}
+
+template<class Scalar>
+void StepperForwardEuler<Scalar>::initialize()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->appModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperForwardEuler::initialize()\n");
+
+  this->setParameterList(this->stepperPL_);
+  this->setObserver();
+}
+
+template<class Scalar>
+void StepperForwardEuler<Scalar>::setInitialConditions(
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+{
+  using Teuchos::RCP;
+
+  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
+
+  // Check if we need Stepper storage for xDot
+  if (initialState->getXDot() == Teuchos::null)
+    this->setStepperXDot(initialState->getX()->clone_v());
+
+  StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
 }
 
 template<class Scalar>
@@ -101,34 +93,63 @@ void StepperForwardEuler<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperForwardEuler::takeStep()");
   {
-    stepperFEObserver_->observeBeginTakeStep(solutionHistory, *this);
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperForwardEuler<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for Forward Euler.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
-
-    typedef Thyra::ModelEvaluatorBase MEB;
-    inArgs_.set_x(currentState->getX());
-    if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(currentState->getTime());
-
-    // For model evaluators whose state function f(x, x_dot, t) describes
-    // an implicit ODE, and which accept an optional x_dot input argument,
-    // make sure the latter is set to null in order to request the evaluation
-    // of a state function corresponding to the explicit ODE formulation
-    // x_dot = f(x, t)
-    if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-    outArgs_.set_f(currentState->getXDot());
-
-    stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
-
-    appModel_->evalModel(inArgs_,outArgs_);
-
-    // Forward Euler update, x = x + dt*xdot
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
+
+    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot(currentState);
+
+    if ( !(this->getUseFSAL()) ) {
+      // Need to compute XDotOld.
+      if (!Teuchos::is_null(stepperFEObserver_))
+        stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
+
+      // Evaluate xDot = f(x,t).
+      this->evaluateExplicitODE(xDot, currentState->getX(),
+                                currentState->getTime());
+
+      // For UseFSAL=false, x and xDot are now sync'ed or consistent
+      // at the same time level for the currentState.
+      currentState->setIsSynced(true);
+    }
+
+
+    // Forward Euler update, x^n = x^{n-1} + dt^n * xDot^{n-1}
     const Scalar dt = workingState->getTimeStep();
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
-      *(currentState->getX()),dt,*(currentState->getXDot()));
+      *(currentState->getX()),dt,*(xDot));
 
-    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+
+    xDot = this->getStepperXDot(workingState);
+
+    if (this->getUseFSAL()) {
+      // Get consistent xDot^n.
+      if (!Teuchos::is_null(stepperFEObserver_))
+        stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
+
+      // Evaluate xDot = f(x,t).
+      this->evaluateExplicitODE(xDot, workingState->getX(),
+                                workingState->getTime());
+
+      // For UseFSAL=true, x and xDot are now sync'ed or consistent
+      // for the workingState.
+      workingState->setIsSynced(true);
+    } else {
+      assign(xDot.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+      workingState->setIsSynced(false);
+    }
+
+    workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
-    stepperFEObserver_->observeEndTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -161,10 +182,10 @@ std::string StepperForwardEuler<Scalar>::description() const
 template<class Scalar>
 void StepperForwardEuler<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl
-      << "appModel_ = " << appModel_->description() << std::endl;
+      << "appModel_ = " << this->appModel_->description() << std::endl;
 }
 
 
@@ -174,13 +195,15 @@ void StepperForwardEuler<Scalar>::setParameterList(
 {
   if (pList == Teuchos::null) {
     // Create default parameters if null, otherwise keep current parameters.
-    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+    if (this->stepperPL_ == Teuchos::null)
+      this->stepperPL_ = this->getDefaultParameters();
   } else {
-    stepperPL_ = pList;
+    this->stepperPL_ = pList;
   }
-  stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+  this->stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
-  std::string stepperType = stepperPL_->get<std::string>("Stepper Type");
+  std::string stepperType =
+    this->stepperPL_->template get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Forward Euler",
     std::logic_error,
        "Error - Stepper Type is not 'Forward Euler'!\n"
@@ -194,9 +217,11 @@ StepperForwardEuler<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
-  pl->set("Stepper Type", "Forward Euler",
-          "'Stepper Type' must be 'Forward Euler'.");
-
+  pl->set<std::string>("Stepper Type", "Forward Euler",
+                       "'Stepper Type' must be 'Forward Euler'.");
+  this->getValidParametersBasic(pl);
+  pl->set<bool>("Use FSAL", true);
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   return pl;
 }
 
@@ -205,8 +230,13 @@ template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperForwardEuler<Scalar>::getDefaultParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  *pl = *(this->getValidParameters());
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  using Teuchos::rcp_const_cast;
+
+  RCP<ParameterList> pl =
+    rcp_const_cast<ParameterList>(this->getValidParameters());
+
   return pl;
 }
 
@@ -215,7 +245,7 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperForwardEuler<Scalar>::getNonconstParameterList()
 {
-  return(stepperPL_);
+  return(this->stepperPL_);
 }
 
 
@@ -223,8 +253,8 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperForwardEuler<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
-  stepperPL_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
+  this->stepperPL_ = Teuchos::null;
   return(temp_plist);
 }
 

@@ -52,7 +52,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Minimax3.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -68,12 +68,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -82,19 +82,21 @@ int main(int argc, char *argv[]) {
   try {
     // Initialize objective function.
     int dim = 4;
-    ROL::Minimax3<RealT> obj;
+    ROL::ZOO::Minimax3<RealT> obj;
 
     // Initialize iteration vectors.
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    ROL::StdVector<RealT> x(x_rcp);
-    Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    (*z_rcp)[0] = 0.0; (*z_rcp)[1] = 1.0; (*z_rcp)[2] = 2.0; (*z_rcp)[3] = -1.0;
-    ROL::StdVector<RealT> z(x_rcp);
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::StdVector<RealT> x(x_ptr);
+
+    ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    (*z_ptr)[0] = 0.0; (*z_ptr)[1] = 1.0; (*z_ptr)[2] = 2.0; (*z_ptr)[3] = -1.0;
+
+    ROL::StdVector<RealT> z(z_ptr);
 
     // Algorithmic input parameters.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+
     std::string stepname = "Bundle";
     ROL::Algorithm<RealT> algo(stepname,*parlist);
 
@@ -102,13 +104,13 @@ int main(int argc, char *argv[]) {
     algo.run(x, obj, true, *outStream);
 
     // Compute error 
-    Teuchos::RCP<ROL::Vector<RealT> > diff = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,z);
     RealT error = diff->norm();
     *outStream << "\nAbsolute Error: " << error << "\n";
     *outStream <<   "Relative Error: " << error/z.norm() << "\n";
-    errorFlag = ((error > 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
+    errorFlag = ((error > 1e4*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

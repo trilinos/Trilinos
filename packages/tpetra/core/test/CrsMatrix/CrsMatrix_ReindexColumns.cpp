@@ -46,11 +46,7 @@
 #include <Tpetra_TestingUtilities.hpp>
 
 namespace {
-  //using Teuchos::broadcast;
-  //using std::endl;
 
-  using Tpetra::TestingUtilities::getNode;
-  using Tpetra::TestingUtilities::getDefaultComm;
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::Comm;
@@ -86,8 +82,7 @@ namespace {
     int gblSuccess = 0;
     int lclSuccess = 1;
 
-    RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -101,7 +96,7 @@ namespace {
     const GO indexBase = 0;
     RCP<const map_type> rowMap =
       rcp (new map_type (numGlobalIndices, indexBase, comm,
-                         Tpetra::GloballyDistributed, node));
+                         Tpetra::GloballyDistributed));
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! rowMap->isContiguous (), std::logic_error, "The row Map is supposed "
       "to be contiguous, but is not.");
@@ -161,20 +156,7 @@ namespace {
 
     // Make a deep copy of the graph, to check later that the
     // conversion was correct.
-    RCP<graph_type> graph2;
-    {
-      const bool cloneDebug = false;
-      RCP<ParameterList> clonePlist = parameterList ("Tpetra::CrsMatrix::clone");
-      clonePlist->set ("Debug", cloneDebug);
-      try {
-        graph2 = graph.clone (node, clonePlist);
-      } catch (std::exception& e) {
-        std::ostringstream err2;
-        err2 << "Proc " << myRank << ": CrsMatrix::clone threw an exception: "
-             << e.what () << endl;
-        cerr << err2.str ();
-      }
-    }
+    RCP<graph_type> graph2 = rcp(new graph_type(graph));
     TEST_ASSERT( ! graph2.is_null () );
 
     gblSuccess = 0;
@@ -267,7 +249,7 @@ namespace {
     }
 
     RCP<const map_type> newColMap =
-      rcp (new map_type (INVALID, newGblInds (), indexBase, comm, node));
+      rcp (new map_type (INVALID, newGblInds (), indexBase, comm));
 
     // Print both old and new column Maps.
     {

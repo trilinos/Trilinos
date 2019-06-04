@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -86,21 +86,20 @@ public:
   vector():DV() {
     _size = 0;
     _extra_storage = 1.1;
-    DV::modified_host() = 1;
   }
 
 
   vector(int n, Scalar val=Scalar()):DualView<Scalar*,LayoutLeft,Arg1Type>("Vector",size_t(n*(1.1))) {
     _size = n;
     _extra_storage = 1.1;
-    DV::modified_host() = 1;
+    DV::modified_flags(0) = 1;
 
     assign(n,val);
   }
 
 
   void resize(size_t n) {
-    if(n>=capacity())
+    if(n>=span())
       DV::resize(size_t (n*_extra_storage));
     _size = n;
   }
@@ -113,22 +112,22 @@ public:
 
     /* Resize if necessary (behavour of std:vector) */
 
-    if(n>capacity())
+    if(n>span())
       DV::resize(size_t (n*_extra_storage));
     _size = n;
 
           /* Assign value either on host or on device */
 
-    if( DV::modified_host() >= DV::modified_device() ) {
+    if( DV::template need_sync<typename DV::t_dev::device_type>() ) {
       set_functor_host f(DV::h_view,val);
       parallel_for(n,f);
       DV::t_host::execution_space::fence();
-      DV::modified_host()++;
+      DV::template modify<typename DV::t_host::device_type>();
     } else {
       set_functor f(DV::d_view,val);
       parallel_for(n,f);
       DV::t_dev::execution_space::fence();
-      DV::modified_device()++;
+      DV::template modify<typename DV::t_dev::device_type>();
     }
   }
 
@@ -137,8 +136,9 @@ public:
   }
 
   void push_back(Scalar val) {
-    DV::modified_host()++;
-    if(_size == capacity()) {
+    DV::template sync<typename DV::t_host::device_type>();
+    DV::template modify<typename DV::t_host::device_type>();
+    if(_size == span()) {
       size_t new_size = _size*_extra_storage;
       if(new_size == _size) new_size++;
       DV::resize(new_size);
@@ -159,7 +159,10 @@ public:
 
   size_type size() const {return _size;}
   size_type max_size() const {return 2000000000;}
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   size_type capacity() const {return DV::capacity();}
+#endif
+  size_type span() const {return DV::span();}
   bool empty() const {return _size==0;}
 
   iterator begin() const {return &DV::h_view(0);}
@@ -244,10 +247,10 @@ public:
   }
 
   void on_host() {
-    DV::modified_host() = DV::modified_device() + 1;
+    DV::template modify<typename DV::t_host::device_type>();
   }
   void on_device() {
-    DV::modified_device() = DV::modified_host() + 1;
+    DV::template modify<typename DV::t_dev::device_type>();
   }
 
   void set_overallocation(float extra) {

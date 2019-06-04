@@ -1,23 +1,23 @@
-C Copyright (c) 2007 National Technology & Engineering Solutions of
+C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
 *DECK, SETON1
@@ -39,8 +39,8 @@ C
 C  *********************************************************************
 C
 C  Subroutine SETON1 extracts nodal vaules of element variables by
-C  performing a weighted least squares fit (4 or more elements) or 
-C  a triangulation (3 elements) over the centroids of the elements 
+C  performing a weighted least squares fit (4 or more elements) or
+C  a triangulation (3 elements) over the centroids of the elements
 C  attached to the current node.
 C
 C  Each element block must be processed independently in order to
@@ -89,27 +89,28 @@ C
 C
 C  *********************************************************************
 C
-      DO 10 I = 1, NODESA
-      DO 10 J = 1, NVAREL
-        SOLENA(I,J) = 0.
-   10 CONTINUE
+      DO I = 1, NODESA
+         DO J = 1, NVAREL
+            SOLENA(I,J) = 0.
+         end do
+      end do
 C
 C  load up CNTRA array - coordinates of donor mesh element centroids
 C
       NNODES = 4
-        DO 20 IEL = 1, NUMEBA
-          DO 25 I = 1, NNODES
+        DO IEL = 1, NUMEBA
+          DO I = 1, NNODES
             INODE = ICONA(I,IEL)
             XX(I) = XA(INODE)
             YY(I) = YA(INODE)
             ZZ(I) = ZA(INODE)
-   25     CONTINUE
-        CALL CNTR(13,XX,YY,ZZ,CNTRA(IEL,1),CNTRA(IEL,2),CNTRA(IEL,3))
-   20   CONTINUE
+         end do
+         CALL CNTR(13,XX,YY,ZZ,CNTRA(IEL,1),CNTRA(IEL,2),CNTRA(IEL,3))
+      end do
 C
 C  put element variables into SOLEA array
 C
-      DO 30 IVAR = 1, NVAREL
+      DO IVAR = 1, NVAREL
         IF (ITT(IVAR,iblk) .EQ. 0)GO TO 30
         CALL EXGEV(NTP2EX,ISTP,IVAR,IDBLK,NUMEBA,SOLEA(1,IVAR),IERR)
 C
@@ -117,25 +118,26 @@ C
 C
 C replace element mass with density
 C
-          DO 35 IEL = 1, NUMEBA
-            DO 40 I = 1, NNODES
+          DO IEL = 1, NUMEBA
+            DO I = 1, NNODES
               XX(I) = XA(ICONA(I,IEL))
               YY(I) = YA(ICONA(I,IEL))
               ZZ(I) = ZA(ICONA(I,IEL))
-   40       CONTINUE
+           end do
             CALL VOL(ITYPE,XX,YY,ZZ,VOLUME)
             SOLEA(IEL,IVAR) = SOLEA(IEL,IVAR) / VOLUME
-   35     CONTINUE
+         end do
         END IF
-   30 CONTINUE
+ 30   CONTINUE
+      end do
 C
 C start least squares extrapolation
 C  Find the elements connected to the node. If fewer than 3 elements,
-C  adjust search to find additional elements. If unable to get at 
-C  least 3 elements, must be treated as special case (just average 
+C  adjust search to find additional elements. If unable to get at
+C  least 3 elements, must be treated as special case (just average
 C  element values at node)(see below).
 C
-      DO 50 INOD = 1, NUMNDA
+      DO INOD = 1, NUMNDA
         IGLND = NDLSTA(INOD)
 C
 C  Process special case of only 1 element attached to node
@@ -146,17 +148,17 @@ C  Get node number diagonally across element, in most cases this
 C  node will have 4 elements attached.
 C
           NXTLND = 0
-          DO 70 I = 1, NNODES
+          DO I = 1, NNODES
             IF (IGLND .EQ. ICONA(I,INVCN(1,IGLND)))NXTLND = I + 2
-   70     CONTINUE
+         end do
           IF (NXTLND .GT. NNODES) NXTLND = NXTLND - NNODES
           NXGLND = ICONA(NXTLND,INVCN(1,IGLND))
 C
 C  If 3 or more elements,
 c  fit a plane through the element centroids, project element
-c  centroids and original node onto plane, extrapolate 
+c  centroids and original node onto plane, extrapolate
 c  in 2-d (coords of plane) to original node (done in EXTS).
-c  If 2 or less elements, 
+c  If 2 or less elements,
 c  average original element variables at original node
 c
           IF (INVLN(NXGLND) .GT. 2)THEN
@@ -174,13 +176,14 @@ c
 c  get second node that is shared by both elements. That is the
 c  node on the other end of the shared element side.
 c
-          DO 90 I = 1, NNODES
-          DO 90 J = 1, NNODES
-            IF(ICONA(I,INVCN(1,IGLND)) .NE. IGLND .AND. 
+          DO I = 1, NNODES
+          DO J = 1, NNODES
+            IF(ICONA(I,INVCN(1,IGLND)) .NE. IGLND .AND.
      &         ICONA(I,INVCN(1,IGLND)) .EQ. ICONA(J,INVCN(2,IGLND)))
      &         NXGLND = ICONA(I,INVCN(1,IGLND))
-   90     CONTINUE
-c
+         end do
+      end do
+c     
 c  If this second node has more than 3 elements, extrapolate. Otherwise
 c  average. (at original node)
 c
@@ -195,6 +198,6 @@ c
           CALL EXTS(IGLND,INVCN,MAXLN,IGLND,INVLN(IGLND),XA,YA,ZA,
      &              CNTRA,SOLEA,SOLENA,ITT,iblk)
         END IF
-   50 CONTINUE
+      end do
       RETURN
       END

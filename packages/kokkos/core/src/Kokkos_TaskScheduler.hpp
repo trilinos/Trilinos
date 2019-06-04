@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -419,16 +419,20 @@ public:
   TaskScheduler() : m_track(), m_queue(0) {}
 
   KOKKOS_INLINE_FUNCTION
-  TaskScheduler( TaskScheduler && rhs ) = default ;
+  TaskScheduler( TaskScheduler && rhs )
+    : m_track( rhs.m_track ), m_queue( rhs.m_queue ) {}
 
   KOKKOS_INLINE_FUNCTION
-  TaskScheduler( TaskScheduler const & rhs ) = default ;
+  TaskScheduler( TaskScheduler const & rhs )
+    : m_track( rhs.m_track ), m_queue( rhs.m_queue ) {}
 
   KOKKOS_INLINE_FUNCTION
-  TaskScheduler & operator = ( TaskScheduler && rhs ) = default ;
+  TaskScheduler & operator = ( TaskScheduler && rhs )
+    { m_track = rhs.m_track ; m_queue =  rhs.m_queue ; return *this ; }
 
   KOKKOS_INLINE_FUNCTION
-  TaskScheduler & operator = ( TaskScheduler const & rhs ) = default ;
+  TaskScheduler & operator = ( TaskScheduler const & rhs )
+    { m_track = rhs.m_track ; m_queue =  rhs.m_queue ; return *this ; }
 
   TaskScheduler( memory_pool const & arg_memory_pool )
     : m_track()
@@ -620,7 +624,6 @@ public:
   when_all( Future< A1 , A2 > const arg[] , int narg )
     {
       using future_type = Future< execution_space > ;
-      using task_base   = Kokkos::Impl::TaskBase< void , void , void > ;
 
       future_type f ;
 
@@ -688,7 +691,6 @@ public:
     {
       using input_type  = decltype( func(0) );
       using future_type = Future< execution_space > ;
-      using task_base   = Kokkos::Impl::TaskBase< void , void , void > ;
 
       static_assert( is_future< input_type >::value
                    , "Functor must return a Kokkos::Future" );

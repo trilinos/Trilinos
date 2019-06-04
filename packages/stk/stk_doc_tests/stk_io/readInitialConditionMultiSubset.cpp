@@ -41,7 +41,6 @@
 #include <string>                       // for allocator, operator+, etc
 #include <vector>                       // for vector
 #include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL
-#include "Ioss_IOFactory.h"             // for IOFactory
 #include "Ioss_NodeSet.h"               // for NodeSet
 #include "Ioss_Region.h"                // for NodeSetContainer, Region
 #include "Ioss_Utils.h"                 // for Utils
@@ -89,7 +88,8 @@ namespace {
       const stk::mesh::PartVector &all_parts = meta_data.get_mesh_parts();
       for (size_t i=0; i < all_parts.size(); i++) {
 	//+ Put the field on all element block parts...
-	stk::mesh::put_field(pressure, *all_parts[i]);
+	stk::mesh::put_field_on_mesh(pressure, *all_parts[i],
+                                     (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
       }
 
       // This commits BulkData and populates the coordinates, connectivity, mesh...

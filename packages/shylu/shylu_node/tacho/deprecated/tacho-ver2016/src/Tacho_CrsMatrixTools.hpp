@@ -218,7 +218,7 @@ namespace Tacho {
           auto vals = B.ValuesInRow(i);
           const auto ioffset = i + offset;
           A.RowPtrBegin(i) = nnz;
-          for (ordinal_type idx=0;idx<cols.dimension_0();++idx) {
+          for (ordinal_type idx=0;idx<cols.extent(0);++idx) {
             if (ioffset <= cols(idx)) {
               A.Col(nnz) = cols(idx);
               A.Value(nnz) = vals(idx);
@@ -240,7 +240,7 @@ namespace Tacho {
           auto vals = B.ValuesInRow(i);
           const auto ioffset = i - offset;
           A.RowPtrBegin(i) = nnz;
-          for (ordinal_type idx=0;idx<cols.dimension_0();++idx) {
+          for (ordinal_type idx=0;idx<cols.extent(0);++idx) {
             if (ioffset >= cols(idx)) {
               A.Col(nnz) = cols(idx);
               A.Value(nnz) = vals(idx);
@@ -283,7 +283,7 @@ namespace Tacho {
       space_type::execution_space::fence();
 
       // column exchange
-      if (p.dimension_0()) {
+      if (p.extent(0)) {
         // structure copy
         Kokkos::parallel_for( range_policy_type(0, B.NumRows()),
                               [&](const ordinal_type i)
@@ -301,7 +301,7 @@ namespace Tacho {
                                 const auto W_cols = W.ColsInRow(i);
                                 const auto W_vals = W.ValuesInRow(i);
 
-                                for (size_type j=0;j<B_cols.dimension_0();++j) {
+                                for (size_type j=0;j<B_cols.extent(0);++j) {
                                   W_cols(j) = p(B_cols(j));
                                   W_vals(j) = B_vals(j);
                                 }
@@ -311,7 +311,7 @@ namespace Tacho {
       }
 
       // row exchange and sort
-      if (ip.dimension_0()) {
+      if (ip.extent(0)) {
         // structure copy
         size_type offset = 0;
         for (ordinal_type i=0;i<W.NumRows();++i) {
@@ -330,13 +330,13 @@ namespace Tacho {
                                 const auto A_cols = A.ColsInRow(i);
                                 const auto A_vals = A.ValuesInRow(i);
 
-                                for (size_type j=0;j<W_cols.dimension_0();++j) {
+                                for (size_type j=0;j<W_cols.extent(0);++j) {
                                   A_cols(j) = W_cols(j);
                                   //A_vals(j) = W_vals(j);
                                   W_cols(j) = j;  // use W as workspace of indices
                                 }
 
-                                const ordinal_type begin = 0, end = A_cols.dimension_0();
+                                const ordinal_type begin = 0, end = A_cols.extent(0);
                                 Util::sort(A_cols, W_cols, begin, end);
 
                                 for (size_type j=begin;j<end;++j)

@@ -31,10 +31,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include <stk_util/stk_config.h>
 #include <gtest/gtest.h>                // for InitGoogleTest, etc
-#include "mpi.h"                        // for MPI_Comm_rank, MPI_Finalize, etc
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_unit_test_utils/ParallelGtestOutput.hpp>
+#include <stk_ngp_test/ngp_test.hpp>
 #include <Kokkos_Core.hpp>
 
 int gl_argc = 0;
@@ -43,19 +44,19 @@ char** gl_argv = 0;
 int main(int argc, char **argv)
 {
     stk::parallel_machine_init(&argc, &argv);
-    Kokkos::initialize(argc, argv);
 
-    testing::InitGoogleTest(&argc, argv);
+    ngp_testing::NgpTestEnvironment testEnv(&argc, argv);
 
     gl_argc = argc;
     gl_argv = argv;
 
+#ifdef STK_HAS_MPI
     int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);
     stk::unit_test_util::create_parallel_output(procId);
+#endif
 
-    int returnVal = RUN_ALL_TESTS();
+    int returnVal = testEnv.run_all_tests();
 
-    Kokkos::finalize_all();
     stk::parallel_machine_finalize();
 
     return returnVal;

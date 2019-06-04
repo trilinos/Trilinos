@@ -254,7 +254,6 @@ private:
         Teuchos::rcp(new Teuchos::TwoDColDependencyXMLConverter< \
         DEPENDEE_TYPE , DEPENDENT_TYPE >));
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 /**
  * \brief Adds several ArrayModifierDependencies templated on
  * DEPENDEE_TYPE and several standard dependent types.
@@ -275,25 +274,6 @@ private:
   TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , long long int) \
   TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , double) \
   TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , float)
-#else
-/**
- * \brief Adds several ArrayModifierDependencies templated on
- * DEPENDEE_TYPE and several standard dependent types.
- */
-#define TEUCHOS_ADD_ARRAY_MODIFIER_DEP_GROUP(DEPENDEE_TYPE) \
-  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , std::string) \
-  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , int) \
-  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , double) \
-  TEUCHOS_ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , float) \
-  TEUCHOS_ADD_TWODROW_DEP( DEPENDEE_TYPE , std::string) \
-  TEUCHOS_ADD_TWODROW_DEP( DEPENDEE_TYPE , int) \
-  TEUCHOS_ADD_TWODROW_DEP( DEPENDEE_TYPE , double) \
-  TEUCHOS_ADD_TWODROW_DEP( DEPENDEE_TYPE , float)  \
-  TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , std::string) \
-  TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , int) \
-  TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , double) \
-  TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , float)
-#endif
 
 
 #endif // TEUCHOS_DEPENDENCYXMLCONVERTERDB_HPP

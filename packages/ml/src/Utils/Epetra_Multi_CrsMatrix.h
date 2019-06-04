@@ -83,7 +83,7 @@ public:
 
   //! Returns the result of a Epetra_Operator inverse applied to an
   //Epetra_MultiVector X in Y. NOT IMPLEMEMENTED!
-  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return -1;}
+  virtual int ApplyInverse(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const {return -1;}
 
 
   //! Computes C= <me> * A

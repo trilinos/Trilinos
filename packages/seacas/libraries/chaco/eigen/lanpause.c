@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,7 @@ int lanpause(int      j,         /* current step */
              int *    pausemode, /* which pausing criterion to use */
              int      version,   /* which version of sel. orth. we are using */
              double   beta       /* current off-diagonal value */
-             )
+)
 {
   extern int    DEBUG_EVECS;    /* debugging level for eigen computation */
   extern double DOUBLE_EPSILON; /* machine precision */
@@ -106,7 +106,7 @@ int lanpause_float(int     j,         /* current step */
                    int *   pausemode, /* which pausing criterion to use */
                    int     version,   /* which version of sel. orth. we are using */
                    double  beta       /* current off-diagonal value */
-                   )
+)
 {
   extern int    DEBUG_EVECS;    /* debugging level for eigen computation */
   extern double DOUBLE_EPSILON; /* machine precision */

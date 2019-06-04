@@ -125,7 +125,7 @@ public:
     this->setHaveSeparatorRange(status);
     this->setHaveSeparatorTree(status);
  } 
-  /*! \brief Do we have the seperator range?
+  /*! \brief Do we have the separator range?
    */
   bool haveSeparatorRange() const
   {
@@ -139,14 +139,14 @@ public:
     haveSeparatorRange_ = status; 
   }
   
-  /*! \brief Do we have the seperator tree?
+  /*! \brief Do we have the separator tree?
    */
   bool haveSeparatorTree() const
   {
     return haveSeparatorTree_; 
   }
   
-  /*! \brief Do we have the seperators?
+  /*! \brief Do we have the separators?
    */
   bool haveSeparators() const
   {
@@ -242,14 +242,14 @@ public:
     return false;
   }
 
-  /*! \brief Get (local) seperator range by RCP.
+  /*! \brief Get (local) separator range by RCP.
    */
   inline const ArrayRCP<index_t> &getSeparatorRangeRCP() const
   {
     return separatorRange_;
   }
   
-  /*! \brief Get (local) seperator tree by RCP.
+  /*! \brief Get (local) separator tree by RCP.
    */
   inline const ArrayRCP<index_t> &getSeparatorTreeRCP() const
   {
@@ -276,14 +276,14 @@ public:
       return const_cast<ArrayRCP<index_t>& > (perm_);
   }
   
-  /*! \brief Get seperator range by const RCP.
+  /*! \brief Get separator range by const RCP.
    */
   inline ArrayRCP<index_t> &getSeparatorRangeRCPConst() const
   {
     return const_cast<ArrayRCP<index_t> & > (separatorRange_);
   }
   
-  /*! \brief Get seperator tree by const RCP.
+  /*! \brief Get separator tree by const RCP.
    */
   inline ArrayRCP<index_t> &getSeparatorTreeRCPConst() const
   {

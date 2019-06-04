@@ -143,7 +143,7 @@ namespace MueLuTests {
     Teuchos::ParameterList list;
     list.set("nx",nx);
     list.set("ny",ny);
-    typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
     RCP<double_multivector_type> XYZ = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,double_multivector_type>("2D",rowMap,list);
     level.Set("Coordinates",XYZ);
 

@@ -31,6 +31,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <stk_util/stk_config.h>
+
+#ifdef STK_HAVE_BOOSTLIB
+
 #include <stk_util/environment/FileUtils.hpp>
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for max
@@ -117,3 +121,6 @@ namespace stk {
     }
   }
 }
+
+#endif
+

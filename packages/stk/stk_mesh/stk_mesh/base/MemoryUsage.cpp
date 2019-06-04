@@ -45,7 +45,7 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsg
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsg
 
 
 namespace stk {

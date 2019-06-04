@@ -46,6 +46,8 @@
     \brief Interior Point test using Hock & Schittkowski problem 29.
 */
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_HS29.hpp"
 #include "ROL_Algorithm.hpp"
 
@@ -53,22 +55,22 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp; 
+  
+   
 
   typedef std::vector<RealT>            vec;
   typedef ROL::StdVector<RealT>         SV;
-  typedef RCP<ROL::Vector<RealT> >      RCPV;
+  typedef ROL::Ptr<ROL::Vector<RealT> >      ROL::PtrV;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -77,21 +79,21 @@ int main(int argc, char *argv[]) {
     int xopt_dim  = 3; // Dimension of optimization vectors
     int ci_dim    = 1; // Dimension of inequality constraint
 
-    RCP<vec> xopt_rcp = rcp( new vec(xopt_dim,1.0) ); // Feasible initial guess
+    ROL::Ptr<vec> xopt_ptr = ROL::makePtr<vec>(xopt_dim,1.0); // Feasible initial guess
 
-    RCP<vec> li_rcp  = rcp( new vec(ci_dim,0.0) );
+    ROL::Ptr<vec> li_ptr  = ROL::makePtr<vec>(ci_dim,0.0);
 
-    RCPV xopt = rcp( new SV(xopt_rcp) );
-    RCPV li   = rcp( new SV(li_rcp) );
+    ROL::PtrV xopt = ROL::makePtr<SV>(xopt_ptr);
+    ROL::PtrV li   = ROL::makePtr<SV>(li_ptr);
 
     // Original obective
     using ROL::ZOO::Objective_HS29;
     using ROL::ZOO::InequalityConstraint_HS29;
     
-    RCP<ROL::Objective<RealT> >             obj_hs29 = rcp( new Objective_HS29<RealT> );
-    RCP<ROL::InequalityConstraint<RealT> >  incon_hs29 = rcp( new InequalityConstraint_HS29<RealT> );
+    ROL::Ptr<ROL::Objective<RealT> >             obj_hs29 = ROL::makePtr<Objective_HS29<RealT>>();
+    ROL::Ptr<ROL::InequalityConstraint<RealT> >  incon_hs29 = ROL::makePtr<InequalityConstraint_HS29<RealT>>();
 
-    RCP<Teuchos::ParameterList> parlist = rcp(new Teuchos::ParameterList);
+    
     std::string stepname = "Interior Point"; 
 
     RealT mu = 0.1;            // Initial penalty parameter
@@ -119,8 +121,8 @@ int main(int argc, char *argv[]) {
     ROL::OptimizationProblem<RealT> problem( obj_hs29, xopt, incon_hs29, li, parlist);  
     
     // Define algorithm.
-    RCP<ROL::Algorithm<RealT> > algo;    
-    algo = rcp( new ROL::Algorithm<RealT>(stepname,*parlist) );
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;    
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>(stepname,*parlist);
 
     algo->run(problem,true,*outStream);   
 
@@ -128,7 +130,7 @@ int main(int argc, char *argv[]) {
 
     *outStream << std::endl << std::setw(20) << "Computed Minimizer" << std::endl;
     for( int i=0;i<xopt_dim;++i ) {   
-      *outStream << std::setw(20) << (*xopt_rcp)[i] << std::endl;
+      *outStream << std::setw(20) << (*xopt_ptr)[i] << std::endl;
     }
 
     *outStream << "Exact minimizers: x* = (a,b,c), (a,-b,-c), (-a,b,-c), (-a,-b,c)" << std::endl;

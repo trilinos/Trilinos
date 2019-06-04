@@ -178,8 +178,7 @@ namespace MueLu {
     We use Teko and the Teko::LinearOp which is declared as
     Teuchos::RCP<const Thyra::LinearOpBase<ST> > with ST=double. See e.g. Teko_ConfigDefs.hpp.
 
-    In Teko SC=double and LO=int are hard-coded. The node is
-    Tpetra::DefaultPlatform::DefaultPlatformType::NodeType
+    In Teko SC=double and LO=int are hard-coded. The node is Tpetra::Map<>::node_type.
     The global ordinal GO is chosen as a conservative choice from what Tpetra supports
     (see Teko_ConfigDefs.hpp for more details)
 
@@ -279,7 +278,7 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero This option has no effect.
     */
-    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const {
+    void Apply(MultiVector& X, const MultiVector& B, bool /* InitialGuessIsZero */ = false) const {
       TEUCHOS_TEST_FOR_EXCEPTION(this->IsSetup() == false, Exceptions::RuntimeError,
                                  "MueLu::TekoSmoother::Apply(): Setup() has not been called");
 

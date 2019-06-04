@@ -42,8 +42,6 @@
 #ifndef SACADO_UQ_PCE_SCALARTRAITSIMP_HPP
 #define SACADO_UQ_PCE_SCALARTRAITSIMP_HPP
 
-#ifdef HAVE_SACADO_TEUCHOS
-
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerializationTraits.hpp"
 #include "Teuchos_RCP.hpp"
@@ -76,6 +74,7 @@ namespace Sacado {
       typedef value_mag_type magnitudeType;
       typedef typename Sacado::mpl::apply<PCEType, storage_half_type>::type halfPrecision;
       typedef typename Sacado::mpl::apply<PCEType, storage_double_type>::type doublePrecision;
+      typedef typename TVT::coordinateType coordinateType;
 
       typedef value_type innerProductType;
 
@@ -455,7 +454,5 @@ namespace Sacado {
   } // namespace UQ
 
 } // namespace Sacado
-
-#endif // HAVE_SACADO_TEUCHOS
 
 #endif // SACADO_FAD_SCALARTRAITSIMP_HPP

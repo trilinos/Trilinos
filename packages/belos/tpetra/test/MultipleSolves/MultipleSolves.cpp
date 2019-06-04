@@ -42,7 +42,7 @@
 #include "BelosSolverFactory.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "MatrixMarket_Tpetra.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
@@ -279,8 +279,7 @@ TEUCHOS_UNIT_TEST( MultipleSolves, GMRES )
   Teuchos::OSTab tab1 (out);
 
   // Get the default communicator for tests.
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   std::istringstream matrixFile (symPosDefMatrixString);
@@ -371,8 +370,7 @@ TEUCHOS_UNIT_TEST( MultipleSolves, CG )
   Teuchos::OSTab tab1 (out);
 
   // Get the default communicator for tests.
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   std::istringstream matrixFile (symPosDefMatrixString);

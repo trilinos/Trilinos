@@ -47,7 +47,7 @@
 #include "PyTrilinos_config.h"
 #include "Epetra_ConfigDefs.h"
 
-// Epetra includes
+// Epetra include files
 #include "Epetra_DLLExportMacro.h"
 #include "Epetra_Time.h"
 #include "Epetra_SerialComm.h"

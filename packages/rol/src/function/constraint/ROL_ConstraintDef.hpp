@@ -45,6 +45,9 @@
 #ifndef ROL_CONSTRAINT_DEF_H
 #define ROL_CONSTRAINT_DEF_H
 
+#include "ROL_LinearAlgebra.hpp"
+#include "ROL_LAPACK.hpp"
+
 namespace ROL {
 
 template <class Real>
@@ -61,11 +64,11 @@ void Constraint<Real>::applyJacobian(Vector<Real> &jv,
   //Real h = 2.0/(v.norm()*v.norm())*tol;
 
   // Compute constraint at x.
-  Teuchos::RCP<Vector<Real> > c = jv.clone();
+  ROL::Ptr<Vector<Real> > c = jv.clone();
   this->value(*c,x,ctol);
 
   // Compute perturbation x + h*v.
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+  ROL::Ptr<Vector<Real> > xnew = x.clone();
   xnew->set(x);
   xnew->axpy(h,v);
   this->update(*xnew);
@@ -104,11 +107,11 @@ void Constraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
   const Real one(1);
   Real h(0), ctol = std::sqrt(ROL_EPSILON<Real>());
 
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
-  Teuchos::RCP<Vector<Real> > ex   = x.clone();
-  Teuchos::RCP<Vector<Real> > eajv = ajv.clone();
-  Teuchos::RCP<Vector<Real> > cnew = dualv.clone();  // in general, should be in the constraint space
-  Teuchos::RCP<Vector<Real> > c0   = dualv.clone();  // in general, should be in the constraint space
+  ROL::Ptr<Vector<Real> > xnew = x.clone();
+  ROL::Ptr<Vector<Real> > ex   = x.clone();
+  ROL::Ptr<Vector<Real> > eajv = ajv.clone();
+  ROL::Ptr<Vector<Real> > cnew = dualv.clone();  // in general, should be in the constraint space
+  ROL::Ptr<Vector<Real> > c0   = dualv.clone();  // in general, should be in the constraint space
   this->value(*c0,x,ctol);
   
   ajv.zero();
@@ -140,11 +143,11 @@ void Constraint<Real>::applyHessian(Vector<Real> &huv,
   //Real h = 2.0/(v.norm()*v.norm())*tol;
 
   // Compute constraint Jacobian at x.
-  Teuchos::RCP<Vector<Real> > ju = huv.clone();
+  ROL::Ptr<Vector<Real> > ju = huv.clone();
   this->applyJacobian(*ju,u,x,jtol);
 
   // Compute new step x + h*v.
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+  ROL::Ptr<Vector<Real> > xnew = x.clone();
   xnew->set(x);
   xnew->axpy(h,v);
   this->update(*xnew);
@@ -169,11 +172,11 @@ void Constraint<Real>::applyAdjointHessian(Vector<Real> &huv,
   Real h = std::max(static_cast<Real>(1),x.norm()/v.norm())*tol;
 
   // Compute constraint Jacobian at x.
-  Teuchos::RCP<Vector<Real> > aju = huv.clone();
+  ROL::Ptr<Vector<Real> > aju = huv.clone();
   applyAdjointJacobian(*aju,u,x,tol);
 
   // Compute new step x + h*v.
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+  ROL::Ptr<Vector<Real> > xnew = x.clone();
   xnew->set(x);
   xnew->axpy(h,v);
   update(*xnew);
@@ -212,28 +215,28 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   v1.zero(); v2.zero();
 
   // Allocate static memory.
-  Teuchos::RCP<Vector<Real> > r1 = b1.clone();
-  Teuchos::RCP<Vector<Real> > r2 = b2.clone();
-  Teuchos::RCP<Vector<Real> > z1 = v1.clone();
-  Teuchos::RCP<Vector<Real> > z2 = v2.clone();
-  Teuchos::RCP<Vector<Real> > w1 = b1.clone();
-  Teuchos::RCP<Vector<Real> > w2 = b2.clone();
-  std::vector<Teuchos::RCP<Vector<Real> > > V1;
-  std::vector<Teuchos::RCP<Vector<Real> > > V2;
-  Teuchos::RCP<Vector<Real> > V2temp = b2.clone();
-  std::vector<Teuchos::RCP<Vector<Real> > > Z1;
-  std::vector<Teuchos::RCP<Vector<Real> > > Z2;
-  Teuchos::RCP<Vector<Real> > w1temp = b1.clone();
-  Teuchos::RCP<Vector<Real> > Z2temp = v2.clone();
+  ROL::Ptr<Vector<Real> > r1 = b1.clone();
+  ROL::Ptr<Vector<Real> > r2 = b2.clone();
+  ROL::Ptr<Vector<Real> > z1 = v1.clone();
+  ROL::Ptr<Vector<Real> > z2 = v2.clone();
+  ROL::Ptr<Vector<Real> > w1 = b1.clone();
+  ROL::Ptr<Vector<Real> > w2 = b2.clone();
+  std::vector<ROL::Ptr<Vector<Real> > > V1;
+  std::vector<ROL::Ptr<Vector<Real> > > V2;
+  ROL::Ptr<Vector<Real> > V2temp = b2.clone();
+  std::vector<ROL::Ptr<Vector<Real> > > Z1;
+  std::vector<ROL::Ptr<Vector<Real> > > Z2;
+  ROL::Ptr<Vector<Real> > w1temp = b1.clone();
+  ROL::Ptr<Vector<Real> > Z2temp = v2.clone();
 
   std::vector<Real> res(m+1, zero); 
-  Teuchos::SerialDenseMatrix<int, Real> H(m+1,m);
-  Teuchos::SerialDenseVector<int, Real> cs(m);
-  Teuchos::SerialDenseVector<int, Real> sn(m);
-  Teuchos::SerialDenseVector<int, Real> s(m+1);
-  Teuchos::SerialDenseVector<int, Real> y(m+1);
-  Teuchos::SerialDenseVector<int, Real> cnorm(m);
-  Teuchos::LAPACK<int, Real> lapack;
+  LA::Matrix<Real> H(m+1,m);
+  LA::Vector<Real> cs(m);
+  LA::Vector<Real> sn(m);
+  LA::Vector<Real> s(m+1);
+  LA::Vector<Real> y(m+1);
+  LA::Vector<Real> cnorm(m);
+  ROL::LAPACK<int, Real> lapack;
 
   // Compute initial residual.
   applyAdjointJacobian(*r1, v2, x, zerotol);
@@ -328,7 +331,9 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     // Evaluate special stopping condition.
     tol = tol;
 
+    std::cout << "  " << i+1 << ": " << res[i+1]/res[0] << std::endl;
     if (res[i+1] <= tol) {
+      std::cout << "  solved in " << i+1 << " iterations to " << res[i+1] << " (" << res[i+1]/res[0] << ")" << std::endl;
       // Update solution vector.
       v1.plus(*z1);
       v2.plus(*z2);
@@ -382,7 +387,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyJacobian(const Vecto
                                                                      const bool printToStream,
                                                                      std::ostream & outStream,
                                                                      const int order) {
-  TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+  ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
   const Real one(1.0);
@@ -398,23 +403,23 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyJacobian(const Vecto
   std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Compute constraint value at x.
-  Teuchos::RCP<Vector<Real> > c = jv.clone();
+  ROL::Ptr<Vector<Real> > c = jv.clone();
   this->update(x);
   this->value(*c, x, tol);
 
   // Compute (Jacobian at x) times (vector v).
-  Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+  ROL::Ptr<Vector<Real> > Jv = jv.clone();
   this->applyJacobian(*Jv, v, x, tol);
   Real normJv = Jv->norm();
 
   // Temporary vectors.
-  Teuchos::RCP<Vector<Real> > cdif = jv.clone();
-  Teuchos::RCP<Vector<Real> > cnew = jv.clone();
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+  ROL::Ptr<Vector<Real> > cdif = jv.clone();
+  ROL::Ptr<Vector<Real> > cnew = jv.clone();
+  ROL::Ptr<Vector<Real> > xnew = x.clone();
 
   for (int i=0; i<numSteps; i++) {
 
@@ -497,16 +502,16 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyAdjointJacobian(cons
   Real eta = one;
 
   // Temporary vectors.
-  Teuchos::RCP<Vector<Real> > c0   = c.clone();
-  Teuchos::RCP<Vector<Real> > cnew = c.clone();
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
-  Teuchos::RCP<Vector<Real> > ajv0 = ajv.clone();
-  Teuchos::RCP<Vector<Real> > ajv1 = ajv.clone();
-  Teuchos::RCP<Vector<Real> > ex   = x.clone();
-  Teuchos::RCP<Vector<Real> > eajv = ajv.clone();
+  ROL::Ptr<Vector<Real> > c0   = c.clone();
+  ROL::Ptr<Vector<Real> > cnew = c.clone();
+  ROL::Ptr<Vector<Real> > xnew = x.clone();
+  ROL::Ptr<Vector<Real> > ajv0 = ajv.clone();
+  ROL::Ptr<Vector<Real> > ajv1 = ajv.clone();
+  ROL::Ptr<Vector<Real> > ex   = x.clone();
+  ROL::Ptr<Vector<Real> > eajv = ajv.clone();
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Compute constraint value at x.
@@ -584,8 +589,8 @@ Real Constraint<Real>::checkAdjointConsistencyJacobian(const Vector<Real> &w,
                                                        std::ostream & outStream) {
   Real tol = ROL_EPSILON<Real>();
 
-  Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
-  Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
+  ROL::Ptr<Vector<Real> > Jv = dualw.clone();
+  ROL::Ptr<Vector<Real> > Jw = dualv.clone();
   
   applyJacobian(*Jv,v,x,tol);
   applyAdjointJacobian(*Jw,w,x,tol);
@@ -646,14 +651,14 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyAdjointHessian(const
   std::vector<std::vector<Real> > ahuvCheck(numSteps, tmp);
 
   // Temporary vectors.
-  Teuchos::RCP<Vector<Real> > AJdif = hv.clone();
-  Teuchos::RCP<Vector<Real> > AJu = hv.clone();
-  Teuchos::RCP<Vector<Real> > AHuv = hv.clone();
-  Teuchos::RCP<Vector<Real> > AJnew = hv.clone();
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+  ROL::Ptr<Vector<Real> > AJdif = hv.clone();
+  ROL::Ptr<Vector<Real> > AJu = hv.clone();
+  ROL::Ptr<Vector<Real> > AHuv = hv.clone();
+  ROL::Ptr<Vector<Real> > AJnew = hv.clone();
+  ROL::Ptr<Vector<Real> > xnew = x.clone();
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Apply adjoint Jacobian to u.

@@ -842,7 +842,7 @@ int Amesos_Mumps::CheckError()
 // ======================================================================
 void Amesos_Mumps::PrintTiming() const
 {
-  if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
+  if (!Problem_->GetMatrix() || Comm().MyPID() != 0)
     return;
 
   double ConTime = GetTime(MtxConvTime_);
@@ -884,7 +884,7 @@ void Amesos_Mumps::PrintTiming() const
 // ===========================================================================
 Epetra_RowMatrix& Amesos_Mumps::Matrix() 
 {
-  Epetra_RowMatrix* Matrix = dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator());
+  Epetra_RowMatrix* Matrix = Problem_->GetMatrix();
   assert (Matrix != 0);
   return(*Matrix);
 }
@@ -892,7 +892,7 @@ Epetra_RowMatrix& Amesos_Mumps::Matrix()
 // ===========================================================================
 const Epetra_RowMatrix& Amesos_Mumps::Matrix() const
 {
-  Epetra_RowMatrix* Matrix = dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator());
+  Epetra_RowMatrix* Matrix = Problem_->GetMatrix();
   assert (Matrix != 0);
   return(*Matrix);
 }

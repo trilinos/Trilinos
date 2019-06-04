@@ -63,7 +63,7 @@ namespace ROL {
 template<class Real> 
 class StdLinearOperatorFactory {
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
+  template <typename T> using ROL::Ptr = ROL::Ptr<T>;
 
   typedef LinearOperator<Real>    OP;
   typedef StdLinearOperator<Real> StdOP;
@@ -74,7 +74,7 @@ private:
 
 
   Teuchos::BLAS<int,Real>     blas_;
-  Teuchos::LAPACK<int,Real>   lapack_;
+  ROL::LAPACK<int,Real>   lapack_;
 
   // Fill x with uniformly-distributed random values from [lower,upper]
   void randomize( vector &x, Real lower=0.0, Real upper=1.0 ) {
@@ -99,12 +99,12 @@ private:
     int N2 = A.size();
     int N = (std::round(std::sqrt(N2)));
     bool isSquare = N*N == N2;
-    TEUCHOS_TEST_FOR_EXCEPTION( !isSquare, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( !isSquare, std::invalid_argument,
       "Error: vector representation A of matrix must have a square "
       "number of elements."); 
-    TEUCHOS_TEST_FOR_EXCEPTION( B.size() != N2, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( B.size() != N2, std::invalid_argument,
       "Error: vectors A and B must have the same length.");
-    TEUCHOS_TEST_FOR_EXCEPTION( C.size() != N2, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( C.size() != N2, std::invalid_argument,
       "Error: vectors A and C must have the same length.");
 
     char tra = transA : 'T' : 'N';
@@ -119,7 +119,7 @@ private:
     int N2 = A.size();
     int N = (std::round(std::sqrt(N2)));
     bool isSquare = N*N == N2;
-    TEUCHOS_TEST_FOR_EXCEPTION( !isSquare, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( !isSquare, std::invalid_argument,
       "Error: vector representation of matrix must have a square "
       "number of elements."); 
 
@@ -131,10 +131,10 @@ private:
 
     // Query workspace 
     lapack_.GEQRF(N,N,&A[0],LDA,&TAU[0],&LWORK1,-1,&INFO);
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO,std::logic_error,"LAPACK GEQRF LWORK query failed.");
+    ROL_TEST_FOR_EXCEPTION(INFO,std::logic_error,"LAPACK GEQRF LWORK query failed.");
     
     lapack_.ORGQR(N,N,N,&A[0],LDA,&TAU[0],&LWORK2,-1,&INFO);
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO,std::logic_error,"LAPACK ORGQR LWORK query failed.");
+    ROL_TEST_FOR_EXCEPTION(INFO,std::logic_error,"LAPACK ORGQR LWORK query failed.");
 
     const int LWORK = std::max(std::abs(LWORK1),std::abs(LWORK2));
 
@@ -142,11 +142,11 @@ private:
  
     // Factor the input matrix
     lapack_.GEQRF(N,N,&A[0],LDA,&TAU[0],LWORK,&INFO);
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO,std::logic_error,"LAPACK GEQRF failed with INFO = " << INFO );
+    ROL_TEST_FOR_EXCEPTION(INFO,std::logic_error,"LAPACK GEQRF failed with INFO = " << INFO );
     
     // Overwrite the input matrix with the orthogonal matrix Q
     lapack_.ORGQR(N,N,N,&A[0],LDA,&TAU[0],&WORK[0],LWORK,&INFO);    
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO,std::logic_error,"LAPACK ORGQR failed with INFO = " << INFO );
+    ROL_TEST_FOR_EXCEPTION(INFO,std::logic_error,"LAPACK ORGQR failed with INFO = " << INFO );
 
   }  
 
@@ -187,14 +187,14 @@ public:
     return retString;    
   }
 
-  Teuchos::RCP<LinearOperator<Real> > getOperator( int size, const std::string &type="" ) const {
+  ROL::Ptr<LinearOperator<Real> > getOperator( int size, const std::string &type="" ) const {
     EMatrixType emt = StringToEMatrixType(type);
 
-    using Teuchos::rcp;
+    
 
     int n2 = size*size;
 
-    RCP<vector> Ap = rcp( new vector(n2) );
+    ROL::Ptr<vector> Ap = ROL::makePtr<vector>(n2);
 
     switch( emt ) {
       case MATRIX_SPD: {
@@ -294,7 +294,7 @@ public:
       }   
 
     }
-    return rcp( new StdOP(Ap) );
+    return ROL::makePtr<StdOP>(Ap);
   }
 
   

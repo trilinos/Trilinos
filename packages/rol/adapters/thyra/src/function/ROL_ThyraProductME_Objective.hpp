@@ -66,7 +66,7 @@ public:
     thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_) {
     valueUpdated = gradientUpdated = false;
     value_ = 0;
-    x_ptr == Teuchos::null;
+    x_ptr = Teuchos::null;
     grad_ptr = Teuchos::null;
     if(params != Teuchos::null)
       params->set<int>("Optimizer Iteration Number", -1);
@@ -80,10 +80,10 @@ public:
   */
   Real value( const Vector<Real> &rol_x, Real &tol ) {
 
-    if(!x_hasChanged(rol_x))
+    if(!x_hasChanged(rol_x) &&  valueUpdated)
        return value_;
 
-    const ThyraVector<Real>  & thyra_p = Teuchos::dyn_cast<const ThyraVector<Real> >(rol_x);
+    const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
     Teuchos::RCP< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
     Teuchos::RCP<const Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
 
@@ -121,9 +121,9 @@ public:
       params->set<bool>("Update Functional Gradient", !gradientUpdated);
     }
 
-    const ThyraVector<Real>  & thyra_p = Teuchos::dyn_cast<const ThyraVector<Real> >(rol_x);
+    const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
     Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
-    ThyraVector<Real>  & thyra_dgdp = Teuchos::dyn_cast<ThyraVector<Real> >(rol_g);
+    ThyraVector<Real>  & thyra_dgdp = dynamic_cast<ThyraVector<Real>&>(rol_g);
 
     //Teuchos::RCP<Thyra::MultiVectorBase<Real> > dgdp = thyra_dgdp.getVector();
     Teuchos::RCP< Thyra::ProductMultiVectorBase<Real> > prodvec_dgdp_p = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Real>>(thyra_dgdp.getVector());
@@ -134,6 +134,14 @@ public:
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+
+    Teuchos::RCP< Thyra::VectorBase<Real> > g;
+
+    if(!valueUpdated) {
+      g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
+      outArgs.set_g(g_index, g);
+    }
+
     for(std::size_t i=0; i<p_indices.size(); ++i) {
       const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
             outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, g_index, p_indices[i]);
@@ -143,7 +151,7 @@ public:
       else if(dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM))
         dgdp_orient = Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
          "ROL::ThyraProductME_Objective: DgDp does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
       }
 
@@ -154,8 +162,12 @@ public:
     if (grad_ptr == Teuchos::null)
       grad_ptr = rol_g.clone();
     grad_ptr->set(rol_g);
-    
-    gradientUpdated = valueUpdated = true;
+
+    if(!valueUpdated) {
+      value_ = ::Thyra::get_ele(*g,0);
+      valueUpdated = true;
+    }
+    gradientUpdated = true;
   };
 
   void update( const Vector<Real> & /*x*/, bool flag, int iter) {

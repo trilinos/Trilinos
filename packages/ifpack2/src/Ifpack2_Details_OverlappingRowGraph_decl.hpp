@@ -44,7 +44,7 @@
 #define IFPACK2_DETAILS_OVERLAPPINGROWGRAPH_DECL_HPP
 
 #include <Ifpack2_ConfigDefs.hpp>
-#include <Tpetra_RowGraph.hpp>
+#include "Ifpack2_Details_RowGraph.hpp"
 #include <Tpetra_Import_decl.hpp>
 #include <Tpetra_Export_decl.hpp>
 
@@ -63,9 +63,7 @@ namespace Details {
 ///   should not rely on its interface.
 template<class GraphType>
 class OverlappingRowGraph :
-    virtual public Tpetra::RowGraph<typename GraphType::local_ordinal_type,
-                                    typename GraphType::global_ordinal_type,
-                                    typename GraphType::node_type> {
+    virtual public Ifpack2::Details::RowGraph<GraphType> {
 public:
   //! \name Typedefs
   //@{
@@ -120,8 +118,10 @@ public:
   //! The communicator over which the graph is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //! The graph's Node instance.
-  virtual Teuchos::RCP<node_type> getNode () const;
+  virtual TPETRA_DEPRECATED Teuchos::RCP<node_type> getNode () const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! The Map that describes the distribution of rows over processes.
   virtual Teuchos::RCP<const map_type> getRowMap () const;
@@ -194,12 +194,6 @@ public:
   ///   entries in that row that are owned by the calling process.
   virtual size_t getNumEntriesInLocalRow (local_ordinal_type localRow) const;
 
-  //! The global number of diagonal entries.
-  virtual global_size_t getGlobalNumDiags () const;
-
-  //! The number of diagonal entries owned by the calling process.
-  virtual size_t getNodeNumDiags () const;
-
   //! The maximum number of entries in any row on any process.
   virtual size_t getGlobalMaxNumRowEntries () const;
 
@@ -208,12 +202,6 @@ public:
 
   //! Whether this graph has a column Map.
   virtual bool hasColMap() const;
-
-  //! Whether this graph is lower triangular.
-  virtual bool isLowerTriangular() const;
-
-  //! Whether this graph is upper triangular.
-  virtual bool isUpperTriangular() const;
 
   //! Whether this graph is locally indexed.
   virtual bool isLocallyIndexed () const;

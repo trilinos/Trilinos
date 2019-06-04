@@ -94,17 +94,17 @@ namespace mesh {
  *       - Put a scalar field on all nodes in a part
  *           typedef stk::mesh::Field<double>  ScalarFieldType;
  *           ScalarFieldType& field = meta.declare_field<ScalarFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field(field, stk::topology::NODE_RANK, <part>);
+ *           stk::mesh::put_field_on_mesh(field, stk::topology::NODE_RANK, <part>);
  *
  *       - Put a 1d (of size 3) field of doubles on all nodes in a part
  *           typedef stk::mesh::Field<double, stk::mesh::Cartesian3d>  CoordFieldType;
  *           CoordFieldType& field = meta.declare_field<CoordFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field(field, stk::topology::NODE_RANK, <part>, Cartesian3d::Size);
+ *           stk::mesh::put_field_on_mesh(field, stk::topology::NODE_RANK, <part>, Cartesian3d::Size);
  *
  *       - Put a 2d (of sizes 3 and 3) field of doubles on all nodes in a part
  *           typedef stk::mesh::Field<double, stk::mesh::Cartesian3d, stk::mesh::Cartesian3d> MultiDimFieldType;
  *           MultiFieldType& field = meta.declare_field<MultiFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field(field, stk::topology::NODE_RANK, <part>, Cartesian3d::Size, Cartesian3d::Size);
+ *           stk::mesh::put_field_on_mesh(field, stk::topology::NODE_RANK, <part>, Cartesian3d::Size, Cartesian3d::Size);
  *
  * Items of interest
  *   - Accessing field data: see FieldData.hpp

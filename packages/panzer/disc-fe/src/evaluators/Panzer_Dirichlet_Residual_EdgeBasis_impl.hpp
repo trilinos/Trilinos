@@ -59,7 +59,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
+template<typename EvalT, typename Traits>
+DirichletResidual_EdgeBasis<EvalT, Traits>::
+DirichletResidual_EdgeBasis(
+  const Teuchos::ParameterList& p)
 {
   std::string residual_name = p.get<std::string>("Residual Name");
 
@@ -76,12 +79,12 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
 
   // some sanity checks
   TEUCHOS_ASSERT(basis->isVectorBasis());
-  TEUCHOS_ASSERT(basis_layout->dimension(0)==vector_layout_dof->dimension(0));
-  TEUCHOS_ASSERT(basis_layout->dimension(1)==vector_layout_dof->dimension(1));
-  TEUCHOS_ASSERT(Teuchos::as<unsigned>(basis->dimension())==vector_layout_dof->dimension(2));
-  TEUCHOS_ASSERT(vector_layout_vector->dimension(0)==vector_layout_dof->dimension(0));
-  TEUCHOS_ASSERT(vector_layout_vector->dimension(1)==vector_layout_dof->dimension(1));
-  TEUCHOS_ASSERT(vector_layout_vector->dimension(2)==vector_layout_dof->dimension(2));
+  TEUCHOS_ASSERT(basis_layout->extent(0)==vector_layout_dof->extent(0));
+  TEUCHOS_ASSERT(basis_layout->extent(1)==vector_layout_dof->extent(1));
+  TEUCHOS_ASSERT(Teuchos::as<unsigned>(basis->dimension())==vector_layout_dof->extent(2));
+  TEUCHOS_ASSERT(vector_layout_vector->extent(0)==vector_layout_dof->extent(0));
+  TEUCHOS_ASSERT(vector_layout_vector->extent(1)==vector_layout_dof->extent(1));
+  TEUCHOS_ASSERT(vector_layout_vector->extent(2)==vector_layout_dof->extent(2));
 
   residual = PHX::MDField<ScalarT,Cell,BASIS>(residual_name, basis_layout);
   dof      = PHX::MDField<const ScalarT,Cell,Point,Dim>(dof_name, vector_layout_dof);
@@ -90,7 +93,7 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   // setup all basis fields that are required
 
   // setup all fields to be evaluated and constructed
-  pointValues = PointValues2<ScalarT>(pointRule->getName()+"_",false);
+  pointValues = PointValues2<double>(pointRule->getName()+"_",false);
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
@@ -106,18 +109,23 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,sd,fm)
+template<typename EvalT, typename Traits>
+void
+DirichletResidual_EdgeBasis<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   orientations = sd.orientations_;
-
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(dof,fm);
-  this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
+template<typename EvalT, typename Traits>
+void
+DirichletResidual_EdgeBasis<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   const int numCells = workset.num_cells;
   if(numCells <= 0)

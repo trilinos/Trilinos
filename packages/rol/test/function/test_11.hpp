@@ -76,16 +76,16 @@ class CLTestObjective : public ROL::Objective<Real> {
 public:
 
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > xp = 
-      Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
+    ROL::Ptr<const std::vector<Real> > xp = 
+      dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
       return 0.5*((*xp)[0]*(*xp)[0] + 2*(*xp)[1]*(*xp)[1]);
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > gp = 
-      Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > xp = 
-      Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
+    ROL::Ptr<std::vector<Real> > gp = 
+      dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
+    ROL::Ptr<const std::vector<Real> > xp = 
+      dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     (*gp)[0] =   (*xp)[0];
     (*gp)[1] = 2*(*xp)[1];
   }
@@ -94,10 +94,10 @@ public:
                 const ROL::Vector<Real> &v, 
                 const ROL::Vector<Real> &x,
                 Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvp = 
-      Teuchos::dyn_cast<ROL::StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
+    ROL::Ptr<std::vector<Real> > hvp = 
+      dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp = 
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     (*hvp)[0] =   (*vp)[0];
     (*hvp)[1] = 2*(*vp)[1];
   }
@@ -107,26 +107,26 @@ public:
 template<class Real>
 class CLExactModel : public ROL::Objective<Real> {
 
-Teuchos::RCP<std::vector<Real> > x_;
-const Teuchos::RCP<const std::vector<Real> > l_;
-const Teuchos::RCP<const std::vector<Real> > u_;
-Teuchos::RCP<std::vector<Real> > g_;
-Teuchos::RCP<std::vector<Real> > di_;
-Teuchos::RCP<std::vector<Real> > j_;
-Teuchos::RCP<ROL::Objective<Real> > obj_;
+ROL::Ptr<std::vector<Real> > x_;
+const ROL::Ptr<const std::vector<Real> > l_;
+const ROL::Ptr<const std::vector<Real> > u_;
+ROL::Ptr<std::vector<Real> > g_;
+ROL::Ptr<std::vector<Real> > di_;
+ROL::Ptr<std::vector<Real> > j_;
+ROL::Ptr<ROL::Objective<Real> > obj_;
 
 public:
 
-  CLExactModel( Teuchos::RCP<std::vector<Real> > &xp,
-                const Teuchos::RCP<const std::vector<Real> > &lp,
-                const Teuchos::RCP<const std::vector<Real> > &up ) : 
+  CLExactModel( ROL::Ptr<std::vector<Real> > &xp,
+                const ROL::Ptr<const std::vector<Real> > &lp,
+                const ROL::Ptr<const std::vector<Real> > &up ) : 
                 x_(xp), l_(lp), u_(up) { 
-    g_  = Teuchos::rcp( new std::vector<double>(x_->size()) );
-    di_ = Teuchos::rcp( new std::vector<double>(x_->size()) );
-    j_  = Teuchos::rcp( new std::vector<double>(x_->size()) );
+    g_  = ROL::makePtr<std::vector<double>(x_->size>());
+    di_ = ROL::makePtr<std::vector<double>(x_->size>());
+    j_  = ROL::makePtr<std::vector<double>(x_->size>());
  
 
-    obj_ = Teuchos::rcp( new CLTestObjective<Real>() );
+    obj_ = ROL::makePtr<CLTestObjective<Real>>();
 
     ROL::StdVector<Real> g(g_);
     ROL::StdVector<Real> x(x_);
@@ -169,8 +169,8 @@ public:
   } 
 
   void update( const ROL::Vector<Real> &x, bool flag = true, int iter=-1 ) {
-    Teuchos::RCP<const std::vector<Real> > xc = 
-      Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
+    ROL::Ptr<const std::vector<Real> > xc = 
+      dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     (*x_)[0]  = (*xc)[0];
     (*x_)[1]  = (*xc)[1];
 
@@ -211,10 +211,10 @@ public:
   }
 
   Real value( const ROL::Vector<Real> &s, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > sp = 
-      Teuchos::dyn_cast<const ROL::StdVector<Real> >(s).getVector();
+    ROL::Ptr<const std::vector<Real> > sp = 
+      dynamic_cast<const ROL::StdVector<Real>&>(s).getVector();
 
-    Teuchos::RCP<ROL::Vector<Real> > y = s.clone();
+    ROL::Ptr<ROL::Vector<Real> > y = s.clone();
     hessVec(*y,s,s,tol);  
     Real result = 0.5*y->dot(s);
     result += (*di_)[0]*(*g_)[0]*(*sp)[0];
@@ -223,8 +223,8 @@ public:
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &s, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > gp = 
-      Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
+    ROL::Ptr<std::vector<Real> > gp = 
+      dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
     hessVec(g,s,s,tol);
      
     (*gp)[0] += (*di_)[0]*(*g_)[0];
@@ -236,10 +236,10 @@ public:
                 const ROL::Vector<Real> &s,
                 Real &tol ) {
 
-    Teuchos::RCP<std::vector<Real> > hvp = 
-      Teuchos::dyn_cast<ROL::StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
+    ROL::Ptr<std::vector<Real> > hvp = 
+      dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp = 
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
 
     obj_->hessVec(hv,v,s,tol);
 

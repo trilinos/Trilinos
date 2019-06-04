@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -45,12 +45,15 @@ Ioss::Initializer::Initializer()
   Ioss::Edge2::factory();
   Ioss::Edge3::factory();
 
-  Ioss::Bar2::factory();
-  Ioss::Bar3::factory();
+  Ioss::Spring2::factory();
+  Ioss::Spring3::factory();
+  Ioss::Beam2::factory();
+  Ioss::Beam3::factory();
   Ioss::ShellLine2D2::factory();
   Ioss::ShellLine2D3::factory();
 
   Ioss::Hex8::factory();
+  Ioss::Hex16::factory();
   Ioss::Hex20::factory();
   Ioss::Hex27::factory();
 
@@ -63,6 +66,7 @@ Ioss::Initializer::Initializer()
   Ioss::Pyramid19::factory();
 
   Ioss::Quad4::factory();
+  Ioss::Quad6::factory();
   Ioss::Quad8::factory();
   Ioss::Quad9::factory();
 
@@ -91,6 +95,7 @@ Ioss::Initializer::Initializer()
   Ioss::Unknown::factory();
 
   Ioss::Wedge6::factory();
+  Ioss::Wedge12::factory();
   Ioss::Wedge15::factory();
   Ioss::Wedge16::factory();
   Ioss::Wedge18::factory();

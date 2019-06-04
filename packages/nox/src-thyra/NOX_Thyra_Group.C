@@ -68,6 +68,7 @@
 #include "NOX_Abstract_MultiVector.H"
 #include "NOX_Thyra_MultiVector.H"
 #include "NOX_Assert.H"
+#include "NOX_SolverStats.hpp"
 
 NOX::Thyra::Group::
 Group(const NOX::Thyra::Vector& initial_guess,
@@ -75,7 +76,12 @@ Group(const NOX::Thyra::Vector& initial_guess,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector,
       const bool rightScalingFirst):
-  model_(model), rightScalingFirst_(rightScalingFirst)
+  model_(model),
+  rightScalingFirst_(rightScalingFirst),
+  updatePreconditioner_(true),
+  last_linear_solve_status_(NOX::Abstract::Group::NotConverged),
+  last_linear_solve_num_iters_(0),
+  last_linear_solve_achieved_tol_(0.0)
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
@@ -139,14 +145,23 @@ Group(const NOX::Thyra::Vector& initial_guess,
       const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& prec_factory,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector,
-      const bool rightScalingFirst):
+      const bool rightScalingFirst,
+      const bool updatePreconditioner,
+      const bool jacobianIsEvaluated):
   model_(model),
   lop_(linear_op),
   lows_factory_(lows_factory),
   prec_(prec_op),
   prec_factory_(prec_factory),
-  rightScalingFirst_(rightScalingFirst)
+  rightScalingFirst_(rightScalingFirst),
+  updatePreconditioner_(updatePreconditioner),
+  last_linear_solve_status_(NOX::Abstract::Group::NotConverged),
+  last_linear_solve_num_iters_(0),
+  last_linear_solve_achieved_tol_(0.0)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(jacobianIsEvaluated && Teuchos::is_null(linear_op),std::runtime_error,
+                             "ERROR - NOX::Thyra::Group(...) - linear_op is null but JacobianIsEvaluated is true. Impossible combination!");
+
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
   // To support implicit function scaling, all vectors must be copy
@@ -186,6 +201,11 @@ Group(const NOX::Thyra::Vector& initial_guess,
   out_args_ = model_->createOutArgs();
 
   resetIsValidFlags();
+
+  if (jacobianIsEvaluated) {
+    is_valid_jacobian_ = true;
+    shared_jacobian_->getObject(this);
+  }
 }
 
 NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
@@ -198,7 +218,10 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   prec_factory_(source.prec_factory_),
   right_weight_vec_(source.right_weight_vec_),
   inv_right_weight_vec_(source.inv_right_weight_vec_),
-  rightScalingFirst_(source.rightScalingFirst_)
+  rightScalingFirst_(source.rightScalingFirst_),
+  last_linear_solve_status_(source.last_linear_solve_status_),
+  last_linear_solve_num_iters_(source.last_linear_solve_num_iters_),
+  last_linear_solve_achieved_tol_(source.last_linear_solve_achieved_tol_)
 {
 
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.x_vec_, type));
@@ -304,6 +327,10 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
   if (nonnull(shared_jacobian_))
     if (this->isJacobian())
       shared_jacobian_->getObject(this);
+
+  last_linear_solve_status_ = source.last_linear_solve_status_;
+  last_linear_solve_num_iters_ = source.last_linear_solve_num_iters_;
+  last_linear_solve_achieved_tol_ = source.last_linear_solve_achieved_tol_;
 
   return *this;
 }
@@ -724,6 +751,14 @@ Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getGradientPtr() 
   return gradient_vec_;
 }
 
+void NOX::Thyra::Group::logLastLinearSolveStats(NOX::SolverStats& stats) const
+{
+  stats.linearSolve.logLinearSolve(last_linear_solve_status_ == NOX::Abstract::Group::Ok,
+                                   last_linear_solve_num_iters_,
+                                   last_linear_solve_achieved_tol_,
+                                   0.0,
+                                   0.0);
+}
 
 void NOX::Thyra::Group::print() const
 {
@@ -772,6 +807,7 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 
     p.sublist("Output").set("Last Iteration Count",current_iters);
     p.sublist("Output").set("Cumulative Iteration Count",cumulative_iters + current_iters);
+    last_linear_solve_num_iters_ = current_iters;
   }
 
   this->unscaleResidualAndJacobian();
@@ -784,20 +820,20 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 
   }
 
-  // ToDo: Get the output statistics and achieved tolerance to pass
-  // back ...
+  last_linear_solve_achieved_tol_ = solve_status.achievedTol;
 
+  last_linear_solve_status_ = NOX::Abstract::Group::Failed;
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
-    return NOX::Abstract::Group::Ok;
+    last_linear_solve_status_ = NOX::Abstract::Group::Ok;
   else if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_UNCONVERGED)
-    return NOX::Abstract::Group::NotConverged;
+    last_linear_solve_status_ = NOX::Abstract::Group::NotConverged;
 
-  return NOX::Abstract::Group::Failed;
+  return last_linear_solve_status_;
 }
 
 NOX::Abstract::Group::ReturnType
-NOX::Thyra::Group::applyRightPreconditioning(bool useTranspose,
-                         Teuchos::ParameterList& params,
+NOX::Thyra::Group::applyRightPreconditioning(bool /* useTranspose */,
+                         Teuchos::ParameterList& /* params */,
                          const NOX::Abstract::Vector& input,
                          NOX::Abstract::Vector& result) const
 {
@@ -880,7 +916,16 @@ void NOX::Thyra::Group::updateLOWS() const
   {
     NOX_FUNC_TIME_MONITOR("NOX Total Preconditioner Construction");
 
-    if (nonnull(prec_factory_)) {
+    if (nonnull(prec_) && (!updatePreconditioner_)) {
+      // Use the preconditioner. If the matrix values need to be
+      // updated, it must be handled by user manually
+      ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
+                          lop_,
+                          prec_,
+                          shared_jacobian_->getObject(this).ptr());
+    }
+    else if (nonnull(prec_factory_)) {
+      // Automatically update using the user supplied prec factory
       prec_factory_->initializePrec(losb_, prec_.get());
 
       ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
@@ -889,6 +934,7 @@ void NOX::Thyra::Group::updateLOWS() const
                           shared_jacobian_->getObject(this).ptr());
     }
     else if ( nonnull(prec_) && (out_args_.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
+      // Automatically update using the ModelEvaluator
       in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
       out_args_.set_W_prec(prec_);
       model_->evalModel(in_args_, out_args_);
@@ -902,6 +948,7 @@ void NOX::Thyra::Group::updateLOWS() const
 
     }
     else {
+      // No preconditioner
       ::Thyra::initializeOp<double>(*lows_factory_,
                     lop_,
                     shared_jacobian_->getObject(this).ptr());

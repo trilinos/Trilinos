@@ -65,8 +65,8 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   typename y_vector_type::HostMirror h_y = Kokkos::create_mirror_view(y);
   typename x_vector_type::HostMirror h_x = Kokkos::create_mirror_view(x);
 
-  KokkosKernels::Impl::safe_device_to_host_deep_copy (x.dimension_0(), x, h_x);
-  KokkosKernels::Impl::safe_device_to_host_deep_copy (y.dimension_0(), y, h_y);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy (x.extent(0), x, h_x);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy (y.extent(0), y, h_y);
   Kokkos::fence();
 
 
@@ -82,7 +82,7 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
     }
     h_y(i) = beta * h_y(i) + alpha * result;
   }
-  KokkosKernels::Impl::safe_host_to_device_deep_copy (y.dimension_0(),  h_y, y);
+  KokkosKernels::Impl::safe_host_to_device_deep_copy (y.extent(0),  h_y, y);
   Kokkos::fence();
 }
 
@@ -108,11 +108,11 @@ void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   //KokkosKernels::Impl::print_1Dview(y);
   typedef Kokkos::Details::ArithTraits<typename y_vector_type::non_const_value_type> AT;
   int num_errors = 0;
-  Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv"
+  Kokkos::parallel_reduce("KokkosSparse::Test::spmv"
                          ,my_exec_space(0, y.extent(0))
                          ,fSPMV<y_vector_type, y_vector_type, y_vector_type>(expected_y,y,eps)
                          ,num_errors);
-  if(num_errors>0) printf("KokkosKernels::UnitTests::spmv: %i errors of %i with params: %lf %lf\n",
+  if(num_errors>0) printf("KokkosSparse::Test::spmv: %i errors of %i with params: %lf %lf\n",
       num_errors,y.extent_int(0),AT::abs(alpha),AT::abs(beta));
   EXPECT_TRUE(num_errors==0);
 }
@@ -146,11 +146,11 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
 
     auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), i);
     int num_errors = 0;
-    Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_mv"
+    Kokkos::parallel_reduce("KokkosSparse::Test::spmv_mv"
                            ,my_exec_space(0,y_i.extent(0))
                            ,fSPMV<decltype(y_i), decltype(y_spmv), y_vector_type>(y_i, y_spmv, eps)
                            ,num_errors);
-    if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_mv: %i errors of %i for mv %i\n",
+    if(num_errors>0) printf("KokkosSparse::Test::spmv_mv: %i errors of %i for mv %i\n",
         num_errors,y_i.extent_int(0),i);
     EXPECT_TRUE(num_errors==0);
   }

@@ -31,7 +31,7 @@ namespace Tacho {
                       "A does not have Kokkos::LayoutLeft.");
         int r_val = 0;      
         
-        const ordinal_type m = A.dimension_0();
+        const ordinal_type m = A.extent(0);
         if (m > 0) {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )

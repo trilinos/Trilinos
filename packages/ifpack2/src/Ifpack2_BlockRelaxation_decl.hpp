@@ -209,6 +209,10 @@ public:
   */
   void setParameters(const Teuchos::ParameterList& params);
 
+  //! Return a list of all the parameters that this class accepts.
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters () const;
+
   //! Initialize
   void initialize();
 

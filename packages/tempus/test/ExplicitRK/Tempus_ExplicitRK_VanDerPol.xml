@@ -1,0 +1,180 @@
+<ParameterList name="ExplicitRK_VanDerPol">
+    <ParameterList name="VanDerPolModel">
+        <Parameter name="Accept model parameters"    type="bool" value="false"/>
+        <Parameter name="Provide nominal values"     type="bool" value="true"/>
+        <Parameter name="Coeff epsilon" type="double" value="0.1"/>
+        <Parameter name="IC x0"   type="double" value="2.0"/>
+        <Parameter name="IC x1"   type="double" value="-0.6654321"/>
+        <Parameter name="IC t0"   type="double" value="0.0"/>
+    </ParameterList>
+    <ParameterList name="Tempus">
+        <Parameter name="Integrator Name" type="string" value="Embedded Integrator"/>
+
+        <ParameterList name="Demo_Integrator">
+            <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
+            <Parameter name="Screen Output Index List"     type="string" value="1"/>
+            <Parameter name="Screen Output Index Interval" type="int"   value="1000"/>
+            <Parameter name="Stepper Name"       type="string" value="Bogacki Shampine Stepper"/>
+            <ParameterList name="Solution History">
+                <Parameter name="Storage Type"  type="string" value="Unlimited"/>
+                <Parameter name="Storage Limit" type="int"    value="20"/>
+            </ParameterList>
+            <ParameterList name="Time Step Control">
+                <Parameter name="Initial Time"           type="double" value="0.0"/>
+                <Parameter name="Final Time"             type="double" value="2.0"/>
+                <!--<Parameter name="Initial Time Step"      type="double" value="0.0001"/>-->
+                <!--<Parameter name="Initial Time Index"     type="int"    value="0"/>-->
+                <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
+                <Parameter name="Number of Time Steps" type="int" value="100"/>
+            </ParameterList>
+        </ParameterList>
+
+
+        <ParameterList name="Embedded_Integrator">
+            <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
+            <Parameter name="Screen Output Index List"     type="string" value="1"/>
+            <Parameter name="Screen Output Index Interval" type="int"   value="1000"/>
+            <Parameter name="Stepper Name"       type="string" value="Bogacki Shampine Stepper"/>
+            <ParameterList name="Solution History">
+                <Parameter name="Storage Type"  type="string" value="Unlimited"/>
+                <Parameter name="Storage Limit" type="int"    value="20"/>
+            </ParameterList>
+            <ParameterList name="Time Step Control">
+                <Parameter name="Initial Time"           type="double" value="0.0"/>
+                <Parameter name="Final Time"             type="double" value="2.0"/>
+                <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
+                <Parameter name="Number of Time Steps" type="int" value="100"/>
+            </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="General_Embedded_Integrator">
+            <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
+            <Parameter name="Screen Output Index List"     type="string" value="1"/>
+            <Parameter name="Screen Output Index Interval" type="int"   value="1000"/>
+            <Parameter name="Stepper Name"       type="string" value="General ERK Embedded"/>
+            <ParameterList name="Solution History">
+                <Parameter name="Storage Type"  type="string" value="Unlimited"/>
+                <Parameter name="Storage Limit" type="int"    value="20"/>
+            </ParameterList>
+            <ParameterList name="Time Step Control">
+                <Parameter name="Initial Time"           type="double" value="0.0"/>
+                <Parameter name="Final Time"             type="double" value="2.0"/>
+                <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
+                <Parameter name="Number of Time Steps" type="int" value="100"/>
+            </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="Embedded_Integrator_PID">
+            <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
+            <Parameter name="Screen Output Index List"     type="string" value="1"/>
+            <Parameter name="Screen Output Index Interval" type="int"   value="1000"/>
+            <Parameter name="Stepper Name"       type="string" value="Bogacki Shampine Stepper Embedded"/>
+            <ParameterList name="Solution History">
+                <Parameter name="Storage Type"  type="string" value="Unlimited"/>
+                <Parameter name="Storage Limit" type="int"    value="20"/>
+            </ParameterList>
+            <ParameterList name="Time Step Control">
+                <Parameter name="Initial Time"           type="double" value="0.0"/>
+                <Parameter name="Final Time"             type="double" value="2.0"/>
+                <Parameter name="Initial Time Step"      type="double" value="1e-1"/>
+                <Parameter name="Initial Time Index"     type="int"    value="0"/>
+                <Parameter name="Final Time Index"       type="int"    value="1000000"/>
+                <Parameter name="Maximum Absolute Error" type="double" value="1.0e-3"/>
+                <Parameter name="Maximum Relative Error" type="double" value="1.0e-3"/>
+                <Parameter name="Output Index Interval"  type="int"    value="1"/>
+                <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
+                <Parameter name="Maximum Number of Stepper Failures" type="int" value="12"/>
+                <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
+                <ParameterList name="Time Step Control Strategy">
+                    <Parameter name="Time Step Control Strategy List" type="string" value="pid"/>
+                    <ParameterList name="pid">
+                        <Parameter name="Name" type="string" value="Integral Controller"/>
+                    </ParameterList>
+                </ParameterList>
+            </ParameterList>
+         </ParameterList>
+
+        <ParameterList name="Embedded_Integrator_PID_General">
+            <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
+            <Parameter name="Screen Output Index List"     type="string" value="1"/>
+            <Parameter name="Screen Output Index Interval" type="int"   value="1000"/>
+            <Parameter name="Stepper Name"       type="string" value="General ERK Bogacki Shampine Stepper Embedded"/>
+            <ParameterList name="Solution History">
+                <Parameter name="Storage Type"  type="string" value="Unlimited"/>
+                <Parameter name="Storage Limit" type="int"    value="20"/>
+            </ParameterList>
+            <ParameterList name="Time Step Control">
+                <Parameter name="Initial Time"           type="double" value="0.0"/>
+                <Parameter name="Final Time"             type="double" value="2.0"/>
+                <Parameter name="Initial Time Step"      type="double" value="1e-1"/>
+                <Parameter name="Initial Time Index"     type="int"    value="0"/>
+                <Parameter name="Final Time Index"       type="int"    value="1000000"/>
+                <Parameter name="Maximum Absolute Error" type="double" value="1.0e-3"/>
+                <Parameter name="Maximum Relative Error" type="double" value="1.0e-3"/>
+                <Parameter name="Output Index Interval"  type="int"    value="1"/>
+                <Parameter name="Integrator Step Type"   type="string" value="Variable"/>
+                <Parameter name="Output Exactly On Output Times"  type="bool" value="false"/>
+                <Parameter name="Output Time List"       type="string" value="0.12"/>
+                <Parameter name="Maximum Number of Stepper Failures" type="int" value="12"/>
+                <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
+                <ParameterList name="Time Step Control Strategy">
+                    <Parameter name="Time Step Control Strategy List" type="string" value="pid"/>
+                    <ParameterList name="pid">
+                        <Parameter name="Name" type="string" value="Integral Controller"/>
+                    </ParameterList>
+                </ParameterList>
+            </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="Bogacki Shampine Stepper">
+            <Parameter name="Stepper Type" type="string" value="Bogacki-Shampine 3(2) Pair"/>
+            <Parameter name="Use FSAL"       type="bool" value="true"/>
+            <Parameter name="Use Embedded" type="bool" value="false"/>
+        </ParameterList>
+
+        <ParameterList name="Bogacki Shampine Stepper Embedded">
+            <Parameter name="Stepper Type" type="string" value="Bogacki-Shampine 3(2) Pair"/>
+            <Parameter name="Use Embedded" type="bool" value="true"/>
+        </ParameterList>
+
+        <ParameterList name="General ERK Bogacki Shampine Stepper Embedded">
+            <Parameter name="Use Embedded" type="bool" value="true"/>
+            <Parameter name="Stepper Type" type="string" value="General ERK"/>
+            <ParameterList name="Tableau">
+                <Parameter name="A" type="string"
+                    value="0.000000000000000 0.000000000000000 0.000000000000000 0.000000000000000;
+                           0.500000000000000 0.000000000000000 0.000000000000000 0.000000000000000;
+                           0.000000000000000 0.750000000000000 0.000000000000000 0.000000000000000;
+                           0.222222222222222 0.333333333333333 0.444444444444444 0.000000000000000"/>
+                <Parameter name="b" type="string"
+                    value="0.222222222222222 0.333333333333333 0.444444444444444 0.000000000000000"/>
+                <Parameter name="c" type="string"
+                    value="0.000000000000000 0.333333333333333 0.666666666666666 1.000000000000000"/>
+                <Parameter name="bstar" type="string"
+                    value="0.29166666666 0.250000000000000 0.333333333333333 0.125000000000000"/>
+                <Parameter name="order" type="int" value="3"/>
+            </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="General ERK Embedded">
+            <Parameter name="Use Embedded" type="bool" value="false"/>
+            <Parameter name="Stepper Type" type="string" value="General ERK"/>
+            <ParameterList name="Tableau">
+                <Parameter name="A" type="string"
+                    value="0.0 0.0 0.0 0.0;
+                           0.5 0.0 0.0 0.0;
+                           0.0 0.75 0.0 0.0;
+                           0.222222222222222 0.333333333333333 0.444444444444444 0.0"/>
+                <Parameter name="b" type="string"
+                    value="0.222222222222222 0.333333333333333 0.444444444444444 0.0"/>
+                <Parameter name="c" type="string"
+                    value="0.0 0.333333333333333 0.666666666666666 1.0"/>
+                <Parameter name="bstar" type="string"
+                    value="0.29166666666 0.25 0.333333333333333 0.125"/>
+                <Parameter name="order" type="int" value="3"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+
+</ParameterList>

@@ -53,14 +53,14 @@ void GameofLifeMesh::declare_fields()
 void GameofLifeMesh::put_fields_on_parts()
 {
     int val = 0;
-    stk::mesh::put_field(*m_lifeField, m_metaData.universal_part(), &val);
-    stk::mesh::put_field(*m_activeNeighborField, m_metaData.universal_part(), &val);
+    stk::mesh::put_field_on_mesh(*m_lifeField, m_metaData.universal_part(), &val);
+    stk::mesh::put_field_on_mesh(*m_activeNeighborField, m_metaData.universal_part(), &val);
 
     double factor = 1.0;
-    stk::mesh::put_field(*m_distFactors, *m_nodeset1, &factor);
-    stk::mesh::put_field(*m_distFactors, *m_nodeset2, &factor);
-    stk::mesh::put_field(*m_distFactors, *m_nodeset3, &factor);
-    stk::mesh::put_field(*m_distFactors, *m_nodeset4, &factor);
+    stk::mesh::put_field_on_mesh(*m_distFactors, *m_nodeset1, &factor);
+    stk::mesh::put_field_on_mesh(*m_distFactors, *m_nodeset2, &factor);
+    stk::mesh::put_field_on_mesh(*m_distFactors, *m_nodeset3, &factor);
+    stk::mesh::put_field_on_mesh(*m_distFactors, *m_nodeset4, &factor);
 }
 void GameofLifeMesh::declare_parts()
 {
@@ -132,7 +132,7 @@ void TwoDimGameofLifeMesh::declare_coordinate_field()
 {
     m_nodeCoords = &meta_data().declare_field<stk::mesh::Field<double,stk::mesh::Cartesian2d>>(
             stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(*m_nodeCoords, meta_data().universal_part(), 2);
+    stk::mesh::put_field_on_mesh(*m_nodeCoords, meta_data().universal_part(), 2, nullptr);
 }
 bool TwoDimGameofLifeMesh::only_one_active_proc()
 {
@@ -184,7 +184,7 @@ void TwoDimGameofLifeMesh::share_node_with_this_id_to_this_processor(unsigned no
 TriGameofLifeMesh::TriGameofLifeMesh(stk::ParallelMachine comm, unsigned width,
                                          unsigned height,
                                          stk::mesh::BulkData::AutomaticAuraOption auraOption)
-:TwoDimGameofLifeMesh(comm, stk::topology::TRIANGLE_3, width, height, auraOption)
+:TwoDimGameofLifeMesh(comm, stk::topology::TRI_3_2D, width, height, auraOption)
 {
     m_elemsPerRow = 2*m_width;
     m_elemProcOffset = m_procRank*m_elemsPerRow*m_rowsPerProc;
@@ -240,7 +240,7 @@ void TriGameofLifeMesh::declare_node_ids_of_this_element(unsigned index)
 //Quad Game of Life Mesh
 QuadGameofLifeMesh::QuadGameofLifeMesh(stk::ParallelMachine comm, unsigned width, unsigned height,
                                  stk::mesh::BulkData::AutomaticAuraOption auraOption)
-:TwoDimGameofLifeMesh(comm, stk::topology::QUAD_4, width, height, auraOption)
+:TwoDimGameofLifeMesh(comm, stk::topology::QUAD_4_2D, width, height, auraOption)
 {
     m_elemsPerRow = m_width;
     if (m_numProcs - 1 == m_procRank)
@@ -302,7 +302,7 @@ void ThreeDimGameofLifeMesh::declare_coordinate_field()
 {
     m_nodeCoords = &meta_data().declare_field<stk::mesh::Field<double,stk::mesh::Cartesian>>(
             stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(*m_nodeCoords, meta_data().universal_part(), 3);
+    stk::mesh::put_field_on_mesh(*m_nodeCoords, meta_data().universal_part(), 3, nullptr);
 }
 bool ThreeDimGameofLifeMesh::only_one_active_proc()
 {

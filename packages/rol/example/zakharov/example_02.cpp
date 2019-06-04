@@ -54,9 +54,8 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 typedef double RealT;
 
@@ -71,13 +70,7 @@ int main(int argc, char *argv[]) {
   GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
-  oblackholestream bhs; // outputs nothing
-  if (iprint > 0)
-    outStream = rcp(&std::cout, false);
-  else
-    outStream = rcp(&bhs, false);
+  auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
 
   int errorFlag  = 0;
 
@@ -87,23 +80,22 @@ int main(int argc, char *argv[]) {
 
     int dim = 10; // Set problem dimension. 
 
-    RCP<ParameterList> parlist = rcp(new ParameterList());
     std::string paramfile = "parameters.xml";
-    updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile( paramfile );
 
-    RCP<vector> x_rcp = rcp( new vector(dim, 1.0) );
-    RCP<vector> k_rcp = rcp( new vector(dim, 0.0) );
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 1.0);
+    ROL::Ptr<vector> k_ptr = ROL::makePtr<vector>(dim, 0.0);
 
-    RCP<V> x = rcp( new SV(x_rcp) );  // Optimization vector
-    RCP<V> k = rcp( new SV(k_rcp) );  // Vector appearing in Zakharov objective
+    ROL::Ptr<V> x = ROL::makePtr<SV>(x_ptr);  // Optimization vector
+    ROL::Ptr<V> k = ROL::makePtr<SV>(k_ptr);  // Vector appearing in Zakharov objective
 
-    RCP<V> s = x->clone();            // Step vector
+    ROL::Ptr<V> s = x->clone();            // Step vector
 
     for( int i=0; i<dim; ++i ) {
-      (*k_rcp)[i] = i+1.0;
+      (*k_ptr)[i] = i+1.0;
     }
     
-    RCP<ROL::Objective<RealT> > obj = rcp(new ROL::ZOO::Objective_Zakharov<RealT>(k) );
+    ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ROL::ZOO::Objective_Zakharov<RealT>>(k);
     
     ROL::OptimizationProblem<RealT> opt(obj,x);
     ROL::AlgorithmState<RealT> state;

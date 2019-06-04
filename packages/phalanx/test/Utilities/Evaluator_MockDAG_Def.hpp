@@ -46,8 +46,8 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 
-struct CELL;
-struct BASIS;
+class CELL;
+class BASIS;
 
 namespace PHX {
 
@@ -60,7 +60,7 @@ namespace PHX {
   }
 
   template<typename EvalT,typename Traits>
-  void MockDAG<EvalT,Traits>::evaluateFields(typename Traits::EvalData d){}
+  void MockDAG<EvalT,Traits>::evaluateFields(typename Traits::EvalData /* d */){}
 
   template<typename EvalT,typename Traits>
   void MockDAG<EvalT,Traits>::evaluates(const std::string& n)

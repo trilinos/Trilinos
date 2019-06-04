@@ -127,9 +127,26 @@ namespace MueLu {
       return rcp(new Hierarchy());
     }
 
+    virtual RCP<Hierarchy> CreateHierarchy(const std::string& label) const {
+      return rcp(new Hierarchy(label));
+    }
+
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy& H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
+
+      RCP<Level>    l0 = H.GetLevel(0);
+      RCP<Operator> Op = l0->Get<RCP<Operator> >("A");
+      // Check that user-supplied nullspace dimension is at least as large as NumPDEs
+      if (l0->IsAvailable("Nullspace")) {
+        RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(Op);
+        if (A != Teuchos::null) {
+          Teuchos::RCP<MultiVector> nullspace = l0->Get<RCP<MultiVector> >("Nullspace");
+          TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(A->GetFixedBlockSize()) > nullspace->getNumVectors(), Exceptions::RuntimeError, "user-provided nullspace has fewer vectors (" << nullspace->getNumVectors() << ") than number of PDE equations (" << A->GetFixedBlockSize() << ")");
+        } else {
+          this->GetOStream(Warnings0) << "Skipping dimension check of user-supplied nullspace because user-supplied operator is not a matrix" << std::endl;
+        }
+      }
 
 #ifdef HAVE_MUELU_DEBUG
       // Reset factories' data used for debugging
@@ -140,8 +157,6 @@ namespace MueLu {
 
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
-      RCP<Level>    l0 = H.GetLevel(0);
-      RCP<Operator> Op = l0->Get<RCP<Operator> >("A");
 
       Xpetra::UnderlyingLib lib = Op->getDomainMap()->lib();
       H.setlib(lib);
@@ -226,10 +241,9 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
-
-      RCP<Teuchos::FancyOStream> fos = this->getOStream();
-      fos->setOutputToRootOnly(0);
-      H.describe(*fos, verbosity_);
+      // FIXME: Should allow specification of NumVectors on parameterlist
+      H.AllocateLevelMultiVectors(1);
+      H.describe(H.GetOStream(Runtime0), verbosity_);
 
       // When we reuse hierarchy, it is necessary that we don't
       // change the number of levels. We also cannot make requests
@@ -262,11 +276,11 @@ namespace MueLu {
   protected: //TODO: access function
 
     //! Setup Matrix object
-    virtual void SetupOperator(Operator& Op) const { }
+    virtual void SetupOperator(Operator& /* Op */) const { }
 
     //! Setup extra data
     // TODO: merge with SetupMatrix ?
-    virtual void SetupExtra(Hierarchy& H) const { }
+    virtual void SetupExtra(Hierarchy& /* H */) const { }
 
     // TODO this was private
     // Used in SetupHierarchy() to access levelManagers_
@@ -324,9 +338,9 @@ namespace MueLu {
 
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
-          if (data[i] < levelManagers_.size() && L->IsAvailable(name,&*levelManagers_[i]->GetFactory(name))) {
+          if (data[i] < levelManagers_.size() && L->IsAvailable(name,&*levelManagers_[data[i]]->GetFactory(name))) {
 	    // Try generating factory
-            RCP<T> M = L->template Get< RCP<T> >(name,&*levelManagers_[i]->GetFactory(name));
+            RCP<T> M = L->template Get< RCP<T> >(name,&*levelManagers_[data[i]]->GetFactory(name));
             if (!M.is_null()) {
               Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
             }
@@ -372,11 +386,11 @@ namespace MueLu {
       typedef Node NO;
       typedef Xpetra::MultiVector<GO,LO,GO,NO> GOMultiVector;
 
-      size_t num_els = (size_t) fcont.dimension(0);
-      size_t num_vecs =(size_t) fcont.dimension(1);
+      size_t num_els = (size_t) fcont.extent(0);
+      size_t num_vecs =(size_t) fcont.extent(1);
 
       // Generate rowMap
-      Teuchos::RCP<const Map> rowMap = Xpetra::MapFactory<LO,GO,NO>::Build(colMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),fcont.dimension(0),colMap.getIndexBase(),colMap.getComm());
+      Teuchos::RCP<const Map> rowMap = Xpetra::MapFactory<LO,GO,NO>::Build(colMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),fcont.extent(0),colMap.getIndexBase(),colMap.getComm());
 
       // Fill multivector to use *petra dump routines
       RCP<GOMultiVector> vec = Xpetra::MultiVectorFactory<GO, LO, GO, NO>::Build(rowMap,num_vecs);

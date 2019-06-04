@@ -45,6 +45,7 @@
 #include "TpetraCore_config.h"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_createMirrorView.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
@@ -52,6 +53,8 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include <memory>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 
 /// \file Tpetra_Details_packCrsMatrix.hpp
@@ -89,6 +92,7 @@ class Distributor;
 //
 namespace Details {
 
+namespace PackCrsMatrixImpl {
 /// \brief Compute the number of packets and offsets for the pack procedure
 ///
 /// \tparam OutputOffsetsViewType the type of the output offsets view
@@ -162,20 +166,20 @@ public:
     error_ ("error") // don't forget this, or you'll get segfaults!
   {
     if (debug) {
-      const size_t numRowsToPack = static_cast<size_t> (lclRowInds_.dimension_0 ());
+      const size_t numRowsToPack = static_cast<size_t> (lclRowInds_.extent (0));
 
-      if (numRowsToPack != static_cast<size_t> (counts_.dimension_0 ())) {
+      if (numRowsToPack != static_cast<size_t> (counts_.extent (0))) {
         std::ostringstream os;
-        os << "lclRowInds.dimension_0() = " << numRowsToPack
-           << " != counts.dimension_0() = " << counts_.dimension_0 ()
+        os << "lclRowInds.extent(0) = " << numRowsToPack
+           << " != counts.extent(0) = " << counts_.extent (0)
            << ".";
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str ());
       }
       if (static_cast<size_t> (numRowsToPack + 1) !=
-          static_cast<size_t> (outputOffsets_.dimension_0 ())) {
+          static_cast<size_t> (outputOffsets_.extent (0))) {
         std::ostringstream os;
-        os << "lclRowInds.dimension_0() + 1 = " << (numRowsToPack + 1)
-           << " != outputOffsets.dimension_0() = " << outputOffsets_.dimension_0 ()
+        os << "lclRowInds.extent(0) + 1 = " << (numRowsToPack + 1)
+           << " != outputOffsets.extent(0) = " << outputOffsets_.extent (0)
            << ".";
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str ());
       }
@@ -196,7 +200,7 @@ public:
 
     if (final) {
       if (debug) {
-        if (curInd >= static_cast<local_row_index_type> (outputOffsets_.dimension_0 ())) {
+        if (curInd >= static_cast<local_row_index_type> (outputOffsets_.extent (0))) {
           error_ () = 2;
           return;
         }
@@ -204,9 +208,9 @@ public:
       outputOffsets_(curInd) = update;
     }
 
-    if (curInd < static_cast<local_row_index_type> (counts_.dimension_0 ())) {
+    if (curInd < static_cast<local_row_index_type> (counts_.extent (0))) {
       const auto lclRow = lclRowInds_(curInd);
-      if (static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (rowOffsets_.dimension_0 ()) ||
+      if (static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (rowOffsets_.extent (0)) ||
           static_cast<local_row_index_type> (lclRow) < static_cast<local_row_index_type> (0)) {
         error_ () = 3;
         return;
@@ -296,28 +300,28 @@ computeNumPacketsAndOffsets (const OutputOffsetsViewType& outputOffsets,
   const char prefix[] = "computeNumPacketsAndOffsets: ";
 
   count_type count = 0;
-  const count_type numRowsToPack = lclRowInds.dimension_0 ();
+  const count_type numRowsToPack = lclRowInds.extent (0);
 
   if (numRowsToPack == 0) {
     return count;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION
-      (rowOffsets.dimension_0 () <= static_cast<size_type> (1),
+      (rowOffsets.extent (0) <= static_cast<size_type> (1),
        std::invalid_argument, prefix << "There is at least one row to pack, "
-       "but the matrix has no rows.  lclRowInds.dimension_0() = " <<
-       numRowsToPack << ", but rowOffsets.dimension_0() = " <<
-       rowOffsets.dimension_0 () << " <= 1.");
+       "but the matrix has no rows.  lclRowInds.extent(0) = " <<
+       numRowsToPack << ", but rowOffsets.extent(0) = " <<
+       rowOffsets.extent (0) << " <= 1.");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (outputOffsets.dimension_0 () !=
+      (outputOffsets.extent (0) !=
        static_cast<size_type> (numRowsToPack + 1), std::invalid_argument,
        prefix << "Output dimension does not match number of rows to pack.  "
-       << "outputOffsets.dimension_0() = " << outputOffsets.dimension_0 ()
-       << " != lclRowInds.dimension_0() + 1 = "
+       << "outputOffsets.extent(0) = " << outputOffsets.extent (0)
+       << " != lclRowInds.extent(0) + 1 = "
        << static_cast<size_type> (numRowsToPack + 1) << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (counts.dimension_0 () != numRowsToPack, std::invalid_argument,
-       prefix << "counts.dimension_0() = " << counts.dimension_0 ()
+      (counts.extent (0) != numRowsToPack, std::invalid_argument,
+       prefix << "counts.extent(0) = " << counts.extent (0)
        << " != numRowsToPack = " << numRowsToPack << ".");
 
     functor_type f (outputOffsets, counts, rowOffsets,
@@ -493,7 +497,7 @@ struct PackCrsMatrixFunctor {
     num_packets_per_lid_view_type;
   typedef Kokkos::View<const size_t*, BufferDeviceType> offsets_view_type;
   typedef Kokkos::View<char*, BufferDeviceType> exports_view_type;
-  typedef typename PackTraits<LO, DT>::input_array_type
+  typedef typename PackTraits<LO, BufferDeviceType>::input_array_type
     export_lids_view_type;
   typedef typename PackTraits<int, DT>::input_array_type
     source_pids_view_type;
@@ -539,10 +543,10 @@ struct PackCrsMatrixFunctor {
   {
     const LO numRows = local_matrix_in.numRows ();
     const LO rowMapDim =
-      static_cast<LO> (local_matrix.graph.row_map.dimension_0 ());
+      static_cast<LO> (local_matrix.graph.row_map.extent (0));
     TEUCHOS_TEST_FOR_EXCEPTION
       (numRows != 0 && rowMapDim != numRows + static_cast<LO> (1),
-       std::logic_error, "local_matrix.graph.row_map.dimension_0() = "
+       std::logic_error, "local_matrix.graph.row_map.extent(0) = "
        << rowMapDim << " != numRows (= " << numRows << " ) + 1.");
   }
 
@@ -644,7 +648,7 @@ do_pack (const LocalMatrix& local_matrix,
            >::input_array_type& num_packets_per_lid,
          const typename PackTraits<
              typename LocalMap::local_ordinal_type,
-             typename LocalMatrix::device_type
+             BufferDeviceType
            >::input_array_type& export_lids,
          const typename PackTraits<
              int,
@@ -659,27 +663,27 @@ do_pack (const LocalMatrix& local_matrix,
   typedef Kokkos::RangePolicy<typename DT::execution_space, LO> range_type;
   const char prefix[] = "Tpetra::Details::do_pack: ";
 
-  if (export_lids.dimension_0 () != 0) {
+  if (export_lids.extent (0) != 0) {
     TEUCHOS_TEST_FOR_EXCEPTION
-      (static_cast<size_t> (offsets.dimension_0 ()) !=
-       static_cast<size_t> (export_lids.dimension_0 () + 1),
-       std::invalid_argument, prefix << "offsets.dimension_0() = "
-       << offsets.dimension_0 () << " != export_lids.dimension_0() (= "
-       << export_lids.dimension_0 () << ") + 1.");
+      (static_cast<size_t> (offsets.extent (0)) !=
+       static_cast<size_t> (export_lids.extent (0) + 1),
+       std::invalid_argument, prefix << "offsets.extent(0) = "
+       << offsets.extent (0) << " != export_lids.extent(0) (= "
+       << export_lids.extent (0) << ") + 1.");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (export_lids.dimension_0 () != num_packets_per_lid.dimension_0 (),
-       std::invalid_argument, prefix << "export_lids.dimension_0() = " <<
-       export_lids.dimension_0 () << " != num_packets_per_lid.dimension_0() = "
-       << num_packets_per_lid.dimension_0 () << ".");
+      (export_lids.extent (0) != num_packets_per_lid.extent (0),
+       std::invalid_argument, prefix << "export_lids.extent(0) = " <<
+       export_lids.extent (0) << " != num_packets_per_lid.extent(0) = "
+       << num_packets_per_lid.extent (0) << ".");
     // If exports has nonzero length at this point, then the matrix
     // has at least one entry to pack.  Thus, if packing process
     // ranks, we had better have at least one process rank to pack.
     TEUCHOS_TEST_FOR_EXCEPTION
-      (pack_pids && exports.dimension_0 () != 0 &&
-       source_pids.dimension_0 () == 0, std::invalid_argument, prefix <<
-       "pack_pids is true, and exports.dimension_0() = " <<
-       exports.dimension_0 ()  << " != 0, meaning that we need to pack at "
-       "least one matrix entry, but source_pids.dimension_0() = 0.");
+      (pack_pids && exports.extent (0) != 0 &&
+       source_pids.extent (0) == 0, std::invalid_argument, prefix <<
+       "pack_pids is true, and exports.extent(0) = " <<
+       exports.extent (0)  << " != 0, meaning that we need to pack at "
+       "least one matrix entry, but source_pids.extent(0) = 0.");
   }
 
   typedef PackCrsMatrixFunctor<LocalMatrix, LocalMap,
@@ -690,7 +694,7 @@ do_pack (const LocalMatrix& local_matrix,
                        pack_pids);
 
   typename pack_functor_type::value_type result;
-  range_type range (0, num_packets_per_lid.dimension_0 ());
+  range_type range (0, num_packets_per_lid.extent (0));
   Kokkos::parallel_reduce (range, f, result);
 
   if (result.first != 0) {
@@ -755,20 +759,20 @@ do_pack (const LocalMatrix& local_matrix,
 ///   (i.e., a possibly different number of entries per row).
 template<typename ST, typename LO, typename GO, typename NT, typename BufferDeviceType>
 void
-packCrsMatrixImpl (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                   Kokkos::DualView<char*, BufferDeviceType>& exports,
-                   const Kokkos::View<size_t*, BufferDeviceType>& num_packets_per_lid,
-                   const Kokkos::View<const LO*, typename NT::device_type>& export_lids,
-                   const Kokkos::View<const int*, typename NT::device_type>& export_pids,
-                   size_t& constant_num_packets,
-                   const bool pack_pids,
-                   Distributor& /* dist */)
+packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+               Kokkos::DualView<char*, BufferDeviceType>& exports,
+               const Kokkos::View<size_t*, BufferDeviceType>& num_packets_per_lid,
+               const Kokkos::View<const LO*, BufferDeviceType>& export_lids,
+               const Kokkos::View<const int*, typename NT::device_type>& export_pids,
+               size_t& constant_num_packets,
+               const bool pack_pids,
+               Distributor& /* dist */)
 {
   using Kokkos::View;
   typedef BufferDeviceType DT;
   typedef typename DT::execution_space execution_space;
   typedef Kokkos::DualView<char*, BufferDeviceType> exports_view_type;
-  const char prefix[] = "Tpetra::Details::packCrsMatrixImpl: ";
+  const char prefix[] = "Tpetra::Details::PackCrsMatrixImpl::packCrsMatrix: ";
   constexpr bool debug = false;
 
   auto local_matrix = sourceMatrix.getLocalMatrix ();
@@ -780,19 +784,19 @@ packCrsMatrixImpl (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   constant_num_packets = 0;
 
   const size_t num_export_lids =
-    static_cast<size_t> (export_lids.dimension_0 ());
+    static_cast<size_t> (export_lids.extent (0));
   TEUCHOS_TEST_FOR_EXCEPTION
     (num_export_lids !=
-     static_cast<size_t> (num_packets_per_lid.dimension_0 ()),
-     std::invalid_argument, prefix << "num_export_lids.dimension_0() = "
-     << num_export_lids << " != num_packets_per_lid.dimension_0() = "
-     << num_packets_per_lid.dimension_0 () << ".");
+     static_cast<size_t> (num_packets_per_lid.extent (0)),
+     std::invalid_argument, prefix << "num_export_lids.extent(0) = "
+     << num_export_lids << " != num_packets_per_lid.extent(0) = "
+     << num_packets_per_lid.extent (0) << ".");
   if (num_export_lids != 0) {
     TEUCHOS_TEST_FOR_EXCEPTION
-      (num_packets_per_lid.ptr_on_device () == NULL, std::invalid_argument,
+      (num_packets_per_lid.data () == NULL, std::invalid_argument,
        prefix << "num_export_lids = "<< num_export_lids << " != 0, but "
-       "num_packets_per_lid.ptr_on_device() = "
-       << num_packets_per_lid.ptr_on_device () << " == NULL.");
+       "num_packets_per_lid.data() = "
+       << num_packets_per_lid.data () << " == NULL.");
   }
 
   const size_t num_bytes_per_lid = PackTraits<LO, DT>::packValueCount (LO (0));
@@ -815,7 +819,7 @@ packCrsMatrixImpl (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     // values should be packed (though this does assume that in our
     // packing scheme, rows with zero entries take zero bytes).
     size_t num_bytes_per_value_l = 0;
-    if (local_matrix.values.dimension_0() > 0) {
+    if (local_matrix.values.extent(0) > 0) {
       const ST& val = local_matrix.values(0);
       num_bytes_per_value_l = PackTraits<ST, DT>::packValueCount (val);
     }
@@ -849,7 +853,7 @@ packCrsMatrixImpl (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                                  num_bytes_per_pid, num_bytes_per_value);
 
   // Resize the output pack buffer if needed.
-  if (count > static_cast<size_t> (exports.dimension_0 ())) {
+  if (count > static_cast<size_t> (exports.extent (0))) {
     // FIXME (26 Apr 2016) Fences around (UVM) allocations only
     // temporarily needed for #227 debugging.  Should be able to
     // remove them after that's fixed.
@@ -864,8 +868,8 @@ packCrsMatrixImpl (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   }
   if (debug) {
     std::ostringstream os;
-    os << "*** count: " << count << ", exports.dimension_0(): "
-       << exports.dimension_0 () << std::endl;
+    os << "*** count: " << count << ", exports.extent(0): "
+       << exports.extent (0) << std::endl;
     std::cerr << os.str ();
   }
 
@@ -873,20 +877,19 @@ packCrsMatrixImpl (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // at least one entry to pack.  Thus, if packing process ranks, we
   // had better have at least one process rank to pack.
   TEUCHOS_TEST_FOR_EXCEPTION
-    (pack_pids && exports.dimension_0 () != 0 &&
-     export_pids.dimension_0 () == 0, std::invalid_argument, prefix <<
-     "pack_pids is true, and exports.dimension_0() = " <<
-     exports.dimension_0 ()  << " != 0, meaning that we need to pack at least "
-     "one matrix entry, but export_pids.dimension_0() = 0.");
+    (pack_pids && exports.extent (0) != 0 &&
+     export_pids.extent (0) == 0, std::invalid_argument, prefix <<
+     "pack_pids is true, and exports.extent(0) = " <<
+     exports.extent (0)  << " != 0, meaning that we need to pack at least "
+     "one matrix entry, but export_pids.extent(0) = 0.");
 
   typedef typename std::decay<decltype (local_matrix)>::type
     local_matrix_type;
   typedef typename std::decay<decltype (local_col_map)>::type
     local_map_type;
-  typedef typename exports_view_type::t_dev dev_exports_view_type;
-  typedef typename dev_exports_view_type::memory_space buf_mem_space;
-  exports.template modify<buf_mem_space> ();
-  auto exports_d = exports.template view<buf_mem_space> ();
+
+  exports.modify_device ();
+  auto exports_d = exports.view_device ();
   do_pack<local_matrix_type, local_map_type, DT>
     (local_matrix, local_col_map, exports_d, num_packets_per_lid,
      export_lids, export_pids, offsets, num_bytes_per_value,
@@ -894,37 +897,22 @@ packCrsMatrixImpl (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // If we got this far, we succeeded.
 }
 
+} // namespace PackCrsMatrixImpl
+
 template<typename ST, typename LO, typename GO, typename NT>
 void
-packCrsMatrix (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
+packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                Teuchos::Array<char>& exports,
                const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                const Teuchos::ArrayView<const LO>& exportLIDs,
                size_t& constantNumPackets,
                Distributor& distor)
 {
-  typedef typename CrsMatrix<ST,LO,GO,NT>::local_matrix_type local_matrix_type;
-  typedef typename local_matrix_type::device_type device_type;
-  typedef typename Kokkos::View<size_t*, device_type>::HostMirror::execution_space host_exec_space;
-  typedef Kokkos::Device<host_exec_space, Kokkos::HostSpace> host_dev_type;
-
-  // mfh 23 Aug 2017: Fix for #1088 requires pack / unpack buffers to
-  // have a possibly different memory space (CudaSpace) than the
-  // default CUDA memory space (currently CudaUVMSpace).
-  typedef typename device_type::execution_space buffer_exec_space;
-#ifdef KOKKOS_HAVE_CUDA
-  typedef typename std::conditional<
-      std::is_same<
-        buffer_exec_space, Kokkos::Cuda
-      >::value,
-      Kokkos::CudaSpace,
-      typename device_type::memory_space
-    >::type buffer_memory_space;
-#else
-  typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
-  typedef Kokkos::Device<buffer_exec_space,
-    buffer_memory_space> buffer_device_type;
+  using local_matrix_type = typename CrsMatrix<ST,LO,GO,NT>::local_matrix_type;
+  using device_type = typename local_matrix_type::device_type;
+  using buffer_device_type = typename DistObject<char, LO, GO, NT>::buffer_device_type;
+  using host_exec_space = typename Kokkos::View<size_t*, device_type>::HostMirror::execution_space;
+  using host_dev_type = Kokkos::Device<host_exec_space, Kokkos::HostSpace>;
 
   // Convert all Teuchos::Array to Kokkos::View
 
@@ -936,27 +924,32 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
                                             numPacketsPerLID.getRawPtr (),
                                             numPacketsPerLID.size (), false,
                                             "num_packets_per_lid");
+  // FIXME (mfh 05 Feb 2019) We should just pass the exportLIDs
+  // DualView through here, instead of recreating a device View from a
+  // host ArrayView that itself came from a DualView.
+  //
   // This is an input array, so we have to copy to device here.
   // However, we never need to copy it back to host.
   auto export_lids_d =
-    create_mirror_view_from_raw_host_array (outputDevice,
+    create_mirror_view_from_raw_host_array (buffer_device_type (),
                                             exportLIDs.getRawPtr (),
                                             exportLIDs.size (), true,
                                             "export_lids");
+  static_assert (std::is_same<typename decltype (export_lids_d)::device_type,
+                   buffer_device_type>::value,
+                 "export_lids_d has the wrong device_type.");
+
   // Create an empty array of PIDs
   Kokkos::View<int*, device_type> export_pids_d ("export_pids", 0);
 
   Kokkos::DualView<char*, buffer_device_type> exports_dv ("exports", 0);
   constexpr bool pack_pids = false;
-  packCrsMatrixImpl<ST, LO, GO, NT, buffer_device_type> (sourceMatrix,
-                                                         exports_dv,
-                                                         num_packets_per_lid_d,
-                                                         export_lids_d,
-                                                         export_pids_d,
-                                                         constantNumPackets,
-                                                         pack_pids, distor);
-  // The counts are an output of packCrsMatrixImpl, so we have to copy
-  // them back to host.
+  PackCrsMatrixImpl::packCrsMatrix<ST, LO, GO, NT, buffer_device_type> (
+      sourceMatrix, exports_dv, num_packets_per_lid_d, export_lids_d,
+      export_pids_d, constantNumPackets, pack_pids, distor);
+
+  // The counts are an output of PackCrsMatrixImpl::packCrsMatrix, so we have to
+  // copy them back to host.
   Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h
     (numPacketsPerLID.getRawPtr (),
      numPacketsPerLID.size ());
@@ -965,11 +958,11 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
   // FIXME (mfh 23 Aug 2017) If we're forced to use a DualView for
   // exports_dv above, then we have two host copies for exports_h.
 
-  // The exports are an output of packCrsMatrixImpl, so we have to
-  // copy them back to host.
+  // The exports are an output of PackCrsMatrixImpl::packCrsMatrix, so we have
+  // to copy them back to host.
   if (static_cast<size_t> (exports.size ()) !=
-      static_cast<size_t> (exports_dv.dimension_0 ())) {
-    exports.resize (exports_dv.dimension_0 ());
+      static_cast<size_t> (exports_dv.extent (0))) {
+    exports.resize (exports_dv.extent (0));
   }
   Kokkos::View<char*, host_dev_type> exports_h (exports.getRawPtr (),
                                                 exports.size ());
@@ -978,33 +971,18 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
-packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
-                  Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& exports,
-                  const Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& numPacketsPerLID,
-                  const Kokkos::DualView<const LO*, typename NT::device_type>& exportLIDs,
+packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                  Kokkos::DualView<char*,
+                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
+                  const Kokkos::DualView<size_t*,
+                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
+                  const Kokkos::DualView<const LO*,
+                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
                   size_t& constantNumPackets,
                   Distributor& distor)
 {
-  typedef typename CrsMatrix<ST,LO,GO,NT>::local_matrix_type local_matrix_type;
-  typedef typename local_matrix_type::device_type device_type;
-
-  // mfh 23 Aug 2017: Fix for #1088 requires pack / unpack buffers to
-  // have a possibly different memory space (CudaSpace) than the
-  // default CUDA memory space (currently CudaUVMSpace).
-  typedef typename device_type::execution_space buffer_exec_space;
-#ifdef KOKKOS_HAVE_CUDA
-  typedef typename std::conditional<
-      std::is_same<
-        buffer_exec_space, Kokkos::Cuda
-      >::value,
-      Kokkos::CudaSpace,
-      typename device_type::memory_space
-    >::type buffer_memory_space;
-#else
-  typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
-  typedef Kokkos::Device<buffer_exec_space,
-    buffer_memory_space> buffer_device_type;
+  using device_type = typename CrsMatrix<ST, LO, GO, NT>::device_type;
+  using buffer_device_type = typename DistObject<char, LO, GO, NT>::buffer_device_type;
 
   // Create an empty array of PIDs, since the interface needs it.
   Kokkos::View<int*, device_type> exportPIDs_d ("exportPIDs", 0);
@@ -1012,27 +990,22 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
 
   // Write-only device access
   auto numPacketsPerLID_nc = numPacketsPerLID; // const DV& -> DV
-  numPacketsPerLID_nc.modified_host() = 0;
-  numPacketsPerLID_nc.modified_device() = 1;
-  auto numPacketsPerLID_d = numPacketsPerLID.template view<buffer_memory_space> ();
+  numPacketsPerLID_nc.clear_sync_state ();
+  numPacketsPerLID_nc.modify_device ();
+  auto numPacketsPerLID_d = numPacketsPerLID.view_device ();
 
   // Read-only device access
-  auto exportLIDs_nc = Tpetra::Details::castAwayConstDualView (exportLIDs);
-  exportLIDs_nc.template sync<typename device_type::memory_space> ();
-  auto exportLIDs_d = exportLIDs.template view<typename device_type::memory_space> ();
+  TEUCHOS_ASSERT( ! exportLIDs.need_sync_device () );
+  auto exportLIDs_d = exportLIDs.view_device ();
 
-  packCrsMatrixImpl<ST, LO, GO, NT, buffer_device_type> (sourceMatrix,
-                                                         exports,
-                                                         numPacketsPerLID_d,
-                                                         exportLIDs_d,
-                                                         exportPIDs_d,
-                                                         constantNumPackets,
-                                                         pack_pids, distor);
+  PackCrsMatrixImpl::packCrsMatrix<ST,LO,GO,NT,buffer_device_type> (
+      sourceMatrix, exports, numPacketsPerLID_d, exportLIDs_d,
+      exportPIDs_d, constantNumPackets, pack_pids, distor);
 }
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
-packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
+packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                              Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports_dv,
                              const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                              const Teuchos::ArrayView<const LO>& exportLIDs,
@@ -1047,6 +1020,29 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatri
 
   typename local_matrix_type::device_type outputDevice;
 
+  const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    const int myRank = [&] () {
+      auto map = sourceMatrix.getMap ();
+      if (map.get () == nullptr) {
+        return -1;
+      }
+      auto comm = map->getComm ();
+      if (comm.get () == nullptr) {
+        return -2;
+      }
+      return comm->getRank ();
+    } ();
+    std::ostringstream os;
+    os << "Proc " << myRank << ": packCrsMatrixWithOwningPIDs: ";
+    prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+
+    std::ostringstream os2;
+    os2 << *prefix << "start" << std::endl;
+    std::cerr << os2.str ();
+  }
+
   // Convert all Teuchos::Array to Kokkos::View
 
   // This is an output array, so we don't have to copy to device here.
@@ -1060,7 +1056,7 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatri
   // This is an input array, so we have to copy to device here.
   // However, we never need to copy it back to host.
   auto export_lids_d =
-    create_mirror_view_from_raw_host_array (outputDevice,
+    create_mirror_view_from_raw_host_array (buffer_device_type (),
                                             exportLIDs.getRawPtr (),
                                             exportLIDs.size (), true,
                                             "export_lids");
@@ -1072,15 +1068,62 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatri
                                             sourcePIDs.size (), true,
                                             "export_pids");
   constexpr bool pack_pids = true;
-  packCrsMatrixImpl (sourceMatrix, exports_dv,
-                     num_packets_per_lid_d, export_lids_d,
-                     export_pids_d, constantNumPackets, pack_pids, distor);
+  try {
+    PackCrsMatrixImpl::packCrsMatrix
+      (sourceMatrix, exports_dv, num_packets_per_lid_d, export_lids_d,
+       export_pids_d, constantNumPackets, pack_pids, distor);
+  }
+  catch (std::exception& e) {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "PackCrsMatrixImpl::packCrsMatrix threw: "
+         << e.what () << std::endl;
+      std::cerr << os.str ();
+    }
+    throw;
+  }
+  catch (...) {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "PackCrsMatrixImpl::packCrsMatrix threw an exception "
+        "not a subclass of std::exception" << std::endl;
+      std::cerr << os.str ();
+    }
+    throw;
+  }
 
-  // The counts are an output of packCrsMatrixImpl, so we
-  // have to copy them back to host.
-  Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h
-    (numPacketsPerLID.getRawPtr (), numPacketsPerLID.size ());
-  Kokkos::deep_copy (num_packets_per_lid_h, num_packets_per_lid_d);
+  if (numPacketsPerLID.size () != 0) {
+    try {
+      // The counts are an output of PackCrsMatrixImpl::packCrsMatrix,
+      // so we have to copy them back to host.
+      Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h
+        (numPacketsPerLID.getRawPtr (), numPacketsPerLID.size ());
+      Kokkos::deep_copy (num_packets_per_lid_h, num_packets_per_lid_d);
+    }
+    catch (std::exception& e) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Kokkos::deep_copy threw: " << e.what () << std::endl;
+        std::cerr << os.str ();
+      }
+      throw;
+    }
+    catch (...) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Kokkos::deep_copy threw an exception not a subclass "
+          "of std::exception" << std::endl;
+        std::cerr << os.str ();
+      }
+      throw;
+    }
+  }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "done" << std::endl;
+    std::cerr << os.str ();
+  }
 }
 
 } // namespace Details
@@ -1098,7 +1141,7 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatri
   Details::packCrsMatrixNew<ST, LO, GO, NT> (const CrsMatrix<ST, LO, GO, NT>&, \
     Kokkos::DualView<char*, DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const Kokkos::DualView<size_t*, DistObject<char, LO, GO, NT>::buffer_device_type>&, \
-    const Kokkos::DualView<const LO*, NT::device_type>&, \
+    const Kokkos::DualView<const LO*, DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     size_t&, \
     Distributor&); \
   template void \

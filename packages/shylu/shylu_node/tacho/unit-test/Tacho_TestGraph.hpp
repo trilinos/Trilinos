@@ -6,28 +6,29 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_CrsMatrixBase.hpp"
-#include "TachoExp_MatrixMarket.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_CrsMatrixBase.hpp"
+#include "Tacho_MatrixMarket.hpp"
 
-#include "TachoExp_Graph.hpp"
+#include "Tacho_Graph.hpp"
 
 #if defined(TACHO_HAVE_SCOTCH)
-#include "TachoExp_GraphTools_Scotch.hpp"
+#include "Tacho_GraphTools_Scotch.hpp"
 #endif
 
 #if defined(TACHO_HAVE_METIS)
-#include "TachoExp_GraphTools_Metis.hpp"
+#include "Tacho_GraphTools_Metis.hpp"
 #endif
 
-#include "TachoExp_GraphTools_CAMD.hpp"
+#include "Tacho_GraphTools_CAMD.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
-typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
-typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
+typedef CrsMatrixBase<ValueType,HostSpaceType>   CrsMatrixBaseHostType;
+//typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
 
 TEST( Graph, constructor ) {  
+  TEST_BEGIN;
   ///
   /// host space crs matrix base
   ///
@@ -36,7 +37,7 @@ TEST( Graph, constructor ) {
     n = 4,
     nnz = 16;
 
-  CrsMatrixBaseHostType Ah("A host", m, n, nnz);
+  CrsMatrixBaseHostType Ah(m, n, nnz);
 
   ordinal_type cnt = 0;
   for (ordinal_type i=0;i<m;++i) {
@@ -49,17 +50,10 @@ TEST( Graph, constructor ) {
   }
   
   ///
-  /// device space crs matrix base and mirroring
-  ///
-  CrsMatrixBaseDeviceType Ad("A device");
-  Ad.createMirror(Ah);
-  Ad.copy(Ah);
-
-  ///
   /// construction of graph
   ///
-  Graph G(Ad);
-
+  Graph G(Ah);
+  
   auto rptr = G.RowPtr();
   auto cidx = G.ColIdx();
 
@@ -69,19 +63,17 @@ TEST( Graph, constructor ) {
       EXPECT_TRUE(cidx(j) != i);
     }
   }
+  TEST_END;
 }
 
 #if defined(TACHO_HAVE_SCOTCH)
 TEST( Graph, scotch ) {
+  TEST_BEGIN;
   std::string inputfilename = MM_TEST_FILE + ".mtx";
-  CrsMatrixBaseHostType Ah("A host");
-  Ah = MatrixMarket<ValueType>::read(inputfilename);
+  CrsMatrixBaseHostType Ah;
+  MatrixMarket<ValueType>::read(inputfilename, Ah);
 
-  CrsMatrixBaseDeviceType Ad("A device");
-  Ad.createMirror(Ah);
-  Ad.copy(Ah);
-
-  Graph G(Ad);
+  Graph G(Ah);
   GraphTools_Scotch S(G);
 
   const ordinal_type m = G.NumRows();
@@ -104,21 +96,18 @@ TEST( Graph, scotch ) {
   for (ordinal_type i=0;i<m;++i) {
     EXPECT_EQ(i, peri(perm(i)));
   }
-  
+  TEST_END;
 }
 #endif
 
 #if defined(TACHO_HAVE_METIS)
 TEST( Graph, metis ) {
+  TEST_BEGIN;
   std::string inputfilename = MM_TEST_FILE + ".mtx";
-  CrsMatrixBaseHostType Ah("A host");
-  Ah = MatrixMarket<ValueType>::read(inputfilename);
+  CrsMatrixBaseHostType Ah;
+  MatrixMarket<ValueType>::read(inputfilename, Ah);
 
-  CrsMatrixBaseDeviceType Ad("A device");
-  Ad.createMirror(Ah);
-  Ad.copy(Ah);
-
-  Graph G(Ad);
+  Graph G(Ah);
   GraphTools_Metis M(G);
 
   M.reorder();
@@ -133,22 +122,19 @@ TEST( Graph, metis ) {
   for (ordinal_type i=0;i<m;++i) {
     EXPECT_EQ(i, peri(perm(i)));
   }
-  
+  TEST_END;  
 }
 #endif
 
 #if defined(TACHO_HAVE_SCOTCH)
 TEST( Graph, camd ) {
+  TEST_BEGIN;
   std::string inputfilename = MM_TEST_FILE + ".mtx";
 
-  CrsMatrixBaseHostType Ah("A host");
-  Ah = MatrixMarket<ValueType>::read(inputfilename);
+  CrsMatrixBaseHostType Ah;
+  MatrixMarket<ValueType>::read(inputfilename, Ah);
 
-  CrsMatrixBaseDeviceType Ad("A device");
-  Ad.createMirror(Ah);
-  Ad.copy(Ah);
-
-  Graph G(Ad);
+  Graph G(Ah);
   GraphTools_Scotch S(G);
 
   const ordinal_type m = G.NumRows();
@@ -177,7 +163,7 @@ TEST( Graph, camd ) {
   for (ordinal_type i=0;i<m;++i) {
     EXPECT_EQ(i, peri(perm(i)));
   }
-
+  TEST_END;
 }
 #endif
 

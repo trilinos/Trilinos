@@ -53,7 +53,7 @@ namespace FROSch {
     class RGDSWCoarseOperator : public GDSWCoarseOperator<SC,LO,GO,NO> {
         
         public:
-        
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
@@ -61,11 +61,15 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
+        
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr DDInterfacePtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtrVecPtr EntitySetPtrVecPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtr InterfaceEntityPtr;
         
@@ -75,11 +79,11 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr2D SCVecPtr2D;
         
         
         RGDSWCoarseOperator(CrsMatrixPtr k,
@@ -88,24 +92,25 @@ namespace FROSch {
         virtual int resetCoarseSpaceBlock(UN blockId,
                                           UN dimension,
                                           UN dofsPerNode,
-                                          MapPtr &nodesMap,
-                                          MapPtrVecPtr &dofsMaps,
-                                          GOVecPtr &myGlobalDirichletBoundaryDofs,
-                                          SCVecPtr2D &localNodeList);
+                                          MapPtr nodesMap,
+                                          MapPtrVecPtr dofsMaps,
+                                          GOVecPtr dirichletBoundaryDofs,
+                                          MultiVectorPtr nodeList);
         
         
         protected:
         
-        int phiGammaReducedGDSW(UN blockId,
-                                int option,
-                                bool buildRotations,
-                                UN dimension,
-                                UN dofsPerNode,
-                                SCVecPtr2D &localNodeList,
-                                LOVecPtr2D &partMappings,
-                                EntitySetPtr &vertices,
-                                EntitySetPtr &edges,
-                                EntitySetPtr &faces); // Sollte man hier nicht auch die typen noch auswählen können
+        virtual MultiVectorPtrVecPtr computeTranslations(UN blockId,
+                                                         EntitySetPtr coarseNodes,
+                                                         EntitySetPtrVecPtr entitySetVector,
+                                                         DistanceFunction distanceFunction = ConstantDistanceFunction);
+        
+        virtual MultiVectorPtrVecPtr computeRotations(UN blockId,
+                                                      UN dimension,
+                                                      MultiVectorPtr nodeList,
+                                                      EntitySetPtr coarseNodes,
+                                                      EntitySetPtrVecPtr entitySetVector,
+                                                      DistanceFunction distanceFunction = ConstantDistanceFunction);
         
     };
     

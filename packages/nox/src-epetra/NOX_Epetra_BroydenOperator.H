@@ -52,7 +52,7 @@
 #include "NOX_Common.H"
 #include "NOX_Epetra.H"
 #include "Teuchos_ParameterList.hpp"
-#include "NOX_Solver_PrePostOperator.H"
+#include "NOX_Observer.hpp"
 #include "NOX_Abstract_PrePostOperator.H"
 
 #include "Epetra_Vector.h"
@@ -105,7 +105,7 @@ namespace Epetra {
 
  */
 class BroydenOperator : public Epetra_RowMatrix,
-                        public NOX::Abstract::PrePostOperator,
+                        public NOX::Observer,
                         public NOX::Epetra::Interface::Jacobian,
                         public NOX::Epetra::Interface::Preconditioner
 {
@@ -365,8 +365,8 @@ class BroydenOperator : public Epetra_RowMatrix,
   //! Reference to NOX::Utils object
   const Teuchos::RCP<NOX::Utils>& utils;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 
   //! label for the Epetra_RowMatrix
   std::string label;

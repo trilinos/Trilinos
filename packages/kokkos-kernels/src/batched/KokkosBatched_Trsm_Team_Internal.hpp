@@ -47,8 +47,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsmInternal:: not valid template types");
+
       const ScalarType one(1.0), zero(0.0);
 
       if (alpha == zero)   TeamSetInternal  ::invoke(member, m, n, zero,  B, bs0, bs1);
@@ -57,7 +56,9 @@ namespace KokkosBatched {
         if (m <= 0 || n <= 0) return 0;
 
         for (int p=0;p<m;++p) {
-          const int iend = m-p-1, jend = n;
+          // Made this non-const in order to WORKAROUND issue #349
+          int iend = m-p-1;
+          int jend = n;
           
           const ValueType
             *__restrict__ a21 = iend ? A+(p+1)*as0+p*as1 : NULL;
@@ -70,18 +71,13 @@ namespace KokkosBatched {
           if (!use_unit_diag) {
             const ValueType alpha11 = A[p*as0+p*as1];
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
-                b1t[j*bs1] /= alpha11;
+                b1t[j*bs1] = b1t[j*bs1] / alpha11;
               });
             member.team_barrier();
           }
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend*jend),[&](const int &ij) {
-#if							\
-  defined (KOKKOS_ENABLE_CUDA) &&				\
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-              const int i = ij%iend, j = ij/iend;
-#else
+              // assume layout right for batched computation
               const int i = ij/jend, j = ij%jend;
-#endif
               B2[i*bs0+j*bs1] -= a21[i*as0] * b1t[j*bs1];
             });          
         }
@@ -102,8 +98,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsmInternal:: not valid template types");
+
       enum : int {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
@@ -130,18 +125,21 @@ namespace KokkosBatched {
                         /**/  ValueType *__restrict__ BB) {
           const int mb = mbAlgo;
           const int tsize = member.team_size();
-          const int nb = (jb/tsize + jb%tsize > 0);
-          const int np = jb%nb;
+          // Made this non-const in order to WORKAROUND issue #349
+          int nb = (jb/tsize + jb%tsize > 0);
+          int np = jb%nb;
           for (int p=0;p<ib;p+=mb) {
-            const int pb = ((p+mb) > ib ? (ib-p) : mb); 
+            // Made this non-const in order to WORKAROUND issue #349
+            int pb = ((p+mb) > ib ? (ib-p) : mb); 
                 
             // trsm update
             const ValueType *__restrict__ Ap = AA+p*as0+p*as1;
             /**/  ValueType *__restrict__ Bp = BB+p*bs0;
                 
             member.team_barrier();                  
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/nb)+(np>0)),[&](const int &jj) {
-                const int j = jj*nb, qb = (j+nb) > jb ? np : nb;
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/nb)+(np>0)),[&](const int jj) {
+                // Made this non-const in order to WORKAROUND issue #349
+                int j = jj*nb, qb = (j+nb) > jb ? np : nb;
                 if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, qb, Bp+j*bs1);
                 else               trsm_n.serial_invoke(Ap, pb, qb, Bp+j*bs1);
               });
@@ -198,8 +196,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsmInternal:: not valid template types");
+
       const ScalarType one(1.0), zero(0.0);
 
       // note that parallel range is different ( m*n vs m-1*n);        
@@ -210,7 +207,9 @@ namespace KokkosBatched {
         
         ValueType *__restrict__ B0 = B;
         for (int p=(m-1);p>=0;--p) {
-          const int iend = p, jend = n;
+          // Made this non-const in order to WORKAROUND issue #349
+          int iend = p;
+          int jend = n;
 
           const ValueType *__restrict__ a01 = A+p*as1;
           /**/  ValueType *__restrict__ b1t = B+p*bs0;
@@ -219,7 +218,7 @@ namespace KokkosBatched {
           if (!use_unit_diag) {
             const ValueType alpha11 = A[p*as0+p*as1];
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
-                b1t[j*bs1] /= alpha11;
+                b1t[j*bs1] = b1t[j*bs1] / alpha11;
               });
             member.team_barrier();
           }
@@ -252,8 +251,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsmInternal:: not valid template types");
+
       enum : int {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
@@ -275,8 +273,9 @@ namespace KokkosBatched {
                         /**/  ValueType *__restrict__ BB) {
           const int mb = mbAlgo; //(ib <=5 ? ib : mbAlgo);
           const int tsize = member.team_size();
-          const int nb = (jb/tsize + jb%tsize > 0);
-          const int np = jb%nb;
+          // Made this non-const in order to WORKAROUND issue #349
+          int nb = (jb/tsize + jb%tsize > 0);
+          int np = jb%nb;
           for (int pp=0;pp<ib;pp+=mb) {
             const int 
               ptmp = (ib - pp - mb), 

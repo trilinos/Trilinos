@@ -47,11 +47,11 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
@@ -90,18 +90,18 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
   }
 
   int errorFlag  = 0;
@@ -115,52 +115,52 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    Teuchos::RCP<PoissonData<RealT> > data = Teuchos::rcp(new PoissonData<RealT>(comm, parlist, outStream));
+    ROL::Ptr<PoissonData<RealT> > data = ROL::makePtr<PoissonData<RealT>>(comm, parlist, outStream);
 
     // Get random weights parameter.
     RealT fnzw = parlist->sublist("Problem").get("Fraction of nonzero weights", 0.5);
     fnzw = 1.0 - 2.0*fnzw;
 
     /*** Build vectors and dress them up as ROL vectors. ***/
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > p_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > w_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > c_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_c, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
+    ROL::Ptr<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
+    ROL::Ptr<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
+    ROL::Ptr<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > p_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > w_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > z_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > c_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_c, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > dz_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
     // Set all values to 1 in u, z and c.
-    u_rcp->putScalar(1.0);
-    p_rcp->putScalar(1.0);
-    w_rcp->randomize();
-    z_rcp->putScalar(1.0);
-    c_rcp->putScalar(1.0);
+    u_ptr->putScalar(1.0);
+    p_ptr->putScalar(1.0);
+    w_ptr->randomize();
+    z_ptr->putScalar(1.0);
+    c_ptr->putScalar(1.0);
     // Randomize d vectors.
-    du_rcp->randomize();
-    dz_rcp->randomize();
+    du_ptr->randomize();
+    dz_ptr->randomize();
     // Create ROL::TpetraMultiVectors.
-    Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > pp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(p_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > wp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(w_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > cp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(c_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
+    ROL::Ptr<ROL::Vector<RealT> > up = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(u_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > pp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(p_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > wp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(w_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > zp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(z_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > cp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(c_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dup = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(du_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dzp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(dz_ptr);
     // Create ROL SimOpt vectors.
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     /*** Build objective function, constraint and reduced objective function. ***/
     wp->applyUnary(IsGreaterThan<RealT>(fnzw));
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj =
-      Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, w_rcp, parlist));
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con =
-      Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
-    Teuchos::RCP<ROL::Objective<RealT> > objReduced =
-      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp));
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj =
+      ROL::makePtr<Objective_PDEOPT_Poisson<RealT>>(data, w_ptr, parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con =
+      ROL::makePtr<EqualityConstraint_PDEOPT_Poisson<RealT>>(data, parlist);
+    ROL::Ptr<ROL::Objective<RealT> > objReduced =
+      ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp);
 
     /*** Check functional interface. ***/
     obj->checkGradient(x,d,true,*outStream);
@@ -176,10 +176,10 @@ int main(int argc, char *argv[]) {
     RealT tol = 1e-8;
     zp->zero();
     con->solve(*cp, *up, *zp, tol);
-    data->outputTpetraVector(u_rcp, "data.txt");
+    data->outputTpetraVector(u_ptr, "data.txt");
     data->outputTpetraVector(data->getVecF(), "sources.txt");
 
-    data->setVecUd(u_rcp);
+    data->setVecUd(u_ptr);
     data->zeroRHS();
 
     /*** Solve optimization problem. ***/
@@ -193,11 +193,11 @@ int main(int argc, char *argv[]) {
     //x.zero(); // set zero initial guess
     //algo_cs.run(x, *cp, *obj, *con, true, *outStream);
 
-    //*outStream << std::endl << "|| u_approx - u_analytic ||_L2 = " << data->computeStateError(u_rcp) << std::endl;
+    //*outStream << std::endl << "|| u_approx - u_analytic ||_L2 = " << data->computeStateError(u_ptr) << std::endl;
 
-    data->outputTpetraVector(u_rcp, "state.txt");
-    data->outputTpetraVector(z_rcp, "control.txt");
-    data->outputTpetraVector(w_rcp, "weights.txt");
+    data->outputTpetraVector(u_ptr, "state.txt");
+    data->outputTpetraVector(z_ptr, "control.txt");
+    data->outputTpetraVector(w_ptr, "weights.txt");
     //data->outputTpetraVector(data->getVecWeights(), "weights.txt");
     //data->outputTpetraVector(data->getVecF(), "control.txt");
     //data->outputTpetraData();

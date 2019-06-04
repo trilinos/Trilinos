@@ -63,7 +63,8 @@
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Monitor.hpp"
 
-#include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_Distance2ColorHandle.hpp"
+#include "KokkosGraph_Distance2Color.hpp"
 
 namespace MueLu {
 
@@ -299,9 +300,9 @@ namespace MueLu {
     typedef typename device_t::memory_space memory_space;
     typedef typename device_t::execution_space execution_space;
     typedef typename graph_t::row_map_type::non_const_type rowptrs_view;
-    typedef Kokkos::View<size_t*, Kokkos::HostSpace> host_rowptrs_view;
+    typedef typename rowptrs_view::HostMirror host_rowptrs_view;
     typedef typename graph_t::entries_type::non_const_type colinds_view;
-    typedef Kokkos::View<LocalOrdinal*, Kokkos::HostSpace> host_colinds_view;
+    typedef typename colinds_view::HostMirror host_colinds_view;
     //note: just using colinds_view in place of scalar_view_t type (it won't be used at all by symbolic SPGEMM)
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<
       typename rowptrs_view::const_value_type, typename colinds_view::const_value_type, typename colinds_view::const_value_type, 
@@ -309,20 +310,34 @@ namespace MueLu {
 
     KernelHandle kh;
     //leave gc algorithm choice as the default
-    kh.create_graph_coloring_handle();
+    kh.create_distance2_graph_coloring_handle();
+
+    // get the distance-2 graph coloring handle
+    auto coloringHandle = kh.get_distance2_graph_coloring_handle();
+
+    // Set the distance-2 graph coloring algorithm to use.
+    // Options:
+    //     COLORING_D2_DEFAULT        - Let the kernel handle pick the variation
+    //     COLORING_D2_SERIAL         - Use the legacy serial-only implementation
+    //     COLORING_D2_MATRIX_SQUARED - Use the SPGEMM + D1GC method
+    //     COLORING_D2_SPGEMM         - Same as MATRIX_SQUARED
+    //     COLORING_D2_VB             - Use the parallel vertex based direct method
+    //     COLORING_D2_VB_BIT         - Same as VB but using the bitvector forbidden array
+    //     COLORING_D2_VB_BIT_EF      - Add experimental edge-filtering to VB_BIT
+    coloringHandle->set_algorithm( KokkosGraph::COLORING_D2_SERIAL );   
 
     //Create device views for graph rowptrs/colinds
-    rowptrs_view aRowptrs("A device rowptrs", numRows + 1);
+    rowptrs_view aRowptrs("A device rowptrs", rowptrs.size());
     colinds_view aColinds("A device colinds", colinds.size());
     // Populate A in temporary host views, then copy to device
     {
-      host_rowptrs_view aHostRowptrs("A host rowptrs", numRows + 1);
-      for(LO i = 0; i < numRows + 1; i++)
+      host_rowptrs_view aHostRowptrs = Kokkos::create_mirror_view(aRowptrs);
+      for(size_t i = 0; i < rowptrs.size(); i++)
       {
         aHostRowptrs(i) = rowptrs[i];
       }
       Kokkos::deep_copy(aRowptrs, aHostRowptrs);
-      host_colinds_view aHostColinds("A host colinds", colinds.size());
+      host_colinds_view aHostColinds = Kokkos::create_mirror_view(aColinds);
       for(size_t i = 0; i < colinds.size(); i++)
       {
         aHostColinds(i) = colinds[i];
@@ -331,17 +346,16 @@ namespace MueLu {
     }
     //run d2 graph coloring
     //graph is symmetric so row map/entries and col map/entries are the same
-    KokkosGraph::Experimental::d2_graph_color(&kh, numRows, numRows, aRowptrs, aColinds, aRowptrs, aColinds);
+    KokkosGraph::Experimental::graph_compute_distance2_color(&kh, numRows, numRows, aRowptrs, aColinds, aRowptrs, aColinds);
 
     // extract the colors
-    auto coloringHandle = kh.get_graph_coloring_handle();
     auto colorsDevice = coloringHandle->get_vertex_colors();
 
     auto colors = Kokkos::create_mirror_view(colorsDevice);
     Kokkos::deep_copy(colors, colorsDevice);
 
     //clean up coloring handle
-    kh.destroy_graph_coloring_handle();
+    kh.destroy_distance2_graph_coloring_handle();
 
     //have color 1 (first color) be the aggregate roots (add those to mapping first)
     LocalOrdinal aggCount = 0;

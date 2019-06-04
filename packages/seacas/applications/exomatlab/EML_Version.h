@@ -1,4 +1,4 @@
-// Copyright(C) 2011 National Technology & Engineering Solutions
+// Copyright(C) 2011-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,7 +34,9 @@
 #define SEACAS_Version_h
 
 static char const *qainfo[] = {
-    "exomatlab", "2012/04/17", "0.9.4",
+    "exomatlab",
+    "2012/04/17",
+    "0.9.4",
 };
 
 #endif // SEACAS_Version_h

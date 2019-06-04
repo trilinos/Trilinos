@@ -319,7 +319,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
    
-   TEUCHOS_TEST_FOR_EXCEPTION(data.dimension(0)!=elements.size(),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(data.extent(0)!=elements.size(),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: data cell dimension does not match up with block cell count");
 
    int rank = data.rank();
@@ -337,7 +337,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
       }
    }
    else if(rank==3) {
-      std::size_t entries = data.dimension(2);
+      std::size_t entries = data.extent(2);
  
       TEUCHOS_TEST_FOR_EXCEPTION(dataVector.getNumVectors()!=entries,std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: number of columns in data vector inconsistent with data array");
@@ -534,7 +534,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    if(rank==2)
       numCols = 1;
    else if(rank==3)
-      numCols = data.begin()->second.dimension(2);
+      numCols = data.begin()->second.extent(2);
    else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                           "ArrayToFieldVector::getGhostedDataVector: data array must have rank 2 or 3. This array has rank " << rank << ".");

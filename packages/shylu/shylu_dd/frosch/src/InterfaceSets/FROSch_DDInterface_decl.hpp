@@ -45,6 +45,7 @@
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
 //#define INTERFACE_OUTPUT
+//#define FROSCH_OFFSET_MAPS
 
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
@@ -55,8 +56,6 @@
 
 #include <FROSch_ExtractSubmatrices_def.hpp>
 
-// TODO
-// -> "Parent" -> "Anchestor"
 
 namespace FROSch {
     
@@ -72,12 +71,21 @@ namespace FROSch {
         
         typedef Xpetra::Map<LO,GO,NO> Map;
         typedef Teuchos::RCP<Map> MapPtr;
+        typedef Teuchos::RCP<const Map> ConstMapPtr;
         typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
         
+        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
+        
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
+        typedef const EntitySetPtr EntitySetConstPtr;
+        typedef Teuchos::ArrayRCP<EntitySetPtr> EntitySetPtrVecPtr;
+        typedef const EntitySetPtrVecPtr EntitySetPtrConstVecPtr;
+        
+        typedef Teuchos::ArrayRCP<EntityFlag> EntityFlagVecPtr;
         
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
         typedef Teuchos::ArrayRCP<InterfaceEntityPtr> InterfaceEntityPtrVecPtr;
@@ -88,13 +96,13 @@ namespace FROSch {
         typedef Teuchos::ArrayRCP<LO> LOVecPtr;
         
         typedef Teuchos::Array<GO> GOVec;
+        typedef Teuchos::ArrayView<const GO> ConstGOVecView;
         typedef Teuchos::ArrayRCP<GO> GOVecPtr;
         typedef Teuchos::ArrayView<GO> GOVecView;
         typedef Teuchos::Array<GOVec> GOVecVec;
         typedef Teuchos::ArrayRCP<GOVec> GOVecVecPtr;
         
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
         
         
         DDInterface(UN dimension,
@@ -105,41 +113,73 @@ namespace FROSch {
         
         int resetGlobalDofs(MapPtrVecPtr dofsMaps);
         
-        int removeDirichletNodes(GOVecView myGlobalDirichletBoundaryDofs);
+        int removeDirichletNodes(GOVecView dirichletBoundaryDofs);
         
         int divideUnconnectedEntities(CrsMatrixPtr matrix);
         
-        int sortEntities();
+        int flagEntities(MultiVectorPtr nodeList = Teuchos::null);
         
-        int sortEntities(SCVecPtr2D localNodeList);
+        int removeEmptyEntities();
         
-        int findParents();
+        int sortVerticesEdgesFaces(MultiVectorPtr nodeList = Teuchos::null);
         
-        EntitySetPtr & getVertices();
+        int buildEntityHierarchy();
         
-        EntitySetPtr & getShortEdges();
+        int computeDistancesToCoarseNodes(UN dimension,
+                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
         
-        EntitySetPtr & getStraightEdges();
+        //! This function extracts those entities which are to be used to build a connectivity graph on the subdomain
+        //! level. By default, we identify all entities with multiplicity 2. Afterwards, the corresponding entities can
+        //! be obtained using the function getConnectivityEntities().
+        //! If short or straight edges should be omitted, the function flagEntities() has to be called in advance.
+        int identifyConnectivityEntities(UNVecPtr multiplicities = Teuchos::null,
+                                         EntityFlagVecPtr flags = Teuchos::null);
         
-        EntitySetPtr & getEdges();
+        UN getDimension() const;
         
-        EntitySetPtr & getFaces();
+        UN getDofsPerNode() const;
         
-        EntitySetPtr & getInterface();
+        LO getNumMyNodes() const;
         
-        EntitySetPtr & getInterior();
+        //
+        // Remove the references below?
+        //
         
-        EntitySetPtr & getParentVertices();
+        EntitySetConstPtr & getVertices() const;
         
-        EntitySetPtr & getParentEdges();
+        EntitySetConstPtr & getShortEdges() const;
         
-        EntitySetPtr & getParentFaces();
+        EntitySetConstPtr & getStraightEdges() const;
+        
+        EntitySetConstPtr & getEdges() const;
+        
+        EntitySetConstPtr & getFaces() const;
+        
+        EntitySetConstPtr & getInterface() const;
+        
+        EntitySetConstPtr & getInterior() const;
+        
+        EntitySetConstPtr & getCoarseNodes() const;
+        
+        EntitySetPtrConstVecPtr & getEntitySetVector() const;
+        
+        //! This function returns those entities which are to be used to build a connectivity graph on the subdomain
+        //! level. They have to identified first using the function identifyConnectivityEntities().
+        EntitySetConstPtr & getConnectivityEntities() const;
+        
+        ConstMapPtr getNodesMap() const;
+        
         
     protected:
-        
+#ifdef FROSCH_OFFSET_MAPS
+        int communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
+                                       GOVecVec &componentsSubdomainsUnique,
+                                       UN priorDofsPerNode = 0);
+#else
         int communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
                                        GOVecVec &componentsSubdomainsUnique);
-        
+#endif
         int identifyLocalComponents(GOVecVecPtr &componentsSubdomains,
                                     GOVecVec &componentsSubdomainsUnique);
         
@@ -157,12 +197,12 @@ namespace FROSch {
         EntitySetPtr Faces_;
         EntitySetPtr Interface_;
         EntitySetPtr Interior_;
-        EntitySetPtr ParentVertices_;
-        EntitySetPtr ParentEdges_;
-        EntitySetPtr ParentFaces_;
+        EntitySetPtr CoarseNodes_;
+        EntitySetPtr ConnectivityEntities_;
+        EntitySetPtrVecPtr EntitySetVector_;
         
-        MapPtr LocalToGlobalNodesMap_;
-        MapPtr LocalToGlobalNodesUniqueMap_;
+        MapPtr NodesMap_;
+        MapPtr UniqueNodesMap_;
     };
     
 }

@@ -126,9 +126,14 @@ namespace MueLu {
 
     //! Default constructor.
     Hierarchy();
+    //! Constructor that labels the hierarchy.
+    Hierarchy(const std::string& label);
 
     //! Constructor
     Hierarchy(const RCP<Matrix> & A);
+
+    //! Constructor
+    Hierarchy(const RCP<Matrix> & A, const std::string& label);
 
     //! Destructor.
     virtual ~Hierarchy() { }
@@ -323,9 +328,12 @@ namespace MueLu {
       dumpFile_  = filename;
     }
 
+#ifdef HAVE_MUELU_DEPRECATED_CODE
     template<class Node2>
     Teuchos::RCP< Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    MUELU_DEPRECATED
     clone (const RCP<Node2> &node2) const;
+#endif
 
     void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
@@ -334,6 +342,10 @@ namespace MueLu {
     void ResetDescription() {
       description_ = "";
     }
+
+    void AllocateLevelMultiVectors(int numvecs);
+    void DeleteLevelMultiVectors();
+
   protected:
     const RCP<const FactoryManagerBase>& GetLevelManager(const int levelID) const {
       return levelManagers_[levelID];
@@ -391,11 +403,18 @@ namespace MueLu {
     // Level managers used during the Setup
     Array<RCP<const FactoryManagerBase> > levelManagers_;
 
+    // Caching (Multi)Vectors used in Hierarchy::Iterate()
+    int sizeOfAllocatedLevelMultiVectors_;
+    Array<RCP<MultiVector> > residual_, coarseRhs_, coarseX_, coarseImport_, coarseExport_, correction_;
+    
+
   }; //class Hierarchy
 
+#ifdef HAVE_MUELU_DEPRECATED_CODE
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template<typename Node2>
   Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  MUELU_DEPRECATED
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   clone (const Teuchos::RCP<Node2> &node2) const {
     typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2>           New_H_Type;
@@ -449,6 +468,7 @@ namespace MueLu {
 
     return new_h;
   }
+#endif
 
 } //namespace MueLu
 

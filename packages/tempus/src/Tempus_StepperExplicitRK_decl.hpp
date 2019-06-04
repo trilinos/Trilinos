@@ -10,9 +10,10 @@
 #define Tempus_StepperExplicitRK_decl_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_Stepper.hpp"
+#include "Tempus_StepperExplicit.hpp"
 #include "Tempus_RKButcherTableau.hpp"
-#include "Tempus_StepperExplicitRKObserver.hpp"
+#include "Tempus_StepperObserverComposite.hpp"
+#include "Tempus_StepperExplicitRKObserverComposite.hpp"
 
 
 namespace Tempus {
@@ -58,54 +59,100 @@ namespace Tempus {
  *     - \f$\dot{X}_i \leftarrow \bar{f}(X_i,t_{n-1}+c_i\Delta t)\f$
  *   - end for
  *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
- *   - \f$\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})\f$ [Optional]
+ *
+ *  When using the First-Step-As-Last (FSAL) priniciple, where one can
+ *  reuse the last function evaulation as the first evaluation of the next
+ *  time step, the algorithm is only slightly more complicated.
+ *   - for \f$i = 1 \ldots s\f$ do
+ *     - if ( i==1 && useFSAL && (previous step not failed) )
+ *       - tmp = \f$\dot{X}_1\f$
+ *       - \f$\dot{X}_1 = \dot{X}_s\f$
+ *       - \f$\dot{X}_s\f$ = tmp
+ *     - else
+ *       - \f$X_i \leftarrow x_{n-1}
+ *                + \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\dot{X}_j\f$
+ *       - Evaluate \f$\bar{f}(X_{i},t_{n-1}+c_{i}\Delta t)\f$
+ *       - \f$\dot{X}_i \leftarrow \bar{f}(X_i,t_{n-1}+c_i\Delta t)\f$
+ *   - end for
+ *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
+ *
+ *   For Explicit RK, FSAL requires \f$c_1 = 0\f$, \f$c_s = 1\f$, and
+ *   be stiffly accurate (\f$a_{sj} = b_j\f$).  An example of this is
+ *   the Bogacki-Shampine 3(2) method.
+ *   \f[
+ *   \begin{array}{c|cccc}  0  & 0    &     &     &   \\
+ *                         1/3 & 1/2  & 0   &     &   \\
+ *                         2/3 & 0    & 3/4 & 0   &   \\
+ *                          1  & 2/9  & 1/3 & 4/9 & 0 \\ \hline
+ *                             & 2/9  & 1/3 & 4/9 & 0 \\
+ *                             & 7/24 & 1/4 & 1/3 & 1/8 \end{array}
+ *   \f]
  */
 template<class Scalar>
-class StepperExplicitRK : virtual public Tempus::Stepper<Scalar>
+class StepperExplicitRK : virtual public Tempus::StepperExplicit<Scalar>
 {
 public:
 
-  /// Constructor
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperExplicitRK();
+
+  /// Constructor to specialize Stepper parameters.
   StepperExplicitRK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor to use default Stepper parameters.
+  StepperExplicitRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType = "RK Explicit 4 Stage");
+
+  /// Constructor for StepperFactory.
+  StepperExplicitRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return appModel_;}
-
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-    { return Teuchos::null; }
     virtual void setObserver(
-      Teuchos::RCP<StepperExplicitRKObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    void setTableau(
-      Teuchos::RCP<Teuchos::ParameterList> pList,
-      std::string stepperType = "");
+    virtual void setTableau(std::string stepperType);
+
+    virtual void setTableau(
+      Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+
+    virtual void setTableau(
+      Teuchos::RCP<const RKButcherTableau<Scalar> > ERK_ButcherTableau);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
+    virtual std::string getStepperType() const
+     { return this->stepperPL_->template get<std::string>("Stepper Type"); }
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
     virtual Scalar getOrder() const {return ERK_ButcherTableau_->order();}
     virtual Scalar getOrderMin() const {return ERK_ButcherTableau_->orderMin();}
     virtual Scalar getOrderMax() const {return ERK_ButcherTableau_->orderMax();}
+    virtual Scalar getInitTimeStep(
+        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const;
+
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getStageX() {return stageX_;}
 
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
@@ -113,6 +160,8 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
   /// \name ParameterList methods
@@ -131,29 +180,22 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-private:
-
-  /// Default Constructor -- not allowed
-  StepperExplicitRK();
-
 protected:
-
-  std::string                                            description_;
-  Teuchos::RCP<Teuchos::ParameterList>                   stepperPL_;
-  /// Explicit ODE ModelEvaluator
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >     appModel_;
-
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>              inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>             outArgs_;
 
   Teuchos::RCP<const RKButcherTableau<Scalar> >          ERK_ButcherTableau_;
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
 
-  Teuchos::RCP<StepperExplicitRKObserver<Scalar> >  stepperExplicitRKObserver_;
+  Teuchos::RCP<StepperObserverComposite<Scalar> >    stepperObserver_;
+  Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >  stepperExplicitRKObserver_;
 
+  // For Embedded RK
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
+
 };
 
 } // namespace Tempus

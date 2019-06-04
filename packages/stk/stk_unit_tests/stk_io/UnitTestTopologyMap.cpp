@@ -60,13 +60,14 @@ int testElement(const std::string &name, unsigned spatialDim)
   int errors = 0;
   Ioss::ElementTopology *element = Ioss::ElementTopology::factory(name);
   if ( element == nullptr ) {
-    std::cerr << "\tERROR: Element type '" << name << "' could not be constructed.";
+    // std::cerr << "\tERROR: Element type '" << name << "' could not be constructed.";
     // Must return since we have a NULL pointer and can't do further tests...
     return 1;
   }
+
   if (element->name() != name) {
     // This is an alias.  Don't run it through the rest of the tests
-    std::cerr << "Element '" << name << "' is an alias for element '" << element->name() << "'\n";
+    // std::cerr << "Element '" << name << "' is an alias for element '" << element->name() << "'\n";
     return 0;
   }
 
@@ -77,7 +78,8 @@ int testElement(const std::string &name, unsigned spatialDim)
       element->name() == "tri7"      || element->name() == "trishell7" ||
       element->name() == "pyramid18" || element->name() == "pyramid19" ||
       element->name() == "wedge20"   || element->name() == "wedge21" ||
-      element->name() == "wedge16") {
+      element->name() == "wedge12"   || element->name() == "hex16" ||
+      element->name() == "quad6"     || element->name() == "wedge16") {
     std::cerr << "\tERROR (EXPECTED): No support for '" << element->name() << "'\n";
     return 0;
   }
@@ -148,10 +150,11 @@ TEST(UnitTestTopology, testUnit)
     }
 
     int current_error = testElement(elements[i], spatialDim);
-    if (elements[i] != "node" &&
-        elements[i] != "rod3d2" &&
-        elements[i] != "rod3d3" &&
-        elements[i] != "tri4a" /*FIXME?*/) {
+    if (elements[i] != "node"    &&
+        elements[i] != "bar2"    &&
+        elements[i] != "bar3"    &&
+        elements[i] != "spring2" &&
+        elements[i] != "spring3") {
       errors += current_error;
     }
     else {
@@ -161,5 +164,3 @@ TEST(UnitTestTopology, testUnit)
   }
   ASSERT_TRUE(errors == 0);
 }
-
-

@@ -67,44 +67,44 @@ void gemm(const char transA,const char transB,AMat::const_value_type alpha ,cons
   // Check compatibility of dimensions at run time.
   if ((transA=='n'||transA=='N')&&(transB=='n'||transB=='N')) {
 if(rank==2){
-if(a.dimension_0()!=c.dimension_0()||a.dimension_1()!=b.dimension_0()||b.dimension_1()!=c.dimension_1()){
+if(a.extent(0)!=c.extent(0)||a.extent(1)!=b.extent(0)||b.extent(1)!=c.extent(1)){
     std::ostringstream os;
     os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.dimension_0 ()<<","<<a.dimension_1()<<")"
-       << ", B: " << "("<<b.dimension_0 ()<<","<<b.dimension_1()<<")"
-       << ", C: " << "("<<c.dimension_0 ()<<","<<c.dimension_1()<<")";
+       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<")"
+       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<")"
+       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<")";
     Kokkos::Impl::throw_runtime_exception (os.str ());
 }
 }
 else if(rank==3){
-if(a.dimension_1()!=c.dimension_1()||a.dimension_2()!=b.dimension_1()||b.dimension_2()!=c.dimension_2()||a.dimension_0()!=b.dimension_0()||b.dimension_0()!=c.dimension_0()){
+if(a.extent(1)!=c.extent(1)||a.extent(2)!=b.extent(1)||b.extent(2)!=c.extent(2)||a.extent(0)!=b.extent(0)||b.extent(0)!=c.extent(0)){
     std::ostringstream os;
     os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.dimension_0 ()<<","<<a.dimension_1()<<","<<a.dimension_2()<<")"
-       << ", B: " << "("<<b.dimension_0 ()<<","<<b.dimension_1()<<","<<b.dimension_2()<<")"
-       << ", C: " << "("<<c.dimension_0 ()<<","<<c.dimension_1()<<","<<c.dimension_2()<<")";
+       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<","<<a.extent(2)<<")"
+       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<","<<b.extent(2)<<")"
+       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<","<<c.extent(2)<<")";
     Kokkos::Impl::throw_runtime_exception (os.str ());
 }
 }
 
 }else if((transA=='n'||transA=='N')&&(transB=='t'||transB=='T')){
 if(rank==2){
-if(a.dimension_0()!=c.dimension_0()||a.dimension_1()!=b.dimension_1()||b.dimension_0()!=c.dimension_1()){
+if(a.extent(0)!=c.extent(0)||a.extent(1)!=b.extent(1)||b.extent(0)!=c.extent(1)){
     std::ostringstream os;
     os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.dimension_0 ()<<","<<a.dimension_1()<<")"
-       << ", B: " << "("<<b.dimension_0 ()<<","<<b.dimension_1()<<")"
-       << ", C: " << "("<<c.dimension_0 ()<<","<<c.dimension_1()<<")";
+       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<")"
+       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<")"
+       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<")";
     Kokkos::Impl::throw_runtime_exception (os.str ());
 }
 }
 else if(rank==3){
-if(a.dimension_1()!=c.dimension_1()||a.dimension_2()!=b.dimension_2()||b.dimension_1()!=c.dimension_2()||a.dimension_0()!=b.dimension_0()||b.dimension_0()!=c.dimension_0()){
+if(a.extent(1)!=c.extent(1)||a.extent(2)!=b.extent(2)||b.extent(1)!=c.extent(2)||a.extent(0)!=b.extent(0)||b.extent(0)!=c.extent(0)){
     std::ostringstream os;
     os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.dimension_0 ()<<","<<a.dimension_1()<<","<<a.dimension_2()<<")"
-       << ", B: " << "("<<b.dimension_0 ()<<","<<b.dimension_1()<<","<<b.dimension_2()<<")"
-       << ", C: " << "("<<c.dimension_0 ()<<","<<c.dimension_1()<<","<<c.dimension_2()<<")";
+       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<","<<a.extent(2)<<")"
+       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<","<<b.extent(2)<<")"
+       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<","<<c.extent(2)<<")";
     Kokkos::Impl::throw_runtime_exception (os.str ());
 }
 }
@@ -112,44 +112,44 @@ if(a.dimension_1()!=c.dimension_1()||a.dimension_2()!=b.dimension_2()||b.dimensi
 
 }else if ((transA=='t'||transA=='T')&&(transB=='n'||transB=='N')) {
 if(rank==2){
-if(a.dimension_1()!=c.dimension_0()||a.dimension_0()!=b.dimension_0()||b.dimension_1()!=c.dimension_1()){
+if(a.extent(1)!=c.extent(0)||a.extent(0)!=b.extent(0)||b.extent(1)!=c.extent(1)){
     std::ostringstream os;
     os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.dimension_0 ()<<","<<a.dimension_1()<<")"
-       << ", B: " << "("<<b.dimension_0 ()<<","<<b.dimension_1()<<")"
-       << ", C: " << "("<<c.dimension_0 ()<<","<<c.dimension_1()<<")";
+       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<")"
+       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<")"
+       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<")";
     Kokkos::Impl::throw_runtime_exception (os.str ());
 }
 }
 else if(rank==3){
-if(a.dimension_2()!=c.dimension_1()||a.dimension_1()!=b.dimension_1()||b.dimension_2()!=c.dimension_2()||a.dimension_0()!=b.dimension_0()||b.dimension_0()!=c.dimension_0()){
+if(a.extent(2)!=c.extent(1)||a.extent(1)!=b.extent(1)||b.extent(2)!=c.extent(2)||a.extent(0)!=b.extent(0)||b.extent(0)!=c.extent(0)){
     std::ostringstream os;
     os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.dimension_0 ()<<","<<a.dimension_1()<<","<<a.dimension_2()<<")"
-       << ", B: " << "("<<b.dimension_0 ()<<","<<b.dimension_1()<<","<<b.dimension_2()<<")"
-       << ", C: " << "("<<c.dimension_0 ()<<","<<c.dimension_1()<<","<<c.dimension_2()<<")";
+       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<","<<a.extent(2)<<")"
+       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<","<<b.extent(2)<<")"
+       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<","<<c.extent(2)<<")";
     Kokkos::Impl::throw_runtime_exception (os.str ());
 }
 }
 
 }else if ((transA=='t'||transA=='T')&&(transB=='t'||transB=='T')) {
 if(rank==2){
-if(a.dimension_1()!=c.dimension_0()||a.dimension_0()!=b.dimension_1()||b.dimension_0()!=c.dimension_1()){
+if(a.extent(1)!=c.extent(0)||a.extent(0)!=b.extent(1)||b.extent(0)!=c.extent(1)){
     std::ostringstream os;
     os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.dimension_0 ()<<","<<a.dimension_1()<<")"
-       << ", B: " << "("<<b.dimension_0 ()<<","<<b.dimension_1()<<")"
-       << ", C: " << "("<<c.dimension_0 ()<<","<<c.dimension_1()<<")";
+       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<")"
+       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<")"
+       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<")";
     Kokkos::Impl::throw_runtime_exception (os.str ());
 }
 }
 else if(rank==3){
-if(a.dimension_2()!=c.dimension_1()||a.dimension_1()!=b.dimension_2()||b.dimension_1()!=c.dimension_2()||a.dimension_0()!=b.dimension_0()||b.dimension_0()!=c.dimension_0()){
+if(a.extent(2)!=c.extent(1)||a.extent(1)!=b.extent(2)||b.extent(1)!=c.extent(2)||a.extent(0)!=b.extent(0)||b.extent(0)!=c.extent(0)){
     std::ostringstream os;
     os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.dimension_0 ()<<","<<a.dimension_1()<<","<<a.dimension_2()<<")"
-       << ", B: " << "("<<b.dimension_0 ()<<","<<b.dimension_1()<<","<<b.dimension_2()<<")"
-       << ", C: " << "("<<c.dimension_0 ()<<","<<c.dimension_1()<<","<<c.dimension_2()<<")";
+       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<","<<a.extent(2)<<")"
+       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<","<<b.extent(2)<<")"
+       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<","<<c.extent(2)<<")";
     Kokkos::Impl::throw_runtime_exception (os.str ());
 }
 }

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,6 +40,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Edge2D2::name = "edge2d2";
   class St_Edge2D2 : public ElementVariableType
   {
   public:
@@ -103,9 +104,7 @@ int Ioss::Edge2D2::number_edges_face(int face) const
 
 Ioss::IntVector Ioss::Edge2D2::edge_connectivity(int /* edge_number */) const
 {
-  Ioss::IntVector connectivity(Constants::nedgenode);
-  connectivity[0] = 0;
-  connectivity[1] = 1;
+  Ioss::IntVector connectivity;
   return connectivity;
 }
 

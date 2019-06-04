@@ -47,21 +47,15 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Ifpack2_Utilities.hpp"
-#include "Ifpack2_Relaxation_decl.hpp"
 #include "MatrixMarket_Tpetra.hpp"
+#include "Tpetra_transform_MultiVector.hpp"
+#include "Tpetra_withLocalAccess_MultiVector.hpp"
 #include <cstdlib>
+#include <memory>
 #include <sstream>
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-#  include "KokkosSparse_gauss_seidel.hpp"
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-
-
-// mfh 28 Mar 2013: Uncomment out these three lines to compute
-// statistics on diagonal entries in compute().
-// #ifndef IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS
-// #  define IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS 1
-// #endif // IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS
+#include "KokkosSparse_gauss_seidel.hpp"
 
 namespace {
   // Validate that a given int is nonnegative.
@@ -145,9 +139,57 @@ namespace {
       return Teuchos::ScalarTraits<Scalar>::eps ();
     }
   };
+
+  // Work-around for GitHub Issue #5269.
+  template<class Scalar,
+           const bool isComplex = Teuchos::ScalarTraits<Scalar>::isComplex>
+  struct RealTraits {};
+
+  template<class Scalar>
+  struct RealTraits<Scalar, false> {
+    using val_type = Scalar;
+    using mag_type = Scalar;
+    static KOKKOS_INLINE_FUNCTION mag_type real (const val_type& z) {
+      return z;
+    }
+  };
+
+  template<class Scalar>
+  struct RealTraits<Scalar, true> {
+    using val_type = Scalar;
+    using mag_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    static KOKKOS_INLINE_FUNCTION mag_type real (const val_type& z) {
+      return Kokkos::ArithTraits<val_type>::real (z);
+    }
+  };
+
+  template<class Scalar>
+  KOKKOS_INLINE_FUNCTION typename RealTraits<Scalar>::mag_type
+  getRealValue (const Scalar& z) {
+    return RealTraits<Scalar>::real (z);
+  }
+
 } // namespace (anonymous)
 
 namespace Ifpack2 {
+
+template<class MatrixType>
+void
+Relaxation<MatrixType>::
+updateCachedMultiVector (const Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>>& map,
+                         size_t numVecs) const
+{
+  // Allocate a multivector if the cached one isn't perfect.  Checking
+  // for map pointer equality is much cheaper than Map::isSameAs.
+  if (cachedMV_.is_null () ||
+      map.get () != cachedMV_->getMap ().get () ||
+      cachedMV_->getNumVectors () != numVecs) {
+    using MV = Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                                   global_ordinal_type, node_type>;
+    cachedMV_ = Teuchos::rcp (new MV (map, numVecs, false));
+  }
+}
+
 
 template<class MatrixType>
 void Relaxation<MatrixType>::
@@ -173,7 +215,6 @@ template<class MatrixType>
 Relaxation<MatrixType>::
 Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
 : A_ (A),
-  Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::Relaxation"))),
   NumSweeps_ (1),
   PrecType_ (Ifpack2::Details::JACOBI),
   DampingFactor_ (STS::one ()),
@@ -211,10 +252,6 @@ Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
   this->setObjectLabel ("Ifpack2::Relaxation");
 }
 
-//==========================================================================
-template<class MatrixType>
-Relaxation<MatrixType>::~Relaxation() {
-}
 
 template<class MatrixType>
 Teuchos::RCP<const Teuchos::ParameterList>
@@ -305,6 +342,14 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   typedef scalar_type ST; // just to make code below shorter
+
+  if (pl.isType<double>("relaxation: damping factor")) {
+    // Make sure that ST=complex can run with a damping factor that is
+    // a double.
+    ST df = pl.get<double>("relaxation: damping factor");
+    pl.remove("relaxation: damping factor");
+    pl.set("relaxation: damping factor",df);
+  }
 
   pl.validateParametersAndSetDefaults (* getValidParameters ());
 
@@ -466,7 +511,7 @@ void
 Relaxation<MatrixType>::
 apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
-       Teuchos::ETransp mode,
+       Teuchos::ETransp /* mode */,
        scalar_type alpha,
        scalar_type beta) const
 {
@@ -496,11 +541,15 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     beta != STS::zero (), std::logic_error,
     "Ifpack2::Relaxation::apply: beta = " << beta << " != 0 case not "
     "implemented.");
-  {
-    // Reset the timer each time, since Relaxation uses the same Time
-    // object to track times for different methods.
-    Teuchos::TimeMonitor timeMon (*Time_, true);
 
+  const std::string timerName ("Ifpack2::Relaxation::apply");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
+
+  {
+    Teuchos::TimeMonitor timeMon (*timer);
     // Special case: alpha == 0.
     if (alpha == STS::zero ()) {
       // No floating-point operations, so no need to update a count.
@@ -512,9 +561,14 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       RCP<const MV> Xcopy;
       // FIXME (mfh 12 Sep 2014) This test for aliasing is incomplete.
       {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
         auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
         auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-        if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+#else
+        auto X_lcl_host = X.getLocalViewHost ();
+        auto Y_lcl_host = Y.getLocalViewHost ();
+#endif
+        if (X_lcl_host.data () == Y_lcl_host.data ()) {
           Xcopy = rcp (new MV (X, Teuchos::Copy));
         } else {
           Xcopy = rcpFromRef (X);
@@ -554,7 +608,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       }
     }
   }
-  ApplyTime_ += Time_->totalElapsedTime ();
+  ApplyTime_ += timer->totalElapsedTime ();
   ++NumApply_;
 }
 
@@ -585,73 +639,87 @@ applyMat (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordi
 template<class MatrixType>
 void Relaxation<MatrixType>::initialize ()
 {
+  const char methodName[] = "Ifpack2::Relaxation::initialize";
+
   TEUCHOS_TEST_FOR_EXCEPTION
-    (A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::initialize: "
-     "The input matrix A is null.  Please call setMatrix() with a nonnull "
-     "input matrix before calling this method.");
-  Teuchos::TimeMonitor timeMon (*Time_, true);
+    (A_.is_null (), std::runtime_error, methodName << ": The "
+     "input matrix A is null.  Please call setMatrix() with "
+     "a nonnull input matrix before calling this method.");
 
-  if (A_.is_null ()) {
-    hasBlockCrsMatrix_ = false;
-  }
-  else { // A_ is not null
-    Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
-      Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
-    if (A_bcrs.is_null ()) {
-      hasBlockCrsMatrix_ = false;
-    }
-    else { // A_ is a block_crs_matrix_type
-      hasBlockCrsMatrix_ = true;
-    }
-  }
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter (methodName);
 
-  if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-    const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (crsMat == NULL, std::logic_error, "Ifpack2::Relaxation::initialize: "
-       "Multithreaded Gauss-Seidel methods currently only work when the input "
-       "matrix is a Tpetra::CrsMatrix.");
+  { // Timing of initialize starts here
+    Teuchos::TimeMonitor timeMon (*timer);
+    isInitialized_ = false;
 
-    if(this->ifpack2_dump_matrix_){
-      int random_integer = rand();
-      std::stringstream ss;
-      ss << random_integer;
-      std::string str = ss.str();
-      Tpetra::MatrixMarket::Writer<crs_matrix_type> crs_writer;
-      std::string file_name = str + "_Ifpack2_MT_GS.mtx";
-      Teuchos::RCP<const crs_matrix_type> rcp_crs_mat = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-      crs_writer.writeSparseFile(file_name, rcp_crs_mat);
+    {
+      auto rowMap = A_->getRowMap ();
+      auto comm = rowMap.is_null () ? Teuchos::null : rowMap->getComm ();
+      IsParallel_ = ! comm.is_null () && comm->getSize () > 1;
     }
 
-    this->mtKernelHandle_ = Teuchos::rcp (new mt_kernel_handle_type ());
-    if (mtKernelHandle_->get_gs_handle () == NULL) {
-      mtKernelHandle_->create_gs_handle ();
+    // mfh 21 Mar 2013, 07 May 2019: The Import object may be null,
+    // but in that case, the domain and column Maps are the same and
+    // we don't need to Import anyway.
+    //
+    // mfh 07 May 2019: A_->getGraph() might be an
+    // OverlappingRowGraph, which doesn't have an Import object.
+    // However, in that case, the comm should have size 1.
+    Importer_ = IsParallel_ ? A_->getGraph ()->getImporter () :
+      Teuchos::null;
+
+    {
+      Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+        Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+      hasBlockCrsMatrix_ = ! A_bcrs.is_null ();
     }
-    local_matrix_type kcsr = crsMat->getLocalMatrix ();
 
-    bool is_symmetric = (PrecType_ == Ifpack2::Details::MTSGS);
-    is_symmetric = is_symmetric || is_matrix_structurally_symmetric_;
+    if (PrecType_ == Details::MTGS || PrecType_ == Details::MTSGS) {
+      const crs_matrix_type* crsMat =
+        dynamic_cast<const crs_matrix_type*> (A_.get());
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (crsMat == nullptr, std::logic_error, methodName << ": "
+         "Multithreaded Gauss-Seidel methods currently only work "
+         "when the input matrix is a Tpetra::CrsMatrix.");
 
-    using KokkosSparse::Experimental::gauss_seidel_symbolic;
-    gauss_seidel_symbolic<mt_kernel_handle_type,
-      lno_row_view_t,
-      lno_nonzero_view_t> (mtKernelHandle_.getRawPtr (),
-                           A_->getNodeNumRows (),
-                           A_->getNodeNumCols (),
-                           kcsr.graph.row_map,
-                           kcsr.graph.entries,
-                           is_symmetric);
-#else // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "The multithreaded implementation of Gauss-Seidel "
-     "is not enabled.  Please talk to the Ifpack2 developers about how to "
-     "enable this method.");
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-  }
+      // FIXME (mfh 27 May 2019) Dumping the matrix belongs in
+      // compute, not initialize, since users may change the matrix's
+      // values at any time before calling compute.
+      if (ifpack2_dump_matrix_) {
+        static int sequence_number = 0;
+        const std::string file_name = "Ifpack2_MT_GS_" +
+          std::to_string (sequence_number++) + ".mtx";
+        Teuchos::RCP<const crs_matrix_type> rcp_crs_mat =
+          Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+        if (! rcp_crs_mat.is_null ()) {
+          using writer_type = Tpetra::MatrixMarket::Writer<crs_matrix_type>;
+          writer_type::writeSparseFile (file_name, rcp_crs_mat);
+        }
+      }
 
+      this->mtKernelHandle_ = Teuchos::rcp (new mt_kernel_handle_type ());
+      if (mtKernelHandle_->get_gs_handle () == nullptr) {
+        mtKernelHandle_->create_gs_handle ();
+      }
+      local_matrix_type kcsr = crsMat->getLocalMatrix ();
 
-  InitializeTime_ += Time_->totalElapsedTime ();
+      bool is_symmetric = (PrecType_ == Ifpack2::Details::MTSGS);
+      is_symmetric = is_symmetric || is_matrix_structurally_symmetric_;
+
+      using KokkosSparse::Experimental::gauss_seidel_symbolic;
+      gauss_seidel_symbolic<mt_kernel_handle_type,
+                            lno_row_view_t,
+                            lno_nonzero_view_t> (mtKernelHandle_.getRawPtr (),
+                                                 A_->getNodeNumRows (),
+                                                 A_->getNodeNumCols (),
+                                                 kcsr.graph.row_map,
+                                                 kcsr.graph.entries,
+                                                 is_symmetric);
+    }
+  } // timing of initialize stops here
+
+  InitializeTime_ += timer->totalElapsedTime ();
   ++NumInitialize_;
   isInitialized_ = true;
 }
@@ -685,10 +753,10 @@ public:
   InvertDiagBlocks (BlockDiagView& block_diag)
     : block_diag_(block_diag)
   {
-    const auto blksz = block_diag.dimension_1();
-    Kokkos::resize(rwrk_buf_, block_diag_.dimension_0(), blksz);
+    const auto blksz = block_diag.extent(1);
+    Kokkos::resize(rwrk_buf_, block_diag_.extent(0), blksz);
     rwrk_ = rwrk_buf_;
-    Kokkos::resize(iwrk_buf_, block_diag_.dimension_0(), blksz);
+    Kokkos::resize(iwrk_buf_, block_diag_.extent(0), blksz);
     iwrk_ = iwrk_buf_;
   }
 
@@ -732,10 +800,13 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   typedef local_ordinal_type LO;
   typedef typename node_type::device_type device_type;
 
+  const std::string timerName ("Ifpack2::Relaxation::computeBlockCrs");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
   {
-    // Reset the timer each time, since Relaxation uses the same Time
-    // object to track times for different methods.
-    Teuchos::TimeMonitor timeMon (*Time_, true);
+    Teuchos::TimeMonitor timeMon (*timer);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::"
@@ -745,7 +816,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
     const block_crs_matrix_type* blockCrsA =
       dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
     TEUCHOS_TEST_FOR_EXCEPTION(
-      blockCrsA == NULL, std::logic_error, "Ifpack2::Relaxation::"
+      blockCrsA == nullptr, std::logic_error, "Ifpack2::Relaxation::"
       "computeBlockCrs: A_ is not a BlockCrsMatrix, but it should be if we "
       "got this far.  Please report this bug to the Ifpack2 developers.");
 
@@ -762,7 +833,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       blockDiag_ = block_diag_type (); // clear it before reallocating
       blockDiag_ = block_diag_type ("Ifpack2::Relaxation::blockDiag_",
                                     lclNumMeshRows, blockSize, blockSize);
-      if (Teuchos::as<LO>(diagOffsets_.dimension_0 () ) < lclNumMeshRows) {
+      if (Teuchos::as<LO>(diagOffsets_.extent (0) ) < lclNumMeshRows) {
         // Clear diagOffsets_ first (by assigning an empty View to it)
         // to save memory, before reallocating.
         diagOffsets_ = Kokkos::View<size_t*, device_type> ();
@@ -770,11 +841,11 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       }
       blockCrsA->getCrsGraph ().getLocalDiagOffsets (diagOffsets_);
       TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (diagOffsets_.dimension_0 ()) !=
-         static_cast<size_t> (blockDiag_.dimension_0 ()),
-         std::logic_error, "diagOffsets_.dimension_0() = " <<
-         diagOffsets_.dimension_0 () << " != blockDiag_.dimension_0() = "
-         << blockDiag_.dimension_0 () <<
+        (static_cast<size_t> (diagOffsets_.extent (0)) !=
+         static_cast<size_t> (blockDiag_.extent (0)),
+         std::logic_error, "diagOffsets_.extent(0) = " <<
+         diagOffsets_.extent (0) << " != blockDiag_.extent(0) = "
+         << blockDiag_.extent (0) <<
          ".  Please report this bug to the Ifpack2 developers.");
       savedDiagOffsets_ = true;
     }
@@ -850,11 +921,9 @@ void Relaxation<MatrixType>::computeBlockCrs ()
        "Tpetra::BlockCrsMatrix, one or more diagonal block LU factorizations "
        "failed on one or more (MPI) processes.");
 #endif // HAVE_IFPACK2_DEBUG
-
-    Importer_ = A_->getGraph ()->getImporter ();
   } // end TimeMonitor scope
 
-  ComputeTime_ += Time_->totalElapsedTime ();
+  ComputeTime_ += timer->totalElapsedTime ();
   ++NumCompute_;
   IsComputed_ = true;
 }
@@ -862,6 +931,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
 template<class MatrixType>
 void Relaxation<MatrixType>::compute ()
 {
+  using Tpetra::readWrite;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -874,11 +944,29 @@ void Relaxation<MatrixType>::compute ()
   using Teuchos::REDUCE_SUM;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::reduceAll;
-  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
-                         global_ordinal_type, node_type> vector_type;
-  typedef typename vector_type::device_type device_type;
+  using LO = local_ordinal_type;
+  using vector_type = Tpetra::Vector<scalar_type, local_ordinal_type,
+                                     global_ordinal_type, node_type>;
+  using device_type = typename vector_type::device_type;
+  using IST = typename vector_type::impl_scalar_type;
+  using KAT = Kokkos::ArithTraits<IST>;
+
+  const char methodName[] = "Ifpack2::Relaxation::compute";
   const scalar_type zero = STS::zero ();
   const scalar_type one = STS::one ();
+
+  // mfh 27 May 2019: Later on, we should introduce an IFPACK2_DEBUG
+  // environment variable to control this behavior at run time.
+#ifdef HAVE_IFPACK2_DEBUG
+  constexpr bool debug = true;
+#else
+  constexpr bool debug = false;
+#endif // HAVE_IFPACK2_DEBUG
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, methodName << ": "
+     "The input matrix A is null.  Please call setMatrix() with a nonnull "
+     "input matrix, then call initialize(), before calling this method.");
 
   // We don't count initialization in compute() time.
   if (! isInitialized ()) {
@@ -890,27 +978,21 @@ void Relaxation<MatrixType>::compute ()
     return;
   }
 
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter (methodName);
 
-
-  {
-    // Reset the timer each time, since Relaxation uses the same Time
-    // object to track times for different methods.
-    Teuchos::TimeMonitor timeMon (*Time_, true);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::compute: "
-      "The input matrix A is null.  Please call setMatrix() with a nonnull "
-      "input matrix, then call initialize(), before calling this method.");
-
-    // Reset state.
+  { // Timing of compute starts here.
+    Teuchos::TimeMonitor timeMon (*timer);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (NumSweeps_ < 0, std::logic_error, methodName
+       << ": NumSweeps_ = " << NumSweeps_ << " < 0.  "
+       "Please report this bug to the Ifpack2 developers.");
     IsComputed_ = false;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      NumSweeps_ < 0, std::logic_error,
-      "Ifpack2::Relaxation::compute: NumSweeps_ = " << NumSweeps_ << " < 0.  "
-      "Please report this bug to the Ifpack2 developers.");
-
-    Diagonal_ = rcp (new vector_type (A_->getRowMap ()));
+    Diagonal_ = Teuchos::null;
+    // A_->getLocalDiagCopy fills in all Vector entries, even if the
+    // matrix has no stored entries in the corresponding rows.
+    Diagonal_ = rcp (new vector_type (A_->getRowMap (), false));
 
     // Extract the diagonal entries.  The CrsMatrix static graph
     // version is faster for subsequent calls to compute(), since it
@@ -930,53 +1012,51 @@ void Relaxation<MatrixType>::compute ()
       // a CrsMatrix.
       const crs_matrix_type* crsMat =
         dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
-      if (crsMat == NULL || ! crsMat->isStaticGraph ()) {
+      if (crsMat == nullptr || ! crsMat->isStaticGraph ()) {
         A_->getLocalDiagCopy (*Diagonal_); // slow path
-      } else {
+      }
+      else {
         if (! savedDiagOffsets_) { // we haven't precomputed offsets
           const size_t lclNumRows = A_->getRowMap ()->getNodeNumElements ();
-          if (diagOffsets_.dimension_0 () < lclNumRows) {
-            typedef typename node_type::device_type DT;
-            diagOffsets_ = Kokkos::View<size_t*, DT> (); // clear 1st to save mem
-            diagOffsets_ = Kokkos::View<size_t*, DT> ("offsets", lclNumRows);
+          if (diagOffsets_.extent (0) < lclNumRows) {
+            using Kokkos::view_alloc;
+            using Kokkos::WithoutInitializing;
+            using offsets_view_type = Kokkos::View<size_t*, device_type>;
+
+            diagOffsets_ = offsets_view_type (); // clear 1st to save mem
+            auto howAlloc = view_alloc ("offsets", WithoutInitializing);
+            diagOffsets_ = offsets_view_type (howAlloc, lclNumRows);
           }
           crsMat->getCrsGraph ()->getLocalDiagOffsets (diagOffsets_);
           savedDiagOffsets_ = true;
         }
         crsMat->getLocalDiagCopy (*Diagonal_, diagOffsets_);
-#ifdef HAVE_IFPACK2_DEBUG
-        // Validate the fast-path diagonal against the slow-path diagonal.
-        vector_type D_copy (A_->getRowMap ());
-        A_->getLocalDiagCopy (D_copy);
-        D_copy.update (STS::one (), *Diagonal_, -STS::one ());
-        const magnitude_type err = D_copy.normInf ();
-        // The two diagonals should be exactly the same, so their
-        // difference should be exactly zero.
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          err != STM::zero(), std::logic_error, "Ifpack2::Relaxation::compute: "
-          "\"fast-path\" diagonal computation failed.  \\|D1 - D2\\|_inf = "
-          << err << ".");
-#endif // HAVE_IFPACK2_DEBUG
+
+        if (debug) {
+          // Validate the fast-path diagonal against the slow-path diagonal.
+          vector_type D_copy (A_->getRowMap ());
+          A_->getLocalDiagCopy (D_copy);
+          D_copy.update (STS::one (), *Diagonal_, -STS::one ());
+          const magnitude_type err = D_copy.normInf ();
+          // The two diagonals should be exactly the same, so their
+          // difference should be exactly zero.
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (err != STM::zero(), std::logic_error, methodName << ": "
+             << "\"fast-path\" diagonal computation failed.  "
+             "\\|D1 - D2\\|_inf = " << err << ".");
+        }
       }
     }
 
     // If we're checking the computed inverse diagonal, then keep a
     // copy of the original diagonal entries for later comparison.
-    RCP<vector_type> origDiag;
+    std::unique_ptr<vector_type> origDiag;
     if (checkDiagEntries_) {
-      origDiag = rcp (new vector_type (A_->getRowMap ()));
-      Tpetra::deep_copy (*origDiag, *Diagonal_);
+      origDiag = std::unique_ptr<vector_type>
+        (new vector_type (*Diagonal_, Teuchos::Copy));
     }
 
-    const size_t numMyRows = A_->getNodeNumRows ();
-
-    // We're about to read and write diagonal entries on the host.
-    Diagonal_->template sync<Kokkos::HostSpace> ();
-    Diagonal_->template modify<Kokkos::HostSpace> ();
-    auto diag_2d = Diagonal_->template getLocalView<Kokkos::HostSpace> ();
-    auto diag_1d = Kokkos::subview (diag_2d, Kokkos::ALL (), 0);
-    // FIXME (mfh 12 Jan 2016) temp fix for Kokkos::complex vs. std::complex.
-    scalar_type* const diag = reinterpret_cast<scalar_type*> (diag_1d.ptr_on_device ());
+    const LO numMyRows = static_cast<LO> (A_->getNodeNumRows ());
 
     // Setup for L1 Methods.
     // Here we add half the value of the off-processor entries in the row,
@@ -985,29 +1065,46 @@ void Relaxation<MatrixType>::compute ()
     // This follows from Equation (6.5) in: Baker, Falgout, Kolev and
     // Yang.  "Multigrid Smoothers for Ultraparallel Computing."  SIAM
     // J. Sci. Comput., Vol. 33, No. 5. (2011), pp. 2864-2887.
+    //
+    // FIXME (mfh 27 May 2019) Add device-parallel version for when
+    // *A_ is a CrsMatrix.  Furthermore, in that case, we should
+    // combine diagonal extraction above with L1 modification into a
+    // single parallel loop.
     if (DoL1Method_ && IsParallel_) {
-      const scalar_type two = one + one;
-      const size_t maxLength = A_->getNodeMaxNumRowEntries ();
-      Array<local_ordinal_type> indices (maxLength);
-      Array<scalar_type> values (maxLength);
-      size_t numEntries;
+      vector_type& gblDiag = *Diagonal_;
+      using rw_type =
+        decltype (readWrite (gblDiag).on (Kokkos::HostSpace ()));
+      // Once we have C++14, we can get rid of this alias and use
+      // "auto" in the lambda below.
+      using lcl_vec_type =
+        Tpetra::with_local_access_function_argument_type<rw_type>;
+      const row_matrix_type& A_row = *A_;
+      const magnitude_type L1_eta = L1Eta_;
+      Tpetra::withLocalAccess
+        ([&A_row, L1_eta, numMyRows] (const lcl_vec_type& diag) {
+           const magnitude_type two = STM::one () + STM::one ();
+           const size_t maxLength = A_row.getNodeMaxNumRowEntries ();
+           Array<local_ordinal_type> indices (maxLength);
+           Array<scalar_type> values (maxLength);
+           size_t numEntries;
 
-      for (size_t i = 0; i < numMyRows; ++i) {
-        A_->getLocalRowCopy (i, indices (), values (), numEntries);
-        magnitude_type diagonal_boost = STM::zero ();
-        for (size_t k = 0 ; k < numEntries ; ++k) {
-          if (static_cast<size_t> (indices[k]) > numMyRows) {
-            diagonal_boost += STS::magnitude (values[k] / two);
-          }
-        }
-        if (STS::magnitude (diag[i]) < L1Eta_ * diagonal_boost) {
-          diag[i] += diagonal_boost;
-        }
-      }
+           for (LO i = 0; i < numMyRows; ++i) {
+             A_row.getLocalRowCopy (i, indices (), values (), numEntries);
+             magnitude_type diagonal_boost = STM::zero ();
+             for (size_t k = 0 ; k < numEntries; ++k) {
+               if (indices[k] > numMyRows) {
+                 diagonal_boost += STS::magnitude (values[k] / two);
+               }
+             }
+             if (KAT::magnitude (diag[i]) < L1_eta * diagonal_boost) {
+               diag[i] += diagonal_boost;
+             }
+           }
+         }, readWrite (gblDiag).on (Kokkos::HostSpace ()));
     }
 
     //
-    // Invert the diagonal entries of the matrix (not in place).
+    // Invert the matrix's diagonal entries (in Diagonal_).
     //
 
     // Precompute some quantities for "fixing" zero or tiny diagonal
@@ -1017,9 +1114,9 @@ void Relaxation<MatrixType>::compute ()
     // Teuchos::ScalarTraits when its template parameter is not a
     // floating-point type.  (Ifpack2 sometimes gets instantiated for
     // integer Scalar types.)
-    const scalar_type oneOverMinDiagVal = (MinDiagonalValue_ == zero) ?
-      one / SmallTraits<scalar_type>::eps () :
-      one / MinDiagonalValue_;
+    const IST oneOverMinDiagVal = (MinDiagonalValue_ == zero) ?
+      KAT::one () / static_cast<IST> (SmallTraits<scalar_type>::eps ()) :
+      KAT::one () / static_cast<IST> (MinDiagonalValue_);
     // It's helpful not to have to recompute this magnitude each time.
     const magnitude_type minDiagValMag = STS::magnitude (MinDiagonalValue_);
 
@@ -1032,79 +1129,88 @@ void Relaxation<MatrixType>::compute ()
       size_t numSmallDiagEntries = 0; // "small" includes zero
       size_t numZeroDiagEntries = 0; // # zero diagonal entries
       size_t numNegDiagEntries = 0; // # negative (real parts of) diagonal entries
-
-      // As we go, keep track of the diagonal entries with the least and
-      // greatest magnitude.  We could use the trick of starting the min
-      // with +Inf and the max with -Inf, but that doesn't work if
-      // scalar_type is a built-in integer type.  Thus, we have to start
-      // by reading the first diagonal entry redundantly.
-      // scalar_type minMagDiagEntry = zero;
-      // scalar_type maxMagDiagEntry = zero;
       magnitude_type minMagDiagEntryMag = STM::zero ();
       magnitude_type maxMagDiagEntryMag = STM::zero ();
-      if (numMyRows > 0) {
-        const scalar_type d_0 = diag[0];
-        const magnitude_type d_0_mag = STS::magnitude (d_0);
-        // minMagDiagEntry = d_0;
-        // maxMagDiagEntry = d_0;
-        minMagDiagEntryMag = d_0_mag;
-        maxMagDiagEntryMag = d_0_mag;
-      }
 
-      // Go through all the diagonal entries.  Compute counts of
-      // small-magnitude, zero, and negative-real-part entries.  Invert
-      // the diagonal entries that aren't too small.  For those that are
-      // too small in magnitude, replace them with 1/MinDiagonalValue_
-      // (or 1/eps if MinDiagonalValue_ happens to be zero).
-      for (size_t i = 0 ; i < numMyRows; ++i) {
-        const scalar_type d_i = diag[i];
-        const magnitude_type d_i_mag = STS::magnitude (d_i);
-        const magnitude_type d_i_real = STS::real (d_i);
+      vector_type& gblDiag = *Diagonal_;
+      // Once we have C++14, we can get rid of these two aliases and
+      // use "auto" in the lambda below.
+      using rw_type =
+        decltype (readWrite (gblDiag).on (Kokkos::HostSpace ()));
+      using lcl_vec_type =
+        Tpetra::with_local_access_function_argument_type<rw_type>;
+      Tpetra::withLocalAccess
+        ([&] (const lcl_vec_type& diag) {
+           // As we go, keep track of the diagonal entries with the
+           // least and greatest magnitude.  We could use the trick of
+           // starting min with +Inf and max with -Inf, but that
+           // doesn't work if scalar_type is a built-in integer type.
+           // Thus, we have to start by reading the first diagonal
+           // entry redundantly.
+           if (numMyRows != 0) {
+             const magnitude_type d_0_mag = KAT::abs (diag[0]);
+             minMagDiagEntryMag = d_0_mag;
+             maxMagDiagEntryMag = d_0_mag;
+           }
 
-        // We can't compare complex numbers, but we can compare their
-        // real parts.
-        if (d_i_real < STM::zero ()) {
-          ++numNegDiagEntries;
-        }
-        if (d_i_mag < minMagDiagEntryMag) {
-          // minMagDiagEntry = d_i;
-          minMagDiagEntryMag = d_i_mag;
-        }
-        if (d_i_mag > maxMagDiagEntryMag) {
-          // maxMagDiagEntry = d_i;
-          maxMagDiagEntryMag = d_i_mag;
-        }
+           // Go through all the diagonal entries.  Compute counts of
+           // small-magnitude, zero, and negative-real-part entries.
+           // Invert the diagonal entries that aren't too small.  For
+           // those too small in magnitude, replace them with
+           // 1/MinDiagonalValue_ (or 1/eps if MinDiagonalValue_
+           // happens to be zero).
+           for (LO i = 0; i < numMyRows; ++i) {
+             const IST d_i = diag[i];
+             const magnitude_type d_i_mag = KAT::abs (d_i);
+             // Work-around for GitHub Issue #5269.
+             //const magnitude_type d_i_real = KAT::real (d_i);
+             const auto d_i_real = getRealValue (d_i);
 
-        if (fixTinyDiagEntries_) {
-          // <= not <, in case minDiagValMag is zero.
-          if (d_i_mag <= minDiagValMag) {
-            ++numSmallDiagEntries;
-            if (d_i_mag == STM::zero ()) {
-              ++numZeroDiagEntries;
-            }
-            diag[i] = oneOverMinDiagVal;
-          } else {
-            diag[i] = one / d_i;
-          }
-        }
-        else { // Don't fix zero or tiny diagonal entries.
-          // <= not <, in case minDiagValMag is zero.
-          if (d_i_mag <= minDiagValMag) {
-            ++numSmallDiagEntries;
-            if (d_i_mag == STM::zero ()) {
-              ++numZeroDiagEntries;
-            }
-          }
-          diag[i] = one / d_i;
-        }
-      }
+             // We can't compare complex numbers, but we can compare their
+             // real parts.
+             if (d_i_real < STM::zero ()) {
+               ++numNegDiagEntries;
+             }
+             if (d_i_mag < minMagDiagEntryMag) {
+               minMagDiagEntryMag = d_i_mag;
+             }
+             if (d_i_mag > maxMagDiagEntryMag) {
+               maxMagDiagEntryMag = d_i_mag;
+             }
+
+             if (fixTinyDiagEntries_) {
+               // <= not <, in case minDiagValMag is zero.
+               if (d_i_mag <= minDiagValMag) {
+                 ++numSmallDiagEntries;
+                 if (d_i_mag == STM::zero ()) {
+                   ++numZeroDiagEntries;
+                 }
+                 diag[i] = oneOverMinDiagVal;
+               }
+               else {
+                 diag[i] = KAT::one () / d_i;
+               }
+             }
+             else { // Don't fix zero or tiny diagonal entries.
+               // <= not <, in case minDiagValMag is zero.
+               if (d_i_mag <= minDiagValMag) {
+                 ++numSmallDiagEntries;
+                 if (d_i_mag == STM::zero ()) {
+                   ++numZeroDiagEntries;
+                 }
+               }
+               diag[i] = KAT::one () / d_i;
+             }
+           }
+         }, readWrite (gblDiag).on (Kokkos::HostSpace ()));
 
       // Count floating-point operations of computing the inverse diagonal.
       //
       // FIXME (mfh 30 Mar 2013) Shouldn't counts be global, not local?
       if (STS::isComplex) { // magnitude: at least 3 flops per diagonal entry
         ComputeFlops_ += 4.0 * numMyRows;
-      } else {
+      }
+      else {
         ComputeFlops_ += numMyRows;
       }
 
@@ -1148,19 +1254,13 @@ void Relaxation<MatrixType>::compute ()
       globalNumZeroDiagEntries_ = globalCounts[1];
       globalNumNegDiagEntries_ = globalCounts[2];
 
-      // Forestall "set but not used" compiler warnings.
-      // (void) minMagDiagEntry;
-      // (void) maxMagDiagEntry;
-
       // Compute and save the difference between the computed inverse
       // diagonal, and the original diagonal's inverse.
-      //
-      // NOTE (mfh 11 Jan 2016) We need to sync Diagonal_ back from
-      // host to device for the update kernel below, and we don't need
-      // to modify it or sync it back again here.
       vector_type diff (A_->getRowMap ());
       diff.reciprocal (*origDiag);
-      Diagonal_->template sync<device_type> ();
+      if (Diagonal_->need_sync_device ()) {
+        Diagonal_->sync_device ();
+      }
       diff.update (-one, *Diagonal_, one);
       globalDiagNormDiff_ = diff.norm2 ();
     }
@@ -1169,64 +1269,74 @@ void Relaxation<MatrixType>::compute ()
         // Go through all the diagonal entries.  Invert those that
         // aren't too small in magnitude.  For those that are too
         // small in magnitude, replace them with oneOverMinDiagVal.
-        for (size_t i = 0 ; i < numMyRows; ++i) {
-          const scalar_type d_i = diag[i];
-          const magnitude_type d_i_mag = STS::magnitude (d_i);
+        vector_type& gblDiag = *Diagonal_;
+        Tpetra::transform
+          ("Ifpack2::Relaxation::compute: Invert & fix diagonal",
+           gblDiag, gblDiag,
+           KOKKOS_LAMBDA (const IST& d_i) {
+            const magnitude_type d_i_mag = KAT::magnitude (d_i);
 
-          // <= not <, in case minDiagValMag is zero.
-          if (d_i_mag <= minDiagValMag) {
-            diag[i] = oneOverMinDiagVal;
-          } else {
-            diag[i] = one / d_i;
-          }
-        }
+            // <= not <, in case minDiagValMag is zero.
+            if (d_i_mag <= minDiagValMag) {
+              return oneOverMinDiagVal;
+            }
+            else {
+              // For Stokhos types, operator/ returns an expression
+              // type.  Explicitly convert to IST before returning.
+              return IST (KAT::one () / d_i);
+            }
+          });
       }
       else { // don't fix tiny or zero diagonal entries
-        for (size_t i = 0 ; i < numMyRows; ++i) {
-          diag[i] = one / diag[i];
+        if (Diagonal_->need_sync_device ()) {
+          Diagonal_->sync_device ();
         }
+        Diagonal_->reciprocal (*Diagonal_);
       }
+
       if (STS::isComplex) { // magnitude: at least 3 flops per diagonal entry
         ComputeFlops_ += 4.0 * numMyRows;
-      } else {
+      }
+      else {
         ComputeFlops_ += numMyRows;
       }
     }
 
-    if (IsParallel_ && (PrecType_ == Ifpack2::Details::GS ||
-                        PrecType_ == Ifpack2::Details::SGS)) {
-      // mfh 21 Mar 2013: The Import object may be null, but in that
-      // case, the domain and column Maps are the same and we don't
-      // need to Import anyway.
-      Importer_ = A_->getGraph ()->getImporter ();
-      Diagonal_->template sync<device_type> ();
+    if (Diagonal_->need_sync_device ()) {
+      Diagonal_->sync_device ();
     }
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-    //KokkosKernels GaussSiedel Initialization.
-    if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
-      const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
+
+    if (PrecType_ == Ifpack2::Details::MTGS ||
+        PrecType_ == Ifpack2::Details::MTSGS) {
+      //KokkosKernels GaussSeidel Initialization.
+
+      const crs_matrix_type* crsMat =
+        dynamic_cast<const crs_matrix_type*> (A_.get());
       TEUCHOS_TEST_FOR_EXCEPTION
-        (crsMat == NULL, std::logic_error, "Ifpack2::Relaxation::compute: "
-         "Multithreaded Gauss-Seidel methods currently only work when the input "
-         "matrix is a Tpetra::CrsMatrix.");
+        (crsMat == nullptr, std::logic_error, methodName << ": "
+         "Multithreaded Gauss-Seidel methods currently only work "
+         "when the input matrix is a Tpetra::CrsMatrix.");
       local_matrix_type kcsr = crsMat->getLocalMatrix ();
 
       const bool is_symmetric = (PrecType_ == Ifpack2::Details::MTSGS);
+      auto diagView_2d = Diagonal_->getLocalViewDevice ();
+      auto diagView_1d = Kokkos::subview (diagView_2d, Kokkos::ALL (), 0);
       using KokkosSparse::Experimental::gauss_seidel_numeric;
       gauss_seidel_numeric<mt_kernel_handle_type,
-        lno_row_view_t,
-        lno_nonzero_view_t,
-        scalar_nonzero_view_t> (mtKernelHandle_.getRawPtr (),
-                                A_->getNodeNumRows (), A_->getNodeNumCols (),
-                                kcsr.graph.row_map,
-                                kcsr.graph.entries,
-                                kcsr.values,
-                                is_symmetric);
+                           lno_row_view_t,
+                           lno_nonzero_view_t,
+                           scalar_nonzero_view_t> (mtKernelHandle_.getRawPtr (),
+                                                   A_->getNodeNumRows (),
+                                                   A_->getNodeNumCols (),
+                                                   kcsr.graph.row_map,
+                                                   kcsr.graph.entries,
+                                                   kcsr.values,
+                                                   diagView_1d,
+                                                   is_symmetric);
     }
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
   } // end TimeMonitor scope
 
-  ComputeTime_ += Time_->totalElapsedTime ();
+  ComputeTime_ += timer->totalElapsedTime ();
   ++NumCompute_;
   IsComputed_ = true;
 }
@@ -1239,9 +1349,6 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
                     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::as;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type> MV;
-
   if (hasBlockCrsMatrix_) {
     ApplyInverseJacobi_BlockCrsMatrix (X, Y);
     return;
@@ -1277,14 +1384,15 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
   // If we were allowed to assume that the starting guess was zero,
   // then we have already done the first sweep above.
   const int startSweep = ZeroStartingSolution_ ? 1 : 0;
-  // We don't need to initialize the result MV, since the sparse
-  // mat-vec will clobber its contents anyway.
-  MV A_times_Y (Y.getMap (), as<size_t>(numVectors), false);
+
+  // Allocate a multivector if the cached one isn't perfect
+  updateCachedMultiVector(Y.getMap(),as<size_t>(numVectors));
+
   for (int j = startSweep; j < NumSweeps_; ++j) {
     // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
-    applyMat (Y, A_times_Y);
-    A_times_Y.update (STS::one (), X, -STS::one ());
-    Y.elementWiseMultiply (DampingFactor_, *Diagonal_, A_times_Y, STS::one ());
+    applyMat (Y, *cachedMV_);
+    cachedMV_->update (STS::one (), X, -STS::one ());
+    Y.elementWiseMultiply (DampingFactor_, *Diagonal_, *cachedMV_, STS::one ());
   }
 
   // For each column of output, for each pass over the matrix:
@@ -1316,15 +1424,16 @@ ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type,
                                      global_ordinal_type,
                                      node_type>& Y) const
 {
-  typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type> BMV;
+  using Tpetra::Experimental::BlockMultiVector;
+  using BMV = BlockMultiVector<scalar_type, local_ordinal_type,
+                               global_ordinal_type, node_type>;
 
   const block_crs_matrix_type* blockMatConst =
     dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
   TEUCHOS_TEST_FOR_EXCEPTION
-    (blockMatConst == NULL, std::logic_error, "This method should never be "
-     "called if the matrix A_ is not a BlockCrsMatrix.  Please report this "
-     "bug to the Ifpack2 developers.");
+    (blockMatConst == nullptr, std::logic_error, "This method should "
+     "never be called if the matrix A_ is not a BlockCrsMatrix.  "
+     "Please report this bug to the Ifpack2 developers.");
   // mfh 23 Jan 2016: Unfortunately, the const cast is necessary.
   // This is because applyBlock() is nonconst (more accurate), while
   // apply() is const (required by Tpetra::Operator interface, but a
@@ -1374,7 +1483,7 @@ Relaxation<MatrixType>::
 ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
-  typedef Relaxation<MatrixType> this_type;
+  using this_type = Relaxation<MatrixType>;
   // The CrsMatrix version is faster, because it can access the sparse
   // matrix data directly, rather than by copying out each row's data
   // in turn.  Thus, we check whether the RowMatrix is really a
@@ -1388,11 +1497,13 @@ ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_
     dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
   const crs_matrix_type* crsMat =
     dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
-  if (blockCrsMat != NULL)  {
+  if (blockCrsMat != nullptr)  {
     const_cast<this_type*> (this)->ApplyInverseGS_BlockCrsMatrix (*blockCrsMat, X, Y);
-  } else if (crsMat != NULL) {
+  }
+  else if (crsMat != nullptr) {
     ApplyInverseGS_CrsMatrix (*crsMat, X, Y);
-  } else {
+  }
+  else {
     ApplyInverseGS_RowMatrix (X, Y);
   }
 }
@@ -1438,14 +1549,12 @@ ApplyInverseGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_ty
   RCP<MV> Y2;
   if (IsParallel_) {
     if (Importer_.is_null ()) { // domain and column Maps are the same.
-      // We will copy Y into Y2 below, so no need to fill with zeros here.
-      Y2 = rcp (new MV (Y.getMap (), NumVectors, false));
-    } else {
-      // FIXME (mfh 21 Mar 2013) We probably don't need to fill with
-      // zeros here, since we are doing an Import into Y2 below
-      // anyway.  However, it doesn't hurt correctness.
-      Y2 = rcp (new MV (Importer_->getTargetMap (), NumVectors));
+      updateCachedMultiVector (Y.getMap (), NumVectors);
     }
+    else {
+      updateCachedMultiVector (Importer_->getTargetMap (), NumVectors);
+    }
+    Y2 = cachedMV_;
   }
   else {
     Y2 = rcpFromRef (Y);
@@ -1472,6 +1581,9 @@ ApplyInverseGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_ty
       // data exchange is here, once per sweep
       if (IsParallel_) {
         if (Importer_.is_null ()) {
+          // FIXME (mfh 27 May 2019) This doesn't deep copy -- not
+          // clear if this is correct.  Reevaluate at some point.
+
           *Y2 = Y; // just copy, since domain and column Maps are the same
         } else {
           Y2->doImport (Y, *Importer_, Tpetra::INSERT);
@@ -1704,27 +1816,19 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   }
 }
 
-
-
-
 template<class MatrixType>
 void
 Relaxation<MatrixType>::
-MTGaussSeidel (const crs_matrix_type* crsMat,
+MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-               const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
-               const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
-               const scalar_type& dampingFactor,
-               const Tpetra::ESweepDirection direction,
-               const int numSweeps,
-               const bool zeroInitialGuess) const
+               const Tpetra::ESweepDirection direction) const
 {
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
   using Teuchos::null;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
   using Teuchos::rcp_const_cast;
+  using Teuchos::as;
 
   typedef scalar_type Scalar;
   typedef local_ordinal_type LocalOrdinal;
@@ -1734,23 +1838,42 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
   const char prefix[] = "Ifpack2::Relaxation::(reordered)MTGaussSeidel: ";
   const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
 
+  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (A_.get());
   TEUCHOS_TEST_FOR_EXCEPTION
-    (crsMat == NULL, std::logic_error, prefix << "The matrix is NULL.  This "
-     "should never happen.  Please report this bug to the Ifpack2 developers.");
+    (crsMat == nullptr, std::logic_error, "Ifpack2::Relaxation::apply: "
+     "Multithreaded Gauss-Seidel methods currently only work when the "
+     "input matrix is a Tpetra::CrsMatrix.");
+
+  //Teuchos::ArrayView<local_ordinal_type> rowIndices; // unused, as of 04 Jan 2017
   TEUCHOS_TEST_FOR_EXCEPTION
-    (! crsMat->isFillComplete (), std::runtime_error, prefix << "The input "
-     "CrsMatrix is not fill complete.  Please call fillComplete on the matrix,"
-     " then do setup again, before calling apply().  \"Do setup\" means that "
-     "if only the matrix's values have changed since last setup, you need only"
-     " call compute().  If the matrix's structure may also have changed, you "
-     "must first call initialize(), then call compute().  If you have not set"
-     " up this preconditioner for this matrix before, you must first call "
-     "initialize(), then call compute().");
+    (! localSmoothingIndices_.is_null (), std::logic_error,
+     "Ifpack2's implementation of Multithreaded Gauss-Seidel does not "
+     "implement the case where the user supplies an iteration order.  "
+     "This error used to appear as \"MT GaussSeidel ignores the given "
+     "order\".  "
+     "I tried to add more explanation, but I didn't implement \"MT "
+     "GaussSeidel\" [sic].  "
+     "You'll have to ask the person who did.");
+
   TEUCHOS_TEST_FOR_EXCEPTION
-    (numSweeps < 0, std::invalid_argument, prefix << "The number of sweeps "
-     "must be nonnegative, but you provided numSweeps = " << numSweeps <<
-     " < 0.");
-  if (numSweeps == 0) {
+    (crsMat == nullptr, std::logic_error, prefix << "The matrix is null."
+     "  This should never happen.  Please report this bug to the Ifpack2 "
+     "developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! crsMat->isFillComplete (), std::runtime_error, prefix << "The "
+     "input CrsMatrix is not fill complete.  Please call fillComplete "
+     "on the matrix, then do setup again, before calling apply().  "
+     "\"Do setup\" means that if only the matrix's values have changed "
+     "since last setup, you need only call compute().  If the matrix's "
+     "structure may also have changed, you must first call initialize(), "
+     "then call compute().  If you have not set up this preconditioner "
+     "for this matrix before, you must first call initialize(), then "
+     "call compute().");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (NumSweeps_ < 0, std::logic_error, prefix << ": NumSweeps_ = "
+     << NumSweeps_ << " < 0.  Please report this bug to the Ifpack2 "
+     "developers.");
+  if (NumSweeps_ == 0) {
     return;
   }
 
@@ -1825,7 +1948,7 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
       // guess to zero, we don't have to worry about setting remote
       // entries to zero, even though we are not doing an Import in
       // this case.
-      if (zeroInitialGuess) {
+      if (ZeroStartingSolution_) {
         X_colMap->putScalar (ZERO);
       }
       // No need to copy back to X at end.
@@ -1835,13 +1958,13 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
       // Just use the cached column Map multivector for that.
       // force=true means fill with zeros, so no need to fill
       // remote entries (not in domain Map) with zeros.
-      //X_colMap = crsMat->getColumnMapMultiVector (X, true);
-      X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+      updateCachedMultiVector(colMap,as<size_t>(X.getNumVectors()));
+      X_colMap = cachedMV_;
       // X_domainMap is always a domain Map view of the column Map
       // multivector.  In this case, the domain and column Maps are
       // the same, so X_domainMap _is_ X_colMap.
       X_domainMap = X_colMap;
-      if (! zeroInitialGuess) { // Don't copy if zero initial guess
+      if (! ZeroStartingSolution_) { // Don't copy if zero initial guess
         try {
           deep_copy (*X_domainMap , X); // Copy X into constant stride MV
         } catch (std::exception& e) {
@@ -1866,8 +1989,8 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
     }
   }
   else { // Column Map and domain Map are _not_ the same.
-    //X_colMap = crsMat->getColumnMapMultiVector (X);
-    X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+    updateCachedMultiVector(colMap,as<size_t>(X.getNumVectors()));
+    X_colMap = cachedMV_;
 
     X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
@@ -1877,7 +2000,7 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
 
     if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap_host_view.ptr_on_device () != X_domainMap_host_view.ptr_on_device (),
+        X_colMap_host_view.data () != X_domainMap_host_view.data (),
         std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
         "Pointer to start of column Map view of X is not equal to pointer to "
         "start of (domain Map view of) X.  This may mean that "
@@ -1886,13 +2009,13 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      X_colMap_host_view.dimension_0 () < X_domainMap_host_view.dimension_0 () ||
+      X_colMap_host_view.extent (0) < X_domainMap_host_view.extent (0) ||
       X_colMap->getLocalLength () < X_domainMap->getLocalLength (),
       std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
       "X_colMap has fewer local rows than X_domainMap.  "
-      "X_colMap_host_view.dimension_0() = " << X_colMap_host_view.dimension_0 ()
-      << ", X_domainMap_host_view.dimension_0() = "
-      << X_domainMap_host_view.dimension_0 ()
+      "X_colMap_host_view.extent(0) = " << X_colMap_host_view.extent (0)
+      << ", X_domainMap_host_view.extent(0) = "
+      << X_domainMap_host_view.extent (0)
       << ", X_colMap->getLocalLength() = " << X_colMap->getLocalLength ()
       << ", and X_domainMap->getLocalLength() = "
       << X_domainMap->getLocalLength ()
@@ -1910,7 +2033,7 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
       "is broken.  Please report this bug to the Tpetra developers.");
 #endif // HAVE_IFPACK2_DEBUG
 
-    if (zeroInitialGuess) {
+    if (ZeroStartingSolution_) {
       // No need for an Import, since we're filling with zeros.
       X_colMap->putScalar (ZERO);
     } else {
@@ -1969,8 +2092,8 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
   bool update_y_vector = true;
   //false as it was done up already, and we dont want to zero it in each sweep.
   bool zero_x_vector = false;
-  
-  for (int sweep = 0; sweep < numSweeps; ++sweep) {
+
+  for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (! importer.is_null () && sweep > 0) {
       // We already did the first Import for the zeroth sweep above,
       // if it was necessary.
@@ -1984,7 +2107,7 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
             kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
             Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
             Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-            zero_x_vector, update_y_vector);
+            zero_x_vector, update_y_vector, DampingFactor_);
       }
       else if (direction == Tpetra::Forward) {
         KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply
@@ -1992,7 +2115,7 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
             kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
             Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
             Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-            zero_x_vector, update_y_vector);
+            zero_x_vector, update_y_vector, DampingFactor_);
       }
       else if (direction == Tpetra::Backward) {
         KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply
@@ -2000,7 +2123,7 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
             kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
             Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
             Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-            zero_x_vector, update_y_vector);
+            zero_x_vector, update_y_vector, DampingFactor_);
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2028,12 +2151,16 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
     }
   }
 
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "The multithreaded implementation of Gauss-Seidel "
-     "is not enabled.  Please talk to the Ifpack2 developers about how to "
-     "enable this method.");
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+  const double dampingFlops = (DampingFactor_ == STS::one ()) ? 0.0 : 1.0;
+  const double numVectors = as<double> (X.getNumVectors ());
+  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
+  double ApplyFlops = NumSweeps_ * numVectors *
+    (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
+  if (direction == Tpetra::Symmetric)
+    ApplyFlops *= 2.0;
+  ApplyFlops_ += ApplyFlops;
+
 }
 
 template<class MatrixType>
@@ -2042,34 +2169,8 @@ Relaxation<MatrixType>::
 ApplyInverseMTSGS_CrsMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
                              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X) const
 {
-  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (crsMat == NULL, std::logic_error, "Ifpack2::Relaxation::apply: "
-     "Multithreaded Gauss-Seidel methods currently only work when the input "
-     "matrix is a Tpetra::CrsMatrix.");
-
-  using Teuchos::as;
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
-
-  //Teuchos::ArrayView<local_ordinal_type> rowIndices; // unused, as of 04 Jan 2017
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (! localSmoothingIndices_.is_null (), std::logic_error,
-     "Our implementation of Multithreaded Gauss-Seidel does not implement the "
-     "use case where the user supplies an iteration order.  "
-     "This error used to appear as \"MT GaussSeidel ignores the given "
-     "order\".  "
-     "I tried to add more explanation, but I didn't implement \"MT "
-     "GaussSeidel\" [sic].  "
-     "You'll have to ask the person who did.");
-  this->MTGaussSeidel (crsMat, X, B, *Diagonal_, DampingFactor_, direction,
-                       NumSweeps_, ZeroStartingSolution_);
-
-  const double dampingFlops = (DampingFactor_ == STS::one ()) ? 0.0 : 1.0;
-  const double numVectors = as<double> (X.getNumVectors ());
-  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
-  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
-  ApplyFlops_ += 2.0 * NumSweeps_ * numVectors *
-      (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
+  this->MTGaussSeidel (B, X, direction);
 }
 
 
@@ -2078,34 +2179,9 @@ void Relaxation<MatrixType>::ApplyInverseMTGS_CrsMatrix (
     const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X) const {
 
-  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      crsMat == NULL, std::runtime_error, "Ifpack2::Relaxation::compute: "
-      "MT methods works for CRSMatrix Only.");
-
-  using Teuchos::as;
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
-
-  //Teuchos::ArrayView<local_ordinal_type> rowIndices; // unused, as of 04 Jan 2017
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (! localSmoothingIndices_.is_null (), std::logic_error,
-     "Our implementation of Multithreaded Gauss-Seidel does not implement the "
-     "use case where the user supplies an iteration order.  "
-     "This error used to appear as \"MT GaussSeidel ignores the given "
-     "order\".  "
-     "I tried to add more explanation, but I didn't implement \"MT "
-     "GaussSeidel\" [sic].  "
-     "You'll have to ask the person who did.");
-  this->MTGaussSeidel (crsMat, X, B, *Diagonal_, DampingFactor_, direction,
-                       NumSweeps_, ZeroStartingSolution_);
-
-  const double dampingFlops = (DampingFactor_ == STS::one()) ? 0.0 : 1.0;
-  const double numVectors = as<double> (X.getNumVectors ());
-  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
-  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
-  ApplyFlops_ += NumSweeps_ * numVectors *
-    (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
+  this->MTGaussSeidel (B, X, direction);
 }
 
 template<class MatrixType>
@@ -2114,7 +2190,7 @@ Relaxation<MatrixType>::
 ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
-  typedef Relaxation<MatrixType> this_type;
+  using this_type = Relaxation<MatrixType>;
   // The CrsMatrix version is faster, because it can access the sparse
   // matrix data directly, rather than by copying out each row's data
   // in turn.  Thus, we check whether the RowMatrix is really a
@@ -2124,14 +2200,17 @@ ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
   // declaration in Ifpack2_Relaxation_decl.hpp header file.  The code
   // will still be correct if the cast fails, but it will use an
   // unoptimized kernel.
-  const block_crs_matrix_type* blockCrsMat = dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr());
-  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
-  if (blockCrsMat != NULL)  {
+  const block_crs_matrix_type* blockCrsMat =
+    dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
+  const crs_matrix_type* crsMat =
+    dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
+  if (blockCrsMat != nullptr)  {
     const_cast<this_type*> (this)->ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
   }
-  else if (crsMat != NULL) {
+  else if (crsMat != nullptr) {
     ApplyInverseSGS_CrsMatrix (*crsMat, X, Y);
-  } else {
+  }
+  else {
     ApplyInverseSGS_RowMatrix (X, Y);
   }
 }
@@ -2150,8 +2229,8 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
-
+  using MV = Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                                 global_ordinal_type, node_type>;
 
   // Tpetra's GS implementation for CrsMatrix handles zeroing out the
   // starting multivector itself.  The generic RowMatrix version here
@@ -2179,14 +2258,12 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
   RCP<MV> Y2;
   if (IsParallel_) {
     if (Importer_.is_null ()) { // domain and column Maps are the same.
-      // We will copy Y into Y2 below, so no need to fill with zeros here.
-      Y2 = rcp (new MV (Y.getMap (), NumVectors, false));
-    } else {
-      // FIXME (mfh 21 Mar 2013) We probably don't need to fill with
-      // zeros here, since we are doing an Import into Y2 below
-      // anyway.  However, it doesn't hurt correctness.
-      Y2 = rcp (new MV (Importer_->getTargetMap (), NumVectors));
+      updateCachedMultiVector (Y.getMap (), NumVectors);
     }
+    else {
+      updateCachedMultiVector (Importer_->getTargetMap (), NumVectors);
+    }
+    Y2 = cachedMV_;
   }
   else {
     Y2 = rcpFromRef (Y);

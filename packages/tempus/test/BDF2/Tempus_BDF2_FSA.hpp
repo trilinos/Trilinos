@@ -79,7 +79,7 @@ void test_sincos_fsa(const bool use_combined_method,
       sens_pl.set("Sensitivity Method", "Combined");
     else {
       sens_pl.set("Sensitivity Method", "Staggered");
-      sens_pl.set("Reuse State Linear Solver", true);
+      //sens_pl.set("Reuse State Linear Solver", true);
     }
     sens_pl.set("Use DfDp as Tangent", use_dfdp_as_tangent);
     ParameterList& interp_pl =
@@ -105,7 +105,7 @@ void test_sincos_fsa(const bool use_combined_method,
     for (int i=0; i<num_param; ++i)
       Thyra::assign(DxDp0->col(i).ptr(),
                     *(model->getExactSensSolution(i, t0).get_x()));
-    integrator->setInitialState(t0, x0, Teuchos::null, Teuchos::null,
+    integrator->initializeSolutionHistory(t0, x0, Teuchos::null, Teuchos::null,
                                 DxDp0, Teuchos::null, Teuchos::null);
 
     // Integrate to timeMax
@@ -140,7 +140,7 @@ void test_sincos_fsa(const bool use_combined_method,
         Thyra::createMembers(model->get_x_space(), num_param);
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-        double time = solutionState->getTime();
+        double time_i = solutionState->getTime();
         RCP<const DMVPV> x_prod_plot =
           Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());
         RCP<const Thyra::VectorBase<double> > x_plot =
@@ -148,12 +148,12 @@ void test_sincos_fsa(const bool use_combined_method,
         RCP<const Thyra::MultiVectorBase<double> > DxDp_plot =
           x_prod_plot->getMultiVector()->subView(Teuchos::Range1D(1,num_param));
         RCP<const Thyra::VectorBase<double> > x_exact_plot =
-          model->getExactSolution(time).get_x();
+          model->getExactSolution(time_i).get_x();
         for (int j=0; j<num_param; ++j)
           Thyra::assign(DxDp_exact_plot->col(j).ptr(),
-                        *(model->getExactSensSolution(j, time).get_x()));
+                        *(model->getExactSensSolution(j, time_i).get_x()));
         ftmp << std::fixed << std::setprecision(7)
-             << time
+             << time_i
              << std::setw(11) << get_ele(*(x_plot), 0)
              << std::setw(11) << get_ele(*(x_plot), 1);
         for (int j=0; j<num_param; ++j)
@@ -196,15 +196,8 @@ void test_sincos_fsa(const bool use_combined_method,
   *my_out << "  Expected order: " << order << std::endl;
   *my_out << "  Observed order: " << slope << std::endl;
   *my_out << "  =========================" << std::endl;
-  if (use_combined_method) {
-    TEST_FLOATING_EQUALITY( slope, order, 0.015 );
-    TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0344598, 1.0e-4 );
-  }
-  else {
-    // Need to resolve for why we only get 1st order with staggered method
-    TEST_FLOATING_EQUALITY( slope, 1.0, 0.015 );
-    TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.309789, 1.0e-4 );
-  }
+  TEST_FLOATING_EQUALITY( slope, order, 0.015 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0344598, 1.0e-4 );
 
   if (comm->getRank() == 0) {
     std::ofstream ftmp("Tempus_BDF2_SinCos_Sens-Error.dat");

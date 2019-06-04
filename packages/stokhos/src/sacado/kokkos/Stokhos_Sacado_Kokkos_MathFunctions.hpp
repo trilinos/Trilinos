@@ -50,7 +50,27 @@
 
 #ifdef HAVE_STOKHOS_ENSEMBLE_SCALAR_TYPE
 
+#if STOKHOS_USE_MP_VECTOR_SFS_SPEC
+#define UNARYFUNC_MACRO_SFS(OP,FADOP)                                   \
+namespace Stokhos {                                                     \
+  template <typename O, typename T, int N, typename D>                  \
+  class StaticFixedStorage;                                             \
+}                                                                       \
+namespace Sacado {                                                      \
+  namespace MP {                                                        \
+    template <typename S> class Vector;                                 \
+    template <typename O, typename T, int N, typename D>                \
+    KOKKOS_INLINE_FUNCTION                                              \
+    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
+    OP (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >&);         \
+  }                                                                     \
+}
+#else
+#define UNARYFUNC_MACRO_SFS(OP,FADOP) /* */
+#endif
+
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
+UNARYFUNC_MACRO_SFS(OP,FADOP)                                           \
 namespace Sacado {                                                      \
                                                                         \
   namespace MP {                                                        \
@@ -88,10 +108,45 @@ UNARYFUNC_MACRO(asinh, ASinhOp)
 UNARYFUNC_MACRO(atanh, ATanhOp)
 UNARYFUNC_MACRO(abs, AbsOp)
 UNARYFUNC_MACRO(fabs, FAbsOp)
+UNARYFUNC_MACRO(ceil, CeilOp)
 
 #undef UNARYFUNC_MACRO
+#undef UNARYFUNC_MACRO_SFS
+
+#if STOKHOS_USE_MP_VECTOR_SFS_SPEC
+#define BINARYFUNC_MACRO_SFS(OP,FADOP)                                  \
+namespace Stokhos {                                                     \
+  template <typename O, typename T, int N, typename D>                  \
+  class StaticFixedStorage;                                             \
+}                                                                       \
+namespace Sacado {                                                      \
+  namespace MP {                                                        \
+    template <typename S> class Vector;                                 \
+    template <typename O, typename T, int N, typename D>                \
+    KOKKOS_INLINE_FUNCTION                                              \
+    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
+    OP (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >&,          \
+        const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >&);         \
+                                                                        \
+    template <typename O, typename T, int N, typename D>                \
+    KOKKOS_INLINE_FUNCTION                                              \
+    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
+    OP (const typename Vector< Stokhos::StaticFixedStorage<O,T,N,D> >::value_type&, \
+        const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >&);         \
+                                                                        \
+    template <typename O, typename T, int N, typename D>                \
+    KOKKOS_INLINE_FUNCTION                                              \
+    Vector< Stokhos::StaticFixedStorage<O,T,N,D> >                      \
+    OP (const Vector< Stokhos::StaticFixedStorage<O,T,N,D> >&,          \
+        const typename Vector< Stokhos::StaticFixedStorage<O,T,N,D> >::value_type&); \
+  }                                                                     \
+}
+#else
+#define BINARYFUNC_MACRO_SFS(OP,FADOP) /* */
+#endif
 
 #define BINARYFUNC_MACRO(OP,FADOP)                                      \
+BINARYFUNC_MACRO_SFS(OP,FADOP)                                          \
 namespace Sacado {                                                      \
                                                                         \
   namespace MP {                                                        \
@@ -128,6 +183,7 @@ BINARYFUNC_MACRO(max, MaxOp)
 BINARYFUNC_MACRO(min, MinOp)
 
 #undef BINARYFUNC_MACRO
+#undef BINARYFUNC_MACRO_SFS
 
 #endif
 
@@ -167,6 +223,7 @@ UNARYFUNC_MACRO(asinh, ASinhOp)
 UNARYFUNC_MACRO(atanh, ATanhOp)
 UNARYFUNC_MACRO(abs, AbsOp)
 UNARYFUNC_MACRO(fabs, FAbsOp)
+UNARYFUNC_MACRO(ceil, CeilOp)
 
 #undef UNARYFUNC_MACRO
 

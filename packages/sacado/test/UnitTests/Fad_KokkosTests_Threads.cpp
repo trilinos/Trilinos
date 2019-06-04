@@ -35,6 +35,7 @@
 #include "Kokkos_Core.hpp"
 
 // Instantiate tests for Threads device
+#define SACADO_TEST_DFAD 1
 using Kokkos::Threads;
 VIEW_FAD_TESTS_D( Threads )
 
@@ -42,13 +43,13 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize threads
-  Kokkos::Threads::initialize();
-  Kokkos::Threads::print_configuration(std::cout);
+  Kokkos::initialize();
+  Kokkos::print_configuration(std::cout);
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finalize threads
-  Kokkos::Threads::finalize();
+  Kokkos::finalize();
 
   return res;
 }

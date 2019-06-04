@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,10 +32,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include "rf_format.h"
+#include "fmt/ostream.h"
 #include <cstdarg> // for va_arg, va_end, va_list, etc
 #include <cstddef> // for size_t
-#include <cstdio>  // for fprintf, nullptr, stderr
+#include <cstdio>  // for nullptr, stderr
 #include <cstdlib> // for exit, free, malloc
 
 /*#include "rf_allo.h"*/
@@ -44,7 +44,7 @@
 extern int Proc;
 #endif
 
-static double *smalloc(size_t n, char *filename, int lineno);
+static void *smalloc(size_t n, char *filename, int lineno);
 
 /******************************************************************************
  *
@@ -81,46 +81,45 @@ static double *smalloc(size_t n, char *filename, int lineno);
  *
  *****************************************************************************/
 /******************************************************************************
-* 	The following section is a commented section containing
-*	an example main code:
-*******************************************************************************
-*double *array_alloc();
-*main()
-*{
-*  int ***temp;
-*   int *temp2;
-*   int i, j, k;
-*   int il, jl, kl;
-*
-*   malloc_debug(2);
-*   il = 2;
-*   jl = 3;
-*   kl = 3;
-*   temp = (int ***) array_alloc(3,il,jl,kl,sizeof(int));
-*   for (i=0; i<il; i++) {
-*      for (j=0; j<jl; j++) {
-*         for (k=0; k<kl; k++) temp[i][j][k] = 1;
-*      }
-*   }
-*
-*   temp2 = (int *) malloc(10*sizeof(int));
-*   for (i=0; i<10; i++) temp2[i] = 0;
-*
-*   for (i=0; i<il; i++) {
-*      for (j=0; j<jl; j++) {
-*         for (k=0; k<kl; k++) printf(" %d\n", temp[i][j][k]);
-*      }
-*   }
-*   malloc_verify();
-*}
-******************************************************************************/
+ * 	The following section is a commented section containing
+ *	an example main code:
+ *******************************************************************************
+ *double *array_alloc();
+ *main()
+ *{
+ *  int ***temp;
+ *   int *temp2;
+ *   int i, j, k;
+ *   int il, jl, kl;
+ *
+ *   malloc_debug(2);
+ *   il = 2;
+ *   jl = 3;
+ *   kl = 3;
+ *   temp = (int ***) array_alloc(3,il,jl,kl,sizeof(int));
+ *   for (i=0; i<il; i++) {
+ *      for (j=0; j<jl; j++) {
+ *         for (k=0; k<kl; k++) temp[i][j][k] = 1;
+ *      }
+ *   }
+ *
+ *   temp2 = (int *) malloc(10*sizeof(int));
+ *   for (i=0; i<10; i++) temp2[i] = 0;
+ *
+ *   for (i=0; i<il; i++) {
+ *      for (j=0; j<jl; j++) {
+ *         for (k=0; k<kl; k++) fmt::print(" {}\n", temp[i][j][k]);
+ *      }
+ *   }
+ *   malloc_verify();
+ *}
+ ******************************************************************************/
 
 /*****************************************************************************/
 /*****************************************************************************/
 
-double *array_alloc(const char *file, int lineno, int numdim, ...)
+void *array_alloc(const char *file, int lineno, int numdim, ...)
 {
-  const char *yo = "array_alloc";
   struct dim
   {
     size_t index; /* Number of elements in the dimension	*/
@@ -129,7 +128,7 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
     size_t off;   /* offset from beginning of array	*/
   } dim[3];       /* Info about each dimension 		*/
   size_t  total;  /* Total size of the array		*/
-  double *dfield; /* ptr to avoid lint complaints		*/
+  void *  dfield; /* ptr to avoid lint complaints		*/
   char *  field;  /* The multi-dimensional array		*/
   char ** ptr;    /* Pointer offset			*/
   char *  data;   /* Data offset				*/
@@ -138,13 +137,13 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
   va_start(va, numdim);
 
   if (numdim <= 0) {
-    fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is <=0\n", yo, file, lineno,
-            numdim);
+    fmt::print(stderr, "{} ({}: {}) ERROR: number of dimensions, {}, is <=0\n", __func__, file,
+               lineno, numdim);
     exit(1);
   }
   else if (numdim > 3) {
-    fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is > 3\n", yo, file, lineno,
-            numdim);
+    fmt::print(stderr, "{} ({}: {}) ERROR: number of dimensions, {}, is > 3\n", __func__, file,
+               lineno, numdim);
     exit(1);
   }
 
@@ -152,12 +151,13 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
 
   if (dim[0].index == 0) {
 #ifdef DEBUG
-    fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-                    "dimension == 0; will return nullptr\n",
-            yo, file, lineno);
+    fmt::print(stderr,
+               "WARNING, {} ({}: {}) called with first "
+               "dimension == 0; will return nullptr\n",
+               __func__, file, lineno);
 #endif
     va_end(va);
-    return ((double *)nullptr);
+    return (nullptr);
   }
 
   dim[0].total = dim[0].index;
@@ -165,12 +165,13 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
   dim[0].off   = 0;
   for (int i = 1; i < numdim; i++) {
     dim[i].index = va_arg(va, size_t);
-    if (dim[i].index <= 0) {
-      fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d == 0, "
-                      " will return nullptr\n",
-              yo, file, lineno, i + 1);
+    if (dim[i].index == 0) {
+      fmt::print(stderr,
+                 "WARNING: {} ({}: {}) called with dimension {} == 0, "
+                 " will return nullptr\n",
+                 __func__, file, lineno, i + 1);
       va_end(va);
-      return ((double *)nullptr);
+      return (nullptr);
     }
     dim[i].total = dim[i - 1].total * dim[i].index;
     dim[i].size  = sizeof(void *);
@@ -207,23 +208,20 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
 /*****************************************************************************/
 /*****************************************************************************/
 
-static double *smalloc(size_t n, char *filename, int lineno)
+static void *smalloc(size_t n, char *filename, int lineno)
 
 {
-  const char *yo = "smalloc";
-  double *    pntr; /* return value */
+  void *pntr = nullptr; /* return value */
 
-  if (n == 0) {
-    pntr = nullptr;
-  }
-  else {
-    pntr = reinterpret_cast<double *>(malloc(n));
+  if (n != 0) {
+    pntr = malloc(n);
   }
 
   if (pntr == nullptr && n != 0) {
-    fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
-                    "requested = " ST_ZU "\n",
-            yo, filename, lineno, (unsigned long)n);
+    fmt::print(stderr,
+               "{} (from {},{}) Out of space - number of bytes "
+               "requested = {:n}\n",
+               __func__, filename, lineno, n);
     exit(0);
   }
 

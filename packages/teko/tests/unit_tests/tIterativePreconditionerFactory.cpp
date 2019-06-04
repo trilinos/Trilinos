@@ -74,7 +74,7 @@
 // Tpetra includes
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraVectorSpace.hpp"
 
@@ -218,7 +218,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, parameter_list_init)
 TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, parameter_list_init_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm ();
 
    Teko::LinearOp  A = build2x2(Comm,1,2,3,4);
 
@@ -320,7 +320,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test)
 TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm ();
 
    Teko::LinearOp  A = build2x2(Comm,1,2,3,4);
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
@@ -404,7 +404,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test)
 TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm ();
 
    Teko::LinearOp  A = build2x2(Comm,1,2,3,4);
    Teko::LinearOp iP = build2x2(Comm,1.0,0.0,0.0,1.0/4.0);

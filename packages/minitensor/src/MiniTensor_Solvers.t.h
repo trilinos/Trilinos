@@ -400,6 +400,15 @@ updateConvergenceCriterion(T const ae)
 
   converged = converged_absolute || converged_relative;
 
+  bool const
+  converged_acceptable = abs_error <= acc_tol && num_iter == max_num_iter - 1;  
+  
+  if (converged == false && converged_acceptable == true) {
+    converged = true;
+    warning = true;
+    warning_message = "Reached acceptable tolerance";
+  }  
+
   return;
 }
 
@@ -416,6 +425,23 @@ updateDivergenceCriterion(T const fn_value)
   if (enforce_monotonicity == true && monotonic == false) {
     failed = true;
     failure_message = "Non-monotonic";
+  }
+
+  T reduction_ratio = previous_value > 0.0 ? (fn_value / previous_value) : 0.0;
+
+  if (reduction_ratio > stagnation_tol) {
+    ++num_stagnation_iter;
+  }
+  else {
+    num_stagnation_iter = 0;
+  }
+
+  non_stagnant = num_stagnation_iter < max_stagnation_iter;
+
+  // only set warning for stagnant residual
+  if (enforce_non_stagnation == true && non_stagnant == false) {
+    warning = true;
+    warning_message = "Stagnant residual";
   }
 
   previous_value = fn_value;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -80,7 +80,7 @@ double median_time        = 0;
 double sim_time = 0;
 
 void time_out(FILE *outfile /* file to print output to */
-              )
+)
 {
   FILE *     tempfile;    /* file name for two passes */
   extern int ECHO;        /* parameter for different output styles */
@@ -145,9 +145,7 @@ void time_out(FILE *outfile /* file to print output to */
 
     if (OUTPUT_TIME > 1) {
       if (inertial_time != 0) {
-        if (inertial_time != 0) {
-          fprintf(tempfile, "\nInertial time: %g sec.\n", inertial_time);
-        }
+        fprintf(tempfile, "\nInertial time: %g sec.\n", inertial_time);
         if (inertial_axis_time != 0) {
           fprintf(tempfile, "  inertial axis %g\n", inertial_axis_time);
         }
@@ -161,9 +159,7 @@ void time_out(FILE *outfile /* file to print output to */
       }
 
       if (kl_total_time != 0) {
-        if (kl_total_time != 0) {
-          fprintf(tempfile, "\nKL time: %g sec.\n", kl_total_time);
-        }
+        fprintf(tempfile, "\nKL time: %g sec.\n", kl_total_time);
         if (kl_init_time != 0) {
           fprintf(tempfile, "  initialization %g\n", kl_init_time);
         }

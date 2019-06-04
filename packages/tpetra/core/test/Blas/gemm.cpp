@@ -42,16 +42,29 @@
 */
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_Details_gemm.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
+
+// kokkos kernels
+#include "KokkosBlas.hpp"
+#include "KokkosKernels_Utils.hpp"
+
 #include <typeinfo>
 
 namespace {
   using std::endl;
   typedef int LO;
+
+  LO M = 13;
+
+  TEUCHOS_STATIC_SETUP()
+  {
+    Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP ();
+    clp.setOption ("M", &M, "First matrix dimension M");
+  }
+
 
   template<class ValueType,
            const bool isInteger = std::is_integral<ValueType>::value>
@@ -167,9 +180,9 @@ namespace {
       Kokkos::fill_random (C_orig, randPool, minVal, maxVal);
     }
 
-    mat_type A ("A", A_orig.dimension_0 (), A_orig.dimension_1 ());
-    mat_type B ("B", B_orig.dimension_0 (), B_orig.dimension_1 ());
-    mat_type C ("C", C_orig.dimension_0 (), C_orig.dimension_1 ());
+    mat_type A ("A", A_orig.extent (0), A_orig.extent (1));
+    mat_type B ("B", B_orig.extent (0), B_orig.extent (1));
+    mat_type C ("C", C_orig.extent (0), C_orig.extent (1));
     auto A_host = Kokkos::create_mirror_view (A);
     auto B_host = Kokkos::create_mirror_view (B);
     auto C_host = Kokkos::create_mirror_view (C);
@@ -178,9 +191,9 @@ namespace {
     // and C, in case the routine to test is buggy and modifies the
     // wrong thing.  The host mirror of a View may be the View itself,
     // thus the same allocation.
-    host_mat_type A2 ("A2", A.dimension_0 (), A.dimension_1 ());
-    host_mat_type B2 ("B2", B.dimension_0 (), B.dimension_1 ());
-    host_mat_type C2 ("C2", C.dimension_0 (), C.dimension_1 ());
+    host_mat_type A2 ("A2", A.extent (0), A.extent (1));
+    host_mat_type B2 ("B2", B.extent (0), B.extent (1));
+    host_mat_type C2 ("C2", C.extent (0), C.extent (1));
 
     // Use the host versions of A, B, and C to compute max norms.
     // We'll need these for relative error bounds.
@@ -189,24 +202,24 @@ namespace {
     mag_type C_norm = Kokkos::ArithTraits<mag_type>::zero ();
     {
       Kokkos::deep_copy (A2, A_orig);
-      for (LO i = 0; i < static_cast<LO> (A2.dimension_0 ()); ++i) {
-        for (LO j = 0; j < static_cast<LO> (A2.dimension_1 ()); ++j) {
+      for (LO i = 0; i < static_cast<LO> (A2.extent (0)); ++i) {
+        for (LO j = 0; j < static_cast<LO> (A2.extent (1)); ++j) {
           const mag_type curAbs =
             Kokkos::ArithTraits<entry_type>::abs (A2(i,j));
           A_norm = (curAbs > A_norm) ? curAbs : A_norm;
         }
       }
       Kokkos::deep_copy (B2, B_orig);
-      for (LO i = 0; i < static_cast<LO> (B2.dimension_0 ()); ++i) {
-        for (LO j = 0; j < static_cast<LO> (B2.dimension_1 ()); ++j) {
+      for (LO i = 0; i < static_cast<LO> (B2.extent (0)); ++i) {
+        for (LO j = 0; j < static_cast<LO> (B2.extent (1)); ++j) {
           const mag_type curAbs =
             Kokkos::ArithTraits<entry_type>::abs (B2(i,j));
           B_norm = (curAbs > B_norm) ? curAbs : B_norm;
         }
       }
-      Kokkos::deep_copy (C2, A_orig);
-      for (LO i = 0; i < static_cast<LO> (C2.dimension_0 ()); ++i) {
-        for (LO j = 0; j < static_cast<LO> (C2.dimension_1 ()); ++j) {
+      Kokkos::deep_copy (C2, C_orig);
+      for (LO i = 0; i < static_cast<LO> (C2.extent (0)); ++i) {
+        for (LO j = 0; j < static_cast<LO> (C2.extent (1)); ++j) {
           const mag_type curAbs =
             Kokkos::ArithTraits<entry_type>::abs (C2(i,j));
           C_norm = (curAbs > C_norm) ? curAbs : C_norm;
@@ -214,9 +227,9 @@ namespace {
       }
     }
 
-    const LO A2_stride = Tpetra::Details::Blas::getStride2DView (A2);
-    const LO B2_stride = Tpetra::Details::Blas::getStride2DView (B2);
-    const LO C2_stride = Tpetra::Details::Blas::getStride2DView (C2);
+    const LO A2_stride = A2.stride(1); 
+    const LO B2_stride = B2.stride(1);
+    const LO C2_stride = C2.stride(1);
 
     typedef Kokkos::ArithTraits<coeff_type> KAT;
     const coeff_type zero = KAT::zero ();
@@ -261,7 +274,7 @@ namespace {
         Kokkos::deep_copy (C2, C_orig);
 
         {
-          ::Tpetra::Details::Blas::gemm (trans_A, trans_B, alpha, A, B, beta, C);
+          KokkosBlas::gemm(&trans_A, &trans_B, alpha, A, B, beta, C);
           const Teuchos::ETransp teuchosTransA = trans_A_is_trans ?
             (trans_A_is_conj ? Teuchos::CONJ_TRANS : Teuchos::TRANS) :
             Teuchos::NO_TRANS;
@@ -281,8 +294,8 @@ namespace {
 
         {
           mag_type maxErr = Kokkos::ArithTraits<mag_type>::zero ();
-          for (LO i = 0; i < static_cast<LO> (C_host.dimension_0 ()); ++i) {
-            for (LO j = 0; j < static_cast<LO> (C_host.dimension_1 ()); ++j) {
+          for (LO i = 0; i < static_cast<LO> (C_host.extent (0)); ++i) {
+            for (LO j = 0; j < static_cast<LO> (C_host.extent (1)); ++j) {
               const mag_type curErr =
                 Kokkos::ArithTraits<entry_type>::abs (C_host(i,j) - C2(i,j));
               maxErr = (curErr > maxErr) ? curErr : maxErr;
@@ -291,26 +304,25 @@ namespace {
           const bool wrong = (maxErr > bound);
           if (wrong) {
             TEST_ASSERT( false );
-            out << "Comparing Tpetra::Details::Blas::gemm against "
+            out << "Comparing KokkosBlas::gemm against "
               "Teuchos::BLAS::GEMM: Max error " << maxErr << " > error bound "
                 << bound << endl;
           }
         }
 
-        // Repeat test for the "default" Tpetra::Details::Blas::gemm implementation.
+        // Repeat test for the "default" KokkosBlas::gemm implementation.
         {
           Kokkos::deep_copy (A, A_orig);
           Kokkos::deep_copy (B, B_orig);
           Kokkos::deep_copy (C, C_orig);
-          ::Tpetra::Details::Blas::Default::gemm (trans_A, trans_B, alpha,
-                                                  A, B, beta, C);
+          KokkosBlas::gemm(&trans_A, &trans_B, alpha, A, B, beta, C);
           Kokkos::deep_copy (C_host, C);
         }
 
         {
           mag_type maxErr = Kokkos::ArithTraits<mag_type>::zero ();
-          for (LO i = 0; i < static_cast<LO> (C_host.dimension_0 ()); ++i) {
-            for (LO j = 0; j < static_cast<LO> (C_host.dimension_1 ()); ++j) {
+          for (LO i = 0; i < static_cast<LO> (C_host.extent (0)); ++i) {
+            for (LO j = 0; j < static_cast<LO> (C_host.extent (1)); ++j) {
               const mag_type curErr =
                 Kokkos::ArithTraits<entry_type>::abs (C_host(i,j) - C2(i,j));
               maxErr = (curErr > maxErr) ? curErr : maxErr;
@@ -319,7 +331,7 @@ namespace {
           const bool wrong = (maxErr > bound);
           if (wrong) {
             TEST_ASSERT( false );
-            out << "Comparing Tpetra::Details::Blas::Default::gemm against "
+            out << "Comparing KokkosBlas::Default::gemm against "
               "Teuchos::BLAS::GEMM: Max error " << maxErr << " > error bound "
                 << bound << endl;
           }
@@ -385,7 +397,7 @@ namespace {
     typedef map_type::device_type device_type;
 
     Teuchos::OSTab tab0 (out);
-    out << "Test \"Tpetra::Details::Blas::gemm\"" << endl;
+    out << "Test \"KokkosBlas::gemm\"" << endl;
     Teuchos::OSTab tab1 (out);
 
     auto comm = Tpetra::TestingUtilities::getDefaultComm ();
@@ -394,12 +406,17 @@ namespace {
     Tpetra::Map<> map (comm->getSize (), 1, 0, comm);
 
     auto randPool = preparePseudorandomNumberGenerator<device_type> ();
-    const LO m_vals[] = {1, 2, 5, 13};
     const LO n_vals[] = {1, 2, 5, 13};
     const LO k_vals[] = {1, 2, 5, 13};
-    for (LO m : m_vals) {
+
+    if (comm->getRank() == 0) std::cout << std::endl;
+    LO m = M;
+    {
       for (LO n : n_vals) {
         for (LO k : k_vals) {
+          if (comm->getRank() == 0) 
+            std::cout << "Testing m,n,k = " << m << "," << n << "," << k 
+                      << std::endl;
           testGemmVsTeuchosBlas<entry_type, coeff_type, device_type> (out,
                                                                       success,
                                                                       randPool,

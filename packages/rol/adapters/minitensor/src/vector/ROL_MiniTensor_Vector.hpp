@@ -88,11 +88,11 @@ public:
   norm() const final;
 
   virtual
-  Teuchos::RCP<Vector<T>>
+  ROL::Ptr<Vector<T>>
   clone() const final;
 
   virtual
-  Teuchos::RCP<Vector<T>>
+  ROL::Ptr<Vector<T>>
   basis(int const i) const final;
 
   virtual

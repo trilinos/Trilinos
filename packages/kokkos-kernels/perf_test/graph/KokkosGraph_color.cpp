@@ -49,10 +49,10 @@
 #include <algorithm>    // std::shuffle
 #include <vector>
 
-#include "KokkosGraph_GraphColor.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_MyCRSMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
+#include "KokkosGraph_Distance1Color.hpp"
 
 
 
@@ -61,41 +61,41 @@ void print_options(){
 }
 int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv){
   for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
+    if ( 0 == strcasecmp( argv[i] , "--threads" ) ) {
       params.use_threads = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "serial" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--serial" ) ) {
       params.use_serial = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
       params.use_openmp = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       params.use_cuda = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "repeat" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--repeat" ) ) {
       params.repeat = atoi( argv[++i] );
     }
 
-    else if ( 0 == strcasecmp( argv[i] , "chunksize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--chunksize" ) ) {
       params.chunk_size = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "teamsize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--teamsize" ) ) {
       params.team_size = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "vectorsize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--vectorsize" ) ) {
       params.vector_size  = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--amtx" ) ) {
       params.a_mtx_bin_file = argv[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--dynamic" ) ) {
       params.use_dynamic_scheduling = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "verbose" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--verbose" ) ) {
       params.verbose = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--algorithm" ) ) {
       ++i;
       if ( 0 == strcasecmp( argv[i] , "COLORING_DEFAULT" ) ) {
         params.algorithm = 1;
@@ -114,6 +114,12 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       }
       else if ( 0 == strcasecmp( argv[i] , "COLORING_EB" ) ) {
         params.algorithm = 6;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "COLORING_VBD" ) ) {
+        params.algorithm = 7;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "COLORING_VBDBIT" ) ) {
+        params.algorithm = 8;
       }
       else {
         std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
@@ -181,6 +187,8 @@ void run_experiment(
     kh.set_verbose(true);
   }
 
+  std::cout << "algorithm: " << algorithm << std::endl;
+
   for (int i = 0; i < repeat; ++i){
 
     switch (algorithm){
@@ -206,13 +214,23 @@ void run_experiment(
     case 6:
       kh.create_graph_coloring_handle(COLORING_EB);
       break;
+
+    case 7:
+      kh.create_graph_coloring_handle(COLORING_VBD);
+      break;
+
+    case 8:
+      kh.create_graph_coloring_handle(COLORING_VBDBIT);
+      break;
+
     default:
       kh.create_graph_coloring_handle(COLORING_DEFAULT);
 
     }
+
     graph_color_symbolic(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries);
 
-    std::cout <<
+    std::cout << std::endl <<
         "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
         "Num colors:" << kh.get_graph_coloring_handle()->get_num_colors() << " "
         "Num Phases:" << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
@@ -433,13 +451,14 @@ int main (int argc, char ** argv){
   }
   std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
 
+  const int num_threads = params.use_openmp; // Assumption is that use_openmp variable is provided as number of threads
+  const int device_id = 0;
+  Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
+  Kokkos::print_configuration(std::cout);
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 
   if (params.use_openmp) {
-
-    Kokkos::OpenMP::initialize( params.use_openmp );
-    Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
     <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(
@@ -452,15 +471,11 @@ int main (int argc, char ** argv){
         params
         );
 #endif
-    Kokkos::OpenMP::finalize();
   }
 #endif
 
 #if defined( KOKKOS_ENABLE_CUDA )
   if (params.use_cuda) {
-    Kokkos::HostSpace::execution_space::initialize();
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
-    Kokkos::Cuda::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
     <size_type, idx, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
@@ -473,18 +488,12 @@ int main (int argc, char ** argv){
         );
 
 #endif
-
-
-    Kokkos::Cuda::finalize();
-    Kokkos::HostSpace::execution_space::finalize();
   }
 
 #endif
 
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
   if (params.use_serial) {
-    Kokkos::Serial::initialize( params.use_openmp );
-    Kokkos::Serial::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
     <size_type, idx, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::HostSpace>(
@@ -497,10 +506,10 @@ int main (int argc, char ** argv){
         params
         );
 #endif
-    Kokkos::Serial::finalize();
   }
 #endif
 
+  Kokkos::finalize();
 
   return 0;
 }

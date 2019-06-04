@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -29,13 +29,14 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include "Ioss_CodeTypes.h"     // for HAVE_MPI
+#include "Ioss_CodeTypes.h"     // for SEACAS_HAVE_MPI
 #include <Ioss_DatabaseIO.h>    // for DatabaseIO
 #include <Ioss_ParallelUtils.h> // for ParallelUtils
 #include <Ioss_SerializeIO.h>
 #include <Ioss_Utils.h> // for IOSS_ERROR, IOSS_WARNING
-#include <ostream>      // for operator<<, etc
-#include <string>       // for char_traits
+#include <fmt/ostream.h>
+#include <ostream> // for operator<<, etc
+#include <string>  // for char_traits
 
 namespace Ioss {
 
@@ -82,15 +83,15 @@ namespace Ioss {
     if (m_activeFallThru) {
       if (m_manualOwner != -1 && m_manualOwner != s_owner) {
         std::ostringstream errmsg;
-        errmsg << "Attempting to replace manual ownership from " << s_owner << " to "
-               << m_manualOwner;
+        fmt::print(errmsg, "Attempting to replace manual ownership from {} to {}", s_owner,
+                   m_manualOwner);
         IOSS_ERROR(errmsg);
       }
     }
 
     else if (s_groupFactor > 0) {
       if (m_manualOwner == -1) {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
         do {
           MPI_Barrier(util.communicator());
         } while (++s_owner != s_groupRank);
@@ -100,8 +101,8 @@ namespace Ioss {
       else {
         if (s_owner != -1 && m_manualOwner != s_owner) {
           std::ostringstream errmsg;
-          errmsg << "Attempting to replace manual ownership from " << s_owner << " to "
-                 << m_manualOwner;
+          fmt::print(errmsg, "Attempting to replace manual ownership from {} to {}", s_owner,
+                     m_manualOwner);
           IOSS_ERROR(errmsg);
         }
         s_owner = m_manualOwner;
@@ -125,7 +126,7 @@ namespace Ioss {
       else if (s_groupFactor > 0) {
         if (m_manualOwner == -1) {
           m_databaseIO->closeDatabase();
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
           s_owner                        = s_groupRank;
           const Ioss::ParallelUtils util = m_databaseIO->util();
           do {
@@ -154,8 +155,8 @@ namespace Ioss {
   {
     IOSS_FUNC_ENTER(m_);
     if (s_rank != -1) {
-      IOSS_WARNING << "Mesh I/O serialization group factor cannot be changed "
-                      "once serialized I/O has begun";
+      fmt::print(IOSS_WARNING, "Mesh I/O serialization group factor cannot be changed "
+                               "once serialized I/O has begun");
     }
     else {
       s_groupFactor = factor;

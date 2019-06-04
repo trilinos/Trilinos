@@ -65,9 +65,9 @@ TEST(stkMeshHowTo, useAdvancedFields)
 
     double initialVectorValue[] = {1, 2, 3, 4, 5, 6, 7, 8};
     const unsigned nodesPerTet = 4;
-    stk::mesh::put_field(variableSizeField, tetPart, nodesPerTet, initialVectorValue);
+    stk::mesh::put_field_on_mesh(variableSizeField, tetPart, nodesPerTet, initialVectorValue);
     const unsigned nodesPerHex = 8;
-    stk::mesh::put_field(variableSizeField, hexPart, nodesPerHex, initialVectorValue);
+    stk::mesh::put_field_on_mesh(variableSizeField, hexPart, nodesPerHex, initialVectorValue);
 
     metaData.commit();
     stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);

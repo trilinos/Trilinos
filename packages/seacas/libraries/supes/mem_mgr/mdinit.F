@@ -1,23 +1,23 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,42 +29,13 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
       SUBROUTINE MDINIT (USERV)
 C
 C     THIS SUBPROGRAM PROVIDES DATA MANAGEMENT WITH DYNAMIC MEMORY
 C     ALLOCATION CAPABILITIES.  THE ENTIRE PACKAGE IS WRITTEN IN
 C     STANDARD FORTRAN-77 WITH THE EXCEPTION OF TWO SYSTEM DEPENDENT
 C     SUBPROGRAMS:  IXLNUM AND EXMEMY.
-C
-C     AUTHOR:  W. C. MILLS-CURRAN, SANDIA NATIONAL LABORATORIES,
-C     DIV. 1523.
-C     DATE:  FEBRUARY, 1986.
-C
-C     DOCUMENTATION:  SAND86-0911
-C
-C     REVISED 28-OCT-1988
-C     Modified to allow memory for character variables.  The error
-C     handling was also improved to allow better user control.
-C
-C ****************************************************************************
-C
-C                   ISSUED BY SANDIA NATIONAL LABORATORIES,
-C                          A PRIME CONTRACTOR TO THE
-C                      UNITED STATES DEPARTMENT OF ENERGY
-C
-C ****************************************************************************
-C
-C THIS CODE WAS PREPARED IN THE COURSE OF WORK SPONSORED BY THE UNITED STATES
-C GOVERNMENT.  NEITHER THE UNITED STATES, NOR THE UNITED STATES DEPARTMENT OF
-C ENERGY, NOR THE UNITED STATES NUCLEAR REGULATORY COMMISSION, NOR ANY OF
-C THEIR EMPLOYEES, NOR ANY OF THEIR CONTRACTORS, SUBCONTRACTORS, OR THEIR
-C EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL
-C LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS OR USEFULNESS OF
-C ANY INFORMATION, APPARATUS, PRODUCT OR PROCESS DISCLOSED, OR REPRESENTS THAT
-C ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-C
-C ****************************************************************************
 C
 C     ENTRY POINTS:
 C
@@ -596,7 +567,7 @@ C
       END IF
 C
 C ... Using malloc/free -- ignore MCEXEC/MDEXEC calls.
-      
+
 c      CALL MXEXEC (MYV, MYCHAR, MYLOC, MYCLOC, UCLOC, COFFST,
 c     *   OFFSET, DPOINT, LDICT, NNAMES,
 c     *   VOID, LVOID, NVOIDS, FILL, FDATA, CFILL, CFDATA, CHRNUM,
@@ -850,7 +821,7 @@ C
       END IF
 C
 C ... Using malloc/free -- ignore mdget calls.
-      
+
 c      CALL MXGET (MYLOC, MNGET, VOID, LVOID, NVOIDS,
 c     *   CHRCOL, LASTER, VROW)
 C
@@ -991,7 +962,7 @@ C
          CALL MXLIST (EUNIT, OFFSET, DICT, DPOINT, LDICT, NNAMES,
      *        VOID, LVOID, NVOIDS, CHRCOL)
       end if
-      
+
       LASTER = SUCESS
       ERRVEC(LASTER) = ERRVEC(LASTER) + 1
       RETURN

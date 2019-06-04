@@ -61,17 +61,17 @@ template <class Real>
 class EpetraMultiVector : public Vector<Real> {
 private:
 
-  Teuchos::RCP<Epetra_MultiVector>  epetra_vec_;
+  ROL::Ptr<Epetra_MultiVector>  epetra_vec_;
 
 public:
   virtual ~EpetraMultiVector() {}
 
-  EpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector> & epetra_vec) : epetra_vec_(epetra_vec) {}
+  EpetraMultiVector(const ROL::Ptr<Epetra_MultiVector> & epetra_vec) : epetra_vec_(epetra_vec) {}
 
   /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
   */
   void plus( const Vector<Real> &x ) {
-    const EpetraMultiVector &ex = Teuchos::dyn_cast<const EpetraMultiVector>(x);
+    const EpetraMultiVector &ex = dynamic_cast<const EpetraMultiVector&>(x);
     epetra_vec_->Update( 1.0, *ex.getVector(), 1.0 );
   }
 
@@ -85,7 +85,7 @@ public:
   */
   Real dot( const Vector<Real> &x ) const {
     double val;
-    const EpetraMultiVector &ex = Teuchos::dyn_cast<const EpetraMultiVector>(x);
+    const EpetraMultiVector &ex = dynamic_cast<const EpetraMultiVector&>(x);
     epetra_vec_->Dot( *ex.getVector(), &val );
     return (Real)val;
   }
@@ -100,45 +100,58 @@ public:
 
   /** \brief Clone to make a new (uninitialized) vector.
   */
-  Teuchos::RCP<Vector<Real> > clone() const{
-    return Teuchos::rcp(new EpetraMultiVector( 
-  	     Teuchos::rcp(new Epetra_MultiVector(epetra_vec_->Map(),epetra_vec_->NumVectors(),false)) ));
+  ROL::Ptr<Vector<Real> > clone() const{
+    return ROL::makePtr<EpetraMultiVector>( 
+  	     ROL::makePtr<Epetra_MultiVector>(epetra_vec_->Map(),epetra_vec_->NumVectors(),false) );
   }
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
   */
-  virtual void axpy( const Real alpha, const Vector<Real> &x ) {
-    const EpetraMultiVector &ex = Teuchos::dyn_cast<const EpetraMultiVector>(x);
+  void axpy( const Real alpha, const Vector<Real> &x ) {
+    const EpetraMultiVector &ex = dynamic_cast<const EpetraMultiVector&>(x);
     epetra_vec_->Update( alpha, *ex.getVector(), 1.0 );
   }
 
   /**  \brief Set to zero vector.
   */
-  virtual void zero() {
+  void zero() {
     epetra_vec_->PutScalar(0.0);
   }
 
-  virtual void PutScalar(Real alpha) {
-    epetra_vec_->PutScalar((double) alpha);
+  void PutScalar(const Real C) {
+    epetra_vec_->PutScalar(static_cast<double>(C));
+  }
+
+  void setScalar(const Real C) {
+    epetra_vec_->PutScalar(static_cast<double>(C));
+  }
+
+  void randomize(const Real l=0.0, const Real u=1.0) {
+    epetra_vec_->Random();                         // Random numbers between -1 and 1
+    this->scale(static_cast<Real>(0.5)*(u-l));     // Random numbers between (l-u)/2 and (u-l)/2
+    Ptr<Vector<Real>> copy = this->clone();
+    copy->setScalar(static_cast<Real>(0.5)*(u+l)); // Constant vector with values (u+l)/2
+    this->plus(*copy);                             // Random numbers between l and u
   }
 
   /**  \brief Set \f$y \leftarrow x\f$ where \f$y = \mbox{*this}\f$.
   */
-  virtual void set( const Vector<Real> &x ) {
-    const EpetraMultiVector &ex = Teuchos::dyn_cast<const EpetraMultiVector>(x);
+  void set( const Vector<Real> &x ) {
+    const EpetraMultiVector &ex = dynamic_cast<const EpetraMultiVector&>(x);
     epetra_vec_->Scale(1.0,*ex.getVector());
   }
 
-  Teuchos::RCP<const Epetra_MultiVector> getVector() const {
+  ROL::Ptr<const Epetra_MultiVector> getVector() const {
     return this->epetra_vec_;
   }
 
-  Teuchos::RCP<Epetra_MultiVector> getVector() {
+  ROL::Ptr<Epetra_MultiVector> getVector() {
     return this->epetra_vec_;
   }
 
-  Teuchos::RCP<Vector<Real> > basis( const int i ) const {
-    Teuchos::RCP<EpetraMultiVector> e = Teuchos::rcp( new EpetraMultiVector( Teuchos::rcp(new Epetra_MultiVector(epetra_vec_->Map(),epetra_vec_->NumVectors(),true)) ));
+  ROL::Ptr<Vector<Real> > basis( const int i ) const {
+    ROL::Ptr<EpetraMultiVector> e = 
+    ROL::makePtr<EpetraMultiVector>( ROL::makePtr<Epetra_MultiVector>(epetra_vec_->Map(),epetra_vec_->NumVectors(),true));
     const Epetra_BlockMap & domainMap = e->getVector()->Map();
 
     Epetra_Map linearMap(domainMap.NumGlobalElements(), domainMap.NumMyElements(), 0, domainMap.Comm());

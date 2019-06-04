@@ -19,7 +19,7 @@
 #include "stk_mesh/base/GetEntities.hpp"  // for get_selected_entities
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 #include "stk_unit_test_utils/ioUtils.hpp"
 /*
  * GameofLife
@@ -102,11 +102,11 @@ void GameofLife::write_mesh()
 //protected
 void GameofLife::update_this_element(stk::mesh::Entity elem)
 {
-    if (stk::topology::QUAD_4 == m_elemType)
+    if (stk::topology::QUAD_4_2D == m_elemType)
         update_quad(elem);
     else if (stk::topology::HEX_8 == m_elemType)
         update_hex(elem);
-    else if (stk::topology::TRIANGLE_3 == m_elemType)
+    else if (stk::topology::TRIANGLE_3_2D == m_elemType)
         update_tri(elem);
     else
         ThrowRequire(true);

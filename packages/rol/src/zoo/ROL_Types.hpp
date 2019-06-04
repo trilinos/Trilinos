@@ -57,13 +57,14 @@
 
 #include <algorithm>
 #include <complex>
+#include <exception>
 #include <string>
 #include <sstream>
 #include <limits>
-#include <Teuchos_getConst.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <type_traits>
+#include <ROL_stacktrace.hpp>
+#include "ROL_ScalarTraits.hpp"
+#include <ROL_Ptr.hpp>
 #include <ROL_Vector.hpp>
 #include <ROL_config.h>
 
@@ -87,8 +88,8 @@ namespace ROL {
   /** \brief  Platform-dependent machine epsilon.
    */
   template<class Real>
-  inline Real ROL_EPSILON(void) { return std::abs(Teuchos::ScalarTraits<Real>::eps()); }
-  //static const Real ROL_EPSILON<Real>() = std::abs(Teuchos::ScalarTraits<Real>::eps());
+  inline Real ROL_EPSILON(void) { return std::abs(ROL::ScalarTraits<Real>::eps()); }
+  //static const Real ROL_EPSILON<Real>() = std::abs(ROL::ScalarTraits<Real>::eps());
 
   /** \brief  Tolerance for various equality tests.
    */
@@ -98,7 +99,7 @@ namespace ROL {
   /** \brief  Platform-dependent maximum double.
    */
   template<class Real>
-  inline Real ROL_OVERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmax()); }
+  inline Real ROL_OVERFLOW(void) { return std::abs(ROL::ScalarTraits<Real>::rmax()); }
 
   template<class Real>
   inline Real ROL_INF(void) { return 0.1*ROL_OVERFLOW<Real>(); }
@@ -109,7 +110,32 @@ namespace ROL {
   /** \brief  Platform-dependent minimum double.
    */
   template<class Real>
-  inline Real ROL_UNDERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmin()); }
+  inline Real ROL_UNDERFLOW(void) { return std::abs(ROL::ScalarTraits<Real>::rmin()); }
+
+  /** \brief Enum for algorithm termination.
+   */
+  enum EExitStatus {
+    EXITSTATUS_CONVERGED = 0,
+    EXITSTATUS_MAXITER,
+    EXITSTATUS_STEPTOL,
+    EXITSTATUS_NAN,
+    EXITSTATUS_USERDEFINED,
+    EXITSTATUS_LAST
+  };
+
+  inline std::string EExitStatusToString(EExitStatus tr) {
+    std::string retString;
+    switch(tr) {
+      case EXITSTATUS_CONVERGED:   retString = "Converged";                          break;
+      case EXITSTATUS_MAXITER:     retString = "Iteration Limit Exceeded";           break;
+      case EXITSTATUS_STEPTOL:     retString = "Step Tolerance Met";                 break;
+      case EXITSTATUS_NAN:         retString = "Step and/or Gradient Returned NaN";  break;
+      case EXITSTATUS_USERDEFINED: retString = "User Defined";                       break;
+      case EXITSTATUS_LAST:        retString = "Last Type (Dummy)";                  break;
+      default:                     retString = "INVALID EExitStatus";
+    }
+    return retString;
+  }
 
   /** \brief  State for algorithm class.  Will be used for restarts.
    */
@@ -128,9 +154,10 @@ namespace ROL {
     Real aggregateGradientNorm;
     Real aggregateModelError;
     bool flag;
-    Teuchos::RCP<Vector<Real> > iterateVec;
-    Teuchos::RCP<Vector<Real> > lagmultVec;
-    Teuchos::RCP<Vector<Real> > minIterVec;
+    ROL::Ptr<Vector<Real> > iterateVec;
+    ROL::Ptr<Vector<Real> > lagmultVec;
+    ROL::Ptr<Vector<Real> > minIterVec;
+    EExitStatus statusFlag;
 
     AlgorithmState(void) : iter(0), minIter(0), nfval(0), ngrad(0), value(0), minValue(0), 
       gnorm(std::numeric_limits<Real>::max()),
@@ -139,7 +166,8 @@ namespace ROL {
       aggregateGradientNorm(std::numeric_limits<Real>::max()),
       aggregateModelError(std::numeric_limits<Real>::max()),
       flag(false),
-      iterateVec(Teuchos::null), lagmultVec(Teuchos::null), minIterVec(Teuchos::null) {}
+      iterateVec(ROL::nullPtr), lagmultVec(ROL::nullPtr), minIterVec(ROL::nullPtr),
+      statusFlag(EXITSTATUS_LAST) {}
 
     void reset(void) {
       iter                  = 0;
@@ -155,13 +183,13 @@ namespace ROL {
       aggregateGradientNorm = ROL_INF<Real>();
       aggregateModelError   = ROL_INF<Real>();
       flag                  = false;
-      if (iterateVec != Teuchos::null) {
+      if (iterateVec != ROL::nullPtr) {
         iterateVec->zero();
       }
-      if (lagmultVec != Teuchos::null) {
+      if (lagmultVec != ROL::nullPtr) {
         lagmultVec->zero();
       }
-      if (minIterVec != Teuchos::null) {
+      if (minIterVec != ROL::nullPtr) {
         minIterVec->zero();
       }
     }
@@ -171,33 +199,42 @@ namespace ROL {
    */
   template<class Real>
   struct StepState {
-    Teuchos::RCP<Vector<Real> > gradientVec;
-    Teuchos::RCP<Vector<Real> > descentVec;
-    Teuchos::RCP<Vector<Real> > constraintVec;
+    ROL::Ptr<Vector<Real> > gradientVec;
+    ROL::Ptr<Vector<Real> > descentVec;
+    ROL::Ptr<Vector<Real> > constraintVec;
     int nfval;
     int ngrad;
     Real searchSize; // line search parameter (alpha) or trust-region radius (delta)
+    int flag; // Was step successful?
+    int SPiter; // Subproblem iteration count
+    int SPflag; // Subproblem termination flag
 
-    StepState(void) : gradientVec(Teuchos::null),
-                      descentVec(Teuchos::null),
-                      constraintVec(Teuchos::null),
+    StepState(void) : gradientVec(ROL::nullPtr),
+                      descentVec(ROL::nullPtr),
+                      constraintVec(ROL::nullPtr),
                       nfval(0),
                       ngrad(0),
-                      searchSize(0) {}
+                      searchSize(0),
+                      flag(0),
+                      SPiter(0),
+                      SPflag(0) {}
 
     void reset(const Real searchSizeInput = 1.0) {
-      if (gradientVec != Teuchos::null) {
+      if (gradientVec != ROL::nullPtr) {
         gradientVec->zero();
       }
-      if (descentVec != Teuchos::null) {
+      if (descentVec != ROL::nullPtr) {
         descentVec->zero();
       }
-      if (constraintVec != Teuchos::null) {
+      if (constraintVec != ROL::nullPtr) {
         constraintVec->zero();
       }
       nfval = 0;
       ngrad = 0;
       searchSize = searchSizeInput;
+      flag = 0;
+      SPiter = 0;
+      SPflag = 0;
     }
   };
 
@@ -243,6 +280,7 @@ namespace ROL {
     STEP_PRIMALDUALACTIVESET,
     STEP_TRUSTREGION,
     STEP_INTERIORPOINT,
+    STEP_FLETCHER,
     STEP_LAST
   };
 
@@ -257,6 +295,7 @@ namespace ROL {
       case STEP_PRIMALDUALACTIVESET: retString = "Primal Dual Active Set"; break;
       case STEP_TRUSTREGION:         retString = "Trust Region";           break;
       case STEP_INTERIORPOINT:       retString = "Interior Point";         break;
+      case STEP_FLETCHER:            retString = "Fletcher";               break;
       case STEP_LAST:                retString = "Last Type (Dummy)";      break;
       default:                       retString = "INVALID EStep";
     }
@@ -280,12 +319,14 @@ namespace ROL {
         break;
 
       case TYPE_E:    comp = ( (s == STEP_COMPOSITESTEP) ||
-                               (s == STEP_AUGMENTEDLAGRANGIAN) );
+                               (s == STEP_AUGMENTEDLAGRANGIAN) ||
+			       (s == STEP_FLETCHER) );
         break;
 
       case TYPE_EB:   comp = ( (s == STEP_AUGMENTEDLAGRANGIAN) ||
                                (s == STEP_MOREAUYOSIDAPENALTY) ||
-                               (s == STEP_INTERIORPOINT) );
+                               (s == STEP_INTERIORPOINT) ||
+			       (s == STEP_FLETCHER) );
         break;
 
       case TYPE_LAST: comp = false; break;
@@ -321,7 +362,8 @@ namespace ROL {
             (ls == STEP_MOREAUYOSIDAPENALTY) ||
             (ls == STEP_PRIMALDUALACTIVESET) ||
             (ls == STEP_TRUSTREGION) || 
-            (ls == STEP_INTERIORPOINT) ) ;
+            (ls == STEP_INTERIORPOINT) ||
+	    (ls == STEP_FLETCHER) ) ;
   }
 
   inline EStep & operator++(EStep &type) {
@@ -516,6 +558,7 @@ namespace ROL {
     KRYLOV_CG = 0,
     KRYLOV_CR,
     KRYLOV_GMRES,
+    KRYLOV_MINRES,
     KRYLOV_USERDEFINED,
     KRYLOV_LAST
   };
@@ -526,6 +569,7 @@ namespace ROL {
       case KRYLOV_CG:          retString = "Conjugate Gradients"; break;
       case KRYLOV_CR:          retString = "Conjugate Residuals"; break;
       case KRYLOV_GMRES:       retString = "GMRES";               break;
+      case KRYLOV_MINRES:      retString = "MINRES";              break;
       case KRYLOV_USERDEFINED: retString = "User Defined";        break;
       case KRYLOV_LAST:        retString = "Last Type (Dummy)";   break;
       default:                 retString = "INVALID EKrylov";
@@ -878,182 +922,6 @@ namespace ROL {
   }
 
 
-  /** \enum   ROL::ETestObjectives
-      \brief  Enumeration of test objective functions.
-
-      \arg    ROSENBROCK           describe
-      \arg    FREUDENSTEINANDROTH  describe
-      \arg    POWELL               describe
-      \arg    SUMOFSQUARES         describe
-      \arg    LEASTSQUARES         describe
-   */
-  enum ETestObjectives {
-    TESTOBJECTIVES_ROSENBROCK = 0,
-    TESTOBJECTIVES_FREUDENSTEINANDROTH,
-    TESTOBJECTIVES_BEALE,
-    TESTOBJECTIVES_POWELL,
-    TESTOBJECTIVES_SUMOFSQUARES,
-    TESTOBJECTIVES_LEASTSQUARES,
-    TESTOBJECTIVES_POISSONCONTROL,
-    TESTOBJECTIVES_POISSONINVERSION,
-    TESTOBJECTIVES_ZAKHAROV,
-    TESTOBJECTIVES_LAST
-  };
-
-  inline std::string ETestObjectivesToString(ETestObjectives to) {
-    std::string retString;
-    switch(to) {
-      case TESTOBJECTIVES_ROSENBROCK:          retString = "Rosenbrock's Function";            break;
-      case TESTOBJECTIVES_FREUDENSTEINANDROTH: retString = "Freudenstein and Roth's Function"; break;
-      case TESTOBJECTIVES_BEALE:               retString = "Beale's Function";                 break;
-      case TESTOBJECTIVES_POWELL:              retString = "Powell's Badly Scaled Function";   break;
-      case TESTOBJECTIVES_SUMOFSQUARES:        retString = "Sum of Squares Function";          break;
-      case TESTOBJECTIVES_LEASTSQUARES:        retString = "Least Squares Function";           break;
-      case TESTOBJECTIVES_POISSONCONTROL:      retString = "Poisson Optimal Control";          break;
-      case TESTOBJECTIVES_POISSONINVERSION:    retString = "Poisson Inversion Problem";        break;
-      case TESTOBJECTIVES_ZAKHAROV:            retString = "Zakharov's Function";              break;
-      case TESTOBJECTIVES_LAST:                retString = "Last Type (Dummy)";                break;
-      default:                                 retString = "INVALID ETestObjectives";
-    }
-    return retString;
-  }
-  
-  /** \brief  Verifies validity of a TestObjectives enum.
-    
-      \param  ls  [in]  - enum of the TestObjectives
-      \return 1 if the argument is a valid TestObjectives; 0 otherwise.
-    */
-  inline int isValidTestObjectives(ETestObjectives to){
-    return( (to == TESTOBJECTIVES_ROSENBROCK)          ||
-            (to == TESTOBJECTIVES_FREUDENSTEINANDROTH) ||
-            (to == TESTOBJECTIVES_BEALE)               ||
-            (to == TESTOBJECTIVES_POWELL)              ||
-            (to == TESTOBJECTIVES_SUMOFSQUARES)        ||
-            (to == TESTOBJECTIVES_LEASTSQUARES)        ||
-            (to == TESTOBJECTIVES_POISSONCONTROL)      ||
-            (to == TESTOBJECTIVES_POISSONINVERSION)    ||
-            (to == TESTOBJECTIVES_ZAKHAROV)
-          );
-  }
-
-  inline ETestObjectives & operator++(ETestObjectives &type) {
-    return type = static_cast<ETestObjectives>(type+1);
-  }
-
-  inline ETestObjectives operator++(ETestObjectives &type, int) {
-    ETestObjectives oldval = type;
-    ++type;
-    return oldval;
-  }
-
-  inline ETestObjectives & operator--(ETestObjectives &type) {
-    return type = static_cast<ETestObjectives>(type-1);
-  }
-
-  inline ETestObjectives operator--(ETestObjectives &type, int) {
-    ETestObjectives oldval = type;
-    --type;
-    return oldval;
-  }
-
-  inline ETestObjectives StringToETestObjectives(std::string s) {
-    s = removeStringFormat(s);
-    for ( ETestObjectives to = TESTOBJECTIVES_ROSENBROCK; to < TESTOBJECTIVES_LAST; to++ ) {
-      if ( !s.compare(removeStringFormat(ETestObjectivesToString(to))) ) {
-        return to;
-      }
-    }
-    return TESTOBJECTIVES_ROSENBROCK;
-  }
-
-  /** \enum   ROL::ETestOptProblem
-      \brief  Enumeration of test optimization problems.
-
-      \arg    HS1           describe
-      \arg    HS2           describe
-      \arg    HS3           describe
-      \arg    HS4           describe
-      \arg    HS5           describe
-      \arg    HS25          describe
-   */
-  enum ETestOptProblem {
-    TESTOPTPROBLEM_HS1 = 0,
-    TESTOPTPROBLEM_HS2,
-    TESTOPTPROBLEM_HS3,
-    TESTOPTPROBLEM_HS4,
-    TESTOPTPROBLEM_HS5,
-    TESTOPTPROBLEM_HS25,
-    TESTOPTPROBLEM_HS38,
-    TESTOPTPROBLEM_HS45,
-    TESTOPTPROBLEM_BVP,
-    TESTOPTPROBLEM_LAST
-  };
-
-  inline std::string ETestOptProblemToString(ETestOptProblem to) {
-    std::string retString;
-    switch(to) {
-      case TESTOPTPROBLEM_HS1:  retString = "Hock and Schittkowski Test Problem #1";  break;
-      case TESTOPTPROBLEM_HS2:  retString = "Hock and Schittkowski Test Problem #2";  break;
-      case TESTOPTPROBLEM_HS3:  retString = "Hock and Schittkowski Test Problem #3";  break;
-      case TESTOPTPROBLEM_HS4:  retString = "Hock and Schittkowski Test Problem #4";  break;
-      case TESTOPTPROBLEM_HS5:  retString = "Hock and Schittkowski Test Problem #5";  break;
-      case TESTOPTPROBLEM_HS25: retString = "Hock and Schittkowski Test Problem #25"; break;
-      case TESTOPTPROBLEM_HS38: retString = "Hock and Schittkowski Test Problem #38"; break;
-      case TESTOPTPROBLEM_HS45: retString = "Hock and Schittkowski Test Problem #45"; break;
-      case TESTOPTPROBLEM_BVP:  retString = "Boundary Value Problem";                 break;
-      case TESTOPTPROBLEM_LAST: retString = "Last Type (Dummy)";                      break;
-      default:                  retString = "INVALID ETestOptProblem";
-    }
-    return retString;
-  }
-  
-  /** \brief  Verifies validity of a TestOptProblem enum.
-    
-      \param  ls  [in]  - enum of the TestOptProblem
-      \return 1 if the argument is a valid TestOptProblem; 0 otherwise.
-    */
-  inline int isValidTestOptProblem(ETestOptProblem to){
-    return( (to == TESTOPTPROBLEM_HS1)  ||
-            (to == TESTOPTPROBLEM_HS2)  ||
-            (to == TESTOPTPROBLEM_HS3)  ||
-            (to == TESTOPTPROBLEM_HS4)  ||
-            (to == TESTOPTPROBLEM_HS5)  ||
-            (to == TESTOPTPROBLEM_HS25) ||
-            (to == TESTOPTPROBLEM_HS38) ||
-            (to == TESTOPTPROBLEM_HS45) ||
-            (to == TESTOPTPROBLEM_BVP) );
-  }
-
-  inline ETestOptProblem & operator++(ETestOptProblem &type) {
-    return type = static_cast<ETestOptProblem>(type+1);
-  }
-
-  inline ETestOptProblem operator++(ETestOptProblem &type, int) {
-    ETestOptProblem oldval = type;
-    ++type;
-    return oldval;
-  }
-
-  inline ETestOptProblem & operator--(ETestOptProblem &type) {
-    return type = static_cast<ETestOptProblem>(type-1);
-  }
-
-  inline ETestOptProblem operator--(ETestOptProblem &type, int) {
-    ETestOptProblem oldval = type;
-    --type;
-    return oldval;
-  }
-
-  inline ETestOptProblem StringToETestOptProblem(std::string s) {
-    s = removeStringFormat(s);
-    for ( ETestOptProblem to = TESTOPTPROBLEM_HS1; to < TESTOPTPROBLEM_LAST; to++ ) {
-      if ( !s.compare(removeStringFormat(ETestOptProblemToString(to))) ) {
-        return to;
-      }
-    }
-    return TESTOPTPROBLEM_HS1;
-  }
-
 
   // For use in gradient and Hessian checks
   namespace Finite_Difference_Arrays {
@@ -1112,14 +980,29 @@ Real rol_cast(const Element &val) {
 
 namespace Exception {
 
-class NotImplemented : public Teuchos::ExceptionBase {
+class NotImplemented : public std::logic_error {
 public:
   NotImplemented( const std::string& what_arg ) :
-    Teuchos::ExceptionBase(what_arg) {}
+    std::logic_error(what_arg) {}
 
 
 }; // class NotImplemented
  
+
+#if __cplusplus >= 201402L // using C++14
+
+using std::enable_if_t;
+
+#else // No C++14
+
+template<bool B, class T=void>
+using enable_if_t = typename std::enable_if<B,T>::type;
+
+#endif
+
+
+
+
 
 } // namespace Exception
 
@@ -1189,7 +1072,7 @@ public:
   \endcode
 
   \subsection step_qs_sec Step 3: Choose optimization algorithm.
-  ---  with @b Teuchos::ParameterList settings in the variable @b parlist.
+  ---  with @b ROL::ParameterList settings in the variable @b parlist.
 
   \code
       ROL::Algorithm<RealT> algo("Line Search",parlist);
@@ -1312,6 +1195,11 @@ public:
  *  @ingroup stochastic_group
  * \brief ROL's risk measure implementations.
 */ 
+
+/** @defgroup dynamic_group Dynamic functions
+ *  @ingroup interface_group
+ *  \brief ROL's interfaces for time-dependent constraints and objectives
+ */
 
 /** @defgroup examples_group Examples
  *  \brief ROL's examples

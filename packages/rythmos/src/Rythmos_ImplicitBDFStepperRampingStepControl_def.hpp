@@ -255,8 +255,8 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::nextStepSize(
 
 template<class Scalar>
 void ImplicitBDFStepperRampingStepControl<Scalar>::setCorrection(
-     const StepperBase<Scalar>& stepper
-    ,const RCP<const Thyra::VectorBase<Scalar> >& soln
+     const StepperBase<Scalar>& /* stepper */
+    ,const RCP<const Thyra::VectorBase<Scalar> >& /* soln */
     ,const RCP<const Thyra::VectorBase<Scalar> >& ee
     ,int solveStatus)
 {
@@ -281,7 +281,7 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setCorrection(
 
 template<class Scalar>
 bool ImplicitBDFStepperRampingStepControl<Scalar>::acceptStep(
-  const StepperBase<Scalar>& stepper, Scalar* LETValue)
+  const StepperBase<Scalar>& /* stepper */, Scalar* LETValue)
 {
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -448,7 +448,7 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::completeStep(
 template<class Scalar>
 AttemptedStepStatusFlag
 ImplicitBDFStepperRampingStepControl<Scalar>::rejectStep(
-  const StepperBase<Scalar>& stepper)
+  const StepperBase<Scalar>& /* stepper */)
 {
   TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
 

@@ -94,7 +94,9 @@ namespace Belos {
     typedef typename STS::magnitudeType MagnitudeType;
 
   public:
-    MyStatusTest(MagnitudeType tol) : Base(tol), prevNorm_(-STS::one()), curNorm_(-STS::one()) { }
+    MyStatusTest(MagnitudeType tol) : Base(tol),
+                                      prevNorm_(-Teuchos::ScalarTraits<MagnitudeType>::one()),
+                                      curNorm_(-Teuchos::ScalarTraits<MagnitudeType>::one()) { }
 
     StatusType checkStatus(Iteration<SC,MV,OP>* iSolver) {
       // Get residual
@@ -102,7 +104,7 @@ namespace Belos {
       Teuchos::RCP<const MV> res = iSolver->getNativeResiduals(&norms);
       MagnitudeType resNorm = norms[0];
 
-      if (curNorm_ == -STS::one()) {
+      if (curNorm_ == -Teuchos::ScalarTraits<MagnitudeType>::one()) {
         prevNorm_ = curNorm_ = resNorm;
       } else {
         prevNorm_ = curNorm_;
@@ -135,6 +137,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero(), one = STS::one();
+  typedef typename STS::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   bool success = true;
   bool verbose = true;
@@ -178,7 +182,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // =========================================================================
       RCP<Matrix>       A;
       RCP<Map>          map;
-      RCP<MultiVector>  nullspace, coordinates;
+      RCP<MultiVector>  nullspace;
+      RCP<RealValuedMultiVector> coordinates;
 
       // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
       //                                 d1  d2  d3
@@ -196,16 +201,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
       if (matrixType == "Laplace1D") {
         map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriParameters);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriParameters);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriParameters);
 
       } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
                  matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
         map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriParameters);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriParameters);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriParameters);
 
       } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
         map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriParameters);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriParameters);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriParameters);
       }
 
       // Expand map to do multiple DOF per node for block problems
@@ -223,7 +228,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 #endif
 
       RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriParameters);
+        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriParameters);
       A = Pr->BuildMatrix();
 
       if (matrixType == "Elasticity2D" ||
@@ -253,16 +258,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
             fileList[i] == "problem_x.xml")
           continue;
 
+        std::string xmlFile = dirName + fileList[i];
+
+        Teuchos::ParameterList paramList;
+        Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+
+        if (TYPE_EQUAL(Scalar, std::complex<double>) and paramList.get<bool>("skipForComplex", false))
+          continue;
+
         // Set seed
         Utilities::SetRandomSeed(*comm);
 
         // Reset (potentially) cached value of the estimate
         A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-
-        std::string xmlFile = dirName + fileList[i];
-
-        Teuchos::ParameterList paramList;
-        Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
         std::string    solveType = paramList.get<std::string>   ("solver", "standalone");
         double         goldRate  = paramList.get<double>        ("convergence rate");
@@ -327,11 +335,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         }
 
         const int    maxIts = 1000;
-        const double tol    = 1e-12;
+        typedef typename STS::magnitudeType MagnitudeType;
+        const MagnitudeType tol    = 1e-12;
 
         H->IsPreconditioner(isPrec);
         if (isPrec == false) {
-          MueLu::ReturnType ret = H->Iterate(*B, *X, std::pair<LO,SC>(maxIts, tol));
+          MueLu::ReturnType ret = H->Iterate(*B, *X, std::pair<LO,MagnitudeType>(maxIts, tol));
 
           double rate = H->GetRate();
 
@@ -455,4 +464,3 @@ int main(int argc, char *argv[]) {
 
   return status;
 }
-

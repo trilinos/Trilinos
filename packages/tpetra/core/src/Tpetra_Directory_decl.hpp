@@ -42,12 +42,11 @@
 #ifndef TPETRA_DIRECTORY_DECL_HPP
 #define TPETRA_DIRECTORY_DECL_HPP
 
-#include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_Describable.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map_decl.hpp"
 #include "Tpetra_DirectoryImpl_decl.hpp"
 #include "Tpetra_TieBreak.hpp"
+#include <Teuchos_Describable.hpp>
 
 namespace Tpetra {
 
@@ -121,9 +120,9 @@ namespace Tpetra {
   ///   already exists.  Epetra_Directory is an abstract interface
   ///   with one implementation (Epetra_BasicDirectory);
   ///   Tpetra::Directory is a concrete implementation.
-  template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-           class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-           class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template<class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
   class Directory : public Teuchos::Describable {
   public:
     //! Type of the Map specialization to give to the constructor.
@@ -170,8 +169,9 @@ namespace Tpetra {
     /// such as a MultiVector or CrsMatrix (distributed over a given
     /// Map) for a different Kokkos Node type, for example if creating
     /// a host (CPU) copy of a device (GPU) object.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class Node2>
-    Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
+    Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> > TPETRA_DEPRECATED
     clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& clone_map) const
     {
       using Teuchos::RCP;
@@ -181,7 +181,7 @@ namespace Tpetra {
       RCP<Directory<LO, GO, Node2> > dir (new Directory<LO, GO, Node2> ());
       if (clone_map.isDistributed ()) {
         if (clone_map.isUniform ()) {
-          typedef Details::ContiguousUniformDirectory<LO, GO, Node> impl_type;
+          typedef ::Tpetra::Details::ContiguousUniformDirectory<LO, GO, Node> impl_type;
           const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
           TEUCHOS_TEST_FOR_EXCEPTION(
             theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
@@ -191,7 +191,7 @@ namespace Tpetra {
           dir->impl_ = theImpl->template clone<Node2> (clone_map);
         }
         else if (clone_map.isContiguous ()) {
-          typedef Details::DistributedContiguousDirectory<LO, GO, Node> impl_type;
+          typedef ::Tpetra::Details::DistributedContiguousDirectory<LO, GO, Node> impl_type;
           const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
           TEUCHOS_TEST_FOR_EXCEPTION(
             theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
@@ -201,7 +201,7 @@ namespace Tpetra {
           dir->impl_ = theImpl->template clone<Node2> (clone_map);
         }
         else { // not contiguous
-          typedef Details::DistributedNoncontiguousDirectory<LO, GO, Node> impl_type;
+          typedef ::Tpetra::Details::DistributedNoncontiguousDirectory<LO, GO, Node> impl_type;
           const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
           TEUCHOS_TEST_FOR_EXCEPTION(
             theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
@@ -212,7 +212,7 @@ namespace Tpetra {
         }
       }
       else { // locally replicated (not distributed)
-        typedef Details::ReplicatedDirectory<LO, GO, Node> impl_type;
+        typedef ::Tpetra::Details::ReplicatedDirectory<LO, GO, Node> impl_type;
         const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
         TEUCHOS_TEST_FOR_EXCEPTION(
           theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
@@ -223,6 +223,7 @@ namespace Tpetra {
       }
       return dir;
     }
+#endif
 
     //@}
     //! @name Implementation of Teuchos::Describable.
@@ -322,7 +323,7 @@ namespace Tpetra {
     ///   implementations, depending on characteristics of the input
     ///   Map (e.g., locally replicated or globally distributed,
     ///   contiguous or noncontiguous).
-    typedef Details::Directory<LocalOrdinal, GlobalOrdinal, Node> base_type;
+    typedef ::Tpetra::Details::Directory<LocalOrdinal, GlobalOrdinal, Node> base_type;
 
     /// \brief Implementation of this object.
     ///
@@ -339,6 +340,7 @@ namespace Tpetra {
     Directory<LocalOrdinal, GlobalOrdinal, Node>&
     operator= (const Directory<LocalOrdinal, GlobalOrdinal, Node>& source);
   }; // class Directory
+
 } // namespace Tpetra
 
 #endif // TPETRA_DIRECTORY_DECL_HPP

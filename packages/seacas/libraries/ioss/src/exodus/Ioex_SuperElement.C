@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -87,13 +87,10 @@ namespace {
     }
     return status;
   }
-
-  const std::string SCALAR() { return std::string("scalar"); }
 } // namespace
 
 Ioex::SuperElement::SuperElement(std::string filename, const std::string &my_name)
-    : Ioss::GroupingEntity(nullptr, my_name, 1), fileName(std::move(filename)), numDOF(0),
-      num_nodes(0), numEIG(0), numRBM(0), num_dim(0), filePtr(-1)
+    : Ioss::GroupingEntity(nullptr, my_name, 1), fileName(std::move(filename))
 {
 
   // For now, we will open the raw netcdf file here and parse the
@@ -143,23 +140,28 @@ Ioex::SuperElement::SuperElement(std::string filename, const std::string &my_nam
 
   // Add the standard fields...
   if (num_nodes > 0) {
-    fields.add(Ioss::Field("coordx", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH, num_nodes));
-    fields.add(Ioss::Field("coordy", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH, num_nodes));
-    fields.add(Ioss::Field("coordz", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH, num_nodes));
     fields.add(
-        Ioss::Field("node_num_map", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH, num_nodes));
-    fields.add(Ioss::Field("cbmap", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH,
+        Ioss::Field("coordx", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::MESH, num_nodes));
+    fields.add(
+        Ioss::Field("coordy", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::MESH, num_nodes));
+    fields.add(
+        Ioss::Field("coordz", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::MESH, num_nodes));
+    fields.add(Ioss::Field("node_num_map", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::MESH,
+                           num_nodes));
+    fields.add(Ioss::Field("cbmap", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::MESH,
                            2 * num_nodes * num_dim));
   }
 
-  fields.add(Ioss::Field("Kr", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH, numDOF * numDOF));
+  fields.add(
+      Ioss::Field("Kr", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::MESH, numDOF * numDOF));
 
-  fields.add(Ioss::Field("Mr", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH, numDOF * numDOF));
+  fields.add(
+      Ioss::Field("Mr", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::MESH, numDOF * numDOF));
 
   if (numRBM > 0) {
-    fields.add(Ioss::Field("InertiaTensor", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH,
+    fields.add(Ioss::Field("InertiaTensor", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::MESH,
                            numDOF * numRBM));
-    fields.add(Ioss::Field("MassInertia", Ioss::Field::REAL, SCALAR(), Ioss::Field::MESH,
+    fields.add(Ioss::Field("MassInertia", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::MESH,
                            numDOF * numRBM));
   }
 
@@ -177,7 +179,7 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "cbmap", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load coodintate data field 'cbmap' from file '" << fileName
+      errmsg << "ERROR: Could not load coordinate data field 'cbmap' from file '" << fileName
              << "'.";
       IOSS_ERROR(errmsg);
     }
@@ -188,7 +190,7 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
 
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load coodintate data field 'node_num_map' from file '" << fileName
+      errmsg << "ERROR: Could not load coordinate data field 'node_num_map' from file '" << fileName
              << "'.";
       IOSS_ERROR(errmsg);
     }
@@ -198,7 +200,7 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "coordx", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load coodintate data field 'coordx' from file '" << fileName
+      errmsg << "ERROR: Could not load coordinate data field 'coordx' from file '" << fileName
              << "'.";
       IOSS_ERROR(errmsg);
     }
@@ -208,7 +210,7 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "coordy", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load coodintate data field 'coordy' from file '" << fileName
+      errmsg << "ERROR: Could not load coordinate data field 'coordy' from file '" << fileName
              << "'.";
       IOSS_ERROR(errmsg);
     }
@@ -218,7 +220,7 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "coordz", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load coodintate data field 'coordz' from file '" << fileName
+      errmsg << "ERROR: Could not load coordinate data field 'coordz' from file '" << fileName
              << "'.";
       IOSS_ERROR(errmsg);
     }
@@ -256,8 +258,8 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "MassInertia", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load mass inertia matrix field 'MassInertia' from file '" << fileName
-             << "'.";
+      errmsg << "ERROR: Could not load mass inertia matrix field 'MassInertia' from file '"
+             << fileName << "'.";
       IOSS_ERROR(errmsg);
     }
   }

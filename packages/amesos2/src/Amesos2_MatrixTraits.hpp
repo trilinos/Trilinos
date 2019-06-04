@@ -50,15 +50,12 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
-#  include <Tpetra_DefaultPlatform.hpp>
 #  include <Epetra_RowMatrix.h>
 #  include <Epetra_CrsMatrix.h>
 // #  include <Epetra_MsrMatrix.h>
 #  include <Epetra_VbrMatrix.h>
 // and perhaps some others later...
-#endif
 #endif
 
 #include "Amesos2_Util.hpp"
@@ -120,15 +117,14 @@ namespace Amesos2 {
   };
 
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 
   template <>
   struct MatrixTraits<Epetra_RowMatrix> {
     typedef double scalar_t;
     typedef int local_ordinal_t;
-    typedef int global_ordinal_t;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
+    typedef Tpetra::Map<>::node_type node_t;
 
     typedef Epetra_RowMatrix matrix_type;
     typedef matrix_type local_matrix_t;
@@ -143,8 +139,8 @@ namespace Amesos2 {
   struct MatrixTraits<Epetra_CrsMatrix> {
     typedef double scalar_t;
     typedef int local_ordinal_t;
-    typedef int global_ordinal_t;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
+    typedef Tpetra::Map<>::node_type node_t;
 
     typedef Epetra_CrsMatrix matrix_type;
     typedef matrix_type local_matrix_t;
@@ -159,8 +155,8 @@ namespace Amesos2 {
   // struct MatrixTraits<Epetra_MsrMatrix> {
   //   typedef double scalar_t;
   //   typedef int local_ordinal_t;
-  //   typedef int global_ordinal_t;
-  //   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
+  //   typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
+  //   typedef Tpetra::Map<>::node_type node_t;
 
   //   typedef row_access major_access;
   // };
@@ -169,8 +165,8 @@ namespace Amesos2 {
   struct MatrixTraits<Epetra_VbrMatrix> {
     typedef double scalar_t;
     typedef int local_ordinal_t;
-    typedef int global_ordinal_t;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
+    typedef Tpetra::Map<>::node_type node_t;
 
     typedef Epetra_VbrMatrix matrix_type;
     typedef matrix_type local_matrix_t;
@@ -181,7 +177,6 @@ namespace Amesos2 {
     typedef row_access major_access;
   };
 
-#endif
 #endif
 
 }

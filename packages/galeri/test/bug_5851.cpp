@@ -1,5 +1,5 @@
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -57,11 +57,11 @@ int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
                                      Tpetra::CrsMatrix<scalar_t, lno_t, gno_t>,
                                      Tpetra::MultiVector<scalar_t, lno_t, gno_t> >
                         (params.GetMatrixType(), map, params.GetParameterList());
-    if (comm->getRank() == 0) 
+    if (comm->getRank() == 0)
       cout << "AFTER GALERI BuildProblem M_=" << M_ << endl;
 
     M_ = Pr->BuildMatrix();
-    if (comm->getRank() == 0) 
+    if (comm->getRank() == 0)
       cout << "AFTER GALERI BuildMatrix  M_=" << M_ << endl;
   }
   catch (std::exception &e) {    // Probably not enough memory
@@ -70,7 +70,7 @@ int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
   }
   if (M_.is_null())
     return 1;
-  else 
+  else
     return 0;
 }
 
@@ -78,9 +78,8 @@ int main(int narg, char **arg)
 {
   int ierr, jerr;
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard mpiSession(&narg, &arg);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   if (comm->getRank() == 0) cout << "TESTING WITH scalar_t == DOUBLE" << endl;
   ierr = buildCrsMatrix<int, long, double>(10, 10, 10, std::string("Laplace3D"), comm);

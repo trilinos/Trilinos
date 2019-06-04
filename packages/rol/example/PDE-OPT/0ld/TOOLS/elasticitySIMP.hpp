@@ -57,19 +57,19 @@ protected:
   Real minDensity_;
   int powerP_;
   
-  std::vector<Teuchos::RCP<Material_SIMP<Real> > >SIMPmaterial_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  myDensity_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  myCellArea_;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > CBMat0_;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradgradMats0_;
+  std::vector<ROL::Ptr<Material_SIMP<Real> > >SIMPmaterial_;
+  ROL::Ptr<Tpetra::MultiVector<> >  myDensity_;
+  ROL::Ptr<Tpetra::MultiVector<> >  myCellArea_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > CBMat0_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradgradMats0_;
 
 public:
   ElasticitySIMP() {}
   ~ElasticitySIMP() {}
 
-  virtual void ElasticitySIMP_Initialize(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+  virtual void ElasticitySIMP_Initialize(const ROL::Ptr<const Teuchos::Comm<int> > &comm,
                                          const Teuchos::RCP<Teuchos::ParameterList> &parlist,
-                                         const Teuchos::RCP<std::ostream> &outStream) {
+                                         const ROL::Ptr<std::ostream> &outStream) {
     this->Initialize(comm, parlist, outStream);
     // new material parameters
     Teuchos::ParameterList &list = this->parlist_->sublist("ElasticitySIMP");
@@ -81,32 +81,32 @@ public:
 
   virtual void SetSIMPParallelStructure() { 
     PDE_FEM<Real>::SetParallelStructure();
-    this->myCellMap_ = Teuchos::rcp(new Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
-                              this->myCellIds_, 0, this->commPtr_));
+    this->myCellMap_ = ROL::makePtr<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+                              this->myCellIds_, 0, this->commPtr_);
   }
 
-  Teuchos::RCP<const Tpetra::Map<> > getDomainMapA() const {
+  ROL::Ptr<const Tpetra::Map<> > getDomainMapA() const {
     return this->matA_->getDomainMap();
   }
 
-  Teuchos::RCP<const Tpetra::Map<> > getCellMap() const {
+  ROL::Ptr<const Tpetra::Map<> > getCellMap() const {
     return this->myCellMap_;
   }
   
-  Teuchos::RCP<Tpetra::MultiVector<> > getMaterialDensity() const {
+  ROL::Ptr<Tpetra::MultiVector<> > getMaterialDensity() const {
     return myDensity_;
   }
  
 // return cell measures 
-  Teuchos::RCP<Tpetra::MultiVector<> > getCellAreas() {
-    myCellArea_ = Teuchos::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
+  ROL::Ptr<Tpetra::MultiVector<> > getCellAreas() {
+    myCellArea_ = ROL::makePtr<Tpetra::MultiVector<>>(this->myCellMap_, 1, true);
     for (int i=0; i<this->numCells_; i++){
     	myCellArea_ -> replaceGlobalValue(this->myCellIds_[i], 0, this->myCellMeasure_[i]);
     }
     return myCellArea_;
   }
 //
-  void ApplyBCToVec (const Teuchos::RCP<Tpetra::MultiVector<> > & u) {
+  void ApplyBCToVec (const ROL::Ptr<Tpetra::MultiVector<> > & u) {
     Real zero(0.0);
     // u is myOverlapMap_
     for (int i=0; i<this->myDirichletDofs_.size(); ++i) {
@@ -116,13 +116,13 @@ public:
   }
 
   void resetMaterialDensity (const Real val) {
-    myDensity_ = Teuchos::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
+    myDensity_ = ROL::makePtr<Tpetra::MultiVector<>>(this->myCellMap_, 1, true);
     myDensity_->putScalar(val);
     renewMaterialVector();
   }
 
-  void updateMaterialDensity (const Teuchos::RCP<const Tpetra::MultiVector<> > & newDensity) {
-    myDensity_ = Teuchos::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
+  void updateMaterialDensity (const ROL::Ptr<const Tpetra::MultiVector<> > & newDensity) {
+    myDensity_ = ROL::makePtr<Tpetra::MultiVector<>>(this->myCellMap_, 1, true);
     Tpetra::deep_copy(*myDensity_, *newDensity);	
     renewMaterialVector();
   }
@@ -137,7 +137,7 @@ public:
 
   virtual void CreateMaterial() {
     for(int i=0; i<this->numCells_; i++) {
-      Teuchos::RCP<Material_SIMP<Real> > CellMaterial = Teuchos::rcp(new Material_SIMP<Real>());
+      ROL::Ptr<Material_SIMP<Real> > CellMaterial = ROL::makePtr<Material_SIMP<Real>>();
       CellMaterial->InitializeSIMP(this->spaceDim_, this->planeStrain_, this->E_,
                                    this->poissonR_, initDensity_, powerP_, minDensity_);
       this->materialTensorDim_ = CellMaterial->GetMaterialTensorDim();
@@ -154,7 +154,7 @@ public:
       Teuchos::TimeMonitor LocalTimer(*LocalAssemblyTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
       #endif
       renewMaterialVector();	
-      //this->gradgradMats_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, full_lfs));
+      //this->gradgradMats_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numCells_, full_lfs, full_lfs);
       Construct_CBmats(ifInitial);
       Intrepid::FunctionSpaceTools::integrate<Real>(*this->gradgradMats_, // compute local grad.grad (stiffness) matrices
                                                     *this->CBMat_,
@@ -163,16 +163,16 @@ public:
       return;
     }	
     CreateMaterial();
-    this->gradgradMats0_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, full_lfs));
-    this->gradgradMats_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, full_lfs));
-    this->valvalMats_    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, full_lfs));
+    this->gradgradMats0_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numCells_, full_lfs, full_lfs);
+    this->gradgradMats_  = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numCells_, full_lfs, full_lfs);
+    this->valvalMats_    = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numCells_, full_lfs, full_lfs);
     
-    this->BMat_		 = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->materialTensorDim_));
-    this->BMatWeighted_	 = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->materialTensorDim_));
-    CBMat0_ 		 = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->materialTensorDim_));
-    this->CBMat_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->materialTensorDim_));
-    this->NMat_		 = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->spaceDim_));
-    this->NMatWeighted_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->spaceDim_));
+    this->BMat_		 = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numCells_, full_lfs, this->numCubPoints_, this->materialTensorDim_);
+    this->BMatWeighted_	 = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numCells_, full_lfs, this->numCubPoints_, this->materialTensorDim_);
+    CBMat0_ 		 = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numCells_, full_lfs, this->numCubPoints_, this->materialTensorDim_);
+    this->CBMat_         = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numCells_, full_lfs, this->numCubPoints_, this->materialTensorDim_);
+    this->NMat_		 = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numCells_, full_lfs, this->numCubPoints_, this->spaceDim_);
+    this->NMatWeighted_  = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numCells_, full_lfs, this->numCubPoints_, this->spaceDim_);
     this->Construct_N_B_mats();
     Construct_CBmats(ifInitial);
     Intrepid::FunctionSpaceTools::integrate<Real>(*this->gradgradMats0_, // compute local grad.grad (stiffness) matrices
@@ -191,23 +191,23 @@ public:
 
   // test matrices
   virtual void test_mats() {
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_Jaco_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_Grad_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_N_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_B_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_K0_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_K_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_M_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_F_Vec;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_Jaco_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_Grad_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_N_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_B_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_K0_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_K_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_M_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_F_Vec;
     
-    test_Jaco_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->spaceDim_, this->spaceDim_));
-    test_Grad_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->lfs_, this->spaceDim_));
-    test_N_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, this->spaceDim_));
-    test_B_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, this->materialTensorDim_));
-    test_K0_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, this->numLocalDofs_));
-    test_K_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, this->numLocalDofs_));
-    test_M_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, this->numLocalDofs_));
-    test_F_Vec = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, 1));
+    test_Jaco_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->spaceDim_, this->spaceDim_);
+    test_Grad_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->lfs_, this->spaceDim_);
+    test_N_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, this->spaceDim_);
+    test_B_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, this->materialTensorDim_);
+    test_K0_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, this->numLocalDofs_);
+    test_K_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, this->numLocalDofs_);
+    test_M_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, this->numLocalDofs_);
+    test_F_Vec = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, 1);
     
     for(int i=0; i<this->spaceDim_; i++) {
        for(int j=0; j<this->spaceDim_; j++) {
@@ -252,7 +252,7 @@ public:
      for (int i=0; i<this->numCells_; ++i) {
       
       SIMPScale = SIMPmaterial_[i]->getSIMPScaleFactor();
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > materialMat = SIMPmaterial_[i]->GetMaterialTensor();
+      ROL::Ptr<Intrepid::FieldContainer<Real> > materialMat = SIMPmaterial_[i]->GetMaterialTensor();
       for (int j=0; j<this->numCubPoints_; ++j) {
         for (int m=0; m<this->lfs_*this->spaceDim_; m++) {
           for (int n=0; n<this->materialTensorDim_; n++) {

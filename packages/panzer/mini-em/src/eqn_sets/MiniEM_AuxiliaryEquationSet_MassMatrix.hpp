@@ -24,8 +24,8 @@ namespace mini_em {
 		             const bool build_transient_support);
     
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					       const panzer::FieldLibrary& field_library,
-                                               const Teuchos::ParameterList& user_data) const;
+					       const panzer::FieldLibrary& /* field_library */,
+                                               const Teuchos::ParameterList& /* user_data */) const;
 
     void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					   const panzer::FieldLibrary& field_library,
@@ -35,6 +35,7 @@ namespace mini_em {
   protected:
     std::string dof_name;
     double multiplier;
+    Teuchos::RCP<const std::vector<std::string> > fieldMultipliers;
     Teuchos::RCP<panzer::GlobalEvaluationDataContainer> m_gedc;
     Teuchos::RCP<std::vector<std::string> > m_dof_names;
   };

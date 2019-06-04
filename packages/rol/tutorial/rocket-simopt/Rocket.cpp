@@ -44,18 +44,17 @@
 #include "Rocket.hpp"
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 
 int main( int argc, char* argv[] ) {
 
-  using Teuchos::rcp; 
+   
   using vector = std::vector<double>;
 
-  auto parlist = rcp( new Teuchos::ParameterList() );
-  Teuchos::updateParametersFromXmlFile("Rocket.xml",parlist.ptr()); 
+  auto parlist = ROL::getParametersFromXmlFile( "Rocket.xml" ); 
+  
 
   int     N  = parlist->get("Time Steps" ,      100   );  
   double  T  = parlist->get("Final Time",       20.0  );    
@@ -67,24 +66,24 @@ int main( int argc, char* argv[] ) {
   double  mt = mf+mr;    // Total mass
   double  dt = T/N;      // Time ste
 
-  auto u_rcp = rcp( new vector(N) );
-  auto u = rcp( new ROL::StdVector<double>(u_rcp) );
+  auto u_ptr = ROL::makePtr<vector>(N);
+  auto u = ROL::makePtr<ROL::StdVector<double>>(u_ptr);
   auto l = u->dual().clone();
 
-  auto z_rcp = rcp( new vector(N,mf/T) );
-  auto z = rcp( new ROL::StdVector<double>(z_rcp) );
+  auto z_ptr = ROL::makePtr<vector>(N,mf/T);
+  auto z = ROL::makePtr<ROL::StdVector<double>>(z_ptr);
 
 
   // Trapezpoidal weights
-  auto w_rcp = rcp( new vector(N,dt) );
-  (*w_rcp)[0] *= 0.5; (*w_rcp)[N-1] *= 0.5;
-  auto w = rcp( new ROL::StdVector<double>(w_rcp) );
+  auto w_ptr = ROL::makePtr<vector>(N,dt);
+  (*w_ptr)[0] *= 0.5; (*w_ptr)[N-1] *= 0.5;
+  auto w = ROL::makePtr<ROL::StdVector<double>>(w_ptr);
 
   // Piecewise constant weights
-  auto e_rcp = rcp( new vector(N,dt) );
-  auto e = rcp( new ROL::StdVector<double>(e_rcp) );
+  auto e_ptr = ROL::makePtr<vector>(N,dt);
+  auto e = ROL::makePtr<ROL::StdVector<double>>(e_ptr);
 
-  auto con = rcp( new Rocket::Constraint( N, T, mt, mf, ve, g ) );
+  auto con = ROL::makePtr<Rocket::Constraint>( N, T, mt, mf, ve, g );
 
   double tol = 1.e-7; // Needed for solve
 
@@ -92,18 +91,18 @@ int main( int argc, char* argv[] ) {
   con->update_2(*z);
   con->solve(*l, *u, *z, tol);
 
-  auto ucb_rcp = rcp( new vector(N) );
-  auto ucb = rcp( new ROL::StdVector<double>(ucb_rcp) );
+  auto ucb_ptr = ROL::makePtr<vector>(N);
+  auto ucb = ROL::makePtr<ROL::StdVector<double>>(ucb_ptr);
   ucb->set(*u);
 
   //  u->print(std::cout); 
   double htarg = w->dot(*u);  // Final height 
 
-  auto obj  = rcp( new Rocket::Objective( N, T, mt, htarg, mu, w ) );
-  auto robj = rcp( new ROL::Reduced_Objective_SimOpt<double>( obj, con, u, z, l ) );
+  auto obj  = ROL::makePtr<Rocket::Objective>( N, T, mt, htarg, mu, w );
+  auto robj = ROL::makePtr<ROL::Reduced_Objective_SimOpt<double>>( obj, con, u, z, l );
 
   // Full space problem
-  //  auto x = Teuchos::rcp( new ROL::Vector_SimOpt<double>(u,z) );
+  //  auto x = ROL::makePtr<ROL::Vector_SimOpt<double>>(u,z);
   //  ROL::OptimizationProblem<double> opt( obj, x, con, l );
   ROL::OptimizationProblem<double> opt( robj, z ); 
   ROL::OptimizationSolver<double> solver( opt, *parlist );
@@ -132,26 +131,26 @@ int main( int argc, char* argv[] ) {
     os << std::setw(12) << 0
        << std::setw(18) << mf/T
        << std::setw(16) << 0
-       << std::setw(16) << (*z_rcp)[0]
+       << std::setw(16) << (*z_ptr)[0]
        << std::setw(16) << 0 << std::endl;
 
-    hcb[0]  = 0.5*dt*(*ucb_rcp)[0];
-    hopt[0] = 0.5*dt*(*u_rcp)[0];
+    hcb[0]  = 0.5*dt*(*ucb_ptr)[0];
+    hopt[0] = 0.5*dt*(*u_ptr)[0];
 
     for( int i=1; i<N; ++i ) {
-      hcb[i]  = hcb[i-1]  + 0.5*dt*( (*ucb_rcp)[i] + (*ucb_rcp)[i-1] );
-      hopt[i] = hopt[i-1] + 0.5*dt*( (*u_rcp)[i]   + (*u_rcp)[i-1] );
+      hcb[i]  = hcb[i-1]  + 0.5*dt*( (*ucb_ptr)[i] + (*ucb_ptr)[i-1] );
+      hopt[i] = hopt[i-1] + 0.5*dt*( (*u_ptr)[i]   + (*u_ptr)[i-1] );
 
       os << std::setw(12) << i*dt
          << std::setw(18) << mf/T
          << std::setw(16) << hcb[i]
-         << std::setw(16) << (*z_rcp)[i-1]
+         << std::setw(16) << (*z_ptr)[i-1]
          << std::setw(16) << hopt[i] << std::endl;
 
       os << std::setw(12) << i*dt
          << std::setw(18) << mf/T
          << std::setw(16) << hcb[i]
-         << std::setw(16) << (*z_rcp)[i]
+         << std::setw(16) << (*z_ptr)[i]
          << std::setw(16) << hopt[i] << std::endl;
     }
   }

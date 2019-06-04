@@ -56,7 +56,7 @@
 namespace panzer {
 
 // Forward declaration.
-template <typename LocalOrdinalT> class ConnManagerBase;
+class ConnManager;
 
 class UniqueGlobalIndexerBase {
 public:
@@ -302,6 +302,11 @@ public:
   const Kokkos::View<const LocalOrdinalT*,Kokkos::LayoutRight,PHX::Device> getElementLIDs(LocalOrdinalT localElmtId) const
     { return Kokkos::subview(localIDs_k_, localElmtId, Kokkos::ALL() ); }
 
+  /** Return all the element LIDS for a given indexer
+   */
+  const Kokkos::View<const LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> getLIDs() const
+    {return localIDs_k_;}
+
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method. Note
      */
@@ -313,7 +318,7 @@ public:
      functor.global_lids = localIDs_k_;
      functor.local_lids = lids; // we assume this array is sized correctly!
 
-     Kokkos::parallel_for(cellIds.dimension_0(),functor);
+     Kokkos::parallel_for(cellIds.extent(0),functor);
    }
 
    /** \brief How many GIDs are associate with a particular element block
@@ -332,7 +337,7 @@ public:
 
    /** \brief Returns the connection manager currently being used.
      */
-   virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const = 0;
+   virtual Teuchos::RCP<const ConnManager> getConnManager() const = 0;
 
    class CopyCellLIDsFunctor {
    public:
@@ -345,7 +350,7 @@ public:
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<Teuchos::as<int>(local_lids.dimension_1());i++) 
+       for(int i=0;i<static_cast<int>(local_lids.extent(1));i++) 
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
      

@@ -889,10 +889,8 @@ typedef std::pair<double,double> PairOfDoubles;
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL(LongInt) // can't do QD with LongInt, one of the tests complains
 
-#  ifdef HAVE_TEUCHOS_LONG_LONG_INT
   typedef long long int LongLongInt;
   UNIT_TEST_GROUP_ORDINAL(LongLongInt)
-#  endif
 
 #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 

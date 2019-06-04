@@ -979,23 +979,23 @@ FAD_BINARYOP_MACRO(atan2,
                    (c.fastAccessCoeff(j)*expr1.dx(i,j))/ (expr1.val(j)*expr1.val(j) + c.fastAccessCoeff(j)*c.fastAccessCoeff(j)),
                    (-c.fastAccessCoeff(j)*expr2.fastAccessDx(i,j))/ (c.fastAccessCoeff(j)*c.fastAccessCoeff(j) + expr2.val(j)*expr2.val(j)),
                    (c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j))/ (expr1.val(j)*expr1.val(j) + c.fastAccessCoeff(j)*c.fastAccessCoeff(j)))
-FAD_BINARYOP_MACRO(pow,
-                   PowerOp,
-                   using std::pow; using std::log;,
-                   pow(expr1.val(), expr2.val()),
-                   pow(expr1.val(j), expr2.val(j)),
-                   if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type((expr2.dx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.dx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j))) ),
-                   if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.dx(i,j)*log(expr1.val(j))*pow(expr1.val(j),expr2.val(j))) ),
-                   if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.val(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),expr2.val(j))) ),
-                   if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type((expr2.fastAccessDx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.fastAccessDx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j))) ),
-                   pow(c, expr2.val()),
-                   pow(expr1.val(), c),
-                   pow(c.fastAccessCoeff(j), expr2.val(j)),
-                   pow(expr1.val(j), c.fastAccessCoeff(j)),
-                   if_then_else( c.fastAccessCoeff(j) == val_type(0.0), val_type(0.0), val_type(expr2.dx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j))) ),
-                   if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j))) ),
-                   if_then_else( c.fastAccessCoeff(j) == val_type(0.0), val_type(0.0), val_type(expr2.fastAccessDx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j))) ),
-                   if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j)))) )
+// FAD_BINARYOP_MACRO(pow,
+//                    PowerOp,
+//                    using std::pow; using std::log;,
+//                    pow(expr1.val(), expr2.val()),
+//                    pow(expr1.val(j), expr2.val(j)),
+//                    if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type((expr2.dx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.dx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j))) ),
+//                    if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.dx(i,j)*log(expr1.val(j))*pow(expr1.val(j),expr2.val(j))) ),
+//                    if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.val(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),expr2.val(j))) ),
+//                    if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type((expr2.fastAccessDx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.fastAccessDx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j))) ),
+//                    pow(c, expr2.val()),
+//                    pow(expr1.val(), c),
+//                    pow(c.fastAccessCoeff(j), expr2.val(j)),
+//                    pow(expr1.val(j), c.fastAccessCoeff(j)),
+//                    if_then_else( c.fastAccessCoeff(j) == val_type(0.0), val_type(0.0), val_type(expr2.dx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j))) ),
+//                    if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j))) ),
+//                    if_then_else( c.fastAccessCoeff(j) == val_type(0.0), val_type(0.0), val_type(expr2.fastAccessDx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j))) ),
+//                    if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j)))) )
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    ;,
@@ -1030,6 +1030,415 @@ FAD_BINARYOP_MACRO(min,
                    if_then_else( expr1.val(j) <= c.fastAccessCoeff(j), expr1.dx(i,j), val_type(0) ),
                    if_then_else( c.fastAccessCoeff(j) <= expr2.val(j), val_type(0), expr2.fastAccessDx(i,j) ),
                    if_then_else( expr1.val(j) <= c.fastAccessCoeff(j), expr1.fastAccessDx(i,j), val_type(0) ) )
+
+// Special handling for std::pow() to provide specializations of PowerOp for
+// "simd" value types that use if_then_else(). The only reason for not using
+// if_then_else() always is to avoid evaluating the derivative if the value is
+// zero to avoid throwing FPEs.
+namespace Sacado {
+  namespace Fad {
+  namespace Exp {
+
+    //
+    // Implementation for simd type using if_then_else()
+    //
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, false, ExprSpecMPVector, true > :
+      public Expr< PowerOp< T1, T2, false, false, ExprSpecMPVector, true > > {
+    public:
+
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef typename ExprT1::value_type value_type_1;
+      typedef typename ExprT2::value_type value_type_2;
+      typedef typename Sacado::Promote<value_type_1,
+                                       value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename value_type::value_type val_type;
+
+      typedef ExprSpecMPVector expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const T1& expr1_, const T2& expr2_) :
+        expr1(expr1_), expr2(expr2_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        const int sz1 = expr1.size(), sz2 = expr2.size();
+        return sz1 > sz2 ? sz1 : sz2;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr1.hasFastAccess() && expr2.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(expr1.val(), expr2.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type val(int j) const {
+        using std::pow;
+        return pow(expr1.val(j), expr2.val(j));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type dx(int i, int j) const {
+        using std::pow; using std::log;
+        const int sz1 = expr1.size(), sz2 = expr2.size();
+        if (sz1 > 0 && sz2 > 0)
+          return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type((expr2.dx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.dx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j))) );
+        else if (sz1 > 0)
+          // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+          // It seems less accurate and caused convergence problems in some codes
+          return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.val(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),expr2.val(j))) );
+        else
+          return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(expr2.dx(i,j)*log(expr1.val(j))*pow(expr1.val(j),expr2.val(j))) );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type fastAccessDx(int i, int j) const {
+        using std::pow; using std::log;
+        return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type((expr2.fastAccessDx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.fastAccessDx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j))) );
+      }
+
+    protected:
+
+      const T1& expr1;
+      const T2& expr2;
+
+    };
+
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, true, ExprSpecMPVector, true >
+      : public Expr< PowerOp< T1, T2, false, true, ExprSpecMPVector, true > > {
+    public:
+
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef T2 ConstT;
+      typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+
+      typedef typename value_type::value_type val_type;
+
+      typedef ExprSpecMPVector expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const T1& expr1_, const ConstT& c_) :
+        expr1(expr1_), c(c_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        return expr1.size();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr1.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(expr1.val(), c);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type val(int j) const {
+        using std::pow;
+        return pow(expr1.val(j), c.fastAccessCoeff(j));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type dx(int i, int j) const {
+        using std::pow;
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j))) );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type fastAccessDx(int i, int j) const {
+        using std::pow;
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return if_then_else( expr1.val(j) == val_type(0.0), val_type(0.0), val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j))) );
+      }
+
+    protected:
+
+      const T1& expr1;
+      const ConstT& c;
+    };
+
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, true, false, ExprSpecMPVector, true >
+      : public Expr< PowerOp< T1, T2, true, false, ExprSpecMPVector, true > > {
+    public:
+
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef T1 ConstT;
+      typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+
+      typedef typename value_type::value_type val_type;
+
+      typedef ExprSpecMPVector expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const ConstT& c_, const T2& expr2_) :
+        c(c_), expr2(expr2_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        return expr2.size();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr2.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(c, expr2.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type val(int j) const {
+        using std::pow;
+        return pow(c.fastAccessCoeff(j), expr2.val(j));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type dx(int i, int j) const {
+        using std::pow; using std::log;
+        return if_then_else( c.fastAccessCoeff(j) == val_type(0.0), val_type(0.0), val_type(expr2.dx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j))) );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type fastAccessDx(int i, int j) const {
+        using std::pow; using std::log;
+        return if_then_else( c.fastAccessCoeff(j) == val_type(0.0), val_type(0.0), val_type(expr2.fastAccessDx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j))) );
+      }
+
+    protected:
+
+      const ConstT& c;
+      const T2& expr2;
+    };
+
+    //
+    // Specialization for scalar types using ternary operator
+    //
+
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, false, ExprSpecMPVector, false > :
+      public Expr< PowerOp< T1, T2, false, false, ExprSpecMPVector, false > > {
+    public:
+
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef typename ExprT1::value_type value_type_1;
+      typedef typename ExprT2::value_type value_type_2;
+      typedef typename Sacado::Promote<value_type_1,
+                                       value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename value_type::value_type val_type;
+
+      typedef ExprSpecMPVector expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const T1& expr1_, const T2& expr2_) :
+        expr1(expr1_), expr2(expr2_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        const int sz1 = expr1.size(), sz2 = expr2.size();
+        return sz1 > sz2 ? sz1 : sz2;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr1.hasFastAccess() && expr2.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(expr1.val(), expr2.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type val(int j) const {
+        using std::pow;
+        return pow(expr1.val(j), expr2.val(j));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type dx(int i, int j) const {
+        using std::pow; using std::log;
+        const int sz1 = expr1.size(), sz2 = expr2.size();
+        if (sz1 > 0 && sz2 > 0)
+          return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type((expr2.dx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.dx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j)));
+        else if (sz1 > 0)
+          // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+          // It seems less accurate and caused convergence problems in some codes
+          return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.val(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),expr2.val(j)));
+        else
+          return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.dx(i,j)*log(expr1.val(j))*pow(expr1.val(j),expr2.val(j)));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type fastAccessDx(int i, int j) const {
+        using std::pow; using std::log;
+        return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type((expr2.fastAccessDx(i,j)*log(expr1.val(j))+expr2.val(j)*expr1.fastAccessDx(i,j)/expr1.val(j))*pow(expr1.val(j),expr2.val(j)));
+      }
+
+    protected:
+
+      const T1& expr1;
+      const T2& expr2;
+
+    };
+
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, true, ExprSpecMPVector, false >
+      : public Expr< PowerOp< T1, T2, false, true, ExprSpecMPVector, false > > {
+    public:
+
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef T2 ConstT;
+      typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+
+      typedef typename value_type::value_type val_type;
+
+      typedef ExprSpecMPVector expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const T1& expr1_, const ConstT& c_) :
+        expr1(expr1_), c(c_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        return expr1.size();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr1.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(expr1.val(), c);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type val(int j) const {
+        using std::pow;
+        return pow(expr1.val(j), c.fastAccessCoeff(j));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type dx(int i, int j) const {
+        using std::pow;
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(c.fastAccessCoeff(j)*expr1.dx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j)));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type fastAccessDx(int i, int j) const {
+        using std::pow;
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return expr1.val(j) == val_type(0.0) ? val_type(0.0) : val_type(c.fastAccessCoeff(j)*expr1.fastAccessDx(i,j)/expr1.val(j)*pow(expr1.val(j),c.fastAccessCoeff(j)));
+      }
+
+    protected:
+
+      const T1& expr1;
+      const ConstT& c;
+    };
+
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, true, false, ExprSpecMPVector, false >
+      : public Expr< PowerOp< T1, T2, true, false, ExprSpecMPVector, false > > {
+    public:
+
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef T1 ConstT;
+      typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+
+      typedef typename value_type::value_type val_type;
+
+      typedef ExprSpecMPVector expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const ConstT& c_, const T2& expr2_) :
+        c(c_), expr2(expr2_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        return expr2.size();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr2.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(c, expr2.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type val(int j) const {
+        using std::pow;
+        return pow(c.fastAccessCoeff(j), expr2.val(j));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type dx(int i, int j) const {
+        using std::pow; using std::log;
+        return c.fastAccessCoeff(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.dx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j)));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      val_type fastAccessDx(int i, int j) const {
+        using std::pow; using std::log;
+        return c.fastAccessCoeff(j) == val_type(0.0) ? val_type(0.0) : val_type(expr2.fastAccessDx(i,j)*log(c.fastAccessCoeff(j))*pow(c.fastAccessCoeff(j),expr2.val(j)));
+      }
+
+    protected:
+
+      const ConstT& c;
+      const T2& expr2;
+    };
+
+  }
+  }
+}
 
 //--------------------------if_then_else operator -----------------------
 // Can't use the above macros because it is a ternary operator (sort of).

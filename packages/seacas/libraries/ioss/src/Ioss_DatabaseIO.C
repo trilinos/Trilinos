@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,41 +32,50 @@
 
 #include <Ioss_BoundingBox.h>
 #include <Ioss_CodeTypes.h>
+#include <Ioss_CommSet.h>
+#include <Ioss_DBUsage.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_ElementTopology.h>
 #include <Ioss_EntityBlock.h>
+#include <Ioss_Field.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_GroupingEntity.h>
 #include <Ioss_NodeBlock.h>
 #include <Ioss_ParallelUtils.h>
+#include <Ioss_Property.h>
 #include <Ioss_Region.h>
+#include <Ioss_SerializeIO.h>
+#include <Ioss_SideBlock.h>
+#include <Ioss_SideSet.h>
+#include <Ioss_State.h>
 #include <Ioss_StructuredBlock.h>
+#include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
 #include <cassert>
 #include <cfloat>
 #include <cstddef>
 #include <cstring>
+#include <fmt/ostream.h>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <set>
 #include <string>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <tokenize.h>
 #include <utility>
 #include <vector>
 
-#include <Ioss_DBUsage.h>
-#include <Ioss_Field.h>
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_Property.h>
-#include <Ioss_SerializeIO.h>
-#include <Ioss_SideBlock.h>
-#include <Ioss_SideSet.h>
-#include <Ioss_State.h>
-#include <Ioss_SurfaceSplit.h>
-
 namespace {
+  auto initial_time = std::chrono::high_resolution_clock::now();
+
+  void log_time(std::chrono::time_point<std::chrono::high_resolution_clock> &start,
+                std::chrono::time_point<std::chrono::high_resolution_clock> &finish,
+                int current_state, double state_time, bool is_input, bool single_proc_only,
+                const Ioss::ParallelUtils &util);
+
   void log_field(const char *symbol, const Ioss::GroupingEntity *entity, const Ioss::Field &field,
                  bool single_proc_only, const Ioss::ParallelUtils &util);
 
@@ -79,20 +88,14 @@ namespace {
       return true;
     }
 
-    const std::string &ge_name    = ge->name();
     const std::string &field_name = field.get_name();
-    unsigned int       hash_code  = Ioss::Utils::hash(ge_name) + Ioss::Utils::hash(field_name);
+    unsigned int       hash_code  = ge->hash() + Ioss::Utils::hash(field_name);
     unsigned int       max_hash   = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MAX);
     unsigned int       min_hash   = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MIN);
     if (max_hash != min_hash) {
-      std::string errmsg = "Parallel inconsistency detected for ";
-      errmsg += in_out == 0 ? "writing" : "reading";
-      errmsg += " field '";
-      errmsg += field_name;
-      errmsg += "' on entity '";
-      errmsg += ge_name;
-      errmsg += "'\n";
-      IOSS_WARNING << errmsg;
+      const std::string &ge_name = ge->name();
+      fmt::print(IOSS_WARNING, "Parallel inconsistency detected for {} field '{}' on entity '{}'\n",
+                 in_out == 0 ? "writing" : "reading", field_name, ge_name);
       return false;
     }
     return true;
@@ -148,59 +151,27 @@ namespace {
 namespace Ioss {
   DatabaseIO::DatabaseIO(Region *region, std::string filename, DatabaseUsage db_usage,
                          MPI_Comm communicator, const PropertyManager &props)
-      : properties(props), commonSideTopology(nullptr), DBFilename(std::move(filename)),
-        dbState(STATE_INVALID), isParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
-        timeScaleFactor(1.0), splitType(SPLIT_BY_TOPOLOGIES), dbUsage(db_usage),
-        dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true), usingParallelIO(false),
-        util_(communicator), region_(region), isInput(is_input_event(db_usage)),
-        isParallelConsistent(true),
+      : properties(props), DBFilename(std::move(filename)), dbUsage(db_usage), util_(communicator),
+        region_(region), isInput(is_input_event(db_usage)),
         singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT ||
-                       SerializeIO::isEnabled()),
-        doLogging(false), useGenericCanonicalName(false), ignoreDatabaseNames(false)
+                       SerializeIO::isEnabled())
   {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
 
+    // Some operations modify DBFilename and there is a need to get
+    // back to the original filename...
+    originalDBFilename = DBFilename;
+
     // Check environment variable IOSS_PROPERTIES. If it exists, parse
     // the contents and add to the 'properties' map.
+    util_.add_environment_properties(properties);
 
-    std::string env_props;
-    if (util_.get_environment("IOSS_PROPERTIES", env_props, isParallel)) {
-      // env_props string should be of the form
-      // "PROP1=VALUE1:PROP2=VALUE2:..."
-      std::vector<std::string> prop_val = tokenize(env_props, ":");
+    Utils::check_set_bool_property(properties, "ENABLE_FIELD_RECOGNITION", enableFieldRecognition);
 
-      for (auto &elem : prop_val) {
-        std::vector<std::string> property = tokenize(elem, "=");
-        if (property.size() != 2) {
-          std::ostringstream errmsg;
-          errmsg << "ERROR: Invalid property specification found in "
-                    "IOSS_PROPERTIES environment variable\n"
-                 << "       Found '" << elem << "' which is not of the correct PROPERTY=VALUE form";
-          IOSS_ERROR(errmsg);
-        }
-        std::string prop      = Utils::uppercase(property[0]);
-        std::string value     = property[1];
-        std::string up_value  = Utils::uppercase(value);
-        bool        all_digit = value.find_first_not_of("0123456789") == std::string::npos;
-
-        if (myProcessor == 0) {
-          std::cerr << "IOSS: Adding property '" << prop << "' with value '" << value << "'\n";
-        }
-        if (all_digit) {
-          int int_value = std::strtol(value.c_str(), nullptr, 10);
-          properties.add(Property(prop, int_value));
-        }
-        else if (up_value == "TRUE" || up_value == "YES") {
-          properties.add(Property(prop, 1));
-        }
-        else if (up_value == "FALSE" || up_value == "NO") {
-          properties.add(Property(prop, 0));
-        }
-        else {
-          properties.add(Property(prop, value));
-        }
-      }
+    if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
+      std::string tmp = properties.get("FIELD_SUFFIX_SEPARATOR").get_string();
+      fieldSeparator  = tmp[0];
     }
 
     if (properties.exists("INTEGER_SIZE_API")) {
@@ -218,14 +189,16 @@ namespace Ioss {
       }
     }
 
-    if (properties.exists("SERIALIZE_IO")) {
-      int isize = properties.get("SERIALIZE_IO").get_int();
-      Ioss::SerializeIO::setGroupFactor(isize);
-      if (isize > 0) {
-        singleProcOnly = true;
-      }
+    if (properties.exists("CYCLE_COUNT")) {
+      cycleCount = properties.get("CYCLE_COUNT").get_int();
     }
 
+    if (properties.exists("OVERLAY_COUNT")) {
+      overlayCount = properties.get("OVERLAY_COUNT").get_int();
+    }
+
+    Utils::check_set_bool_property(properties, "ENABLE_TRACING", m_enableTracing);
+    Utils::check_set_bool_property(properties, "TIME_STATE_INPUT_OUTPUT", m_timeStateInOut);
     {
       bool logging;
       if (Utils::check_set_bool_property(properties, "LOGGING", logging)) {
@@ -264,21 +237,11 @@ namespace Ioss {
 
   /** \brief Set the number of bytes used to represent an integer.
    *
-   *  \param[in] The number of bytes. This is 4 for INT32 or 8 for INT64.
+   *  \param[in] size The number of bytes. This is 4 for INT32 or 8 for INT64.
    */
   void DatabaseIO::set_int_byte_size_api(DataSize size) const
   {
     dbIntSizeAPI = size; // mutable
-  }
-
-  char DatabaseIO::get_field_separator() const
-  {
-    char suffix = '_'; // Default
-    if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
-      std::string tmp = properties.get("FIELD_SUFFIX_SEPARATOR").get_string();
-      suffix          = tmp[0];
-    }
-    return suffix;
   }
 
   /** \brief Set the character used to separate a field suffix from the field basename
@@ -295,6 +258,7 @@ namespace Ioss {
     tmp[0] = separator;
     tmp[1] = 0;
     properties.add(Property("FIELD_SUFFIX_SEPARATOR", tmp));
+    fieldSeparator = separator;
   }
 
   IfDatabaseExistsBehavior DatabaseIO::open_create_behavior() const
@@ -317,12 +281,12 @@ namespace Ioss {
 
       const int mode = 0777; // Users umask will be applied to this.
 
-      auto iter = path.begin();
-      while (iter != path.end() && !error_found) {
-        iter                  = std::find(iter, path.end(), '/');
-        std::string path_root = std::string(path.begin(), iter);
+      auto iter = path.cbegin();
+      while (iter != path.cend() && !error_found) {
+        iter                  = std::find(iter, path.cend(), '/');
+        std::string path_root = std::string(path.cbegin(), iter);
 
-        if (iter != path.end()) {
+        if (iter != path.cend()) {
           ++iter; // Skip past the '/'
         }
 
@@ -335,22 +299,22 @@ namespace Ioss {
         };
         if (stat(path_root.c_str(), &st) != 0) {
           if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
-            errmsg << "ERROR: Cannot create directory '" << path_root
-                   << "' : " << std::strerror(errno) << "\n";
+            fmt::print(errmsg, "ERROR: Cannot create directory '{}' : {}\n", path_root,
+                       std::strerror(errno));
             error_found = true;
           }
         }
         else if (!S_ISDIR(st.st_mode)) {
           errno = ENOTDIR;
-          errmsg << "ERROR: Path '" << path_root << "' is not a directory.\n";
+          fmt::print(errmsg, "ERROR: Path '{}' is not a directory.\n", path_root);
           error_found = true;
         }
       }
     }
     else {
       // Give the other processors something to say in case there is an error.
-      errmsg << "ERROR: Could not create path. See processor 0 output for more "
-                "details.\n";
+      fmt::print(errmsg,
+                 "ERROR: Could not create path. See processor 0 output for more details.\n");
     }
 
     // Sync all processors with error status...
@@ -365,6 +329,24 @@ namespace Ioss {
     }
   }
 
+  const std::string &DatabaseIO::decoded_filename() const
+  {
+    if (decodedFilename.empty()) {
+      if (isParallel) {
+        decodedFilename = util().decode_filename(get_filename(), isParallel && !usingParallelIO);
+      }
+      else if (properties.exists("processor_count") && properties.exists("my_processor")) {
+        int proc_count  = properties.get("processor_count").get_int();
+        int my_proc     = properties.get("my_processor").get_int();
+        decodedFilename = Ioss::Utils::decode_filename(get_filename(), my_proc, proc_count);
+      }
+      else {
+        decodedFilename = get_filename();
+      }
+    }
+    return decodedFilename;
+  }
+
   void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field &field, int in_out) const
   {
     if (ge != nullptr) {
@@ -376,16 +358,29 @@ namespace Ioss {
     }
   }
 
-  // Default versions do nothing...
-  bool DatabaseIO::begin_state__(Region * /* region */, int /* state */, double /* time */)
+  bool DatabaseIO::begin_state(int state, double time)
   {
-    return true;
+    IOSS_FUNC_ENTER(m_);
+    if (m_timeStateInOut) {
+      m_stateStart = std::chrono::high_resolution_clock::now();
+    }
+    return begin_state__(state, time);
+  }
+  bool DatabaseIO::end_state(int state, double time)
+  {
+    IOSS_FUNC_ENTER(m_);
+    bool res = end_state__(state, time);
+    if (m_timeStateInOut) {
+      auto finish = std::chrono::high_resolution_clock::now();
+      log_time(m_stateStart, finish, state, time, is_input(), singleProcOnly, util_);
+    }
+    return res;
   }
 
-  bool DatabaseIO::end_state__(Region * /* region */, int /* state */, double /* time */)
-  {
-    return true;
-  }
+  // Default versions do nothing...
+  bool DatabaseIO::begin_state__(int /* state */, double /* time */) { return true; }
+
+  bool DatabaseIO::end_state__(int /* state */, double /* time */) { return true; }
 
   void DatabaseIO::handle_groups()
   {
@@ -429,10 +424,11 @@ namespace Ioss {
       // locations.  OK to have a single member
       if (group_spec.size() < 2) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Invalid " << type_name << " group specification '" << group << "'\n"
-               << "       Correct syntax is 'new_group,member1,...,memberN' and "
-                  "their must "
-               << "       be at least 1 member of the group";
+        fmt::print(errmsg,
+                   "ERROR: Invalid {} group specification '{}'\n"
+                   "       Correct syntax is 'new_group,member1,...,memberN' and there must "
+                   "       be at least 1 member of the group",
+                   type_name, group);
         IOSS_ERROR(errmsg);
       }
 
@@ -444,9 +440,10 @@ namespace Ioss {
   void DatabaseIO::create_group(EntityType /*type*/, const std::string &type_name,
                                 const std::vector<std::string> &group_spec, const T * /*set_type*/)
   {
-    IOSS_WARNING << "WARNING: Grouping of " << type_name << " sets is not yet implemented.\n"
-                 << "         Skipping the creation of " << type_name << " set '" << group_spec[0]
-                 << "'\n\n";
+    fmt::print(IOSS_WARNING,
+               "WARNING: Grouping of {0} sets is not yet implemented.\n"
+               "         Skipping the creation of {0} set '{1}'\n\n",
+               type_name, group_spec[0]);
   }
 
   template <>
@@ -471,15 +468,17 @@ namespace Ioss {
     for (size_t i = 1; i < group_spec.size(); i++) {
       SideSet *set = get_region()->get_sideset(group_spec[i]);
       if (set != nullptr) {
-        SideBlockContainer side_blocks = set->get_side_blocks();
+        const SideBlockContainer &side_blocks = set->get_side_blocks();
         for (auto &sbold : side_blocks) {
-          size_t side_count = sbold->get_property("entity_count").get_int();
-          auto   sbnew      = new SideBlock(this, sbold->name(), sbold->topology()->name(),
+          size_t  side_count = sbold->entity_count();
+          auto    sbnew      = new SideBlock(this, sbold->name(), sbold->topology()->name(),
                                      sbold->parent_element_topology()->name(), side_count);
-          int64_t id = sbold->get_property("id").get_int();
+          int64_t id         = sbold->get_property("id").get_int();
           sbnew->property_add(Property("set_offset", entity_count));
           sbnew->property_add(Property("set_df_offset", df_count));
           sbnew->property_add(Property("id", id));
+          sbnew->property_add(Property("id", id));
+          sbnew->property_add(Property("guid", util().generate_guid(id)));
 
           new_set->add(sbnew);
 
@@ -496,9 +495,11 @@ namespace Ioss {
         }
       }
       else {
-        IOSS_WARNING << "WARNING: While creating the grouped surface '" << group_spec[0]
-                     << "', the surface '" << group_spec[i] << "' does not exist. "
-                     << "This surface will skipped and not added to the group.\n\n";
+        fmt::print(
+            IOSS_WARNING,
+            "WARNING: While creating the grouped surface '{}', the surface '{}' does not exist. "
+            "This surface will skipped and not added to the group.\n\n",
+            group_spec[0], group_spec[i]);
       }
     }
   }
@@ -511,10 +512,10 @@ namespace Ioss {
   {
     DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
 
-    bool                  first          = true;
-    ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+    bool                         first          = true;
+    const ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
     for (auto block : element_blocks) {
-      size_t element_count = block->get_property("entity_count").get_int();
+      size_t element_count = block->entity_count();
 
       // Check face types.
       if (element_count > 0) {
@@ -571,10 +572,17 @@ namespace Ioss {
     qaRecords.push_back(time);
   }
 
-  void DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions)
+  void DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions,
+                                       const std::vector<std::string> &inclusions)
   {
-    blockOmissions.assign(omissions.begin(), omissions.end());
-    std::sort(blockOmissions.begin(), blockOmissions.end());
+    if (!omissions.empty()) {
+      blockOmissions.assign(omissions.cbegin(), omissions.cend());
+      std::sort(blockOmissions.begin(), blockOmissions.end());
+    }
+    if (!inclusions.empty()) {
+      blockInclusions.assign(inclusions.cbegin(), inclusions.cend());
+      std::sort(blockInclusions.begin(), blockInclusions.end());
+    }
   }
 
   // Check topology of all sides (face/edges) in model...
@@ -598,7 +606,7 @@ namespace Ioss {
       // Set contains (parent_element, boundary_topology) pairs...
       std::set<std::pair<const ElementTopology *, const ElementTopology *>> side_topo;
 
-      ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+      const ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
 
       for (auto &block : element_blocks) {
         const ElementTopology *elem_type = block->topology();
@@ -626,7 +634,7 @@ namespace Ioss {
           side_topo.insert(std::make_pair(ftopo, ftopo));
         }
         else {
-          const ElementBlock *block = *element_blocks.begin();
+          const ElementBlock *block = *element_blocks.cbegin();
           side_topo.insert(std::make_pair(block->topology(), ftopo));
         }
       }
@@ -634,9 +642,312 @@ namespace Ioss {
       assert(sideTopology.empty());
       // Copy into the sideTopology container...
       DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
-      std::copy(side_topo.begin(), side_topo.end(), std::back_inserter(new_this->sideTopology));
+      std::copy(side_topo.cbegin(), side_topo.cend(), std::back_inserter(new_this->sideTopology));
     }
     assert(!sideTopology.empty());
+  }
+
+  void DatabaseIO::get_block_adjacencies__(const Ioss::ElementBlock *eb,
+                                           std::vector<std::string> &block_adjacency) const
+  {
+    if (!blockAdjacenciesCalculated) {
+      compute_block_adjacencies();
+    }
+
+    const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
+    assert(Ioss::Utils::check_block_order(element_blocks));
+
+    // Extract the computed block adjacency information for this
+    // element block:
+    int blk_position = 0;
+    if (eb->property_exists("original_block_order")) {
+      blk_position = eb->get_property("original_block_order").get_int();
+    }
+    else {
+      for (const auto &leb : element_blocks) {
+        if (leb == eb) {
+          break;
+        }
+        blk_position++;
+      }
+    }
+
+    int lblk_position = -1;
+    for (const auto &leb : element_blocks) {
+      if (leb->property_exists("original_block_order")) {
+        lblk_position = leb->get_property("original_block_order").get_int();
+      }
+      else {
+        lblk_position++;
+      }
+
+      if (blk_position != lblk_position &&
+          static_cast<int>(blockAdjacency[blk_position][lblk_position]) == 1) {
+        block_adjacency.push_back(leb->name());
+      }
+    }
+  }
+
+  // common
+  void DatabaseIO::compute_block_adjacencies() const
+  {
+    // Add a field to each element block specifying which other element
+    // blocks the block is adjacent to (defined as sharing nodes).
+    // This is only calculated on request...
+
+    blockAdjacenciesCalculated = true;
+
+    const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
+    assert(Ioss::Utils::check_block_order(element_blocks));
+
+    if (element_blocks.size() == 1) {
+      blockAdjacency.resize(1);
+      blockAdjacency[0].resize(1);
+      blockAdjacency[0][0] = false;
+      return;
+    }
+
+    // Each processor first calculates the adjacencies on their own
+    // processor...
+
+    std::vector<int64_t>          node_used(nodeCount);
+    std::vector<std::vector<int>> inv_con(nodeCount);
+
+    {
+      Ioss::SerializeIO serializeIO__(this);
+      int               blk_position = -1;
+      for (Ioss::ElementBlock *eb : element_blocks) {
+        if (eb->property_exists("original_block_order")) {
+          blk_position = eb->get_property("original_block_order").get_int();
+        }
+        else {
+          blk_position++;
+        }
+        int64_t my_element_count = eb->entity_count();
+        if (int_byte_size_api() == 8) {
+          std::vector<int64_t> conn;
+          eb->get_field_data("connectivity_raw", conn);
+          for (auto node : conn) {
+            assert(node > 0 && node - 1 < nodeCount);
+            node_used[node - 1] = blk_position + 1;
+          }
+        }
+        else {
+          std::vector<int> conn;
+          eb->get_field_data("connectivity_raw", conn);
+          for (auto node : conn) {
+            assert(node > 0 && node - 1 < nodeCount);
+            node_used[node - 1] = blk_position + 1;
+          }
+        }
+
+        if (my_element_count > 0) {
+          for (int64_t i = 0; i < nodeCount; i++) {
+            if (node_used[i] == blk_position + 1) {
+              inv_con[i].push_back(blk_position);
+            }
+          }
+        }
+      }
+    }
+
+#ifdef SEACAS_HAVE_MPI
+    if (isParallel) {
+      // Get contributions from other processors...
+      // Get the communication map...
+      Ioss::CommSet *css = get_region()->get_commset("commset_node");
+      Ioss::Utils::check_non_null(css, "communication map", "commset_node", __func__);
+      std::vector<std::pair<int, int>> proc_node;
+      {
+        std::vector<int> entity_processor;
+        css->get_field_data("entity_processor", entity_processor);
+        proc_node.reserve(entity_processor.size() / 2);
+        size_t j = 0;
+        for (size_t i = 0; i < entity_processor.size(); j++, i += 2) {
+          proc_node.emplace_back(entity_processor[i + 1], entity_processor[i]);
+        }
+      }
+
+      // Now sort by increasing processor number.
+      std::sort(proc_node.begin(), proc_node.end());
+
+      // Pack the data: global_node_id, bits for each block, ...
+      // Use 'int' as basic type...
+      size_t                id_size   = 1;
+      size_t                word_size = sizeof(int) * 8;
+      size_t                bits_size = (element_blocks.size() + word_size - 1) / word_size;
+      std::vector<unsigned> send(proc_node.size() * (id_size + bits_size));
+      std::vector<unsigned> recv(proc_node.size() * (id_size + bits_size));
+
+      std::vector<int> procs(util().parallel_size());
+      size_t           offset = 0;
+      for (const auto &pn : proc_node) {
+        int64_t glob_id = pn.second;
+        int     proc    = pn.first;
+        procs[proc]++;
+        send[offset++] = glob_id;
+        int64_t loc_id = nodeMap.global_to_local(glob_id, true) - 1;
+        for (int jblk : inv_con[loc_id]) {
+          size_t wrd_off = jblk / word_size;
+          size_t bit     = jblk % word_size;
+          send[offset + wrd_off] |= (1 << bit);
+        }
+        offset += bits_size;
+      }
+
+      // Count nonzero entries in 'procs' array -- count of
+      // sends/receives
+      size_t non_zero = util().parallel_size() - std::count(procs.begin(), procs.end(), 0);
+
+      // Post all receives...
+      MPI_Request              request_null = MPI_REQUEST_NULL;
+      std::vector<MPI_Request> request(non_zero, request_null);
+      std::vector<MPI_Status>  status(non_zero);
+
+      int    result  = MPI_SUCCESS;
+      size_t req_cnt = 0;
+      offset         = 0;
+      for (int i = 0; result == MPI_SUCCESS && i < util().parallel_size(); i++) {
+        if (procs[i] > 0) {
+          const unsigned size     = procs[i] * (id_size + bits_size);
+          void *const    recv_buf = &recv[offset];
+          result = MPI_Irecv(recv_buf, size, MPI_INT, i, 10101, util().communicator(),
+                             &request[req_cnt]);
+          req_cnt++;
+          offset += size;
+        }
+      }
+      assert(result != MPI_SUCCESS || non_zero == req_cnt);
+
+      if (result != MPI_SUCCESS) {
+        fmt::print(stderr, "ERROR: MPI_Irecv error on processor {} in {}", util().parallel_rank(),
+                   __func__);
+      }
+
+      int local_error  = (MPI_SUCCESS == result) ? 0 : 1;
+      int global_error = util().global_minmax(local_error, Ioss::ParallelUtils::DO_MAX);
+
+      if (global_error != 0) {
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR: MPI_Irecv error on some processor in {}", __func__);
+        IOSS_ERROR(errmsg);
+      }
+
+      result  = MPI_SUCCESS;
+      req_cnt = 0;
+      offset  = 0;
+      for (int i = 0; result == MPI_SUCCESS && i < util().parallel_size(); i++) {
+        if (procs[i] > 0) {
+          const unsigned size     = procs[i] * (id_size + bits_size);
+          void *const    send_buf = &send[offset];
+          result = MPI_Rsend(send_buf, size, MPI_INT, i, 10101, util().communicator());
+          req_cnt++;
+          offset += size;
+        }
+      }
+      assert(result != MPI_SUCCESS || non_zero == req_cnt);
+
+      if (result != MPI_SUCCESS) {
+        fmt::print(stderr, "ERROR: MPI_Rsend error on processor {} in {}", util().parallel_rank(),
+                   __func__);
+      }
+
+      local_error  = (MPI_SUCCESS == result) ? 0 : 1;
+      global_error = util().global_minmax(local_error, Ioss::ParallelUtils::DO_MAX);
+
+      if (global_error != 0) {
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR: MPI_Rsend error on some processor in {}", __func__);
+        IOSS_ERROR(errmsg);
+      }
+
+      result = MPI_Waitall(req_cnt, TOPTR(request), TOPTR(status));
+
+      if (result != MPI_SUCCESS) {
+        fmt::print(stderr, "ERROR: MPI_Waitall error on processor {} in {}", util().parallel_rank(),
+                   __func__);
+      }
+
+      // Unpack the data and update the inv_con arrays for boundary
+      // nodes...
+      offset = 0;
+      for (size_t i = 0; i < proc_node.size(); i++) {
+        int64_t glob_id = recv[offset++];
+        int64_t loc_id  = nodeMap.global_to_local(glob_id, true) - 1;
+        for (size_t iblk = 0; iblk < element_blocks.size(); iblk++) {
+          size_t wrd_off = iblk / word_size;
+          size_t bit     = iblk % word_size;
+          if (recv[offset + wrd_off] & (1 << bit)) {
+            inv_con[loc_id].push_back(iblk); // May result in duplicates, but that is OK.
+          }
+        }
+        offset += bits_size;
+      }
+    }
+#endif
+
+    // Convert from inv_con arrays to block adjacency...
+    blockAdjacency.resize(element_blocks.size());
+    for (auto &block : blockAdjacency) {
+      block.resize(element_blocks.size());
+    }
+
+    for (int64_t i = 0; i < nodeCount; i++) {
+      for (size_t j = 0; j < inv_con[i].size(); j++) {
+        int jblk = inv_con[i][j];
+        for (size_t k = j + 1; k < inv_con[i].size(); k++) {
+          int kblk                   = inv_con[i][k];
+          blockAdjacency[jblk][kblk] = true;
+          blockAdjacency[kblk][jblk] = true;
+        }
+      }
+    }
+
+#ifdef SEACAS_HAVE_MPI
+    if (isParallel) {
+      // Sync across all processors...
+      size_t word_size = sizeof(int) * 8;
+      size_t bits_size = (element_blocks.size() + word_size - 1) / word_size;
+
+      std::vector<unsigned> data(element_blocks.size() * bits_size);
+      int64_t               offset = 0;
+      for (size_t jblk = 0; jblk < element_blocks.size(); jblk++) {
+        for (size_t iblk = 0; iblk < element_blocks.size(); iblk++) {
+          if (blockAdjacency[jblk][iblk] == 1) {
+            size_t wrd_off = iblk / word_size;
+            size_t bit     = iblk % word_size;
+            data[offset + wrd_off] |= (1 << bit);
+          }
+        }
+        offset += bits_size;
+      }
+
+      std::vector<unsigned> out_data(element_blocks.size() * bits_size);
+      MPI_Allreduce((void *)TOPTR(data), TOPTR(out_data), static_cast<int>(data.size()),
+                    MPI_UNSIGNED, MPI_BOR, util().communicator());
+
+      offset = 0;
+      for (size_t jblk = 0; jblk < element_blocks.size(); jblk++) {
+        for (size_t iblk = 0; iblk < element_blocks.size(); iblk++) {
+          if (blockAdjacency[jblk][iblk] == 0) {
+            size_t wrd_off = iblk / word_size;
+            size_t bit     = iblk % word_size;
+            if (out_data[offset + wrd_off] & (1 << bit)) {
+              blockAdjacency[jblk][iblk] = 1;
+            }
+          }
+        }
+        offset += bits_size;
+      }
+    }
+#endif
+
+    // Make it symmetric... (TODO: this probably isn't needed...)
+    for (size_t iblk = 0; iblk < element_blocks.size(); iblk++) {
+      for (size_t jblk = iblk; jblk < element_blocks.size(); jblk++) {
+        blockAdjacency[jblk][iblk] = blockAdjacency[iblk][jblk];
+      }
+    }
   }
 
   AxisAlignedBoundingBox DatabaseIO::get_bounding_box(const Ioss::ElementBlock *eb) const
@@ -646,12 +957,12 @@ namespace Ioss {
       std::vector<double> coordinates;
       Ioss::NodeBlock *   nb = get_region()->get_node_blocks()[0];
       nb->get_field_data("mesh_model_coordinates", coordinates);
-      ssize_t nnode = nb->get_property("entity_count").get_int();
+      ssize_t nnode = nb->entity_count();
       ssize_t ndim  = nb->get_property("component_degree").get_int();
 
-      Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-      size_t                      nblock         = element_blocks.size();
-      std::vector<double>         minmax;
+      const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
+      size_t                             nblock         = element_blocks.size();
+      std::vector<double>                minmax;
       minmax.reserve(6 * nblock);
 
       for (auto &block : element_blocks) {
@@ -700,18 +1011,18 @@ namespace Ioss {
 
     std::vector<double> coordinates;
     sb->get_field_data("mesh_model_coordinates_x", coordinates);
-    auto x = std::minmax_element(coordinates.begin(), coordinates.end());
+    auto x = std::minmax_element(coordinates.cbegin(), coordinates.cend());
     xx     = std::make_pair(*(x.first), *(x.second));
 
     if (ndim > 1) {
       sb->get_field_data("mesh_model_coordinates_y", coordinates);
-      auto y = std::minmax_element(coordinates.begin(), coordinates.end());
+      auto y = std::minmax_element(coordinates.cbegin(), coordinates.cend());
       yy     = std::make_pair(*(y.first), *(y.second));
     }
 
     if (ndim > 2) {
       sb->get_field_data("mesh_model_coordinates_z", coordinates);
-      auto z = std::minmax_element(coordinates.begin(), coordinates.end());
+      auto z = std::minmax_element(coordinates.cbegin(), coordinates.cend());
       zz     = std::make_pair(*(z.first), *(z.second));
     }
 
@@ -719,20 +1030,56 @@ namespace Ioss {
   }
 } // namespace Ioss
 
-#include <sys/time.h>
-
 namespace {
-  struct timeval tp;
-  double         initial_time = -1.0;
+  void log_time(std::chrono::time_point<std::chrono::high_resolution_clock> &start,
+                std::chrono::time_point<std::chrono::high_resolution_clock> &finish,
+                int current_state, double state_time, bool is_input, bool single_proc_only,
+                const Ioss::ParallelUtils &util)
+  {
+    std::vector<double> all_times;
+    double duration = std::chrono::duration<double, std::milli>(finish - start).count();
+    if (single_proc_only) {
+      all_times.push_back(duration);
+    }
+    else {
+      util.gather(duration, all_times);
+    }
+
+    if (util.parallel_rank() == 0 || single_proc_only) {
+      std::ostringstream strm;
+      fmt::print(strm, "\nIOSS: Time to {} state {}, time {} is ", (is_input ? "read " : "write"),
+                 current_state, state_time);
+
+      double total = 0.0;
+      for (auto &p_time : all_times) {
+        total += p_time;
+      }
+
+      // Now append each processors time onto the stream...
+      if (util.parallel_size() == 1) {
+        fmt::print(strm, "{} (ms)\n", total);
+      }
+      else if (util.parallel_size() > 4) {
+        std::sort(all_times.begin(), all_times.end());
+        fmt::print(strm, " Min: {}\tMax: {}\tMed: {}", all_times.front(), all_times.back(),
+                   all_times[all_times.size() / 2]);
+      }
+      else {
+        char sep = (util.parallel_size() > 1) ? ':' : ' ';
+        for (auto &p_time : all_times) {
+          fmt::print(strm, "{:8d}{}", p_time, sep);
+        }
+      }
+      if (util.parallel_size() > 1) {
+        fmt::print(strm, "\tTot: {} (ms)\n", total);
+      }
+      std::cerr << strm.str();
+    }
+  }
 
   void log_field(const char *symbol, const Ioss::GroupingEntity *entity, const Ioss::Field &field,
                  bool single_proc_only, const Ioss::ParallelUtils &util)
   {
-    if (initial_time < 0.0) {
-      gettimeofday(&tp, nullptr);
-      initial_time = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-    }
-
     if (entity != nullptr) {
       std::vector<int64_t> all_sizes;
       if (single_proc_only) {
@@ -743,12 +1090,11 @@ namespace {
       }
 
       if (util.parallel_rank() == 0 || single_proc_only) {
-        const std::string &name = entity->name();
-        std::ostringstream strm;
-        gettimeofday(&tp, nullptr);
-        double time_now = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-        strm << symbol << " [" << std::fixed << std::setprecision(3) << time_now - initial_time
-             << "]\t";
+        const std::string &           name = entity->name();
+        std::ostringstream            strm;
+        auto                          now  = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff = now - initial_time;
+        fmt::print(strm, "{} [{:.3f}]\t", symbol, diff.count());
 
         int64_t total = 0;
         for (auto &p_size : all_sizes) {
@@ -756,35 +1102,32 @@ namespace {
         }
         // Now append each processors size onto the stream...
         if (util.parallel_size() > 4) {
-          auto min_max = std::minmax_element(all_sizes.begin(), all_sizes.end());
-          strm << " m:" << std::setw(8) << *min_max.first << " M:" << std::setw(8)
-               << *min_max.second << " A:" << std::setw(8) << total / all_sizes.size();
+          auto min_max = std::minmax_element(all_sizes.cbegin(), all_sizes.cend());
+          fmt::print(strm, " m: {:8d} M: {:8d} A: {:8d}", *min_max.first, *min_max.second,
+                     total / all_sizes.size());
         }
         else {
           for (auto &p_size : all_sizes) {
-            strm << std::setw(8) << p_size << ":";
+            fmt::print(strm, "{:8d}:", p_size);
           }
         }
         if (util.parallel_size() > 1) {
-          strm << " T:" << std::setw(8) << total;
+          fmt::print(strm, " T:{:8d}", total);
         }
-        strm << "\t" << name << "/" << field.get_name() << "\n";
-        std::cout << strm.str();
+        fmt::print(strm, "\t{}/{}\n", name, field.get_name());
+        std::cerr << strm.str();
       }
     }
     else {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
       if (!single_proc_only) {
         MPI_Barrier(util.communicator());
       }
 #endif
       if (util.parallel_rank() == 0 || single_proc_only) {
-        std::ostringstream strm;
-        gettimeofday(&tp, nullptr);
-        double time_now = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-        strm << symbol << " [" << std::fixed << std::setprecision(3) << time_now - initial_time
-             << "]\n";
-        std::cout << strm.str();
+        auto                          time_now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff     = time_now - initial_time;
+        fmt::print("{} [{:.3f}]\n", symbol, diff.count());
       }
     }
   }

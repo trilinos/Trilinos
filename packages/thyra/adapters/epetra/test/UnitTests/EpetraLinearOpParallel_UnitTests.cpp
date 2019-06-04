@@ -46,7 +46,7 @@
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "EpetraThyraAdaptersTestHelpers.hpp"
+#include "EpetraLinearOpTestHelpers.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 

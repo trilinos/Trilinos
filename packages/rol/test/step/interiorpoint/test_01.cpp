@@ -41,18 +41,22 @@
 // ************************************************************************
 // @HEADER
 
+#include "Teuchos_GlobalMPISession.hpp"
+
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_InteriorPointPenalty.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Bounds.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include <iomanip>
 
 
-/*! \file test_01.cpp 
+/*! \file test_01.cpp
     \brief Verify that the interior point log-barrier penalized objective
-           passes gradient and Hessian checks. 
+           passes gradient and Hessian checks.
 */
 
 template<class Real>
@@ -61,8 +65,8 @@ class NullObjective : public ROL::Objective<Real> {
 public:
   Real value( const V &x, Real &tol ) {
     return Real(0.0);
-  } 
-  void gradient( V &g, const V &x, Real &tol ) { 
+  }
+  void gradient( V &g, const V &x, Real &tol ) {
     g.zero();
   }
   void hessVec( V &hv, const V &v, const V &x, Real &tol ) {
@@ -70,10 +74,10 @@ public:
   }
 };
 
-template<class Real> 
+template<class Real>
 void printVector( const ROL::Vector<Real> &x, std::ostream &outStream ) {
-  Teuchos::RCP<const std::vector<Real> > xp = 
-    Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
+  ROL::Ptr<const std::vector<Real> > xp = 
+    dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
 
   for( size_t i=0; i<xp->size(); ++i ) {
     outStream << (*xp)[i] << std::endl;
@@ -94,22 +98,20 @@ int main(int argc, char *argv[]) {
   typedef ROL::Objective<RealT>       OBJ;
   typedef ROL::BoundConstraint<RealT> BND;
 
-  typedef Teuchos::ParameterList      PL;
-
-  using Teuchos::RCP; using Teuchos::rcp;
+  typedef ROL::ParameterList      PL;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint = argc - 1;
-  RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs;
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs;
   if( iprint > 0 ) 
-    outStream = rcp(&std::cout,false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs,false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
-   
+
   try {
 
     PL parlist;
@@ -119,53 +121,53 @@ int main(int argc, char *argv[]) {
     RealT mu = 1.e2;
     RealT kappaD = 1.e-4;
     bool useLinearDamping = true;
-  
+
     lblist.set("Use Linear Damping", useLinearDamping);
     lblist.set("Linear Damping Coefficient",kappaD);
     lblist.set("Initial Barrier Parameter",mu);
 
     RealT ninf = ROL::ROL_NINF<RealT>();
     RealT inf  = ROL::ROL_INF<RealT>();
- 
+
     int dim = 4;
     int numTestVectors = 19;
  
-    RCP<vector> x_rcp  = rcp( new vector(dim, 0.0) ); 
-    RCP<vector> d_rcp  = rcp( new vector(dim, 0.0) );
-    RCP<vector> v_rcp  = rcp( new vector(dim, 0.0) );
-    RCP<vector> l_rcp  = rcp( new vector(dim, 0.0) );
-    RCP<vector> u_rcp  = rcp( new vector(dim, 0.0) );
-    RCP<vector> e0_rcp = rcp( new vector(dim, 0.0) ); // First canonical vector
+    ROL::Ptr<vector> x_ptr  = ROL::makePtr<vector>(dim, 0.0); 
+    ROL::Ptr<vector> d_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> v_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> l_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> u_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> e0_ptr = ROL::makePtr<vector>(dim, 0.0); // First canonical vector
 
-    (*e0_rcp)[0] = 1.0;
+    (*e0_ptr)[0] = 1.0;
 
-    SV e0(e0_rcp);
+    SV e0(e0_ptr);
 
     // Lower Bounds         // Upper Bounds
-    (*l_rcp)[0] = ninf;     (*u_rcp)[0] = 5.0;
-    (*l_rcp)[1] = ninf;     (*u_rcp)[1] = inf;
-    (*l_rcp)[2] = -5.0;     (*u_rcp)[2] = inf;
-    (*l_rcp)[3] = -5.0;     (*u_rcp)[3] = 5.0;
+    (*l_ptr)[0] = ninf;     (*u_ptr)[0] = 5.0;
+    (*l_ptr)[1] = ninf;     (*u_ptr)[1] = inf;
+    (*l_ptr)[2] = -5.0;     (*u_ptr)[2] = inf;
+    (*l_ptr)[3] = -5.0;     (*u_ptr)[3] = 5.0;
 
     RealT left = -1.0;  RealT right = 1.0;
 
-    RealT xmax = 4.99; 
+    RealT xmax = 4.99;
 
-    RCP<V> x  = rcp( new SV( x_rcp ) );
-    RCP<V> d  = rcp( new SV( d_rcp ) );
-    RCP<V> v  = rcp( new SV( v_rcp ) );
-    RCP<V> l  = rcp( new SV( l_rcp ) );
-    RCP<V> u  = rcp( new SV( u_rcp ) );
+    ROL::Ptr<V> x  = ROL::makePtr<SV>( x_ptr );
+    ROL::Ptr<V> d  = ROL::makePtr<SV>( d_ptr );
+    ROL::Ptr<V> v  = ROL::makePtr<SV>( v_ptr );
+    ROL::Ptr<V> l  = ROL::makePtr<SV>( l_ptr );
+    ROL::Ptr<V> u  = ROL::makePtr<SV>( u_ptr );
 
-    RCP<const V> maskL, maskU;
+    ROL::Ptr<const V> maskL, maskU;
 
     ROL::RandomizeVector(*d,left,right);
     ROL::RandomizeVector(*v,left,right);
 
-    std::vector<RealT>   values(numTestVectors);        // Computed objective value for each 
-    std::vector<RealT>   exact_values(numTestVectors);  
+    std::vector<RealT>   values(numTestVectors);        // Computed objective value for each
+    std::vector<RealT>   exact_values(numTestVectors);
 
-    std::vector<RCP<V> > x_test;
+    std::vector<ROL::Ptr<V> > x_test;
 
     for(int i=0; i<numTestVectors; ++i) {
       x_test.push_back(x->clone());
@@ -174,20 +176,20 @@ int main(int argc, char *argv[]) {
       x_test[i]->applyUnary(ROL::Elementwise::Fill<RealT>(fillValue));
     }
 
-    RCP<OBJ> obj = rcp( new NullObjective<RealT> );
-    RCP<BND> bnd = rcp( new ROL::Bounds<RealT>(l,u) );
+    ROL::Ptr<OBJ> obj = ROL::makePtr<NullObjective<RealT>>();
+    ROL::Ptr<BND> bnd = ROL::makePtr<ROL::Bounds<RealT>>(l,u);
 
     ROL::InteriorPointPenalty<RealT> ipobj(obj,bnd,parlist);
 
     maskL = ipobj.getLowerMask();
     maskU = ipobj.getUpperMask();
 
-    RCP<const std::vector<RealT> > maskL_rcp = Teuchos::dyn_cast<const SV>(*maskL).getVector();
-    RCP<const std::vector<RealT> > maskU_rcp = Teuchos::dyn_cast<const SV>(*maskU).getVector();
+    ROL::Ptr<const std::vector<RealT> > maskL_ptr = dynamic_cast<const SV&>(*maskL).getVector();
+    ROL::Ptr<const std::vector<RealT> > maskU_ptr = dynamic_cast<const SV&>(*maskU).getVector();
 
     *outStream << "\nLower bound vector" << std::endl;
     printVector(*l,*outStream);
- 
+
     *outStream << "\nUpper bound vector" << std::endl;
     printVector(*u,*outStream);
 
@@ -198,14 +200,14 @@ int main(int argc, char *argv[]) {
     printVector(*maskU, *outStream);
 
     *outStream << "\nChecking Objective value" << std::endl;
- 
+
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
-    *outStream   << std::setw(16) << "x[i], i=0,1,2,3" 
-                 << std::setw(20) << "Computed Objective" 
+    *outStream   << std::setw(16) << "x[i], i=0,1,2,3"
+                 << std::setw(20) << "Computed Objective"
                  << std::setw(20) << "Exact Objective" << std::endl;
 
     RealT valueError(0.0);
- 
+
     for(int i=0; i<numTestVectors; ++i) {
       values[i] = ipobj.value(*(x_test[i]),tol);
 
@@ -214,44 +216,44 @@ int main(int argc, char *argv[]) {
       // Extract the value from the test vector that is in every element
       RealT xval = x_test[i]->dot(e0);
 
- 
+
       for(int j=0; j<dim; ++j) {
-        if( (*maskL_rcp)[j] ) {
-          RealT diff = xval-(*l_rcp)[j];
+        if( (*maskL_ptr)[j] ) {
+          RealT diff = xval-(*l_ptr)[j];
           exact_values[i] -= mu*std::log(diff);
 
-          if( useLinearDamping && !(*maskU_rcp)[j] ) {
+          if( useLinearDamping && !(*maskU_ptr)[j] ) {
             exact_values[i] += mu*kappaD*diff;
           }
 
         }
-        if( (*maskU_rcp)[j] ) {
-          RealT diff = (*u_rcp)[j]-xval;
+        if( (*maskU_ptr)[j] ) {
+          RealT diff = (*u_ptr)[j]-xval;
           exact_values[i] -= mu*std::log(diff);
 
-          if(useLinearDamping && !(*maskL_rcp)[j] ) {
+          if(useLinearDamping && !(*maskL_ptr)[j] ) {
             exact_values[i] += mu*kappaD*diff;
-          }        
-    
+          }
+
         }
       } // end loop over elements
 
       *outStream << std::setw(16) << xval
-                 << std::setw(20) << values[i] 
-                 << std::setw(20) << exact_values[i] << std::endl; 
+                 << std::setw(20) << values[i]
+                 << std::setw(20) << exact_values[i] << std::endl;
       RealT valDiff = exact_values[i] - values[i];
-      valueError += valDiff*valDiff; 
+      valueError += valDiff*valDiff;
     } // end loop over vectors
 
     if(valueError>ROL::ROL_EPSILON<RealT>()) {
       errorFlag++;
-    }     
+    }
 
-    *outStream << "\nPerforming finite difference checks" << std::endl; 
+    *outStream << "\nPerforming finite difference checks" << std::endl;
 
     ipobj.checkGradient(*x,*v,true,*outStream);       *outStream << std::endl;
     ipobj.checkHessVec(*x,*d,true,*outStream);        *outStream << std::endl;
-    ipobj.checkHessSym(*x,*d,*v,true,*outStream);     *outStream << std::endl; 
+    ipobj.checkHessSym(*x,*d,*v,true,*outStream);     *outStream << std::endl;
 
   }
   catch (std::logic_error err) {
@@ -266,4 +268,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-

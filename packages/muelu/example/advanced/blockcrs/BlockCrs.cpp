@@ -202,6 +202,7 @@ namespace MueLuExamples {
 
     typedef typename Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
     typedef typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
+    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> realvaluedmultivector_type;
     typedef typename Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> matrixwrap_type;
     RCP<const map_type >   map;
     RCP<multivector_type > coordinates;
@@ -228,7 +229,7 @@ namespace MueLuExamples {
         << "========================================================" << std::endl;
 
     RCP<Galeri::Xpetra::Problem<map_type,matrixwrap_type,multivector_type> > Pr =
-        Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,map_type,matrixwrap_type,multivector_type>(matrixType, map, galeriList);
+      Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,map_type,matrixwrap_type,multivector_type>(matrixType, map, galeriList);
 
     A = Pr->BuildMatrix();
 
@@ -298,6 +299,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     typedef Xpetra::CrsMatrix<SC,LO,GO,NO> Xpetra_CrsMatrix;
     typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO> Xpetra_CrsMatrixWrap;
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType SCN;
+
+    SC one = Teuchos::ScalarTraits<SC>::one();
 
     RCP<Tpetra_CrsMatrix> Acrs;
     RCP<Tpetra_BlockCrsMatrix> Ablock;
@@ -369,7 +372,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     {
       Teuchos::ParameterList IList;
       IList.set("relaxation: type","Jacobi");
-      IList.set("relaxation: damping factor",1.0);
+      IList.set("relaxation: damping factor",one);
       IList.set("relaxation: sweeps",10);
       std::string ifpack2_precond("RELAXATION");
 

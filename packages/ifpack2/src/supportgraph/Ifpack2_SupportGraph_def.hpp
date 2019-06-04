@@ -648,7 +648,7 @@ apply (const Tpetra::MultiVector<scalar_type,
     {
       auto X_lcl_host = X.getLocalView<Kokkos::HostSpace> ();
       auto Y_lcl_host = Y.getLocalView<Kokkos::HostSpace> ();
-      if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+      if (X_lcl_host.data () == Y_lcl_host.data ()) {
         Xcopy = rcp (new MV (X, Teuchos::Copy));
       } else {
         Xcopy = rcpFromRef (X);

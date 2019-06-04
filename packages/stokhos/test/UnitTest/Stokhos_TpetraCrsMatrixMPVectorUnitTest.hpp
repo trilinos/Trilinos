@@ -41,6 +41,7 @@
 
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
+#include "Stokhos_Ensemble_Sizes.hpp"
 
 // Teuchos
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
@@ -48,8 +49,7 @@
 // Tpetra
 #include "Stokhos_Tpetra_MP_Vector.hpp"
 #include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
@@ -116,12 +116,7 @@ scalar generate_multi_vector_coefficient( const ordinal nFEM,
 // Tests
 //
 
-// Vector size used in tests -- Needs to be what is instantiated for CPU/MIC/GPU
-#if defined(__CUDACC__)
-const int VectorSize = 16;
-#else
-const int VectorSize = 16;
-#endif
+const int VectorSize = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 
 //
 // Test vector addition
@@ -136,7 +131,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -144,21 +138,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // Comm
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
 
@@ -219,7 +209,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -228,21 +217,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_Vector::dot_type dot_type;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // Comm
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
 
@@ -326,7 +311,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -334,21 +318,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // Comm
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
 
@@ -418,7 +398,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -427,21 +406,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // Comm
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
 
@@ -538,7 +513,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -547,21 +521,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // Comm
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
 
@@ -667,7 +637,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -677,19 +646,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -793,7 +758,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -803,19 +767,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -932,7 +892,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -945,19 +904,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -1060,7 +1015,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1070,20 +1024,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // 1-D Laplacian matrix
   GlobalOrdinal nrow = 50;
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(3), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(3);
@@ -1210,7 +1160,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::getParametersFromXmlFile;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1220,20 +1169,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // 1-D Laplacian matrix
   GlobalOrdinal nrow = 50;
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(3), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(3);
@@ -1371,7 +1316,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1381,19 +1325,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -1528,7 +1468,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1538,19 +1477,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -1694,7 +1629,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::getParametersFromXmlFile;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1704,20 +1638,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // 1-D Laplacian matrix
   GlobalOrdinal nrow = 50;
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(3), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(3);
@@ -1885,7 +1815,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1896,20 +1825,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  if (!Kokkos::HostSpace::execution_space::is_initialized())
-    Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if ( !Kokkos::is_initialized() )
+    Kokkos::initialize();
 
   // 1-D Laplacian matrix
   GlobalOrdinal nrow = 50;
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph = Tpetra::createCrsGraph(map, size_t(3));
   Array<GlobalOrdinal> columnIndices(3);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();

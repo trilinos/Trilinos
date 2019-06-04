@@ -222,19 +222,19 @@ namespace Tpetra {
 
       // FIXME (mfh 16 Jan 2016) Currently, TSQR is a host-only
       // implementation.
-      A.template sync<Kokkos::HostSpace> ();
-      A.template modify<Kokkos::HostSpace> ();
-      Q.template sync<Kokkos::HostSpace> ();
-      Q.template modify<Kokkos::HostSpace> ();
+      A.sync_host ();
+      A.modify_host ();
+      Q.sync_host ();
+      Q.modify_host ();
       auto A_view = A.template getLocalView<Kokkos::HostSpace> ();
       auto Q_view = Q.template getLocalView<Kokkos::HostSpace> ();
       scalar_type* const A_ptr =
-        reinterpret_cast<scalar_type*> (A_view.ptr_on_device ());
+        reinterpret_cast<scalar_type*> (A_view.data ());
       scalar_type* const Q_ptr =
-        reinterpret_cast<scalar_type*> (Q_view.ptr_on_device ());
+        reinterpret_cast<scalar_type*> (Q_view.data ());
       const bool contiguousCacheBlocks = false;
-      tsqr_->factorExplicitRaw (A_view.dimension_0 (),
-                                A_view.dimension_1 (),
+      tsqr_->factorExplicitRaw (A_view.extent (0),
+                                A_view.extent (1),
                                 A_ptr, A.getStride (),
                                 Q_ptr, Q.getStride (),
                                 R.values (), R.stride (),
@@ -285,14 +285,14 @@ namespace Tpetra {
       // to make sure it is the same communicator as the one we are
       // using in our dist_tsqr_type implementation.
 
-      Q.template sync<Kokkos::HostSpace> ();
-      Q.template modify<Kokkos::HostSpace> ();
+      Q.sync_host ();
+      Q.modify_host ();
       auto Q_view = Q.template getLocalView<Kokkos::HostSpace> ();
       scalar_type* const Q_ptr =
-        reinterpret_cast<scalar_type*> (Q_view.ptr_on_device ());
+        reinterpret_cast<scalar_type*> (Q_view.data ());
       const bool contiguousCacheBlocks = false;
-      return tsqr_->revealRankRaw (Q_view.dimension_0 (),
-                                   Q_view.dimension_1 (),
+      return tsqr_->revealRankRaw (Q_view.extent (0),
+                                   Q_view.extent (1),
                                    Q_ptr, Q.getStride (),
                                    R.values (), R.stride (),
                                    tol, contiguousCacheBlocks);

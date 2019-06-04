@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -36,6 +36,7 @@
 #include <Ioss_VariableType.h>
 #include <cstddef>
 #include <cstdint>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -63,21 +64,17 @@ namespace {
   void error_message(const Ioss::Field &field, Ioss::Field::BasicType requested_type)
   {
     std::ostringstream errmsg;
-    errmsg << "ERROR: For field named '" << field.get_name() << "', code requested value of type '"
-           << type_string(requested_type) << "', but field type is '"
-           << type_string(field.get_type()) << "'. Types must match\n";
+    fmt::print(errmsg,
+               "ERROR: For field named '{}', code requested value of type '{}', but field type is "
+               "'{}'. Types must match\n",
+               field.get_name(), type_string(requested_type), type_string(field.get_type()));
     IOSS_ERROR(errmsg);
   }
 } // namespace
 
 /** \brief Create an empty field.
  */
-Ioss::Field::Field()
-    : name_(""), rawCount_(0), transCount_(0), size_(0), index_(0), type_(INVALID), role_(INTERNAL),
-      rawStorage_(nullptr), transStorage_(nullptr)
-{
-  rawStorage_ = transStorage_ = Ioss::VariableType::factory("invalid");
-}
+Ioss::Field::Field() { rawStorage_ = transStorage_ = Ioss::VariableType::factory("invalid"); }
 
 /** \brief Create a field.
  *
@@ -94,7 +91,7 @@ Ioss::Field::Field()
 Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type, const std::string &storage,
                    const Ioss::Field::RoleType role, size_t value_count, size_t index)
     : name_(std::move(name)), rawCount_(value_count), transCount_(value_count), size_(0),
-      index_(index), type_(type), role_(role), rawStorage_(nullptr), transStorage_(nullptr)
+      index_(index), type_(type), role_(role)
 {
   rawStorage_ = transStorage_ = Ioss::VariableType::factory(storage);
   size_                       = internal_get_size(type_, rawCount_, rawStorage_);
@@ -115,8 +112,8 @@ Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type, const st
  */
 Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type, const std::string &storage,
                    int copies, const Ioss::Field::RoleType role, size_t value_count, size_t index)
-    : name_(std::move(name)), rawCount_(value_count), transCount_(value_count), size_(0),
-      index_(index), type_(type), role_(role), rawStorage_(nullptr), transStorage_(nullptr)
+    : name_(std::move(name)), rawCount_(value_count), transCount_(value_count), index_(index),
+      type_(type), role_(role)
 {
   rawStorage_ = transStorage_ = Ioss::VariableType::factory(storage, copies);
   size_                       = internal_get_size(type_, rawCount_, rawStorage_);
@@ -137,8 +134,8 @@ Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type, const st
 Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type,
                    const Ioss::VariableType *storage, const Ioss::Field::RoleType role,
                    size_t value_count, size_t index)
-    : name_(std::move(name)), rawCount_(value_count), transCount_(value_count), size_(0),
-      index_(index), type_(type), role_(role), rawStorage_(storage), transStorage_(storage)
+    : name_(std::move(name)), rawCount_(value_count), transCount_(value_count), index_(index),
+      type_(type), role_(role), rawStorage_(storage), transStorage_(storage)
 {
   size_ = internal_get_size(type_, rawCount_, rawStorage_);
 }
@@ -166,8 +163,9 @@ size_t Ioss::Field::verify(size_t data_size) const
     size_t required = get_size();
     if (required > data_size) {
       std::ostringstream errmsg;
-      errmsg << "Field " << name_ << " requires " << required << " bytes to store its data. Only "
-             << data_size << " bytes were provided." << '\n';
+      fmt::print(errmsg,
+                 "Field {} requires {} bytes to store its data. Only {} bytes were provided.\n",
+                 name_, required, data_size);
       IOSS_ERROR(errmsg);
     }
   }
@@ -274,13 +272,13 @@ namespace {
     // Calculate size of the low-level data type
     size_t basic_size = 0;
     switch (type) {
-    case Ioss::Field::REAL: basic_size      = sizeof(double); break;
-    case Ioss::Field::INTEGER: basic_size   = sizeof(int); break;
-    case Ioss::Field::INT64: basic_size     = sizeof(int64_t); break;
-    case Ioss::Field::COMPLEX: basic_size   = sizeof(Complex); break;
-    case Ioss::Field::STRING: basic_size    = sizeof(std::string *); break;
+    case Ioss::Field::REAL: basic_size = sizeof(double); break;
+    case Ioss::Field::INTEGER: basic_size = sizeof(int); break;
+    case Ioss::Field::INT64: basic_size = sizeof(int64_t); break;
+    case Ioss::Field::COMPLEX: basic_size = sizeof(Complex); break;
+    case Ioss::Field::STRING: basic_size = sizeof(std::string *); break;
     case Ioss::Field::CHARACTER: basic_size = sizeof(char); break;
-    case Ioss::Field::INVALID: basic_size   = 0; break;
+    case Ioss::Field::INVALID: basic_size = 0; break;
     }
     // Calculate size of the storage type
     size_t storage_size = storage->component_count();

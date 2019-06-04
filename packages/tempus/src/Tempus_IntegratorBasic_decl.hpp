@@ -22,6 +22,7 @@
 #include "Tempus_Integrator.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_IntegratorObserverBasic.hpp"
+#include "Tempus_IntegratorObserverComposite.hpp"
 
 #include <string>
 
@@ -66,8 +67,8 @@ public:
     virtual void startIntegrator();
     /// Start time step.
     virtual void startTimeStep();
-    /// Only accept step after meeting time step criteria.
-    virtual void acceptTimeStep();
+    /// Check if time step has passed or failed.
+    virtual void checkTimeStep();
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
     /// Return a copy of the Tempus ParameterList
@@ -104,10 +105,10 @@ public:
     /// Set the Stepper
     virtual void setStepperWStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
     /// Set the initial state which has the initial conditions
-    virtual void setInitialState(
+    virtual void initializeSolutionHistory(
       Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null);
     /// Set the initial state from Thyra::VectorBase(s)
-    virtual void setInitialState(Scalar t0,
+    virtual void initializeSolutionHistory(Scalar t0,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
@@ -124,14 +125,19 @@ public:
     virtual void setTimeStepControl(
       Teuchos::RCP<TimeStepControl<Scalar> > tsc = Teuchos::null);
     /// Get the Observer
-    virtual Teuchos::RCP<IntegratorObserver<Scalar> > getObserver()
+    virtual Teuchos::RCP<IntegratorObserverComposite<Scalar> > getObserver()
       {return integratorObserver_;}
     /// Set the Observer
     virtual void setObserver(
       Teuchos::RCP<IntegratorObserver<Scalar> > obs = Teuchos::null);
     /// Initializes the Integrator after set* function calls
     virtual void initialize();
-
+    //TODO: finish this
+    /// Returns the IntegratorTimer_ for this Integrator
+    virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
+    { return integratorTimer_;}
+    virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const override
+    { return stepperTimer_;}
 
     /// Get current the solution, x
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() const
@@ -149,6 +155,9 @@ public:
 
     Teuchos::RCP<Teuchos::ParameterList> getIntegratorParameterList()
       { return integratorPL_; }
+
+    //virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const
+      //{return integratorTimer_;}
   //@}
 
   /// Parse when screen output should be executed
@@ -177,11 +186,12 @@ protected:
   Teuchos::RCP<Teuchos::ParameterList>      integratorPL_;
   Teuchos::RCP<SolutionHistory<Scalar> >    solutionHistory_;
   Teuchos::RCP<TimeStepControl<Scalar> >    timeStepControl_;
-  Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver_;
+  Teuchos::RCP<IntegratorObserverComposite<Scalar> > integratorObserver_;
   Teuchos::RCP<Stepper<Scalar> >            stepper_;
 
   Teuchos::RCP<Teuchos::Time> integratorTimer_;
   Teuchos::RCP<Teuchos::Time> stepperTimer_;
+  Scalar runtime_;
 
   std::vector<int> outputScreenIndices_;  ///< Vector of screen output indices.
 

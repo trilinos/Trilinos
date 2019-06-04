@@ -250,7 +250,7 @@ struct SPGEMM_NUMERIC<KernelHandle,
           row_mapC, entriesC, valuesC);
           break;
     case SPGEMM_MKL:
-      mkl_apply<spgemmHandleType>(
+      mkl_apply(
                 sh,
                 m,n,k,
                 row_mapA, entriesA, valuesA, transposeA,
@@ -275,16 +275,8 @@ struct SPGEMM_NUMERIC<KernelHandle,
                 row_mapC, entriesC, valuesC, handle->get_verbose());
       break;
 
-    case SPGEMM_DEFAULT:
-    case SPGEMM_KK_MEMSPEED:
-    case SPGEMM_KK_SPEED:
-    case SPGEMM_KK_MEMORY:
-    case SPGEMM_KK_MEMORY2:
-    case SPGEMM_KK_COLOR:
-    case SPGEMM_KK_MULTICOLOR:
-    case SPGEMM_KK_MULTICOLOR2:
-    case SPGEMM_KK_MULTIMEM:
-    case SPGEMM_KK_OUTERMULTIMEM:
+    default:
+
     {
       KokkosSPGEMM
       <KernelHandle,
@@ -314,8 +306,6 @@ struct SPGEMM_NUMERIC<KernelHandle,
           entriesC,
           valuesC
           );
-      break;
-    default:
       break;
     }
 }

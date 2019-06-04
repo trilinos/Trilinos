@@ -52,33 +52,33 @@ namespace ROL {
 template <class Real>
 class RiskLessConstraint : public Constraint<Real> {
 private:
-  const Teuchos::RCP<Constraint<Real> > con_;
+  const ROL::Ptr<Constraint<Real> > con_;
 
 public:
-  RiskLessConstraint(const Teuchos::RCP<Constraint<Real> > &con)
+  RiskLessConstraint(const ROL::Ptr<Constraint<Real> > &con)
     : con_(con) {}
 
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    Teuchos::RCP<const Vector<Real> > x0 = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
+    ROL::Ptr<const Vector<Real> > x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
     con_->value(c,*x0,tol);
   }
 
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    Teuchos::RCP<const Vector<Real> > x0 = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-    Teuchos::RCP<const Vector<Real> > v0 = Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector();
+    ROL::Ptr<const Vector<Real> > x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+    ROL::Ptr<const Vector<Real> > v0 = dynamic_cast<const RiskVector<Real>&>(v).getVector();
     con_->applyJacobian(jv,*v0,*x0,tol);
   }
 
   void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    Teuchos::RCP<const Vector<Real> > x0 = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-    Teuchos::RCP<Vector<Real> > ajv0 = Teuchos::dyn_cast<RiskVector<Real> >(ajv).getVector();
+    ROL::Ptr<const Vector<Real> > x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+    ROL::Ptr<Vector<Real> > ajv0 = dynamic_cast<RiskVector<Real>&>(ajv).getVector();
     con_->applyAdjointJacobian(*ajv0,v,*x0,tol);
   }
 
   void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    Teuchos::RCP<const Vector<Real> > x0 = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-    Teuchos::RCP<const Vector<Real> > v0 = Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector();
-    Teuchos::RCP<Vector<Real> > ahuv0 = Teuchos::dyn_cast<RiskVector<Real> >(ahuv).getVector();
+    ROL::Ptr<const Vector<Real> > x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+    ROL::Ptr<const Vector<Real> > v0 = dynamic_cast<const RiskVector<Real>&>(v).getVector();
+    ROL::Ptr<Vector<Real> > ahuv0 = dynamic_cast<RiskVector<Real>&>(ahuv).getVector();
     con_->applyAdjointHessian(*ahuv0,u,*v0,*x0,tol);
   }
 

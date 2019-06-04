@@ -62,7 +62,7 @@ class NullOperator : public LinearOperator<Real> {
   }
 
   void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
                                 ">>> ERROR (ROL_NullOperator, applyInverse): "
                                 "Null Operator has no inverse.");
   }

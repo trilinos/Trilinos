@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,29 +32,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include "exodusII.h"       // for ex_close, etc
+#include "copy_string_cpp.h"
+#include "exodusII.h" // for ex_close, etc
+#include "fmt/ostream.h"
+#include "fmt/time.h"
 #include "nem_spread.h"     // for NemSpread, second, etc
 #include "pe_common.h"      // for PEX_MAX
 #include "ps_pario_const.h" // for PIO_Time_Array
 #include "rf_allo.h"        // for safe_free, array_alloc
-#include "rf_format.h"      // for ST_ZU
 #include "rf_io_const.h"    // for Debug_Flag
 #include "sort_utils.h"     // for gds_iqsort
 #include <cassert>          // for assert
 #include <cstddef>          // for size_t
-#include <cstdio>           // for fprintf, printf, nullptr, etc
+#include <cstdio>           // for nullptr, etc
 #include <cstdlib>          // for exit, free, malloc
-#include <cstring>          // for strcpy, strlen, memset, etc
+#include <cstring>          // for strlen, memset, etc
 #include <ctime>            // for asctime, localtime, time, etc
 #include <vector>           // for vector
 template <typename INT> struct ELEM_COMM_MAP;
 template <typename INT> struct NODE_COMM_MAP;
-
-#if __cplusplus > 199711L
-#define TOPTR(x) x.data()
-#else
-#define TOPTR(x) (x.empty() ? nullptr : &x[0])
-#endif
 
 namespace {
   template <typename INT>
@@ -64,7 +60,7 @@ namespace {
  * need this variable for the 0 processor to hold on to the correct
  * Exodus II database title
  */
-extern char GeomTitle[];
+extern std::string GeomTitle;
 
 /****************************************************************************/
 /* This function writes parallel specific mesh information out to the       */
@@ -101,8 +97,6 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
                                           INT *Num_Nodes_In_NS, INT *Num_Elems_In_SS,
                                           INT *Num_Elems_In_EB)
 {
-  static char yo[] = "write_parExo_data";
-
   /* Performance metrics. */
   unsigned long bytes_out      = 0;
   double        total_out_time = 0.0, tt1;
@@ -125,19 +119,20 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   tt1 = second();
 
   if (Debug_Flag >= 4) {
-    printf("Putting init global info in file id: %d\n", mesh_exoid);
-    printf("\tNumber Global Nodes: " ST_ZU "\n", (size_t)globals.Num_Node);
-    printf("\tNumber Global Elements: " ST_ZU "\n", (size_t)globals.Num_Elem);
-    printf("\tNumber Global Element Blocks: " ST_ZU "\n", (size_t)globals.Num_Elem_Blk);
-    printf("\tNumber Global Node Sets: " ST_ZU "\n", (size_t)globals.Num_Node_Set);
-    printf("\tNumber Global Side Sets: " ST_ZU "\n", (size_t)globals.Num_Side_Set);
+    fmt::print("Putting init global info in file id: {}\n", mesh_exoid);
+    fmt::print("\tNumber Global Nodes: {}\n", globals.Num_Node);
+    fmt::print("\tNumber Global Elements: {}\n", globals.Num_Elem);
+    fmt::print("\tNumber Global Element Blocks: {}\n", globals.Num_Elem_Blk);
+    fmt::print("\tNumber Global Node Sets: {}\n", globals.Num_Node_Set);
+    fmt::print("\tNumber Global Side Sets: {}\n", globals.Num_Side_Set);
   }
 
   if (ex_put_init_global(mesh_exoid, globals.Num_Node, globals.Num_Elem, globals.Num_Elem_Blk,
                          globals.Num_Node_Set, globals.Num_Side_Set) < 0) {
-    fprintf(stderr, "[%s]: ERROR, Unable to put global initial "
-                    "information in parallel mesh file!\n",
-            yo);
+    fmt::print(stderr,
+               "[{}]: ERROR, Unable to put global initial "
+               "information in parallel mesh file!\n",
+               __func__);
     exit(1);
   }
 
@@ -194,7 +189,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     for (int i1 = 0; i1 < ncomm_cnt; i1++) {
       n_comm_map[i1].proc_ids = (INT *)malloc(2 * (n_comm_map[i1].node_cnt) * sizeof(INT));
       if (!(n_comm_map[i1].proc_ids)) {
-        fprintf(stderr, "[%s]: ERROR, insufficient memory!\n", yo);
+        fmt::print(stderr, "[{}]: ERROR, insufficient memory!\n", __func__);
         exit(1);
       }
 
@@ -263,7 +258,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     for (int i1 = 0; i1 < ecomm_cnt; i1++) {
       e_comm_map[i1].proc_ids = (INT *)malloc(3 * (e_comm_map[i1].elem_cnt) * sizeof(INT));
       if (!(e_comm_map[i1].proc_ids)) {
-        fprintf(stderr, "[%s]: ERROR, insufficient memory!\n", yo);
+        fmt::print(stderr, "[{}]: ERROR, insufficient memory!\n", __func__);
         exit(1);
       }
 
@@ -289,32 +284,32 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   tt1 = second();
 
   if (Debug_Flag >= 4) {
-    printf("Putting init Nemesis info in file id: %d\n", mesh_exoid);
-    printf("\tNumber of Proccesor for: %d\n", num_proc_for);
+    fmt::print("Putting init Nemesis info in file id: {}\n", mesh_exoid);
+    fmt::print("\tNumber of Proccesor for: {}\n", num_proc_for);
   }
 
   if (ex_put_init_info(mesh_exoid, num_proc_for, 1, (char *)"p") < 0) {
-    fprintf(stderr, "[%s]: ERROR, unable to output init info!\n", yo);
+    fmt::print(stderr, "[{}]: ERROR, unable to output init info!\n", __func__);
     exit(1);
   }
 
   if (Debug_Flag >= 6) {
-    printf("Putting init load balance info in file id: %d\n", mesh_exoid);
-    printf("\tNumber Internal Nodes: " ST_ZU "\n", (size_t)globals.Num_Internal_Nodes[iproc]);
-    printf("\tNumber Border Nodes: " ST_ZU "\n", (size_t)globals.Num_Border_Nodes[iproc]);
-    printf("\tNumber External Nodes: " ST_ZU "\n", (size_t)globals.Num_External_Nodes[iproc]);
-    printf("\tNumber Internal Elements: " ST_ZU "\n", (size_t)globals.Num_Internal_Elems[iproc]);
-    printf("\tNumber Border Elements: " ST_ZU "\n", (size_t)globals.Num_Border_Elems[iproc]);
-    printf("\tNumber Nodal Cmaps: " ST_ZU "\n", static_cast<size_t>(ncomm_cnt));
-    printf("\tNumber Elemental Cmaps: " ST_ZU "\n", static_cast<size_t>(ecomm_cnt));
-    printf("\tProccesor For: %d\n", proc_for);
+    fmt::print("Putting init load balance info in file id: {}\n", mesh_exoid);
+    fmt::print("\tNumber Internal Nodes: {}\n", globals.Num_Internal_Nodes[iproc]);
+    fmt::print("\tNumber Border Nodes: {}\n", globals.Num_Border_Nodes[iproc]);
+    fmt::print("\tNumber External Nodes: {}\n", globals.Num_External_Nodes[iproc]);
+    fmt::print("\tNumber Internal Elements: {}\n", globals.Num_Internal_Elems[iproc]);
+    fmt::print("\tNumber Border Elements: {}\n", globals.Num_Border_Elems[iproc]);
+    fmt::print("\tNumber Nodal Cmaps: {}\n", static_cast<size_t>(ncomm_cnt));
+    fmt::print("\tNumber Elemental Cmaps: {}\n", static_cast<size_t>(ecomm_cnt));
+    fmt::print("\tProccesor For: {}\n", proc_for);
   }
 
   if (ex_put_loadbal_param(mesh_exoid, globals.Num_Internal_Nodes[iproc],
                            globals.Num_Border_Nodes[iproc], globals.Num_External_Nodes[iproc],
                            globals.Num_Internal_Elems[iproc], globals.Num_Border_Elems[iproc],
                            ncomm_cnt, ecomm_cnt, proc_for) < 0) {
-    fprintf(stderr, "[%s]: ERROR, unable to output load balance info\n", yo);
+    fmt::print(stderr, "[{}]: ERROR, unable to output load balance info\n", __func__);
     ex_close(mesh_exoid);
     exit(1);
   }
@@ -326,9 +321,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   bytes_out += 4 * sizeof(INT);
   tt1 = second();
 
-  if (ex_put_cmap_params(mesh_exoid, TOPTR(n_comm_ids), TOPTR(n_comm_ncnts), TOPTR(e_comm_ids),
-                         TOPTR(e_comm_ecnts), proc_for) < 0) {
-    fprintf(stderr, "[%s]: ERROR, unable to output comm map params!\n", yo);
+  if (ex_put_cmap_params(mesh_exoid, n_comm_ids.data(), n_comm_ncnts.data(), e_comm_ids.data(),
+                         e_comm_ecnts.data(), proc_for) < 0) {
+    fmt::print(stderr, "[{}]: ERROR, unable to output comm map params!\n", __func__);
     ex_close(mesh_exoid);
     exit(1);
   }
@@ -388,7 +383,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     for (int i1 = 0; i1 < ncomm_cnt; i1++) {
       if (ex_put_node_cmap(mesh_exoid, n_comm_ids[i1], n_comm_map[i1].node_ids,
                            n_comm_map[i1].proc_ids, proc_for) < 0) {
-        fprintf(stderr, "[%s]: ERROR, unable to output nodal comm map!\n", yo);
+        fmt::print(stderr, "[{}]: ERROR, unable to output nodal comm map!\n", __func__);
         ex_close(mesh_exoid);
         exit(1);
       }
@@ -405,7 +400,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     for (int i1 = 0; i1 < ecomm_cnt; i1++) {
       if (ex_put_elem_cmap(mesh_exoid, e_comm_ids[i1], e_comm_map[i1].elem_ids,
                            e_comm_map[i1].side_ids, e_comm_map[i1].proc_ids, proc_for) < 0) {
-        fprintf(stderr, "[%s]: ERROR, unable to output elemental comm map!\n", yo);
+        fmt::print(stderr, "[{}]: ERROR, unable to output elemental comm map!\n", __func__);
         ex_close(mesh_exoid);
         exit(1);
       }
@@ -425,9 +420,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     bytes_out += 3 * globals.Num_Node_Set * sizeof(INT);
     tt1 = second();
 
-    if (ex_put_ns_param_global(mesh_exoid, Node_Set_Ids, Num_Nodes_In_NS, TOPTR(glob_ns_df_cnts)) <
+    if (ex_put_ns_param_global(mesh_exoid, Node_Set_Ids, Num_Nodes_In_NS, glob_ns_df_cnts.data()) <
         0) {
-      fprintf(stderr, "[%s]: ERROR, unable to output global node-set params\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, unable to output global node-set params\n", __func__);
       ex_close(mesh_exoid);
       exit(1);
     }
@@ -444,9 +439,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     bytes_out += 3 * globals.Num_Side_Set * sizeof(INT);
     tt1 = second();
 
-    if (ex_put_ss_param_global(mesh_exoid, Side_Set_Ids, Num_Elems_In_SS, TOPTR(glob_ss_df_cnts)) <
+    if (ex_put_ss_param_global(mesh_exoid, Side_Set_Ids, Num_Elems_In_SS, glob_ss_df_cnts.data()) <
         0) {
-      fprintf(stderr, "[%s]: ERROR, unable to output global side-set params\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, unable to output global side-set params\n", __func__);
       ex_close(mesh_exoid);
       exit(1);
     }
@@ -459,7 +454,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   tt1 = second();
 
   if (ex_put_eb_info_global(mesh_exoid, Elem_Blk_Ids, Num_Elems_In_EB) < 0) {
-    fprintf(stderr, "[%s]: ERROR, unable to output global elem blk IDs\n", yo);
+    fmt::print(stderr, "[{}]: ERROR, unable to output global elem blk IDs\n", __func__);
     ex_close(mesh_exoid);
     exit(1);
   }
@@ -468,75 +463,69 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   total_out_time += PIO_Time_Array[6];
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-  if (iproc == 0) {
-    /* Generate a QA record for the utility */
-    time_t time_val = time(nullptr);
-    char * ct_ptr   = asctime(localtime(&time_val));
-    char   tm_date[30];
-    strncpy(tm_date, ct_ptr, 30);
+  /* Generate a QA record for the utility */
+  time_t date_time = time(nullptr);
+  auto * lt        = std::localtime(&date_time);
 
-    /* Break string with null characters */
-    tm_date[3]  = '\0';
-    tm_date[7]  = '\0';
-    tm_date[10] = '\0';
-    tm_date[19] = '\0';
-    tm_date[29] = '\0';
+  char qa_time[MAX_STR_LENGTH + 1];
+  char qa_name[MAX_STR_LENGTH + 1];
+  char qa_vers[MAX_STR_LENGTH + 1];
+  char qa_date[MAX_STR_LENGTH + 1];
 
-    char qa_date[MAX_STR_LENGTH + 1];
-    char qa_time[MAX_STR_LENGTH + 1];
-    char qa_name[MAX_STR_LENGTH + 1];
-    char qa_vers[MAX_STR_LENGTH + 1];
-    sprintf(qa_date, "%s %s %s", &tm_date[8], &tm_date[4], &tm_date[20]);
-    sprintf(qa_time, "%s", &tm_date[11]);
-    strncpy(qa_name, UTIL_NAME, MAX_STR_LENGTH);
-    strncpy(qa_vers, VER_STR, MAX_STR_LENGTH);
+  std::string time = fmt::format("{:%H:%M:%S}", *lt);
+  std::string date = fmt::format("{:%Y/%m/%d}", *lt);
+  copy_string(qa_date, date);
+  copy_string(qa_time, time);
+  copy_string(qa_name, UTIL_NAME);
+  copy_string(qa_vers, VER_STR);
 
-    if (qa_date[strlen(qa_date) - 1] == '\n') {
-      qa_date[strlen(qa_date) - 1] = '\0';
-    }
-    if (globals.Num_QA_Recs > 0) {
-      strcpy(globals.QA_Record[4 * (globals.Num_QA_Recs - 1)], qa_name);
-      strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 1], qa_vers);
-      strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 2], qa_date);
-      strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 3], qa_time);
+  if (globals.Num_QA_Recs > 0) {
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 0], qa_name,
+                MAX_STR_LENGTH + 1);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 1], qa_vers,
+                MAX_STR_LENGTH + 1);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 2], qa_date,
+                MAX_STR_LENGTH + 1);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 3], qa_time,
+                MAX_STR_LENGTH + 1);
 
-      /* Output QA records to screen */
-      if (Debug_Flag >= 4) {
-        printf("Number of QA records: %d\n", globals.Num_QA_Recs);
-        if (Debug_Flag >= 6) {
-          printf("QA Records:\n");
-          for (int i1 = 0; i1 < 4 * (globals.Num_QA_Recs); i1++) {
-            printf("\t%s\n", globals.QA_Record[i1]);
-          }
+    /* Output QA records to screen */
+    if (Debug_Flag >= 4) {
+      fmt::print("Number of QA records: {}\n", globals.Num_QA_Recs);
+      if (Debug_Flag >= 6) {
+        fmt::print("QA Records:\n");
+        for (int i1 = 0; i1 < 4 * (globals.Num_QA_Recs); i1++) {
+          fmt::print("\t{}\n", globals.QA_Record[i1]);
         }
       }
     }
+  }
 
-    /* Output the QA and Info records */
-    for (int i1 = 0; i1 < 4 * globals.Num_QA_Recs; i1++) {
-      bytes_out += (MAX_STR_LENGTH + MAX_LINE_LENGTH) * sizeof(char);
+  /* Output the QA and Info records */
+  for (int i1 = 0; i1 < 4 * globals.Num_QA_Recs; i1++) {
+    bytes_out += (MAX_STR_LENGTH + MAX_LINE_LENGTH) * sizeof(char);
+  }
+
+  tt1 = second();
+
+  if (ex_put_qa(mesh_exoid, globals.Num_QA_Recs, (char *(*)[4]) & globals.QA_Record[0]) < 0) {
+    fmt::print(stderr, "[{}]: ERROR Could not put QA records\n", __func__);
+    ex_close(mesh_exoid);
+    exit(1);
+  }
+
+  if (globals.Num_Info_Recs > 0) {
+    if (Debug_Flag >= 4) {
+      fmt::print("Number of info records: {}\n", globals.Num_Info_Recs);
     }
 
-    tt1 = second();
-
-    if (ex_put_qa(mesh_exoid, globals.Num_QA_Recs, (char *(*)[4]) & globals.QA_Record[0]) < 0) {
-      fprintf(stderr, "[%s]: ERROR Could not put QA records\n", yo);
+    if (ex_put_info(mesh_exoid, globals.Num_Info_Recs, globals.Info_Record) < 0) {
+      fmt::print(stderr, "[{}]: ERROR Could not put Info records\n", __func__);
       ex_close(mesh_exoid);
       exit(1);
     }
-
-    if (globals.Num_Info_Recs > 0) {
-      if (Debug_Flag >= 4) {
-        printf("Number of info records: %d\n", globals.Num_Info_Recs);
-      }
-
-      if (ex_put_info(mesh_exoid, globals.Num_Info_Recs, globals.Info_Record) < 0) {
-        fprintf(stderr, "[%s]: ERROR Could not put Info records\n", yo);
-        ex_close(mesh_exoid);
-        exit(1);
-      }
-    }
   }
+
   PIO_Time_Array[8] = (second() - tt1);
   total_out_time += PIO_Time_Array[8];
 
@@ -544,53 +533,50 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
      file in/out of define mode, so should be early in the write stage
   */
   if (Debug_Flag >= 4) {
-    printf("Number of Coordinate Frames: %d\n", globals.Num_Coordinate_Frames);
+    fmt::print("Number of Coordinate Frames: {}\n", globals.Num_Coordinate_Frames);
   }
 
   if (globals.Num_Coordinate_Frames > 0) {
-    T *Coordinate_Frame_Coordinates = nullptr;
-    Coordinate_Frame_Coordinates    = globals.Coordinate_Frame_Coordinates;
+    T *Coordinate_Frame_Coordinates = globals.Coordinate_Frame_Coordinates;
     if (ex_put_coordinate_frames(mesh_exoid, globals.Num_Coordinate_Frames,
                                  globals.Coordinate_Frame_Ids, Coordinate_Frame_Coordinates,
                                  globals.Coordinate_Frame_Tags) < 0) {
-      fprintf(stderr, "[%s]: ERROR, Unable to put coordinate frame data in parallel mesh file\n",
-              yo);
+      fmt::print(stderr, "[{}]: ERROR, Unable to put coordinate frame data in parallel mesh file\n",
+                 __func__);
       ex_close(mesh_exoid);
       exit(1);
     }
   }
 
-  char cTitle[MAX_LINE_LENGTH + 1];
-  cTitle[0] = '\0';
+  std::string cTitle;
 
   if (proc_for == 0) {
-    strncpy(cTitle, GeomTitle, MAX_LINE_LENGTH);
-    cTitle[MAX_LINE_LENGTH] = '\0';
+    cTitle = GeomTitle;
   }
   else {
-    sprintf(cTitle, "Parallel Mesh File for Processor %d", proc_for);
+    cTitle = fmt::format("Parallel Mesh File for Processor {}", proc_for);
   }
 
   /* Output the initial information to the parallel Exodus file(s) */
-  bytes_out += strlen(cTitle) * sizeof(char) + 6 * sizeof(INT);
+  bytes_out += cTitle.length() * sizeof(char) + 6 * sizeof(INT);
   tt1 = second();
 
   if (Debug_Flag >= 4) {
-    printf("Putting init info in file id: %d\n", mesh_exoid);
-    printf("\tTitle: %s\n", cTitle);
-    printf("\tNumber Dimensions: %d\n", globals.Num_Dim);
-    printf("\tNumber Nodes: " ST_ZU "\n", itotal_nodes);
-    printf("\tNumber Elements: " ST_ZU "\n",
-           (size_t)globals.Num_Internal_Elems[iproc] + (size_t)globals.Num_Border_Elems[iproc]);
-    printf("\tNumber Element Blocks: " ST_ZU "\n", (size_t)globals.Num_Elem_Blk);
-    printf("\tNumber Node Sets: " ST_ZU "\n", (size_t)globals.Num_Node_Set);
-    printf("\tNumber Side Sets: " ST_ZU "\n", (size_t)globals.Num_Side_Set);
+    fmt::print("Putting init info in file id: {}\n", mesh_exoid);
+    fmt::print("\tTitle: {}\n", cTitle);
+    fmt::print("\tNumber Dimensions: {}\n", globals.Num_Dim);
+    fmt::print("\tNumber Nodes: {}\n", itotal_nodes);
+    fmt::print("\tNumber Elements: {}\n",
+               globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc]);
+    fmt::print("\tNumber Element Blocks: {}\n", globals.Num_Elem_Blk);
+    fmt::print("\tNumber Node Sets: {}\n", globals.Num_Node_Set);
+    fmt::print("\tNumber Side Sets: {}\n", globals.Num_Side_Set);
   }
 
-  if (ex_put_init(mesh_exoid, cTitle, globals.Num_Dim, itotal_nodes,
+  if (ex_put_init(mesh_exoid, cTitle.c_str(), globals.Num_Dim, itotal_nodes,
                   globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc],
                   globals.Num_Elem_Blk, globals.Num_Node_Set, globals.Num_Side_Set) < 0) {
-    fprintf(stderr, "[%s]: ERROR, Unable to put initial info in parallel mesh file\n", yo);
+    fmt::print(stderr, "[{}]: ERROR, Unable to put initial info in parallel mesh file\n", __func__);
     ex_close(mesh_exoid);
     exit(1);
   }
@@ -618,11 +604,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   T *z_coord = nullptr;
   if (itotal_nodes > 0) {
     switch (globals.Num_Dim) {
-    case 3:
-      z_coord = globals.Coor[iproc][2];
+    case 3: z_coord = globals.Coor[iproc][2];
     /* FALLTHROUGH */
-    case 2:
-      y_coord = globals.Coor[iproc][1];
+    case 2: y_coord = globals.Coor[iproc][1];
     /* FALLTHROUGH */
     case 1: x_coord = globals.Coor[iproc][0]; break;
     }
@@ -633,10 +617,10 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   tt1 = second();
 
   if (Debug_Flag >= 4) {
-    printf("Putting coordinate info in file id: %d\n", mesh_exoid);
+    fmt::print("Putting coordinate info in file id: {}\n", mesh_exoid);
   }
   if (ex_put_coord(mesh_exoid, x_coord, y_coord, z_coord) < 0) {
-    fprintf(stderr, "[%s]: ERROR, could not write out nodal coordinates\n", yo);
+    fmt::print(stderr, "[{}]: ERROR, could not write out nodal coordinates\n", __func__);
     ex_close(mesh_exoid);
     exit(1);
   }
@@ -649,7 +633,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
   if (ex_put_processor_node_maps(mesh_exoid, nem_node_mapi, nem_node_mapb, nem_node_mape,
                                  proc_for) < 0) {
-    fprintf(stderr, "[%s]: ERROR, could not write Nemesis nodal number map!\n", yo);
+    fmt::print(stderr, "[{}]: ERROR, could not write Nemesis nodal number map!\n", __func__);
     check_exodus_error(ex_close(mesh_exoid), "ex_close");
     ex_close(mesh_exoid);
     exit(1);
@@ -660,18 +644,18 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   if (globals.Proc_Global_Node_Id_Map[iproc] != nullptr) {
     bytes_out += itotal_nodes * sizeof(INT);
     if (ex_put_map_param(mesh_exoid, 1, 0) < 0) {
-      fprintf(stderr, "[%s]: ERROR, unable to define global node map parameters!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, unable to define global node map parameters!\n", __func__);
       ex_close(mesh_exoid);
       exit(1);
     }
 
     if (ex_put_num_map(mesh_exoid, EX_NODE_MAP, 1, globals.Proc_Global_Node_Id_Map[iproc]) < 0) {
-      fprintf(stderr, "[%s]: ERROR, unable to output global node id map!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, unable to output global node id map!\n", __func__);
       ex_close(mesh_exoid);
       exit(1);
     }
     if (ex_put_name(mesh_exoid, EX_NODE_MAP, 1, "original_global_id_map") < 0) {
-      fprintf(stderr, "[%s]: ERROR, unable to define global node map name!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, unable to define global node map name!\n", __func__);
       ex_close(mesh_exoid);
       exit(1);
     }
@@ -703,7 +687,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     char **EB_Types = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
                                            MAX_STR_LENGTH + 1, sizeof(char));
     if (EB_Types == nullptr) {
-      fprintf(stderr, "%s: fatal: insufficient memory\n", yo);
+      fmt::print(stderr, "{}: fatal: insufficient memory\n", __func__);
       exit(1);
     }
 
@@ -750,7 +734,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
       /* Error check */
       if (ilocal >= globals.Num_Elem_Blk) {
-        fprintf(stderr, "[%s]: Error finding local element block ID\n", yo);
+        fmt::print(stderr, "[{}]: Error finding local element block ID\n", __func__);
         exit(1);
       }
 
@@ -759,8 +743,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       if (ilocal < globals.Proc_Num_Elem_Blk[iproc]) {
 
         /* Generate the ExodusII element name */
-        strncpy(EB_Types[i1], Elem_Blk_Types[i1], MAX_STR_LENGTH);
-        EB_Types[i1][MAX_STR_LENGTH] = '\0';
+        copy_string(EB_Types[i1], Elem_Blk_Types[i1], MAX_STR_LENGTH);
 
         EB_Cnts[i1]  = globals.Proc_Num_Elem_In_Blk[iproc][ilocal];
         EB_NperE[i1] = globals.Proc_Nodes_Per_Elem[iproc][ilocal];
@@ -768,7 +751,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       }
     }
     if (Debug_Flag >= 4) {
-      printf("Putting concat_elem_block info in file id: %d\n", mesh_exoid);
+      fmt::print("Putting concat_elem_block info in file id: {}\n", mesh_exoid);
     }
     error = ex_put_concat_elem_block(mesh_exoid, &EB_Ids[0], &EB_Types[0], &EB_Cnts[0],
                                      &EB_NperE[0], &EB_Nattr[0], 1);
@@ -794,7 +777,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
         if (globals.Proc_Num_Attr[iproc][ilocal] > 0) {
           if (ex_put_attr_names(mesh_exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[i1],
                                 Elem_Blk_Attr_Names[i1]) < 0) {
-            fprintf(stderr, "[%s]: ERROR, could not write Exodus attribute names!\n", yo);
+            fmt::print(stderr, "[{}]: ERROR, could not write Exodus attribute names!\n", __func__);
             ex_close(mesh_exoid);
             exit(1);
           }
@@ -812,10 +795,10 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     tt1 = second();
 
     if (Debug_Flag >= 4) {
-      printf("Putting node_num_map in file id: %d\n", mesh_exoid);
+      fmt::print("Putting node_num_map in file id: {}\n", mesh_exoid);
     }
     if (ex_put_id_map(mesh_exoid, EX_NODE_MAP, globals.GNodes[iproc]) < 0) {
-      fprintf(stderr, "[%s]: ERROR, could not write Exodus node number map!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, could not write Exodus node number map!\n", __func__);
       ex_close(mesh_exoid);
       exit(1);
     }
@@ -827,9 +810,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
      * Allocate memory for the elemental map. Currently this map is assigned
      * as a linear array since it is not really used.
      */
-    INT *iElem_Map = (INT *)array_alloc(__FILE__, __LINE__, 1, globals.Num_Internal_Elems[iproc] +
-                                                                   globals.Num_Border_Elems[iproc],
-                                        sizeof(INT));
+    INT *iElem_Map = (INT *)array_alloc(
+        __FILE__, __LINE__, 1, globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc],
+        sizeof(INT));
     for (INT i1 = 0; i1 < globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc];
          i1++) {
       iElem_Map[i1] = globals.GElems[iproc][i1] + 1;
@@ -840,10 +823,10 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     tt1 = second();
 
     if (Debug_Flag >= 4) {
-      printf("Putting elem_num_map info in file id: %d\n", mesh_exoid);
+      fmt::print("Putting elem_num_map info in file id: {}\n", mesh_exoid);
     }
     if (ex_put_id_map(mesh_exoid, EX_ELEM_MAP, iElem_Map) < 0) {
-      fprintf(stderr, "[%s]: ERROR, unable to output element map\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, unable to output element map\n", __func__);
       ex_close(mesh_exoid);
       exit(1);
     }
@@ -854,18 +837,18 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       bytes_out +=
           globals.Num_Internal_Elems[iproc] * globals.Num_Border_Elems[iproc] * sizeof(INT);
       if (ex_put_map_param(mesh_exoid, 0, 1) < 0) {
-        fprintf(stderr, "[%s]: ERROR, unable to define global map parameters!\n", yo);
+        fmt::print(stderr, "[{}]: ERROR, unable to define global map parameters!\n", __func__);
         ex_close(mesh_exoid);
         exit(1);
       }
 
       if (ex_put_num_map(mesh_exoid, EX_ELEM_MAP, 1, globals.Proc_Global_Elem_Id_Map[iproc]) < 0) {
-        fprintf(stderr, "[%s]: ERROR, unable to output global id map!\n", yo);
+        fmt::print(stderr, "[{}]: ERROR, unable to output global id map!\n", __func__);
         ex_close(mesh_exoid);
         exit(1);
       }
       if (ex_put_name(mesh_exoid, EX_ELEM_MAP, 1, "original_global_id_map") < 0) {
-        fprintf(stderr, "[%s]: ERROR, unable to define global map name!\n", yo);
+        fmt::print(stderr, "[{}]: ERROR, unable to define global map name!\n", __func__);
         ex_close(mesh_exoid);
         exit(1);
       }
@@ -875,7 +858,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     if (ex_put_processor_elem_maps(mesh_exoid, globals.Elem_Map[iproc],
                                    globals.Elem_Map[iproc] + globals.Num_Internal_Elems[iproc],
                                    proc_for) < 0) {
-      fprintf(stderr, "[%s]: ERROR, unable to output nemesis element map!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, unable to output nemesis element map!\n", __func__);
       ex_close(mesh_exoid);
       exit(1);
     }
@@ -898,7 +881,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
       /* Error check */
       if (ilocal >= globals.Num_Elem_Blk) {
-        fprintf(stderr, "[%s]: Error finding local element block ID\n", yo);
+        fmt::print(stderr, "[{}]: Error finding local element block ID\n", __func__);
         exit(1);
       }
 
@@ -927,11 +910,11 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
         tt1 = second();
 
         if (Debug_Flag >= 4) {
-          printf("Putting element_connectivity info in file id: %d\n", mesh_exoid);
+          fmt::print("Putting element_connectivity info in file id: {}\n", mesh_exoid);
         }
         if (ex_put_conn(mesh_exoid, EX_ELEM_BLOCK, globals.Proc_Elem_Blk_Ids[iproc][ilocal],
                         proc_local_conn, nullptr, nullptr) < 0) {
-          fprintf(stderr, "[%s]: ERROR, unable to output connectivity\n", yo);
+          fmt::print(stderr, "[{}]: ERROR, unable to output connectivity\n", __func__);
           ex_close(mesh_exoid);
           exit(1);
         }
@@ -956,7 +939,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
           if (ex_put_attr(mesh_exoid, EX_ELEM_BLOCK, globals.Proc_Elem_Blk_Ids[iproc][ilocal],
                           ptr) < 0) {
-            fprintf(stderr, "[%s]: ERROR, unable to output element attributes\n", yo);
+            fmt::print(stderr, "[{}]: ERROR, unable to output element attributes\n", __func__);
             exit(1);
           }
 
@@ -1060,14 +1043,14 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     }
 
     ex_set_specs set_specs{};
-    set_specs.sets_ids            = TOPTR(conc_ids);
-    set_specs.num_entries_per_set = TOPTR(conc_nodes);
-    set_specs.num_dist_per_set    = TOPTR(conc_df);
-    set_specs.sets_entry_index    = TOPTR(conc_nind);
-    set_specs.sets_dist_index     = TOPTR(conc_dind);
-    set_specs.sets_entry_list     = TOPTR(conc_nlist);
+    set_specs.sets_ids            = conc_ids.data();
+    set_specs.num_entries_per_set = conc_nodes.data();
+    set_specs.num_dist_per_set    = conc_df.data();
+    set_specs.sets_entry_index    = conc_nind.data();
+    set_specs.sets_dist_index     = conc_dind.data();
+    set_specs.sets_entry_list     = conc_nlist.data();
     set_specs.sets_extra_list     = nullptr;
-    set_specs.sets_dist_fact      = TOPTR(conc_sdf);
+    set_specs.sets_dist_fact      = conc_sdf.data();
     ex_put_concat_sets(mesh_exoid, EX_NODE_SET, &set_specs);
   }
   total_out_time += second() - tt1;
@@ -1170,14 +1153,14 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     }
 
     ex_set_specs set_specs{};
-    set_specs.sets_ids            = TOPTR(conc_ids);
-    set_specs.num_entries_per_set = TOPTR(conc_sides);
-    set_specs.num_dist_per_set    = TOPTR(conc_dist);
-    set_specs.sets_entry_index    = TOPTR(conc_eind);
-    set_specs.sets_dist_index     = TOPTR(conc_dind);
-    set_specs.sets_entry_list     = TOPTR(conc_elist);
-    set_specs.sets_extra_list     = TOPTR(conc_slist);
-    set_specs.sets_dist_fact      = TOPTR(conc_sdflist);
+    set_specs.sets_ids            = conc_ids.data();
+    set_specs.num_entries_per_set = conc_sides.data();
+    set_specs.num_dist_per_set    = conc_dist.data();
+    set_specs.sets_entry_index    = conc_eind.data();
+    set_specs.sets_dist_index     = conc_dind.data();
+    set_specs.sets_entry_list     = conc_elist.data();
+    set_specs.sets_extra_list     = conc_slist.data();
+    set_specs.sets_dist_fact      = conc_sdflist.data();
     ex_put_concat_sets(mesh_exoid, EX_SIDE_SET, &set_specs);
   }
   PIO_Time_Array[19] += (second() - tt1);
@@ -1195,7 +1178,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   bytes_out += globals.Num_Dim * 8 * sizeof(char);
   tt1 = second();
   if (ex_put_coord_names(mesh_exoid, Coord_Name) < 0) {
-    fprintf(stderr, "[%s]: ERROR, could not output coordinate names\n", yo);
+    fmt::print(stderr, "[{}]: ERROR, could not output coordinate names\n", __func__);
     ex_close(mesh_exoid);
     exit(1);
   }
@@ -1208,9 +1191,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     bytes_out +=
         write_var_param(mesh_exoid, max_name_length, Restart_Info.NVar_Glob, Restart_Info.GV_Name,
                         Restart_Info.NVar_Node, Restart_Info.NV_Name, Restart_Info.NVar_Elem,
-                        Restart_Info.EV_Name, TOPTR(Restart_Info.GElem_TT), Restart_Info.NVar_Nset,
-                        Restart_Info.NSV_Name, TOPTR(Restart_Info.GNset_TT), Restart_Info.NVar_Sset,
-                        Restart_Info.SSV_Name, TOPTR(Restart_Info.GSset_TT));
+                        Restart_Info.EV_Name, Restart_Info.GElem_TT.data(), Restart_Info.NVar_Nset,
+                        Restart_Info.NSV_Name, Restart_Info.GNset_TT.data(), Restart_Info.NVar_Sset,
+                        Restart_Info.SSV_Name, Restart_Info.GSset_TT.data());
 
     PIO_Time_Array[21] = (second() - tt1);
     total_out_time += PIO_Time_Array[21];

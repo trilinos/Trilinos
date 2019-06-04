@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -54,11 +54,11 @@ void coarsen(
     int               ndims,       /* number of eigenvectors to calculate */
     int               solver_flag, /* which eigensolver to use */
     int               vmax,        /* largest subgraph to stop coarsening */
-    double            eigtol,      /* tolerence in eigen calculation */
+    double            eigtol,      /* tolerance in eigen calculation */
     int               nstep,       /* number of coarsenings between RQI steps */
     int               step,        /* current step number */
     int               give_up      /* has coarsening bogged down? */
-    )
+)
 {
   extern FILE *     Output_File;            /* output file or null */
   extern int        DEBUG_COARSEN;          /* debug flag for coarsening */
@@ -159,10 +159,10 @@ void coarsen(
         twptr  = term_wgts[j];
         ctwptr = new_term_wgts[j];
         for (i = 1; i <= nvtxs; i++) {
-          if (twptr[i] > .5) {
+          if (twptr[i] > 0.5f) {
             ctwptr[i] = 1;
           }
-          else if (twptr[i] < -.5) {
+          else if (twptr[i] < -0.5f) {
             ctwptr[i] = -1;
           }
           else {
@@ -336,7 +336,7 @@ void coarsen(
       /* Solve extended eigen problem */
 
       /* If not coarsening ewgts, then need care with term_wgts. */
-      if (!using_ewgts && term_wgts[1] != NULL && step != 0) {
+      if (!using_ewgts && step != 0) {
         twptr      = smalloc((nvtxs + 1) * (nsets - 1) * sizeof(float));
         twptr_save = twptr;
         for (j = 1; j < nsets; j++) {
@@ -348,10 +348,10 @@ void coarsen(
           twptr  = term_wgts[j];
           ctwptr = new_term_wgts[j];
           for (i = 1; i <= nvtxs; i++) {
-            if (twptr[i] > .5) {
+            if (twptr[i] > 0.5f) {
               ctwptr[i] = 1;
             }
-            else if (twptr[i] < -.5) {
+            else if (twptr[i] < -0.5f) {
               ctwptr[i] = -1;
             }
             else {

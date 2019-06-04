@@ -46,17 +46,12 @@
            full-space methods.
 */
 
-#include "ROL_Algorithm.hpp"
-
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_BPOEObjective.hpp"
-#include "ROL_RiskBoundConstraint.hpp"
-#include "ROL_RiskVector.hpp"
-
 #include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_ParameterList.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -79,25 +74,25 @@ typedef H1VectorPrimal<RealT> DualConstraintVector;
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm
-    = Teuchos::DefaultComm<int>::getComm();
+  ROL::Ptr<const Teuchos::Comm<int>> comm
+    = ROL::toPtr(Teuchos::DefaultComm<int>::getComm());
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
   bool print = (iprint>0);
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (print)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   bool print0 = print && !(comm->getRank());
-  Teuchos::RCP<std::ostream> outStream0;
+  ROL::Ptr<std::ostream> outStream0;
   if (print0)
-    outStream0 = Teuchos::rcp(&std::cout, false);
+    outStream0 = ROL::makePtrFromRef(std::cout);
   else
-    outStream0 = Teuchos::rcp(&bhs, false);
+    outStream0 = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -112,89 +107,52 @@ int main(int argc, char *argv[]) {
     RealT nl  = 1.0;   // Nonlinearity parameter (1 = Burgers, 0 = linear).
     RealT cH1 = 1.0;   // Scale for derivative term in H1 norm.
     RealT cL2 = 0.0;   // Scale for mass term in H1 norm.
-    Teuchos::RCP<BurgersFEM<RealT> > fem
-      = Teuchos::rcp(new BurgersFEM<RealT>(nx,nl,cH1,cL2));
+    ROL::Ptr<BurgersFEM<RealT>> fem
+      = ROL::makePtr<BurgersFEM<RealT>>(nx,nl,cH1,cL2);
     fem->test_inverse_mass(*outStream0);
     fem->test_inverse_H1(*outStream0);
     /*************************************************************************/
     /************* INITIALIZE SIMOPT OBJECTIVE FUNCTION **********************/
     /*************************************************************************/
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj
-      = Teuchos::rcp(new Objective_BurgersControl<RealT>(fem,x));
+    ROL::Ptr<ROL::Objective_SimOpt<RealT>> pobj
+      = ROL::makePtr<Objective_BurgersControl<RealT>>(fem,x);
     /*************************************************************************/
     /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
     /*************************************************************************/
     bool hess = true;
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pcon
-      = Teuchos::rcp(new Constraint_BurgersControl<RealT>(fem,hess));
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT>> pcon
+      = ROL::makePtr<Constraint_BurgersControl<RealT>>(fem,hess);
     /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
     /*************************************************************************/
-    // INITIALIZE CONTROL VECTORS
-    Teuchos::RCP<std::vector<RealT> > z_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > gz_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > yz_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
-    for (int i=0; i<nx+2; i++) {
-      (*yz_rcp)[i] = 2.0*random<RealT>(comm)-1.0;
-    }
-    Teuchos::RCP<ROL::Vector<RealT> > zp
-      = Teuchos::rcp(new PrimalControlVector(z_rcp,fem));
-    Teuchos::RCP<ROL::Vector<RealT> > gzp
-      = Teuchos::rcp(new DualControlVector(gz_rcp,fem));
-    Teuchos::RCP<ROL::Vector<RealT> > yzp
-      = Teuchos::rcp(new PrimalControlVector(yz_rcp,fem));
-    RealT zvar = random<RealT>(comm);
-    RealT gvar = random<RealT>(comm);
-    RealT yvar = random<RealT>(comm);
-    Teuchos::RCP<Teuchos::ParameterList> bpoelist = Teuchos::rcp(new Teuchos::ParameterList);
-    bpoelist->sublist("SOL").sublist("Risk Measure").set("Name","bPOE");
-    ROL::RiskVector<RealT> z(bpoelist,zp,zvar), g(bpoelist,gzp,gvar), y(bpoelist,yzp,yvar);
-    // INITIALIZE STATE VECTORS
-    Teuchos::RCP<std::vector<RealT> > u_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > gu_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new PrimalStateVector(u_rcp,fem));
-    Teuchos::RCP<ROL::Vector<RealT> > gup
-      = Teuchos::rcp(new DualStateVector(gu_rcp,fem));
-    // INITIALIZE CONSTRAINT VECTORS
-    Teuchos::RCP<std::vector<RealT> > c_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > l_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
-    for (int i=0; i<nx; i++) {
-      (*l_rcp)[i] = random<RealT>(comm);
-    }
-    Teuchos::RCP<ROL::Vector<RealT> > cp
-      = Teuchos::rcp(new PrimalConstraintVector(c_rcp,fem));
-    Teuchos::RCP<ROL::Vector<RealT> > lp
-      = Teuchos::rcp(new DualConstraintVector(l_rcp,fem));
+    ROL::Ptr<std::vector<RealT>> z_ptr, u_ptr, c_ptr, l_ptr;
+    z_ptr = ROL::makePtr<std::vector<RealT>>(nx+2, 0.0);
+    u_ptr = ROL::makePtr<std::vector<RealT>>(nx, 1.0);
+    c_ptr = ROL::makePtr<std::vector<RealT>>(nx, 0.0);
+    l_ptr = ROL::makePtr<std::vector<RealT>>(nx, 0.0);
+    ROL::Ptr<ROL::Vector<RealT>> zp, up, cp, lp;
+    zp = ROL::makePtr<PrimalControlVector>(z_ptr,fem);
+    up = ROL::makePtr<PrimalStateVector>(u_ptr,fem);
+    cp = ROL::makePtr<PrimalConstraintVector>(c_ptr,fem);
+    lp = ROL::makePtr<DualConstraintVector>(l_ptr,fem);
     /*************************************************************************/
     /************* INITIALIZE SAMPLE GENERATOR *******************************/
     /*************************************************************************/
     int dim = 4, nSamp = 1000;
     std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
-    std::vector<std::vector<RealT> > bounds(dim,tmp);
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman
-      = Teuchos::rcp(new L2VectorBatchManager<RealT,int>(comm));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(
-          nSamp,bounds,bman,false,false,100));
+    std::vector<std::vector<RealT>> bounds(dim,tmp);
+    ROL::Ptr<ROL::BatchManager<RealT>> bman
+      = ROL::makePtr<L2VectorBatchManager<RealT,int>>(comm);
+    ROL::Ptr<ROL::SampleGenerator<RealT>> sampler
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(
+          nSamp,bounds,bman,false,false,100);
     /*************************************************************************/
-    /************* INITIALIZE RISK-AVERSE OBJECTIVE FUNCTION *****************/
+    /************* INITIALIZE OBJECTIVE FUNCTION *****************************/
     /*************************************************************************/
     bool storage = true, fdhess = false;
-    Teuchos::RCP<ROL::Objective<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(
-          pobj,pcon,up,zp,lp,gup,gzp,cp,storage,fdhess));
-    RealT order = 2.0, threshold = -0.85*(1.0-x);
-    Teuchos::RCP<ROL::Objective<RealT> > obj
-      = Teuchos::rcp(new ROL::BPOEObjective<RealT>(
-          robj,order,threshold,sampler,storage));
+    ROL::Ptr<ROL::Objective<RealT>> robj
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(
+          pobj,pcon,up,zp,lp,storage,fdhess);
     /*************************************************************************/
     /************* INITIALIZE BOUND CONSTRAINTS ******************************/
     /*************************************************************************/
@@ -213,51 +171,34 @@ int main(int argc, char *argv[]) {
         Zhi[i] = 10.0;
       }
     }
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > Zbnd
-      = Teuchos::rcp(new L2BoundConstraint<RealT>(Zlo,Zhi,fem));
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::RiskBoundConstraint<RealT>(bpoelist,Zbnd));
+    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd
+      = ROL::makePtr<L2BoundConstraint<RealT>>(Zlo,Zhi,fem);
     /*************************************************************************/
-    /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
+    /************* INITIALIZE RISK-AVERSE OPTIMIZATION PROBLEM ***************/
     /*************************************************************************/
+    RealT order = 2.0, threshold = -0.85*(1.0-x);
+    ROL::Ptr<ROL::ParameterList> bpoelist = ROL::makePtr<ROL::ParameterList>();
+    bpoelist->sublist("SOL").set("Store Sampled Value and Gradient",true);
+    bpoelist->sublist("SOL").set("Stochastic Component Type","Probability");
+    bpoelist->sublist("SOL").sublist("Probability").set("Name","bPOE");
+    bpoelist->sublist("SOL").sublist("Probability").sublist("bPOE").set("Threshold",threshold);
+    bpoelist->sublist("SOL").sublist("Probability").sublist("bPOE").set("Moment Order",order);
+    ROL::OptimizationProblem<RealT> problem(robj,zp,bnd);
+    problem.setStochasticObjective(*bpoelist,sampler);
     // CHECK OBJECTIVE DERIVATIVES
     bool derivcheck = false;
     if (derivcheck) {
-      int nranks = sampler->numBatches();
-      for (int pid = 0; pid < nranks; pid++) {
-        if ( pid == sampler->batchID() ) {
-          for (int i = sampler->start(); i < sampler->numMySamples(); i++) {
-            *outStream << "Sample " << i << "  Rank " << sampler->batchID() << "\n";
-            *outStream << "(" << sampler->getMyPoint(i)[0] << ", "
-                              << sampler->getMyPoint(i)[1] << ", "
-                              << sampler->getMyPoint(i)[2] << ", "
-                              << sampler->getMyPoint(i)[3] << ")\n";
-            pcon->setParameter(sampler->getMyPoint(i));
-            pcon->checkSolve(*up,*zp,*cp,print,*outStream);
-            robj->setParameter(sampler->getMyPoint(i));
-            *outStream << "\n";
-            robj->checkGradient(*zp,*gzp,*yzp,print,*outStream);
-            robj->checkHessVec(*zp,*gzp,*yzp,print,*outStream);
-            *outStream << "\n\n";
-          }
-        }
-        comm->barrier();
-      }
+      problem.check(*outStream0);
     }
-    obj->checkGradient(z,g,y,print0,*outStream0);
-    obj->checkHessVec(z,g,y,print0,*outStream0);
     /*************************************************************************/
     /************* RUN OPTIMIZATION ******************************************/
     /*************************************************************************/
     // READ IN XML INPUT
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
     // RUN OPTIMIZATION
-    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
-    zp->zero();
-    algo.run(z, g, *obj, *bnd, print0, *outStream0);
+    ROL::OptimizationSolver<RealT> solver(problem,*parlist);
+    solver.solve(*outStream);
     /*************************************************************************/
     /************* PRINT CONTROL AND STATE TO SCREEN *************************/
     /*************************************************************************/
@@ -267,12 +208,12 @@ int main(int argc, char *argv[]) {
       for ( int i = 0; i < nx+2; i++ ) {
         ofs << std::scientific << std::setprecision(10);
         ofs << std::setw(20) << std::left << (RealT)i/((RealT)nx+1.0);
-        ofs << std::setw(20) << std::left << (*z_rcp)[i];
+        ofs << std::setw(20) << std::left << (*z_ptr)[i];
         ofs << "\n";
       }
       ofs.close();
     }
-    *outStream0 << "Scalar Parameter: " << z.getStatistic(0) << "\n\n";
+    *outStream0 << "Scalar Parameter: " << problem.getSolutionStatistic() << "\n\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

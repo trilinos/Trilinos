@@ -20,7 +20,6 @@ message("CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
 
 set(Trilinos_PACKAGES
 #Pamgen
-#ThreadPool
 #Teuchos
 #Shards
 #Kokkos

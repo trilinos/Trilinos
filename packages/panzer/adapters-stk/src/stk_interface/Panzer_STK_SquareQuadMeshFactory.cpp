@@ -87,14 +87,53 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
    machRank_ = stk::parallel_machine_rank(parallelMach);
    machSize_ = stk::parallel_machine_size(parallelMach);
 
-   if(xProcs_==-1) {
+   if (xProcs_ == -1 && yProcs_ == -1) {
+     // copied from galeri
+     xProcs_ = yProcs_ = Teuchos::as<int>(pow(Teuchos::as<double>(machSize_), 0.5));
+
+     if (xProcs_ * yProcs_ != Teuchos::as<int>(machSize_))  {
+       // Simple method to find a set of processor assignments
+       xProcs_ = yProcs_ = 1;
+
+       // This means that this works correctly up to about maxFactor^2
+       // processors.
+       const int maxFactor = 100;
+
+       int ProcTemp = machSize_;
+       int factors[maxFactor];
+       for (int jj = 0; jj < maxFactor; jj++) factors[jj] = 0;
+       for (int jj = 2; jj < maxFactor; jj++) {
+         bool flag = true;
+         while (flag) {
+           int temp = ProcTemp/jj;
+           if (temp*jj == ProcTemp) {
+             factors[jj]++;
+             ProcTemp = temp;
+
+           } else {
+             flag = false;
+           }
+         }
+       }
+       xProcs_ = ProcTemp;
+       for (int jj = maxFactor-1; jj > 0; jj--) {
+         while (factors[jj] != 0) {
+           if      (xProcs_ <= yProcs_) xProcs_ = xProcs_*jj;
+           else                         yProcs_ = yProcs_*jj;
+           factors[jj]--;
+         }
+       }
+     }
+
+   } else if(xProcs_==-1) {
       // default x only decomposition
       xProcs_ = machSize_; 
       yProcs_ = 1;
    }
-   TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_,std::logic_error,
-                      "Cannot build SquareQuadMeshFactory, the product of \"X Procs\" and \"Y Procs\""
-                      " must equal the number of processors.");
+  TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_) != xProcs_ * yProcs_, std::logic_error,
+      "Cannot build SquareQuadMeshFactory. The product of 'X Procs * Y Procs = " << xProcs_ << "*" << yProcs_ << " = " << xProcs_*yProcs_
+      << "' must equal the number of processors = " << machSize_
+      << "\n\n\t==> Run the simulation with an appropriate number of processors, i.e. #procs = " << xProcs_*yProcs_ << ".\n");
    procTuple_ = procRankToProcTuple(machRank_);
 
    // build meta information: blocks and side set setups

@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -57,7 +57,6 @@
 #include <ROCm/Kokkos_ROCm_Tile.hpp>
 #include <ROCm/Kokkos_ROCm_Invoke.hpp>
 #include <ROCm/Kokkos_ROCm_Join.hpp>
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace Kokkos {
@@ -75,7 +74,7 @@ T& reduce_value(T* x, std::false_type) [[hc]]
   return *x;
 }
 
-#if KOKKOS_ROCM_HAS_WORKAROUNDS
+#ifdef KOKKOS_IMPL_ROCM_CLANG_WORKAROUND
 struct always_true
 {
     template<class... Ts>
@@ -133,15 +132,10 @@ void reduce_enqueue(
       });
       t_idx.barrier.wait();
 
-      // Reduce within a tile using multiple threads.
-// even though buffer.size is always 64, the value 64 must be hard coded below
-// due to a compiler bug
-//      for(std::size_t s = 1; s < buffer.size(); s *= 2)
-      for(std::size_t s = 1; s < 64; s *= 2)
+      for(std::size_t s = 1; s < buffer.size(); s *= 2)
       {
           const std::size_t index = 2 * s * local;
-//          if (index < buffer.size())
-          if (index < 64)
+          if (index < buffer.size())
           {
               buffer.action_at(index, index + s, [&](T* x, T* y)
               {
@@ -154,7 +148,7 @@ void reduce_enqueue(
       // Store the tile result in the global memory.
       if (local == 0)
       {
-#if KOKKOS_ROCM_HAS_WORKAROUNDS
+#ifdef KOKKOS_IMPL_ROCM_CLANG_WORKAROUND
           // Workaround for assigning from LDS memory: std::copy should work
           // directly
           buffer.action_at(0, [&](T* x)
@@ -163,7 +157,7 @@ void reduce_enqueue(
 // new ROCM 15 address space changes aren't implemented in std algorithms yet
               auto * src = reinterpret_cast<char *>(x);
               auto * dest = reinterpret_cast<char *>(result.data()+tile*output_length);
-              for(int i=0; i<sizeof(T);i++) dest[i] = src[i];
+              for(int i=0; i<sizeof(T)*output_length;i++) dest[i] = src[i];
 #else
               // Workaround: copy_if used to avoid memmove
               std::copy_if(x, x+output_length, result.data()+tile*output_length, always_true{} );
@@ -174,12 +168,10 @@ void reduce_enqueue(
 
 #endif
       }
-      
   });
   if (output_result != nullptr)
      ValueInit::init(ReducerConditional::select(f, reducer), output_result);
   fut.wait();
-
   copy(result,result_cpu.data());
   if (output_result != nullptr) {
     for(std::size_t i=0;i<td.num_tiles;i++)

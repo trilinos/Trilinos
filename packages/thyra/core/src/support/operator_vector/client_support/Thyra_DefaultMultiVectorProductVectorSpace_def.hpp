@@ -77,8 +77,8 @@ void DefaultMultiVectorProductVectorSpace<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultMultiVectorProductVectorSpace<Scalar>::uninitialize(
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > *space,
-  int *numColumns
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > * /* space */,
+  int * /* numColumns */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement when needed!");

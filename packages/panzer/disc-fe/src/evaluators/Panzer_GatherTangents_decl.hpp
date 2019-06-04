@@ -93,8 +93,8 @@ private:
   Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
   Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
 
-  PointValues2<ScalarT> pointValues;
-  PHX::MDField<const ScalarT, Cell, IP, Dim, Dim, void, void, void, void>
+  PointValues2<double> pointValues;
+  PHX::MDField<const double, Cell, IP, Dim, Dim, void, void, void, void>
     constJac_;
 
   Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;

@@ -41,7 +41,6 @@
 #
 # Wrapper used for unit testing purposes
 #
-
 MACRO(EXTRAREPO_EXECUTE_PROCESS_WRAPPER)
   IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
     EXECUTE_PROCESS(${ARGN}
@@ -58,42 +57,24 @@ ENDMACRO()
 
 
 #
-# Function for getting the tracking branch
-#
-FUNCTION(EXTRAREPO_GET_TRACKING_BRANCH  EXTRAREPO_SRC_DIR  TRACKING_BRANCH_OUT)
-  IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-    EXECUTE_PROCESS(
-      COMMAND "${GIT_EXE}" rev-parse --abbrev-ref --symbolic-full-name @{u}
-      WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      RESULT_VARIABLE  EP_RTN
-      OUTPUT_VARIABLE  TRACKING_BRANCH
-      )
-    IF (NOT EP_RTN STREQUAL "0")
-      MESSAGE(SEND_ERROR "Error: obtaining tracking branch for repo"
-        " '${EXTRAREPO_SRC_DIR}' failed!" )
-    ENDIF()
-  ELSE()
-    # For unit testing purpose, just return generic tacking branch string
-    SET(TRACKING_BRANCH "tracking/branch")
-  ENDIF()
-  SET(${TRACKING_BRANCH_OUT}  ${TRACKING_BRANCH}  PARENT_SCOPE)
-ENDFUNCTION()
-
-
-#
 # Update an existing git repo
 #
 FUNCTION(TRIBITS_UPDATE_GIT_EXTRAREPO  GIT_EXE  EXTRAREPO_SRC_DIR)
 
-  SET(EXTRAREPO_CLEAN_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.clean.out")
-  SET(EXTRAREPO_RESET_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.reset.out")
-  SET(EXTRAREPO_FETCH_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.fetch.out")
-  SET(EXTRAREPO_SET_BRANCH_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.set_branch.out")
+  SET(EXTRAREPO_FETCH_OUT_FILE
+    "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.fetch.out")
+  SET(EXTRAREPO_CLEAN_OUT_FILE
+    "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.clean.out")
+  SET(EXTRAREPO_RESET_OUT_FILE
+    "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.reset.out")
+  SET(EXTRAREPO_SET_BRANCH_OUT_FILE
+    "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.set_branch.out")
 
-  EXTRAREPO_GET_TRACKING_BRANCH("${EXTRAREPO_SRC_DIR}"
-    EXTRAREPO_TRACKING_BRANCH)
-  #PRINT_VAR(EXTRAREPO_TRACKING_BRANCH)
+  SET(FETCH_CMND_ARGS
+    COMMAND "${GIT_EXE}" fetch ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}
+    TIMEOUT 600 # seconds
+    WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
+    OUTPUT_FILE "${EXTRAREPO_FETCH_OUT_FILE}" )
   SET(CLEAN_CMND_ARGS
     COMMAND "${GIT_EXE}" clean -fdx
     WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
@@ -102,27 +83,22 @@ FUNCTION(TRIBITS_UPDATE_GIT_EXTRAREPO  GIT_EXE  EXTRAREPO_SRC_DIR)
     COMMAND "${GIT_EXE}" reset --hard HEAD
     WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
     OUTPUT_FILE "${EXTRAREPO_RESET_OUT_FILE}" )
-  SET(FETCH_CMND_ARGS
-    COMMAND "${GIT_EXE}" fetch origin
-    TIMEOUT 600 # seconds
-    WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
-    OUTPUT_FILE "${EXTRAREPO_FETCH_OUT_FILE}" )
   IF (${PROJECT_NAME}_EXTRAREPOS_BRANCH)
     SET(SET_BRANCH_CMND_ARGS
       COMMAND "${GIT_EXE}" checkout -B ${${PROJECT_NAME}_EXTRAREPOS_BRANCH}
-        --track origin/${${PROJECT_NAME}_EXTRAREPOS_BRANCH}
+        --track ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}/${${PROJECT_NAME}_EXTRAREPOS_BRANCH}
       WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
       OUTPUT_FILE "${EXTRAREPO_SET_BRANCH_OUT_FILE}" )
   ELSE ()
     SET(SET_BRANCH_CMND_ARGS
-      COMMAND "${GIT_EXE}" reset --hard "${EXTRAREPO_TRACKING_BRANCH}"
+      COMMAND "${GIT_EXE}" reset --hard "@{u}"
       WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
       OUTPUT_FILE "${EXTRAREPO_SET_BRANCH_OUT_FILE}" )
   ENDIF()
 
+  EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${FETCH_CMND_ARGS})
   EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${CLEAN_CMND_ARGS})
   EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${RESET_CMND_ARGS})
-  EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${FETCH_CMND_ARGS})
   EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${SET_BRANCH_CMND_ARGS})
 
 ENDFUNCTION()
@@ -131,7 +107,6 @@ ENDFUNCTION()
 #
 # Update or clone a single extra repo
 #
-
 FUNCTION(TRIBITS_CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
   EXTRAREPO_REPOTYPE_IN  EXTRAREPO_REPOURL_IN
   )
@@ -141,7 +116,8 @@ FUNCTION(TRIBITS_CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
   SET(EXTRAREPO_SRC_DIR "${${PROJECT_NAME}_SOURCE_DIRECTORY}/${EXTRAREPO_DIR_IN}")
   #PRINT_VAR(EXTRAREPO_SRC_DIR)
 
-  SET(EXTRAREPO_CLONE_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.clone.out")
+  SET(EXTRAREPO_CLONE_OUT_FILE
+    "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.clone.out")
   SET(EXTRAREPO_CHECKOUT_OUT_FILE
     "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.checkout.out")
 
@@ -152,8 +128,15 @@ FUNCTION(TRIBITS_CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
 
     # Set the command to clone
     IF (${EXTRAREPO_REPOTYPE_IN} STREQUAL GIT)
+      IF (${PROJECT_NAME}_EXTRAREPOS_BRANCH) 
+        SET(CHECKOUT_BRANCH_ARG -b ${${PROJECT_NAME}_EXTRAREPOS_BRANCH})
+      ELSE()
+        SET(CHECKOUT_BRANCH_ARG)
+      ENDIF()
       SET(CLONE_CMND_ARGS
-        COMMAND "${GIT_EXE}" clone "${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
+        COMMAND "${GIT_EXECUTABLE}" clone
+        ${CHECKOUT_BRANCH_ARG} -o ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}
+	"${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
         WORKING_DIRECTORY "${${PROJECT_NAME}_SOURCE_DIRECTORY}"
         OUTPUT_FILE "${EXTRAREPO_CLONE_OUT_FILE}" )
     ELSE()
@@ -174,7 +157,7 @@ FUNCTION(TRIBITS_CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
   IF (${EXTRAREPO_REPOTYPE_IN} STREQUAL GIT)
     # Always update the git repo, even after a clone.  See
     # TRIBITS_CTEST_DRIVER() documentation.
-    TRIBITS_UPDATE_GIT_EXTRAREPO("${GIT_EXE}" "${EXTRAREPO_SRC_DIR}")
+    TRIBITS_UPDATE_GIT_EXTRAREPO("${GIT_EXECUTABLE}" "${EXTRAREPO_SRC_DIR}")
   ELSE()
     MESSAGE(SEND_ERROR
       "Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
@@ -184,79 +167,17 @@ ENDFUNCTION()
 
 
 #
-# Update the branch of the base git repo
+# Clone or update all of the extra repos and put them on the right branch.
 #
-FUNCTION(TRIBITS_SET_BASE_REPO_BRANCH  CTEST_UPDATE_RETURN_VAL
-  UPDATE_FAILED_VAR_OUT
-  )
-
-  SET(GIT_CHECKOUT_RETURN_VAL "0")
-
-  IF (${PROJECT_NAME}_BRANCH AND NOT "${CTEST_UPDATE_RETURN_VAL}" LESS "0")
-
-    MESSAGE("For base repo, doing switch to branch ${${PROJECT_NAME}_BRANCH}")
-
-    SET(EXECUTE_PROCESS_COMMANDS_ARGS
-      COMMAND ${GIT_EXE} checkout
-        -B ${${PROJECT_NAME}_BRANCH} --track origin/${${PROJECT_NAME}_BRANCH}
-      WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}
-      RESULT_VARIABLE GIT_CHECKOUT_RETURN_VAL
-      OUTPUT_VARIABLE BRANCH_OUTPUT
-      ERROR_VARIABLE  BRANCH_ERROR
-      )
-     # NOTE: Above will work smoothly even if the local branch already
-     # exists and/or is already on that branch.  This command does not move
-     # ORIG_HEAD so it will not mess up the pull and update that CTest did
-     # for the base repo.
-
-    IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-      EXECUTE_PROCESS(${EXECUTE_PROCESS_COMMANDS_ARGS})
-    ELSE()
-      MESSAGE("EXECUTE_PROCESS(${EXECUTE_PROCESS_COMMANDS_ARGS})")
-      SET(GIT_CHECKOUT_RETURN_VAL 0)
-    ENDIF()
-
-    IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
-      MESSAGE("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with"
-        " error code ${GIT_CHECKOUT_RETURN_VAL}")
-      QUEUE_ERROR("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with"
-        " error code ${GIT_CHECKOUT_RETURN_VAL}")
-    ENDIF()
-    #Apparently the successful branch switch is also written to stderr.
-    MESSAGE("${BRANCH_ERROR}")
-
-  ENDIF()
-
-  IF ("${CTEST_UPDATE_RETURN_VAL}" LESS "0" OR NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
-    SET(${UPDATE_FAILED_VAR_OUT} TRUE PARENT_SCOPE)
-  ELSE()
-    SET(${UPDATE_FAILED_VAR_OUT} FALSE PARENT_SCOPE)
-  ENDIF()
-
-ENDFUNCTION()
-
-
+# NOTE: The base repo is cloned by CTEST_START() and updated by CTEST_UPDATE()
+# before calling this function.  This function only operates on the extra
+# repos.
 #
-# Clone or update all of the repos and put them on right branch
-#
-# NOTE: The base repo is cloned and updated by CTEST_UPDATE() before calling
-# this function.  This function only puts the base repo on the right branch.
-#
-
-FUNCTION(TRIBITS_CLONE_OR_UPDATE_ALL_REPOS  CTEST_UPDATE_RETURN_VAL
+FUNCTION(TRIBITS_CLONE_OR_UPDATE_EXTRA_REPOS  CTEST_UPDATE_RETURN_VAL
   UPDATE_FAILED_VAR_OUT
   )
 
   SET(UPDATE_FAILED FALSE)
-
-  # A) Put the base repo on the right branch
-
-  TRIBITS_SET_BASE_REPO_BRANCH(${CTEST_UPDATE_RETURN_VAL}  BASE_REPO_UPDATE_FAILED)
-  IF (BASE_REPO_UPDATE_FAILED)
-    SET(UPDATE_FAILED TRUE)
-  ENDIF()
-
-  # B) Clone and update the extra repos
 
   IF (${PROJECT_NAME}_EXTRAREPOS_BRANCH)
     MESSAGE("For extra repos, doing switch to branch ${${PROJECT_NAME}_EXTRAREPOS_BRANCH}")
@@ -272,7 +193,7 @@ FUNCTION(TRIBITS_CLONE_OR_UPDATE_ALL_REPOS  CTEST_UPDATE_RETURN_VAL
       EXTRAREPO_REPOURL )
     TRIBITS_CLONE_OR_UPDATE_EXTRAREPO( ${EXTRAREPO_NAME} ${EXTRAREPO_DIR}
       ${EXTRAREPO_REPOTYPE} ${EXTRAREPO_REPOURL} )
-    # ToDo: Detect and return failure
+    # ToDo: Detect and return failure in cloning or updating extra repos!
     MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
   ENDFOREACH()
 
@@ -321,7 +242,6 @@ ENDMACRO()
 # NOTE: This macro is used to clean up the main TRIBITS_CTEST_DRIVER()
 # macro.
 #
-
 MACRO(TRIBITS_SETUP_PACKAGES)
 
   # Here, we must point into the source tree just cloned (or updated)
@@ -390,7 +310,6 @@ ENDMACRO()
 #
 # Select packages set by the input
 #
-
 MACRO(ENABLE_USER_SELECTED_PACKAGES)
 
   # 1) Set the enables for packages already set with
@@ -419,10 +338,9 @@ ENDMACRO()
 # Extract the list of changed files for the main repo on put into an
 # modified files file.
 #
-
 MACRO(TRIBITS_GET_MODIFIED_FILES  WORKING_DIR_IN  MODIFIED_FILES_FILE_NAME_IN)
   SET(CMND_ARGS
-    COMMAND "${GIT_EXE}" diff --name-only ORIG_HEAD..HEAD
+    COMMAND "${GIT_EXECUTABLE}" diff --name-only ORIG_HEAD..HEAD
     WORKING_DIRECTORY "${WORKING_DIR_IN}"
     OUTPUT_FILE ${MODIFIED_FILES_FILE_NAME_IN}
     #OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -438,7 +356,6 @@ ENDMACRO()
 #
 # Select only packages that are modified or failed in the last CI iteration
 #
-
 MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
 
   #
@@ -498,6 +415,7 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
       COMMAND ${PYTHON_EXECUTABLE}
         ${${PROJECT_NAME}_TRIBITS_DIR}/ci_support/get-tribits-packages-from-files-list.py
         --files-list-file=${MODIFIED_FILES_FILE_NAME}
+        --project-dir=${TRIBITS_PROJECT_ROOT}
         --deps-xml-file=${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}
       OUTPUT_VARIABLE MODIFIED_PACKAGES_LIST
       OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -506,6 +424,7 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
     SET(MODIFIED_PACKAGES_LIST)
   ENDIF()
 
+  SPLIT("${MODIFIED_PACKAGES_LIST}" "," MODIFIED_PACKAGES_LIST)
   PRINT_VAR(MODIFIED_PACKAGES_LIST)
 
   #
@@ -534,6 +453,8 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
     ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
     IF ("${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
       IF (
+        ${TRIBITS_PACKAGE} STREQUAL "ALL_PACKAGES"
+        OR
         ${TRIBITS_PACKAGE}_TESTGROUP STREQUAL "PT"
         OR
         (
@@ -605,7 +526,6 @@ ENDMACRO()
 # NOTE: These disables need to dominate over the above enables so this code is
 # after all the enable code has run
 #
-
 MACRO(DISABLE_EXCLUDED_PACKAGES)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
     MESSAGE("Disabling excluded package ${TRIBITS_PACKAGE} ...")
@@ -655,7 +575,6 @@ ENDMACRO()
 # locally.  When run locally, ctest will just report aggregated times for
 # subprojects that have 1 or more tests.  Not true for CDash.
 #
-
 MACRO(TRIBITS_CTEST_DRIVER_SET_LABELS_TO_SUBPROJECTS_MAPPING)
   SET(CTEST_LABELS_FOR_SUBPROJECTS)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST})
@@ -667,7 +586,6 @@ ENDMACRO()
 #
 # Select the default generator.
 #
-
 MACRO(SELECT_DEFAULT_GENERATOR)
   # When the build tree is known and exists, use
   # its generator.
@@ -687,7 +605,6 @@ ENDMACRO()
 #
 # Call INITIALIZE_ERROR_QUEUE once at the top of TRIBITS_CTEST_DRIVER
 #
-
 MACRO(INITIALIZE_ERROR_QUEUE)
   SET(TRIBITS_CTEST_DRIVER_ERROR_QUEUE "")
 ENDMACRO()
@@ -704,7 +621,6 @@ ENDMACRO()
 # When adding more callers of QUEUE_ERROR, just make sure that it does not
 # duplicate an existing/reported dashboard failure.
 #
-
 MACRO(QUEUE_ERROR err_msg)
   SET(TRIBITS_CTEST_DRIVER_ERROR_QUEUE
     ${TRIBITS_CTEST_DRIVER_ERROR_QUEUE} "${err_msg}")
@@ -714,7 +630,6 @@ ENDMACRO()
 #
 # Call REPORT_QUEUED_ERRORS() once at the bottom of TRIBITS_CTEST_DRIVER()
 #
-
 MACRO(REPORT_QUEUED_ERRORS)
   IF ("${TRIBITS_CTEST_DRIVER_ERROR_QUEUE}" STREQUAL "")
     MESSAGE("TRIBITS_CTEST_DRIVER_ERROR_QUEUE is empty. All is well.")
@@ -731,7 +646,6 @@ ENDMACRO()
 # Override CTEST_SUBMIT to drive multiple submits and to detect failed
 # submissions and track them as queued errors.
 #
-
 MACRO(TRIBITS_CTEST_SUBMIT)
 
   # Cache the original CTEST_DROP_SITE and CTEST_DROP_LOCATION
@@ -807,7 +721,6 @@ ENDMACRO()
 #
 # Wrapper for CTEST_UPDATE(...) for unit testing
 #
-
 MACRO(CTEST_UPDATE_WRAPPER)
   IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
     CTEST_UPDATE(${ARGN})
@@ -822,7 +735,6 @@ ENDMACRO()
 # Helper macros to pass through common CMake configure arguments used by both
 # package-by-pacakge approach and all-at-once approach
 #
-
 MACRO(TRIBITS_FWD_CMAKE_CONFIG_ARGS_0)
   SET( CONFIGURE_OPTIONS
     "-D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}"
@@ -835,6 +747,10 @@ MACRO(TRIBITS_FWD_CMAKE_CONFIG_ARGS_0)
   IF (NOT CTEST_GENERATE_DEPS_XML_OUTPUT_FILE)
     LIST(APPEND CONFIGURE_OPTIONS
     "-D${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE:FILEPATH=")
+  ENDIF()
+  IF (NOT "${${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES}" STREQUAL "")
+    LIST(APPEND CONFIGURE_OPTIONS
+      "-D${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES:BOOL=${${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES}")
   ENDIF()
   IF (NOT "${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE}" STREQUAL "")
     LIST(APPEND CONFIGURE_OPTIONS
@@ -859,17 +775,23 @@ MACRO(TRIBITS_FWD_CMAKE_CONFIG_ARGS_0)
     "-D${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON")
   LIST(APPEND CONFIGURE_OPTIONS
       "-D${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE}")
+  IF (CTEST_DO_INSTALL)
+    LIST(APPEND CONFIGURE_OPTIONS
+      "-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON")
+  ENDIF()
 ENDMACRO()
 
 
 MACRO(TRIBITS_FWD_CMAKE_CONFIG_ARGS_1)
   SET(CONFIGURE_OPTIONS ${CONFIGURE_OPTIONS}
-    ${EXTRA_SYSTEM_CONFIGURE_OPTIONS} ${EXTRA_CONFIGURE_OPTIONS})
+    ${EXTRA_SYSTEM_CONFIGURE_OPTIONS} ${EXTRA_CONFIGURE_OPTIONS}
+    ${${PROJECT_NAME}_EXTRA_CONFIGURE_OPTIONS} )
 ENDMACRO()
 
 
 # Remove the all of the LastTestsFailed*.log files so we can determine if any
 # tests have failed.
+#
 MACRO(TRIBITS_REMOVE_LAST_TEST_FAILED_LOG_FILE)
   # Remove the LastTestsFailed log so we can detect if there are any
   # failed tests.
@@ -900,6 +822,7 @@ FUNCTION(TRIBITS_GET_FAILED_PACKAGES_FROM_FAILED_TESTS
           OUTPUT_VARIABLE  FAILED_PACKAGES
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+  SPLIT("${FAILED_PACKAGES}" "," FAILED_PACKAGES)
   SET(${FAILED_PACKAGES_OUT} "${FAILED_PACKAGES}" PARENT_SCOPE)
 ENDFUNCTION()
 
@@ -910,7 +833,6 @@ ENDFUNCTION()
 # Sets ${PROJECT_NAME}_FAILED_PACKAGES as an indication if there are any
 # failures.
 #
-
 MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
   MESSAGE(
@@ -964,7 +886,22 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
     # B) Configure the package and its dependent packages
     #
 
-    IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
+    SET(PBP_CONFIGURE_PASSED TRUE)
+
+    IF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
+
+      MESSAGE("${TRIBITS_PACKAGE}: Skipping configure due"
+	" to running in unit testing mode!")
+
+    ELSE()
+
+      #
+      # We always have to configure if we are going to do anything for the
+      # package.  We just want submit configure results to CDash if we are not
+      # asked to configure!
+      #
+
+      SET(PBP_CONFIGURE_PASSED FALSE)
 
       CTEST_CONFIGURE(
         BUILD "${CTEST_BINARY_DIRECTORY}"
@@ -980,16 +917,15 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
       # If the configure failed, add the package to the list
       # of failed packages
-      IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
-        MESSAGE("${TRIBITS_PACKAGE} FAILED to configure")
-        LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
-        LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-      ELSE()
-        MESSAGE("${TRIBITS_PACKAGE}: Configure passed!")
+      IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0")
+        MESSAGE("\n${TRIBITS_PACKAGE}: Configure passed!\n")
+        SET(PBP_CONFIGURE_PASSED TRUE)
         # load target properties and test keywords
         CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
         # Overridde from this file!
         INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
+      ELSE()
+        MESSAGE("\n${TRIBITS_PACKAGE} FAILED to configure!\n")
       ENDIF()
 
       IF (EXISTS ${CMAKE_CACHE_CLEAN_FILE})
@@ -998,15 +934,12 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
         SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
       ENDIF()
 
-      SET(REPO_VERSION_FILE "${CTEST_BINARY_DIRECTORY}/${PROJECT_NAME}RepoVersion.txt")
-      IF (EXISTS "${REPO_VERSION_FILE}")
-        SET(CTEST_NOTES_FILES "${REPO_VERSION_FILE};${CTEST_NOTES_FILES}")
-      ENDIF()
-
       PRINT_VAR(CTEST_NOTES_FILES)
 
-      # Submit configure results and the notes to the dashboard
-      IF (CTEST_DO_SUBMIT)
+      IF (NOT CTEST_DO_CONFIGURE AND CTEST_DO_SUBMIT)
+        MESSAGE("${TRIBITS_PACKAGE}: Skipping submitting configure"
+	  " and notes due to CTEST_DO_CONFIGURE='${CTEST_DO_CONFIGURE}'!")
+      ELSEIF (CTEST_DO_SUBMIT)
         MESSAGE("\nSubmitting configure and notes ...")
         TRIBITS_CTEST_SUBMIT( PARTS configure notes )
       ENDIF()
@@ -1014,19 +947,41 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
     ENDIF()
 
     #
-    # C) If configure passed then try the build.  Otherwise, move on to
-    # to the next package.
+    # C) Build the library and then ALL
     #
 
-    IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND
-      NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND
-      NOT CTEST_CONFIGURATION_UNIT_TESTING
+    SET(PBP_BUILD_PASSED TRUE)
+    SET(PBP_BUILD_LIBS_PASSED TRUE)
+
+    PRINT_VAR(PBP_CONFIGURE_PASSED)
+
+    IF ( NOT PBP_CONFIGURE_PASSED AND CTEST_DO_BUILD )
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping build due"
+	" to configure failing!")
+
+      SET(PBP_BUILD_PASSED FALSE)
+      SET(PBP_BUILD_LIBS_PASSED FALSE)
+
+    ELSEIF (NOT CTEST_DO_BUILD)
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping build due"
+	" to CTEST_DO_BUILD='${CTEST_DO_BUILD}'!")
+
+    ELSEIF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING OR
+      CTEST_CONFIGURATION_UNIT_TESTING
       )
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping build due"
+	" to running in unit testing mode!")
+
+    ELSE()
 
       # Start by trying to build just the libraries for the current package
 
       SET( CTEST_BUILD_TARGET ${TRIBITS_PACKAGE}_libs )
       MESSAGE("\nBuilding target: '${CTEST_BUILD_TARGET}' ...\n")
+      SET(PBP_BUILD_LIBS_PASSED FALSE)
       CTEST_BUILD(
         BUILD "${CTEST_BINARY_DIRECTORY}"
         RETURN_VALUE  BUILD_LIBS_RETURN_VAL
@@ -1038,10 +993,12 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
       # Determine if the build failed or not.
 
-      SET(BUILD_LIBS_SUCCESS FALSE)
       IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0")
-        MESSAGE("${TRIBITS_PACKAGE}: Libs build passed!")
-        SET(BUILD_LIBS_SUCCESS TRUE)
+        MESSAGE("\n${TRIBITS_PACKAGE}: Libs build passed!")
+        SET(PBP_BUILD_LIBS_PASSED TRUE)
+      ELSE()
+        MESSAGE("\nFAILED library build for package '${TRIBITS_PACKAGE}'!")
+        SET(PBP_BUILD_PASSED FALSE)
       ENDIF()
       # Above: Since make -i is used BUILD_LIBS_RETURN_VAL might be 0, but
       # if there are errors the build should fail, so both
@@ -1049,7 +1006,6 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
       # good build and for the all target to be built.
 
       # Submit the library build results to the dashboard
-
       IF (CTEST_DO_SUBMIT)
         TRIBITS_CTEST_SUBMIT( PARTS build )
       ENDIF()
@@ -1057,9 +1013,7 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
       # If the build of the libraries passed, then go on the build
       # the tests/examples and run them.
 
-      IF (BUILD_LIBS_SUCCESS)
-
-        SET(BUILD_OR_TEST_FAILED FALSE)
+      IF (PBP_BUILD_LIBS_PASSED)
 
         # Build the ALL target, but append the results to the last build.xml
         SET(CTEST_BUILD_TARGET)
@@ -1075,7 +1029,7 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
         IF (NOT "${BUILD_ALL_NUM_ERRORS}" EQUAL "0")
           MESSAGE("${TRIBITS_PACKAGE}: All build FAILED!")
-          SET(BUILD_OR_TEST_FAILED TRUE)
+          SET(PBP_BUILD_PASSED FALSE)
         ELSE()
           MESSAGE("${TRIBITS_PACKAGE}: All build passed!")
         ENDIF()
@@ -1085,75 +1039,134 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
           TRIBITS_CTEST_SUBMIT( PARTS build )
         ENDIF()
 
-        IF (CTEST_DO_TEST)
+      ENDIF()
 
-	  TRIBITS_REMOVE_LAST_TEST_FAILED_LOG_FILE()
-          # Run the tests that match the ${TRIBITS_PACKAGE} name
-          MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}'"
-            " (parallel level ${CTEST_PARALLEL_LEVEL}) ...\n")
-          CTEST_TEST(
-            BUILD "${CTEST_BINARY_DIRECTORY}"
-            PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-            INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
-            #NUMBER_FAILED  TEST_NUM_FAILED
-            )
-          # See if a 'LastTestsFailed*.log' file exists to determine if there
-          # are failed tests
-          TRIBITS_FIND_LAST_TEST_FAILED_LOG_FILE()
-          IF (FAILED_TEST_LOG_FILE)
-	    MESSAGE("${TRIBITS_PACKAGE}: File '${FAILED_TEST_LOG_FILE}'"
-              " exists so there were failed tests!")
-            SET(BUILD_OR_TEST_FAILED TRUE)
-          ENDIF()
-          # 2009/12/05: ToDo: We need to add an argument to CTEST_TEST(...)
-          # called something like 'NUMBER_FAILED numFailedTests' to allow us
-          # to detect when the tests have filed.
-          #IF (TEST_NUM_FAILED GREATER 0)
-          #  SET(BUILD_OR_TEST_FAILED TRUE)
-          #ENDIF()
-          IF (CTEST_DO_SUBMIT)
-            TRIBITS_CTEST_SUBMIT( PARTS Test )
-          ENDIF()
-        ENDIF()
+    ENDIF()
 
-        IF (CTEST_DO_COVERAGE_TESTING)
-          MESSAGE("\nRunning coverage for package '${TRIBITS_PACKAGE}' ...\n")
-          CTEST_COVERAGE(
-            BUILD "${CTEST_BINARY_DIRECTORY}"
-            LABELS ${TRIBITS_PACKAGE} ${TRIBITS_PACKAGE}Libs ${TRIBITS_PACKAGE}Exes
-            )
-          IF (CTEST_DO_SUBMIT)
-            TRIBITS_CTEST_SUBMIT( PARTS Coverage )
-          ENDIF()
-        ENDIF()
+    #
+    # D) Run the tests
+    #
 
-        IF (CTEST_DO_MEMORY_TESTING)
-          MESSAGE("\nRunning memory testing for package '${TRIBITS_PACKAGE}' ...\n")
-          PRINT_VAR(CTEST_MEMORYCHECK_COMMAND)
-          PRINT_VAR(CTEST_MEMORYCHECK_COMMAND_OPTIONS)
-          PRINT_VAR(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE)
-          CTEST_MEMCHECK(
-            BUILD "${CTEST_BINARY_DIRECTORY}"
-            PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-            INCLUDE_LABEL "^${TRIBITS_PACKAGE}$")
-          IF (CTEST_DO_SUBMIT)
-            TRIBITS_CTEST_SUBMIT( PARTS MemCheck )
-          ENDIF()
-        ENDIF()
+    SET(PBP_TESTS_PASSED TRUE)
 
-        IF (BUILD_OR_TEST_FAILED)
-          LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-        ENDIF()
+    IF (NOT PBP_BUILD_LIBS_PASSED AND CTEST_DO_TEST)
 
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping tests since libray build failed!\n")
+
+      SET(PBP_TESTS_PASSED FALSE)
+
+    ELSEIF (NOT CTEST_DO_TEST)
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping running tests due"
+        " to CTEST_DO_TEST='${CTEST_DO_TEST}'!")
+
+    ELSE()
+      
+      #
+      # D.1) Run the regular tests
+      #
+
+      SET(PBP_TESTS_PASSED FALSE)
+
+      # Run the tests that match the ${TRIBITS_PACKAGE} name
+      MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}'"
+        " (parallel level ${CTEST_PARALLEL_LEVEL}) ...\n")
+      TRIBITS_REMOVE_LAST_TEST_FAILED_LOG_FILE()
+      CTEST_TEST(
+        BUILD "${CTEST_BINARY_DIRECTORY}"
+        PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
+        INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
+          )
+      # See if a 'LastTestsFailed*.log' file exists to determine if there are
+      # failed tests
+      TRIBITS_FIND_LAST_TEST_FAILED_LOG_FILE()
+      IF (FAILED_TEST_LOG_FILE)
+        MESSAGE("\n${TRIBITS_PACKAGE}: File '${FAILED_TEST_LOG_FILE}'"
+          " exists so there were failed tests!")
       ELSE()
+        MESSAGE("\n${TRIBITS_PACKAGE}: File '${FAILED_TEST_LOG_FILE}'"
+	  " does NOT exist so all tests passed!")
+        SET(PBP_TESTS_PASSED TRUE)
+      ENDIF()
+      # 2009/12/05: ToDo: We need to add an argument to CTEST_TEST(...)
+      # called something like 'NUMBER_FAILED numFailedTests' to allow us to
+      # detect when the tests have filed.
+      IF (CTEST_DO_SUBMIT)
+        TRIBITS_CTEST_SUBMIT( PARTS Test )
+      ENDIF()
 
-        MESSAGE("FAILED library build for package '${TRIBITS_PACKAGE}'")
-        LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
-        LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
+      #
+      # D.2) Collect coverage results
+      #
+
+      IF (CTEST_DO_COVERAGE_TESTING)
+
+        MESSAGE("\nRunning coverage for package '${TRIBITS_PACKAGE}' ...\n")
+
+        CTEST_COVERAGE(
+          BUILD "${CTEST_BINARY_DIRECTORY}"
+          LABELS ${TRIBITS_PACKAGE} ${TRIBITS_PACKAGE}Libs ${TRIBITS_PACKAGE}Exes
+          )
+
+        IF (CTEST_DO_SUBMIT)
+          TRIBITS_CTEST_SUBMIT( PARTS Coverage )
+        ENDIF()
 
       ENDIF()
 
     ENDIF()
+
+    #
+    # E) Run memory testing
+    #
+
+    IF (NOT PBP_BUILD_LIBS_PASSED AND CTEST_DO_MEMORY_TESTING)
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping running memory checking"
+	 "tests since libray build failed!\n")
+
+    ELSEIF (NOT CTEST_DO_MEMORY_TESTING)
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping running memory checking tests due"
+        " to CTEST_DO_MEMORY_TESTING='${CTEST_DO_MEMORY_TESTING}'!")
+
+    ELSE()
+
+      MESSAGE("\nRunning memory testing for package '${TRIBITS_PACKAGE}' ...\n")
+
+      PRINT_VAR(CTEST_MEMORYCHECK_COMMAND)
+      PRINT_VAR(CTEST_MEMORYCHECK_COMMAND_OPTIONS)
+      PRINT_VAR(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE)
+
+      CTEST_MEMCHECK(
+        BUILD "${CTEST_BINARY_DIRECTORY}"
+        PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
+        INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
+	)
+      # ToDo: Determine if memory testing passed or not and affect overall
+      # pass/fail!
+
+      IF (CTEST_DO_SUBMIT)
+        TRIBITS_CTEST_SUBMIT( PARTS MemCheck )
+      ENDIF()
+
+    ENDIF()
+
+    #
+    # F) Record if this package failed the build or any tests
+    #
+
+    IF (NOT PBP_CONFIGURE_PASSED OR NOT PBP_BUILD_LIBS_PASSED)
+      LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
+    ENDIF()
+
+    IF (NOT PBP_BUILD_PASSED OR NOT PBP_TESTS_PASSED)
+      LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
+    ENDIF()
+
+    #
+    # G) Do submit of update
+    #
 
     IF (CTEST_DO_SUBMIT)
       MESSAGE("\nSubmit the update file that will trigger the notification email ...\n")
@@ -1164,13 +1177,14 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
   ENDFOREACH(TRIBITS_PACKAGE)
 
-  IF(${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES)
+  IF (${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES)
     MESSAGE(
       "\nFinal set packages that failed to configure or have the libraries build:"
       " '${${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES}'")
   ENDIF()
 
-  MESSAGE("\nDone with the incremental building and testing of ${PROJECT_NAME} packages!\n")
+  MESSAGE("\nDone with the incremental building and testing of"
+    " ${PROJECT_NAME} packages!\n")
 
 ENDMACRO()
 
@@ -1182,13 +1196,16 @@ ENDMACRO()
 # Sets ${PROJECT_NAME}_FAILED_PACKAGES as an indication if there are any
 # failures.
 #
-
 MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
 
   MESSAGE(
     "\n***"
     "\n*** Configure, build, test and submit results all-at-once for all enabled packages ..."
     "\n***")
+
+  SET(AAO_CONFIGURE_FAILED FALSE)
+  SET(AAO_BUILD_FAILED FALSE)
+  SET(AAO_INSTALL_FAILED FALSE)
 
   #
   # A) Define mapping from labels to subprojects and gather configure arguments
@@ -1203,20 +1220,25 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
 
   # Create CONFIGURE_OPTIONS
   TRIBITS_FWD_CMAKE_CONFIG_ARGS_0()
-  IF (${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES)
-    LIST(APPEND CONFIGURE_OPTIONS
-      "-D${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES:BOOL=TRUE" )
-  ENDIF()
   IF (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
     LIST(APPEND CONFIGURE_OPTIONS
-      "-D${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON"
-      )
+      "-D${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON" )
+    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
+      LIST(APPEND CONFIGURE_OPTIONS
+        "-D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}=OFF" )
+    ENDFOREACH()
+    # NOTE: Above we have to explicitly set disables for the excluded pacakges
+    # since we are pssing in ${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON.  This is
+    # effectively the "black-listing" approach.
   ELSE()
     FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST})
       LIST(APPEND CONFIGURE_OPTIONS
-         "-D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}=ON"
-        )
+         "-D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}=ON" )
     ENDFOREACH()
+    # NOTE: Above we don't have to consider the packages excluded in
+    # ${PROJECT_NAME}_EXCLUDE_PACKAGES because they are not enabled ad this
+    # point and therefore no in ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST.
+    # This is effectively the "white-listing" approach.
   ENDIF()
   LIST(APPEND CONFIGURE_OPTIONS
     "-D${PROJECT_NAME}_ENABLE_TESTS:BOOL=ON")
@@ -1227,7 +1249,13 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   # B) Configure the package and its dependent packages
   #
 
-  IF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
+  IF (NOT CTEST_DO_CONFIGURE)
+
+    MESSAGE("\nSkipping configure due to CTEST_DO_CONFIGURE='${CTEST_DO_CONFIGURE}'!\n")
+    SET(AAO_CONFIGURE_PASSED TRUE)
+    # Just assume configure passeed for the purpose of running the build.
+
+  ELSEIF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
 
     MESSAGE("Skipping actual ctest_configure() because"
       " CTEST_DEPENDENCY_HANDLING_UNIT_TESTING='${CTEST_DEPENDENCY_HANDLING_UNIT_TESTING}'!"
@@ -1251,6 +1279,7 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
     IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
       MESSAGE("Configure FAILED!")
       SET(AAO_CONFIGURE_PASSED FALSE)
+      SET(AAO_CONFIGURE_FAILED TRUE)
     ELSE()
       MESSAGE("Configure PASSED!")
       SET(AAO_CONFIGURE_PASSED TRUE)
@@ -1266,9 +1295,8 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
       LIST(APPEND CTEST_NOTES_FILES "${CMAKE_CACHE_CLEAN_FILE}")
     ENDIF()
   
-    SET(REPO_VERSION_FILE "${CTEST_BINARY_DIRECTORY}/${PROJECT_NAME}RepoVersion.txt")
     IF (EXISTS "${REPO_VERSION_FILE}")
-      LIST(APPEND CTEST_NOTES_FILES "${REPO_VERSION_FILE}")
+      SET(CTEST_NOTES_FILES "${REPO_VERSION_FILE};${CTEST_NOTES_FILES}")
     ENDIF()
   
     PRINT_VAR(CTEST_NOTES_FILES)
@@ -1285,7 +1313,11 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   # C) Do the build
   #
 
-  IF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND AAO_CONFIGURE_PASSED)
+  IF (NOT CTEST_DO_BUILD)
+
+    MESSAGE("\nSkipping build due to CTEST_DO_BUILD='${CTEST_DO_BUILD}'!\n")
+
+  ELSEIF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND AAO_CONFIGURE_PASSED)
 
     MESSAGE("Skipping build because"
       " CTEST_DEPENDENCY_HANDLING_UNIT_TESTING='${CTEST_DEPENDENCY_HANDLING_UNIT_TESTING}'!"
@@ -1307,6 +1339,7 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   
     IF (NOT "${BUILD_ALL_NUM_ERRORS}" EQUAL "0")
       MESSAGE("Build FAILED!")
+      SET(AAO_BUILD_FAILED TRUE)
     ELSE()
       MESSAGE("Build PASSED!")
     ENDIF()
@@ -1314,6 +1347,36 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
     # Submit the build for all target
     IF (CTEST_DO_SUBMIT)
       TRIBITS_CTEST_SUBMIT( PARTS build )
+    ENDIF()
+
+    IF (CTEST_DO_INSTALL)
+
+      MESSAGE("")
+      MESSAGE("Installing (i.e. building target 'install_package_by_package') ...")
+      MESSAGE("")
+
+      CTEST_BUILD(
+        BUILD "${CTEST_BINARY_DIRECTORY}"
+        TARGET install_package_by_package
+        RETURN_VALUE  BUILD_INSTALL_RETURN_VAL
+        NUMBER_ERRORS  BUILD_INSTALL_NUM_ERRORS
+        )
+      MESSAGE("Build install output:"
+        " BUILD_INSTALL_NUM_ERRORS='${BUILD_INSTALL_NUM_ERRORS}',"
+        "BUILD_INSTALL_RETURN_VAL='${BUILD_INSTALL_RETURN_VAL}'" )
+
+      IF (NOT "${BUILD_INSTALL_NUM_ERRORS}" EQUAL "0")
+        MESSAGE("Install FAILED!")
+        SET(AAO_INSTALL_FAILED TRUE)
+      ELSE()
+        MESSAGE("Install PASSED!")
+      ENDIF()
+
+      # Submit the build for all target
+      IF (CTEST_DO_SUBMIT)
+        TRIBITS_CTEST_SUBMIT( PARTS build )
+      ENDIF()
+
     ENDIF()
 
   ELSE()
@@ -1369,7 +1432,6 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
     TRIBITS_FIND_LAST_TEST_FAILED_LOG_FILE()
     IF (FAILED_TEST_LOG_FILE)
       MESSAGE("File '${FAILED_TEST_LOG_FILE}' exists so there were non-passing tests!")
-      SET(BUILD_OR_TEST_FAILED TRUE)
     ELSE()
       MESSAGE("File '${FAILED_TEST_LOG_FILE}' does NOT exist so all tests passed!")
     ENDIF()
@@ -1467,7 +1529,7 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   # G) Determine final pass/fail by gathering list of failing packages
   #
 
-  IF (NOT AAO_CONFIGURE_PASSED)
+  IF (AAO_CONFIGURE_FAILED OR AAO_BUILD_FAILED OR AAO_INSTALL_FAILED)
     IF (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
       # Special value "ALL_PACAKGES" so that it will trigger enabling all
       # packages on the next CI iteration!
@@ -1476,6 +1538,20 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
       # Specific packages were selected to be tested so fail all of them!
       SET(${PROJECT_NAME}_FAILED_PACKAGES  ${${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST})
     ENDIF()
+    # NOTE: With the all-at-once appraoch, there is no way to determine which
+    # packages have build or install failures given the current CTEST_BUILD()
+    # command.  And since some build targets don't get used in tests, we can't
+    # look at what packages have test failures in order to know that a build
+    # failure will cause a test failure.  And in the case of install failures,
+    # those will never cause test failures.  Therefore, if there are any build
+    # or install failures, we just have to assume that any tested package
+    # could have failed.  Hense, we set the above just like for a (global)
+    # configure failures.  Perhaps we couild read the generated *.xml files to
+    # figure that out but that is not worth the work righ now.  The only bad
+    # consequence of this is that a CI build would end up building and testing
+    # every package even if only one dowstream package had a build failure,
+    # for example.  That is just one of the downsides of the all-at-once
+    # appraoch vs the package-by-package appraoch.
   ELSEIF (FAILED_TEST_LOG_FILE)
     TRIBITS_GET_FAILED_PACKAGES_FROM_FAILED_TESTS("${FAILED_TEST_LOG_FILE}"
       ${PROJECT_NAME}_FAILED_PACKAGES )

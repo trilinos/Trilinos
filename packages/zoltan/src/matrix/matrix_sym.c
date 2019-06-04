@@ -88,7 +88,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 
   pinwgt = (float*)ZOLTAN_MALLOC((matrix->nPins*2+matrix->nY)*matrix->pinwgtdim*sizeof(float));
 
-  if (((matrix->nPins*2+matrix->nY)*matrix->pinwgtdim) && !pinwgt) MEMORY_ERROR;
+  if ((matrix->nPins*2+matrix->nY) && matrix->pinwgtdim && !pinwgt) MEMORY_ERROR;
 
   for (i=0, cnt = 0 ; i < matrix->nY ; ++i) {
     for (j = matrix->ystart[i] ; j < matrix->yend[i] ; ++j) {

@@ -31,6 +31,7 @@
 #define SACADO_FAD_EXP_VIEWSTORAGE_HPP
 
 #include <type_traits>
+#include <memory>
 
 #include "Sacado_DynamicArrayTraits.hpp"
 #include "Sacado_mpl_integral_nonzero_constant.hpp"
@@ -39,6 +40,10 @@ namespace Sacado {
 
   namespace Fad {
   namespace Exp {
+
+    // Class representing a pointer to ViewFad so that &ViewFad is supported
+    template <typename T, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr;
 
     /*!
      * \brief Derivative array storage class that is a view into a contiguous
@@ -51,7 +56,7 @@ namespace Sacado {
     private:
 
       // Enumerated flag so logic is evaluated at compile-time
-      enum { stride_one = 1 == static_stride };
+      static constexpr bool stride_one = (1 == static_stride);
 
     public:
 
@@ -110,7 +115,7 @@ namespace Sacado {
       //! Assignment
       KOKKOS_INLINE_FUNCTION
       ViewStorage& operator=(const ViewStorage& x) {
-        if (this != &x) {
+        if (this != std::addressof(x)) {
           *val_ = *x.val_;
           if (stride_one)
             for (int i=0; i<sz_.value; ++i)
@@ -175,7 +180,7 @@ namespace Sacado {
       //! Returns derivative component \c i with bounds checking
       KOKKOS_INLINE_FUNCTION
       T dx(int i) const {
-        return sz_.value ? dx_[ stride_one ? i : i * stride_.value ] : T(0.);
+        return unsigned(sz_.value) ? dx_[ stride_one ? i : i * stride_.value ] : T(0.);
       }
 
       //! Returns derivative component \c i without bounds checking
@@ -188,6 +193,13 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       const T& fastAccessDx(int i) const {
         return dx_[ stride_one ? i : i * stride_.value ];
+      }
+
+      //! Overload of addressof operator
+      KOKKOS_INLINE_FUNCTION
+      ViewFadPtr<T,static_length,static_stride,U> operator&() const {
+        return ViewFadPtr<T,static_length,static_stride,U>(
+          this->dx_, this->val_, this->sz_.value, this->stride_.value);
       }
 
     protected:

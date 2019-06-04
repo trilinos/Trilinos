@@ -174,7 +174,7 @@ getTimeStepControl() const
 
 template<class Scalar>
 void IntegratorPseudoTransientAdjointSensitivity<Scalar>::
-setInitialState(Scalar t0,
+initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0,
@@ -187,7 +187,6 @@ setInitialState(Scalar t0,
   using Thyra::VectorSpaceBase;
   using Thyra::assign;
   using Thyra::createMember;
-  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
   //
   // Create and initialize product X, Xdot, Xdotdot
@@ -216,8 +215,8 @@ setInitialState(Scalar t0,
   else
     assign(Ydotdot->getNonconstMultiVector().ptr(), *ydotdot0);
 
-  state_integrator_->setInitialState(t0, x0, xdot0, xdotdot0);
-  sens_integrator_->setInitialState(t0, Y, Ydot, Ydotdot);
+  state_integrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0);
+  sens_integrator_->initializeSolutionHistory(t0, Y, Ydot, Ydotdot);
 }
 
 template<class Scalar>
@@ -380,16 +379,22 @@ buildSolutionHistory()
     RCP<VectorBase<Scalar> > x_b = x;
 
     // X-Dot
-    RCP<DPV> x_dot = defaultProductVector(prod_space);
-    assign(x_dot->getNonconstVectorBlock(0).ptr(), *(state->getXDot()));
-    assign(x_dot->getNonconstVectorBlock(1).ptr(), zero);
-    RCP<VectorBase<Scalar> > x_dot_b = x_dot;
+    RCP<VectorBase<Scalar> > x_dot_b;
+    if (state->getXDot() != Teuchos::null) {
+      RCP<DPV> x_dot = defaultProductVector(prod_space);
+      assign(x_dot->getNonconstVectorBlock(0).ptr(), *(state->getXDot()));
+      assign(x_dot->getNonconstVectorBlock(1).ptr(), zero);
+      x_dot_b = x_dot;
+    }
 
     // X-Dot-Dot
-    RCP<DPV> x_dot_dot = defaultProductVector(prod_space);
-    assign(x_dot_dot->getNonconstVectorBlock(0).ptr(), *(state->getXDotDot()));
-    assign(x_dot_dot->getNonconstVectorBlock(1).ptr(), zero);
-    RCP<VectorBase<Scalar> > x_dot_dot_b = x_dot_dot;
+    RCP<VectorBase<Scalar> > x_dot_dot_b;
+    if (state->getXDotDot() != Teuchos::null) {
+      RCP<DPV> x_dot_dot = defaultProductVector(prod_space);
+      assign(x_dot_dot->getNonconstVectorBlock(0).ptr(),*(state->getXDotDot()));
+      assign(x_dot_dot->getNonconstVectorBlock(1).ptr(), zero);
+      x_dot_dot_b = x_dot_dot;
+    }
 
     RCP<SolutionState<Scalar> > prod_state =
       rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
@@ -417,16 +422,22 @@ buildSolutionHistory()
     RCP<VectorBase<Scalar> > x_b = x;
 
     // X-Dot
-    RCP<DPV> x_dot = defaultProductVector(prod_space);
-    assign(x_dot->getNonconstVectorBlock(0).ptr(), *frozen_x_dot);
-    assign(x_dot->getNonconstVectorBlock(1).ptr(), *(state->getXDot()));
-    RCP<VectorBase<Scalar> > x_dot_b = x_dot;
+    RCP<VectorBase<Scalar> > x_dot_b;
+    if (state->getXDot() != Teuchos::null) {
+      RCP<DPV> x_dot = defaultProductVector(prod_space);
+      assign(x_dot->getNonconstVectorBlock(0).ptr(), *frozen_x_dot);
+      assign(x_dot->getNonconstVectorBlock(1).ptr(), *(state->getXDot()));
+      x_dot_b = x_dot;
+    }
 
     // X-Dot-Dot
-    RCP<DPV> x_dot_dot = defaultProductVector(prod_space);
-    assign(x_dot_dot->getNonconstVectorBlock(0).ptr(), *frozen_x_dot_dot);
-    assign(x_dot_dot->getNonconstVectorBlock(1).ptr(), *(state->getXDotDot()));
-    RCP<VectorBase<Scalar> > x_dot_dot_b = x_dot_dot;
+    RCP<VectorBase<Scalar> > x_dot_dot_b;
+    if (state->getXDotDot() != Teuchos::null) {
+      RCP<DPV> x_dot_dot = defaultProductVector(prod_space);
+      assign(x_dot_dot->getNonconstVectorBlock(0).ptr(), *frozen_x_dot_dot);
+      assign(x_dot_dot->getNonconstVectorBlock(1).ptr(),*(state->getXDotDot()));
+      x_dot_dot_b = x_dot_dot;
+    }
 
     RCP<SolutionState<Scalar> > prod_state =
       rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),

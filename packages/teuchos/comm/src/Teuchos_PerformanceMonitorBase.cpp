@@ -306,9 +306,6 @@ namespace Teuchos {
     // \param mid [in] The value of "mid" in the implementation of \c
     //   mergeCounterNamesHelper().
     //
-    // \param localNames [in] List of counter names belonging to the
-    //   calling MPI process.
-    //
     // \param globalNames [in/out] Only accessed if myRank == left.
     //   If so, on input: the intermediate reduction result of the
     //   union resp. intersection (depending on \c setOp).  On output:
@@ -324,7 +321,6 @@ namespace Teuchos {
                            const int myRank,
                            const int left,
                            const int mid,
-                           const Array<std::string>& localNames,
                            Array<std::string>& globalNames,
                            const ECounterSetOp setOp)
     {
@@ -362,23 +358,28 @@ namespace Teuchos {
           // Compute the set intersection / union as specified by the
           // enum.
           Array<string> newNames;
-          if (setOp == Intersection)
-            std::set_intersection (globalNames.begin(), globalNames.end(),
-                                   otherNames.begin(), otherNames.end(),
-                                   std::back_inserter (newNames));
-          else if (setOp == Union)
-            std::set_union (globalNames.begin(), globalNames.end(),
-                            otherNames.begin(), otherNames.end(),
-                            std::back_inserter (newNames));
-          else
-            TEUCHOS_TEST_FOR_EXCEPTION(setOp != Intersection && setOp != Union,
-                               std::logic_error,
-                               "Invalid set operation enum value.  Please "
-                               "report this bug to the Teuchos developers.");
-          globalNames.swap (newNames);
+          if ( std::is_sorted(globalNames.begin(), globalNames.end()) &&
+              std::is_sorted(otherNames.begin(), otherNames.end())) {
+            if (setOp == Intersection)
+              std::set_intersection (globalNames.begin(), globalNames.end(),
+                                     otherNames.begin(), otherNames.end(),
+                                     std::back_inserter (newNames));
+            else if (setOp == Union)
+              std::set_union (globalNames.begin(), globalNames.end(),
+                              otherNames.begin(), otherNames.end(),
+                              std::back_inserter (newNames));
+            else
+              TEUCHOS_TEST_FOR_EXCEPTION(setOp != Intersection && setOp != Union,
+                                 std::logic_error,
+                                 "Invalid set operation enum value.  Please "
+                                 "report this bug to the Teuchos developers.");
+            globalNames.swap (newNames);
+          } else { // Need a brute force merge
+            unsortedMergePair(otherNames, globalNames, setOp);
+          }
         }
       else if (myRank == mid)
-        sendStrings (comm, localNames, left);
+        sendStrings (comm, globalNames, left);
       else
         TEUCHOS_TEST_FOR_EXCEPTION(myRank != left && myRank != mid,
                            std::logic_error,
@@ -386,6 +387,7 @@ namespace Teuchos {
                            << " nor mid=" << mid << ".  Please report this "
                            "bug to the Teuchos developers.");
     }
+
 
     // Recursive helper function for \c mergeCounterNames().
     //
@@ -456,11 +458,54 @@ namespace Teuchos {
           // Combine the results of the recursive step.
           if (myRank == left || myRank == mid)
             mergeCounterNamesPair (comm, myRank, left, mid,
-                                   localNames, globalNames, setOp);
+                                   globalNames, setOp);
         }
     }
 
   } // namespace (anonymous)
+
+  /**
+   * merge for unsorted lists.  New entries are at the bottom of the list
+   * @param localNames - The calling MPI process' list of (local)
+   * counter names.
+   * @param globalNames - Global list of names
+   * @param setOp If Intersection, globalNames on output
+   *   contains the intersection of all sets of counter names.  If
+   *   Union, globalNames on output contains the union of all sets of
+   *   counter names.
+   */
+  void unsortedMergePair(const Array<std::string>& localNames,
+                         Array<std::string>& globalNames,
+                         const ECounterSetOp setOp){
+    if (setOp == Union) {
+      for (int i=0; i<localNames.size();++i) {
+        bool found=false;
+        // If the name is not in globalNames add it
+        for (int j=0;j<globalNames.size() && !found; ++j)
+          if (localNames[i] == globalNames[j])
+            found=true;
+        if (!found)
+          globalNames.push_back(localNames[i]);
+      }
+    } else if (setOp == Intersection) {
+      for (int i=0; i<globalNames.size();++i) {
+        bool found=false;
+        // If the name is not in localNames remove it
+        for (int j=0;j<localNames.size() && !found; ++j)
+          if (localNames[j] == globalNames[i])
+            found=true;
+        if (!found) {
+          globalNames.remove(i);
+          --i;
+        }
+      }
+    } else
+      TEUCHOS_TEST_FOR_EXCEPTION(setOp != Intersection && setOp != Union,
+                                       std::logic_error,
+                                       "Invalid set operation enum value.  Please "
+                                       "report this bug to the Teuchos developers.");
+  }
+
 
   void
   mergeCounterNames (const Comm<int>& comm,

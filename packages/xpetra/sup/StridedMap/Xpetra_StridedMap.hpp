@@ -101,15 +101,6 @@ namespace Xpetra {
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
   private:
 
   typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory_t;
@@ -140,6 +131,21 @@ namespace Xpetra {
      *  \pre stridingInfo.size() > 0
      *  \pre numGlobalElements % getFixedBlockSize() == 0
      */
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
+    StridedMap (UnderlyingLib xlib,
+                global_size_t numGlobalElements,
+                GlobalOrdinal indexBase,
+                std::vector<size_t>& stridingInfo,
+                const Teuchos::RCP< const Teuchos::Comm< int > >& comm,
+                LocalOrdinal stridedBlockId,  // FIXME (mfh 03 Sep 2014) This breaks for unsigned LocalOrdinal
+                GlobalOrdinal offset,
+                LocalGlobal lg,
+                const Teuchos::RCP< Node >& /* node */) 
+      : StridedMap(xlib, numGlobalElements, indexBase, stridingInfo, comm,
+                   stridedBlockId, offset, lg)
+      {}
+#endif // #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     StridedMap (UnderlyingLib xlib,
                 global_size_t numGlobalElements,
                 GlobalOrdinal indexBase,
@@ -147,8 +153,7 @@ namespace Xpetra {
                 const Teuchos::RCP< const Teuchos::Comm< int > >& comm,
                 LocalOrdinal stridedBlockId = -1,  // FIXME (mfh 03 Sep 2014) This breaks for unsigned LocalOrdinal
                 GlobalOrdinal offset = 0,
-                LocalGlobal lg = GloballyDistributed,
-                const Teuchos::RCP< Node >& node = defaultArgNode())
+                LocalGlobal lg = GloballyDistributed)
       : stridingInfo_ (stridingInfo),
         stridedBlockId_ (stridedBlockId),
         offset_ (offset),
@@ -178,7 +183,7 @@ namespace Xpetra {
         global_size_t numGlobalNodes = numGlobalElements / blkSize;
 
         // build an equally distributed node map
-        RCP<Map> nodeMap = MapFactory_t::Build(xlib, numGlobalNodes, indexBase, comm, lg, node);
+        RCP<Map> nodeMap = MapFactory_t::Build(xlib, numGlobalNodes, indexBase, comm, lg);
         global_size_t numLocalNodes = nodeMap->getNodeNumElements();
 
         // translate local node ids to local dofs
@@ -201,7 +206,7 @@ namespace Xpetra {
             dofgids[i*nDofsPerNode + j] = indexBase_ + offset_ + (nodeGID - indexBase_)*Teuchos::as<GlobalOrdinal>(blkSize) + Teuchos::as<GlobalOrdinal>(nStridedOffset + j);
         }
 
-        map_ = MapFactory_t::Build(xlib, numGlobalElements, dofgids, indexBase, comm, node);
+        map_ = MapFactory_t::Build(xlib, numGlobalElements, dofgids, indexBase, comm);
 
         if (stridedBlockId == -1) {
           TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsPerNode), Exceptions::RuntimeError,
@@ -217,7 +222,7 @@ namespace Xpetra {
                                      "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
         }
       } else {
-        map_ = MapFactory_t::Build(xlib, numGlobalElements, indexBase, comm, lg, node);
+        map_ = MapFactory_t::Build(xlib, numGlobalElements, indexBase, comm, lg);
       }
 
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
@@ -244,9 +249,17 @@ namespace Xpetra {
      *  \pre numGlobalElements % getFixedBlockSize() == 0
      *  \pre numLocalElements % getFixedBlockSize() == 0
      */
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     StridedMap(UnderlyingLib xlib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId, GlobalOrdinal offset,
+               const Teuchos::RCP< Node > & /* node */)
+      : StridedMap(xlib, numGlobalElements, numLocalElements, indexBase, 
+                   stridingInfo, comm, stridedBlockId, offset)
+    {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    StridedMap(UnderlyingLib xlib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo,
+               const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset), indexBase_(indexBase)
     {
       size_t blkSize = getFixedBlockSize();
@@ -278,7 +291,7 @@ namespace Xpetra {
         global_size_t numLocalNodes = numLocalElements / blkSize;
 
         // build an equally distributed node map
-        RCP<Map> nodeMap = MapFactory_t::Build(xlib, numGlobalNodes, numLocalNodes, indexBase, comm, node);
+        RCP<Map> nodeMap = MapFactory_t::Build(xlib, numGlobalNodes, numLocalNodes, indexBase, comm);
 
         // translate local node ids to local dofs
         size_t nStridedOffset = 0;
@@ -300,7 +313,7 @@ namespace Xpetra {
             dofgids[i*nDofsPerNode + j] = indexBase_ + offset_ + (nodeGID - indexBase_)*Teuchos::as<GlobalOrdinal>(blkSize) + Teuchos::as<GlobalOrdinal>(nStridedOffset + j);
         }
 
-        map_ = MapFactory_t::Build(xlib, numGlobalElements, dofgids, indexBase, comm, node);
+        map_ = MapFactory_t::Build(xlib, numGlobalElements, dofgids, indexBase, comm);
 
         if (stridedBlockId == -1) {
           TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsPerNode), Exceptions::RuntimeError,
@@ -317,7 +330,7 @@ namespace Xpetra {
         }
 
       } else {
-        map_ = MapFactory_t::Build(xlib, numGlobalElements, numLocalElements, indexBase, comm, node);
+        map_ = MapFactory_t::Build(xlib, numGlobalElements, numLocalElements, indexBase, comm);
       }
 
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
@@ -333,9 +346,17 @@ namespace Xpetra {
      *  \pre elementList.size() % getFixedBlockSize() == 0
      *  \post CheckConsistency() == true
      */
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     StridedMap(UnderlyingLib xlib, global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase,
-               std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId = -1,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId,
+               const Teuchos::RCP< Node > & /* node */)
+      : StridedMap(xlib, numGlobalElements, elementList, indexBase,
+                   stridingInfo, comm, stridedBlockId)
+     {}
+#endif  // TPETRA_ENABLE_DEPRECATED_CODE
+    StridedMap(UnderlyingLib xlib, global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase,
+               std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId = -1)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), indexBase_(indexBase)
     {
       size_t blkSize = getFixedBlockSize();
@@ -372,7 +393,7 @@ namespace Xpetra {
                                    "StridedMap::StridedMap: stridingInfo not valid: stridingBlockInfo[stridedBlockId] is not an integer multiple of elementList.size().");
       }
 
-      map_ = MapFactory_t::Build(xlib, numGlobalElements, elementList, indexBase, comm, node);
+      map_ = MapFactory_t::Build(xlib, numGlobalElements, elementList, indexBase, comm);
 
       // calculate offset_
 
@@ -396,7 +417,7 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
     }
 
-    StridedMap(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, GlobalOrdinal indexBase, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)
+    StridedMap(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, GlobalOrdinal /* indexBase */, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset), indexBase_(map->getIndexBase())
     {
       // TAW: 11/24/15
@@ -666,8 +687,10 @@ namespace Xpetra {
     //! Get the Comm object for this Map.
     Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { return map_->getComm(); }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get the Node object for this Map.
     Teuchos::RCP<Node>  getNode() const { return map_->getNode(); }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     RCP<const Map> removeEmptyProcesses  () const { return map_->removeEmptyProcesses(); }
     RCP<const Map> replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return map_->replaceCommWithSubset(newComm); }

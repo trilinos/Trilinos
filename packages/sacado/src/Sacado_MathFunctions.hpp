@@ -37,11 +37,14 @@
 #include "Sacado_Fad_ExpressionFwd.hpp"
 #include "Sacado_SFINAE_Macros.hpp"
 
+// Note:  Sacado::Fad::Ops are forward-declared here, instead of in macros
+// below.
+#include "Sacado_Fad_Ops_Fwd.hpp"
+
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
-    template <typename T> class FADOP;                                  \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
@@ -140,7 +143,6 @@ UNARYFUNC_MACRO(cbrt, CbrtOp)
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
-    template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class ConstExpr;                              \
     template <typename T> struct IsFadExpr;                             \
     template <typename T> struct ExprLevel;                             \
@@ -428,6 +430,100 @@ BINARYFUNC_MACRO(max, MaxOp)
 BINARYFUNC_MACRO(min, MinOp)
 
 #undef BINARYFUNC_MACRO
+
+#if defined(HAVE_SACADO_KOKKOSCORE)
+
+namespace Sacado {
+#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+  namespace Fad {
+    template <typename ValT, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr;
+    template <typename T> class DFad;
+    template <typename T, int N> class SFad;
+    template <typename T, int N> class SLFad;
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(DFad<T>* dst, const DFad<T>& x);
+    template <typename T, int N>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(SFad<T,N>* dst, const SFad<T,N>& x);
+    template <typename T, int N>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(SLFad<T,N>* dst, const SLFad<T,N>& x);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+  }
+#endif
+  namespace ELRFad {
+    template <typename ValT, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr;
+    template <typename T> class DFad;
+    template <typename T, int N> class SFad;
+    template <typename T, int N> class SLFad;
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(DFad<T>* dst, const DFad<T>& x);
+    template <typename T, int N>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(SFad<T,N>* dst, const SFad<T,N>& x);
+    template <typename T, int N>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(SLFad<T,N>* dst, const SLFad<T,N>& x);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+  }
+  namespace CacheFad {
+    template <typename ValT, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr;
+    template <typename T> class DFad;
+    template <typename T, int N> class SFad;
+    template <typename T, int N> class SLFad;
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(DFad<T>* dst, const DFad<T>& x);
+    template <typename T, int N>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(SFad<T,N>* dst, const SFad<T,N>& x);
+    template <typename T, int N>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(SLFad<T,N>* dst, const SLFad<T,N>& x);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+  }
+  namespace ELRCacheFad {
+    template <typename ValT, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr;
+    template <typename T> class DFad;
+    template <typename T, int N> class SFad;
+    template <typename T, int N> class SLFad;
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(DFad<T>* dst, const DFad<T>& x);
+    template <typename T, int N>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(SFad<T,N>* dst, const SFad<T,N>& x);
+    template <typename T, int N>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(SLFad<T,N>* dst, const SLFad<T,N>& x);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+  }
+}
+
+namespace Kokkos {
+#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+  using Sacado::Fad::atomic_add;
+#endif
+  using Sacado::ELRFad::atomic_add;
+  using Sacado::CacheFad::atomic_add;
+  using Sacado::ELRCacheFad::atomic_add;
+}
+
+#endif
 
 #ifdef SACADO_ENABLE_NEW_DESIGN
 #include "Sacado_Fad_Exp_MathFunctions.hpp"

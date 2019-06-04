@@ -14,12 +14,13 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD
   PHX_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD
-  "Enable to use backwards compatible mode where multiple evaluators can be registered that evalaute the same field. Phalanx will use the first evaluator it finds. This should default to off but for backwards compatibility with current codes, we default this to ON."
-  ON )
+  "Enable to use backwards compatible mode where multiple evaluators can be registered that evalaute the same field. Phalanx will use the first evaluator it finds. Default to OFF but unless Panzer is enabled. For backwards compatibility with Panzer users, we default this to ON."
+  "${${PROJECT_NAME}_ENABLE_Panzer}" )
+MESSAGE(STATUS "Allow Multiple Evaluator Registration for Same Field: ${${PACKAGE_NAME}_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD}")
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
   PHX_ETI
-  "Build with explicit template instation enabled."
+  "Build with explicit template instation enabled in the examples."
   OFF )
 
 # If not explicitly defined by the user, pick a default node type that
@@ -98,6 +99,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors wrapped around each evaluator."
   "${${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR}" )
 
+# Use only for CUDA builds
+MESSAGE(STATUS "Sacado Hierarchic DFAD support: ${Sacado_ENABLE_HIERARCHICAL_DFAD}")
+
 # Experimental device dag support
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEVICE_DAG
   PHX_ENABLE_DEVICE_DAG
@@ -108,8 +112,8 @@ MESSAGE(STATUS "Experimental Device DAG support: ${PHX_ENABLE_DEVICE_DAG}")
 # Enforce that if device type is cuda and device dag enabled then relocatable device code must be enabled
 IF(${PACKAGE_NAME}_ENABLE_DEVICE_DAG)
   IF(PHX_KOKKOS_DEVICE_TYPE_CUDA)
-    IF(NOT Kokkos_ENABLE_Cuda_RDC)
-      MESSAGE(FATAL_ERROR, " Enabling ${PACKAGE_NAME}_ENABLE_DEVICE_DAG support with a CUDA device type in Phalanx requires compilation with relocatable device code! Please reconfigure with Kokkos_ENABLE_Cuda_RDC=ON and add --relocatable-device-code=true to the CMAKE_CXX_FLAGS.")
+    IF(NOT Kokkos_ENABLE_Cuda_Relocatable_Device_Code)
+      MESSAGE(FATAL_ERROR, " Enabling ${PACKAGE_NAME}_ENABLE_DEVICE_DAG support with a CUDA device type in Phalanx requires compilation with relocatable device code! Please reconfigure with Kokkos_ENABLE_Cuda_Relocatable_Device_Code=ON.")
     ENDIF()
   ENDIF()
 ENDIF()

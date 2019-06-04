@@ -44,7 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -207,8 +207,7 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
 
   int gblSuccess = 0; // output argument
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   auto world_size = comm->getSize();
   auto my_rank = comm->getRank();
@@ -260,7 +259,7 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
   import_type importer(unique_map, default_map);
 
   // Matrix built with default map
-  matrix_type default_mtx_fwd(default_map, 3, Tpetra::DynamicProfile);
+  matrix_type default_mtx_fwd(default_map, 3, Tpetra::StaticProfile);
 
   // Do a forward import (an import operation using an Import plan) from the
   // unique matrix to the default matrix.  i.e., communicate entries
@@ -287,7 +286,7 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
   }
 
   // Matrix built with default map
-  matrix_type default_mtx_rev(default_map, 3, Tpetra::DynamicProfile);
+  matrix_type default_mtx_rev(default_map, 3, Tpetra::StaticProfile);
 
   // Do a reverse mode import (an import operation using an Export plan) from the
   // unique matrix to the default matrix.  i.e., communicate entries

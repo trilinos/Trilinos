@@ -50,11 +50,11 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_topology/apply_functor.tcc"  // for topology::apply_functor
+#include "stk_topology/apply_functor.hpp"  // for topology::apply_host_functor
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_topology/topology.tcc"    // for topology::num_nodes
-#include "stk_topology/topology_type.tcc"  // for topology::topology_type
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert
+#include "stk_topology/topology_utils.hpp"    // for topology::num_nodes
+#include "stk_topology/topology_type.hpp"  // for topology::topology_type
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert
 #include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
 
 namespace stk {
@@ -110,12 +110,9 @@ struct create_single_edge_impl
     if (m_part_to_insert_new_edges)
       add_parts.push_back(m_part_to_insert_new_edges);
 
-    std::array<Entity,Topology::num_nodes> elem_nodes;
+    Entity elem_nodes[(Topology::num_nodes > 0) ? Topology::num_nodes : 1];
     EntityVector edge_nodes(m_edge_nodes, m_edge_nodes+m_num_edge_nodes);
-    OrdinalVector ordinal_scratch;
-    ordinal_scratch.reserve(64);
-    PartVector part_scratch;
-    part_scratch.reserve(64);
+    OrdinalVector scratch1, scratch2, scratch3;
 
     Entity ielem = m_element;
 
@@ -165,15 +162,15 @@ struct create_single_edge_impl
       for (int n=0; n<num_edge_nodes; ++n)
       {
           Entity node = edge_nodes[n];
-          mesh.declare_relation(side,node,n, perm, ordinal_scratch, part_scratch);
+          mesh.declare_relation(side,node,n, perm, scratch1, scratch2, scratch3);
       }
     }
     else {
       side = iedge->second;
     }
-    perm = mesh.find_permutation(elem_topo, elem_nodes.data(), edge_topo, edge_nodes.data(), m_edge_ordinal);
+    perm = mesh.find_permutation(elem_topo, elem_nodes, edge_topo, edge_nodes.data(), m_edge_ordinal);
     ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
-    mesh.declare_relation(ielem, side, m_edge_ordinal, perm, ordinal_scratch, part_scratch);
+    mesh.declare_relation(ielem, side, m_edge_ordinal, perm, scratch1, scratch2, scratch3);
   }
 
   //members
@@ -223,13 +220,10 @@ struct create_edge_impl
     if (m_part_to_insert_new_edges)
       add_parts.push_back(m_part_to_insert_new_edges);
 
-    std::array<Entity,Topology::num_nodes> elem_nodes;
+    Entity elem_nodes[(Topology::num_nodes > 0) ? Topology::num_nodes : 1];
     EntityVector edge_nodes(EdgeTopology::num_nodes);
     EntityKeyVector edge_node_keys(EdgeTopology::num_nodes);
-    OrdinalVector ordinal_scratch;
-    ordinal_scratch.reserve(64);
-    PartVector part_scratch;
-    part_scratch.reserve(64);
+    OrdinalVector scratch1, scratch2, scratch3;
 
     for (size_t ielem=0, eelem=m_bucket.size(); ielem<eelem; ++ielem) {
       {
@@ -256,7 +250,7 @@ struct create_edge_impl
 
         if (edge_exist[e]) continue;
 
-        Topology::edge_nodes(elem_nodes, e, edge_nodes.begin());
+        Topology::edge_nodes(elem_nodes, e, edge_nodes.data());
 
         //sort side nodes into lexicographical smallest permutation
         if (EntityLess(mesh)(edge_nodes[1], edge_nodes[0])) {
@@ -281,15 +275,15 @@ struct create_edge_impl
           m_edge_map[edge_nodes] = side;
           for (int n=0; n<num_edge_nodes; ++n) {
             Entity node = edge_nodes[n];
-            mesh.declare_relation(side,node,n, perm, ordinal_scratch, part_scratch);
+            mesh.declare_relation(side,node,n, perm, scratch1, scratch2, scratch3);
           }
         }
         else {
           side = iedge->second;
         }
-        perm = mesh.find_permutation(elem_topo, elem_nodes.data(), edge_topo, edge_nodes.data(), e);
+        perm = mesh.find_permutation(elem_topo, elem_nodes, edge_topo, edge_nodes.data(), e);
         ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
-        mesh.declare_relation(m_bucket[ielem], side, e, perm, ordinal_scratch, part_scratch);
+        mesh.declare_relation(m_bucket[ielem], side, e, perm, scratch1, scratch2, scratch3);
       }
     }
   }
@@ -323,12 +317,9 @@ struct connect_face_impl
 
     BulkData & mesh = m_bucket.mesh();
 
-    std::array<Entity,Topology::num_nodes> face_nodes;
+    Entity face_nodes[(Topology::num_nodes > 0) ? Topology::num_nodes : 1];
     EntityVector edge_nodes(EdgeTopology::num_nodes);
-    OrdinalVector ordinal_scratch;
-    ordinal_scratch.reserve(64);
-    PartVector part_scratch;
-    part_scratch.reserve(64);
+    OrdinalVector scratch1, scratch2, scratch3;
 
     for (size_t iface=0, eface=m_bucket.size(); iface<eface; ++iface) {
       {
@@ -355,7 +346,7 @@ struct connect_face_impl
 
         if (edge_exist[e]) continue;
 
-        Topology::edge_nodes(face_nodes, e, edge_nodes.begin());
+        Topology::edge_nodes(face_nodes, e, edge_nodes.data());
 
         //sort edge nodes into lexicographical smallest permutation
         if (EntityLess(mesh)(edge_nodes[1], edge_nodes[0])) {
@@ -369,9 +360,9 @@ struct connect_face_impl
         //which is fine
         if (iedge != m_edge_map.end()) {
           Entity edge = iedge->second;
-          Permutation perm = mesh.find_permutation(face_topo, face_nodes.data(), edge_topo, edge_nodes.data(), e);
+          Permutation perm = mesh.find_permutation(face_topo, face_nodes, edge_topo, edge_nodes.data(), e);
           ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
-          mesh.declare_relation(m_bucket[iface], edge, e, perm, ordinal_scratch, part_scratch);
+          mesh.declare_relation(m_bucket[iface], edge, e, perm, scratch1, scratch2, scratch3);
         }
       }
     }
@@ -398,7 +389,7 @@ namespace impl {
               Bucket &b = *face_buckets[i];
 
               connect_face_impl functor(edge_map, b);
-              stk::topology::apply_functor< connect_face_impl > apply(functor);
+              stk::topology::apply_host_functor< connect_face_impl > apply(functor);
               apply( b.topology() );
           }
       }
@@ -459,7 +450,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
           Bucket &b = *element_buckets[i];
 
           create_edge_impl functor( count_edges, ids_requested, edge_map, b, part_to_insert_new_edges);
-          stk::topology::apply_functor< create_edge_impl > apply(functor);
+          stk::topology::apply_host_functor< create_edge_impl > apply(functor);
           apply( b.topology() );
         }
       }
@@ -489,7 +480,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
                   unsigned localElemEdgeOrdinal = 10000;
                   stk::mesh::impl::find_element_edge_ordinal_and_equivalent_nodes(mesh, localElem, numNodesPerEdge, edgeNodes, localElemEdgeOrdinal, localElemEdgeNodes);
                   create_single_edge_impl functor( count_edges, ids_requested, edge_map, mesh, localElem, localElemEdgeOrdinal, numNodesPerEdge, localElemEdgeNodes, part_to_insert_new_edges);
-                  stk::topology::apply_functor< create_single_edge_impl > apply(functor);
+                  stk::topology::apply_host_functor< create_single_edge_impl > apply(functor);
                   apply( mesh.bucket(localElem).topology() );
                 }
                 elements.clear();

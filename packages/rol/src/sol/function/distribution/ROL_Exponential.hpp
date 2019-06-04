@@ -45,7 +45,7 @@
 #define ROL_EXPONENTIAL_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -70,7 +70,7 @@ public:
   Exponential(const Real loc = 0., const Real scale = 1.)
     : loc_(loc), scale_((scale>0.) ? scale : 1.) {}
 
-  Exponential(Teuchos::ParameterList &parlist) {
+  Exponential(ROL::ParameterList &parlist) {
     loc_   = parlist.sublist("SOL").sublist("Distribution").sublist("Exponential").get("Location",0.);
     scale_ = parlist.sublist("SOL").sublist("Distribution").sublist("Exponential").get("Scale",1.);
     scale_ = (scale_ > 0.) ? scale_ : 1.;

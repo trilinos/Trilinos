@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -61,7 +61,7 @@ namespace Iotr {
 
   public:
     const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const override;
-    int output_count(int in) const override;
+    int                       output_count(int in) const override;
 
   protected:
     explicit MinMax(const std::string &type);
@@ -69,8 +69,8 @@ namespace Iotr {
     bool internal_execute(const Ioss::Field &field, void *data) override;
 
   private:
-    bool doMin;
-    bool doAbs;
+    bool doMin{false};
+    bool doAbs{false};
   };
 } // namespace Iotr
 

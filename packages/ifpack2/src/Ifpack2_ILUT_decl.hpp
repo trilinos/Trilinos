@@ -161,7 +161,7 @@ public:
   ///
   /// ILUT implements the following parameters:
   /// <ul>
-  /// <li> "fact: ilut level-of-fill" (\c int)
+  /// <li> "fact: ilut level-of-fill" (\c double)
   /// <li> "fact: drop tolerance" (\c magnitude_type)
   /// <li> "fact: absolute threshold" (\c magnitude_type)
   /// <li> "fact: relative threshold" (\c magnitude_type)
@@ -173,9 +173,12 @@ public:
   /// number of entries to keep in the strict upper triangle of the
   /// current row, and in the strict lower triangle of the current
   /// row.  It does <B>not</B> correspond to the \f$p\f$ parameter in Saad's original
-  /// description.
-  /// Each row has at most \f$level-of-fill + nnz(A(i; 1 : i))\f$
-  /// nonzero elements.
+  /// description. This parameter represents a maximum fill fraction.
+  /// In this implementation, the L and U factors always contains nonzeros corresponding
+  /// to the original sparsity pattern of A, so this value should be >= 1.0.
+  /// Letting \f$fill = \frac{(level-of-fill - 1)*nnz(A)}{2*N}\f$,
+  /// each row of the computed L and U factors contains at most \f$fill\f$
+  /// nonzero elements in addition to those from the sparsity pattern of A.
   /// ILUT always keeps the diagonal entry in the
   /// current row, regardless of the drop tolerance or fill level.
   ///
@@ -314,7 +317,7 @@ public:
   /// not including the diagonal entry in that row (which is always
   /// part of U).  This has a different meaning for ILUT than it does
   /// for ILU(k).
-  inline int getLevelOfFill() const {
+  inline double getLevelOfFill() const {
     return LevelOfFill_;
   }
 
@@ -406,7 +409,7 @@ private:
   magnitude_type Athresh_; //!< Absolute threshold
   magnitude_type Rthresh_; //!< Relative threshold
   magnitude_type RelaxValue_; //!< Relax value
-  int LevelOfFill_; //!< Max fill level
+  double LevelOfFill_; //!< Max fill level
   //! Discard all elements below this tolerance
   magnitude_type DropTolerance_;
 

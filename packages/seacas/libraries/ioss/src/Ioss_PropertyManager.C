@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,22 +34,22 @@
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Utils.h>
 #include <cstddef>
+#include <fmt/ostream.h>
 #include <map>
 #include <ostream>
 #include <string>
 #include <utility>
 
 Ioss::PropertyManager::PropertyManager(const PropertyManager &from)
+    : m_properties(from.m_properties)
 {
-  IOSS_FUNC_ENTER(m_);
-  properties = from.properties;
 }
 
 Ioss::PropertyManager::~PropertyManager()
 {
   try {
     IOSS_FUNC_ENTER(m_);
-    properties.clear();
+    m_properties.clear();
   }
   catch (...) {
   }
@@ -62,11 +62,11 @@ Ioss::PropertyManager::~PropertyManager()
 void Ioss::PropertyManager::add(const Ioss::Property &new_prop)
 {
   IOSS_FUNC_ENTER(m_);
-  auto iter = properties.find(new_prop.get_name());
-  if (iter != properties.end()) {
-    properties.erase(iter);
+  auto iter = m_properties.find(new_prop.get_name());
+  if (iter != m_properties.end()) {
+    m_properties.erase(iter);
   }
-  properties.insert(ValuePair(new_prop.get_name(), new_prop));
+  m_properties.insert(ValuePair(new_prop.get_name(), new_prop));
 }
 
 /** \brief Checks if a property exists in the database.
@@ -77,7 +77,7 @@ void Ioss::PropertyManager::add(const Ioss::Property &new_prop)
 bool Ioss::PropertyManager::exists(const std::string &property_name) const
 {
   IOSS_FUNC_ENTER(m_);
-  return (properties.find(property_name) != properties.end());
+  return (m_properties.find(property_name) != m_properties.end());
 }
 
 /** \brief Get a property object from the property manager.
@@ -88,10 +88,10 @@ bool Ioss::PropertyManager::exists(const std::string &property_name) const
 Ioss::Property Ioss::PropertyManager::get(const std::string &property_name) const
 {
   IOSS_FUNC_ENTER(m_);
-  auto iter = properties.find(property_name);
-  if (iter == properties.end()) {
+  auto iter = m_properties.find(property_name);
+  if (iter == m_properties.end()) {
     std::ostringstream errmsg;
-    errmsg << "ERROR: Could not find property '" << property_name << "'\n";
+    fmt::print(errmsg, "ERROR: Could not find property '{}'\n", property_name);
     IOSS_ERROR(errmsg);
   }
   return (*iter).second;
@@ -107,9 +107,9 @@ Ioss::Property Ioss::PropertyManager::get(const std::string &property_name) cons
 void Ioss::PropertyManager::erase(const std::string &property_name)
 {
   IOSS_FUNC_ENTER(m_);
-  auto iter = properties.find(property_name);
-  if (iter != properties.end()) {
-    properties.erase(iter);
+  auto iter = m_properties.find(property_name);
+  if (iter != m_properties.end()) {
+    m_properties.erase(iter);
   }
 }
 
@@ -123,7 +123,7 @@ int Ioss::PropertyManager::describe(NameList *names) const
   IOSS_FUNC_ENTER(m_);
   int                         the_count = 0;
   PropMapType::const_iterator I;
-  for (I = properties.begin(); I != properties.end(); ++I) {
+  for (I = m_properties.begin(); I != m_properties.end(); ++I) {
     names->push_back((*I).first);
     the_count++;
   }
@@ -137,5 +137,5 @@ int Ioss::PropertyManager::describe(NameList *names) const
 size_t Ioss::PropertyManager::count() const
 {
   IOSS_FUNC_ENTER(m_);
-  return properties.size();
+  return m_properties.size();
 }

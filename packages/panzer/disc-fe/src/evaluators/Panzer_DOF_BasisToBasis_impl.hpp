@@ -98,16 +98,6 @@ DOF_BasisToBasis(const std::string & fieldName,
 
 //**********************************************************************
 template <typename EvalT, typename TRAITST>
-void DOF_BasisToBasis<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::SetupData /* d */,
-			                                  PHX::FieldManager<TRAITST>& /* fm */)
-{
-  // not needed anymore
-  // this->utils.setFieldData(dof_source_coeff,fm);
-  // this->utils.setFieldData(dof_target_coeff,fm);
-}
-
-//**********************************************************************
-template <typename EvalT, typename TRAITST>
 void DOF_BasisToBasis<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData workset)
 { 
   // Zero out arrays (intrepid does a sum!)

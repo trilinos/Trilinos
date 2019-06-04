@@ -59,9 +59,9 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Bounds.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 
 
@@ -69,14 +69,14 @@
 // If D_{ii}>0 for all i, then the minimizer is the solution to 
 // the linear system x_i=b_i/d_i
 template<class Real> 
-Teuchos::RCP<ROL::Objective<Real>> 
+ROL::Ptr<ROL::Objective<Real>> 
 createDiagonalQuadraticObjective( const ROL::Vector<Real> &a, 
                                   const ROL::Vector<Real> &b ) {
-  using Teuchos::rcp;
-  auto op = rcp( new ROL::DiagonalOperator<Real>(a) );
+  
+  auto op = ROL::makePtr<ROL::DiagonalOperator<Real>>(a);
   auto vec = b.clone();
   vec->set(b);
-  auto obj = rcp( new ROL::QuadraticObjective<Real>(op,vec) );
+  auto obj = ROL::makePtr<ROL::QuadraticObjective<Real>>(op,vec);
   return obj;
 }
 
@@ -87,25 +87,25 @@ int main(int argc, char *argv[]) {
 //  typedef ROL::Vector<RealT>    V;
   typedef ROL::StdVector<RealT> SV;
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a
   // (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
   try { 
  
-    auto parlist = Teuchos::getParametersFromXmlFile("binary_constraint.xml");
+    auto parlist = ROL::getParametersFromXmlFile("binary_constraint.xml");
 
     // Penalty parameter
     RealT gamma = 1.0;
@@ -116,8 +116,8 @@ int main(int argc, char *argv[]) {
     /*-----  Optimization Vector -----*/
 
     // Initial guess
-    auto x0_rcp = rcp( new std::vector<RealT>(4) );  
-    auto x0 = rcp( new SV(x0_rcp) );
+    auto x0_ptr = ROL::makePtr<std::vector<RealT>>(4);  
+    auto x0 = ROL::makePtr<SV>(x0_ptr);
     ROL::RandomizeVector(*x0);
 
     auto x = x0->clone(); x->set(*x0);
@@ -125,19 +125,19 @@ int main(int argc, char *argv[]) {
     /*----- Objective Function -----*/
 
     // Diagonal quadratic objective scaling vector
-    auto d_rcp = rcp( new std::vector<RealT>(4) );  
-    auto d = rcp( new SV(d_rcp) );
+    auto d_ptr = ROL::makePtr<std::vector<RealT>>(4);  
+    auto d = ROL::makePtr<SV>(d_ptr);
 
     // Quadratic objective offset vector
-    auto b_rcp = rcp( new std::vector<RealT>(4) );  
-    auto b = rcp( new SV(b_rcp) );
+    auto b_ptr = ROL::makePtr<std::vector<RealT>>(4);  
+    auto b = ROL::makePtr<SV>(b_ptr);
 
     // Set values for objective
-    (*b_rcp)[0] = 1.0;  (*b_rcp)[1] = 1.0;  
-    (*b_rcp)[2] = 1.0;  (*b_rcp)[3] = 1.0;   
+    (*b_ptr)[0] = 1.0;  (*b_ptr)[1] = 1.0;  
+    (*b_ptr)[2] = 1.0;  (*b_ptr)[3] = 1.0;   
 
-    (*d_rcp)[0] = 1.0;  (*d_rcp)[1] = 2.0;  
-    (*d_rcp)[2] = 4.0;  (*d_rcp)[3] = 8.0;
+    (*d_ptr)[0] = 1.0;  (*d_ptr)[1] = 2.0;  
+    (*d_ptr)[2] = 4.0;  (*d_ptr)[3] = 8.0;
 
     auto obj = createDiagonalQuadraticObjective( *d, *b ); 
 
@@ -147,26 +147,26 @@ int main(int argc, char *argv[]) {
     /*----- Bound Constraint -----*/
 
     // Lower bound vector
-    auto xl_rcp = rcp( new std::vector<RealT>(4) );  
-    auto xl = rcp( new SV(xl_rcp) );
+    auto xl_ptr = ROL::makePtr<std::vector<RealT>>(4);  
+    auto xl = ROL::makePtr<SV>(xl_ptr);
 
     // Upper bound vector
-    auto xu_rcp = rcp( new std::vector<RealT>(4) );  
-    auto xu = rcp( new SV(xu_rcp) );
+    auto xu_ptr = ROL::makePtr<std::vector<RealT>>(4);  
+    auto xu = ROL::makePtr<SV>(xu_ptr);
     
     // Set bounds
-    (*xl_rcp)[0] = 0.0;   (*xl_rcp)[1] = 0.0;  
-    (*xl_rcp)[2] = NINF;  (*xl_rcp)[3] = NINF;
+    (*xl_ptr)[0] = 0.0;   (*xl_ptr)[1] = 0.0;  
+    (*xl_ptr)[2] = NINF;  (*xl_ptr)[3] = NINF;
 
-    (*xu_rcp)[0] = 1.0;   (*xu_rcp)[1] = INF;  
-    (*xu_rcp)[2] = 1.0;   (*xu_rcp)[3] = INF;
+    (*xu_ptr)[0] = 1.0;   (*xu_ptr)[1] = INF;  
+    (*xu_ptr)[2] = 1.0;   (*xu_ptr)[3] = INF;
 
 //    ROL::BoundConstraint<RealT> bnd(xl,xu);
-    auto bnd = rcp( new ROL::Bounds<RealT>(xl,xu) );
+    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(xl,xu);
 
     /*---- Constraint and Lagrange Multiplier -----*/
 
-    auto con = rcp( new ROL::BinaryConstraint<RealT>( bnd, gamma ) );
+    auto con = ROL::makePtr<ROL::BinaryConstraint<RealT>>( bnd, gamma );
 
     // Lagrange multiplier
     auto l = x->dual().clone();
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     // Constrained minimizer set X = { [ 0, 0, 1, 0.125 ], [ 1, 0, 1, 0.125 ] }
    
     // Create Optimization problems
-    ROL::OptimizationProblem<RealT> problem_E( obj, x, Teuchos::null, con, l ); 
+    ROL::OptimizationProblem<RealT> problem_E( obj, x, ROL::nullPtr, con, l ); 
     ROL::OptimizationProblem<RealT> problem_EB( obj, x, bnd, con, l ); 
    
     // Perform linear algebra and finite difference checks

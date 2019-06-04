@@ -45,13 +45,13 @@
     \brief Unit test for Automatic Differentiation evalutators
 */
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 
 #include "../TOOLS/template_tools.hpp"
-
+#include "ROL_Ptr.hpp"
 
 // Example of ScalarFunction 
 // f(x,y) = <x,x> + 2*<y,y> - 2 y[0]*(x[0]+x[1]) + 3*x[0]*(y[1]-y[0])
@@ -104,12 +104,12 @@ int main(int argc, char *argv[] ) {
 
   using RealT = double;
 
-  using Teuchos::RCP; using Teuchos::rcp; 
-  Teuchos::oblackholestream bhs;
+    
+  ROL::nullstream bhs;
 
-  RCP<std::ostream> os;
-  if(argc>1)   os = rcp(&std::cout,false);
-  else         os = rcp(&bhs,false);
+  ROL::Ptr<std::ostream> os;
+  if(argc>1)   os = ROL::makePtrFromRef(std::cout);
+  else         os = ROL::makePtrFromRef(bhs);
   
   using DFad = Sacado::Fad::DFad<RealT>;
 

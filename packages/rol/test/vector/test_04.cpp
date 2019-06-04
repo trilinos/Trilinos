@@ -48,7 +48,7 @@
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 typedef double RealT;
@@ -62,14 +62,14 @@ void print_vector( const ROL::Vector<Real> &x ) {
   typedef ROL::PartitionedVector<Real> PV;
   typedef typename PV::size_type       size_type;
 
-  const PV eb = Teuchos::dyn_cast<const PV>(x);
+  const PV eb = dynamic_cast<const PV&>(x);
   size_type n = eb.numVectors();
     
   for(size_type k=0; k<n; ++k) {
     std::cout << "[subvector " << k << "]" << std::endl;
-    Teuchos::RCP<const V> vec = eb.get(k);
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      Teuchos::dyn_cast<const SV>(*vec).getVector();  
+    ROL::Ptr<const V> vec = eb.get(k);
+    ROL::Ptr<const std::vector<Real> > vp = 
+      dynamic_cast<const SV&>(*vec).getVector();  
    for(size_type i=0;i<vp->size();++i) {
       std::cout << (*vp)[i] << std::endl;
     }  
@@ -89,13 +89,13 @@ int main(int argc, char *argv[]) {
 
   int iprint = argc - 1;
 
-  RCP<std::ostream> outStream;
-  oblackholestream bhs; // no output
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // no output
  
   if( iprint>0 ) 
-    outStream = rcp(&std::cout,false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs,false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -114,46 +114,46 @@ int main(int argc, char *argv[]) {
      
     RealT left = -1e0, right = 1e0;
 
-    std::vector<RCP<V> > x_rcp;
-    std::vector<RCP<V> > y_rcp;
-    std::vector<RCP<V> > z_rcp;
+    std::vector<ROL::Ptr<V> > x_ptr;
+    std::vector<ROL::Ptr<V> > y_ptr;
+    std::vector<ROL::Ptr<V> > z_ptr;
 
     for( PV::size_type k=0; k<nvec; ++k ) {
-      RCP<std::vector<RealT> > xk_rcp = rcp( new std::vector<RealT>(dim[k]) );
-      RCP<std::vector<RealT> > yk_rcp = rcp( new std::vector<RealT>(dim[k]) );
-      RCP<std::vector<RealT> > zk_rcp = rcp( new std::vector<RealT>(dim[k]) );
+      ROL::Ptr<std::vector<RealT> > xk_ptr = ROL::makePtr<std::vector<RealT>>(dim[k]);
+      ROL::Ptr<std::vector<RealT> > yk_ptr = ROL::makePtr<std::vector<RealT>>(dim[k]);
+      ROL::Ptr<std::vector<RealT> > zk_ptr = ROL::makePtr<std::vector<RealT>>(dim[k]);
        
       for( int i=0; i<dim[k]; ++i ) {
-        (*xk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*yk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*zk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*xk_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*yk_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*zk_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       }
    
-      RCP<V> xk = rcp( new SV( xk_rcp ) );
-      RCP<V> yk = rcp( new SV( yk_rcp ) );
-      RCP<V> zk = rcp( new SV( zk_rcp ) );
+      ROL::Ptr<V> xk = ROL::makePtr<SV>( xk_ptr );
+      ROL::Ptr<V> yk = ROL::makePtr<SV>( yk_ptr );
+      ROL::Ptr<V> zk = ROL::makePtr<SV>( zk_ptr );
 
-      x_rcp.push_back(xk);
-      y_rcp.push_back(yk);
-      z_rcp.push_back(zk);
+      x_ptr.push_back(xk);
+      y_ptr.push_back(yk);
+      z_ptr.push_back(zk);
       
       total_dim += dim[k];
     }
 
-    PV x(x_rcp);
-    RCP<V> y = ROL::CreatePartitionedVector<RealT>(y_rcp[0],y_rcp[1],y_rcp[2]);
-    PV z(z_rcp);
+    PV x(x_ptr);
+    ROL::Ptr<V> y = ROL::CreatePartitionedVector<RealT>(y_ptr[0],y_ptr[1],y_ptr[2]);
+    PV z(z_ptr);
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(*y, z, true, *outStream);
-    ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
+    ROL::StdVector<RealT> checkvec( ROL::makePtrFromRef(consistency) );
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }
 
     // Basis tests.
     // set x to first basis vector
-    Teuchos::RCP<ROL::Vector<RealT> > zp = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > zp = x.clone();
     zp = x.basis(0);
     RealT znorm = zp->norm();
     *outStream << "Norm of ROL::Vector z (first basis vector): " << znorm << "\n";

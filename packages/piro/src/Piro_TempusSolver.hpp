@@ -170,6 +170,9 @@ public:
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
 
+  //! Set initial guess for Newton method
+  void setInitialGuess( Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess = Teuchos::null); 
+
   //! Return RCP to Tempus::SolutionHistory
   Teuchos::RCP<Tempus::SolutionHistory<Scalar> > 
   getSolutionHistory() const; 
@@ -232,7 +235,12 @@ private:
   void setObserver(); 
 
   //! Boolean to tell TempusSolver whether or not to abort if a transient solve fails 
-  bool abort_on_failure_; 
+  bool abort_on_failure_;
+
+  //! Boolean passed to observer - if true, solver will abort if it reaches 
+  //min_dt and is unable to converge.  This is the desired behavior when using Tempus 
+  //from Albany.  
+  bool abort_on_fail_at_min_dt_;
 
 };
 

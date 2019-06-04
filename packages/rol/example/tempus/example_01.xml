@@ -1,0 +1,43 @@
+<ParameterList name="ForwardEuler_SinCos">
+  <ParameterList name="Tempus">
+    <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
+
+    <ParameterList name="Demo Integrator">
+      <Parameter name="Integrator Type"              type="string" value="Integrator Basic"/>
+      <Parameter name="Screen Output Index List"     type="string" value="1"/>
+      <Parameter name="Screen Output Index Interval" type="int"    value="100"/>
+      <Parameter name="Stepper Name"                 type="string" value="Demo Stepper"/>
+      <ParameterList name="Solution History">
+        <Parameter name="Storage Type"  type="string" value="Unlimited"/>
+        <Parameter name="Storage Limit" type="int"    value="20"/>
+      </ParameterList>
+      <ParameterList name="Time Step Control">
+        <Parameter name="Initial Time"           type="double" value="0.0"/>
+        <Parameter name="Final Time"             type="double" value="1.0"/>
+        <Parameter name="Initial Time Index"     type="int"    value="0"/>
+        <Parameter name="Final Time Index"       type="int"    value="1000"/>
+        <Parameter name="Minimum Time Step"      type="double" value="0.0001"/>
+        <Parameter name="Initial Time Step"      type="double" value="0.1"/>
+        <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
+        <Parameter name="Minimum Order"          type="int"    value="1"/>
+        <Parameter name="Initial Order"          type="int"    value="1"/>
+        <Parameter name="Maximum Order"          type="int"    value="1"/>
+        <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
+        <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
+        <Parameter name="Integrator Step Type"   type="string" value="Constant"/>
+        <Parameter name="Output Time List"       type="string" value=""/>
+        <Parameter name="Output Index List"      type="string" value=""/>
+        <Parameter name="Output Time Interval"   type="double" value="10.0"/>
+        <Parameter name="Output Index Interval"  type="int"    value="1000"/>
+        <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
+        <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Demo Stepper">
+      <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
+    </ParameterList>
+
+  </ParameterList>
+
+</ParameterList>

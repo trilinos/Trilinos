@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -38,6 +38,7 @@
 #include <Ioss_VariableType.h>
 #include <cassert>
 #include <cstddef>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -53,17 +54,17 @@
  *
  *  \param[in] io_database The database associated with the entity.
  *  \param[in] my_name The entity name.
- *  \param[in] entity_count The number of subentities in the entity.
+ *  \param[in] entity_cnt The number of subentities in the entity.
  *
  */
 Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database, const std::string &my_name,
-                                     int64_t entity_count)
-    : entityCount(entity_count), entityName(my_name), database_(io_database),
+                                     int64_t entity_cnt)
+    : entityCount(entity_cnt), entityName(my_name), database_(io_database),
       hash_(Ioss::Utils::hash(my_name))
 {
   properties.add(Ioss::Property("name", my_name));
 
-  properties.add(Ioss::Property("entity_count", entity_count));
+  properties.add(Ioss::Property("entity_count", entity_cnt));
 
   properties.add(Ioss::Property(this, "attribute_count", Ioss::Property::INTEGER));
 
@@ -72,7 +73,7 @@ Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database, const std::s
     if (io_database != nullptr) {
       int_type = field_int_type();
     }
-    fields.add(Ioss::Field("ids", int_type, "scalar", Ioss::Field::MESH, entity_count));
+    fields.add(Ioss::Field("ids", int_type, "scalar", Ioss::Field::MESH, entity_cnt));
   }
 }
 
@@ -88,9 +89,8 @@ void Ioss::GroupingEntity::delete_database() {}
 
 void Ioss::GroupingEntity::really_delete_database()
 {
-  Ioss::DatabaseIO *new_db = const_cast<Ioss::DatabaseIO *>(database_);
-  delete new_db;
-  new_db = nullptr;
+  delete database_;
+  database_ = nullptr;
 }
 
 std::string Ioss::GroupingEntity::generic_name() const
@@ -174,8 +174,8 @@ Ioss::Property Ioss::GroupingEntity::get_implicit_property(const std::string &my
 
   // End of the line. No property of this name exists.
   std::ostringstream errmsg;
-  errmsg << "\nERROR: Property '" << my_name << "' does not exist on " << type_string() << " "
-         << name() << "\n\n";
+  fmt::print(errmsg, "\nERROR: Property '{}' does not exist on {} {}\n\n", my_name, type_string(),
+             name());
   IOSS_ERROR(errmsg);
 }
 
@@ -188,17 +188,16 @@ Ioss::Property Ioss::GroupingEntity::get_implicit_property(const std::string &my
  */
 void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
 {
-  size_t entity_size = get_property("entity_count").get_int();
+  size_t entity_size = entity_count();
   size_t field_size  = new_field.raw_count();
   if (entity_size != field_size && type() != REGION) {
     std::string        filename = get_database()->get_filename();
     std::ostringstream errmsg;
-    errmsg << "IO System error: The " << type_string() << " '" << name() << "' has a size of "
-           << entity_size << ",\nbut the field '" << new_field.get_name()
-           << "' which is being output on that entity has a size of " << field_size
-           << "\non database '" << filename
-           << "'.\nThe sizes must match.  This is an application error that "
-              "should be reported.";
+    fmt::print(errmsg,
+               "IO System error: The {} '{}' has a size of {},\nbut the field '{}' which is being "
+               "output on that entity has a size of {}\non database '{}'.\nThe sizes must match.  "
+               "This is an application error that should be reported.",
+               type_string(), name(), entity_size, new_field.get_name(), field_size, filename);
     IOSS_ERROR(errmsg);
   }
   fields.add(new_field);
@@ -215,7 +214,6 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field &new_field)
 int Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *data,
                                          size_t data_size) const
 {
-  IOSS_FUNC_ENTER(m_);
   verify_field_exists(field_name, "input");
 
   Ioss::Field field  = get_field(field_name);
@@ -240,7 +238,6 @@ int Ioss::GroupingEntity::get_field_data(const std::string &field_name, void *da
 int Ioss::GroupingEntity::put_field_data(const std::string &field_name, void *data,
                                          size_t data_size) const
 {
-  IOSS_FUNC_ENTER(m_);
   verify_field_exists(field_name, "input");
 
   Ioss::Field field = get_field(field_name);
@@ -277,7 +274,7 @@ void Ioss::GroupingEntity::count_attributes() const
   int64_t                        attribute_count = 0;
   for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
     std::string field_name = *IF;
-    if (field_name != "attribute" || (field_name == "attribute" && results_fields.size() == 1)) {
+    if (field_name != "attribute" || results_fields.size() == 1) {
       Ioss::Field field = get_field(field_name);
       attribute_count += field.raw_storage()->component_count();
     }
@@ -291,9 +288,8 @@ void Ioss::GroupingEntity::verify_field_exists(const std::string &field_name,
   if (!field_exists(field_name)) {
     std::string        filename = get_database()->get_filename();
     std::ostringstream errmsg;
-    errmsg << "\nERROR: On database '" << filename << "', Field '" << field_name
-           << "' does not exist for " << inout << " on " << type_string() << " " << name()
-           << "\n\n";
+    fmt::print(errmsg, "\nERROR: On database '{}', Field '{}' does not exist for {} on {} {}\n\n",
+               filename, field_name, inout, type_string(), name());
     IOSS_ERROR(errmsg);
   }
 }
@@ -302,6 +298,22 @@ void Ioss::GroupingEntity::property_update(const std::string &property, int64_t 
 {
   if (property_exists(property)) {
     if (get_property(property).get_int() != value) {
+      auto *nge = const_cast<Ioss::GroupingEntity *>(this);
+      nge->property_erase(property);
+      nge->property_add(Ioss::Property(property, value));
+    }
+  }
+  else {
+    auto *nge = const_cast<Ioss::GroupingEntity *>(this);
+    nge->property_add(Ioss::Property(property, value));
+  }
+}
+
+void Ioss::GroupingEntity::property_update(const std::string &property,
+                                           const std::string &value) const
+{
+  if (property_exists(property)) {
+    if (get_property(property).get_string() != value) {
       auto *nge = const_cast<Ioss::GroupingEntity *>(this);
       nge->property_erase(property);
       nge->property_add(Ioss::Property(property, value));

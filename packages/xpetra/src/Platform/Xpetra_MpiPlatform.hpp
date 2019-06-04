@@ -85,14 +85,12 @@ namespace Xpetra {
     //! Comm Instance
     Teuchos::RCP< const Teuchos::Comm<int> > getComm() const;
 
-    //! Get Get a node for parallel computation.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    //! Get a Kokkos Node instance.
     Teuchos::RCP<Node> getNode() const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
-
-  protected:
-    //! Node object instantiated for the platform.
-    Teuchos::RCP<Node> node_;
 
   private:
     Teuchos::RCP<Teuchos::MpiComm<int> > comm_;
@@ -100,16 +98,14 @@ namespace Xpetra {
   };
 
   template <class Node>
-  MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
-    : node_(node) {
-    comm_ = Teuchos::createMpiComm<int>(rawMpiComm);
-  }
+  MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> /* node */, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm) :
+    comm_ (Teuchos::createMpiComm<int>(rawMpiComm))
+  {}
 
   template <class Node>
-  MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node)
-    : node_(node) {
-    comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
-  }
+  MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> /* node */) :
+    comm_ (Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD)))
+  {}
 
   template <class Node>
   MpiPlatform<Node>::~MpiPlatform() {  }
@@ -125,9 +121,11 @@ namespace Xpetra {
     return comm_;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Node>
   Teuchos::RCP<Node> MpiPlatform<Node>::getNode() const
-  {  return node_; }
+  {  return Teuchos::null; }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 } // namespace Xpetra
 

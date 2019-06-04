@@ -79,6 +79,14 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
     interp_pl.set("Interpolator Type", "Lagrange");
     interp_pl.set("Order", 0);
 
+    // Set FSAL to false, because it is not currently setup for ASA.
+    pl->sublist("Default Stepper").set("Use FSAL", false);
+
+    // Set IC consistency check to false, because it is not currently
+    // setup for ASA.
+    pl->sublist("Default Stepper")
+           .set("Initial Condition Consistency Check", false);
+
     // Setup the Integrator and reset initial time step
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
@@ -97,7 +105,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
     for (int i=0; i<num_param; ++i)
       Thyra::assign(DxDp0->col(i).ptr(),
                     *(model->getExactSensSolution(i, t0).get_x()));
-    integrator->setInitialState(t0, x0, Teuchos::null, Teuchos::null,
+    integrator->initializeSolutionHistory(t0, x0, Teuchos::null, Teuchos::null,
                                 DxDp0, Teuchos::null, Teuchos::null);
 
     // Integrate to timeMax
@@ -143,7 +151,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
         integrator->getSolutionHistory();
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-        const double time = solutionState->getTime();
+        const double time_i = solutionState->getTime();
         RCP<const DPV> x_prod_plot =
           Teuchos::rcp_dynamic_cast<const DPV>(solutionState->getX());
         RCP<const Thyra::VectorBase<double> > x_plot =
@@ -153,9 +161,9 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
         RCP<const Thyra::MultiVectorBase<double> > adjoint_plot =
           adjoint_prod_plot->getMultiVector();
         RCP<const Thyra::VectorBase<double> > x_exact_plot =
-          model->getExactSolution(time).get_x();
+          model->getExactSolution(time_i).get_x();
         ftmp << std::fixed << std::setprecision(7)
-             << time
+             << time_i
              << std::setw(11) << get_ele(*(x_plot), 0)
              << std::setw(11) << get_ele(*(x_plot), 1)
              << std::setw(11) << get_ele(*(adjoint_plot->col(0)), 0)

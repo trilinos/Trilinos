@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,20 +33,22 @@
  *
  */
 
-#include "elb.h"      // for Machine_Description, TOPTR, etc
+#include "elb.h"      // for Machine_Description, etc
 #include "elb_allo.h" // for array_alloc
 #include "elb_elem.h" // for NNODES, get_elem_info
 #include "elb_err.h"  // for Gen_Error, error_lev
 #include "elb_output.h"
 #include "elb_util.h" // for gds_qsort, qsort2, in_list, etc
+#include "fmt/ostream.h"
+#include "fmt/time.h"
+#include "scopeguard.h"
+#include <copy_string_cpp.h>
 #include <cstddef>    // for size_t, nullptr
-#include <cstdio>     // for printf, sprintf, fprintf, etc
 #include <cstdlib>    // for free, malloc, realloc
-#include <cstring>    // for strcat, strcpy, strlen, etc
+#include <cstring>    // for strcat, strlen, etc
 #include <ctime>      // for asctime, localtime, time, etc
 #include <exodusII.h> // for ex_close, ex_opts, etc
 #include <iostream>
-#include <vector> // for vector
 #include <vector> // for vector
 
 namespace {
@@ -79,14 +81,14 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
                   Problem_Description *problem, Mesh_Description<INT> *mesh,
                   LB_Description<INT> *lb, Sphere_Info *sphere)
 {
-  int  exoid;
-  char title[MAX_LINE_LENGTH + 1], method1[MAX_LINE_LENGTH + 1];
-  char method2[MAX_LINE_LENGTH + 1];
+  int         exoid;
+  std::string method1{}, method2{};
+  std::string title;
 
   int cpu_ws = sizeof(float);
   int io_ws  = sizeof(float);
 
-  printf("Outputting load balance to file %s\n", nemI_out_file.c_str());
+  fmt::print("Outputting load balance to file {}\n", nemI_out_file.c_str());
 
   /* Create the load balance file */
   /* Attempt to create a netcdf4-format file; if it fails, then assume
@@ -128,106 +130,97 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
 
   /* Create the title */
   if (problem->type == NODAL) {
-    strcpy(method1, "nodal");
+    method1 = "nodal";
   }
   else {
-    strcpy(method1, "elemental");
+    method1 = "elemental";
   }
 
-  sprintf(title, "nem_slice %s load balance file", method1);
+  title = fmt::format("nem_slice {} load balance file", method1.c_str());
 
-  strcpy(method1, "method1: ");
-  strcpy(method2, "method2: ");
+  method1 = "method1: ";
+  method2 = "method2: ";
 
   switch (lb->type) {
   case MULTIKL:
-    strcat(method1, "Multilevel-KL decomposition");
-    strcat(method2, "With Kernighan-Lin refinement");
+    method1 += "Multilevel-KL decomposition";
+    method2 += "With Kernighan-Lin refinement";
     break;
-  case SPECTRAL: strcat(method1, "Spectral decomposition"); break;
-  case INERTIAL: strcat(method1, "Inertial decomposition"); break;
-  case ZPINCH: strcat(method1, "ZPINCH decomposition"); break;
-  case BRICK: strcat(method1, "BRICK decomposition"); break;
-  case ZOLTAN_RCB: strcat(method1, "RCB decomposition"); break;
-  case ZOLTAN_RIB: strcat(method1, "RIB decomposition"); break;
-  case ZOLTAN_HSFC: strcat(method1, "HSFC decomposition"); break;
-  case LINEAR: strcat(method1, "Linear decomposition"); break;
-  case RANDOM: strcat(method1, "Random decomposition"); break;
-  case SCATTERED: strcat(method1, "Scattered decomposition"); break;
+  case SPECTRAL: method1 += "Spectral decomposition"; break;
+  case INERTIAL: method1 += "Inertial decomposition"; break;
+  case ZPINCH: method1 += "ZPINCH decomposition"; break;
+  case BRICK: method1 += "BRICK decomposition"; break;
+  case ZOLTAN_RCB: method1 += "RCB decomposition"; break;
+  case ZOLTAN_RIB: method1 += "RIB decomposition"; break;
+  case ZOLTAN_HSFC: method1 += "HSFC decomposition"; break;
+  case LINEAR: method1 += "Linear decomposition"; break;
+  case RANDOM: method1 += "Random decomposition"; break;
+  case SCATTERED: method1 += "Scattered decomposition"; break;
   }
 
   if (lb->refine == KL_REFINE && lb->type != MULTIKL) {
-    strcat(method2, "with Kernighan-Lin refinement");
+    method2 += "with Kernighan-Lin refinement";
   }
   else if (lb->type != MULTIKL) {
-    strcat(method2, "no refinement");
+    method2 += "no refinement";
   }
 
   switch (lb->num_sects) {
-  case 1: strcat(method1, " via bisection"); break;
-  case 2: strcat(method1, " via quadrasection"); break;
-  case 3: strcat(method1, " via octasection"); break;
+  case 1: method1 += " via bisection"; break;
+  case 2: method1 += " via quadrasection"; break;
+  case 3: method1 += " via octasection"; break;
   }
 
   /* Do some sorting */
   for (int proc = 0; proc < machine->num_procs; proc++) {
 
     /* Sort node maps */
-    gds_qsort(TOPTR(lb->int_nodes[proc]), lb->int_nodes[proc].size());
+    gds_qsort(lb->int_nodes[proc].data(), lb->int_nodes[proc].size());
     if (problem->type == NODAL) {
-      sort2(lb->ext_nodes[proc].size(), TOPTR(lb->ext_nodes[proc]), TOPTR(lb->ext_procs[proc]));
+      sort2(lb->ext_nodes[proc].size(), lb->ext_nodes[proc].data(), lb->ext_procs[proc].data());
     }
 
     /* Sort element maps */
-    gds_qsort(TOPTR(lb->int_elems[proc]), lb->int_elems[proc].size());
+    gds_qsort(lb->int_elems[proc].data(), lb->int_elems[proc].size());
   }
 
   /* Output the info records */
   char *info[3];
-  info[0] = title;
-  info[1] = method1;
-  info[2] = method2;
+  info[0] = const_cast<char *>(title.c_str());
+  info[1] = const_cast<char *>(method1.c_str());
+  info[2] = const_cast<char *>(method2.c_str());
 
   if (ex_put_info(exoid, 3, info) < 0) {
     Gen_Error(0, "warning: output of info records failed");
   }
 
   /* Generate a QA record for the utility */
-  time_t time_val = time(nullptr);
-  char * ct_ptr   = asctime(localtime(&time_val));
-  char   tm_date[30];
-  strcpy(tm_date, ct_ptr);
-
-  /* Break string with null characters */
-  tm_date[3]  = '\0';
-  tm_date[7]  = '\0';
-  tm_date[10] = '\0';
-  tm_date[19] = '\0';
+  time_t      time_val = time(nullptr);
+  auto *      lt       = std::localtime(&time_val);
+  std::string time     = fmt::format("{:%H:%M:%S}", *lt);
+  std::string date     = fmt::format("{:%Y/%m/%d}", *lt);
 
   char qa_date[15], qa_time[10], qa_name[MAX_STR_LENGTH];
   char qa_vers[10];
 
-  sprintf(qa_date, "%s %s %s", &tm_date[8], &tm_date[4], &tm_date[20]);
-  sprintf(qa_time, "%s", &tm_date[11]);
-  strcpy(qa_name, UTIL_NAME);
-  strcpy(qa_vers, ELB_VERSION);
+  copy_string(qa_time, time);
+  copy_string(qa_date, date);
+  copy_string(qa_name, UTIL_NAME);
+  copy_string(qa_vers, ELB_VERSION);
 
-  if (qa_date[strlen(qa_date) - 1] == '\n') {
-    qa_date[strlen(qa_date) - 1] = '\0';
-  }
   char **lqa_record = reinterpret_cast<char **>(array_alloc(1, 4, sizeof(char *)));
   for (int i2 = 0; i2 < 4; i2++) {
     lqa_record[i2] = reinterpret_cast<char *>(array_alloc(1, MAX_STR_LENGTH + 1, sizeof(char)));
   }
 
-  strcpy(lqa_record[0], qa_name);
-  strcpy(lqa_record[1], qa_vers);
-  strcpy(lqa_record[2], qa_date);
-  strcpy(lqa_record[3], qa_time);
+  copy_string(lqa_record[0], qa_name, MAX_STR_LENGTH + 1);
+  copy_string(lqa_record[1], qa_vers, MAX_STR_LENGTH + 1);
+  copy_string(lqa_record[2], qa_date, MAX_STR_LENGTH + 1);
+  copy_string(lqa_record[3], qa_time, MAX_STR_LENGTH + 1);
 
-  printf("QA Record:\n");
+  fmt::print("QA Record:\n");
   for (int i2 = 0; i2 < 4; i2++) {
-    printf("\t%s\n", lqa_record[i2]);
+    fmt::print("\t{}\n", lqa_record[i2]);
   }
 
   if (ex_put_qa(exoid, 1, reinterpret_cast<char *(*)[4]>(&lqa_record[0])) < 0) {
@@ -248,7 +241,9 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     return 0;
   }
 
-  /* Set up dummy arrays for ouput */
+  ex_put_eb_info_global(exoid, mesh->eb_ids.data(), mesh->eb_cnts.data());
+
+  /* Set up dummy arrays for output */
   std::vector<INT> num_nmap_cnts(machine->num_procs);
   std::vector<INT> num_emap_cnts(machine->num_procs);
 
@@ -261,7 +256,7 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     }
   }
   else { /* Elemental load balance */
-    if (((problem->num_vertices) - (sphere->num)) > 0) {
+    if (problem->num_vertices > sphere->num) {
       /* need to check and make sure that there really are comm maps */
       for (int cnt = 0; cnt < machine->num_procs; cnt++) {
         if (!lb->bor_nodes[cnt].empty()) {
@@ -297,8 +292,8 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
       bes[iproc] = lb->bor_elems[iproc].size();
     }
 
-    if (ex_put_loadbal_param_cc(exoid, TOPTR(ins), TOPTR(bns), TOPTR(ens), TOPTR(ies), TOPTR(bes),
-                                TOPTR(num_nmap_cnts), TOPTR(num_emap_cnts)) < 0) {
+    if (ex_put_loadbal_param_cc(exoid, ins.data(), bns.data(), ens.data(), ies.data(), bes.data(),
+                                num_nmap_cnts.data(), num_emap_cnts.data()) < 0) {
       Gen_Error(0, "fatal: unable to output load-balance parameters");
       return 0;
     }
@@ -319,8 +314,8 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     }
 
     /* Output the communication map parameters */
-    if (ex_put_cmap_params_cc(exoid, TOPTR(node_cmap_ids_cc), TOPTR(node_cmap_cnts_cc),
-                              TOPTR(node_proc_ptr), nullptr, nullptr, nullptr) < 0) {
+    if (ex_put_cmap_params_cc(exoid, node_cmap_ids_cc.data(), node_cmap_cnts_cc.data(),
+                              node_proc_ptr.data(), nullptr, nullptr, nullptr) < 0) {
       Gen_Error(0, "fatal: unable to output communication map parameters");
       return 0;
     }
@@ -328,14 +323,14 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     /* Output the node and element maps */
     for (int proc = 0; proc < machine->num_procs; proc++) {
       /* Output the nodal map */
-      if (ex_put_processor_node_maps(exoid, TOPTR(lb->int_nodes[proc]), TOPTR(lb->bor_nodes[proc]),
-                                     TOPTR(lb->ext_nodes[proc]), proc) < 0) {
+      if (ex_put_processor_node_maps(exoid, lb->int_nodes[proc].data(), lb->bor_nodes[proc].data(),
+                                     lb->ext_nodes[proc].data(), proc) < 0) {
         Gen_Error(0, "fatal: failed to output node map");
         return 0;
       }
 
       /* Output the elemental map */
-      if (ex_put_processor_elem_maps(exoid, TOPTR(lb->int_elems[proc]), nullptr, proc) < 0) {
+      if (ex_put_processor_elem_maps(exoid, lb->int_elems[proc].data(), nullptr, proc) < 0) {
         Gen_Error(0, "fatal: failed to output element map");
         return 0;
       }
@@ -346,10 +341,10 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
        */
 
       /* This is a 2-key sort */
-      qsort2(TOPTR(lb->ext_procs[proc]), TOPTR(lb->ext_nodes[proc]), lb->ext_nodes[proc].size());
+      qsort2(lb->ext_procs[proc].data(), lb->ext_nodes[proc].data(), lb->ext_nodes[proc].size());
 
       /* Output the nodal communication map */
-      if (ex_put_node_cmap(exoid, 1, TOPTR(lb->ext_nodes[proc]), TOPTR(lb->ext_procs[proc]), proc) <
+      if (ex_put_node_cmap(exoid, 1, lb->ext_nodes[proc].data(), lb->ext_procs[proc].data(), proc) <
           0) {
         Gen_Error(0, "fatal: failed to output nodal communication map");
         return 0;
@@ -387,9 +382,9 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     }
 
     /* Output the communication map parameters */
-    if (ex_put_cmap_params_cc(exoid, TOPTR(node_cmap_ids_cc), TOPTR(node_cmap_cnts_cc),
-                              TOPTR(node_proc_ptr), TOPTR(elem_cmap_ids_cc),
-                              TOPTR(elem_cmap_cnts_cc), TOPTR(elem_proc_ptr)) < 0) {
+    if (ex_put_cmap_params_cc(exoid, node_cmap_ids_cc.data(), node_cmap_cnts_cc.data(),
+                              node_proc_ptr.data(), elem_cmap_ids_cc.data(),
+                              elem_cmap_cnts_cc.data(), elem_proc_ptr.data()) < 0) {
       Gen_Error(0, "fatal: unable to output communication map parameters");
       return 0;
     }
@@ -397,14 +392,14 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     /* Output the node and element maps */
     for (int proc = 0; proc < machine->num_procs; proc++) {
       /* Output the nodal map */
-      if (ex_put_processor_node_maps(exoid, TOPTR(lb->int_nodes[proc]), TOPTR(lb->bor_nodes[proc]),
+      if (ex_put_processor_node_maps(exoid, lb->int_nodes[proc].data(), lb->bor_nodes[proc].data(),
                                      nullptr, proc) < 0) {
         Gen_Error(0, "fatal: failed to output node map");
         return 0;
       }
 
       /* Output the elemental map */
-      if (ex_put_processor_elem_maps(exoid, TOPTR(lb->int_elems[proc]), TOPTR(lb->bor_elems[proc]),
+      if (ex_put_processor_elem_maps(exoid, lb->int_elems[proc].data(), lb->bor_elems[proc].data(),
                                      proc) < 0) {
         Gen_Error(0, "fatal: failed to output element map");
         return 0;
@@ -436,10 +431,10 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
          * by processor and then by global ID.
          */
         /* This is a 2-key sort */
-        qsort2(TOPTR(n_cmap_procs), TOPTR(n_cmap_nodes), cnt3);
+        qsort2(n_cmap_procs.data(), n_cmap_nodes.data(), cnt3);
 
         /* Output the nodal communication map */
-        if (ex_put_node_cmap(exoid, 1, TOPTR(n_cmap_nodes), TOPTR(n_cmap_procs), proc) < 0) {
+        if (ex_put_node_cmap(exoid, 1, n_cmap_nodes.data(), n_cmap_procs.data(), proc) < 0) {
           Gen_Error(0, "fatal: unable to output nodal communication map");
           return 0;
         }
@@ -447,8 +442,8 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
 
       /* Output the elemental communication map */
       if (!lb->e_cmap_elems[proc].empty()) {
-        if (ex_put_elem_cmap(exoid, 1, TOPTR(lb->e_cmap_elems[proc]), TOPTR(lb->e_cmap_sides[proc]),
-                             TOPTR(lb->e_cmap_procs[proc]), proc) < 0) {
+        if (ex_put_elem_cmap(exoid, 1, lb->e_cmap_elems[proc].data(), lb->e_cmap_sides[proc].data(),
+                             lb->e_cmap_procs[proc].data(), proc) < 0) {
           Gen_Error(0, "fatal: unable to output elemental communication map");
           return 0;
         }
@@ -478,7 +473,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
 {
   int exid_vis, exid_inp;
 
-  char        title[MAX_LINE_LENGTH + 1];
+  std::string title;
   const char *coord_names[] = {"X", "Y", "Z"};
 
   /*-----------------------------Execution Begins------------------------------*/
@@ -488,10 +483,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
   vis_file_name += "-vis.exoII";
 
   /* Generate the title for the file */
-  strcpy(title, UTIL_NAME);
-  strcat(title, " ");
-  strcat(title, ELB_VERSION);
-  strcat(title, " load balance visualization file");
+  title = fmt::format("{} {}  load balance visualization file", UTIL_NAME, ELB_VERSION);
 
   /*
    * If the vis technique is to be by element block then calculate the
@@ -506,7 +498,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
   }
 
   /* Create the ExodusII file */
-  std::cout << "Outputting load balance visualization file " << vis_file_name.c_str() << "\n";
+  fmt::print("Outputting load balance visualization file {}\n", vis_file_name.c_str());
   int cpu_ws = 0;
   int io_ws  = 0;
   int mode   = EX_CLOBBER;
@@ -533,19 +525,13 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
   }
   ON_BLOCK_EXIT(ex_close, exid_inp);
 
-  char **elem_type = (char **)array_alloc(2, mesh->num_el_blks, MAX_STR_LENGTH + 1, sizeof(char));
-  if (!elem_type) {
-    Gen_Error(0, "fatal: insufficient memory");
-    return 0;
-  }
-  ON_BLOCK_EXIT(free, elem_type);
+  std::vector<std::string> elem_type(mesh->num_el_blks);
+  std::vector<INT>         el_blk_ids(mesh->num_el_blks);
+  std::vector<INT>         el_cnt_blk(mesh->num_el_blks);
+  std::vector<INT>         node_pel_blk(mesh->num_el_blks);
+  std::vector<INT>         nattr_el_blk(mesh->num_el_blks);
 
-  std::vector<INT> el_blk_ids(mesh->num_el_blks);
-  std::vector<INT> el_cnt_blk(mesh->num_el_blks);
-  std::vector<INT> node_pel_blk(mesh->num_el_blks);
-  std::vector<INT> nattr_el_blk(mesh->num_el_blks);
-
-  if (ex_get_ids(exid_inp, EX_ELEM_BLOCK, TOPTR(el_blk_ids)) < 0) {
+  if (ex_get_ids(exid_inp, EX_ELEM_BLOCK, el_blk_ids.data()) < 0) {
     Gen_Error(0, "fatal: unable to get element block IDs");
     return 0;
   }
@@ -563,15 +549,16 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
    * nodal/element results will be used.
    */
   for (size_t ecnt = 0; ecnt < mesh->num_el_blks; ecnt++) {
-    if (ex_get_block(exid_inp, EX_ELEM_BLOCK, el_blk_ids[ecnt], elem_type[ecnt], &el_cnt_blk[ecnt],
+    char type[MAX_STR_LENGTH + 1];
+    if (ex_get_block(exid_inp, EX_ELEM_BLOCK, el_blk_ids[ecnt], type, &el_cnt_blk[ecnt],
                      &node_pel_blk[ecnt], nullptr, nullptr, &nattr_el_blk[ecnt]) < 0) {
       Gen_Error(0, "fatal: unable to get element block parameters");
       return 0;
     }
-
+    elem_type[ecnt] = type;
     nsize += el_cnt_blk[ecnt] * node_pel_blk[ecnt];
 
-    if (strcmp(elem_type[0], elem_type[ecnt]) == 0) {
+    if (elem_type[0] == elem_type[ecnt]) {
       if (node_pel_blk[0] != node_pel_blk[ecnt]) {
         acc_vis = ELB_FALSE;
       }
@@ -583,7 +570,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
 
   if (acc_vis == ELB_TRUE) {
     /* Output the initial information */
-    if (ex_put_init(exid_vis, title, mesh->num_dims, mesh->num_nodes, mesh->num_elems,
+    if (ex_put_init(exid_vis, title.c_str(), mesh->num_dims, mesh->num_nodes, mesh->num_elems,
                     vis_nelem_blks, 0, 0) < 0) {
       Gen_Error(0, "fatal: unable to output initial params to vis file");
       return 0;
@@ -594,11 +581,9 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
     float *yptr = nullptr;
     float *zptr = nullptr;
     switch (mesh->num_dims) {
-    case 3:
-      zptr = (mesh->coords) + 2 * mesh->num_nodes;
+    case 3: zptr = (mesh->coords) + 2 * mesh->num_nodes;
     /* FALLTHRU */
-    case 2:
-      yptr = (mesh->coords) + mesh->num_nodes;
+    case 2: yptr = (mesh->coords) + mesh->num_nodes;
     /* FALLTHRU */
     case 1: xptr = mesh->coords;
     }
@@ -639,14 +624,14 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
       vis_el_blk_ptr[bcnt] = ccnt;
       int    pos           = 0;
       int    old_pos       = 0;
-      INT *  el_ptr        = TOPTR(elem_block);
+      INT *  el_ptr        = elem_block.data();
       size_t ecnt          = mesh->num_elems;
       while (pos != -1) {
         pos = in_list(bcnt, ecnt, el_ptr);
         if (pos != -1) {
           old_pos += pos + 1;
           ecnt       = mesh->num_elems - old_pos;
-          el_ptr     = TOPTR(elem_block) + old_pos;
+          el_ptr     = elem_block.data() + old_pos;
           int nnodes = get_elem_info(NNODES, mesh->elem_type[old_pos - 1]);
           for (int ncnt = 0; ncnt < nnodes; ncnt++) {
             tmp_connect[ccnt++] = mesh->connect[old_pos - 1][ncnt] + 1;
@@ -657,7 +642,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
     vis_el_blk_ptr[vis_nelem_blks] = ccnt;
 
     /* Output the element map */
-    if (ex_put_map(exid_vis, TOPTR(elem_map)) < 0) {
+    if (ex_put_map(exid_vis, elem_map.data()) < 0) {
       Gen_Error(0, "fatal: unable to output element number map");
       return 0;
     }
@@ -669,8 +654,8 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
        * element.
        */
       int ecnt = (vis_el_blk_ptr[bcnt + 1] - vis_el_blk_ptr[bcnt]) / node_pel_blk[0];
-      if (ex_put_block(exid_vis, EX_ELEM_BLOCK, bcnt + 1, elem_type[0], ecnt, node_pel_blk[0], 0, 0,
-                       0) < 0) {
+      if (ex_put_block(exid_vis, EX_ELEM_BLOCK, bcnt + 1, elem_type[0].c_str(), ecnt,
+                       node_pel_blk[0], 0, 0, 0) < 0) {
         Gen_Error(0, "fatal: unable to output element block params");
         return 0;
       }
@@ -684,7 +669,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
     }
   }
 
-  else { /* For nodal/element results visualization of the partioning. */
+  else { /* For nodal/element results visualization of the partitioning. */
     // Copy the mesh portion to the vis file.
     ex_copy(exid_inp, exid_vis);
 
@@ -722,7 +707,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
       }
 
       /* Output the nodal variables */
-      if (ex_put_var(exid_vis, 1, EX_NODAL, 1, 1, mesh->num_nodes, TOPTR(proc_vals)) < 0) {
+      if (ex_put_var(exid_vis, 1, EX_NODAL, 1, 1, mesh->num_nodes, proc_vals.data()) < 0) {
         Gen_Error(0, "fatal: unable to output nodal variables");
         return 0;
       }

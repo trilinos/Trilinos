@@ -7,11 +7,11 @@
 namespace Rocket {
 
 std::vector<double>& getVector( ROL::Vector<double>& x ) {
-  return *(Teuchos::dyn_cast<ROL::StdVector<double>>(x).getVector());
+  return *(dynamic_cast<ROL::StdVector<double>&>(x).getVector());
 }
 
 const std::vector<double>& getVector( const ROL::Vector<double>& x ) {
-  return *(Teuchos::dyn_cast<const ROL::StdVector<double>>(x).getVector());
+  return *(dynamic_cast<const ROL::StdVector<double>&>(x).getVector());
 }
 
 
@@ -22,12 +22,12 @@ private:
   int N;
   double T, dt, mt;
   double htarg, alpha;
-  const Teuchos::RCP<const V>  w; // Trapezoidal weights
+  const ROL::Ptr<const V>  w; // Trapezoidal weights
 
 public:
   
   Objective(  int N_, double T_, double mt_, double htarg_, double alpha_, 
-              const Teuchos::RCP<const V>& w_ ) :
+              const ROL::Ptr<const V>& w_ ) :
     N(N_), T(T_), dt(T/N), mt(mt_), htarg(htarg_), alpha(alpha_), w(w_) {
   }
 

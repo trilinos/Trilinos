@@ -58,9 +58,11 @@
 #include "MoochoPack_MoochoThyraSolver.hpp"
 #endif
 
+#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
 #ifdef HAVE_PIRO_OPTIPACK
 #include "OptiPack_NonlinearCG.hpp"
 #include "GlobiPack_BrentsLineSearch.hpp"
+#endif
 #endif
 
 #ifdef HAVE_PIRO_ROL
@@ -69,6 +71,7 @@
 #include "ROL_ThyraME_Objective.hpp"
 #include "ROL_ThyraProductME_Objective.hpp"
 #include "ROL_LineSearchStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
@@ -117,6 +120,8 @@ Piro::PerformAnalysis(
 
   }
 #endif
+
+#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
 #ifdef HAVE_PIRO_OPTIPACK
   else if (analysis == "OptiPack") {
     *out << "Piro PerformAnalysis: Optipack Optimization Being Performed " << endl;
@@ -126,6 +131,8 @@ Piro::PerformAnalysis(
 
   }
 #endif
+#endif
+
 #ifdef HAVE_PIRO_ROL
   else if (analysis == "ROL") {
     *out << "Piro PerformAnalysis: ROL Optimization Being Performed " << endl;
@@ -135,12 +142,20 @@ Piro::PerformAnalysis(
   }
 #endif
   else {
-    if (analysis == "Dakota" || analysis == "OptiPack" || analysis == "MOOCHO" || analysis == "ROL")
+    if (analysis == "Dakota" || 
+#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
+        analysis == "OptiPack" || 
+#endif
+        analysis == "MOOCHO" || analysis == "ROL")
       *out << "ERROR: Trilinos/Piro was not configured to include \n "
            << "       analysis type: " << analysis << endl;
     else
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
-           << "       Valid analysis types are: Solve, Dakota, MOOCHO, OptiPack, ROL\n" << endl;
+           << "       Valid analysis types are: Solve, Dakota, MOOCHO, "
+#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
+           << "OptiPack, " 
+#endif
+           << "ROL\n" << endl;
     status = 0; // Should not fail tests
   }
 
@@ -181,6 +196,9 @@ Piro::PerformMoochoAnalysis(
 
   return (int) solution_status;
 #else
+  (void)piroModel;
+  (void)moochoParams;
+  (void)p;
  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
  *out << "ERROR: Trilinos/Piro was not configured to include MOOCHO analysis."
       << endl;
@@ -235,6 +253,9 @@ Piro::PerformDakotaAnalysis(
 
   return 0;
 #else
+  (void)piroModel;
+  (void)dakotaParams;
+  (void)p;
  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
  *out << "ERROR: Trilinos/Piro was not configured to include Dakota analysis."
       << "\nYou must enable TriKota." << endl;
@@ -242,7 +263,12 @@ Piro::PerformDakotaAnalysis(
 #endif
 }
 
+#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
 int
+#ifdef HAVE_PIRO_OPTIPACK
+// Spew deprecation warnings only if Piro user has requested OptiPack.
+OPTIPACK_DEPRECATED
+#endif
 Piro::PerformOptiPackAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
     Teuchos::ParameterList& optipackParams,
@@ -288,11 +314,16 @@ Piro::PerformOptiPackAnalysis(
 
   return (int) solveResult;
 #else
+  (void)piroModel;
+  (void)optipackParams;
+  (void)globipackParams;
+  (void)p;
  *out << "ERROR: Trilinos/Piro was not configured to include OptiPack analysis."
       << endl;
  return 0;  // should not fail tests
 #endif
 }
+#endif // !OPTIPACK_HIDE_DEPRECATED_CODE
 
 int
 Piro::PerformROLAnalysis(
@@ -405,8 +436,9 @@ Piro::PerformROLAnalysis(
   }
 
   // Define Step
-  Teuchos::RCP<ROL::LineSearchStep<double> > step = 
-    Teuchos::rcp(new ROL::LineSearchStep<double>(rolParams.sublist("ROL Options")));
+  Teuchos::RCP<ROL::LineSearchStep<double> > stepLS = Teuchos::rcp(new ROL::LineSearchStep<double>(rolParams.sublist("ROL Options")));
+  Teuchos::RCP<ROL::TrustRegionStep<double> > stepTR = Teuchos::rcp(new ROL::TrustRegionStep<double>(rolParams.sublist("ROL Options")));
+
   *out << "\nROL options:" << std::endl;
   rolParams.sublist("ROL Options").print(*out);
   *out << std::endl;
@@ -420,7 +452,8 @@ Piro::PerformROLAnalysis(
     Teuchos::rcp(new ROL::StatusTest<double>(gtol, stol, maxit));
 
   // Define Algorithm
-  ROL::Algorithm<double> algo(step,status,print);
+  ROL::Algorithm<double> algoLS(stepLS,status,print);
+  ROL::Algorithm<double> algoTR(stepTR,status,print);
 
   // Run Algorithm
   std::vector<std::string> output;
@@ -439,10 +472,24 @@ Piro::PerformROLAnalysis(
     Teuchos::RCP<const Thyra::VectorBase<double>> p_up = Thyra::defaultProductVector<double>(p_space, p_up_vecs());
 
     ROL::Thyra_BoundConstraint<double>  boundConstraint(p_lo->clone_v(), p_up->clone_v(), eps_bound);
-    output  = algo.run(rol_p, obj, boundConstraint, print, *out);
+    if(rolParams.get<std::string>("Step Method", "Line Search") == "Line Search") {
+      *out << "\nUsing Line Search Algorithm" << std::endl;
+      output  = algoLS.run(rol_p, obj, boundConstraint, print, *out);
+    }
+    else {
+      *out << "\nUsing Trust Region Algorithm" << std::endl;
+      output  = algoTR.run(rol_p, obj, boundConstraint, print, *out);
+    }
   }
   else
-    output = algo.run(rol_p, obj, print, *out);
+    if(rolParams.get<std::string>("Step Method", "Line Search") == "Line Search") {
+      *out << "\nUsing Line Search Algorithm" << std::endl;
+      output  = algoLS.run(rol_p, obj, print, *out);
+    }
+    else {
+      *out << "\nUsing Trust Region Algorithm" << std::endl;
+      output  = algoTR.run(rol_p, obj, print, *out);
+    }
 
 
   for ( unsigned i = 0; i < output.size(); i++ ) {
@@ -451,6 +498,8 @@ Piro::PerformROLAnalysis(
 
   return 0;
 #else
+  (void)piroModel;
+  (void)p;
  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
  *out << "ERROR: Trilinos/Piro was not configured to include ROL analysis."
       << "\nYou must enable ROL." << endl;
@@ -469,8 +518,10 @@ Piro::getValidPiroAnalysisParameters()
   validPL->set<bool>("Output Final Parameters", false, "");
   validPL->sublist("Solve",     false, "");
   validPL->sublist("MOOCHO",    false, "");
+#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
   validPL->sublist("OptiPack",  false, "");
   validPL->sublist("GlobiPack", false, "");
+#endif
   validPL->sublist("Dakota",    false, "");
   validPL->sublist("ROL",       false, "");
   validPL->set<int>("Write Interval", 1, "Iterval between writes to mesh");

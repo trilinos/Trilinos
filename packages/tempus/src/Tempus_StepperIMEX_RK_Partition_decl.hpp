@@ -208,14 +208,13 @@ namespace Tempus {
  *         for \f$X_i\f$ where \f$Y_i\f$ are known parameters
  *       - \f$g^x_i \leftarrow - \tilde{\dot{X}}\f$
  *     - \f$f_i \leftarrow f(Z_i,\hat{t}_i)\f$
- *     - \f$\dot{X}_i
- *          = - g^x_i - f^x(Z_i,t_i)\f$ [Optional]
- *     - \f$\dot{Y}_i = - f^y_i \f$ [Optional]
  *   - end for
  *   - \f$z_n = z_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\, f_i\f$
  *   - \f$x_n \mathrel{+{=}} - \Delta t\,\sum_{i=1}^{s} b_i\, g^x_i\f$
- *   - Solve \f$M(z_n) \dot{z}_n + F(z_n,t_n) + G(z_n,t_n) = 0\f$
- *       for \f$\dot{z}_n\f$ [Optional]
+ *
+ *  The First-Step-As-Last (FSAL) principle is not valid for IMEX RK Partition.
+ *  The default is to set useFSAL=false, and useFSAL=true will result
+ *  in an error.
  *
  *  #### References
  *  -# Shadid, Cyr, Pawlowski, Widley, Scovazzi, Zeng, Phillips, Conde,
@@ -229,17 +228,35 @@ class StepperIMEX_RK_Partition : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-  /// Constructor
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperIMEX_RK_Partition();
+
+  /// Constructor to specialize Stepper parameters.
+  StepperIMEX_RK_Partition(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor to use default Stepper parameters.
+  StepperIMEX_RK_Partition(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType = "Partitioned IMEX RK SSP2");
+
+  /// Constructor for StepperFactory.
   StepperIMEX_RK_Partition(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& models,
-    std::string stepperType,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
 
   /// \name Basic stepper methods
   //@{
     /// Set both the explicit and implicit tableau from ParameterList
     virtual void setTableaus(Teuchos::RCP<Teuchos::ParameterList> pList,
-                             std::string stepperType);
+                             std::string stepperType = "");
 
     /// Set the explicit tableau from ParameterList
     virtual void setExplicitTableau(std::string stepperType,
@@ -260,11 +277,8 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
-     { return wrapperModelPairIMEX_; }
+     { return this->wrapperModel_; }
 
     virtual void setModelPair(
       const Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> > &
@@ -274,21 +288,15 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
 
-    /// Set solver via ParameterList solver name.
-    virtual void setSolver(std::string solverName);
-    /// Set solver via solver ParameterList.
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    /// Set solver.
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-      { return solver_; }
     virtual void setObserver(
-      Teuchos::RCP<StepperIMEX_RKPartObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -305,7 +313,18 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
+
+  /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const
+  {
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A = implicitTableau_->A();
+    return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
+  }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
   /// \name ParameterList methods
   //@{
@@ -334,19 +353,9 @@ public:
     Scalar time, Scalar stepSize, Scalar stageNumber,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const;
 
-private:
-
-  /// Default Constructor -- not allowed
-  StepperIMEX_RK_Partition();
-
 protected:
 
   std::string                                            description_;
-  Teuchos::RCP<Teuchos::ParameterList>                   stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
-                                                         wrapperModelPairIMEX_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >      solver_;
-
   Teuchos::RCP<const RKButcherTableau<Scalar> >          explicitTableau_;
   Teuchos::RCP<const RKButcherTableau<Scalar> >          implicitTableau_;
 
@@ -359,6 +368,7 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
   Teuchos::RCP<StepperIMEX_RKPartObserver<Scalar> > stepperIMEX_RKPartObserver_;
+
 };
 
 

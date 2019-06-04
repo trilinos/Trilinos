@@ -924,28 +924,37 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_Broadcast ) {        \
   ValueTypeSerializer<int,FadType> fts(                                 \
     rcp(new ValueTypeSerializer<int,double>), p);                       \
                                                                         \
-  Kokkos::View<FadType*,Device> x("x",n,p+1), x2("x2",n,p+1), x3("x3",n,p+1); \
+  typedef Kokkos::View<FadType*,Device> ViewType;                       \
+  typedef ViewType::HostMirror HostViewType;                            \
+  ViewType x("x",n,p+1), x2("x2",n,p+1), x3("x3",n,p+1);                \
+  HostViewType h_x = Kokkos::create_mirror_view(x);                     \
+  HostViewType h_x2 = Kokkos::create_mirror_view(x2);                   \
+  HostViewType h_x3 = Kokkos::create_mirror_view(x3);                   \
   for (int i=0; i<n; i++) {                                             \
-    x[i] = FadType(p, rnd.number());                                    \
+    h_x[i] = FadType(p, rnd.number());                                  \
     for (int j=0; j<p; j++)                                             \
-      x[i].fastAccessDx(j) = rnd.number();                              \
+      h_x[i].fastAccessDx(j) = rnd.number();                            \
   }                                                                     \
   for (int i=0; i<n; i++) {                                             \
-    x2[i] = FadType(p, 0.0);                                            \
+    h_x2[i] = FadType(p, 0.0);                                          \
   }                                                                     \
+  Kokkos::deep_copy(x, h_x);                                            \
+  Kokkos::deep_copy(x2, h_x2);                                          \
   if (comm->getRank() == 0) {                                           \
     x2 = x;                                                             \
     x3 = x;                                                             \
   }                                                                     \
                                                                         \
   Teuchos::broadcast(*comm, 0, n, x2);                                  \
+  Kokkos::deep_copy(h_x2, x2);                                          \
   bool success1 = checkFadArrays(                                       \
-    x, x2, std::string(#FAD)+" Broadcast", out);                        \
+    h_x, h_x2, std::string(#FAD)+" Broadcast", out);                    \
   success1 = checkResultOnAllProcs(*comm, out, success1);               \
                                                                         \
   Teuchos::broadcast(*comm, fts, 0, n, x3);                             \
+  Kokkos::deep_copy(h_x3, x3);                                          \
   bool success2 = checkFadArrays(                                       \
-    x, x3, std::string(#FAD)+" Broadcast FTS", out);                    \
+    h_x, h_x3, std::string(#FAD)+" Broadcast FTS", out);                \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
                                                                         \
   success = success1 && success2;                                       \
@@ -961,30 +970,41 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_SumAll ) {           \
   ValueTypeSerializer<int,FadType> fts(                                 \
     rcp(new ValueTypeSerializer<int,double>), p);                       \
                                                                         \
-  Kokkos::View<FadType*,Device> x("x",n,p+1), sums("sums",n,p+1),       \
+  typedef Kokkos::View<FadType*,Device> ViewType;                       \
+  typedef ViewType::HostMirror HostViewType;                            \
+  ViewType x("x",n,p+1), sums("sums",n,p+1),                            \
     sums2("sums2",n,p+1), sums3("sums3",n,p+1);                         \
+  HostViewType h_x = Kokkos::create_mirror_view(x);                     \
+  HostViewType h_sums = Kokkos::create_mirror_view(sums);               \
+  HostViewType h_sums2 = Kokkos::create_mirror_view(sums2);             \
+  HostViewType h_sums3 = Kokkos::create_mirror_view(sums3);             \
   for (int i=0; i<n; i++) {                                             \
-    x[i] = FadType(p, 1.0*(i+1));                                       \
+    h_x[i] = FadType(p, 1.0*(i+1));                                     \
     for (int j=0; j<p; j++)                                             \
-      x[i].fastAccessDx(j) = 2.0*(i+1);                                 \
+      h_x[i].fastAccessDx(j) = 2.0*(i+1);                               \
   }                                                                     \
   for (int i=0; i<n; i++) {                                             \
-    sums[i] = FadType(p, 1.0*(i+1)*num_proc);                           \
+    h_sums[i] = FadType(p, 1.0*(i+1)*num_proc);                         \
     for (int j=0; j<p; j++)                                             \
-      sums[i].fastAccessDx(j) = 2.0*(i+1)*num_proc;                     \
+      h_sums[i].fastAccessDx(j) = 2.0*(i+1)*num_proc;                   \
   }                                                                     \
   for (int i=0; i<n; i++) {                                             \
-    sums2[i] = FadType(p, 0.0);                                         \
+    h_sums2[i] = FadType(p, 0.0);                                       \
   }                                                                     \
+  Kokkos::deep_copy(x, h_x);                                            \
+  Kokkos::deep_copy(sums, h_sums);                                      \
+  Kokkos::deep_copy(sums2, h_sums2);                                    \
                                                                         \
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, n, x, sums2);          \
+  Kokkos::deep_copy(h_sums2, sums2);                                    \
   bool success1 = checkFadArrays(                                       \
-    sums, sums2, std::string(#FAD)+" Sum All", out);                    \
+    h_sums, h_sums2, std::string(#FAD)+" Sum All", out);                \
   success1 = checkResultOnAllProcs(*comm, out, success1);               \
                                                                         \
   Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_SUM, n, x, sums3);     \
+  Kokkos::deep_copy(h_sums3, sums3);                                    \
   bool success2 = checkFadArrays(                                       \
-    sums, sums3, std::string(#FAD)+" Sum All FTS", out);                \
+    h_sums, h_sums3, std::string(#FAD)+" Sum All FTS", out);            \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
   success = success1 && success2;                                       \
                                                                         \
@@ -1001,30 +1021,41 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MaxAll ) {           \
   ValueTypeSerializer<int,FadType> fts(                                 \
     rcp(new ValueTypeSerializer<int,double>), p);                       \
                                                                         \
-  Kokkos::View<FadType*,Device> x("x",n,p+1), maxs("maxs",n,p+1),       \
+  typedef Kokkos::View<FadType*,Device> ViewType;                       \
+  typedef ViewType::HostMirror HostViewType;                            \
+  ViewType x("x",n,p+1), maxs("maxs",n,p+1),                            \
     maxs2("maxs2",n,p+1), maxs3("maxs3",n,p+1);                         \
+  HostViewType h_x = Kokkos::create_mirror_view(x);                     \
+  HostViewType h_maxs = Kokkos::create_mirror_view(maxs);               \
+  HostViewType h_maxs2 = Kokkos::create_mirror_view(maxs2);             \
+  HostViewType h_maxs3 = Kokkos::create_mirror_view(maxs3);             \
   for (int i=0; i<n; i++) {                                             \
-    x[i] = FadType(p, 1.0*(i+1)*(rank+1));                              \
+    h_x[i] = FadType(p, 1.0*(i+1)*(rank+1));                            \
     for (int j=0; j<p; j++)                                             \
-      x[i].fastAccessDx(j) = 2.0*(i+1)*(rank+1);                        \
+      h_x[i].fastAccessDx(j) = 2.0*(i+1)*(rank+1);                      \
   }                                                                     \
   for (int i=0; i<n; i++) {                                             \
-    maxs[i] = FadType(p, 1.0*(i+1)*num_proc);                           \
+    h_maxs[i] = FadType(p, 1.0*(i+1)*num_proc);                         \
     for (int j=0; j<p; j++)                                             \
-      maxs[i].fastAccessDx(j) = 2.0*(i+1)*num_proc;                     \
+      h_maxs[i].fastAccessDx(j) = 2.0*(i+1)*num_proc;                   \
   }                                                                     \
   for (int i=0; i<n; i++) {                                             \
-    maxs2[i] = FadType(p, 0.0);                                         \
+    h_maxs2[i] = FadType(p, 0.0);                                       \
   }                                                                     \
+  Kokkos::deep_copy(x, h_x);                                            \
+  Kokkos::deep_copy(maxs, h_maxs);                                      \
+  Kokkos::deep_copy(maxs2, h_maxs2);                                    \
                                                                         \
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, n, x, maxs2);          \
+  Kokkos::deep_copy(h_maxs2, maxs2);                                    \
   bool success1 = checkFadArrays(                                       \
-    maxs, maxs2, std::string(#FAD)+" Max All", out);                    \
+    h_maxs, h_maxs2, std::string(#FAD)+" Max All", out);                \
   success1 = checkResultOnAllProcs(*comm, out, success1);               \
                                                                         \
   Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MAX, n, x, maxs3);     \
+  Kokkos::deep_copy(h_maxs3, maxs3);                                    \
   bool success2 = checkFadArrays(                                       \
-    maxs, maxs3, std::string(#FAD)+" Max All FTS", out);                \
+    h_maxs, h_maxs3, std::string(#FAD)+" Max All FTS", out);            \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
   success = success1 && success2;                                       \
                                                                         \
@@ -1040,36 +1071,47 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
   ValueTypeSerializer<int,FadType> fts(                                 \
     rcp(new ValueTypeSerializer<int,double>), p);                       \
                                                                         \
-  Kokkos::View<FadType*,Device> x("x",n,p+1), mins("mins",n,p+1),       \
+  typedef Kokkos::View<FadType*,Device> ViewType;                       \
+  typedef ViewType::HostMirror HostViewType;                            \
+  ViewType x("x",n,p+1), mins("mins",n,p+1),                            \
     mins2("mins2",n,p+1), mins3("mins3",n,p+1);                         \
+  HostViewType h_x = Kokkos::create_mirror_view(x);                     \
+  HostViewType h_mins = Kokkos::create_mirror_view(mins);               \
+  HostViewType h_mins2 = Kokkos::create_mirror_view(mins2);             \
+  HostViewType h_mins3 = Kokkos::create_mirror_view(mins3);             \
   for (int i=0; i<n; i++) {                                             \
-    x[i] = FadType(p, 1.0*(i+1)*(rank+1));                              \
+    h_x[i] = FadType(p, 1.0*(i+1)*(rank+1));                            \
     for (int j=0; j<p; j++)                                             \
-      x[i].fastAccessDx(j) = 2.0*(i+1)*(rank+1);                        \
+      h_x[i].fastAccessDx(j) = 2.0*(i+1)*(rank+1);                      \
   }                                                                     \
   for (int i=0; i<n; i++) {                                             \
-    mins[i] = FadType(p, 1.0*(i+1));                                    \
+    h_mins[i] = FadType(p, 1.0*(i+1));                                  \
     for (int j=0; j<p; j++)                                             \
-      mins[i].fastAccessDx(j) = 2.0*(i+1);                              \
+      h_mins[i].fastAccessDx(j) = 2.0*(i+1);                            \
   }                                                                     \
   for (int i=0; i<n; i++) {                                             \
-    mins2[i] = FadType(p, 0.0);                                         \
+    h_mins2[i] = FadType(p, 0.0);                                       \
   }                                                                     \
+  Kokkos::deep_copy(x, h_x);                                            \
+  Kokkos::deep_copy(mins, h_mins);                                      \
+  Kokkos::deep_copy(mins2, h_mins2);                                    \
                                                                         \
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, n, x, mins2);          \
+  Kokkos::deep_copy(h_mins2, mins2);                                    \
   bool success1 = checkFadArrays(                                       \
-    mins, mins2, std::string(#FAD)+" Min All", out);                    \
+    h_mins, h_mins2, std::string(#FAD)+" Min All", out);                \
   success1 = checkResultOnAllProcs(*comm, out, success1);               \
                                                                         \
   Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MIN, n, x, mins3);     \
+  Kokkos::deep_copy(h_mins3, mins3);                                    \
   bool success2 = checkFadArrays(                                       \
-    mins, mins3, std::string(#FAD)+" Min All FTS", out);                \
+    h_mins, h_mins3, std::string(#FAD)+" Min All FTS", out);            \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
   success = success1 && success2;                                       \
                                                                         \
 }
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 #define FAD_KOKKOS_COMM_TESTS_OPENMP(FadType, FAD)                      \
   using Kokkos::OpenMP;                                                 \
   FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, OpenMP)
@@ -1077,7 +1119,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
 #define FAD_KOKKOS_COMM_TESTS_OPENMP(FadType, FAD)
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
 #define FAD_KOKKOS_COMM_TESTS_THREADS(FadType, FAD)                      \
   using Kokkos::Threads;                                                 \
   FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, Threads)
@@ -1085,7 +1127,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
 #define FAD_KOKKOS_COMM_TESTS_THREADS(FadType, FAD)
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #define FAD_KOKKOS_COMM_TESTS_CUDA(FadType, FAD)                         \
   using Kokkos::Cuda;                                                    \
   FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, Cuda)
@@ -1093,7 +1135,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
 #define FAD_KOKKOS_COMM_TESTS_CUDA(FadType, FAD)
 #endif
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
 #define FAD_KOKKOS_COMM_TESTS_SERIAL(FadType, FAD)                      \
   using Kokkos::Serial;                                                 \
   FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, Serial)

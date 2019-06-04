@@ -109,9 +109,9 @@ public:
   /// Start time step.
   virtual void startTimeStep()
     { integrator_->startTimeStep(); }
-  /// Only accept step after meeting time step criteria.
-  virtual void acceptTimeStep()
-    { integrator_->acceptTimeStep(); }
+  /// Check if time step has passed or failed.
+  virtual void checkTimeStep()
+    { integrator_->checkTimeStep(); }
   /// Perform tasks after end of integrator.
   virtual void endIntegrator()
     { integrator_->endIntegrator(); }
@@ -144,12 +144,12 @@ public:
   virtual void setStepperWStepper(Teuchos::RCP<Stepper<Scalar> > stepper)
     { integrator_->setStepperWStepper(stepper); }
   /// Set the initial state which has the initial conditions
-  virtual void setInitialState(
+  virtual void initializeSolutionHistory(
     Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null)
-    { integrator_->setInitialState(state); }
+    { integrator_->initializeSolutionHistory(state); }
 
   /// Set the initial state from Thyra::VectorBase(s)
-  virtual void setInitialState(
+  virtual void initializeSolutionHistory(
     Scalar t0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
@@ -182,6 +182,10 @@ public:
   /// Initializes the Integrator after set* function calls
   virtual void initialize()
     { integrator_->initialize(); }
+  virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
+    { return integrator_->getIntegratorTimer(); }
+  virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const override
+    { return integrator_->getStepperTimer(); }
 
   /// Get current the solution, x
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;

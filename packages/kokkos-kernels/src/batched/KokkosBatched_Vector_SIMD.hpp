@@ -3,165 +3,121 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Kokkos_Complex.hpp"
+#include <Kokkos_Complex.hpp>
+#include <KokkosBatched_Vector.hpp>
+
+#if defined(__CUDA_ARCH__) 
+#undef  __KOKKOSBATCHED_ENABLE_AVX__
+#else
+// compiler bug with AVX in some architectures
+#define __KOKKOSBATCHED_ENABLE_AVX__
+#endif
 
 namespace KokkosBatched {
   namespace Experimental {
 
-    template<typename T, typename SpT, int l>
-    class Vector<VectorTag<SIMD<T,SpT>,l> > {
+    template<typename T, int v = 0>
+    struct TypeTraits {
+      typedef T thread_private_type;
+      typedef T team_private_type;
+    };
+
+    template<typename T, int l, int v>
+    struct TypeTraits<Vector<SIMD<T>,l>, v> {
+      typedef typename std::conditional<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value, 
+                                        Vector<SIMD<T>,l>, T>::type thread_private_type;
+      typedef typename std::conditional<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value, 
+                                        Vector<SIMD<T>,l>, Vector<SIMD<T>,(l/v)+(l%v>0)> > team_private_type;      
+    };
+  
+    template<typename T, int l>
+    class Vector<SIMD<T>,l> {
     public:
-      using tag_type = VectorTag<SIMD<T,SpT>,l>;
+      using type = Vector<SIMD<T>,l>;
+      using value_type = T;
+      using mag_type = typename Kokkos::Details::ArithTraits<T>::mag_type;
 
-      using type = Vector<tag_type>;
-      using value_type = typename tag_type::value_type;
-      using mag_type = typename Kokkos::Details::ArithTraits<value_type>::mag_type;
+      enum : int { vector_length = l };
 
-      // TODO:: do I need this ? 
-      //   - for cuda, this is necessary (if this is used on cuda) and we mostly use layout left directly
-      //   - for host, the lambda does not allow further compiler optimization 
-      using member_type = typename tag_type::member_type;
-
-      static const int vector_length = tag_type::length;
-
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
+      typedef __device_builtin__ __builtin_align__(16) value_type data_type[vector_length];
+#else
       typedef value_type data_type[vector_length];
+#endif
 
       KOKKOS_INLINE_FUNCTION
       static const char* label() { return "SIMD"; }
+
+      template<typename,int>
+      friend class Vector;
 
     private:
       mutable data_type _data;
 
     public:
       KOKKOS_INLINE_FUNCTION Vector() {
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-        Kokkos::parallel_for
-          (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
-           [&](const int &i) {
-            _data[i] = 0;
-          });
-#else
+        //static_assert(std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+        //              "Vector SIMD should not be instanciated in CudaSpace");
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
-#endif
-#if !defined( KOKKOS_DEBUG ) & defined( KOKKOS_ENABLE_PRAGMA_SIMD )
-#pragma simd
 #endif
         for (int i=0;i<vector_length;++i)
           _data[i] = 0;
-#endif
       }
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-        Kokkos::parallel_for
-          (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
-           [&](const int &i) {
-            _data[i] = val;
-          });
-#else
+      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
-#endif
-#if !defined( KOKKOS_DEBUG ) & defined( KOKKOS_ENABLE_PRAGMA_SIMD )
-#pragma simd
 #endif
         for (int i=0;i<vector_length;++i)
           _data[i] = val;
-#endif
       }
-      KOKKOS_INLINE_FUNCTION Vector(const type &b) {
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-        Kokkos::parallel_for
-          (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
-           [&](const int &i) {
-            _data[i] = b._data[i];
-          });
-#else
+      template<typename ArgValueType>
+      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if !defined( KOKKOS_DEBUG ) & defined( KOKKOS_ENABLE_PRAGMA_SIMD )
-#pragma simd
-#endif
         for (int i=0;i<vector_length;++i)
-          _data[i] = b._data[i];
-#endif
+          _data[i] = b[i];
       }
 
       KOKKOS_INLINE_FUNCTION
-      type& loadAligned(value_type const *p) {
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-        Kokkos::parallel_for
-          (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
-           [&](const int &i) {
-            _data[i] = p[i];
-          });
-#else
+      type& loadAligned(const value_type *p) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if !defined( KOKKOS_DEBUG ) & defined( KOKKOS_ENABLE_PRAGMA_SIMD )
-#pragma simd
-#endif
         for (int i=0;i<vector_length;++i)
           _data[i] = p[i];
-#endif
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
-      type& loadUnaligned(value_type const *p) {
+      type& loadUnaligned(const value_type *p) {
         return loadAligned(p);
       }
       
-      // AVX has aligned version and unaligned version;
-      // aligned load store are recommended if memory is aligned
-      // in this version, there is no difference between aligned and unaligned
-
       KOKKOS_INLINE_FUNCTION
       void storeAligned(value_type *p) const {
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-        Kokkos::parallel_for
-          (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
-           [&](const int &i) {
-            p[i] = _data[i];
-          });
-#else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if !defined( KOKKOS_DEBUG ) & defined( KOKKOS_ENABLE_PRAGMA_SIMD )
-#pragma simd
-#endif
         for (int i=0;i<vector_length;++i)
           p[i] = _data[i];
-#endif
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -170,577 +126,491 @@ namespace KokkosBatched {
       }
 
       KOKKOS_INLINE_FUNCTION
-      value_type& operator[](const int i) const {
+      value_type& operator[](const int &i) const {
         return _data[i];
       }
-
     };
-
-    /// ---------------------------------------------------------------------------------------------------    
-
-    /// simd, simd
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<T,SpT>,l> >
-    operator + (Vector<VectorTag<SIMD<T,SpT>,l> > const & a,  Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-         [&](const int &i) {
-          r_val[i] = a[i] + b[i];
-        });
-#else
-#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
-#pragma ivdep
-#endif
-#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
-#pragma vector always
-#endif
-#if !defined( KOKKOS_DEBUG ) & defined( KOKKOS_ENABLE_PRAGMA_SIMD )
-#pragma simd
-#endif
-      for (int i=0;i<l;++i)
-        r_val[i] = a[i] + b[i];
-#endif
-      return r_val;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator += (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      a = a + b;
-      return a;
-    }
-
-    /// simd, real
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> >
-    operator + (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const T b) {
-      return a + Vector<VectorTag<SIMD<T,SpT>,l> >(b);
-    }
-    
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator + (const T a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) + b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > & 
-    operator += (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const T b) {
-      a = a + b;
-      return a;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> >
-    operator ++ (Vector<VectorTag<SIMD<T,SpT>,l> > & a, int) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > a0 = a;
-      a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
-      return a0;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<T,SpT>,l> > & 
-    operator ++ (Vector<VectorTag<SIMD<T,SpT>,l> > & a) {
-      a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
-      return a;
-    }
-
-    /// simd complex, real
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >
-    operator + (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const T b) {
-      return a + Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
-    }
-    
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator + (const T a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) + b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & 
-    operator += (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const T b) {
-      a = a + b;
-      return a;
-    }
-
-    /// simd complex, complex 
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >
-    operator + (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const Kokkos::complex<T> b) {
-      return a + Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
-    }
-    
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator + (const Kokkos::complex<T> a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) + b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & 
-    operator += (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const Kokkos::complex<T> b) {
-      a = a + b;
-      return a;
-    }
-
-    /// ---------------------------------------------------------------------------------------------------
-
-    /// simd, simd
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-         [&](const int &i) {
-          r_val[i] = a[i] - b[i];
-        });
-#else
-#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
-#pragma ivdep
-#endif
-#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
-#pragma vector always
-#endif
-#if !defined( KOKKOS_DEBUG ) & defined( KOKKOS_ENABLE_PRAGMA_SIMD )
-#pragma simd
-#endif
-      for (int i=0;i<l;++i)
-        r_val[i] = a[i] - b[i];
-#endif
-      return r_val;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a) {
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-         [&](const int &i) {
-          a[i] = -a[i];
-        });
-#else
-#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
-#pragma ivdep
-#endif
-#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
-#pragma vector always
-#endif
-#if !defined( KOKKOS_DEBUG ) & defined( KOKKOS_ENABLE_PRAGMA_SIMD )
-#pragma simd
-#endif
-      for (int i=0;i<l;++i)
-        a[i] = -a[i];
-#endif
-      return a;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator -= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      a = a - b;
-      return a;
-    }
-
-    /// simd, real
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const T b) {
-      return a - Vector<VectorTag<SIMD<T,SpT>,l> >(b);
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator - (const T a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) - b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator -= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const T b) {
-      a = a - b;
-      return a;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator -- (Vector<VectorTag<SIMD<T,SpT>,l> > & a, int) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > a0 = a;
-      a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
-      return a0;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<T,SpT>,l> > & 
-    operator -- (Vector<VectorTag<SIMD<T,SpT>,l> > & a) {
-      a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
-      return a;
-    }
-
-    /// simd complex, real
-    
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator - (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const T b) {
-      return a - Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator - (const T a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) - b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator -= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const T b) {
-      a = a - b;
-      return a;
-    }
-
-    /// simd complex, complex
-    
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator - (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const Kokkos::complex<T> b) {
-      return a - Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator - (const Kokkos::complex<T> a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) - b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator -= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const Kokkos::complex<T> b) {
-      a = a - b;
-      return a;
-    }
-
-    /// ---------------------------------------------------------------------------------------------------    
-
-    /// simd, simd
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator * (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-         [&](const int &i) {
-          r_val[i] = a[i] * b[i];
-        });
-#else
-#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
-#pragma ivdep
-#endif
-#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
-#pragma vector always
-#endif
-#if !defined( KOKKOS_DEBUG ) & defined( KOKKOS_ENABLE_PRAGMA_SIMD )
-#pragma simd
-#endif
-      for (int i=0;i<l;++i)
-        r_val[i] = a[i] * b[i];
-#endif
-      return r_val;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator *= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      a = a * b;
-      return a;
-    }
-
-
-    /// simd, real
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator * (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const T b) {
-      return a * Vector<VectorTag<SIMD<T,SpT>,l> >(b);
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator * (const T a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) * b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator *= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const T b) {
-      a = a * b;
-      return a;
-    }
-
-    /// simd complex, real
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator * (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const T b) {
-      return a * Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator * (const T a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) * b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator *= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const T b) {
-      a = a * b;
-      return a;
-    }
-
-    /// simd complex, complex
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator * (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const Kokkos::complex<T> b) {
-      return a * Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator * (const Kokkos::complex<T> a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) * b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator *= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const Kokkos::complex<T> b) {
-      a = a * b;
-      return a;
-    }
-
-    /// ---------------------------------------------------------------------------------------------------    
-
-    /// simd, simd
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator / (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-         [&](const int &i) {
-          r_val[i] = a[i] / b[i];
-        });
-#else
-#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
-#pragma ivdep
-#endif
-#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
-#pragma vector always
-#endif
-#if !defined( KOKKOS_DEBUG ) & defined( KOKKOS_ENABLE_PRAGMA_SIMD )
-#pragma simd
-#endif
-      for (int i=0;i<l;++i)
-        r_val[i] = a[i] / b[i];
-#endif
-      return r_val;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator /= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      a = a / b;
-      return a;
-    }
-
-    /// simd, real
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator / (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const T b) {
-      return a / Vector<VectorTag<SIMD<T,SpT>,l> >(b);
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator / (const T a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) / b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator /= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const T b) {
-      a = a / b;
-      return a;
-    }
-
-    /// simd complex, real
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator / (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const T b) {
-      return a / Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator / (const T a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) / b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator /= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const T b) {
-      a = a / b;
-      return a;
-    }
-
-    /// simd complex, complex
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator / (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const Kokkos::complex<T> b) {
-      return a / Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator / (const Kokkos::complex<T> a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) / b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator /= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const Kokkos::complex<T> b) {
-      a = a / b;
-      return a;
-    }
-
   }
 }
+
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
+namespace KokkosBatched {
+  namespace Experimental {
+
+    template<>
+    class Vector<SIMD<double>,2> {
+    public:
+      using type = Vector<SIMD<double>,2>;
+      using value_type = double;
+      using mag_type = double;
+
+      enum : int { vector_length = 2 };
+      //typedef __device_builtin__ __builtin_align__(16) value_type data_type[vector_length];
+      typedef double2 data_type;
+
+      KOKKOS_INLINE_FUNCTION
+      static const char* label() { return "CudaDouble2"; }
+
+      template<typename,int>
+      friend class Vector;
+
+    private:
+      mutable data_type _data;
+
+    public:
+      KOKKOS_INLINE_FUNCTION Vector() { _data.x = 0; _data.y = 0; }
+      KOKKOS_INLINE_FUNCTION Vector(const value_type &val) { _data.x = val; _data.y = val; }
+      KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data.x = b._data.x; _data.y = b._data.y; }
+      KOKKOS_INLINE_FUNCTION Vector(const double2 &val) { _data.x = val.x; _data.y = val.y; }
+
+      template<typename ArgValueType>
+      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
+        _data.x = val; 
+        _data.y = val;
+      }
+
+      template<typename ArgValueType>
+      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
+        _data.x = b[0];
+        _data.y = b[1];
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      type& operator=(const double2 &val) {
+        _data.x = val.x;
+        _data.y = val.y;
+        return *this;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      double2 double2() const {
+        return _data;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      type& loadAligned(const value_type *p) {
+        _data.x = *(p  );
+        _data.y = *(p+1);
+        return *this;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      type& loadUnaligned(const value_type *p) {
+        _data.x = *(p  );
+        _data.y = *(p+1);
+        return *this;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void storeAligned(value_type *p) const {
+        *(p  ) = _data.x;
+        *(p+1) = _data.y;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void storeUnaligned(value_type *p) const {
+        *(p  ) = _data.x;
+        *(p+1) = _data.y;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type& operator[](const int &i) const {
+        return reinterpret_cast<value_type*>(&_data)[i];
+      }
+    };
+  }
+}
+#endif
+
+
+#if defined(__KOKKOSBATCHED_ENABLE_AVX__)
+#if defined(__AVX__) || defined(__AVX2__)
+#include <immintrin.h>
+
+namespace KokkosBatched {
+  namespace Experimental {
+
+    template<>
+    class Vector<SIMD<double>,4> {
+    public:
+      using type = Vector<SIMD<double>,4>;
+      using value_type = double;
+      using mag_type = double;
+
+      enum : int { vector_length = 4 };
+      typedef __m256d data_type __attribute__ ((aligned(32)));
+
+      inline
+      static const char* label() { return "AVX256"; }
+
+      template<typename,int>
+      friend class Vector;
+
+    private:
+      mutable data_type _data;
+
+    public:
+      inline Vector() { _data = _mm256_setzero_pd(); }
+      inline Vector(const value_type &val) { _data = _mm256_set1_pd(val); }
+      inline Vector(const type &b) { _data = b._data; }
+      inline Vector(const __m256d &val) { _data = val; }
+
+      template<typename ArgValueType>
+      inline Vector(const ArgValueType &val) {
+        auto d = reinterpret_cast<value_type*>(&_data);
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+        for (int i=0;i<vector_length;++i)
+          d[i] = val;
+      }
+
+      template<typename ArgValueType>
+      inline Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<ArgValueType*>(&b._data);
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
+      }
+
+      inline
+      type& operator=(const __m256d &val) {
+        _data = val;
+        return *this;
+      }
+
+      inline
+      operator __m256d() const {
+        return _data;
+      }
+
+      inline
+      type& loadAligned(const value_type *p) {
+        _data = _mm256_load_pd(p);
+        return *this;
+      }
+
+      inline
+      type& loadUnaligned(const value_type *p) {
+        _data = _mm256_loadu_pd(p);
+        return *this;
+      }
+
+      inline
+      void storeAligned(value_type *p) const {
+        _mm256_store_pd(p, _data);
+      }
+
+      inline
+      void storeUnaligned(value_type *p) const {
+        _mm256_storeu_pd(p, _data);
+      }
+
+      inline
+      value_type& operator[](const int &i) const {
+        return reinterpret_cast<value_type*>(&_data)[i];
+      }
+    };
+
+    template<>
+    class Vector<SIMD<Kokkos::complex<double> >,2> {
+    public:
+      using type = Vector<SIMD<Kokkos::complex<double> >,2>;
+      using value_type = Kokkos::complex<double>;
+      using mag_type = double;
+
+      static const int vector_length = 2;
+      typedef __m256d data_type __attribute__ ((aligned(32)));
+
+      inline
+      static const char* label() { return "AVX256"; }
+      
+      template<typename,int>
+      friend class Vector;
+
+    private:
+      mutable data_type _data;
+
+    public:
+      inline Vector() { _data = _mm256_setzero_pd(); }
+      inline Vector(const value_type &val) { _data = _mm256_broadcast_pd((const __m128d *)&val);}
+      inline Vector(const mag_type &val) { const value_type a(val); _data = _mm256_broadcast_pd((__m128d const *)&a); }
+      inline Vector(const type &b) { _data = b._data; }
+      inline Vector(const __m256d &val) { _data = val; }
+      
+//       template<typename ArgValueType>
+//       inline Vector(const ArgValueType val) {
+// #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+// #pragma ivdep
+// #endif
+// #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+// #pragma vector always
+// #endif
+//         for (int i=0;i<vector_length;++i)
+//           _data.d[i] = value_type(val);
+//       }
+      template<typename ArgValueType>
+      inline Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<ArgValueType*>(&b._data);
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
+      }
+
+      inline
+      type& operator=(const __m256d &val) {
+        _data = val;
+        return *this;
+      }
+
+      inline
+      operator __m256d() const {
+        return _data;
+      }
+
+      inline
+      type& loadAligned(const value_type *p) {
+        _data = _mm256_load_pd((mag_type*)p);
+        return *this;
+      }
+
+      inline
+      type& loadUnaligned(const value_type *p) {
+        _data = _mm256_loadu_pd((mag_type*)p);
+        return *this;
+      }
+
+      inline
+      void storeAligned(value_type *p) const {
+        _mm256_store_pd((mag_type*)p, _data);
+      }
+
+      inline
+      void storeUnaligned(value_type *p) const {
+        _mm256_storeu_pd((mag_type*)p, _data);
+      }
+
+      inline
+      value_type& operator[](const int &i) const {
+        return reinterpret_cast<value_type*>(&_data)[i];
+      }
+    };
+}}
+#endif /* #if defined(__AVX__) || defined(__AVX2__) */
+
+#if defined(__AVX512F__)
+#include <immintrin.h>
+
+namespace KokkosBatched {
+  namespace Experimental {
+
+    template<>
+    class Vector<SIMD<double>,8> {
+    public:
+      using type = Vector<SIMD<double>,8>;
+      using value_type = double;
+      using mag_type = double;
+      
+      enum : int { vector_length = 8 };
+      typedef __m512d data_type __attribute__ ((aligned(64)));
+
+      template<typename,int>
+      friend class Vector;
+
+    private:
+      mutable data_type _data;
+
+    public:
+      inline Vector() { _data = _mm512_setzero_pd(); }
+      inline Vector(const value_type &val) { _data = _mm512_set1_pd(val); }
+      inline Vector(const type &b) { _data = b._data; }
+      inline Vector(const __m512d &val) { _data = val; }
+
+      template<typename ArgValueType>
+      inline Vector(const ArgValueType &val) {
+        auto d = reinterpret_cast<value_type*>(&_data);
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+        for (int i=0;i<vector_length;++i)
+          d[i] = val;
+      }
+      template<typename ArgValueType>
+      inline Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<ArgValueType*>(&b._data);
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
+      }
+
+      inline
+      type& operator=(const __m512d &val) {
+        _data = val;
+        return *this;
+      }
+
+      inline
+      operator __m512d() const {
+        return _data;
+      }
+
+      inline
+      type& loadAligned(const value_type *p) {
+        _data = _mm512_load_pd(p);
+        return *this;
+      }
+
+      inline
+      type& loadUnaligned(const value_type *p) {
+        _data = _mm512_loadu_pd(p);
+        return *this;
+      }
+
+      inline
+      void storeAligned(value_type *p) const {
+        _mm512_store_pd(p, _data);
+      }
+
+      inline
+      void storeUnaligned(value_type *p) const {
+        _mm512_storeu_pd(p, _data);
+      }
+
+      inline
+      value_type& operator[](const int &i) const {
+        return reinterpret_cast<value_type*>(&_data)[i];
+      }
+    };
+
+    template<>
+    class Vector<SIMD<Kokkos::complex<double> >,4> {
+    public:
+      using type = Vector<SIMD<Kokkos::complex<double> >,4>;
+      using value_type = Kokkos::complex<double>;
+      using mag_type = double;
+
+      enum : int { vector_length = 4 };
+      typedef __m512d data_type __attribute__ ((aligned(64)));
+
+      inline
+      static const char* label() { return "AVX512"; }
+
+      template<typename,int>
+      friend class Vector;
+
+    private:
+      mutable data_type _data;
+
+    public:
+      inline Vector() { _data = _mm512_setzero_pd(); }
+      inline Vector(const value_type &val) {
+        _data = _mm512_mask_broadcast_f64x4(_mm512_set1_pd(val.imag()), 0x55, _mm256_set1_pd(val.real()));
+      }
+      inline Vector(const mag_type &val) {
+        _data = _mm512_mask_broadcast_f64x4(_mm512_setzero_pd(), 0x55, _mm256_set1_pd(val));
+      }
+      inline Vector(const type &b) { _data = b._data; }
+      inline Vector(const __m512d &val) { _data = val; }
+
+      template<typename ArgValueType>
+      inline Vector(const ArgValueType &val) {
+        auto d = reinterpret_cast<value_type*>(&_data);
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+        for (int i=0;i<vector_length;++i)
+          d[i] = val;
+      }
+      template<typename ArgValueType>
+      inline Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<value_type*>(&b._data);
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
+      }
+
+      inline
+      type& operator=(const __m512d &val) {
+        _data = val;
+        return *this;
+      }
+
+      inline
+      operator __m512d() const {
+        return _data;
+      }
+
+      inline
+      type& loadAligned(const value_type *p) {
+        _data = _mm512_load_pd((mag_type*)p);
+        return *this;
+      }
+
+      inline
+      type& loadUnaligned(const value_type *p) {
+        _data = _mm512_loadu_pd((mag_type*)p);
+        return *this;
+      }
+
+      inline
+      void storeAligned(value_type *p) const {
+        _mm512_store_pd((mag_type*)p, _data);
+      }
+
+      inline
+      void storeUnaligned(value_type *p) const {
+        _mm512_storeu_pd((mag_type*)p, _data);
+      }
+
+      inline
+      value_type& operator[](const int &i) const {
+        return reinterpret_cast<value_type*>(&_data)[i];
+      }
+    };
+  }
+}
+#endif /* #if defined(__AVX512F__) */
+#endif /* #if defined(__KOKKOSBATCHED_ENABLE_AVX__) */
+
+#include "KokkosBatched_Vector_SIMD_Arith.hpp"
+#include "KokkosBatched_Vector_SIMD_Logical.hpp"
+#include "KokkosBatched_Vector_SIMD_Relation.hpp"
+#include "KokkosBatched_Vector_SIMD_Math.hpp"
+#include "KokkosBatched_Vector_SIMD_Misc.hpp"
+#include "KokkosBatched_Vector_SIMD_View.hpp"
 
 #endif

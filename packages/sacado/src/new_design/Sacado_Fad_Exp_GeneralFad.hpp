@@ -90,7 +90,6 @@ namespace Sacado {
       //@{
 
       //! Default constructor
-      KOKKOS_INLINE_FUNCTION
       GeneralFad() = default;
 
       //! Constructor with value
@@ -125,7 +124,6 @@ namespace Sacado {
       GeneralFad(const Storage& s) : ExtenderType(s) {}
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
       GeneralFad(const GeneralFad& x) = default;
 
       //! Copy constructor from any Expression object
@@ -142,7 +140,6 @@ namespace Sacado {
       using ExtenderType::ExtenderType;
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
       ~GeneralFad() = default;
 
       //! Set %GeneralFad object as the \c ith independent variable
@@ -219,7 +216,6 @@ namespace Sacado {
       }
 
       //! Assignment with GeneralFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
       GeneralFad&
       operator=(const GeneralFad& x) = default;
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -48,11 +48,9 @@ namespace Ioss {
   {
   public:
     enum BasicType { INVALID = -1, REAL, INTEGER, POINTER, STRING };
-    enum VariableType { UNKNOWN_VAR_TYPE = -1, SCALAR };
 
     Property();
-    Property(std::string name, BasicType type, VariableType storage, void *data,
-             bool is_it_implicit = false);
+    Property(std::string name, BasicType type, void *data, bool is_it_implicit = false);
     Property(std::string name, int64_t value, bool is_it_implicit = false);
     Property(std::string name, int value, bool is_it_implicit = false);
     Property(std::string name, double value, bool is_it_implicit = false);
@@ -110,9 +108,8 @@ namespace Ioss {
     BasicType get_type() const { return type_; }
 
   private:
-    std::string  name_;
-    BasicType    type_;
-    VariableType storage_;
+    std::string name_;
+    BasicType   type_;
 
     bool get_value(int64_t *value) const;
     bool get_value(double *value) const;

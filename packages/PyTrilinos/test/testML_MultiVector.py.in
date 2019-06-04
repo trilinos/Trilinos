@@ -157,7 +157,7 @@ class MLMultiVectorTestCase(unittest.TestCase):
 
     def testConstructorBad0(self):
         "Test ML.MultiVector (Space, int) constructor, negative number of vectors"
-        self.assertRaises(IndexError, ML.MultiVector, self.space, -1)
+        self.assertRaises((IndexError,RuntimeError), ML.MultiVector, self.space, -1)
 
     def testConstructorBad1(self):
         "Test ML.MultiVector (Space, 1D sequence) constructor with mismatch"
@@ -222,7 +222,7 @@ class MLMultiVectorTestCase(unittest.TestCase):
         mv = ML.MultiVector(self.space, range(10))
         self.assertEqual(mv.GetNumVectors(),  1)
         self.assertEqual(mv.GetMyLength()  , 10)
-        self.assertRaises(IndexError, mv.Reshape, ML.Space(7), -3)
+        self.assertRaises((IndexError,RuntimeError), mv.Reshape, ML.Space(7), -3)
 
     def testAppend0(self):
         "Test ML.MultiVector Append method, no arguments"

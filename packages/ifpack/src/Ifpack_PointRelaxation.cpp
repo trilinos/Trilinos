@@ -215,9 +215,12 @@ int Ifpack_PointRelaxation::Compute()
     IFPACK_CHK_ERR(-2); // at least one application
 
   // NOTE: RowMatrixRowMap doesn't work correctly for Epetra_VbrMatrix
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   const Epetra_VbrMatrix * VbrMat = dynamic_cast<const Epetra_VbrMatrix*>(&Matrix());
   if(VbrMat)  Diagonal_ = Teuchos::rcp( new Epetra_Vector(VbrMat->RowMap()) );
-  else Diagonal_ = Teuchos::rcp( new Epetra_Vector(Matrix().RowMatrixRowMap()) );
+  else
+#endif
+  Diagonal_ = Teuchos::rcp( new Epetra_Vector(Matrix().RowMatrixRowMap()) );
 
   if (Diagonal_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);

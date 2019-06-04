@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -208,7 +208,7 @@ struct CudaParallelLaunch< DriverType
                     , const int          shmem
                     , const cudaStream_t stream = 0 )
   {
-    if ( grid.x && ( block.x * block.y * block.z ) ) {
+    if ( (grid.x != 0) && ( ( block.x * block.y * block.z ) != 0 ) ) {
 
       if ( sizeof( Kokkos::Impl::CudaTraits::ConstantGlobalBufferType ) <
            sizeof( DriverType ) ) {
@@ -264,7 +264,7 @@ struct CudaParallelLaunch< DriverType
                     , const int          shmem
                     , const cudaStream_t stream = 0 )
   {
-    if ( grid.x && ( block.x * block.y * block.z ) ) {
+    if ( (grid.x != 0) && ( ( block.x * block.y * block.z ) != 0 ) ) {
 
       if ( sizeof( Kokkos::Impl::CudaTraits::ConstantGlobalBufferType ) <
            sizeof( DriverType ) ) {
@@ -321,7 +321,7 @@ struct CudaParallelLaunch< DriverType
                     , const int          shmem
                     , const cudaStream_t stream = 0 )
   {
-    if ( grid.x && ( block.x * block.y * block.z ) ) {
+    if ( (grid.x != 0) && ( ( block.x * block.y * block.z ) != 0 ) ) {
 
       if ( sizeof( Kokkos::Impl::CudaTraits::ConstantGlobalBufferType ) <
            sizeof( DriverType ) ) {
@@ -370,7 +370,7 @@ struct CudaParallelLaunch< DriverType
                     , const int          shmem
                     , const cudaStream_t stream = 0 )
   {
-    if ( grid.x && ( block.x * block.y * block.z ) ) {
+    if ( (grid.x != 0) && ( ( block.x * block.y * block.z ) != 0 ) ) {
 
       if ( sizeof( Kokkos::Impl::CudaTraits::ConstantGlobalBufferType ) <
            sizeof( DriverType ) ) {

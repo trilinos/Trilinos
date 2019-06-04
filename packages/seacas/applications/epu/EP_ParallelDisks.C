@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2010 National Technology & Engineering Solutions
+ * Copyright(C) 2010-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -79,7 +79,7 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
   // Possible to have node layout without parallel disks
 
   std::string prepend;
-  if (rootdir.length() != 0u) {
+  if (!rootdir.empty()) {
     prepend = rootdir + "/";
   }
   else if (Excn::is_path_absolute(name)) {
@@ -97,7 +97,7 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
   }
   else {
     Create_IO_Filename(name, lnn, numproc);
-    if (subdir.length() != 0u) {
+    if (!subdir.empty()) {
       name = subdir + "/" + name;
     }
   }

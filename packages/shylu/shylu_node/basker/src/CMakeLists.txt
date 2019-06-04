@@ -18,8 +18,16 @@ FILE(GLOB HEADERS_PUBLIC *.hpp)
 LIST( APPEND HEADERS_PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h )
 
 
+# Experiment to try and get both Basker versions compiling - no help
+APPEND_SET(HEADERS				
+  shylubasker_decl.hpp
+  shylubasker_def.hpp
+  shylubasker_trilinos_decl.hpp
+  )
+
+
 APPEND_SET(SOURCES
-  basker.cpp)
+  shylubasker.cpp)
 
 #-----------------------------------------------------------------------------
 

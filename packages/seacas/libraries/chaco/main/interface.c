@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -67,7 +67,7 @@ int interface(int    nvtxs,                 /* number of vertices in full graph 
               int     ndims,                /* number of eigenvectors (2^d sets) */
               double  eigtol,               /* tolerance on eigenvectors */
               long    seed                  /* for random graph mutations */
-              )
+)
 {
   extern char *     PARAMS_FILENAME;    /* name of file with parameter updates */
   extern int        MAKE_VWGTS;         /* make vertex weights equal to degrees? */
@@ -207,9 +207,7 @@ int interface(int    nvtxs,                 /* number of vertices in full graph 
     sfree(vwgts);
     vwgts = NULL;
     sfree(ewgts);
-    ewgts     = NULL;
-    start     = NULL;
-    adjacency = NULL;
+    ewgts = NULL;
   }
 
   if (global_method == 3 ||
@@ -260,20 +258,14 @@ skip:
 
   if (flag && FREE_GRAPH) {
     sfree(start);
-    start = NULL;
     sfree(adjacency);
-    adjacency = NULL;
     sfree(vwgts);
-    vwgts = NULL;
     sfree(ewgts);
-    ewgts = NULL;
   }
 
   if (!Using_Main && params_file != NULL) {
     fclose(params_file);
   }
 
-  sfree(vwgts);
-  sfree(ewgts);
   return (flag);
 }

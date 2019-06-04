@@ -167,7 +167,7 @@ namespace TeuchosTests
       "    </ParameterList>\n"
       "    <ParameterList name=\"Discretization\">\n"
       "      <Parameter name=\"Node Set Associations\" type=\"TwoDArray(string)\" value=\"2x2:{1, 2, top, bottom}\"/>\n"
-      "      <Parameter name=\"Bool-looking String\" type=\"string\" value=\"TRUE\"/>\n"
+      "      <Parameter name=\"Bool-looking String\" type=\"string\" value=\"TRUE\" docString=\"my docString\"/>\n"
       "    </ParameterList>\n"
       "  </ParameterList>\n";
     RCP<ParameterList> xmlParams = Teuchos::getParametersFromXmlString(xmlString);
@@ -243,6 +243,70 @@ namespace TeuchosTests
       "double r_sq = xin*xin+yin*yin;\n"
       "double factor = 0.5*1.e8*1.60217662e-19/(2*3.14159265358979323846*8.854187817e-12);\n"
       "ES_POTENTIAL= factor*log(r_sq) +3*xin-3*yin;\n");
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, Issue2306)
+  {
+    // ensure that duplicate names throw an exception
+    TEST_THROW(Teuchos::getParametersFromYamlString(
+      "Foo:\n"
+      "  Bar:\n"
+      "    Value: 1\n"
+      "  Bar:\n"
+      "    Value: 2\n"),
+      Teuchos::ParserFail);
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, keep_top_name)
+  {
+    Teuchos::ParameterList pl;
+    char const * const cstr =
+      "%YAML 1.1\n"
+      "---\n"
+      "Albany:\n"
+      "  some param: 5\n"
+      "...\n";
+    Teuchos::updateParametersFromYamlCString(cstr, Teuchos::ptr(&pl), true);
+    std::stringstream ss;
+    ss << std::showpoint;
+    Teuchos::writeParameterListToYamlOStream(pl, ss);
+    auto s = ss.str();
+    TEST_EQUALITY(s, cstr);
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, long_long_param)
+  {
+    auto pl = Teuchos::getParametersFromYamlString(
+      "List:\n"
+      " small number: 54\n"
+      " big number: 72057594037927936\n");
+    TEST_EQUALITY(pl->isType<int>("small number"), true);
+    TEST_EQUALITY(pl->isType<long long>("big number"), true);
+    TEST_EQUALITY(pl->get<long long>("big number"), 72057594037927936ll);
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, flow_map)
+  {
+    auto pl = Teuchos::getParametersFromYamlString(
+      "List:\n"
+      " Fields: {rho: 0.125, px: 0., py: 0., pz: 0., rho_E: 0.25}\n");
+    auto& field_pl = pl->sublist("Fields");
+    TEST_EQUALITY(field_pl.get<double>("rho"), 0.125);
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, root_name)
+  {
+    Teuchos::ParameterList pl;
+    Teuchos::updateParametersFromYamlString(
+      "mycode:\n"
+      "  sublist:\n"
+      "    param1: foo\n",
+      Teuchos::ptr(&pl),
+      true,
+      "root_name test"
+      );
+    auto& sublist = pl.sublist("sublist");
+    TEST_EQUALITY(sublist.name(), "mycode->sublist");
   }
 
 } //namespace TeuchosTests

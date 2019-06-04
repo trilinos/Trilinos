@@ -156,7 +156,7 @@ namespace Intrepid2 {
 
           // Generic array for the output values; needs to be properly resized depending on the operator type
           const auto numFields = lineBasis.getCardinality();
-          const auto numPoints = lineNodes.dimension(0);
+          const auto numPoints = lineNodes.extent(0);
           //const auto spaceDim  = lineBasis.getBaseCellTopology().getDimension();
 
 
@@ -210,17 +210,17 @@ namespace Intrepid2 {
           }
           {
             // exception #13: incorrect 0th dimension of output array (must equal number of basis functions)
-            DynRankView ConstructWithLabel(badVals, lineBasis.getCardinality() + 1, lineNodes.dimension(0));
+            DynRankView ConstructWithLabel(badVals, lineBasis.getCardinality() + 1, lineNodes.extent(0));
             INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE) );
           }
           {
             // exception #14: incorrect 1st dimension of output array (must equal number of points)
-            DynRankView ConstructWithLabel(badVals, lineBasis.getCardinality(), lineNodes.dimension(0) + 1);
+            DynRankView ConstructWithLabel(badVals, lineBasis.getCardinality(), lineNodes.extent(0) + 1);
             INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE) );
           }
           {
             // exception #15: incorrect 2nd dimension of output array (must equal spatial dimension)
-            DynRankView ConstructWithLabel(badVals, lineBasis.getCardinality(), lineNodes.dimension(0), 2);
+            DynRankView ConstructWithLabel(badVals, lineBasis.getCardinality(), lineNodes.extent(0), 2);
             INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD) );
           }
         }
@@ -350,7 +350,7 @@ namespace Intrepid2 {
         const ordinal_type spaceDim  = lineBasis.getBaseCellTopology().getDimension();
 
         DynRankViewHost ConstructWithLabel(lineNodesHost, order+1, spaceDim);
-        const ordinal_type numPoints = lineNodesHost.dimension(0);
+        const ordinal_type numPoints = lineNodesHost.extent(0);
 
         for (ordinal_type i=0;i<numPoints;++i)
           lineNodesHost(i, 0) = -1.0+(2.0*i)/(numPoints-1);

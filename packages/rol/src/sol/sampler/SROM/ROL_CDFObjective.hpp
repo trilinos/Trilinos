@@ -48,7 +48,7 @@
 #include "ROL_BatchManager.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Distribution.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include <math.h>
 
 namespace ROL {
@@ -57,10 +57,10 @@ template <class Real>
 class CDFObjective : public Objective<Real> {
 private:
   // Batch manager for parallel computation
-  Teuchos::RCP<BatchManager<Real> > bman_;
+  ROL::Ptr<BatchManager<Real> > bman_;
 
   // Distribution information
-  std::vector<Teuchos::RCP<Distribution<Real> > > dist_;
+  std::vector<ROL::Ptr<Distribution<Real> > > dist_;
   std::vector<Real> lowerBound_;
   std::vector<Real> upperBound_;
   int dimension_;
@@ -176,12 +176,12 @@ private:
   }
 
 public:
-  CDFObjective(const std::vector<Teuchos::RCP<Distribution<Real> > > &dist,
-               const Teuchos::RCP<BatchManager<Real> > &bman,
+  CDFObjective(const std::vector<ROL::Ptr<Distribution<Real> > > &dist,
+               const ROL::Ptr<BatchManager<Real> > &bman,
                const Real scale = 1.e-2,
                const bool optProb = true, const bool optAtom = true)
     : Objective<Real>(), bman_(bman), dist_(dist), dimension_(dist.size()),
-      scale_(scale), sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(Teuchos::ScalarTraits<Real>::pi())),
+      scale_(scale), sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(ROL::ScalarTraits<Real>::pi())),
       optProb_(optProb), optAtom_(optAtom) {
     lowerBound_.resize(dimension_,0);
     upperBound_.resize(dimension_,0);
@@ -193,7 +193,7 @@ public:
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const SROMVector<Real> &ex = dynamic_cast<const SROMVector<Real>&>(x);
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     Real val(0), diff(0), pt(0), wt(0), meas(0), lb(0), one(1);
@@ -213,7 +213,7 @@ public:
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     g.zero();
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const SROMVector<Real> &ex = dynamic_cast<const SROMVector<Real>&>(x);
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     const int numSamples = prob.getNumMyAtoms();
@@ -236,7 +236,7 @@ public:
         }
       }
     }
-    SROMVector<Real> &eg = Teuchos::dyn_cast<SROMVector<Real> >(g);
+    SROMVector<Real> &eg = dynamic_cast<SROMVector<Real>&>(g);
     ProbabilityVector<Real> &gprob = *(eg.getProbabilityVector());
     AtomVector<Real> &gatom = *(eg.getAtomVector());
     for (int k = 0; k < numSamples; k++) {
@@ -251,10 +251,10 @@ public:
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     hv.zero();
-    const SROMVector<Real> &ev = Teuchos::dyn_cast<const SROMVector<Real> >(v);
+    const SROMVector<Real> &ev = dynamic_cast<const SROMVector<Real>&>(v);
     const ProbabilityVector<Real> &vprob = *(ev.getProbabilityVector());
     const AtomVector<Real> &vatom = *(ev.getAtomVector());
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const SROMVector<Real> &ex = dynamic_cast<const SROMVector<Real>&>(x);
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     const int numSamples = prob.getNumMyAtoms();
@@ -278,7 +278,7 @@ public:
         }
       }
     }
-    SROMVector<Real> &ehv = Teuchos::dyn_cast<SROMVector<Real> >(hv);
+    SROMVector<Real> &ehv = dynamic_cast<SROMVector<Real>&>(hv);
     ProbabilityVector<Real> &hprob = *(ehv.getProbabilityVector());
     AtomVector<Real> &hatom = *(ehv.getAtomVector());
     for (int k = 0; k < numSamples; k++) {

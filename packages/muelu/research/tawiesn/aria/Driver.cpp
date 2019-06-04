@@ -152,7 +152,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // =========================================================================
     // Convenient definitions
     // =========================================================================
-    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+    SC zero = Teuchos::ScalarTraits<SC>::zero();
 
     // Instead of checking each time for rank, create a rank 0 stream
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -376,7 +376,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     temp = IO::ReadMultiVector ("rhs.mm", dofLinearMap);
     RHS->doImport(*temp, *dofImporter, Xpetra::INSERT);
-    LHS->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    LHS->putScalar(zero);
 
     // MueLu part
 
@@ -389,7 +389,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     userParamList.set("ArrayRCP<LO> DofPresent", dofPresent);
 
     RCP<Hierarchy> H;
-    H = MueLu::CreateXpetraPreconditioner(DistributedMatrix, paramList, paramList /*coordinates*/);
+    H = MueLu::CreateXpetraPreconditioner(DistributedMatrix, paramList);
 
 #ifdef HAVE_MUELU_BELOS
     {
@@ -500,7 +500,7 @@ int main(int argc, char* argv[]) {
 #  endif
 #endif
       } else if (node == "serial") {
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
         typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
@@ -520,7 +520,7 @@ int main(int argc, char* argv[]) {
         throw MueLu::Exceptions::RuntimeError("Serial node type is disabled");
 #endif
       } else if (node == "openmp") {
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
         typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
@@ -540,7 +540,7 @@ int main(int argc, char* argv[]) {
         throw MueLu::Exceptions::RuntimeError("OpenMP node type is disabled");
 #endif
       } else if (node == "cuda") {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
         typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION

@@ -1,11 +1,13 @@
 #include "balanceUtils.hpp"
 #include "mpi.h"
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_topology/topology.hpp>
+#include "search_tolerance/FaceSearchTolerance.hpp"
 #include "stk_mesh/base/Field.hpp"  // for field_data
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
-#include "FaceSearchTolerance.hpp"
+#include "stk_util/diag/StringUtil.hpp"
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_topology/topology.hpp>
 
 namespace stk
 {
@@ -36,7 +38,7 @@ double BalanceSettings::getGraphVertexWeight(stk::mesh::Entity entity, int crite
 
 BalanceSettings::GraphOption BalanceSettings::getGraphOption() const
 {
-    return BalanceSettings::LOADBALANCE;
+    return BalanceSettings::LOAD_BALANCE;
 }
 
 bool BalanceSettings::includeSearchResultsInGraph() const
@@ -44,7 +46,10 @@ bool BalanceSettings::includeSearchResultsInGraph() const
     return false;
 }
 
-double BalanceSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const
+double BalanceSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
+                                                  const stk::mesh::FieldBase & coordField,
+                                                  const stk::mesh::Entity * faceNodes,
+                                                  const unsigned numFaceNodes) const
 {
     return 0.0;
 }
@@ -152,6 +157,27 @@ bool BalanceSettings::shouldFixMechanisms() const
     return false;
 }
 
+bool BalanceSettings::shouldFixSpiders() const
+{
+    return false;
+}
+
+std::string BalanceSettings::getSpiderConnectivityCountFieldName() const
+{
+    return "beam_connectivity_count";
+}
+
+const stk::mesh::Field<int> * BalanceSettings::getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+{
+    return nullptr;
+}
+
+bool BalanceSettings::useLocalIds() const
+{
+    return getGraphOption() == stk::balance::BalanceSettings::COLOR_MESH ||
+           getGraphOption() == stk::balance::BalanceSettings::COLOR_MESH_BY_TOPOLOGY ||
+           getGraphOption() == stk::balance::BalanceSettings::COLOR_MESH_AND_OUTPUT_COLOR_FIELDS;
+}
 
 //////////////////////////////////////
 
@@ -200,8 +226,8 @@ double GraphCreationSettings::getGraphEdgeWeight(stk::topology element1Topology,
         {s, s, s, s, s, s, s}  // super element
     };
 
-    int element1Index = getConnectionTableIndex(element1Topology);
-    int element2Index = getConnectionTableIndex(element2Topology);
+    int element1Index = getEdgeWeightTableIndex(element1Topology);
+    int element2Index = getEdgeWeightTableIndex(element2Topology);
 
     return weightTable[element1Index][element2Index];
 }
@@ -218,52 +244,40 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
         case stk::topology::PARTICLE:
         case stk::topology::LINE_2:
         case stk::topology::BEAM_2:
+        case stk::topology::BEAM_3:
             return 1;
-            break;
         case stk::topology::SHELL_TRIANGLE_3:
             return 3;
-            break;
         case stk::topology::SHELL_TRIANGLE_6:
             return 6;
-            break;
         case stk::topology::SHELL_QUADRILATERAL_4:
             return 6;
-            break;
         case stk::topology::SHELL_QUADRILATERAL_8:
             return 12;
-            break;
         case stk::topology::HEXAHEDRON_8:
             return 3;
-            break;
         case stk::topology::HEXAHEDRON_20:
             return 12;
-            break;
         case stk::topology::TETRAHEDRON_4:
             return 1;
-            break;
         case stk::topology::TETRAHEDRON_10:
             return 3;
-            break;
         case stk::topology::WEDGE_6:
             return 2;
-            break;
         case stk::topology::WEDGE_15:
             return 12;
-            break;
         default:
             if ( type.is_superelement( ))
             {
                 return 10;
             }
             throw("Invalid Element Type In WeightsOfElement");
-            break;
     }
-    return 0;
 }
 
 BalanceSettings::GraphOption GraphCreationSettings::getGraphOption() const
 {
-    return BalanceSettings::LOADBALANCE;
+    return BalanceSettings::LOAD_BALANCE;
 }
 
 bool GraphCreationSettings::includeSearchResultsInGraph() const
@@ -282,13 +296,16 @@ void GraphCreationSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<st
     m_UseConstantToleranceForFaceSearch = false;
 }
 
-double GraphCreationSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const
+double GraphCreationSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
+                                                        const stk::mesh::FieldBase & coordField,
+                                                        const stk::mesh::Entity * faceNodes,
+                                                        const unsigned numFaceNodes) const
 {
     if (m_UseConstantToleranceForFaceSearch) {
         return mToleranceForFaceSearch;
     }
     else {
-        return m_faceSearchToleranceFunction->compute(mesh, coordField, faceNodes);
+        return m_faceSearchToleranceFunction->compute(mesh, coordField, faceNodes, numFaceNodes);
     }
 }
 
@@ -318,6 +335,14 @@ void GraphCreationSettings::setToleranceForFaceSearch(double tol)
 void GraphCreationSettings::setToleranceForParticleSearch(double tol)
 {
     mToleranceForParticleSearch = tol;
+}
+void GraphCreationSettings::setEdgeWeightForSearch(double w)
+{
+    edgeWeightForSearch = w;
+}
+void GraphCreationSettings::setVertexWeightMultiplierForVertexInSearch(double w)
+{
+    vertexWeightMultiplierForVertexInSearch = w;
 }
 
 int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology) const
@@ -385,11 +410,137 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
     return tableIndex;
 }
 
+int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology) const
+{
+    int tableIndex = -1;
+    switch(elementTopology)
+    {
+        case stk::topology::PARTICLE:
+            tableIndex = 0;
+            break;
+        case stk::topology::LINE_2:
+        case stk::topology::LINE_2_1D:
+        case stk::topology::LINE_3_1D:
+        case stk::topology::BEAM_2:
+        case stk::topology::BEAM_3:
+        case stk::topology::SHELL_LINE_2:
+        case stk::topology::SHELL_LINE_3:
+            tableIndex = 1;
+            break;
+        case stk::topology::TRI_3_2D:
+        case stk::topology::TRI_4_2D:
+        case stk::topology::QUAD_4_2D:
+        case stk::topology::SHELL_TRI_3:
+        case stk::topology::SHELL_TRI_4:
+        case stk::topology::SHELL_QUAD_4:
+            tableIndex = 2;
+            break;
+        case stk::topology::TET_4:
+        case stk::topology::PYRAMID_5:
+        case stk::topology::WEDGE_6:
+        case stk::topology::HEX_8:
+            tableIndex = 3;
+            break;
+        case stk::topology::TRI_6_2D:
+        case stk::topology::QUAD_8_2D:
+        case stk::topology::QUAD_9_2D:
+        case stk::topology::SHELL_TRI_6:
+        case stk::topology::SHELL_QUAD_8:
+        case stk::topology::SHELL_QUAD_9:
+            tableIndex = 4;
+            break;
+        case stk::topology::TET_8:
+        case stk::topology::TET_10:
+        case stk::topology::TET_11:
+        case stk::topology::PYRAMID_13:
+        case stk::topology::PYRAMID_14:
+        case stk::topology::WEDGE_15:
+        case stk::topology::WEDGE_18:
+        case stk::topology::HEX_20:
+        case stk::topology::HEX_27:
+            tableIndex = 5;
+            break;
+        default:
+            if(elementTopology.is_superelement())
+            {
+                tableIndex = 6;
+            }
+            else
+            {
+                std::cerr << "Topology is " << elementTopology << std::endl;
+                throw("Invalid Element Type in GetDimOfElement");
+            }
+            break;
+    };
+    return tableIndex;
+}
+
+void GraphCreationSettings::setShouldFixSpiders(bool fixSpiders)
+{
+    m_shouldFixSpiders = fixSpiders;
+}
+
 bool GraphCreationSettings::shouldFixMechanisms() const
 {
     return true;
 }
 
+bool GraphCreationSettings::shouldFixSpiders() const
+{
+    return m_shouldFixSpiders;
+}
+
+const stk::mesh::Field<int> * GraphCreationSettings::getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+{
+    if (m_spiderConnectivityCountField == nullptr) {
+        m_spiderConnectivityCountField = reinterpret_cast<stk::mesh::Field<int>*>(stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK,
+                                                                                                                             getSpiderConnectivityCountFieldName()));
+        ThrowRequireMsg(m_spiderConnectivityCountField != nullptr, "Must create spider connectivity field when stomping spiders.");
+    }
+    return m_spiderConnectivityCountField;
+}
+
+const std::string& get_coloring_part_base_name()
+{
+    static std::string coloringPartBaseName = "STK_INTERNAL_COLORING_PART";
+    return coloringPartBaseName;
+}
+
+stk::mesh::Part* get_coloring_part(const stk::mesh::BulkData& bulk, const stk::mesh::Entity& entity)
+{
+    const stk::mesh::Bucket& bucket = bulk.bucket(entity);
+    const stk::mesh::PartVector& parts = bucket.supersets();
+    stk::mesh::Part* colorPart = nullptr;
+    unsigned numColors = 0;
+    const std::string coloringBaseName = get_coloring_part_base_name();
+    const unsigned length = coloringBaseName.length();
+    for (stk::mesh::Part* part : parts)
+    {
+        std::string partSubName = part->name().substr(0, length);
+        if (!sierra::case_strcmp(partSubName, coloringBaseName))
+        {
+            ++numColors;
+            colorPart = part;
+        }
+    }
+    ThrowRequireMsg(numColors <= 1, "Entity " << bulk.entity_key(entity) << " has " << numColors << " coloring parts.");
+    return colorPart;
+}
+
+stk::mesh::PartVector get_root_topology_parts_for_rank(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank)
+{
+  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  std::set<stk::mesh::Part*> parts;
+  stk::mesh::BucketVector buckets = bulk.buckets(rank);
+  for (stk::mesh::Bucket* bucket : buckets)
+  {
+    stk::topology topo = bucket->topology();
+    stk::mesh::Part& topoPart = meta.get_topology_root_part(topo);
+    parts.insert(&topoPart);
+  }
+
+  return stk::mesh::PartVector(parts.begin(), parts.end());
+}
 
 }
 }

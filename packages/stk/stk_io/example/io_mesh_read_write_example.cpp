@@ -34,8 +34,7 @@
 #include <string>
 #include <iostream>
 
-#include <boost/program_options.hpp>
-#include <boost/program_options/cmdline.hpp>
+#include <stk_util/command_line/CommandLineParserParallel.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/util/ParameterList.hpp>
@@ -270,9 +269,7 @@ namespace {
   }
 }
 
-namespace bopt = boost::program_options;
-
-int main(int argc, char** argv)
+int main(int argc, const char** argv)
 {
   std::string working_directory = "";
   std::string decomp_method = "";
@@ -286,41 +283,73 @@ int main(int argc, char** argv)
   bool lc_names = true;
   std::string parallel_io = "";
   std::string heartbeat_format = "none";
+
+  stk::parallel_machine_init(&argc, const_cast<char***>(&argv));
+
   //----------------------------------
-  // Process the broadcast command line arguments
-  bopt::options_description desc("options");
+  // Process the command line arguments
+  stk::CommandLineParserParallel cmdLine(MPI_COMM_WORLD);
 
-  desc.add_options()
-    ("help,h", "produce help message")
-    ("directory,d",   bopt::value<std::string>(&working_directory),
-     "working directory with trailing '/'" )
-    ("decomposition,D", bopt::value<std::string>(&decomp_method),
-     "decomposition method.  One of: linear, rcb, rib, hsfc, block, cyclic, random, kway, geom_kway, metis_sfc" )
-    ("mesh",          bopt::value<std::string>(&mesh),
-     "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'" )
-    ("compression_level", bopt::value<int>(&compression_level), "compression level [1..9] to use" )
-    ("shuffle", bopt::value<bool>(&compression_shuffle), "use shuffle filter prior to compressing data: true|false" )
-    ("lower_case_variable_names", bopt::value<bool>(&lc_names), "convert variable names to lowercase and replace spaces in names with underscore (default is true): true|false" )
-    ("compose_output", bopt::value<bool>(&compose_output), "create a single output file: true|false" )
-    ("parallel_io_method", bopt::value<std::string>(&parallel_io),
-     "Method to use for parallel io. One of mpiio, mpiposix, or pnetcdf")
-    ("heartbeat_format", bopt::value<std::string>(&heartbeat_format),
-     "Format of heartbeat output. One of binary, csv, text, ts_text, spyhis, [none]")
-    ("interpolate", bopt::value<int>(&interpolation_intervals), "number of intervals to divide each input time step into")
-    ("integer_size", bopt::value<int>(&integer_size), "use 4 or 8-byte integers for input and output" );
+  cmdLine.add_required<std::string>({"mesh", "m", "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'"});
+  cmdLine.add_optional<std::string>({"directory", "d", "working directory with trailing '/'"}, "./");
+  cmdLine.add_optional<std::string>({"decomposition", "D", "decomposition method.  One of: linear, rcb, rib, hsfc, block, cyclic, random, kway, geom_kway, metis_sfc"}, "rcb");
+  cmdLine.add_optional<int>({"compression_level", "c", "compression level [1..9] to use"}, 0);
+  cmdLine.add_optional<std::string>({"shuffle", "s", "use shuffle filter prior to compressing data: true|false"}, "false");
+  cmdLine.add_optional<std::string>({"lower_case_variable_names", "l", "convert variable names to lowercase and replace spaces in names with underscore (default is true): true|false"}, "true");
+  cmdLine.add_optional<std::string>({"compose_output", "C", "create a single output file: true|false"}, "false");
+  cmdLine.add_optional<std::string>({"parallel_io_method", "p", "Method to use for parallel io. One of mpiio, mpiposix, or pnetcdf"}, "pnetcdf");
+  cmdLine.add_optional<std::string>({"heartbeat_format", "h", "Format of heartbeat output. One of binary, csv, text, ts_text, spyhis, [none]"}, "none");
+  cmdLine.add_optional<int>({"interpolate", "i", "number of intervals to divide each input time step into"}, 0);
+  cmdLine.add_optional<int>({"integer_size", "I", "use 4 or 8-byte integers for input and output"}, 4);
 
+  stk::CommandLineParser::ParseState parseState = cmdLine.parse(argc, argv);
 
-  stk::parallel_machine_init(&argc, &argv);
-
-  bopt::variables_map vm;
-  bopt::store(bopt::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
-  bopt::notify(vm);
-
-  if (mesh.empty()) {
-    std::cerr << "\nERROR: The --mesh option is required\n";
-    std::cerr << "\nApplication " << desc << "\n";
-    std::exit(EXIT_FAILURE);
+  if (stk::CommandLineParser::ParseError == parseState ||
+      stk::CommandLineParser::ParseHelpOnly == parseState) {
+    std::cout << cmdLine.get_usage() << std::endl;
+    stk::parallel_machine_finalize();
+    return 0;
   }
+
+  if (cmdLine.is_option_provided("directory")) {
+    working_directory = cmdLine.get_option_value<std::string>("directory");
+  }
+  if (cmdLine.is_option_provided("decomposition")) {
+    decomp_method = cmdLine.get_option_value<std::string>("decomposition");
+  }
+  if (cmdLine.is_option_provided("shuffle")) {
+    if (cmdLine.get_option_value<std::string>("shuffle") == "true") {
+      compression_shuffle = true;
+    }
+  }
+  if (cmdLine.is_option_provided("lower_case_variable_names")) {
+    if (cmdLine.get_option_value<std::string>("lower_case_variable_names") == "false") {
+      lc_names = false;
+    }
+  }
+  if (cmdLine.is_option_provided("compose_output")) {
+    if (cmdLine.get_option_value<std::string>("compose_output") == "true" ||
+        cmdLine.get_option_value<std::string>("compose_output") == "yes") {
+      compose_output = true;
+    }
+  }
+  if (cmdLine.is_option_provided("compression_level")) {
+    compression_level = cmdLine.get_option_value<int>("compression_level");
+  }
+  if (cmdLine.is_option_provided("parallel_io_method")) {
+    parallel_io = cmdLine.get_option_value<std::string>("parallel_io_method");
+  }
+  if (cmdLine.is_option_provided("heartbeat_format")) {
+    heartbeat_format = cmdLine.get_option_value<std::string>("heartbeat_format");
+  }
+  if (cmdLine.is_option_provided("interpolate")) {
+    interpolation_intervals = cmdLine.get_option_value<int>("interpolate");
+  }
+  if (cmdLine.is_option_provided("integer_size")) {
+    integer_size = cmdLine.get_option_value<int>("integer_size");
+  }
+
+  mesh = cmdLine.get_option_value<std::string>("mesh");
 
   type = "exodusii";
   if (strncasecmp("gen:", mesh.c_str(), 4) == 0) {

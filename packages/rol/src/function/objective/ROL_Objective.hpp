@@ -147,7 +147,7 @@ public:
     ROL_UNUSED(v);
     ROL_UNUSED(x);
     ROL_UNUSED(tol);
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::Objective): invHessVec not implemented!"); 
     //hv.set(v.dual());
   }

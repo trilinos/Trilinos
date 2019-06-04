@@ -1814,7 +1814,7 @@ namespace Sacado {
         const value_type_1 v1 = expr1.val();
         const value_type_2 v2 = expr2.val();
         v = std::pow(v1,v2);
-        if (v1 == value_type(0)) {
+        if (v1 == value_type_1(0)) {
           a = value_type(0);
         }
         else {
@@ -2660,6 +2660,5 @@ namespace Sacado {
   } // namespace CacheFad
 
 } // namespace Sacado
-
 
 #endif // SACADO_CACHEFAD_OPS_HPP

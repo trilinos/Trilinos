@@ -60,6 +60,7 @@ namespace Teuchos {
   class ParameterList;
 }
 namespace NOX {
+  struct SolverStats;
   namespace Abstract {
     class MultiVector;
   }
@@ -511,6 +512,14 @@ namespace Abstract {
    virtual Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const = 0;
 
   //@}
+
+  /** @name "Linear Solve Statistics" functions. */
+  //@{
+
+  /*!  \brief Adds statistics from last linear solve to the
+       SovlerStats object.
+  */
+   virtual void logLastLinearSolveStats(NOX::SolverStats& stats) const;
 
   /*!
     \brief

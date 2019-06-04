@@ -108,8 +108,8 @@ namespace Tacho {
       _level = 0;
 
       int ierr = 0;
-      ordinal_type *rptr_ptr = reinterpret_cast<ordinal_type*>(_rptr.ptr_on_device());
-      ordinal_type *cidx_ptr = reinterpret_cast<ordinal_type*>(_cidx.ptr_on_device());
+      ordinal_type *rptr_ptr = reinterpret_cast<ordinal_type*>(_rptr.data());
+      ordinal_type *cidx_ptr = reinterpret_cast<ordinal_type*>(_cidx.data());
 
       ierr = SCOTCH_graphInit(&_graph);TACHO_TEST_FOR_ABORT(ierr, "Failed in SCOTCH_graphInit");
       ierr = SCOTCH_graphBuild(&_graph,             // scotch graph
@@ -153,10 +153,10 @@ namespace Tacho {
       int ierr = 0;
       
       // pointers for global graph ordering
-      ordinal_type *perm  = _perm.ptr_on_device();
-      ordinal_type *peri  = _peri.ptr_on_device();
-      ordinal_type *range = _range.ptr_on_device();
-      ordinal_type *tree  = _tree.ptr_on_device();
+      ordinal_type *perm  = _perm.data();
+      ordinal_type *peri  = _peri.data();
+      ordinal_type *range = _range.data();
+      ordinal_type *tree  = _tree.data();
 
       {
         // set desired tree level

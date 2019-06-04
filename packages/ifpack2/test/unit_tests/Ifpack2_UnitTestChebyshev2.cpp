@@ -368,18 +368,13 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Prepare arguments for creating the Map.
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
-  RCP<NT> node;
-  {
-    ParameterList junk;
-    node = rcp (new NT (junk));
-  }
   const size_t localNumRows = as<size_t> (localNumberOfRows);
   const global_size_t globalNumRows = localNumRows * comm->getSize ();
   const GO indexBase = 0;
   const Tpetra::LocalGlobal lg = Tpetra::GloballyDistributed;
 
   // Create the row Map of the matrix, and the matrix's other Maps.
-  RCP<const map_type> rowMap (new map_type (globalNumRows, indexBase, comm, lg, node));
+  RCP<const map_type> rowMap (new map_type (globalNumRows, indexBase, comm, lg));
   RCP<const map_type> rangeMap = rowMap;
   RCP<const map_type> domainMap = rowMap;
 

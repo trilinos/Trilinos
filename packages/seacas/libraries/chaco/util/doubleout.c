@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,6 +33,7 @@
  *
  */
 
+#include <math.h>
 #include <stdio.h>
 
 /* Print a double precision number with filtering format to screen. */
@@ -40,8 +41,6 @@ void doubleout(double number, int mode)
 /* argument to print */
 /* currently just one */
 {
-  double fabs(double); /* intrinsic absolute value function */
-
   if (mode == 1) {
     if (fabs(number) < 100) {
       printf("  %19.16f", number);
@@ -58,8 +57,6 @@ void doubleout_file(FILE *outfile, double number, int mode)
 /* argument to print */
 /* currently just one */
 {
-  double fabs(double); /* intrinsic absolute value function */
-
   if (outfile == NULL) {
     return;
   }

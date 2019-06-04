@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,14 +38,14 @@
  * Functions contained in this file:
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-#include "elb.h"        // for Problem_Description, etc
-#include "elb_elem.h"   // for elem_name_from_enum
-#include "elb_err.h"    // for Gen_Error
-#include "elb_format.h" // for ST_ZU
+#include "elb.h"      // for Problem_Description, etc
+#include "elb_elem.h" // for elem_name_from_enum
+#include "elb_err.h"  // for Gen_Error
 #include "elb_groups.h"
-#include <cstdio>      // for printf, sscanf, nullptr
-#include <cstdlib>     // for free, malloc
-#include <cstring>     // for strchr, strlen
+#include <cstdio>  // for sscanf, nullptr
+#include <cstdlib> // for free, malloc
+#include <cstring> // for strchr, strlen
+#include <fmt/format.h>
 #include <sys/types.h> // for ssize_t
 #include <vector>      // for vector
 
@@ -85,14 +85,10 @@ extern int ilog2i(size_t n);
  *   - "1-20/40-45/5-10 21-41   1-4,11-20       42,43,45   5-10 31-41
  *
  *****************************************************************************/
-template int parse_groups(int *el_blk_ids, int *el_blk_cnts, Mesh_Description<int> *mesh,
-                          Problem_Description *prob);
-template int parse_groups(int64_t *el_blk_ids, int64_t *el_blk_cnts,
-                          Mesh_Description<int64_t> *mesh, Problem_Description *prob);
+template int parse_groups(Mesh_Description<int> *mesh, Problem_Description *prob);
+template int parse_groups(Mesh_Description<int64_t> *mesh, Problem_Description *prob);
 
-template <typename INT>
-int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
-                 Problem_Description *prob)
+template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_Description *prob)
 {
   char *id;
   int   last, found;
@@ -101,8 +97,7 @@ int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
 
   /* allocate memory for the groups */
   prob->group_no = (int *)malloc(mesh->num_el_blks * sizeof(int));
-  mesh->eb_cnts  = (INT *)malloc(mesh->num_el_blks * sizeof(INT));
-  if (!(prob->group_no) || !(mesh->eb_cnts)) {
+  if (!(prob->group_no)) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
@@ -110,7 +105,6 @@ int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
   /* prepare the group number array, and copy the element block counts */
   for (size_t i = 0; i < mesh->num_el_blks; i++) {
     prob->group_no[i] = -1;
-    mesh->eb_cnts[i]  = el_blk_cnts[i];
   }
 
   /* convert any comma's to blank spaces in the designator string */
@@ -127,7 +121,7 @@ int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
     if (*id == '/') {
       id++;
     }
-    scandescriptor(id, el_blk_ids, i, mesh->num_el_blks, prob);
+    scandescriptor(id, mesh->eb_ids.data(), i, mesh->num_el_blks, prob);
     id = strchr(id, '/');
     i++;
   } while (id != nullptr);
@@ -150,18 +144,18 @@ int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
 
   {
     size_t first_el = 0;
-    printf("\nNumber of blocks: " ST_ZU "\n", mesh->num_el_blks);
-    printf("Block ID and associated groups:\n");
-    printf("   block   #elems  group   type\n");
+    fmt::print("\nNumber of blocks: {}\n", mesh->num_el_blks);
+    fmt::print("Block ID and associated groups:\n");
+    fmt::print("   block   #elems  group   type\n");
     for (i = 0; i < mesh->num_el_blks; i++) {
-      printf("%8lu%8lu%8d%8s\n", (size_t)el_blk_ids[i], (size_t)mesh->eb_cnts[i], prob->group_no[i],
-             elem_name_from_enum(mesh->elem_type[first_el]));
+      fmt::print("{:8d}{:8d}{:8d}{:8s}\n", (size_t)mesh->eb_ids[i], (size_t)mesh->eb_cnts[i],
+                 prob->group_no[i], elem_name_from_enum(mesh->elem_type[first_el]));
       first_el += mesh->eb_cnts[i];
     }
-    printf("There are %d groups of blocks\n", prob->num_groups);
+    fmt::print("There are {} groups of blocks\n", prob->num_groups);
   }
 
-  /* finnished with the group designator string */
+  /* finished with the group designator string */
   free(prob->groups);
 
   return 1;
@@ -250,7 +244,7 @@ int get_group_info(Machine_Description *machine, Problem_Description *prob,
     nproc = ilog2i(machine->procs_per_box);
   }
   for (int i = 0; i < prob->num_groups; i++) {
-    nprocg[i] = int((nproc * (nelemg[i] + .5)) / static_cast<float>(prob->num_vertices));
+    nprocg[i] = int((nproc * (nelemg[i] + 0.5f)) / static_cast<float>(prob->num_vertices));
     if (nelemg[i] && !nprocg[i]) {
       nprocg[i] = 1;
     }
@@ -289,9 +283,9 @@ int get_group_info(Machine_Description *machine, Problem_Description *prob,
       return 0;
     }
   }
-  printf("Load balance information\n");
+  fmt::print("Load balance information\n");
   for (int i = 0; i < prob->num_groups; i++) {
-    printf("group[%d]  #elements=%-10d  #proc=%d\n", i, nelemg[i], nprocg[i]);
+    fmt::print("group[{}]  #elements={:10d}  #proc={}\n", i, nelemg[i], nprocg[i]);
   }
 
   return 1;
@@ -348,12 +342,12 @@ namespace {
             }
           }
           else {
-            printf("Error reading descriptor '%s'\n", d);
-            printf("                          ");
+            fmt::print("Error reading descriptor '{}'\n", d);
+            fmt::print("                          ");
             for (c = 0; c < qn; c++) {
-              printf(" ");
+              fmt::print(" ");
             }
-            printf("^\n");
+            fmt::print("^\n");
             return;
           }
         }

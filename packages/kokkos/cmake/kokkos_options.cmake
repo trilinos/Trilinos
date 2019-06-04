@@ -25,11 +25,13 @@ list(APPEND KOKKOS_INTERNAL_ENABLE_OPTIONS_LIST
      Cuda_LDG_Intrinsic
      Debug
      Debug_DualView_Modify_Check
-     Debug_Bounds_Checkt
+     Debug_Bounds_Check
      Compiler_Warnings
      Profiling
      Profiling_Load_Print
      Aggressive_Vectorization
+     Deprecated_Code
+     Explicit_Instantiation
      )
 
 #-------------------------------------------------------------------------------
@@ -60,14 +62,11 @@ foreach(opt ${KOKKOS_INTERNAL_ENABLE_OPTIONS_LIST})
   ENDIF()
 endforeach()
 
+IF(DEFINED Kokkos_ARCH)
+  MESSAGE(FATAL_ERROR "Defined Kokkos_ARCH, use KOKKOS_ARCH instead!")
+ENDIF()
 IF(DEFINED Kokkos_Arch)
-  IF(DEFINED KOKKOS_ARCH)
-    IF(NOT (${KOKKOS_ARCH} STREQUAL "${Kokkos_Arch}"))
-      MESSAGE(FATAL_ERROR "Defined both Kokkos_Arch and KOKKOS_ARCH and they differ!")
-    ENDIF()
-  ELSE()
-    SET(KOKKOS_ARCH ${Kokkos_Arch})
-  ENDIF()
+  MESSAGE(FATAL_ERROR "Defined Kokkos_Arch, use KOKKOS_ARCH instead!")
 ENDIF()
   
 #-------------------------------------------------------------------------------
@@ -80,6 +79,7 @@ list(APPEND KOKKOS_ARCH_LIST
      ARMv80          # (HOST) ARMv8.0 Compatible CPU
      ARMv81          # (HOST) ARMv8.1 Compatible CPU
      ARMv8-ThunderX  # (HOST) ARMv8 Cavium ThunderX CPU
+     ARMv8-TX2       # (HOST) ARMv8 Cavium ThunderX2 CPU
      WSM             # (HOST) Intel Westmere CPU
      SNB             # (HOST) Intel Sandy/Ivy Bridge CPUs
      HSW             # (HOST) Intel Haswell CPUs
@@ -102,6 +102,9 @@ list(APPEND KOKKOS_ARCH_LIST
      Maxwell53       # (GPU) NVIDIA Maxwell generation CC 5.3
      Pascal60        # (GPU) NVIDIA Pascal generation CC 6.0
      Pascal61        # (GPU) NVIDIA Pascal generation CC 6.1
+     Volta70         # (GPU) NVIDIA Volta generation CC 7.0
+     Volta72         # (GPU) NVIDIA Volta generation CC 7.2
+     Turing75         # (GPU) NVIDIA Turing generation CC 7.5
     )
 
 # List of possible device architectures.
@@ -120,11 +123,18 @@ list(APPEND KOKKOS_DEVICES_LIST
 # List of possible TPLs for Kokkos
 # From Makefile.kokkos: Options: hwloc,librt,experimental_memkind
 set(KOKKOS_USE_TPLS_LIST)
+if(APPLE)
+list(APPEND KOKKOS_USE_TPLS_LIST
+    HWLOC          # hwloc
+    MEMKIND        # experimental_memkind
+    )
+else()
 list(APPEND KOKKOS_USE_TPLS_LIST
     HWLOC          # hwloc
     LIBRT          # librt
     MEMKIND        # experimental_memkind
     )
+endif()
 # Map of cmake variables to Makefile variables
 set(KOKKOS_INTERNAL_HWLOC hwloc)
 set(KOKKOS_INTERNAL_LIBRT librt)
@@ -169,6 +179,7 @@ set(KOKKOS_INTERNAL_LAMBDA enable_lambda)
 
 set(tmpr "\n       ")
 string(REPLACE ";" ${tmpr} KOKKOS_INTERNAL_ARCH_DOCSTR "${KOKKOS_ARCH_LIST}")
+set(KOKKOS_INTERNAL_ARCH_DOCSTR "${tmpr}${KOKKOS_INTERNAL_ARCH_DOCSTR}")
 # This would be useful, but we use Foo_ENABLE mechanisms
 #string(REPLACE ";" ${tmpr} KOKKOS_INTERNAL_DEVICES_DOCSTR "${KOKKOS_DEVICES_LIST}")
 #string(REPLACE ";" ${tmpr} KOKKOS_INTERNAL_USE_TPLS_DOCSTR "${KOKKOS_USE_TPLS_LIST}")
@@ -263,8 +274,11 @@ set(KOKKOS_ENABLE_PROFILING ${KOKKOS_INTERNAL_ENABLE_PROFILING_DEFAULT} CACHE BO
 set_kokkos_default_default(PROFILING_LOAD_PRINT OFF)
 set(KOKKOS_ENABLE_PROFILING_LOAD_PRINT ${KOKKOS_INTERNAL_ENABLE_PROFILING_LOAD_PRINT_DEFAULT} CACHE BOOL "Enable profile load print.")
 
+set_kokkos_default_default(DEPRECATED_CODE ON)
+set(KOKKOS_ENABLE_DEPRECATED_CODE ${KOKKOS_INTERNAL_ENABLE_DEPRECATED_CODE_DEFAULT} CACHE BOOL "Enable deprecated code.")
 
-
+set_kokkos_default_default(EXPLICIT_INSTANTIATION OFF)
+set(KOKKOS_ENABLE_EXPLICIT_INSTANTIATION ${KOKKOS_INTERNAL_ENABLE_EXPLICIT_INSTANTIATION_DEFAULT} CACHE BOOL "Enable explicit template instantiation.")
 
 #-------------------------------------------------------------------------------
 #------------------------------- KOKKOS_USE_TPLS -------------------------------

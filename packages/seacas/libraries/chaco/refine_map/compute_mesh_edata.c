@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,7 +41,7 @@ double compute_mesh_edata(struct refine_edata *edata,        /* desire data for 
                           int                  mesh_dims[3], /* dimensions of processor mesh */
                           struct vtx_data **   comm_graph,   /* communication graph */
                           int *                node2vtx      /* maps mesh nodes to graph vertices */
-                          )
+)
 {
   double desire;     /* edge's interest in flipping */
   float  ewgt;       /* edge weight */

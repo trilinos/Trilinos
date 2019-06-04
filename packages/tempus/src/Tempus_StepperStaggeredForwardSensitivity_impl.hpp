@@ -23,7 +23,16 @@ namespace Tempus {
 // Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
 template<class Scalar> class StepperFactory;
 
-// StepperStaggeredForwardSensitivity definitions:
+
+template<class Scalar>
+StepperStaggeredForwardSensitivity<Scalar>::
+StepperStaggeredForwardSensitivity()
+{
+  this->setParams(Teuchos::null, Teuchos::null);
+  this->modelWarning();
+}
+
+
 template<class Scalar>
 StepperStaggeredForwardSensitivity<Scalar>::
 StepperStaggeredForwardSensitivity(
@@ -31,9 +40,6 @@ StepperStaggeredForwardSensitivity(
   const Teuchos::RCP<Teuchos::ParameterList>& pList,
   const Teuchos::RCP<Teuchos::ParameterList>& sens_pList)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
   // Set all the input parameters and call initialize
   this->setParams(pList, sens_pList);
   this->setModel(appModel);
@@ -66,11 +72,11 @@ setModel(
   // Create state and sensitivity steppers
   RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
   if (stateStepper_ == Teuchos::null)
-    stateStepper_ = sf->createStepper(appModel, stepperPL_);
+    stateStepper_ = sf->createStepper(stepperPL_, appModel);
   else
     stateStepper_->setModel(appModel);
   if (sensitivityStepper_ == Teuchos::null)
-    sensitivityStepper_ = sf->createStepper(fsa_model_, stepperPL_);
+    sensitivityStepper_ = sf->createStepper(stepperPL_, fsa_model_);
   else
     sensitivityStepper_->setModel(fsa_model_);
 }
@@ -231,9 +237,8 @@ takeStep(
   prod_state->setOrder(state->getOrder());
 
   // If step passed promote the state, otherwise fail and stop
-  if (state->getStepperStatus() == Status::FAILED ||
-      state->getSolutionStatus() == Status::FAILED) {
-    prod_state->getStepperState()->stepperStatus_ = Status::FAILED;
+  if (state->getSolutionStatus() == Status::FAILED) {
+    prod_state->setSolutionStatus(Status::FAILED);
     return;
   }
   stateSolutionHistory_->promoteWorkingState();
@@ -243,7 +248,7 @@ takeStep(
   if (reuse_solver_ && stateStepper_->getSolver() != Teuchos::null)
     fsa_model_->setSolver(stateStepper_->getSolver(), force_W_update_);
 
-  // Take step in senstivity equations
+  // Take step in sensitivity equations
   sensSolutionHistory_->initWorkingState();
   RCP<SolutionState<Scalar> > sens_state =
     sensSolutionHistory_->getWorkingState();
@@ -267,13 +272,12 @@ takeStep(
   prod_state->setOrder(std::min(state->getOrder(), sens_state->getOrder()));
 
   // If step passed promote the state, otherwise fail and stop
-  if (sens_state->getStepperStatus() == Status::FAILED ||
-      sens_state->getSolutionStatus() == Status::FAILED) {
-    prod_state->getStepperState()->stepperStatus_ = Status::FAILED;
+  if (sens_state->getSolutionStatus() == Status::FAILED) {
+    prod_state->setSolutionStatus(Status::FAILED);
   }
   else {
     sensSolutionHistory_->promoteWorkingState();
-    prod_state->getStepperState()->stepperStatus_ = Status::PASSED;
+    prod_state->setSolutionStatus(Status::PASSED);
   }
 }
 

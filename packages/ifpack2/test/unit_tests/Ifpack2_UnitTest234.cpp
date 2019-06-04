@@ -62,7 +62,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Ifpack2_Chebyshev.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include <type_traits>
 
@@ -98,8 +98,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Chebyshev, Issue234, SC)
 
   out << "Create test matrix A" << endl;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   // Create a nonzero diagonal matrix with a single row per process.
   // We won't actually do anything with it; we just need to give the

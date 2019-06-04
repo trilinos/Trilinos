@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2008 National Technology & Engineering Solutions
+ * Copyright(C) 2008-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,12 +35,16 @@
 #ifndef EXODIFF_UTIL_H
 #define EXODIFF_UTIL_H
 
-#if __cplusplus > 199711L
-#define TOPTR(x) x.data()
-#else
-#define TOPTR(x) (x.empty() ? nullptr : &x[0])
-#endif
+#include <fmt/color.h>
+#include <sstream>
+#include <string>
 
 char **get_name_array(int size, int length);
-void free_name_array(char **names, int size);
+void   free_name_array(char **names, int size);
+
+void Error(const std::string &x);
+void ERR_OUT(std::ostringstream &buf);
+void DIFF_OUT(std::ostringstream &buf, fmt::internal::color_type color = fmt::color::red);
+void DIFF_OUT(const std::string &buf, fmt::internal::color_type color = fmt::color::red);
+
 #endif

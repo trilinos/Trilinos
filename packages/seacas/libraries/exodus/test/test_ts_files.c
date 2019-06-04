@@ -1,38 +1,39 @@
 /*
-* Copyright(c) 2005 National Technology &Engineering Solutions
-* of Sandia, LLC(NTESS).Under the terms of Contract DE - NA0003525 with
-* NTESS, the U.S.Government retains certain rights in this software.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are
-* met:
-*
-* * Redistributions of source code must retain the above copyright
-* notice, this list of conditions and the following disclaimer.
-*
-* * Redistributions in binary form must reproduce the above
-* copyright notice, this list of conditions and the following
-* disclaimer in the documentation and / or other materials provided
-* with the                                                 distribution.
-*
-* * Neither the name of NTESS nor the names of its
-* contributors may be used to endorse or promote products derived
-* from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-* A PARTICULAR PURPOSE ARE DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT
-* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT
-* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright(c) 2005-2017 National Technology &Engineering Solutions
+ * of Sandia, LLC(NTESS).Under the terms of Contract DE - NA0003525 with
+ * NTESS, the U.S.Government retains certain rights in this software.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following
+ * disclaimer in the documentation and / or other materials provided
+ * with the                                                 distribution.
+ *
+ * * Neither the name of NTESS nor the names of its
+ * contributors may be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include <exodusII.h>
+#include <exodusII_int.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -323,13 +324,13 @@ void *init_file(void *varg)
   block_names[5] = "block_6";
   block_names[6] = "block_7";
 
-  strncpy(blocks[0].topology, "quad", 32);
-  strncpy(blocks[1].topology, "quad", 32);
-  strncpy(blocks[2].topology, "hex", 32);
-  strncpy(blocks[3].topology, "tetra", 32);
-  strncpy(blocks[4].topology, "wedge", 32);
-  strncpy(blocks[5].topology, "tetra", 32);
-  strncpy(blocks[6].topology, "tri", 32);
+  ex_copy_string(blocks[0].topology, "quad", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[1].topology, "quad", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[2].topology, "hex", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[3].topology, "tetra", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[4].topology, "wedge", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[5].topology, "tetra", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[6].topology, "tri", MAX_STR_LENGTH + 1);
 
   blocks[0].num_entry = 1;
   blocks[1].num_entry = 1;
@@ -992,7 +993,7 @@ void *init_file(void *varg)
   qa_record[0][1] = "testwt";
   qa_record[0][2] = "07/07/93";
   qa_record[0][3] = "15:41:33";
-  qa_record[1][0] = "";
+  qa_record[1][0] = "Thirty-Two character QA Record|";
   qa_record[1][1] = "                            ";
   qa_record[1][2] = "";
   qa_record[1][3] = "                        ";
@@ -1011,7 +1012,7 @@ void *init_file(void *varg)
 
   info[0] = "This is the first information record.";
   info[1] = "";
-  info[2] = "                                     ";
+  info[2] = "This info record is exactly 80 characters long.  last character should be pipe |";
 
   error = ex_put_info(exoid, num_info, info);
   printf("after ex_put_info, error = %d\n", error);
@@ -1308,9 +1309,4 @@ int main(int argc, char *argv[])
   for (t = 0; t < NUM_THREADS; t++) {
     pthread_join(threads[t], NULL);
   }
-
-  /*  ex_close(exoid); */
-
-  /* Last thing that main() should do */
-  pthread_exit(NULL);
 }

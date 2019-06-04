@@ -1,23 +1,23 @@
 C Copyright(C) 2014 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C 
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C 
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
       SUBROUTINE VIINIT(ASPECT,JUSTIF)
 C
@@ -221,7 +221,7 @@ C
       dev(8) = 0.0
       dev(9) = 0.0
       dev(10) = 0.0
-      
+
       dev(11) = 0.0
       dev(12) = 0.0
       dev(13) = 0.0
@@ -243,7 +243,7 @@ C
       dev(28) = 0.0
       dev(29) = 0.0
       dev(30) = 5000.
-      
+
       dev(31) = 750.
       dev(32) = 0.0
       dev(33) = 1.0
@@ -800,12 +800,12 @@ C
       CHARACTER*132 PSTNAM
       INTEGER LENGTH,ISTART,IEND,I
       integer*4 koutff, koutfl
- 
+
       DATA PSTNAM /'vdicps.ps'/
- 
+
       DATA ISTAT /0/
       LENGTH = MIN(LEN(NAME),132)
- 
+
 C Strip off any leading blanks
       ISTART = 0
       DO 10 I=1,LENGTH
@@ -815,7 +815,7 @@ C Strip off any leading blanks
        ENDIF
 10    CONTINUE
 11    CONTINUE
- 
+
 C Strip off trailing blanks
       IEND = 0
       IF(ISTART.GT.0)THEN
@@ -830,7 +830,7 @@ C Strip off trailing blanks
       PSTNAM=NAME(ISTART:IEND)
       RETURN
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
- 
+
       ENTRY PSTOFS(KOUTFL)
       IF(ISTAT.EQ.0) THEN
         OPEN(KOUTFL,FILE=PSTNAM,FORM='FORMATTED',STATUS='UNKNOWN',
@@ -845,7 +845,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
   210 CONTINUE
       RETURN
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
- 
+
       ENTRY PSTCFS(KOUTFF,KK)
       IF(ISTAT.NE.0) THEN
         CLOSE(KOUTFF,ERR=303)
@@ -925,10 +925,10 @@ C     set common variables
       KCPW=0
       KBAUD=0
       KCOMTP=0
- 
+
 C CHECK FOR VALID CLASSIFICATION. Because of output format ignore.
       CALL PSTJOB
- 
+
 C     IF(KSECUR.NE.0) THEN
 C        CALL VBERRH(957,13)
 C     END IF
@@ -1739,75 +1739,77 @@ C
       RETURN
       END
       SUBROUTINE VDIQCO(NUM,INDEX,CLRARY,CLRMOD)
-C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
-C VDIQCO           -Inquire Color Table.
-C
-C R.W.Simons       -08APR81
-C H. S. LAUSON      29MAY86 - changed for current HLS interpretation
-C
-C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
-C                   All Black and White Devices. (LXY, HC1, ALP)
-C
-C ENTRY CONDITIONS -NUM = integer number of color indexes to inquire.
-C                   Range 1-256.
-C                   INDEX = integer array of indexes to inquire.  Range
-C                   0-255.
-C                   CLRMOD = integer color model to be used.  Range 0,1.
-C
-C CALLS            -VBERRH
-C
-C EXIT CONDITIONS  -CLRARY = real array of 3 by NUM elements returning
-C                   the values of the components of the indexes inquired.
-C                   Range for RGB: red 0.0-1.0
-C                                  green 0.0-1.0
-C                                  blue 0.0-1.0
-C                   Range for HLS: hue 0.0-360.0
-C                                  lightness 0.0-1.0
-C                                  saturation 0.0-1.0
-C
-C NARRATIVE        -Inquire one or more color table entries.  NUM and
-C                   INDEX specify how many and which indexes are being
-C                   inquired.  CLRMOD specifies which color model
-C                   (0=RGB, 1=HLS) should be used in constructing values
-C                   to return in CLRARY.  A device which does not
-C                   support a color table index specified will
-C                   return -1.0 in the first element of the CLRARY value
-C                   for that index.
-C
-C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
+C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C     
+C     VDIQCO           -Inquire Color Table.
+C     
+C     R.W.Simons       -08APR81
+C     H. S. LAUSON      29MAY86 - changed for current HLS interpretation
+C     
+C     ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
+C     All Black and White Devices. (LXY, HC1, ALP)
+C     
+C     ENTRY CONDITIONS -NUM = integer number of color indexes to inquire.
+C     Range 1-256.
+C     INDEX = integer array of indexes to inquire.  Range
+C     0-255.
+C     CLRMOD = integer color model to be used.  Range 0,1.
+C     
+C     CALLS            -VBERRH
+C     
+C     EXIT CONDITIONS  -CLRARY = real array of 3 by NUM elements returning
+C     the values of the components of the indexes inquired.
+C     Range for RGB: red 0.0-1.0
+C     green 0.0-1.0
+C     blue 0.0-1.0
+C     Range for HLS: hue 0.0-360.0
+C     lightness 0.0-1.0
+C     saturation 0.0-1.0
+C     
+C     NARRATIVE        -Inquire one or more color table entries.  NUM and
+C     INDEX specify how many and which indexes are being
+C     inquired.  CLRMOD specifies which color model
+C     (0=RGB, 1=HLS) should be used in constructing values
+C     to return in CLRARY.  A device which does not
+C     support a color table index specified will
+C     return -1.0 in the first element of the CLRARY value
+C     for that index.
+C     
+C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C     
       INTEGER NUM,INDEX(NUM),CLRMOD
       REAL CLRARY(3,NUM)
-C
+C     
       COMMON /PCOLST/ PCOLS(3,256)
-C
-C CHECK FOR VALID NUM.
+C     
+C     CHECK FOR VALID NUM.
       IF(NUM.LT.1.OR.NUM.GT.256) THEN
          CALL VBERRH(723,5)
          GOTO 999
       END IF
-C
-C CHECK FOR VALID CLRMOD.
+C     
+C     CHECK FOR VALID CLRMOD.
       IF(CLRMOD.NE.0.AND.CLRMOD.NE.1) THEN
          CALL VBERRH(725,5)
          GOTO 999
       END IF
-C
+C     
       IF(CLRMOD.NE.0) STOP 'HLS COLORS NOT SUPPORTED'
-C
-C CHECK FOR VALID INDEXES.
-         DO 100 I=1,NUM
+C     
+C     CHECK FOR VALID INDEXES.
+      DO I=1,NUM
          INDEXN=INDEX(I)
          IF(INDEXN.LT.0.OR.INDEXN.GT.255) THEN
             CALL VBERRH(724,5)
             GOTO 100
          END IF
-           DO 200 IC=1,3
-  200      CLRARY(IC,I)=PCOLS(IC,INDEXN)
-  100    CONTINUE
-C
-  999 RETURN
+         CLRARY(1,I)=PCOLS(1,INDEXN)
+         CLRARY(2,I)=PCOLS(2,INDEXN)
+         CLRARY(3,I)=PCOLS(3,INDEXN)
+ 100     continue
+      end do
+C     
+ 999  RETURN
       END
       SUBROUTINE VDIQCP(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
@@ -2008,8 +2010,9 @@ C CHECK FOR VALID CLRARY.
             END IF
 C
 C 256 INDEXES ARE SUPPORTED:
-              DO 200 IC=1,3
-  200         PCOLS(IC,INDEXN+1)=CLRARY(IC,I)
+              DO IC=1,3
+                 PCOLS(IC,INDEXN+1)=CLRARY(IC,I)
+              end do
 C
 C           define symbol for color reference
 C
@@ -2254,7 +2257,7 @@ C                            nothing is left on the stack
 C FLUSH BUFFER
       CALL PSTBUF(0,' ')
 C     write end of data message
-      
+
       WRITE(KPAGE,'(I10)',ERR=345) TOTPAG
       GO TO 349
   345    KPAGE=' ???'
@@ -2609,7 +2612,7 @@ C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
       INTEGER ESCPCD,N
       REAL ARGS(*)
- 
+
 C
 C COMPUTER DEPENDENT COMMON VARIABLES AND CONSTANTS.
       include 'vcpstc.blk'
@@ -2853,7 +2856,7 @@ C           (4)=LINE STYLE
 C           (5)=LINE WIDTH
 C           (6)=CHARACTER BOX Y
 C           (7)=CHARACTER BOX X
- 
+
 C SCALE FACTORS FOR NDC TO DC MAPPING. (LXY,HC1)
       REAL XSCALE,YSCALE
       COMMON /VCSCAL/ XSCALE,YSCALE
@@ -3430,43 +3433,44 @@ C
       return
       end
       SUBROUTINE PSTI2C(INT,NDIGIT,ISTR)
-C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
-C PSTI2C           - convert positive integer to decimal character
-C                    string equivalent
-C
-C ENVIRONMENT      - COMPUTER-INdependent
-C
-C ENTRY CONDITIONS - int = positive integer to be converted
-C                  ndigit = number of digits to be produced in string
-C                           form (pad left with zeros)
-C                  istr = character string of at least ndigit characters
-C
-C CALLS            -
-C
-C EXIT CONDITIONS  - istr contains decimal-string equivalent of int
-C                       (ndigits left-justified in istr)
-C
-C NARRATIVE        - This routine modified 10/89  S.L.Thompson
-C
-C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C     
+C     PSTI2C           - convert positive integer to decimal character
+C     string equivalent
+C     
+C     ENVIRONMENT      - COMPUTER-INdependent
+C     
+C     ENTRY CONDITIONS - int = positive integer to be converted
+C     ndigit = number of digits to be produced in string
+C     form (pad left with zeros)
+C     istr = character string of at least ndigit characters
+C     
+C     CALLS            -
+C     
+C     EXIT CONDITIONS  - istr contains decimal-string equivalent of int
+C     (ndigits left-justified in istr)
+C     
+C     NARRATIVE        - This routine modified 10/89  S.L.Thompson
+C     
+C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
       INTEGER INT,NDIGIT
       CHARACTER ISTR*(*)
       CHARACTER*1 KA(10)
       DATA KA /'0','1','2','3','4','5','6','7','8','9'/
-C
-C check input parameters
+C     
+C     check input parameters
       INT1=MAX(INT,0)
       LENGTH=LEN(ISTR)
       NDIG1=MAX(1,MIN(LENGTH,NDIGIT))
       ISTR='00000000000000000000000000000000000000000'
       ND=LENGTH
-        DO 10 I=1,NDIG1
-        J=INT1/10
-        K=INT1-10*J
-        ISTR(ND:ND)=KA(K+1)
-        ND=ND-1
-   10   INT1=J
+      DO I=1,NDIG1
+         J=INT1/10
+         K=INT1-10*J
+         ISTR(ND:ND)=KA(K+1)
+         ND=ND-1
+         INT1=J
+      end do
       RETURN
       END
       SUBROUTINE PSTBBG

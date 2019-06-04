@@ -57,7 +57,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(GlobalStatistics,p)
+template<typename EvalT, typename Traits>
+GlobalStatistics<EvalT, Traits>::
+GlobalStatistics(
+  const Teuchos::ParameterList& p)
 {
   comm = p.get< Teuchos::RCP<const Teuchos::Comm<int> > >("Comm");
 
@@ -76,7 +79,7 @@ PHX_EVALUATOR_CTOR(GlobalStatistics,p)
   for (typename std::vector<std::string>::const_iterator name = names.begin(); name != names.end(); ++name)
     field_values.push_back(PHX::MDField<const ScalarT,Cell,IP>(*name, ir->dl_scalar));
 
-  Teuchos::RCP<PHX::MDALayout<Cell> > cell_dl = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->dimension(0)));
+  Teuchos::RCP<PHX::MDALayout<Cell> > cell_dl = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->extent(0)));
   volumes = PHX::MDField<ScalarT,Cell>("Cell Volumes",cell_dl);
 
   tmp = PHX::MDField<ScalarT,Cell>("GlobalStatistics:tmp:"+names_string,cell_dl);
@@ -104,25 +107,25 @@ PHX_EVALUATOR_CTOR(GlobalStatistics,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(GlobalStatistics,sd,fm)
+template<typename EvalT, typename Traits>
+void
+GlobalStatistics<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(volumes,fm);
-  this->utils.setFieldData(tmp,fm);
-  this->utils.setFieldData(ones,fm);
-  
-  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_values.begin();
-       field != field_values.end(); ++field)
-    this->utils.setFieldData(*field,fm);
-
   ir_index = panzer::getIntegrationRuleIndex(ir_order,(*sd.worksets_)[0], this->wda);
-
-  for (typename PHX::MDField<ScalarT,Cell,IP>::size_type cell = 0; cell < ones.dimension(0); ++cell)
-    for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < ones.dimension(1); ++ip)
+  for (typename PHX::MDField<ScalarT,Cell,IP>::size_type cell = 0; cell < ones.extent(0); ++cell)
+    for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < ones.extent(1); ++ip)
       ones(cell,ip) = 1.0;
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
+template<typename EvalT, typename Traits>
+void
+GlobalStatistics<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   if (workset.num_cells == 0)
     return;
@@ -145,7 +148,7 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       averages[field_index] += tmp(cell);
 
-      for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < (field->dimension(1)); ++ip) {
+      for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < (field->extent(1)); ++ip) {
         maxs[field_index] = std::max( (*field)(cell,ip), maxs[field_index]);
         mins[field_index] = std::min( (*field)(cell,ip), mins[field_index]);
       }
@@ -155,7 +158,11 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
 }
 
 //**********************************************************************
-PHX_PRE_EVALUATE_FIELDS(GlobalStatistics, /* data */)
+template<typename EvalT, typename Traits>
+void
+GlobalStatistics<EvalT, Traits>::
+preEvaluate(
+  typename Traits::PreEvalData  /* data */)
 {
   total_volume = Teuchos::ScalarTraits<ScalarT>::zero();
 
@@ -170,7 +177,11 @@ PHX_PRE_EVALUATE_FIELDS(GlobalStatistics, /* data */)
 }
 
 //**********************************************************************
-PHX_POST_EVALUATE_FIELDS(GlobalStatistics, /* data */)
+template<typename EvalT, typename Traits>
+void
+GlobalStatistics<EvalT, Traits>::
+postEvaluate(
+  typename Traits::PostEvalData  /* data */)
 {
   this->postprocess(*(global_data->os));
 }

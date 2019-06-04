@@ -42,8 +42,6 @@
 #ifndef SACADO_MP_SCALAR_TRAITS_IMP_HPP
 #define SACADO_MP_SCALAR_TRAITS_IMP_HPP
 
-#ifdef HAVE_SACADO_TEUCHOS
-
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerializationTraits.hpp"
 #include "Teuchos_SerializationTraitsHelpers.hpp"
@@ -78,6 +76,7 @@ namespace Sacado {
       typedef value_mag_type magnitudeType;
       typedef Sacado::MP::Vector<storage_half_type> halfPrecision;
       typedef Sacado::MP::Vector<storage_double_type> doublePrecision;
+      typedef typename Teuchos::ScalarTraits<value_type>::coordinateType coordinateType;
 
       static const bool isComplex = TVT::isComplex;
       static const bool isOrdinal = TVT::isOrdinal;
@@ -197,6 +196,7 @@ namespace Sacado {
       typedef Sacado::MP::Vector<storage_mag_type> magnitudeType;
       typedef Sacado::MP::Vector<storage_half_type> halfPrecision;
       typedef Sacado::MP::Vector<storage_double_type> doublePrecision;
+      typedef typename Teuchos::ScalarTraits<value_type>::coordinateType coordinateType;
 
       static const bool isComplex = TVT::isComplex;
       static const bool isOrdinal = TVT::isOrdinal;
@@ -666,7 +666,5 @@ namespace Sacado {
   }
 
 }
-
-#endif // HAVE_SACADO_TEUCHOS
 
 #endif // SACADO_MP_SCALAR_TRAITS_IMP_HPP

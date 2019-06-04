@@ -411,10 +411,10 @@ std::ostream& Ifpack_SORa::Print(std::ostream& os) const{
 }
 
 
-double Ifpack_SORa::Condest(const Ifpack_CondestType CT,
-                             const int MaxIters,
-                             const double Tol,
-                             Epetra_RowMatrix* Matrix_in){
+double Ifpack_SORa::Condest(const Ifpack_CondestType /* CT */,
+                             const int /* MaxIters */,
+                             const double /* Tol */,
+                             Epetra_RowMatrix* /* Matrix_in */){
   return -1.0;
 }
 

@@ -56,7 +56,24 @@ using panzer::Dim;
 namespace user_app {
     
   //! Convection: conv = multiplier * a \cdot \nabla x
-PANZER_EVALUATOR_CLASS(Convection)
+template<typename EvalT, typename Traits>
+class Convection
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    Convection(
+      const Teuchos::ParameterList& p);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
   PHX::MDField<ScalarT,Cell,Point> conv;
     
@@ -66,7 +83,8 @@ PANZER_EVALUATOR_CLASS(Convection)
     
   double multiplier;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class Convection
+
 
 }
 

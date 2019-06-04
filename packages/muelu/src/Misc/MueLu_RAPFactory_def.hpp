@@ -52,6 +52,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_MatrixUtils.hpp>
 #include <Xpetra_TripleMatrixMultiply.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -78,6 +79,7 @@ namespace MueLu {
     SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("rap: triple product");
     SET_VALID_ENTRY("rap: fix zero diagonals");
+    SET_VALID_ENTRY("rap: relative diagonal floor");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",                   null, "Prolongator factory");
@@ -119,6 +121,7 @@ namespace MueLu {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
       std::ostringstream levelstr;
       levelstr << coarseLevel.GetLevelID();
+      std::string labelstr = FormattingHelper::getColonLabel(coarseLevel.getObjectLabel());
 
       TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_ == false, Exceptions::RuntimeError,
         "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
@@ -130,11 +133,9 @@ namespace MueLu {
 
       if (pL.get<bool>("rap: triple product") == false) {
         // Reuse pattern if available (multiple solve)
-        RCP<ParameterList> APparams;
+        RCP<ParameterList> APparams = rcp(new ParameterList);
         if(pL.isSublist("matrixmatrix: kernel params"))
-          APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-        else
-          APparams= rcp(new ParameterList);
+          APparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
         // By default, we don't need global constants for A*P
         APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
@@ -153,15 +154,13 @@ namespace MueLu {
           SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
 
           AP = MatrixMatrix::Multiply(*A, !doTranspose, *P, !doTranspose, AP, GetOStream(Statistics2),
-                                      doFillComplete, doOptimizeStorage, std::string("MueLu::A*P-")+levelstr.str(), APparams);
+                                      doFillComplete, doOptimizeStorage, labelstr+std::string("MueLu::A*P-")+levelstr.str(), APparams);
         }
 
         // Reuse coarse matrix memory if available (multiple solve)
-        RCP<ParameterList> RAPparams;
-        if(pL.isSublist("matrixmatrix: kernel params")) RAPparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-        else RAPparams= rcp(new ParameterList);
-
-
+        RCP<ParameterList> RAPparams = rcp(new ParameterList);
+        if(pL.isSublist("matrixmatrix: kernel params"))
+          RAPparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
         if (coarseLevel.IsAvailable("RAP reuse data", this)) {
           GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
@@ -188,7 +187,7 @@ namespace MueLu {
           SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
 
           Ac = MatrixMatrix::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
-                                      doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-implicit-")+levelstr.str(), RAPparams);
+                                      doFillComplete, doOptimizeStorage, labelstr+std::string("MueLu::R*(AP)-implicit-")+levelstr.str(), RAPparams);
 
         } else {
           RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
@@ -196,9 +195,18 @@ namespace MueLu {
           SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
 
           Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
-                                      doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-explicit-")+levelstr.str(), RAPparams);
+                                      doFillComplete, doOptimizeStorage, labelstr+std::string("MueLu::R*(AP)-explicit-")+levelstr.str(), RAPparams);
         }
-        CheckRepairMainDiagonal(Ac);
+
+        Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double> >("rap: relative diagonal floor")();
+        if(relativeFloor.size() > 0) {
+          Xpetra::MatrixUtils<SC,LO,GO,NO>::RelativeDiagonalBoost(Ac, relativeFloor,GetOStream(Statistics2));
+        }
+
+        bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+        bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
+        if (checkAc || repairZeroDiagonals)
+          Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1));
 
         if (IsPrint(Statistics2)) {
           RCP<ParameterList> params = rcp(new ParameterList());;
@@ -207,6 +215,7 @@ namespace MueLu {
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
         }
 
+        if(!Ac.is_null()) {std::ostringstream oss; oss << "A_" << coarseLevel.GetLevelID(); Ac->setObjectLabel(oss.str());}
         Set(coarseLevel, "A",         Ac);
 
         APparams->set("graph", AP);
@@ -214,8 +223,9 @@ namespace MueLu {
         RAPparams->set("graph", Ac);
         Set(coarseLevel, "RAP reuse data", RAPparams);
       } else {
-        RCP<ParameterList> RAPparams;
-        RAPparams= rcp(new ParameterList);
+        RCP<ParameterList> RAPparams = rcp(new ParameterList);
+        if(pL.isSublist("matrixmatrix: kernel params"))
+          RAPparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
         // We *always* need global constants for the RAP, but not for the temps
         RAPparams->set("compute global constants: temporaries",RAPparams->get("compute global constants: temporaries",false));
@@ -229,7 +239,7 @@ namespace MueLu {
 
           Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::
             MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
-                        doOptimizeStorage, std::string("MueLu::R*A*P-implicit-")+levelstr.str(),
+                        doOptimizeStorage, labelstr+std::string("MueLu::R*A*P-implicit-")+levelstr.str(),
                         RAPparams);
 
         } else {
@@ -240,10 +250,21 @@ namespace MueLu {
 
           Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::
             MultiplyRAP(*R, !doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
-                        doOptimizeStorage, std::string("MueLu::R*A*P-explicit-")+levelstr.str(),
+                        doOptimizeStorage, labelstr+std::string("MueLu::R*A*P-explicit-")+levelstr.str(),
                         RAPparams);
         }
-        CheckRepairMainDiagonal(Ac);
+      
+        Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double> >("rap: relative diagonal floor")();
+        if(relativeFloor.size() > 0) {
+          Xpetra::MatrixUtils<SC,LO,GO,NO>::RelativeDiagonalBoost(Ac, relativeFloor,GetOStream(Statistics2));
+        }
+
+        bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+        bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
+        if (checkAc || repairZeroDiagonals)
+          Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1));
+
+
 
         if (IsPrint(Statistics2)) {
           RCP<ParameterList> params = rcp(new ParameterList());;
@@ -252,6 +273,7 @@ namespace MueLu {
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
         }
 
+        if(!Ac.is_null()) {std::ostringstream oss; oss << "A_" << coarseLevel.GetLevelID(); Ac->setObjectLabel(oss.str());}
         Set(coarseLevel, "A",         Ac);
 
         // RAPparams->set("graph", Ac);
@@ -301,101 +323,6 @@ namespace MueLu {
       }
     }
 
-  }
-
-  // Plausibility check: no zeros on diagonal
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckRepairMainDiagonal(RCP<Matrix>& Ac) const {
-    const Teuchos::ParameterList& pL = GetParameterList();
-    bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
-    bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
-
-    if (!checkAc && !repairZeroDiagonals)
-      return;
-
-    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
-
-    Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
-    p->set("DoOptimizeStorage", true);
-
-    RCP<const Map> rowMap = Ac->getRowMap();
-    RCP<Vector> diagVec = VectorFactory::Build(rowMap);
-    Ac->getLocalDiagCopy(*diagVec);
-
-    LO lZeroDiags = 0;
-    Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
-
-    for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
-      if (diagVal[i] == zero) {
-        lZeroDiags++;
-      }
-    }
-    GO gZeroDiags;
-    MueLu_sumAll(rowMap->getComm(), Teuchos::as<GO>(lZeroDiags), gZeroDiags);
-
-    if (repairZeroDiagonals && gZeroDiags > 0) {
-      // TAW: If Ac has empty rows, put a 1 on the diagonal of Ac. Be aware that Ac might have empty rows AND columns.
-      // The columns might not exist in the column map at all.
-      //
-      // It would be nice to add the entries to the original matrix Ac. But then we would have to use
-      // insertLocalValues. However we cannot add new entries for local column indices that do not exist in the column map
-      // of Ac (at least Epetra is not able to do this). With Tpetra it is also not possible to add new entries after the
-      // FillComplete call with a static map, since the column map already exists and the diagonal entries are completely missing.
-      //
-      // Here we build a diagonal matrix with zeros on the diagonal and ones on the diagonal for the rows where Ac has empty rows
-      // We have to build a new matrix to be able to use insertGlobalValues. Then we add the original matrix Ac to our new block
-      // diagonal matrix and use the result as new (non-singular) matrix Ac.
-      // This is very inefficient.
-      //
-      // If you know something better, please let me know.
-      RCP<Matrix> fixDiagMatrix = MatrixFactory::Build(rowMap, 1);
-      for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
-        if (diagVal[r] == zero) {
-          GO grid = rowMap->getGlobalElement(r);
-          Teuchos::ArrayRCP<GO> indout(1,grid);
-          Teuchos::ArrayRCP<SC> valout(1, one);
-          fixDiagMatrix->insertGlobalValues(grid,indout.view(0, 1), valout.view(0, 1));
-        }
-      }
-      {
-        Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete1"));
-        if(rowMap->lib() == Xpetra::UseTpetra) Ac->resumeFill(); // TODO needed for refactored Tpetra because of the isFillActive flag???
-        Ac->fillComplete(p);
-      }
-      MatrixMatrix::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
-      if (Ac->IsView("stridedMaps"))
-        fixDiagMatrix->CreateView("stridedMaps", Ac);
-
-      Ac = Teuchos::null;     // free singular coarse level matrix
-      Ac = fixDiagMatrix;     // set fixed non-singular coarse level matrix
-
-      // call fillComplete with optimized storage option set to true
-      // This is necessary for new faster Epetra MM kernels.
-      {
-        Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete2"));
-        if(rowMap->lib() == Xpetra::UseTpetra) Ac->resumeFill(); // TODO needed for refactored Tpetra because of the isFillActive flag???
-        Ac->fillComplete(p);
-      }
-    } // end repair
-
-
-
-    // print some output
-    if (IsPrint(Warnings0))
-      GetOStream(Warnings0) << "RAPFactory (WARNING): " << (repairZeroDiagonals ? "repaired " : "found ")
-          << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
-
-#ifdef HAVE_MUELU_DEBUG // only for debugging
-    // check whether Ac has been repaired...
-    Ac->getLocalDiagCopy(*diagVec);
-    Teuchos::ArrayRCP< Scalar > diagVal2 = diagVec->getDataNonConst(0);
-    for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
-      if (diagVal2[r] == zero) {
-        GetOStream(Errors,-1) << "Error: there are zeros left on diagonal after repair..." << std::endl;
-        break;
-      }
-    }
-#endif
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

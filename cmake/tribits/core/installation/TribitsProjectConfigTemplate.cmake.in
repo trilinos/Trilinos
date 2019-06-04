@@ -65,6 +65,8 @@ SET(${PROJECT_NAME}_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
 ## Compiler flags used by ${PROJECT_NAME} build
 ## ---------------------------------------------------------------------------
 
+SET(${PROJECT_NAME}_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+
 SET(${PROJECT_NAME}_CXX_COMPILER_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
 
 SET(${PROJECT_NAME}_C_COMPILER_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
@@ -90,24 +92,6 @@ SET(${PROJECT_NAME}_AR ${CMAKE_AR})
 ## The project version number
 SET(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}")
 
-## The project include file directories.
-#SET(${PROJECT_NAME}_INCLUDE_DIRS "${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}")
-
-## The project library directories.
-#SET(${PROJECT_NAME}_LIBRARY_DIRS "${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}")
-
-## The project libraries.
-#SET(${PROJECT_NAME}_LIBRARIES "${${PROJECT_NAME}_CONFIG_LIBRARIES}")
-
-## The project tpl include paths
-#SET(${PROJECT_NAME}_TPL_INCLUDE_DIRS "${${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS}")
-
-## The project tpl library paths
-#SET(${PROJECT_NAME}_TPL_LIBRARY_DIRS "${${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS}")
-
-## The project tpl libraries
-#SET(${PROJECT_NAME}_TPL_LIBRARIES "${${PROJECT_NAME}_CONFIG_TPL_LIBRARIES}")
-
 # For best practices in handling of components, see
 # <http://www.cmake.org/cmake/help/v3.2/manual/cmake-developer.7.html#find-modules>.
 #
@@ -123,32 +107,32 @@ ENDIF()
 # the required components wasn't found.
 SET(${PROJECT_NAME}_FOUND TRUE)
 FOREACH(comp ${PDOLLAR}{COMPONENTS_LIST})
-   SET(
-     INCLUDE_FILE
-     ${PDOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${PDOLLAR}{comp}/${PDOLLAR}{comp}Config.cmake
-     )
-   IF (EXISTS ${PDOLLAR}{INCLUDE_FILE})
-       # Set ${PROJECT_NAME}_<component>_FOUND.
-       SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
-       # Include the package file.
-       INCLUDE(${PDOLLAR}{INCLUDE_FILE})
-       # Add variables to lists.
-       LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_INCLUDE_DIRS})
-       LIST(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARY_DIRS})
-       LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
-       LIST(APPEND ${PROJECT_NAME}_TPL_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_INCLUDE_DIRS})
-       LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
-       LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
-   ELSE()
-       # Component not found.
-       MESSAGE(WARNING "Component \"${PDOLLAR}{comp}\" NOT found.")
-       # Set ${PROJECT_NAME}_<component>_FOUND to FALSE.
-       SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
-       # Set ${PROJECT_NAME}_FOUND to FALSE if component is not optional.
-       IF(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
-           SET(${PROJECT_NAME}_FOUND FALSE)
-       ENDIF()
+  SET(
+    INCLUDE_FILE
+    ${PDOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${PDOLLAR}{comp}/${PDOLLAR}{comp}Config.cmake
+    )
+ IF (EXISTS ${PDOLLAR}{INCLUDE_FILE})
+   # Set ${PROJECT_NAME}_<component>_FOUND.
+   SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
+   # Include the package file.
+   INCLUDE(${PDOLLAR}{INCLUDE_FILE})
+   # Add variables to lists.
+   LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_INCLUDE_DIRS})
+   LIST(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARY_DIRS})
+   LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
+   LIST(APPEND ${PROJECT_NAME}_TPL_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_INCLUDE_DIRS})
+   LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
+   LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
+ ELSE()
+   # Component not found.
+   MESSAGE(WARNING "Component \"${PDOLLAR}{comp}\" NOT found.")
+   # Set ${PROJECT_NAME}_<component>_FOUND to FALSE.
+   SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
+   # Set ${PROJECT_NAME}_FOUND to FALSE if component is not optional.
+   IF(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
+     SET(${PROJECT_NAME}_FOUND FALSE)
    ENDIF()
+ ENDIF()
 ENDFOREACH()
 
 # Resolve absolute paths and remove duplicate paths
@@ -169,6 +153,20 @@ FOREACH(dir ${PDOLLAR}{${PROJECT_NAME}_LIBRARY_DIRS})
 ENDFOREACH()
 LIST(REMOVE_DUPLICATES short_dirs)
 SET(${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{short_dirs})
+
+# Remove duplicates in ${PROJECT_NAME}_LIBRARIES
+LIST(REVERSE ${PROJECT_NAME}_LIBRARIES)
+LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
+LIST(REVERSE ${PROJECT_NAME}_LIBRARIES)
+
+# Remove duplicates in ${PROJECT_NAME}_TPL_INCLUDE_DIRS
+IF (${PROJECT_NAME}_TPL_INCLUDE_DIRS)
+  LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_TPL_INCLUDE_DIRS)
+ENDIF()
+
+# NOTE: It is *NOT* safe to try to remove duplicate in
+# ${PROJECT_NAME}_TPL_LIBRARIES because these can be specified as -L, -l, etc.
+# Actaully, we should think about that.
 
 ## ---------------------------------------------------------------------------
 ## MPI specific variables
@@ -201,5 +199,3 @@ SET(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 
 ## The TPLs enabled for this project
 SET(${PROJECT_NAME}_TPL_LIST "${FULL_TPL_SET}")
-
-${PROJECT_CONFIG_CODE}

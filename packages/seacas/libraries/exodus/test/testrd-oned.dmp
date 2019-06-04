@@ -1,0 +1,470 @@
+
+after ex_open
+         I/O word size 4
+after ex_get_init, error =   0
+database parameters:
+title =  'This is a test'
+num_dim =   1
+num_nodes =  10
+num_elem =  10
+num_elem_blk =   3
+num_node_sets =   2
+num_side_sets =   2
+ after ex_inquire, error = 0
+
+after ex_get_coord, error =   0
+x coords = 
+  1.0
+  1.1
+  1.2
+  1.3
+  1.5
+  1.6
+  1.8
+  2.0
+  2.2
+  2.5
+
+after ex_get_coord_names, error =   0
+x coord name = 'xcoor'
+ after ex_get_attr_param, error = 0
+num nodal attributes = 1
+ after ex_get_attr_names, error = 0
+nodal attribute 0 = 'Node_attr_1'
+ after ex_get_one_attr, error = 0
+  1.0
+  1.1
+  1.2
+  1.3
+  1.5
+  1.6
+  1.8
+  2.0
+  2.2
+  2.5
+
+after ex_get_map, error =   0
+elem_map(0) = 10 
+elem_map(1) = 20 
+elem_map(2) = 30 
+elem_map(3) = 40 
+elem_map(4) = 50 
+elem_map(5) = 60 
+elem_map(6) = 70 
+elem_map(7) = 80 
+elem_map(8) = 90 
+elem_map(9) = 100 
+
+after ex_get_elem_blk_ids, error =   0
+
+after ex_get_names, error =   0
+
+after ex_get_elem_block, error = 0
+element block id = 10
+element type = 'bar'
+num_elem_in_block =  4
+num_nodes_per_elem =  2
+num_attr =  1
+name = 'left_side'
+
+after ex_get_elem_block, error = 0
+element block id = 20
+element type = 'bar'
+num_elem_in_block =  5
+num_nodes_per_elem =  2
+num_attr =  1
+name = 'right_side'
+
+after ex_get_elem_block, error = 0
+element block id = 30
+element type = 'point'
+num_elem_in_block =  1
+num_nodes_per_elem =  1
+num_attr =  0
+name = 'center'
+
+after ex_inquire, error = 0
+
+There are  2 properties for each element block
+after ex_get_prop_names, error = 0
+element block  1, property( 2): 'DENSITY'=     1
+element block  2, property( 2): 'DENSITY'=    10
+element block  3, property( 2): 'DENSITY'=    34
+
+after ex_get_elem_conn, error = 0
+connect array for elem block 10
+  1
+  2
+
+after ex_get_elem_conn, error = 0
+connect array for elem block 20
+  5
+  6
+
+after ex_get_elem_conn, error = 0
+connect array for elem block 30
+  5
+
+ after ex_get_elem_attr, error = 0
+ after ex_get_elem_attr_names, error = 0
+element block 10 attribute 'THICKNESS' = 0.0000
+
+ after ex_get_elem_attr, error = 0
+ after ex_get_elem_attr_names, error = 0
+element block 20 attribute 'WIDTH' = 12.5664
+
+after ex_get_node_set_ids, error =   0
+
+after ex_get_names, error =   0
+
+after ex_get_node_set_param, error =   0
+
+node set 20 parameters: 
+num_nodes =  5
+name = 'all_odd_nodes'
+
+after ex_get_node_set, error =   0
+
+after ex_get_node_set_dist_fact, error =   0
+
+node list for node set 20
+  1
+  3
+  5
+  7
+  9
+dist factors for node set 20
+ 1.00
+ 2.00
+ 3.00
+ 4.00
+ 5.00
+ after ex_get_attr_param, error = 0
+num nodeset attributes for nodeset 20 = 1
+ after ex_get_attr_names, error = 0
+nodeset attribute 0 = 'Nodeset_attribute'
+ after ex_get_one_attr, error = 0
+  1.0
+  1.1
+  1.2
+  1.3
+  1.5
+
+after ex_get_node_set_param, error =   0
+
+node set 21 parameters: 
+num_nodes =  3
+name = 'some_even_nodes'
+
+after ex_get_node_set, error =   0
+
+after ex_get_node_set_dist_fact, error =   0
+
+node list for node set 21
+  2
+  4
+  6
+dist factors for node set 21
+ 1.00
+ 2.00
+ 3.00
+ after ex_get_attr_param, error = 0
+num nodeset attributes for nodeset 21 = 0
+
+after ex_inquire, error = 0
+
+There are  3 properties for each node set
+after ex_get_prop_names, error = 0
+node set  1, property( 1): 'ID'=    20
+node set  2, property( 1): 'ID'=    21
+node set  1, property( 2): 'FACE'=     4
+node set  2, property( 2): 'FACE'=     5
+node set  1, property( 3): 'VELOCITY'=  1000
+node set  2, property( 3): 'VELOCITY'=  2000
+
+after ex_inquire, error =   0
+
+after ex_inquire: EX_INQ_NS_NODE_LEN = 8, error =   0
+
+after ex_inquire: EX_INQ_NS_DF_LEN = 8, error =   0
+
+after ex_get_concat_node_sets, error =   0
+
+concatenated node set info
+ids = 
+ 20
+ 21
+num_nodes_per_set = 
+  5
+  3
+node_ind = 
+  0
+  5
+node_list = 
+  1
+  3
+  5
+  7
+  9
+  2
+  4
+  6
+dist_fact = 
+1.000
+2.000
+3.000
+4.000
+5.000
+1.000
+2.000
+3.000
+
+after ex_get_side_set_ids, error =   0
+
+after ex_get_names, error =   0
+
+after ex_get_side_set_param, error =   0
+side set  1 parameters:
+name = 'left_boundary'
+num_sides =   1
+num_dist_factors =   1
+
+after ex_get_side_set, error =   0
+
+after ex_get_side_set_node_list, error =   0
+
+after ex_get_side_set_dist_fact, error =   0
+element list for side set  1
+  1
+side list for side set  1
+  1
+node list for side set  1
+  1
+dist factors for side set  1
+2.000
+
+after ex_get_side_set_param, error =   0
+side set  2 parameters:
+name = 'right_boundary'
+num_sides =   1
+num_dist_factors =   1
+
+after ex_get_side_set, error =   0
+
+after ex_get_side_set_node_list, error =   0
+
+after ex_get_side_set_dist_fact, error =   0
+element list for side set  2
+  9
+side list for side set  2
+  2
+node list for side set  2
+ 10
+dist factors for side set  2
+3.000
+
+after ex_inquire, error = 0
+
+There are  1 properties for each side set
+after ex_get_prop_names, error = 0
+side set  1, property( 1): 'ID'=     1
+side set  2, property( 1): 'ID'=     2
+
+after ex_inquire: EX_INQ_SIDE_SETS = 2,  error = 0
+
+after ex_inquire: EX_INQ_SS_ELEM_LEN = 2,  error = 0
+
+after ex_inquire: EX_INQ_SS_NODE_LEN = 2,  error = 0
+
+after ex_inquire: EX_INQ_SS_DF_LEN = 2,  error = 0
+
+after ex_get_concat_side_sets, error =   0
+concatenated side set info
+ids = 
+  1
+  2
+num_elem_per_set = 
+  1
+  1
+num_dist_per_set = 
+  1
+  1
+elem_ind = 
+  0
+  1
+dist_ind = 
+  0
+  1
+elem_list = 
+  1
+  9
+side_list = 
+  1
+  2
+dist_fact = 
+2.000
+3.000
+
+after ex_get_qa, error =   0
+QA records = 
+ 'TESTWT'
+ 'testwt'
+ '07/07/93'
+ '15:41:33'
+ ''
+ ''
+ ''
+ ''
+
+after ex_inquire, error =   0
+
+after ex_get_info, error =   0
+info records = 
+ 'This is the first information record.'
+ ''
+ ''
+
+after ex_get_variable_param, error =   0
+
+after ex_get_variable_param, error =   0
+
+after ex_get_variable_names, error =   0
+There are  2 nodal variables; their names are :
+ 'node_variable_a_very_long_name_0'
+ 'nod_var1'
+
+after ex_get_variable_param, error =   0
+
+after ex_get_variable_names, error =   0
+There are  3 element variables; their names are :
+ 'this_variable_name_is_short'
+ 'this_variable_name_is_just_right'
+ 'this_variable_name_is_tooooo_lon'
+
+after ex_get_elem_var_tab, error =   0
+This is the element variable truth table:
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+
+after ex_get_variable_param, error =   0
+
+after ex_get_variable_names, error =   0
+There are  3 nodeset variables; their names are :
+ 'ns_var0'
+ 'ns_var1'
+ 'ns_var2'
+
+after ex_get_nset_var_tab, error =   0
+This is the nodeset variable truth table:
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+
+after ex_get_variable_param, error =   0
+
+after ex_inquire, error =   0
+There are 10 time steps in the database.
+
+after ex_get_time, error =   0
+time value at time step  3 = 0.030
+
+after ex_get_all_times, error =   0
+time values at all time steps are:
+0.010
+0.020
+0.030
+0.040
+0.050
+0.060
+0.070
+0.080
+0.090
+0.100
+
+after ex_get_nodal_var, error =   0
+nodal variable  1 values at time step  3
+1.030
+1.060
+1.090
+1.120
+1.150
+1.180
+1.210
+1.240
+1.270
+1.300
+
+after ex_get_nodal_var_time, error =   0
+nodal variable  1 values for node  1 through time:
+1.010
+1.020
+1.030
+1.040
+1.050
+1.060
+1.070
+1.080
+1.090
+1.100
+
+ after ex_get_elem_blk_ids, error =   0
+
+after ex_get_elem_var, error =   0
+element variable  1 values of element block 10 at time step  3
+4.030
+4.060
+4.090
+4.120
+
+after ex_get_elem_var, error =   0
+element variable  1 values of element block 20 at time step  3
+5.030
+5.060
+5.090
+5.120
+5.150
+
+after ex_get_elem_var, error =   0
+element variable  1 values of element block 30 at time step  3
+6.030
+
+after ex_get_elem_var_time, error =   0
+element variable  2 values for element  2 through time:
+5.020
+5.040
+5.060
+5.080
+5.100
+5.120
+5.140
+5.160
+5.180
+5.200
+
+ after ex_get_node_set_ids, error =   0
+
+after ex_get_nset_var, error =   0
+nodeset variable  2 values of nodeset 20 at time step  3
+9.030
+9.060
+9.090
+9.120
+9.150
+
+after ex_get_nset_var, error =   0
+nodeset variable  2 values of nodeset 21 at time step  3
+10.030
+10.060
+10.090
+
+after ex_close, error =   0

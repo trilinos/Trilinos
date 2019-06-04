@@ -116,21 +116,21 @@ LOCA::MultiContinuation::NaturalConstraint::numConstraints() const
 
 void
 LOCA::MultiContinuation::NaturalConstraint::setX(
-                        const NOX::Abstract::Vector& y)
+                        const NOX::Abstract::Vector& /* y */)
 {
   isValidConstraints = false;
 }
 
 void
-LOCA::MultiContinuation::NaturalConstraint::setParam(int paramID, double val)
+LOCA::MultiContinuation::NaturalConstraint::setParam(int /* paramID */, double /* val */)
 {
   isValidConstraints = false;
 }
 
 void
 LOCA::MultiContinuation::NaturalConstraint::setParams(
-             const std::vector<int>& paramIDs,
-             const NOX::Abstract::MultiVector::DenseMatrix& vals)
+             const std::vector<int>& /* paramIDs */,
+             const NOX::Abstract::MultiVector::DenseMatrix& /* vals */)
 {
   isValidConstraints = false;
 }

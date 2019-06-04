@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -408,6 +408,9 @@ struct inclusive_scan_integer_sequence
   using type = typename helper::type ;
   static constexpr value_type value  = helper::value ;
 };
+
+template <typename T>
+using identity_t = T;
 
 }} // namespace Kokkos::Impl
 

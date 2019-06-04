@@ -124,14 +124,14 @@ class Zakharov_Sacado_Objective : public Objective<Real> {
     FunctionZakharov<GradType>    zfuncGrad_; 
     FunctionZakharov<HessVecType> zfuncHessVec_; 
 
-    Teuchos::RCP<const vector> getVector( const V& x ) {
-      using Teuchos::dyn_cast;
-      return dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<const vector> getVector( const V& x ) {
+      
+      return dynamic_cast<const SV&>(x).getVector();
     }
 
-    Teuchos::RCP<vector> getVector( V& x ) {
-      using Teuchos::dyn_cast;
-      return dyn_cast<SV>(x).getVector();
+    ROL::Ptr<vector> getVector( V& x ) {
+      
+      return dynamic_cast<SV&>(x).getVector();
     }
 
   public:
@@ -140,16 +140,16 @@ class Zakharov_Sacado_Objective : public Objective<Real> {
 
     /* Evaluate the objective function at x */
     Real value( const Vector<Real> &x, Real &tol ) {
-      using Teuchos::RCP;
-      RCP<const vector> xp = getVector(x);      
+      
+      ROL::Ptr<const vector> xp = getVector(x);      
       return zfunc_.eval(*xp);
     }
 
     /* Evaluate the gradient at x */
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-      using Teuchos::RCP;
-      RCP<const vector> xp = getVector(x);
-      RCP<vector> gp = getVector(g);
+      
+      ROL::Ptr<const vector> xp = getVector(x);
+      ROL::Ptr<vector> gp = getVector(g);
 
       uint n = xp->size();
 
@@ -171,10 +171,10 @@ class Zakharov_Sacado_Objective : public Objective<Real> {
     /* Compute the action of the Hessian evaluated at x on a vector v */
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
-      using Teuchos::RCP;
-      RCP<vector> hvp = getVector(hv);
-      RCP<const vector> vp = getVector(v);
-      RCP<const vector> xp = getVector(x);
+      
+      ROL::Ptr<vector> hvp = getVector(hv);
+      ROL::Ptr<const vector> vp = getVector(v);
+      ROL::Ptr<const vector> xp = getVector(x);
 
       uint n = xp->size();
 

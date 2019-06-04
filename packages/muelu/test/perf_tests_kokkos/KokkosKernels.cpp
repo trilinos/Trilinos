@@ -117,7 +117,7 @@ void kernel_coalesce_drop_device(KokkosSparse::CrsMatrix<scalar_type, local_ordi
         auto col = rowView.colidx(colID);
 
         // Avoid square root by using squared values
-        auto aiiajj = eps*eps * ATS::magnitude(diag(row, 0))*ATS::magnitude(diag(col, 0));          // eps^2*|a_ii|*|a_jj|
+        auto aiiajj = eps*eps * ATS::magnitude(diag(row))*ATS::magnitude(diag(col));          // eps^2*|a_ii|*|a_jj|
         auto aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));  // |a_ij|^2
 
         if (aij2 > aiiajj || row == col)
@@ -151,7 +151,7 @@ void kernel_coalesce_drop_device(KokkosSparse::CrsMatrix<scalar_type, local_ordi
       auto col = rowView.colidx(colID);
 
       // Avoid square root by using squared values
-      auto aiiajj = eps*eps * ATS::magnitude(diag(row, 0))*ATS::magnitude(diag(col, 0));            // eps^2*|a_ii|*|a_jj|
+      auto aiiajj = eps*eps * ATS::magnitude(diag(row))*ATS::magnitude(diag(col));            // eps^2*|a_ii|*|a_jj|
       auto aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));    // |a_ij|^2
 
       if (aij2 > aiiajj || row == col) {
@@ -287,7 +287,7 @@ int main_(int argc, char **argv) {
   execution_space::fence();
   Kokkos::Impl::Timer timer;
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   if (typeid(device_type) == typeid(Kokkos::Serial)) {
     for (int i = 0; i < loop; i++)
       kernel_coalesce_drop_serial(A);
@@ -305,8 +305,6 @@ int main_(int argc, char **argv) {
   execution_space::fence();
 
   printf("kernel_coalesce_drop: %.2e (s)\n", kernel_time / loop);
-
-  execution_space::finalize();
 
   return 0;
 }
@@ -334,21 +332,21 @@ int main(int argc, char* argv[]) {
     return main_<double,int,Kokkos::DefaultExecutionSpace>(argc, argv);
 
   } else if (node == "serial") {
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     return main_<double,int,Kokkos::Serial>(argc, argv);
 #else
     std::cout << "Error: Serial node type is disabled" << std::endl;
 #endif
 
   } else if (node == "openmp") {
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     return main_<double,int,Kokkos::OpenMP>(argc, argv);
 #else
     std::cout << "Error: OpenMP node type is disabled" << std::endl;
 #endif
 
   } else if (node == "cuda") {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     return main_<double,int,Kokkos::Cuda>(argc, argv);
 #else
     std::cout << "Error: CUDA node type is disabled" << std::endl;

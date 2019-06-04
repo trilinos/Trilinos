@@ -61,10 +61,10 @@
 #include "ROL_CompositeStep.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_Constraint.hpp"
+#include "ROL_ParameterList.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "example_02.hpp"
 
@@ -80,12 +80,12 @@ int main(int argc, char **argv)
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -97,56 +97,56 @@ int main(int argc, char **argv)
     int dim = 5;
     int nc = 3;
 
-    Teuchos::RCP< Sacado_Objective<RealT,Example_Objective> > obj = 
-        Teuchos::rcp( new Sacado_Objective<RealT,Example_Objective> ());
+    ROL::Ptr< Sacado_Objective<RealT,Example_Objective> > obj = 
+        ROL::makePtr<Sacado_Objective<RealT,Example_Objective>>();
 
-    Teuchos::RCP< Sacado_Constraint<RealT,Example_Constraint > > constr =
-        Teuchos::rcp( new Sacado_Constraint<RealT,Example_Constraint > (nc));
+    ROL::Ptr< Sacado_Constraint<RealT,Example_Constraint > > constr =
+        ROL::makePtr<Sacado_Constraint<RealT,Example_Constraint >>(nc);
 
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
 
-    Teuchos::RCP<std::vector<RealT> > sol_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    ROL::StdVector<RealT> x(x_rcp);      // Iteration vector.
-    ROL::StdVector<RealT> sol(sol_rcp);  // Reference solution vector.
+    ROL::Ptr<std::vector<RealT> > sol_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::StdVector<RealT> x(x_ptr);      // Iteration vector.
+    ROL::StdVector<RealT> sol(sol_ptr);  // Reference solution vector.
 
     // Get initial guess
-    (*x_rcp)[0] = -1.8;
-    (*x_rcp)[1] = 1.7;
-    (*x_rcp)[2] = 1.9;
-    (*x_rcp)[3] = -0.8;
-    (*x_rcp)[4] = -0.8;
+    (*x_ptr)[0] = -1.8;
+    (*x_ptr)[1] = 1.7;
+    (*x_ptr)[2] = 1.9;
+    (*x_ptr)[3] = -0.8;
+    (*x_ptr)[4] = -0.8;
 
     // Get solution
-    (*sol_rcp)[0] = -1.717143570394391e+00;
-    (*sol_rcp)[1] =  1.595709690183565e+00;
-    (*sol_rcp)[2] =  1.827245752927178e+00;
-    (*sol_rcp)[3] = -7.636430781841294e-01;
-    (*sol_rcp)[4] = -7.636430781841294e-01;
+    (*sol_ptr)[0] = -1.717143570394391e+00;
+    (*sol_ptr)[1] =  1.595709690183565e+00;
+    (*sol_ptr)[2] =  1.827245752927178e+00;
+    (*sol_ptr)[3] = -7.636430781841294e-01;
+    (*sol_ptr)[4] = -7.636430781841294e-01;
 
     RealT left = -1e0, right = 1e0;
-    Teuchos::RCP<std::vector<RealT> > xtest_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > g_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > v_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > vc_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > vl_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
-    ROL::StdVector<RealT> xtest(xtest_rcp);
-    ROL::StdVector<RealT> g(g_rcp);
-    ROL::StdVector<RealT> d(d_rcp);
-    ROL::StdVector<RealT> v(v_rcp);
-    ROL::StdVector<RealT> vc(vc_rcp);
-    ROL::StdVector<RealT> vl(vl_rcp);
+    ROL::Ptr<std::vector<RealT> > xtest_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > d_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > v_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > vc_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
+    ROL::Ptr<std::vector<RealT> > vl_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
+    ROL::StdVector<RealT> xtest(xtest_ptr);
+    ROL::StdVector<RealT> g(g_ptr);
+    ROL::StdVector<RealT> d(d_ptr);
+    ROL::StdVector<RealT> v(v_ptr);
+    ROL::StdVector<RealT> vc(vc_ptr);
+    ROL::StdVector<RealT> vl(vl_ptr);
 
     // set xtest, d, v
     for (int i=0; i<dim; i++) {
-      (*xtest_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*d_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*v_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*xtest_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*d_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*v_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
     // set vc, vl
     for (int i=0; i<nc; i++) {
-      (*vc_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*vl_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*vc_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*vl_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
     obj->checkGradient(xtest, d, true, *outStream);                             *outStream << "\n"; 
@@ -156,17 +156,16 @@ int main(int argc, char **argv)
     constr->checkApplyAdjointJacobian(xtest, vl, vc, xtest, true, *outStream);  *outStream << "\n";
     constr->checkApplyAdjointHessian(xtest, vl, d, xtest, true, *outStream);    *outStream << "\n";
 
-    Teuchos::RCP<std::vector<RealT> > v1_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > v2_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
-    ROL::StdVector<RealT> v1(v1_rcp);
-    ROL::StdVector<RealT> v2(v2_rcp);
+    ROL::Ptr<std::vector<RealT> > v1_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > v2_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
+    ROL::StdVector<RealT> v1(v1_ptr);
+    ROL::StdVector<RealT> v2(v2_ptr);
     RealT augtol = 1e-8;
     constr->solveAugmentedSystem(v1, v2, d, vc, xtest, augtol);
     
     // Define algorithm.
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
     std::string paramfile = "parameters.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile(paramfile);
     ROL::Algorithm<RealT> algo("Composite Step", *parlist);
 
     // Run algorithm.
@@ -175,17 +174,17 @@ int main(int argc, char **argv)
 
     // Compute Error
     *outStream << "\nReference solution x_r =\n";
-    *outStream << std::scientific << "  " << (*sol_rcp)[0] << "\n";
-    *outStream << std::scientific << "  " << (*sol_rcp)[1] << "\n";
-    *outStream << std::scientific << "  " << (*sol_rcp)[2] << "\n";
-    *outStream << std::scientific << "  " << (*sol_rcp)[3] << "\n";
-    *outStream << std::scientific << "  " << (*sol_rcp)[4] << "\n";
+    *outStream << std::scientific << "  " << (*sol_ptr)[0] << "\n";
+    *outStream << std::scientific << "  " << (*sol_ptr)[1] << "\n";
+    *outStream << std::scientific << "  " << (*sol_ptr)[2] << "\n";
+    *outStream << std::scientific << "  " << (*sol_ptr)[3] << "\n";
+    *outStream << std::scientific << "  " << (*sol_ptr)[4] << "\n";
     *outStream << "\nOptimal solution x =\n";
-    *outStream << std::scientific << "  " << (*x_rcp)[0] << "\n";
-    *outStream << std::scientific << "  " << (*x_rcp)[1] << "\n";
-    *outStream << std::scientific << "  " << (*x_rcp)[2] << "\n";
-    *outStream << std::scientific << "  " << (*x_rcp)[3] << "\n";
-    *outStream << std::scientific << "  " << (*x_rcp)[4] << "\n";
+    *outStream << std::scientific << "  " << (*x_ptr)[0] << "\n";
+    *outStream << std::scientific << "  " << (*x_ptr)[1] << "\n";
+    *outStream << std::scientific << "  " << (*x_ptr)[2] << "\n";
+    *outStream << std::scientific << "  " << (*x_ptr)[3] << "\n";
+    *outStream << std::scientific << "  " << (*x_ptr)[4] << "\n";
     x.axpy(-1.0, sol);
     RealT abserr = x.norm();
     RealT relerr = abserr/sol.norm();

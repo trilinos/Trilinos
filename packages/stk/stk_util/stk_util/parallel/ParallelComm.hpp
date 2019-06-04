@@ -37,7 +37,7 @@
 #include <cstddef>                      // for size_t, ptrdiff_t
 #include <vector>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/environment/ReportHandler.hpp> // for ThrowAssertMsg
+#include <stk_util/util/ReportHandler.hpp> // for ThrowAssertMsg
 
 namespace stk { template <unsigned int N> struct CommBufferAlign; }
 
@@ -97,9 +97,6 @@ public:
 
   /** Reset the buffer to the beginning so that size() == 0 */
   void reset();
-
-  /** Reset the buffer pointers to NULL */
-  void reset_to_null();
 
   /** Size, in bytes, of the buffer.
    *  If the buffer is not yet allocated this is zero.
@@ -309,10 +306,6 @@ void CommBuffer::reset()
 { m_ptr = m_beg ; }
 
 inline
-void CommBuffer::reset_to_null()
-{ m_beg = nullptr; m_ptr = nullptr; m_end = nullptr; }
-
-inline
 size_t CommBuffer::capacity() const
 { return m_end - m_beg ; }
 
@@ -341,6 +334,7 @@ template<typename T>
 void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
                               std::vector< std::vector<T> > &recv_lists,
                               MPI_Comm &mpi_communicator ) {
+#ifdef STK_HAS_MPI
   //
   //  Determine the number of processors involved in this communication
   //
@@ -386,6 +380,7 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
       MPI_Wait( &recv_handles[iproc], &status );
     }
   }
+#endif
 }
 
 //

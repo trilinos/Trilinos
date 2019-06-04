@@ -54,7 +54,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
+template<typename EvalT, typename Traits>
+DirichletResidual_FaceBasis<EvalT, Traits>::
+DirichletResidual_FaceBasis(
+  const Teuchos::ParameterList& p)
 {
   std::string residual_name = p.get<std::string>("Residual Name");
 
@@ -71,19 +74,19 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
 
   // some sanity checks
   TEUCHOS_ASSERT(basis->isVectorBasis());
-  TEUCHOS_ASSERT(basis_layout->dimension(0)==vector_layout_dof->dimension(0));
-  TEUCHOS_ASSERT(basis_layout->dimension(1)==vector_layout_dof->dimension(1));
+  TEUCHOS_ASSERT(basis_layout->extent(0)==vector_layout_dof->extent(0));
+  TEUCHOS_ASSERT(basis_layout->extent(1)==vector_layout_dof->extent(1));
   TEUCHOS_ASSERT(basis->dimension()==vector_layout_dof->extent_int(2));
-  TEUCHOS_ASSERT(vector_layout_vector->dimension(0)==vector_layout_dof->dimension(0));
-  TEUCHOS_ASSERT(vector_layout_vector->dimension(1)==vector_layout_dof->dimension(1));
-  TEUCHOS_ASSERT(vector_layout_vector->dimension(2)==vector_layout_dof->dimension(2));
+  TEUCHOS_ASSERT(vector_layout_vector->extent(0)==vector_layout_dof->extent(0));
+  TEUCHOS_ASSERT(vector_layout_vector->extent(1)==vector_layout_dof->extent(1));
+  TEUCHOS_ASSERT(vector_layout_vector->extent(2)==vector_layout_dof->extent(2));
 
   residual = PHX::MDField<ScalarT,Cell,BASIS>(residual_name, basis_layout);
   dof      = PHX::MDField<const ScalarT,Cell,Point,Dim>(dof_name, vector_layout_dof);
   value    = PHX::MDField<const ScalarT,Cell,Point,Dim>(value_name, vector_layout_vector);
 
   // setup all fields to be evaluated and constructed
-  pointValues = PointValues2<ScalarT> (pointRule->getName()+"_",false);
+  pointValues = PointValues2<double> (pointRule->getName()+"_",false);
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
@@ -100,20 +103,24 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DirichletResidual_FaceBasis,sd,fm)
+template<typename EvalT, typename Traits>
+void
+DirichletResidual_FaceBasis<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   orientations = sd.orientations_;
-
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(dof,fm);
-  this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
-
-  faceNormal = Kokkos::createDynRankView(residual.get_static_view(),"faceNormal",dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  faceNormal = Kokkos::createDynRankView(residual.get_static_view(),"faceNormal",dof.extent(0),dof.extent(1),dof.extent(2));
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
+template<typename EvalT, typename Traits>
+void
+DirichletResidual_FaceBasis<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   // basic cell topology data
   const shards::CellTopology & parentCell = *basis->getCellTopology();

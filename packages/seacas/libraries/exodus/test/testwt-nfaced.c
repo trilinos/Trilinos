@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,10 +33,10 @@
  *
  */
 /*****************************************************************************
-*
-* testwt - test write an ExodusII database file (testwt-nfaced.exo)
-*
-*****************************************************************************/
+ *
+ * testwt - test write an ExodusII database file (testwt-nfaced.exo)
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"
 #include <assert.h>
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     num_elem_blk  = 1;
     num_node_sets = 0;
 
-    strcpy(par.title, title);
+    ex_copy_string(par.title, title, MAX_LINE_LENGTH + 1);
     par.num_dim       = num_dim;
     par.num_nodes     = num_nodes;
     par.num_edge      = 0;

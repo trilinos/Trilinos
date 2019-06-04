@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -68,6 +68,22 @@ TEST_F( TEST_CATEGORY, team_reduce )
   TestTeamPolicy< TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Static> >::test_reduce( 1000 );
   TestTeamPolicy< TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Dynamic> >::test_reduce( 1000 );
 }
+
+TEST_F( TEST_CATEGORY, team_broadcast )
+{
+  TestTeamBroadcast< TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Static> >::test_teambroadcast( 0 );
+  TestTeamBroadcast< TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Dynamic> >::test_teambroadcast( 0 );
+
+  TestTeamBroadcast< TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Static> >::test_teambroadcast( 2 );
+  TestTeamBroadcast< TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Dynamic> >::test_teambroadcast( 2 );
+
+  TestTeamBroadcast< TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Static> >::test_teambroadcast( 16 );
+  TestTeamBroadcast< TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Dynamic> >::test_teambroadcast( 16 );
+
+  TestTeamBroadcast< TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Static> >::test_teambroadcast( 1000 );
+  TestTeamBroadcast< TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Dynamic> >::test_teambroadcast( 1000 );
+}
+
 }
 
 #include <TestTeamVector.hpp>

@@ -55,7 +55,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Sum,p)
+template<typename EvalT, typename Traits>
+Sum<EvalT, Traits>::
+Sum(
+  const Teuchos::ParameterList& p)
 {
   std::string sum_name = p.get<std::string>("Sum Name");
   Teuchos::RCP<std::vector<std::string> > value_names = 
@@ -66,7 +69,7 @@ PHX_EVALUATOR_CTOR(Sum,p)
   TEUCHOS_ASSERT(static_cast<int>(value_names->size()) < MAX_VALUES);
 
   // check if the user wants to scale each term independently
-  auto local_scalars = Kokkos::View<double *,PHX::Device>("scalars",value_names->size());
+  auto local_scalars = Kokkos::View<double *,typename PHX::DevLayout<double>::type,PHX::Device>("scalars",value_names->size());
   if(p.isType<Teuchos::RCP<const std::vector<double> > >("Scalars")) {
     auto scalars_v = *p.get<Teuchos::RCP<const std::vector<double> > >("Scalars");
 
@@ -104,13 +107,14 @@ PHX_EVALUATOR_CTOR(Sum,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Sum, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+Sum<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  /* fm */)
 {
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < scalars.dimension_0(); ++i)
-    this->utils.setFieldData(values[i],fm);
-
-  cell_data_size = sum.size() / sum.fieldTag().dataLayout().dimension(0);
+  cell_data_size = sum.size() / sum.fieldTag().dataLayout().extent(0);
 }
 
 
@@ -119,7 +123,7 @@ template<typename EvalT, typename TRAITS>
 template<unsigned int RANK>
 KOKKOS_INLINE_FUNCTION
 void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
-  auto num_vals = scalars.dimension_0();
+  auto num_vals = scalars.extent(0);
 
 
   if (RANK == 1 )
@@ -129,14 +133,14 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
   }
   else if (RANK == 2)
   {
-    const size_t dim_1 = sum.dimension(1);
+    const size_t dim_1 = sum.extent(1);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t iv = 0; iv < num_vals; ++iv)
         sum(i,j) += scalars(iv)*(values[iv](i,j));
   }
   else if (RANK == 3)
   {
-    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2);
+    const size_t dim_1 = sum.extent(1),dim_2 = sum.extent(2);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t iv = 0; iv < num_vals; ++iv)
@@ -144,7 +148,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
   }
   else if (RANK == 4)
   {
-    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3);
+    const size_t dim_1 = sum.extent(1),dim_2 = sum.extent(2),dim_3 = sum.extent(3);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t l = 0; l < dim_3; ++l)
@@ -153,7 +157,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
   }
   else if (RANK == 5)
   {
-    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4);
+    const size_t dim_1 = sum.extent(1),dim_2 = sum.extent(2),dim_3 = sum.extent(3),dim_4 = sum.extent(4);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t l = 0; l < dim_3; ++l)
@@ -163,7 +167,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
   }
   else if (RANK == 6)
   {
-    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4),dim_5 = sum.dimension(5);
+    const size_t dim_1 = sum.extent(1),dim_2 = sum.extent(2),dim_3 = sum.extent(3),dim_4 = sum.extent(4),dim_5 = sum.extent(5);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t l = 0; l < dim_3; ++l)
@@ -175,7 +179,11 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Sum, /* workset */)
+template<typename EvalT, typename Traits>
+void
+Sum<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 {   
 
   sum.deep_copy(ScalarT(0.0));
@@ -194,7 +202,7 @@ PHX_EVALUATE_FIELDS(Sum, /* workset */)
   }
 #else
   size_t rank = sum.rank();
-  const size_t length = sum.dimension(0);
+  const size_t length = sum.extent(0);
   if (rank == 1 )
   {
     Kokkos::parallel_for(Kokkos::RangePolicy<PanzerSumTag<1> >(0, length), *this);
@@ -261,22 +269,10 @@ SumStatic(const Teuchos::ParameterList& p)
 
 template<typename EvalT, typename TRAITS,typename Tag0>
 void SumStatic<EvalT,TRAITS,Tag0,void,void>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
-{
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i)
-    this->utils.setFieldData(values[i],fm);
-}
-
-//**********************************************************************
-
-template<typename EvalT, typename TRAITS,typename Tag0>
-void SumStatic<EvalT,TRAITS,Tag0,void,void>::
 evaluateFields(typename TRAITS::EvalData /* d */)
 {
   sum.deep_copy(ScalarT(0.0));
-  for (std::size_t i = 0; i < sum.dimension_0(); ++i)
+  for (std::size_t i = 0; i < sum.extent(0); ++i)
     for (std::size_t d = 0; d < values.size(); ++d)
       sum(i) += (values[d])(i);
 }
@@ -303,8 +299,8 @@ SumStatic(const Teuchos::ParameterList& p)
     TEUCHOS_ASSERT(scalar_values->size()==value_names->size());
     useScalars = true;
 
-    Kokkos::View<double*,PHX::Device> scalars_nc
-        = Kokkos::View<double*,PHX::Device>("scalars",scalar_values->size());
+    Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device> scalars_nc
+      = Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device>("scalars",scalar_values->size());
 
     for(std::size_t i=0;i<scalar_values->size();i++)
       scalars_nc(i) = (*scalar_values)[i];
@@ -337,15 +333,56 @@ SumStatic(const Teuchos::ParameterList& p)
 //**********************************************************************
 
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
+SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
+SumStatic(const std::vector<PHX::Tag<typename EvalT::ScalarT>> & inputs,
+          const std::vector<double> & scalar_values,
+          const PHX::Tag<typename EvalT::ScalarT> & output)
+{
+  TEUCHOS_ASSERT(scalar_values.size()==inputs.size());
+
+  // check if the user wants to scale each term independently
+  if(scalars.size()==0) {
+    useScalars = false;
+  }
+  else {
+    useScalars = true;
+
+    Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device> scalars_nc
+      = Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device>("scalars",scalar_values.size());
+
+    for(std::size_t i=0;i<scalar_values.size();i++)
+      scalars_nc(i) = scalar_values[i];
+
+    scalars = scalars_nc;
+  }
+
+  // sanity check
+  TEUCHOS_ASSERT(inputs.size()<=MAX_VALUES);
+  
+  sum = output;
+  this->addEvaluatedField(sum);
+ 
+  values.resize(inputs.size());
+  for (std::size_t i=0; i < inputs.size(); ++i) {
+    values[i] = inputs[i];
+    this->addDependentField(values[i]);
+  }
+
+  numValues = inputs.size();
+
+  std::string n = "SumStatic Rank 2 Evaluator";
+  this->setName(n);
+}
+
+//**********************************************************************
+
+template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
 void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i) {
-    this->utils.setFieldData(values[i],fm);
+  for (std::size_t i=0; i < values.size(); ++i)
     value_views[i] = values[i].get_static_view();
-  }
 }
 
 //**********************************************************************
@@ -356,11 +393,11 @@ evaluateFields(typename TRAITS::EvalData /* d */)
 {
   sum.deep_copy(ScalarT(0.0));
 
-  // Kokkos::parallel_for(sum.dimension_0(), *this);
+  // Kokkos::parallel_for(sum.extent(0), *this);
   if(useScalars) 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,ScalarsTag>(0,sum.dimension_0()), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,ScalarsTag>(0,sum.extent(0)), *this);
   else
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoScalarsTag>(0,sum.dimension_0()), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoScalarsTag>(0,sum.extent(0)), *this);
 }
 
 //**********************************************************************
@@ -423,20 +460,6 @@ SumStatic(const Teuchos::ParameterList& p)
 */
 
 //**********************************************************************
-/*
-
-template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1,typename Tag2>
-void SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2>::
-postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
-{
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i)
-    this->utils.setFieldData(values[i],fm);
-}
-*/
-
-//**********************************************************************
 
 /*
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1,typename Tag2>
@@ -446,9 +469,9 @@ evaluateFields(typename TRAITS::EvalData d)
   sum.deep_copy(ScalarT(0.0));
   
   for (std::size_t d = 0; d < values.size(); ++d)
-    for (std::size_t i = 0; i < sum.dimension_0(); ++i)
-      for (std::size_t j = 0; j < sum.dimension_1(); ++j)
-        for (std::size_t k = 0; k < sum.dimension_2(); ++k)
+    for (std::size_t i = 0; i < sum.extent(0); ++i)
+      for (std::size_t j = 0; j < sum.extent(1); ++j)
+        for (std::size_t k = 0; k < sum.extent(2); ++k)
           sum(i,j,k) += (values[d])(i);
 }
 */

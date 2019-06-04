@@ -59,7 +59,10 @@
 
 namespace panzer_stk {
 
-PHX_EVALUATOR_CTOR(ScatterCellQuantity,p) :
+template<typename EvalT, typename Traits>
+ScatterCellQuantity<EvalT, Traits>::
+ScatterCellQuantity(
+  const Teuchos::ParameterList& p) :
    mesh_(p.get<Teuchos::RCP<STK_Interface> >("Mesh"))
 {
   using panzer::Cell;
@@ -87,17 +90,22 @@ PHX_EVALUATOR_CTOR(ScatterCellQuantity,p) :
   this->setName(scatterName+": STK-Scatter Cell Quantity Fields");
 }
 
-PHX_POST_REGISTRATION_SETUP(ScatterCellQuantity, /* d */, fm)
+template<typename EvalT, typename Traits>
+void
+ScatterCellQuantity<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData /* d */,
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
+  for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd)
     std::string fieldName = scatterFields_[fd].fieldTag().name();
-
-    // setup the field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-  }
 }
 
-PHX_EVALUATE_FIELDS(ScatterCellQuantity,workset)
+template<typename EvalT, typename Traits>
+void
+ScatterCellQuantity<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 {
    panzer::MDFieldArrayFactory af("",true);
 
@@ -107,11 +115,11 @@ PHX_EVALUATE_FIELDS(ScatterCellQuantity,workset)
 
    for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
       PHX::MDField<const ScalarT,panzer::Cell> & field = scatterFields_[fieldIndex];
-      // std::vector<double> value(field.dimension(0),0.0);
-      PHX::MDField<double,panzer::Cell,panzer::NODE> value = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
+      // std::vector<double> value(field.extent(0),0.0);
+      PHX::MDField<double,panzer::Cell,panzer::NODE> value = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.extent(0),1);
 
       // write to double field
-      for(unsigned i=0; i<field.dimension(0);i++)
+      for(unsigned i=0; i<field.extent(0);i++)
          value(i,0) = Sacado::ScalarValue<ScalarT>::eval(field(i));
 
       mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,value);

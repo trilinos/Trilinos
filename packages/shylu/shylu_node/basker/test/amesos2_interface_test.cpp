@@ -72,7 +72,9 @@ int main(int argc, char* argv[])
   }
   
   //Starting up Kokkos
-  Exe_Space::initialize(nthreads);
+  Kokkos::InitArguments init_args;
+  init_args.num_threads = nthreads;
+  Kokkos::initialize( init_args );
   std::cout << "Kokkos Settings" << std::endl;
   std::cout << "hwloc aval: " 
 	    << Kokkos::hwloc::available()<< std::endl;

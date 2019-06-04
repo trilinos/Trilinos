@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,4 +38,4 @@ double PIO_Time_Array[26]; /* Vector for timings */
 
 struct Parallel_IO PIO_Info;
 
-char Par_Nem_File_Name[MAX_FNL]; /* The par nemesis file name. */
+std::string Par_Nem_File_Name; /* The par nemesis file name. */

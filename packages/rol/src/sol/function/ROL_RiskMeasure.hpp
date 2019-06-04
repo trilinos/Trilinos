@@ -97,9 +97,9 @@ class RiskMeasure {
 protected:
   Real val_;
   Real gv_;
-  Teuchos::RCP<Vector<Real> > g_;
-  Teuchos::RCP<Vector<Real> > hv_;
-  Teuchos::RCP<Vector<Real> > dualVector_;
+  ROL::Ptr<Vector<Real> > g_;
+  ROL::Ptr<Vector<Real> > hv_;
+  ROL::Ptr<Vector<Real> > dualVector_;
   bool firstReset_;
 
   int comp_;
@@ -133,9 +133,9 @@ public:
              On input, \f$x\f$ carries \f$x_0\f$ and any statistics (scalars)
              associated with the risk measure. 
   */
-  virtual void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
-    x0 = Teuchos::rcp_const_cast<Vector<Real> >(
-         Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector());
+  virtual void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
+    x0 = ROL::constPtrCast<Vector<Real> >(
+         dynamic_cast<const RiskVector<Real>&>(x).getVector());
     // Create memory for class members
     if ( firstReset_ ) {
       g_  = (x0->dual()).clone();
@@ -162,12 +162,12 @@ public:
              \f$v_0\f$ and any statistics (scalars) associated with the risk
              measure.
   */
-  virtual void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
-                     Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
+  virtual void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+                     ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
     // Get vector component of v.  This is important for CVaR.
-    v0 = Teuchos::rcp_const_cast<Vector<Real> >(
-         Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
+    v0 = ROL::constPtrCast<Vector<Real> >(
+         dynamic_cast<const RiskVector<Real>&>(v).getVector());
   }
 
   /** \brief Update internal risk measure storage for value computation.
@@ -241,7 +241,7 @@ public:
   */
   virtual void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
     sampler.sumAll(*g_,*dualVector_);
-    (Teuchos::dyn_cast<RiskVector<Real> >(g)).setVector(*dualVector_);
+    (dynamic_cast<RiskVector<Real>&>(g)).setVector(*dualVector_);
   }
 
   /** \brief Return risk measure Hessian-times-a-vector.
@@ -257,7 +257,7 @@ public:
   */
   virtual void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
     sampler.sumAll(*hv_,*dualVector_);
-    (Teuchos::dyn_cast<RiskVector<Real> >(hv)).setVector(*dualVector_);
+    (dynamic_cast<RiskVector<Real>&>(hv)).setVector(*dualVector_);
   }
 };
 

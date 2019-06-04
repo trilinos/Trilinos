@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 import re
 import yaml
 from log import Log

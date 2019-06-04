@@ -104,8 +104,8 @@ void ML_OverwriteDefaults(ParameterList &inList, ParameterList &List,bool OverWr
         - \c "coarse: max size" \c = \c 128
  */
 int ML_Epetra::SetDefaultsSA(ParameterList & inList,
-                 Teuchos::RCP<std::vector<int> > &options,
-                 Teuchos::RCP<std::vector<double> > &params,
+                 Teuchos::RCP<std::vector<int> > &/* options */,
+                 Teuchos::RCP<std::vector<double> > &/* params */,
                  bool OverWrite)
 {
   ParameterList List;
@@ -301,8 +301,8 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
        - \c "coarse: max size" \c = \c 128
  */
 int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
-                 Teuchos::RCP<std::vector<int> > &options,
-                 Teuchos::RCP<std::vector<double> > &params,
+                 Teuchos::RCP<std::vector<int> > &/* options */,
+                 Teuchos::RCP<std::vector<double> > &/* params */,
                  bool OverWrite)
 {
   ParameterList List;
@@ -365,8 +365,8 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
         - \c "coarse: max size" \c = \c 256
  */
 int ML_Epetra::SetDefaultsNSSA(ParameterList & inList,
-                 Teuchos::RCP<std::vector<int> > &options,
-                 Teuchos::RCP<std::vector<double> > &params,
+                 Teuchos::RCP<std::vector<int> > &/* options */,
+                 Teuchos::RCP<std::vector<double> > &/* params */,
                  bool OverWrite)
 {
   ParameterList List;

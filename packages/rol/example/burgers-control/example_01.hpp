@@ -48,7 +48,7 @@
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -348,8 +348,8 @@ public:
   }
 
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // SOLVE STATE EQUATION
     std::vector<Real> param(4,0.0);
     std::vector<Real> u;
@@ -380,10 +380,10 @@ public:
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
-    Teuchos::RCP<std::vector<Real> > gp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(g)).getVector());
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
+    ROL::Ptr<std::vector<Real> > gp =
+      dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
     // SOLVE STATE EQUATION
     std::vector<Real> param(4,0.0);
     std::vector<Real> u;
@@ -417,12 +417,12 @@ public:
   }
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<std::vector<Real> > hvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hv)).getVector());
+    ROL::Ptr<const std::vector<Real> > zp =
+      dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
+    ROL::Ptr<const std::vector<Real> > vp =
+      dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
+    ROL::Ptr<std::vector<Real> > hvp =
+      dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
     // SOLVE STATE EQUATION
     std::vector<Real> param(4,0.0);
     std::vector<Real> u;
@@ -475,8 +475,8 @@ public:
     x_up_.resize(dim_,1.0);
   }
   bool isFeasible( const ROL::Vector<Real> &x ) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
+    ROL::Ptr<const std::vector<Real> > ex =
+      dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     bool val = true;
     int  cnt = 1;
     for ( int i = 0; i < this->dim_; i++ ) {
@@ -487,17 +487,17 @@ public:
     return val;
   }
   void project( ROL::Vector<Real> &x ) {
-    Teuchos::RCP<std::vector<Real> > ex =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(x)).getVector());
+    ROL::Ptr<std::vector<Real> > ex =
+      dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
     for ( int i = 0; i < this->dim_; i++ ) {
       (*ex)[i] = std::max(this->x_lo_[i],std::min(this->x_up_[i],(*ex)[i]));
     }
   }
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
+    ROL::Ptr<const std::vector<Real> > ex =
+      dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
+    ROL::Ptr<std::vector<Real> > ev =
+      dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(eps,this->min_diff_);
     for ( int i = 0; i < this->dim_; i++ ) {
       if ( ((*ex)[i] <= this->x_lo_[i]+epsn) ) {
@@ -506,10 +506,10 @@ public:
     }
   }
   void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
+    ROL::Ptr<const std::vector<Real> > ex =
+      dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
+    ROL::Ptr<std::vector<Real> > ev =
+      dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(eps,this->min_diff_);
     for ( int i = 0; i < this->dim_; i++ ) {
       if ( ((*ex)[i] >= this->x_up_[i]-epsn) ) {
@@ -518,12 +518,12 @@ public:
     }
   }
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<const std::vector<Real> > eg =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(g))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
+    ROL::Ptr<const std::vector<Real> > ex =
+      dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
+    ROL::Ptr<const std::vector<Real> > eg =
+      dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
+    ROL::Ptr<std::vector<Real> > ev =
+      dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(eps,this->min_diff_);
     for ( int i = 0; i < this->dim_; i++ ) {
       if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > 0.0) ){
@@ -532,12 +532,12 @@ public:
     }
   }
   void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<const std::vector<Real> > eg =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(g))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
+    ROL::Ptr<const std::vector<Real> > ex =
+      dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
+    ROL::Ptr<const std::vector<Real> > eg =
+      dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
+    ROL::Ptr<std::vector<Real> > ev =
+      dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(eps,this->min_diff_);
     for ( int i = 0; i < this->dim_; i++ ) {
       if ( ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
@@ -546,15 +546,15 @@ public:
     }
   }
   void setVectorToUpperBound( ROL::Vector<Real> &u ) {
-    Teuchos::RCP<std::vector<Real> > us = Teuchos::rcp( new std::vector<Real>(this->dim_,0.0) );
+    ROL::Ptr<std::vector<Real> > us = ROL::makePtr<std::vector<Real>>(this->dim_,0.0);
     us->assign(this->x_up_.begin(),this->x_up_.end()); 
-    Teuchos::RCP<ROL::Vector<Real> > up = Teuchos::rcp( new ROL::StdVector<Real>(us) );
+    ROL::Ptr<ROL::Vector<Real> > up = ROL::makePtr<ROL::StdVector<Real>>(us);
     u.set(*up);
   }
   void setVectorToLowerBound( ROL::Vector<Real> &l ) {
-    Teuchos::RCP<std::vector<Real> > ls = Teuchos::rcp( new std::vector<Real>(this->dim_,0.0) );
+    ROL::Ptr<std::vector<Real> > ls = ROL::makePtr<std::vector<Real>>(this->dim_,0.0);
     ls->assign(this->x_lo_.begin(),this->x_lo_.end()); 
-    Teuchos::RCP<ROL::Vector<Real> > lp = Teuchos::rcp( new ROL::StdVector<Real>(ls) );
+    ROL::Ptr<ROL::Vector<Real> > lp = ROL::makePtr<ROL::StdVector<Real>>(ls);
     l.set(*lp);
   }
 };

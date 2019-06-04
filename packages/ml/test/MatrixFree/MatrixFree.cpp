@@ -202,7 +202,9 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MFP);
   solver.Iterate(200, 1e-5);
 
+#ifndef NDEBUG
   int MFPIters = solver.NumIters();
+#endif
 
   delete MFP;
 
@@ -224,9 +226,11 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MFP_noLowMemory);
   solver.Iterate(200, 1e-5);
 
+#ifndef NDEBUG
   int MFP2Iters = solver.NumIters();
 
   assert (MFP2Iters == MFPIters);
+#endif
 
   delete MFP_noLowMemory;
 
@@ -253,12 +257,13 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MLP);
   solver.Iterate(200, 1e-5);
 
+#ifndef NDEBUG
   int MLPIters = solver.NumIters();
 
-  delete MLP;
-
   assert (abs(MLPIters < MFPIters) < 2);
+#endif
 
+  delete MLP;
   delete VbrA;
   delete Map;
 

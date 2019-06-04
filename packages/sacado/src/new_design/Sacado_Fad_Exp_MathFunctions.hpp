@@ -33,13 +33,16 @@
 #include "Sacado_cmath.hpp"
 #include "Sacado_SFINAE_Macros.hpp"
 
+// Note:  Sacado::Fad::Ops are forward-declared here, instead of in macros
+// below.
+#include "Sacado_Fad_Exp_Ops_Fwd.hpp"
+
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
   namespace Exp {                                                       \
     template <typename T> class Expr;                                   \
-    template <typename T, typename E> class FADOP;                      \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
     FADOP< typename Expr<T>::derived_type,                              \
@@ -82,8 +85,6 @@ namespace Sacado {                                                      \
   namespace Fad {                                                       \
   namespace Exp {                                                       \
     template <typename T> class Expr;                                   \
-    template <typename T1, typename T2, bool, bool, typename E>         \
-    class FADOP;                                                        \
     template <typename T> struct IsFadExpr;                             \
     template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
@@ -127,5 +128,31 @@ BINARYFUNC_MACRO(max, MaxOp)
 BINARYFUNC_MACRO(min, MinOp)
 
 #undef BINARYFUNC_MACRO
+
+#if defined(HAVE_SACADO_KOKKOSCORE)
+
+namespace Sacado {
+  namespace Fad {
+  namespace Exp {
+    template <typename S> class GeneralFad;
+    template <typename ValT, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr;
+
+    template <typename S>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(GeneralFad<S>* dst, const GeneralFad<S>& x);
+
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+  }
+  }
+}
+
+namespace Kokkos {
+  using Sacado::Fad::Exp::atomic_add;
+}
+
+#endif
 
 #endif // SACADO_FAD_EXP_MATHFUNCTIONS_HPP

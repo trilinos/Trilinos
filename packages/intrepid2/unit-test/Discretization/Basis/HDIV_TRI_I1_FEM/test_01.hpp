@@ -138,7 +138,7 @@ namespace Intrepid2 {
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const ordinal_type numFields = triBasis.getCardinality();
-        const ordinal_type numPoints = triNodes.dimension(0);
+        const ordinal_type numPoints = triNodes.extent(0);
 
         DynRankView vals;
         vals = DynRankView("vals", numFields, numPoints);
@@ -184,23 +184,23 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals2, triNodes, OPERATOR_VALUE) );
 
         // exception #13 incorrect 0th dimension of output array for OPERATOR_VALUE (must equal number of basis functions)
-        DynRankView ConstructWithLabel(badVals3, triBasis.getCardinality() + 1, triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension());
+        DynRankView ConstructWithLabel(badVals3, triBasis.getCardinality() + 1, triNodes.extent(0), triBasis.getBaseCellTopology().getDimension());
         INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals3, triNodes, OPERATOR_VALUE) );
 
         // exception #14 incorrect 0th dimension of output array for OPERATOR_DIV (must equal number of basis functions)
-        DynRankView ConstructWithLabel(badVals4, triBasis.getCardinality() + 1, triNodes.dimension(0));
+        DynRankView ConstructWithLabel(badVals4, triBasis.getCardinality() + 1, triNodes.extent(0));
         INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals4, triNodes, OPERATOR_DIV) );
 
         // exception #15 incorrect 1st dimension of output array (must equal number of points)
-        DynRankView ConstructWithLabel(badVals5, triBasis.getCardinality(), triNodes.dimension(0) + 1, triBasis.getBaseCellTopology().getDimension());
+        DynRankView ConstructWithLabel(badVals5, triBasis.getCardinality(), triNodes.extent(0) + 1, triBasis.getBaseCellTopology().getDimension());
         INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals5, triNodes, OPERATOR_VALUE) );
     
         // exception #16 incorrect 1st dimension of output array (must equal number of points)
-        DynRankView ConstructWithLabel(badVals6, triBasis.getCardinality(), triNodes.dimension(0) + 1);
+        DynRankView ConstructWithLabel(badVals6, triBasis.getCardinality(), triNodes.extent(0) + 1);
         INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals6, triNodes, OPERATOR_DIV) );
     
         // exception #17: incorrect 2nd dimension of output array (must equal the space dimension)
-        DynRankView ConstructWithLabel(badVals7, triBasis.getCardinality(), triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension() + 1);
+        DynRankView ConstructWithLabel(badVals7, triBasis.getCardinality(), triNodes.extent(0), triBasis.getBaseCellTopology().getDimension() + 1);
         INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals7, triNodes, OPERATOR_VALUE) );
     
 #endif
@@ -228,7 +228,7 @@ namespace Intrepid2 {
         const auto allTags = triBasis.getAllDofTags();
    
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const ordinal_type dofTagSize = allTags.dimension(0);
+        const ordinal_type dofTagSize = allTags.extent(0);
         
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
         for (ordinal_type i = 0; i < dofTagSize; i++) {
@@ -330,7 +330,7 @@ namespace Intrepid2 {
         
         // Dimensions for the output arrays:
         const ordinal_type numFields = triBasis.getCardinality();
-        const ordinal_type numPoints = triNodes.dimension(0);
+        const ordinal_type numPoints = triNodes.extent(0);
         const ordinal_type spaceDim  = triBasis.getBaseCellTopology().getDimension();
     
         {

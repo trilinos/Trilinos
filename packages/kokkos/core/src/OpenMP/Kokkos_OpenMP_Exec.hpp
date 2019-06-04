@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -47,7 +47,7 @@
 #include <Kokkos_Macros.hpp>
 #if defined( KOKKOS_ENABLE_OPENMP )
 
-#if !defined(_OPENMP)
+#if !defined(_OPENMP) && !defined(__CUDA_ARCH__)
 #error "You enabled Kokkos OpenMP support without enabling OpenMP in the compiler!"
 #endif
 
@@ -141,7 +141,11 @@ inline OpenMP::OpenMP() noexcept
 {}
 
 inline
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 bool OpenMP::is_initialized() noexcept
+#else
+bool OpenMP::impl_is_initialized() noexcept
+#endif
 { return Impl::t_openmp_instance != nullptr; }
 
 inline
@@ -154,7 +158,11 @@ bool OpenMP::in_parallel( OpenMP const& ) noexcept
 }
 
 inline
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 int OpenMP::thread_pool_size() noexcept
+#else
+int OpenMP::impl_thread_pool_size() noexcept
+#endif
 {
   return   OpenMP::in_parallel()
          ? omp_get_num_threads()
@@ -163,7 +171,11 @@ int OpenMP::thread_pool_size() noexcept
 }
 
 KOKKOS_INLINE_FUNCTION
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 int OpenMP::thread_pool_rank() noexcept
+#else
+int OpenMP::impl_thread_pool_rank() noexcept
+#endif
 {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
   return Impl::t_openmp_instance ? 0 : omp_get_thread_num();
@@ -267,22 +279,30 @@ public:
   KOKKOS_INLINE_FUNCTION
   int size() const noexcept
     {
-      #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+#if defined( KOKKOS_ENABLE_DEPRECATED_CODE )
       return Kokkos::OpenMP::thread_pool_size();
-      #else
+#else
+      return Kokkos::OpenMP::impl_thread_pool_size();
+#endif
+#else
       return 0 ;
-      #endif
+#endif
     }
 
   /// \brief acquire value such that 0 <= value < size()
   KOKKOS_INLINE_FUNCTION
   int acquire() const  noexcept
     {
-      #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+#if defined( KOKKOS_ENABLE_DEPRECATED_CODE )
       return Kokkos::OpenMP::thread_pool_rank();
-      #else
+#else
+      return Kokkos::OpenMP::impl_thread_pool_rank();
+#endif
+#else
       return 0 ;
-      #endif
+#endif
     }
 
   /// \brief release a value acquired by generate
@@ -331,19 +351,28 @@ public:
 
 } // namespace Experimental
 
-
-#if !defined( KOKKOS_DISABLE_DEPRECATED )
-
 inline
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 int OpenMP::thread_pool_size( int depth )
+#else
+int OpenMP::impl_thread_pool_size( int depth )
+#endif
 {
   return depth < 2
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
          ? thread_pool_size()
+#else
+         ? impl_thread_pool_size()
+#endif
          : 1;
 }
 
 KOKKOS_INLINE_FUNCTION
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 int OpenMP::hardware_thread_id() noexcept
+#else
+int OpenMP::impl_hardware_thread_id() noexcept
+#endif
 {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
   return Impl::t_openmp_hardware_id;
@@ -353,12 +382,14 @@ int OpenMP::hardware_thread_id() noexcept
 }
 
 inline
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
 int OpenMP::max_hardware_threads() noexcept
+#else
+int OpenMP::impl_max_hardware_threads() noexcept
+#endif
 {
   return Impl::g_openmp_hardware_max_threads;
 }
-
-#endif // KOKKOS_DISABLE_DEPRECATED
 
 } // namespace Kokkos
 

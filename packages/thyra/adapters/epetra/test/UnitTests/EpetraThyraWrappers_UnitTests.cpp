@@ -64,6 +64,20 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::rcp;
 
 
+void createEpetraVsAndMap(const Thyra::Ordinal localDim_in,
+  const Ptr<RCP<const Thyra::VectorSpaceBase<double> > > &vs,
+  const Ptr<RCP<const Epetra_Map> > &epetra_map,
+  const int emptyProcRootRank = -1
+  )
+{
+  const RCP<const Epetra_Comm> epetra_comm = getEpetraComm();
+  const int procRank = epetra_comm->MyPID();
+  const Thyra::Ordinal localDim = (procRank == emptyProcRootRank ? 0 : localDim_in);
+  *epetra_map = rcp(new Epetra_Map(-1, as<int>(localDim), 0, *epetra_comm));
+  *vs =  Thyra::create_VectorSpace(*epetra_map);
+}
+
+
 void runVectorSpaceTesterTest(const int emptyProc, 
   Teuchos::FancyOStream &out, bool &success)
 {

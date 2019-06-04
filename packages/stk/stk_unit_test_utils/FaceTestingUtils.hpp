@@ -33,9 +33,16 @@
 #ifndef FACETESTINGUTILS_HPP_
 #define FACETESTINGUTILS_HPP_
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <string>
-#include <vector>
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <set>                       // for set
+#include <string>                    // for string
+#include "stk_mesh/base/Entity.hpp"  // for Entity
+#include "stk_mesh/base/Types.hpp"   // for EntityId, EntityVector
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Part; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 unsigned count_sides_in_mesh(const stk::mesh::BulkData& mesh);
 
@@ -67,6 +74,7 @@ bool read_file_create_faces_check_face_elem_connectivity_stk(std::string filenam
 
 bool read_file_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts);
 
+
 namespace stk
 {
 namespace unit_test_util
@@ -80,6 +88,7 @@ stk::mesh::Entity declare_element_side_with_nodes(stk::mesh::BulkData &mesh,
 stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,
         stk::mesh::EntityId global_sub_topology_id, stk::mesh::Part &part);
 
+stk::mesh::Part *get_surface_part_with_id(const stk::mesh::MetaData &meta, int id);
 }
 }
 

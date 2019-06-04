@@ -111,22 +111,22 @@ namespace Tpetra {
       // process, and interface of TieBreak allows side effects.
       // Users may wish to exploit them regardless of the kind of Map
       // they pass in.
-      const Details::Directory<LO, GO, NT>* dir = NULL;
+      const ::Tpetra::Details::Directory<LO, GO, NT>* dir = NULL;
       bool usedTieBreak = false;
       if (map.isDistributed ()) {
         if (map.isUniform ()) {
-          dir = new Details::ContiguousUniformDirectory<LO, GO, NT> (map);
+          dir = new ::Tpetra::Details::ContiguousUniformDirectory<LO, GO, NT> (map);
         }
         else if (map.isContiguous ()) {
-          dir = new Details::DistributedContiguousDirectory<LO, GO, NT> (map);
+          dir = new ::Tpetra::Details::DistributedContiguousDirectory<LO, GO, NT> (map);
         }
         else {
-          dir = new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map, tieBreak);
+          dir = new ::Tpetra::Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map, tieBreak);
           usedTieBreak = true;
         }
       }
       else {
-        dir = new Details::ReplicatedDirectory<LO, GO, NT> (map);
+        dir = new ::Tpetra::Details::ReplicatedDirectory<LO, GO, NT> (map);
 
         if (tieBreak.mayHaveSideEffects () && map.getNodeNumElements () != 0) {
           // We need the second clause in the above test because Map's
@@ -196,20 +196,20 @@ namespace Tpetra {
       // Create an implementation object of the appropriate type,
       // depending on whether the Map is distributed or replicated,
       // and contiguous or noncontiguous.
-      const Details::Directory<LO, GO, NT>* dir = NULL;
+      const ::Tpetra::Details::Directory<LO, GO, NT>* dir = NULL;
       if (map.isDistributed ()) {
         if (map.isUniform ()) {
-          dir = new Details::ContiguousUniformDirectory<LO, GO, NT> (map);
+          dir = new ::Tpetra::Details::ContiguousUniformDirectory<LO, GO, NT> (map);
         }
         else if (map.isContiguous ()) {
-          dir = new Details::DistributedContiguousDirectory<LO, GO, NT> (map);
+          dir = new ::Tpetra::Details::DistributedContiguousDirectory<LO, GO, NT> (map);
         }
         else {
-          dir = new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map);
+          dir = new ::Tpetra::Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map);
         }
       }
       else {
-        dir = new Details::ReplicatedDirectory<LO, GO, NT> (map);
+        dir = new ::Tpetra::Details::ReplicatedDirectory<LO, GO, NT> (map);
       }
       TEUCHOS_TEST_FOR_EXCEPTION(
         dir == NULL, std::logic_error, "Tpetra::Directory::initialize: "
@@ -288,7 +288,6 @@ namespace Tpetra {
 //
 
 #define TPETRA_DIRECTORY_INSTANT(LO,GO,NODE) \
-  \
-  template class Directory< LO , GO , NODE >; \
+  template class Directory< LO , GO , NODE >;
 
 #endif // TPETRA_DIRECTORY_HPP

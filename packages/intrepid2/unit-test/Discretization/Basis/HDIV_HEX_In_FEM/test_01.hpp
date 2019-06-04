@@ -161,7 +161,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
 
     // Array dimensions
     const ordinal_type numFields = hexBasis.getCardinality();
-    const ordinal_type numPoints = hexNodes.dimension(0);
+    const ordinal_type numPoints = hexNodes.extent(0);
     const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
 
     {
@@ -457,7 +457,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
 
     // Array dimensions
     const ordinal_type numFields = hexBasis.getCardinality();
-    const ordinal_type numPoints = hexNodes.dimension(0);
+    const ordinal_type numPoints = hexNodes.extent(0);
     const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
 
     *outStream << " -- Testing OPERATOR_VALUE \n";

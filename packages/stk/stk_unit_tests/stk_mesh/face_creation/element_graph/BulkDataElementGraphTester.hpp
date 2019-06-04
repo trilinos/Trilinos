@@ -58,7 +58,7 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
@@ -107,7 +107,7 @@ public:
 
         if (parallel_size() > 1)
         {
-            stk::mesh::OrdinalVector shared_part, owned_part, empty;
+            stk::mesh::OrdinalVector shared_part, owned_part, empty, scratch1, scratch2;
             shared_part.push_back(m_mesh_meta_data.globally_shared_part().mesh_meta_data_ordinal());
             owned_part.push_back(m_mesh_meta_data.locally_owned_part().mesh_meta_data_ordinal());
 
@@ -123,11 +123,11 @@ public:
                 {
                     stk::mesh::EntityKey key = this->entity_key(entity);
                     internal_change_owner_in_comm_data(key, owning_proc);
-                    internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/);
+                    this->internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/, scratch1, scratch2);
                 }
                 else
                 {
-                    internal_change_entity_parts(entity, shared_part /*add*/, empty /*remove*/);
+                    this->internal_change_entity_parts(entity, shared_part /*add*/, empty /*remove*/, scratch1, scratch2);
                 }
                 modified_entities[i] = entity;
             }
@@ -138,7 +138,8 @@ public:
 
             add_comm_list_entries_for_entities( modified_entities );
 
-            internal_resolve_shared_membership();
+            stk::mesh::EntityVector entitiesNoLongerShared;
+            internal_resolve_shared_membership(entitiesNoLongerShared);
 
             if ( is_automatic_aura_on() )
             {

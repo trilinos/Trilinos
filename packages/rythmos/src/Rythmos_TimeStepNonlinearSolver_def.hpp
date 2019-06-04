@@ -274,6 +274,8 @@ TimeStepNonlinearSolver<Scalar>::solve(
     *x->space(),*model_->get_x_space() );
   TEUCHOS_TEST_FOR_EXCEPT(
     0!=solveCriteria && "ToDo: Support passed in solve criteria!" );
+#else
+  (void)solveCriteria;
 #endif
 
   const RCP<Teuchos::FancyOStream> out = this->getOStream();

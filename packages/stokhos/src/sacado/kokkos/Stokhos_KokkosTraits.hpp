@@ -44,32 +44,33 @@
 
 #include "Sacado_Traits.hpp"
 
-#include "Kokkos_Core.hpp"
+#include "Kokkos_Macros.hpp"
+#include "Kokkos_Core_fwd.hpp"
 
 namespace Sacado {
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   template <>
   struct StringName< Kokkos::Serial > {
     static std::string eval() { return "Kokkos::Serial"; }
   };
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
   template <>
   struct StringName< Kokkos::Threads > {
     static std::string eval() { return "Kokkos::Threads"; }
   };
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   template <>
   struct StringName< Kokkos::OpenMP > {
     static std::string eval() { return "Kokkos::OpenMP"; }
   };
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   template <>
   struct StringName< Kokkos::Cuda > {
     static std::string eval() { return "Kokkos::Cuda"; }

@@ -10,7 +10,7 @@ like.  However, PyTrilinos has adopted a set of interface conventions
 for dealing with them and simple methods for achieving those
 interfaces.
 
-Built-in python containers, such as list, are discontiguous and
+Built-in python containers, such as lists, are discontiguous and
 heterogeneous, which makes them unsuitable for efficiently handling
 C-array type data.  Fortunately, there is a third party module named
 NumPy that has been adopted by the python community for just this

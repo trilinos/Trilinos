@@ -143,3 +143,53 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1-4
   )
+
+# mfh 01 Feb 2018: Test for Github Issue #2198.
+# It should always build, but it's only useful
+# to run in an MPI build.
+TRIBITS_ADD_EXECUTABLE(
+  Issue_2198
+  SOURCES
+    Issue_2198
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  )
+
+# mfh 10 May 2018: See GitHub Issue #2564 for why we split the GitHub
+# Issue #2198 test into two separate cases: the first needing 3 MPI
+# processes, and the second needing 5 MPI processes.
+
+TRIBITS_ADD_TEST(
+  Issue_2198
+  NAME Issue_2198_no_more_than_4_processes
+  COMM mpi
+  NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  Issue_2198
+  NAME Issue_2198_exactly_5_processes
+  COMM mpi
+  NUM_MPI_PROCS 5
+  STANDARD_PASS_OUTPUT
+  )
+
+# Always build the test, whether or not MPI is enabled,
+# but only run it when MPI is enabled, because it is only
+# meaningful in that case.
+TRIBITS_ADD_EXECUTABLE(
+  Issue_3968
+  SOURCES
+    Issue_3968
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  Issue_3968
+  NAME Issue_3968_mpi
+  ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )

@@ -91,8 +91,8 @@ namespace Intrepid2 {
         const auto grad = ( gradRank == 3 ? Kokkos::subdynrankview( _basisGrads,     Kokkos::ALL(), pt, Kokkos::ALL()) :
                                             Kokkos::subdynrankview( _basisGrads, cl, Kokkos::ALL(), pt, Kokkos::ALL()));
         
-        const ordinal_type dim = jac.dimension(0); // dim0 and dim1 should match
-        const ordinal_type cardinality = grad.dimension(0);
+        const ordinal_type dim = jac.extent(0); // dim0 and dim1 should match
+        const ordinal_type cardinality = grad.extent(0);
 
         for (ordinal_type i=0;i<dim;++i)
           for (ordinal_type j=0;j<dim;++j) {
@@ -121,11 +121,11 @@ namespace Intrepid2 {
 #endif
     const auto cellTopo = basis->getBaseCellTopology();
     const ordinal_type spaceDim = cellTopo.getDimension();
-    const ordinal_type numCells = worksetCell.dimension(0);
+    const ordinal_type numCells = worksetCell.extent(0);
     
     //points can be rank-2 (P,D), or rank-3 (C,P,D)
     const ordinal_type pointRank = points.rank();
-    const ordinal_type numPoints = (pointRank == 2 ? points.dimension(0) : points.dimension(1));
+    const ordinal_type numPoints = (pointRank == 2 ? points.extent(0) : points.extent(1));
     const ordinal_type basisCardinality = basis->getCardinality();    
 
     typedef Kokkos::DynRankView<jacobianValueType,jacobianProperties...> jacobianViewType;
@@ -169,8 +169,8 @@ namespace Intrepid2 {
     using range_policy_type = Kokkos::Experimental::MDRangePolicy
       < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     range_policy_type policy( { 0, 0 },
-                              { jacobian.dimension(0), jacobian.dimension(1) } );
-    Kokkos::Experimental::md_parallel_for( policy, FunctorType(jacobian, worksetCell, grads) );
+                              { jacobian.extent(0), jacobian.extent(1) } );
+    Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, grads) );
   }
 
   template<typename SpT>

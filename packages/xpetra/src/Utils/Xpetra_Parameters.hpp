@@ -55,6 +55,14 @@
 
 namespace Xpetra {
 
+  enum Instantiation {
+    DOUBLE_INT_INT,
+    DOUBLE_INT_LONGINT,
+    DOUBLE_INT_LONGLONGINT,
+    COMPLEX_INT_INT,
+    FLOAT_INT_INT
+  };
+
   class Parameters
     : public Teuchos::VerboseObject<Parameters>, public Teuchos::Describable
   {
@@ -67,9 +75,9 @@ namespace Xpetra {
 
     void setCLP(Teuchos::CommandLineProcessor& clp) {
       int nOptions=0;                                  // Gives the number of possible option values to select
-      const int maxOptions=2;                          // No ore than 2 libraries are supported right now
-      Xpetra::UnderlyingLib optionValues[maxOptions]; // Array that gives the numeric values for each option.
-      const char*            optionNames [maxOptions]; // Array that gives the name used in the commandline for each option.
+      const int maxOptions=2;                          // No more than 2 libraries are supported right now
+      Xpetra::UnderlyingLib optionValues[maxOptions];  // Array that gives the numeric values for each option.
+      const char*           optionNames [maxOptions];  // Array that gives the name used in the commandline for each option.
 
       std::stringstream documentation; // documentation for the option
       documentation << "linear algebra library (Epetra, Tpetra)";
@@ -92,6 +100,51 @@ namespace Xpetra {
 
       clp.setOption<Xpetra::UnderlyingLib>("linAlgebra", &lib_, nOptions, optionValues, optionNames, documentation.str().c_str());
 
+#if defined(HAVE_XPETRA_TPETRA)
+      int nInstOptions=0;                                     // Gives the number of possible option values to select
+      const int   maxInstOptions=5;                           // No more than 5 instantiations are supported right now
+      Xpetra::Instantiation instOptionValues[maxInstOptions]; // Array that gives the numeric values for each option.
+      const char *          instOptionNames [maxInstOptions]; // Array that gives the name used in the commandline for each option.
+
+      // The ordering of these blocks determines the default behavior.
+      // We test the first available instantiation from the bottom
+      // (i.e. DOUBLE_INT_INT runs if nothing else is available).
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+      inst_ = Xpetra::DOUBLE_INT_INT;  // set default
+      instOptionValues[nInstOptions] = Xpetra::DOUBLE_INT_INT;
+      instOptionNames[nInstOptions] = "DOUBLE_INT_INT";
+      nInstOptions++;
+#  endif
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
+      inst_ = Xpetra::DOUBLE_INT_LONGINT;  // set default
+      instOptionValues[nInstOptions] = Xpetra::DOUBLE_INT_LONGINT;
+      instOptionNames[nInstOptions] = "DOUBLE_INT_LONGINT";
+      nInstOptions++;
+#  endif
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+      inst_ = Xpetra::DOUBLE_INT_LONGLONGINT;  // set default
+      instOptionValues[nInstOptions] = Xpetra::DOUBLE_INT_LONGLONGINT;
+      instOptionNames[nInstOptions] = "DOUBLE_INT_LONGLONGINT";
+      nInstOptions++;
+#  endif
+#  if defined(HAVE_MUELU_INST_COMPLEX_INT_INT) || defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+      inst_ = Xpetra::COMPLEX_INT_INT;  // set default
+      instOptionValues[nInstOptions] = Xpetra::COMPLEX_INT_INT;
+      instOptionNames[nInstOptions] = "COMPLEX_INT_INT";
+      nInstOptions++;
+#  endif
+#  if defined(HAVE_MUELU_INST_FLOAT_INT_INT) || defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_INT_INT)
+      inst_ = Xpetra::FLOAT_INT_INT;  // set default
+      instOptionValues[nInstOptions] = Xpetra::FLOAT_INT_INT;
+      instOptionNames[nInstOptions] = "FLOAT_INT_INT";
+      nInstOptions++;
+#  endif
+      std::stringstream instDocumentation; // documentation for the option
+      instDocumentation << "choice of instantiation";
+
+      clp.setOption<Xpetra::Instantiation>("instantiation", &inst_, nInstOptions, instOptionValues, instOptionNames, instDocumentation.str().c_str());
+#endif
+
     }
 
     void check() const {
@@ -101,6 +154,11 @@ namespace Xpetra {
     Xpetra::UnderlyingLib GetLib() const {
       check();
       return lib_;
+    }
+
+    Xpetra::Instantiation GetInstantiation() const {
+      check();
+      return inst_;
     }
 
     //! @name Overridden from Teuchos::Describable
@@ -132,6 +190,7 @@ namespace Xpetra {
 
   private:
     Xpetra::UnderlyingLib lib_;
+    Xpetra::Instantiation inst_;
   };
 
 }

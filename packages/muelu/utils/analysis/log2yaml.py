@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 """log2yaml
 
 Usage:

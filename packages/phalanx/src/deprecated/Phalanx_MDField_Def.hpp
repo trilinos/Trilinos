@@ -851,71 +851,71 @@ setFieldData(const PHX::any& a)
 
     if (m_tag.dataLayout().rank() == 1) {
       m_field_data1 = PHX::any_cast<non_const_view1>(a);
-      m_field_oned_view = array_oned_type(m_field_data1.ptr_on_device(),m_field_data1.size(),PHX::getSacadoSize(m_field_data1));
-      m_dimension_rank_size(0) = m_field_data1.dimension_0();
+      m_field_oned_view = array_oned_type(m_field_data1.data(),m_field_data1.size(),PHX::getSacadoSize(m_field_data1));
+      m_dimension_rank_size(0) = m_field_data1.extent(0);
       m_dimension_rank_size(7) = 1;
       m_dimension_rank_size(8) = m_field_data1.size();
     }
     else if (m_tag.dataLayout().rank() == 2) {
       m_field_data2 = PHX::any_cast<non_const_view2>(a);
-      m_field_oned_view = array_oned_type(m_field_data2.ptr_on_device(),m_field_data2.size(),PHX::getSacadoSize(m_field_data2));
-      m_dimension_rank_size(0) = m_field_data2.dimension_0();
-      m_dimension_rank_size(1) = m_field_data2.dimension_1();
+      m_field_oned_view = array_oned_type(m_field_data2.data(),m_field_data2.size(),PHX::getSacadoSize(m_field_data2));
+      m_dimension_rank_size(0) = m_field_data2.extent(0);
+      m_dimension_rank_size(1) = m_field_data2.extent(1);
       m_dimension_rank_size(7) = 2;
       m_dimension_rank_size(8) = m_field_data2.size();
     }
     else if (m_tag.dataLayout().rank() == 3) {
       m_field_data3 = PHX::any_cast<non_const_view3>(a);
-      m_field_oned_view = array_oned_type(m_field_data3.ptr_on_device(),m_field_data3.size(),PHX::getSacadoSize(m_field_data3));
-      m_dimension_rank_size(0) = m_field_data3.dimension_0();
-      m_dimension_rank_size(1) = m_field_data3.dimension_1();
-      m_dimension_rank_size(2) = m_field_data3.dimension_2();
+      m_field_oned_view = array_oned_type(m_field_data3.data(),m_field_data3.size(),PHX::getSacadoSize(m_field_data3));
+      m_dimension_rank_size(0) = m_field_data3.extent(0);
+      m_dimension_rank_size(1) = m_field_data3.extent(1);
+      m_dimension_rank_size(2) = m_field_data3.extent(2);
       m_dimension_rank_size(7) = 3;
       m_dimension_rank_size(8) = m_field_data3.size();
     }
     else if (m_tag.dataLayout().rank() == 4) {
       m_field_data4 = PHX::any_cast<non_const_view4>(a);
-      m_field_oned_view = array_oned_type(m_field_data4.ptr_on_device(),m_field_data4.size(),PHX::getSacadoSize(m_field_data4));
-      m_dimension_rank_size(0) = m_field_data4.dimension_0();
-      m_dimension_rank_size(1) = m_field_data4.dimension_1();
-      m_dimension_rank_size(2) = m_field_data4.dimension_2();
-      m_dimension_rank_size(3) = m_field_data4.dimension_3();
+      m_field_oned_view = array_oned_type(m_field_data4.data(),m_field_data4.size(),PHX::getSacadoSize(m_field_data4));
+      m_dimension_rank_size(0) = m_field_data4.extent(0);
+      m_dimension_rank_size(1) = m_field_data4.extent(1);
+      m_dimension_rank_size(2) = m_field_data4.extent(2);
+      m_dimension_rank_size(3) = m_field_data4.extent(3);
       m_dimension_rank_size(7) = 4;
       m_dimension_rank_size(8) = m_field_data4.size();
     }
     else if (m_tag.dataLayout().rank() == 5) {
       m_field_data5 = PHX::any_cast<non_const_view5>(a);
-      m_field_oned_view = array_oned_type(m_field_data5.ptr_on_device(),m_field_data5.size(),PHX::getSacadoSize(m_field_data5));
-      m_dimension_rank_size(0) = m_field_data5.dimension_0();
-      m_dimension_rank_size(1) = m_field_data5.dimension_1();
-      m_dimension_rank_size(2) = m_field_data5.dimension_2();
-      m_dimension_rank_size(3) = m_field_data5.dimension_3();
-      m_dimension_rank_size(4) = m_field_data5.dimension_4();
+      m_field_oned_view = array_oned_type(m_field_data5.data(),m_field_data5.size(),PHX::getSacadoSize(m_field_data5));
+      m_dimension_rank_size(0) = m_field_data5.extent(0);
+      m_dimension_rank_size(1) = m_field_data5.extent(1);
+      m_dimension_rank_size(2) = m_field_data5.extent(2);
+      m_dimension_rank_size(3) = m_field_data5.extent(3);
+      m_dimension_rank_size(4) = m_field_data5.extent(4);
       m_dimension_rank_size(7) = 5;
       m_dimension_rank_size(8) = m_field_data5.size();
     }
     else if (m_tag.dataLayout().rank() == 6) {
       m_field_data6 = PHX::any_cast<non_const_view6>(a);
-      m_field_oned_view = array_oned_type(m_field_data6.ptr_on_device(),m_field_data6.size(),PHX::getSacadoSize(m_field_data6));
-      m_dimension_rank_size(0) = m_field_data6.dimension_0();
-      m_dimension_rank_size(1) = m_field_data6.dimension_1();
-      m_dimension_rank_size(2) = m_field_data6.dimension_2();
-      m_dimension_rank_size(3) = m_field_data6.dimension_3();
-      m_dimension_rank_size(4) = m_field_data6.dimension_4();
-      m_dimension_rank_size(5) = m_field_data6.dimension_5();
+      m_field_oned_view = array_oned_type(m_field_data6.data(),m_field_data6.size(),PHX::getSacadoSize(m_field_data6));
+      m_dimension_rank_size(0) = m_field_data6.extent(0);
+      m_dimension_rank_size(1) = m_field_data6.extent(1);
+      m_dimension_rank_size(2) = m_field_data6.extent(2);
+      m_dimension_rank_size(3) = m_field_data6.extent(3);
+      m_dimension_rank_size(4) = m_field_data6.extent(4);
+      m_dimension_rank_size(5) = m_field_data6.extent(5);
       m_dimension_rank_size(7) = 6;
       m_dimension_rank_size(8) = m_field_data6.size();
     }
     else if (m_tag.dataLayout().rank() == 7) {
       m_field_data7 = PHX::any_cast<non_const_view7>(a);
-      m_field_oned_view = array_oned_type(m_field_data7.ptr_on_device(),m_field_data7.size(),PHX::getSacadoSize(m_field_data7));
-      m_dimension_rank_size(0) = m_field_data7.dimension_0();
-      m_dimension_rank_size(1) = m_field_data7.dimension_1();
-      m_dimension_rank_size(2) = m_field_data7.dimension_2();
-      m_dimension_rank_size(3) = m_field_data7.dimension_3();
-      m_dimension_rank_size(4) = m_field_data7.dimension_4();
-      m_dimension_rank_size(5) = m_field_data7.dimension_5(); 
-      m_dimension_rank_size(6) = m_field_data7.dimension_6(); 
+      m_field_oned_view = array_oned_type(m_field_data7.data(),m_field_data7.size(),PHX::getSacadoSize(m_field_data7));
+      m_dimension_rank_size(0) = m_field_data7.extent(0);
+      m_dimension_rank_size(1) = m_field_data7.extent(1);
+      m_dimension_rank_size(2) = m_field_data7.extent(2);
+      m_dimension_rank_size(3) = m_field_data7.extent(3);
+      m_dimension_rank_size(4) = m_field_data7.extent(4);
+      m_dimension_rank_size(5) = m_field_data7.extent(5); 
+      m_dimension_rank_size(6) = m_field_data7.extent(6); 
       m_dimension_rank_size(7) = 7;
       m_dimension_rank_size(8) = m_field_data7.size();   
     }

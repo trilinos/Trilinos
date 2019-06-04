@@ -290,13 +290,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, CreateBlockedDiagonalOp, M,
   TEST_EQUALITY(bop->getMatrix(0,2)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
   TEST_EQUALITY(bop->getMatrix(0,3)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40);
   TEST_EQUALITY(bop->getMatrix(0,3)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
-  TEST_EQUALITY(bop->getMatrix(1,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(1,0)->getColMap()->getMinGlobalIndex(),std::numeric_limits<GO>::max()); // TODO
   TEST_EQUALITY(bop->getMatrix(1,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
   //TEST_EQUALITY(bop->getMatrix(1,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 40);
-  TEST_EQUALITY(bop->getMatrix(2,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(2,0)->getColMap()->getMinGlobalIndex(),std::numeric_limits<GO>::max()); // TODO
   TEST_EQUALITY(bop->getMatrix(2,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
   //TEST_EQUALITY(bop->getMatrix(2,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 40);
-  TEST_EQUALITY(bop->getMatrix(3,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(3,0)->getColMap()->getMinGlobalIndex(),std::numeric_limits<GO>::max()); // TODO
   TEST_EQUALITY(bop->getMatrix(3,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
   //TEST_EQUALITY(bop->getMatrix(3,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 40);
 
@@ -385,13 +385,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, CreateBlockedDiagonalOpThyr
   TEST_EQUALITY(bop->getMatrix(0,2)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
   TEST_EQUALITY(bop->getMatrix(0,3)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 5);
   TEST_EQUALITY(bop->getMatrix(0,3)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
-  TEST_EQUALITY(bop->getMatrix(1,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(1,0)->getColMap()->getMinGlobalIndex(),std::numeric_limits<GO>::max()); // TODO
   TEST_EQUALITY(bop->getMatrix(1,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
   //TEST_EQUALITY(bop->getMatrix(1,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 5);
-  TEST_EQUALITY(bop->getMatrix(2,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(2,0)->getColMap()->getMinGlobalIndex(),std::numeric_limits<GO>::max()); // TODO
   TEST_EQUALITY(bop->getMatrix(2,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
   //TEST_EQUALITY(bop->getMatrix(2,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 5);
-  TEST_EQUALITY(bop->getMatrix(3,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(3,0)->getColMap()->getMinGlobalIndex(),std::numeric_limits<GO>::max()); // TODO
   TEST_EQUALITY(bop->getMatrix(3,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
   //TEST_EQUALITY(bop->getMatrix(3,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 5);
 
@@ -2876,8 +2876,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, BlockedOperatorApply, M, MA
 
 #define XP_MATRIX_INSTANT(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, SplitMatrix, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, CreateBlockedDiagonalOp, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, CreateBlockedDiagonalOpThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperator, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperator2, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
@@ -2900,7 +2898,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, BlockedOperatorApply, M, MA
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, BlockedOperatorApply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // List of tests which run only with Tpetra
-#define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N)
+#define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, CreateBlockedDiagonalOp, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, CreateBlockedDiagonalOpThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // List of tests which run only with Epetra
 #define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N) \

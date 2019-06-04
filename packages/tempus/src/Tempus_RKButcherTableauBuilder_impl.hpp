@@ -167,6 +167,16 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
                           Explicit3_8Rule_RKBT<Scalar> >(),
       "RK Explicit 3/8 Rule");
 
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          ExplicitBogackiShampine32_RKBT<Scalar> >(),
+      "Bogacki-Shampine 3(2) Pair");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          ExplicitMerson45_RKBT<Scalar> >(),
+      "Merson 4(5) Pair");
+
   // Implicit
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
@@ -180,8 +190,13 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
 
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
-                          IRK2StageTheta_RKBT<Scalar> >(),
-      "IRK 2 Stage Theta Method");
+                          IRK1StageTheta_RKBT<Scalar> >(),
+      "Implicit Midpoint");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          EDIRK2StageTheta_RKBT<Scalar> >(),
+      "EDIRK 2 Stage Theta Method");
 
   // SDIRK
   builder_.setObjectFactory(
@@ -218,6 +233,11 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< RKButcherTableau<Scalar>,
                           SDIRK5Stage5thOrder_RKBT<Scalar> >(),
       "SDIRK 5 Stage 5th order");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          SDIRK21_RKBT<Scalar> >(),
+      "SDIRK 2(1) Pair");
 
   // EDIRK
   builder_.setObjectFactory(

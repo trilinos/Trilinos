@@ -53,24 +53,24 @@ namespace ROL {
 template <class Real>
 class Reduced_Constraint_SimOpt : public Constraint<Real> {
 private:
-  const Teuchos::RCP<Constraint_SimOpt<Real> > conVal_;          
-  const Teuchos::RCP<Constraint_SimOpt<Real> > conRed_; 
-  const Teuchos::RCP<SimController<Real> > stateStore_;
-  Teuchos::RCP<SimController<Real> > adjointStore_;
+  const ROL::Ptr<Constraint_SimOpt<Real> > conVal_;          
+  const ROL::Ptr<Constraint_SimOpt<Real> > conRed_; 
+  const ROL::Ptr<SimController<Real> > stateStore_;
+  ROL::Ptr<SimController<Real> > adjointStore_;
 
   // Primal vectors
-  Teuchos::RCP<Vector<Real> > state_;                              
-  Teuchos::RCP<Vector<Real> > adjoint_;                            
-  Teuchos::RCP<Vector<Real> > residual_;                            
-  Teuchos::RCP<Vector<Real> > state_sens_;                              
-  Teuchos::RCP<Vector<Real> > adjoint_sens_;                            
+  ROL::Ptr<Vector<Real> > state_;                              
+  ROL::Ptr<Vector<Real> > adjoint_;                            
+  ROL::Ptr<Vector<Real> > residual_;                            
+  ROL::Ptr<Vector<Real> > state_sens_;                              
+  ROL::Ptr<Vector<Real> > adjoint_sens_;                            
 
   // Dual vectors
-  Teuchos::RCP<Vector<Real> > dualstate_;
-  Teuchos::RCP<Vector<Real> > dualstate1_;
-  Teuchos::RCP<Vector<Real> > dualadjoint_;
-  Teuchos::RCP<Vector<Real> > dualcontrol_;
-  Teuchos::RCP<Vector<Real> > dualresidual_;                            
+  ROL::Ptr<Vector<Real> > dualstate_;
+  ROL::Ptr<Vector<Real> > dualstate1_;
+  ROL::Ptr<Vector<Real> > dualadjoint_;
+  ROL::Ptr<Vector<Real> > dualcontrol_;
+  ROL::Ptr<Vector<Real> > dualresidual_;                            
 
   const bool storage_;             
   const bool useFDhessVec_;
@@ -171,19 +171,19 @@ public:
       @param[in] useFDhessVec is a flag whether or not to use a finite-difference Hessian approximation.
   */
   Reduced_Constraint_SimOpt(
-      const Teuchos::RCP<Constraint_SimOpt<Real> > &conVal, 
-      const Teuchos::RCP<Constraint_SimOpt<Real> > &conRed, 
-      const Teuchos::RCP<SimController<Real> > &stateStore,
-      const Teuchos::RCP<Vector<Real> > &state, 
-      const Teuchos::RCP<Vector<Real> > &control, 
-      const Teuchos::RCP<Vector<Real> > &adjoint,
-      const Teuchos::RCP<Vector<Real> > &residual,
+      const ROL::Ptr<Constraint_SimOpt<Real> > &conVal, 
+      const ROL::Ptr<Constraint_SimOpt<Real> > &conRed, 
+      const ROL::Ptr<SimController<Real> > &stateStore,
+      const ROL::Ptr<Vector<Real> > &state, 
+      const ROL::Ptr<Vector<Real> > &control, 
+      const ROL::Ptr<Vector<Real> > &adjoint,
+      const ROL::Ptr<Vector<Real> > &residual,
       const bool storage = true,
       const bool useFDhessVec = false) 
     : conVal_(conVal), conRed_(conRed), stateStore_(stateStore),
       storage_(storage), useFDhessVec_(useFDhessVec),
       updateFlag_(true), updateIter_(0) {
-    adjointStore_ = Teuchos::rcp(new SimController<Real>());
+    adjointStore_ = ROL::makePtr<SimController<Real>>();
     state_        = state->clone();
     adjoint_      = adjoint->clone();
     residual_     = residual->clone();
@@ -211,23 +211,23 @@ public:
       @param[in] useFDhessVec is a flag whether or not to use a finite-difference Hessian approximation.
   */
   Reduced_Constraint_SimOpt(
-      const Teuchos::RCP<Constraint_SimOpt<Real> > &conVal, 
-      const Teuchos::RCP<Constraint_SimOpt<Real> > &conRed,
-      const Teuchos::RCP<SimController<Real> > &stateStore, 
-      const Teuchos::RCP<Vector<Real> > &state,
-      const Teuchos::RCP<Vector<Real> > &control, 
-      const Teuchos::RCP<Vector<Real> > &adjoint,
-      const Teuchos::RCP<Vector<Real> > &residual,
-      const Teuchos::RCP<Vector<Real> > &dualstate,
-      const Teuchos::RCP<Vector<Real> > &dualcontrol, 
-      const Teuchos::RCP<Vector<Real> > &dualadjoint,
-      const Teuchos::RCP<Vector<Real> > &dualresidual,
+      const ROL::Ptr<Constraint_SimOpt<Real> > &conVal, 
+      const ROL::Ptr<Constraint_SimOpt<Real> > &conRed,
+      const ROL::Ptr<SimController<Real> > &stateStore, 
+      const ROL::Ptr<Vector<Real> > &state,
+      const ROL::Ptr<Vector<Real> > &control, 
+      const ROL::Ptr<Vector<Real> > &adjoint,
+      const ROL::Ptr<Vector<Real> > &residual,
+      const ROL::Ptr<Vector<Real> > &dualstate,
+      const ROL::Ptr<Vector<Real> > &dualcontrol, 
+      const ROL::Ptr<Vector<Real> > &dualadjoint,
+      const ROL::Ptr<Vector<Real> > &dualresidual,
       const bool storage = true,
       const bool useFDhessVec = false)
     : conVal_(conVal), conRed_(conRed), stateStore_(stateStore),
       storage_(storage), useFDhessVec_(useFDhessVec),
       updateFlag_(true), updateIter_(0) {
-    adjointStore_ = Teuchos::rcp(new SimController<Real>());
+    adjointStore_ = ROL::makePtr<SimController<Real>>();
     state_        = state->clone();
     adjoint_      = adjoint->clone();
     residual_     = residual->clone();

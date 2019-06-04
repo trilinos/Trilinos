@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -266,7 +266,7 @@ void parse_input(int argc, char *argv[], int *debug, INT *map_origin, INT *num_e
     }
     else if (strcmp("-f", argv[arg]) == 0) {
       if (++arg < argc) {
-        strcpy(file_name, argv[arg]);
+        ex_copy_string(file_name, argv[arg], MAX_STRING_LEN);
       }
     }
     else if (strcmp("-m", argv[arg]) == 0) {
@@ -896,7 +896,7 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
   char cTemp[128];
 
   output[0] = '\0';
-  strcpy(output, base);
+  ex_copy_string(output, base, MAX_STRING_LEN);
   strcat(output, ".");
   strcat(output, ext);
   if (other != NULL) {

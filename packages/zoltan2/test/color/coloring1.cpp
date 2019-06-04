@@ -50,7 +50,6 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
@@ -58,7 +57,6 @@
 #include <Zoltan2_ColoringProblem.hpp>
 
 using Teuchos::RCP;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // Program to demonstrate use of Zoltan2 to color a TPetra matrix
@@ -154,9 +152,8 @@ int main(int narg, char** arg)
   int testReturn = 0;
 
   ////// Establish session.
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
 
   // Read run-time options.
@@ -168,7 +165,7 @@ int main(int narg, char** arg)
                  "Name of file to write the coloring");
   cmdp.setOption("verbose", "quiet", &verbose,
                  "Print messages and results.");
-  cout << "Starting everything" << endl;
+  std::cout << "Starting everything" << std::endl;
 
   //////////////////////////////////
   // Even with cmdp option "true", I get errors for having these
@@ -218,9 +215,9 @@ int main(int narg, char** arg)
   RCP<SparseMatrix> Matrix = uinput->getUITpetraCrsMatrix();
 
   if (me == 0)
-    cout << "NumRows     = " << Matrix->getGlobalNumRows() << endl
-         << "NumNonzeros = " << Matrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl;
+    std::cout << "NumRows     = " << Matrix->getGlobalNumRows() << std::endl
+         << "NumNonzeros = " << Matrix->getGlobalNumEntries() << std::endl
+         << "NumProcs = " << comm->getSize() << std::endl;
 
   ////// Specify problem parameters
   Teuchos::ParameterList params;
@@ -234,7 +231,7 @@ int main(int narg, char** arg)
   try
   {
   Zoltan2::ColoringProblem<SparseMatrixAdapter> problem(&adapter, &params);
-  cout << "Going to color" << endl;
+  std::cout << "Going to color" << std::endl;
   problem.solve();
 
   ////// Basic metric checking of the coloring solution
@@ -242,13 +239,13 @@ int main(int narg, char** arg)
   int *checkColoring;
   Zoltan2::ColoringSolution<SparseMatrixAdapter> *soln = problem.getSolution();
 
-  cout << "Going to get results" << endl;
+  std::cout << "Going to get results" << std::endl;
   // Check that the solution is really a coloring
   checkLength = soln->getColorsSize();
   checkColoring = soln->getColors();
 
   if (outputFile != "") {
-    ofstream colorFile;
+    std::ofstream colorFile;
 
     // Write coloring to file,
     // each process writes local coloring to a separate file
@@ -257,15 +254,15 @@ int main(int narg, char** arg)
     fname << outputFile << "." << comm->getSize() << "." << me;
     colorFile.open(fname.str().c_str());
     for (size_t i=0; i<checkLength; i++){
-      colorFile << " " << checkColoring[i] << endl;
+      colorFile << " " << checkColoring[i] << std::endl;
     }
     colorFile.close();
   }
 
   // Print # of colors on each proc.
-  cout << "No. of colors on proc " << me << " : " << soln->getNumColors() << endl;
+  std::cout << "No. of colors on proc " << me << " : " << soln->getNumColors() << std::endl;
 
-  cout << "Going to validate the soln" << endl;
+  std::cout << "Going to validate the soln" << std::endl;
   // Verify that checkColoring is a coloring
   testReturn = validateColoring(Matrix, checkColoring);
 

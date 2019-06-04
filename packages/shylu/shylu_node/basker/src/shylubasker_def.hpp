@@ -1,23 +1,23 @@
-#ifndef BASKER_DEF_HPP
-#define BASKER_DEF_HPP
+#ifndef SHYLUBASKER_DEF_HPP
+#define SHYLUBASKER_DEF_HPP
 
 //#define BASKER_TIME
 
 /*Basker Includes*/
 #include "shylubasker_decl.hpp"
-#include "basker_matrix_decl.hpp"
-#include "basker_matrix_def.hpp"
-#include "basker_matrix_view_decl.hpp"
-#include "basker_matrix_view_def.hpp"
-#include "basker_tree.hpp"
-#include "basker_sfactor.hpp"
-#include "basker_sfactor_inc.hpp"
-#include "basker_nfactor.hpp"
-#include "basker_nfactor_inc.hpp"
-#include "basker_solve_rhs.hpp"
-#include "basker_util.hpp"
-#include "basker_stats.hpp"
-#include "basker_order.hpp"
+#include "shylubasker_matrix_decl.hpp"
+#include "shylubasker_matrix_def.hpp"
+#include "shylubasker_matrix_view_decl.hpp"
+#include "shylubasker_matrix_view_def.hpp"
+#include "shylubasker_tree.hpp"
+#include "shylubasker_sfactor.hpp"
+#include "shylubasker_sfactor_inc.hpp"
+#include "shylubasker_nfactor.hpp"
+#include "shylubasker_nfactor_inc.hpp"
+#include "shylubasker_solve_rhs.hpp"
+#include "shylubasker_util.hpp"
+#include "shylubasker_stats.hpp"
+#include "shylubasker_order.hpp"
 
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
@@ -1085,24 +1085,24 @@ namespace BaskerNS
     if(match_flag == BASKER_TRUE)
     {
       printVec("match.csc", order_match_array,
-          order_match_array.dimension_0());
+          order_match_array.extent(0));
     }
     if(btf_flag == BASKER_TRUE)
     {
       printVec("btf.csc", order_btf_array,
-          order_btf_array.dimension_0());
+          order_btf_array.extent(0));
       printVec("amdblk.csc", order_blk_amd_array,
-          order_blk_amd_array.dimension_0());
+          order_blk_amd_array.extent(0));
     }
     if(btf_tabs_offset != 0)
     {
       printVec("ND.csc", part_tree.permtab, 
-          part_tree.permtab.dimension_0());
+          part_tree.permtab.extent(0));
     }
     if(amd_flag == BASKER_TRUE)
     {
       printVec("camd.csc", order_csym_array,
-          order_csym_array.dimension_0());
+          order_csym_array.extent(0));
     }
   }//end DEBUG_PRINT()
 

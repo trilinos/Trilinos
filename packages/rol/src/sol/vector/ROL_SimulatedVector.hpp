@@ -67,33 +67,33 @@ class DualSimulatedVector;
 template<class Real>
 class SimulatedVector : public Vector<Real> {
 
-  typedef Vector<Real>                       V;
-  typedef Teuchos::RCP<V>                    RCPV;
-  typedef Teuchos::RCP<BatchManager<Real> >  RCPBM;
-  typedef SimulatedVector<Real>              PV;
+  typedef Vector<Real>                   V;
+  typedef ROL::Ptr<V>                    Vp;
+  typedef ROL::Ptr<BatchManager<Real> >  VBMp; 
+  typedef SimulatedVector<Real>          PV;
 
 private:
-  const std::vector<RCPV>                    vecs_;
-  Teuchos::RCP<BatchManager<Real> >          bman_;
-  mutable std::vector<RCPV>             dual_vecs_;
-  mutable Teuchos::RCP<PV>              dual_pvec_;
+  const std::vector<Vp>                  vecs_;
+  ROL::Ptr<BatchManager<Real> >          bman_;
+  mutable std::vector<Vp>                dual_vecs_;
+  mutable ROL::Ptr<PV>                   dual_pvec_;
 public:
 
   typedef typename std::vector<PV>::size_type    size_type;
 
-  SimulatedVector( const std::vector<RCPV> &vecs, const RCPBM &bman ) : vecs_(vecs), bman_(bman) {
+  SimulatedVector( const std::vector<Vp> &vecs, const VBMp &bman ) : vecs_(vecs), bman_(bman) {
     for( size_type i=0; i<vecs_.size(); ++i ) {
       dual_vecs_.push_back((vecs_[i]->dual()).clone());
     }
   }
 
   void set( const V &x ) {
-    using Teuchos::dyn_cast;
-    const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
+    
+    const PV &xs = dynamic_cast<const PV&>(x);
 
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
-                                std::invalid_argument,
-                                "Error: Vectors must have the same number of subvectors." );
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+                            std::invalid_argument,
+                            "Error: Vectors must have the same number of subvectors." );
 
     for( size_type i=0; i<vecs_.size(); ++i ) {
       vecs_[i]->set(*xs.get(i));
@@ -101,12 +101,12 @@ public:
   }
 
   void plus( const V &x ) {
-    using Teuchos::dyn_cast;
-    const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
+    
+    const PV &xs = dynamic_cast<const PV&>(x);
 
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
-                                std::invalid_argument,
-                                "Error: Vectors must have the same number of subvectors." );
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+                            std::invalid_argument,
+                            "Error: Vectors must have the same number of subvectors." );
 
     for( size_type i=0; i<vecs_.size(); ++i ) {
       vecs_[i]->plus(*xs.get(i));
@@ -120,12 +120,12 @@ public:
   }
 
   void axpy( const Real alpha, const V &x ) {
-    using Teuchos::dyn_cast;
-    const PV &xs = dyn_cast<const PV>(x);
+    
+    const PV &xs = dynamic_cast<const PV&>(x);
 
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
-                                std::invalid_argument,
-                                "Error: Vectors must have the same number of subvectors." );
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+                            std::invalid_argument,
+                            "Error: Vectors must have the same number of subvectors." );
 
     for( size_type i=0; i<vecs_.size(); ++i ) {
       vecs_[i]->axpy(alpha,*xs.get(i));
@@ -133,12 +133,12 @@ public:
   }
 
   virtual Real dot( const V &x ) const {
-    using Teuchos::dyn_cast;
-    const PV &xs = dyn_cast<const PV>(x);
+    
+    const PV &xs = dynamic_cast<const PV&>(x);
 
-   TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
-                                std::invalid_argument,
-                                "Error: Vectors must have the same number of subvectors." );
+   ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+                           std::invalid_argument,
+                           "Error: Vectors must have the same number of subvectors." );
 
     Real locresult = 0;
     Real result = 0;
@@ -155,41 +155,36 @@ public:
     return std::sqrt(dot(*this));
   }
 
-  virtual RCPV clone() const {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
+  virtual Vp clone() const {
+    
+    
 
-    std::vector<RCPV> clonevec;
+    std::vector<Vp> clonevec;
     for( size_type i=0; i<vecs_.size(); ++i ) {
       clonevec.push_back(vecs_[i]->clone());
     }
-    return rcp( new PV(clonevec, bman_) );
+    return ROL::makePtr<PV>(clonevec, bman_);
   }
 
   virtual const V& dual(void) const {
-    using Teuchos::rcp;
+    
 
     for( size_type i=0; i<vecs_.size(); ++i ) {
       dual_vecs_[i]->set(vecs_[i]->dual());
     }
-    dual_pvec_ = rcp( new PV( dual_vecs_, bman_ ) );
+    dual_pvec_ = ROL::makePtr<PV>( dual_vecs_, bman_ );
     return *dual_pvec_;
   }
 
-  RCPV basis( const int i ) const { // this must be fixed for distributed batching
+  Vp basis( const int i ) const { // this must be fixed for distributed batching
 
-    TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
-                                std::invalid_argument,
-                                "Error: Basis index must be between 0 and vector dimension." );
-
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::dyn_cast;
-
-    RCPV bvec = clone();
+    ROL_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
+                            std::invalid_argument,
+                            "Error: Basis index must be between 0 and vector dimension." );
+    Vp bvec = clone();
 
     // Downcast
-    PV &eb = dyn_cast<PV>(*bvec);
+    PV &eb = dynamic_cast<PV&>(*bvec);
 
     int begin = 0;
     int end = 0;
@@ -235,7 +230,7 @@ public:
 
   // Apply the same binary function to each pair of subvectors in this vector and x
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const V &x ) {
-    const PV &xs = Teuchos::dyn_cast<const PV>(x);
+    const PV &xs = dynamic_cast<const PV&>(x);
 
     for( size_type i=0; i<vecs_.size(); ++i ) {
       vecs_[i]->applyBinary(f,*xs.get(i));
@@ -251,15 +246,27 @@ public:
     return result;
   }
 
+  void setScalar(const Real C) {
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      vecs_[i]->setScalar(C);
+    }
+  }
+
+  void randomize(const Real l=0.0, const Real u=1.0) {
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      vecs_[i]->randomize(l,u);
+    }
+  }
+
   // Methods that do not exist in the base class
 
   // In distributed batching mode, these are understood to take local indices.
 
-  Teuchos::RCP<const Vector<Real> > get(size_type i) const {
+  ROL::Ptr<const Vector<Real> > get(size_type i) const {
     return vecs_[i];
   }
 
-  Teuchos::RCP<Vector<Real> > get(size_type i) {
+  ROL::Ptr<Vector<Real> > get(size_type i) {
     return vecs_[i];
   }
 
@@ -279,30 +286,31 @@ public:
 
 // Helper methods
 template<class Real>
-Teuchos::RCP<Vector<Real> > CreateSimulatedVector( const Teuchos::RCP<Vector<Real> > &a, const Teuchos::RCP<BatchManager<Real> > &bman ) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  typedef RCP<Vector<Real> >       RCPV;
+ROL::Ptr<Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<Vector<Real>> &a, 
+                       const ROL::Ptr<BatchManager<Real>> &bman ) {
+  
+  typedef ROL::Ptr<Vector<Real> >       Vp;
   typedef SimulatedVector<Real>  PV;
 
-  RCPV temp[] = {a};
-  return rcp( new PV( std::vector<RCPV>(temp, temp+1), bman ) );
+  Vp temp[] = {a};
+  return ROL::makePtr<PV>(std::vector<Vp>(temp, temp+1), bman );
 }
 
 template<class Real>
 class PrimalSimulatedVector : public SimulatedVector<Real> {
 private:
-  const std::vector<Teuchos::RCP<Vector<Real> > >   vecs_;
-  const Teuchos::RCP<BatchManager<Real> >           bman_;
-  const Teuchos::RCP<SampleGenerator<Real> >        sampler_;
-  mutable std::vector<Teuchos::RCP<Vector<Real> > > dual_vecs_;
-  mutable Teuchos::RCP<DualSimulatedVector<Real> >  dual_pvec_;
+  const std::vector<ROL::Ptr<Vector<Real>>>    vecs_;
+  const ROL::Ptr<BatchManager<Real>>           bman_;
+  const ROL::Ptr<SampleGenerator<Real>>        sampler_;
+  mutable std::vector<ROL::Ptr<Vector<Real>>>  dual_vecs_;
+  mutable ROL::Ptr<DualSimulatedVector<Real>>  dual_pvec_;
   mutable bool isDualInitialized_;
 public:
 
-  PrimalSimulatedVector(const std::vector<Teuchos::RCP<Vector<Real> > > &vecs,
-                        const Teuchos::RCP<BatchManager<Real> >         &bman,
-                        const Teuchos::RCP<SampleGenerator<Real> >      &sampler)
+  PrimalSimulatedVector(const std::vector<ROL::Ptr<Vector<Real>>> &vecs,
+                        const ROL::Ptr<BatchManager<Real>>         &bman,
+                        const ROL::Ptr<SampleGenerator<Real>>      &sampler)
     : SimulatedVector<Real>(vecs,bman), vecs_(vecs), bman_(bman), sampler_(sampler),
       isDualInitialized_(false) {
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
@@ -312,9 +320,9 @@ public:
 
   Real dot(const Vector<Real> &x) const {
     const SimulatedVector<Real> &xs
-      = Teuchos::dyn_cast<const SimulatedVector<Real> >(x);
+      = dynamic_cast<const SimulatedVector<Real>&>(x);
 
-   TEUCHOS_TEST_FOR_EXCEPTION( sampler_->numMySamples() != static_cast<int>(xs.numVectors()),
+   ROL_TEST_FOR_EXCEPTION( sampler_->numMySamples() != static_cast<int>(xs.numVectors()),
                                std::invalid_argument,
                                "Error: Vectors must have the same number of subvectors." );
 
@@ -334,17 +342,17 @@ public:
     return result;
   }
 
-  Teuchos::RCP<Vector<Real> > clone(void) const {
-    std::vector<Teuchos::RCP<Vector<Real> > > clonevec;
+  ROL::Ptr<Vector<Real> > clone(void) const {
+    std::vector<ROL::Ptr<Vector<Real> > > clonevec;
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
       clonevec.push_back(vecs_[i]->clone());
     }
-    return Teuchos::rcp( new PrimalSimulatedVector<Real>(clonevec, bman_, sampler_) );
+    return ROL::makePtr<PrimalSimulatedVector<Real>>(clonevec, bman_, sampler_);
   }
 
   const Vector<Real>& dual(void) const {
     if (!isDualInitialized_) {
-      dual_pvec_ = Teuchos::rcp( new DualSimulatedVector<Real>(dual_vecs_, bman_, sampler_) );
+      dual_pvec_ = ROL::makePtr<DualSimulatedVector<Real>>(dual_vecs_, bman_, sampler_);
       isDualInitialized_ = true;
     }
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
@@ -359,17 +367,17 @@ public:
 template<class Real>
 class DualSimulatedVector : public SimulatedVector<Real> {
 private:
-  const std::vector<Teuchos::RCP<Vector<Real> > >    vecs_;
-  const Teuchos::RCP<BatchManager<Real> >            bman_;
-  const Teuchos::RCP<SampleGenerator<Real> >         sampler_;
-  mutable std::vector<Teuchos::RCP<Vector<Real> > >  primal_vecs_;
-  mutable Teuchos::RCP<PrimalSimulatedVector<Real> > primal_pvec_;
+  const std::vector<ROL::Ptr<Vector<Real> > >    vecs_;
+  const ROL::Ptr<BatchManager<Real> >            bman_;
+  const ROL::Ptr<SampleGenerator<Real> >         sampler_;
+  mutable std::vector<ROL::Ptr<Vector<Real> > >  primal_vecs_;
+  mutable ROL::Ptr<PrimalSimulatedVector<Real> > primal_pvec_;
   mutable bool isPrimalInitialized_;
 public:
 
-  DualSimulatedVector(const std::vector<Teuchos::RCP<Vector<Real> > > &vecs,
-                      const Teuchos::RCP<BatchManager<Real> >         &bman,
-                      const Teuchos::RCP<SampleGenerator<Real> >      &sampler)
+  DualSimulatedVector(const std::vector<ROL::Ptr<Vector<Real> > > &vecs,
+                      const ROL::Ptr<BatchManager<Real> >         &bman,
+                      const ROL::Ptr<SampleGenerator<Real> >      &sampler)
     : SimulatedVector<Real>(vecs,bman), vecs_(vecs), bman_(bman), sampler_(sampler),
       isPrimalInitialized_(false) {
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
@@ -379,9 +387,9 @@ public:
 
   Real dot(const Vector<Real> &x) const {
     const SimulatedVector<Real> &xs
-      = Teuchos::dyn_cast<const SimulatedVector<Real> >(x);
+      = dynamic_cast<const SimulatedVector<Real>&>(x);
 
-   TEUCHOS_TEST_FOR_EXCEPTION( sampler_->numMySamples() != static_cast<Real>(xs.numVectors()),
+   ROL_TEST_FOR_EXCEPTION( sampler_->numMySamples() != static_cast<Real>(xs.numVectors()),
                                std::invalid_argument,
                                "Error: Vectors must have the same number of subvectors." );
 
@@ -401,17 +409,17 @@ public:
     return result;
   }
 
-  Teuchos::RCP<Vector<Real> > clone(void) const {
-    std::vector<Teuchos::RCP<Vector<Real> > > clonevec;
+  ROL::Ptr<Vector<Real> > clone(void) const {
+    std::vector<ROL::Ptr<Vector<Real> > > clonevec;
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
       clonevec.push_back(vecs_[i]->clone());
     }
-    return Teuchos::rcp( new DualSimulatedVector<Real>(clonevec, bman_, sampler_) );
+    return ROL::makePtr<DualSimulatedVector<Real>>(clonevec, bman_, sampler_);
   }
 
   const Vector<Real>& dual(void) const {
     if (!isPrimalInitialized_) {
-      primal_pvec_ = Teuchos::rcp( new PrimalSimulatedVector<Real>(primal_vecs_, bman_, sampler_) );
+      primal_pvec_ = ROL::makePtr<PrimalSimulatedVector<Real>>(primal_vecs_, bman_, sampler_);
       isPrimalInitialized_ = true;
     }
     const Real one(1);
@@ -425,98 +433,104 @@ public:
 };
 
 template<class Real>
-Teuchos::RCP<const Vector<Real> > CreateSimulatedVector( const Teuchos::RCP<const Vector<Real> > &a, const Teuchos::RCP<BatchManager<Real> > &bman ) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  typedef RCP<const Vector<Real> >      RCPV;
+ROL::Ptr<const Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<const Vector<Real> > &a, 
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
+  
+  typedef ROL::Ptr<const Vector<Real> >      Vp;
   typedef const SimulatedVector<Real> PV;
 
-  RCPV temp[] = {a};
-  return rcp( new PV( std::vector<RCPV>(temp, temp+1), bman ) );
+  Vp temp[] = {a};
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+1), bman );
 }
 
 template<class Real>
-Teuchos::RCP<Vector<Real> > CreateSimulatedVector( const Teuchos::RCP<Vector<Real> > &a,
-                                                   const Teuchos::RCP<Vector<Real> > &b,
-                                                   const Teuchos::RCP<BatchManager<Real> > &bman ) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  typedef RCP<Vector<Real> >      RCPV;
+ROL::Ptr<Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<Vector<Real> > &a,
+                       const ROL::Ptr<Vector<Real> > &b,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
+  
+  typedef ROL::Ptr<Vector<Real> >      Vp;
   typedef SimulatedVector<Real> PV;
 
-  RCPV temp[] = {a,b};
-  return rcp( new PV( std::vector<RCPV>(temp, temp+2), bman ) );
+  Vp temp[] = {a,b};
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+2), bman );
 }
 
 template<class Real>
-Teuchos::RCP<const Vector<Real> > CreateSimulatedVector( const Teuchos::RCP<const Vector<Real> > &a,
-                                                         const Teuchos::RCP<const Vector<Real> > &b,
-                                                         const Teuchos::RCP<BatchManager<Real> > &bman ) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  typedef RCP<const Vector<Real> >      RCPV;
+ROL::Ptr<const Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<const Vector<Real> > &a,
+                       const ROL::Ptr<const Vector<Real> > &b,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
+  
+  
+  typedef ROL::Ptr<const Vector<Real> >      Vp;
   typedef const SimulatedVector<Real> PV;
 
-  RCPV temp[] = {a,b};
-  return rcp( new PV( std::vector<RCPV>(temp, temp+2), bman ) );
+  Vp temp[] = {a,b};
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+2), bman );
 }
 
 template<class Real>
-Teuchos::RCP<Vector<Real> > CreateSimulatedVector( const Teuchos::RCP<Vector<Real> > &a,
-                                                   const Teuchos::RCP<Vector<Real> > &b,
-                                                   const Teuchos::RCP<Vector<Real> > &c,
-                                                   const Teuchos::RCP<BatchManager<Real> > &bman ) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  typedef RCP<Vector<Real> >      RCPV;
+ROL::Ptr<Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<Vector<Real> > &a,
+                       const ROL::Ptr<Vector<Real> > &b,
+                       const ROL::Ptr<Vector<Real> > &c,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
+  
+  
+  typedef ROL::Ptr<Vector<Real> >      Vp;
   typedef SimulatedVector<Real> PV;
 
-  RCPV temp[] = {a,b,c};
-  return rcp( new PV( std::vector<RCPV>(temp, temp+3), bman ) );
+  Vp temp[] = {a,b,c};
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+3), bman );
 }
 
 template<class Real>
-Teuchos::RCP<const Vector<Real> > CreateSimulatedVector( const Teuchos::RCP<const Vector<Real> > &a,
-                                                         const Teuchos::RCP<const Vector<Real> > &b,
-                                                         const Teuchos::RCP<const Vector<Real> > &c,
-                                                         const Teuchos::RCP<BatchManager<Real> > &bman ) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  typedef RCP<const Vector<Real> >      RCPV;
+ROL::Ptr<const Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<const Vector<Real> > &a,
+                       const ROL::Ptr<const Vector<Real> > &b,
+                       const ROL::Ptr<const Vector<Real> > &c,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
+  
+  
+  typedef ROL::Ptr<const Vector<Real> >      Vp;
   typedef const SimulatedVector<Real> PV;
 
-  RCPV temp[] = {a,b,c};
-  return rcp( new PV( std::vector<RCPV>(temp, temp+3), bman ) );
+  Vp temp[] = {a,b,c};
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+3), bman );
 }
 
 template<class Real>
-Teuchos::RCP<Vector<Real> > CreateSimulatedVector( const Teuchos::RCP<Vector<Real> > &a,
-                                                   const Teuchos::RCP<Vector<Real> > &b,
-                                                   const Teuchos::RCP<Vector<Real> > &c,
-                                                   const Teuchos::RCP<Vector<Real> > &d,
-                                                   const Teuchos::RCP<BatchManager<Real> > &bman ) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  typedef RCP<Vector<Real> >      RCPV;
+ROL::Ptr<Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<Vector<Real> > &a,
+                       const ROL::Ptr<Vector<Real> > &b,
+                       const ROL::Ptr<Vector<Real> > &c,
+                       const ROL::Ptr<Vector<Real> > &d,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
+  
+  
+  typedef ROL::Ptr<Vector<Real> >      Vp;
   typedef SimulatedVector<Real> PV;
 
-  RCPV temp[] = {a,b,c,d};
-  return rcp( new PV( std::vector<RCPV>(temp, temp+4), bman ) );
+  Vp temp[] = {a,b,c,d};
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+4), bman );
 }
 
 template<class Real>
-Teuchos::RCP<const Vector<Real> > CreateSimulatedVector( const Teuchos::RCP<const Vector<Real> > &a,
-                                                         const Teuchos::RCP<const Vector<Real> > &b,
-                                                         const Teuchos::RCP<const Vector<Real> > &c,
-                                                         const Teuchos::RCP<const Vector<Real> > &d,
-                                                         const Teuchos::RCP<BatchManager<Real> > &bman ) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  typedef RCP<const Vector<Real> >      RCPV;
+ROL::Ptr<const Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<const Vector<Real> > &a,
+                       const ROL::Ptr<const Vector<Real> > &b,
+                       const ROL::Ptr<const Vector<Real> > &c,
+                       const ROL::Ptr<const Vector<Real> > &d,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
+  
+  
+  typedef ROL::Ptr<const Vector<Real> >      Vp;
   typedef const SimulatedVector<Real> PV;
 
-  RCPV temp[] = {a,b,c,d};
-  return rcp( new PV( std::vector<RCPV>(temp, temp+4), bman ) );
+  Vp temp[] = {a,b,c,d};
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+4), bman );
 }
 
 } // namespace ROL

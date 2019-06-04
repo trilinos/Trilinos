@@ -44,7 +44,10 @@
 #define USER_APP_CONSTANT_MODEL_T_HPP
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR_NAMESPACE(user_app,ConstantModel,p) :
+template<typename EvalT, typename Traits>
+user_app::ConstantModel<EvalT, Traits>::
+ConstantModel(
+  const Teuchos::ParameterList& p) :
   value( p.get<double>("Value") ),
   constant( p.get<std::string>("Name"), 
 	    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
@@ -56,7 +59,12 @@ PHX_EVALUATOR_CTOR_NAMESPACE(user_app,ConstantModel,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(user_app::ConstantModel,worksets,fm)
+template<typename EvalT, typename Traits>
+void
+user_app::ConstantModel<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData worksets,
+  PHX::FieldManager<Traits>& fm)
 {
   using namespace PHX;
   this->utils.setFieldData(constant,fm);
@@ -67,7 +75,11 @@ PHX_POST_REGISTRATION_SETUP(user_app::ConstantModel,worksets,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(user_app::ConstantModel,d)
+template<typename EvalT, typename Traits>
+void
+user_app::ConstantModel<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData d)
 { }
 
 //**********************************************************************

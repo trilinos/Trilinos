@@ -42,21 +42,11 @@
 #ifndef TPETRA_IMPORT_DECL_HPP
 #define TPETRA_IMPORT_DECL_HPP
 
-#include <Tpetra_Details_Transfer.hpp>
+#include "Tpetra_Details_Transfer.hpp"
+#include "Tpetra_Import_fwd.hpp"
+#include "Tpetra_Export_fwd.hpp"
 
 namespace Tpetra {
-  //
-  // Forward declarations.  The "doxygen" bit simply tells Doxygen
-  // (our automatic documentation generation system) to skip forward
-  // declarations.
-  //
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ImportExportData;
-
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Export;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \brief Communication plan for data redistribution from a
   ///   uniquely-owned to a (possibly) multiply-owned distribution.
@@ -118,20 +108,21 @@ namespace Tpetra {
   ///   the Import (i.e., when calling DistObject's doImport()
   ///   (forward mode) or doExport() (reverse mode)).
   ///
-  template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-           class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-           class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template<class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
   class Import:
     public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>
   {
   private:
     friend class Export<LocalOrdinal,GlobalOrdinal,Node>;
+    using base_type =
+      ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>;
   public:
     //! The specialization of Map used by this class.
-    //typedef typename ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>::map_type map_type;
-    typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
 
-    //! @name Constructor/Destructor Methods
+    //! @name Constructors, assignment, and destructor
     //@{
 
     /// \brief Construct an Import from the source and target Maps.
@@ -207,7 +198,8 @@ namespace Tpetra {
     /// constructor.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-            Teuchos::Array<int> & remotePIDs);
+            Teuchos::Array<int> & remotePIDs,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::rcp(new Teuchos::ParameterList) );
 
     /// \brief Copy constructor.
     ///
@@ -223,96 +215,86 @@ namespace Tpetra {
     /// transpose of a sparse matrix.
     Import (const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter);
 
-    /// \bief Full Expert constructor
-    /// Requirements: source and target maps are fully correct
+    /// \brief Constructor that computes optimized target Map.
     ///
-
-    Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
-            const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
-            Teuchos::Array<int> & userRemotePIDs,
-            Teuchos::Array<GlobalOrdinal>& remoteGIDs,
-            const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
-            const Teuchos::ArrayView<const int> & userExportPIDs,
-            const bool useRemotePIDs,
+    /// Like every other Import constructor, this must be called
+    /// collectively on all processes in the input Map's communicator.
+    ///
+    /// \pre <tt>sourceMap->isOneToOne() </tt>
+    ///
+    /// \param sourceMap [in] Source Map of the Import.
+    ///
+    /// \param targetMapRemoteOrPermuteGlobalIndices [in] On the
+    ///   calling process, the global indices that will go into the
+    ///   target Map.  May differ on each process, just like Map's
+    ///   noncontiguous constructor.  No index in here on this process
+    ///   may also appear in \c sourceMap on this process.
+    ///
+    /// \param targetMapRemoteOrPermuteProcessRanks [in] For k in 0,
+    ///   ..., <tt>numTargetMapRemoteOrPermuteGlobalIndices-1</tt>,
+    ///   <tt>targetMapRemoteOrPermuteProcessRanks[k]</tt> is the rank
+    ///   of the MPI process from which to receive data for global
+    ///   index <tt>targetMapRemoteOrPermuteGlobalIndices[k]</tt>.
+    ///
+    /// \param numTargetMapRemoteOrPermuteGlobalIndices [in] Number of
+    ///   valid entries in the two input arrays above.  May differ on
+    ///   different processes.  May be zero on some or even all
+    ///   processes.
+    ///
+    /// \param mayReorderTargetMapIndicesLocally [in] If true, then
+    ///   this constructor reserves the right to reorder the target
+    ///   Map indices on each process, for better communication
+    ///   performance.
+    Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& sourceMap,
+            const GlobalOrdinal targetMapRemoteOrPermuteGlobalIndices[],
+            const int targetMapRemoteOrPermuteProcessRanks[],
+            const LocalOrdinal numTargetMapRemoteOrPermuteGlobalIndices,
+            const bool mayReorderTargetMapIndicesLocally,
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
-
-    //! Destructor.
-    virtual ~Import ();
-
-    /// \brief Set parameters.
-    ///
-    /// Please see the class documentation for a list of all accepted
-    /// parameters and their default values.
-    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
-
-    //@}
-    //! @name Import Attribute Methods
-    //@{
-
-    /// \brief Number of initial identical IDs.
-    ///
-    /// The number of IDs that are identical between the source and
-    /// target Maps, up to the first different ID.
-    size_t getNumSameIDs() const;
-
-    /// \brief Number of IDs to permute but not to communicate.
-    ///
-    /// The number of IDs that are local to the calling process, but
-    /// not part of the first getNumSameIDs() entries.  The Import
-    /// will permute these entries locally (without distributed-memory
-    /// communication).
-    size_t getNumPermuteIDs() const;
-
-    //! List of local IDs in the source Map that are permuted.
-    Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
-
-    //! List of local IDs in the target Map that are permuted.
-    Teuchos::ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
-
-    //! Number of entries not on the calling process.
-    size_t getNumRemoteIDs() const;
-
-    //! List of entries in the target Map to receive from other processes.
-    Teuchos::ArrayView<const LocalOrdinal> getRemoteLIDs() const;
-
-    //! Number of entries that must be sent by the calling process to other processes.
-    size_t getNumExportIDs() const;
-
-    //! List of entries in the source Map that will be sent to other processes.
-    Teuchos::ArrayView<const LocalOrdinal> getExportLIDs() const;
-
-    /// \brief List of processes to which entries will be sent.
-    ///
-    /// The entry with Local ID <tt>getExportLIDs()[i]</tt> will be
-    /// sent to process <tt>getExportPIDs()[i]</tt>.
-    Teuchos::ArrayView<const int> getExportPIDs() const;
-
-    //! The Source Map used to construct this Import object.
-    Teuchos::RCP<const map_type> getSourceMap () const;
-
-    //! The Target Map used to construct this Import object.
-    Teuchos::RCP<const map_type> getTargetMap () const;
-
-    //! The Distributor that this Import object uses to move data.
-    Distributor & getDistributor() const;
-
-    /// \brief Do all target Map indices on the calling process exist
-    ///   on at least one process (not necessarily this one) in the
-    ///   source Map?
-    ///
-    /// It's not necessarily an error for an Import not to be locally
-    /// complete on one or more processes.  For example, this may
-    /// happen in the common use case of "restriction" -- that is,
-    /// taking a subset of a large object.  Nevertheless, you may find
-    /// this predicate useful for figuring out whether you set up your
-    /// Maps in the way that you expect.
-    bool isLocallyComplete () const;
+    /// \brief Expert constructor.
+    Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
+            const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
+            const Teuchos::ArrayView<int> & remotePIDs,
+            const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
+            const Teuchos::ArrayView<const int> & userExportPIDs,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
+            const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
     //! Assignment operator.
     Import<LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const Import<LocalOrdinal,GlobalOrdinal,Node>& Source);
+    operator= (const Import<LocalOrdinal,GlobalOrdinal,Node>& Source) = default;
+    
+    //! Destructor.
+    virtual ~Import () = default;
+
+    //@}
+    //! @name Special "constructors"
+    //@{
+
+    /// \brief Find the union of the target IDs from two Import objects.
+    ///
+    /// On return, the input arrays permuteGIDs[1,2] and remotePGIDs[1,2] will
+    /// be ordered.  unionTgtGIDs are ordered as [{same}, {permute}, {remote}].
+    /// {same} is ordered identically to the target map with most "same"
+    /// indices.  {permute} is ordered from smallest ID to largest.  {remote} is
+    /// ordered by remote process ID and ID, respectively.  remotePGIDs are
+    /// ordered the same as {remote}.
+    void
+    findUnionTargetGIDs(Teuchos::Array<GlobalOrdinal>& unionTgtGIDs,
+                        Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs,
+                        typename Teuchos::Array<GlobalOrdinal>::size_type& numSameGIDs,
+                        typename Teuchos::Array<GlobalOrdinal>::size_type& numPermuteGIDs,
+                        typename Teuchos::Array<GlobalOrdinal>::size_type& numRemoteGIDs,
+                        const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs1,
+                        const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs2,
+                        Teuchos::Array<GlobalOrdinal>& permuteGIDs1,
+                        Teuchos::Array<GlobalOrdinal>& permuteGIDs2,
+                        Teuchos::Array<GlobalOrdinal>& remoteGIDs1,
+                        Teuchos::Array<GlobalOrdinal>& remoteGIDs2,
+                        Teuchos::Array<int>& remotePIDs1,
+                        Teuchos::Array<int>& remotePIDs2) const;
 
     /// \brief Return the union of this Import and \c rhs.
     ///
@@ -369,14 +351,12 @@ namespace Tpetra {
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnion () const;
 
-
     /// \brief Returns an importer that contains only the remote entries of this
     ///
     /// Returns an importer that contains only the remote entries of this importer.
     /// It is expected that remoteTarget represents such a map.
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const;
-
 
     //@}
     //! @name I/O Methods
@@ -428,13 +408,6 @@ namespace Tpetra {
 
     //@}
   private:
-    //! All the data needed for executing the Import communication plan.
-    Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
-    //! Output stream for debug output.
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
-    //! Whether to print copious debug output on each process.
-    bool debug_;
-
     //! @name Initialization helper functions (called by the constructor)
     //@{
 
@@ -463,7 +436,7 @@ namespace Tpetra {
 
     /// \brief Compute the necessary receives for the Import.
     ///
-    /// This routine fills in the following fields of ImportData_:
+    /// This routine fills in the following fields of TransferData_:
     ///
     ///   - numSameIDs_ (the number of consecutive initial GIDs owned
     ///     by both the source and target Maps)
@@ -521,9 +494,11 @@ namespace Tpetra {
     ///    GIDs.
     ///
     /// This routine fills in the <tt>remoteLIDs_</tt> field of
-    /// <tt>ImportData_</tt>.
+    /// <tt>TransferData_</tt>.
     void
-    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, bool useRemotePIDs, Teuchos::Array<int> & remotePIDs);
+    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, 
+                 bool useRemotePIDs, Teuchos::Array<int> & remotePIDs,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist= Teuchos::null);
     //@}
 
     /// \brief "Expert" constructor that includes all the Import's data.
@@ -548,16 +523,15 @@ namespace Tpetra {
 
   }; // class Import
 
-  /** \brief Nonmember constructor for Import.
-
-      Create a Import object from the given source and target Maps.
-      \pre <tt>src != null</tt>
-      \pre <tt>tgt != null</tt>
-      \return The Import object. If <tt>src == tgt</tt>, returns \c null.
-        (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
-
-      \relatesalso Import
-    */
+  /// \brief Nonmember constructor for Import.
+  ///
+  /// Create a Import object from the given source and target Maps.
+  /// \pre <tt>src != null</tt>
+  /// \pre <tt>tgt != null</tt>
+  /// \return The Import object. If <tt>src == tgt</tt>, returns \c null.
+  /// (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
+  ///
+  /// \relatesalso Import
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
   createImport (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& src,
@@ -569,25 +543,22 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       src == Teuchos::null || tgt == Teuchos::null, std::runtime_error,
-      "Tpetra::createImport(): neither source nor target map may be null:"
-      << std::endl << "source: " << src << std::endl << "target: " << tgt
-      << std::endl);
+      "Tpetra::createImport: Neither source nor target Map may be null.");
 #endif // HAVE_TPETRA_DEBUG
-    typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+    using import_type = Import<LocalOrdinal, GlobalOrdinal, Node>;
     return Teuchos::rcp (new import_type (src, tgt));
   }
 
-  /** \brief Nonmember constructor for Import that takes a ParameterList.
-
-      Create a Import object from the given source and target Maps,
-      using the given list of parameters.
-      \pre <tt>src != null</tt>
-      \pre <tt>tgt != null</tt>
-      \return The Import object. If <tt>src == tgt</tt>, returns \c null.
-        (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
-
-      \relatesalso Import
-    */
+  /// \brief Nonmember constructor for Import that takes a ParameterList.
+  ///
+  /// Create a Import object from the given source and target Maps,
+  /// using the given list of parameters.
+  /// \pre <tt>src != null</tt>
+  /// \pre <tt>tgt != null</tt>
+  /// \return The Import object. If <tt>src == tgt</tt>, returns \c null.
+  /// (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
+  ///
+  /// \relatesalso Import
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
   createImport (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& src,

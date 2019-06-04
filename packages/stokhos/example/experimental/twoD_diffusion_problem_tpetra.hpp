@@ -46,7 +46,6 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Comm.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Import.hpp"

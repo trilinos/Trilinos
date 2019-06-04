@@ -93,6 +93,8 @@
 #include "Xpetra_MapExtractor.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 
+#include <Teuchos_MatrixMarket_Raw_Writer.hpp>
+#include <string>
 
 
 namespace Xpetra {
@@ -102,7 +104,7 @@ namespace Xpetra {
   // This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
   template<class SC,class LO,class GO,class NO>
   RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
-  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &epAB) {
+  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &/* epAB */) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
       "Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
@@ -122,6 +124,28 @@ namespace Xpetra {
 
     return tmpC3;
   }
+
+
+  template<class SC,class LO,class GO,class NO>
+  RCP<Xpetra::MultiVector<SC,LO,GO,NO> >
+  Convert_Epetra_MultiVector_ToXpetra_MultiVector (RCP<Epetra_MultiVector> &epX) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+      "Convert_Epetra_MultiVector_ToXpetra_MultiVector cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+  }
+
+  // specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
+  template<>
+  inline RCP<Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> > Convert_Epetra_MultiVector_ToXpetra_MultiVector<double,int,int,Xpetra::EpetraNode> (RCP<Epetra_MultiVector> &epX) {
+    typedef double             SC;
+    typedef int                LO;
+    typedef int                GO;
+    typedef Xpetra::EpetraNode NO;
+
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO >> tmp = Xpetra::toXpetra<GO,NO>(epX);
+    return tmp;
+  }
+
 #endif
 
   /*!
@@ -288,6 +312,35 @@ namespace Xpetra {
       throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
     } //Write
 
+
+    /*! @brief Save local parts of matrix to files in Matrix Market format. */
+    static void WriteLocal(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+      const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
+          dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
+      RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
+
+      ArrayRCP<const size_t> rowptr_RCP;
+      ArrayRCP<LocalOrdinal>           rowptr2_RCP;
+      ArrayRCP<const LocalOrdinal>     colind_RCP;
+      ArrayRCP<const Scalar>     vals_RCP;
+      tmp_CrsMtx->getAllValues(rowptr_RCP, colind_RCP, vals_RCP);
+
+      ArrayView<const size_t> rowptr = rowptr_RCP();
+      ArrayView<const LocalOrdinal>     colind = colind_RCP();
+      ArrayView<const Scalar>     vals = vals_RCP();
+
+      rowptr2_RCP.resize(rowptr.size());
+      ArrayView<LocalOrdinal> rowptr2 = rowptr2_RCP();
+      for (size_t j = 0; j<rowptr.size(); j++)
+        rowptr2[j] = rowptr[j];
+
+      Teuchos::MatrixMarket::Raw::Writer<Scalar,LocalOrdinal> writer;
+      writer.writeFile(fileName + "." + std::to_string(Op.getRowMap()->getComm()->getSize()) + "." + std::to_string(Op.getRowMap()->getComm()->getRank()),
+                       rowptr2,colind,vals,
+                       rowptr.size()-1,Op.getColMap()->getNodeNumElements());
+    } //WriteLocal
+
+
     /*! @brief Save matrix to file in Matrix Market format. */
     static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
       typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
@@ -352,12 +405,9 @@ namespace Xpetra {
 
           typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
-          //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-          Teuchos::ParameterList pl = Teuchos::ParameterList();
-          RCP<Node> node = rcp(new Node(pl));
           bool callFillComplete = true;
 
-          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
+          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, callFillComplete);
 
           if (tA.is_null())
             throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
@@ -558,7 +608,7 @@ namespace Xpetra {
         typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
 
         RCP<const map_type>   temp = toTpetra(map);
-        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
+        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),temp);
         RCP<MultiVector>      rmv  = Xpetra::toXpetra(TMV);
         return rmv;
 #else
@@ -579,9 +629,7 @@ namespace Xpetra {
         typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
 
-        RCP<Node> node = rcp(new Node());
-
-        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm, node);
+        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm);
         if (tMap.is_null())
           throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
 
@@ -840,6 +888,34 @@ namespace Xpetra {
       throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
     } //Write
 
+
+    /*! @brief Save local parts of matrix to files in Matrix Market format. */
+    static void WriteLocal(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+      const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
+          dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
+      RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
+
+      ArrayRCP<const size_t> rowptr_RCP;
+      ArrayRCP<LocalOrdinal>           rowptr2_RCP;
+      ArrayRCP<const LocalOrdinal>     colind_RCP;
+      ArrayRCP<const Scalar>     vals_RCP;
+      tmp_CrsMtx->getAllValues(rowptr_RCP, colind_RCP, vals_RCP);
+
+      ArrayView<const size_t> rowptr = rowptr_RCP();
+      ArrayView<const LocalOrdinal>     colind = colind_RCP();
+      ArrayView<const Scalar>     vals = vals_RCP();
+
+      rowptr2_RCP.resize(rowptr.size());
+      ArrayView<LocalOrdinal> rowptr2 = rowptr2_RCP();
+      for (size_t j = 0; j<rowptr.size(); j++)
+        rowptr2[j] = rowptr[j];
+
+      Teuchos::MatrixMarket::Raw::Writer<Scalar,LocalOrdinal> writer;
+      writer.writeFile(fileName + "." + std::to_string(Op.getRowMap()->getComm()->getSize()) + "." + std::to_string(Op.getRowMap()->getComm()->getRank()),
+                       rowptr2,colind,vals,
+                       rowptr.size()-1,Op.getColMap()->getNodeNumElements());
+    } //WriteLocal
+
     /*! @brief Save matrix to file in Matrix Market format. */
     static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
       typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
@@ -908,12 +984,9 @@ namespace Xpetra {
 
           typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
-          //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-          Teuchos::ParameterList pl = Teuchos::ParameterList();
-          RCP<Node> node = rcp(new Node(pl));
           bool callFillComplete = true;
 
-          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
+          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, callFillComplete);
 
           if (tA.is_null())
             throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
@@ -1114,7 +1187,8 @@ namespace Xpetra {
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
         Epetra_MultiVector * MV;
         EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(), toEpetra(map), MV);
-        return Xpetra::toXpetra<int,Node>(rcp(MV));
+        RCP<Epetra_MultiVector> MVrcp = rcp(MV);
+        return Convert_Epetra_MultiVector_ToXpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(MVrcp);
 #else
         throw Exceptions::RuntimeError("Xpetra has not been compiled with Epetra and EpetraExt support.");
 #endif
@@ -1130,7 +1204,7 @@ namespace Xpetra {
         typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
 
         RCP<const map_type>   temp = toTpetra(map);
-        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
+        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),temp);
         RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >      rmv  = Xpetra::toXpetra(TMV);
         return rmv;
 # endif
@@ -1170,9 +1244,7 @@ namespace Xpetra {
         typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
 
-        RCP<Node> node = rcp(new Node());
-
-        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm, node);
+        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm);
         if (tMap.is_null())
           throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
 

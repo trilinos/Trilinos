@@ -227,6 +227,22 @@ namespace Xpetra {
         vv_.push_back(this->ExtractVector(v, r, mapExtractor->getThyraMode()));
     }
 
+    /*!
+     * Constructor to build a blocked multivector from a blocked map and component vectors
+     *
+     * \note We do *NOT* check map compatibility between the BlockedMap and the array of multivectors
+     *
+     * \param  map BlockedMap object containing information about the block splitting
+     * \param  vin A std::vector of RCPs to component vectors
+     */
+    BlockedMultiVector(const Teuchos::RCP< const BlockedMap > &map, std::vector<Teuchos::RCP<MultiVector> > & vin) {
+      numVectors_ = vin[0]->getNumVectors();
+      map_ = map;
+      vv_.resize(vin.size());
+      for(size_t i=0; i<vv_.size(); i++)
+	vv_[i] = vin[i];
+    }
+
     //! Destructor.
     virtual ~BlockedMultiVector() {
       for (size_t r = 0; r < vv_.size(); ++r)
@@ -253,22 +269,22 @@ namespace Xpetra {
     //@{
 
     //! Replace value, using global (row) index.
-    virtual void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) {
+    virtual void replaceGlobalValue(GlobalOrdinal /* globalRow */, size_t /* vectorIndex */, const Scalar &/* value */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::replaceGlobalValue: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Add value to existing value, using global (row) index.
-    virtual void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) {
+    virtual void sumIntoGlobalValue(GlobalOrdinal /* globalRow */, size_t /* vectorIndex */, const Scalar &/* value */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::sumIntoGlobalValue: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Replace value, using local (row) index.
-    virtual void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) {
+    virtual void replaceLocalValue(LocalOrdinal /* myRow */, size_t /* vectorIndex */, const Scalar &/* value */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::replaceLocalValue: Not supported by BlockedMultiVector.");
     }
 
     //! Add value to existing value, using local (row) index.
-    virtual void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) {
+    virtual void sumIntoLocalValue(LocalOrdinal /* myRow */, size_t /* vectorIndex */, const Scalar &/* value */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::sumIntoLocalValue:Not (yet) supported by BlockedMultiVector.");
     }
 
@@ -329,17 +345,17 @@ namespace Xpetra {
     //@{
 
     //! Compute dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i]).
-    virtual void dot(const MultiVector&A, const Teuchos::ArrayView< Scalar > &dots) const {
+    virtual void dot(const MultiVector&/* A */, const Teuchos::ArrayView< Scalar > &/* dots */) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::dot: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this).
-    virtual void abs(const MultiVector&A) {
+    virtual void abs(const MultiVector&/* A */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::abs: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    virtual void reciprocal(const MultiVector&A) {
+    virtual void reciprocal(const MultiVector&/* A */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::reciprocal: Not (yet) supported by BlockedMultiVector.");
     }
 
@@ -500,12 +516,12 @@ namespace Xpetra {
     }
 
     //! Compute mean (average) value of each vector in multi-vector. The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
-    virtual void meanValue(const Teuchos::ArrayView< Scalar > &means) const {
+    virtual void meanValue(const Teuchos::ArrayView< Scalar > &/* means */) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::meanValue: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
-    virtual void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector&A, const MultiVector&B, const Scalar &beta) {
+    virtual void multiply(Teuchos::ETransp /* transA */, Teuchos::ETransp /* transB */, const Scalar &/* alpha */, const MultiVector&/* A */, const MultiVector&/* B */, const Scalar &/* beta */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::multiply: Not (yet) supported by BlockedMultiVector.");
     }
 
@@ -552,14 +568,30 @@ namespace Xpetra {
 
     //! Local number of rows on the calling process.
     virtual size_t getLocalLength() const {
-      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::getLocalLength: routine not implemented. It has no value as one must iterate on the partial vectors.");
-      TEUCHOS_UNREACHABLE_RETURN(0);
+      XPETRA_MONITOR("BlockedMultiVector::getLocalLength()");
+      return map_->getFullMap()->getNodeNumElements();
     }
 
     //! Global number of rows in the multivector.
     virtual global_size_t getGlobalLength() const {
       XPETRA_MONITOR("BlockedMultiVector::getGlobalLength()");
       return map_->getFullMap()->getGlobalNumElements();
+    }
+
+    //! Local number of rows on the calling process.
+    virtual bool isSameSize(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
+      const BlockedMultiVector * Vb = dynamic_cast<const BlockedMultiVector *>(&vec);
+      if(!Vb) return false;
+      for (size_t r = 0; r < map_->getNumMaps(); ++r) {
+        RCP<const MultiVector> a = getMultiVector(r);
+        RCP<const MultiVector> b = Vb->getMultiVector(r);
+        if((a==Teuchos::null && b != Teuchos::null) || 
+           (a!=Teuchos::null && b == Teuchos::null)) 
+          return false;           
+        if(a!=Teuchos::null  && b !=Teuchos::null && !a->isSameSize(*b)) 
+          return false;        
+      }
+      return true;
     }
 
     //@}
@@ -604,22 +636,22 @@ namespace Xpetra {
     }
 
     //! Import.
-    virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Import& importer, CombineMode CM) {
+    virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &/* source */, const Import& /* importer */, CombineMode /* CM */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::doImport: Not supported by BlockedMultiVector.");
     }
 
     //! Export.
-    virtual void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Import& importer, CombineMode CM) {
+    virtual void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &/* dest */, const Import& /* importer */, CombineMode /* CM */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::doExport: Not supported by BlockedMultiVector.");
     }
 
     //! Import (using an Exporter).
-    virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Export& exporter, CombineMode CM) {
+    virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &/* source */, const Export& /* exporter */, CombineMode /* CM */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::doImport: Not supported by BlockedMultiVector.");
     }
 
     //! Export (using an Importer).
-    virtual void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export& exporter, CombineMode CM) {
+    virtual void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &/* dest */, const Export& /* exporter */, CombineMode /* CM */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::doExport: Not supported by BlockedMultiVector.");
     }
 
@@ -710,6 +742,7 @@ namespace Xpetra {
       XPETRA_MONITOR("BlockedMultiVector::getMultiVector(r,bThyraMode)");
       TEUCHOS_TEST_FOR_EXCEPTION(r > map_->getNumMaps(), std::out_of_range, "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << map_->getNumMaps() << " partial blocks.");
       XPETRA_TEST_FOR_EXCEPTION(map_->getThyraMode() != bThyraMode, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::getMultiVector: inconsistent Thyra mode");
+      (void)bThyraMode; // avoid unused parameter warning when HAVE_XPETRA_DEBUG isn't defined
       return vv_[r];
     }
 
@@ -723,6 +756,7 @@ namespace Xpetra {
       XPETRA_TEST_FOR_EXCEPTION(r >= map_->getNumMaps(), std::out_of_range, "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << map_->getNumMaps() << " partial blocks.");
       XPETRA_TEST_FOR_EXCEPTION(numVectors_ != v->getNumVectors(),Xpetra::Exceptions::RuntimeError,"The BlockedMultiVectors expects " << getNumVectors() << " vectors. The provided partial multivector has " << v->getNumVectors() << " vectors.");
       XPETRA_TEST_FOR_EXCEPTION(map_->getThyraMode() != bThyraMode, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::setMultiVector: inconsistent Thyra mode");
+      (void)bThyraMode; // avoid unused parameter warning when HAVE_XPETRA_DEBUG isn't defined
       Teuchos::RCP<MultiVector> vv = Teuchos::rcp_const_cast<MultiVector>(v);
       TEUCHOS_TEST_FOR_EXCEPTION(vv==Teuchos::null, Xpetra::Exceptions::RuntimeError, "Partial vector must not be Teuchos::null");
       vv_[r] = vv;

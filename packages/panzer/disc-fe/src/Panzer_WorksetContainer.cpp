@@ -266,51 +266,88 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
 
   // loop over each basis requiring orientations, then apply them
   //////////////////////////////////////////////////////////////////////////////////
-
+  
   // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
 
   const WorksetNeeds & needs = lookupNeeds(eBlock);
-  TEUCHOS_ASSERT(needs.bases.size()==needs.rep_field_name.size());
 
-  for(std::size_t w=0;w<needs.bases.size();w++) {
-    //const std::string & fieldName = needs.rep_field_name[i];
-    const PureBasis & basis = *needs.bases[w];
+  if(needs.bases.size()>0) {
+    // sanity check that we aren't missing something (the old and new "needs" should not be used together)
+    TEUCHOS_ASSERT(needs.getBases().size()==0);
 
-    // no need for this if orientations are not required!
-    if(!basis.requiresOrientations()) continue;
-
-    // build accessors for orientation fields
-    std::vector<Intrepid2::Orientation> ortsPerBlock;
-
-    // loop over worksets compute and apply orientations
-    for(std::size_t i=0;i<worksets.size();i++) {
-      // break out of the workset loop
-      if(worksets[i].num_cells<=0) continue;
-
-      for(std::size_t j=0;j<worksets[i].numDetails();j++) {
-        WorksetDetails & details = worksets[i](j);
-
-        ortsPerBlock.clear();
-        for (int k=0;k<worksets[i].num_cells;++k) {
-          ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
-        }
-
-        for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
-          Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
-
-          // only apply orientations if its relevant to the current needs
-          if(layout->getBasis()->name()!=basis.name())
-            continue;
-
-          TEUCHOS_ASSERT(layout!=Teuchos::null);
-          TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
-          if(layout->getBasis()->requiresOrientations()) {
-            // apply orientations for this basis
-            details.bases[basis_index]->applyOrientations(ortsPerBlock);
+    for(std::size_t w=0;w<needs.bases.size();w++) {
+      const PureBasis & basis = *needs.bases[w];
+  
+      // no need for this if orientations are not required!
+      if(!basis.requiresOrientations())
+        continue;
+  
+      // build accessors for orientation fields
+      std::vector<Intrepid2::Orientation> ortsPerBlock;
+  
+      // loop over worksets compute and apply orientations
+      for(std::size_t i=0;i<worksets.size();i++) {
+        // break out of the workset loop
+        if(worksets[i].num_cells<=0) continue;
+  
+        for(std::size_t j=0;j<worksets[i].numDetails();j++) {
+          WorksetDetails & details = worksets[i](j);
+  
+          ortsPerBlock.clear();
+          for (int k=0;k<worksets[i].num_cells;++k) {
+            ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
+          }
+  
+          for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
+            Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
+  
+            // only apply orientations if its relevant to the current needs
+            if(layout->getBasis()->name()!=basis.name())
+              continue;
+  
+            TEUCHOS_ASSERT(layout!=Teuchos::null);
+            TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
+            if(layout->getBasis()->requiresOrientations()) {
+              // apply orientations for this basis
+              details.bases[basis_index]->applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
+            }
           }
         }
       }
-    }
+    } // end for w
+  }
+  else if(needs.getBases().size()>0) {
+    // sanity check that we aren't missing something (the old and new "needs" should not be used together)
+    TEUCHOS_ASSERT(needs.bases.size()==0);
+
+    // This is for forwards compatibility, the needs now use "getBasis" calls as opposed
+    // to director accessors.
+    for(const auto & bd : needs.getBases()) {
+  
+      // build accessors for orientation fields
+      std::vector<Intrepid2::Orientation> ortsPerBlock;
+  
+      // loop over worksets compute and apply orientations
+      for(std::size_t i=0;i<worksets.size();i++) {
+        // break out of the workset loop
+        if(worksets[i].num_cells<=0) continue;
+  
+        for(std::size_t j=0;j<worksets[i].numDetails();j++) {
+          WorksetDetails & details = worksets[i](j);
+  
+          ortsPerBlock.clear();
+          // for (int k=0;k<worksets[i].num_cells;++k) {
+          for (int k=0;k<details.numOwnedCells();++k) {
+            ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
+          }
+  
+          for(const auto & id : needs.getIntegrators()) {
+            // apply orientations for this basis
+            details.getBasisValues(bd,id).applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
+          }
+        }
+      }
+    } // end for w
   }
 }
   
@@ -340,49 +377,85 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
   
   // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
   const WorksetNeeds & needs = lookupNeeds(desc.getElementBlock());
-  TEUCHOS_ASSERT(needs.bases.size()==needs.rep_field_name.size());
+
+  if(needs.bases.size()>0) {
+    // sanity check that we aren't missing something (the old and new "needs" should not be used together)
+    TEUCHOS_ASSERT(needs.getBases().size()==0);
+    for(std::size_t i=0;i<needs.bases.size();i++) {
+      const PureBasis & basis = *needs.bases[i];
+      
+      // no need for this if orientations are not required!
+      if(!basis.requiresOrientations()) continue;
+      
+      // build accessors for orientation fields
+      std::vector<Intrepid2::Orientation> ortsPerBlock;  
+      
+      // loop over worksets compute and apply orientations
+      for(std::map<unsigned,Workset>::iterator itr=worksets.begin(); 
+          itr!=worksets.end();++itr) { 
+        
+        // break out of the workset loop
+        if(itr->second.num_cells<=0) continue;
+        
+        for(std::size_t j=0;j<itr->second.numDetails();j++) {  
+          WorksetDetails & details = itr->second(j);
   
-  for(std::size_t i=0;i<needs.bases.size();i++) {
-    //const std::string & fieldName = needs.rep_field_name[i];
-    const PureBasis & basis = *needs.bases[i];
-    
-    // no need for this if orientations are not required!
-    if(!basis.requiresOrientations()) continue;
-    
-    // build accessors for orientation fields
-    std::vector<Intrepid2::Orientation> ortsPerBlock;  
-    
-    // loop over worksets compute and apply orientations
-    for(std::map<unsigned,Workset>::iterator itr=worksets.begin(); 
-        itr!=worksets.end();++itr) { 
-      
-      // break out of the workset loop
-      if(itr->second.num_cells<=0) continue;
-      
-      for(std::size_t j=0;j<itr->second.numDetails();j++) {  
-        WorksetDetails & details = itr->second(j);
-
-        ortsPerBlock.clear();
-        for (int k=0;k<itr->second.num_cells;++k) {
-          ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
-        }
-
-        for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
-          Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
-
-          // only apply orientations if its relevant to the current needs
-          if(layout->getBasis()->name()!=basis.name())
-            continue;
-
-          TEUCHOS_ASSERT(layout!=Teuchos::null);
-          TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
-          if(layout->getBasis()->requiresOrientations()) {
-            // apply orientations for this basis
-            details.bases[basis_index]->applyOrientations(ortsPerBlock);
+          ortsPerBlock.clear();
+          for (int k=0;k<itr->second.num_cells;++k) {
+            ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
+          }
+  
+          for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
+            Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
+  
+            // only apply orientations if its relevant to the current needs
+            if(layout->getBasis()->name()!=basis.name())
+              continue;
+  
+            TEUCHOS_ASSERT(layout!=Teuchos::null);
+            TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
+            if(layout->getBasis()->requiresOrientations()) {
+              // apply orientations for this basis
+              details.bases[basis_index]->applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
+            }
           }
         }
       }
-    }
+    } // end for i
+  }
+  else if(needs.getBases().size()>0) {
+    // sanity check that we aren't missing something (the old and new "needs" should not be used together)
+    TEUCHOS_ASSERT(needs.bases.size()==0);
+
+    // This is for forwards compatibility, the needs now use "getBasis" calls as opposed
+    // to director accessors.
+    for(const auto & bd : needs.getBases()) {
+  
+      // build accessors for orientation fields
+      std::vector<Intrepid2::Orientation> ortsPerBlock;
+  
+      // loop over worksets compute and apply orientations
+      for(std::map<unsigned,Workset>::iterator itr=worksets.begin(); 
+          itr!=worksets.end();++itr) { 
+        
+        // break out of the workset loop
+        if(itr->second.num_cells<=0) continue;
+        
+        for(std::size_t j=0;j<itr->second.numDetails();j++) {  
+          WorksetDetails & details = itr->second(j);
+  
+          ortsPerBlock.clear();
+          for (int k=0;k<itr->second.num_cells;++k) {
+            ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
+          }
+  
+          for(const auto & id : needs.getIntegrators()) {
+            // apply orientations for this basis
+            details.getBasisValues(bd,id).applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
+          }
+        }
+      }
+    } // end for w
   }
 }
 

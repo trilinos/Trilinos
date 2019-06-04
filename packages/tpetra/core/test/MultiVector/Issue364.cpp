@@ -67,7 +67,7 @@ public:
     typedef typename ViewType::execution_space execution_space;
     typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
     int result = 1;
-    Kokkos::parallel_reduce (range_type (0, x.dimension_0 ()),
+    Kokkos::parallel_reduce (range_type (0, x.extent (0)),
                              VectorsEqual<ViewType> (x, y),
                              result);
     return result == 1;
@@ -113,7 +113,7 @@ public:
   static void run (const ViewType& x) {
     typedef typename ViewType::execution_space execution_space;
     typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
-    Kokkos::parallel_for (range_type (0, x.dimension_0 ()),
+    Kokkos::parallel_for (range_type (0, x.extent (0)),
                           NegateAllEntries<ViewType> (x));
   }
 
@@ -165,16 +165,12 @@ namespace { // (anonymous)
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector, DualViewNoncontig, Node )
   {
-    typedef typename Tpetra::MultiVector<>::scalar_type Scalar;
-    typedef typename Tpetra::MultiVector<>::local_ordinal_type LO;
-    typedef typename Tpetra::MultiVector<>::global_ordinal_type GO;
-    typedef typename Tpetra::MultiVector<>::device_type DT;
-    typedef typename DT::memory_space dev_memory_space;
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
-    typedef typename MV::impl_scalar_type IST;
-    typedef typename Kokkos::View<IST**, DT>::HostMirror::memory_space
-      host_memory_space;
+    using Scalar = typename Tpetra::MultiVector<>::scalar_type;
+    using LO = typename Tpetra::MultiVector<>::local_ordinal_type;
+    using GO = typename Tpetra::MultiVector<>::global_ordinal_type;
+    using map_type = Tpetra::Map<LO, GO, Node>;
+    using MV = Tpetra::MultiVector<Scalar, LO, GO, Node>;
+    using IST = typename MV::impl_scalar_type;
 
     const IST ONE = Kokkos::Details::ArithTraits<IST>::one ();
 
@@ -196,12 +192,12 @@ namespace { // (anonymous)
 
     out << "Fill the master MultiVector X" << endl;
     {
-      X.template sync<host_memory_space> ();
-      X.template modify<host_memory_space> ();
-      auto X_lcl = X.template getLocalView<host_memory_space> ();
+      X.sync_host ();
+      X.modify_host ();
+      auto X_lcl = X.getLocalViewHost ();
 
-      TEST_EQUALITY( static_cast<LO> (X_lcl.dimension_0 ()), lclNumRows );
-      TEST_EQUALITY( static_cast<LO> (X_lcl.dimension_1 ()), numVecs );
+      TEST_EQUALITY( static_cast<LO> (X_lcl.extent (0)), lclNumRows );
+      TEST_EQUALITY( static_cast<LO> (X_lcl.extent (1)), numVecs );
       if (! success) {
         return;
       }
@@ -216,7 +212,7 @@ namespace { // (anonymous)
           curVal = curVal + Kokkos::Details::ArithTraits<IST>::one ();
         }
       }
-      X.template sync<dev_memory_space> ();
+      X.sync_device ();
     }
 
     // Make a "backup" of X, for later comparison.
@@ -232,8 +228,8 @@ namespace { // (anonymous)
 
     out << "Modify the entries of that view, on host" << endl;
     {
-      X_sub->template sync<host_memory_space> ();
-      X_sub->template modify<host_memory_space> ();
+      X_sub->sync_host ();
+      X_sub->modify_host ();
 
       // Use negative values to distinguish changes to the subview.
       for (LO k = 0; k < static_cast<LO> (cols.size ()); ++k) {
@@ -248,11 +244,11 @@ namespace { // (anonymous)
 
         auto X_sub_j = X_sub->getVector (k);
         auto X_sub_lcl_j_2d =
-          X_sub_j->template getLocalView<host_memory_space> ();
+          X_sub_j->getLocalViewHost ();
         auto X_sub_lcl_j_1d =
           Kokkos::subview (X_sub_lcl_j_2d, Kokkos::ALL (), 0);
 
-        TEST_EQUALITY( static_cast<LO> (X_sub_lcl_j_1d.dimension_0 ()),
+        TEST_EQUALITY( static_cast<LO> (X_sub_lcl_j_1d.extent (0)),
                        lclNumRows );
         if (! success) {
           return;
@@ -283,7 +279,7 @@ namespace { // (anonymous)
           continue;
         }
         auto X_sub_lcl_j_2d =
-          X_sub_j->template getLocalView<host_memory_space> ();
+          X_sub_j->getLocalViewHost ();
         auto X_sub_lcl_j_1d =
           Kokkos::subview (X_sub_lcl_j_2d, Kokkos::ALL (), 0);
 
@@ -292,7 +288,7 @@ namespace { // (anonymous)
         if (X_j.is_null ()) {
           continue;
         }
-        auto X_lcl_j_2d = X_j->template getLocalView<host_memory_space> ();
+        auto X_lcl_j_2d = X_j->getLocalViewHost ();
         auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
         auto X_copy_j = X_copy.getVector (j);
@@ -301,15 +297,15 @@ namespace { // (anonymous)
           continue;
         }
         auto X_copy_lcl_j_2d =
-          X_copy_j->template getLocalView<host_memory_space> ();
+          X_copy_j->getLocalViewHost ();
         auto X_copy_lcl_j_1d =
           Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
-        TEST_EQUALITY( static_cast<LO> (X_sub_lcl_j_1d.dimension_0 ()),
+        TEST_EQUALITY( static_cast<LO> (X_sub_lcl_j_1d.extent (0)),
                        lclNumRows );
-        TEST_EQUALITY( static_cast<LO> (X_lcl_j_1d.dimension_0 ()),
+        TEST_EQUALITY( static_cast<LO> (X_lcl_j_1d.extent (0)),
                        lclNumRows );
-        TEST_EQUALITY( static_cast<LO> (X_copy_lcl_j_1d.dimension_0 ()),
+        TEST_EQUALITY( static_cast<LO> (X_copy_lcl_j_1d.extent (0)),
                        lclNumRows );
         if (! success) {
           return;
@@ -329,12 +325,12 @@ namespace { // (anonymous)
         auto iter = std::find (cols.begin (), cols.end (), j);
         if (iter == cols.end ()) { // not in the sequence
           auto X_j = X.getVector (j);
-          auto X_lcl_j_2d = X_j->template getLocalView<host_memory_space> ();
+          auto X_lcl_j_2d = X_j->getLocalViewHost ();
           auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
           auto X_copy_j = X_copy.getVector (j);
           auto X_copy_lcl_j_2d =
-            X_copy_j->template getLocalView<host_memory_space> ();
+            X_copy_j->getLocalViewHost ();
           auto X_copy_lcl_j_1d =
             Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
@@ -346,7 +342,7 @@ namespace { // (anonymous)
     }
 
     out << "Sync X_sub to device" << endl;
-    X_sub->template sync<dev_memory_space> ();
+    X_sub->sync_device ();
 
     // At this point, the device version of X_sub and the device
     // version of the corresponding columns of X should be the same.
@@ -355,15 +351,15 @@ namespace { // (anonymous)
       for (LO k = 0; k < static_cast<LO> (cols.size ()); ++k) {
         const LO j = cols[k];
         auto X_sub_j = X_sub->getVector (k);
-        auto X_sub_lcl_j_2d = X_sub_j->template getLocalView<dev_memory_space> ();
+        auto X_sub_lcl_j_2d = X_sub_j->getLocalViewDevice ();
         auto X_sub_lcl_j_1d = Kokkos::subview (X_sub_lcl_j_2d, Kokkos::ALL (), 0);
 
         auto X_j = X.getVector (j);
-        auto X_lcl_j_2d = X_j->template getLocalView<dev_memory_space> ();
+        auto X_lcl_j_2d = X_j->getLocalViewDevice ();
         auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
         // auto X_copy_j = X_copy.getVector (j);
-        // auto X_copy_lcl_j_2d = X_copy_j->template getLocalView<dev_memory_space> ();
+        // auto X_copy_lcl_j_2d = X_copy_j->getLocalViewDevice ();
         // auto X_copy_lcl_j_1d = Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
         const bool eq = vectorsEqual (X_sub_lcl_j_1d, X_lcl_j_1d);
@@ -379,11 +375,11 @@ namespace { // (anonymous)
         auto iter = std::find (cols.begin (), cols.end (), j);
         if (iter == cols.end ()) { // not in the sequence
           auto X_j = X.getVector (j);
-          auto X_lcl_j_2d = X_j->template getLocalView<dev_memory_space> ();
+          auto X_lcl_j_2d = X_j->getLocalViewDevice ();
           auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
           auto X_copy_j = X_copy.getVector (j);
-          auto X_copy_lcl_j_2d = X_copy_j->template getLocalView<dev_memory_space> ();
+          auto X_copy_lcl_j_2d = X_copy_j->getLocalViewDevice ();
           auto X_copy_lcl_j_1d = Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
           const bool eq = vectorsEqual (X_lcl_j_1d, X_copy_lcl_j_1d);
@@ -448,12 +444,12 @@ namespace { // (anonymous)
 
       out << "Fill the master MultiVector X" << endl;
       {
-        X.template sync<host_memory_space> ();
-        X.template modify<host_memory_space> ();
-        auto X_lcl = X.template getLocalView<host_memory_space> ();
+        X.sync_host ();
+        X.modify_host ();
+        auto X_lcl = X.getLocalViewHost ();
 
-        TEST_EQUALITY( static_cast<LO> (X_lcl.dimension_0 ()), lclNumRows );
-        TEST_EQUALITY( static_cast<LO> (X_lcl.dimension_1 ()), numVecs );
+        TEST_EQUALITY( static_cast<LO> (X_lcl.extent (0)), lclNumRows );
+        TEST_EQUALITY( static_cast<LO> (X_lcl.extent (1)), numVecs );
         if (! success) {
           return;
         }
@@ -468,12 +464,12 @@ namespace { // (anonymous)
             curVal = curVal + Kokkos::Details::ArithTraits<IST>::one ();
           }
         }
-        X.template sync<dev_memory_space> ();
+        X.sync_device ();
       }
 
       // Make a "backup" of X, for later comparison.
       MV X_copy (X, Teuchos::Copy);
-      X_copy.template sync<dev_memory_space> (); // just to make sure
+      X_copy.sync_device (); // just to make sure
 
       out << "Create first view Y of a noncontiguous subset of columns of X" << endl;
       Teuchos::Array<size_t> Y_cols (4);
@@ -496,8 +492,8 @@ namespace { // (anonymous)
       out << "Sync Y to host, and modify it there.  "
         "Don't sync it back to device." << endl;
       {
-        Y->template sync<host_memory_space> ();
-        Y->template modify<host_memory_space> ();
+        Y->sync_host ();
+        Y->modify_host ();
 
         // Multiply all entries by 2.
         for (LO k = 0; k < static_cast<LO> (Y_cols.size ()); ++k) {
@@ -509,9 +505,9 @@ namespace { // (anonymous)
             continue;
           }
           auto Y_j = Y->getVector (k);
-          auto Y_lcl_j_2d = Y_j->template getLocalView<host_memory_space> ();
+          auto Y_lcl_j_2d = Y_j->getLocalViewHost ();
           auto Y_lcl_j_1d = Kokkos::subview (Y_lcl_j_2d, Kokkos::ALL (), 0);
-          TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.dimension_0 ()), lclNumRows );
+          TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.extent (0)), lclNumRows );
           if (! success) {
             return;
           }
@@ -523,8 +519,8 @@ namespace { // (anonymous)
 
       out << "Modify Z on device, and sync it to host." << endl;
       {
-        Z->template sync<dev_memory_space> ();
-        Z->template modify<dev_memory_space> ();
+        Z->sync_device ();
+        Z->modify_device ();
 
         for (LO k = 0; k < static_cast<LO> (Z_cols.size ()); ++k) {
           const LO j = Z_cols[k];
@@ -535,9 +531,9 @@ namespace { // (anonymous)
             continue;
           }
           auto Z_j = Z->getVector (k);
-          auto Z_lcl_j_2d = Z_j->template getLocalView<dev_memory_space> ();
+          auto Z_lcl_j_2d = Z_j->getLocalViewDevice ();
           auto Z_lcl_j_1d = Kokkos::subview (Z_lcl_j_2d, Kokkos::ALL (), 0);
-          TEST_EQUALITY( static_cast<LO> (Z_lcl_j_1d.dimension_0 ()), lclNumRows );
+          TEST_EQUALITY( static_cast<LO> (Z_lcl_j_1d.extent (0)), lclNumRows );
           if (! success) {
             return;
           }
@@ -545,7 +541,7 @@ namespace { // (anonymous)
         }
 
         // THIS is the thing that tests for Issue #364.
-        Z->template sync<host_memory_space> ();
+        Z->sync_host ();
       }
 
       // Check that Z's sync to host did not cause all of X to get
@@ -571,27 +567,27 @@ namespace { // (anonymous)
           if (X_j.is_null ()) {
             continue;
           }
-          auto X_lcl_j_2d = X_j->template getLocalView<host_memory_space> ();
+          auto X_lcl_j_2d = X_j->getLocalViewHost ();
           auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
-          TEST_EQUALITY( static_cast<LO> (X_lcl_j_1d.dimension_0 ()),
+          TEST_EQUALITY( static_cast<LO> (X_lcl_j_1d.extent (0)),
                          lclNumRows );
 
           auto X_copy_j = X_copy.getVector (k);
           if (X_copy_j.is_null ()) {
             continue;
           }
-          auto X_copy_lcl_j_2d = X_copy_j->template getLocalView<host_memory_space> ();
+          auto X_copy_lcl_j_2d = X_copy_j->getLocalViewHost ();
           auto X_copy_lcl_j_1d = Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
-          TEST_EQUALITY( static_cast<LO> (X_copy_lcl_j_1d.dimension_0 ()),
+          TEST_EQUALITY( static_cast<LO> (X_copy_lcl_j_1d.extent (0)),
                          lclNumRows );
 
           auto Y_j = Y->getVector (k);
           if (Y_j.is_null ()) {
             continue;
           }
-          auto Y_lcl_j_2d = Y_j->template getLocalView<host_memory_space> ();
+          auto Y_lcl_j_2d = Y_j->getLocalViewHost ();
           auto Y_lcl_j_1d = Kokkos::subview (Y_lcl_j_2d, Kokkos::ALL (), 0);
-          TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.dimension_0 ()),
+          TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.extent (0)),
                          lclNumRows );
           if (! success) {
             return;

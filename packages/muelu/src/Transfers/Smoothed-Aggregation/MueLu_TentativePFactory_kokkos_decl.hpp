@@ -53,6 +53,8 @@
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
+#include "Teuchos_ScalarTraits.hpp"
+
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_AmalgamationFactory_fwd.hpp" // FIXME_KOKKOS (once we have kokkos version)
 #include "MueLu_AmalgamationInfo_fwd.hpp"    // FIXME_KOKKOS (once we have kokkos version)
@@ -112,6 +114,8 @@ namespace MueLu {
     typedef typename DeviceType::execution_space                     execution_space;
     typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType    real_type;
+    typedef Xpetra::MultiVector<real_type, LocalOrdinal, GlobalOrdinal, node_type> RealValuedMultiVector;
 
   private:
     // For compatibility
@@ -156,13 +160,15 @@ namespace MueLu {
     // could be writing an out of class implementation, and then calling it in
     // a member function.
     void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
+                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
     bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
   private:
 
     void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
+
+    mutable bool bTransferCoordinates_ = false;
 
   };
 

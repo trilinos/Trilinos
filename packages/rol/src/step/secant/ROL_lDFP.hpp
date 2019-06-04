@@ -60,14 +60,14 @@ public:
   // Apply lBFGS Approximate Inverse Hessian
   void applyH( Vector<Real> &Hv, const Vector<Real> &v ) const {
     // Get Generic Secant State
-    const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    const ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
     Real one(1);
 
     // Apply initial Hessian approximation to v
     applyH0(Hv,v);
 
-    std::vector<Teuchos::RCP<Vector<Real> > > a(state->current+1);
-    std::vector<Teuchos::RCP<Vector<Real> > > b(state->current+1);
+    std::vector<ROL::Ptr<Vector<Real> > > a(state->current+1);
+    std::vector<ROL::Ptr<Vector<Real> > > b(state->current+1);
     Real bv(0), av(0), bs(0), as(0);
     for (int i = 0; i <= state->current; i++) {
       b[i] = Hv.clone();
@@ -95,7 +95,7 @@ public:
   // Apply Initial Secant Approximate Hessian
   virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v ) const {
     // Get Generic Secant State
-    const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    const ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
 
     Hv.set(v.dual());
     if (state->iter != 0 && state->current != -1) {
@@ -107,7 +107,7 @@ public:
   // Apply lBFGS Approximate Hessian
   void applyB( Vector<Real> &Bv, const Vector<Real> &v ) const {
     // Get Generic Secant State
-    const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    const ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
     Real zero(0);
 
     Bv.set(v.dual());
@@ -119,7 +119,7 @@ public:
     }
 
     // Apply initial inverse Hessian approximation to v
-    Teuchos::RCP<Vector<Real> > tmp = Bv.clone();
+    ROL::Ptr<Vector<Real> > tmp = Bv.clone();
     applyB0(*tmp,Bv);
     Bv.set(*tmp);
 
@@ -134,7 +134,7 @@ public:
   // Apply Initial Secant Approximate Hessian
   virtual void applyB0( Vector<Real> &Bv, const Vector<Real> &v ) const {
     // Get Generic Secant State
-    const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    const ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
 
     Bv.set(v.dual());
     if (state->iter != 0 && state->current != -1) {

@@ -78,7 +78,7 @@ GatherNormals(
   // setup the orientation field
   std::string orientationFieldName = basis->name() + " Orientation";
   // setup all fields to be evaluated and constructed
-  pointValues = panzer::PointValues2<ScalarT> (pointRule->getName()+"_",false);
+  pointValues = panzer::PointValues2<double> (pointRule->getName()+"_",false);
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
@@ -98,16 +98,12 @@ postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   orientations = d.orientations_;
-
-  // setup the field data object
-  this->utils.setFieldData(gatherFieldNormals,fm);
   this->utils.setFieldData(pointValues.jac,fm);
-
   faceNormal = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),
 					 "faceNormal",
-					 gatherFieldNormals.dimension(0),
-					 gatherFieldNormals.dimension(1),
-					 gatherFieldNormals.dimension(2));
+					 gatherFieldNormals.extent(0),
+					 gatherFieldNormals.extent(1),
+					 gatherFieldNormals.extent(2));
 }
 
 // **********************************************************************
@@ -121,7 +117,7 @@ evaluateFields(typename Traits::EvalData workset)
 
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   int cellDim = parentCell.getDimension();
-  int numFaces = gatherFieldNormals.dimension(1);
+  int numFaces = gatherFieldNormals.extent(1);
 
   // allocate space that is sized correctly for AD
   auto refEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"ref_edges", 2, cellDim);

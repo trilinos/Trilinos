@@ -47,7 +47,7 @@
 #include <Teuchos_Time.hpp>
 #include <Teuchos_as.hpp>
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
@@ -57,8 +57,6 @@ namespace {
 using Teuchos::Comm;
 using Teuchos::rcp;
 using Teuchos::RCP;
-using Tpetra::Platform;
-using Tpetra::DefaultPlatform;
 using Tpetra::Map;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
@@ -105,19 +103,9 @@ TEUCHOS_STATIC_SETUP()
 }
 
 
-template<class Scalar>
-RCP<const Platform<Scalar> > getDefaultPlatform()
-{
-  if (testMpi) {
-    return DefaultPlatform<Scalar>::getPlatform();
-  }
-  return rcp(new Tpetra::SerialPlatform<Scalar>());
-}
-
-
 template <class LO, class GO, class Scalar>
 void GenerateCrsProblem(int *xoff, int *yoff, int numRHS,
-            const Platform<Scalar> &platform,
+            const RCP<const Teuchos::Comm<int> >& comm,
             RCP<Map<LO,GO> > &map,
             RCP<CrsMatrix<Scalar,LO,GO> > &A,
             RCP<MultiVector<Scalar,LO,GO> > &b,
@@ -135,8 +123,7 @@ void runMatrixTests(RCP<CrsMatrix<Scalar,LO,GO> > A,  RCP<MultiVector<Scalar,LO,
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, Scalar )
 {
   typedef ScalarTraits<Scalar> ST;
-  RCP<const Platform<Scalar> > platform = getDefaultPlatform<Scalar>();
-  RCP<const Comm<int> > comm = platform->getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   if (comm->getSize() != numProcsX*numProcsY) {
     out << "numProcsX*numProcsY must equal numProcs!" << endl;
     success = false;
@@ -220,7 +207,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, 
         int nrhs=k;
         out << "\n*************** Results for " << nrhs << " RHS ";
 
-        GenerateCrsProblem(Xoff.getRawPtr(), Yoff.getRawPtr(), nrhs, *platform,
+        GenerateCrsProblem(Xoff.getRawPtr(), Yoff.getRawPtr(), nrhs,
             map, A, b, bt, xexact, out);
 
         runMatrixTests(A, b, bt, xexact, out);
@@ -304,7 +291,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, 
 //
 template <class LO, class GO, class Scalar>
 void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
-            const Platform<Scalar> &platform,
             RCP<const Map<LO,GO> > &map,
             RCP<CrsMatrix<Scalar,LO,GO> > &A,
             RCP<MultiVector<Scalar,LO,GO> > &b,
@@ -314,7 +300,7 @@ void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
 {
   typedef Tpetra::global_size_t global_size_t;
   Time timer("GenerateCrsProblem",false);
-  RCP<const Comm<int> > comm = platform.getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
   // Determine my global IDs
   ArrayRCP<GO> myGlobalElements = GenerateMyGlobalElements<GO>(numNodesX, numNodesY, numProcsX, comm->getRank());

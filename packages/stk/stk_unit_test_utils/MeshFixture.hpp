@@ -38,38 +38,41 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
+#include <stk_ngp_test/ngp_test.hpp>
 
 namespace stk
 {
 namespace unit_test_util
 {
 
-class MeshFixture : public ::testing::Test
+class MeshFixtureNoTest
 {
 protected:
-    MeshFixture()
+    MeshFixtureNoTest()
     : communicator(MPI_COMM_WORLD), metaData(nullptr), bulkData(nullptr)
     {
         allocate_meta();
     }
 
-    MeshFixture(unsigned spatial_dim)
+    MeshFixtureNoTest(unsigned spatial_dim)
     : communicator(MPI_COMM_WORLD), metaData(nullptr), bulkData(nullptr)
     {
         allocate_meta(spatial_dim);
     }
 
-    MeshFixture(unsigned spatial_dim, const std::vector<std::string>& entityRankNames)
+    MeshFixtureNoTest(unsigned spatial_dim, const std::vector<std::string>& entityRankNames)
     : communicator(MPI_COMM_WORLD), metaData(nullptr), bulkData(nullptr)
     {
         allocate_meta(spatial_dim, entityRankNames);
     }
 
-    virtual ~MeshFixture()
+    virtual ~MeshFixtureNoTest()
     {
         delete bulkData;
         delete metaData;
+        bulkData = nullptr;
+        metaData = nullptr;
     }
 
     void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -156,6 +159,20 @@ protected:
     MPI_Comm communicator;
     stk::mesh::MetaData *metaData = nullptr;
     stk::mesh::BulkData *bulkData = nullptr;
+};
+
+class MeshFixture : public MeshFixtureNoTest, public ::ngp_testing::Test {
+ protected:
+  MeshFixture(){}
+  MeshFixture(unsigned spatial_dim) : MeshFixtureNoTest(spatial_dim) {}
+  MeshFixture(unsigned spatial_dim, const std::vector<std::string>& entityRankNames)
+  : MeshFixtureNoTest(spatial_dim,entityRankNames){}
+
+};
+
+class MeshFixture2D : public MeshFixtureNoTest, public ::ngp_testing::Test {
+ protected:
+  MeshFixture2D() : MeshFixtureNoTest(2) {}
 };
 
 class MeshTestFixture : public MeshFixture

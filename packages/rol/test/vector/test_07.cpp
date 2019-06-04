@@ -52,14 +52,14 @@
 
 #include "ROL_DiagonalOperator.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
 
   typedef std::vector<RealT>    vector;
   typedef ROL::Vector<RealT>    V;
@@ -75,8 +75,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
 
   int iprint = argc - 1;
-  Teuchos::oblackholestream bhs; // outputs nothing
-  std::ostream& outStream = (iprint > 0) ? std::cout : bhs;
+  ROL::nullstream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  if  (iprint > 0) 
+    outStream = ROL::makePtrFromRef(std::cout);
+  else  
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -88,19 +92,19 @@ int main(int argc, char *argv[]) {
     int dim = 10; 
 
     // Create Tpetra::MultiVectors (single vectors) 
-    RCP<vector> x_rcp = rcp( new vector(dim) );
-    RCP<vector> y_rcp = rcp( new vector(dim) );
-    RCP<vector> w_rcp = rcp( new vector(dim,2.0) );
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim);
+    ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(dim);
+    ROL::Ptr<vector> w_ptr = ROL::makePtr<vector>(dim,2.0);
 
-    RCP<V> xs = rcp( new SV( x_rcp ) );
-    RCP<V> ys = rcp( new SV( y_rcp ) );
+    ROL::Ptr<V> xs = ROL::makePtr<SV>( x_ptr );
+    ROL::Ptr<V> ys = ROL::makePtr<SV>( y_ptr );
     
-    SV ws( w_rcp );
+    SV ws( w_ptr );
 
     ROL::RandomizeVector(*xs);
     ROL::RandomizeVector(*ys);
 
-    RCP<LinearOperator> W = rcp( new DiagonalOperator(ws) );
+    ROL::Ptr<LinearOperator> W = ROL::makePtr<DiagonalOperator>(ws);
  
     PrimalVector x(xs,W);
     DualVector   y(ys,W);    
@@ -108,63 +112,63 @@ int main(int argc, char *argv[]) {
     RealT xy = x.dot(y.dual());
     RealT yx = y.dot(x.dual());
 
-    outStream << "\nAbsolute error between x.dot(y.dual()) and y.dot(x.dual()): "
+    *outStream << "\nAbsolute error between x.dot(y.dual()) and y.dot(x.dual()): "
               << std::abs(xy-yx) << "\n";
-    outStream << "x.dot(y.dual()): " << xy << "\n";
-    outStream << "y.dot(x.dual()): " << yx << "\n";
+    *outStream << "x.dot(y.dual()): " << xy << "\n";
+    *outStream << "y.dot(x.dual()): " << yx << "\n";
     if ( std::abs(xy-yx) > errtol ) {
-      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }
 
     RealT xx = std::sqrt(x.dot(x)), xnorm = x.norm();
     RealT yy = std::sqrt(y.dot(y)), ynorm = y.norm();
 
-    outStream << "\nAbsolute error between sqrt(x.dot(x)) and x.norm(): "
+    *outStream << "\nAbsolute error between sqrt(x.dot(x)) and x.norm(): "
               << std::abs(xx-xnorm) << "\n";
-    outStream << "sqrt(x.dot(x)): " << xx << "\n";
-    outStream << "x.norm():       " << xnorm << "\n";
+    *outStream << "sqrt(x.dot(x)): " << xx << "\n";
+    *outStream << "x.norm():       " << xnorm << "\n";
     if ( std::abs(xx-xnorm) > errtol ) {
-      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }
 
-    outStream << "\nAbsolute error between sqrt(y.dot(y)) and y.norm(): "
+    *outStream << "\nAbsolute error between sqrt(y.dot(y)) and y.norm(): "
               << std::abs(yy-ynorm) << "\n";
-    outStream << "sqrt(y.dot(y)): " << yy << "\n";
-    outStream << "y.norm():       " << ynorm << "\n";
+    *outStream << "sqrt(y.dot(y)): " << yy << "\n";
+    *outStream << "y.norm():       " << ynorm << "\n";
     if ( std::abs(yy-ynorm) > errtol ) {
-      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }
 
     // clone z from x, deep copy x into z, norm of z
-    Teuchos::RCP<ROL::Vector<RealT> > z = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > z = x.clone();
     z->set(x);
     RealT znorm = z->norm();
-    outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
+    *outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
     if ( std::abs(xnorm - znorm) > errtol ) {
-      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }
-    Teuchos::RCP<ROL::Vector<RealT> > w = y.clone();
+    ROL::Ptr<ROL::Vector<RealT> > w = y.clone();
     w = y.clone();
     w->set(y);
     RealT wnorm = w->norm();
-    outStream << "\nNorm of ROL::Vector w (clone of y): " << wnorm << "\n";
+    *outStream << "\nNorm of ROL::Vector w (clone of y): " << wnorm << "\n";
     if ( std::abs(ynorm - wnorm) > errtol ) {
-      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }
 
     // Standard tests.
-    RCP<vector> x1_rcp = rcp( new vector(dim) );
-    RCP<vector> y1_rcp = rcp( new vector(dim) );
-    RCP<vector> z1_rcp = rcp( new vector(dim) );
+    ROL::Ptr<vector> x1_ptr = ROL::makePtr<vector>(dim);
+    ROL::Ptr<vector> y1_ptr = ROL::makePtr<vector>(dim);
+    ROL::Ptr<vector> z1_ptr = ROL::makePtr<vector>(dim);
 
-    RCP<V> x1s = rcp( new SV( x1_rcp ) );
-    RCP<V> y1s = rcp( new SV( y1_rcp ) );
-    RCP<V> z1s = rcp( new SV( z1_rcp ) );
+    ROL::Ptr<V> x1s = ROL::makePtr<SV>( x1_ptr );
+    ROL::Ptr<V> y1s = ROL::makePtr<SV>( y1_ptr );
+    ROL::Ptr<V> z1s = ROL::makePtr<SV>( z1_ptr );
 
     ROL::RandomizeVector(*x1s);
     ROL::RandomizeVector(*y1s);
@@ -175,8 +179,8 @@ int main(int argc, char *argv[]) {
     PrimalVector y1(y1s,W);
     PrimalVector z1(z1s,W);
 
-    std::vector<RealT> consistency = x1.checkVector(y1, z1, true, outStream);
-    ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
+    std::vector<RealT> consistency = x1.checkVector(y1, z1, true, *outStream);
+    ROL::StdVector<RealT> checkvec( ROL::makePtrFromRef(consistency) );
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }
@@ -184,7 +188,7 @@ int main(int argc, char *argv[]) {
   }
 
   catch (std::logic_error err) {
-    outStream << err.what() << "\n";
+    *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
 

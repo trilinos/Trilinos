@@ -48,6 +48,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_UnitTests_Swap
+  SOURCES
+    CrsMatrix_UnitTests_Swap
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NonlocalAfterResume
   SOURCES
     CrsMatrix_NonlocalAfterResume
@@ -61,16 +72,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NodeConversion
   SOURCES
     CrsMatrix_NodeConversion
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ""
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_TriSolve
-  SOURCES
-    CrsMatrix_TriSolve
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -261,6 +262,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_ReplaceDiagonal
+  SOURCES
+    CrsMatrix_ReplaceDiagonal
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_MultipleFillCompletes
   SOURCES
     CrsMatrix_MultipleFillCompletes
@@ -328,6 +339,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ""
   COMM serial mpi
   NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Equilibration
+  SOURCES
+    Equilibration.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_StaticImportExport
+  SOURCES
+    CrsMatrix_StaticImportExport
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
   STANDARD_PASS_OUTPUT
   )
 

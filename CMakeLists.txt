@@ -59,7 +59,7 @@
 
 # To be safe, define your minimum CMake version.  This may be newer than the
 # min required by TriBITS.
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
 
 # Must set the project name as a variable at very beginning before including anything else
 # We set the project name in a separate file so CTest scripts can use it.
@@ -85,9 +85,6 @@ SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT ON)
 SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
 # Don't allow disabled subpackages to be excluded from tarball
 SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
-# Set up to automatically use standard dev envs by default
-SET(${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND
-  "${CMAKE_CURRENT_LIST_DIR}/cmake/StdDevEnvs.cmake" )
 
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()

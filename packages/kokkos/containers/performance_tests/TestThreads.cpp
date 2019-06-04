@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -81,12 +81,12 @@ protected:
 
     std::cout << "Threads: " << num_threads << std::endl;
 
-    Kokkos::Threads::initialize( num_threads );
+    Kokkos::initialize( Kokkos::InitArguments(num_threads) );
   }
 
   static void TearDownTestCase()
   {
-    Kokkos::Threads::finalize();
+    Kokkos::finalize();
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -54,7 +54,7 @@ double bidir(double *alpha, /* vector of Lanczos scalars */
              double  ritz,  /* approximate eigenvalue  of T */
              double *s,     /* approximate eigenvector of T */
              double  hurdle /* hurdle for local maximum in recurrence */
-             )
+)
 
 {
   int    i;        /* index */
@@ -72,7 +72,7 @@ double bidir(double *alpha, /* vector of Lanczos scalars */
   while (i <= j && iterate) {
     /* follow the forward recurrence until a local maximum > 1.0 */
     s[i] = -((alpha[i - 1] - ritz) * s[i - 1] + beta[i - 1] * s[i - 2]) / beta[i];
-    if (fabs(s[i - 1]) > hurdle && i > 2) {
+    if (fabs(s[i - 1]) > hurdle) {
       if (fabs(s[i]) < fabs(s[i - 1]) && fabs(s[i - 1]) > fabs(s[i - 2])) {
         iterate = FALSE;
         k       = i - 1;

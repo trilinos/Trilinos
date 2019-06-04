@@ -27,7 +27,7 @@ if ( NETCDF_NCDUMP_BINARY )
 else()
    find_program (NETCDF_NCDUMP_BINARY
 	     NAME ncdump
-	     PATHS 
+	     PATHS
 	       ${NetCDF_BINARY_DIR}
                ${Netcdf_LIBRARY_DIRS}/../bin
                $ENV{ACCESS}/bin
@@ -37,7 +37,7 @@ else()
 	        ${NetCDF_DIR}/bin
 	     )
 endif()
-	     
+
 TRIBITS_ADD_TEST(
 	ExoIICTests
 	NAME CreateEdgeFaceWithConcats
@@ -79,7 +79,7 @@ IF ( NETCDF_NCDUMP_BINARY )
     testrd_ss
     testrdwt
     testcp
-    testcp_ln
+    testcp_tran
     testcp_nl
     testcpd
     testwt_clb
@@ -100,6 +100,8 @@ IF ( NETCDF_NCDUMP_BINARY )
     rd_wt_mesh
     test-empty
     testwt-compress
+    testwt-results
+    testwt-oned
   )
 
   IF (SEACASExodus_ENABLE_THREADSAFE)
@@ -131,35 +133,37 @@ IF ( NETCDF_NCDUMP_BINARY )
 
   # NOTE: The "LINKER_LANGUAGE CXX" is used to workaround an issue with
   #       the trilinos cmake adding the pamgen and pamgen_extras libraries as
-  #       a dependency.  These are C++ libraries and result in unresolved depedencies
+  #       a dependency.  These are C++ libraries and result in unresolved dependencies
   #       when built with shareable libraries on some platforms....
 
   FOREACH ( testName ${cbind_OLDTESTS} )
     TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX)
   ENDFOREACH ( testName )
 
+  TRIBITS_ADD_EXECUTABLE( testwt-localization NOEXEPREFIX NOEXESUFFIX SOURCES testwt-localization.C LINKER_LANGUAGE CXX)
+
   TRIBITS_ADD_ADVANCED_TEST(
    exodus_unit_tests
-   TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall 
+   TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
 	  OUTPUT_FILE exodus_unit_tests.out
 	  PASS_ANY
    TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold${TS}
 		         ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
    COMM mpi serial
    OVERALL_NUM_MPI_PROCS 1
-   FINAL_PASS_REGULAR_EXPRESSION 
+   FINAL_PASS_REGULAR_EXPRESSION
   )
 
   if ( TPL_Netcdf_Enables_Netcdf4 )
     TRIBITS_ADD_ADVANCED_TEST(
      exodus_unit_tests_nc4_env
-     TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall netcdf4 
+     TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall netcdf4
 	    OUTPUT_FILE exodus_unit_tests.out
 	    PASS_ANY
-     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold${TS} 
+     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold${TS}
                            ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
      COMM mpi serial
-     FINAL_PASS_REGULAR_EXPRESSION 
+     FINAL_PASS_REGULAR_EXPRESSION
     )
 
     TRIBITS_ADD_ADVANCED_TEST(
@@ -167,13 +171,26 @@ IF ( NETCDF_NCDUMP_BINARY )
      TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testnc4
 	    OUTPUT_FILE exodus_nc4_unit_tests.out
 	    PASS_ANY
-     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_nc4_unit_tests.gold 
+     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_nc4_unit_tests.gold
 		           ${CMAKE_CURRENT_BINARY_DIR}/exodus_nc4_unit_tests.out
      COMM mpi serial
      OVERALL_NUM_MPI_PROCS 1
-     FINAL_PASS_REGULAR_EXPRESSION 
+     FINAL_PASS_REGULAR_EXPRESSION
     )
   endif()
+
+#  if ( TPL_Netcdf_Enables_Netcdf5 )
+    TRIBITS_ADD_ADVANCED_TEST(
+     exodus_unit_tests_nc5_env
+     TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall netcdf5
+	    OUTPUT_FILE exodus_unit_tests.out
+	    PASS_ANY
+     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold${TS}
+                           ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
+     COMM mpi serial
+     FINAL_PASS_REGULAR_EXPRESSION
+    )
+#  endif()
 ELSE()
   MESSAGE(STATUS
       "WARNING: ${PACKAGE_NAME}: Exodus unit tests will not be run due to failure finding ncdump executable.")

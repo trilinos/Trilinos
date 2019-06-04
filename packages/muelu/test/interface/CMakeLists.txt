@@ -113,7 +113,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
     IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
-
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterTpetra"
@@ -176,10 +175,29 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
 ENDIF()
 
-ADD_SUBDIRECTORY(EasyParameterListInterpreter)
-ADD_SUBDIRECTORY(EasyParameterListInterpreter-heavy)
-ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
-ADD_SUBDIRECTORY(FactoryParameterListInterpreter-heavy)
-ADD_SUBDIRECTORY(MLParameterListInterpreter)
-ADD_SUBDIRECTORY(MLParameterListInterpreter2)
-ADD_SUBDIRECTORY(Output)
+
+# Select appropriate set of input and gold files, add make target for rebase.
+
+ADD_SUBDIRECTORY(default)
+
+IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT OR ${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG)
+  ADD_SUBDIRECTORY(complex)
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+  ADD_SUBDIRECTORY(kokkos)
+
+  IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT OR ${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG)
+    ADD_SUBDIRECTORY(kokkos-complex)
+  ENDIF()
+ENDIF()
+
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(rebase_cp
+  SOURCE_FILES rebase.sh
+  )
+
+ADD_CUSTOM_TARGET(
+  rebase
+  COMMAND ./rebase.sh "${CMAKE_CURRENT_SOURCE_DIR}"
+  )

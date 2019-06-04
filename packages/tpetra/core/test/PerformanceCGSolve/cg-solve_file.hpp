@@ -45,7 +45,7 @@
 #define CG_SOLVE_FILE_HPP
 
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
@@ -73,18 +73,6 @@ struct result_struct {
     addtime(add),dottime(dot),matvectime(matvec),
     final_residual(res),niters(niter) {};
 };
-
-
-template<class Node>
-Teuchos::XMLTestNode machine_configuration(Node node);
-
-template<class Node>
-Teuchos::XMLTestNode machine_configuration(Node node) {
-  Teuchos::XMLTestNode config = Teuchos::PerfTest_MachineConfig();
-  config.addString("KokkosNodeType",node->name());
-  return config;
-}
-
 
 template<class CrsMatrix>
 Teuchos::XMLTestNode test_entry(
@@ -143,7 +131,7 @@ Teuchos::XMLTestNode test_entry(
 
 template<class CrsMatrix, class Vector>
 result_struct
-cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int myproc)
+cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int myproc, double tolerance, int max_iter)
 {
   static_assert (std::is_same<typename CrsMatrix::scalar_type, typename Vector::scalar_type>::value,
                  "The CrsMatrix and Vector template parameters must have the same scalar_type.");
@@ -152,8 +140,8 @@ cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector
   typedef typename Vector::mag_type magnitude_type;
   typedef typename Vector::local_ordinal_type LO;
   Teuchos::RCP<Vector> r,p,Ap;
-  int max_iter=200;
-  double tolerance = 1e-8;
+  //int max_iter=200;
+  //double tolerance = 1e-8;
   r = Tpetra::createVector<ScalarType>(A->getRangeMap());
   p = Tpetra::createVector<ScalarType>(A->getRangeMap());
   Ap = Tpetra::createVector<ScalarType>(A->getRangeMap());
@@ -260,7 +248,6 @@ run (int argc, char *argv[])
   typedef typename Tpetra::Map<>::local_ordinal_type    LO;
   typedef typename Tpetra::Map<>::global_ordinal_type   GO;
 
-  typedef Tpetra::MpiPlatform<Node>                     Platform;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node>          crs_matrix_type;
   typedef Tpetra::Vector<Scalar,LO,GO,Node>             vec_type;
   typedef Tpetra::Map<LO,GO,Node>                       map_type;
@@ -312,21 +299,19 @@ run (int argc, char *argv[])
   (void) MPI_Comm_rank (MPI_COMM_WORLD, &myRank);
 #endif // HAVE_MPI
 
-  int device = myRank % numgpus;
-  if(device>=skipgpu) device++;
-  int verboseint = verbose?1:0;
-  Teuchos::ParameterList params;
-  params.set("Num Threads",numthreads,"Number of Threads per Threadteam");
-  params.set("Num Teams",numteams,"Number of Threadteams");
-  params.set("Verbose",verboseint,"Verbose output");
-  params.set("Device",device,"Device Number");
+  Kokkos::InitArguments kokkosArgs;
+  kokkosArgs.num_threads = numthreads;
+  kokkosArgs.num_numa = numteams; // ???
+  kokkosArgs.device_id = myRank % numgpus;
+  kokkosArgs.skip_device = skipgpu;
+  kokkosArgs.disable_warnings = ! verbose;
+
+  Kokkos::initialize (kokkosArgs);
 
   //
   // Get the communicator and node
   //
-  RCP<Node> node (new Node (params));
-  Platform platform (node);
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   //
   // Say hello, print some communicator info
@@ -343,10 +328,10 @@ run (int argc, char *argv[])
   //
   RCP<crs_matrix_type> A;
   if (! filename.empty ()) {
-    A = Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile (filename, comm, node);
+    A = Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile (filename, comm);
   }
   else {
-    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm, node);
+    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm);
   }
 
   if (printMatrix) {
@@ -369,11 +354,17 @@ run (int argc, char *argv[])
   if (nsize < 0) {
     typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
     b = reader_type::readVectorFile (filename_vector, map->getComm (),
-                                     map->getNode (), map);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                     map->getNode (),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                     map);
   } else {
     typedef Tpetra::Utils::MatrixGenerator<crs_matrix_type> gen_type;
-    b = gen_type::generate_miniFE_vector (nsize, map->getComm (),
-                                          map->getNode ());
+    b = gen_type::generate_miniFE_vector (nsize, map->getComm ()
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                          , map->getNode ()
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                         );
   }
 
   // The vector x on input is the initial guess for the CG solve.
@@ -381,12 +372,11 @@ run (int argc, char *argv[])
   RCP<vec_type> x (new vec_type (A->getDomainMap ()));
 
   // Solve the linear system Ax=b using CG.
-  result_struct results = cg_solve (A, b, x, myRank);
+  result_struct results = cg_solve (A, b, x, myRank, tolerance, niters);
 
   // Print results.
   if (myRank == 0) {
-    Teuchos::XMLTestNode machine_config =
-      machine_configuration (map->getNode ());
+    Teuchos::XMLTestNode machine_config = Teuchos::PerfTest_MachineConfig();
     Teuchos::XMLTestNode test =
       test_entry (filename, filename_vector, nsize, comm->getSize (), numteams,
                   numthreads, A, results, niters, tolerance, tol_small,

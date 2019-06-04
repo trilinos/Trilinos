@@ -49,16 +49,16 @@
 
 #include "Tpetra_Experimental_BlockCrsMatrix.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 
 #include "Kokkos_Random.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
 namespace { // (anonymous)
@@ -100,14 +100,14 @@ localApplyBlockNoTrans (Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Nod
   // NOTE (mfh 01 Jun 2016) This is a host code, so we have to sync
   // all the objects to host.  We sync them back to device after we're
   // done.  That's why all objects come in by nonconst reference.
-  A.template sync<Kokkos::HostSpace> ();
-  X.template sync<Kokkos::HostSpace> ();
-  Y.template sync<Kokkos::HostSpace> ();
-  Y.template modify<Kokkos::HostSpace> (); // only Y gets modified here
+  A.sync_host ();
+  X.sync_host ();
+  Y.sync_host ();
+  Y.modify_host (); // only Y gets modified here
 
   // Get the matrix values.  Blocks are stored contiguously, each
   // block in row-major order (Kokkos::LayoutRight).
-  auto val = A.template getValues<Kokkos::HostSpace> ();
+  auto val = A.getValuesHost ();
 
   auto gblGraph = A.getCrsGraph ();
   auto lclGraph = G.getLocalGraph ();
@@ -136,7 +136,7 @@ localApplyBlockNoTrans (Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Nod
         const LO meshCol = indHost[absBlkOff];
 
         auto A_cur_1d = Kokkos::subview (val, absBlkOff * blockSize * blockSize);
-        little_blk_type A_cur (A_cur_1d.ptr_on_device (), blockSize, blockSize);
+        little_blk_type A_cur (A_cur_1d.data (), blockSize, blockSize);
         auto X_cur = X.getLocalBlock (meshCol, j);
 
         GEMV (alpha, A_cur, X_cur, Y_lcl); // Y_lcl += alpha*A_cur*X_cur
@@ -511,11 +511,11 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   // because, for CudaUVMSpace, the HostMirror is the same as the
   // original.  This causes segfaults in the pseudorandom number
   // generator, due to CUDA code trying to access host memory.
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> host_device_type;
 #else
   typedef Kokkos::View<SC**, Kokkos::LayoutRight, device_type>::host_mirror_space host_device_type;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
   typedef host_device_type::execution_space host_execution_space;
   typedef Kokkos::View<SC**, Kokkos::LayoutRight, host_device_type> block_type;
 
@@ -538,8 +538,8 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   RCP<matrix_type> A = rcp (new matrix_type (*graph, blkSize));
 
   // We're filling on the host.
-  A->sync<Kokkos::HostSpace> ();
-  A->modify<Kokkos::HostSpace> ();
+  A->sync_host ();
+  A->modify_host ();
 
   // This only matters if filling with random values.  We only do that
   // if opts.runTest is true (that is, if we're testing correctness of
@@ -555,7 +555,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   block_type curBlk ("curBlk", blkSize, blkSize);
   // We only use this if filling with random values.
   Kokkos::View<SC*, Kokkos::LayoutRight, host_device_type,
-    Kokkos::MemoryUnmanaged> curBlk_1d (curBlk.ptr_on_device (),
+    Kokkos::MemoryUnmanaged> curBlk_1d (curBlk.data (),
                                         blkSize * blkSize);
   if (! opts.runTest) {
     // For benchmarks, we don't care so much about the values; we just
@@ -582,7 +582,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
       }
       const LO lclColInd = lclColInds[k];
       const LO err =
-        A->replaceLocalValues (lclRow, &lclColInd, curBlk.ptr_on_device (), 1);
+        A->replaceLocalValues (lclRow, &lclColInd, curBlk.data (), 1);
       TEUCHOS_TEST_FOR_EXCEPTION(err != 1, std::logic_error, "Bug");
     }
   }
@@ -606,73 +606,72 @@ main (int argc, char* argv[])
   using std::endl;
   typedef Tpetra::Vector<>::scalar_type SC;
 
-  // RAII protection for MPI_Initialize / MPI_Finalize.  This first
-  // calls MPI_Initialize (if building with MPI).  At the end of this
-  // scope / when main() returns or throws an exception, it calls
-  // MPI_Finalize (if building with MPI).
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
-  // Think of this as a wrapped version of MPI_COMM_WORLD.
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-
-  // The output stream 'out' will ignore any output not from Process 0.
-  RCP<Teuchos::FancyOStream> pOut = getOutputStream (*comm);
-  Teuchos::FancyOStream& out = *pOut;
-
-  // Read command-line options into the 'opts' struct.
-  CmdLineOpts opts;
-  {
-    Teuchos::CommandLineProcessor clp;
-    setCmdLineOpts (opts, clp);
-    int result = parseCmdLineOpts (clp, argc, argv);
-    if (result == 1) { // help printed
-      return EXIT_SUCCESS;
-    }
-    else if (result == -1) { // parse error
-      return EXIT_FAILURE;
-    }
-    result = checkCmdLineOpts (out, *comm, opts);
-    if (result != 0) {
-      return EXIT_FAILURE;
-    }
-  }
-
-  out << "Command-line options:" << endl;
-  printCmdLineOpts (out, opts);
-
-  auto G = getTpetraGraph (comm, opts);
-  auto A = getTpetraBlockCrsMatrix (out, G, opts);
-  Tpetra::Vector<> X (A->getDomainMap ());
-  Tpetra::Vector<> Y (A->getRangeMap ());
-
-  // Fill X with values that don't increase the max-norm of results.
-  // That way, repeated mat-vecs won't overflow.  This matters because
-  // some processors do a silly thing and handle Inf or NaN (or even
-  // denorms) via traps.  This is very expensive, so if the norms
-  // increase or decrease a lot, that might trigger the slow case.
-  const SC X_val = static_cast<SC> (1.0) /
-    static_cast<SC> (opts.numEntPerRow * opts.blockSize);
-  X.putScalar (X_val);
-  Y.putScalar (0.0);
-
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
   bool success = true;
-  if (opts.runTest) {
-    const bool lclSuccess = compareLocalMatVec (out, *A, X, Y);
-    success = success && lclSuccess;
-  }
-  else {
-    auto timer =
-      TimeMonitor::getNewCounter ("Tpetra BlockCrsMatrix apply (mat-vec)");
+  {
+    auto comm = Tpetra::getDefaultComm ();
+
+    // Output stream 'out' will ignore output not from Process 0.
+    RCP<Teuchos::FancyOStream> pOut = getOutputStream (*comm);
+    Teuchos::FancyOStream& out = *pOut;
+
+    // Read command-line options into the 'opts' struct.
+    CmdLineOpts opts;
     {
-      TimeMonitor timeMon (*timer);
-      for (int trial = 0; trial < opts.numTrials; ++trial) {
-        A->apply (X, Y);
+      Teuchos::CommandLineProcessor clp;
+      setCmdLineOpts (opts, clp);
+      int result = parseCmdLineOpts (clp, argc, argv);
+      if (result == 1) { // help printed
+        return EXIT_SUCCESS;
+      }
+      else if (result == -1) { // parse error
+        return EXIT_FAILURE;
+      }
+      result = checkCmdLineOpts (out, *comm, opts);
+      if (result != 0) {
+        return EXIT_FAILURE;
       }
     }
+
+    out << "Command-line options:" << endl;
+    printCmdLineOpts (out, opts);
+
+    auto G = getTpetraGraph (comm, opts);
+    auto A = getTpetraBlockCrsMatrix (out, G, opts);
+    Tpetra::Vector<> X (A->getDomainMap ());
+    Tpetra::Vector<> Y (A->getRangeMap ());
+
+    // Fill X with values that don't increase the max-norm of results.
+    // That way, repeated mat-vecs won't overflow.  This matters
+    // because some processors do a silly thing and handle Inf or NaN
+    // (or even denorms) via traps.  This is very expensive, so if the
+    // norms increase or decrease a lot, that might trigger the slow
+    // case.
+    const SC X_val = static_cast<SC> (1.0) /
+      static_cast<SC> (opts.numEntPerRow * opts.blockSize);
+    X.putScalar (X_val);
+    Y.putScalar (0.0);
+
+    if (opts.runTest) {
+      const bool lclSuccess = compareLocalMatVec (out, *A, X, Y);
+      success = success && lclSuccess;
+    }
+    else {
+      auto timer =
+        TimeMonitor::getNewCounter ("Tpetra BlockCrsMatrix apply (mat-vec)");
+      {
+        TimeMonitor timeMon (*timer);
+        for (int trial = 0; trial < opts.numTrials; ++trial) {
+          A->apply (X, Y);
+        }
+      }
+    }
+
+    if (! opts.runTest) {
+      TimeMonitor::report (comm.ptr (), out);
+    }
   }
 
-  if (! opts.runTest) {
-    TimeMonitor::report (comm.ptr (), out);
-  }
   if (success) {
     return EXIT_SUCCESS;
   }

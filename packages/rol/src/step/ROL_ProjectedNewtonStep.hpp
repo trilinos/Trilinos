@@ -59,8 +59,8 @@ template <class Real>
 class ProjectedNewtonStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<Vector<Real> > gp_; ///< Additional vector storage
-  Teuchos::RCP<Vector<Real> > d_;  ///< Additional vector storage
+  ROL::Ptr<Vector<Real> > gp_; ///< Additional vector storage
+  ROL::Ptr<Vector<Real> > d_;  ///< Additional vector storage
   int verbosity_;                  ///< Verbosity level
   const bool computeObj_;
   bool useProjectedGrad_;          ///< Whether or not to use to the projected gradient criticality measure
@@ -74,15 +74,15 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a ProjectedNewtonStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
+      specifications are passed in through a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  ProjectedNewtonStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
-    : Step<Real>(), gp_(Teuchos::null), d_(Teuchos::null),
+  ProjectedNewtonStep( ROL::ParameterList &parlist, const bool computeObj = true )
+    : Step<Real>(), gp_(ROL::nullPtr), d_(ROL::nullPtr),
       verbosity_(0), computeObj_(computeObj), useProjectedGrad_(false) {
     // Parse ParameterList
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    ROL::ParameterList& Glist = parlist.sublist("General");
     useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
@@ -99,7 +99,7 @@ public:
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1);
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Compute projected Newton step
     // ---> Apply inactive-inactive block of inverse hessian to gradient
@@ -118,7 +118,7 @@ public:
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1);
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate and store previous step
     algo_state.iter++;

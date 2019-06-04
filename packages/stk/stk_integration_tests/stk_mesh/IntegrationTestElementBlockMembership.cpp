@@ -7,8 +7,6 @@
 /*--------------------------------------------------------------------*/
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <Ioss_IOFactory.h>             // for IOFactory
-#include <Ioss_Region.h>                // for Region
 #include <init/Ionit_Initializer.h>     // for Initializer
 #include <stddef.h>                     // for size_t, nullptr
 #include <string>                       // for string
@@ -89,7 +87,8 @@ public:
 protected:
     virtual void check_difference(stk::mesh::Entity element1, stk::mesh::Entity element2)
     {
-        EXPECT_TRUE(stk::mesh::impl::are_entity_element_blocks_equivalent(get_bulk(), element1, element2));
+        std::vector<stk::mesh::PartOrdinal> scratch1, scratch2;
+        EXPECT_TRUE(stk::mesh::impl::are_entity_element_blocks_equivalent(get_bulk(), element1, element2, scratch1, scratch2));
     }
 };
 
@@ -103,7 +102,8 @@ public:
 protected:
     virtual void check_difference(stk::mesh::Entity element1, stk::mesh::Entity element2)
     {
-        EXPECT_FALSE(stk::mesh::impl::are_entity_element_blocks_equivalent(get_bulk(), element1, element2));
+        std::vector<stk::mesh::PartOrdinal> scratch1, scratch2;
+        EXPECT_FALSE(stk::mesh::impl::are_entity_element_blocks_equivalent(get_bulk(), element1, element2, scratch1, scratch2));
     }
 };
 

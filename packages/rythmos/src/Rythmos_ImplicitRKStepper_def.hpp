@@ -654,9 +654,9 @@ ImplicitRKStepper<Scalar>::get_x_space() const
 
 template<class Scalar>
 void ImplicitRKStepper<Scalar>::addPoints(
-    const Array<Scalar>& time_vec
-    ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    const Array<Scalar>& /* time_vec */
+    ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& /* x_vec */
+    ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& /* xdot_vec */
     )
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
@@ -709,7 +709,7 @@ void ImplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 
 
 template<class Scalar>
-void ImplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
+void ImplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& /* time_vec */)
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
 }

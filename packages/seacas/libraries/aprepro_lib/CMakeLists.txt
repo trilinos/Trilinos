@@ -11,6 +11,10 @@ SET(APREPRO_VERSION_PATCH "0")
 SET(APREPRO_VERSION "${APREPRO_VERSION_MAJOR}.${APREPRO_VERSION_MINOR}")
 SET(APREPRO_VERSION_FULL "${APREPRO_VERSION}.${APREPRO_VERSION_PATCH}")
 
+IF (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodus)
+  ADD_DEFINITIONS(-DEXODUS_SUPPORT)
+ENDIF()
+
 INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -29,16 +33,17 @@ SET(HEADERS
 )
 
 SET(SOURCES
- apr_aprepro.cc 
- apr_util.cc 
- apr_stats.cc 
- apr_init.cc 
- apr_builtin.cc 
- apr_units.cc 
+ apr_aprepro.cc
+ apr_util.cc
+ apr_stats.cc
+ apr_init.cc
+ apr_builtin.cc
+ apr_units.cc
  apr_tokenize.cc
- apr_scanner.cc  
+ apr_scanner.cc
  apr_getline_int.c
  ${BISON_LIB_SOURCE}
+ apr_exodus.cc
  apr_array.cc
 )
 
@@ -51,7 +56,7 @@ if(GENERATE_FLEX_FILES)
 
   add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/apr_scanner.cc
                      COMMAND ${FLEX_EXE}
-                     ARGS -o apr_scanner.cc
+                     ARGS -o apr_scanner.cc --noline
 		        ${CMAKE_CURRENT_SOURCE_DIR}/aprepro.ll
                      MAIN_DEPENDENCY aprepro.ll
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -72,7 +77,7 @@ if(GENERATE_BISON_FILES)
 
   add_custom_command(OUTPUT  apr_parser.cc
                      COMMAND ${BISON_EXE}
-                     ARGS --yacc --defines=aprepro_parser.h --output apr_parser.cc
+                     ARGS --defines=aprepro_parser.h --output apr_parser.cc
                         ${CMAKE_CURRENT_SOURCE_DIR}/aprepro.yy
                      MAIN_DEPENDENCY aprepro.yy
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -86,17 +91,31 @@ if(USE_TRIBITS)
     SOURCES ${SOURCES}
   )
 
+if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+   # add a target to generate API documentation with Doxygen
+   if(SEACASProj_ENABLE_DOXYGEN)
+     find_package(Doxygen)
+     if(DOXYGEN_FOUND)
+       add_custom_command(TARGET aprepro_lib POST_BUILD
+          COMMAND ${DOXYGEN_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile
+          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+          COMMENT "Generating Aprepro API documentation with Doxygen" VERBATIM
+        )
+     endif(DOXYGEN_FOUND)
+   endif()
+endif()
+
 if(${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
   add_executable(aprepro_test_app apr_test.cc)
   target_link_libraries(aprepro_test_app aprepro_lib)
 
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_lib_unit_test
- TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro_test_app 
-        ARGS -o test.output ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app 
+ TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro_test_app
+        ARGS -o test.output ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app
   OUTPUT_FILE test.stderr
   PASS_ANY
- TEST_1 CMND sed ARGS s+${CMAKE_CURRENT_SOURCE_DIR}++ 
+ TEST_1 CMND sed ARGS s+${CMAKE_CURRENT_SOURCE_DIR}++
 		       ${CMAKE_CURRENT_BINARY_DIR}/test.stderr
   OUTPUT_FILE filtered.output
   PASS_ANY
@@ -106,9 +125,9 @@ TRIBITS_ADD_ADVANCED_TEST(
  TEST_3 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test.stderr.gold
 		       ${CMAKE_CURRENT_BINARY_DIR}/filtered.output
- COMM mpi serial		      
+ COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
- FINAL_PASS_REGULAR_EXPRESSION 
+ FINAL_PASS_REGULAR_EXPRESSION
 )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -124,9 +143,9 @@ TRIBITS_ADD_ADVANCED_TEST(
  TEST_2 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test-array.stderr.gold
 		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.stderr
- COMM mpi serial		      
+ COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
- FINAL_PASS_REGULAR_EXPRESSION 
+ FINAL_PASS_REGULAR_EXPRESSION
 )
 endif()
 

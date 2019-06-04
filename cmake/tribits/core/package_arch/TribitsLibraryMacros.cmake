@@ -47,6 +47,7 @@ INCLUDE(AppendStringVar)
 INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(TribitsGeneralMacros)
+INCLUDE(TribitsReportInvalidTribitsUsage)
 INCLUDE(SetAndIncDirs)
 
 ###
@@ -458,6 +459,11 @@ ENDFUNCTION()
 #
 # **Miscellaneous Notes (TRIBITS_ADD_LIBRARY())**
 #
+# When the file ``Version.cmake`` exists and the CMake variables
+# ``${PROJECT_NAME}_VERSION`` and ``${PROJECT_NAME}_MAJOR_VERSION`` are
+# defined, then produced shared libraries will be given the standard SOVERSION
+# symlinks (see `<projectDir>/Version.cmake`_).
+#
 # **WARNING:** Do **NOT** use the built-in CMake command ``ADD_DEFINITIONS()``
 # to add defines ``-D<someDefine>`` to the compile command line that will
 # affect any of the header files in the package!  These CMake-added defines
@@ -478,12 +484,14 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     # This is a subpackage being processed
 
     IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_LIBRARY()"
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_LIBRARY()"
         " in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
     IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_ADD_LIBRARY() before "
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_ADD_LIBRARY() before "
         " TRIBITS_SUBPACKAGE_POSTPROCESS() in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
@@ -491,13 +499,15 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
 
     # This is a package being processed
 
-    IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_PACKAGE() before TRIBITS_ADD_LIBRARY()"
-        " in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_PACKAGE() or TRIBITS_PACKAGE_DECL() before"
+        " TRIBITS_ADD_LIBRARY() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
     IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
-      MESSAGE(FATAL_ERROR "Must call TRIBITS_ADD_LIBRARY() before "
+      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+        "Must call TRIBITS_ADD_LIBRARY() before "
         " TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
     ENDIF()
 
@@ -834,12 +844,16 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
       LABELS ${PACKAGE_NAME}Libs ${PARENT_PACKAGE_NAME}Libs
       )
 
-    SET_TARGET_PROPERTIES(
-      ${LIBRARY_NAME}
-      PROPERTIES
-      VERSION ${${PROJECT_NAME}_VERSION}
-      SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}
+    IF (NOT "${${PROJECT_NAME}_VERSION}" STREQUAL "" AND
+      NOT "${${PROJECT_NAME}_MAJOR_VERSION}" STREQUAL ""
       )
+      SET_TARGET_PROPERTIES(
+        ${LIBRARY_NAME}
+        PROPERTIES
+        VERSION ${${PROJECT_NAME}_VERSION}
+        SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}
+        )
+    ENDIF()
 
     PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
     PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})

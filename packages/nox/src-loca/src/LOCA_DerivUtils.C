@@ -83,7 +83,7 @@ LOCA::DerivUtils::~DerivUtils()
 }
 
 Teuchos::RCP<LOCA::DerivUtils>
-LOCA::DerivUtils::clone(NOX::CopyType type) const
+LOCA::DerivUtils::clone(NOX::CopyType /* type */) const
 {
   return Teuchos::rcp(new DerivUtils(*this));  //Call Copy Constructor
 }

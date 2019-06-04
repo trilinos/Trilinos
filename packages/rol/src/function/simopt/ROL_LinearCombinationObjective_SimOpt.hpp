@@ -45,34 +45,34 @@
 #define ROL_LINEARCOMBINATIONOBJECTIVE_SIMOPT_H
 
 #include "ROL_Objective_SimOpt.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 
 namespace ROL {
 
 template <class Real>
 class LinearCombinationObjective_SimOpt : public Objective_SimOpt<Real> {
 private:
-  const std::vector<Teuchos::RCP<Objective_SimOpt<Real> > > obj_;
+  const std::vector<ROL::Ptr<Objective_SimOpt<Real> > > obj_;
   std::vector<Real> weights_;
   size_t size_;
 
-  Teuchos::RCP<Vector<Real> > udual_, zdual_;
+  ROL::Ptr<Vector<Real> > udual_, zdual_;
   bool uinitialized_, zinitialized_;
 
 public:
-  LinearCombinationObjective_SimOpt(const std::vector<Teuchos::RCP<Objective_SimOpt<Real> > > &obj)
+  LinearCombinationObjective_SimOpt(const std::vector<ROL::Ptr<Objective_SimOpt<Real> > > &obj)
     : Objective_SimOpt<Real>(), obj_(obj),
-      udual_(Teuchos::null), zdual_(Teuchos::null),
+      udual_(ROL::nullPtr), zdual_(ROL::nullPtr),
       uinitialized_(false), zinitialized_(false) {
     size_ = obj_.size();
     weights_.clear(); weights_.assign(size_,static_cast<Real>(1));
   }
 
   LinearCombinationObjective_SimOpt(const std::vector<Real> &weights,
-                                    const std::vector<Teuchos::RCP<Objective_SimOpt<Real> > > &obj)
+                                    const std::vector<ROL::Ptr<Objective_SimOpt<Real> > > &obj)
     : Objective_SimOpt<Real>(), obj_(obj),
       weights_(weights), size_(weights.size()),
-      udual_(Teuchos::null), zdual_(Teuchos::null),
+      udual_(ROL::nullPtr), zdual_(ROL::nullPtr),
       uinitialized_(false), zinitialized_(false) {}
 
   void update(const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1) {

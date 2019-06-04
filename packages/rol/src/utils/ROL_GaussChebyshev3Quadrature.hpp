@@ -65,7 +65,7 @@ public:
   std::vector<std::vector<Real> > test(const bool printToStream = true,
                                        std::ostream &outStream = std::cout) const {
     const int deg = 2*nQuad_-1;
-    const Real pi(Teuchos::ScalarTraits<Real>::pi()), two(2), three(3), half(0.5), C(4.0/Teuchos::ScalarTraits<Real>::pi());
+    const Real pi(ROL::ScalarTraits<Real>::pi()), two(2), three(3), half(0.5), C(4.0/ROL::ScalarTraits<Real>::pi());
     std::vector<Real> tmp(4);
     std::vector<std::vector<Real> > out(deg+1,tmp);
     std::vector<Real> pts, wts;
@@ -109,7 +109,7 @@ public:
 private:
   void buildQuadrature(std::vector<Real> &pts, std::vector<Real> &wts) const {
     pts.resize(nQuad_); wts.resize(nQuad_);
-    Real sum(0), pi(Teuchos::ScalarTraits<Real>::pi()), two(2), one(1), half(0.5), n = static_cast<Real>(nQuad_);
+    Real sum(0), pi(ROL::ScalarTraits<Real>::pi()), two(2), one(1), half(0.5), n = static_cast<Real>(nQuad_);
     for (int i = 0; i < nQuad_; ++i) {
       pts[i] = std::pow(std::cos(half*pi*(two*static_cast<Real>(i+1)-one)/(two*n+one)),two);
       wts[i] = two*pi/(two*n+one) * pts[i];

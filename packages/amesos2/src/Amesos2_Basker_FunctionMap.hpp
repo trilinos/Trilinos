@@ -59,14 +59,8 @@
 
 #include "Amesos2_FunctionMap.hpp"
 #include "Amesos2_Basker_TypeMap.hpp"
-
-#ifdef SHYLU_NODEBASKER
-#include <shylubasker_trilinos_decl.hpp>
-#include <shylubasker_def.hpp>
-#else
 #include "basker_decl.hpp"
 #include "basker_def.hpp"
-#endif
 
 namespace Amesos2 {
 

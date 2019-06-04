@@ -44,14 +44,8 @@
 // The initial guesses are all set to zero.
 //
 // As currently set up, this driver tests the case when the number of right-hand
-// sides (numrhs = 15) is greater than the blocksize (block = 10) used by
-// the solver. Here, 2 passes through the solver are required to solve
-// for all right-hand sides. This information can be edited (see below - other
-// information used by block solver - can be user specified) to solve for
-// other sizes of systems. For example, one could set numrhs = 1 and block = 1,
-// to solve a single right-hand side system in the traditional way, or, set
-// numrhs = 1 and block > 1 to solve a single rhs-system with a block implementation.
-//
+// sides (numrhs = 15).  The pseudo-block CG solver will only take one pass through
+// all 15 RHS.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -85,7 +79,6 @@ int main(int argc, char *argv[]) {
     bool leftprec = true;      // left preconditioning or right.
     int frequency = -1; // how often residuals are printed by solver
     int numrhs = 15;  // total number of right-hand sides to solve for
-    int blocksize = 10;  // blocksize used by solver
     int maxiters = -1; // maximum number of iterations for the solver to use
     std::string filename("bcsstk14.hb");
     double tol = 1.0e-5;  // relative residual tolerance
@@ -97,8 +90,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-    cmdp.setOption("block-size",&blocksize,"Block size to be used by CG solver.");
-    cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
+    cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem size).");
 
 
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -175,16 +167,16 @@ int main(int argc, char *argv[]) {
     RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
 
     //
-    // *****Create parameter list for the block CG solver manager*****
+    // *****Create parameter list for the pseudo-block CG solver manager*****
     //
     const int NumGlobalElements = B->GlobalLength();
     if (maxiters == -1)
-      maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
+      maxiters = NumGlobalElements; // maximum number of iterations to run
     //
     ParameterList belosList;
-    belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+    belosList.set( "Estimate Condition Number", true );
     if (verbose) {
       belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
           Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
@@ -213,18 +205,17 @@ int main(int argc, char *argv[]) {
     }
 
     // Create an iterative solver manager.
-    RCP< Belos::SolverManager<double,MV,OP> > solver
+    RCP< Belos::PseudoBlockCGSolMgr<double,MV,OP> > solver
       = rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>(problem, rcp(&belosList,false)) );
 
     //
     // *******************************************************************
-    // *************Start the block CG iteration*************************
+    // *************Start the pseudo-block CG iteration*************************
     // *******************************************************************
     if (proc_verbose) {
       std::cout << std::endl << std::endl;
       std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
       std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-      std::cout << "Block size used by solver: " << blocksize << std::endl;
       std::cout << "Max number of CG iterations: " << maxiters << std::endl;
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
@@ -251,6 +242,7 @@ int main(int argc, char *argv[]) {
         std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
         if (actRes > tol) badRes = true;
       }
+      std::cout<<std::endl<<"Condition Estimate: " << solver->getConditionEstimate() << std::endl;
     }
 
     success = ret==Belos::Converged && !badRes;

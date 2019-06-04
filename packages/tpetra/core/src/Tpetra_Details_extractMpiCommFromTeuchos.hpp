@@ -50,7 +50,8 @@
 
 #include "TpetraCore_config.h"
 #ifdef HAVE_TPETRACORE_MPI
-#include <mpi.h> // MPI_Comm
+#  include <mpi.h> // MPI_Comm
+#endif // HAVE_TPETRACORE_MPI
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
@@ -62,6 +63,7 @@ namespace Teuchos {
 namespace Tpetra {
 namespace Details {
 
+#ifdef HAVE_TPETRACORE_MPI
 /// \brief Get the MPI_Comm out of the given Teuchos::Comm object.
 ///
 /// \param comm [in] Communicator, wrapped in a Teuchos::Comm wrapper.
@@ -71,9 +73,12 @@ namespace Details {
 ///   MPI_COMM_SELF (if comm is a Teuchos::SerialComm).
 MPI_Comm
 extractMpiCommFromTeuchos (const Teuchos::Comm<int>& comm);
+#endif // HAVE_TPETRACORE_MPI
+
+//! Is the given Comm a Teuchos::MpiComm<int> instance?
+bool teuchosCommIsAnMpiComm (const Teuchos::Comm<int>& comm);
 
 } // namespace Details
 } // namespace Tpetra
 
-#endif // HAVE_TPETRACORE_MPI
 #endif // TPETRA_DETAILS_EXTRACTMPICOMMFROMTEUCHOS_HPP

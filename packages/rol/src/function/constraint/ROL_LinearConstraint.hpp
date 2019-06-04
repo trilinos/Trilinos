@@ -68,20 +68,20 @@ namespace ROL {
 template <class Real>
 class LinearConstraint : public Constraint<Real> {
 private:
-  const Teuchos::RCP<const LinearOperator<Real> > A_;
-  const Teuchos::RCP<const LinearOperator<Real> > Atrans_;
-  const Teuchos::RCP<const Vector<Real> > b_;
+  const ROL::Ptr<const LinearOperator<Real>> A_;
+  const ROL::Ptr<const LinearOperator<Real>> Atrans_;
+  const ROL::Ptr<const Vector<Real>> b_;
   bool  isSymmetric_;
 public:
   // Nonsymmetric case
-  LinearConstraint( const Teuchos::RCP<const LinearOperator<Real> > &A,
-                            const Teuchos::RCP<const LinearOperator<Real> > &Atrans,
-                            const Teuchos::RCP<const Vector<Real> &b ) :
+  LinearConstraint( const ROL::Ptr<const LinearOperator<Real>> &A,
+                            const ROL::Ptr<const LinearOperator<Real>> &Atrans,
+                            const ROL::Ptr<const Vector<Real> &b ) :
       A_(A), Atrans_(Atrans), b_(b), isSymmetric_(false) {
   }
   // Symmetric case
-  LinearConstraint( const Teuchos::RCP<const LinearOperator<Real> > &A,
-                            const Teuchos::RCP<const Vector<Real> &b ) : 
+  LinearConstraint( const ROL::Ptr<const LinearOperator<Real>> &A,
+                            const ROL::Ptr<const Vector<Real> &b ) : 
       A_(A), Atrans_(A), b_(b), isSymmetric_(true) {
   }
 

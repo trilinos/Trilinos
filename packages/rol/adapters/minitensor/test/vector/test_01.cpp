@@ -67,7 +67,7 @@ TEST(MiniTensor_ROL, VectorAdaptor)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -116,7 +116,7 @@ TEST(MiniTensor_ROL, VectorAdaptor)
 
   // Basis tests.
   // set x to first basis vector
-  Teuchos::RCP<ROL::Vector<T>>
+  ROL::Ptr<ROL::Vector<T>>
   w = x.clone();
 
   w = x.basis(0);
@@ -165,7 +165,7 @@ TEST(MiniTensor_ROL, VectorValue)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &

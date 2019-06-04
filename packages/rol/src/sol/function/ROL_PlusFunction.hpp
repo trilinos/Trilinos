@@ -54,17 +54,17 @@ namespace ROL {
 template<class Real>
 class PlusFunction : public PositiveFunction<Real> {
 private:
-  Teuchos::RCP<Distribution<Real> > dist_;
+  ROL::Ptr<Distribution<Real> > dist_;
   Real param_;
 
 public: 
-  PlusFunction(Teuchos::RCP<Distribution<Real> > &dist, Real param = 1.) : dist_(dist) {
+  PlusFunction(ROL::Ptr<Distribution<Real> > &dist, Real param = 1.) : dist_(dist) {
     param_ = ((param <= 0) ? 1.e-2 : param);
   }
 
-  PlusFunction(Teuchos::ParameterList &parlist) {
+  PlusFunction(ROL::ParameterList &parlist) {
     Real param(1.e-1), zero(0), one(1);
-    Teuchos::ParameterList pfList;
+    ROL::ParameterList pfList;
     if (parlist.isSublist("Plus Function")) {
       param = parlist.sublist("Plus Function").get("Smoothing Parameter",1.);
       pfList = parlist.sublist("Plus Function");

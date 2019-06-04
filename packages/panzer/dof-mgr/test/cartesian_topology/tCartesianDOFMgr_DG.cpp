@@ -88,10 +88,10 @@ namespace std {
 namespace panzer {
 namespace unit_test {
 
-typedef CartesianConnManager<int,Ordinal64>::Triplet<Ordinal64> Triplet;
+using Triplet = CartesianConnManager::Triplet<panzer::Ordinal64>;
 
 std::string getElementBlock(const Triplet & element,
-                            const CartesianConnManager<int,Ordinal64> & connManager)
+                            const CartesianConnManager & connManager)
                                     
 {
   int localElmtId = connManager.computeLocalElementIndex(element); 
@@ -115,7 +115,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
   TEUCHOS_ASSERT(nz >= 2);
 
   // build the topology
-  using CCM = CartesianConnManager<int,Ordinal64>;
+  using CCM = CartesianConnManager;
   RCP<CCM> connManager = rcp(new CCM);
   connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
 

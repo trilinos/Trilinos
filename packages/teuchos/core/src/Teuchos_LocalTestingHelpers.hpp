@@ -153,6 +153,15 @@
   TEUCHOS_TEST_COMPARE( v1, comp, v2, out, success )
 
 
+/** \brief Assert that v1 comp v2 (where comp = '==', '>=", "!=", etc) where
+ * the second object v2 is printed as value.
+ *
+ * \ingroup Teuchos_UnitTestAssertMacros_grp
+ */
+#define TEST_COMPARE_CONST( v1, comp, v2 ) \
+  TEUCHOS_TEST_COMPARE_CONST( v1, comp, v2, out, success )
+
+
 /** \brief Assert that a1.size()==a2.size() and a[i]==b[i], i=0....
  *
  * Works for any object types that support a1[i], a1.size(), a2[j], and

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -156,6 +156,10 @@ double vals_fset_var1fs1[2][2] = {{1., 3.}, {9., 27.}};
 #define EXCHECK(funcall, errmsg)                                                                   \
   if ((funcall) < 0) {                                                                             \
     fprintf(stderr, errmsg);                                                                       \
+    free(varParams.edge_var_tab);                                                                  \
+    free(varParams.face_var_tab);                                                                  \
+    free(varParams.elem_var_tab);                                                                  \
+    free(varParams.fset_var_tab);                                                                  \
     return 1;                                                                                      \
   }
 
@@ -209,33 +213,39 @@ int cCreateEdgeFace(int argc, char *argv[])
 
   ex_opts(EX_VERBOSE | EX_ABORT);
 
+  exoid = ex_create(EX_TEST_FILENAME, EX_CLOBBER, &appWordSize, &diskWordSize);
+  if (exoid <= 0) {
+    fprintf(stderr, "Unable to open \"%s\" for writing.\n", EX_TEST_FILENAME);
+    return 1;
+  }
+
   edgeBlocks[0].type                = EX_EDGE_BLOCK;
   edgeBlocks[0].id                  = 100;
   edgeBlocks[0].num_entry           = 20;
   edgeBlocks[0].num_nodes_per_entry = 2;
   edgeBlocks[0].num_attribute       = 1;
-  strcpy(edgeBlocks[0].topology, "EDGE2");
+  ex_copy_string(edgeBlocks[0].topology, "EDGE2", MAX_STR_LENGTH + 1);
 
   faceBlocks[0].type                = EX_FACE_BLOCK;
   faceBlocks[0].id                  = 500;
   faceBlocks[0].num_entry           = 2;
   faceBlocks[0].num_nodes_per_entry = 4;
   faceBlocks[0].num_attribute       = 1;
-  strcpy(faceBlocks[0].topology, "QUAD4");
+  ex_copy_string(faceBlocks[0].topology, "QUAD4", MAX_STR_LENGTH + 1);
 
   faceBlocks[1].type                = EX_FACE_BLOCK;
   faceBlocks[1].id                  = 600;
   faceBlocks[1].num_entry           = 1;
   faceBlocks[1].num_nodes_per_entry = 4;
   faceBlocks[1].num_attribute       = 1;
-  strcpy(faceBlocks[1].topology, "QUAD4");
+  ex_copy_string(faceBlocks[1].topology, "QUAD4", MAX_STR_LENGTH + 1);
 
   faceBlocks[2].type                = EX_FACE_BLOCK;
   faceBlocks[2].id                  = 700;
   faceBlocks[2].num_entry           = 8;
   faceBlocks[2].num_nodes_per_entry = 4;
   faceBlocks[2].num_attribute       = 1;
-  strcpy(faceBlocks[2].topology, "QUAD4");
+  ex_copy_string(faceBlocks[2].topology, "QUAD4", MAX_STR_LENGTH + 1);
 
   elemBlocks[0].type                = EX_ELEM_BLOCK;
   elemBlocks[0].id                  = 200;
@@ -244,7 +254,7 @@ int cCreateEdgeFace(int argc, char *argv[])
   elemBlocks[0].num_edges_per_entry = 12;
   elemBlocks[0].num_faces_per_entry = 6;
   elemBlocks[0].num_attribute       = 2;
-  strcpy(elemBlocks[0].topology, "HEX8");
+  ex_copy_string(elemBlocks[0].topology, "HEX8", MAX_STR_LENGTH + 1);
 
   elemBlocks[1].type                = EX_ELEM_BLOCK;
   elemBlocks[1].id                  = 201;
@@ -253,7 +263,7 @@ int cCreateEdgeFace(int argc, char *argv[])
   elemBlocks[1].num_edges_per_entry = 0;
   elemBlocks[1].num_faces_per_entry = 0;
   elemBlocks[1].num_attribute       = 0;
-  strcpy(elemBlocks[1].topology, "TET4");
+  ex_copy_string(elemBlocks[1].topology, "TET4", MAX_STR_LENGTH + 1);
 
   varParams.edge_var_tab  = (int *)malloc(2 * sizeof(int));
   varParams.face_var_tab  = (int *)malloc(3 * sizeof(int));
@@ -283,12 +293,6 @@ int cCreateEdgeFace(int argc, char *argv[])
   varParams.fset_var_tab[0] = 1;
   varParams.num_sset        = 0;
   varParams.num_elset       = 0;
-
-  exoid = ex_create(EX_TEST_FILENAME, EX_CLOBBER, &appWordSize, &diskWordSize);
-  if (exoid <= 0) {
-    fprintf(stderr, "Unable to open \"%s\" for writing.\n", EX_TEST_FILENAME);
-    return 1;
-  }
 
   EXCHECK(ex_put_init_ext(exoid, &modelParams), "Unable to initialize database.\n");
 
@@ -478,6 +482,11 @@ int cCreateEdgeFace(int argc, char *argv[])
   if (concatResult) {
     EXCHECK(ex_put_all_var_param_ext(exoid, &varParams),
             "Unable to write result variable parameter information.\n");
+
+    free(varParams.edge_var_tab);
+    free(varParams.face_var_tab);
+    free(varParams.elem_var_tab);
+    free(varParams.fset_var_tab);
   }
   else {
     EXCHECK(ex_put_variable_param(exoid, EX_GLOBAL, 2),

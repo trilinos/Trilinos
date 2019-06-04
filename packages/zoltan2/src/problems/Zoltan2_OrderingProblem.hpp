@@ -131,7 +131,7 @@ public:
   /*! \brief Constructor that uses a default communicator
    */
   OrderingProblem(Adapter *A, ParameterList *p) : 
-  OrderingProblem(A, p, Teuchos::DefaultComm<int>::getComm())
+  OrderingProblem(A, p, Tpetra::getDefaultComm())
   {}
 
   /*! \brief Set up validators specific to this Problem
@@ -139,7 +139,7 @@ public:
   static void getValidParameters(ParameterList & pl)
   {
 
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
     AlgND<Adapter>::getValidParameters(pl);
 #endif
 
@@ -230,7 +230,7 @@ private:
 
 ////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void OrderingProblem<Adapter>::solve(bool updateInputData)
+void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
 {
   HELLO;
 
@@ -308,7 +308,7 @@ void OrderingProblem<Adapter>::solve(bool updateInputData)
     ZOLTAN2_COMPUTE_ORDERING
   }
 
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
   else if (method.compare("nd") == 0) {
     AlgND<Adapter> alg(this->envConst_, this->comm_, this->graphModel_,
       this->coordinateModel_,this->baseInputAdapter_);
@@ -354,7 +354,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
     modelType = GraphModelType;
   }
 
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
   if ((method == std::string("nd")))
   {
     modelType = GraphModelType;

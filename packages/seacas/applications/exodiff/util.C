@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,8 +31,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include "fmt/color.h"
+#include "fmt/ostream.h"
 #include "util.h"
 #include <cstring> // for nullptr, memset
+#include <iostream>
+#include <unistd.h>
 
 char **get_name_array(int size, int length)
 {
@@ -53,5 +57,55 @@ void free_name_array(char **names, int size)
     delete[] names[i];
   }
   delete[] names;
-  names = nullptr;
+}
+
+namespace {
+  bool term_out()
+  {
+    static bool is_term = isatty(fileno(stdout));
+    return is_term;
+  }
+
+  bool cerr_out()
+  {
+    static bool is_term = isatty(fileno(stderr));
+    return is_term;
+  }
+} // namespace
+
+void Error(const std::string &x)
+{
+  std::ostringstream out;
+  fmt::print(out, "exodiff: ERROR: {}", x);
+  ERR_OUT(out);
+}
+
+void ERR_OUT(std::ostringstream &buf)
+{
+  if (cerr_out()) {
+    fmt::print(stderr, fmt::v5::fg(fmt::color::red), "{}", buf.str());
+  }
+  else {
+    fmt::print(stderr, "{}", buf.str());
+  }
+}
+
+void DIFF_OUT(std::ostringstream &buf, fmt::internal::color_type color)
+{
+  if (term_out()) {
+    fmt::print(fmt::v5::fg(color), "{}\n", buf.str());
+  }
+  else {
+    fmt::print("{}\n", buf.str());
+  }
+}
+
+void DIFF_OUT(const std::string &buf, fmt::internal::color_type color)
+{
+  if (term_out()) {
+    fmt::print(fmt::v5::fg(color), "{}\n", buf);
+  }
+  else {
+    fmt::print("{}\n", buf);
+  }
 }

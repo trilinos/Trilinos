@@ -55,9 +55,9 @@ private:
 
 public:
 
-ElasticityData(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+ElasticityData(const ROL::Ptr<const Teuchos::Comm<int> > &comm,
              const Teuchos::RCP<Teuchos::ParameterList> &parlist,
-             const Teuchos::RCP<std::ostream> &outStream) 
+             const ROL::Ptr<std::ostream> &outStream) 
 {
 	this->Initialize (comm, parlist, outStream);
 	this->SetParallelStructure();

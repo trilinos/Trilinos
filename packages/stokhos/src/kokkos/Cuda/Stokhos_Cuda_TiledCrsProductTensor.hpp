@@ -236,7 +236,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_type row_count = A.graph.row_map.dimension_0() - 1;
+    const size_type row_count = A.graph.row_map.extent(0) - 1;
     const size_type tensor_dimension = A.block.dimension();
     const size_type tile_size = A.block.tile_size();
     const size_type num_tiles = A.block.num_tiles();
@@ -465,7 +465,7 @@ public:
     typedef typename vector_type::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
-    Zero( const vector_type & x ) : m_x( x ), m_d(x.dimension_0()) {}
+    Zero( const vector_type & x ) : m_x( x ), m_d(x.extent(0)) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type j ) const {
@@ -485,7 +485,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_type row_count = A.graph.row_map.dimension_0() - 1;
+    const size_type row_count = A.graph.row_map.extent(0) - 1;
     const size_type tensor_dimension = A.block.dimension();
     const size_type tile_size = A.block.tile_size();
     const size_type num_tiles = A.block.num_tiles();
@@ -730,7 +730,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_type row_count = A.graph.row_map.dimension_0() - 1;
+    const size_type row_count = A.graph.row_map.extent(0) - 1;
     const size_type tensor_dimension = A.block.dimension();
     const size_type tile_size = A.block.tile_size();
     const size_type num_tiles = A.block.num_tiles();

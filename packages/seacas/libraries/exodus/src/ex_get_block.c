@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,29 +33,28 @@
  *
  */
 /*!
-*
-* \undoc exgblk - read block parameters
-*
-* entry conditions -
-*   input parameters:
-*       int     idexo                   exodus file id
-*       int     blk_type                block type (edge,face,element)
-*       int     blk_id                  block id
-*
-* exit conditions -
-*       char*   elem_type               element type name
-*       int*    num_entries_this_blk    number of elements in this element block
-*       int*    num_nodes_per_entry     number of nodes per element block
-*       int*    num_attr_per_entry      number of attributes
-*
-* revision history -
-*
-*
-*/
+ *
+ * \undoc exgblk - read block parameters
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     idexo                   exodus file id
+ *       int     blk_type                block type (edge,face,element)
+ *       int     blk_id                  block id
+ *
+ * exit conditions -
+ *       char*   elem_type               element type name
+ *       int*    num_entries_this_blk    number of elements in this element block
+ *       int*    num_nodes_per_entry     number of nodes per element block
+ *       int*    num_attr_per_entry      number of attributes
+ *
+ * revision history -
+ *
+ *
+ */
 
 #include "exodusII.h" // for ex_block, void_int, etc
 #include "exodusII_int.h"
-#include <string.h>    // for strcpy
 #include <sys/types.h> // for int64_t
 
 /*
@@ -125,7 +124,7 @@ int ex_get_block(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, char *
   }
 
   if (elem_type) {
-    strcpy(elem_type, block.topology);
+    ex_copy_string(elem_type, block.topology, 33);
   }
 
   EX_FUNC_LEAVE(err);

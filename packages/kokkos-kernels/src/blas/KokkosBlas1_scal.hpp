@@ -68,12 +68,12 @@ scal (const RMV& R, const AV& a, const XMV& X)
                  "RMV and XMV must either have rank 1 or rank 2.");
 
   // Check compatibility of dimensions at run time.
-  if (X.dimension_0 () != R.dimension_0 () ||
-      X.dimension_1 () != R.dimension_1 ()) {
+  if (X.extent(0) != R.extent(0) ||
+      X.extent(1) != R.extent(1)) {
     std::ostringstream os;
     os << "KokkosBlas::scal: Dimensions of R and X do not match: "
-       << "R: " << R.dimension_0 () << " x " << R.dimension_1 ()
-       << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ();
+       << "R: " << R.extent(0) << " x " << R.extent(1)
+       << ", X: " << X.extent(0) << " x " << X.extent(1);
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 

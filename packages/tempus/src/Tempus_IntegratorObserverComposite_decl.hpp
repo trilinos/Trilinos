@@ -15,7 +15,10 @@
 
 namespace Tempus {
 
-/** \brief This observer 
+/** \brief This observer is a composite observer,
+ *
+ *  which takes other IntegratorObservers and sequentially calls each
+ *  individual observer function.
  */
 template<class Scalar>
 class IntegratorObserverComposite
@@ -46,14 +49,20 @@ public:
     /// Observe after Stepper takes step.
     virtual void observeAfterTakeStep(const Integrator<Scalar>& integrator) override;
 
-    /// Observe after accepting time step.
-    virtual void observeAcceptedTimeStep(const Integrator<Scalar>& integrator) override;
+    /// Observe after checking time step.
+    virtual void observeAfterCheckTimeStep(const Integrator<Scalar>& integrator) override;
+
+    /// Observe the end of the time step loop.
+    virtual void observeEndTimeStep(const Integrator<Scalar>& integrator) override;
 
     /// Observe the end of the time integrator.
     virtual void observeEndIntegrator(const Integrator<Scalar>& integrator) override;
 
     // add observer to the composite observer list
     void addObserver(const Teuchos::RCP<IntegratorObserver<Scalar> > &observer);
+
+    // clear all observer from the composite observer list
+    void clearObservers();
   //@}
 
 private:

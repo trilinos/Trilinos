@@ -61,7 +61,29 @@ namespace panzer {
   <Parameter name="Multiplier" type="double" value="Multiplier value"/>
   <Parameter name="Field Multiplier" type="string" value="Multiplier name"/>
 */
-PANZER_EVALUATOR_CLASS(DotProduct)
+template<typename EvalT, typename Traits>
+class DotProduct
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    DotProduct(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT> vec_a_dot_vec_b;
   PHX::MDField<const ScalarT> vec_a, vec_b;
@@ -72,7 +94,8 @@ PANZER_EVALUATOR_CLASS(DotProduct)
 
   bool multiplier_field_on;
   double multiplier_value;
-PANZER_EVALUATOR_CLASS_END
+}; // end of class DotProduct
+
 
 /** \brief Build a dot product evaluator. Evaluates dot product at a set of points
 

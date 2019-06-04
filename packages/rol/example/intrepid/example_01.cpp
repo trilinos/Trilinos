@@ -69,19 +69,19 @@ typedef std::vector<RealT> vec;
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+  
+  
      
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
  
@@ -96,23 +96,23 @@ int main(int argc, char *argv[]) {
     int nDoF = numCells*(numFields-1)+1;
 
     // Create discretization
-    RCP<Discretization<RealT>> disc = rcp( new Discretization<RealT>(numCells,numFields,domainLength) );
+    ROL::Ptr<Discretization<RealT>> disc = ROL::makePtr<Discretization<RealT>>(numCells,numFields,domainLength);
   
-    RCP<vec> u_rcp   = rcp(new vec(nDoF,1.0));      // Simulation vector 
-    RCP<vec> z_rcp   = rcp(new vec(nDoF,1.0));      // Optimization vector 
-    RCP<vec> yu_rcp  = rcp(new vec(nDoF,0.0));      // Test vector in U
-    RCP<vec> yz_rcp  = rcp(new vec(nDoF,0.0));      // Test vector in Z
+    ROL::Ptr<vec> u_ptr   = ROL::makePtr<vec>(nDoF,1.0);      // Simulation vector 
+    ROL::Ptr<vec> z_ptr   = ROL::makePtr<vec>(nDoF,1.0);      // Optimization vector 
+    ROL::Ptr<vec> yu_ptr  = ROL::makePtr<vec>(nDoF,0.0);      // Test vector in U
+    ROL::Ptr<vec> yz_ptr  = ROL::makePtr<vec>(nDoF,0.0);      // Test vector in Z
 
-    RCP<vec> gu_rcp  = rcp(new vec(nDoF,0.0));      // Gradient w.r.t. Sim vector
-    RCP<vec> gz_rcp  = rcp(new vec(nDoF,0.0));      // Gradient w.r.t. Opt vector
+    ROL::Ptr<vec> gu_ptr  = ROL::makePtr<vec>(nDoF,0.0);      // Gradient w.r.t. Sim vector
+    ROL::Ptr<vec> gz_ptr  = ROL::makePtr<vec>(nDoF,0.0);      // Gradient w.r.t. Opt vector
 
-    RCP<vec> utarget_rcp = rcp(new vec(nDoF,1.0));  // Target vector
+    ROL::Ptr<vec> utarget_ptr = ROL::makePtr<vec>(nDoF,1.0);  // Target vector
 
-    RCP<vec> v_rcp   = rcp(new vec(nDoF,1.0));      // Simulation vector 
-    RCP<vec> w_rcp   = rcp(new vec(nDoF,1.0));      // Optimization vector 
+    ROL::Ptr<vec> v_ptr   = ROL::makePtr<vec>(nDoF,1.0);      // Simulation vector 
+    ROL::Ptr<vec> w_ptr   = ROL::makePtr<vec>(nDoF,1.0);      // Optimization vector 
 
-    RCP<vec> c_rcp  = rcp(new vec(nDoF,0.0));       // Constraint vector
-    RCP<vec> l_rcp  = rcp(new vec(nDoF,0.0));       // Lagrange multiplier
+    ROL::Ptr<vec> c_ptr  = ROL::makePtr<vec>(nDoF,0.0);       // Constraint vector
+    ROL::Ptr<vec> l_ptr  = ROL::makePtr<vec>(nDoF,0.0);       // Lagrange multiplier
 
     // -----------------------
     // Begin derivative checks
@@ -121,46 +121,46 @@ int main(int argc, char *argv[]) {
     RealT left = -1e0, right = 1e0; 
     for(int i=0;i<nDoF;++i) {
 
-      (*v_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*w_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*yu_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*yz_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*v_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*w_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*yu_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*yz_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
 
       RealT x = i*h; // Grid points
 
-      (*utarget_rcp)[i] = x*x*(domainLength-x)*(domainLength-x);
+      (*utarget_ptr)[i] = x*x*(domainLength-x)*(domainLength-x);
     }
 
     // Make ROL::StdVector 
-    SV u(u_rcp);
-    SV z(z_rcp);
-    SV gu(u_rcp);
-    SV gz(z_rcp);
-    SV yu(yu_rcp);
-    SV yz(yz_rcp);
-    SV v(v_rcp);
-    SV w(w_rcp);
-    SV c(c_rcp); 
-    SV l(l_rcp);
+    SV u(u_ptr);
+    SV z(z_ptr);
+    SV gu(u_ptr);
+    SV gz(z_ptr);
+    SV yu(yu_ptr);
+    SV yz(yz_ptr);
+    SV v(v_ptr);
+    SV w(w_ptr);
+    SV c(c_ptr); 
+    SV l(l_ptr);
 
-    RCP<V> utarget = Teuchos::rcp(new SV(utarget_rcp) ); 
+    ROL::Ptr<V> utarget = ROL::makePtr<SV>(utarget_ptr); 
 
-    RCP<V> up   = rcp(&u,false);
-    RCP<V> zp   = rcp(&z,false);
-    RCP<V> gup  = rcp(&gu,false);
-    RCP<V> gzp  = rcp(&gz,false);
-    RCP<V> yup  = rcp(&yu,false);
-    RCP<V> yzp  = rcp(&yz,false);
+    ROL::Ptr<V> up   = &u,false;
+    ROL::Ptr<V> zp   = &z,false;
+    ROL::Ptr<V> gup  = &gu,false;
+    ROL::Ptr<V> gzp  = &gz,false;
+    ROL::Ptr<V> yup  = &yu,false;
+    ROL::Ptr<V> yzp  = &yz,false;
 
     Vector_SimOpt<RealT> uz(up,zp);
     Vector_SimOpt<RealT> g(gup,gzp);
     Vector_SimOpt<RealT> y(yup,yzp);
 
     // Tracking Objective
-    RCP<Objective_SimOpt<RealT>> obj = rcp( new TrackingObjective<RealT>(disc,utarget,gamma) );
+    ROL::Ptr<Objective_SimOpt<RealT>> obj = ROL::makePtr<TrackingObjective<RealT>>(disc,utarget,gamma);
 
     // Constraint
-    RCP<Constraint_SimOpt<RealT>> con = rcp( new BVPConstraint<RealT>(disc) );
+    ROL::Ptr<Constraint_SimOpt<RealT>> con = ROL::makePtr<BVPConstraint<RealT>>(disc);
  
     obj->checkGradient(uz,y,true,*outStream);
     obj->checkHessVec(uz,y,true,*outStream);
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     // ----------------  
 
     // Define algorithm.
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     std::string stepname = "Composite Step";
     parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Nominal Relative Tolerance",1.e-4);
     parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Fix Tolerance",true);

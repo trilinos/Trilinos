@@ -73,7 +73,8 @@ inline stk::mesh::Field<double> & declareNodalField(stk::mesh::MetaData &stkMesh
 					       int numberOfStates)
 {
     stk::mesh::Field<double> &multiStateField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, numberOfStates);
-    stk::mesh::put_field(multiStateField, stkMeshMetaData.universal_part());
+    stk::mesh::put_field_on_mesh(multiStateField, stkMeshMetaData.universal_part(),
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
     return multiStateField;
 }
 
@@ -94,24 +95,24 @@ inline void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, const doubl
     }
 }
 
-inline void putDataOnTriStateField(stk::mesh::BulkData &bulkData, stk::mesh::FieldBase *triStateField,
-        const double stateNp1Value,
-        const double stateNValue,
-        const double stateNm1Value)
-{
-    stk::mesh::FieldBase *statedFieldNp1 =
-            triStateField->field_state(stk::mesh::StateNP1);
-    putDataOnTestField(bulkData, stateNp1Value,
-                       *statedFieldNp1);
-    stk::mesh::FieldBase *statedFieldN =
-            triStateField->field_state(stk::mesh::StateN);
-    putDataOnTestField(bulkData, stateNValue,
-                       *statedFieldN);
-    stk::mesh::FieldBase *statedFieldNm1 =
-            triStateField->field_state(stk::mesh::StateNM1);
-    putDataOnTestField(bulkData, stateNm1Value,
-                       *statedFieldNm1);
-}
+//inline void putDataOnTriStateField(stk::mesh::BulkData &bulkData, stk::mesh::FieldBase *triStateField,
+//        const double stateNp1Value,
+//        const double stateNValue,
+//        const double stateNm1Value)
+//{
+//    stk::mesh::FieldBase *statedFieldNp1 =
+//            triStateField->field_state(stk::mesh::StateNP1);
+//    putDataOnTestField(bulkData, stateNp1Value,
+//                       *statedFieldNp1);
+//    stk::mesh::FieldBase *statedFieldN =
+//            triStateField->field_state(stk::mesh::StateN);
+//    putDataOnTestField(bulkData, stateNValue,
+//                       *statedFieldN);
+//    stk::mesh::FieldBase *statedFieldNm1 =
+//            triStateField->field_state(stk::mesh::StateNM1);
+//    putDataOnTestField(bulkData, stateNm1Value,
+//                       *statedFieldNm1);
+//}
 
 inline void testDataOnField(stk::mesh::BulkData &stkMeshBulkData, const double goldValue, stk::mesh::FieldBase &field)
 {
@@ -146,33 +147,33 @@ inline void setupMeshAndFieldsForTest(stk::io::StkMeshIoBroker &stkMeshIoBroker,
     putDataOnTestField(stkMeshIoBroker.bulk_data(), velocityValue, velocityField);
 }
 
-inline void testMultistateFieldWroteCorrectlyToRestart(const std::string &restartFilename,
-        const double time,
-        const std::string &fieldName,
-        const double stateNp1Value,
-        const double stateNValue)
-{
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    stk::io::StkMeshIoBroker stkIo(communicator);
-    size_t index = stkIo.add_mesh_database(restartFilename, stk::io::READ_RESTART);
-    stkIo.set_active_mesh(index);
-    stkIo.create_input_mesh();
-
-    stk::mesh::MetaData &restartedMetaData = stkIo.meta_data();
-    stk::mesh::Field<double> &triStateField =
-            declareTriStateNodalField(restartedMetaData, fieldName);
-
-    stkIo.add_input_field(stk::io::MeshField(triStateField));
-    stkIo.populate_bulk_data();
-    stkIo.read_defined_input_fields(time);
-
-    stk::mesh::FieldBase *statedFieldNp1 =
-            triStateField.field_state(stk::mesh::StateNP1);
-    testDataOnField(stkIo.bulk_data(), stateNp1Value, *statedFieldNp1);
-    stk::mesh::FieldBase *statedFieldN =
-            triStateField.field_state(stk::mesh::StateN);
-    testDataOnField(stkIo.bulk_data(), stateNValue, *statedFieldN);
-}
+//inline void testMultistateFieldWroteCorrectlyToRestart(const std::string &restartFilename,
+//        const double time,
+//        const std::string &fieldName,
+//        const double stateNp1Value,
+//        const double stateNValue)
+//{
+//    MPI_Comm communicator = MPI_COMM_WORLD;
+//    stk::io::StkMeshIoBroker stkIo(communicator);
+//    size_t index = stkIo.add_mesh_database(restartFilename, stk::io::READ_RESTART);
+//    stkIo.set_active_mesh(index);
+//    stkIo.create_input_mesh();
+//
+//    stk::mesh::MetaData &restartedMetaData = stkIo.meta_data();
+//    stk::mesh::Field<double> &triStateField =
+//            declareTriStateNodalField(restartedMetaData, fieldName);
+//
+//    stkIo.add_input_field(stk::io::MeshField(triStateField));
+//    stkIo.populate_bulk_data();
+//    stkIo.read_defined_input_fields(time);
+//
+//    stk::mesh::FieldBase *statedFieldNp1 =
+//            triStateField.field_state(stk::mesh::StateNP1);
+//    testDataOnField(stkIo.bulk_data(), stateNp1Value, *statedFieldNp1);
+//    stk::mesh::FieldBase *statedFieldN =
+//            triStateField.field_state(stk::mesh::StateN);
+//    testDataOnField(stkIo.bulk_data(), stateNValue, *statedFieldN);
+//}
 
 inline void testMultistateFieldWroteCorrectly(const std::string &resultsFilename,
         const double time,

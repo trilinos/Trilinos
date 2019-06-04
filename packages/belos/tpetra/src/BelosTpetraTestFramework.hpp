@@ -53,36 +53,10 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
-#include "Galeri_iohb.h"
+#include "Trilinos_Util_iohb.h"
 
 namespace Belos {
   namespace Tpetra {
-
-    /// \fn getNode
-    /// \brief Return a Kokkos Node instance.
-    ///
-    /// Use this template function to get an instance of a Kokkos Node
-    /// suitable for the type of Tpetra objects that you are using.
-    /// The NodeType template parameter of this function corresponds
-    /// to the Node(Type) parameter of Tpetra objects such as
-    /// Tpetra::MultiVector and Tpetra::Operator.
-    ///
-    /// \param params [in/out] On input: Any parameters that the Kokkos
-    ///   Node accepts.  On output, the list may (optionally) be
-    ///   modified to include missing parameters and their default
-    ///   values.  If params is null, default parameters will be used.
-    ///
-    /// Interpretation of parameters depends on the particular Kokkos
-    /// Node type.  Specializations of this function reserve the right
-    /// to introduce parameters (for example, to increase verbosity of
-    /// Node instantiation), which you can see if you pass in a non-null
-    /// ParameterList.  Thus, it's always better to pass in a non-null
-    /// ParameterList, so that you can see what this function did.
-    template<class NodeType>
-    Teuchos::RCP<NodeType>
-    getNode (Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::null) {
-      return Teuchos::rcp (new NodeType (params));
-    }
 
     /// \class HarwellBoeingReader
     /// \brief Read a Harwell-Boeing format file into a Tpetra::CrsMatrix.
@@ -181,10 +155,11 @@ namespace Belos {
         typedef global_ordinal_type GO;
         typedef node_type NT;
         RCP<const map_type> rowMap =
-          createUniformContigMapWithNode<LO, GO, NT> (numRows, comm_, node_);
+          createUniformContigMapWithNode<LO, GO, NT> (numRows, comm_);
         RCP<const map_type> rangeMap = rowMap;
         RCP<const map_type> domainMap =
-          createUniformContigMapWithNode<LO, GO, NT> (numCols, comm_, node_);
+          createUniformContigMapWithNode<LO, GO, NT> (numCols, comm_);
+
         // Convert the read-in matrix data into a Tpetra::CrsMatrix.
         typedef ArrayView<const int>::size_type size_type;
         ArrayView<const double> valView (val, static_cast<size_type> (nnz));
@@ -479,7 +454,7 @@ namespace Belos {
              << "\"" << endl;
         const bool callFillComplete = true;
         RCP<sparse_matrix_type> A =
-          reader_type::readSparseFile (filename, comm_, node_, callFillComplete,
+          reader_type::readSparseFile (filename, comm_, callFillComplete,
                                        tolerant_, debug_);
         return A;
       }
@@ -581,8 +556,8 @@ namespace Belos {
           *out << "Reading right-hand side(s) B from Matrix Market file" << endl;
           Teuchos::OSTab tab2 (out);
           typedef ::Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
-          B = reader_type::readDenseFile (inRhsFilename, comm_, A->getNode(),
-                                          rangeMap, tolerant_, debug_);
+          B = reader_type::readDenseFile (inRhsFilename, comm_, rangeMap,
+                                          tolerant_, debug_);
           TEUCHOS_TEST_FOR_EXCEPTION(B.is_null (), std::runtime_error, "Failed "
             "to read right-hand side(s) B from Matrix Market file \""
             << inRhsFilename << "\".");
@@ -719,7 +694,7 @@ namespace Belos {
 
         // For a square matrix, we only need a Map for the range of the matrix.
         RCP<const map_type> pRangeMap =
-          createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_, node_);
+          createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_);
         // The sparse matrix object to fill.
         RCP<sparse_matrix_type> pMat = rcp (new sparse_matrix_type (pRangeMap, 0));
 
@@ -770,7 +745,8 @@ namespace Belos {
 
         // For a square matrix, we only need a Map for the range of the matrix.
         RCP<const map_type> pRangeMap =
-          createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_, node_);
+          createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_);
+
         // The sparse matrix object to fill.
         RCP<sparse_matrix_type> pMat = rcp (new sparse_matrix_type (pRangeMap, 0));
 

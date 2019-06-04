@@ -46,7 +46,7 @@
 typedef double RealT;
 
 template<class Real>
-Real random(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) {
+Real random(const ROL::Ptr<const Teuchos::Comm<int> > &comm) {
   Real val = 0.0;
   if ( Teuchos::rank<int>(*comm)==0 ) {
     val = (Real)rand()/(Real)RAND_MAX;
@@ -58,17 +58,17 @@ Real random(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) {
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0 && Teuchos::rank<int>(*comm)==0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -85,30 +85,30 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build control vectors
     int nx = 256;
-    Teuchos::RCP<std::vector<RealT> > x1_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> x1(x1_rcp);
-    Teuchos::RCP<std::vector<RealT> > x2_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> x2(x2_rcp);
-    Teuchos::RCP<std::vector<RealT> > x3_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> x3(x3_rcp);
-    Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> z(z_rcp);
-    Teuchos::RCP<std::vector<RealT> > xr_rcp = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> xr(xr_rcp);
-    Teuchos::RCP<std::vector<RealT> > d_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> d(d_rcp);
+    ROL::Ptr<std::vector<RealT> > x1_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    ROL::StdVector<RealT> x1(x1_ptr);
+    ROL::Ptr<std::vector<RealT> > x2_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    ROL::StdVector<RealT> x2(x2_ptr);
+    ROL::Ptr<std::vector<RealT> > x3_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    ROL::StdVector<RealT> x3(x3_ptr);
+    ROL::Ptr<std::vector<RealT> > z_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    ROL::StdVector<RealT> z(z_ptr);
+    ROL::Ptr<std::vector<RealT> > xr_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    ROL::StdVector<RealT> xr(xr_ptr);
+    ROL::Ptr<std::vector<RealT> > d_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    ROL::StdVector<RealT> d(d_ptr);
     for ( int i = 0; i < nx+2; i++ ) {
-      (*xr_rcp)[i] = random<RealT>(comm);
-      (*d_rcp)[i]  = random<RealT>(comm);
+      (*xr_ptr)[i] = random<RealT>(comm);
+      (*d_ptr)[i]  = random<RealT>(comm);
     }
     // Build state and adjoint vectors
-    Teuchos::RCP<std::vector<RealT> > u_rcp  = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-    ROL::StdVector<RealT> u(u_rcp);
-    Teuchos::RCP<std::vector<RealT> > p_rcp  = Teuchos::rcp( new std::vector<RealT>(nx,0.0) );
-    ROL::StdVector<RealT> p(p_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(&u,false);
-    Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(&z,false);
-    Teuchos::RCP<ROL::Vector<RealT> > pp = Teuchos::rcp(&p,false);
+    ROL::Ptr<std::vector<RealT> > u_ptr  = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+    ROL::StdVector<RealT> u(u_ptr);
+    ROL::Ptr<std::vector<RealT> > p_ptr  = ROL::makePtr<std::vector<RealT>>(nx,0.0);
+    ROL::StdVector<RealT> p(p_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > up = ROL::makePtrFromRef(u);
+    ROL::Ptr<ROL::Vector<RealT> > zp = ROL::makePtrFromRef(z);
+    ROL::Ptr<ROL::Vector<RealT> > pp = ROL::makePtrFromRef(p);
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
@@ -117,10 +117,10 @@ int main(int argc, char* argv[]) {
     int nSamp = parlist->sublist("Problem Description").get("Number of Samples", 20);
     std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<RealT> > bounds(dim,tmp);
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman
-      = Teuchos::rcp(new ROL::StdTeuchosBatchManager<RealT,int>(comm));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,bounds,bman,false,false,100));
+    ROL::Ptr<ROL::BatchManager<RealT> > bman
+      = ROL::makePtr<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman,false,false,100);
     int nprocs = Teuchos::size<int>(*comm);
     std::stringstream name;
     name << "samples_np" << nprocs;
@@ -130,13 +130,13 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build risk-averse objective function
     RealT alpha = 1.e-3;
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobjSimOpt
-      = Teuchos::rcp(new Objective_BurgersControl<RealT>(alpha,nx));
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pconSimOpt
-      = Teuchos::rcp(new Constraint_BurgersControl<RealT>(nx));
-    Teuchos::RCP<ROL::Objective<RealT> > pObj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,zp,pp));
-    Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::rcp(new ROL::RiskNeutralObjective<RealT>(pObj, sampler, true));
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > pobjSimOpt
+      = ROL::makePtr<Objective_BurgersControl<RealT>>(alpha,nx);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pconSimOpt
+      = ROL::makePtr<Constraint_BurgersControl<RealT>>(nx);
+    ROL::Ptr<ROL::Objective<RealT> > pObj
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(pobjSimOpt,pconSimOpt,up,zp,pp);
+    ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ROL::RiskNeutralObjective<RealT>>(pObj, sampler, true);
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
     x1.set(xr);
@@ -158,65 +158,65 @@ int main(int argc, char* argv[]) {
     ROL::SimulatedObjective<RealT> simobj(sampler, pobjSimOpt);
     // Simulated vectors.
     int nvecloc = sampler->numMySamples();
-    std::vector<Teuchos::RCP<std::vector<RealT> > >  xuk_rcp(nvecloc),  vuk_rcp(nvecloc),  yuk_rcp(nvecloc);
-    std::vector<Teuchos::RCP<std::vector<RealT> > > dxuk_rcp(nvecloc), dvuk_rcp(nvecloc), dyuk_rcp(nvecloc);
-    std::vector<Teuchos::RCP<ROL::Vector<RealT> > >  xu_rcp(nvecloc),   vu_rcp(nvecloc),   yu_rcp(nvecloc);
-    std::vector<Teuchos::RCP<ROL::Vector<RealT> > > dxu_rcp(nvecloc),  dvu_rcp(nvecloc),  dyu_rcp(nvecloc);
+    std::vector<ROL::Ptr<std::vector<RealT> > >  xuk_ptr(nvecloc),  vuk_ptr(nvecloc),  yuk_ptr(nvecloc);
+    std::vector<ROL::Ptr<std::vector<RealT> > > dxuk_ptr(nvecloc), dvuk_ptr(nvecloc), dyuk_ptr(nvecloc);
+    std::vector<ROL::Ptr<ROL::Vector<RealT> > >  xu_ptr(nvecloc),   vu_ptr(nvecloc),   yu_ptr(nvecloc);
+    std::vector<ROL::Ptr<ROL::Vector<RealT> > > dxu_ptr(nvecloc),  dvu_ptr(nvecloc),  dyu_ptr(nvecloc);
     RealT right = 1, left = 0;
     for( int k=0; k<nvecloc; ++k ) {
-      xuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      vuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      yuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      dxuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      dvuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      dyuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      xu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( xuk_rcp[k] ) );
-      vu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( vuk_rcp[k] ) );
-      yu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( yuk_rcp[k] ) );
-      dxu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( dxuk_rcp[k] ) );
-      dvu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( dvuk_rcp[k] ) );
-      dyu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( dyuk_rcp[k] ) );
+      xuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      vuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      yuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      dxuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      dvuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      dyuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      xu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( xuk_ptr[k] );
+      vu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( vuk_ptr[k] );
+      yu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( yuk_ptr[k] );
+      dxu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( dxuk_ptr[k] );
+      dvu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( dvuk_ptr[k] );
+      dyu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( dyuk_ptr[k] );
       for( int i=0; i<nx; ++i ) {
-        (*xuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*vuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*yuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*dxuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*dvuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*dyuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*xuk_ptr[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*vuk_ptr[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*yuk_ptr[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*dxuk_ptr[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*dvuk_ptr[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*dyuk_ptr[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       }
     }
-    Teuchos::RCP<ROL::PrimalSimulatedVector<RealT> > xu, vu, yu;
-    Teuchos::RCP<ROL::DualSimulatedVector<RealT> > dxu, dvu, dyu;
-    xu = Teuchos::rcp(new ROL::PrimalSimulatedVector<RealT>(xu_rcp, bman, sampler));
-    vu = Teuchos::rcp(new ROL::PrimalSimulatedVector<RealT>(vu_rcp, bman, sampler));
-    yu = Teuchos::rcp(new ROL::PrimalSimulatedVector<RealT>(yu_rcp, bman, sampler));
-    dxu = Teuchos::rcp(new ROL::DualSimulatedVector<RealT>(dxu_rcp, bman, sampler));
-    dvu = Teuchos::rcp(new ROL::DualSimulatedVector<RealT>(dvu_rcp, bman, sampler));
-    dyu = Teuchos::rcp(new ROL::DualSimulatedVector<RealT>(dyu_rcp, bman, sampler));
+    ROL::Ptr<ROL::PrimalSimulatedVector<RealT> > xu, vu, yu;
+    ROL::Ptr<ROL::DualSimulatedVector<RealT> > dxu, dvu, dyu;
+    xu = ROL::makePtr<ROL::PrimalSimulatedVector<RealT>>(xu_ptr, bman, sampler);
+    vu = ROL::makePtr<ROL::PrimalSimulatedVector<RealT>>(vu_ptr, bman, sampler);
+    yu = ROL::makePtr<ROL::PrimalSimulatedVector<RealT>>(yu_ptr, bman, sampler);
+    dxu = ROL::makePtr<ROL::DualSimulatedVector<RealT>>(dxu_ptr, bman, sampler);
+    dvu = ROL::makePtr<ROL::DualSimulatedVector<RealT>>(dvu_ptr, bman, sampler);
+    dyu = ROL::makePtr<ROL::DualSimulatedVector<RealT>>(dyu_ptr, bman, sampler);
     // SimOpt vectors.
-    Teuchos::RCP<std::vector<RealT> > xz_rcp, vz_rcp, yz_rcp;
-    Teuchos::RCP<std::vector<RealT> > dxz_rcp, dvz_rcp, dyz_rcp;
-    xz_rcp = Teuchos::rcp(new std::vector<RealT>(nx+2,0.0));
-    vz_rcp = Teuchos::rcp(new std::vector<RealT>(nx+2,0.0));
-    yz_rcp = Teuchos::rcp(new std::vector<RealT>(nx+2,0.0));
-    dxz_rcp = Teuchos::rcp(new std::vector<RealT>(nx+2,0.0));
-    dvz_rcp = Teuchos::rcp(new std::vector<RealT>(nx+2,0.0));
-    dyz_rcp = Teuchos::rcp(new std::vector<RealT>(nx+2,0.0));
-    Teuchos::RCP<ROL::StdVector<RealT> > xz, vz, yz;
-    Teuchos::RCP<ROL::StdVector<RealT> > dxz, dvz, dyz;
-    xz = Teuchos::rcp(new ROL::StdVector<RealT>(xz_rcp));
-    vz = Teuchos::rcp(new ROL::StdVector<RealT>(vz_rcp));
-    yz = Teuchos::rcp(new ROL::StdVector<RealT>(yz_rcp));
-    dxz = Teuchos::rcp(new ROL::StdVector<RealT>(dxz_rcp));
-    dvz = Teuchos::rcp(new ROL::StdVector<RealT>(dvz_rcp));
-    dyz = Teuchos::rcp(new ROL::StdVector<RealT>(dyz_rcp));
+    ROL::Ptr<std::vector<RealT> > xz_ptr, vz_ptr, yz_ptr;
+    ROL::Ptr<std::vector<RealT> > dxz_ptr, dvz_ptr, dyz_ptr;
+    xz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    vz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    yz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    dxz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    dvz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    dyz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    ROL::Ptr<ROL::StdVector<RealT> > xz, vz, yz;
+    ROL::Ptr<ROL::StdVector<RealT> > dxz, dvz, dyz;
+    xz = ROL::makePtr<ROL::StdVector<RealT>>(xz_ptr);
+    vz = ROL::makePtr<ROL::StdVector<RealT>>(vz_ptr);
+    yz = ROL::makePtr<ROL::StdVector<RealT>>(yz_ptr);
+    dxz = ROL::makePtr<ROL::StdVector<RealT>>(dxz_ptr);
+    dvz = ROL::makePtr<ROL::StdVector<RealT>>(dvz_ptr);
+    dyz = ROL::makePtr<ROL::StdVector<RealT>>(dyz_ptr);
     for ( int i = 0; i < nx+2; i++ ) {
-      (*xz_rcp)[i] = random<RealT>(comm);
-      (*vz_rcp)[i] = random<RealT>(comm);
-      (*yz_rcp)[i] = random<RealT>(comm);
-      (*dxz_rcp)[i] = random<RealT>(comm);
-      (*dvz_rcp)[i] = random<RealT>(comm);
-      (*dyz_rcp)[i] = random<RealT>(comm);
+      (*xz_ptr)[i] = random<RealT>(comm);
+      (*vz_ptr)[i] = random<RealT>(comm);
+      (*yz_ptr)[i] = random<RealT>(comm);
+      (*dxz_ptr)[i] = random<RealT>(comm);
+      (*dvz_ptr)[i] = random<RealT>(comm);
+      (*dyz_ptr)[i] = random<RealT>(comm);
     }
     ROL::Vector_SimOpt<RealT> x(xu, xz);
     ROL::Vector_SimOpt<RealT> v(vu, vz);
@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
       std::ofstream file;
       file.open("control-fs-expv.txt");
       for ( int i = 0; i < nx+2; ++i ) {
-        file << (*xz_rcp)[i] << "\n";
+        file << (*xz_ptr)[i] << "\n";
       }
       file.close();
     }

@@ -100,7 +100,7 @@ namespace ML_Epetra
     //@{ \name Mathematical functions.
 
     //! Apply the inverse of the preconditioner to an Epetra_MultiVector (NOT AVAILABLE)
-    int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    int Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const {
       return(-1);}
 
     //! Apply the preconditioner w/ RHS B and get result X
@@ -144,7 +144,7 @@ namespace ML_Epetra
     int DestroyPreconditioner();
 
     //! Sets use transpose (not implemented).
-    int SetUseTranspose(bool UseTranspose){return(-1);}
+    int SetUseTranspose(bool /* UseTranspose */){return(-1);}
 
     //! Returns the infinity norm (not implemented).
     double NormInf() const {return(0.0);};
@@ -181,6 +181,9 @@ namespace ML_Epetra
 
     //! Implicitly applies in the inverse in an additive format
     int ApplyInverse_Implicit_Additive(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
+
+    //! Implicitly applies in the inverse with smoothing only
+    int ApplyInverse_Implicit_OnlySmoothing(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
 
     //! Implicitly applies in the inverse in an 1-2-1 format
     int ApplyInverse_Implicit_121(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;

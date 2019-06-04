@@ -138,8 +138,8 @@ public:
                         const Teuchos::ArrayView<const LO>& perm) const
   {
     //note: j is col, i is row
-    for(size_t j = 0; j < X_out.dimension_1(); ++j) {
-      for(size_t i = 0; i < X_out.dimension_0(); ++i) {
+    for(size_t j = 0; j < X_out.extent(1); ++j) {
+      for(size_t i = 0; i < X_out.extent(0); ++i) {
         const LO i_perm = perm[i];
         X_out(i, j) = X_in(i_perm, j);
       }
@@ -151,8 +151,8 @@ public:
                          OutView& X_out,
                          const Teuchos::ArrayView<const LO>& perm) const
   {
-    for(size_t j = 0; j < X_out.dimension_1(); ++j) {
-      for(size_t i = 0; i < X_out.dimension_0(); ++i) {
+    for(size_t j = 0; j < X_out.extent(1); ++j) {
+      for(size_t i = 0; i < X_out.extent(0); ++i) {
         const LO i_perm = perm[i];
         X_in(i_perm, j) = X_out(i, j);
       }
@@ -182,7 +182,7 @@ public:
                        MV_out& X_out,
                        const Teuchos::ArrayView<const LO>& perm) const
   {
-    for(size_t j = 0; j < X_in.dimension_1(); ++j) {
+    for(size_t j = 0; j < X_in.extent(1); ++j) {
       Teuchos::ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
       for(size_t i = 0; i < X_out.getLocalLength(); ++i) {
         const LO i_perm = perm[i];

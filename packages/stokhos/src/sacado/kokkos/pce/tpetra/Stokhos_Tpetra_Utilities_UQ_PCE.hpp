@@ -60,7 +60,6 @@ namespace Stokhos {
                                  Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
   create_cijk_crs_graph(const CijkType& cijk,
                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                        const Teuchos::RCP<Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& node,
                         const size_t matrix_pce_size) {
     using Teuchos::RCP;
     using Teuchos::arrayView;
@@ -71,7 +70,7 @@ namespace Stokhos {
 
     const size_t pce_sz = cijk.dimension();
     RCP<const Map> map =
-      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(pce_sz, comm, node);
+      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(pce_sz, comm);
     RCP<Graph> graph = Tpetra::createCrsGraph(map);
     if (matrix_pce_size == 1) {
       // Mean-based case -- graph is diagonal
@@ -149,10 +148,9 @@ namespace Stokhos {
 
     // Build Cijk graph if necessary
     if (cijk_graph == Teuchos::null)
-      cijk_graph = create_cijk_crs_graph<LocalOrdinal,GlobalOrdinal>(
+      cijk_graph = create_cijk_crs_graph<LocalOrdinal,GlobalOrdinal,Device>(
         cijk,
         flat_domain_map->getComm(),
-        flat_domain_map->getNode(),
         matrix_pce_size);
 
     // Build flattened graph that is the Kronecker product of the given
@@ -234,7 +232,13 @@ namespace Stokhos {
     typedef typename FlatVector::dual_view_type flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals = vec.getDualView();
+    flat_view_type flat_vals (vec.getLocalViewDevice(), vec.getLocalViewHost());
+    if (vec.need_sync_device ()) {
+      flat_vals.modify_host ();
+    }
+    else if (vec.need_sync_host ()) {
+      flat_vals.modify_device ();
+    }
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -264,7 +268,13 @@ namespace Stokhos {
     typedef typename FlatVector::dual_view_type flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals = vec.getDualView();
+    flat_view_type flat_vals (vec.getLocalViewDevice(), vec.getLocalViewHost());
+    if (vec.need_sync_device ()) {
+      flat_vals.modify_host ();
+    }
+    else if (vec.need_sync_host ()) {
+      flat_vals.modify_device ();
+    }
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));

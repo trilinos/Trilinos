@@ -45,7 +45,6 @@
 #define ROL_LINESEARCHSTEP_H
 
 #include "ROL_Types.hpp"
-#include "ROL_HelperFunctions.hpp"
 #include "ROL_Step.hpp"
 #include "ROL_LineSearch.hpp"
 
@@ -139,13 +138,13 @@ template <class Real>
 class LineSearchStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<Step<Real> >        desc_;       ///< Unglobalized step object
-  Teuchos::RCP<Secant<Real> >      secant_;     ///< Secant object (used for quasi-Newton)
-  Teuchos::RCP<Krylov<Real> >      krylov_;     ///< Krylov solver object (used for inexact Newton)
-  Teuchos::RCP<NonlinearCG<Real> > nlcg_;       ///< Nonlinear CG object (used for nonlinear CG)
-  Teuchos::RCP<LineSearch<Real> >  lineSearch_; ///< Line-search object
+  ROL::Ptr<Step<Real> >        desc_;       ///< Unglobalized step object
+  ROL::Ptr<Secant<Real> >      secant_;     ///< Secant object (used for quasi-Newton)
+  ROL::Ptr<Krylov<Real> >      krylov_;     ///< Krylov solver object (used for inexact Newton)
+  ROL::Ptr<NonlinearCG<Real> > nlcg_;       ///< Nonlinear CG object (used for nonlinear CG)
+  ROL::Ptr<LineSearch<Real> >  lineSearch_; ///< Line-search object
 
-  Teuchos::RCP<Vector<Real> > d_;
+  ROL::Ptr<Vector<Real> > d_;
 
   ELineSearch         els_;   ///< enum determines type of line search
   ECurvatureCondition econd_; ///< enum determines type of curvature condition
@@ -158,7 +157,7 @@ private:
   bool computeObj_;
   Real fval_;
 
-  Teuchos::ParameterList parlist_;
+  ROL::ParameterList parlist_;
 
   std::string lineSearchName_;  
 
@@ -193,7 +192,7 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a LineSearchStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.  The
+      specifications are passed in through a ROL::ParameterList.  The
       line-search type, secant type, Krylov type, or nonlinear CG type can
       be set using user-defined objects.
 
@@ -203,24 +202,24 @@ public:
       @param[in]     krylov     is a user-defined Krylov object
       @param[in]     nlcg       is a user-defined Nonlinear CG object
   */
-  LineSearchStep( Teuchos::ParameterList &parlist,
-                  const Teuchos::RCP<LineSearch<Real> > &lineSearch = Teuchos::null,
-                  const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,
-                  const Teuchos::RCP<Krylov<Real> > &krylov = Teuchos::null,
-                  const Teuchos::RCP<NonlinearCG<Real> > &nlcg = Teuchos::null )
-    : Step<Real>(), desc_(Teuchos::null), secant_(secant),
+  LineSearchStep( ROL::ParameterList &parlist,
+                  const ROL::Ptr<LineSearch<Real> > &lineSearch = ROL::nullPtr,
+                  const ROL::Ptr<Secant<Real> > &secant = ROL::nullPtr,
+                  const ROL::Ptr<Krylov<Real> > &krylov = ROL::nullPtr,
+                  const ROL::Ptr<NonlinearCG<Real> > &nlcg = ROL::nullPtr )
+    : Step<Real>(), desc_(ROL::nullPtr), secant_(secant),
       krylov_(krylov), nlcg_(nlcg), lineSearch_(lineSearch),
       els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
       verbosity_(0), computeObj_(true), fval_(0), parlist_(parlist) {
     // Parse parameter list
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    ROL::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+    ROL::ParameterList& Glist = parlist.sublist("General");
     econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
     acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
     verbosity_ = Glist.get("Print Verbosity",0);
     computeObj_ = Glist.get("Recompute Objective Function",false);
     // Initialize Line Search
-    if (lineSearch_ == Teuchos::null) {
+    if (lineSearch_ == ROL::nullPtr) {
       lineSearchName_ = Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation"); 
       els_ = StringToELineSearch(lineSearchName_);
       lineSearch_ = LineSearchFactory<Real>(parlist);
@@ -238,60 +237,60 @@ public:
     d_ = x.clone();
 
     // Initialize unglobalized step
-    Teuchos::ParameterList& list
+    ROL::ParameterList& list
       = parlist_.sublist("Step").sublist("Line Search").sublist("Descent Method");
-    EDescent edesc = StringToEDescent(list.get("Type","Quasi-Newton Method") );
+    EDescent edesc = StringToEDescent(list.get("Type","Quasi-Newton Method"));
     if (bnd.isActivated()) {
       switch(edesc) {
         case DESCENT_STEEPEST: {
-          desc_ = Teuchos::rcp(new GradientStep<Real>(parlist_,computeObj_));
+          desc_ = ROL::makePtr<GradientStep<Real>>(parlist_,computeObj_);
           break;
         }
         case DESCENT_NONLINEARCG: {
-          desc_ = Teuchos::rcp(new NonlinearCGStep<Real>(parlist_,nlcg_,computeObj_));
+          desc_ = ROL::makePtr<NonlinearCGStep<Real>>(parlist_,nlcg_,computeObj_);
           break;
         }
         case DESCENT_SECANT: {
-          desc_ = Teuchos::rcp(new ProjectedSecantStep<Real>(parlist_,secant_,computeObj_));
+          desc_ = ROL::makePtr<ProjectedSecantStep<Real>>(parlist_,secant_,computeObj_);
           break;
         }
         case DESCENT_NEWTON: {
-          desc_ = Teuchos::rcp(new ProjectedNewtonStep<Real>(parlist_,computeObj_));
+          desc_ = ROL::makePtr<ProjectedNewtonStep<Real>>(parlist_,computeObj_);
           break;
         }
         case DESCENT_NEWTONKRYLOV: {
-          desc_ = Teuchos::rcp(new ProjectedNewtonKrylovStep<Real>(parlist_,krylov_,secant_,computeObj_));
+          desc_ = ROL::makePtr<ProjectedNewtonKrylovStep<Real>>(parlist_,krylov_,secant_,computeObj_);
           break;
         }
         default:
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
             ">>> (LineSearchStep::Initialize): Undefined descent type!");
       }
     }
     else {
       switch(edesc) {
         case DESCENT_STEEPEST: {
-          desc_ = Teuchos::rcp(new GradientStep<Real>(parlist_,computeObj_));
+          desc_ = ROL::makePtr<GradientStep<Real>>(parlist_,computeObj_);
           break;
         }
         case DESCENT_NONLINEARCG: {
-          desc_ = Teuchos::rcp(new NonlinearCGStep<Real>(parlist_,nlcg_,computeObj_));
+          desc_ = ROL::makePtr<NonlinearCGStep<Real>>(parlist_,nlcg_,computeObj_);
           break;
         }
         case DESCENT_SECANT: {
-          desc_ = Teuchos::rcp(new SecantStep<Real>(parlist_,secant_,computeObj_));
+          desc_ = ROL::makePtr<SecantStep<Real>>(parlist_,secant_,computeObj_);
           break;
         }
         case DESCENT_NEWTON: {
-          desc_ = Teuchos::rcp(new NewtonStep<Real>(parlist_,computeObj_));
+          desc_ = ROL::makePtr<NewtonStep<Real>>(parlist_,computeObj_);
           break;
         }
         case DESCENT_NEWTONKRYLOV: {
-          desc_ = Teuchos::rcp(new NewtonKrylovStep<Real>(parlist_,krylov_,secant_,computeObj_));
+          desc_ = ROL::makePtr<NewtonKrylovStep<Real>>(parlist_,krylov_,secant_,computeObj_);
           break;
         }
         default:
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
             ">>> (LineSearchStep::Initialize): Undefined descent type!");
       }
     }
@@ -299,7 +298,7 @@ public:
 
     // Initialize line search
     lineSearch_->initialize(x,s,g,obj,bnd);
-    //const Teuchos::RCP<const StepState<Real> > desc_state = desc_->getStepState();
+    //const ROL::Ptr<const StepState<Real> > desc_state = desc_->getStepState();
     //lineSearch_->initialize(x,s,*(desc_state->gradientVec),obj,bnd);
   }
 
@@ -325,7 +324,7 @@ public:
 
     // Ensure that s is a descent direction
     // ---> If not, then default to steepest descent
-    const Teuchos::RCP<const StepState<Real> > desc_state = desc_->getStepState();
+    const ROL::Ptr<const StepState<Real> > desc_state = desc_->getStepState();
     Real gs = GradDotStep(*(desc_state->gradientVec),s,x,bnd,algo_state.gnorm);
     if (gs >= zero) {
       s.set((desc_state->gradientVec)->dual());
@@ -334,7 +333,7 @@ public:
     }
 
     // Perform line search
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     fval_ = algo_state.value;
     step_state->nfval = 0; step_state->ngrad = 0;
     lineSearch_->setData(algo_state.gnorm,*(desc_state->gradientVec));
@@ -368,10 +367,13 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s,
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     algo_state.nfval += step_state->nfval;
     algo_state.ngrad += step_state->ngrad;
     desc_->update(x,s,obj,bnd,algo_state);
+    step_state->flag = desc_->getStepState()->flag;
+    step_state->SPiter = desc_->getStepState()->SPiter;
+    step_state->SPflag = desc_->getStepState()->SPflag;
     if ( !computeObj_ ) {
       algo_state.value = fval_;
     }
@@ -410,10 +412,10 @@ public:
       This function prints the iteration status.
 
       @param[in]     algo_state    is the current state of the algorithm
-      @param[in]     printHeader   if ste to true will print the header at each iteration
+      @param[in]     printHeader   if set to true will print the header at each iteration
   */
   std::string print( AlgorithmState<Real> & algo_state, bool print_header = false ) const  {
-    const Teuchos::RCP<const StepState<Real> > step_state = Step<Real>::getStepState();
+    const ROL::Ptr<const StepState<Real> > step_state = Step<Real>::getStepState();
     std::string desc = desc_->print(algo_state,false);
     desc.erase(std::remove(desc.end()-3,desc.end(),'\n'), desc.end());
     std::string name = desc_->printName();

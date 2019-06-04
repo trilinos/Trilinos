@@ -7,7 +7,6 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -41,9 +40,11 @@ enum MappingInputDistributution{
   AllHaveCopies
 };
 
-RCP<mytest_tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int numProcs, Teuchos::RCP<const Teuchos::Comm<int> > tcomm,
-    RCP<Zoltan2::Environment> env, zscalar_t ** &partCenters, zgno_t & myTasks){
-
+RCP<mytest_tcrsGraph_t> create_tpetra_input_matrix(
+  int nx, int ny, int nz, 
+  int numProcs, Teuchos::RCP<const Teuchos::Comm<int> > tcomm,
+  RCP<Zoltan2::Environment> env, zscalar_t ** &partCenters, zgno_t & myTasks)
+{
   int rank = tcomm->getRank();
   using namespace Teuchos;
 
@@ -65,8 +66,6 @@ RCP<mytest_tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int n
     partCenters[i] = new zscalar_t[myTasks];
   }
 
-
-  zgno_t *task_gnos = new zgno_t [myTasks];
   zgno_t *task_communication_xadj_ = new zgno_t [myTasks+1];
   zgno_t *task_communication_adj_ = new zgno_t [myTasks * 6];
 
@@ -74,8 +73,6 @@ RCP<mytest_tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int n
   zlno_t prevNCount = 0;
   task_communication_xadj_[0] = 0;
   for (zgno_t i = myTaskBegin; i < myTaskEnd; ++i) {
-    task_gnos[i - myTaskBegin] = i;
-
     int x = i % nx;
     int y = (i / (nx)) % ny;
     int z = (i / (nx)) / ny;
@@ -122,6 +119,9 @@ RCP<mytest_tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int n
   }
   TpetraCrsGraph->fillComplete ();
 
+  delete [] task_communication_xadj_;
+  delete [] task_communication_adj_;
+
   env->timerStop(Zoltan2::MACRO_TIMERS, "TpetraGraphCreate");
   return TpetraCrsGraph;
 }
@@ -155,8 +155,10 @@ RCP <Zoltan2::XpetraMultiVectorAdapter<mytest_tMVector_t> > create_multi_vector_
 }
 
 
-void test_distributed_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm){
-  Teuchos::RCP<const Teuchos::Comm<int> > tcomm =  global_tcomm;//Teuchos::createSerialComm<int>();
+void test_distributed_input_adapter(
+  int nx, int ny, int nz, Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = global_tcomm;//Teuchos::createSerialComm<int>();
   mytest_part_t numProcs = tcomm->getSize();
   Teuchos::ParameterList distributed_problemParams;
   //create mapping problem parameters
@@ -167,7 +169,7 @@ void test_distributed_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const T
   distributed_problemParams.set("algorithm", "multijagged");
   distributed_problemParams.set("num_global_parts", numProcs);
 
-  RCP<Zoltan2::Environment> env (new Zoltan2::Environment(distributed_problemParams, global_tcomm));
+  RCP<Zoltan2::Environment> env(new Zoltan2::Environment(distributed_problemParams, global_tcomm));
   RCP<Zoltan2::TimerManager> timer(new Zoltan2::TimerManager(global_tcomm, &std::cout, Zoltan2::MACRO_TIMERS));
   env->setTimer(timer);
   /////////////////////////CREATE DISTRIBUTED INPUT ADAPTER///////////////////////////////////////
@@ -175,17 +177,21 @@ void test_distributed_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const T
   zscalar_t **partCenters;
   zgno_t myTasks ;
   //create tpetra input graph
-  RCP<mytest_tcrsGraph_t> distributed_tpetra_graph = create_tpetra_input_matrix(nx, ny, nz, numProcs, tcomm, env, partCenters, myTasks);
+  RCP<mytest_tcrsGraph_t> distributed_tpetra_graph = 
+                          create_tpetra_input_matrix(nx, ny, nz, numProcs, 
+                                                     tcomm, env, partCenters,
+                                                     myTasks);
   RCP<const mytest_map_t> distributed_map = distributed_tpetra_graph->getMap();
   global_tcomm->barrier();
 
   //create input adapter from tpetra graph
   env->timerStart(Zoltan2::MACRO_TIMERS, "AdapterCreate");
-  RCP<const mytest_tcrsGraph_t> const_tpetra_graph = rcp_const_cast<const mytest_tcrsGraph_t>(distributed_tpetra_graph);
+  RCP<const mytest_tcrsGraph_t> const_tpetra_graph = 
+            rcp_const_cast<const mytest_tcrsGraph_t>(distributed_tpetra_graph);
   RCP<mytest_adapter_t> ia (new mytest_adapter_t(const_tpetra_graph));
 
   //create multivector for coordinates and
-  RCP <Zoltan2::XpetraMultiVectorAdapter<mytest_tMVector_t> > distributed_adapter = create_multi_vector_adapter(distributed_map, partCenters, myTasks);
+  RCP<Zoltan2::XpetraMultiVectorAdapter<mytest_tMVector_t> > distributed_adapter = create_multi_vector_adapter(distributed_map, partCenters, myTasks);
   ia->setCoordinateInput(distributed_adapter.getRawPtr());
   env->timerStop(Zoltan2::MACRO_TIMERS, "AdapterCreate");
   global_tcomm->barrier();
@@ -259,19 +265,25 @@ void test_distributed_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const T
 
   if (global_tcomm->getRank() == 0){
     std::cout << "METRICS FOR THE FIRST CASE - TWO PHASE MAPPING" << std::endl;
-    metricObject_1->printMetrics(cout);
+    metricObject_1->printMetrics(std::cout);
     std::cout << "METRICS FOR THE SECOND CASE - TWO PHASE MAPPING - INITIAL ASSIGNMENT ARE ASSUMED TO BE A PART" << std::endl;
-    metricObject_2->printMetrics(cout);
+    metricObject_2->printMetrics(std::cout);
     std::cout << "METRICS FOR THE THIRD CASE - ONE PHASE MAPPING - EACH ELEMENT IS ASSUMED TO BE IN UNIQUE PART AT  THE BEGINNING" << std::endl;
-    metricObject_3->printMetrics(cout);
+    metricObject_3->printMetrics(std::cout);
   }
+
+  for (int i = 0; i < 3; i++) delete [] partCenters[i];
+  delete [] partCenters;
 }
 
 
 
-void test_serial_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm){
+void test_serial_input_adapter(
+  int nx, int ny, int nz, Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm)
+{
   //all processors have the all input in this case.
-  Teuchos::RCP<const Teuchos::Comm<int> > serial_comm =  Teuchos::createSerialComm<int>();
+  Teuchos::RCP<const Teuchos::Comm<int> > serial_comm =  
+                                          Teuchos::createSerialComm<int>();
 
   //for the input creation, let processor think that it is the only processor.
   mytest_part_t numProcs = serial_comm->getSize();
@@ -362,29 +374,31 @@ void test_serial_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teucho
 
   if (global_tcomm->getRank() == 0){
     std::cout << "METRICS FOR THE SERIAL CASE - ONE PHASE MAPPING - EACH ELEMENT IS ASSUMED TO BE IN UNIQUE PART AT  THE BEGINNING" << std::endl;
-    metricObject_3->printMetrics(cout);
+    metricObject_3->printMetrics(std::cout);
   }
+
+  for (int i = 0; i < 3; i++) delete [] partCenters[i];
+  delete [] partCenters;
 }
 
-int main(int argc, char *argv[]){
+int main(int narg, char *arg[]){
 
-
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm = Tpetra::getDefaultComm();
 
   int nx = 16, ny = 16, nz = 16;
-  for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "NX" ) ) {
-      nx = atoi( argv[++i] );
+  for ( int i = 1 ; i < narg ; ++i ) {
+    if ( 0 == strcasecmp( arg[i] , "NX" ) ) {
+      nx = atoi( arg[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "NY" ) ) {
-      ny = atoi( argv[++i] );
+    else if ( 0 == strcasecmp( arg[i] , "NY" ) ) {
+      ny = atoi( arg[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "NZ" ) ) {
-      nz = atoi( argv[++i] );
+    else if ( 0 == strcasecmp( arg[i] , "NZ" ) ) {
+      nz = atoi( arg[++i] );
     }
     else{
-      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << arg[i] << std::endl ;
       return 1;
     }
   }
@@ -437,15 +451,15 @@ int main(int argc, char *argv[]){
 #endif
 
     if (global_tcomm->getRank() == 0){
-      cout << "PASS" << endl;
+      std::cout << "PASS" << std::endl;
     }
   }
   catch(std::string &s){
-    cerr << s << endl;
+    std::cerr << s << std::endl;
   }
 
   catch(char * s){
-    cerr << s << endl;
+    std::cerr << s << std::endl;
   }
 }
 

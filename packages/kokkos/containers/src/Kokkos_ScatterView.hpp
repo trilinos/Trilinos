@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -578,13 +578,24 @@ public:
   , internal_view(Kokkos::ViewAllocateWithoutInitializing(
                     std::string("duplicated_") + original_view.label()),
                   unique_token.size(),
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
                   original_view.extent(0),
                   original_view.extent(1),
                   original_view.extent(2),
                   original_view.extent(3),
                   original_view.extent(4),
                   original_view.extent(5),
-                  original_view.extent(6))
+                  original_view.extent(6) )
+#else
+                  original_view.rank_dynamic > 0 ? original_view.extent(0): KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                  original_view.rank_dynamic > 1 ? original_view.extent(1): KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                  original_view.rank_dynamic > 2 ? original_view.extent(2): KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                  original_view.rank_dynamic > 3 ? original_view.extent(3): KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                  original_view.rank_dynamic > 4 ? original_view.extent(4): KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                  original_view.rank_dynamic > 5 ? original_view.extent(5): KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                  original_view.rank_dynamic > 6 ? original_view.extent(6): KOKKOS_IMPL_CTOR_DEFAULT_ARG)
+
+#endif
   {
     reset();
   }
@@ -623,14 +634,12 @@ public:
         typename ExecSpace::memory_space,
         typename dest_type::memory_space>::value,
         "ScatterView deep_copy destination memory space not accessible");
-    size_t strides[8];
-    internal_view.stride(strides);
     bool is_equal = (dest.data() == internal_view.data());
     size_t start = is_equal ? 1 : 0;
     Kokkos::Impl::Experimental::ReduceDuplicates<ExecSpace, original_value_type, Op>(
         internal_view.data(),
         dest.data(),
-        strides[0],
+        internal_view.stride(0),
         start,
         internal_view.extent(0),
         internal_view.label());
@@ -772,9 +781,6 @@ public:
         typename ExecSpace::memory_space,
         typename dest_type::memory_space>::value,
         "ScatterView deep_copy destination memory space not accessible");
-    size_t strides[8];
-    internal_view.stride(strides);
-    size_t stride = strides[internal_view_type::rank - 1];
     auto extent = internal_view.extent(
         internal_view_type::rank - 1);
     bool is_equal = (dest.data() == internal_view.data());
@@ -782,7 +788,7 @@ public:
     Kokkos::Impl::Experimental::ReduceDuplicates<ExecSpace, original_value_type, Op>(
         internal_view.data(),
         dest.data(),
-        stride,
+        internal_view.stride(internal_view_type::rank - 1),
         start,
         extent,
         internal_view.label());

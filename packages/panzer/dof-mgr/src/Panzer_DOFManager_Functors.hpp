@@ -60,7 +60,7 @@ struct SumRank2 {
   
   KOKKOS_INLINE_FUNCTION
   void operator () (const unsigned int i, GO& lsum) const {
-    for (unsigned int j=0; j < a_.dimension_1(); ++j)
+    for (unsigned int j=0; j < a_.extent(1); ++j)
       lsum += a_(i,j);
   }
 };

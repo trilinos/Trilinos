@@ -50,7 +50,7 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_StdVector.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
@@ -71,12 +71,12 @@ int main(int argc, char *argv[]) {
   GlobalMPISession mpiSession(&argc, &argv);
  
   int iprint = argc - 1;
-  RCP<std::ostream>  outStream;
-  oblackholestream   bhs;
+  ROL::Ptr<std::ostream>  outStream;
+  ROL::nullstream bhs;
   if( iprint > 0 )
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs,false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -87,42 +87,42 @@ int main(int argc, char *argv[]) {
     int dim = 5;
 
     // Upper bound vector
-    RCP<vec> u_rcp = rcp(new vec(dim,0.0));
+    ROL::Ptr<vec> u_ptr = ROL::makePtr<vec>(dim,0.0);
 
     // Lower bound vector
-    RCP<vec> l_rcp = rcp(new vec(dim,0.0));
+    ROL::Ptr<vec> l_ptr = ROL::makePtr<vec>(dim,0.0);
 
     // Gradient vectors
-    RCP<vec> g1_rcp = rcp(new vec(dim,1.0));
-    RCP<vec> g2_rcp = rcp(new vec(dim,-1.0));
+    ROL::Ptr<vec> g1_ptr = ROL::makePtr<vec>(dim,1.0);
+    ROL::Ptr<vec> g2_ptr = ROL::makePtr<vec>(dim,-1.0);
 
     // Test vectors
-    RCP<vec> y_rcp  = rcp(new vec(dim,0.0));
-    RCP<vec> v_rcp  = rcp(new vec(dim,0.0));
-    RCP<vec> vs_rcp = rcp(new vec(dim,0.0));
+    ROL::Ptr<vec> y_ptr  = ROL::makePtr<vec>(dim,0.0);
+    ROL::Ptr<vec> v_ptr  = ROL::makePtr<vec>(dim,0.0);
+    ROL::Ptr<vec> vs_ptr = ROL::makePtr<vec>(dim,0.0);
 
-    (*y_rcp)[0] =  2.0;
-    (*y_rcp)[1] = -4.0;
-    (*y_rcp)[2] =  1.0;
-    (*y_rcp)[3] = -1.0;
-    (*y_rcp)[4] =  8.0; 
+    (*y_ptr)[0] =  2.0;
+    (*y_ptr)[1] = -4.0;
+    (*y_ptr)[2] =  1.0;
+    (*y_ptr)[3] = -1.0;
+    (*y_ptr)[4] =  8.0; 
 
     for(int i=0;i<dim;++i) {
-      (*u_rcp)[i] =   i+1.0;
-      (*l_rcp)[i] = -(i+1.0);
+      (*u_ptr)[i] =   i+1.0;
+      (*l_ptr)[i] = -(i+1.0);
     }
  
-    RCP<V> lp =  rcp(new SV(l_rcp));
-    RCP<V> up  = rcp(new SV(u_rcp));
-    RCP<V> yp  = rcp(new SV(y_rcp));
-    RCP<V> vp  = rcp(new SV(v_rcp));
-    RCP<V> vsp = rcp(new SV(vs_rcp));
-    RCP<V> g1p = rcp(new SV(g1_rcp));
-    RCP<V> g2p = rcp(new SV(g2_rcp));
+    ROL::Ptr<V> lp =  ROL::makePtr<SV>(l_ptr);
+    ROL::Ptr<V> up  = ROL::makePtr<SV>(u_ptr);
+    ROL::Ptr<V> yp  = ROL::makePtr<SV>(y_ptr);
+    ROL::Ptr<V> vp  = ROL::makePtr<SV>(v_ptr);
+    ROL::Ptr<V> vsp = ROL::makePtr<SV>(vs_ptr);
+    ROL::Ptr<V> g1p = ROL::makePtr<SV>(g1_ptr);
+    ROL::Ptr<V> g2p = ROL::makePtr<SV>(g2_ptr);
 
 
     ROL::Bounds<RealT>     bc(lp,up);
-    ROL::StdBoundConstraint<RealT>  sbc(*l_rcp,*u_rcp);
+    ROL::StdBoundConstraint<RealT>  sbc(*l_ptr,*u_ptr);
 
     // Test project
     vp->set(*yp);

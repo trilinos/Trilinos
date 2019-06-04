@@ -84,10 +84,12 @@ struct VectorFunctionCalls {
   Ordinal applyUnary_;
   Ordinal applyBinary_;
   Ordinal reduce_;
+  Ordinal setScalar_;
+  Ordinal randomize_;
   VectorFunctionCalls() :
     constructor_(0), destructor_(0), plus_(0), scale_(0), dot_(0), norm_(0), clone_(0),
     axpy_(0), zero_(0), basis_(0), dimension_(0), set_(0), dual_(0), applyUnary_(0),
-    applyBinary_(0), reduce_(0) {}
+    applyBinary_(0), reduce_(0), setScalar_(0), randomize_(0) {}
 
 }; // struct VectorFunctionCalls
 
@@ -121,6 +123,8 @@ void printVectorFunctionCalls( const ProfiledVector<Ordinal,Real> &x, std::ostre
   outStream << "applyUnary  : " << x.functionCalls_.applyUnary_   << std::endl;
   outStream << "applyBinary : " << x.functionCalls_.applyBinary_  << std::endl;
   outStream << "reduce      : " << x.functionCalls_.reduce_       << std::endl;
+  outStream << "setScalar   : " << x.functionCalls_.setScalar_    << std::endl;
+  outStream << "randomize   : " << x.functionCalls_.randomize_    << std::endl;
 }
 
 
@@ -128,19 +132,18 @@ void printVectorFunctionCalls( const ProfiledVector<Ordinal,Real> &x, std::ostre
 template<class Ordinal,class Real> 
 class ProfiledVector : public Vector<Real> {
 
-  template <typename T> using RCP = Teuchos::RCP<T>;  
   typedef Vector<Real>   V;
 
 private: 
-  Teuchos::RCP<Vector<Real> > v_; 
+  ROL::Ptr<Vector<Real> > v_; 
   static VectorFunctionCalls<Ordinal> functionCalls_;
 public:
 
-  ProfiledVector( const Teuchos::RCP<Vector<Real> > &v ) { 
+  ProfiledVector( const ROL::Ptr<Vector<Real> > &v ) { 
     // Make sure that given vector is not itself a ProfiledVector to avoid recursion
-    Teuchos::RCP<ProfiledVector> pv = Teuchos::null;
-    pv = Teuchos::rcp_dynamic_cast<ProfiledVector>(v);
-    TEUCHOS_TEST_FOR_EXCEPTION( pv != Teuchos::null, std::logic_error, "ProfiledVector class "
+    ROL::Ptr<ProfiledVector> pv = ROL::nullPtr;
+    pv = ROL::dynamicPtrCast<ProfiledVector>(v);
+    ROL_TEST_FOR_EXCEPTION( pv != ROL::nullPtr, std::logic_error, "ProfiledVector class "
     "cannot encapsulate a ProfiledVector object!");
 
     v_ = v;
@@ -153,7 +156,7 @@ public:
   }
 
   void plus( const Vector<Real> &x ) {
-    RCP<const V> xp = Teuchos::dyn_cast<const ProfiledVector>(x).getVector();
+    ROL::Ptr<const V> xp = dynamic_cast<const ProfiledVector&>(x).getVector();
 
     functionCalls_.plus_++;
     v_->plus(*xp);
@@ -165,7 +168,7 @@ public:
   }
   
   Real dot( const Vector<Real> &x ) const {
-    RCP<const V> xp = Teuchos::dyn_cast<const ProfiledVector>(x).getVector();
+    ROL::Ptr<const V> xp = dynamic_cast<const ProfiledVector&>(x).getVector();
     functionCalls_.dot_++;
     return v_->dot(*xp);
   }
@@ -175,13 +178,13 @@ public:
     return v_->norm();
   }
 
-  Teuchos::RCP<Vector<Real> > clone() const {
+  ROL::Ptr<Vector<Real> > clone() const {
     functionCalls_.clone_++;
-    return Teuchos::rcp( new ProfiledVector( v_->clone() ) );
+    return ROL::makePtr<ProfiledVector>( v_->clone() );
   }
 
   void axpy( const Real alpha, const Vector<Real> &x ) {
-    RCP<const V> xp = Teuchos::dyn_cast<const ProfiledVector>(x).getVector();
+    ROL::Ptr<const V> xp = dynamic_cast<const ProfiledVector&>(x).getVector();
     functionCalls_.axpy_++;
     return v_->axpy(alpha,*xp);
   }
@@ -191,9 +194,9 @@ public:
     v_->zero();
   }
 
-  Teuchos::RCP<Vector<Real> > basis( const int i ) const {
+  ROL::Ptr<Vector<Real> > basis( const int i ) const {
     functionCalls_.basis_++;
-   return Teuchos::rcp( new ProfiledVector( v_->basis(i) ) );
+   return ROL::makePtr<ProfiledVector>( v_->basis(i) );
   }
 
   int dimension() const {
@@ -202,22 +205,22 @@ public:
   }
 
   void set( const Vector<Real> &x ) {
-    RCP<const V> xp = Teuchos::dyn_cast<const ProfiledVector>(x).getVector();
+    ROL::Ptr<const V> xp = dynamic_cast<const ProfiledVector&>(x).getVector();
     functionCalls_.set_++;
     v_->set(*xp);
   }
 
-  // TODO: determine the correct way to handle dual when v_ is a generic RCP<ROL::Vector>
+  // TODO: determine the correct way to handle dual when v_ is a generic ROL::Ptr<ROL::Vector>
   const Vector<Real> & dual() const {
     functionCalls_.dual_++; 
     return *this;
   }
 
-  Teuchos::RCP<Vector<Real> > getVector() {
+  ROL::Ptr<Vector<Real> > getVector() {
     return v_;
   }
 
-  Teuchos::RCP<const Vector<Real> > getVector() const {
+  ROL::Ptr<const Vector<Real> > getVector() const {
     return v_;
   }
 
@@ -234,6 +237,16 @@ public:
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     functionCalls_.reduce_++;
     return v_->reduce(r);
+  }
+
+  void setScalar( const Real C ) {
+    functionCalls_.setScalar_++;
+    v_->setScalar(C);
+  }
+
+  void randomize( const Real l=0.0, const Real u=1.0) {
+    functionCalls_.randomize_++;
+    v_->randomize(l,u);
   }
 
   void print( std::ostream &outStream ) const {

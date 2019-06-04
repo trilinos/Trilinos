@@ -39,16 +39,10 @@
 // ************************************************************************
 // @HEADER
 
-// Ensure that if CUDA and KokkosCompat are enabled, then only the .cu
-// version of this file will actually be compiled.
-#include <Tpetra_ConfigDefs.hpp>
-
-
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Tpetra_ConfigDefs.hpp>
 #include <TpetraCore_ETIHelperMacros.h>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
@@ -91,8 +85,7 @@ namespace { // (anonymous)
     int lclSuccess = 0;
     int gblSuccess = 0;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
 
     if (myRank == 0) {
@@ -104,29 +97,10 @@ namespace { // (anonymous)
     LO nEle = 63;
     RCP<const map_type> map = rcp (new map_type (nEle, 0, comm));
 
-#ifdef KOKKOS_HAVE_OPENMP
-    if (Kokkos::Impl::is_same<Node, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP> >::value) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        ! Kokkos::OpenMP::is_initialized (), std::logic_error,
-        "OpenMP execution space not initialized!" );
-    }
-#endif // KOKKOS_HAVE_OPENMP
+        ! Kokkos::is_initialized (), std::logic_error,
+        "Kokkos is not initialized!" );
 
-#ifdef KOKKOS_HAVE_PTHREAD
-    if (Kokkos::Impl::is_same<Node, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads> >::value) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! Kokkos::Threads::is_initialized (), std::logic_error,
-        "Threads execution space not initialized!" );
-    }
-#endif // KOKKOS_HAVE_PTHREAD
-
-#ifdef KOKKOS_HAVE_SERIAL
-    if (Kokkos::Impl::is_same<Node, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> >::value) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! Kokkos::Serial::is_initialized (), std::logic_error,
-        "Serial execution space not initialized!" );
-    }
-#endif // KOKKOS_HAVE_SERIAL
 
     RCP<crs_matrix_type> matrix = rcp (new crs_matrix_type (map, 10));
     const LO NumMyElements = map->getNodeNumElements ();

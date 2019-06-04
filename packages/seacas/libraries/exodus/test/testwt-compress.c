@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,34 +33,35 @@
  *
  */
 /*****************************************************************************
-*
-* testwt - test write an ExodusII database file
-*
-* author - Sandia National Laboratories
-*          Larry A. Schoof - Original
-*          Vic Yarberry    - Added headers and error logging
-*               7/7/93          Modified for use with Exodus 2.00
-*
-*
-* environment - UNIX
-*
-* entry conditions -
-*
-* exit conditions -
-*
-* revision history -
-*
-*  This is a test program for the C binding of the EXODUS II
-*  database write routines.
-*
-*
-*****************************************************************************/
+ *
+ * testwt - test write an ExodusII database file
+ *
+ * author - Sandia National Laboratories
+ *          Larry A. Schoof - Original
+ *          Vic Yarberry    - Added headers and error logging
+ *               7/7/93          Modified for use with Exodus 2.00
+ *
+ *
+ * environment - UNIX
+ *
+ * entry conditions -
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *  This is a test program for the C binding of the EXODUS II
+ *  database write routines.
+ *
+ *
+ *****************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "exodusII.h"
+#include "exodusII_int.h"
 
 int main(int argc, char **argv)
 {
@@ -332,13 +333,13 @@ int main(int argc, char **argv)
   block_names[5] = "block_6";
   block_names[6] = "block_7";
 
-  strncpy(blocks[0].topology, "quad", 32);
-  strncpy(blocks[1].topology, "quad", 32);
-  strncpy(blocks[2].topology, "hex", 32);
-  strncpy(blocks[3].topology, "tetra", 32);
-  strncpy(blocks[4].topology, "wedge", 32);
-  strncpy(blocks[5].topology, "tetra", 32);
-  strncpy(blocks[6].topology, "tri", 32);
+  ex_copy_string(blocks[0].topology, "quad", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[1].topology, "quad", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[2].topology, "hex", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[3].topology, "tetra", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[4].topology, "wedge", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[5].topology, "tetra", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[6].topology, "tri", MAX_STR_LENGTH + 1);
 
   blocks[0].num_entry = 1;
   blocks[1].num_entry = 1;
@@ -1164,7 +1165,7 @@ int main(int argc, char **argv)
   nset_var_vals  = (float *)calloc(10, CPU_word_size);
 
   for (i = 0; i < num_time_steps; i++) {
-    time_value = (float)(i + 1) / 100.;
+    time_value = (float)(i + 1) / 100.0f;
 
     /* write time value */
 

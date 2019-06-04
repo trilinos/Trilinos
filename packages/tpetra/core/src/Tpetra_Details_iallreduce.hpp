@@ -702,9 +702,9 @@ struct Iallreduce<PacketType,
     typedef typename std::remove_const<PacketType>::type packet_type;
 
     std::shared_ptr<CommRequest> req =
-      Impl::iallreduceRaw<packet_type> (sendbuf.ptr_on_device (),
-                                        recvbuf.ptr_on_device (),
-                                        static_cast<int> (sendbuf.dimension_0 ()),
+      Impl::iallreduceRaw<packet_type> (sendbuf.data (),
+                                        recvbuf.data (),
+                                        static_cast<int> (sendbuf.extent (0)),
                                         op, comm);
     return Impl::wrapIallreduceCommRequest (req, sendbuf, recvbuf);
 #else // NOT HAVE_TPETRACORE_MPI
@@ -764,8 +764,8 @@ struct Iallreduce<PacketType,
     typedef typename std::remove_const<PacketType>::type packet_type;
 
     std::shared_ptr<CommRequest> req =
-      Impl::iallreduceRaw<packet_type> (sendbuf.ptr_on_device (),
-                                        recvbuf.ptr_on_device (),
+      Impl::iallreduceRaw<packet_type> (sendbuf.data (),
+                                        recvbuf.data (),
                                         static_cast<int> (1),
                                         op, comm);
     return Impl::wrapIallreduceCommRequest (req, sendbuf, recvbuf);
@@ -846,6 +846,12 @@ iallreduce (const InputViewType& sendbuf,
     recv_layout_type, recv_device_type, rank> impl_type;
   return impl_type::iallreduce (sendbuf, recvbuf, op, comm);
 }
+
+std::shared_ptr<CommRequest>
+iallreduce (const int localValue,
+            int& globalValue,
+            const ::Teuchos::EReductionType op,
+            const ::Teuchos::Comm<int>& comm);
 
 } // namespace Details
 } // namespace Tpetra

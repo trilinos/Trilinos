@@ -6,7 +6,7 @@
     <Parameter docString="Screen Output Index Interval (e.g., every 100 time steps" id="3" isDefault="false" isUsed="true" name="Screen Output Index Interval" type="int" value="1000000"/>
     <Parameter docString="'Stepper Name' selects the Stepper block to construct (Required)." id="4" isDefault="false" isUsed="true" name="Stepper Name" type="string" value="Demo Stepper"/>
     <ParameterList id="7" name="Solution History">
-      <Parameter docString="" id="5" isDefault="true" isUsed="true" name="Storage Type" type="string" value="Unlimited"/>
+      <Parameter docString="" id="5" isDefault="true" isUsed="true" name="Storage Type" type="string" value="Undo"/>
       <Parameter docString="" id="6" isDefault="true" isUsed="true" name="Storage Limit" type="int" value="2"/>
       <ParameterList name="Interpolator">
         <Parameter name="Interpolator Type" type="string" value="Lagrange"/>
@@ -14,33 +14,36 @@
     </ParameterList>
     <ParameterList id="31" name="Time Step Control">
       <Parameter docString="" id="8" isDefault="true" isUsed="true" name="Initial Time" type="double" value="0.00000000000000000e+00"/>
-      <Parameter docString="" id="9" isDefault="true" isUsed="true" name="Final Time" type="double" value="1.79769313486231571e+308"/>
+      <Parameter docString="" id="9" isDefault="true" isUsed="true" name="Final Time" type="double" value="1.0e+99"/>
       <Parameter docString="" id="10" isDefault="true" isUsed="true" name="Initial Time Index" type="int" value="0"/>
       <Parameter docString="" id="11" isDefault="true" isUsed="true" name="Final Time Index" type="int" value="1000000"/>
-      <Parameter docString="" id="12" isDefault="true" isUsed="true" name="Minimum Time Step" type="double" value="2.22044604925031308e-16"/>
-      <Parameter docString="" id="13" isDefault="true" isUsed="true" name="Initial Time Step" type="double" value="2.22044604925031308e-16"/>
-      <Parameter docString="" id="14" isDefault="true" isUsed="true" name="Maximum Time Step" type="double" value="1.79769313486231571e+308"/>
-      <Parameter docString="" id="32" isDefault="true" isUsed="true" name="Amplification Factor" type="double" value="1.75"/>
-      <Parameter docString="" id="33" isDefault="true" isUsed="true" name="Reduction Factor" type="double" value="0.5"/>
-      <Parameter docString="" id="34" isDefault="true" isUsed="true" name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
-      <Parameter docString="" id="35" isDefault="true" isUsed="true" name="Maximum Value Monitoring Function" type="double" value="0.1"/>
+      <Parameter docString="" id="12" isDefault="true" isUsed="true" name="Minimum Time Step" type="double" value="0.0"/>
+      <Parameter docString="" id="13" isDefault="true" isUsed="true" name="Initial Time Step" type="double" value="1.0"/>
+      <Parameter docString="" id="14" isDefault="true" isUsed="true" name="Maximum Time Step" type="double" value="1.0e+99"/>
       <Parameter docString="" id="17" isDefault="true" isUsed="true" name="Minimum Order" type="int" value="1"/>
       <Parameter docString="" id="18" isDefault="true" isUsed="true" name="Initial Order" type="int" value="1"/>
       <Parameter docString="" id="19" isDefault="true" isUsed="true" name="Maximum Order" type="int" value="1"/>
       <Parameter docString="" id="15" isDefault="true" isUsed="true" name="Maximum Absolute Error" type="double" value="1.00000000000000002e-08"/>
       <Parameter docString="" id="16" isDefault="true" isUsed="true" name="Maximum Relative Error" type="double" value="1.00000000000000002e-08"/>
       <Parameter docString="" id="20" isDefault="true" isUsed="true" name="Integrator Step Type" type="string" value="Variable"/>
+      <Parameter docString="" id="37" isDefault="true" isUsed="true" name="Output Exactly On Output Times" type="bool" value="true"/>
       <Parameter docString="" id="21" isDefault="true" isUsed="true" name="Output Time List" type="string" value=""/>
       <Parameter docString="" id="22" isDefault="true" isUsed="true" name="Output Index List" type="string" value=""/>
-      <Parameter docString="" id="23" isDefault="true" isUsed="true" name="Output Time Interval" type="double" value="1.79769313486231571e+308"/>
+      <Parameter docString="" id="23" isDefault="true" isUsed="true" name="Output Time Interval" type="double" value="1.0e+99"/>
       <Parameter docString="" id="24" isDefault="true" isUsed="true" name="Output Index Interval" type="int" value="1000000"/>
       <Parameter docString="" id="25" isDefault="true" isUsed="true" name="Maximum Number of Stepper Failures" type="int" value="10"/>
       <Parameter docString="" id="26" isDefault="true" isUsed="true" name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
       <Parameter docString="" id="27" isDefault="true" isUsed="true" name="Number of Time Steps" type="int" value="-1"/>
+      <ParameterList id="32" name="Time Step Control Strategy">
+          <Parameter docString="" id="33" isDefault="true" isUsed="true" name="Time Step Control Strategy List" type="string" value=""/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
   <ParameterList id="30" name="Demo Stepper">
     <Parameter docString="" id="29" isDefault="false" isUsed="true" name="Stepper Type" type="string" value="Forward Euler"/>
+    <Parameter docString="" id="34" isDefault="false" isUsed="true" name="Use FSAL" type="bool" value="true"/>
+    <Parameter docString="" id="35" isDefault="false" isUsed="true" name="Initial Condition Consistency" type="string" value="Consistent"/>
+    <Parameter docString="" id="36" isDefault="false" isUsed="true" name="Initial Condition Consistency Check" type="bool" value="true"/>
   </ParameterList>
   <Validators/>
 </ParameterList>

@@ -42,18 +42,34 @@
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_UQ_PCE_CONTIGUOUS_HPP
 #define KOKKOS_EXPERIMENTAL_VIEW_UQ_PCE_CONTIGUOUS_HPP
 
-#include "Sacado_Traits.hpp"
-#include "Sacado_UQ_PCE.hpp"
-#include "Sacado_UQ_PCE_Traits.hpp"
+// Only include forward declarations so any overloads appear before they
+// might be used inside Kokkos
+#include "Kokkos_Core_fwd.hpp"
+#include "Kokkos_View.hpp"
+#include "Kokkos_Layout.hpp"
 
-#include "Kokkos_Core.hpp"
 #include "Kokkos_AnalyzeStokhosShape.hpp"
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_UQ_PCE_Utils.hpp"
 
-#include "impl/KokkosExp_ViewMapping.hpp"
 
 //----------------------------------------------------------------------------
+
+namespace Sacado {
+  namespace UQ {
+    template <typename Storage >
+    class PCE;
+  }
+}
+
+namespace Kokkos {
+
+  namespace Impl {
+    template<class Space, class T, class ... P>
+    struct MirrorType;
+  }
+
+}
 
 namespace Kokkos {
 namespace Experimental {
@@ -80,6 +96,40 @@ struct is_ViewPCEContiguous< Kokkos::View<D,P...> , Args... > {
 
 namespace Kokkos {
 
+// Declare overloads of create_mirror() so they are in scope
+// Kokkos_Core.hpp is included below
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror(
+  const Kokkos::View<T,P...> & src,
+  typename std::enable_if<
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
+    !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+        Kokkos::LayoutStride >::value >::type * = 0);
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror(
+  const Kokkos::View<T,P...> & src,
+  typename std::enable_if<
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
+    std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+      Kokkos::LayoutStride >::value >::type * = 0);
+
+template<class Space, class T, class ... P>
+typename Impl::MirrorType<Space,T,P ...>::view_type
+create_mirror(
+  const Space&,
+  const Kokkos::View<T,P...> & src,
+  typename std::enable_if<
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Experimental::Impl::ViewPCEContiguous >::value >::type * = 0);
+
 // Overload of deep_copy for UQ::PCE views intializing to a constant scalar
 template< class DT, class ... DP >
 void deep_copy(
@@ -88,7 +138,251 @@ void deep_copy(
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-  )>::type * = 0 )
+                 )>::type * = 0 );
+
+// Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
+template< class DT, class ... DP >
+void deep_copy(
+  const View<DT,DP...> & view ,
+  const typename View<DT,DP...>::value_type & value
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+                 )>::type * = 0 );
+
+// Overload of deep_copy for UQ::PCE views intializing to a constant scalar
+template< class ExecSpace , class DT, class ... DP >
+void deep_copy(
+  const ExecSpace &,
+  const View<DT,DP...> & view ,
+  const typename View<DT,DP...>::array_type::value_type & value
+  , typename std::enable_if<(
+  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+                 )>::type * = 0 );
+
+// Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
+template< class ExecSpace , class DT, class ... DP >
+void deep_copy(
+  const ExecSpace &,
+  const View<DT,DP...> & view ,
+  const typename View<DT,DP...>::value_type & value
+  , typename std::enable_if<(
+  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+                 )>::type * = 0 );
+
+/* Specialize for deep copy of UQ::PCE */
+template< class DT , class ... DP , class ST , class ... SP >
+inline
+void deep_copy( const View<DT,DP...> & dst ,
+                const View<ST,SP...> & src
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  &&
+  std::is_same< typename ViewTraits<ST,SP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+                  )>::type * = 0 );
+
+template <typename T, typename ... P>
+struct is_view_uq_pce< View<T,P...> > {
+  typedef View<T,P...> view_type;
+  static const bool value =
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewPCEContiguous >::value;
+};
+
+template <typename ViewType>
+struct CijkType< ViewType,
+                 typename std::enable_if< is_view_uq_pce< ViewType >::value >::type > {
+  typedef typename ViewType::non_const_value_type::cijk_type type;
+};
+
+template <typename T, typename ... P>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_uq_pce< View<T,P...> >::value, unsigned >::type
+dimension_scalar(const View<T,P...>& view) {
+  return view.impl_map().dimension_scalar();
+}
+
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_uq_pce<view_type>::value,
+                typename CijkType<view_type>::type >::type
+cijk(const view_type& view) {
+  return view.impl_map().cijk();
+}
+
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_uq_pce<view_type>::value, bool >::type
+is_allocation_contiguous(const view_type& view) {
+  return view.impl_map().is_allocation_contiguous();
+}
+
+template <typename ViewType>
+ViewType
+make_view(const std::string& label,
+          const typename CijkType<ViewType>::type& cijk,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  return ViewType(view_alloc(label,cijk),
+                  N0, N1, N2, N3, N4, N5, N6, N7);
+}
+
+template <typename ViewType>
+ViewType
+make_view(const std::string& label,
+          const Impl::WithoutInitializing_t& init,
+          const typename CijkType<ViewType>::type& cijk,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  return ViewType(view_alloc(label,init,cijk),
+                  N0, N1, N2, N3, N4, N5, N6, N7);
+}
+
+template <typename ViewType>
+ViewType
+make_view(const ViewAllocateWithoutInitializing& init,
+          const typename CijkType<ViewType>::type& cijk,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  return ViewType(view_alloc(init.label,
+                                           WithoutInitializing,
+                                           cijk),
+                  N0, N1, N2, N3, N4, N5, N6, N7);
+}
+
+template <typename ViewType>
+typename std::enable_if< is_view_uq_pce<ViewType>::value, ViewType>::type
+make_view(typename ViewType::pointer_type ptr,
+          const typename CijkType<ViewType>::type& cijk,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  size_t N[8] = { N0, N1, N2, N3, N4, N5, N6, N7 };
+  N[ViewType::rank] = cijk.dimension();
+  ViewType v(view_wrap(ptr, cijk),
+             N[0], N[1], N[2], N[3], N[4], N[5], N[6], N[7]);
+  return v;
+}
+
+} // namespace Kokkos
+
+#include "Sacado_Traits.hpp"
+#include "Sacado_UQ_PCE.hpp"
+#include "Sacado_UQ_PCE_Traits.hpp"
+#include "Kokkos_Core.hpp"
+
+namespace Kokkos {
+
+template <typename D, typename ... P>
+struct FlatArrayType< View<D,P...>,
+                      typename std::enable_if< is_view_uq_pce< View<D,P...> >::value >::type > {
+  typedef View<D,P...> view_type;
+  typedef typename view_type::traits::dimension dimension;
+  typedef typename view_type::array_type::value_type flat_value_type;
+  typedef typename Kokkos::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
+  typedef View<flat_data_type,P...> type;
+};
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror( const Kokkos::View<T,P...> & src
+             , typename std::enable_if<
+                 std::is_same< typename ViewTraits<T,P...>::specialize ,
+                   Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+               &&
+                 ! std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
+                               , Kokkos::LayoutStride >::value
+               >::type *
+             )
+{
+  typedef View<T,P...>                   src_type ;
+  typedef typename src_type::HostMirror  dst_type ;
+
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+
+  return dst_type(view_alloc(std::string(src.label()).append("_mirror"),
+                             src.impl_map().cijk()), layout);
+}
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror( const Kokkos::View<T,P...> & src
+             , typename std::enable_if<
+                 std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+                &&
+                   std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
+                               , Kokkos::LayoutStride >::value
+               >::type *
+             )
+{
+  typedef View<T,P...>                   src_type ;
+  typedef typename src_type::HostMirror  dst_type ;
+
+  Kokkos::LayoutStride layout ;
+
+  layout.dimension[0] = src.extent(0);
+  layout.dimension[1] = src.extent(1);
+  layout.dimension[2] = src.extent(2);
+  layout.dimension[3] = src.extent(3);
+  layout.dimension[4] = src.extent(4);
+  layout.dimension[5] = src.extent(5);
+  layout.dimension[6] = src.extent(6);
+  layout.dimension[7] = src.extent(7);
+
+  layout.stride[0] = src.stride_0();
+  layout.stride[1] = src.stride_1();
+  layout.stride[2] = src.stride_2();
+  layout.stride[3] = src.stride_3();
+  layout.stride[4] = src.stride_4();
+  layout.stride[5] = src.stride_5();
+  layout.stride[6] = src.stride_6();
+  layout.stride[7] = src.stride_7();
+
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+
+  return dst_type(view_alloc(std::string(src.label()).append("_mirror"),
+                             src.impl_map().cijk()), layout);
+}
+
+template<class Space, class T, class ... P>
+typename Impl::MirrorType<Space,T,P ...>::view_type
+create_mirror(const Space& , const Kokkos::View<T,P...> & src
+             , typename std::enable_if<
+                 std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+               >::type *) {
+  typedef View<T,P...> src_type ;
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+  return typename Impl::MirrorType<Space,T,P ...>::view_type(
+    view_alloc(src.label(), src.impl_map().cijk()),layout);
+}
+
+// Overload of deep_copy for UQ::PCE views intializing to a constant scalar
+template< class DT, class ... DP >
+void deep_copy(
+  const View<DT,DP...> & view ,
+  const typename View<DT,DP...>::array_type::value_type & value
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  )>::type * )
 {
   static_assert(
     std::is_same< typename ViewTraits<DT,DP...>::value_type ,
@@ -99,9 +393,9 @@ void deep_copy(
   typedef typename view_type::array_type::value_type scalar_type;
   typedef typename FlatArrayType<view_type>::type flat_array_type;
   if (value == scalar_type(0))
-    Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+    Kokkos::Impl::StokhosViewFill< flat_array_type >( view , value );
   else
-    Kokkos::Impl::ViewFill< view_type>( view , value );
+    Kokkos::Impl::StokhosViewFill< view_type>( view , value );
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
@@ -112,14 +406,14 @@ void deep_copy(
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-  )>::type * = 0 )
+  )>::type * )
 {
   static_assert(
     std::is_same< typename ViewTraits<DT,DP...>::value_type ,
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::StokhosViewFill< View<DT,DP...> >( view , value );
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant scalar
@@ -132,7 +426,7 @@ void deep_copy(
   Kokkos::Impl::is_execution_space< ExecSpace >::value &&
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-  )>::type * = 0 )
+  )>::type * )
 {
   static_assert(
     std::is_same< typename ViewTraits<DT,DP...>::value_type ,
@@ -143,9 +437,9 @@ void deep_copy(
   typedef typename view_type::array_type::value_type scalar_type;
   typedef typename FlatArrayType<view_type>::type flat_array_type;
   if (value == scalar_type(0))
-    Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+    Kokkos::Impl::StokhosViewFill< flat_array_type >( view , value );
   else
-    Kokkos::Impl::ViewFill< view_type>( view , value );
+    Kokkos::Impl::StokhosViewFill< view_type>( view , value );
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
@@ -158,14 +452,14 @@ void deep_copy(
   Kokkos::Impl::is_execution_space< ExecSpace >::value &&
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-  )>::type * = 0 )
+  )>::type * )
 {
   static_assert(
     std::is_same< typename ViewTraits<DT,DP...>::value_type ,
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::StokhosViewFill< View<DT,DP...> >( view , value );
 }
 
 namespace Experimental {
@@ -186,21 +480,21 @@ struct DeepCopyNonContiguous
                          const InputView & arg_in ) :
     output( arg_out ), input( arg_in )
   {
-    parallel_for( output.dimension_0() , *this );
+    parallel_for( output.extent(0) , *this );
     execution_space::fence();
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i0 ) const
   {
-    for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-    for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
-      output(i0,i1,i2,i3,i4,i5,i6,i7) = input(i0,i1,i2,i3,i4,i5,i6,i7) ;
+    for ( size_type i1 = 0 ; i1 < output.extent(1) ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < output.extent(2) ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < output.extent(3) ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < output.extent(4) ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < output.extent(5) ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
+    for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
+      output.access(i0,i1,i2,i3,i4,i5,i6,i7) = input.access(i0,i1,i2,i3,i4,i5,i6,i7) ;
     }}}}}}}
   }
 };
@@ -219,7 +513,7 @@ void deep_copy( const View<DT,DP...> & dst ,
   &&
   std::is_same< typename ViewTraits<ST,SP...>::specialize
               , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-  )>::type * = 0 )
+  )>::type * )
 {
   static_assert(
     std::is_same< typename ViewTraits<DT,DP...>::value_type ,
@@ -268,17 +562,17 @@ void deep_copy( const View<DT,DP...> & dst ,
            !is_allocation_contiguous(src) ) {
         size_t src_dims[8];
         //src.dimensions(src_dims);
-        src_dims[0] = src.dimension_0();
-        src_dims[1] = src.dimension_1();
-        src_dims[2] = src.dimension_2();
-        src_dims[3] = src.dimension_3();
-        src_dims[4] = src.dimension_4();
-        src_dims[5] = src.dimension_5();
-        src_dims[6] = src.dimension_6();
-        src_dims[7] = src.dimension_7();
+        src_dims[0] = src.extent(0);
+        src_dims[1] = src.extent(1);
+        src_dims[2] = src.extent(2);
+        src_dims[3] = src.extent(3);
+        src_dims[4] = src.extent(4);
+        src_dims[5] = src.extent(5);
+        src_dims[6] = src.extent(6);
+        src_dims[7] = src.extent(7);
         src_dims[src_type::Rank] = dimension_scalar(src);
         tmp_src_type src_tmp(
-          Experimental::view_alloc("src_tmp" , Experimental::WithoutInitializing, cijk(src) ) ,
+          view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
           src_dims[0], src_dims[1], src_dims[2], src_dims[3],
           src_dims[4], src_dims[5], src_dims[6], src_dims[7] );
         Experimental::Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
@@ -293,17 +587,17 @@ void deep_copy( const View<DT,DP...> & dst ,
                  is_allocation_contiguous(src) ) {
         size_t dst_dims[8];
         //dst.dimensions(dst_dims);
-        dst_dims[0] = dst.dimension_0();
-        dst_dims[1] = dst.dimension_1();
-        dst_dims[2] = dst.dimension_2();
-        dst_dims[3] = dst.dimension_3();
-        dst_dims[4] = dst.dimension_4();
-        dst_dims[5] = dst.dimension_5();
-        dst_dims[6] = dst.dimension_6();
-        dst_dims[7] = dst.dimension_7();
+        dst_dims[0] = dst.extent(0);
+        dst_dims[1] = dst.extent(1);
+        dst_dims[2] = dst.extent(2);
+        dst_dims[3] = dst.extent(3);
+        dst_dims[4] = dst.extent(4);
+        dst_dims[5] = dst.extent(5);
+        dst_dims[6] = dst.extent(6);
+        dst_dims[7] = dst.extent(7);
         dst_dims[dst_type::Rank] = dimension_scalar(dst);
         tmp_dst_type dst_tmp(
-          Experimental::view_alloc("dst_tmp" , Experimental::WithoutInitializing, cijk(dst) ) ,
+          view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
           dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
           dst_dims[4], dst_dims[5], dst_dims[6], dst_dims[7] );
         tmp_dst_array_type dst_array = dst_tmp ;
@@ -317,33 +611,33 @@ void deep_copy( const View<DT,DP...> & dst ,
       else {
         size_t src_dims[8];
         //src.dimensions(src_dims);
-        src_dims[0] = src.dimension_0();
-        src_dims[1] = src.dimension_1();
-        src_dims[2] = src.dimension_2();
-        src_dims[3] = src.dimension_3();
-        src_dims[4] = src.dimension_4();
-        src_dims[5] = src.dimension_5();
-        src_dims[6] = src.dimension_6();
-        src_dims[7] = src.dimension_7();
+        src_dims[0] = src.extent(0);
+        src_dims[1] = src.extent(1);
+        src_dims[2] = src.extent(2);
+        src_dims[3] = src.extent(3);
+        src_dims[4] = src.extent(4);
+        src_dims[5] = src.extent(5);
+        src_dims[6] = src.extent(6);
+        src_dims[7] = src.extent(7);
         src_dims[src_type::Rank] = dimension_scalar(src);
         tmp_src_type src_tmp(
-          Experimental::view_alloc("src_tmp" , Experimental::WithoutInitializing, cijk(src) ) ,
+          view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
           src_dims[0], src_dims[1], src_dims[2], src_dims[3],
           src_dims[4], src_dims[5], src_dims[6], src_dims[7] );
         Experimental::Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
         size_t dst_dims[8];
         //dst.dimensions(dst_dims);
-        dst_dims[0] = dst.dimension_0();
-        dst_dims[1] = dst.dimension_1();
-        dst_dims[2] = dst.dimension_2();
-        dst_dims[3] = dst.dimension_3();
-        dst_dims[4] = dst.dimension_4();
-        dst_dims[5] = dst.dimension_5();
-        dst_dims[6] = dst.dimension_6();
-        dst_dims[7] = dst.dimension_7();
+        dst_dims[0] = dst.extent(0);
+        dst_dims[1] = dst.extent(1);
+        dst_dims[2] = dst.extent(2);
+        dst_dims[3] = dst.extent(3);
+        dst_dims[4] = dst.extent(4);
+        dst_dims[5] = dst.extent(5);
+        dst_dims[6] = dst.extent(6);
+        dst_dims[7] = dst.extent(7);
         dst_dims[dst_type::Rank] = dimension_scalar(dst);
         tmp_dst_type dst_tmp(
-          Experimental::view_alloc("dst_tmp" , Experimental::WithoutInitializing, cijk(dst) ) ,
+          view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
           dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
           dst_dims[4], dst_dims[5], dst_dims[6], dst_dims[7] );
         tmp_dst_array_type dst_array = dst_tmp ;
@@ -355,106 +649,7 @@ void deep_copy( const View<DT,DP...> & dst ,
   }
 }
 
-template <typename T, typename ... P>
-struct is_view_uq_pce< View<T,P...> > {
-  typedef View<T,P...> view_type;
-  static const bool value =
-    std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewPCEContiguous >::value;
-};
-
-template <typename D, typename ... P>
-struct FlatArrayType< View<D,P...>,
-                      typename std::enable_if< is_view_uq_pce< View<D,P...> >::value >::type > {
-  typedef View<D,P...> view_type;
-  typedef typename view_type::traits::dimension dimension;
-  typedef typename view_type::array_type::value_type flat_value_type;
-  typedef typename Kokkos::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
-  typedef View<flat_data_type,P...> type;
-};
-
-template <typename ViewType>
-struct CijkType< ViewType,
-                 typename std::enable_if< is_view_uq_pce< ViewType >::value >::type > {
-  typedef typename ViewType::non_const_value_type::cijk_type type;
-};
-
-template <typename T, typename ... P>
-KOKKOS_INLINE_FUNCTION
-constexpr typename
-std::enable_if< is_view_uq_pce< View<T,P...> >::value, unsigned >::type
-dimension_scalar(const View<T,P...>& view) {
-  return view.implementation_map().dimension_scalar();
 }
-
-template <typename view_type>
-KOKKOS_INLINE_FUNCTION
-constexpr typename
-std::enable_if< is_view_uq_pce<view_type>::value,
-                typename CijkType<view_type>::type >::type
-cijk(const view_type& view) {
-  return view.implementation_map().cijk();
-}
-
-template <typename view_type>
-KOKKOS_INLINE_FUNCTION
-constexpr typename
-std::enable_if< is_view_uq_pce<view_type>::value, bool >::type
-is_allocation_contiguous(const view_type& view) {
-  return view.implementation_map().is_allocation_contiguous();
-}
-
-template <typename ViewType>
-ViewType
-make_view(const std::string& label,
-          const typename CijkType<ViewType>::type& cijk,
-          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
-          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
-{
-  return ViewType(Experimental::view_alloc(label,cijk),
-                  N0, N1, N2, N3, N4, N5, N6, N7);
-}
-
-template <typename ViewType>
-ViewType
-make_view(const std::string& label,
-          const Experimental::Impl::WithoutInitializing_t& init,
-          const typename CijkType<ViewType>::type& cijk,
-          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
-          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
-{
-  return ViewType(Experimental::view_alloc(label,init,cijk),
-                  N0, N1, N2, N3, N4, N5, N6, N7);
-}
-
-template <typename ViewType>
-ViewType
-make_view(const ViewAllocateWithoutInitializing& init,
-          const typename CijkType<ViewType>::type& cijk,
-          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
-          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
-{
-  return ViewType(Experimental::view_alloc(init.label,
-                                           Experimental::WithoutInitializing,
-                                           cijk),
-                  N0, N1, N2, N3, N4, N5, N6, N7);
-}
-
-template <typename ViewType>
-typename std::enable_if< is_view_uq_pce<ViewType>::value, ViewType>::type
-make_view(typename ViewType::pointer_type ptr,
-          const typename CijkType<ViewType>::type& cijk,
-          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
-          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
-{
-  size_t N[8] = { N0, N1, N2, N3, N4, N5, N6, N7 };
-  N[ViewType::rank] = cijk.dimension();
-  ViewType v(Experimental::view_wrap(ptr, cijk),
-             N[0], N[1], N[2], N[3], N[4], N[5], N[6], N[7]);
-  return v;
-}
-
-} // namespace Kokkos
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -791,7 +986,9 @@ class ViewMapping< Traits , /* View internal mapping */
         std::is_same< typename Traits::array_layout
                     , Kokkos::LayoutStride >::value
       )
-    )>::type >
+    )
+    , typename Traits::specialize
+    >::type >
 {
 private:
 
@@ -832,8 +1029,8 @@ private:
     prepend_offset_type,
     append_offset_type >::type array_offset_type;
 
-  handle_type      m_handle ;
-  offset_type      m_offset ;
+  handle_type      m_impl_handle ;
+  offset_type      m_impl_offset ;
   unsigned         m_sacado_size ;   // Size of sacado dimension
   cijk_type        m_cijk ;          // Sparse 3 tensor
   bool             m_is_contiguous ; // Is data allocated contiguously
@@ -847,9 +1044,9 @@ private:
     if (sz == 0)
       return true;
     const intrinsic_scalar_type* last_coeff =
-      m_handle.value_ptr[sz-1].coeff();
+      m_impl_handle.value_ptr[sz-1].coeff();
     const intrinsic_scalar_type* last_coeff_expected =
-      m_handle.scalar_ptr + (sz-1)*m_sacado_size;
+      m_impl_handle.scalar_ptr + (sz-1)*m_sacado_size;
     return last_coeff == last_coeff_expected;
   }
 
@@ -866,28 +1063,28 @@ public:
   // Using the internal offset mapping so limit to public rank:
   template< typename iType >
   KOKKOS_INLINE_FUNCTION constexpr size_t extent( const iType & r ) const
-    { return m_offset.m_dim.extent(r); }
+    { return m_impl_offset.m_dim.extent(r); }
 
   KOKKOS_INLINE_FUNCTION constexpr
   typename Traits::array_layout layout() const
-    { return m_offset.layout(); }
+    { return m_impl_offset.layout(); }
 
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
-    { return m_offset.dimension_0(); }
+    { return m_impl_offset.dimension_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_1() const
-    { return m_offset.dimension_1(); }
+    { return m_impl_offset.dimension_1(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_2() const
-    { return m_offset.dimension_2(); }
+    { return m_impl_offset.dimension_2(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_3() const
-    { return m_offset.dimension_3(); }
+    { return m_impl_offset.dimension_3(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_4() const
-    { return m_offset.dimension_4(); }
+    { return m_impl_offset.dimension_4(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_5() const
-    { return m_offset.dimension_5(); }
+    { return m_impl_offset.dimension_5(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_6() const
-    { return m_offset.dimension_6(); }
+    { return m_impl_offset.dimension_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_7() const
-    { return m_offset.dimension_7(); }
+    { return m_impl_offset.dimension_7(); }
 
   // Is a regular layout with uniform striding for each index.
   // Since we all for striding within the data type, we can't guarantee
@@ -895,25 +1092,25 @@ public:
   using is_regular = std::false_type ;
 
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_0() const
-    { return m_offset.stride_0(); }
+    { return m_impl_offset.stride_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_1() const
-    { return m_offset.stride_1(); }
+    { return m_impl_offset.stride_1(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_2() const
-    { return m_offset.stride_2(); }
+    { return m_impl_offset.stride_2(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_3() const
-    { return m_offset.stride_3(); }
+    { return m_impl_offset.stride_3(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_4() const
-    { return m_offset.stride_4(); }
+    { return m_impl_offset.stride_4(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_5() const
-    { return m_offset.stride_5(); }
+    { return m_impl_offset.stride_5(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_6() const
-    { return m_offset.stride_6(); }
+    { return m_impl_offset.stride_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_7() const
-    { return m_offset.stride_7(); }
+    { return m_impl_offset.stride_7(); }
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION void stride( iType * const s ) const
-    { m_offset.stride(s); }
+    { m_impl_offset.stride(s); }
 
   // Size of sacado scalar dimension
   KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned dimension_scalar() const
@@ -951,21 +1148,21 @@ public:
 
   /** \brief  Span of the mapped range : [ data() .. data() + span() ) */
   KOKKOS_INLINE_FUNCTION constexpr size_t span() const
-    { return m_offset.span(); }
+    { return m_impl_offset.span(); }
 
   /** \brief  Is the mapped range span contiguous */
   KOKKOS_INLINE_FUNCTION constexpr bool span_is_contiguous() const
-    { return m_offset.span_is_contiguous() ; }
+    { return m_impl_offset.span_is_contiguous() ; }
 
   /** \brief Raw data access */
   KOKKOS_INLINE_FUNCTION constexpr pointer_type data() const
-    { return m_handle.value_ptr ; }
+    { return m_impl_handle.value_ptr ; }
 
   //----------------------------------------
 
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference() const
-    { return *m_handle.value_ptr; }
+    { return *m_impl_handle.value_ptr; }
 
   // FIXME:  Check this
   template< typename I0 >
@@ -975,7 +1172,7 @@ public:
                     ! std::is_same< typename Traits::array_layout , Kokkos::LayoutStride >::value
                   , reference_type >::type
   reference( const I0 & i0 ) const
-    { return m_handle.value_ptr[i0]; }
+    { return m_impl_handle.value_ptr[i0]; }
 
   // FIXME:  Check this
   template< typename I0 >
@@ -985,50 +1182,50 @@ public:
                     std::is_same< typename Traits::array_layout , Kokkos::LayoutStride >::value
                   , reference_type >::type
   reference( const I0 & i0 ) const
-    { return m_handle.value_ptr[ m_offset(i0) ]; }
+    { return m_impl_handle.value_ptr[ m_impl_offset(i0) ]; }
 
   template< typename I0 , typename I1 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 ) const
-    { return m_handle.value_ptr[ m_offset(i0,i1) ]; }
+    { return m_impl_handle.value_ptr[ m_impl_offset(i0,i1) ]; }
 
   template< typename I0 , typename I1 , typename I2 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 ) const
-    { return m_handle.value_ptr[ m_offset(i0,i1,i2) ]; }
+    { return m_impl_handle.value_ptr[ m_impl_offset(i0,i1,i2) ]; }
 
   template< typename I0 , typename I1 , typename I2 , typename I3 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 ) const
-    { return m_handle.value_ptr[ m_offset(i0,i1,i2,i3) ]; }
+    { return m_impl_handle.value_ptr[ m_impl_offset(i0,i1,i2,i3) ]; }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 ) const
-    { return m_handle.value_ptr[ m_offset(i0,i1,i2,i3,i4) ]; }
+    { return m_impl_handle.value_ptr[ m_impl_offset(i0,i1,i2,i3,i4) ]; }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 ) const
-    { return m_handle.value_ptr[ m_offset(i0,i1,i2,i3,i4,i5) ]; }
+    { return m_impl_handle.value_ptr[ m_impl_offset(i0,i1,i2,i3,i4,i5) ]; }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 , typename I6 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 , const I6 & i6 ) const
-    { return m_handle.value_ptr[ m_offset(i0,i1,i2,i3,i4,i5,i6) ]; }
+    { return m_impl_handle.value_ptr[ m_impl_offset(i0,i1,i2,i3,i4,i5,i6) ]; }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 , typename I6 , typename I7 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 , const I6 & i6 , const I7 & i7 ) const
-    { return m_handle.value_ptr[ m_offset(i0,i1,i2,i3,i4,i5,i6,i7) ]; }
+    { return m_impl_handle.value_ptr[ m_impl_offset(i0,i1,i2,i3,i4,i5,i6,i7) ]; }
 
   //----------------------------------------
 
@@ -1048,8 +1245,8 @@ public:
 
   KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping() :
-    m_handle(),
-    m_offset(),
+    m_impl_handle(),
+    m_impl_offset(),
     m_sacado_size(0),
     m_cijk(),
     m_is_contiguous(true)
@@ -1067,19 +1264,20 @@ public:
     ( ViewCtorProp< P ... > const & prop
     , typename Traits::array_layout const & layout
     )
-    : m_handle()
-    , m_offset( std::integral_constant< unsigned , 0 >() , layout )
+    : m_impl_handle()
+    , m_impl_offset( std::integral_constant< unsigned , 0 >() , layout )
     , m_sacado_size( Kokkos::Impl::GetSacadoSize<unsigned(Rank)>::eval(layout) )
     {
-      m_handle.set( ( (ViewCtorProp<void,pointer_type> const &) prop ).value
-                    , m_offset.span(), m_sacado_size );
+      m_impl_handle.set( ( (ViewCtorProp<void,pointer_type> const &) prop ).value
+                    , m_impl_offset.span(), m_sacado_size );
       m_cijk = extract_cijk<cijk_type>(prop);
 #ifndef __CUDA_ARCH__
       if (m_cijk.dimension() == 0)
         m_cijk = getGlobalCijkTensor<cijk_type>();
-      // Use 0 or 1 to signal the size wasn't specified in the constructor,
-      // since now dimesion_i() == 1 for all i >= rank
-      if (m_sacado_size == 0 || m_sacado_size == 1)
+      // Use 0 or KOKKOS_IMPL_CTOR_DEFAULT_ARG to signal the size wasn't
+      // specified in the constructor
+      if (m_sacado_size == 0 ||
+          m_sacado_size == unsigned(KOKKOS_IMPL_CTOR_DEFAULT_ARG))
         m_sacado_size = m_cijk.dimension();
 #endif
       m_is_contiguous = this->is_data_contiguous();
@@ -1105,19 +1303,20 @@ public:
     // Disallow padding
     typedef std::integral_constant< unsigned , 0 > padding ;
 
-    m_offset = offset_type( padding(), layout );
+    m_impl_offset = offset_type( padding(), layout );
     m_sacado_size = Kokkos::Impl::GetSacadoSize<unsigned(Rank)>::eval(layout);
     m_cijk = extract_cijk<cijk_type>(prop);
     if (m_cijk.dimension() == 0)
       m_cijk = getGlobalCijkTensor<cijk_type>();
-    // Use 0 or 1 to signal the size wasn't specified in the constructor,
-    // since now dimesion_i() == 1 for all i >= rank
-    if (m_sacado_size == 0 || m_sacado_size == 1)
+    // Use 0 or KOKKOS_IMPL_CTOR_DEFAULT_ARG to signal the size wasn't
+    // specified in the constructor
+    if (m_sacado_size == 0 ||
+        m_sacado_size == unsigned(KOKKOS_IMPL_CTOR_DEFAULT_ARG))
       m_sacado_size = m_cijk.dimension();
     m_is_contiguous = true;
 
     const size_t alloc_size =
-      handle_type::memory_span( m_offset.span(), m_sacado_size );
+      handle_type::memory_span( m_impl_offset.span(), m_sacado_size );
 
     // Create shared memory tracking record with allocate memory from the memory space
     record_type * const record =
@@ -1129,15 +1328,15 @@ public:
     //  May be zero if one of the dimensions is zero.
     if ( alloc_size ) {
 
-      m_handle.set( reinterpret_cast< pointer_type >( record->data() ),
-                    m_offset.span(), m_sacado_size );
+      m_impl_handle.set( reinterpret_cast< pointer_type >( record->data() ),
+                    m_impl_offset.span(), m_sacado_size );
 
       // Assume destruction is only required when construction is requested.
       // The ViewValueFunctor has both value construction and destruction operators.
-      record->m_destroy = m_handle.create_functor(
+      record->m_destroy = m_impl_handle.create_functor(
         ( (ViewCtorProp<void,execution_space> const &) prop).value
         , ctor_prop::initialize
-        , m_offset.span()
+        , m_impl_offset.span()
         , m_sacado_size
         , m_cijk );
 
@@ -1165,8 +1364,8 @@ namespace Impl {
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess< typename DstTraits::memory_space
+                , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has UQ::PCE
     std::is_same< typename DstTraits::specialize
@@ -1175,15 +1374,17 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has UQ::PCE only
     std::is_same< typename SrcTraits::specialize
                 , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-  )>::type >
+  )
+  , typename DstTraits::specialize
+  >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcType ;
 
   KOKKOS_INLINE_FUNCTION static
   void assign( DstType & dst
@@ -1231,8 +1432,8 @@ public:
           , typename SrcType::offset_type::dimension_type >::value ,
         "View assignment must have compatible dimensions" );
 
-      dst.m_handle  = src.m_handle ;
-      dst.m_offset  = src.m_offset ;
+      dst.m_impl_handle  = src.m_impl_handle ;
+      dst.m_impl_offset  = src.m_impl_offset ;
       dst.m_sacado_size = src.m_sacado_size ;
       dst.m_cijk    = src.m_cijk ;
       dst.m_is_contiguous = src.m_is_contiguous ;
@@ -1247,8 +1448,8 @@ public:
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess< typename DstTraits::memory_space
+                , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has ordinary
     std::is_same< typename DstTraits::specialize , void >::value
@@ -1259,15 +1460,17 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Ranks match
     unsigned(DstTraits::dimension::rank) == unsigned(SrcTraits::dimension::rank)+1
-  )>::type >
+  )
+  , typename DstTraits::specialize
+  >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcType ;
 
   KOKKOS_INLINE_FUNCTION static
   void assign( DstType & dst
@@ -1318,14 +1521,14 @@ public:
         Kokkos::abort("\n\n ****** Kokkos::View< Sacado::UQ::PCE ... >:  can't assign non-contiguous view ******\n\n");
 
       unsigned dims[8];
-      dims[0] = src.m_offset.dimension_0();
-      dims[1] = src.m_offset.dimension_1();
-      dims[2] = src.m_offset.dimension_2();
-      dims[3] = src.m_offset.dimension_3();
-      dims[4] = src.m_offset.dimension_4();
-      dims[5] = src.m_offset.dimension_5();
-      dims[6] = src.m_offset.dimension_6();
-      dims[7] = src.m_offset.dimension_7();
+      dims[0] = src.m_impl_offset.dimension_0();
+      dims[1] = src.m_impl_offset.dimension_1();
+      dims[2] = src.m_impl_offset.dimension_2();
+      dims[3] = src.m_impl_offset.dimension_3();
+      dims[4] = src.m_impl_offset.dimension_4();
+      dims[5] = src.m_impl_offset.dimension_5();
+      dims[6] = src.m_impl_offset.dimension_6();
+      dims[7] = src.m_impl_offset.dimension_7();
       unsigned rank = SrcTraits::dimension::rank;
       unsigned sacado_size = src.m_sacado_size;
       if (std::is_same<typename SrcTraits::array_layout, LayoutLeft>::value) {
@@ -1338,11 +1541,11 @@ public:
         dims[rank] = sacado_size;
       }
       typedef typename DstType::offset_type dst_offset_type;
-      dst.m_offset = dst_offset_type( std::integral_constant< unsigned , 0 >(),
+      dst.m_impl_offset = dst_offset_type( std::integral_constant< unsigned , 0 >(),
                                       typename DstTraits::array_layout(
                                         dims[0] , dims[1] , dims[2] , dims[3] ,
                                         dims[4] , dims[5] , dims[6] , dims[7] ) );
-      dst.m_handle  = src.m_handle.scalar_ptr ;
+      dst.m_impl_handle  = src.m_impl_handle.scalar_ptr ;
     }
 };
 
@@ -1355,8 +1558,8 @@ public:
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess< typename DstTraits::memory_space
+                , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has ordinary
     std::is_same< typename DstTraits::specialize , void >::value
@@ -1367,15 +1570,17 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Ranks match
     unsigned(DstTraits::dimension::rank) == unsigned(SrcTraits::dimension::rank)
-    )>::type >
+    )
+    , typename DstTraits::specialize
+    >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcType ;
 
   KOKKOS_INLINE_FUNCTION static
   void assign( DstType & dst
@@ -1426,14 +1631,14 @@ public:
         Kokkos::abort("\n\n ****** Kokkos::View< Sacado::UQ::PCE ... >:  can't assign non-contiguous view ******\n\n");
 
       unsigned dims[8];
-      dims[0] = src.m_offset.dimension_0();
-      dims[1] = src.m_offset.dimension_1();
-      dims[2] = src.m_offset.dimension_2();
-      dims[3] = src.m_offset.dimension_3();
-      dims[4] = src.m_offset.dimension_4();
-      dims[5] = src.m_offset.dimension_5();
-      dims[6] = src.m_offset.dimension_6();
-      dims[7] = src.m_offset.dimension_7();
+      dims[0] = src.m_impl_offset.dimension_0();
+      dims[1] = src.m_impl_offset.dimension_1();
+      dims[2] = src.m_impl_offset.dimension_2();
+      dims[3] = src.m_impl_offset.dimension_3();
+      dims[4] = src.m_impl_offset.dimension_4();
+      dims[5] = src.m_impl_offset.dimension_5();
+      dims[6] = src.m_impl_offset.dimension_6();
+      dims[7] = src.m_impl_offset.dimension_7();
       unsigned rank = SrcTraits::dimension::rank;
       unsigned sacado_size = src.m_sacado_size;
       if (std::is_same<typename DstTraits::array_layout, LayoutLeft>::value) {
@@ -1445,11 +1650,11 @@ public:
         dims[rank] = 0;
       }
       typedef typename DstType::offset_type dst_offset_type;
-      dst.m_offset = dst_offset_type( std::integral_constant< unsigned , 0 >(),
+      dst.m_impl_offset = dst_offset_type( std::integral_constant< unsigned , 0 >(),
                                       typename DstTraits::array_layout(
                                         dims[0] , dims[1] , dims[2] , dims[3] ,
                                         dims[4] , dims[5] , dims[6] , dims[7] ) );
-      dst.m_handle  = src.m_handle.scalar_ptr ;
+      dst.m_impl_handle  = src.m_impl_handle.scalar_ptr ;
     }
 };
 
@@ -1559,21 +1764,21 @@ public:
   // However, a compatible ViewMapping is acceptable.
   template< class DstTraits >
   KOKKOS_INLINE_FUNCTION
-  static void assign( ViewMapping< DstTraits , void > & dst
-                    , ViewMapping< SrcTraits , void > const & src
+  static void assign( ViewMapping< DstTraits , typename DstTraits::specialize > & dst
+                    , ViewMapping< SrcTraits , typename SrcTraits::specialize > const & src
                     , Arg0 arg0, Args ... args )
     {
       static_assert(
-        ViewMapping< DstTraits , traits_type , void >::is_assignable ,
+        ViewMapping< DstTraits , traits_type , typename DstTraits::specialize >::is_assignable ,
         "Subview destination type must be compatible with subview derived type" );
 
-      typedef ViewMapping< DstTraits , void > DstType ;
+      typedef ViewMapping< DstTraits , typename DstTraits::specialize > DstType ;
       typedef typename DstType::offset_type  dst_offset_type ;
 
       const SubviewExtents< SrcTraits::rank , rank >
-        extents( src.m_offset.m_dim , arg0 , args... );
+        extents( src.m_impl_offset.m_dim , arg0 , args... );
 
-      const size_t offset = src.m_offset( extents.domain_offset(0)
+      const size_t offset = src.m_impl_offset( extents.domain_offset(0)
                                           , extents.domain_offset(1)
                                           , extents.domain_offset(2)
                                           , extents.domain_offset(3)
@@ -1582,10 +1787,10 @@ public:
                                           , extents.domain_offset(6)
                                           , extents.domain_offset(7) );
 
-      dst.m_offset = dst_offset_type( src.m_offset , extents );
-      dst.m_handle.value_ptr = src.m_handle.value_ptr + offset;
-      dst.m_handle.scalar_ptr =
-        src.m_handle.scalar_ptr + offset * src.m_sacado_size;
+      dst.m_impl_offset = dst_offset_type( src.m_impl_offset , extents );
+      dst.m_impl_handle.value_ptr = src.m_impl_handle.value_ptr + offset;
+      dst.m_impl_handle.scalar_ptr =
+        src.m_impl_handle.scalar_ptr + offset * src.m_sacado_size;
       dst.m_sacado_size = src.m_sacado_size;
       dst.m_cijk = src.m_cijk;
       dst.m_is_contiguous = src.m_is_contiguous;
@@ -1604,9 +1809,9 @@ namespace Kokkos {
 namespace Impl {
 
 // Specialization for deep_copy( view, view::value_type ) for Cuda
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 template< class OutputView >
-struct ViewFill< OutputView ,
+struct StokhosViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
                                                         Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
                                      std::is_same< typename OutputView::execution_space,
@@ -1637,17 +1842,17 @@ struct ViewFill< OutputView ,
       const size_type nvec = dimension_scalar(output);
 
       const size_type i0 = dev.league_rank() * nrow + tidy;
-      if ( i0 >= output.dimension_0() ) return;
+      if ( i0 >= output.extent(0) ) return;
 
-      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type i1 = 0 ; i1 < output.extent(1) ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.extent(2) ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.extent(3) ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.extent(4) ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.extent(5) ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
       for ( size_type is = tidx ; is < nvec ; is+=VectorLength ) {
-        output(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
+        output.access(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
           input.fastAccessCoeff(is) ;
       }}}}}}}}
     }
@@ -1672,23 +1877,23 @@ struct ViewFill< OutputView ,
       const size_type npce = dimension_scalar(output);
 
       const size_type i0 = dev.league_rank() * nrow + tidy;
-      if ( i0 >= output.dimension_0() ) return;
+      if ( i0 >= output.extent(0) ) return;
 
-      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type i1 = 0 ; i1 < output.extent(1) ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.extent(2) ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.extent(3) ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.extent(4) ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.extent(5) ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
       for ( size_type is = tidx ; is < npce ; is+=VectorLength ) {
-        output(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
+        output.access(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
           is == 0 ? input : scalar_type(0) ;
       }}}}}}}}
     }
   };
 
-  ViewFill( const OutputView & output , const_value_type & input )
+  StokhosViewFill( const OutputView & output , const_value_type & input )
   {
     // Coalesced accesses are 128 bytes in size
     typedef typename OutputView::array_type::value_type scalar_type;
@@ -1699,14 +1904,14 @@ struct ViewFill< OutputView ,
     const size_type block_size = 256;
 
     const size_type rows_per_block = block_size / vector_length;
-    const size_type n = output.dimension_0();
+    const size_type n = output.extent(0);
     const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
     const size_type team_size = rows_per_block * vector_length;
     Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
     if (static_cast<unsigned>(input.size()) != dimension_scalar(output) &&
         input.size() != 1)
-      Kokkos::abort("ViewFill:  Invalid input value size");
+      Kokkos::abort("StokhosViewFill:  Invalid input value size");
 
     if (input.size() == 1)
       parallel_for(
@@ -1716,7 +1921,7 @@ struct ViewFill< OutputView ,
     execution_space::fence();
   }
 
-  ViewFill( const OutputView & output , const scalar_type & input )
+  StokhosViewFill( const OutputView & output , const scalar_type & input )
   {
     // Coalesced accesses are 128 bytes in size
     typedef typename OutputView::array_type::value_type scalar_type;
@@ -1727,7 +1932,7 @@ struct ViewFill< OutputView ,
     const size_type block_size = 256;
 
     const size_type rows_per_block = block_size / vector_length;
-    const size_type n = output.dimension_0();
+    const size_type n = output.extent(0);
     const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
     const size_type team_size = rows_per_block * vector_length;
     Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
@@ -1737,10 +1942,12 @@ struct ViewFill< OutputView ,
   }
 
 };
-#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
+#endif /* #if defined( KOKKOS_ENABLE_CUDA ) */
 
 } // namespace Impl
 } // namespace Kokkos
+
+#include "Kokkos_View_Utils_Def.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

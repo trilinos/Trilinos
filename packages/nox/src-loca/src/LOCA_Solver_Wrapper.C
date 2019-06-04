@@ -89,8 +89,15 @@ reset(const NOX::Abstract::Vector& initialGuess)
   resetWrapper();
 }
 
+void
+LOCA::Solver::Wrapper::
+reset()
+{
+  resetWrapper();
+}
+
 NOX::StatusTest::StatusType
-LOCA::Solver::Wrapper::getStatus()
+LOCA::Solver::Wrapper::getStatus() const
 {
   return solverPtr->getStatus();
 }
@@ -151,6 +158,12 @@ Teuchos::RCP< const Teuchos::ParameterList >
 LOCA::Solver::Wrapper::getListPtr() const
 {
   return constSolverPtr->getListPtr();
+}
+
+Teuchos::RCP<const NOX::SolverStats>
+LOCA::Solver::Wrapper::getSolverStatistics() const
+{
+  return constSolverPtr->getSolverStatistics();
 }
 
 void

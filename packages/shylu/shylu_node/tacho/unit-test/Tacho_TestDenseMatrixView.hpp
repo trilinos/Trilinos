@@ -6,21 +6,22 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_DenseMatrixView.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_DenseMatrixView.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 typedef Kokkos::View<ValueType*,HostSpaceType> value_type_array_host;
-typedef Kokkos::View<ValueType*,DeviceSpaceType> value_type_array_device;
+//typedef Kokkos::View<ValueType*,DeviceSpaceType> value_type_array_device;
 
 typedef DenseMatrixView<ValueType,HostSpaceType> DenseMatrixViewHostType;
-typedef DenseMatrixView<ValueType,DeviceSpaceType> DenseMatrixViewDeviceType;
+//typedef DenseMatrixView<ValueType,DeviceSpaceType> DenseMatrixViewDeviceType;
 
 typedef DenseMatrixView<DenseMatrixViewHostType,HostSpaceType> DenseMatrixOfBlocksHostType;
-typedef DenseMatrixView<DenseMatrixViewHostType,DeviceSpaceType> DenseMatrixOfBlocksDeviceType;
+//typedef DenseMatrixView<DenseMatrixViewHostType,DeviceSpaceType> DenseMatrixOfBlocksDeviceType;
 
 TEST( DenseMatrixView, flat ) {
+  TEST_BEGIN;
   const ordinal_type m = 10, n = 10;
 
   Kokkos::View<ValueType*,HostSpaceType> a("a", m*n);
@@ -41,9 +42,11 @@ TEST( DenseMatrixView, flat ) {
   for (ordinal_type k=0;k<(m*n);++k) {
     EXPECT_TRUE(a[k] == ValueType(k));
   }  
+  TEST_END;
 }
 
 TEST( DenseMatrixView, hier ) {
+  TEST_BEGIN;
   const ordinal_type m = 5, n = 5, mb = 3;
 
   Kokkos::View<ValueType*,HostSpaceType> a("a", m*n), a1("a1", m*n);
@@ -84,9 +87,11 @@ TEST( DenseMatrixView, hier ) {
 
   for (ordinal_type k=0;k<(m*n);++k) 
     EXPECT_EQ(a(k), a1(k));
+  TEST_END;
 }
 
 TEST( DenseMatrixView, memorypool ) {
+  TEST_BEGIN;
   const ordinal_type m = 5, n = 5, mb = 3;
 
   Kokkos::View<ValueType*,HostSpaceType> a("a", m*n), a1("a1", m*n);
@@ -136,6 +141,7 @@ TEST( DenseMatrixView, memorypool ) {
 
   for (ordinal_type k=0;k<(m*n);++k) 
     EXPECT_EQ(a(k), a1(k));  
+  TEST_END;
 }
 
 

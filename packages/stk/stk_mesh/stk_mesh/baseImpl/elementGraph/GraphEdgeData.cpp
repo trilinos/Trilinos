@@ -1,6 +1,6 @@
 #include "GraphEdgeData.hpp"
 #include "ElemElemGraphImpl.hpp"
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace stk
 {
@@ -60,9 +60,16 @@ const GraphEdgesForElement& Graph::get_edges_for_element(impl::LocalId elem) con
     return m_graphEdges[elem];
 }
 
+void Graph::reserve_edges(impl::LocalId localElemId, size_t numEdges)
+{
+    if (numEdges > 0) {
+        m_graphEdges[localElemId].reserve(m_graphEdges[localElemId].size()+numEdges);
+    }
+}
+
 void Graph::add_edge(const GraphEdge &graphEdge)
 {
-    m_graphEdges[graphEdge.elem1()].push_back(graphEdge);
+    m_graphEdges[graphEdge.elem1()].emplace_back(graphEdge);
     ++m_numEdges;
 }
 
@@ -126,17 +133,20 @@ std::string get_par_info_description(const impl::ParallelInfo &parInfo)
 
 void ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo &parInfo)
 {
-    std::pair<impl::ParallelGraphInfo::iterator, bool> inserted = m_parallel_graph_info.insert(std::make_pair(graphEdge, parInfo));
+    std::pair<impl::ParallelGraphInfo::iterator, bool> inserted = m_parallel_graph_info.emplace(graphEdge, parInfo);
     if (!inserted.second)
     {
-        ThrowErrorMsg("Program error. local elem/remote elem pair"
-                        << " (" << graphEdge.elem1() << "," << graphEdge.side1() << "/" << convert_negative_local_id_to_remote_global_id(graphEdge.elem2()) << "," << graphEdge.side2() << ")"
-                        << " on procs (" << m_procRank << "," << parInfo.get_proc_rank_of_neighbor() << ")"
-                        << " already exists in map. Please contact sierra-help@sandia.gov for support." << std::endl
-                        << "existing par info " << std::endl
-                        << get_par_info_description(inserted.first->second)
-                        << "new par info " << std::endl
-                        << get_par_info_description(parInfo));
+        const impl::ParallelInfo &existingParInfo = inserted.first->second;
+        if (existingParInfo != parInfo) {
+            ThrowErrorMsg("Program error. local elem/remote elem pair"
+                            << " (" << graphEdge.elem1() << "," << graphEdge.side1() << "/" << convert_negative_local_id_to_remote_global_id(graphEdge.elem2()) << "," << graphEdge.side2() << ")"
+                            << " on procs (" << m_procRank << "," << parInfo.get_proc_rank_of_neighbor() << ")"
+                            << " already exists in map. Please contact sierra-help@sandia.gov for support." << std::endl
+                            << "existing par info " << std::endl
+                            << get_par_info_description(existingParInfo)
+                            << "new par info " << std::endl
+                            << get_par_info_description(parInfo));
+        }
     }
 }
 

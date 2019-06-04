@@ -98,6 +98,7 @@ namespace Galeri {
     class MultiVectorTraits<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>,Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > {
     public:
       typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> type;
+      typedef Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> type_real;
 
       static Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Build(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& map, size_t num) {
         return Teuchos::rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map, num));
@@ -111,6 +112,7 @@ namespace Galeri {
     class MultiVectorTraits<Map,::Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > {
     public:
       typedef ::Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> type;
+      typedef ::Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> type_real;
 
       static Teuchos::RCP< ::Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Build(const Teuchos::RCP<const Map>& map, size_t num) {
         return ::Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(map, num);

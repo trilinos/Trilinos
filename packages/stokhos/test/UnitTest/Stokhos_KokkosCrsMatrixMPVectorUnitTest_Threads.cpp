@@ -122,14 +122,17 @@ int main( int argc, char* argv[] ) {
     Kokkos::hwloc::get_available_cores_per_numa();
   num_hyper_threads =
     Kokkos::hwloc::get_available_threads_per_core();
-  Kokkos::Threads::initialize(num_cores * num_hyper_threads);
-  Kokkos::Threads::print_configuration(std::cout);
+
+  Kokkos::InitArguments init_args;
+  init_args.num_threads = num_cores*num_hyper_threads;
+  Kokkos::initialize( init_args );
+  Kokkos::print_configuration(std::cout);
 
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::Threads::finalize();
+  Kokkos::finalize();
 
   return ret;
 }

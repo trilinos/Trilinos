@@ -141,8 +141,9 @@ namespace MueLu {
       if (!bIsBlocked) {
         TEUCHOS_TEST_FOR_EXCEPTION(T->getRangeMap()->isSameAs(*(A10->getDomainMap())) == false, Exceptions::RuntimeError,
                                    "MueLu::SchurComplementFactory::Build: RangeMap of A01 and domain map of A10 are not the same.");
+        RCP<ParameterList> myparams = rcp(new ParameterList);
+        S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A10, false, *T, false, GetOStream(Statistics2),true,true,std::string("SchurComplementFactory"),myparams);
 
-        S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A10, false, *T, false, GetOStream(Statistics2));
       } else {
         // nested blocking
         RCP<BlockedCrsMatrix> bA10 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A10);

@@ -9,7 +9,8 @@ TRILINOS_DIR=`readlink -f ${DRIVER_SCRIPT_DIR}/../../../..`
 echo "TRILINOS_DIR='${TRILINOS_DIR}'"
 
 source /etc/bashrc
-source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh
+source $TRILINOS_DIR/cmake/std/GCC-4.8.4-OpenMPI-1.10.1-MpiReleaseDebugSharedPtOpenMP_env.sh
+module list
 
 export CTEST_DASHBOARD_ROOT=$PWD
 

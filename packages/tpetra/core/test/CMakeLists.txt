@@ -9,10 +9,14 @@ ADD_SUBDIRECTORIES(
   Block
   BugTests
   Comm
+  Core  
   CrsGraph
   CrsMatrix
   Directory
   Distributor
+  FECrsGraph
+  FECrsMatrix
+  FEMultiVector
   HashTable
   ImportExport
   ImportExport2
@@ -24,7 +28,6 @@ ADD_SUBDIRECTORIES(
   MultiVectorFiller
   Node
   PerformanceCGSolve
-  Platform
   Sort
   Utils
   RowMatrixTransposer

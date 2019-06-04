@@ -286,6 +286,25 @@ const std::vector<int> & FieldAggPattern::localOffsets(int fieldId) const
    return offsets;
 }
 
+const Kokkos::View<const int*,PHX::Device> FieldAggPattern::localOffsetsKokkos(int fieldId) const
+{
+   // lazy evaluation
+   std::map<int,Kokkos::View<int*,PHX::Device> >::const_iterator itr = fieldOffsetsKokkos_.find(fieldId);
+   if(itr!=fieldOffsetsKokkos_.end())
+      return itr->second;
+
+   const auto hostOffsetsStdVector = this->localOffsets(fieldId);
+   Kokkos::View<int*,PHX::Device> offsets("panzer::FieldAggPattern::localOffsetsKokkos",hostOffsetsStdVector.size());
+   auto hostOffsets = Kokkos::create_mirror_view(offsets);
+   for (size_t i=0; i < hostOffsetsStdVector.size(); ++i)
+     hostOffsets(i) = hostOffsetsStdVector[i];
+   Kokkos::deep_copy(offsets,hostOffsets);
+   PHX::Device::fence();
+
+   fieldOffsetsKokkos_[fieldId] = offsets;
+   return offsets;
+}
+
 bool FieldAggPattern::LessThan::operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const
 {
    if(a[0] < b[0]) return true;

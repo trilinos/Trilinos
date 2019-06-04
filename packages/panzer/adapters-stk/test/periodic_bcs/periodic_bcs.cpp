@@ -882,10 +882,6 @@ namespace panzer {
                  RCP<std::vector<Tuple<double,3> > > > idsAndCoords_top = panzer_stk::periodic_helpers::getSideIdsAndCoords(*mesh,"top");
        std::pair<RCP<std::vector<std::size_t> >,
                  RCP<std::vector<Tuple<double,3> > > > idsAndCoords_bottom = panzer_stk::periodic_helpers::getSideIdsAndCoords(*mesh,"bottom");
-       std::vector<std::size_t> & sideIds_top = *idsAndCoords_top.first;
-       std::vector<std::size_t> & sideIds_bottom = *idsAndCoords_bottom.first;
-       std::vector<Tuple<double,3> > & sideCoords_top = *idsAndCoords_top.second;
-       std::vector<Tuple<double,3> > & sideCoords_bottom = *idsAndCoords_bottom.second;
 
     // Nodes
     {

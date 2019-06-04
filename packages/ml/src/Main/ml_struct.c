@@ -40,6 +40,15 @@ ML_PrintControl ML_PrintLevel = {0};
 int ml_defines_have_printed = 0;
 int ML_Create(ML **ml_ptr, int Nlevels)
 {
+#ifdef ML_MPI
+  return ML_Create2(ml_ptr, Nlevels, MPI_COMM_WORLD);
+#else
+  return ML_Create2(ml_ptr, Nlevels, 0);
+#endif
+}
+
+int ML_Create2(ML **ml_ptr, int Nlevels, USR_COMM in_comm)
+{
    int             i, length;
    double          *max_eigen;
    ML_Operator     *Amat, *Rmat, *Pmat;
@@ -77,7 +86,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->repartitionStartLevel = -1;
    (*ml_ptr)->RAP_storage_type=ML_MSR_MATRIX;
 
-   ML_Comm_Create( &((*ml_ptr)->comm) );
+   ML_Comm_Create2( &((*ml_ptr)->comm), in_comm );
    if (global_comm == NULL)
      global_comm = (*ml_ptr)->comm;
 

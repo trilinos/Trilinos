@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,7 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
            double *          vwsqrt,  /* square root of vertex weights */
            double *ptheta, double *pphi, double *pgamma, /* return optimal angles */
            int using_vwgts                               /* are vertex weights being used? */
-           )
+)
 
 /* Compute rotation angle to minimize distance to discrete points. */
 {
@@ -88,7 +88,6 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
   int        total;            /* total number of iterations */
   int        ntries, maxtries; /* number of local minimizations */
   int        i, j;             /* loop counter */
-  int        kk;
   double     func3d(), constraint();
   double     drandom();
   void       grad3d(), hess3d(), gradcon(), hesscon(), kramer3(), ch_eigenvec3();
@@ -228,11 +227,6 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
         /* If in final pass, tighten convergence criterion. */
         if (funcc < max_constraint) {
           step_min = final_step_min;
-        }
-
-        kk = 0;
-        if (kk) {
-          ch_evals3(hessc, &eval, &res, &res);
         }
 
         for (i = 0; i < 3; i++) {

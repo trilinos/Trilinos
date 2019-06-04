@@ -88,21 +88,3 @@ operator+(
   return s.append(s2.begin(), s2.end());
 }
 
-
-// namespace boost {
-
-// std::size_t
-// hash<ci_string>::operator()(
-//   const ci_string &      s) const
-// {
-//   std::size_t seed = 0;
-    
-//   for(ci_string::const_iterator first = s.begin(); first != s.end(); ++first) {
-//     std::tr1::hash<char> hasher;
-//     seed ^= hasher(std::tolower(*first)) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-//   }
-    
-//   return seed;
-// }
-
-// } // namespace boost

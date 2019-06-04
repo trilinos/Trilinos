@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -49,18 +49,20 @@ namespace Info {
 
     bool parse_options(int argc, char **argv);
 
-    int  summary() const { return summary_; }
+    bool summary() const { return summary_; }
     bool check_node_status() const { return checkNodeStatus_; }
     bool compute_volume() const { return computeVolume_; }
     bool compute_bbox() const { return computeBBox_; }
     bool adjacencies() const { return adjacencies_; }
     bool ints_64_bit() const { return ints64Bit_; }
     bool list_groups() const { return listGroups_; }
+    bool show_config() const { return showConfig_; }
 
-    int  surface_split_scheme() const { return surfaceSplitScheme_; }
-    char field_suffix_separator() const { return fieldSuffixSeparator_; }
-    bool use_generic_names() const { return useGenericNames_; }
-
+    int         surface_split_scheme() const { return surfaceSplitScheme_; }
+    char        field_suffix_separator() const { return fieldSuffixSeparator_; }
+    bool        use_generic_names() const { return useGenericNames_; }
+    bool        disable_field_recognition() const { return disableFieldRecognition_; }
+    std::string decomp_method() const { return decompMethod_; }
     std::string filename() const { return filename_; }
     std::string type() const { return filetype_; }
     std::string groupname() const { return groupname_; }
@@ -71,22 +73,25 @@ namespace Info {
     void enroll_options();
 
     Ioss::GetLongOption options_;
+    std::string         filetype_{"exodus"};
+    std::string         filename_;
+    std::string         groupname_;
+    std::string         decompMethod_;
 
-    bool checkNodeStatus_;
-    bool computeVolume_;
-    bool adjacencies_;
-    bool ints64Bit_;
-    bool computeBBox_;
-    bool listGroups_;
-    bool useGenericNames_;
-    char fieldSuffixSeparator_;
+    bool checkNodeStatus_{false};
+    bool computeVolume_{false};
+    bool adjacencies_{false};
+    bool ints64Bit_{false};
+    bool computeBBox_{false};
+    bool listGroups_{false};
+    bool useGenericNames_{false};
+    bool disableFieldRecognition_{false};
+    bool showConfig_{false};
+    bool summary_{false};
 
-    int summary_;
-    int surfaceSplitScheme_;
+    char fieldSuffixSeparator_{'_'};
 
-    std::string filetype_;
-    std::string filename_;
-    std::string groupname_;
+    int surfaceSplitScheme_{1};
   };
 } // namespace Info
 #endif

@@ -48,7 +48,7 @@ PyTrilinos.LOCA.TurningPoint.MinimallyAugmented is the python
 interface to namespace TurningPoint::MinimallyAugmented of the
 Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.TurningPoint.MinimallyAugmented is to provide
 groups and vectors for locating turning point bifurcations using the
@@ -66,31 +66,39 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.TurningPoint",
-        directors = "1",
-        docstring = %loca_turningpoint_minimallyaugmented_docstring) MinimallyAugmented
+%define %loca_turningpoint_minimallyaugmented_importcode
+"
+from . import _MinimallyAugmented
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import MultiContinuation
+from . import MooreSpence
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA.TurningPoint",
+        directors    = "1",
+        moduleimport = %loca_turningpoint_minimallyaugmented_importcode,
+        docstring    = %loca_turningpoint_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
-#ifdef HAVE_EPETRA
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// LOCA includes
-#include "LOCA.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
@@ -117,6 +125,9 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
 %teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::AbstractGroup)
 %teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup)
 
+// The %import directives that follow generate an 'import Interface'
+// python command that does not work in python 3.  Add the current
+// directory to the search path so that it does work.
 %pythoncode
 %{
 import sys, os.path as op

@@ -175,14 +175,14 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     TEST_EQUALITY(sOp->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * 100 + 99);
     TEST_EQUALITY(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(sOp), Teuchos::null);
 
-    size_t localEntries = 0;
+    /*    size_t localEntries = 0;
     if(comm->getSize() > 2 && comm->getRank() == 0) localEntries = 299;
     else if(comm->getSize() > 2 && comm->getRank() == comm->getSize()-1) localEntries = 299;
     else localEntries = 300;
     if(comm->getSize() == 2) localEntries = 299;
-    if(comm->getSize() == 1) localEntries = 298;
-    TEST_EQUALITY(sOp->getNodeNumEntries(), localEntries);
-    TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 300 - 2));
+    if(comm->getSize() == 1) localEntries = 298;*/
+    //    TEST_EQUALITY(sOp->getNodeNumEntries(), localEntries);
+    //    TEST_EQUALITY(sOp->getGlobalNumEntries(),  Teuchos::as<size_t>(comm->getSize() * 300 - 2));
 
     RCP<Vector> v = VectorFactory::Build(sOp->getRangeMap(),true);
     sOp->getLocalDiagCopy(*v);
@@ -204,14 +204,15 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     TEST_EQUALITY(sOp->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * 100 + 99);
     TEST_EQUALITY(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(sOp), Teuchos::null);
 
-    localEntries = 0;
+    /*localEntries = 0;
     if(comm->getSize() > 2 && comm->getRank() == 0) localEntries = 299;
     else if(comm->getSize() > 2 && comm->getRank() == comm->getSize()-1) localEntries = 299;
     else localEntries = 300;
     if(comm->getSize() == 2) localEntries = 299;
-    if(comm->getSize() == 1) localEntries = 298;
-    TEST_EQUALITY(sOp->getNodeNumEntries(), localEntries);
-    TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 300 - 2));
+    if(comm->getSize() == 1) localEntries = 298;*/
+
+    //    TEST_EQUALITY(sOp->getNodeNumEntries(), localEntries);
+    //    TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 300 - 2));
 
     /*v = VectorFactory::Build(sOp->getRangeMap(),true);
     sOp->getLocalDiagCopy(*v);

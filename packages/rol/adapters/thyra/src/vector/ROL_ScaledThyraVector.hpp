@@ -86,7 +86,7 @@ class PrimalScaledThyraVector : public ThyraVector<Real> {
 
     Real dot( const Vector<Real> &x ) const {
       Teuchos::RCP<const Thyra::VectorBase<Real> > ex 
-          = Teuchos::dyn_cast<const ThyraVector<Real> >(x).getVector();
+          = dynamic_cast<const ThyraVector<Real>&>(x).getVector();
 
       // compute a scaled version of the "this" vector
       Teuchos::RCP<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
@@ -99,14 +99,14 @@ class PrimalScaledThyraVector : public ThyraVector<Real> {
 
     Teuchos::RCP<Vector<Real> > clone() const {
       Teuchos::RCP<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
-      return Teuchos::rcp(new PrimalScaledThyraVector<Real>(vec->clone_v(),scaling_vec_));
+      return Teuchos::rcp( new PrimalScaledThyraVector<Real>(vec->clone_v(),scaling_vec_) );
     }
 
     const Vector<Real> & dual() const {
       if ( !isDualInitialized_ ) {
         // Create new memory for dual vector
         Teuchos::RCP<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
-        dual_vec_ = Teuchos::rcp(new DualScaledThyraVector<Real>(vec->clone_v(),scaling_vec_));
+        dual_vec_ = Teuchos::rcp( new DualScaledThyraVector<Real>(vec->clone_v(),scaling_vec_) );
         isDualInitialized_ = true;
       }
       // Scale this with scaling_vec_ and place in dual vector
@@ -141,7 +141,7 @@ class DualScaledThyraVector : public ThyraVector<Real> {
 
     Real dot( const Vector<Real> &x ) const {
       Teuchos::RCP<const Thyra::VectorBase<Real> > ex 
-          = Teuchos::dyn_cast<const ThyraVector<Real> >(x).getVector();
+          = dynamic_cast<const ThyraVector<Real>&>(x).getVector();
 
       // compute a scaled version of the "this" vector
       Teuchos::RCP<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
@@ -154,14 +154,14 @@ class DualScaledThyraVector : public ThyraVector<Real> {
 
     Teuchos::RCP<Vector<Real> > clone() const {
       Teuchos::RCP<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
-      return Teuchos::rcp(new DualScaledThyraVector<Real>(vec->clone_v(),scaling_vec_));
+      return Teuchos::rcp( new DualScaledThyraVector<Real>(vec->clone_v(),scaling_vec_) );
     }
 
     const Vector<Real> & dual() const {
       if ( !isDualInitialized_ ) {
         // Create new memory for dual vector
         Teuchos::RCP<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
-        primal_vec_ = Teuchos::rcp(new PrimalScaledThyraVector<Real>(vec->clone_v(),scaling_vec_));
+        primal_vec_ = Teuchos::rcp( new PrimalScaledThyraVector<Real>(vec->clone_v(),scaling_vec_) );
         isDualInitialized_ = true;
       }
       // Scale this with scaling_vec_ and place in dual vector

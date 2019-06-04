@@ -60,36 +60,36 @@ namespace ROL {
 template <class Real>
 class ConstraintManager {
 private:
-  Teuchos::RCP<Constraint<Real> >      con_;
-  Teuchos::RCP<Vector<Real> >          l_;
-  Teuchos::RCP<Vector<Real> >          x_;
-  Teuchos::RCP<BoundConstraint<Real> > bnd_;
+  ROL::Ptr<Constraint<Real> >      con_;
+  ROL::Ptr<Vector<Real> >          l_;
+  ROL::Ptr<Vector<Real> >          x_;
+  ROL::Ptr<BoundConstraint<Real> > bnd_;
 
-  std::vector<Teuchos::RCP<Constraint<Real> > >      cvec_;
-  std::vector<Teuchos::RCP<Vector<Real> > >          lvec_;
-  std::vector<Teuchos::RCP<Vector<Real> > >          svec_;
-  std::vector<Teuchos::RCP<BoundConstraint<Real> > > sbnd_;
+  std::vector<ROL::Ptr<Constraint<Real> > >      cvec_;
+  std::vector<ROL::Ptr<Vector<Real> > >          lvec_;
+  std::vector<ROL::Ptr<Vector<Real> > >          svec_;
+  std::vector<ROL::Ptr<BoundConstraint<Real> > > sbnd_;
 
   std::vector<bool> isInequality_;
 
   bool isNull_;
   bool hasInequality_;
 
-  void initializeSlackVariable(const Teuchos::RCP<Constraint<Real> >      &con,
-                               const Teuchos::RCP<BoundConstraint<Real> > &cbnd,
-                               const Teuchos::RCP<Vector<Real> >          &s,
-                               const Teuchos::RCP<Vector<Real> >          &x) const {
+  void initializeSlackVariable(const ROL::Ptr<Constraint<Real> >      &con,
+                               const ROL::Ptr<BoundConstraint<Real> > &cbnd,
+                               const ROL::Ptr<Vector<Real> >          &s,
+                               const ROL::Ptr<Vector<Real> >          &x) const {
     // Set slack variable to s = proj(c(x))
     Real tol = std::sqrt(ROL_EPSILON<Real>());
     con->value(*s,*x,tol);
     cbnd->project(*s);
   }
 
-  void initialize(const std::vector<Teuchos::RCP<Constraint<Real> > >      &cvec,
-                  const std::vector<Teuchos::RCP<Vector<Real> > >          &lvec,
-                  const std::vector<Teuchos::RCP<BoundConstraint<Real> > > &bvec,
-                  const Teuchos::RCP<Vector<Real> >                        &x,
-                  const Teuchos::RCP<BoundConstraint<Real> >               &bnd) {
+  void initialize(const std::vector<ROL::Ptr<Constraint<Real> > >      &cvec,
+                  const std::vector<ROL::Ptr<Vector<Real> > >          &lvec,
+                  const std::vector<ROL::Ptr<BoundConstraint<Real> > > &bvec,
+                  const ROL::Ptr<Vector<Real> >                        &x,
+                  const ROL::Ptr<BoundConstraint<Real> >               &bnd) {
     // Check size of multiplier vector and constraint vector
     int size = static_cast<int>(cvec.size());
     if ( size != static_cast<int>(lvec.size()) ) {
@@ -99,9 +99,9 @@ private:
       throw Exception::NotImplemented(">>> ROL::ConstraintManager: Constraint and BoundConstraint vectors are different sizes!");
     }
     // If bnd is null, then make a null BoundConstraint
-    Teuchos::RCP<BoundConstraint<Real> > bnd0;
-    if ( bnd == Teuchos::null ) {
-      bnd0 = Teuchos::rcp(new BoundConstraint<Real>());
+    ROL::Ptr<BoundConstraint<Real> > bnd0;
+    if ( bnd == ROL::nullPtr ) {
+      bnd0 = ROL::makePtr<BoundConstraint<Real>>(*x);
       bnd0->deactivate();
     }
     else {
@@ -115,21 +115,21 @@ private:
     isNull_ = true;
     hasInequality_ = false;
     for (int i = 0; i < size; ++i) {
-      Teuchos::RCP<Constraint<Real> >      con  = cvec[i];
-      Teuchos::RCP<Vector<Real> >          l    = lvec[i];
-      Teuchos::RCP<BoundConstraint<Real> > cbnd = bvec[i];
-      if (con != Teuchos::null) {
+      ROL::Ptr<Constraint<Real> >      con  = cvec[i];
+      ROL::Ptr<Vector<Real> >          l    = lvec[i];
+      ROL::Ptr<BoundConstraint<Real> > cbnd = bvec[i];
+      if (con != ROL::nullPtr) {
         if ( con->isActivated() ) {
           // Set default type to equality
           isInequality_.push_back(false);
           // Fill constraint and multiplier vectors
           cvec_.push_back(con);
           lvec_.push_back(l);
-          if (cbnd != Teuchos::null) {
+          if (cbnd != ROL::nullPtr) {
             if ( cbnd->isActivated() ) {
               // Set type to inequality
               isInequality_.back() = true;
-              // Create slace variables
+              // Create slack variables
               svec_.push_back(l->dual().clone());
               initializeSlackVariable(con,cbnd,svec_[cnt],x);
               // Create slack bound
@@ -147,8 +147,8 @@ private:
     // Create partitioned constraint and multiplier vector
     if ( !isNull_ ) {
       if ( cnt_con > 1 || hasInequality_ ) {
-        con_ = Teuchos::rcp(new Constraint_Partitioned<Real>(cvec_,isInequality_));
-        l_   = Teuchos::rcp(new PartitionedVector<Real>(lvec_));
+        con_ = ROL::makePtr<Constraint_Partitioned<Real>>(cvec_,isInequality_);
+        l_   = ROL::makePtr<PartitionedVector<Real>>(lvec_);
       }
       else {
         con_ = cvec_[0];
@@ -156,13 +156,13 @@ private:
       }
     }
     else {
-      con_ = Teuchos::null;
-      l_   = Teuchos::null;
+      con_ = ROL::nullPtr;
+      l_   = ROL::nullPtr;
     }
     // Create partitioned optimization vector and bound constraint
     if ( hasInequality_ ) {
-      x_   = Teuchos::rcp(new PartitionedVector<Real>(svec_));
-      bnd_ = Teuchos::rcp(new BoundConstraint_Partitioned<Real>(sbnd_));
+      x_   = ROL::makePtr<PartitionedVector<Real>>(svec_);
+      bnd_ = ROL::makePtr<BoundConstraint_Partitioned<Real>>(sbnd_,svec_);
     }
     else {
       x_   = x;
@@ -173,60 +173,60 @@ private:
 public:
   virtual ~ConstraintManager(void) {}
 
-  ConstraintManager(const std::vector<Teuchos::RCP<Constraint<Real> > >      &cvec,
-                    const std::vector<Teuchos::RCP<Vector<Real> > >          &lvec,
-                    const std::vector<Teuchos::RCP<BoundConstraint<Real> > > &bvec,
-                    const Teuchos::RCP<Vector<Real> >                        &x,
-                    const Teuchos::RCP<BoundConstraint<Real> >               &bnd = Teuchos::null)
+  ConstraintManager(const std::vector<ROL::Ptr<Constraint<Real> > >      &cvec,
+                    const std::vector<ROL::Ptr<Vector<Real> > >          &lvec,
+                    const std::vector<ROL::Ptr<BoundConstraint<Real> > > &bvec,
+                    const ROL::Ptr<Vector<Real> >                        &x,
+                    const ROL::Ptr<BoundConstraint<Real> >               &bnd = ROL::nullPtr)
     : isNull_(true), hasInequality_(false) {
     initialize(cvec,lvec,bvec,x,bnd);
   }
 
-  ConstraintManager(const std::vector<Teuchos::RCP<Constraint<Real> > >      &cvec,
-                    const std::vector<Teuchos::RCP<Vector<Real> > >          &lvec,
-                    const Teuchos::RCP<Vector<Real> >                        &x,
-                    const Teuchos::RCP<BoundConstraint<Real> >               &bnd = Teuchos::null)
+  ConstraintManager(const std::vector<ROL::Ptr<Constraint<Real> > >      &cvec,
+                    const std::vector<ROL::Ptr<Vector<Real> > >          &lvec,
+                    const ROL::Ptr<Vector<Real> >                        &x,
+                    const ROL::Ptr<BoundConstraint<Real> >               &bnd = ROL::nullPtr)
     : isNull_(true), hasInequality_(false) {
-    std::vector<Teuchos::RCP<BoundConstraint<Real> > > bvec(cvec.size(),Teuchos::null);
+    std::vector<ROL::Ptr<BoundConstraint<Real> > > bvec(cvec.size(),ROL::nullPtr);
     initialize(cvec,lvec,bvec,x,bnd);
   }
 
-  ConstraintManager(const Teuchos::RCP<Constraint<Real> >                    &con,
-                    const Teuchos::RCP<Vector<Real> >                        &l,
-                    const Teuchos::RCP<BoundConstraint<Real> >               &cbnd,
-                    const Teuchos::RCP<Vector<Real> >                        &x,
-                    const Teuchos::RCP<BoundConstraint<Real> >               &bnd = Teuchos::null)
+  ConstraintManager(const ROL::Ptr<Constraint<Real> >                    &con,
+                    const ROL::Ptr<Vector<Real> >                        &l,
+                    const ROL::Ptr<BoundConstraint<Real> >               &cbnd,
+                    const ROL::Ptr<Vector<Real> >                        &x,
+                    const ROL::Ptr<BoundConstraint<Real> >               &bnd = ROL::nullPtr)
     : isNull_(true), hasInequality_(false) {
-    std::vector<Teuchos::RCP<Constraint<Real> > >      cvec(1,con);
-    std::vector<Teuchos::RCP<Vector<Real> > >          lvec(1,l);
-    std::vector<Teuchos::RCP<BoundConstraint<Real> > > bvec(1,cbnd);
+    std::vector<ROL::Ptr<Constraint<Real> > >      cvec(1,con);
+    std::vector<ROL::Ptr<Vector<Real> > >          lvec(1,l);
+    std::vector<ROL::Ptr<BoundConstraint<Real> > > bvec(1,cbnd);
     initialize(cvec,lvec,bvec,x,bnd);
   }
 
-  ConstraintManager(const Teuchos::RCP<Constraint<Real> >                    &con,
-                    const Teuchos::RCP<Vector<Real> >                        &l,
-                    const Teuchos::RCP<Vector<Real> >                        &x,
-                    const Teuchos::RCP<BoundConstraint<Real> >               &bnd = Teuchos::null)
+  ConstraintManager(const ROL::Ptr<Constraint<Real> >                    &con,
+                    const ROL::Ptr<Vector<Real> >                        &l,
+                    const ROL::Ptr<Vector<Real> >                        &x,
+                    const ROL::Ptr<BoundConstraint<Real> >               &bnd = ROL::nullPtr)
     : isNull_(true), hasInequality_(false) {
-    std::vector<Teuchos::RCP<Constraint<Real> > >      cvec(1,con);
-    std::vector<Teuchos::RCP<Vector<Real> > >          lvec(1,l);
-    std::vector<Teuchos::RCP<BoundConstraint<Real> > > bvec(1,Teuchos::null);
+    std::vector<ROL::Ptr<Constraint<Real> > >      cvec(1,con);
+    std::vector<ROL::Ptr<Vector<Real> > >          lvec(1,l);
+    std::vector<ROL::Ptr<BoundConstraint<Real> > > bvec(1,ROL::nullPtr);
     initialize(cvec,lvec,bvec,x,bnd);
   }
 
-  const Teuchos::RCP<Constraint<Real> > getConstraint(void) const {
+  const ROL::Ptr<Constraint<Real> > getConstraint(void) const {
     return con_;
   }
 
-  const Teuchos::RCP<Vector<Real> > getMultiplier(void) const {
+  const ROL::Ptr<Vector<Real> > getMultiplier(void) const {
     return l_;
   }
 
-  const Teuchos::RCP<Vector<Real> > getOptVector(void) const {
+  const ROL::Ptr<Vector<Real> > getOptVector(void) const {
     return x_;
   }
 
-  const Teuchos::RCP<BoundConstraint<Real> > getBoundConstraint(void) const {
+  const ROL::Ptr<BoundConstraint<Real> > getBoundConstraint(void) const {
     return bnd_;
   }
 

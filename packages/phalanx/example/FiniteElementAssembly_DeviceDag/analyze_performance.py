@@ -35,6 +35,9 @@ def main():
     parser.add_argument('-a', '--analyze', action='store_true', help='Analyze the data from files generated with --run.')
     parser.add_argument('-p', '--prefix', help='Add a prefix string to all output filenames.')
     parser.add_argument('-v', '--verbose', action='store_true', help='Print more data to screen.')
+    parser.add_argument('-ne', '--num-eqns', type=int, default=16, help='Number of equations to solve for.')
+    parser.add_argument('-ts', '--team-size', type=int, required=True, help='Team size for hierarchic parallelism.')
+    parser.add_argument('-vs', '--vector-size', type=int, required=True, help='Vector size for hierarchic parallelism.')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-b', '--base-exe', action='store_true', default=False, help="Use the Base executable")
     group.add_argument('-m', '--mixed-exe', action='store_true', default=False, help="Use the Mixed Field Type executable")
@@ -44,11 +47,10 @@ def main():
     nx = 20
     ny = 20
     nz = 20
-    ne = 16
-    ts = 8
-    vs = 32
-    #ts = 256
-    #vs = 1
+    ne = args.num_eqns
+    ts = args.team_size
+    vs = args.vector_size
+    print "number of equations = %d, team size = %d, vector size = %d\n" % (ne, vs, vs)
 
     executable = "./Phalanx_example_finite_element_assembly.exe"
     if args.mixed_exe:
@@ -84,7 +86,7 @@ def main():
         timings["[PHX::MyTraits::Jacobian] Scatter Jacobian"] = np.zeros(len(workset_range),dtype=np.float64)
         timings["[PHX::MyTraits::Residual] Scatter Residual"] = np.zeros(len(workset_range),dtype=np.float64)
 
-    print dir(np)
+    #print dir(np)
         
     for i in range(len(workset_range)):
 
@@ -127,62 +129,84 @@ def main():
         fig = plt.figure()
         plt.semilogy()
         if do_jac:
-            plt.plot(workset_range,timings["Jacobian Evaluation Time <<Host DAG>>"],label="Jac Total Time (Host DAG)")
-            plt.plot(workset_range,timings["Jacobian Evaluation Time <<Device DAG>>"],label="Jac Total Time (Device DAG)")
-        plt.plot(workset_range,timings["Residual Evaluation Time <<Host DAG>>"],label="Res Total Time (Host DAG)")
-        plt.plot(workset_range,timings["Residual Evaluation Time <<Device DAG>>"],label="Res Total Time (Device DAG)")
-        plt.xlabel("Workset Size")
-        plt.ylabel("Time (s)")
+            # maroon = #990033, light blue = #00ffff
+            plt.plot(workset_range,timings["Jacobian Evaluation Time <<Host DAG>>"],label="Jac Total Time (Host DAG)",marker="o",color="#990033",markersize=8)
+            plt.plot(workset_range,timings["Jacobian Evaluation Time <<Device DAG>>"],label="Jac Total Time (Device DAG)",marker="s",color="r",markersize=8)
+        plt.plot(workset_range,timings["Residual Evaluation Time <<Host DAG>>"],label="Res Total Time (Host DAG)",marker="o",color="b",markersize=8)
+        plt.plot(workset_range,timings["Residual Evaluation Time <<Device DAG>>"],label="Res Total Time (Device DAG)",marker="s",color="#00ffff",markersize=8)
+        plt.xlabel("Workset Size",fontsize=16)
+        plt.ylabel("Time (s)",fontsize=16)
+        plt.tick_params(labelsize=16)
         title = "nel=%i,neq=%i,nderiv=%i,ts=%i,vs=%i" % (nx*ny*nz,ne,8*ne,ts,vs)
         plt.title(title)
-        plt.legend(bbox_to_anchor=(1,1))
+        #plt.legend(bbox_to_anchor=(1,1))
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5,1.0),ncol=2,fancybox=True,shadow=True, prop={'size': 12})
         plt.grid()
-        fig.savefig("dag_timings.png")
+        dag_timings_filename = "dag_timings_nx_%i_ny_%i_nz_%i_ne_%i_ts_%i_vs_%i.png" % (nx, ny, nz ,ne, ts, vs)
+        fig.savefig(dag_timings_filename)
         #plt.show()
 
         if do_jac:
             fig = plt.figure(2)
             #plt.clf()
             plt.semilogy()
-            plt.plot(workset_range,timings["Jacobian Evaluation Time <<Host DAG>>"],label="Jac Total Time (Host DAG)")
-            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] Gather Solution"],label="Jac Gather")
-            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] ZeroContributedField"],label="Jac Zero")
-            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] ProjectValueToQP"],label="Jac ProjToQP")
-            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] ProjectGradientToQP"],label="Jac ProjGradToQP")
-            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] IntegrateDiffusionTerm"],label="Jac Int Diff Term")
-            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] IntegrateSourceTerm"],label="Jac Int Source Term")
-            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] Scatter Jacobian"],label="Jac Scatter")
-            plt.xlabel("Workset Size")
-            plt.ylabel("Time (s)")
+            plt.plot(workset_range,timings["Jacobian Evaluation Time <<Host DAG>>"],label="Jac Total Time (Host DAG)",marker='o')
+            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] Gather Solution"],label="Jac Gather",marker='s')
+            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] ZeroContributedField"],label="Jac Zero",marker='^')
+            #plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] ProjectValueToQP"],label="Jac ProjToQP",marker='+')
+            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] ProjectGradientToQP"],label="Jac ProjGradToQP",marker='*')
+            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] IntegrateDiffusionTerm"],label="Jac Int Diff Term",marker='x')
+            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] IntegrateSourceTerm"],label="Jac Int Source Term",marker='D')
+            plt.plot(workset_range,timings["[PHX::MyTraits::Jacobian] Scatter Jacobian"],label="Jac Scatter",marker='.',color="#ff6600")
+            plt.xlabel("Workset Size",fontsize=16)
+            plt.ylabel("Time (s)",fontsize=16)
+            plt.tick_params(labelsize=16)
             title = "nel=%i,neq=%i,nderiv=%i,ts=%i,vs=%i" % (nx*ny*nz,ne,8*ne,ts,vs)
             plt.title(title)
             #plt.legend(bbox_to_anchor=(1,1))
             #plt.legend(loc=1, prop={'size': 10})
             plt.legend(loc='upper center', bbox_to_anchor=(0.5,1.0),ncol=3,fancybox=True,shadow=True, prop={'size': 10})
             plt.grid()
-            fig.savefig("jac_evaluator_timings.png")
+            jac_evaluator_timings_filename = "jac_evaluator_timings_nx_%i_ny_%i_nz_%i_ne_%i_ts_%i_vs_%i.png" % (nx, ny, nz ,ne, ts, vs)
+            fig.savefig(jac_evaluator_timings_filename)
             
         fig = plt.figure(3)
         #plt.clf()
         plt.semilogy()
-        plt.plot(workset_range,timings["Residual Evaluation Time <<Host DAG>>"],label="Res Total Time (Host DAG)")
-        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] Gather Solution"],label="Res Gather")
-        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] ZeroContributedField"],label="Res Zero")
-        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] ProjectValueToQP"],label="Res ProjToQP")
-        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] ProjectGradientToQP"],label="Res ProjGradToQP")
-        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] IntegrateDiffusionTerm"],label="Res Int Diff Term")
-        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] IntegrateSourceTerm"],label="Res Int Source Term")
-        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] Scatter Residual"],label="Res Scatter")
-        plt.xlabel("Workset Size")
-        plt.ylabel("Time (s)")
+        plt.plot(workset_range,timings["Residual Evaluation Time <<Host DAG>>"],label="Res Total Time (Host DAG)",marker='o')
+        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] Gather Solution"],label="Res Gather",marker='s')
+        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] ZeroContributedField"],label="Res Zero",marker='^')
+        #plt.plot(workset_range,timings["[PHX::MyTraits::Residual] ProjectValueToQP"],label="Res ProjToQP",marker='+')
+        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] ProjectGradientToQP"],label="Res ProjGradToQP",marker='*')
+        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] IntegrateDiffusionTerm"],label="Res Int Diff Term",marker='x')
+        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] IntegrateSourceTerm"],label="Res Int Source Term",marker='D')
+        plt.plot(workset_range,timings["[PHX::MyTraits::Residual] Scatter Residual"],label="Res Scatter",marker='.',color="#ff6600")
+        plt.xlabel("Workset Size",fontsize=16)
+        plt.ylabel("Time (s)",fontsize=16)
+        plt.tick_params(labelsize=16)
         title = "nel=%i,neq=%i,nderiv=%i,ts=%i,vs=%i" % (nx*ny*nz,ne,8*ne,ts,vs)
         plt.title(title)
         #plt.legend(bbox_to_anchor=(1,1))
-        plt.axis([0,2000,1.0e-3,1])
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5,1.0),ncol=3,fancybox=True,shadow=True, prop={'size': 10})
+        #plt.axis([0,2000,1.0e-4,0.1])
         plt.grid()
-        fig.savefig("res_evaluator_timings.png")
+        res_evaluator_timings_filename = "res_evaluator_timings_nx_%i_ny_%i_nz_%i_ne_%i_ts_%i_vs_%i.png" % (nx, ny, nz ,ne, ts, vs)
+        fig.savefig(res_evaluator_timings_filename)
 
-        print dir(plt)
+        #print dir(plt)
+
+
+        # Plot to assess savings
+        filename_f = "raw_data_output_f_nx_%i_ny_%i_nz_%i_ne_%i_ws_%i_ts_%i_vs_%i.csv" % (nx, ny, nz ,ne, ws, ts, vs)
+        write_file = open(filename_f,'w')
+        for i in range(len(workset_range)):
+            write_file.write(str(workset_range[i])+", "+str(timings["Residual Evaluation Time <<Host DAG>>"][i])+"\n")
+
+        filename_J = "raw_data_output_J_nx_%i_ny_%i_nz_%i_ne_%i_ws_%i_ts_%i_vs_%i.csv" % (nx, ny, nz ,ne, ws, ts, vs)
+        write_file = open(filename_J,'w')
+        for i in range(len(workset_range)):
+            write_file.write(str(workset_range[i])+", "+str(timings["Jacobian Evaluation Time <<Host DAG>>"][i])+"\n")
+
         
     print "Finished Workset Analysis"
 

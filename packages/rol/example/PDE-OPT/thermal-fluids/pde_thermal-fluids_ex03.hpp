@@ -58,38 +58,38 @@
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 
 template <class Real>
 class PDE_ThermalFluids_ex03 : public PDE<Real> {
 private:
   // Finite element basis information
-  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtrVel_;
-  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtrPrs_;
-  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtrThr_;
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtrVel_;
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtrPrs_;
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtrThr_;
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
   // Cell cubature information
-  Teuchos::RCP<Intrepid::Cubature<Real> > cellCub_;
-  Teuchos::RCP<Intrepid::Cubature<Real> > bdryCub_;
+  ROL::Ptr<Intrepid::Cubature<Real> > cellCub_;
+  ROL::Ptr<Intrepid::Cubature<Real> > bdryCub_;
   // Cell node information
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
-  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > volCellNodes_;
+  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
   std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
   // Finite element definition
-  Teuchos::RCP<FE<Real> > feVel_;
-  Teuchos::RCP<FE<Real> > fePrs_;
-  Teuchos::RCP<FE<Real> > feThr_;
-  std::vector<std::vector<Teuchos::RCP<FE<Real> > > > feVelBdry_;
-  std::vector<std::vector<Teuchos::RCP<FE<Real> > > > fePrsBdry_;
-  std::vector<std::vector<Teuchos::RCP<FE<Real> > > > feThrBdry_;
+  ROL::Ptr<FE<Real> > feVel_;
+  ROL::Ptr<FE<Real> > fePrs_;
+  ROL::Ptr<FE<Real> > feThr_;
+  std::vector<std::vector<ROL::Ptr<FE<Real> > > > feVelBdry_;
+  std::vector<std::vector<ROL::Ptr<FE<Real> > > > fePrsBdry_;
+  std::vector<std::vector<ROL::Ptr<FE<Real> > > > feThrBdry_;
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
   std::vector<std::vector<int> > fvidx_;
   std::vector<std::vector<int> > fpidx_;
   std::vector<std::vector<int> > fhidx_;
   // Coordinates of degrees freedom on boundary cells.
   // Indexing:  [sideset number][local side id](cell number, value at dof)
-  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellVDofValues_;
-  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellTDofValues_;
+  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellVDofValues_;
+  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellTDofValues_;
   // Field pattern, offsets, etc.
   std::vector<std::vector<int> > fieldPattern_;  // local Field/DOF pattern; set from DOF manager 
   int numFields_;                                // number of fields (equations in the PDE)
@@ -104,7 +104,7 @@ private:
   Real ReScale_, PrScale_, GrScale_, hScale_, TScale_;
   bool pinPressure_;
 
-  Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
+  ROL::Ptr<FieldHelper<Real> > fieldHelper_;
 
   Real velocityDirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId, int dir) const {
     Real val(0);
@@ -156,11 +156,11 @@ private:
       bdryCellTDofValues_[i].resize(numLocSides);
       for (int j=0; j<numLocSides; ++j) {
         int c = bdryCellLocIds_[i][j].size();
-        bdryCellVDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, d));
-        bdryCellTDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, ft));
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > Vcoords, Tcoords;
-        Vcoords = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, d));
-        Tcoords = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, ft, d));
+        bdryCellVDofValues_[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, d);
+        bdryCellTDofValues_[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, ft);
+        ROL::Ptr<Intrepid::FieldContainer<Real> > Vcoords, Tcoords;
+        Vcoords = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, d);
+        Tcoords = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, ft, d);
         if (c > 0) {
           feVel_->computeDofCoords(Vcoords, bdryCellNodes_[i][j]);
           feThr_->computeDofCoords(Tcoords, bdryCellNodes_[i][j]);
@@ -275,9 +275,9 @@ private:
     return ThicknessNumber(x, sideset) * conductivityFunc(x);
   }
 
-  void computeCoefficients(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &nu,
-                           const Teuchos::RCP<Intrepid::FieldContainer<Real> > &grav,
-                           const Teuchos::RCP<Intrepid::FieldContainer<Real> > &kappa) const {
+  void computeCoefficients(const ROL::Ptr<Intrepid::FieldContainer<Real> > &nu,
+                           const ROL::Ptr<Intrepid::FieldContainer<Real> > &grav,
+                           const ROL::Ptr<Intrepid::FieldContainer<Real> > &kappa) const {
     int c = feVel_->gradN()->dimension(0);
     int p = feVel_->gradN()->dimension(2);
     int d = feVel_->gradN()->dimension(3);
@@ -295,9 +295,9 @@ private:
     }
   }
 
-  void computeThermalRobin(Teuchos::RCP<Intrepid::FieldContainer<Real> > &robin,
-                           const Teuchos::RCP<Intrepid::FieldContainer<Real> > &u,
-                           const Teuchos::RCP<Intrepid::FieldContainer<Real> > &z,
+  void computeThermalRobin(ROL::Ptr<Intrepid::FieldContainer<Real> > &robin,
+                           const ROL::Ptr<Intrepid::FieldContainer<Real> > &u,
+                           const ROL::Ptr<Intrepid::FieldContainer<Real> > &z,
                            const int sideset,
                            const int locSideId,
                            const int deriv = 0,
@@ -326,15 +326,15 @@ private:
     }
   }
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > getThermalBoundaryCoeff(
+  ROL::Ptr<Intrepid::FieldContainer<Real> > getThermalBoundaryCoeff(
       const Intrepid::FieldContainer<Real> & cell_coeff,
       int sideSet, int cell) const {
     std::vector<int> bdryCellLocId = bdryCellLocIds_[sideSet][cell];
     const int numCellsSide = bdryCellLocId.size();
     const int f = basisPtrThr_->getCardinality();
     
-    Teuchos::RCP<Intrepid::FieldContainer<Real > > bdry_coeff
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real > (numCellsSide, f));
+    ROL::Ptr<Intrepid::FieldContainer<Real > > bdry_coeff
+      = ROL::makePtr<Intrepid::FieldContainer<Real >>(numCellsSide, f);
     for (int i = 0; i < numCellsSide; ++i) {
       for (int j = 0; j < f; ++j) {
         (*bdry_coeff)(i, j) = cell_coeff(bdryCellLocId[i], j);
@@ -346,9 +346,9 @@ private:
 public:
   PDE_ThermalFluids_ex03(Teuchos::ParameterList &parlist) : grav_(-1) {
     // Finite element fields -- NOT DIMENSION INDEPENDENT!
-    basisPtrVel_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
-    basisPtrPrs_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
-    basisPtrThr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+    basisPtrVel_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
+    basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
+    basisPtrThr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
     // Volume quadrature rules.
     shards::CellTopology cellType = basisPtrVel_->getBaseCellTopology();         // get the cell type from any basis
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                           // create cubature factory
@@ -401,10 +401,10 @@ public:
     }
   }
 
-  void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void residual(ROL::Ptr<Intrepid::FieldContainer<Real> > & res,
+                const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     // Retrieve dimensions.
     int c  = u_coeff->dimension(0);
     int p  = cellCub_->getNumPoints();
@@ -414,50 +414,50 @@ public:
     int d  = cellCub_->getDimension();
  
     // Initialize residuals.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > R(d+2);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > R(d+2);
     for (int i = 0; i < d; ++i) {
-      R[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv));
+      R[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv);
     }
-    R[d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp));
-    R[d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh));
+    R[d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp);
+    R[d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh);
 
     // Split u_coeff into components.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U, Z;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > U, Z;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
 
     // Evaluate problem coefficients at quadrature points.
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > nu, grav, kappa;
-    nu    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    grav  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    kappa = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > nu, grav, kappa;
+    nu    = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    grav  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    kappa = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     computeCoefficients(nu,grav,kappa);
 
     // Evaluate/interpolate finite element fields on cells.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > valVel_vec(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > valVel_vec(d);
     for (int i = 0; i < d; ++i) {
-      valVel_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      valVel_vec[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
       feVel_->evaluateValue(valVel_vec[i], U[i]);
     }
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valPres_eval, valHeat_eval;
-    valPres_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    valHeat_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > valPres_eval, valHeat_eval;
+    valPres_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valHeat_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     fePrs_->evaluateValue(valPres_eval, U[d]);
     feThr_->evaluateValue(valHeat_eval, U[d+1]);
     // Evaluate/interpolate gradient of finite element fields on cells.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradVel_vec(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > gradVel_vec(d);
     for (int i = 0; i < d; ++i) {
-      gradVel_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      gradVel_vec[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
       feVel_->evaluateGradient(gradVel_vec[i], U[i]);
     }
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradHeat_eval;
-    gradHeat_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > gradHeat_eval;
+    gradHeat_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
     feThr_->evaluateGradient(gradHeat_eval, U[d+1]);
 
     // Assemble the velocity vector and its divergence.
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVel_eval, divVel_eval;
-    valVel_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    divVel_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > valVel_eval, divVel_eval;
+    valVel_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+    divVel_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     for (int i = 0; i < c; ++i) {
       for (int j = 0; j < p; ++j) {
         (*divVel_eval)(i,j) = static_cast<Real>(0);
@@ -471,28 +471,28 @@ public:
     /**************************************************************************/
     /*** NAVIER STOKES ********************************************************/
     /**************************************************************************/
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > nuGradVel_vec(d), valVelDotgradVel_vec(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > nuGradVel_vec(d), valVelDotgradVel_vec(d);
     for (int i = 0; i < d; ++i) {
       // Multiply velocity gradients with viscosity.
-      nuGradVel_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      nuGradVel_vec[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
       Intrepid::FunctionSpaceTools::tensorMultiplyDataData<Real>(*nuGradVel_vec[i], *nu, *gradVel_vec[i]);
       // Compute nonlinear terms in the Navier-Stokes equations.
-      valVelDotgradVel_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      valVelDotgradVel_vec[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
       Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*valVelDotgradVel_vec[i], *valVel_eval, *gradVel_vec[i]);
     }
     // Negative pressure
     Intrepid::RealSpaceTools<Real>::scale(*valPres_eval,static_cast<Real>(-1));
     // Compute gravitational force.
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gravForce;
-    gravForce = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > gravForce;
+    gravForce = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*gravForce, *grav, *valHeat_eval);
 
     /**************************************************************************/
     /*** THERMAL **************************************************************/
     /**************************************************************************/
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > kappaGradHeat_eval, velDotGradHeat_eval;
-    kappaGradHeat_eval  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    velDotGradHeat_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > kappaGradHeat_eval, velDotGradHeat_eval;
+    kappaGradHeat_eval  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+    velDotGradHeat_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     // Multiply temperature gradient with conductivity
     Intrepid::FunctionSpaceTools::tensorMultiplyDataData<Real>(*kappaGradHeat_eval, *kappa, *gradHeat_eval);
     // Dot multiply scaled velocity with temperature gradient
@@ -563,22 +563,22 @@ public:
             int numCellsSide = bdryCellLocIds_[i][j].size();
             if (numCellsSide) {
               // Get U and Z coefficients on Robin boundary
-              Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry, z_coeff_bdry;
+              ROL::Ptr<Intrepid::FieldContainer<Real > > u_coeff_bdry, z_coeff_bdry;
               u_coeff_bdry = getThermalBoundaryCoeff(*(U[d+1]), i, j);
               z_coeff_bdry = getThermalBoundaryCoeff(*(Z[d+1]), i, j);
               // Evaluate U and Z on FE basis
-              Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry, valZ_eval_bdry;
-              valU_eval_bdry = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-              valZ_eval_bdry = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+              ROL::Ptr<Intrepid::FieldContainer<Real > > valU_eval_bdry, valZ_eval_bdry;
+              valU_eval_bdry = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+              valZ_eval_bdry = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
               feThrBdry_[i][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
               feThrBdry_[i][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
               // Compute Stefan-Boltzmann residual
-              Teuchos::RCP<Intrepid::FieldContainer<Real> > robinVal;
-              robinVal = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+              ROL::Ptr<Intrepid::FieldContainer<Real> > robinVal;
+              robinVal = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
               computeThermalRobin(robinVal,valU_eval_bdry,valZ_eval_bdry,i,j,0);
               // Evaluate boundary integral
-              Teuchos::RCP<Intrepid::FieldContainer<Real> > robinRes;
-              robinRes = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, fh));
+              ROL::Ptr<Intrepid::FieldContainer<Real> > robinRes;
+              robinRes = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, fh);
               Intrepid::FunctionSpaceTools::integrate<Real>(*robinRes,
                                                             *robinVal,
                                                             *(feThrBdry_[i][j]->NdetJ()),
@@ -645,10 +645,10 @@ public:
     fieldHelper_->combineFieldCoeff(res, R);
   }
 
-  void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Jacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     // Retrieve dimensions.
     int c  = u_coeff->dimension(0);
     int p  = cellCub_->getNumPoints();
@@ -658,68 +658,68 @@ public:
     int d  = cellCub_->getDimension();
  
     // Initialize jacobians.
-    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J(d+2);
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J(d+2);
     for (int i = 0; i < d+2; ++i) {
       J[i].resize(d+2);
     }
     for (int i = 0; i < d; ++i) {
       for (int j = 0; j < d; ++j) {
-        J[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fv));
+        J[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fv);
       }
-      J[d][i]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fv));
-      J[i][d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fp));
-      J[d+1][i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fv));
-      J[i][d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fh));
+      J[d][i]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fv);
+      J[i][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fp);
+      J[d+1][i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fv);
+      J[i][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fh);
     }
-    J[d][d]     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fp));
-    J[d+1][d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fp));
-    J[d][d+1]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fh));
-    J[d+1][d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fh));
+    J[d][d]     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fp);
+    J[d+1][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fp);
+    J[d][d+1]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fh);
+    J[d+1][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fh);
 
     // Split u_coeff into components.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U, Z;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > U, Z;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
 
     // Evaluate problem coefficients at quadrature points.
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > nu, grav, kappa;
-    nu    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    grav  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    kappa = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > nu, grav, kappa;
+    nu    = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    grav  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    kappa = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     computeCoefficients(nu,grav,kappa);
 
     // Evaluate/interpolate finite element fields on cells.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > valVel_vec(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > valVel_vec(d);
     for (int i = 0; i < d; ++i) {
-      valVel_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      valVel_vec[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
       feVel_->evaluateValue(valVel_vec[i], U[i]);
     }
     // Evaluate/interpolate gradient of finite element fields on cells.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradVel_vec(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > gradVel_vec(d);
     for (int i = 0; i < d; ++i) {
-      gradVel_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      gradVel_vec[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
       feVel_->evaluateGradient(gradVel_vec[i], U[i]);
     }
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradHeat_eval;
-    gradHeat_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > gradHeat_eval;
+    gradHeat_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
     feThr_->evaluateGradient(gradHeat_eval, U[d+1]);
 
     // Assemble the velocity vector and its divergence.
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVel_eval;
-    valVel_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > dVel_vec(d);
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradHeat_vec(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real> > valVel_eval;
+    valVel_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > dVel_vec(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > gradHeat_vec(d);
     for (int k = 0; k < d; ++k) {
       dVel_vec[k].resize(d);
       for (int l = 0; l < d; ++l) {
-        dVel_vec[k][l] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+        dVel_vec[k][l] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
         for (int i = 0; i < c; ++i) {
           for (int j = 0; j < p; ++j) {
             (*dVel_vec[k][l])(i,j) = (*gradVel_vec[k])(i,j,l);
           }
         }
       }
-      gradHeat_vec[k] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      gradHeat_vec[k] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
       for (int i = 0; i < c; ++i) {
         for (int j = 0; j < p; ++j) {
           (*valVel_eval)(i,j,k)  = (*valVel_vec[k])(i,j);
@@ -731,45 +731,45 @@ public:
     /**************************************************************************/
     /*** NAVIER STOKES ********************************************************/
     /**************************************************************************/
-    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > dVelPhi_vec(d);
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > dVelPhi_vec(d);
     for (int i = 0; i < d; ++i) {
       // Compute nonlinear terms in the Navier-Stokes equations.
       dVelPhi_vec[i].resize(d);
       for (int j = 0; j < d; ++j) {
-        dVelPhi_vec[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+        dVelPhi_vec[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
         Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*dVelPhi_vec[i][j], *dVel_vec[i][j], *(feVel_->N()));
       }
     }
     // Multiply velocity gradients with viscosity.
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > nuGradPhi_eval;
-    nuGradPhi_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p, d));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > nuGradPhi_eval;
+    nuGradPhi_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p, d);
     Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(*nuGradPhi_eval, *nu, *(feVel_->gradN()));
     // Compute nonlinear terms in the Navier-Stokes equations.
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelDotgradPhi_eval;
-    valVelDotgradPhi_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > valVelDotgradPhi_eval;
+    valVelDotgradPhi_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
     Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(*valVelDotgradPhi_eval, *valVel_eval, *(feVel_->gradN()));
     // Negative pressure basis.
     Intrepid::FieldContainer<Real> negPrsPhi(*(fePrs_->N()));
     Intrepid::RealSpaceTools<Real>::scale(negPrsPhi,static_cast<Real>(-1));
     // Compute gravity Jacobian
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gravPhi;
-    gravPhi = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > gravPhi;
+    gravPhi = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, p);
     Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*gravPhi, *grav, *(feThr_->N()));
 
     /**************************************************************************/
     /*** THERMAL **************************************************************/
     /**************************************************************************/
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > kappaGradPhi, VelPhi;
-    kappaGradPhi = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, p, d));
-    VelPhi = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, p));
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > dHeatPhi(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real> > kappaGradPhi, VelPhi;
+    kappaGradPhi = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, p, d);
+    VelPhi = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, p);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > dHeatPhi(d);
     // Compute kappa times gradient of basis.
     Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(*kappaGradPhi, *kappa, *(feThr_->gradN()));
     // Compute scaled velocity.
     Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(*VelPhi, *valVel_eval, *feThr_->gradN());
     // Thermal-velocity Jacobians.
     for (int i = 0; i < d; ++i) {
-      dHeatPhi[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, p));
+      dHeatPhi[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, p);
       Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*dHeatPhi[i], *gradHeat_vec[i], *feThr_->N());
     }
 
@@ -842,28 +842,28 @@ public:
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
-            Teuchos::RCP<Intrepid::FieldContainer<Real> > robinJac;
+            ROL::Ptr<Intrepid::FieldContainer<Real> > robinJac;
             if (numCellsSide) {
               // Get U and Z coefficients on Robin boundary
-              Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry, z_coeff_bdry;
+              ROL::Ptr<Intrepid::FieldContainer<Real > > u_coeff_bdry, z_coeff_bdry;
               u_coeff_bdry = getThermalBoundaryCoeff(*(U[d+1]), i, j);
               z_coeff_bdry = getThermalBoundaryCoeff(*(Z[d+1]), i, j);
               // Evaluate U and Z on FE basis
-              Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry, valZ_eval_bdry;
-              valU_eval_bdry = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-              valZ_eval_bdry = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+              ROL::Ptr<Intrepid::FieldContainer<Real > > valU_eval_bdry, valZ_eval_bdry;
+              valU_eval_bdry = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+              valZ_eval_bdry = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
               feThrBdry_[i][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
               feThrBdry_[i][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
               // Compute Stefan-Boltzmann residual
-              Teuchos::RCP< Intrepid::FieldContainer<Real> > robinVal1
-                = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+              ROL::Ptr< Intrepid::FieldContainer<Real> > robinVal1
+                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
               Intrepid::FieldContainer<Real> robinVal(numCellsSide, fh, numCubPerSide);
               computeThermalRobin(robinVal1,valU_eval_bdry,valZ_eval_bdry,i,j,1,0);
               Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(robinVal,
                                                                           *robinVal1,
                                                                           *(feThrBdry_[i][j]->N()));
               // Evaluate boundary integral
-              robinJac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, fh, fh));
+              robinJac = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, fh, fh);
               Intrepid::FunctionSpaceTools::integrate<Real>(*robinJac,
                                                             robinVal,
                                                             *(feThrBdry_[i][j]->NdetJ()),
@@ -967,10 +967,10 @@ public:
   }
 
 
-  void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Jacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     // Retrieve dimensions.
     int c  = u_coeff->dimension(0);
     int fv = basisPtrVel_->getCardinality();
@@ -979,26 +979,26 @@ public:
     int d  = cellCub_->getDimension();
  
     // Initialize jacobians.
-    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J(d+2);
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J(d+2);
     for (int i = 0; i < d+2; ++i) {
       J[i].resize(d+2);
     }
     for (int i = 0; i < d; ++i) {
       for (int j = 0; j < d; ++j) {
-        J[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fv));
+        J[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fv);
       }
-      J[d][i]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fv));
-      J[i][d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fp));
-      J[d+1][i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fv));
-      J[i][d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fh));
+      J[d][i]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fv);
+      J[i][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fp);
+      J[d+1][i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fv);
+      J[i][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fh);
     }
-    J[d][d]     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fp));
-    J[d+1][d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fp));
-    J[d][d+1]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fh));
-    J[d+1][d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fh));
+    J[d][d]     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fp);
+    J[d+1][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fp);
+    J[d][d+1]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fh);
+    J[d+1][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fh);
 
     // Split u_coeff into components.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U, Z;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > U, Z;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
 
@@ -1014,20 +1014,20 @@ public:
             int numCellsSide = bdryCellLocIds_[i][j].size();
             if (numCellsSide) {
               // Get U and Z coefficients on Robin boundary
-              Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry
+              ROL::Ptr<Intrepid::FieldContainer<Real > > u_coeff_bdry
                 = getThermalBoundaryCoeff(*(U[d+1]), i, j);
-              Teuchos::RCP<Intrepid::FieldContainer<Real > > z_coeff_bdry
+              ROL::Ptr<Intrepid::FieldContainer<Real > > z_coeff_bdry
                 = getThermalBoundaryCoeff(*(Z[d+1]), i, j);
               // Evaluate U and Z on FE basis
-              Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry
-                = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-              Teuchos::RCP<Intrepid::FieldContainer<Real > > valZ_eval_bdry
-                = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+              ROL::Ptr<Intrepid::FieldContainer<Real > > valU_eval_bdry
+                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+              ROL::Ptr<Intrepid::FieldContainer<Real > > valZ_eval_bdry
+                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
               feThrBdry_[i][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
               feThrBdry_[i][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
               // Compute Stefan-Boltzmann residual
-              Teuchos::RCP< Intrepid::FieldContainer<Real> > robinVal1
-                = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+              ROL::Ptr< Intrepid::FieldContainer<Real> > robinVal1
+                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
               Intrepid::FieldContainer<Real> robinVal(numCellsSide, fh, numCubPerSide);
               computeThermalRobin(robinVal1,valU_eval_bdry,valZ_eval_bdry,i,j,1,1);
               Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(robinVal,
@@ -1134,11 +1134,11 @@ public:
 
   }
 
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
 //    throw Exception::NotImplemented("");
     // Retrieve dimensions.
     int c  = u_coeff->dimension(0);
@@ -1149,28 +1149,28 @@ public:
     int d  = cellCub_->getDimension();
  
     // Initialize jacobians.
-    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > H(d+2);
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > H(d+2);
     for (int i = 0; i < d+2; ++i) {
       H[i].resize(d+2);
     }
     for (int i = 0; i < d; ++i) {
       for (int j = 0; j < d; ++j) {
-        H[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fv));
+        H[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fv);
       }
     }
     for (int i = 0; i < d; ++i) {
-      H[d][i]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fv));
-      H[i][d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fp));
-      H[d+1][i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fv));
-      H[i][d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fh));
+      H[d][i]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fv);
+      H[i][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fp);
+      H[d+1][i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fv);
+      H[i][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fh);
     }
-    H[d][d]     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fp));
-    H[d+1][d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fp));
-    H[d][d+1]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fh));
-    H[d+1][d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fh));
+    H[d][d]     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fp);
+    H[d+1][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fp);
+    H[d][d+1]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fh);
+    H[d+1][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fh);
 
     // Split l_coeff into components.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > L;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > L;
     fieldHelper_->splitFieldCoeff(L, l_coeff);
 
     // APPLY DIRICHLET CONDITIONS
@@ -1223,25 +1223,25 @@ public:
     }
 
     // Evaluate/interpolate finite element fields on cells.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > valVel_vec(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > valVel_vec(d);
     for (int i = 0; i < d; ++i) {
-      valVel_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      valVel_vec[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
       feVel_->evaluateValue(valVel_vec[i], L[i]);
     }
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valHeat_eval;
-    valHeat_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > valHeat_eval;
+    valHeat_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     feThr_->evaluateValue(valHeat_eval, L[3]);
 
     // Compute nonlinear terms in the Navier-Stokes equations.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > valVelPhi_vec(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > valVelPhi_vec(d);
     for (int i = 0; i < d; ++i) {
-      valVelPhi_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+      valVelPhi_vec[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
       Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*valVelPhi_vec[i], *valVel_vec[i], *(feVel_->N()));
     }
 
     // Compute nonlinear terms in the thermal equation.
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valHeatVelPhi;
-    valHeatVelPhi = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > valHeatVelPhi;
+    valHeatVelPhi = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, p);
     Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*valHeatVelPhi, *valHeat_eval, *(feVel_->N()));
 
     /*** Evaluate weak form of the Hessian. ***/
@@ -1277,31 +1277,31 @@ public:
 
   }
 
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_12(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_ThermalFluids::Hessian_12): Hessian is zero.");
   }
 
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_21(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_ThermalFluids::Hessian_21): Hessian is zero.");
   }
 
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_22(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_ThermalFluids::Hessian_22): Hessian is zero.");
   }
 
-  void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & riesz) {
     // Retrieve dimensions.
     int c  = feVel_->N()->dimension(0);
     int fv = basisPtrVel_->getCardinality();
@@ -1310,23 +1310,23 @@ public:
     int d  = cellCub_->getDimension();
  
     // Initialize jacobians.
-    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J(d+2);
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J(d+2);
     for (int i = 0; i < d+2; ++i) {
       J[i].resize(d+2);
     }
     for (int i = 0; i < d; ++i) {
       for (int j = 0; j < d; ++j) {
-        J[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fv));
+        J[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fv);
       }
-      J[d][i]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fv));
-      J[i][d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fp));
-      J[d+1][i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fv));
-      J[i][d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fh));
+      J[d][i]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fv);
+      J[i][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fp);
+      J[d+1][i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fv);
+      J[i][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fh);
     }
-    J[d][d]     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fp));
-    J[d+1][d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fp));
-    J[d][d+1]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fh));
-    J[d+1][d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fh));
+    J[d][d]     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fp);
+    J[d+1][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fp);
+    J[d][d+1]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fh);
+    J[d+1][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fh);
 
     for (int i = 0; i < d; ++i) {
       *(J[i][i]) = *(feVel_->stiffMat());
@@ -1340,7 +1340,7 @@ public:
     fieldHelper_->combineFieldCoeff(riesz, J);
   }
 
-  void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & riesz) {
     // Retrieve dimensions.
     int c  = feVel_->N()->dimension(0);
     int fv = basisPtrVel_->getCardinality();
@@ -1349,23 +1349,23 @@ public:
     int d  = cellCub_->getDimension();
  
     // Initialize jacobians.
-    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J(d+2);
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J(d+2);
     for (int i = 0; i < d+2; ++i) {
       J[i].resize(d+2);
     }
     for (int i = 0; i < d; ++i) {
       for (int j = 0; j < d; ++j) {
-        J[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fv));
+        J[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fv);
       }
-      J[d][i]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fv));
-      J[i][d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fp));
-      J[d+1][i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fv));
-      J[i][d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, fh));
+      J[d][i]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fv);
+      J[i][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fp);
+      J[d+1][i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fv);
+      J[i][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fh);
     }
-    J[d][d]     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fp));
-    J[d+1][d]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fp));
-    J[d][d+1]   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fp, fh));
-    J[d+1][d+1] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fh, fh));
+    J[d][d]     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fp);
+    J[d+1][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fp);
+    J[d][d+1]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fh);
+    J[d+1][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fh);
 
 
     for (int i = 0; i < d; ++i) {
@@ -1378,20 +1378,20 @@ public:
     fieldHelper_->combineFieldCoeff(riesz, J);
   }
 
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
     return basisPtrs_;
   }
 
-  void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &volCellNodes,
-                    const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
+  void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real> > &volCellNodes,
+                    const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) {
     volCellNodes_ = volCellNodes;
     bdryCellNodes_ = bdryCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
-    feVel_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrVel_,cellCub_));
-    fePrs_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrPrs_,cellCub_));
-    feThr_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrThr_,cellCub_));
+    feVel_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtrVel_,cellCub_);
+    fePrs_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtrPrs_,cellCub_);
+    feThr_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtrThr_,cellCub_);
     // Get boundary degrees of freedom.
     fvidx_ = feVel_->getBoundaryDofs();
     fpidx_ = fePrs_->getBoundaryDofs();
@@ -1407,10 +1407,10 @@ public:
       fePrsBdry_[i].resize(numLocSides);
       feThrBdry_[i].resize(numLocSides);
       for (int j = 0; j < numLocSides; ++j) {
-        if (bdryCellNodes[i][j] != Teuchos::null) {
-          feVelBdry_[i][j] = Teuchos::rcp(new FE<Real>(bdryCellNodes[i][j],basisPtrVel_,bdryCub_,j));
-          fePrsBdry_[i][j] = Teuchos::rcp(new FE<Real>(bdryCellNodes[i][j],basisPtrPrs_,bdryCub_,j));
-          feThrBdry_[i][j] = Teuchos::rcp(new FE<Real>(bdryCellNodes[i][j],basisPtrThr_,bdryCub_,j));
+        if (bdryCellNodes[i][j] != ROL::nullPtr) {
+          feVelBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtrVel_,bdryCub_,j);
+          fePrsBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtrPrs_,bdryCub_,j);
+          feThrBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtrThr_,bdryCub_,j);
         }
       }
     }
@@ -1418,30 +1418,30 @@ public:
 
   void setFieldPattern(const std::vector<std::vector<int> > & fieldPattern) {
     fieldPattern_ = fieldPattern;
-    fieldHelper_ = Teuchos::rcp(new FieldHelper<Real>(numFields_, numDofs_, numFieldDofs_, fieldPattern_));
+    fieldHelper_ = ROL::makePtr<FieldHelper<Real>>(numFields_, numDofs_, numFieldDofs_, fieldPattern_);
   }
 
-  const Teuchos::RCP<FE<Real> > getVelocityFE(void) const {
+  const ROL::Ptr<FE<Real> > getVelocityFE(void) const {
     return feVel_;
   }
 
-  const Teuchos::RCP<FE<Real> > getPressureFE(void) const {
+  const ROL::Ptr<FE<Real> > getPressureFE(void) const {
     return fePrs_;
   }
 
-  const Teuchos::RCP<FE<Real> > getThermalFE(void) const {
+  const ROL::Ptr<FE<Real> > getThermalFE(void) const {
     return feThr_;
   }
 
-  const std::vector<std::vector<Teuchos::RCP<FE<Real> > > > getVelocityBdryFE(void) const {
+  const std::vector<std::vector<ROL::Ptr<FE<Real> > > > getVelocityBdryFE(void) const {
     return feVelBdry_;
   }
 
-  const std::vector<std::vector<Teuchos::RCP<FE<Real> > > > getPressureBdryFE(void) const {
+  const std::vector<std::vector<ROL::Ptr<FE<Real> > > > getPressureBdryFE(void) const {
     return fePrsBdry_;
   }
 
-  const std::vector<std::vector<Teuchos::RCP<FE<Real> > > > getThermalBdryFE(void) const {
+  const std::vector<std::vector<ROL::Ptr<FE<Real> > > > getThermalBdryFE(void) const {
     return feThrBdry_;
   }
 
@@ -1449,7 +1449,7 @@ public:
     return bdryCellLocIds_;
   }
 
-  const Teuchos::RCP<FieldHelper<Real> > getFieldHelper(void) const {
+  const ROL::Ptr<FieldHelper<Real> > getFieldHelper(void) const {
     return fieldHelper_;
   }
 

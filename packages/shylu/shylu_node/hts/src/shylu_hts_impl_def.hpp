@@ -90,59 +90,60 @@ inline int omp_get_thread_num () { return 0; }
 
 #include "shylu_hts_impl.hpp"
 
-
-
 namespace Experimental {
 namespace htsimpl {
 
 static const int parfor_static_size = 20;
 
 #if defined(HAVE_SHYLU_NODEHTS_BLAS) || defined(HAVE_SHYLU_NODEHTS_MKL)
-//todo Make this configurable.
 typedef int blas_int;
 
 template<typename T> void gemm(
   char transa, char transb, blas_int m, blas_int nrhs, blas_int n, T alpha,
   const T* a, blas_int lda, const T* b, blas_int ldb, T beta,
-  const T* c, blas_int ldc);
+  T* c, blas_int ldc);
 
 extern "C" {
   void F77_BLAS_MANGLE(sgemm,SGEMM)(
-    char*, char*, blas_int*, blas_int*, blas_int*, float*, float*, blas_int*,
-    float*, blas_int*, float*, float*, blas_int*);
+    const char*, const char*, const blas_int*, const blas_int*, const blas_int*,
+    const float*, const float*, const blas_int*, const float*, const blas_int*,
+    const float*, float*, const blas_int*);
   void F77_BLAS_MANGLE(dgemm,DGEMM)(
-    char*, char*, blas_int*, blas_int*, blas_int*, double*, double*, blas_int*,
-    double*, blas_int*, double*, double*, blas_int*);
+    const char*, const char*, const blas_int*, const blas_int*, const blas_int*,
+    const double*, const double*, const blas_int*, const double*, const blas_int*,
+    const double*, double*, const blas_int*);
 #ifdef HAVE_SHYLU_NODEHTS_COMPLEX
   void F77_BLAS_MANGLE(cgemm,CGEMM)(
-    char*, char*, blas_int*, blas_int*, blas_int*, std::complex<float>*,
-    std::complex<float>*, blas_int*, std::complex<float>*, blas_int*,
-    std::complex<float>*, std::complex<float>*, blas_int*);
+    const char*, const char*, const blas_int*, const blas_int*, const blas_int*,
+    const std::complex<float>*, const std::complex<float>*, const blas_int*,
+    const std::complex<float>*, const blas_int*, const std::complex<float>*,
+    std::complex<float>*, const blas_int*);
   void F77_BLAS_MANGLE(zgemm,ZGEMM)(
-    char*, char*, blas_int*, blas_int*, blas_int*, std::complex<double>*,
-    std::complex<double>*, blas_int*, std::complex<double>*, blas_int*,
-    std::complex<double>*, std::complex<double>*, blas_int*);
+    const char*, const char*, const blas_int*, const blas_int*, const blas_int*,
+    const std::complex<double>*, const std::complex<double>*, const blas_int*,
+    const std::complex<double>*, const blas_int*, const std::complex<double>*,
+    std::complex<double>*, const blas_int*);
 #endif
 }
 
 template<> inline void gemm<float> (
   char transa, char transb, blas_int m, blas_int nrhs, blas_int n, float alpha,
   const float* a, blas_int lda, const float* b, blas_int ldb, float beta,
-  const float* c, blas_int ldc)
+  float* c, blas_int ldc)
 {
   F77_BLAS_MANGLE(sgemm,SGEMM)(
-    &transa, &transb, &m, &nrhs, &n, &alpha, const_cast<float*>(a), &lda,
-    const_cast<float*>(b), &ldb, &beta, const_cast<float*>(c), &ldc);
+    &transa, &transb, &m, &nrhs, &n, &alpha, a, &lda,
+    b, &ldb, &beta, c, &ldc);
 }
 
 template<> inline void gemm<double> (
   char transa, char transb, blas_int m, blas_int nrhs, blas_int n, double alpha,
   const double* a, blas_int lda, const double* b, blas_int ldb, double beta,
-  const double* c, blas_int ldc)
+  double* c, blas_int ldc)
 {
   F77_BLAS_MANGLE(dgemm,DGEMM)(
-    &transa, &transb, &m, &nrhs, &n, &alpha, const_cast<double*>(a), &lda,
-    const_cast<double*>(b), &ldb, &beta, const_cast<double*>(c), &ldc);
+    &transa, &transb, &m, &nrhs, &n, &alpha, a, &lda,
+    b, &ldb, &beta, c, &ldc);
 }
 
 #ifdef HAVE_SHYLU_NODEHTS_COMPLEX
@@ -150,26 +151,26 @@ template<> inline void gemm<std::complex<float> > (
   char transa, char transb, blas_int m, blas_int nrhs, blas_int n,
   std::complex<float> alpha, const std::complex<float>* a, blas_int lda,
   const std::complex<float>* b, blas_int ldb, std::complex<float> beta,
-  const std::complex<float>* c, blas_int ldc)
+  std::complex<float>* c, blas_int ldc)
 {
   F77_BLAS_MANGLE(cgemm,CGEMM)(
     &transa, &transb, &m, &nrhs, &n, &alpha,
-    const_cast<std::complex<float>*>(a), &lda,
-    const_cast<std::complex<float>*>(b), &ldb, &beta,
-    const_cast<std::complex<float>*>(c), &ldc);
+    a, &lda,
+    b, &ldb, &beta,
+    c, &ldc);
 }
 
 template<> inline void gemm<std::complex<double> > (
   char transa, char transb, blas_int m, blas_int nrhs, blas_int n,
   std::complex<double> alpha, const std::complex<double>* a, blas_int lda,
   const std::complex<double>* b, blas_int ldb, std::complex<double> beta,
-  const std::complex<double>* c, blas_int ldc)
+  std::complex<double>* c, blas_int ldc)
 {
   F77_BLAS_MANGLE(zgemm,ZGEMM)(
     &transa, &transb, &m, &nrhs, &n, &alpha,
-    const_cast<std::complex<double>*>(a), &lda,
-    const_cast<std::complex<double>*>(b), &ldb, &beta,
-    const_cast<std::complex<double>*>(c), &ldc);
+    a, &lda,
+    b, &ldb, &beta,
+    c, &ldc);
 }
 #endif
 #endif
@@ -1054,7 +1055,7 @@ get_matrix_p (const CrsMatrix& A, const Array<Int>& p,
     Sclr* const d_start = sd.d + sd.ir[i];
     memcpy(d_start, A.d + A.ir[r], nc*sizeof(*sd.d));
     if (set_diag_reciprocal)
-      d_start[nc-1] = 1.0/d_start[nc-1];
+      d_start[nc-1] = Sclr{1.0}/d_start[nc-1];
   }
 
   CrsMatrix* cm;
@@ -1998,7 +1999,7 @@ OnDiagTri::init_numeric (const CrsMatrix& T, const bool invert) {
         if (lcol >= this->n_) break;
         Size& i = ir[lrow+1];
         jc[i] = lcol;
-        d[i] = lrow == lcol ? 1.0/T.d[k] : T.d[k];
+        d[i] = lrow == lcol ? Sclr{1.0}/T.d[k] : T.d[k];
         ++i;
       }
     }
@@ -2022,7 +2023,7 @@ OnDiagTri::reinit_numeric (const CrsMatrix& T, const bool invert) {
         const Int lcol = T.jc[k] - c0_;
         if (lcol >= this->n_) break;
         const Size di = (lrow*(lrow + 1))/2 + lcol;
-        const Sclr dv = lrow == lcol ? 1.0/T.d[k] : T.d[k];
+        const Sclr dv = lrow == lcol ? Sclr{1.0}/T.d[k] : T.d[k];
         // Compressed dense triangle.
         d_[di] = dv;
         ++nnz;
@@ -2042,7 +2043,7 @@ OnDiagTri::reinit_numeric (const CrsMatrix& T, const bool invert) {
            k < irgp1; ++k) {
         const Int lcol = T.jc[k] - c0_;
         if (lcol >= this->n_) break;
-        d[i] = lrow == lcol ? 1.0/T.d[k] : T.d[k];
+        d[i] = lrow == lcol ? Sclr{1.0}/T.d[k] : T.d[k];
         ++i;
       }
     }
@@ -3270,7 +3271,7 @@ LevelSetTri::reinit_numeric (const CrsMatrix& T) {
       assert(nc == static_cast<Int>(t.m->ir[i+1] - t.m->ir[i]));
       Sclr* const d_start = t.m->d + t.m->ir[i];
       memcpy(d_start, T.d + T.ir[r], nc*sizeof(*t.m->d));
-      d_start[nc-1] = 1.0/d_start[nc-1];
+      d_start[nc-1] = Sclr{1.0}/d_start[nc-1];
     }
   } while (0);
   if ( ! nthreads_ok) throw hts::Exception(msg);
@@ -3896,8 +3897,8 @@ to_outside (Sclr* x, const Int nrhs, const Sclr a, const Sclr b,
   const Int i0 = part_[tid], i1 = part_[tid+1];
   Sclr* ppx = px_;
   Sclr* px = x;
-  if (b != 1.0) {
-    if (a != 0.0) {
+  if (b != Sclr{1.0}) {
+    if (a != Sclr{0.0}) {
       for (int k = 0; ; ) {
         for (Int i = i0; i < i1; ++i) {
           Sclr* const pxqi = px + q_[i];
@@ -3917,7 +3918,7 @@ to_outside (Sclr* x, const Int nrhs, const Sclr a, const Sclr b,
       }
     }
   } else {
-    if (a != 0.0) {
+    if (a != Sclr{0.0}) {
       for (int k = 0; ; ) {
         for (Int i = i0; i < i1; ++i) {
           Sclr* const pxqi = px + q_[i];

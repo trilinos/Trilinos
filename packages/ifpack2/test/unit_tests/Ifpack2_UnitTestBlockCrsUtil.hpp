@@ -246,7 +246,11 @@ struct BlockCrsMatrixMaker {
     const auto& g = a.getCrsGraph();
     const auto& rowptr = g.getLocalGraph().row_map;
     const auto& colidx = g.getLocalGraph().entries;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     const auto& values = a.template getValues<Kokkos::HostSpace>();
+#else
+    const auto& values = a.getValuesHost();
+#endif
     const auto row_map = g.getRowMap();
     const auto col_map = g.getColMap();
     const LO bs = a.getBlockSize(), bs2 = bs*bs;
@@ -258,7 +262,11 @@ struct BlockCrsMatrixMaker {
       new Tpetra_Map(Tpetra_BlockMultiVector::makePointMap(*col_map, bs)));
     Tpetra_MultiVector_Magnitude colsum_mv(cpm, 1);
     colsum_mv.putScalar(0);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     auto colsum = colsum_mv.template getLocalView<Kokkos::HostSpace>();
+#else
+    auto colsum = colsum_mv.getLocalViewHost();
+#endif
 
     // Get off-diag 1-norms.
     for (LO r = 0; r < nrows; ++r) {
@@ -300,7 +308,7 @@ struct BlockCrsMatrixMaker {
         auto* const block = &values(j*bs2);
         for (Int bi = 0; bi < bs; ++bi) {
           auto& e = block[bi*bs + bi];
-          e = 1.01*std::max(rowsum[bs*r + bi], colsum(bs*c + bi, 0))*signof(e);
+          e = Magnitude(1.01)*std::max(rowsum[bs*r + bi], colsum(bs*c + bi, 0))*signof(e);
         }
       }
     }
@@ -429,11 +437,11 @@ struct BlockCrsMatrixMaker {
         std::sort(colidx.data() + rowptr(r), colidx.data() + rowptr(r+1));
 
       {
-        typename row_map_type::non_const_type row_map("row_map", rowptr.size());
-        Kokkos::deep_copy(row_map, rowptr);
+        typename row_map_type::non_const_type row_map_tmp("row_map", rowptr.size());
+        Kokkos::deep_copy(row_map_tmp, rowptr);
         entries_type entries("entries", colidx.size());
         Kokkos::deep_copy(entries, colidx);
-        g = typename Tpetra_CrsGraph::local_graph_type(entries, row_map);
+        g = typename Tpetra_CrsGraph::local_graph_type(entries, row_map_tmp);
       }
 
       if ( ! tridiags_only) {
@@ -534,7 +542,7 @@ struct BlockCrsMatrixMaker {
       Teuchos::reduceAll(*row_map->getComm(), Teuchos::REDUCE_MAX, 1, &max_bpr_lcl, &max_bpr);
     }
     const Int nthreads =
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
       omp_get_max_threads()
 #else
       1
@@ -550,12 +558,12 @@ struct BlockCrsMatrixMaker {
     std::vector<ThreadData> tds;
     for (Int tid = 0; tid < nthreads; ++tid)
       tds.push_back(ThreadData(max_bpr, bs));
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 #   pragma omp parallel for
 #endif
     for (Int lr = 0; lr < nr; ++lr) {
       const Int tid =
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
         omp_get_thread_num()
 #else
         0

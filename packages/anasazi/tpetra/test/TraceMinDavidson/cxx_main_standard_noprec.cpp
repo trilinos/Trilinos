@@ -55,7 +55,7 @@
 #include "AnasaziOperator.hpp"
 
 // Include headers for Tpetra
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -80,21 +80,17 @@
 
   //
   // Specify types used in this example
-  // Instead of constantly typing Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
-  // we can type TMV.
   //
-  typedef double                                                       Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>                                TSCT;
-  typedef Tpetra::Map<>::local_ordinal_type                            LocalOrdinal;
-  typedef Tpetra::Map<>::global_ordinal_type                           GlobalOrdinal;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType                 Platform;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType       Node;
-  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>               Map;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  TMV;
-  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>     TOP;
-  typedef Anasazi::MultiVecTraits<Scalar, TMV>                         TMVT;
-  typedef Anasazi::OperatorTraits<Scalar, TMV, TOP>                    TOPT;
-  typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>              Import;
+  typedef double                                    Scalar;
+  typedef Teuchos::ScalarTraits<Scalar>             TSCT;
+  typedef Tpetra::Map<>::local_ordinal_type         LocalOrdinal;
+  typedef Tpetra::Map<>::global_ordinal_type        GlobalOrdinal;
+  typedef Tpetra::Map<>                             Map;
+  typedef Tpetra::MultiVector<Scalar>               TMV;
+  typedef Tpetra::Operator<Scalar>                  TOP;
+  typedef Anasazi::MultiVecTraits<Scalar, TMV>      TMVT;
+  typedef Anasazi::OperatorTraits<Scalar, TMV, TOP> TOPT;
+  typedef Tpetra::Import<>                          Import;
 
 
 
@@ -288,15 +284,12 @@ int main(int argc, char *argv[]) {
   //
   // Initialize the MPI session
   //
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
   //
-  // Get the default communicator and node
+  // Get the default communicator
   //
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-  RCP<Node>                      node = platform.getNode();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
 
   //

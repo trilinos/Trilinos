@@ -54,5 +54,8 @@
 #if defined(HAVE_MUELU_AMESOS2)
 #include "Stokhos_Amesos2_MP_Vector.hpp"
 #endif
+#if defined(HAVE_MUELU_BELOS)
+#include "BelosXpetraAdapterMultiVector_MP_Vector.hpp"
+#endif
 
 #endif // STOKHOS_MUELU_MP_VECTOR_HPP

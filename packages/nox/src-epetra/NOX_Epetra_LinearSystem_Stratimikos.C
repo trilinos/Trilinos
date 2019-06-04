@@ -325,15 +325,15 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   if (zeroInitialGuess) result.init(0.0);
 
   // Wrap Thyra objects around Epetra and NOX objects
-  Teuchos::RCP<const Thyra::LinearOpBase<double> > linearOp =
+  Teuchos::RCP<const Thyra::LinearOpBase<double> > linear_op =
     Thyra::epetraLinearOp(jacPtr);
 
   // Set the linear Op and  precomputed prec on this lows
   if (precObj == Teuchos::null)
-    Thyra::initializeOp(*lowsFactory, linearOp, lows.ptr());
+    Thyra::initializeOp(*lowsFactory, linear_op, lows.ptr());
   else
     Thyra::initializePreconditionedOp<double>(
-      *lowsFactory, linearOp, precObj, lows.ptr());
+      *lowsFactory, linear_op, precObj, lows.ptr());
 
   Teuchos::RCP<Epetra_Vector> resultRCP =
     Teuchos::rcp(&result.getEpetraVector(), false);
@@ -341,9 +341,9 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     Teuchos::rcp(&nonConstInput.getEpetraVector(), false);
 
   Teuchos::RCP<Thyra::VectorBase<double> >
-    x = Thyra::create_Vector(resultRCP , linearOp->domain() );
+    x = Thyra::create_Vector(resultRCP , linear_op->domain() );
   Teuchos::RCP<const Thyra::VectorBase<double> >
-    b = Thyra::create_Vector(inputRCP, linearOp->range() );
+    b = Thyra::create_Vector(inputRCP, linear_op->range() );
 
   // Alter the convergence tolerance, if Inexact Newton
   Teuchos::RCP<Thyra::SolveCriteria<double> > solveCriteria;
@@ -423,10 +423,10 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
-applyRightPreconditioning(bool useTranspose,
-              Teuchos::ParameterList& params,
-              const NOX::Epetra::Vector& input,
-              NOX::Epetra::Vector& result) const
+applyRightPreconditioning(bool /* useTranspose */,
+              Teuchos::ParameterList& /* params */,
+              const NOX::Epetra::Vector& /* input */,
+              NOX::Epetra::Vector& /* result */) const
 {
 
 std::cout << " NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning\n"
@@ -437,7 +437,7 @@ return false;
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
 createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
-             bool recomputeGraph) const
+             bool /* recomputeGraph */) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -460,11 +460,11 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
       precObj = precFactory->createPrec();
 
       // Wrap Thyra objects around Epetra Op
-      RCP<const Thyra::LinearOpBase<double> > linearOp =
+      RCP<const Thyra::LinearOpBase<double> > linear_op =
         Thyra::epetraLinearOp(jacPtr);
 
       RCP<const Thyra::LinearOpSourceBase<double> > losb =
-           rcp(new Thyra::DefaultLinearOpSource<double>(linearOp));
+           rcp(new Thyra::DefaultLinearOpSource<double>(linear_op));
 
       // Computation of prec (e.g. ilu) happens here:
       precFactory->initializePrec(losb, precObj.get());
@@ -557,8 +557,8 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
-recomputePreconditioner(const NOX::Epetra::Vector& x,
-            Teuchos::ParameterList& linearSolverParams) const
+recomputePreconditioner(const NOX::Epetra::Vector& /* x */,
+            Teuchos::ParameterList& /* linearSolverParams */) const
 {
 std::cout << " NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner\n"
      << " NOT IMPLEMENTED " << std::endl;

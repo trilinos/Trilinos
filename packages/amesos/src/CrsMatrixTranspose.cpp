@@ -50,8 +50,9 @@
 
 int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) { 
 
+#ifndef NDEBUG
   int ierr = 0;
-   
+#endif
   int iam = In->Comm().MyPID() ;
 
   long long numentries = In->NumGlobalNonzeros64();
@@ -80,7 +81,10 @@ int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) {
     std::vector <int>RowsPerCol( numcols ) ; 
     for ( int i = 0 ; i < numcols ; i++ ) RowsPerCol[i] = 0 ; 
     for ( int MyRow = 0; MyRow <numrows; MyRow++ ) {
-      ierr = In->ExtractMyRowView( MyRow, NumRowEntries, RowValues, ColIndices );
+#ifndef NDEBUG
+      ierr =
+#endif
+      In->ExtractMyRowView( MyRow, NumRowEntries, RowValues, ColIndices );
       assert( ierr == 0 ) ;
       for ( int j = 0; j < NumRowEntries; j++ ) { 
 	RowsPerCol[ ColIndices[j] ] ++ ; 
@@ -98,7 +102,10 @@ int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) {
     //  Populate Ai and Aval 
     //
     for ( int MyRow = 0; MyRow <numrows; MyRow++ ) {
-      ierr = In->ExtractMyRowView( MyRow, NumRowEntries, RowValues, ColIndices );
+#ifndef NDEBUG
+      ierr =
+#endif
+      In->ExtractMyRowView( MyRow, NumRowEntries, RowValues, ColIndices );
       assert( ierr == 0 ) ;
       for ( int j = 0; j < NumRowEntries; j++ ) { 
 	Ai[ nextAp[ ColIndices[j] ] ] = MyRow ; 
@@ -122,7 +129,10 @@ int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) {
     assert( In->NumMyRows() == 0 ) ; 
   }
 
-  ierr = Out->FillComplete();
+#ifndef NDEBUG
+  ierr =
+#endif
+  Out->FillComplete();
   assert( ierr==0 ) ;
   return 0 ; 
 }

@@ -48,10 +48,10 @@
 
 #include "ROL_TpetraMultiVector.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 typedef double RealT;
 
@@ -98,17 +98,12 @@ public:
 
 
 int main(int argc, char *argv[]) {
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
   
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = ROL::toPtr(Tpetra::getDefaultComm());
 
   int iprint = argc - 1;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   std::ostream& outStream = (iprint > 0) ? std::cout : bhs;
 
   int errorFlag = 0;
@@ -120,38 +115,38 @@ int main(int argc, char *argv[]) {
     int dim = k*k;
     RealT threshValue = 4.0;
 
-    RCP<Map> map = rcp( new Map(dim,0,comm) );
+    ROL::Ptr<Map> map = ROL::makePtr<Map>(dim,0,comm);
 
-    // Make RCPs to Tpetra::MultiVectors with single columns, dim elements, 
+    // Make ROL::Ptrs to Tpetra::MultiVectors with single columns, dim elements, 
     // set all elements initially to zero
-    RCP<MV> w_rcp        = rcp( new MV(map,1,true) );
-    RCP<MV> w2_rcp       = rcp( new MV(map,1,true) );
-    RCP<MV> x_rcp        = rcp( new MV(map,1,true) );
-    RCP<MV> x_recip_rcp  = rcp( new MV(map,1,true) );
-    RCP<MV> y_rcp        = rcp( new MV(map,1,true) );
-    RCP<MV> z_rcp        = rcp( new MV(map,1,true) );
-    RCP<MV> z_thresh_rcp = rcp( new MV(map,1,true) );
+    ROL::Ptr<MV> w_ptr        = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> w2_ptr       = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> x_ptr        = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> x_recip_ptr  = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> y_ptr        = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> z_ptr        = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> z_thresh_ptr = ROL::makePtr<MV>(map,1,true);
  
-    V w(w_rcp);
-    V w2(w2_rcp);
-    V x(x_rcp);
-    V x_recip(x_recip_rcp); 
-    V y(y_rcp);
-    V z(z_rcp);
-    V z_thresh(z_thresh_rcp);
+    V w(w_ptr);
+    V w2(w2_ptr);
+    V x(x_ptr);
+    V x_recip(x_recip_ptr); 
+    V y(y_ptr);
+    V z(z_ptr);
+    V z_thresh(z_thresh_ptr);
 
     LO numElements = static_cast<LO>( map->getNodeNumElements() );
  
     for( LO lclRow = 0; lclRow < numElements; ++lclRow ) {
       const GO gblRow = map->getGlobalElement(lclRow);
       
-      w_rcp->replaceGlobalValue(gblRow,0,gblRow+1.0);
+      w_ptr->replaceGlobalValue(gblRow,0,gblRow+1.0);
 
-      w2_rcp->replaceGlobalValue(gblRow,0,std::pow(gblRow+1.0,2));
+      w2_ptr->replaceGlobalValue(gblRow,0,std::pow(gblRow+1.0,2));
 
-      x_recip_rcp->replaceGlobalValue(gblRow,0,1.0/(gblRow+1.0));
+      x_recip_ptr->replaceGlobalValue(gblRow,0,1.0/(gblRow+1.0));
        
-      z_thresh_rcp->replaceGlobalValue(gblRow,0,std::min(1.0+gblRow,threshValue));
+      z_thresh_ptr->replaceGlobalValue(gblRow,0,std::min(1.0+gblRow,threshValue));
    
     }
 

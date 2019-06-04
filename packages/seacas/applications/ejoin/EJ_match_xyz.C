@@ -1,4 +1,4 @@
-// Copyright(C) 2010 National Technology & Engineering Solutions
+// Copyright(C) 2010-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -36,11 +36,11 @@
 #include "Ioss_NodeBlock.h" // for NodeBlock
 #include "Ioss_Property.h"  // for Property
 #include "Ioss_Region.h"    // for Region, NodeBlockContainer
-#include "smart_assert.h"   // for SMART_ASSERT
-#include <algorithm>        // for max, min
-#include <cfloat>           // for FLT_MAX
-#include <cstddef>          // for size_t
-#include <iostream>         // for operator<<, cout, ostream, etc
+#include "Ioss_SmartAssert.h"
+#include <algorithm> // for max, min
+#include <cfloat>    // for FLT_MAX
+#include <cstddef>   // for size_t
+#include <fmt/format.h>
 
 namespace {
   template <typename INT>
@@ -188,7 +188,7 @@ void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> 
 
       double epsilon = (delta[X] + delta[Y] + delta[Z]) / 1.0e3;
       if (epsilon < 0.0) {
-        std::cout << "Parts " << ip << " and " << jp << " do not overlap.\n";
+        fmt::print("Parts {} and {} do not overlap.\n", ip, jp);
         continue;
       }
 
@@ -285,7 +285,7 @@ namespace {
                                std::fabs(j_coord[3 * jj + 1] - i_coord[3 * ii + 1]),
                                std::fabs(j_coord[3 * jj + 2] - i_coord[3 * ii + 2]));
 
-        if (float(distance) <= epsilon) {
+        if (float(distance) <= float(epsilon)) {
           if (distance < dmin) {
             dmin      = distance;
             node_dmin = j;
@@ -323,15 +323,15 @@ namespace {
         }
       }
     }
-    std::cout << "\nNumber of nodes matched                   = " << match << "\n";
-    std::cout << "Number of comparisons                     = " << compare << "\n";
-    std::cout << "Tolerance used for matching               = " << epsilon << "\n";
-    if (dismax > -FLT_MAX) {
-      std::cout << "Maximum distance between matched nodes    = " << dismax << "\n";
+    fmt::print("\nNumber of nodes matched                   = {}\n", match);
+    fmt::print("Number of comparisons                     = {}\n", compare);
+    fmt::print("Tolerance used for matching               = {}\n", epsilon);
+    if (dismax > double(-FLT_MAX)) {
+      fmt::print("Maximum distance between matched nodes    = {}\n", dismax);
     }
-    if (g_dismin < FLT_MAX) {
-      std::cout << "Minimum distance between nonmatched nodes = " << g_dismin << "\n";
+    if (g_dismin < double(FLT_MAX)) {
+      fmt::print("Minimum distance between nonmatched nodes = {}\n", g_dismin);
     }
-    std::cout << "\n";
+    fmt::print("\n");
   }
 } // namespace

@@ -109,6 +109,11 @@
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
     </ParameterList>
 
+    <ParameterList name="myNullFact">
+      <Parameter name="factory"                             type="string"   value="NullspaceFactory"/>
+      <Parameter name="Nullspace"                           type="string"   value="myRebalanceProlongatorFact"/>
+    </ParameterList>
+
 <!-- -->
 <!-- -->
 <!-- -->
@@ -171,12 +176,14 @@
     <Parameter name="max levels"                            type="int"      value="10"/> <!-- Max number of levels -->
     <Parameter name="coarse: max size"                      type="int"      value="500"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
+    <Parameter name="use kokkos refactor"                   type="bool"     value="false"/>
+
 
     <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="SymGaussSeidel"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
-      <Parameter name="Nullspace"                           type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="myNullFact"/>
       <Parameter name="Coordinates"                         type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>

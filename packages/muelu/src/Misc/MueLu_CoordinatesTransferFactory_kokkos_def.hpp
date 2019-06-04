@@ -70,6 +70,9 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",      Teuchos::null, "Generating factory of the coarse map");
     validParamList->set< int >                   ("write start",    -1,            "First level at which coordinates should be written to file");
     validParamList->set< int >                   ("write end",      -1,            "Last level at which coordinates should be written to file");
+    validParamList->set< bool >                  ("structured aggregation",       false, "Flag specifying that the geometric data is transferred for StructuredAggregationFactory");
+    validParamList->set<RCP<const FactoryBase> > ("lCoarseNodesPerDim",           Teuchos::null, "Factory providing the local number of nodes per spatial dimensions of the mesh");
+    validParamList->set<RCP<const FactoryBase> > ("numDimensions",                Teuchos::null, "Factory providing the number of spatial dimensions of the mesh");
 
     return validParamList;
   }
@@ -78,13 +81,19 @@ namespace MueLu {
   void CoordinatesTransferFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     static bool isAvailableCoords = false;
 
-    if (coarseLevel.GetRequestMode() == Level::REQUEST)
-      isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
+    const ParameterList& pL = GetParameterList();
+    if(pL.get<bool>("structured aggregation") == true) {
+      Input(fineLevel, "lCoarseNodesPerDim");
+      Input(fineLevel, "numDimensions");
+    } else {
+      if (coarseLevel.GetRequestMode() == Level::REQUEST)
+        isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
 
-    if (isAvailableCoords == false) {
-      Input(fineLevel, "Coordinates");
-      Input(fineLevel, "Aggregates");
-      Input(fineLevel, "CoarseMap");
+      if (isAvailableCoords == false) {
+        Input(fineLevel, "Coordinates");
+        Input(fineLevel, "Aggregates");
+        Input(fineLevel, "CoarseMap");
+      }
     }
   }
 
@@ -92,12 +101,23 @@ namespace MueLu {
   void CoordinatesTransferFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    typedef Xpetra::MultiVector<double,LO,GO,NO> doubleMultiVector;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> doubleMultiVector;
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
 
     if (coarseLevel.IsAvailable("Coordinates", this)) {
       GetOStream(Runtime0) << "Reusing coordinates" << std::endl;
+      return;
+    }
+
+
+    const ParameterList& pL = GetParameterList();
+    if(pL.get<bool>("structured aggregation") == true) {
+      Array<LO> lCoarseNodesPerDir = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
+      Set<Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDir);
+      int numDimensions = Get<int>(fineLevel, "numDimensions");
+      Set<int>(coarseLevel, "numDimensions", numDimensions);
+
       return;
     }
 
@@ -138,7 +158,7 @@ namespace MueLu {
     auto uniqueMap      = fineCoords->getMap();
     auto coarseCoordMap = MapFactory::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                             elementListView, indexBase, coarseMap->getComm());
-    RCP<doubleMultiVector> coarseCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
+    RCP<doubleMultiVector> coarseCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
 
     // Create overlapped fine coordinates to reduce global communication
     RCP<doubleMultiVector> ghostedCoords = fineCoords;
@@ -146,7 +166,7 @@ namespace MueLu {
       auto nonUniqueMap = aggregates->GetMap();
       auto importer     = ImportFactory::Build(uniqueMap, nonUniqueMap);
 
-      ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
+      ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
       ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
     }
 
@@ -167,32 +187,31 @@ namespace MueLu {
       typename AppendTrait<decltype(fineCoordsView), Kokkos::RandomAccess>::type fineCoordsRandomView = fineCoordsView;
       for (size_t j = 0; j < dim; j++) {
         Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:coord", Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numAggs),
-          KOKKOS_LAMBDA(const LO i) {
-            // A row in this graph represents all node ids in the aggregate
-            // Therefore, averaging is very easy
+                             KOKKOS_LAMBDA(const LO i) {
+                               // A row in this graph represents all node ids in the aggregate
+                               // Therefore, averaging is very easy
 
-            auto aggregate = aggGraph.rowConst(i);
+                               auto aggregate = aggGraph.rowConst(i);
 
-            double sum = 0.0; // do not use Scalar here (Stokhos)
-            for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
-              sum += fineCoordsRandomView(aggregate(colID),j);
+                               typename Teuchos::ScalarTraits<Scalar>::magnitudeType sum = 0.0; // do not use Scalar here (Stokhos)
+                               for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
+                                 sum += fineCoordsRandomView(aggregate(colID),j);
 
-            coarseCoordsView(i,j) = sum / aggregate.length;
-          });
-        }
+                               coarseCoordsView(i,j) = sum / aggregate.length;
+                             });
+      }
     }
 
     Set<RCP<doubleMultiVector> >(coarseLevel, "Coordinates", coarseCoords);
 
-    const ParameterList& pL = GetParameterList();
     int writeStart = pL.get<int>("write start"), writeEnd = pL.get<int>("write end");
     if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd) {
       std::string fileName = "coordinates_before_rebalance_level_" + toString(fineLevel.GetLevelID()) + ".m";
-      Xpetra::IO<double,LO,GO,NO>::Write(fileName, *fineCoords);
+      Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName, *fineCoords);
     }
     if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd) {
       std::string fileName = "coordinates_before_rebalance_level_" + toString(coarseLevel.GetLevelID()) + ".m";
-      Xpetra::IO<double,LO,GO,NO>::Write(fileName,*coarseCoords);
+      Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName,*coarseCoords);
     }
   }
 

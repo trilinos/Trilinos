@@ -603,7 +603,7 @@ def run_tests():
     expect('kkt_is_data_oneliner', kkt_is_data_oneliner('moo'), False)
     testln1 = '  MKL Cmpt BlkSize =   9 time = 4.460000e-04 avg flop/s = 4.237677e+09 max flop/s = 1.664115e+10 diff to ref = 0.000000e+00'
     testln2 = '  MKL Cmpt BlkSize =   9 time = 4.460000e-04 avg flop/s = 4.237677e+09 max flop/s = 1.664115e+10'
-    testln3 = 'ExecSpace::  Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 68 x 4 ]'
+    testln3 = 'ExecSpace::  Kokkos::OpenMP KOKKOS_ENABLE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 68 x 4 ]'
     expect('kkt_is_data_oneliner', kkt_is_data_oneliner(testln1), True)
     expect('kkt_parse_oneliner_re', kkt_parse_oneliner_re(testln2), ('  MKL Cmpt', '  9', '4.460000e-04', '4.237677e+09', '1.664115e+10'))
     expect('kkt_parse_oneliner_re', kkt_parse_oneliner_re(testln1), ('  MKL Cmpt', '  9', '4.460000e-04', '4.237677e+09', '1.664115e+10'))

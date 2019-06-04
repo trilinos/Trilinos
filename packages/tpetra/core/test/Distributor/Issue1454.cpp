@@ -42,6 +42,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_Core.hpp"
 #include <type_traits>
 
@@ -88,20 +89,20 @@ namespace { // (anonymous)
 
 TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
 {
-  typedef Tpetra::Map<> map_type;
-  typedef map_type::device_type device_type;
+  using map_type = Tpetra::Map<>;
+  using device_type = map_type::device_type;
   // mfh 01 Aug 2017: Deal with fix for #1088, by not using
   // Kokkos::CudaUVMSpace for communication buffers.
-#ifdef KOKKOS_HAVE_CUDA
-  typedef typename std::conditional<
+#ifdef KOKKOS_ENABLE_CUDA
+  using buffer_memory_space = typename std::conditional<
   std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
     Kokkos::CudaSpace,
-    typename device_type::memory_space>::type buffer_memory_space;
+    typename device_type::memory_space>::type;
 #else
-  typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
-  typedef typename device_type::execution_space buffer_execution_space;
-  typedef Kokkos::Device<buffer_execution_space, buffer_memory_space> buffer_device_type;
+  using buffer_memory_space = typename device_type::memory_space;
+#endif // KOKKOS_ENABLE_CUDA
+  using buffer_execution_space = typename device_type::execution_space;
+  using buffer_device_type = Kokkos::Device<buffer_execution_space, buffer_memory_space>;
 
   auto comm = Tpetra::TestingUtilities::getDefaultComm ();
   // Create a Map just to ensure that Kokkos gets initialized and
@@ -117,13 +118,16 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
   const int n_exports = proc_ids.extent( 0 );
   using ExecutionSpace = typename device_type::execution_space;
   {
-    typedef TpetraTest::Functor1<decltype (proc_ids) > functor_type;
+    using functor_type = TpetraTest::Functor1<decltype (proc_ids) >;
     Kokkos::parallel_for ("fill_proc_ids",
                           Kokkos::RangePolicy<ExecutionSpace> (0, n),
                           functor_type (proc_ids, comm_size));
   }
   Kokkos::fence ();
-  auto proc_ids_host = Kokkos::create_mirror_view (proc_ids);
+  auto proc_ids_host = Kokkos::create_mirror_view (Kokkos::HostSpace (), proc_ids);
+  static_assert (std::is_same<typename decltype (proc_ids_host)::memory_space,
+                   Kokkos::HostSpace>::value,
+                 "proc_ids_host should be a HostSpace View, but is not.");
   Kokkos::deep_copy (proc_ids_host, proc_ids);
   const int n_imports =
     distributor.createFromSends (Teuchos::ArrayView<const int> (proc_ids_host.data (), n_exports));
@@ -137,10 +141,24 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
   Kokkos::fence();
 
   Kokkos::View<int *, buffer_device_type> imports( "imports", n_imports );
-
-  distributor.doPostsAndWaits (exports, 1, imports);
   auto imports_host = Kokkos::create_mirror_view (imports);
-  Kokkos::deep_copy (imports_host, imports);
+  static_assert (std::is_same<typename decltype (imports_host)::memory_space,
+                   Kokkos::HostSpace>::value,
+                 "imports_host should be a HostSpace View, but is not.");
+
+  if (Tpetra::Details::Behavior::assumeMpiIsCudaAware ()) {
+    distributor.doPostsAndWaits (exports, 1, imports);
+    Kokkos::deep_copy (imports_host, imports);
+  }
+  else {
+    Kokkos::deep_copy (imports_host, imports);
+    auto exports_host = Kokkos::create_mirror_view (exports);
+    static_assert (std::is_same<typename decltype (exports_host)::memory_space,
+                   Kokkos::HostSpace>::value,
+      "exports_host should be a HostSpace View, but is not.");
+    Kokkos::deep_copy (exports_host, exports);
+    distributor.doPostsAndWaits (exports_host, 1, imports_host);
+  }
 
   for (int i = 0; i < n_imports; ++i) {
     TEUCHOS_ASSERT_EQUALITY( imports_host(i), i / 3 );

@@ -71,7 +71,7 @@ FaceToElement()
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
 FaceToElement<LocalOrdinal,GlobalOrdinal>::
-FaceToElement(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn)
+FaceToElement(panzer::ConnManager & conn)
 {
   initialize(conn);
 }
@@ -79,7 +79,7 @@ FaceToElement(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn)
 template <typename LocalOrdinal,typename GlobalOrdinal>
 void
 FaceToElement<LocalOrdinal,GlobalOrdinal>::
-initialize(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn)
+initialize(panzer::ConnManager & conn)
 {
   // Create a map of elems
   std::vector<std::string> block_ids;
@@ -115,7 +115,7 @@ initialize(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn)
     //const std::vector<GlobalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
     const std::vector<LocalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
     for (size_t i=0; i<block_elems.size(); ++i) {
-      const GlobalOrdinal * connectivity = conn.getConnectivity(block_elems[i]);
+      const auto * connectivity = conn.getConnectivity(block_elems[i]);
       element_GIDS.push_back(*connectivity);
     }
   }
@@ -144,7 +144,7 @@ initialize(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn)
       const std::vector<LocalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
       for (size_t i=0; i<block_elems.size(); ++i) {
         int n_conn = conn.getConnectivitySize(block_elems[i]);
-        const GlobalOrdinal * connectivity = conn.getConnectivity(block_elems[i]);
+        const panzer::Ordinal64 * connectivity = conn.getConnectivity(block_elems[i]);
         for (int iface=0; iface<n_conn; ++iface)
           set_of_face_GIDS.insert(connectivity[iface]);
       }
@@ -162,8 +162,14 @@ initialize(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn)
   Teuchos::RCP<GOMultiVector>  face2elem_mv = Teuchos::RCP<GOMultiVector>(new GOMultiVector(face_map, 8));
  // set a flag of -1-shift to identify unmodified data
   face2elem_mv->putScalar(-1-shift);
-  auto b1 = face2elem_mv->getDataNonConst(0), e1 = face2elem_mv->getDataNonConst(1), p1 = face2elem_mv->getDataNonConst(2), l1 = face2elem_mv->getDataNonConst(3);
-  auto b2 = face2elem_mv->getDataNonConst(4), e2 = face2elem_mv->getDataNonConst(5), p2 = face2elem_mv->getDataNonConst(6), l2 = face2elem_mv->getDataNonConst(7);
+  auto b1 = face2elem_mv->getDataNonConst(0);
+  auto e1 = face2elem_mv->getDataNonConst(1);
+  auto p1 = face2elem_mv->getDataNonConst(2);
+  auto l1 = face2elem_mv->getDataNonConst(3);
+  auto b2 = face2elem_mv->getDataNonConst(4);
+  auto e2 = face2elem_mv->getDataNonConst(5);
+  auto p2 = face2elem_mv->getDataNonConst(6);
+  auto l2 = face2elem_mv->getDataNonConst(7);
   // Now loop once again over the blocks
   GlobalOrdinal my_elem = 0;
   for (size_t iblk = 0 ; iblk < block_ids.size(); ++iblk) {
@@ -183,7 +189,7 @@ initialize(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn)
     const std::vector<LocalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
     for (size_t i=0; i<block_elems.size(); ++i) {
       int n_conn = conn.getConnectivitySize(block_elems[i]);
-      const GlobalOrdinal * connectivity = conn.getConnectivity(block_elems[i]);
+      const panzer::Ordinal64 * connectivity = conn.getConnectivity(block_elems[i]);
       for (int iface=0; iface<n_conn; ++iface) {
         LocalOrdinal f = face_map->getLocalElement(connectivity[iface]);
 
@@ -211,8 +217,14 @@ initialize(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn)
   Export exp(face_map, owned_face_map);
   owned_face2elem_mv->doExport(*face2elem_mv, exp, Tpetra::ADD);
 
-  auto ob1 = owned_face2elem_mv->getDataNonConst(0), oe1 = owned_face2elem_mv->getDataNonConst(1), op1 = owned_face2elem_mv->getDataNonConst(2), ol1 = owned_face2elem_mv->getDataNonConst(3);
-  auto ob2 = owned_face2elem_mv->getDataNonConst(4), oe2 = owned_face2elem_mv->getDataNonConst(5), op2 = owned_face2elem_mv->getDataNonConst(6), ol2 = owned_face2elem_mv->getDataNonConst(7);
+  auto ob1 = owned_face2elem_mv->getDataNonConst(0);
+  auto oe1 = owned_face2elem_mv->getDataNonConst(1);
+  auto op1 = owned_face2elem_mv->getDataNonConst(2);
+  auto ol1 = owned_face2elem_mv->getDataNonConst(3);
+  auto ob2 = owned_face2elem_mv->getDataNonConst(4);
+  auto oe2 = owned_face2elem_mv->getDataNonConst(5);
+  auto op2 = owned_face2elem_mv->getDataNonConst(6);
+  auto ol2 = owned_face2elem_mv->getDataNonConst(7);
 
   // Since we added all of the arrays together, they're going to be broken
   // We need to fix all of the broken faces

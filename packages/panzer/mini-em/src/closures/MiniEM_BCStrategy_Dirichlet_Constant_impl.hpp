@@ -32,7 +32,7 @@ BCStrategy_Dirichlet_Constant(const panzer::BC& bc, const Teuchos::RCP<panzer::G
 template <typename EvalT>
 void mini_em::BCStrategy_Dirichlet_Constant<EvalT>::
 setup(const panzer::PhysicsBlock& side_pb,
-      const Teuchos::ParameterList& user_data)
+      const Teuchos::ParameterList& /* user_data */)
 {
   using Teuchos::RCP;
   using std::vector;
@@ -81,10 +81,10 @@ setup(const panzer::PhysicsBlock& side_pb,
 template <typename EvalT>
 void mini_em::BCStrategy_Dirichlet_Constant<EvalT>::
 buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-			   const panzer::PhysicsBlock& pb,
-			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-			   const Teuchos::ParameterList& models,
-			   const Teuchos::ParameterList& user_data) const
+			   const panzer::PhysicsBlock& /* pb */,
+			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& /* factory */,
+			   const Teuchos::ParameterList& /* models */,
+			   const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;

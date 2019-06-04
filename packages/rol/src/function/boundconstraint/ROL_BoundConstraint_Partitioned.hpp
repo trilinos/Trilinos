@@ -65,10 +65,10 @@ class BoundConstraint_Partitioned : public BoundConstraint<Real> {
   typedef typename std::vector<Real>::size_type uint;
 
 private:
-  std::vector<Teuchos::RCP<BoundConstraint<Real> > > bnd_;
+  std::vector<ROL::Ptr<BoundConstraint<Real> > > bnd_;
 
-  Teuchos::RCP<V> l_;
-  Teuchos::RCP<V> u_;
+  ROL::Ptr<V> l_;
+  ROL::Ptr<V> u_;
 
   uint dim_;
 
@@ -78,7 +78,8 @@ private:
 public:
   ~BoundConstraint_Partitioned() {}
 
-  BoundConstraint_Partitioned(const std::vector<Teuchos::RCP<BoundConstraint<Real> > > &bnd)
+  BoundConstraint_Partitioned(const std::vector<ROL::Ptr<BoundConstraint<Real> > > &bnd,
+                              const std::vector<ROL::Ptr<Vector<Real> > > &x)
     : bnd_(bnd), dim_(bnd.size()), hasLvec_(true), hasUvec_(true) {
     BoundConstraint<Real>::deactivate();
     for( uint k=0; k<dim_; ++k ) {
@@ -87,36 +88,58 @@ public:
         break;
       }
     }
-    std::vector<Teuchos::RCP<Vector<Real> > > lp(dim_);
-    std::vector<Teuchos::RCP<Vector<Real> > > up(dim_);
+    std::vector<ROL::Ptr<Vector<Real> > > lp(dim_);
+    std::vector<ROL::Ptr<Vector<Real> > > up(dim_);
     for( uint k=0; k<dim_; ++k ) {
       try {
-        lp[k] = bnd[k]->getLowerBound()->clone();
-        lp[k]->set(*bnd_[k]->getLowerBound());
+        lp[k] = x[k]->clone();
+        if (bnd_[k]->isLowerActivated()) {
+          lp[k]->set(*bnd_[k]->getLowerBound());
+        }
+        else {
+          lp[k]->setScalar(ROL_NINF<Real>());
+        }
       }
-      catch (std::exception &e) {
-        lp[k] = Teuchos::null;
-        hasLvec_ = false;
+      catch (std::exception &e1) {
+        try {
+          lp[k] = x[k]->clone();
+          lp[k]->setScalar(ROL_NINF<Real>());
+        }
+        catch (std::exception &e2) {
+          lp[k] = ROL::nullPtr;
+          hasLvec_ = false;
+        }
       }
       try {
-        up[k] = bnd[k]->getUpperBound()->clone();
-        up[k]->set(*bnd_[k]->getUpperBound());
+        up[k] = x[k]->clone();
+        if (bnd_[k]->isUpperActivated()) {
+          up[k]->set(*bnd_[k]->getUpperBound());
+        }
+        else {
+          up[k]->setScalar(ROL_INF<Real>());
+        }
       }
-      catch (std::exception &e) {
-        up[k] = Teuchos::null;
-        hasUvec_ = false;
+      catch (std::exception &e1) {
+        try {
+          up[k] = x[k]->clone();
+          up[k]->setScalar(ROL_INF<Real>());
+        }
+        catch (std::exception &e2) {
+          up[k] = ROL::nullPtr;
+          hasUvec_ = false;
+        }
       }
     }
     if (hasLvec_) {
-      l_ = Teuchos::rcp(new PV(lp) );
+      l_ = ROL::makePtr<PV>(lp);
     }
     if (hasUvec_) {
-      u_ = Teuchos::rcp(new PV(up) );
+      u_ = ROL::makePtr<PV>(up);
     }
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+    const PV &xpv = dynamic_cast<const PV&>(x);
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
         bnd_[k]->update(*(xpv.get(k)),flag,iter);   
@@ -125,7 +148,7 @@ public:
   }
 
   void project( Vector<Real> &x ) {
-    PV &xpv = Teuchos::dyn_cast<PV>(x);
+    PV &xpv = dynamic_cast<PV&>(x);
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
         bnd_[k]->project(*xpv.get(k));
@@ -134,7 +157,7 @@ public:
   }
 
   void projectInterior( Vector<Real> &x ) {
-    PV &xpv = Teuchos::dyn_cast<PV>(x);
+    PV &xpv = dynamic_cast<PV&>(x);
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
         bnd_[k]->projectInterior(*xpv.get(k));
@@ -143,8 +166,8 @@ public:
   }
 
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-          PV &vpv = Teuchos::dyn_cast<PV>(v);
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+          PV &vpv = dynamic_cast<PV&>(v);
+    const PV &xpv = dynamic_cast<const PV&>(x);
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
         bnd_[k]->pruneUpperActive(*(vpv.get(k)),*(xpv.get(k)),eps);
@@ -153,9 +176,9 @@ public:
  }
 
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-          PV &vpv = Teuchos::dyn_cast<PV>(v);
-    const PV &gpv = Teuchos::dyn_cast<const PV>(g);
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+          PV &vpv = dynamic_cast<PV&>(v);
+    const PV &gpv = dynamic_cast<const PV&>(g);
+    const PV &xpv = dynamic_cast<const PV&>(x);
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
         bnd_[k]->pruneUpperActive(*(vpv.get(k)),*(gpv.get(k)),*(xpv.get(k)),eps);
@@ -164,8 +187,8 @@ public:
   }
  
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-          PV &vpv = Teuchos::dyn_cast<PV>(v);
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+          PV &vpv = dynamic_cast<PV&>(v);
+    const PV &xpv = dynamic_cast<const PV&>(x);
    for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
         bnd_[k]->pruneLowerActive(*(vpv.get(k)),*(xpv.get(k)),eps);
@@ -174,9 +197,9 @@ public:
   }
 
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-          PV &vpv = Teuchos::dyn_cast<PV>(v);
-    const PV &gpv = Teuchos::dyn_cast<const PV>(g);
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+          PV &vpv = dynamic_cast<PV&>(v);
+    const PV &gpv = dynamic_cast<const PV&>(g);
+    const PV &xpv = dynamic_cast<const PV&>(x);
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
         bnd_[k]->pruneLowerActive(*(vpv.get(k)),*(gpv.get(k)),*(xpv.get(k)),eps);
@@ -184,7 +207,7 @@ public:
     }
   }
  
-  const Teuchos::RCP<const Vector<Real> > getLowerBound( void ) const {
+  const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
     if (hasLvec_) {
       return l_;
     }
@@ -193,7 +216,7 @@ public:
     }
   }
        
-  const Teuchos::RCP<const Vector<Real> > getUpperBound( void ) const {
+  const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
     if (hasUvec_) {
       return u_;
     }
@@ -204,7 +227,7 @@ public:
 
   bool isFeasible( const Vector<Real> &v ) { 
     bool feasible = true;
-    const PV &vs = Teuchos::dyn_cast<const PV>(v);
+    const PV &vs = dynamic_cast<const PV&>(v);
     for( uint k=0; k<dim_; ++k ) {
       if(bnd_[k]->isActivated()) {
         feasible = feasible && bnd_[k]->isFeasible(*(vs.get(k)));
@@ -217,15 +240,15 @@ public:
 
 
 template<class Real>
-Teuchos::RCP<BoundConstraint<Real> > 
-CreateBoundConstraint_Partitioned( const Teuchos::RCP<BoundConstraint<Real> > &bnd1,
-                                   const Teuchos::RCP<BoundConstraint<Real> > &bnd2 ) {
+ROL::Ptr<BoundConstraint<Real> > 
+CreateBoundConstraint_Partitioned( const ROL::Ptr<BoundConstraint<Real> > &bnd1,
+                                   const ROL::Ptr<BoundConstraint<Real> > &bnd2 ) {
 
-  using Teuchos::RCP;   using Teuchos::rcp;
+     
   typedef BoundConstraint<Real>             BND;
   typedef BoundConstraint_Partitioned<Real> BNDP;
-  RCP<BND> temp[] = {bnd1, bnd2};
-  return rcp( new BNDP( std::vector<RCP<BND> >(temp,temp+2) ) );
+  ROL::Ptr<BND> temp[] = {bnd1, bnd2};
+  return ROL::makePtr<BNDP>( std::vector<ROL::Ptr<BND>>(temp,temp+2) );
 }
 
 

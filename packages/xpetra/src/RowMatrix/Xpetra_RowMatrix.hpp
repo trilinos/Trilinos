@@ -107,12 +107,6 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    virtual global_size_t getGlobalNumDiags() const = 0;
-
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    virtual size_t getNodeNumDiags() const = 0;
-
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -447,18 +447,18 @@ static void xcqcte(anything **params, anything **surf_list);
 static void xcili(anything **params, anything **surf_list);
 static void xcrqlc(anything **params, anything **surf_list);
 /* utility routines */
-static void init_state(surf_statelist *surf_state);
-static void set_dev_descrip(void);
-static void reset_vdi(surf_statelist *surf_state);
-static void set_mapping(surf_statelist *surf_state);
-static void set_clipping(surf_statelist *cur_state);
-static void set_foreground_color(surf_statelist *surf_state, int *colors);
-static void set_background_color(surf_statelist *surf_state, int *colors);
-static void report_error(surf_statelist *surf_state, int e_class, int e_num, int f_id);
-static void gettoken(int *index_p, int *numrecs_p, char *data_p, int max_chars, char *outtoken_p);
-static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, float *xout,
-                     float *yout, int *lenout);
-static int inside_bnd(point *v, point *bmin, point *bmax, int bound_num);
+static void  init_state(surf_statelist *surf_state);
+static void  set_dev_descrip(void);
+static void  reset_vdi(surf_statelist *surf_state);
+static void  set_mapping(surf_statelist *surf_state);
+static void  set_clipping(surf_statelist *cur_state);
+static void  set_foreground_color(surf_statelist *surf_state, int *colors);
+static void  set_background_color(surf_statelist *surf_state, int *colors);
+static void  report_error(surf_statelist *surf_state, int e_class, int e_num, int f_id);
+static void  gettoken(int *index_p, int *numrecs_p, char *data_p, int max_chars, char *outtoken_p);
+static int   poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, float *xout,
+                       float *yout, int *lenout);
+static int   inside_bnd(point *v, point *bmin, point *bmax, int bound_num);
 static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int bound_num);
 /* cdr routines */
 /* -- not used with interactive devices */
@@ -469,6 +469,16 @@ void cdrrfs();
 void cdrwfs();
 void cdrcfs();
 void cdroab();
+
+static char *copy_string(char *dest, char const *source, long int elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
+}
 
 /*-------------------------------------------------------------*/
 /* >> GLOBAL VARIABLE DECLARATIONS                             */
@@ -596,7 +606,7 @@ static void xactivate(anything **surf_list)
   surf_states[new_state].cgi_inited = CNO;
   surf_states[new_state].this_index = new_state; /* save for dealloc */
   /* -- for batch devices */
-  strcpy(surf_states[new_state].filename, DEFAULT_OUTFILE_NAME);
+  copy_string(surf_states[new_state].filename, DEFAULT_OUTFILE_NAME, 100);
   surf_states[new_state].file_d = -1;
 
   /* set surface state_list pointer to point to this state list */
@@ -787,10 +797,10 @@ static void xcvdcx(anything **params, int num_surfaces, anything **surf_list)
 
     /* store the values in the state list */
     /* default integer precision is 16 - check range */
-    if (*(float *)params[1] > 32767. || *(float *)params[2] > 32767. ||
-        *(float *)params[3] > 32767. || *(float *)params[4] > 32767. ||
-        *(float *)params[1] < -32767. || *(float *)params[2] < -32767. ||
-        *(float *)params[3] < -32767. || *(float *)params[4] < -32767.) {
+    if (*(float *)params[1] > 32767.0f || *(float *)params[2] > 32767.0f ||
+        *(float *)params[3] > 32767.0f || *(float *)params[4] > 32767.0f ||
+        *(float *)params[1] < -32767.0f || *(float *)params[2] < -32767.0f ||
+        *(float *)params[3] < -32767.0f || *(float *)params[4] < -32767.0f) {
       /* error 1:-103 VDC Extent out of range.  Function ignored */
       report_error(cur_state, 1, -103, *(short *)params[0]);
       return;
@@ -1028,7 +1038,7 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
 {
   int   i;          /* index for loop on surfaces */
   int   j;          /* loop index */
-  int   first;      /* logical; TRUE = first time thru */
+  int   first;      /* logical; TRUE = first time through */
   char  data[80];   /* temp for parsing data record */
   char  c;          /* single character */
   int   vdi_esc;    /* used for SVDI escape call */
@@ -1058,7 +1068,7 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
       /* this function must be called before CI */
       /* ...error message if not?? check for legal file name?? */
       if (cur_state->cgi_inited != CYES) {
-        strcpy(cur_state->filename, data);
+        copy_string(cur_state->filename, data, 100);
       }
 
       break;
@@ -1172,8 +1182,7 @@ static void xcqid(anything **params, anything **surf_list)
     vdiqdc(&qdc_index, &value);
     cgi_devid = get_devid_char(value);
     if (cgi_devid != NULL) {
-      strncpy(dev_descrip.dev_id, cgi_devid, 3);
-      dev_descrip.dev_id[3] = '\0';
+      copy_string(dev_descrip.dev_id, cgi_devid, 4);
     }
 
   } /* end if not set */
@@ -1186,7 +1195,7 @@ static void xcqid(anything **params, anything **surf_list)
 
   /* return device id */
   maxchr = (*(int *)params[1] > 3) ? 3 : *(int *)params[1];
-  strncpy((char *)params[4], dev_descrip.dev_id, maxchr);
+  copy_string((char *)params[4], dev_descrip.dev_id, maxchr);
   *((char *)params[4] + maxchr) = '\0';
 
 } /* end xcqid */
@@ -1211,10 +1220,10 @@ static void xcqd(anything **params, anything **surf_list)
     /* display type */
     qdc_index = 2;
     vdiqdc(&qdc_index, &value);
-    if (value == 0.) {
+    if (value == 0.0f) {
       dev_descrip.display_type = CVECT;
     }
-    else if (value == 1.) {
+    else if (value == 1.0f) {
       dev_descrip.display_type = CRAST;
     }
     else {
@@ -1224,7 +1233,7 @@ static void xcqd(anything **params, anything **surf_list)
     /* background color capability */
     qdc_index = 32;
     vdiqdc(&qdc_index, &value);
-    dev_descrip.bcolor_cap = (value == 1.0) ? CYES : CNO;
+    dev_descrip.bcolor_cap = (value == 1.0f) ? CYES : CNO;
 
     /* dynamic modification for background color */
     dev_descrip.dynamic_mod_bg = CIRG;
@@ -1280,80 +1289,80 @@ static void xclf(anything **params, anything **surf_list)
   for (i = 0; i < *(int *)params[1]; i++) {
 
     switch (*(short *)params[0]) {
-    case ACTIVATE_FN: ((int *)params[5])[i]   = CSYES; break;
+    case ACTIVATE_FN: ((int *)params[5])[i] = CSYES; break;
     case DEACTIVATE_FN: ((int *)params[5])[i] = CSYES; break;
-    case CI_FN: ((int *)params[5])[i]         = CSYES; break;
-    case CT_FN: ((int *)params[5])[i]         = CSYES; break;
-    case CXDFAC_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CPDS_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CENDPG_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CBC_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CVDCX_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CV_FN: ((int *)params[5])[i]         = CSYES; break;
-    case CCL_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CDSCL_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CDQERR_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CERHCT_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CCIXP_FN: ((int *)params[5])[i]      = CSNO; break;
-    case CESC_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CQID_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CQD_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CLF_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CLPR_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CQSP_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CLESC_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CQP_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CQCL_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CPL_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CDJPL_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CPM_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CTX_FN: ((int *)params[5])[i]        = CSYES; break;
+    case CI_FN: ((int *)params[5])[i] = CSYES; break;
+    case CT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CXDFAC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPDS_FN: ((int *)params[5])[i] = CSYES; break;
+    case CENDPG_FN: ((int *)params[5])[i] = CSYES; break;
+    case CBC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CVDCX_FN: ((int *)params[5])[i] = CSYES; break;
+    case CV_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CDSCL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CDQERR_FN: ((int *)params[5])[i] = CSYES; break;
+    case CERHCT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCIXP_FN: ((int *)params[5])[i] = CSNO; break;
+    case CESC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQID_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQD_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLF_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLPR_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQSP_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLESC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQP_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQCL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CDJPL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPM_FN: ((int *)params[5])[i] = CSYES; break;
+    case CTX_FN: ((int *)params[5])[i] = CSYES; break;
     case CPG_FN:
-      if (poly_support == -1.) {
+      if (poly_support == -1.0f) {
         vdiqdc(&qdc_index, &poly_support);
       }
-      if (poly_support < 3.) {
+      if (poly_support < 3.0f) {
         ((int *)params[5])[i] = CSNO;
       }
       else {
         ((int *)params[5])[i] = CSYES;
       }
       break;
-    case CCA_FN: ((int *)params[5])[i]   = CSYES; break;
-    case CPXA_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CLNT_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CLNW_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CLNC_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CMKT_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CMKS_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CMKC_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CTXP_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CTXC_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CCHH_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CCHO_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CIS_FN: ((int *)params[5])[i]   = CSYES; break;
-    case CFLC_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CCSM_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CCT_FN: ((int *)params[5])[i]   = CSYES; break;
+    case CCA_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPXA_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLNT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLNW_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLNC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CMKT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CMKS_FN: ((int *)params[5])[i] = CSNO; break;
+    case CMKC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CTXP_FN: ((int *)params[5])[i] = CSNO; break;
+    case CTXC_FN: ((int *)params[5])[i] = CSNO; break;
+    case CCHH_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCHO_FN: ((int *)params[5])[i] = CSNO; break;
+    case CIS_FN: ((int *)params[5])[i] = CSYES; break;
+    case CFLC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCSM_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCT_FN: ((int *)params[5])[i] = CSYES; break;
     case CGTXX_FN: ((int *)params[5])[i] = CSYES; break;
     case CQPRL_FN: ((int *)params[5])[i] = CSYES; break;
-    case CQLN_FN: ((int *)params[5])[i]  = CSYES; break;
+    case CQLN_FN: ((int *)params[5])[i] = CSYES; break;
     case CQLNT_FN: ((int *)params[5])[i] = CSYES; break;
     case CQSLW_FN: ((int *)params[5])[i] = CSNO; break;
-    case CQMK_FN: ((int *)params[5])[i]  = CSNO; break;
+    case CQMK_FN: ((int *)params[5])[i] = CSNO; break;
     case CQMKT_FN: ((int *)params[5])[i] = CSYES; break;
     case CQSMS_FN: ((int *)params[5])[i] = CSNO; break;
     case CQCHH_FN: ((int *)params[5])[i] = CSYES; break;
-    case CQFL_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CQC_FN: ((int *)params[5])[i]   = CSYES; break;
+    case CQFL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQC_FN: ((int *)params[5])[i] = CSYES; break;
     case CQLNA_FN: ((int *)params[5])[i] = CSYES; break;
     case CQMKA_FN: ((int *)params[5])[i] = CSNO; break;
     case CQTXA_FN: ((int *)params[5])[i] = CSYES; break;
     case CQFLA_FN: ((int *)params[5])[i] = CSNO; break;
     case CQCTE_FN: ((int *)params[5])[i] = CSYES; break;
-    case CILI_FN: ((int *)params[5])[i]  = CSYES; break;
+    case CILI_FN: ((int *)params[5])[i] = CSYES; break;
     case CRQLC_FN: ((int *)params[5])[i] = CSYES; break;
-    default: ((int *)params[5])[i]       = CSNO; break;
+    default: ((int *)params[5])[i] = CSNO; break;
     } /* end switch */
   }
 
@@ -1657,7 +1666,7 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
             }
 
             switch (mode) {
-            case 1: /* not looping thru, draw it */
+            case 1: /* not looping through, draw it */
               vdmova(&prev_x, &prev_y);
               vdlina(&cur_x, &cur_y);
               prev_x    = cur_x;
@@ -1690,7 +1699,7 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
               }
               else { /* prev is in */
                 vdmova(&prev_x, &prev_y);
-                mode = 3; /* cur is still out, go thru again */
+                mode = 3; /* cur is still out, go through again */
               }
               break;
             } /* end inner switch */
@@ -1881,7 +1890,7 @@ static void xcdjpl(anything **params, int num_surfaces, anything **surf_list)
             }
 
             switch (mode) {
-            case 1: /* not looping thru, draw it */
+            case 1: /* not looping through, draw it */
               vdmova(&x1, &y1);
               vdlina(&x2, &y2);
               done = TRUE;
@@ -2062,9 +2071,6 @@ static void xctx(anything **params, int num_surfaces, anything **surf_list)
       break;
     }
 
-    x = *(float *)params[1];
-    y = *(float *)params[2];
-
     /* set SVDI foreground color if needed */
     set_foreground_color(cur_state, cur_state->text_color);
 
@@ -2154,13 +2160,13 @@ static void xcpg(anything **params, int num_surfaces, anything **surf_list)
   static float vdi_polymax  = -1.; /* store SVDI polygon max value */
 
   /* find out SVDI support for polygons. */
-  if (poly_support == -1.) {
+  if (poly_support == -1.0f) {
     qdc_index = 24;
     vdiqdc(&qdc_index, &poly_support);
   }
 
   /* get and store max polygon points from SVDI */
-  if (vdi_polymax == -1.) {
+  if (vdi_polymax == -1.0f) {
     qdc_index = 25;
     vdiqdc(&qdc_index, &vdi_polymax);
   }
@@ -2212,7 +2218,7 @@ static void xcpg(anything **params, int num_surfaces, anything **surf_list)
       /* if hollow or if no polygon support, draw the border lines.
          if solid, call vdpoly */
       if ((cur_state->interior_style == CHOLLO) || /* hallow OR   */
-          (poly_support < 3.)) {                   /*no poly supp */
+          (poly_support < 3.0f)) {                 /*no poly supp */
 
         vdiqos(&temp_array[1]); /* make sure line style is solid */
         if (temp_array[4] != 0) {
@@ -2442,7 +2448,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
             yinc = 1;
           }
 
-          /* This special case is for effiency, since is will probably
+          /* This special case is for efficiency, since is will probably
            * be most of the cases: If no clipping is on and [0,0] is at
            * the top left (like SVDI+raster) draw the whole cell array.
            */
@@ -2532,9 +2538,9 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
-              rarray[count] = (float)cells[index++] / 255.;
-              garray[count] = (float)cells[index++] / 255.;
-              barray[count] = (float)cells[index++] / 255.;
+              rarray[count] = (float)cells[index++] / 255.0f;
+              garray[count] = (float)cells[index++] / 255.0f;
+              barray[count] = (float)cells[index++] / 255.0f;
               count++;
             } /* end for j */
 
@@ -2567,9 +2573,9 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
-              rarray[count] = (float)cells[index] / 255.;
-              garray[count] = (float)cells[index + 1] / 255.;
-              barray[count] = (float)cells[index + 2] / 255.;
+              rarray[count] = (float)cells[index] / 255.0f;
+              garray[count] = (float)cells[index + 1] / 255.0f;
+              barray[count] = (float)cells[index + 2] / 255.0f;
               index         = index - 3;
               count++;
             } /* end for j */
@@ -2636,7 +2642,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
   pxclrs   = (int *)params[9];
 
   /* find (and save) the number of pixels in full NDC space */
-  if (x_pixels == -1. && y_pixels == -1.) {
+  if (x_pixels == -1.0f && y_pixels == -1.0f) {
     vdstrv(&zero, &dev_descrip.xndc_max, &zero, &dev_descrip.yndc_max);
     qrs_index = 2;
     vdiqrs(&qrs_index, temp_array);
@@ -2822,7 +2828,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
             yinc = 1;
           }
 
-          /* This special case is for effiency, since is will probably
+          /* This special case is for efficiency, since is will probably
            * be most of the cases: If no clipping is on and [0,0] is at
            * the top left (like SVDI+raster) draw the whole pixel array.
            */
@@ -2911,9 +2917,9 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
-              rarray[count] = (float)pxclrs[index++] / 255.;
-              garray[count] = (float)pxclrs[index++] / 255.;
-              barray[count] = (float)pxclrs[index++] / 255.;
+              rarray[count] = (float)pxclrs[index++] / 255.0f;
+              garray[count] = (float)pxclrs[index++] / 255.0f;
+              barray[count] = (float)pxclrs[index++] / 255.0f;
               count++;
             } /* end for j */
 
@@ -2946,9 +2952,9 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
-              rarray[count] = (float)pxclrs[index] / 255.;
-              garray[count] = (float)pxclrs[index + 1] / 255.;
-              barray[count] = (float)pxclrs[index + 2] / 255.;
+              rarray[count] = (float)pxclrs[index] / 255.0f;
+              garray[count] = (float)pxclrs[index + 1] / 255.0f;
+              barray[count] = (float)pxclrs[index + 2] / 255.0f;
               index         = index - 3;
               count++;
             } /* end for j */
@@ -3019,9 +3025,7 @@ static void xclnt(anything **params, int num_surfaces, anything **surf_list)
       case 2: vdi_style = 5; break;
       case 3: vdi_style = 1; break;
       case 4: vdi_style = 2; break;
-      case 5:
-        vdi_style = 0;
-        break; /* not supported, set to solid */
+      case 5: vdi_style = 0; break; /* not supported, set to solid */
       default: vdi_style = cur_state->line_type; break;
       } /* end switch */
 
@@ -3376,7 +3380,7 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
   int   maxindex;            /* max color index to set */
   int   indx_ptr;            /* for keeping track of color indices */
   int   index1, index2;      /* defines a range of indices to set */
-  int   first;               /* marks first time thru loop */
+  int   first;               /* marks first time through loop */
   int   one = 1;
 
   first = TRUE;
@@ -3411,9 +3415,9 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
     if (first) {
       k = 0;
       for (j = starti; j < starti + num_cols; j++) {
-        color_array[j][0] = (float)((int *)params[3])[k++] / 255.;
-        color_array[j][1] = (float)((int *)params[3])[k++] / 255.;
-        color_array[j][2] = (float)((int *)params[3])[k++] / 255.;
+        color_array[j][0] = (float)((int *)params[3])[k++] / 255.0f;
+        color_array[j][1] = (float)((int *)params[3])[k++] / 255.0f;
+        color_array[j][2] = (float)((int *)params[3])[k++] / 255.0f;
       }
       first = FALSE;
     }
@@ -3703,7 +3707,7 @@ static void xcqln(anything **params, anything **surf_list)
 /* INQUIRE LIST OF AVAILABLE LINE TYPES */
 static void xcqlnt(anything **params, anything **surf_list)
 {
-  int        i, j;          /* loop indicies */
+  int        i, j;          /* loop indices */
   int        qdc_index = 6; /* index for inquiries to vdiqdc  */
   float      value;         /* value returned by vdiqdc */
   static int set = FALSE;   /* flag whether values have been set */
@@ -3744,9 +3748,7 @@ static void xcqlnt(anything **params, anything **surf_list)
       switch (dev_descrip.line_types[i]) {
       case 0: dev_descrip.line_types[i] = 1; break;
       case 1: dev_descrip.line_types[i] = 3; break;
-      case 2:
-        dev_descrip.line_types[i] = 4;
-        break;
+      case 2: dev_descrip.line_types[i] = 4; break;
       /* ...all SVDI dashes map to cgi dash */
       case 3: dev_descrip.line_types[i] = 2; break;
       case 4: dev_descrip.line_types[i] = 2; break;
@@ -4388,7 +4390,7 @@ static void xcrqlc(anything **params, anything **surf_list)
            dev_descrip.dev_class == COUTIN) { /* device does input */
 
     /* for now only allow limited timeout */
-    /* postive and negative values = wait forever, 0 = no wait */
+    /* positive and negative values = wait forever, 0 = no wait */
     if (*(int *)params[2] == 0) {
       *(int *)params[3] = CINVAL;
       return;
@@ -4533,13 +4535,13 @@ static void init_state(surf_statelist *surf_state)
 
     /* set the current surface color table */
     vdiqco(&one, &dev_descrip.index_array[surf_state->bg_index], tmp_array, &dev_descrip.col_mode);
-    surf_state->color_table[0].r = (int)(tmp_array[0][0] * 255.);
-    surf_state->color_table[0].g = (int)(tmp_array[0][1] * 255.);
-    surf_state->color_table[0].b = (int)(tmp_array[0][2] * 255.);
+    surf_state->color_table[0].r = (int)(tmp_array[0][0] * 255.0f);
+    surf_state->color_table[0].g = (int)(tmp_array[0][1] * 255.0f);
+    surf_state->color_table[0].b = (int)(tmp_array[0][2] * 255.0f);
     vdiqco(&one, &dev_descrip.index_array[surf_state->fg_index], tmp_array, &dev_descrip.col_mode);
-    surf_state->color_table[1].r = (int)(tmp_array[0][0] * 255.);
-    surf_state->color_table[1].g = (int)(tmp_array[0][1] * 255.);
-    surf_state->color_table[1].b = (int)(tmp_array[0][2] * 255.);
+    surf_state->color_table[1].r = (int)(tmp_array[0][0] * 255.0f);
+    surf_state->color_table[1].g = (int)(tmp_array[0][1] * 255.0f);
+    surf_state->color_table[1].b = (int)(tmp_array[0][2] * 255.0f);
   } /* end if vector SVDI */
 
   else { /* raster SVDI */
@@ -4550,12 +4552,12 @@ static void init_state(surf_statelist *surf_state)
            &surf_state->fg_index);
 
     /* set the current surface color table */
-    surf_state->color_table[0].r = (int)(dev_descrip.att_array[8] * 255.);
-    surf_state->color_table[0].g = (int)(dev_descrip.att_array[9] * 255.);
-    surf_state->color_table[0].b = (int)(dev_descrip.att_array[10] * 255.);
-    surf_state->color_table[1].r = (int)(dev_descrip.att_array[11] * 255.);
-    surf_state->color_table[1].g = (int)(dev_descrip.att_array[12] * 255.);
-    surf_state->color_table[1].b = (int)(dev_descrip.att_array[13] * 255.);
+    surf_state->color_table[0].r = (int)(dev_descrip.att_array[8] * 255.0f);
+    surf_state->color_table[0].g = (int)(dev_descrip.att_array[9] * 255.0f);
+    surf_state->color_table[0].b = (int)(dev_descrip.att_array[10] * 255.0f);
+    surf_state->color_table[1].r = (int)(dev_descrip.att_array[11] * 255.0f);
+    surf_state->color_table[1].g = (int)(dev_descrip.att_array[12] * 255.0f);
+    surf_state->color_table[1].b = (int)(dev_descrip.att_array[13] * 255.0f);
   } /* end else raster SVDI */
 
   /* set/reset the SVDI attribute array */
@@ -4749,7 +4751,7 @@ static void set_mapping(surf_statelist *surf_state)
 
 /* set_clipping */
 /* Set up the clip region. */
-static void set_clipping(surf_statelist *cur_state)
+static void set_clipping(surf_statelist *my_cur_state)
 {
   point clip1, clip2; /* temp clip values */
   clip1.x = clip1.y = clip2.x = clip2.y = 0;
@@ -4757,32 +4759,32 @@ static void set_clipping(surf_statelist *cur_state)
   /* The clip region depends on clip indicator and drawing surface
    * clip indicator.
    */
-  switch (cur_state->clip_indicator) {
+  switch (my_cur_state->clip_indicator) {
   case CON:
 
     /* VDC clipping is on */
-    switch (cur_state->ds_clip_indicator) {
+    switch (my_cur_state->ds_clip_indicator) {
 
     case CDCOFF: /* view surface clipping off */
 
       /* map the effective clip rectangle to NDC */
-      cur_state->clip_on = TRUE;
-      clip1.x            = cur_state->eff_clip_rect1.x * cur_state->xscale + cur_state->xoffset;
-      clip1.y            = cur_state->eff_clip_rect1.y * cur_state->yscale + cur_state->yoffset;
-      clip2.x            = cur_state->eff_clip_rect2.x * cur_state->xscale + cur_state->xoffset;
-      clip2.y            = cur_state->eff_clip_rect2.y * cur_state->yscale + cur_state->yoffset;
+      my_cur_state->clip_on = TRUE;
+      clip1.x = my_cur_state->eff_clip_rect1.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip1.y = my_cur_state->eff_clip_rect1.y * my_cur_state->yscale + my_cur_state->yoffset;
+      clip2.x = my_cur_state->eff_clip_rect2.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip2.y = my_cur_state->eff_clip_rect2.y * my_cur_state->yscale + my_cur_state->yoffset;
 
       break; /* end case CDCOFF */
 
     case CVPORT: /* clip at viewport */
 
       /* map the effective clip rectangle to NDC */
-      cur_state->clip_on = TRUE;
+      my_cur_state->clip_on = TRUE;
 
-      clip1.x = cur_state->eff_clip_rect1.x * cur_state->xscale + cur_state->xoffset;
-      clip1.y = cur_state->eff_clip_rect1.y * cur_state->yscale + cur_state->yoffset;
-      clip2.x = cur_state->eff_clip_rect2.x * cur_state->xscale + cur_state->xoffset;
-      clip2.y = cur_state->eff_clip_rect2.y * cur_state->yscale + cur_state->yoffset;
+      clip1.x = my_cur_state->eff_clip_rect1.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip1.y = my_cur_state->eff_clip_rect1.y * my_cur_state->yscale + my_cur_state->yoffset;
+      clip2.x = my_cur_state->eff_clip_rect2.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip2.y = my_cur_state->eff_clip_rect2.y * my_cur_state->yscale + my_cur_state->yoffset;
 
       break; /* end case CVPORT */
 
@@ -4790,12 +4792,12 @@ static void set_clipping(surf_statelist *cur_state)
 
       /* map the effective clip rectangle to NDC and intersect it
          with the max NDC space */
-      cur_state->clip_on = TRUE;
+      my_cur_state->clip_on = TRUE;
 
-      clip1.x = cur_state->eff_clip_rect1.x * cur_state->xscale + cur_state->xoffset;
-      clip1.y = cur_state->eff_clip_rect1.y * cur_state->yscale + cur_state->yoffset;
-      clip2.x = cur_state->eff_clip_rect2.x * cur_state->xscale + cur_state->xoffset;
-      clip2.y = cur_state->eff_clip_rect2.y * cur_state->yscale + cur_state->yoffset;
+      clip1.x = my_cur_state->eff_clip_rect1.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip1.y = my_cur_state->eff_clip_rect1.y * my_cur_state->yscale + my_cur_state->yoffset;
+      clip2.x = my_cur_state->eff_clip_rect2.x * my_cur_state->xscale + my_cur_state->xoffset;
+      clip2.y = my_cur_state->eff_clip_rect2.y * my_cur_state->yscale + my_cur_state->yoffset;
 
       clip1.x = max(min(clip1.x, clip2.x), 0.0);
       clip1.y = max(min(clip1.y, clip2.y), 0.0);
@@ -4815,32 +4817,32 @@ static void set_clipping(surf_statelist *cur_state)
   case COFF:
 
     /* VDC clipping is off */
-    switch (cur_state->ds_clip_indicator) {
+    switch (my_cur_state->ds_clip_indicator) {
 
     case CDCOFF: /* display surface clipping off */
 
       /* no clip */
-      cur_state->clip_on = FALSE;
+      my_cur_state->clip_on = FALSE;
       break; /* end case CDCOFF */
 
     case CVPORT: /* clip at viewport */
 
       /* clip at NDC effective viewport  */
-      cur_state->clip_on = TRUE;
-      clip1.x            = cur_state->eff_vp1.x * dev_descrip.xndc_max;
-      clip1.y            = cur_state->eff_vp1.y * dev_descrip.yndc_max;
-      clip2.x            = cur_state->eff_vp2.x * dev_descrip.xndc_max;
-      clip2.y            = cur_state->eff_vp2.y * dev_descrip.yndc_max;
+      my_cur_state->clip_on = TRUE;
+      clip1.x               = my_cur_state->eff_vp1.x * dev_descrip.xndc_max;
+      clip1.y               = my_cur_state->eff_vp1.y * dev_descrip.yndc_max;
+      clip2.x               = my_cur_state->eff_vp2.x * dev_descrip.xndc_max;
+      clip2.y               = my_cur_state->eff_vp2.y * dev_descrip.yndc_max;
       break; /* end case CVPORT */
 
     case CDCREC: /* clip at display surface */
 
       /* clip at max NDC space */
-      cur_state->clip_on = TRUE;
-      clip1.x            = 0.0;
-      clip1.y            = 0.0;
-      clip2.x            = dev_descrip.xndc_max;
-      clip2.y            = dev_descrip.yndc_max;
+      my_cur_state->clip_on = TRUE;
+      clip1.x               = 0.0;
+      clip1.y               = 0.0;
+      clip2.x               = dev_descrip.xndc_max;
+      clip2.y               = dev_descrip.yndc_max;
       break; /* end case CDCREC */
 
     default:
@@ -4861,11 +4863,11 @@ static void set_clipping(surf_statelist *cur_state)
    * the clipping window, and clipmax is the maximum. This is done
    * so that the clipping algorithms work correctly with mirroring.
    */
-  if (cur_state->clip_on) {
-    cur_state->clipmin.x = min(clip1.x, clip2.x);
-    cur_state->clipmax.x = max(clip1.x, clip2.x);
-    cur_state->clipmin.y = min(clip1.y, clip2.y);
-    cur_state->clipmax.y = max(clip1.y, clip2.y);
+  if (my_cur_state->clip_on) {
+    my_cur_state->clipmin.x = min(clip1.x, clip2.x);
+    my_cur_state->clipmax.x = max(clip1.x, clip2.x);
+    my_cur_state->clipmin.y = min(clip1.y, clip2.y);
+    my_cur_state->clipmax.y = max(clip1.y, clip2.y);
   }
 } /* end set_clipping */
 
@@ -4925,14 +4927,14 @@ static void set_foreground_color(surf_statelist *surf_state, int *colors)
 
       /* does foreground need to be updated? */
       /* -- i need to check this out - might need to store as int */
-      if (colors[0] != (int)(cur_state->vdi_attrib.fg_rgb[0] * 255.) ||
-          colors[1] != (int)(cur_state->vdi_attrib.fg_rgb[1] * 255.) ||
-          colors[2] != (int)(cur_state->vdi_attrib.fg_rgb[2] * 255.)) {
+      if (colors[0] != (int)(cur_state->vdi_attrib.fg_rgb[0] * 255.0f) ||
+          colors[1] != (int)(cur_state->vdi_attrib.fg_rgb[1] * 255.0f) ||
+          colors[2] != (int)(cur_state->vdi_attrib.fg_rgb[2] * 255.0f)) {
 
     /* update att_array */
-    cur_state->vdi_attrib.fg_rgb[0] = (float)colors[0] / 255.;
-    cur_state->vdi_attrib.fg_rgb[1] = (float)colors[1] / 255.;
-    cur_state->vdi_attrib.fg_rgb[2] = (float)colors[2] / 255.;
+    cur_state->vdi_attrib.fg_rgb[0] = (float)colors[0] / 255.0f;
+    cur_state->vdi_attrib.fg_rgb[1] = (float)colors[1] / 255.0f;
+    cur_state->vdi_attrib.fg_rgb[2] = (float)colors[2] / 255.0f;
 
     /* set new foreground color */
     vdfrgb(&cur_state->vdi_attrib.fg_rgb[0], &cur_state->vdi_attrib.fg_rgb[1],
@@ -4957,14 +4959,14 @@ static void set_background_color(surf_statelist *surf_state, int *colors)
 
   /* does background need to be updated */
   /* --background color is saved in att_array, even for vector */
-  if (colors[0] != (int)(cur_state->vdi_attrib.bg_rgb[0] * 255.) ||
-      colors[1] != (int)(cur_state->vdi_attrib.bg_rgb[1] * 255.) ||
-      colors[2] != (int)(cur_state->vdi_attrib.bg_rgb[2] * 255.)) {
+  if (colors[0] != (int)(cur_state->vdi_attrib.bg_rgb[0] * 255.0f) ||
+      colors[1] != (int)(cur_state->vdi_attrib.bg_rgb[1] * 255.0f) ||
+      colors[2] != (int)(cur_state->vdi_attrib.bg_rgb[2] * 255.0f)) {
 
     /* store new values in att_array */
-    cur_state->vdi_attrib.bg_rgb[0] = (float)colors[0] / 255.;
-    cur_state->vdi_attrib.bg_rgb[1] = (float)colors[1] / 255.;
-    cur_state->vdi_attrib.bg_rgb[2] = (float)colors[2] / 255.;
+    cur_state->vdi_attrib.bg_rgb[0] = (float)colors[0] / 255.0f;
+    cur_state->vdi_attrib.bg_rgb[1] = (float)colors[1] / 255.0f;
+    cur_state->vdi_attrib.bg_rgb[2] = (float)colors[2] / 255.0f;
 
     /* set the cgi state color table - index 0 */
     cur_state->color_table[0].r = colors[0];
@@ -5163,23 +5165,23 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
     return (FALSE);
   }
 
-  for (bnd = 0; bnd < 4; bnd++) { /* loop thru all boundries */
+  for (bnd = 0; bnd < 4; bnd++) { /* loop through all boundaries */
 
     /* start with last vertex */
-    if (bnd == 0) { /* 1st time thru use original vertex list */
+    if (bnd == 0) { /* 1st time through use original vertex list */
       curlen  = vlen;
       *lenout = 0;
       s.x     = vx[curlen - 1];
       s.y     = vy[curlen - 1];
     }
-    else { /* after 1st time thru, use new vertex list */
+    else { /* after 1st time through, use new vertex list */
       curlen  = *lenout;
       *lenout = 0;
       s.x     = xout[curlen - 1];
       s.y     = yout[curlen - 1];
     }
 
-    for (i = 0; i < curlen; i++) { /* loop thru all vertices */
+    for (i = 0; i < curlen; i++) { /* loop through all vertices */
 
       if (bnd == 0) {
         p.x = vx[i];
@@ -5190,10 +5192,10 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
         p.y = yout[i];
       }
 
-      /* is vertex p 'inside' current boundry */
+      /* is vertex p 'inside' current boundary */
       if (inside_bnd(&p, cmin, cmax, bnd)) {
 
-        /* is vertex s 'inside' current boundry */
+        /* is vertex s 'inside' current boundary */
         if (inside_bnd(&s, cmin, cmax, bnd)) {
 
           /* both p and s are inside, add p to vertex list */
@@ -5246,33 +5248,25 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
 
 /* inside_bnd */
 /* Used by poly_clip and returns true if the vertex is within the
- * boundry. ( where the boundries are numbered 1-4,corresponding to
+ * boundary. ( where the boundaries are numbered 1-4,corresponding to
  * top, right, bottom, left )
  */
 static int inside_bnd(point *v, point *bmin, point *bmax, int bound_num)
 {
-  /* this routine assumes a rectangular boundry */
+  /* this routine assumes a rectangular boundary */
   switch (bound_num) {
-  case 0:
-    return (v->y <= bmax->y);
-    break; /* top */
-  case 1:
-    return (v->x <= bmax->x);
-    break; /* right */
-  case 2:
-    return (v->y >= bmin->y);
-    break; /* bottom */
-  case 3:
-    return (v->x >= bmin->x);
-    break; /* left */
+  case 0: return (v->y <= bmax->y); break; /* top */
+  case 1: return (v->x <= bmax->x); break; /* right */
+  case 2: return (v->y >= bmin->y); break; /* bottom */
+  case 3: return (v->x >= bmin->x); break; /* left */
   default: return (FALSE); break;
   } /* end switch */
 } /* end inside_bnd */
 
 /* intersect_bnd */
 /* Used by poly_clip. Returns the the intersection point of a polygon
- * edge with a clip boundry.  The clip boundry is coded 1-4, corresponding
- * to top, right, bottom, and left boundry edges, repectively.
+ * edge with a clip boundary.  The clip boundary is coded 1-4, corresponding
+ * to top, right, bottom, and left boundary edges, respectively.
  */
 static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int bound_num)
 {
@@ -5319,7 +5313,7 @@ static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int b
   File descriptor which is returned from open is stored in current
   statelist
 */
-void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for compatability */
+void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for compatibility */
 {
   int        errnum, errsev;
   char       symbol[1024];
@@ -5345,7 +5339,7 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
   }
 
   /* copy filename to symbol */
-  strcpy(symbol, cur_state->filename);
+  copy_string(symbol, cur_state->filename, 1024);
 
   /* check the environment to see if a file name has been assigned */
   env = getenv(symbol);

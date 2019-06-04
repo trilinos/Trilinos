@@ -1,10 +1,22 @@
-#!/bin/sh
+#!/bin/bash
 
 xsltproc tex.xsl masterList.xml > paramlist.tex
+returncode=$?
+if [ $returncode -ne 0 ]; then
+    # There seems to be an issue with certain versions of xsltproc
+    # suddenly segfaulting.
+    echo "xsltproc exited unexpectedly. Please investigate!"
+    exit returncode;
+fi
+
 xsltproc tex_hidden.xsl masterList.xml > paramlist_hidden.tex
 
+if [ "$1" != "" ]; then
+    code_file=$1
+else
+    code_file="../../src/MueCentral/MueLu_MasterList.cpp"
+fi
 
-code_file="../../src/MueCentral/MueLu_MasterList.cpp"
 
 echo '// @HEADER
 //
@@ -79,7 +91,7 @@ namespace MueLu {
     }
     return problemSpecificList_;
   }
- 
+
    std::string MasterList::interpretParameterName(const std::string& name, const std::string& value) {
 
     // used to concatenate the return string
@@ -103,8 +115,8 @@ namespace MueLu {
     if (name == "cycle type") {
       std::stringstream temp1; temp1 << "\"" << "MGV" << "\"";
       std::stringstream temp2; temp2 << "\"" << "MGV" << "\"";
-      if (value == temp1.str() ) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"; return ss.str(); }
-      else if (value == temp2.str()) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"W\"/>"; return ss.str(); }
+      if (value == temp1.str() ) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"; }
+      else if (value == temp2.str()) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"W\"/>"; }
       else TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MasterList::interpretParameterName, Line " << __LINE__ << ". "
                                            << "The parameter " << value << " is not supported by MueLu.");
       return ss.str();
@@ -131,7 +143,7 @@ xsltproc gen_interpreter.xsl masterList.xml >> $code_file
 echo '
     return "";
   }
- 
+
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
   Teuchos::RCP<Teuchos::ParameterList> MasterList::problemSpecificList_ = Teuchos::null;
   std::string                          MasterList::problemType_ = "unknown";
@@ -143,7 +155,7 @@ echo ';' >> $code_file
 
 echo '  std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>' >> $code_file
 
-PROBLEM_TYPES=( "Poisson-2D" "Poisson-3D" "Elasticity-2D" "Elasticity-3D" "MHD" "ConvectionDiffusion" )
+PROBLEM_TYPES=( "Poisson-2D" "Poisson-2D-complex" "Poisson-3D" "Poisson-3D-complex" "Elasticity-2D" "Elasticity-2D-complex" "Elasticity-3D" "Elasticity-3D-complex" "MHD" "ConvectionDiffusion" )
 
 for i in "${PROBLEM_TYPES[@]}"; do
   echo "(\"$i\"," >> $code_file
@@ -165,7 +177,7 @@ sed -i '/<Parameter/ s/\\""/\\"/g' $code_file
 sed -i '/<Parameter/ s/"\\"/\\"/g' $code_file
 
 # generate LaTeX files (MueLu options and ML compatibility)
-SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" "reuse" )
+SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" "reuse" "refmaxwell" )
 for i in "${SECTIONS[@]}"; do
   xsltproc --stringparam section "$i" options.xsl   masterList.xml > options_$i.tex
   xsltproc --stringparam section "$i" mloptions.xsl masterList.xml > mloptions_$i.tex

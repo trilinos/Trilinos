@@ -67,6 +67,7 @@
 // templated multivector and sparse matrix classes
 #include "MyMultiVec.hpp"
 #include "MyBetterOperator.hpp"
+#include "MySDMHelpers.hpp"
 
 using namespace Teuchos;
 using namespace Anasazi;
@@ -245,8 +246,8 @@ int main(int argc, char *argv[])
       // note, this is allowed under the restrictions on projectMat, 
       // because <X1,X2> = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
       
@@ -273,12 +274,14 @@ int main(int argc, char *argv[])
       // rank-1
       RCP<MV> one = MVT::Clone(*S,1);
       MVT::MvRandom(*one);
+      SerialDenseMatrix<int,ST> scaleS(sizeS,1);
+      Anasazi::randomSDM(scaleS);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-        MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+        MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
       }
       
       MyOM->stream(Errors) << " normalizeMat(): testing on rank-1 multivector " << endl;
@@ -303,8 +306,8 @@ int main(int argc, char *argv[])
       // and 
       // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
       
@@ -331,12 +334,13 @@ int main(int argc, char *argv[])
       // rank-1
       RCP<MV> one = MVT::Clone(*S,1);
       MVT::MvRandom(*one);
+      SerialDenseMatrix<int,ST> scaleS(sizeS,1);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-        MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+        MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
       }
       
       MyOM->stream(Errors) << " projectAndNormalizeMat(): testing on rank-1 multivector " << endl;
@@ -499,9 +503,9 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
         MScopy = MVT::CloneCopy(*lclMS);
       }
       // randomize this data, it should be overwritten
-      B->random();
+      Anasazi::randomSDM(*B);
       for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // run test
       int ret = OM->projectAndNormalizeMat(*Scopy,theX,C,B,MScopy,theMX);
@@ -555,9 +559,9 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
           MScopy = MVT::CloneCopy(*lclMS);
         }
         // randomize this data, it should be overwritten
-        B->random();
+        Anasazi::randomSDM(*B);
         for (unsigned int i=0; i<C.size(); i++) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
@@ -766,7 +770,7 @@ int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
         MScopy = MVT::CloneCopy(*lclMS);
       }
       // randomize this data, it should be overwritten
-      B->random();
+      Anasazi::randomSDM(*B);
       // run test
       ret = OM->normalizeMat(*Scopy,B,MScopy);
       sout << "normalizeMat() returned rank " << ret << endl;
@@ -976,7 +980,7 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
       }
       // randomize this data, it should be overwritten
       for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // run test
       OM->projectMat(*Scopy,theX,C,MScopy,theMX);
@@ -1001,7 +1005,7 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
         }
         // randomize this data, it should be overwritten
         for (unsigned int i=0; i<C.size(); i++) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );

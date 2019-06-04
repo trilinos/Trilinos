@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -34,11 +34,11 @@
  */
 
 #include "elb_allo.h"
-#include "elb_format.h" // for ST_ZU
-#include <cstdarg>      // for va_end, va_arg, va_list, etc
-#include <cstddef>      // for size_t
-#include <cstdio>       // for fprintf, stderr
-#include <cstdlib>      // for exit, malloc
+#include <cstdarg> // for va_end, va_arg, va_list, etc
+#include <cstddef> // for size_t
+#include <cstdio>  // for stderr
+#include <cstdlib> // for exit, malloc
+#include <fmt/ostream.h>
 
 static void *smalloc(size_t n);
 
@@ -95,19 +95,19 @@ void *array_alloc(int numdim, ...)
   va_start(va, numdim);
 
   if (numdim <= 0) {
-    fprintf(stderr, "array_alloc ERROR: number of dimensions, %d, is <=0\n", numdim);
+    fmt::print(stderr, "array_alloc ERROR: number of dimensions, {}, is <=0\n", numdim);
     va_end(va);
     return nullptr;
   }
   if (numdim > 3) {
-    fprintf(stderr, "array_alloc ERROR: number of dimensions, %d, is > 3\n", numdim);
+    fmt::print(stderr, "array_alloc ERROR: number of dimensions, {}, is > 3\n", numdim);
     va_end(va);
     return nullptr;
   }
 
   dim[0].index = va_arg(va, size_t);
 
-  if (dim[0].index <= 0) {
+  if (dim[0].index == 0) {
     va_end(va);
     return nullptr;
   }
@@ -117,7 +117,7 @@ void *array_alloc(int numdim, ...)
   dim[0].off   = 0;
   for (int i = 1; i < numdim; i++) {
     dim[i].index = va_arg(va, size_t);
-    if (dim[i].index <= 0) {
+    if (dim[i].index == 0) {
       va_end(va);
       return nullptr;
     }
@@ -165,9 +165,10 @@ static void *smalloc(size_t n)
   }
 
   if (pntr == nullptr && n != 0) {
-    fprintf(stderr, "smalloc: Out of space - number of bytes "
-                    "requested = " ST_ZU "\n",
-            n);
+    fmt::print(stderr,
+               "smalloc: Out of space - number of bytes "
+               "requested = {:n}\n",
+               n);
     exit(0);
   }
   return (pntr);

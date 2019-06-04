@@ -54,7 +54,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(NeumannResidual,p)
+template<typename EvalT, typename Traits>
+NeumannResidual<EvalT, Traits>::
+NeumannResidual(
+  const Teuchos::ParameterList& p)
 {
   std::string residual_name = p.get<std::string>("Residual Name");
   std::string flux_name = p.get<std::string>("Flux Name");
@@ -85,24 +88,28 @@ PHX_EVALUATOR_CTOR(NeumannResidual,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(NeumannResidual,sd,fm)
+template<typename EvalT, typename Traits>
+void
+NeumannResidual<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(normal_dot_flux,fm);
-  this->utils.setFieldData(flux,fm);
-  this->utils.setFieldData(normal,fm);
+  num_ip = flux.extent(1);
+  num_dim = flux.extent(2);
 
-  num_ip = flux.dimension(1);
-  num_dim = flux.dimension(2);
-
-  TEUCHOS_ASSERT(flux.dimension(1) == normal.dimension(1));
-  TEUCHOS_ASSERT(flux.dimension(2) == normal.dimension(2));
+  TEUCHOS_ASSERT(flux.extent(1) == normal.extent(1));
+  TEUCHOS_ASSERT(flux.extent(2) == normal.extent(2));
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(NeumannResidual,workset)
+template<typename EvalT, typename Traits>
+void
+NeumannResidual<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   residual.deep_copy(ScalarT(0.0));
 
@@ -118,7 +125,7 @@ PHX_EVALUATE_FIELDS(NeumannResidual,workset)
   // const Kokkos::DynRankView<double,PHX::Device> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
   const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basis_index];
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (std::size_t basis = 0; basis < residual.dimension(1); ++basis) {
+    for (std::size_t basis = 0; basis < residual.extent(1); ++basis) {
       for (std::size_t qp = 0; qp < num_ip; ++qp) {
         residual(cell,basis) += normal_dot_flux(cell,qp)*bv->weighted_basis_scalar(cell,basis,qp);
       }

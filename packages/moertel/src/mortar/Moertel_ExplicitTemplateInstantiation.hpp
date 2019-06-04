@@ -51,9 +51,14 @@
 #include "Moertel_config.h"
 #include <Kokkos_DefaultNode.hpp>
 
+#ifdef HAVE_MOERTEL_TPETRA
 //typedef DefaultNodeType KokkosNode;
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> KokkosNode;
 //typedef KokkosClassic::DefaultNode::DefaultNodeType KokkosNode;
+#else
+typedef int KokkosNode;
+#endif // HAVE_MOERTEL_TPETRA
+
 
 // ETI templates
 #define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_ORD(name, ordinal) \
@@ -73,7 +78,7 @@ typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpac
 
 #ifdef HAVE_MOERTEL_INST_DOUBLE_INT_INT
 #   define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_DII(name)\
-      MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_ST_LO_GO_N(name, double, int, int, KokkosNode) 
+      MOERTEL_INSTANTIATE_TEMPLATE_CLASS_ON_NAME_ST_LO_GO_N(name, double, int, int, KokkosNode)
 #else
 #   define MOERTEL_INSTANTIATE_TEMPLATE_CLASS_DII(name)
 #endif

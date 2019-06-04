@@ -1,5 +1,5 @@
 #include "Zoltan2ParallelGraph.hpp"
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include <balanceUtils.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
@@ -77,48 +77,56 @@ bool areElementsConnected(const stk::mesh::BulkData& stkMeshBulkData,
     return elementsAreConnected;
 }
 
+std::vector<stk::mesh::Entity> getAllPossiblyConnectedElements(const stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity element)
+{
+    unsigned numNodes = stkMeshBulkData.num_nodes(element);
+    const stk::mesh::Entity* nodes = stkMeshBulkData.begin_nodes(element);
+    std::vector<stk::mesh::Entity> allElementsPossiblyConnected;
+    for (unsigned k = 0; k < numNodes; k++)
+    {
+        unsigned numElementsAttachedToNode = stkMeshBulkData.num_elements(nodes[k]);
+        const stk::mesh::Entity* elements = stkMeshBulkData.begin_elements(nodes[k]);
+        allElementsPossiblyConnected.insert(allElementsPossiblyConnected.end(), elements, elements+numElementsAttachedToNode);
+    }
+    stk::util::sort_and_unique(allElementsPossiblyConnected);
+    return allElementsPossiblyConnected;
+}
+
 void createGraphEdgesForElement(stk::mesh::BulkData &stkMeshBulkData,
+                                const stk::mesh::Selector& selector,
                                 const stk::balance::BalanceSettings &balanceSettings,
                                 stk::mesh::Entity elementOfConcern,
                                 std::vector<stk::balance::GraphEdge> &graphEdges,
                                 const stk::mesh::impl::LocalIdMapper& localIds)
 {
-    unsigned numNodes = stkMeshBulkData.num_nodes(elementOfConcern);
-    const stk::mesh::Entity * nodes = stkMeshBulkData.begin_nodes(elementOfConcern);
-    std::set<stk::mesh::Entity> allElementsPossiblyConnected;
-    for (unsigned k=0;k<numNodes;k++)
-    {
-        unsigned numElementsAttachedToNode = stkMeshBulkData.num_elements(nodes[k]);
-        const stk::mesh::Entity * elements = stkMeshBulkData.begin_elements(nodes[k]);
-        allElementsPossiblyConnected.insert(elements, elements+numElementsAttachedToNode);
-    }
+    std::vector<stk::mesh::Entity> allElementsPossiblyConnected = getAllPossiblyConnectedElements(stkMeshBulkData, elementOfConcern);
+    bool useLocalIds = balanceSettings.useLocalIds();
 
-    bool useLocalIds = balanceSettings.getGraphOption() == stk::balance::BalanceSettings::COLORING;
-
-    std::set<stk::mesh::Entity>::iterator possiblyConnectedElement = allElementsPossiblyConnected.begin();
-    for (; possiblyConnectedElement != allElementsPossiblyConnected.end(); possiblyConnectedElement++)
+    for (stk::mesh::Entity possiblyConnectedElement : allElementsPossiblyConnected)
     {
-        if (elementOfConcern != *possiblyConnectedElement)
+        if (elementOfConcern != possiblyConnectedElement)
         {
-            bool doingLoadBalancingConsiderAnyElement = (balanceSettings.getGraphOption() == stk::balance::BalanceSettings::LOADBALANCE);
-            bool doingColoringConsiderOnlyOwnedElement = (balanceSettings.getGraphOption() == stk::balance::BalanceSettings::COLORING && stkMeshBulkData.bucket(*possiblyConnectedElement).owned());
+            bool doingLoadBalancingConsiderAnyElement = (balanceSettings.getGraphOption() == stk::balance::BalanceSettings::LOAD_BALANCE);
+            bool doingColoringConsiderOnlyOwnedElement = (useLocalIds && stkMeshBulkData.bucket(possiblyConnectedElement).owned() &&
+                                                          selector(stkMeshBulkData.bucket(possiblyConnectedElement)));
             if(doingLoadBalancingConsiderAnyElement || doingColoringConsiderOnlyOwnedElement)
             {
                 stk::topology element1Topology = stkMeshBulkData.bucket(elementOfConcern).topology();
-                stk::topology element2Topology = stkMeshBulkData.bucket(*possiblyConnectedElement).topology();
+                stk::topology element2Topology = stkMeshBulkData.bucket(possiblyConnectedElement).topology();
                 size_t numNodesRequiredForConnection = balanceSettings.getNumNodesRequiredForConnection(element1Topology, element2Topology);
-                if ( areElementsConnected(stkMeshBulkData, numNodesRequiredForConnection, elementOfConcern, *possiblyConnectedElement) )
+                if ( areElementsConnected(stkMeshBulkData, numNodesRequiredForConnection, elementOfConcern, possiblyConnectedElement) &&
+                     !stk::balance::internal::shouldOmitSpiderElement(stkMeshBulkData, balanceSettings, possiblyConnectedElement) )
                 {
                     double edgeWeight = balanceSettings.getGraphEdgeWeight(element1Topology, element2Topology);
                     int vertex2ParallelOwner = 0;
                     if ( useLocalIds )
                     {
-                        graphEdges.push_back(stk::balance::GraphEdge(elementOfConcern, stk::balance::internal::get_local_id(localIds, *possiblyConnectedElement), vertex2ParallelOwner, edgeWeight));
+                        graphEdges.push_back(stk::balance::GraphEdge(elementOfConcern, stk::balance::internal::get_local_id(localIds, possiblyConnectedElement), vertex2ParallelOwner, edgeWeight));
                     }
                     else
                     {
-                        vertex2ParallelOwner = stkMeshBulkData.parallel_owner_rank(*possiblyConnectedElement);
-                        graphEdges.push_back(stk::balance::GraphEdge(elementOfConcern, stkMeshBulkData.identifier(*possiblyConnectedElement), vertex2ParallelOwner, edgeWeight));
+                        vertex2ParallelOwner = stkMeshBulkData.parallel_owner_rank(possiblyConnectedElement);
+                        graphEdges.push_back(stk::balance::GraphEdge(elementOfConcern, stkMeshBulkData.identifier(possiblyConnectedElement), vertex2ParallelOwner, edgeWeight));
                     }
                 }
             }
@@ -127,6 +135,7 @@ void createGraphEdgesForElement(stk::mesh::BulkData &stkMeshBulkData,
 }
 
 void Zoltan2ParallelGraph::convertGraphEdgesToZoltanGraph(const stk::mesh::BulkData& stkMeshBulkData,
+                                                          const stk::balance::BalanceSettings &balanceSettings,
                                                           const std::vector<stk::balance::GraphEdge> &graphEdges,
                                                           const unsigned numElements,
                                                           std::vector<int>& adjacencyProcs,
@@ -154,7 +163,7 @@ void Zoltan2ParallelGraph::convertGraphEdgesToZoltanGraph(const stk::mesh::BulkD
 
     std::ostringstream os;
     size_t aboutToAllocate = mOffsets[numElements]*(sizeof(BalanceGlobalNumber) + sizeof(int) + sizeof(double));
-    os << "About to allocate " << stk::human_bytes(aboutToAllocate) << " bytes.";
+    os << "About to allocate " << stk::human_bytes(aboutToAllocate) << " bytes";
     stk::balance::internal::logMessage(stkMeshBulkData.parallel(), os.str());
 
     mAdjacency.resize(mOffsets[numElements]);
@@ -163,12 +172,16 @@ void Zoltan2ParallelGraph::convertGraphEdgesToZoltanGraph(const stk::mesh::BulkD
 
     std::vector<int> numElementsConnectedSoFar(numElements,0);
 
+    bool useLocalIds = balanceSettings.useLocalIds();
     for (size_t i=0;i<graphEdges.size();i++)
     {
         unsigned localId = stk::balance::internal::get_local_id(localIds, graphEdges[i].vertex1());
         int offset = numElementsConnectedSoFar[localId];
         int index = mOffsets[localId] + offset;
 
+        if (useLocalIds) {
+            ThrowRequireMsg(graphEdges[i].vertex2() < numElements, "Adding invalid element to ZoltanII graph");
+        }
         mAdjacency[index] = graphEdges[i].vertex2();
         adjacencyProcs[index] = graphEdges[i].vertex2OwningProc();
         mEdgeWeights[index] = graphEdges[i].weight();
@@ -177,25 +190,27 @@ void Zoltan2ParallelGraph::convertGraphEdgesToZoltanGraph(const stk::mesh::BulkD
 }
 
 void Zoltan2ParallelGraph::createGraphEdgesUsingNodeConnectivity(stk::mesh::BulkData &stkMeshBulkData,
-                                           const stk::balance::BalanceSettings &balanceSettings,
-                                           size_t numElements,
-                                           std::vector<stk::balance::GraphEdge> &graphEdges,
-                                           const stk::mesh::impl::LocalIdMapper& localIds)
+                                                                 const stk::mesh::Selector& selector,
+                                                                 const stk::balance::BalanceSettings &balanceSettings,
+                                                                 size_t numElements,
+                                                                 std::vector<stk::balance::GraphEdge> &graphEdges,
+                                                                 const stk::mesh::impl::LocalIdMapper& localIds)
 {
-    const stk::mesh::BucketVector &buckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
+    bool useLocalIds = balanceSettings.useLocalIds();
+    stk::mesh::Selector searchSelector = (useLocalIds) ? selector : stk::mesh::Selector(stkMeshBulkData.mesh_meta_data().universal_part());
+    const stk::mesh::BucketVector& buckets = stkMeshBulkData.get_buckets(stk::topology::ELEMENT_RANK, searchSelector);
 
     mVertexIds.clear();
     mVertexIds.resize(numElements);
     mVertexWeights.clear();
-    mVertexWeights.resize(numElements);
+    mVertexWeights.resize(numElements, 0);
     mVertexCoordinates.clear();
     unsigned spatialDimension = stkMeshBulkData.mesh_meta_data().spatial_dimension();
     mVertexCoordinates.resize(numElements*spatialDimension, 0);
 
     stk::mesh::FieldBase const * coord = stk::balance::internal::get_coordinate_field(stkMeshBulkData.mesh_meta_data(),
-                                                                               balanceSettings.getCoordinateFieldName());
+                                                                                      balanceSettings.getCoordinateFieldName());
 
-    bool useLocalId = (balanceSettings.getGraphOption() == stk::balance::BalanceSettings::COLORING);
     for (size_t i=0; i<buckets.size(); i++)
     {
         const stk::mesh::Bucket &bucket = *buckets[i];
@@ -205,38 +220,41 @@ void Zoltan2ParallelGraph::createGraphEdgesUsingNodeConnectivity(stk::mesh::Bulk
             {
                 stk::mesh::Entity elementOfConcern = bucket[j];
                 unsigned local_id = stk::balance::internal::get_local_id(localIds, elementOfConcern);
-                mVertexIds[local_id] = getAdjacencyId(stkMeshBulkData, elementOfConcern, useLocalId, localIds);
+                mVertexIds[local_id] = getAdjacencyId(stkMeshBulkData, elementOfConcern, useLocalIds, localIds);
 
-                mVertexWeights[local_id] = balanceSettings.getGraphVertexWeight(bucket.topology());
-
-                stk::balance::internal::fillEntityCentroid(stkMeshBulkData, coord, elementOfConcern, &mVertexCoordinates[local_id*spatialDimension]);
-
-                createGraphEdgesForElement(stkMeshBulkData, balanceSettings, elementOfConcern, graphEdges, localIds);
+                if (!stk::balance::internal::shouldOmitSpiderElement(stkMeshBulkData, balanceSettings, elementOfConcern))
+                {
+                    mVertexWeights[local_id] = balanceSettings.getGraphVertexWeight(bucket.topology());
+                    stk::balance::internal::fillEntityCentroid(stkMeshBulkData, coord, elementOfConcern, &mVertexCoordinates[local_id*spatialDimension]);
+                    createGraphEdgesForElement(stkMeshBulkData, selector, balanceSettings, elementOfConcern, graphEdges, localIds);
+                }
             }
         }
     }
 }
 
 void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData &stkMeshBulkData,
-                                       const stk::balance::BalanceSettings &balanceSettings,
-                                       std::vector<int>& adjacencyProcs,
-                                       const stk::mesh::Selector& searchSelector,
-                                       const stk::mesh::impl::LocalIdMapper& localIds)
+                                                             const stk::balance::BalanceSettings &balanceSettings,
+                                                             std::vector<int>& adjacencyProcs,
+                                                             const stk::mesh::Selector& selector,
+                                                             const stk::mesh::impl::LocalIdMapper& localIds)
 {
-    size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
-                                                                    stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
+    bool useLocalIds = balanceSettings.useLocalIds();
+    stk::mesh::Selector searchSelector = (useLocalIds) ? selector : stk::mesh::Selector(stkMeshBulkData.mesh_meta_data().locally_owned_part());
+    size_t numElements = stk::mesh::count_selected_entities(searchSelector,
+                                                            stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
 
     std::vector<stk::balance::GraphEdge> graphEdges;
 
-    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using node connectivity.");
+    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using node connectivity");
 
     // Set vertexWeights based on topology of entity
-    createGraphEdgesUsingNodeConnectivity(stkMeshBulkData, balanceSettings, numElements,
+    createGraphEdgesUsingNodeConnectivity(stkMeshBulkData, searchSelector, balanceSettings, numElements,
                                           graphEdges, localIds);
 
     if ( !this->amCheckingForMechanisms() && balanceSettings.includeSearchResultsInGraph() )
     {
-        stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using search results.");
+        stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using search results");
 
         stk::balance::internal::createGraphEdgesUsingBBSearch(stkMeshBulkData, balanceSettings, graphEdges, searchSelector);
 
@@ -265,15 +283,16 @@ void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData
         }
     }
 
-    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Convert edges to a graph.");
+    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Convert edges to a graph");
 
     convertGraphEdgesToZoltanGraph(stkMeshBulkData,
+                                   balanceSettings,
                                    graphEdges,
                                    numElements,
                                    adjacencyProcs,
                                    localIds);
 
-    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Finished creating graph.");
+    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Finished creating graph");
 }
 
 
