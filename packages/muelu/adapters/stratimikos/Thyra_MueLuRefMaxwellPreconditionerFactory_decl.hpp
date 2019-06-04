@@ -237,21 +237,9 @@ namespace Thyra {
       typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
       typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
       typedef Thyra::DiagonalLinearOpBase<Scalar>                              ThyDiagLinOpBase;
-#ifdef HAVE_MUELU_TPETRA
-      // TAW 1/26/2016: We deal with Tpetra objects
-#if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
-    (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
-      typedef Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyTpLinOp;
-#endif
-#endif
 #if defined(HAVE_MUELU_EPETRA)
-      typedef Thyra::EpetraLinearOp                                         ThyEpLinOp;
       typedef Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>                  XpEpCrsMat;
 #endif
-
-      //std::cout << "-======---------------------------------" << std::endl;
-      //std::cout << *paramList_ << std::endl;
-      //std::cout << "-======---------------------------------" << std::endl;
 
       // Check precondition
       TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
