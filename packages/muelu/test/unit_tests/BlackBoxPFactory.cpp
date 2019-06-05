@@ -739,8 +739,7 @@ namespace MueLuTests {
   } // Prolongator
 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, BBPoisson, Scalar, LocalOrdinal,
-                                    GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, BBPoisson, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;

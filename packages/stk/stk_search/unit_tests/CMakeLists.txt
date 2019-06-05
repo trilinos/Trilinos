@@ -37,12 +37,23 @@ FILE(GLOB SOURCES *.cpp)
 #removing due to dependence on geometry toolkit which is not available to Trilinos
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestCoarseSearch.cpp")
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+IF(NOT TPL_ENABLE_BoostLib)
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestCoarseSearchBoostImpl.cpp")
+ENDIF()
+
+TRIBITS_ADD_EXECUTABLE(
     search_unit_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
-    ARGS ""
     COMM serial mpi
-    NUM_MPI_PROCS 1
     )
 
+TRIBITS_ADD_TEST(
+    search_unit_tests
+    NAME STKSearch_unit_tests
+    ARGS ""
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+    NUM_MPI_PROCS 1
+)

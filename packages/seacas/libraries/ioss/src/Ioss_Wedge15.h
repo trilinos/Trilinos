@@ -44,7 +44,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr const char *name = "wedge15";
+    static const char *name;
 
     static void factory();
     ~Wedge15() override;

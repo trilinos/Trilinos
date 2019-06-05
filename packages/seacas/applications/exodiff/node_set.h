@@ -55,8 +55,7 @@ public:
   const double *Distribution_Factors() const;
   void          Free_Distribution_Factors() const;
 
-  void Display(std::ostream & /*s*/ = std::cout);
-  int  Check_State() const;
+  int Check_State() const;
 
 private:
   Node_Set(const Node_Set &);                  // Not written.

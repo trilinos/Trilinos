@@ -1260,8 +1260,7 @@ int SNL_FEI_Structure::getMatrixStructure(int** ptColIndices,
     int numPtEqns = ptEqns->size();
 
     std::map<int,int>::const_iterator
-      pteq = ptEqns->begin(),
-      pteq_end = ptEqns->end();
+      pteq = ptEqns->begin();
 
     int lastBlkRow = -1;
 

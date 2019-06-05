@@ -64,6 +64,7 @@
 #include <cmath>   // for ceil, floor
 #include <cstddef> // for size_t
 #include <cstring> // for strlen
+#include <fmt/ostream.h>
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -550,7 +551,6 @@ size_t find_inter(const INT set1[],  /* the first set of integers */
       ++j;
     }
   }
-  // printf("%d\t%d\t%d\n", length1, length2, counter);
   return counter;
 }
 
@@ -850,7 +850,7 @@ template <typename INT> void qsort4(INT *v1, INT *v2, INT *v3, INT *v4, size_t N
   internal_isort_4(v1, v2, v3, v4, N);
 
 #if defined(DEBUG_QSORT)
-  fprintf(stderr, "Checking sort of " ST_ZU " values\n", (size_t)N + 1);
+  fmt::print(stderr, "Checking sort of {} values\n", (size_t)N + 1);
   for (size_t i = 1; i < N; i++) {
     assert(is_less_than4v(v1, v2, v3, v4, i - 1, i));
   }
@@ -868,7 +868,7 @@ template <typename INT> void qsort2(INT *v1, INT *v2, size_t N)
   internal_isort_2(v1, v2, N);
 
 #if defined(DEBUG_QSORT)
-  fprintf(stderr, "Checking sort of " ST_ZU " values\n", (size_t)N + 1);
+  fmt::print(stderr, "Checking sort of {} values\n", (size_t)N + 1);
   for (size_t i = 1; i < N; i++) {
     assert(is_less_than2v(v1, v2, i - 1, i));
   }

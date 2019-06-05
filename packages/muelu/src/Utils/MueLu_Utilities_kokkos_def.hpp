@@ -414,6 +414,7 @@ namespace MueLu {
   DetectDirichletCols(const Xpetra::Matrix<SC,LO,GO,NO>& A,
                       const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows) {
     using ATS        = Kokkos::ArithTraits<SC>;
+    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     SC zero = ATS::zero();
@@ -453,8 +454,8 @@ namespace MueLu {
     const typename ATS::magnitudeType eps = 2.0*ATS::eps();
 
     Kokkos::parallel_for("MueLu:Utils::DetectDirichletCols2", range_type(0,numColEntries),
-                         KOKKOS_LAMBDA(const size_t i) {
-                           dirichletCols(i) = ATS::magnitude(myCols(i,0))>eps;
+                         KOKKOS_LAMBDA (const size_t i) {
+                           dirichletCols(i) = impl_ATS::magnitude(myCols(i,0))>eps;
                          });
     return dirichletCols;
   }

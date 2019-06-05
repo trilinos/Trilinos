@@ -47,6 +47,7 @@
 #include <cgnslib.h>
 #include <cstddef>
 #include <ctime>
+#include <fmt/ostream.h>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -264,10 +265,12 @@ namespace {
             if (++iter > end - begin) {
               auto               bp = adjacent_block(blocks[br], ijk + 3, proc_block_map);
               std::ostringstream errmsg;
-              errmsg << "ERROR: CGNS: Block '" << blocks[bb].name
-                     << "' is in infinite loop calculating processor adjacencies for direction "
-                     << (ijk == 0 ? 'i' : ijk == 1 ? 'j' : 'k') << " on processors "
-                     << blocks[bp].proc << " and " << blocks[br].proc << ".  Check decomposition.";
+              fmt::print(errmsg,
+                         "ERROR: CGNS: Block '{}' is in infinite loop calculating processor "
+                         "adjacencies for direction "
+                         "'{}' on processors {} and {}.  Check decomposition.",
+                         blocks[bb].name, (ijk == 0 ? 'i' : ijk == 1 ? 'j' : 'k'), blocks[bp].proc,
+                         blocks[br].proc);
               IOSS_ERROR(errmsg);
             }
           } while (br >= 0);
@@ -449,7 +452,7 @@ namespace Iocgns {
 
 #if IOSS_DEBUG_OUTPUT
     if (myProcessor == 0) {
-      std::cout << "CGNS DatabaseIO using " << CG_SIZEOF_SIZE << "-bit integers.\n";
+      fmt::print("CGNS DatabaseIO using {}-bit integers\n", CG_SIZEOF_SIZE);
     }
 #endif
     if (!is_input()) {
@@ -534,8 +537,8 @@ namespace Iocgns {
         set_int_byte_size_api(Ioss::USE_INT64_API);
       }
 
-      if (mode == CG_MODE_MODIFY) {
-	Utils::update_db_zone_property(m_cgnsFilePtr, get_region(), myProcessor, isParallel);
+      if (mode == CG_MODE_MODIFY && get_region() != nullptr) {
+        Utils::update_db_zone_property(m_cgnsFilePtr, get_region(), myProcessor, isParallel, false);
       }
 #if 0
       // This isn't currently working since CGNS currently has chunking
@@ -581,42 +584,36 @@ namespace Iocgns {
       if (isParallel) {
         ok_count = std::count(err_status.begin(), err_status.end(), CG_OK);
         if (ok_count == 0 && util().parallel_size() > 2) {
-          errmsg << "ERROR: Unable to open CGNS decomposed database files:\n\t\t"
-                 << Ioss::Utils::decode_filename(get_filename(), 0, util().parallel_size())
-                 << "  ...\n\t\t"
-                 << Ioss::Utils::decode_filename(get_filename(), util().parallel_size() - 1,
-                                                 util().parallel_size())
-                 << "\n";
+          fmt::print(errmsg,
+                     "ERROR: Unable to open CGNS decomposed database files:\n\t\t{} ...\n\t\t{}\n",
+                     Ioss::Utils::decode_filename(get_filename(), 0, util().parallel_size()),
+                     Ioss::Utils::decode_filename(get_filename(), util().parallel_size() - 1,
+                                                  util().parallel_size()));
         }
         else {
-          errmsg << "ERROR: Unable to open CGNS decomposed database files:\n";
+          fmt::print(errmsg, "ERROR: Unable to open CGNS decomposed database files:\n");
           for (int i = 0; i < util().parallel_size(); i++) {
             if (err_status[i] != CG_OK) {
-              errmsg << "\t\t"
-                     << Ioss::Utils::decode_filename(get_filename(), i, util().parallel_size())
-                     << "\n";
+              fmt::print(errmsg, "\t\t{}\n",
+                         Ioss::Utils::decode_filename(get_filename(), i, util().parallel_size()));
             }
           }
         }
-        errmsg << "       for " << (is_input() ? "read" : "write") << " access.\n";
+        fmt::print(errmsg, "       for {} access.\n", (is_input() ? "read" : "write"));
       }
       else {
-        errmsg << "ERROR: Unable to open CGNS database '" << get_filename() << "' for "
-               << (is_input() ? "read" : "write") << " access.\n";
+        fmt::print(errmsg, "ERROR: Unable to open CGNS database '{}' for {} access.\n",
+                   get_filename(), (is_input() ? "read" : "write"));
       }
       if (status != CG_OK) {
         if (ok_count != 0 || util().parallel_size() <= 2) {
-          std::ostringstream msg;
-          msg << "[" << myProcessor << "] CGNS Error: '" << cg_get_error() << "'\n";
-          std::cerr << msg.str();
+          fmt::print(stderr, "[{}] CGNS Error: '{}'\n", myProcessor, cg_get_error());
         }
         else {
           // Since error on all processors, assume the same error on all and only print
           // the error from processor 0.
           if (myProcessor == 0) {
-            std::ostringstream msg;
-            msg << "CGNS Error: '" << cg_get_error() << "'\n";
-            std::cerr << msg.str();
+            fmt::print(stderr, "CGNS Error: '{}'\n", cg_get_error());
           }
         }
       }
@@ -763,9 +760,8 @@ namespace Iocgns {
           set_block_offset(bbeg, bend, blocks, proc_block_map);
 
 #if IOSS_DEBUG_OUTPUT
-          std::cerr << "Range of blocks for " << b.name << " is " << i << " to " << j - 1
-                    << " Global I,J,K = " << b.glob_range[0] << " " << b.glob_range[1] << " "
-                    << b.glob_range[2] << "\n";
+          fmt::print(stderr, "Range of blocks for {} is {} to {} Global I,J,K = {} {} {}\n", b.name,
+                     i, j - 1, b.glob_range[0], b.glob_range[1], b.glob_range[2]);
 #endif
           // All processors need to know about it...
           for (int p = 0; p < proc_count; p++) {
@@ -807,12 +803,10 @@ namespace Iocgns {
 
 #if IOSS_DEBUG_OUTPUT
       for (const auto &b : resolved_blocks) {
-        std::cerr << b.name << " " << b.proc << " " << b.local_zone << " "
-                  << " (" << b.range[0] << " " << b.range[1] << " " << b.range[2] << ") ("
-                  << b.glob_range[0] << " " << b.glob_range[1] << " " << b.glob_range[2] << ") ("
-                  << b.offset[0] << " " << b.offset[1] << " " << b.offset[2] << ") [" << b.face_adj
-                  << "]"
-                  << "\n";
+        fmt::print(stderr, "{} {} {} ({} {} {}) ({} {} {}) ({} {} {}) [{}]\n", b.name, b.proc,
+                   b.local_zone, b.range[0], b.range[1], b.range[2], b.glob_range[0],
+                   b.glob_range[1], b.glob_range[2], b.offset[0], b.offset[1], b.offset[2],
+                   b.face_adj);
       }
 #endif
 
@@ -985,9 +979,10 @@ namespace Iocgns {
     int         proc      = name_proc.second;
     if (proc != myProcessor) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: CGNS: Zone " << zone
-             << " has a name that specifies it should be on processor " << proc
-             << ", but it is actually on processor " << myProcessor;
+      fmt::print(errmsg,
+                 "ERROR: CGNS: Zone {} has a name that specifies it should be on processor {}, but "
+                 "it is actually on processor {}",
+                 zone, proc, myProcessor);
       IOSS_ERROR(errmsg);
     }
 
@@ -1146,17 +1141,20 @@ namespace Iocgns {
         if (connect_type != CG_Abutting1to1 || ptset_type != CG_PointList ||
             donor_ptset_type != CG_PointListDonor) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: CGNS: Zone " << zone
-                 << " adjacency data is not correct type. Require Abutting1to1 and PointList."
-                 << connect_type << "\t" << ptset_type << "\t" << donor_ptset_type;
+          fmt::print(errmsg,
+                     "ERROR: CGNS: Zone {} adjacency data is not correct type. Require "
+                     "Abutting1to1 and PointList."
+                     " {}\t{}\t{}",
+                     zone, connect_type, ptset_type, donor_ptset_type);
           IOSS_ERROR(errmsg);
         }
 
         // Verify data consistency...
         if (npnts != ndata_donor) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: CGNS: Zone " << zone << " point count (" << npnts
-                 << ") does not match donor point count (" << ndata_donor << ").";
+          fmt::print(errmsg,
+                     "ERROR: CGNS: Zone {} point count ({}) does not match donor point count ({}).",
+                     zone, npnts, ndata_donor);
           IOSS_ERROR(errmsg);
         }
 
@@ -1166,8 +1164,7 @@ namespace Iocgns {
         if (donor_iter != m_zoneNameMap.end() && (*donor_iter).second < zone) {
           num_shared += npnts;
 #if IOSS_DEBUG_OUTPUT
-          std::cout << "Zone " << zone << " shares " << npnts << " nodes with " << donorname
-                    << "\n";
+          fmt::print("Zone {} shares {} nodes with {}\n", zone, npnts, donorname);
 #endif
           std::vector<cgsize_t> points(npnts);
           std::vector<cgsize_t> donors(npnts);
@@ -1230,9 +1227,8 @@ namespace Iocgns {
         num_elem -= num_entity;
         std::string element_topo = Utils::map_cgns_to_topology_type(e_type);
 #if IOSS_DEBUG_OUTPUT
-        std::cout << "Added block " << zone_name << ": CGNS topology = '"
-                  << cg_ElementTypeName(e_type) << "', IOSS topology = '" << element_topo
-                  << "' with " << num_entity << " elements\n";
+        fmt::print("Added block {}: CGNS topology = '{}', IOSS topology = '{}' with {} elements\n",
+                   zone_name, cg_ElementTypeName(e_type), element_topo, num_entity);
 #endif
         eblock = new Ioss::ElementBlock(this, zone_name, element_topo, num_entity);
         eblock->property_add(Ioss::Property("base", base));
@@ -1257,13 +1253,11 @@ namespace Iocgns {
         Ioss::SideSet *sset = get_region()->get_sideset(section_name);
 
         if (sset != nullptr) {
-          std::string block_name(zone_name);
-          block_name += "/";
-          block_name += section_name;
-          std::string face_topo = Utils::map_cgns_to_topology_type(e_type);
+          std::string block_name = fmt::format("{}/{}", zone_name, section_name);
+          std::string face_topo  = Utils::map_cgns_to_topology_type(e_type);
 #if IOSS_DEBUG_OUTPUT
-          std::cout << "Added sideset " << block_name << " of topo " << face_topo << " with "
-                    << num_entity << " faces\n";
+          fmt::print("Added sideset {} of topo '{}' with {} faces\n", block_name, face_topo,
+                     num_entity);
 #endif
           std::string parent_topo = eblock == nullptr ? "unknown" : eblock->topology()->name();
           auto sblk = new Ioss::SideBlock(this, block_name, face_topo, parent_topo, num_entity);
@@ -1297,7 +1291,8 @@ namespace Iocgns {
     CGCHECKM(cg_nbases(get_file_pointer(), &n_bases));
     if (n_bases != 1) {
       std::ostringstream errmsg;
-      errmsg << "CGNS: Too many bases; only support files with a single bases at this time";
+      fmt::print(errmsg,
+                 "CGNS: Too many bases; only support files with a single bases at this time");
       IOSS_ERROR(errmsg);
     }
 
@@ -1339,9 +1334,10 @@ namespace Iocgns {
 #endif
         else {
           std::ostringstream errmsg;
-          errmsg << "ERROR: CGNS: Zone " << zone
-                 << " is not of type Unstructured or Structured "
-                    "which are the only types currently supported";
+          fmt::print(errmsg,
+                     "ERROR: CGNS: Zone {} is not of type Unstructured or Structured "
+                     "which are the only types currently supported",
+                     zone);
           IOSS_ERROR(errmsg);
         }
       }
@@ -1357,7 +1353,7 @@ namespace Iocgns {
     CGCHECKM(cg_base_read(get_file_pointer(), base, basename, &cell_dimension, &phys_dimension));
     if (phys_dimension != 3) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: The model is " << phys_dimension << "D.  Only 3D models are supported.";
+      fmt::print(errmsg, "ERROR: The model is {}D.  Only 3D models are supported.", phys_dimension);
       IOSS_ERROR(errmsg);
     }
 
@@ -1434,10 +1430,8 @@ namespace Iocgns {
 
         // If point_list non_empty, then output this adjacency node...
         if (!point_list.empty()) {
-          int         gc_idx = 0;
-          std::string name   = (*I)->name();
-          name += "_to_";
-          name += (*J)->name();
+          int         gc_idx  = 0;
+          std::string name    = fmt::format("{}_to_{}", (*I)->name(), (*J)->name());
           const auto &d1_name = (*J)->name();
           CGCHECKM(cg_conn_write(get_file_pointer(), base, zone, name.c_str(), CG_Vertex,
                                  CG_Abutting1to1, CG_PointList, point_list.size(),
@@ -1445,9 +1439,7 @@ namespace Iocgns {
                                  CG_PointListDonor, CG_DataTypeNull, point_list_donor.size(),
                                  TOPTR(point_list_donor), &gc_idx));
 
-          name = (*J)->name();
-          name += "_to_";
-          name += (*I)->name();
+          name                = fmt::format("{}_to_{}", (*J)->name(), (*I)->name());
           const auto &d2_name = (*I)->name();
 
           CGCHECKM(cg_conn_write(get_file_pointer(), base, dzone, name.c_str(), CG_Vertex,
@@ -2044,7 +2036,7 @@ namespace Iocgns {
       int64_t entity_count = sb->entity_count();
       if (num_to_get != entity_count) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Partial field input not yet implemented for side blocks";
+        fmt::print("ERROR: Partial field input not yet implemented for side blocks");
         IOSS_ERROR(errmsg);
       }
     }
@@ -2400,8 +2392,9 @@ namespace Iocgns {
     for (const auto &z : m_globalToBlockLocalNodeMap) {
       if (z.second == nullptr) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: CGNS: The globalToBlockLocalNodeMap is not defined, so nodal fields "
-                  "cannot be output.";
+        fmt::print(errmsg,
+                   "ERROR: CGNS: The globalToBlockLocalNodeMap is not defined, so nodal fields "
+                   "cannot be output.");
         IOSS_ERROR(errmsg);
       }
     }
@@ -2573,8 +2566,10 @@ namespace Iocgns {
     const Ioss::EntityBlock *parent_block = sb->parent_block();
     if (parent_block == nullptr) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: CGNS: SideBlock " << sb->name()
-             << " does not have a parent-block specified.  This is required for CGNS output.";
+      fmt::print(errmsg,
+                 "ERROR: CGNS: SideBlock '{}' does not have a parent-block specified.  This is "
+                 "required for CGNS output.",
+                 sb->name());
       IOSS_ERROR(errmsg);
     }
 
@@ -2640,8 +2635,9 @@ namespace Iocgns {
       else if (field.get_name() == "distribution_factors") {
         static bool warning_output = false;
         if (!warning_output) {
-          std::cerr << "IOSS: WARNING: For CGNS output, the sideset distribution factors are not "
-                       "output.\n";
+          fmt::print(
+              stderr,
+              "IOSS: WARNING: For CGNS output, the sideset distribution factors are not output.\n");
           warning_output = true;
         }
         return 0;

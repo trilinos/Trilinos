@@ -82,6 +82,41 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::ParameterList;
 
+/*! \brief Apply scaling to interface DOFs
+ *
+ * The vector scalingFactors contains the number of adjacent regions for every DOFs.
+ * In the interior of a region, this is always 1. On region interfaces, this is >1.
+ *
+ * We often need to scale interface entries by 1/N with N being the number of adjacent regions.
+ * This can be achieved by setting \c inverseScaling to \c true.
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void scaleInterfaceDOFs(std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec, ///< Vector to be scaled
+    const std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& scalingFactors, ///< Vector with scaling factors
+    bool inverseScaling ///< Divide by scaling factors (yes/no?)
+    )
+{
+  using Vector = Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using VectorFactory = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+
+  for (std::size_t j = 0; j < regVec.size(); j++)
+  {
+    if (inverseScaling)
+    {
+      RCP<Vector> inverseScalingFactors = VectorFactory::Build(scalingFactors[j]->getMap());
+      inverseScalingFactors->reciprocal(*scalingFactors[j]);
+      regVec[j]->elementWiseMultiply(one, *regVec[j], *inverseScalingFactors, zero);
+    }
+    else
+    {
+      regVec[j]->elementWiseMultiply(one, *regVec[j], *scalingFactors[j], zero);
+    }
+  }
+}
+
 /*! \brief Transform regional matrix to composite layout
  *
  *  Starting from a \c Matrix in regional layout, we
@@ -993,7 +1028,7 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
     size_t countComposites = 0, countDuplicates = 0;
     Array<LO> fineDuplicateLIDs(numFineDuplicateNodes);
     for(size_t regionIdx = 0; regionIdx < numFineRegionNodes; ++regionIdx) {
-      if(compositeToRegionLIDs[countComposites] == regionIdx) {
+      if(compositeToRegionLIDs[countComposites] == static_cast<LO>(regionIdx)) {
         ++countComposites;
       } else {
         fineDuplicateLIDs[countDuplicates] = regionIdx;
@@ -1633,14 +1668,14 @@ void vCycle(const int l, ///< ID of current level
     computeResidual(regRes, fineRegX, fineRegB, regMatrices[l], compRowMaps[l],
                     quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
 
+    scaleInterfaceDOFs(regRes, regInterfaceScalings[l], true);
+
     // Transfer to coarse level
     std::vector<RCP<Vector> > coarseRegX(maxRegPerProc);
     std::vector<RCP<Vector> > coarseRegB(maxRegPerProc);
     for (int j = 0; j < maxRegPerProc; j++) {
       coarseRegX[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
       coarseRegB[j] = VectorFactory::Build(regRowMaps[l+1][j], true);
-
-      regRes[j]->elementWiseMultiply(SC_ONE, *regRes[j], *((regInterfaceScalings[l])[j]), SC_ZERO);
 
       regProlong[l+1][j]->apply(*regRes[j], *coarseRegB[j], Teuchos::TRANS);
       TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));

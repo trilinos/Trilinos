@@ -87,8 +87,14 @@ public:
     template <typename ValueType>
     void add_optional(const CommandLineOption &option, const ValueType &defaultValue)
     {
+        add_optional(get_option_spec(option), option.description, defaultValue);
+    }
+
+    template <typename ValueType>
+    void add_optional(const std::string &option, const std::string &description, const ValueType &defaultValue)
+    {
         optionsDesc.add_options()
-          (get_option_spec(option).c_str(), boost::program_options::value<ValueType>()->default_value(defaultValue), option.description.c_str());
+          (option.c_str(), boost::program_options::value<ValueType>()->default_value(defaultValue), description.c_str());
     }
 
     std::string get_usage() const
@@ -103,7 +109,8 @@ public:
         ParseState state = ParseError;
         try
         {
-            boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(optionsDesc).positional(positionalDesc).run(), varMap);
+            char** nonconst_argv = const_cast<char**>(argv);
+            boost::program_options::store(boost::program_options::command_line_parser(argc, nonconst_argv).options(optionsDesc).positional(positionalDesc).run(), varMap);
             if(is_option_provided("help"))
                 return ParseHelpOnly;
             if(is_option_provided("version"))

@@ -40,7 +40,7 @@ T get_command_line_option(const std::string &option, const T &defaultValue)
     os << defaultValue;
     std::string str = get_option(option, os.str());
     std::istringstream ss(str);
-    T val = 0;
+    T val(defaultValue);
     ss >> val;
     return val;
 }

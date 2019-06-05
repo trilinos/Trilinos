@@ -48,8 +48,6 @@ C   color, interactive, black-white interchange         799.8
 C   color, batch, black background                      799.9
 C   color, interactive, black background                799.11
 C
-C                                                 last mod 6/20/90 slt
-C
 C     Note that there are several parameters to set depending on how
 C     the package is to be used. Most are in routine pstsel routine
 C     which is called at the first of this routine (viinit.) Two other
@@ -1801,8 +1799,9 @@ C CHECK FOR VALID INDEXES.
             CALL VBERRH(724,5)
             GOTO 100
          END IF
-           DO 200 IC=1,3
-  200      CLRARY(IC,I)=PCOLS(IC,INDEXN)
+           CLRARY(1,I)=PCOLS(1,INDEXN)
+           CLRARY(2,I)=PCOLS(2,INDEXN)
+           CLRARY(3,I)=PCOLS(3,INDEXN)
   100    CONTINUE
 C
   999 RETURN
@@ -2006,8 +2005,9 @@ C CHECK FOR VALID CLRARY.
             END IF
 C
 C 256 INDEXES ARE SUPPORTED:
-              DO 200 IC=1,3
-  200         PCOLS(IC,INDEXN+1)=CLRARY(IC,I)
+            PCOLS(1,INDEXN+1)=CLRARY(1,I)
+            PCOLS(2,INDEXN+1)=CLRARY(2,I)
+            PCOLS(3,INDEXN+1)=CLRARY(3,I)
 C
 C           define symbol for color reference
 C
@@ -3428,43 +3428,42 @@ C
       return
       end
       SUBROUTINE PSTI2C(INT,NDIGIT,ISTR)
-C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C
-C PSTI2C           - convert positive integer to decimal character
-C                    string equivalent
-C
-C ENVIRONMENT      - COMPUTER-INdependent
-C
-C ENTRY CONDITIONS - int = positive integer to be converted
-C                  ndigit = number of digits to be produced in string
-C                           form (pad left with zeros)
-C                  istr = character string of at least ndigit characters
-C
-C CALLS            -
-C
-C EXIT CONDITIONS  - istr contains decimal-string equivalent of int
-C                       (ndigits left-justified in istr)
-C
-C NARRATIVE        - This routine modified 10/89  S.L.Thompson
-C
-C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C     
+C     PSTI2C           - convert positive integer to decimal character
+C     string equivalent
+C     
+C     ENVIRONMENT      - COMPUTER-INdependent
+C     
+C     ENTRY CONDITIONS - int = positive integer to be converted
+C     ndigit = number of digits to be produced in string
+C     form (pad left with zeros)
+C     istr = character string of at least ndigit characters
+C     
+C     CALLS            -
+C     
+C     EXIT CONDITIONS  - istr contains decimal-string equivalent of int
+C     (ndigits left-justified in istr)
+C     
+C     C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
       INTEGER INT,NDIGIT
       CHARACTER ISTR*(*)
       CHARACTER*1 KA(10)
       DATA KA /'0','1','2','3','4','5','6','7','8','9'/
-C
-C check input parameters
+C     
+C     check input parameters
       INT1=MAX(INT,0)
       LENGTH=LEN(ISTR)
       NDIG1=MAX(1,MIN(LENGTH,NDIGIT))
       ISTR='00000000000000000000000000000000000000000'
       ND=LENGTH
-        DO 10 I=1,NDIG1
-        J=INT1/10
-        K=INT1-10*J
-        ISTR(ND:ND)=KA(K+1)
-        ND=ND-1
-   10   INT1=J
+      DO I=1,NDIG1
+         J=INT1/10
+         K=INT1-10*J
+         ISTR(ND:ND)=KA(K+1)
+         ND=ND-1
+         INT1=J
+      end do
       RETURN
       END
       SUBROUTINE PSTBBG
@@ -3622,7 +3621,6 @@ C GET THE TIME AND DATE
       KJDATE(2)=0
       KJDATE(3)=0
 C
-999   RETURN
       END
       SUBROUTINE PSTSEL(KARG)
 C

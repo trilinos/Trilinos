@@ -58,7 +58,13 @@ public:
     LocalIdMapperT(const stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank)
     : entityToLocalId()
     {
-        set_local_ids(bulk, rank);
+        set_local_ids(bulk, rank, bulk.mesh_meta_data().locally_owned_part());
+    }
+
+    LocalIdMapperT(const stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank, const stk::mesh::Selector& sel)
+    : entityToLocalId()
+    {
+        set_local_ids(bulk, rank, sel);
     }
 
     const LocalIDType INVALID_LOCAL_ID = std::numeric_limits<LocalIDType>::max();
@@ -73,13 +79,13 @@ public:
         entityToLocalId.clear();
     }
 
-    void set_local_ids(const stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank)
+    void set_local_ids(const stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank, const stk::mesh::Selector& selector)
     {
         entityToLocalId.resize(bulk.get_size_of_entity_index_space(), INVALID_LOCAL_ID);
         if(bulk.mesh_meta_data().entity_rank_count() >= rank)
         {
             stk::mesh::EntityVector entities;
-            stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(rank), entities);
+            stk::mesh::get_selected_entities(selector, bulk.buckets(rank), entities);
             for(size_t i=0; i<entities.size(); ++i)
             {
                 add_new_entity_with_local_id(entities[i], i);

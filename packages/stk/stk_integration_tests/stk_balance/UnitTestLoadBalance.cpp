@@ -88,7 +88,7 @@ public:
     }
     virtual GraphOption getGraphOption() const
     {
-        return BalanceSettings::LOADBALANCE;
+        return BalanceSettings::LOAD_BALANCE;
     }
 
     virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const
@@ -104,7 +104,7 @@ public:
 
     virtual GraphOption getGraphOption() const
     {
-        return BalanceSettings::COLORING;
+        return BalanceSettings::COLOR_MESH;
     }
 };
 

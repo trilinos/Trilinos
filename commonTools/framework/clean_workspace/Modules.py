@@ -20,7 +20,8 @@ class Module(object):
         self.command = self._setup_command()
         self.init_file = self._module_setup(name)
         if name is None and self.init_file:
-            execfile(self.init_file)
+            exec(compile(open(self.init_file, 'r').read(),
+                         self.init_file, 'exec'))
 
     @staticmethod
     def _setup_paths():
@@ -144,7 +145,7 @@ class Module(object):
         # The modules return a string of python commands to be executed on
         # stdout.  Execute those commands now.
         if output:
-            exec (output)  # pylint: disable=exec-used
+            exec(output)  # pylint: disable=exec-used
 
         # Check stderr for anything that looks like an error.
         if ":ERROR:" in stderr:

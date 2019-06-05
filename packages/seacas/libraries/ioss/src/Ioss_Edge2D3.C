@@ -40,6 +40,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Edge2D3::name = "edge2d3";
   class St_Edge2D3 : public ElementVariableType
   {
   public:

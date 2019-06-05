@@ -56,17 +56,21 @@
 #include <cfloat>
 #include <cstddef>
 #include <cstring>
+#include <fmt/ostream.h>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <set>
 #include <string>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <tokenize.h>
 #include <utility>
 #include <vector>
 
 namespace {
+  auto initial_time = std::chrono::high_resolution_clock::now();
+
   void log_time(std::chrono::time_point<std::chrono::high_resolution_clock> &start,
                 std::chrono::time_point<std::chrono::high_resolution_clock> &finish,
                 int current_state, double state_time, bool is_input, bool single_proc_only,
@@ -90,14 +94,8 @@ namespace {
     unsigned int       min_hash   = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MIN);
     if (max_hash != min_hash) {
       const std::string &ge_name = ge->name();
-      std::string        errmsg  = "Parallel inconsistency detected for ";
-      errmsg += in_out == 0 ? "writing" : "reading";
-      errmsg += " field '";
-      errmsg += field_name;
-      errmsg += "' on entity '";
-      errmsg += ge_name;
-      errmsg += "'\n";
-      IOSS_WARNING << errmsg;
+      fmt::print(IOSS_WARNING, "Parallel inconsistency detected for {} field '{}' on entity '{}'\n",
+                 in_out == 0 ? "writing" : "reading", field_name, ge_name);
       return false;
     }
     return true;
@@ -301,22 +299,22 @@ namespace Ioss {
         };
         if (stat(path_root.c_str(), &st) != 0) {
           if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
-            errmsg << "ERROR: Cannot create directory '" << path_root
-                   << "' : " << std::strerror(errno) << "\n";
+            fmt::print(errmsg, "ERROR: Cannot create directory '{}' : {}\n", path_root,
+                       std::strerror(errno));
             error_found = true;
           }
         }
         else if (!S_ISDIR(st.st_mode)) {
           errno = ENOTDIR;
-          errmsg << "ERROR: Path '" << path_root << "' is not a directory.\n";
+          fmt::print(errmsg, "ERROR: Path '{}' is not a directory.\n", path_root);
           error_found = true;
         }
       }
     }
     else {
       // Give the other processors something to say in case there is an error.
-      errmsg << "ERROR: Could not create path. See processor 0 output for more "
-                "details.\n";
+      fmt::print(errmsg,
+                 "ERROR: Could not create path. See processor 0 output for more details.\n");
     }
 
     // Sync all processors with error status...
@@ -335,7 +333,7 @@ namespace Ioss {
   {
     if (decodedFilename.empty()) {
       if (isParallel) {
-        decodedFilename = util().decode_filename(get_filename(), isParallel);
+        decodedFilename = util().decode_filename(get_filename(), isParallel && !usingParallelIO);
       }
       else if (properties.exists("processor_count") && properties.exists("my_processor")) {
         int proc_count  = properties.get("processor_count").get_int();
@@ -426,10 +424,11 @@ namespace Ioss {
       // locations.  OK to have a single member
       if (group_spec.size() < 2) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: Invalid " << type_name << " group specification '" << group << "'\n"
-               << "       Correct syntax is 'new_group,member1,...,memberN' and "
-                  "their must "
-               << "       be at least 1 member of the group";
+        fmt::print(errmsg,
+                   "ERROR: Invalid {} group specification '{}'\n"
+                   "       Correct syntax is 'new_group,member1,...,memberN' and there must "
+                   "       be at least 1 member of the group",
+                   type_name, group);
         IOSS_ERROR(errmsg);
       }
 
@@ -441,9 +440,10 @@ namespace Ioss {
   void DatabaseIO::create_group(EntityType /*type*/, const std::string &type_name,
                                 const std::vector<std::string> &group_spec, const T * /*set_type*/)
   {
-    IOSS_WARNING << "WARNING: Grouping of " << type_name << " sets is not yet implemented.\n"
-                 << "         Skipping the creation of " << type_name << " set '" << group_spec[0]
-                 << "'\n\n";
+    fmt::print(IOSS_WARNING,
+               "WARNING: Grouping of {0} sets is not yet implemented.\n"
+               "         Skipping the creation of {0} set '{1}'\n\n",
+               type_name, group_spec[0]);
   }
 
   template <>
@@ -495,9 +495,11 @@ namespace Ioss {
         }
       }
       else {
-        IOSS_WARNING << "WARNING: While creating the grouped surface '" << group_spec[0]
-                     << "', the surface '" << group_spec[i] << "' does not exist. "
-                     << "This surface will skipped and not added to the group.\n\n";
+        fmt::print(
+            IOSS_WARNING,
+            "WARNING: While creating the grouped surface '{}', the surface '{}' does not exist. "
+            "This surface will skipped and not added to the group.\n\n",
+            group_spec[0], group_spec[i]);
       }
     }
   }
@@ -818,10 +820,8 @@ namespace Ioss {
       assert(result != MPI_SUCCESS || non_zero == req_cnt);
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Irecv error on processor " << util().parallel_rank() << " in "
-               << __func__;
-        std::cerr << errmsg.str();
+        fmt::print(stderr, "ERROR: MPI_Irecv error on processor {} in {}", util().parallel_rank(),
+                   __func__);
       }
 
       int local_error  = (MPI_SUCCESS == result) ? 0 : 1;
@@ -829,8 +829,7 @@ namespace Ioss {
 
       if (global_error != 0) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Irecv error on some processor "
-               << "in " << __func__;
+        fmt::print(errmsg, "ERROR: MPI_Irecv error on some processor in {}", __func__);
         IOSS_ERROR(errmsg);
       }
 
@@ -849,10 +848,8 @@ namespace Ioss {
       assert(result != MPI_SUCCESS || non_zero == req_cnt);
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Rsend error on processor " << util().parallel_rank() << " in "
-               << __func__;
-        std::cerr << errmsg.str();
+        fmt::print(stderr, "ERROR: MPI_Rsend error on processor {} in {}", util().parallel_rank(),
+                   __func__);
       }
 
       local_error  = (MPI_SUCCESS == result) ? 0 : 1;
@@ -860,18 +857,15 @@ namespace Ioss {
 
       if (global_error != 0) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Rsend error on some processor "
-               << "in " << __func__;
+        fmt::print(errmsg, "ERROR: MPI_Rsend error on some processor in {}", __func__);
         IOSS_ERROR(errmsg);
       }
 
       result = MPI_Waitall(req_cnt, TOPTR(request), TOPTR(status));
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Waitall error on processor " << util().parallel_rank() << " in "
-               << __func__;
-        std::cerr << errmsg.str();
+        fmt::print(stderr, "ERROR: MPI_Waitall error on processor {} in {}", util().parallel_rank(),
+                   __func__);
       }
 
       // Unpack the data and update the inv_con arrays for boundary
@@ -1036,12 +1030,7 @@ namespace Ioss {
   }
 } // namespace Ioss
 
-#include <sys/time.h>
-
 namespace {
-  struct timeval tp;
-  double         initial_time = -1.0;
-
   void log_time(std::chrono::time_point<std::chrono::high_resolution_clock> &start,
                 std::chrono::time_point<std::chrono::high_resolution_clock> &finish,
                 int current_state, double state_time, bool is_input, bool single_proc_only,
@@ -1058,8 +1047,8 @@ namespace {
 
     if (util.parallel_rank() == 0 || single_proc_only) {
       std::ostringstream strm;
-      strm << "\nIOSS: Time to " << (is_input ? "read " : "write") << " state " << current_state
-           << ", time " << state_time << " is ";
+      fmt::print(strm, "\nIOSS: Time to {} state {}, time {} is ", (is_input ? "read " : "write"),
+                 current_state, state_time);
 
       double total = 0.0;
       for (auto &p_time : all_times) {
@@ -1068,21 +1057,21 @@ namespace {
 
       // Now append each processors time onto the stream...
       if (util.parallel_size() == 1) {
-        strm << total << " (ms)\n";
+        fmt::print(strm, "{} (ms)\n", total);
       }
       else if (util.parallel_size() > 4) {
         std::sort(all_times.begin(), all_times.end());
-        strm << " Min: " << all_times.front() << "\tMax: " << all_times.back()
-             << "\tMed: " << all_times[all_times.size() / 2];
+        fmt::print(strm, " Min: {}\tMax: {}\tMed: {}", all_times.front(), all_times.back(),
+                   all_times[all_times.size() / 2]);
       }
       else {
         char sep = (util.parallel_size() > 1) ? ':' : ' ';
         for (auto &p_time : all_times) {
-          strm << std::setw(8) << p_time << sep;
+          fmt::print(strm, "{:8d}{}", p_time, sep);
         }
       }
       if (util.parallel_size() > 1) {
-        strm << "\tTot: " << total << " (ms)\n";
+        fmt::print(strm, "\tTot: {} (ms)\n", total);
       }
       std::cerr << strm.str();
     }
@@ -1091,11 +1080,6 @@ namespace {
   void log_field(const char *symbol, const Ioss::GroupingEntity *entity, const Ioss::Field &field,
                  bool single_proc_only, const Ioss::ParallelUtils &util)
   {
-    if (initial_time < 0.0) {
-      gettimeofday(&tp, nullptr);
-      initial_time = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-    }
-
     if (entity != nullptr) {
       std::vector<int64_t> all_sizes;
       if (single_proc_only) {
@@ -1106,12 +1090,11 @@ namespace {
       }
 
       if (util.parallel_rank() == 0 || single_proc_only) {
-        const std::string &name = entity->name();
-        std::ostringstream strm;
-        gettimeofday(&tp, nullptr);
-        double time_now = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-        strm << symbol << " [" << std::fixed << std::setprecision(3) << time_now - initial_time
-             << "]\t";
+        const std::string &           name = entity->name();
+        std::ostringstream            strm;
+        auto                          now  = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff = now - initial_time;
+        fmt::print(strm, "{} [{:.3f}]\t", symbol, diff.count());
 
         int64_t total = 0;
         for (auto &p_size : all_sizes) {
@@ -1120,19 +1103,19 @@ namespace {
         // Now append each processors size onto the stream...
         if (util.parallel_size() > 4) {
           auto min_max = std::minmax_element(all_sizes.cbegin(), all_sizes.cend());
-          strm << " m:" << std::setw(8) << *min_max.first << " M:" << std::setw(8)
-               << *min_max.second << " A:" << std::setw(8) << total / all_sizes.size();
+          fmt::print(strm, " m: {:8d} M: {:8d} A: {:8d}", *min_max.first, *min_max.second,
+                     total / all_sizes.size());
         }
         else {
           for (auto &p_size : all_sizes) {
-            strm << std::setw(8) << p_size << ":";
+            fmt::print(strm, "{:8d}:", p_size);
           }
         }
         if (util.parallel_size() > 1) {
-          strm << " T:" << std::setw(8) << total;
+          fmt::print(strm, " T:{:8d}", total);
         }
-        strm << "\t" << name << "/" << field.get_name() << "\n";
-        std::cout << strm.str();
+        fmt::print(strm, "\t{}/{}\n", name, field.get_name());
+        std::cerr << strm.str();
       }
     }
     else {
@@ -1142,12 +1125,9 @@ namespace {
       }
 #endif
       if (util.parallel_rank() == 0 || single_proc_only) {
-        std::ostringstream strm;
-        gettimeofday(&tp, nullptr);
-        double time_now = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-        strm << symbol << " [" << std::fixed << std::setprecision(3) << time_now - initial_time
-             << "]\n";
-        std::cout << strm.str();
+        auto                          time_now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff     = time_now - initial_time;
+        fmt::print("{} [{:.3f}]\n", symbol, diff.count());
       }
     }
   }

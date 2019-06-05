@@ -40,6 +40,7 @@
 #include "stk_mesh/base/FieldBase.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 #include <vector>
+#include <memory>
 
 namespace ngp {
 
@@ -54,7 +55,7 @@ public:
   FieldManager(const stk::mesh::BulkData & bulk)
     : m_bulk(&bulk)
   {
-    m_fields.resize(m_bulk->mesh_meta_data().get_fields().size(), nullptr);
+    m_fields.resize(m_bulk->mesh_meta_data().get_fields().size());
   }
 
   ~FieldManager() {
@@ -71,20 +72,22 @@ public:
   }
 
   FieldManager(const FieldManager & rhs) = default;
+  FieldManager(FieldManager && rhs) = default;
 
   template <typename T>
   ngp::Field<T> & get_field(unsigned fieldOrdinal) const {
     ThrowRequireMsg(m_bulk != nullptr, "FieldManager ERROR, m_bulk is null.");
     if (m_bulk->mesh_meta_data().get_fields().size() != m_fields.size()) {
-      m_fields.resize(m_bulk->mesh_meta_data().get_fields().size(), nullptr);
+      m_fields.resize(m_bulk->mesh_meta_data().get_fields().size());
     }
     ThrowRequireMsg(fieldOrdinal < m_fields.size(), "Invalid field ordinal (" << fieldOrdinal << ").  Only have " << m_fields.size() << " fields.");
 
-    if (m_fields[fieldOrdinal] == nullptr) {
+    if (m_fields[fieldOrdinal].get() == nullptr) {
       construct_ngp_field(fieldOrdinal);
     }
 
-    ngp::Field<T> * returnField = dynamic_cast<ngp::Field<T>*>(m_fields[fieldOrdinal]);
+    std::shared_ptr<ngp::FieldBase> sharedFieldPtr = m_fields[fieldOrdinal];
+    ngp::Field<T> * returnField = dynamic_cast<ngp::Field<T>*>(sharedFieldPtr.get());
     ThrowRequireMsg(returnField != nullptr, "Calling get_field() with the wrong data type for field '"
                                              << m_bulk->mesh_meta_data().get_fields()[fieldOrdinal]->name() << "'");
     return *returnField;
@@ -97,34 +100,34 @@ private:
     stk::mesh::FieldBase & field = *(m_bulk->mesh_meta_data().get_fields()[fieldOrdinal]);
 
     if (field.type_is<double>()) {
-      m_fields[fieldOrdinal] = new ngp::Field<double>(*m_bulk, field);
+      m_fields[fieldOrdinal] = std::make_shared< ngp::Field<double> >(*m_bulk, field);
     }
     else if (field.type_is<int>()) {
-      m_fields[fieldOrdinal] = new ngp::Field<int>(*m_bulk, field);
+      m_fields[fieldOrdinal] = std::make_shared< ngp::Field<int> >(*m_bulk, field);
     }
     else if (field.type_is<unsigned int>()) {
-      m_fields[fieldOrdinal] = new ngp::Field<unsigned int>(*m_bulk, field);
+      m_fields[fieldOrdinal] = std::make_shared< ngp::Field<unsigned int> >(*m_bulk, field);
     }
     else if (field.type_is<long>()) {
-      m_fields[fieldOrdinal] = new ngp::Field<long>(*m_bulk, field);
+      m_fields[fieldOrdinal] = std::make_shared< ngp::Field<long> >(*m_bulk, field);
     }
     else if (field.type_is<unsigned long>()) {
-      m_fields[fieldOrdinal] = new ngp::Field<unsigned long>(*m_bulk, field);
+      m_fields[fieldOrdinal] = std::make_shared< ngp::Field<unsigned long> >(*m_bulk, field);
     }
     else if (field.type_is<long long>()) {
-      m_fields[fieldOrdinal] = new ngp::Field<long long>(*m_bulk, field);
+      m_fields[fieldOrdinal] = std::make_shared< ngp::Field<long long> >(*m_bulk, field);
     }
     else if (field.type_is<unsigned long long>()) {
-      m_fields[fieldOrdinal] = new ngp::Field<unsigned long long>(*m_bulk, field);
+      m_fields[fieldOrdinal] = std::make_shared< ngp::Field<unsigned long long> >(*m_bulk, field);
     }
     else if (field.type_is<short>()) {
-      m_fields[fieldOrdinal] = new ngp::Field<short>(*m_bulk, field);
+      m_fields[fieldOrdinal] = std::make_shared< ngp::Field<short> >(*m_bulk, field);
     }
     else if (field.type_is<unsigned short>()) {
-      m_fields[fieldOrdinal] = new ngp::Field<unsigned short>(*m_bulk, field);
+      m_fields[fieldOrdinal] = std::make_shared<ngp::Field<unsigned short> >(*m_bulk, field);
     }
     else if (field.type_is<float>()) {
-      m_fields[fieldOrdinal] = new ngp::Field<float>(*m_bulk, field);
+      m_fields[fieldOrdinal] = std::make_shared<ngp::Field<float> >(*m_bulk, field);
     }
     else {
       ThrowErrorMsg("Unsupported Field type: '" << field.data_traits().name << "'");
@@ -132,14 +135,14 @@ private:
   }
 
   void clear_fields() {
-    for ( ngp::FieldBase * field : m_fields) {
-      delete field;
+    for ( std::shared_ptr<ngp::FieldBase> & field : m_fields) {
+      field.reset();
     }
     m_fields.clear();
   }
 
   const stk::mesh::BulkData * m_bulk;
-  mutable std::vector<ngp::FieldBase*> m_fields;
+  mutable std::vector<std::shared_ptr<ngp::FieldBase> > m_fields;
 
 };
 

@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr const char *name = "quad6";
+    static const char *name;
 
     static void factory();
     Quad6(const Quad6 &) = delete;

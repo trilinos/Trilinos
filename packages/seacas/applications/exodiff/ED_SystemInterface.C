@@ -12,6 +12,8 @@
 
 #include "ED_Version.h"
 #include "copy_string_cpp.h"
+#include "copyright.h"
+#include "fmt/ostream.h"
 #include "stringx.h"
 #include <SL_tokenize.h>
 
@@ -20,7 +22,7 @@ namespace {
   {
     std::string sline = line;
     chop_whitespace(sline);
-    ERROR("parsing input file, currently at \"" << sline << "\".\n");
+    Error(fmt::format("parsing input file, currently at \"{}\".\n", sline));
     exit(1);
   }
 
@@ -53,13 +55,14 @@ namespace {
       val = std::stod(str_val);
     }
     catch (...) {
-      ERROR(" Problem converting the string '"
-            << str_val << "' to a double value while parsing tolerance.  Aborting...\n");
+      Error(fmt::format(" Problem converting the string '{}'"
+                        " to a double value while parsing tolerance.  Aborting...\n",
+                        str_val));
       exit(1);
     }
 
     if (val < 0.0) {
-      ERROR(" Parsed a negative value \"" << val << "\".  Aborting...\n");
+      Error(fmt::format(" Parsed a negative value \"{}\".  Aborting...\n", val));
       exit(1);
     }
     return val;
@@ -152,9 +155,9 @@ namespace {
       }
     }
     if (!all_flag && num_include > 0 && num_exclude > 0) {
-      ERROR("Parsing error: Cannot specify both "
-            "variables to include and exclude without using the "
-            "'(all)' specifier.  Aborting...\n");
+      Error(fmt::format("Parsing error: Cannot specify both "
+                        "variables to include and exclude without using the "
+                        "'(all)' specifier.  Aborting...\n"));
       exit(1);
     }
     if (num_include == 0 && num_exclude > 0) {
@@ -180,8 +183,8 @@ namespace {
       SMART_ASSERT(errno == 0);
 
       if (ival1 < 1) {
-        ERROR("parsing exclusion times from command "
-              "line .. value was less than 1\n");
+        Error(fmt::format("parsing exclusion times from command "
+                          "line .. value was less than 1\n"));
         exit(1);
       }
 
@@ -194,8 +197,8 @@ namespace {
         SMART_ASSERT(errno == 0);
 
         if (ival2 < 1) {
-          ERROR("parsing exclusion times from command "
-                "line .. value was less than 1\n");
+          Error(fmt::format("parsing exclusion times from command "
+                            "line .. value was less than 1\n"));
           exit(1);
         }
 
@@ -205,9 +208,9 @@ namespace {
           }
         }
         else if (ival1 > ival2) {
-          ERROR("parsing exclusion times from command "
-                "line .. first value in a range was greater than the "
-                "second.\n");
+          Error(fmt::format("parsing exclusion times from command "
+                            "line .. first value in a range was greater than the "
+                            "second.\n"));
           exit(1);
         }
       }
@@ -257,7 +260,7 @@ SystemInterface::~SystemInterface() = default;
 
 void SystemInterface::show_version()
 {
-  std::cout << "EXODIFF\t(Version: " << version << ") Modified: " << verdate << '\n';
+  fmt::print("EXODIFF\t(Version: {}) Modified: {}\n", version, verdate);
 }
 
 void SystemInterface::enroll_options()
@@ -518,8 +521,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
       if ((case_strcmp("tolerance", temp) == 0) || (case_strcmp("all", temp) == 0)) {
         tolerance_help();
       }
-      std::cout << "\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n";
-      std::cout << "\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n";
+      fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
+      fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
       exit(EXIT_SUCCESS);
     }
   }
@@ -535,39 +538,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    std::cout << "\n"
-              << "Copyright(C) 2008-2017 National Technology & Engineering Solutions\n"
-              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-              << "NTESS, the U.S. Government retains certain rights in this software.\n"
-              << "\n"
-              << "Redistribution and use in source and binary forms, with or without\n"
-              << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n"
-              << "\n"
-              << "    * Redistributions of source code must retain the above copyright\n"
-              << "      notice, this list of conditions and the following disclaimer.\n"
-              << "\n"
-              << "    * Redistributions in binary form must reproduce the above\n"
-              << "      copyright notice, this list of conditions and the following\n"
-              << "      disclaimer in the documentation and/or other materials provided\n"
-              << "      with the distribution.\n"
-              << "\n"
-              << "    * Neither the name of NTESS nor the names of its\n"
-              << "      contributors may be used to endorse or promote products derived\n"
-              << "      from this software without specific prior written permission.\n"
-              << "\n"
-              << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-              << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-              << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-              << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-              << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-              << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-              << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-              << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-              << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-              << "\n";
+    fmt::print("{}", copyright("2008-2019"));
     exit(EXIT_SUCCESS);
   }
 
@@ -584,30 +555,32 @@ bool SystemInterface::parse_options(int argc, char **argv)
       else {
         // Check for additional unknown arguments...
         std::ostringstream out;
-        out << "\nexodiff: ERROR: Too many file arguments specified."
-            << "\n         Probably caused by options following filenames which is no longer "
-               "allowed."
-            << "\n         Unknown options are: ";
+        fmt::print(
+            out,
+            "\nexodiff: ERROR: Too many file arguments specified.\n"
+            "         Probably caused by options following filenames which is no longer allowed.\n"
+            "         Unknown options are: ");
         while (option_index < argc) {
-          out << "'" << argv[option_index++] << "' ";
+          fmt::print(out, "'{}' ", argv[option_index++]);
         }
-        out << "\n\n";
+        fmt::print(out, "\n\n");
         ERR_OUT(out);
         return false;
       }
     }
   }
   else {
-    ERROR("no files specified\n\n");
+    Error("no files specified\n\n");
     return false;
   }
 
   // Get options from environment variable also...
   char *options = getenv("EXODIFF_OPTIONS");
   if (options != nullptr) {
-    std::cout
-        << "\nThe following options were specified via the EXODIFF_OPTIONS environment variable:\n"
-        << "\t\t" << options << "\n\n";
+    fmt::print(
+        "\nThe following options were specified via the EXODIFF_OPTIONS environment variable:\n"
+        "\t\t{}\n\n",
+        options);
     options_.parse(options, options_.basename(*argv));
   }
 
@@ -703,9 +676,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
         }
       }
       else {
-        ERROR("parse error for -explicit keyword. "
-              "Expected '<int|last>:<int|last>', found '"
-              << temp << "' Aborting...\n");
+        Error(fmt::format("parse error for -explicit keyword. "
+                          "Expected '<int|last>:<int|last>', found '{}' Aborting...\n",
+                          temp));
         exit(1);
       }
     }
@@ -903,7 +876,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     if (temp != nullptr) {
       command_file = temp;
       if (!summary_flag && (File_Exists(command_file) == 0)) {
-        ERROR("Can't open file \"" << command_file << "\".\n");
+        Error(fmt::format("Can't open file \"{}\".\n", command_file));
         exit(1);
       }
 
@@ -915,7 +888,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
       if (t2 != nullptr) {
         command_file = t2;
         if (!summary_flag && (File_Exists(command_file) == 0)) {
-          ERROR("Can't open file \"" << command_file << "\".\n");
+          Error(fmt::format("Can't open file \"{}\".\n", command_file));
           exit(1);
         }
 
@@ -1016,7 +989,7 @@ void SystemInterface::Parse_Command_File()
           }
         }
         else {
-          ERROR(" expected an integer "
+          Error(" expected an integer "
                 "after the \"MAX NAMES\" keyword.  "
                 "Aborting...\n");
           exit(1);
@@ -1026,9 +999,9 @@ void SystemInterface::Parse_Command_File()
         tok3 = extract_token(xline, " \t");
         to_lower(tok3);
         if (!abbreviation(tok3, "tolerance", 3)) {
-          ERROR(" expected \"TOLERANCE\" "
-                << "after the \"FINAL TIME\" keyword. "
-                << "Found \"" << tok3 << "\" instead. Aborting...\n");
+          Error(fmt::format(" expected \"TOLERANCE\" after the \"FINAL TIME\" keyword. "
+                            "Found \"{}\" instead. Aborting...\n",
+                            tok3));
           exit(1);
         }
         std::string tok = extract_token(xline, " \n\t=,");
@@ -1269,7 +1242,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1285,7 +1258,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1301,7 +1274,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1317,7 +1290,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1333,7 +1306,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1433,7 +1406,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1466,9 +1439,7 @@ namespace {
           !abbreviation(tok, "eigen_relative", 7) && !abbreviation(tok, "eigen_absolute", 7) &&
           !abbreviation(tok, "eigen_combine", 7) && !abbreviation(tok, "ignore", 3) &&
           !abbreviation(tok, "floor", 3)) {
-        ERROR("in parsing command file: unrecognized "
-              "keyword \""
-              << tok << "\"\n");
+        Error(fmt::format("in parsing command file: unrecognized keyword \"{}\"\n", tok));
         exit(1);
       }
 
@@ -1482,7 +1453,7 @@ namespace {
         def_tol.type = RELATIVE;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          ERROR(" Input file specifies a tolerance type "
+          Error(" Input file specifies a tolerance type "
                 "but no tolerance\n");
           exit(1);
         }
@@ -1494,7 +1465,7 @@ namespace {
         def_tol.type = ABSOLUTE;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          ERROR("Input file specifies a tolerance type "
+          Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
           exit(1);
         }
@@ -1506,7 +1477,7 @@ namespace {
         def_tol.type = COMBINED;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          ERROR("Input file specifies a tolerance type "
+          Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
           exit(1);
         }
@@ -1518,7 +1489,7 @@ namespace {
         def_tol.type = ULPS_FLOAT;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          ERROR("Input file specifies a tolerance type "
+          Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
           exit(1);
         }
@@ -1530,7 +1501,7 @@ namespace {
         def_tol.type = ULPS_DOUBLE;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          ERROR("Input file specifies a tolerance type "
+          Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
           exit(1);
         }
@@ -1542,7 +1513,7 @@ namespace {
         def_tol.type = EIGEN_REL;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          ERROR("Input file specifies a tolerance type "
+          Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
           exit(1);
         }
@@ -1554,7 +1525,7 @@ namespace {
         def_tol.type = EIGEN_ABS;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          ERROR("Input file specifies a tolerance type "
+          Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
           exit(1);
         }
@@ -1566,7 +1537,7 @@ namespace {
         def_tol.type = EIGEN_COM;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          ERROR("Input file specifies a tolerance type "
+          Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
           exit(1);
         }
@@ -1584,7 +1555,7 @@ namespace {
       if (abbreviation(tok, "floor", 3)) {
         tok = extract_token(xline, " \n\t=,");
         if (tok == "" || tok[0] == '#') {
-          ERROR("Floor specified but couldn't find value\n");
+          Error("Floor specified but couldn't find value\n");
           exit(1);
         }
         def_tol.floor = To_Double(tok);
@@ -1611,12 +1582,11 @@ namespace {
 
         int idx = names.size();
         if (idx >= max_names) {
-          ERROR("Number of names in tabbed list is larger "
-                "than current limit of "
-                << max_names
-                << ".  To increase, use \"-maxnames <int>\" on the "
-                   "command line or \"MAX NAMES <int>\" in the command "
-                   "file.  Aborting...\n");
+          Error(fmt::format("Number of names in tabbed list is larger than current limit of {}."
+                            "  To increase, use \"-maxnames <int>\" on the command line or \"MAX "
+                            "NAMES <int>\" in the command "
+                            "file.  Aborting...\n",
+                            max_names));
           exit(1);
         }
 
@@ -1710,121 +1680,121 @@ namespace {
 
   void tolerance_help()
   {
-    std::cout
-        << "\n Tolerance Help:\n"
-        << "\n"
-        << "\t Relative difference  |val1 - val2| / max(|val1|, |val2|)\n"
-        << "\t Absolute difference  |val1 - val2|\n"
-        << "\t Combined difference  |val1 - val2| / max(tol, tol * max(|val1|, |val2|))\n"
-        << "\t Eigen_relative difference  ||val1| - |val2|| / max(|val1|,|val2|)\n"
-        << "\t Eigen_absolute difference  ||val1| - |val2||\n"
-        << "\t Eigen_combined difference  ||val1| - |val2|| / max(tol, tol * max(|val1|, |val2|))\n"
-        << "\t Ulps_float difference  -- Calculate number of representable floats between the two "
-           "values\n"
-        << "\t Ulps_double difference  -- Calculate number of representable doubles between the "
-           "two values\n"
-        << "\n"
-        << "\t Values are considered equal if |val1| <= floor and |val2| <= floor;\n"
-        << "\t where floor is a user-specified value (-Floor option). Otherwise the difference is\n"
-        << "\t computed using one of the above formulas and compared to a tolerance.\n"
-        << "\t If the difference is greater than the tolerance, then the databases\n"
-        << "\t are different.  At the end of execution, a summary of the differences\n"
-        << "\t found is output.\n"
-        << "\t \n"
-        << "\t By default:\n"
-        << "\t * All results variables and attributes are compared using a relative difference\n"
-        << "\t   of 10^{-6} (about 6 significant digits) and a floor of 0.0.\n"
-        << "\t * Nodal locations are compared using {absolute difference} with\n"
-        << "\t   a tolerance of 10^{-6} and a floor of 0.0.\n"
-        << "\t * Time step values are compared using relative difference tolerance of 10^{-6}\n"
-        << "\t   and a floor of 10^{-15}.\n"
-        << "\n\n";
+    fmt::print(
+        "\n Tolerance Help:\n"
+        "\n"
+        "\t Relative difference  |val1 - val2| / max(|val1|, |val2|)\n"
+        "\t Absolute difference  |val1 - val2|\n"
+        "\t Combined difference  |val1 - val2| / max(tol, tol * max(|val1|, |val2|))\n"
+        "\t Eigen_relative difference  ||val1| - |val2|| / max(|val1|,|val2|)\n"
+        "\t Eigen_absolute difference  ||val1| - |val2||\n"
+        "\t Eigen_combined difference  ||val1| - |val2|| / max(tol, tol * max(|val1|, |val2|))\n"
+        "\t Ulps_float difference  -- Calculate number of representable floats between the two "
+        "values\n"
+        "\t Ulps_double difference  -- Calculate number of representable doubles between the "
+        "two values\n"
+        "\n"
+        "\t Values are considered equal if |val1| <= floor and |val2| <= floor;\n"
+        "\t where floor is a user-specified value (-Floor option). Otherwise the difference is\n"
+        "\t computed using one of the above formulas and compared to a tolerance.\n"
+        "\t If the difference is greater than the tolerance, then the databases\n"
+        "\t are different.  At the end of execution, a summary of the differences\n"
+        "\t found is output.\n"
+        "\t \n"
+        "\t By default:\n"
+        "\t * All results variables and attributes are compared using a relative difference\n"
+        "\t   of 10^{-6} (about 6 significant digits) and a floor of 0.0.\n"
+        "\t * Nodal locations are compared using {absolute difference} with\n"
+        "\t   a tolerance of 10^{-6} and a floor of 0.0.\n"
+        "\t * Time step values are compared using relative difference tolerance of 10^{-6}\n"
+        "\t   and a floor of 10^{-15}.\n"
+        "\n\n");
   }
 
   void file_help()
   {
-    std::cout
-        << "\n  Command file syntax:\n"
-        << "\n"
-        << "                # Anything following a # is a comment.\n"
-        << "                DEFAULT TOLERANCE relative 1.E-8 floor 1.E-14\n"
-        << "                COORDINATES absolute 1.E-12\n"
-        << "                TIME STEPS absolute 1.E-14\n"
-        << "                GLOBAL VARIABLES relative 1.E-4 floor 1.E-12\n"
-        << "                NODAL VARIABLES absolute 1.E-8\n"
-        << "                <tab> DISPLX\n"
-        << "                <tab> VELX absolute 1.E-6\n"
-        << "                <tab> VELY relative 1.E-6 floor 1.e-10\n"
-        << "                ELEMENT VARIABLES\n"
-        << "                <tab> !SIGYY\n"
-        << "                <tab> !SIGZZ\n"
-        << "\n"
-        << "         - The variable names are case insensitive (unless or CASE SENSITIVE "
-           "specified),\n"
-        << "           All other comparisons are also case insensitive. Abreviations can be used. "
-           "\n"
-        << "         - All comparisons use the compiled default of relative 1.e-6 for\n"
-        << "           variables and absolute 1.e-6 for coordinates.  This is overridden\n"
-        << "           with the DEFAULT TOLERANCE line.  The DEFAULT TOLERANCE values\n"
-        << "           are overridden by the values given on the VARIABLES line and apply\n"
-        << "           only to those variables.  Each variable can override all values\n"
-        << "           by following its name with a value.\n"
-        << "         - A variable name must start with a tab character.  Only those\n"
-        << "           variables listed will be considered.  The NOT symbol \"!\" means\n"
-        << "           do not include this variable.  Mixing non-! and ! is not allowed\n"
-        << "           without the \"(all)\" specifier, e.g.:\n\n"
-        << "                NODAL VARIABLES (all) absolute 1.E-8\n"
-        << "                <tab> DISPLX\n"
-        << "                <tab> !VELX\n"
-        << "                <tab> VELY relative 1.E-6 floor 1.e-10\n\n"
-        << "           In this case, all variables are considered that are not prepended\n"
-        << "           with a \"!\" symbol.\n"
-        << "         - If a variable type (e.g. NODAL VARIABLES) is not specified, no\n"
-        << "           variables of that type will be considered.\n"
-        << "         - The command line option to set the maximum number of exodus \n"
-        << "           names can be set with MAX NAMES <int>.  Note:  THIS OPTION MUST\n"
-        << "           APPEAR BEFORE THE VARIABLE BLOCKS ARE READ!\n"
-        << "         - The time step exclusion option can be used in the input file with\n"
-        << "           the syntax \"EXCLUDE TIMES <list>\", where <list> has the same\n"
-        << "           format as in the command line.\n"
-        << "         - The matching algorithm, \"-m\", can be turned on from the input file\n"
-        << "           with the APPLY MATCHING keyword on a separate line.\n"
-        << "         - The nodeset matching algorithm, \"-nsmap\", can be turned on from the\n"
-        << "           input file with the NODESET MATCH keyword on a separate line.\n"
-        << "         - The sideset matching algorithm, \"-ssmap\", can be turned on from the\n"
-        << "           input file with the SIDESET MATCH keyword on a separate line.\n"
-        << "         - The short block type compare option, \"-s\", can be turned on with the\n"
-        << "           SHORT BLOCKS keyword.\n"
-        << "         - The no short compare option, \"-no_short\", can be turned on with the\n"
-        << "           NO SHORT BLOCKS keyword.\n"
-        << "         - The case_sensitive option, \"-case_sensitive\", can be turned on with the\n"
-        << "           CASE SENSITIVE keyword.\n"
-        << "         - The ignore case option, \"-i\", can be turned on with the\n"
-        << "           IGNORE CASE keyword. (default behavior now)\n"
-        << "         - The ignore maps option, \"-ignore_maps\", can be turned on with the\n"
-        << "           IGNORE MAPS keyword.\n"
-        << "         - The ignore nans option, \"-ignore_nans\", can be turned on with the\n"
-        << "           IGNORE NANS keyword.\n"
-        << "         - The ignore dups option, \"-ignore_dups\", can be turned on with the\n"
-        << "           IGNORE DUPLICATES keyword.\n"
-        << "         - The time step offset option, \"-T\", can be turned on with the \n"
-        << "           STEP OFFSET keyword.\n"
-        << "         - The automatic time step offset option, \"-TA\", can be turned\n"
-        << "           on with the STEP OFFSET AUTOMATIC keyword.\n"
-        << "         - The automatic time step offset option, \"-TM\", can be turned\n"
-        << "           on with the STEP OFFSET MATCH keyword.\n"
-        << "         - The interpolation option, \"-interpolate\", can be turned\n"
-        << "           on with the INTERPOLATE keyword.\n"
-        << "         - The final time tolerance, \"-final_time_tolerance <tol>\", can be turned\n"
-        << "           on with the FINAL TIME TOLERANCE keyword.\n"
-        << "         - The calculation of the L2 norm of differences \"-norms\", can be turned\n"
-        << "           on with the CALCULATE NORMS keyword.\n"
-        << "         - The exit status return option, \"-stat\", can be turned on with the \n"
-        << "           RETURN STATUS keyword.\n"
-        << "         - The ignore exit status return option, \"-ignore_status\", can be turned on "
-           "with the \n"
-        << "           IGNORE STATUS keyword.\n"
-        << "         - The pedantic compare option, \"-pedantic\", can be turned on with the \n"
-        << "           PEDANTIC keyword.\n\n";
+    fmt::print(
+        "\n  Command file syntax:\n"
+        "\n"
+        "                # Anything following a # is a comment.\n"
+        "                DEFAULT TOLERANCE relative 1.E-8 floor 1.E-14\n"
+        "                COORDINATES absolute 1.E-12\n"
+        "                TIME STEPS absolute 1.E-14\n"
+        "                GLOBAL VARIABLES relative 1.E-4 floor 1.E-12\n"
+        "                NODAL VARIABLES absolute 1.E-8\n"
+        "                <tab> DISPLX\n"
+        "                <tab> VELX absolute 1.E-6\n"
+        "                <tab> VELY relative 1.E-6 floor 1.e-10\n"
+        "                ELEMENT VARIABLES\n"
+        "                <tab> !SIGYY\n"
+        "                <tab> !SIGZZ\n"
+        "\n"
+        "         - The variable names are case insensitive (unless or CASE SENSITIVE "
+        "specified),\n"
+        "           All other comparisons are also case insensitive. Abreviations can be used. "
+        "\n"
+        "         - All comparisons use the compiled default of relative 1.e-6 for\n"
+        "           variables and absolute 1.e-6 for coordinates.  This is overridden\n"
+        "           with the DEFAULT TOLERANCE line.  The DEFAULT TOLERANCE values\n"
+        "           are overridden by the values given on the VARIABLES line and apply\n"
+        "           only to those variables.  Each variable can override all values\n"
+        "           by following its name with a value.\n"
+        "         - A variable name must start with a tab character.  Only those\n"
+        "           variables listed will be considered.  The NOT symbol \"!\" means\n"
+        "           do not include this variable.  Mixing non-! and ! is not allowed\n"
+        "           without the \"(all)\" specifier, e.g.:\n\n"
+        "                NODAL VARIABLES (all) absolute 1.E-8\n"
+        "                <tab> DISPLX\n"
+        "                <tab> !VELX\n"
+        "                <tab> VELY relative 1.E-6 floor 1.e-10\n\n"
+        "           In this case, all variables are considered that are not prepended\n"
+        "           with a \"!\" symbol.\n"
+        "         - If a variable type (e.g. NODAL VARIABLES) is not specified, no\n"
+        "           variables of that type will be considered.\n"
+        "         - The command line option to set the maximum number of exodus \n"
+        "           names can be set with MAX NAMES <int>.  Note:  THIS OPTION MUST\n"
+        "           APPEAR BEFORE THE VARIABLE BLOCKS ARE READ!\n"
+        "         - The time step exclusion option can be used in the input file with\n"
+        "           the syntax \"EXCLUDE TIMES <list>\", where <list> has the same\n"
+        "           format as in the command line.\n"
+        "         - The matching algorithm, \"-m\", can be turned on from the input file\n"
+        "           with the APPLY MATCHING keyword on a separate line.\n"
+        "         - The nodeset matching algorithm, \"-nsmap\", can be turned on from the\n"
+        "           input file with the NODESET MATCH keyword on a separate line.\n"
+        "         - The sideset matching algorithm, \"-ssmap\", can be turned on from the\n"
+        "           input file with the SIDESET MATCH keyword on a separate line.\n"
+        "         - The short block type compare option, \"-s\", can be turned on with the\n"
+        "           SHORT BLOCKS keyword.\n"
+        "         - The no short compare option, \"-no_short\", can be turned on with the\n"
+        "           NO SHORT BLOCKS keyword.\n"
+        "         - The case_sensitive option, \"-case_sensitive\", can be turned on with the\n"
+        "           CASE SENSITIVE keyword.\n"
+        "         - The ignore case option, \"-i\", can be turned on with the\n"
+        "           IGNORE CASE keyword. (default behavior now)\n"
+        "         - The ignore maps option, \"-ignore_maps\", can be turned on with the\n"
+        "           IGNORE MAPS keyword.\n"
+        "         - The ignore nans option, \"-ignore_nans\", can be turned on with the\n"
+        "           IGNORE NANS keyword.\n"
+        "         - The ignore dups option, \"-ignore_dups\", can be turned on with the\n"
+        "           IGNORE DUPLICATES keyword.\n"
+        "         - The time step offset option, \"-T\", can be turned on with the \n"
+        "           STEP OFFSET keyword.\n"
+        "         - The automatic time step offset option, \"-TA\", can be turned\n"
+        "           on with the STEP OFFSET AUTOMATIC keyword.\n"
+        "         - The automatic time step offset option, \"-TM\", can be turned\n"
+        "           on with the STEP OFFSET MATCH keyword.\n"
+        "         - The interpolation option, \"-interpolate\", can be turned\n"
+        "           on with the INTERPOLATE keyword.\n"
+        "         - The final time tolerance, \"-final_time_tolerance <tol>\", can be turned\n"
+        "           on with the FINAL TIME TOLERANCE keyword.\n"
+        "         - The calculation of the L2 norm of differences \"-norms\", can be turned\n"
+        "           on with the CALCULATE NORMS keyword.\n"
+        "         - The exit status return option, \"-stat\", can be turned on with the \n"
+        "           RETURN STATUS keyword.\n"
+        "         - The ignore exit status return option, \"-ignore_status\", can be turned on "
+        "with the \n"
+        "           IGNORE STATUS keyword.\n"
+        "         - The pedantic compare option, \"-pedantic\", can be turned on with the \n"
+        "           PEDANTIC keyword.\n\n");
   }
 } // namespace

@@ -54,6 +54,7 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_allReduceView.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_checkView.hpp"
 #include "Tpetra_Details_fill.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
@@ -464,8 +465,8 @@ namespace Tpetra {
     origView_ (view)
   {
     const char tfecfFuncName[] = "MultiVector(Map,DualView): ";
-
-    const size_t lclNumRows_map = map->getNodeNumElements ();
+    const size_t lclNumRows_map = map.is_null () ? size_t (0) :
+      map->getNodeNumElements ();
     const size_t lclNumRows_view = view.extent (0);
     const size_t LDA = getDualViewStride (view);
 
@@ -475,6 +476,20 @@ namespace Tpetra {
        "map->getNodeNumElements() = " << lclNumRows_map
        << ", view.extent(0) = " << lclNumRows_view
        << ", and getStride() = " << LDA << ".");
+
+    using ::Tpetra::Details::Behavior;
+    const bool debug = Behavior::debug ();
+    if (debug) {
+      using ::Tpetra::Details::checkGlobalDualViewValidity;
+      std::ostringstream gblErrStrm;
+      const bool verbose = Behavior::verbose ();
+      const auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const bool gblValid =
+        checkGlobalDualViewValidity (&gblErrStrm, view, verbose,
+                                     comm.getRawPtr ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! gblValid, std::runtime_error, gblErrStrm.str ());
+    }
   }
 
 
@@ -500,6 +515,20 @@ namespace Tpetra {
 
     auto h_view = Kokkos::create_mirror_view (d_view);
     view_ = dual_view_type (d_view, h_view);
+
+    using ::Tpetra::Details::Behavior;
+    const bool debug = Behavior::debug ();
+    if (debug) {
+      using ::Tpetra::Details::checkGlobalDualViewValidity;
+      std::ostringstream gblErrStrm;
+      const bool verbose = Behavior::verbose ();
+      const auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const bool gblValid =
+        checkGlobalDualViewValidity (&gblErrStrm, view_, verbose,
+                                     comm.getRawPtr ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! gblValid, std::runtime_error, gblErrStrm.str ());
+    }
     // The user gave us a device view.  In order to respect its
     // initial contents, we mark the DualView as "modified on device."
     // That way, the next sync will synchronize it with the host view.
@@ -526,6 +555,24 @@ namespace Tpetra {
       << ".  This may also mean that the input origView's first dimension (number "
       "of rows = " << origView.extent (0) << ") does not not match the number "
       "of entries in the Map on the calling process.");
+
+    using ::Tpetra::Details::Behavior;
+    const bool debug = Behavior::debug ();
+    if (debug) {
+      using ::Tpetra::Details::checkGlobalDualViewValidity;
+      std::ostringstream gblErrStrm;
+      const bool verbose = Behavior::verbose ();
+      const auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const bool gblValid_0 =
+        checkGlobalDualViewValidity (&gblErrStrm, view, verbose,
+                                     comm.getRawPtr ());
+      const bool gblValid_1 =
+        checkGlobalDualViewValidity (&gblErrStrm, origView, verbose,
+                                     comm.getRawPtr ());
+      const bool gblValid = gblValid_0 && gblValid_1;
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! gblValid, std::runtime_error, gblErrStrm.str ());
+    }
   }
 
 
@@ -542,6 +589,20 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::subview;
     const char tfecfFuncName[] = "MultiVector(map,view,whichVectors): ";
+
+    using ::Tpetra::Details::Behavior;
+    const bool debug = Behavior::debug ();
+    if (debug) {
+      using ::Tpetra::Details::checkGlobalDualViewValidity;
+      std::ostringstream gblErrStrm;
+      const bool verbose = Behavior::verbose ();
+      const auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const bool gblValid =
+        checkGlobalDualViewValidity (&gblErrStrm, view, verbose,
+                                     comm.getRawPtr ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! gblValid, std::runtime_error, gblErrStrm.str ());
+    }
 
     const size_t lclNumRows = map.is_null () ? size_t (0) :
       map->getNodeNumElements ();
@@ -614,6 +675,24 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::subview;
     const char tfecfFuncName[] = "MultiVector(map,view,origView,whichVectors): ";
+
+    using ::Tpetra::Details::Behavior;
+    const bool debug = Behavior::debug ();
+    if (debug) {
+      using ::Tpetra::Details::checkGlobalDualViewValidity;
+      std::ostringstream gblErrStrm;
+      const bool verbose = Behavior::verbose ();
+      const auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const bool gblValid_0 =
+        checkGlobalDualViewValidity (&gblErrStrm, view, verbose,
+                                     comm.getRawPtr ());
+      const bool gblValid_1 =
+        checkGlobalDualViewValidity (&gblErrStrm, origView, verbose,
+                                     comm.getRawPtr ());
+      const bool gblValid = gblValid_0 && gblValid_1;
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! gblValid, std::runtime_error, gblErrStrm.str ());
+    }
 
     const size_t lclNumRows = this->getLocalLength ();
     // Check dimensions of the input DualView.  We accept that Kokkos

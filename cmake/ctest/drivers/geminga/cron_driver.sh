@@ -32,6 +32,7 @@ export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
 export TDD_HTTPS_PROXY="https://sonproxy.sandia.gov:80"
 export http_proxy="http://sonproxy.sandia.gov:80"
 export https_proxy="https://sonproxy.sandia.gov:80"
+export no_proxy='.sandia.gov'
 
 . ~/.bashrc
 
@@ -45,6 +46,7 @@ module load sems-cmake/3.10.3
 module load sems-gcc/5.3.0
 module load sems-openmpi/1.10.1
 module load sems-superlu/4.3/base
+module load sems-git/2.10.1
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
@@ -79,10 +81,8 @@ module load sems-boost/1.58.0/base
 module load sems-python/2.7.9
 module load sems-zlib/1.2.8/base
 module load kokkos-cuda/8.0.44
-module load kokkos-openmpi/1.8.7/cuda
+module load kokkos-openmpi/2.0.1/cuda
 module load sems-superlu/4.3
-module load sems-hdf5/1.8.12/parallel
-module load sems-netcdf/4.4.1/exo_parallel
 # See Trilinos github issue #2115.
 export OMPI_CXX=/home/jhu/code/trilinos-test/trilinos/packages/kokkos/bin/nvcc_wrapper
 
@@ -107,10 +107,8 @@ $SCRIPT_DIR/../cron_driver.py
 #module unload cuda
 #module unload gcc
 #module unload openmpi
-module load sems-netcdf/4.4.1/exo_parallel
-module unload sems-hdf5/1.8.12/parallel
 module load sems-superlu/4.3
-module unload kokkos-openmpi/1.8.7/cuda
+module unload kokkos-openmpi/2.0.1/cuda
 module unload kokkos-nvcc_wrapper/1
 module unload kokkos-cuda/8.0.44
 module unload sems-zlib/1.2.8/base

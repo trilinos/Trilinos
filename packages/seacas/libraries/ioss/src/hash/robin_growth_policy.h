@@ -34,43 +34,37 @@
 #include <ratio>
 #include <stdexcept>
 
-#ifndef tsl_assert
 #ifdef TSL_DEBUG
-#define tsl_assert(expr) assert(expr)
+#define tsl_rh_assert(expr) assert(expr)
 #else
-#define tsl_assert(expr) (static_cast<void>(0))
-#endif
+#define tsl_rh_assert(expr) (static_cast<void>(0))
 #endif
 
 /**
  * If exceptions are enabled, throw the exception passed in parameter, otherwise call
  * std::terminate.
  */
-#ifndef TSL_THROW_OR_TERMINATE
 #if (defined(__cpp_exceptions) || defined(__EXCEPTIONS) ||                                         \
      (defined(_MSC_VER) && defined(_CPPUNWIND))) &&                                                \
     !defined(TSL_NO_EXCEPTIONS)
-#define TSL_THROW_OR_TERMINATE(ex, msg) throw ex(msg)
+#define TSL_RH_THROW_OR_TERMINATE(ex, msg) throw ex(msg)
 #else
 #ifdef NDEBUG
-#define TSL_THROW_OR_TERMINATE(ex, msg) std::terminate()
+#define TSL_RH_THROW_OR_TERMINATE(ex, msg) std::terminate()
 #else
 #include <cstdio>
-#define TSL_THROW_OR_TERMINATE(ex, msg)                                                            \
+#define TSL_RH_THROW_OR_TERMINATE(ex, msg)                                                         \
   do {                                                                                             \
     std::fprintf(stderr, msg);                                                                     \
     std::terminate();                                                                              \
   } while (0)
 #endif
 #endif
-#endif
 
-#ifndef TSL_LIKELY
 #if defined(__GNUC__) || defined(__clang__)
-#define TSL_LIKELY(exp) (__builtin_expect(!!(exp), true))
+#define TSL_RH_LIKELY(exp) (__builtin_expect(!!(exp), true))
 #else
-#define TSL_LIKELY(exp) (exp)
-#endif
+#define TSL_RH_LIKELY(exp) (exp)
 #endif
 
 namespace tsl {
@@ -97,7 +91,7 @@ namespace tsl {
       explicit power_of_two_growth_policy(std::size_t &min_bucket_count_in_out)
       {
         if (min_bucket_count_in_out > max_bucket_count()) {
-          TSL_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
+          TSL_RH_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
         }
 
         if (min_bucket_count_in_out > 0) {
@@ -121,7 +115,7 @@ namespace tsl {
       std::size_t next_bucket_count() const
       {
         if ((m_mask + 1) > max_bucket_count() / GrowthFactor) {
-          TSL_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
+          TSL_RH_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
         }
 
         return (m_mask + 1) * GrowthFactor;
@@ -183,7 +177,7 @@ namespace tsl {
       explicit mod_growth_policy(std::size_t &min_bucket_count_in_out)
       {
         if (min_bucket_count_in_out > max_bucket_count()) {
-          TSL_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
+          TSL_RH_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
         }
 
         if (min_bucket_count_in_out > 0) {
@@ -199,20 +193,20 @@ namespace tsl {
       std::size_t next_bucket_count() const
       {
         if (m_mod == max_bucket_count()) {
-          TSL_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
+          TSL_RH_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
         }
 
-        const double next_bucket_count_ =
+        const double my_next_bucket_count =
             std::ceil(double(m_mod) * REHASH_SIZE_MULTIPLICATION_FACTOR);
-        if (!std::isnormal(next_bucket_count_)) {
-          TSL_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
+        if (!std::isnormal(my_next_bucket_count)) {
+          TSL_RH_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
         }
 
-        if (next_bucket_count_ > double(max_bucket_count())) {
+        if (my_next_bucket_count > double(max_bucket_count())) {
           return max_bucket_count();
         }
         else {
-          return std::size_t(next_bucket_count_);
+          return std::size_t(my_next_bucket_count);
         }
       }
 
@@ -294,7 +288,7 @@ namespace tsl {
         auto it_prime =
             std::lower_bound(detail::PRIMES.begin(), detail::PRIMES.end(), min_bucket_count_in_out);
         if (it_prime == detail::PRIMES.end()) {
-          TSL_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
+          TSL_RH_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
         }
 
         m_iprime = static_cast<unsigned int>(std::distance(detail::PRIMES.begin(), it_prime));
@@ -314,7 +308,7 @@ namespace tsl {
       std::size_t next_bucket_count() const
       {
         if (m_iprime + 1 >= detail::PRIMES.size()) {
-          TSL_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
+          TSL_RH_THROW_OR_TERMINATE(std::length_error, "The hash table exceeds its maxmimum size.");
         }
 
         return detail::PRIMES[m_iprime + 1];

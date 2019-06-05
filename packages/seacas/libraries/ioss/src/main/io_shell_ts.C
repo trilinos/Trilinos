@@ -181,7 +181,6 @@ int main(int argc, char *argv[])
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
-  std::cout.imbue(std::locale(std::locale(), new my_numpunct));
   std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
 
 #ifdef SEACAS_HAVE_KOKKOS
@@ -208,7 +207,7 @@ int main(int argc, char *argv[])
 
 #ifdef SEACAS_HAVE_KOKKOS
   OUTPUT << "Kokkos default execution space configuration:\n";
-  Kokkos::DefaultExecutionSpace::print_configuration(std::cout, false);
+  Kokkos::DefaultExecutionSpace::print_configuration(std::cerr, false);
   OUTPUT << "\n";
 #endif
 
@@ -1077,7 +1076,7 @@ namespace {
     for (const auto &field_name : fields) {
       Ioss::Field field = ige->get_field(field_name);
       if (field_name != "ids" && !oge->field_exists(field_name) &&
-          (prefix.length() == 0 ||
+          (prefix.empty() ||
            std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
         // If the field does not already exist, add it to the output node block
         oge->field_add(field);
@@ -1357,9 +1356,8 @@ namespace {
         continue;
       }
 
-      if (field_name != "ids" &&
-          (prefix.length() == 0 ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+      if (field_name != "ids" && (prefix.empty() || std::strncmp(prefix.c_str(), field_name.c_str(),
+                                                                 prefix.length()) == 0)) {
         assert(oge->field_exists(field_name));
         transfer_field_data_internal(ige, oge, field_name, interface);
       }
