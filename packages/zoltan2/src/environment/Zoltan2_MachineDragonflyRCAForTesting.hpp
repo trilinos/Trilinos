@@ -43,6 +43,8 @@ public:
     is_transformed(false),
     pl(NULL) {
 
+    std::cout << "\nRank: " << this->myRank << " MAKE DRAGONFLYRCAFORTESTING, NO PLIST" << std::endl;
+    
     actual_machine_extent = new int[actual_networkDim];
     this->getActualMachineExtent(this->actual_machine_extent);
     
@@ -136,7 +138,7 @@ public:
     num_unique_groups(0),
     group_count(NULL), 
     is_transformed(false),
-    pl(&pl_) {
+    pl(&pl_) { 
 
     actual_machine_extent = new int[actual_networkDim];
     this->getActualMachineExtent(this->actual_machine_extent);
@@ -146,7 +148,7 @@ public:
 
     memset(group_count, 0, sizeof(part_t) * actual_machine_extent[0]);
     
-    std::cout << "\nMAKE DRAGONFLYRCAFORTESTING\n";
+    std::cout << "\nRank: " << this->myRank << " MAKE DRAGONFLYRCAFORTESTING, WITH PLIST" << std::endl;
 
     // Allocate memory for processor coords
     actual_procCoords = new pcoord_t *[actual_networkDim];
@@ -155,11 +157,11 @@ public:
     pcoord_t *xyz = new pcoord_t[actual_networkDim];
     getMyActualMachineCoordinate(xyz);
 
-//    for (int i = 0; i < actual_machine_extent[0]; ++i)
-//      std::cout << "\nRank: " << this->myRank << " 1group_count[" << i << "]: " << group_count[i] << "\n";
+    for (int i = 0; i < actual_machine_extent[0]; ++i)
+      std::cout << "\nRank: " << this->myRank << " 1group_count[" << i << "]: " << group_count[i] << "\n";
 
 
-//    std::cout << "\nRank: " << this->myRank << " Comm size: " << comm.getSize() << "\n";
+    std::cout << "\nRank: " << this->myRank << " Comm size: " << comm.getSize() << "\n";
 
 
     // Gather number of ranks in each Dragonfly network group from across all ranks
@@ -170,11 +172,11 @@ public:
                                         actual_machine_extent[0], 
                                         group_count, tmp_vec);
 
-//    for (int i = 0; i < actual_machine_extent[0]; ++i)
-//      std::cout << "\nRank: " << this->myRank << " 2group_count[" << i << "]: " << group_count[i] << "\n";
+    for (int i = 0; i < actual_machine_extent[0]; ++i)
+      std::cout << "\nRank: " << this->myRank << " 2group_count[" << i << "]: " << group_count[i] << "\n";
 
-//    for (int i = 0; i < actual_machine_extent[0]; ++i)
-//      std::cout << "\nRank: " << this->myRank << " 2tmp_vec[" << i << "]: " << tmp_vec[i] << "\n";
+    for (int i = 0; i < actual_machine_extent[0]; ++i)
+      std::cout << "\nRank: " << this->myRank << " 2tmp_vec[" << i << "]: " << tmp_vec[i] << "\n";
     
 
     // remove zero entries from reduced vector
@@ -200,16 +202,21 @@ public:
     } 
     delete[] tmp_vec;
 
-//    for (int i = 0; i < num_unique_groups; ++i)
-//      std::cout << "\nRank: " << this->myRank << " 3new_group_count[" << i << "]: " << group_count[i] << "\n";
+    for (int i = 0; i < num_unique_groups; ++i)
+      std::cout << "\nRank: " << this->myRank << " 3new_group_count[" << i << "]: " << group_count[i] << "\n";
      
     const Teuchos::ParameterEntry *pe2 = 
       this->pl->getEntryPtr("Machine_Optimization_Level");
+
+    std::cout << "\nChecking PLIST\n";
 
     // Transform with mach opt level
     if (pe2) {
       int optimization_level;
       optimization_level = pe2->getValue<int>(&optimization_level);
+
+
+      std::cout << "\nFound PLIST, opt_level: " << optimization_level << "\n";
 
       if (optimization_level > 0) {
         is_transformed = true;
@@ -313,22 +320,33 @@ public:
   }
 
   virtual ~MachineDragonflyRCAForTesting() {
+
+    std::cout << "\nABOUT TO DESTORY DRAGONFLY TEST MACHINE" << std::endl;
+
     if (is_transformed) {
       is_transformed = false;
-      for (int i = 0; i < transformed_networkDim; ++i) {
-        delete [] transformed_procCoords[i];
+      if (this->numRanks > 1) {
+        for (int i = 0; i < transformed_networkDim; ++i) {
+          delete [] transformed_procCoords[i];
+        }
       } 
       delete [] transformed_machine_extent;
     }
     else {
-      for (int i = 0; i < actual_networkDim; ++i) {
-        delete [] actual_procCoords[i];
+      if (this->numRanks > 1) {
+        for (int i = 0; i < actual_networkDim; ++i) {
+          delete [] actual_procCoords[i];
+        }
       } 
     }
+ 
     delete [] actual_procCoords;
-    delete [] actual_machine_extent;
     delete [] transformed_procCoords;  
+   
+    delete [] actual_machine_extent;
     delete [] group_count;
+    
+    std::cout << "\nMachine Destroyed" << std::endl;
   }
 
   bool hasMachineCoordinates() const { return true; }
@@ -407,13 +425,13 @@ public:
   }
 
   void printAllocation() {
-    if (this->myRank == 0) {
+    if (this->myRank >= 0) {
       // Print transformed coordinates and extents
       if (is_transformed) {
         for (int i = 0; i < this->numRanks; ++i) { 
           std::cout << "Rank:" << i << "  ";
             for (int j = 0; j < this->transformed_networkDim; ++j) {
-              std::cout << " " << transformed_procCoords[j][i]; 
+              std::cout << " " << this->transformed_procCoords[j][i]; 
             }
             std::cout << std::endl;  
         } 
@@ -541,37 +559,77 @@ public:
   }
 
   // Return (approx) hop count from rank1 to rank2. Does not account for 
-  // dynamic routing.
+  // Dragonfly's dynamic routing.
   virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) {
     hops = 0;
+      
+    if (rank1 == rank2)
+      return true;
+    if (rank1 >= this->numRanks || rank2 >= this->numRanks) {
+      std::cerr << "Rank outside bounds for the machine ranks";
+      exit(1);
+    }
 
-    if (is_transformed) {     
-      // Case: ranks in different groups
+    std::cout << "\nRank: " << this->myRank << " RANKY 1: " << rank1 << " RANKY 2: " << rank2
+      << " is_transformed: " << this->is_transformed << std::endl;
+
+
+
+    if (transformed_procCoords == NULL) {
+      std::cout << "\nRank: " << this->myRank << " it's totally null" << std::endl;
+    }
+
+    if (is_transformed) {
+
+      pcoord_t ranky1 = this->transformed_procCoords[0][rank1];
+ 
+      std::cout << "\nRank: " << this->myRank << " ranky 1 tcp[0][" << rank2 << "]: " 
+        << ranky1 << std::endl;
+      
+      pcoord_t ranky2 = this->transformed_procCoords[0][rank2];
+
+
+      std::cout << "\nRank: " << this->myRank << " ranky 2 tcp[0][" << rank2 << "]: " 
+        << ranky2 << std::endl;
+        
+    }
+
+    std::cout << "\nRank: " << this->myRank << " About to HOPPPPP!!!" << std::endl;
+
+    if (this->is_transformed) {    
+      // Case: ranks in different groups (i.e. different RCA x-coords)
       // Does not account for location of group to group connection. 
       // (Most group to group messages will take 5 hops)
-      if (transformed_procCoords[0][rank1] != 
-          transformed_procCoords[0][rank2]) 
+      if (this->transformed_procCoords[0][rank1] != 
+          this->transformed_procCoords[0][rank2]) 
       {
         hops = 5;
+      
+  //      std::cout << "\nHOPS: 5" << std::endl;
         return true;
       }
+
+
 
       // Case: ranks in same group
       // For each 2 differences in transformed_coordinates then
       // 1 hop
-      for (int i = 1; i < transformed_networkDim; ++i) {
-        if (transformed_procCoords[i][rank1] != 
-            transformed_procCoords[i][rank2]) 
+      for (int i = 1; i < this->transformed_networkDim; ++i) {
+        if (this->transformed_procCoords[i][rank1] != 
+            this->transformed_procCoords[i][rank2]) 
           ++hops;
       }
       hops /= 2;
+    
+ //     std::cout << "\nHOPS: " << hops << std::endl;
+    
     }
     else {
       // Case: ranks in different groups
       // Does not account for location of group to group connection. 
       // (Nearly all group to group messages will take 5 hops)
-      if (actual_procCoords[0][rank1] != 
-          actual_procCoords[0][rank2]) 
+      if (this->actual_procCoords[0][rank1] != 
+          this->actual_procCoords[0][rank2]) 
       {
         hops = 5;
         return true;
@@ -580,9 +638,9 @@ public:
       // Case: ranks in same group
       // For each difference in actual_coordinates then
       // 1 hop
-      for (int i = 1; i < actual_networkDim; ++i) {
-        if (actual_procCoords[i][rank1] != 
-            actual_procCoords[i][rank2]) 
+      for (int i = 1; i < this->actual_networkDim; ++i) {
+        if (this->actual_procCoords[i][rank1] != 
+            this->actual_procCoords[i][rank2]) 
           ++hops;
       }
     }
@@ -605,6 +663,7 @@ private:
   bool is_transformed;
 
   const Teuchos::ParameterList *pl;
+
 //  bool delete_tranformed_coords;
 
 /*

@@ -1742,7 +1742,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                         // Uniform partitioning
                         else {
                           
-                          std::cout << "\nU N I F O R M FIRST CUTTING" << std::endl;
+                          std::cout << "\nU N I F O R M CUTTING" << std::endl;
                           
                           //get the target weights of the parts.
                           this->mj_get_initial_cut_coords_target_weights(
@@ -2301,8 +2301,8 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
               future_num_parts /= this->num_first_cut_parts;
 
 
-              std::cout << "\nNonuniformin future_num_parts: " << future_num_parts 
-                << " output_num_parts: " << output_num_parts << "\n";
+//              std::cout << "\nNonuniformin future_num_parts: " << future_num_parts 
+//                << " output_num_parts: " << output_num_parts << "\n";
 
               mj_part_t max_part = 0;
               mj_part_t sum_first_cut_dist = 0;
@@ -2316,7 +2316,12 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
 
               // Remaining parts left to partition
               future_num_parts = this->num_global_parts * max_part / sum_first_cut_dist;
-              
+         
+
+              std::cout << "\nNonuniformin future_num_parts: " << future_num_parts 
+                << " output_num_parts: " << output_num_parts << "\n";
+
+     
               // Number of parts remaining left to partition for each future_part
               // The sum must exactly equal global_num_parts 
               for (int i = 0; i < this->num_first_cut_parts; ++i) {

@@ -311,6 +311,8 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
       if (pe_input_adapter) 
         reduce_best_mapping = pe_input_adapter->getValue<bool>(&reduce_best_mapping);
 
+      std::cout << "\nABOUT TO MAKE TASKMAPPER" << std::endl;
+      
       this->algorithm_ = 
             rcp(new CoordinateTaskMapper<Adapter,part_t>(this->comm_,
                                                          machine, 
@@ -321,10 +323,19 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
                                                          ranks_per_node, 
                                                          divide_prime_first, 
                                                          reduce_best_mapping));
- 
+
+      std::cout << "\nMADE TASKMAPPER" << std::endl;
+
+
       this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
 
+
+      std::cout << "\nGOT TASKMAPPER SOLN" << std::endl;
+
       this->algorithm_->map(this->soln);
+
+
+      std::cout << "\nMAPPED SOLN TASKMAPPER" << std::endl;
     }
     else {
       // Add other mapping methods here

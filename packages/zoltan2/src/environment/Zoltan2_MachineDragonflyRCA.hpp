@@ -373,19 +373,25 @@ public:
   virtual ~MachineDragonflyRCA() {
     if (is_transformed) {
       is_transformed = false;
-      for (int i = 0; i < transformed_networkDim; ++i) {
-        delete [] transformed_procCoords[i];
+      if (this->numRanks > 1) {
+        for (int i = 0; i < transformed_networkDim; ++i) {
+          delete [] transformed_procCoords[i];
+        }
       }
       delete [] transformed_machine_extent; 
     }
     else {
-      for (int i = 0; i < actual_networkDim; ++i) {
-        delete [] actual_procCoords[i];
+      if (this->numRanks > 1) {
+        for (int i = 0; i < actual_networkDim; ++i) {
+          delete [] actual_procCoords[i];
+        }
       }
     }
+    
     delete [] actual_procCoords;
-    delete [] actual_machine_extent;
     delete [] transformed_procCoords;
+
+    delete [] actual_machine_extent; 
     delete [] group_count; 
   }
 
@@ -573,17 +579,17 @@ public:
     return true;
   }
 
-  // Return (approx) hop count from rank1 to rank2. Does not account for 
-  // dynamic routing.
-  bool getHopCount(int rank1, int rank2, pcoord_t &hops) override { 
+  // Return (approx) hop count from rank1 to rank2. Does not account for  
+  // Dragonfly's dynamic routing.
+  virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) { 
     hops = 0;
 
     if (is_transformed) {     
       // Case: ranks in different groups
       // Does not account for location of group to group connection. 
       // (Most group to group messages will take 5 hops)
-      if (transformed_procCoords[0][rank1] != 
-          transformed_procCoords[0][rank2]) 
+      if (this->transformed_procCoords[0][rank1] != 
+          this->transformed_procCoords[0][rank2]) 
       {
         hops = 5;
         return true;
@@ -592,9 +598,9 @@ public:
       // Case: ranks in same group
       // For each 2 differences in transformed_coordinates then
       // 1 hop
-      for (int i = 1; i < transformed_networkDim; ++i) {
-        if (transformed_procCoords[i][rank1] != 
-            transformed_procCoords[i][rank2]) 
+      for (int i = 1; i < this->transformed_networkDim; ++i) {
+        if (this->transformed_procCoords[i][rank1] != 
+            this->transformed_procCoords[i][rank2]) 
           ++hops;
       }
       hops /= 2;
@@ -603,8 +609,8 @@ public:
       // Case: ranks in different groups
       // Does not account for location of group to group connection. 
       // (Nearly all group to group messages will take 5 hops)
-      if (actual_procCoords[0][rank1] != 
-          actual_procCoords[0][rank2]) 
+      if (this->actual_procCoords[0][rank1] != 
+          this->actual_procCoords[0][rank2]) 
       {
         hops = 5;
         return true;
@@ -614,8 +620,8 @@ public:
       // For each difference in actual_coordinates then
       // 1 hop
       for (int i = 1; i < actual_networkDim; ++i) {
-        if (actual_procCoords[i][rank1] != 
-            actual_procCoords[i][rank2]) 
+        if (this->actual_procCoords[i][rank1] != 
+            this->actual_procCoords[i][rank2]) 
           ++hops;
       } 
     }

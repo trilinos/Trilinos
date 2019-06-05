@@ -212,11 +212,26 @@ void getSolutionCenterCoordinates(
 
   for (lno_t i = 0; i < numLocalCoords; i++) {
     part_t p = parts[i];
+  
+//    std::cout << "\nRank: " << comm->getRank() << " i: " << i << " part: " << p << std::endl;
 
     //add up all coordinates in each part.
     for (int j = 0; j < coordDim; ++j) {
+
+//      std::cout << "\nRank: " << comm->getRank() << " i: " << i << " j: " << j << " part: " << p << std::endl;
       scalar_t c = multiJagged_coordinates[j][i];
+
+
+
+//      std::cout << "\nRank: " << comm->getRank() << " i: " << i << " j: " << j 
+//        << " part: " << p << " coord: " << c << std::endl;
+
+
       partCenters[j][p] += c;
+
+
+//      std::cout << "\nRank: " << comm->getRank() << " i: " << i << " j: " << j
+//        << " part: " << p << " coord: " << c << " centers: " << partCenters[j][p] << std::endl;
     }
     ++point_counts[p];
   }
@@ -1049,7 +1064,14 @@ public:
 
         int neighborProc = task_to_proc[neighborTask];
 
+//        std::cout << "\nASSIGNED_PROC: " << assigned_proc 
+//          << " NeighborProc: " << neighborProc << std::endl;
+
         double distance = getProcDistance(assigned_proc, neighborProc);
+
+
+//        std::cout << "\nDA DISTANCE In TASK_MAPPING: " << distance << std::endl;
+
 
         if (task_communication_edge_weight == NULL) {
           totalCost += distance ;
@@ -1655,6 +1677,9 @@ public:
 //    std::cout << "mj_partitioner.sequential_task_partitioning over" 
 //      << std::endl;
 
+
+    std::cout << "\nPartitioning complete!!" << std::endl;
+
     freeArray<pcoord_t *>(tcoords);
     freeArray<int>(permutation);
 
@@ -1758,6 +1783,8 @@ public:
       gnuPlotCode.close();
     }
 */
+
+    std::cout << "\nEND OF COORD TASK MAPPER" << std::endl;
 
     freeArray<part_t>(proc_to_task_xadj_work);
     freeArray<part_t>(task_xadj);
@@ -2357,7 +2384,7 @@ public:
               procCoordinates);
     }
 
-
+/*
     for (int i = 0; i < this->nprocs; ++i)
     {
       std::cout << "\nMyRank: " << comm_->getRank() << " nprocs: " << nprocs << " Coords: ";
@@ -2368,6 +2395,7 @@ public:
       
     }
     std::cout << "\n";
+*/
 
     //get the tasks information, such as coordinate dimension,
     //number of parts.
