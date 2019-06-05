@@ -13,6 +13,7 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
+#include "Tempus_StepperObserverComposite.hpp"
 #include "Tempus_StepperIMEX_RKObserver.hpp"
 
 
@@ -367,6 +368,7 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
+  Teuchos::RCP<StepperObserverComposite<Scalar> >        stepperObserver_;
   Teuchos::RCP<StepperIMEX_RKObserver<Scalar> >  stepperIMEX_RKObserver_;
 
 };

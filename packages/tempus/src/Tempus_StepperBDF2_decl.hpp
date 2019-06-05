@@ -11,6 +11,7 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
+#include "Tempus_StepperObserverComposite.hpp"
 #include "Tempus_StepperBDF2Observer.hpp"
 
 
@@ -131,6 +132,7 @@ public:
 private:
 
   Teuchos::RCP<Stepper<Scalar> >             startUpStepper_;
+  Teuchos::RCP<StepperObserverComposite<Scalar> >        stepperObserver_;
   Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
   Scalar                                     order_;
 };

@@ -359,21 +359,18 @@ template<class Scalar>
 void StepperIMEX_RK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (this->stepperObserver_ == Teuchos::null) {
-      stepperIMEX_RKObserver_ =
-        Teuchos::rcp(new StepperIMEX_RKObserver<Scalar>());
-      this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperIMEX_RKObserver_);
-     }
-  } else {
-    this->stepperObserver_ = obs;
-    stepperIMEX_RKObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperIMEX_RKObserver<Scalar> >
-        (this->stepperObserver_);
-  }
+
+  if (this->stepperObserver_ == Teuchos::null)
+    this->stepperObserver_  =
+      Teuchos::rcp(new StepperObserverComposite<Scalar>());
+
+  if (obs == Teuchos::null)
+    obs = Teuchos::rcp(new StepperIMEX_RKObserver<Scalar>());
+
+  this->stepperObserver_->addObserver(
+      Teuchos::rcp_dynamic_cast<StepperIMEX_RKObserver<Scalar> > (obs, true) );
+
+
 }
 
 
