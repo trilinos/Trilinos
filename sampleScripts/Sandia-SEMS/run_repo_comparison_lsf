@@ -142,10 +142,6 @@ grep "(Failed)" build_updated/test.output | cut -d " " -f 3- | sort -u &> update
 grep "(Not Run)" build_pristine/test.output | cut -d " " -f 3- | sort -u &> pristine_test.notrun || true
 grep "(Not Run)" build_updated/test.output | cut -d " " -f 3- | sort -u &> updated_test.notrun || true
 
-touch pristine_ctestcomplete.check updated_ctestcomplete.check
-awk '/Label/ { if ($0 == "Label Time Summary:") { print "ctest completed"; } else { print "time out: ctest aborted";} }' build_pristine/test.output &> pristine_ctestcomplete.check || true
-awk '/Label/ { if ($0 == "Label Time Summary:") { print "ctest completed"; } else { print "time out: ctest aborted";} }' build_updated/test.output &> updated_ctestcomplete.check || true
-
 DIFF_ERRORS=`diff pristine_build.error updated_build.error | wc -l`
 DIFF_FAILED=`diff pristine_test.failed updated_test.failed | wc -l`
 DIFF_NOTRUN=`diff pristine_test.notrun updated_test.notrun | wc -l`
