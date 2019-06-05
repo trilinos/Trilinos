@@ -34,6 +34,7 @@
 #ifndef STK_SEARCH_UTIL_STK_MESH_PERIODIC_BOUNDARY_SEARCH_HPP
 #define STK_SEARCH_UTIL_STK_MESH_PERIODIC_BOUNDARY_SEARCH_HPP
 
+#include <stk_util/stk_config.h>
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
@@ -160,6 +161,7 @@ public:
       // Default is identity transform.
     }
 
+#if defined(STK_HAVE_BOOST)
     TransformHelper(const boost::array<double, 3> & trans_arg)
       : m_transform_type(TRANSLATION)
       , m_translation(3,0)
@@ -168,6 +170,7 @@ public:
         m_translation[1] = trans_arg[1];
         m_translation[2] = trans_arg[2];
     }
+#endif
 
     TransformHelper(double angle, const double axis[3])
       : m_transform_type(ROTATIONAL)
