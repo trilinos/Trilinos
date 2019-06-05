@@ -3,12 +3,18 @@
 
 #include <vector>
 #include <unordered_map>
+#include <iostream>
 
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_ColoringSolution.hpp>
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
+
+#include "Tpetra_Core.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_FEMultiVector.hpp"
 
 #include <KokkosKernels_Handle.hpp>
 #include "KokkosKernels_IOUtils.hpp"
@@ -22,6 +28,119 @@
 namespace Zoltan2{
 
 //new class, colorLabel?
+class VtxColor {
+  public:
+    unsigned long long rand;
+    unsigned long long color;
+    std::vector<VtxColor*> nbors;
+    //constructors
+    VtxColor(unsigned long long r, unsigned long long c):rand(r),color(c){}
+    VtxColor(){
+      rand = 0;
+      color = 0;
+    }
+    //constructors for FEMultiVector's health
+    VtxColor(const unsigned long long l){
+      rand = l;
+      color = 0;
+    }
+    VtxColor(volatile const VtxColor& other){
+      rand = other.rand;
+      color = other.color;
+      //nbors = other.nbors;
+    }
+    VtxColor(const VtxColor& other){
+      rand = other.rand;
+      color = other.color;
+      //nbors = other.nbors;
+    }
+    volatile VtxColor operator=(const VtxColor& other) volatile {
+      rand = other.rand;
+      color = other.color;
+      //nbors = other.nbors;
+      return *this;
+    }
+    VtxColor& operator=(const VtxColor& other){
+      rand = other.rand;
+      color = other.color;
+      //nbors = other.nbors;
+      return *this;
+    }
+    VtxColor& operator+=(const VtxColor& copy){
+      //conflict detection is here.
+      color = copy.color;
+      return *this;
+    }
+    friend bool operator==(const VtxColor& lhs, const VtxColor& rhs){
+      return (lhs.rand == rhs.rand) && (lhs.color == rhs.color) &&
+             (lhs.nbors == rhs.nbors);
+    }
+    friend std::ostream& operator<<(std::ostream& os, const VtxColor& a){
+      os<<"color: "<<a.color<<", rand: "<<a.rand;
+      return os;
+    }
+   
+};
+
+}//end namespace Zoltan2
+
+namespace Kokkos{
+  namespace Details {
+    template<>
+    class ArithTraits<Zoltan2::VtxColor>{
+    public:
+      typedef Zoltan2::VtxColor val_type;
+      typedef unsigned long long mag_type;
+      
+      static const bool is_specialized = true;
+      static const bool is_signed = false;
+      static const bool is_integer = true;
+      static const bool is_exact = true;
+      static const bool is_complex = false;
+
+      static KOKKOS_FORCEINLINE_FUNCTION bool isInf(const val_type&){
+        return false;
+      }
+      static KOKKOS_FORCEINLINE_FUNCTION bool isNan(const val_type &){
+        return false;
+      }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type abs(const val_type &x){
+        return x.rand;
+      }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type zero() {return 0;}
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type one() {return 1;}
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type min() {return LONG_MIN;}
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type max() {return LONG_MAX;}
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type nan() {
+        return (unsigned long long)-1;
+      }
+      
+      //Backwards compatibility with Teuchos::ScalarTraits
+      typedef mag_type magnitudeType;
+      static const bool isComplex = false;
+      static const bool isOrdinal = true;
+      static const bool isComparable = true;
+      static const bool hasMachineParameters = false;
+      static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude(
+        const val_type &x){
+        return abs(x);
+      }
+      static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf(const val_type&){
+        return false;
+      }
+      static std::string name() {return "Zoltan2::VtxColor";}
+    };
+  }//end namespace Details
+}//end namespace Kokkos
+
+namespace Teuchos {
+template<typename Ordinal>
+struct SerializationTraits<Ordinal, Zoltan2::VtxColor> :
+       public Teuchos::DirectSerializationTraits<Ordinal, Zoltan2::VtxColor>
+{};
+}//end namespace Teuchos
+
+namespace Zoltan2 {
 
 template <typename Adapter>
 class AlgHybridGMB : public Algorithm<Adapter>
@@ -34,7 +153,9 @@ class AlgHybridGMB : public Algorithm<Adapter>
     typedef typename Adapter::scalar_t scalar_t;
     typedef typename Adapter::base_adapter_t base_adapter_t;
     typedef Tpetra::Map<lno_t, gno_t> map_t;
-
+    typedef VtxColor femv_scalar_t;
+    typedef Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t> femv_t;
+    
   private:
 
     void buildModel(modelFlag_t &flags);
@@ -309,14 +430,15 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //TODO: create FEMultiVector of some type, need to figure out what is
       //appropriate.
       //relevant lines from VtxLabel:
-      //   typedef Tpetra::Import<lno_t, gno_t> import_t;
+         typedef Tpetra::Import<lno_t, gno_t> import_t;
       //   typedef Tpetra::FEMultiVector<scalar_t, lno_t, gno_t> femv_t;
       //                                 ^-----Need to figure out what type 
       //                                       this should be
-      //   Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned, 
-      //                                                      mapWithCopies))
-      //   femv_t femv = rcp(new femv_t(mapOwned, importer, 1, true));
-      //                                 could change,------^ 
+         Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned, 
+                                                            mapWithCopies));
+         Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned, 
+                                                    importer, 1, true));
+      //                                 could change,--------^ 
       //                                 potentially? (#vectors in multivector)
 
 
