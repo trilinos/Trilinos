@@ -278,14 +278,14 @@ namespace Xpetra {
 
 
     /*! @brief Save matrix to file in Matrix Market format. */
-    static void Write(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+    static void Write(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op, const bool &writeAllMaps = false) {
 
       Write("rowmap_"    + fileName, *(Op.getRowMap()));
-      if ( !Op.getDomainMap()->isSameAs(*(Op.getRowMap())) )
+      if ( !Op.getDomainMap()->isSameAs(*(Op.getRowMap())) || writeAllMaps )
         Write("domainmap_" + fileName, *(Op.getDomainMap()));
-      if ( !Op.getRangeMap()->isSameAs(*(Op.getRowMap())) )
+      if ( !Op.getRangeMap()->isSameAs(*(Op.getRowMap())) || writeAllMaps )
         Write("rangemap_"  + fileName, *(Op.getRangeMap()));
-      if ( !Op.getColMap()->isSameAs(*(Op.getDomainMap())) )
+      if ( !Op.getColMap()->isSameAs(*(Op.getDomainMap())) || writeAllMaps )
         Write("colmap_"    + fileName, *(Op.getColMap()));
 
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
@@ -345,7 +345,7 @@ namespace Xpetra {
 
 
     /*! @brief Save matrix to file in Matrix Market format. */
-    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op, const bool &writeAllMaps = false) {
       typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
       typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
       //typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
@@ -360,7 +360,7 @@ namespace Xpetra {
           if(m != Teuchos::null) { // skip empty blocks
             TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const XpCrsMatWrap>(m) == Teuchos::null, Xpetra::Exceptions::BadCast,
               "Sub block matrix (" << r << "," << c << ") is not of type CrsMatrixWrap.");
-            XpIO::Write(fileName + toString(r) + toString(c) + ".m", *m);
+            XpIO::Write(fileName + toString(r) + toString(c) + ".m", *m, writeAllMaps);
           }
         }
       }
@@ -852,14 +852,14 @@ namespace Xpetra {
 
 
     /*! @brief Save matrix to file in Matrix Market format. */
-    static void Write(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+    static void Write(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op, const bool &writeAllMaps = false) {
 
       Write("rowmap_"    + fileName, *(Op.getRowMap()));
-      if ( !Op.getDomainMap()->isSameAs(*(Op.getRowMap())) )
+      if ( !Op.getDomainMap()->isSameAs(*(Op.getRowMap())) || writeAllMaps )
         Write("domainmap_" + fileName, *(Op.getDomainMap()));
-      if ( !Op.getRangeMap()->isSameAs(*(Op.getRowMap())) )
+      if ( !Op.getRangeMap()->isSameAs(*(Op.getRowMap())) || writeAllMaps )
         Write("rangemap_"  + fileName, *(Op.getRangeMap()));
-      if ( !Op.getColMap()->isSameAs(*(Op.getDomainMap())) )
+      if ( !Op.getColMap()->isSameAs(*(Op.getDomainMap())) || writeAllMaps )
         Write("colmap_"    + fileName, *(Op.getColMap()));
 
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
@@ -923,7 +923,7 @@ namespace Xpetra {
     } //WriteLocal
 
     /*! @brief Save matrix to file in Matrix Market format. */
-    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op, const bool &writeAllMaps = false) {
       typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
       typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
       //typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
@@ -938,7 +938,7 @@ namespace Xpetra {
           if(m != Teuchos::null) { // skip empty blocks
             TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const XpCrsMatWrap>(m) == Teuchos::null, Xpetra::Exceptions::BadCast,
               "Sub block matrix (" << r << "," << c << ") is not of type CrsMatrixWrap.");
-            XpIO::Write(fileName + toString(r) + toString(c) + ".m", *m);
+            XpIO::Write(fileName + toString(r) + toString(c) + ".m", *m, writeAllMaps);
           }
         }
       }
