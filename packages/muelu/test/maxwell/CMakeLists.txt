@@ -57,15 +57,15 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    IF (${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-ML"
-        ARGS "--linAlgebra=Epetra --precType=ML-RefMaxwell  --xml=Maxwell_ML.xml"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-        )
-    ENDIF()
+    #IF (${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
+    #  TRIBITS_ADD_TEST(
+    #    Maxwell3D
+    #    NAME "Maxwell3D-ML"
+    #    ARGS "--linAlgebra=Epetra --precType=ML-RefMaxwell  --xml=Maxwell_ML.xml"
+    #    COMM serial mpi
+    #    NUM_MPI_PROCS 4
+    #    )
+    #ENDIF()
   ENDIF()
 
 
