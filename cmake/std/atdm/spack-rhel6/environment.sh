@@ -136,8 +136,8 @@ export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.so;${BINUTILS_ROOT
 # libbdf.a because the former works and the latter does not and TriBITS is set
 # up to only find static libs by default!
 unset BINUTILS_ROOT
-# NOTE: Above, you have to unset this or the configure dues in in the compiler
-# check.  What the heck?
+# NOTE: Above, you have to unset BINUTILS_ROOT or the CMake configure of
+# Trilinos dies in the compiler check.  What the heck?
 
 # SuperLUDist
 if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
