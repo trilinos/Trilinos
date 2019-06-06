@@ -985,6 +985,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //@}
 
   // Expert-only function
+#ifdef Reduce
+#undef Reduce
+#endif
   int Reduce();
 
  protected:

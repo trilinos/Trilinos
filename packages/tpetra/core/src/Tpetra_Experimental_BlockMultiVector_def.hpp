@@ -115,11 +115,23 @@ getBlockMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src)
   typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
   const BMV* src_bmv = dynamic_cast<const BMV*> (&src);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    src_bmv == NULL, std::invalid_argument, "Tpetra::Experimental::"
+    src_bmv == nullptr, std::invalid_argument, "Tpetra::Experimental::"
     "BlockMultiVector: The source object of an Import or Export to a "
     "BlockMultiVector, must also be a BlockMultiVector.");
   return Teuchos::rcp (src_bmv, false); // nonowning RCP
 }
+
+template<class Scalar, class LO, class GO, class Node>
+BlockMultiVector<Scalar, LO, GO, Node>::
+BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& in,
+                  const Teuchos::DataAccess copyOrView) :
+  dist_object_type (in),
+  meshMap_ (in.meshMap_),
+  pointMap_ (in.pointMap_),
+  mv_ (in.mv_, copyOrView),
+  mvData_ (getRawHostPtrFromMultiVector (mv_)),
+  blockSize_ (in.blockSize_)
+{}
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -132,10 +144,7 @@ BlockMultiVector (const map_type& meshMap,
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs), // nonowning RCP is OK, since pointMap_ won't go away
   mvData_ (getRawHostPtrFromMultiVector (mv_)),
   blockSize_ (blockSize)
-{
-  // Make sure that mv_ has view semantics.
-  mv_.setCopyOrView (Teuchos::View);
-}
+{}
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -149,10 +158,7 @@ BlockMultiVector (const map_type& meshMap,
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs),
   mvData_ (getRawHostPtrFromMultiVector (mv_)),
   blockSize_ (blockSize)
-{
-  // Make sure that mv_ has view semantics.
-  mv_.setCopyOrView (Teuchos::View);
-}
+{}
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -161,7 +167,7 @@ BlockMultiVector (const mv_type& X_mv,
                   const LO blockSize) :
   dist_object_type (Teuchos::rcp (new map_type (meshMap))), // shallow copy
   meshMap_ (meshMap),
-  mvData_ (NULL), // just for now
+  mvData_ (nullptr), // just for now
   blockSize_ (blockSize)
 {
   using Teuchos::RCP;
@@ -195,7 +201,6 @@ BlockMultiVector (const mv_type& X_mv,
     // should be marked const anyway, because views can't change the
     // allocation (just the entries themselves).
     RCP<mv_type> X_view = Teuchos::rcp_const_cast<mv_type> (X_view_const);
-    X_view->setCopyOrView (Teuchos::View);
     TEUCHOS_TEST_FOR_EXCEPTION(
       X_view->getCopyOrView () != Teuchos::View, std::logic_error, "Tpetra::"
       "Experimental::BlockMultiVector constructor: We just set a MultiVector "
@@ -225,10 +230,7 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
   mv_ (X.mv_, newPointMap, offset * X.getBlockSize ()), // MV "offset view" constructor
   mvData_ (getRawHostPtrFromMultiVector (mv_)),
   blockSize_ (X.getBlockSize ())
-{
-  // Make sure that mv_ has view semantics.
-  mv_.setCopyOrView (Teuchos::View);
-}
+{}
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -241,21 +243,15 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
   mv_ (X.mv_, pointMap_, offset * X.getBlockSize ()), // MV "offset view" constructor
   mvData_ (getRawHostPtrFromMultiVector (mv_)),
   blockSize_ (X.getBlockSize ())
-{
-  // Make sure that mv_ has view semantics.
-  mv_.setCopyOrView (Teuchos::View);
-}
+{}
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
 BlockMultiVector () :
   dist_object_type (Teuchos::null),
-  mvData_ (NULL),
+  mvData_ (nullptr),
   blockSize_ (0)
-{
-  // Make sure that mv_ has view semantics.
-  mv_.setCopyOrView (Teuchos::View);
-}
+{}
 
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::map_type
@@ -463,9 +459,9 @@ getMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src)
   // the Import or Export calls checkSizes in DistObject's doTransfer.
   typedef BlockMultiVector<Scalar, LO, GO, Node> this_type;
   const this_type* srcBlkVec = dynamic_cast<const this_type*> (&src);
-  if (srcBlkVec == NULL) {
+  if (srcBlkVec == nullptr) {
     const mv_type* srcMultiVec = dynamic_cast<const mv_type*> (&src);
-    if (srcMultiVec == NULL) {
+    if (srcMultiVec == nullptr) {
       // FIXME (mfh 05 May 2014) Tpetra::MultiVector's operator=
       // currently does a shallow copy by default.  This is why we
       // return by RCP, rather than by value.

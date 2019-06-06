@@ -1383,10 +1383,10 @@ namespace MueLuTests {
           prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
 
           if(interpolationOrder == 0) {
-            if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
+            if(rowIndices[0] != indicesConstant[rankOffsets[myRank] + rowIdx]) {++numErrors;}
           } else {
             for(size_t entryIdx = 0; entryIdx < prolongatorGraph->getNumEntriesInLocalRow(rowIdx); ++entryIdx) {
-              if(rowIndices[entryIdx] != indicesLinear[rowOffset[rowIdx] + entryIdx]) {++numErrors;}
+              if(rowIndices[entryIdx] != indicesLinear[rowOffset[rankOffsets[myRank] + rowIdx] + entryIdx]) {++numErrors;}
             }
           }
         }
@@ -1543,10 +1543,10 @@ namespace MueLuTests {
           prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
 
           if(interpolationOrder == 0) {
-            if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
+            if(rowIndices[0] != indicesConstant[rankOffsets[myRank] + rowIdx]) {++numErrors;}
           } else {
             for(size_t entryIdx = 0; entryIdx < prolongatorGraph->getNumEntriesInLocalRow(rowIdx); ++entryIdx) {
-              if(rowIndices[entryIdx] != indicesLinear[rowOffset[rowIdx] + entryIdx]) {++numErrors;}
+              if(rowIndices[entryIdx] != indicesLinear[rowOffset[rankOffsets[myRank] + rowIdx] + entryIdx]) {++numErrors;}
             }
           }
         }
