@@ -43,9 +43,10 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AMGX_SETUP_DECL_HPP
-#define MUELU_AMGX_SETUP_DECL_HPP
+#ifndef MUELU_AMGX_SETUP_HPP
+#define MUELU_AMGX_SETUP_HPP
 
+#ifdef HAVE_MUELU_AMGX
 #include <amgx_c.h>
 
 namespace MueLu {
@@ -57,4 +58,5 @@ namespace MueLu {
   void MueLu_AMGX_finalize_plugins();
 }
 
+#endif //HAVE_MUELU_AMGX
 #endif //ifndef MUELU_AMGX_SETUP_DEF_HPP

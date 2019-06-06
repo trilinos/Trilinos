@@ -103,6 +103,7 @@
 
 #ifdef HAVE_MUELU_AMGX
 #include <MueLu_AMGXOperator.hpp>
+#include <MueLu_AMGX_Setup.hpp>
 #endif
 #ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
@@ -118,7 +119,6 @@
 #include "Xpetra_EpetraMultiVector.hpp"
 #endif
 
-#include <MueLu_AMGX_Setup.cpp>
 
 /*********************************************************************/
 

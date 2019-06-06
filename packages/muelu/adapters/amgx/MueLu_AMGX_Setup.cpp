@@ -43,31 +43,28 @@
 // ***********************************************************************
 //
 // @HEADER
-
+#include <MueLu_ConfigDefs.hpp>
 #include "MueLu_AMGX_Setup.hpp"
 
 namespace MueLu {
 
   void MueLu_AMGX_initialize()
   {
-    printf("************************AMGX_initialize********************************\n");
     AMGX_SAFE_CALL(AMGX_initialize());
   }
 
   void MueLu_AMGX_initialize_plugins()
   {    
-    printf("********************AMGX_initialize_plugins****************************\n");
     AMGX_SAFE_CALL(AMGX_initialize_plugins());
   }
 
   void MueLu_AMGX_finalize()
-  {    printf("**********************AMGX_finalize*********************************\n");
+  {
     AMGX_SAFE_CALL(AMGX_finalize());
   }
 
   void MueLu_AMGX_finalize_plugins()
   {    
-    printf("********************AMGX_finalize_plugins******************************\n");
     AMGX_SAFE_CALL(AMGX_finalize_plugins());
   }
 } // namespace
