@@ -212,23 +212,30 @@ void StepperExplicitRK<Scalar>::setObserver(
   if (stepperObserver_ == Teuchos::null) {
     stepperObserver_ = Teuchos::rcp(new StepperObserverComposite<Scalar>);
   }
-  if (stepperExplicitRKObserver_  == Teuchos::null) {
-    stepperExplicitRKObserver_ =
-      Teuchos::rcp(new StepperExplicitRKObserverComposite<Scalar>());
-  }
 
   if (obs == Teuchos::null) {
       auto stepperExplicitRKObserver =
         Teuchos::rcp(new StepperExplicitRKObserver<Scalar>());
+      if (stepperExplicitRKObserver_  == Teuchos::null) {
+        stepperExplicitRKObserver_ =
+          Teuchos::rcp(new StepperExplicitRKObserverComposite<Scalar>());
+      }
       stepperExplicitRKObserver_->addObserver(stepperExplicitRKObserver);
       stepperObserver_->addObserver(
         Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
 	(stepperExplicitRKObserver, true));
   } else {
     stepperObserver_->addObserver(obs);
-    stepperExplicitRKObserver_->addObserver(
-      Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> >
-      (obs, true));
+    if (Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> >
+      (obs) != Teuchos::null) {
+        if (stepperExplicitRKObserver_  == Teuchos::null) {
+          stepperExplicitRKObserver_ =
+            Teuchos::rcp(new StepperExplicitRKObserverComposite<Scalar>());
+        }
+        stepperExplicitRKObserver_->addObserver(
+        Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> >
+        (obs));
+    }
   }
 
 }

@@ -217,6 +217,30 @@ public:
   //! \name Constructors
   //@{
 
+  /// \brief Default constructor.
+  ///
+  /// Creates an empty BlockMultiVector.  An empty BlockMultiVector
+  /// has zero rows, and block size zero.
+  BlockMultiVector ();
+
+  //! Copy constructor (shallow copy).
+  BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>&) = default;
+
+  //! Move constructor (shallow move).
+  BlockMultiVector (BlockMultiVector<Scalar, LO, GO, Node>&&) = default;
+
+  //! Copy assigment (shallow copy).
+  BlockMultiVector<Scalar, LO, GO, Node>&
+  operator= (const BlockMultiVector<Scalar, LO, GO, Node>&) = default;
+
+  //! Move assigment (shallow move).
+  BlockMultiVector<Scalar, LO, GO, Node>&
+  operator= (BlockMultiVector<Scalar, LO, GO, Node>&&) = default;
+
+  //! "Copy constructor" with option to deep copy.
+  BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& in,
+                    const Teuchos::DataAccess copyOrView);
+
   /// \brief Constructor that takes a mesh Map, a block size, and a
   ///   number of vectors (columns).
   ///
@@ -292,12 +316,6 @@ public:
   BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
                     const map_type& newMeshMap,
                     const size_t offset = 0);
-
-  /// \brief Default constructor.
-  ///
-  /// Creates an empty BlockMultiVector.  An empty BlockMultiVector
-  /// has zero rows, and block size zero.
-  BlockMultiVector ();
 
   //@}
   //! \name Access to Maps, the block size, and a MultiVector view.

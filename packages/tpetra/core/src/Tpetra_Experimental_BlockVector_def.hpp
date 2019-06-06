@@ -47,6 +47,19 @@ namespace Experimental {
 
   template<class Scalar, class LO, class GO, class Node>
   BlockVector<Scalar, LO, GO, Node>::
+  BlockVector () :
+    base_type ()
+  {}
+
+  template<class Scalar, class LO, class GO, class Node>
+  BlockVector<Scalar, LO, GO, Node>::
+  BlockVector (const BlockVector<Scalar, LO, GO, Node>& in,
+               const Teuchos::DataAccess copyOrView) :
+    base_type (in, copyOrView)
+  {}
+
+  template<class Scalar, class LO, class GO, class Node>
+  BlockVector<Scalar, LO, GO, Node>::
   BlockVector (const map_type& meshMap, const LO blockSize) :
     base_type (meshMap, blockSize, 1)
   {}
@@ -98,14 +111,9 @@ namespace Experimental {
   {}
 
   template<class Scalar, class LO, class GO, class Node>
-  BlockVector<Scalar, LO, GO, Node>::
-  BlockVector () : base_type () {}
-
-  template<class Scalar, class LO, class GO, class Node>
   typename BlockVector<Scalar, LO, GO, Node>::vec_type
   BlockVector<Scalar, LO, GO, Node>::getVectorView () {
     Teuchos::RCP<vec_type> vPtr = this->mv_.getVectorNonConst (0);
-    vPtr->setCopyOrView (Teuchos::View);
     return *vPtr; // shallow copy
   }
 
@@ -122,7 +130,6 @@ namespace Experimental {
   replaceGlobalValues (const GO globalRowIndex, const Scalar vals[]) const {
     return ((const base_type*) this)->replaceGlobalValues (globalRowIndex, 0, vals);
   }
-
 
   template<class Scalar, class LO, class GO, class Node>
   bool
@@ -152,17 +159,6 @@ namespace Experimental {
     return ((const base_type*) this)->getGlobalRowView (globalRowIndex, 0, vals);
   }
 
-  /// \brief Get a view of the degrees of freedom at the given mesh point.
-  ///
-  /// \warning This method's interface may change or disappear at any
-  ///   time.  Please do not rely on it in your code yet.
-  ///
-  /// The preferred way to refer to little_vec_type is to get it from
-  /// BlockVector's typedef.  This is because different
-  /// specializations of BlockVector reserve the right to use
-  /// different types to implement little_vec_type.  This gives us a
-  /// porting strategy to move from "classic" Tpetra to the Kokkos
-  /// refactor version.
   template<class Scalar, class LO, class GO, class Node>
   typename BlockVector<Scalar, LO, GO, Node>::little_vec_type
   BlockVector<Scalar, LO, GO, Node>::
@@ -170,7 +166,8 @@ namespace Experimental {
   {
     if (! this->isValidLocalMeshIndex (localRowIndex)) {
       return little_vec_type ();
-    } else {
+    }
+    else {
       const size_t blockSize = this->getBlockSize ();
       const size_t offset = localRowIndex * blockSize;
       return little_vec_type (this->getRawPtr () + offset, blockSize);

@@ -100,6 +100,16 @@ namespace panzer {
                           const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
                           const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv);
 
+
+    void evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cell_cub_points,
+                          const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
+                          const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+                          const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+                          const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+                          bool use_vertex_coordinates=true,
+                          const int in_num_cells = -1);
+
+
     void evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
                         const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
                         const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
