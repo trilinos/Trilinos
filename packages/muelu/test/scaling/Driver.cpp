@@ -118,7 +118,7 @@
 #include "Xpetra_EpetraMultiVector.hpp"
 #endif
 
-
+#include <MueLu_AMGX_Setup.cpp>
 
 /*********************************************************************/
 
@@ -286,6 +286,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     belosType = "gmres";
     out << "WARNING: CG will not work with COMPLEX scalars, switching to GMRES"<<std::endl;
   }
+
+#ifdef HAVE_MUELU_AMGX
+//Initialize AMGX
+MueLu::MueLu_AMGX_initialize();
+MueLu::MueLu_AMGX_initialize_plugins();
+#endif
 
   bool isDriver = paramList.isSublist("Run1");
   if (isDriver) {
@@ -534,6 +540,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
 
   }//end reruns
+
+#ifdef HAVE_MUELU_AMGX
+// Finalize AMGX
+//MueLu::MueLu_AMGX_finalize();
+//MueLu::MueLu_AMGX_finalize_plugins();
+#endif
 
   return EXIT_SUCCESS;
 }
