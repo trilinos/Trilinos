@@ -235,7 +235,6 @@ std::string StridedEpetraOperator::PrintNorm(const eNormType & nrmType,const cha
    return ss.str();
 }
 
-#ifndef Teko_DEBUG_OFF
 bool StridedEpetraOperator::testAgainstFullOperator(int count,double tol) const
 {
    Epetra_Vector xf(OperatorRangeMap());
@@ -265,7 +264,6 @@ bool StridedEpetraOperator::testAgainstFullOperator(int count,double tol) const
 
    return result;
 }
-#endif
 
 } // end namespace Epetra
 } // end namespace Teko

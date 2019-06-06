@@ -964,7 +964,7 @@ namespace SEAMS {
 
     std::string tmpstr(start, 0, len);
     char *      tmp;
-    new_string(tmpstr.c_str(), &tmp);
+    new_string(tmpstr, &tmp);
     return tmp;
   }
 

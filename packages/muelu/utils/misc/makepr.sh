@@ -108,6 +108,7 @@ if grep Created $TMPFILE > /dev/null; then
     echo "PR $PRN created successfully"
 else
     echo "PR Generation failed"; 
+    cat $TMPFILE
     exit 1
 fi
 

@@ -231,6 +231,9 @@ unsigned
 increment_message_count(
   unsigned              message_type)
 {
+  if ( (message_type & MSG_SYMMETRIC) && stk::parallel_machine_rank(MPI_COMM_WORLD) != 0 ) {
+    return get_message_type_info(message_type).m_count;
+  }
   return ++get_message_type_info(message_type).m_count;
 }
 

@@ -562,6 +562,93 @@ UnitTestEvaluator::testEvaluator()
   const double normal_gold_value = 0.79788456080286540573;
   EXPECT_TRUE(test_one_value("mean=0;standard_deviation=0.5;normal_pdf(0.0,mean,standard_deviation)", normal_gold_value));
 
+  // Simple test of ts_random
+  const double tsrand_gold_value = 0.64737415343866411277;
+  EXPECT_TRUE(test_one_value("ts_random(1e-3,0,1e-6,1e-4)", tsrand_gold_value));
+
+  // Better test of ts_random
+  {
+    double t = 1e-4;
+    double x = 0;
+    double y = 0;
+    double z = 0;
+    stk::expreval::Eval expr_eval("ts_random(t,x,y,z)");
+    expr_eval.parse();
+    expr_eval.bindVariable("t",t);
+    expr_eval.bindVariable("x",x);
+    expr_eval.bindVariable("y",y);
+    expr_eval.bindVariable("z",z);
+
+    stk::expreval::Eval expr_eval_norm("ts_normal(t,x,y,z,1,1.2,-10,10)");
+    expr_eval_norm.parse();
+    expr_eval_norm.bindVariable("t",t);
+    expr_eval_norm.bindVariable("x",x);
+    expr_eval_norm.bindVariable("y",y);
+    expr_eval_norm.bindVariable("z",z);
+
+    // Ensure uniform distribution with different spatial length scales
+    for(auto&& L : {1e-6,1e3}) {
+
+      std::vector<int> bins(10,0);
+      double mean = 0.0;
+      double den = 0.0;
+      double sigma = 0.0;
+
+      for(int i = 0; i < 100; ++i) {
+        x = L*(i-50)/100.0;
+        for(int j = 0; j < 100; ++j) {
+          y = L*(j-50)/100.0;
+          double result = expr_eval.evaluate();
+          int idx = static_cast<int>(result*10);
+          bins[idx] += 1;
+
+          result = expr_eval_norm.evaluate();
+          mean += result;
+          sigma += (result-1)*(result-1);
+          den += 1;
+        }
+      }
+
+      mean /= den;
+      sigma = std::sqrt(sigma/den);
+
+      std::cout << "Mu = " << mean << ", s = " << sigma << std::endl;
+
+      EXPECT_TRUE(std::abs(mean - 1) < 0.02);
+      EXPECT_TRUE(std::abs(sigma - 1.2) < 0.02);
+
+      int maxN = *std::max_element(bins.begin(), bins.end());
+      int minN = *std::min_element(bins.begin(), bins.end());
+
+      std::cout << "Min/Max = " << minN << "/" << maxN << std::endl;
+      EXPECT_TRUE(maxN < 1100);
+      EXPECT_TRUE(minN > 900);
+    }
+
+    // test uniformity in time
+    x = 1e-4;
+    y = 2.2e-3;
+    z = 1e-5;
+
+    {
+      std::vector<int> bins(10,0);
+      for(int i = 0; i < 10000; ++i) {
+        double result = expr_eval.evaluate();
+        int idx = static_cast<int>(result*10);
+        bins[idx] += 1;
+        t += 1e-4;
+      }
+
+      int maxN = *std::max_element(bins.begin(), bins.end());
+      int minN = *std::min_element(bins.begin(), bins.end());
+      std::cout << "Min/Max = " << minN << "/" << maxN << std::endl;
+      EXPECT_TRUE(maxN < 1100);
+      EXPECT_TRUE(minN > 900);
+    }
+
+  }
+
+
   // These tests just print a range of values of the input expressions.
   // and optionally output to a CSV file along with an associated GNUPLOT input file.
   //

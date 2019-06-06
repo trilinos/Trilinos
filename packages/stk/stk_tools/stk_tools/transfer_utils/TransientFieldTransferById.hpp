@@ -45,8 +45,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 
 namespace stk {
-namespace balance {
-namespace internal {
+namespace transfer_utils {
 
 class TransientTransferByIdForRank
 {
@@ -110,7 +109,6 @@ private:
     void initialize(const std::vector<stk::mesh::EntityRank>& entityRanks);
 };
 
-}
 }
 }
 

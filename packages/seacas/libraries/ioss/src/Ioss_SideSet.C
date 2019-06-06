@@ -38,6 +38,7 @@
 #include <Ioss_SideSet.h>
 #include <algorithm>
 #include <cstddef>
+#include <fmt/ostream.h>
 #include <string>
 #include <vector>
 
@@ -64,12 +65,12 @@ namespace {
       if (old_ge->property_exists(id_str())) {
         id2 = old_ge->get_property(id_str()).get_int();
       }
-      errmsg << "\nERROR: There are multiple side blocks with the same name "
-             << "defined in side set '" << sset->name() << "' in the database file '" << filename
-             << "'.\n"
-             << "\tBoth " << side_block->type_string() << " " << id1 << " and "
-             << old_ge->type_string() << " " << id2 << " are named '" << name
-             << "'.  All names must be unique.";
+      fmt::print(errmsg,
+                 "\nERROR: There are multiple side blocks with the same name "
+                 "defined in side set '{}' in the database file '{}'.\n"
+                 "\tBoth {} {} and {} {} are named '{}'.  All names must be unique.",
+                 sset->name(), filename, side_block->type_string(), id1, old_ge->type_string(), id2,
+                 name);
       IOSS_ERROR(errmsg);
     }
   }

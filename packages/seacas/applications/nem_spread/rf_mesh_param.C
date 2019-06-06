@@ -35,16 +35,16 @@
 
 #include "copy_string_cpp.h"
 #include "exodusII.h" // for MAX_LINE_LENGTH, ex_close, etc
+#include "fmt/ostream.h"
 #include "globals.h"
 #include "nem_spread.h"
-#include "rf_format.h"
 #include "rf_io_const.h" // for Debug_Flag, ExoFile
-#include <cstdio>        // for printf, fprintf, stderr
+#include <cstdio>        // for stderr
 #include <cstdlib>       // for exit
 #include <cstring>       // for memset
 
 /* need to hang on to this to write it out to the proc 0 file */
-char GeomTitle[MAX_LINE_LENGTH + 1];
+std::string GeomTitle;
 
 template void NemSpread<double, int>::read_mesh_param();
 template void NemSpread<float, int>::read_mesh_param();
@@ -70,9 +70,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
 {
 
   /* Local variables */
-
-  const char *yo = "read_mesh_param";
-  char *      exofile;
+  std::string exofile;
   int         exoid, error;
   int         cpu_ws;
   float       version;
@@ -93,20 +91,19 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
   int mode = EX_READ | int64api;
 
   /* Open the EXODUS II mesh file */
-  exoid = ex_open(exofile, mode, &cpu_ws, &io_ws, &version);
+  exoid = ex_open(exofile.c_str(), mode, &cpu_ws, &io_ws, &version);
   if (exoid == -1) {
-    fprintf(stderr, "%s: ERROR opening up the mesh exoII file, %s\n", yo, exofile);
+    fmt::print(stderr, "{}: ERROR opening up the mesh exoII file, {}\n", __func__, exofile.c_str());
     exit(-1);
   }
 
   /* Read the initialization parameters */
-  memset(GeomTitle, '\0', (MAX_LINE_LENGTH + 1) * sizeof(char));
   ex_init_params info{};
   info.title[0] = '\0';
   error         = ex_get_init_ext(exoid, &info);
   check_exodus_error(error, "ex_get_init");
 
-  copy_string(GeomTitle, info.title);
+  GeomTitle            = info.title;
   globals.Num_Dim      = info.num_dim;
   globals.Num_Node     = info.num_nodes;
   globals.Num_Elem     = info.num_elem;
@@ -114,14 +111,14 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
   globals.Num_Node_Set = info.num_node_sets;
   globals.Num_Side_Set = info.num_side_sets;
 
-  printf("\nExodus file (%s)\n", exofile);
-  printf("\tTitle of file: %s\n", GeomTitle);
-  printf("\tDimensionality of problem = %d\n", globals.Num_Dim);
-  printf("\tNumber of nodes           = " ST_ZU "\n", globals.Num_Node);
-  printf("\tNumber of elements        = " ST_ZU "\n", globals.Num_Elem);
-  printf("\tNumber of element blocks  = %d\n", globals.Num_Elem_Blk);
-  printf("\tNumber of node sets       = %d\n", globals.Num_Node_Set);
-  printf("\tNumber of side sets       = %d\n\n", globals.Num_Side_Set);
+  fmt::print("\nExodus file ({})\n", exofile);
+  fmt::print("\tTitle of file: '{}'\n", GeomTitle);
+  fmt::print("\tDimensionality of problem = {:14n}\n", globals.Num_Dim);
+  fmt::print("\tNumber of nodes           = {:14n}\n", globals.Num_Node);
+  fmt::print("\tNumber of elements        = {:14n}\n", globals.Num_Elem);
+  fmt::print("\tNumber of element blocks  = {:14n}\n", globals.Num_Elem_Blk);
+  fmt::print("\tNumber of node sets       = {:14n}\n", globals.Num_Node_Set);
+  fmt::print("\tNumber of side sets       = {:14n}\n\n", globals.Num_Side_Set);
 
   /* Close the file */
   error = ex_close(exoid);

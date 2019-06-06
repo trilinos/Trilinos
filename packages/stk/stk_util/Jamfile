@@ -192,7 +192,6 @@ lib stk_util_parallel
     ]
     stk_util_util
     /mpi//mpi
-    /tpl/boost-program-options//boost_program_options
     /sierra/seacas//aprepro_lib
   :
     [ ifuserbuild
@@ -293,7 +292,6 @@ lib stk_util_use_case
     stk_util_diag
     stk_util_parallel
     stk_util_environment
-    /tpl/boost-program-options//boost_program_options
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -318,7 +316,6 @@ lib stk_util_diag
     stk_util_util
     stk_util_parallel
     stk_util_environment
-    /tpl/boost-program-options//boost_program_options
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

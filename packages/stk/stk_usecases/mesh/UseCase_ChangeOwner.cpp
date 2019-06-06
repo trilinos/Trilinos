@@ -65,7 +65,7 @@ Grid2D_Fixture::Grid2D_Fixture( stk::ParallelMachine comm )
   : m_spatial_dimension(spatial_dimension),
     m_fem_meta_data( m_spatial_dimension ),
     m_bulk_data( m_fem_meta_data , comm , stk::mesh::BulkData::AUTO_AURA ),
-    m_quad_part( m_fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4)),
+    m_quad_part( m_fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4_2D)),
     m_coord_field( m_fem_meta_data.declare_field< VectorField >(stk::topology::NODE_RANK, "coordinates" ) ),
     m_elem_rank( stk::topology::ELEMENT_RANK ),
     m_node_rank( stk::topology::NODE_RANK )
@@ -253,7 +253,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
         );
 
   stk::mesh::Part & owned_part = fem_meta_data.locally_owned_part();
-  stk::mesh::Part & quad_part  = fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4);
+  stk::mesh::Part & quad_part  = fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4_2D);
 
   fem_meta_data.commit();
 
@@ -393,7 +393,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
         nullptr
         );
 
-  stk::mesh::Part & quad_part  = fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4);
+  stk::mesh::Part & quad_part  = fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4_2D);
 
   fem_meta_data.commit();
 
@@ -514,7 +514,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
         nullptr
         );
 
-  stk::mesh::Part & quad_part  = fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4 );
+  stk::mesh::Part & quad_part  = fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4_2D );
 
   fem_meta_data.commit();
 

@@ -8016,6 +8016,7 @@ be documented in `TribitsBuildReference`_.
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
+* `${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE`_
 * `${PROJECT_NAME}_C_Standard`_
 * `${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`_
 * `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
@@ -8054,6 +8055,26 @@ a given TriBITS project are:
 * `PythonInterp_FIND_VERSION`_
 
 These options are described below.
+
+.. _${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE:
+
+**${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE**
+
+  The CMake cache variable ``${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE`` is
+  used to define how some invalid TriBITS usage checks are handled.  The valid
+  values include 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', and 'IGNORE'.  The
+  default value is 'FATAL_ERROR' for a project when
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE=ON``, which is best for
+  development mode for a project that currently has no invalid usage patterns.
+  The default is 'IGNORE' when
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE=OFF``.  But a project with some
+  existing invalid usage patterns might want to set, for example, a default of
+  'WARNING' in order to allow for a smooth upgrade of TriBITS.  To do so,
+  set::
+
+    SET(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT WARNING)
+
+  in the project's base `<projectDir>/ProjectName.cmake`_ file.
 
 .. _${PROJECT_NAME}_C_Standard:
 

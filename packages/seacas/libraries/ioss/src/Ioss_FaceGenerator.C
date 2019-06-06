@@ -45,6 +45,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <fmt/format.h>
 #include <functional>
 #include <random>
 #include <utility>
@@ -298,7 +299,7 @@ namespace Ioss {
 
     size_t reserve = 3.2 * numel;
     faces_.reserve(reserve);
-    std::cout << "Initial Hash Reserve = " << reserve << "\t" << faces_.bucket_count() << "\n";
+    fmt::print("\nInitial Hash Reserve = {:n}\t{:n}\n", reserve, faces_.bucket_count());
 
     const Ioss::ElementBlockContainer &ebs = region_.get_element_blocks();
     for (auto eb : ebs) {
@@ -349,26 +350,24 @@ namespace Ioss {
 
     auto diffh = endh - starth;
     auto difff = endf - endh;
-    std::cout << "Node ID hash time:   \t"
-              << std::chrono::duration<double, std::milli>(diffh).count() << " ms\t"
-              << hash_ids.size() / std::chrono::duration<double>(diffh).count()
-              << " nodes/second\n";
-    std::cout << "Face generation time:\t"
-              << std::chrono::duration<double, std::milli>(difff).count() << " ms\t"
-              << faces_.size() / std::chrono::duration<double>(difff).count() << " faces/second.\n";
+    fmt::print("Node ID hash time:   \t{} ms\t{} nodes/second\n"
+               "Face generation time:\t{} ms\t{} faces/second.\n",
+               std::chrono::duration<double, std::milli>(diffh).count(),
+               hash_ids.size() / std::chrono::duration<double>(diffh).count(),
+               std::chrono::duration<double, std::milli>(difff).count(),
+               faces_.size() / std::chrono::duration<double>(difff).count());
 #ifdef SEACAS_HAVE_MPI
     auto   diffp      = endp - endf;
     size_t proc_count = region_.get_database()->util().parallel_size();
 
     if (proc_count > 1) {
-      std::cout << "Parallel time:       \t"
-                << std::chrono::duration<double, std::milli>(diffp).count() << " ms\t"
-                << faces_.size() / std::chrono::duration<double>(diffp).count()
-                << " faces/second.\n";
+      fmt::print("Parallel time:       \t{} ms\t{} faces/second.\n",
+                 std::chrono::duration<double, std::milli>(diffp).count(),
+                 faces_.size() / std::chrono::duration<double>(diffp).count());
     }
 #endif
-    std::cout << "Total time:          \t"
-              << std::chrono::duration<double, std::milli>(endp - starth).count() << " ms\n\n";
+    fmt::print("Total time:          \t{} ms\n\n",
+               std::chrono::duration<double, std::milli>(endp - starth).count());
   }
 } // namespace Ioss
 

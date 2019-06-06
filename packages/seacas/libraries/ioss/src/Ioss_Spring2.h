@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr const char *name = "spring2";
+    static const char *name;
 
     static void factory();
     ~Spring2() override;

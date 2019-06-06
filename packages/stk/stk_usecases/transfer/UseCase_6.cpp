@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <boost/shared_ptr.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -50,8 +49,6 @@
 #include "STKNode.hpp"
 #include "LinearInterpolate.hpp"
 #include <stk_transfer/GeometricTransfer.hpp>
-
-namespace bopt = boost::program_options;
 
 typedef stk::mesh::Field<double>                       ScalarField ;
 typedef stk::mesh::Field<double, stk::mesh::Cartesian> CartesianField ;
@@ -162,11 +159,11 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
 
   const double radius=.25;
   const std::vector<stk::mesh::FieldBase*> from_fields(1, &domain_coord_sum_field);
-  boost::shared_ptr<stk::transfer::STKNode >
+  std::shared_ptr<stk::transfer::STKNode >
     transfer_domain_mesh (new stk::transfer::STKNode(domain_entities, domain_coord_field, from_fields, radius));
 
   const std::vector<stk::mesh::FieldBase*> to_fields  (1, &range_coord_sum_field);
-  boost::shared_ptr<stk::transfer::STKNode >
+  std::shared_ptr<stk::transfer::STKNode >
     transfer_range_mesh (new stk::transfer::STKNode(range_entities, range_coord_field, to_fields, radius));
 
 

@@ -2339,7 +2339,6 @@ int FEDataFilter::getBlockElemSolution(GlobalID elemBlockID,
    if (numElemDOFPerElement <= 0) return(0);
 
    std::map<GlobalID,int>::const_iterator
-     elemid_end = elemIDList.end(),
      elemid_itr = elemIDList.begin();
 
    for(int i=0; i<len; i++) {
@@ -2400,7 +2399,6 @@ int FEDataFilter::putBlockElemSolution(GlobalID elemBlockID,
    if (DOFPerElement <= 0) return(0);
 
    std::map<GlobalID,int>::const_iterator
-     elemid_end = elemIDList.end(),
      elemid_itr = elemIDList.begin();
 
    for(int i=0; i<len; i++) {

@@ -40,6 +40,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *ShellLine2D2::name = "shellline2d2";
   class St_ShellLine2D2 : public ElementVariableType
   {
   public:

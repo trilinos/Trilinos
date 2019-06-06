@@ -368,6 +368,8 @@ namespace MueLu {
     Teuchos::RCP<const Import> ImporterH_, Importer22_;
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
+    Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
+    Teuchos::RCP<Teuchos::ParameterList> A22_AP_reuse_data_, A22_RAP_reuse_data_;
     //! Some options
     bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_;
     std::string mode_;

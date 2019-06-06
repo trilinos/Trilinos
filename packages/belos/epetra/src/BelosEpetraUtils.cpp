@@ -150,17 +150,29 @@ int createEpetraProblem( std::string             &filename,
     row_vals = val + bindx[i];
     col_inds = bindx + bindx[i];
     NumEntries = bindx[i+1] - bindx[i];
-    int info = (*A)->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds);
+#ifndef NDEBUG
+    int info =
+#endif
+    (*A)->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds);
     assert( info == 0 );
-    info =  (*A)->InsertGlobalValues(update[i], 1, val+i, update+i);
+#ifndef NDEBUG
+    info =
+#endif
+    (*A)->InsertGlobalValues(update[i], 1, val+i, update+i);
     assert( info == 0 );
   }
   //
   // Finish up
   //
-  int info = (*A)->FillComplete();
+#ifndef NDEBUG
+  int info =
+#endif
+  (*A)->FillComplete();
   assert( info == 0 );
-  info = (*A)->OptimizeStorage();
+#ifndef NDEBUG
+  info =
+#endif
+  (*A)->OptimizeStorage();
   assert( info == 0 );
   (*A)->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
   //

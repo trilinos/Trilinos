@@ -49,6 +49,8 @@
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_CrsMatrixUtils.hpp"
 
+#include "Xpetra_IO.hpp"
+
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"

@@ -61,7 +61,9 @@
 #ifdef SEACAS_HAVE_MPI
 #include "mpi.h"
 #else
+#ifndef MPI_COMM_WORLD
 #define MPI_COMM_WORLD 1
+#endif
 #endif
 
 #include <algorithm>

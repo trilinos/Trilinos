@@ -57,10 +57,12 @@ public:
     void adjust_weights_for_small_meshes();
 
     void createGraphEdgesUsingNodeConnectivity(stk::mesh::BulkData &stkMeshBulkData,
+                                               const stk::mesh::Selector& selector,
                                                const stk::balance::BalanceSettings &balanceSettings,
                                                size_t numElements,
                                                std::vector<stk::balance::GraphEdge> &graphEdges,
                                                const stk::mesh::impl::LocalIdMapper& localIds);
+
     void fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData &stkMeshBulkData,
                                            const stk::balance::BalanceSettings &balanceSettings,
                                            std::vector<int>& adjacencyProcs,
@@ -72,10 +74,11 @@ public:
 
 private:
     void convertGraphEdgesToZoltanGraph(const stk::mesh::BulkData& stkMeshBulkData,
-                                          const std::vector<stk::balance::GraphEdge> &graphEdges,
-                                          const unsigned numElements,
-                                          std::vector<int>& adjacencyProcs,
-                                          const stk::mesh::impl::LocalIdMapper& localIds);
+                                        const stk::balance::BalanceSettings &balanceSettings,
+                                        const std::vector<stk::balance::GraphEdge> &graphEdges,
+                                        const unsigned numElements,
+                                        std::vector<int>& adjacencyProcs,
+                                        const stk::mesh::impl::LocalIdMapper& localIds);
 
     std::vector<double> mEdgeWeights;
     std::vector<BalanceLocalNumber> mOffsets;

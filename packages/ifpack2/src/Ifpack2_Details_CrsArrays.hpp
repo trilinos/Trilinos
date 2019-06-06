@@ -125,7 +125,6 @@ struct CrsArrayReader
     KOKKOS_INLINE_FUNCTION void operator()(const int row) const
     {
       LocalOrdinal offset = rowptrs(row);
-      std::cout << "Rowptr[" << row << "] = " << offset << '\n';
       size_t entries = rowptrs(row + 1) - offset;
       Teuchos::Array<Scalar> valsArray(entries);
       Teuchos::Array<LocalOrdinal> indicesArray(entries);

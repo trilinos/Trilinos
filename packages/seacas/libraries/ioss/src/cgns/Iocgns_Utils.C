@@ -57,9 +57,10 @@
 #include <Ioss_Wedge18.h>
 #include <Ioss_Wedge6.h>
 
-#include <tokenize.h>
+#include <fmt/ostream.h>
 #include <numeric>
 #include <set>
+#include <tokenize.h>
 
 #include <cgns/Iocgns_StructuredZoneData.h>
 #include <cgns/Iocgns_Utils.h>
@@ -227,11 +228,14 @@ namespace {
     Ioss::SideSet *sset = block->get_database()->get_region()->get_sideset(fam_name);
     if (sset == nullptr) {
       if (block->get_database()->parallel_rank() == 0) {
-        IOSS_WARNING << "On block " << block->name() << ", found the boundary condition named "
-                     << boco_name << " in family " << fam_name
-                     << ". This family was not previously defined at the top-level of the file"
-                     << " which is not normal.  Check your file to make sure this does not "
-                     << "indicate a problem with the mesh.\n";
+        fmt::print(
+            IOSS_WARNING,
+            "WARNING: On block '{}', found the boundary condition named '{}' in family '{}'.\n"
+            "         This family was not previously defined at the top-level of the file"
+            " which is not normal.\n"
+            "         Check your file to make sure this does not "
+            "indicate a problem with the mesh.\n",
+            block->name(), boco_name, fam_name);
       }
 
       // Need to create a new sideset since didn't see this earlier.
@@ -292,10 +296,10 @@ namespace {
       // Check that the 'bocotype' value matches the value of the property.
       auto old_bocotype = sset->get_property("bc_type").get_int();
       if (old_bocotype != bocotype && bocotype != CG_FamilySpecified) {
-        IOSS_WARNING << "On sideset " << sset->name()
-                     << ", the boundary condition type was previously set to " << old_bocotype
-                     << " which does not match the current value of " << bocotype
-                     << ". It will keep the old value.\n";
+        fmt::print(IOSS_WARNING,
+                   "On sideset '{}', the boundary condition type was previously set to {}"
+                   " which does not match the current value of {}. It will keep the old value.\n",
+                   sset->name(), old_bocotype, bocotype);
       }
     }
     else {
@@ -386,12 +390,12 @@ void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *functio
                                int processor)
 {
   std::ostringstream errmsg;
-  errmsg << "CGNS error '" << cg_get_error() << "' at line " << lineno << " in file '" << file
-         << "' in function '" << function << "'";
+  fmt::print(errmsg, "CGNS error '{}' at line {} in file '{}' in function '{}'", cg_get_error(),
+             lineno, file, function);
   if (processor >= 0) {
-    errmsg << " on processor " << processor;
+    fmt::print(errmsg, " on processor {}", processor);
   }
-  errmsg << ". Please report to gdsjaar@sandia.gov if you need help.";
+  fmt::print(errmsg, ". Please report to gdsjaar@sandia.gov if you need help.");
   if (cgnsid > 0) {
 #if CG_BUILD_PARALLEL
     // This can cause a hang if not all processors call this routine
@@ -428,8 +432,10 @@ Ioss::MeshType Iocgns::Utils::check_mesh_type(int cgns_file_ptr)
       break;
 #else
       std::ostringstream errmsg;
-      errmsg << "ERROR: CGNS: Zone " << zone << " is not the same zone type as previous zones."
-             << " This is currently not allowed or supported (hybrid mesh).";
+      fmt::print(errmsg,
+                 "ERROR: CGNS: Zone {} is not the same zone type as previous zones."
+                 " This is currently not allowed or supported (hybrid mesh).",
+                 zone);
       IOSS_ERROR(errmsg);
 #endif
     }
@@ -444,7 +450,7 @@ Ioss::MeshType Iocgns::Utils::check_mesh_type(int cgns_file_ptr)
 }
 
 void Iocgns::Utils::update_db_zone_property(int cgns_file_ptr, const Ioss::Region *region,
-					    int myProcessor, bool is_parallel)
+                                            int myProcessor, bool is_parallel, bool is_parallel_io)
 {
   // If an output file is closed/opened, make sure that the zones in the Region
   // match the zones on the database (file). CGNS likes to sort the zones, so they
@@ -462,24 +468,26 @@ void Iocgns::Utils::update_db_zone_property(int cgns_file_ptr, const Ioss::Regio
     cgsize_t size[9];
     char     zname[CGNS_MAX_NAME_LENGTH + 1];
     CGCHECK(cg_zone_read(cgns_file_ptr, base, zone, zname, size));
-    auto name_proc = decompose_name(std::string(zname), is_parallel);
+    auto name_proc         = decompose_name(std::string(zname), is_parallel && !is_parallel_io);
     zones[name_proc.first] = zone;
   }
 
   const auto &sblocks = region->get_structured_blocks();
   for (const auto &block : sblocks) {
-    if (block->is_active()) {
+    if (is_parallel_io || block->is_active()) {
       const std::string &name = block->name();
-      auto iter = zones.find(name);
+      auto               iter = zones.find(name);
       if (iter != zones.end()) {
-	auto db_zone = (*iter).second;
-	block->property_update("db_zone", db_zone);
+        auto db_zone = (*iter).second;
+        block->property_update("db_zone", db_zone);
       }
       else {
-	std::ostringstream errmsg;
-	errmsg << "ERROR: CGNS: Structured Block " << name
-	       << " was not found on the CGNS database on processor " << myProcessor;
-	IOSS_ERROR(errmsg);
+        std::ostringstream errmsg;
+        fmt::print(errmsg,
+                   "ERROR: CGNS: Structured Block '{}' was not found on the CGNS database on "
+                   "processor {}.",
+                   name, myProcessor);
+        IOSS_ERROR(errmsg);
       }
     }
   }
@@ -487,15 +495,17 @@ void Iocgns::Utils::update_db_zone_property(int cgns_file_ptr, const Ioss::Regio
   const auto &eblocks = region->get_element_blocks();
   for (const auto &block : eblocks) {
     const std::string &name = block->name();
-    auto iter = zones.find(name);
+    auto               iter = zones.find(name);
     if (iter != zones.end()) {
       auto db_zone = (*iter).second;
       block->property_update("db_zone", db_zone);
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "ERROR: CGNS: Element Block " << name
-	     << " was not found on the CGNS database on processor " << myProcessor;
+      fmt::print(
+          errmsg,
+          "ERROR: CGNS: Element Block '{}' was not found on the CGNS database on processor {}.",
+          name, myProcessor);
       IOSS_ERROR(errmsg);
     }
   }
@@ -689,9 +699,9 @@ namespace {
       assert(off_name % count == 0 && off_name / count == BYTE_PER_NAME);
 
 #if IOSS_DEBUG_OUTPUT
-      std::cerr << "ZGC_CONSOLIDATE: Before consolidation: (" << zgc.size() << ")\n";
+      fmt::print(stderr, "ZGC_CONSOLIDATE: Before consolidation: ({})\n", zgc.size());
       for (const auto &z : zgc) {
-        std::cerr << "\tOZ " << z.m_ownerZone << z << "\n";
+        fmt::print(stderr, "\tOZ {}{}\n", z.m_ownerZone, z);
       }
 #endif
 
@@ -716,9 +726,10 @@ namespace {
               else {
                 // We have a bad zgc -- name and owner_zone match, but not donor_zone.
                 std::ostringstream errmsg;
-                errmsg << "ERROR: CGNS: Found zgc named " << zgc[i].m_connectionName << " on zone "
-                       << owner_zone << " which has two different donor zones: " << donor_zone
-                       << " and " << zgc[j].m_donorZone << "\n";
+                fmt::print(errmsg,
+                           "ERROR: CGNS: Found zgc named '{}' on zone {} which has two different "
+                           "donor zones: {} and {}\n",
+                           zgc[i].m_connectionName, owner_zone, donor_zone, zgc[j].m_donorZone);
                 IOSS_ERROR(errmsg);
               }
             }
@@ -750,9 +761,9 @@ namespace {
       assert(off_name % count == 0 && off_name / count == BYTE_PER_NAME);
 
 #if IOSS_DEBUG_OUTPUT
-      std::cerr << "ZGC_CONSOLIDATE: After consolidation: (" << zgc.size() << ")\n";
+      fmt::print(stderr, "ZGC_CONSOLIDATE: After consolidation: ({})\n", zgc.size());
       for (const auto &z : zgc) {
-        std::cerr << "\tOZ " << z.m_ownerZone << z << "\n";
+        fmt::print(stderr, "\tOZ {}{}\n", z.m_ownerZone, z);
       }
 #endif
     } // End of processor 0 only processing...
@@ -813,8 +824,10 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   // Make sure mesh is not hybrid...
   if (region.mesh_type() == Ioss::MeshType::HYBRID) {
     std::ostringstream errmsg;
-    errmsg << "ERROR: CGNS: The mesh on region " << region.name() << " is of type 'hybrid'."
-           << " This is currently not allowed or supported.";
+    fmt::print(errmsg,
+               "ERROR: CGNS: The mesh on region '{}' is of type 'hybrid'."
+               " This is currently not allowed or supported.",
+               region.name());
     IOSS_ERROR(errmsg);
   }
 #endif
@@ -827,6 +840,23 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   CGERR(cg_goto(file_ptr, base, "end"));
   std::string version = "IOSS: CGNS Writer version " + std::string{__DATE__} + ", " +
                         Ioss::Utils::platform_information();
+
+#ifdef SEACAS_HAVE_MPI
+  if (is_parallel_io) {
+    // Need to make sure the version string is the same on all
+    // processors since they are all writing to the same file.  There
+    // was a difficult to track bug in which the
+    // platform_information() contained different node info ("ser9"
+    // and "ser43") on certain ranks which caused an HDF5 failure way
+    // downstream -- basically at file close.
+    char tmp[2048];
+    Ioss::Utils::copy_string(tmp, version.c_str(), 2048);
+    MPI_Bcast(tmp, (int)version.size() + 1, MPI_BYTE, 0,
+              region.get_database()->util().communicator());
+    version = std::string{tmp};
+  }
+#endif
+
   CGERR(cg_descriptor_write("Information", version.c_str()));
   CGERR(cg_goto(file_ptr, base, "end"));
   CGERR(cg_dataclass_write(CGNS_ENUMV(Dimensional)));
@@ -1070,26 +1100,26 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
                   break;
                 }
               }
-	      if (connect_name == zgc.m_connectionName) {
-		bool done = false;
-		for (char c1 = 'A'; c1 <= 'Z' && !done; c1++) {
-		  for (char c2 = 'A'; c2 <= 'Z' && !done; c2++) {
-		    std::string potential = connect_name + c1 + c2;
-		    iter                  = zgc_names.insert(potential);
-		    if (iter.second) {
-		      connect_name = potential;
-		      done = true;
-		    }
-		  }
-		}
-		if (connect_name == zgc.m_connectionName) {
-		  std::ostringstream errmsg;
-		  errmsg << "ERROR: CGNS: Duplicate ZGC Name '" << zgc.m_connectionName
-			 << "' on zone '" << sb->name() << "', processor "
-			 << zgc.m_ownerProcessor << "\n";
-		  IOSS_ERROR(errmsg);
-		}
-	      }
+              if (connect_name == zgc.m_connectionName) {
+                bool done = false;
+                for (char c1 = 'A'; c1 <= 'Z' && !done; c1++) {
+                  for (char c2 = 'A'; c2 <= 'Z' && !done; c2++) {
+                    std::string potential = connect_name + c1 + c2;
+                    iter                  = zgc_names.insert(potential);
+                    if (iter.second) {
+                      connect_name = potential;
+                      done         = true;
+                    }
+                  }
+                }
+                if (connect_name == zgc.m_connectionName) {
+                  std::ostringstream errmsg;
+                  fmt::print(errmsg,
+                             "ERROR: CGNS: Duplicate ZGC Name '{}' on zone '{}', processor {}\n",
+                             zgc.m_connectionName, sb->name(), zgc.m_ownerProcessor);
+                  IOSS_ERROR(errmsg);
+                }
+              }
             }
           }
           donor_name += "_proc-";
@@ -1142,8 +1172,8 @@ std::string Iocgns::Utils::map_cgns_to_topology_type(CG_ElementType_t type)
   case CG_HEXA_20: topology = Ioss::Hex20::name; break;
   case CG_HEXA_27: topology = Ioss::Hex27::name; break;
   default:
-    std::cerr << "WARNING: Found topology of type " << cg_ElementTypeName(type)
-              << " which is not currently supported.\n";
+    fmt::print(stderr, "WARNING: Found topology of type {} which is not currently supported.\n",
+               cg_ElementTypeName(type));
     topology = Ioss::Unknown::name;
   }
   return topology;
@@ -1216,8 +1246,8 @@ CG_ElementType_t Iocgns::Utils::map_topology_to_cgns(const std::string &name)
     topo = CG_HEXA_27;
   }
   else {
-    std::cerr << "WARNING: Found topology of type " << name
-              << " which is not currently supported.\n";
+    fmt::print(stderr, "WARNING: Found topology of type {} which is not currently supported.\n",
+               name);
   }
   return topo;
 }
@@ -1327,8 +1357,10 @@ int Iocgns::Utils::find_solution_index(int cgns_file_ptr, int base, int zone, in
     return step;
   }
 
-  std::cerr << "WARNING: CGNS: Could not find valid solution index for step " << step << ", zone "
-            << zone << ", and location " << GridLocationName[location] << "\n";
+  fmt::print(
+      stderr,
+      "WARNING: CGNS: Could not find valid solution index for step {}, zone {}, and location {}\n",
+      step, zone, GridLocationName[location]);
   return 0;
 }
 
@@ -1347,8 +1379,8 @@ void Iocgns::Utils::add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db)
 
 #if IOSS_DEBUG_OUTPUT
     if (db->parallel_rank() == 0) {
-      std::cerr << "Family " << family << " named " << name << " has " << num_bc << " BC, and "
-                << num_geo << " geometry references\n";
+      fmt::print(stderr, "Family {} named {} has {} BC, and {} geometry references.\n", family,
+                 name, num_bc, num_geo);
     }
 #endif
     if (num_bc > 0) {
@@ -1387,8 +1419,10 @@ void Iocgns::Utils::add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db)
       }
       else {
         if (db->parallel_rank() == 0) {
-          IOSS_WARNING << "*** WARNING: Skipping BC with name '" << ss_name
-                       << "' since FamBC_UserId is equal to 0.\n\n";
+          fmt::print(
+              IOSS_WARNING,
+              "*** WARNING: Skipping BC with name '{}' since FamBC_UserId is equal to 0.\n\n",
+              ss_name);
         }
       }
     }
@@ -1569,8 +1603,8 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
       }
     }
 #if IOSS_DEBUG_OUTPUT
-    std::cerr << "P" << my_processor << ", Block " << owner_block->name()
-              << " Shared Nodes: " << shared_nodes[owner_zone].size() << "\n";
+    fmt::print(stderr, "P{}, Block {} Shared Nodes: {}\n", my_processor, owner_block->name(),
+               shared_nodes[owner_zone].size());
 #endif
   }
   return shared_nodes;
@@ -1701,10 +1735,11 @@ void Iocgns::Utils::add_structured_boundary_conditions_pio(int                  
       int same_count = (range[0] == range[3] ? 1 : 0) + (range[1] == range[4] ? 1 : 0) +
                        (range[2] == range[5] ? 1 : 0);
       if (same_count != 1) {
-        std::cerr << "WARNING: CGNS: Skipping Boundary Condition '" << boco_name << "' on block '"
-                  << block->name() << "'. It is applied to "
-                  << (same_count == 2 ? "an edge" : "a vertex")
-                  << ". This code only supports surfaces.\n";
+        fmt::print(
+            stderr,
+            "WARNING: CGNS: Skipping Boundary Condition '{}' on block '{}'. It is applied to "
+            "{}. This code only supports surfaces.\n",
+            boco_name, block->name(), (same_count == 2 ? "an edge" : "a vertex"));
         continue;
       }
     }
@@ -1758,10 +1793,10 @@ void Iocgns::Utils::add_structured_boundary_conditions_fpp(int                  
     int same_count = (range[0] == range[3] ? 1 : 0) + (range[1] == range[4] ? 1 : 0) +
                      (range[2] == range[5] ? 1 : 0);
     if (same_count != 1) {
-      std::cerr << "WARNING: CGNS: Skipping Boundary Condition '" << boco_name << "' on block '"
-                << block->name() << "'. It is applied to "
-                << (same_count == 2 ? "an edge" : "a vertex")
-                << ". This code only supports surfaces.\n";
+      fmt::print(stderr,
+                 "WARNING: CGNS: Skipping Boundary Condition '{}' on block '{}'. It is applied to "
+                 "{}. This code only supports surfaces.\n",
+                 boco_name, block->name(), (same_count == 2 ? "an edge" : "a vertex"));
       continue;
     }
 
@@ -2045,13 +2080,13 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
       }
       else {
         std::ostringstream errmsg;
-        errmsg << "IOCGNS error: Could not assign zones to processors in " << __func__;
+        fmt::print(errmsg, "IOCGNS error: Could not assign zones to processors in {}", __func__);
         IOSS_ERROR(errmsg);
       }
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "IOCGNS error: Could not assign zones to processors in " << __func__;
+      fmt::print(errmsg, "IOCGNS error: Could not assign zones to processors in {}", __func__);
       IOSS_ERROR(errmsg);
     }
   }
@@ -2071,12 +2106,18 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
     auto   zone = zones[i];
     double work = zone->work();
     total_work += work;
-    splits[i] = int(std::round(work / avg_work));
+    if (load_balance <= 1.2) {
+      splits[i] = int(std::ceil(work / avg_work));
+    }
+    else {
+      splits[i] = int(std::round(work / avg_work + 0.2));
+    }
     splits[i] = splits[i] == 0 ? 1 : splits[i];
   }
 
-  int num_splits = std::accumulate(splits.begin(), splits.end(), 0);
-  int diff       = proc_count - num_splits;
+  int  num_splits        = std::accumulate(splits.begin(), splits.end(), 0);
+  int  diff              = proc_count - num_splits;
+  bool adjustment_needed = diff > 0;
 
   while (diff != 0) {
     // Adjust splits so sum is equal to proc_count.
@@ -2091,9 +2132,8 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
       if (splits[i] == 0) {
         continue;
       }
-      double zone_avg = work / (double)splits[i];
       if ((splits[i] + step) > 0) {
-        double delta = std::abs(zone_avg - work / (double)(splits[i] + step));
+        double delta = std::abs(avg_work - work / (double)(splits[i] + step));
         if (delta < min_delta) {
           min_delta = delta;
           min_z     = i;
@@ -2103,7 +2143,6 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
     splits[min_z] += step;
     diff -= step;
   }
-
   assert(diff == 0);
   assert(std::accumulate(splits.begin(), splits.end(), 0) == proc_count);
 
@@ -2111,17 +2150,19 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
   double min_avg      = avg_work / load_balance;
   double max_avg      = avg_work * load_balance;
   bool   adaptive_avg = true;
-  for (size_t i = 0; i < zones.size(); i++) {
-    auto   zone = zones[i];
-    double work = zone->work();
-    if (splits[i] == 0) {
-      adaptive_avg = false;
-      break;
-    }
-    double zone_avg = work / (double)splits[i];
-    if (zone_avg < min_avg || zone_avg > max_avg) {
-      adaptive_avg = false;
-      break;
+  if (!adjustment_needed) {
+    for (size_t i = 0; i < zones.size(); i++) {
+      auto   zone = zones[i];
+      double work = zone->work();
+      if (splits[i] == 0) {
+        adaptive_avg = false;
+        break;
+      }
+      double zone_avg = work / (double)splits[i];
+      if (zone_avg < min_avg || zone_avg > max_avg) {
+        adaptive_avg = false;
+        break;
+      }
     }
   }
 
@@ -2262,38 +2303,37 @@ extern "C" int H5get_libversion(unsigned *, unsigned *, unsigned *);
 
 void Iocgns::Utils::show_config()
 {
-  std::cerr << "\tCGNS Library Version: " << CGNS_DOTVERS << "\n";
+  fmt::print(stderr, "\tCGNS Library Version: {}\n", CGNS_DOTVERS);
 #if CG_BUILD_64BIT
-  std::cerr << "\t\tDefault integer size is 64-bit.\n";
+  fmt::print(stderr, "\t\tDefault integer size is 64-bit.\n");
 #else
-  std::cerr << "\t\tDefault integer size is 32-bit.\n";
+  fmt::print(stderr, "\t\tDefault integer size is 32-bit.\n");
 #endif
 #if defined(CGNS_SCOPE_ENUMS)
-  std::cerr << "\t\tScoped Enums enabled\n";
+  fmt::print(stderr, "\t\tScoped Enums enabled\n");
 #else
-  std::cerr << "\t\tScoped Enums NOT enabled\n";
+  fmt::print(stderr, "\t\tScoped Enums NOT enabled\n");
 #endif
 #if CG_BUILD_PARALLEL
-  std::cerr << "\t\tParallel enabled\n";
+  fmt::print(stderr, "\t\tParallel enabled\n");
 #else
-  std::cerr << "\t\tParallel NOT enabled\n";
+  fmt::print(stderr, "\t\tParallel NOT enabled\n");
 #endif
 #if CG_BUILD_HDF5
   unsigned major, minor, release;
   H5get_libversion(&major, &minor, &release);
-  std::cerr << "\t\tHDF5 enabled (" << major << "." << minor << "." << release << ")\n";
+  fmt::print(stderr, "\t\tHDF5 enabled ({}.{}.{})\n", major, minor, release);
 #else
 #error "Not defined..."
 #endif
 #if HDF5_HAVE_COLL_METADATA
-  std::cerr << "\t\tUsing HDF5 Collective Metadata.\n";
+  fmt::print(stderr, "\t\tUsing HDF5 Collective Metadata.\n");
 #else
-  std::cerr << "\t\tHDF5 Collective Metadata NOT Available.\n";
+  fmt::print(stderr, "\t\tHDF5 Collective Metadata NOT Available.\n");
 #endif
 #if HDF5_HAVE_MULTI_DATASET
-  std::cerr << "\t\tHDF5 Multi-Dataset Available.\n";
+  fmt::print(stderr, "\t\tHDF5 Multi-Dataset Available.\n\n");
 #else
-  std::cerr << "\t\tHDF5 Multi-Dataset NOT Available.\n";
+  fmt::print(stderr, "\t\tHDF5 Multi-Dataset NOT Available.\n\n");
 #endif
-  std::cerr << "\n";
 }

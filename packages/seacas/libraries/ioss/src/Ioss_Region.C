@@ -60,6 +60,7 @@
 #include <cctype>
 #include <climits>
 #include <cstddef>
+#include <fmt/ostream.h>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -99,11 +100,11 @@ namespace {
         if (old_ge->property_exists(id_str())) {
           id2 = old_ge->get_property(id_str()).get_int();
         }
-        errmsg << "ERROR: There are multiple blocks or sets with the same name "
-               << "defined in the exodus file '" << filename << "'.\n"
-               << "\tBoth " << entity->type_string() << " " << id1 << " and "
-               << old_ge->type_string() << " " << id2 << " are named '" << name
-               << "'.  All names must be unique.";
+        fmt::print(errmsg,
+                   "ERROR: There are multiple blocks or sets with the same name defined in the "
+                   "exodus file '{}'.\n"
+                   "\tBoth {} {} and {} {} are named '{}'.  All names must be unique.",
+                   filename, entity->type_string(), id1, old_ge->type_string(), id2, name);
         IOSS_ERROR(errmsg);
       }
     }
@@ -155,7 +156,7 @@ namespace {
     }
 
     std::ostringstream errmsg;
-    errmsg << "IOSS: ERROR: Parallel Consistency Error.\n\t\t";
+    fmt::print(errmsg, "IOSS: ERROR: Parallel Consistency Error.\n\t\t");
 
     auto min_hash = hashes;
     auto max_hash = hashes;
@@ -169,19 +170,20 @@ namespace {
         if (min_hash[i] != max_hash[i]) {
           auto ge = entities[i];
           if (count == 0) {
-            errmsg << ge->type_string() << "(s) ";
+            fmt::print(errmsg, "{}(s) ", ge->type_string());
           }
           else {
-            errmsg << ", ";
+            fmt::print(errmsg, ", ");
           }
-          errmsg << "'" << ge->name() << "'";
+          fmt::print(errmsg, "'{}'", ge->name());
           count++;
         }
       }
-      errmsg << (count == 1 ? " is " : " are ");
-      errmsg << "not consistently defined on all processors.\n\t\t"
-             << "Check that name and id matches across processors.\n";
-      std::cerr << errmsg.str();
+      fmt::print(errmsg,
+                 " {} not consistently defined on all processors.\n\t\t"
+                 "Check that name and id matches across processors.\n",
+                 (count == 1 ? "is" : "are"));
+      fmt::print(stderr, "{}", errmsg.str());
     }
   }
 
@@ -426,45 +428,98 @@ namespace Ioss {
   void Region::output_summary(std::ostream &strm, bool do_transient)
   {
     IOSS_FUNC_ENTER(m_);
-    strm << "\n Database: " << get_database()->get_filename() << "\n";
-    strm << " Mesh Type = " << mesh_type_string() << "\n";
-    strm << "\n Number of coordinates per node   =" << std::setw(12)
-         << get_property("spatial_dimension").get_int() << "\n";
-    strm << " Number of nodes                  =" << std::setw(12)
-         << get_property("node_count").get_int() << "\n";
-    strm << " Number of edges                  =" << std::setw(12)
-         << get_property("edge_count").get_int() << "\n";
-    strm << " Number of faces                  =" << std::setw(12)
-         << get_property("face_count").get_int() << "\n";
-    strm << " Number of elements               =" << std::setw(12)
-         << get_property("element_count").get_int() << "\n";
-    strm << " Number of node blocks            =" << std::setw(12)
-         << get_property("node_block_count").get_int() << "\n";
-    strm << " Number of edge blocks            =" << std::setw(12)
-         << get_property("edge_block_count").get_int() << "\n";
-    strm << " Number of face blocks            =" << std::setw(12)
-         << get_property("face_block_count").get_int() << "\n";
-    strm << " Number of element blocks         =" << std::setw(12)
-         << get_property("element_block_count").get_int() << "\n";
-    strm << " Number of structured blocks      =" << std::setw(12)
-         << get_property("structured_block_count").get_int() << "\n";
-    strm << " Number of node sets              =" << std::setw(12)
-         << get_property("node_set_count").get_int() << "\n";
-    strm << " Number of edge sets              =" << std::setw(12)
-         << get_property("edge_set_count").get_int() << "\n";
-    strm << " Number of face sets              =" << std::setw(12)
-         << get_property("face_set_count").get_int() << "\n";
-    strm << " Number of element sets           =" << std::setw(12)
-         << get_property("element_set_count").get_int() << "\n";
-    strm << " Number of element side sets      =" << std::setw(12)
-         << get_property("side_set_count").get_int() << "\n\n";
+
+    int64_t total_cells       = 0;
+    int64_t total_fs_faces    = 0;
+    int64_t total_ns_nodes    = 0;
+    int64_t total_es_edges    = 0;
+    int64_t total_es_elements = 0;
+    int64_t total_sides       = 0;
+
+    {
+      const Ioss::StructuredBlockContainer &sbs = get_structured_blocks();
+      for (auto sb : sbs) {
+        int64_t num_cell = sb->get_property("cell_count").get_int();
+        total_cells += num_cell;
+      }
+
+      const Ioss::NodeSetContainer &nss = get_nodesets();
+      for (auto ns : nss) {
+        int64_t count = ns->entity_count();
+        total_ns_nodes += count;
+      }
+
+      const auto &ess = get_edgesets();
+      for (auto es : ess) {
+        int64_t count = es->entity_count();
+        total_es_edges += count;
+      }
+
+      const auto &fss = get_facesets();
+      for (auto fs : fss) {
+        int64_t count = fs->entity_count();
+        total_fs_faces += count;
+      }
+
+      const auto &els = get_elementsets();
+      for (auto es : els) {
+        int64_t count = es->entity_count();
+        total_es_elements += count;
+      }
+
+      const Ioss::SideSetContainer &sss = get_sidesets();
+      for (auto fs : sss) {
+        const Ioss::SideBlockContainer &fbs = fs->get_side_blocks();
+        for (auto fb : fbs) {
+          int64_t num_side = fb->entity_count();
+          total_sides += num_side;
+        }
+      }
+    }
+
+    fmt::print(
+        strm,
+        "\n Database: {0}\n"
+        " Mesh Type = {1}\n\n"
+        " Number of spatial dimensions = {2:10n}\n"
+        " Number of node blocks        = {7:10n}\t"
+        " Number of nodes              = {3:14n}\n"
+        " Number of edge blocks        = {8:10n}\t"
+        " Number of edges              = {4:14n}\n"
+        " Number of face blocks        = {9:10n}\t"
+        " Number of faces              = {5:14n}\n"
+        " Number of element blocks     = {10:10n}\t"
+        " Number of elements           = {6:14n}\n"
+        " Number of structured blocks  = {11:10n}\t"
+        " Number of cells              = {17:14n}\n"
+        " Number of node sets          = {12:10n}\t"
+        " Length of node list          = {18:14n}\n"
+        " Number of edge sets          = {13:10n}\t"
+        " Length of edge list          = {19:14n}\n"
+        " Number of face sets          = {14:10n}\t"
+        " Length of face list          = {20:14n}\n"
+        " Number of element sets       = {15:10n}\t"
+        " Length of element list       = {21:14n}\n"
+        " Number of element side sets  = {16:10n}\t"
+        " Length of element sides      = {22:14n}\n\n",
+        get_database()->get_filename(), mesh_type_string(),
+        get_property("spatial_dimension").get_int(), get_property("node_count").get_int(),
+        get_property("edge_count").get_int(), get_property("face_count").get_int(),
+        get_property("element_count").get_int(), get_property("node_block_count").get_int(),
+        get_property("edge_block_count").get_int(), get_property("face_block_count").get_int(),
+        get_property("element_block_count").get_int(),
+        get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
+        get_property("edge_set_count").get_int(), get_property("face_set_count").get_int(),
+        get_property("element_set_count").get_int(), get_property("side_set_count").get_int(),
+        total_cells, total_ns_nodes, total_es_edges, total_fs_faces, total_es_elements,
+        total_sides);
 
     if (do_transient && get_property("state_count").get_int() > 0) {
-      strm << " Number of global variables       =" << std::setw(12) << field_count() << "\n";
+      fmt::print(strm, " Number of global variables       = {:10n}\n", field_count());
       {
         Ioss::NameList names;
         nodeBlocks[0]->field_describe(Ioss::Field::TRANSIENT, &names);
-        strm << " Number of nodal variables        =" << std::setw(12) << names.size() << "\n";
+        fmt::print(strm, " Number of nodal variables        = {:10n}\n", names.size());
       }
 
       {
@@ -474,7 +529,7 @@ namespace Ioss {
           block->field_describe(Ioss::Field::TRANSIENT, &names);
         }
         Ioss::Utils::uniquify(names);
-        strm << " Number of element variables      =" << std::setw(12) << names.size() << "\n";
+        fmt::print(strm, " Number of element variables      = {:10n}\n", names.size());
       }
 
       {
@@ -484,7 +539,7 @@ namespace Ioss {
           block->field_describe(Ioss::Field::TRANSIENT, &names);
         }
         Ioss::Utils::uniquify(names);
-        strm << " Number of structured block vars  =" << std::setw(12) << names.size() << "\n";
+        fmt::print(strm, " Number of structured block vars  = {:10n}\n", names.size());
       }
 
       {
@@ -494,7 +549,7 @@ namespace Ioss {
           block->field_describe(Ioss::Field::TRANSIENT, &names);
         }
         Ioss::Utils::uniquify(names);
-        strm << " Number of nodeset variables      =" << std::setw(12) << names.size() << "\n";
+        fmt::print(strm, " Number of nodeset variables      = {:10n}\n", names.size());
       }
 
       {
@@ -508,11 +563,10 @@ namespace Ioss {
         }
 
         Ioss::Utils::uniquify(names);
-        strm << " Number of sideset variables      =" << std::setw(12) << names.size() << "\n";
+        fmt::print(" Number of sideset variables      = {:10n}\n", names.size());
       }
-
-      strm << "\n Number of database time steps    =" << std::setw(12)
-           << get_property("state_count").get_int() << "\n";
+      fmt::print(strm, "\n Number of database time steps    = {:10n}\n",
+                 get_property("state_count").get_int());
     }
   }
 
@@ -570,15 +624,16 @@ namespace Ioss {
       // message in certain cases...
       case STATE_READONLY: {
         std::ostringstream errmsg;
-        errmsg << "Cannot change state of an input (readonly) database in "
-               << get_database()->get_filename();
+        fmt::print(errmsg, "Cannot change state of an input (readonly) database in {}",
+                   get_database()->get_filename());
         IOSS_ERROR(errmsg);
       }
 
       break;
       default: {
         std::ostringstream errmsg;
-        errmsg << "Invalid nesting of begin/end pairs in " << get_database()->get_filename();
+        fmt::print(errmsg, "Invalid nesting of begin/end pairs in {}",
+                   get_database()->get_filename());
         IOSS_ERROR(errmsg);
       }
       }
@@ -604,8 +659,10 @@ namespace Ioss {
     // Region (that is, we are leaving the state we are in).
     if (get_state() != current_state) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Specified end state does not match currently open state\n"
-             << "       [" << get_database()->get_filename() << "]\n";
+      fmt::print(errmsg,
+                 "ERROR: Specified end state does not match currently open state\n"
+                 "       [{}]\n",
+                 get_database()->get_filename());
       IOSS_ERROR(errmsg);
     }
 
@@ -670,9 +727,9 @@ namespace Ioss {
         bool ok = check_parallel_consistency(*this);
         if (!ok) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: Parallel Consistency Failure for "
-                 << (get_database()->is_input() ? "input" : "output") << " database "
-                 << "'" << get_database()->get_filename() << "'.";
+          fmt::print(errmsg, "ERROR: Parallel Consistency Failure for {} database '{}'.",
+                     (get_database()->is_input() ? "input" : "output"),
+                     get_database()->get_filename());
           IOSS_ERROR(errmsg);
         }
       }
@@ -709,13 +766,11 @@ namespace Ioss {
     if (!get_database()->is_input() && !stateTimes.empty() && time <= stateTimes.back()) {
       // Check that time is increasing...
       if (!warning_output) {
-        std::ostringstream errmsg;
-        errmsg << "IOSS WARNING: Current time, " << time << ", is not greater than previous time, "
-               << stateTimes.back() << " in\n"
-               << get_database()->get_filename()
-               << ". This may cause problems in applications that assume "
-                  "monotonically increasing time values.\n";
-        IOSS_WARNING << errmsg.str();
+        fmt::print(IOSS_WARNING,
+                   "IOSS WARNING: Current time {} is not greater than previous time {} in\n{}\n. "
+                   "This may cause problems in applications that assume monotonically increasing "
+                   "time values.\n",
+                   time, stateTimes.back(), get_database()->get_filename());
         warning_output = true;
       }
     }
@@ -758,13 +813,12 @@ namespace Ioss {
           get_database()->usage() == WRITE_RESTART) {
         if (currentState == -1) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: No currently active state.\n"
-                 << "       [" << get_database()->get_filename() << "]\n";
+          fmt::print(errmsg, "ERROR: No currently active state.\n       [{}]\n",
+                     get_database()->get_filename());
           IOSS_ERROR(errmsg);
         }
         else {
           SMART_ASSERT((int)stateTimes.size() >= currentState)(stateTimes.size())(currentState);
-
           time = stateTimes[currentState - 1];
         }
       }
@@ -775,9 +829,10 @@ namespace Ioss {
     }
     else if (state <= 0 || state > stateCount) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Requested state (" << state << ") is invalid.\n"
-             << "       State must be between 1 and " << stateCount << ".\n"
-             << "       [" << get_database()->get_filename() << "]\n";
+      fmt::print(errmsg,
+                 "ERROR: Requested state ({}) is invalid. State must be between 1 and {}.\n"
+                 "       [{}]\n",
+                 state, stateCount, get_database()->get_filename());
       IOSS_ERROR(errmsg);
     }
     else {
@@ -870,21 +925,24 @@ namespace Ioss {
     double time = 0.0;
     if (get_database()->is_input() && stateCount == 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: There are no states (time steps) on the input database.\n"
-             << "       [" << get_database()->get_filename() << "]\n";
+      fmt::print(errmsg,
+                 "ERROR: There are no states (time steps) on the input database.\n"
+                 "       [{}]\n",
+                 get_database()->get_filename());
       IOSS_ERROR(errmsg);
     }
     if (state <= 0 || state > stateCount) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Requested state (" << state << ") is invalid.\n"
-             << "       State must be between 1 and " << stateCount << ".\n"
-             << "       [" << get_database()->get_filename() << "]\n";
+      fmt::print(errmsg,
+                 "ERROR: Requested state ({}) is invalid. State must be between 1 and {}.\n"
+                 "       [{}]\n",
+                 state, stateCount, get_database()->get_filename());
       IOSS_ERROR(errmsg);
     }
     else if (currentState != -1 && !get_database()->is_input()) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: State " << currentState << " was not ended. Can not begin new state.\n"
-             << "       [" << get_database()->get_filename() << "]\n";
+      fmt::print(errmsg, "ERROR: State {} was not ended. Can not begin new state.\n       [{}]\n",
+                 currentState, get_database()->get_filename());
       IOSS_ERROR(errmsg);
     }
     else {
@@ -918,9 +976,10 @@ namespace Ioss {
   {
     if (state != currentState) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: The current database state (" << currentState
-             << ") does not match the ending state (" << state << ").\n"
-             << "       [" << get_database()->get_filename() << "]\n";
+      fmt::print(errmsg,
+                 "ERROR: The current database state ({}) does not match the ending state ({}).\n"
+                 "       [{}]\n",
+                 currentState, state, get_database()->get_filename());
       IOSS_ERROR(errmsg);
     }
     DatabaseIO *db   = get_database();
@@ -1373,11 +1432,11 @@ namespace Ioss {
           }
 
           std::ostringstream errmsg;
-          errmsg << "\n\nERROR: Duplicate names detected.\n       The name '" << db_name
-                 << "' was found for both " << old_ge->type_string() << " " << old_id << " and "
-                 << ge->type_string() << " " << new_id
-                 << ".\n       Names must be unique over all types in a finite "
-                    "element model.\n\n";
+          fmt::print(errmsg,
+                     "\n\nERROR: Duplicate names detected.\n"
+                     "       The name '{}' was found for both {} {} and {} {}.\n"
+                     "       Names must be unique over all types in a finite element model.\n\n",
+                     db_name, old_ge->type_string(), old_id, ge->type_string(), new_id);
           IOSS_ERROR(errmsg);
         }
       }
@@ -1430,8 +1489,10 @@ namespace Ioss {
       return result;
     }
     std::ostringstream errmsg;
-    errmsg << "\n\nERROR: The entity named '" << db_name << "' which is being aliased to '" << alias
-           << "' does not exist in region '" << name() << "'.\n";
+    fmt::print(errmsg,
+               "\n\nERROR: The entity named '{}' which is being aliased to '{}' does not exist in "
+               "region '{}'.\n",
+               db_name, alias, name());
     IOSS_ERROR(errmsg);
   }
 
@@ -1857,7 +1918,7 @@ namespace Ioss {
       }
     }
     std::ostringstream errmsg;
-    errmsg << "Error: Invalid id " << id << " specified for coordinate frame.";
+    fmt::print(errmsg, "Error: Invalid id {} specified for coordinate frame.", id);
     IOSS_ERROR(errmsg);
   }
 
@@ -1964,9 +2025,10 @@ namespace Ioss {
     }
     // Should not reach this point...
     std::ostringstream errmsg;
-    errmsg << "ERROR: In Ioss::Region::get_element_block, an invalid local_id of " << local_id
-           << " is specified.  The valid range is 1 to "
-           << get_implicit_property("element_count").get_int();
+    fmt::print(errmsg,
+               "ERROR: In Ioss::Region::get_element_block, an invalid local_id of {} is specified. "
+               " The valid range is 1 to {}",
+               local_id, get_implicit_property("element_count").get_int());
     IOSS_ERROR(errmsg);
   }
 
@@ -1986,8 +2048,10 @@ namespace Ioss {
     }
     // Should not reach this point...
     std::ostringstream errmsg;
-    errmsg << "ERROR: In Ioss::Region::get_structured_block, an invalid global_offset of "
-           << global_offset << " is specified.";
+    fmt::print(errmsg,
+               "ERROR: In Ioss::Region::get_structured_block, an invalid global_offset of {} is "
+               "specified.",
+               global_offset);
     IOSS_ERROR(errmsg);
   }
 
@@ -2199,9 +2263,10 @@ namespace Ioss {
           GroupingEntity *this_ge = get_entity(base);
           if (this_ge == nullptr) {
             std::ostringstream errmsg;
-            errmsg << "INTERNAL ERROR: Could not find entity '" << base
-                   << "' in synchronize_id_and_name() "
-                   << "                [" << get_database()->get_filename() << "]\n";
+            fmt::print(errmsg,
+                       "INTERNAL ERROR: Could not find entity '{}' in synchronize_id_and_name() "
+                       "                [{}]\n",
+                       base, get_database()->get_filename());
             IOSS_ERROR(errmsg);
           }
 
