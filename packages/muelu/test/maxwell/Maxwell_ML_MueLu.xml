@@ -34,7 +34,7 @@
       <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/>
       <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
 
-      <Parameter name="repartition: enable" type="int" value="1"/>
+      <Parameter name="repartition: enable" type="int" value="0"/>
       <Parameter name="repartition: partitioner" type="string" value="Zoltan"/>
       <Parameter name="repartition: start level" type="int" value="1"/>
       <Parameter name="repartition: min per proc" type="int" value="800"/>
@@ -59,7 +59,7 @@
     <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/>
     <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
 
-    <Parameter name="repartition: enable" type="int" value="1"/>
+    <Parameter name="repartition: enable" type="int" value="0"/>
     <Parameter name="repartition: partitioner" type="string" value="Zoltan"/>
     <Parameter name="repartition: start level" type="int" value="1"/>
     <Parameter name="repartition: min per proc" type="int" value="800"/>
