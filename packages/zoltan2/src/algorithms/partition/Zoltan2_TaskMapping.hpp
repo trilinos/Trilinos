@@ -2545,8 +2545,10 @@ public:
     this->writeMapping2(comm_->getRank());
   #endif
 
-    delete []machine_extent_wrap_around;
-    if (machine_->getMachineExtent(machine_extent)) {
+    delete [] machine_extent_wrap_around;
+   
+    if (machine_->getMachineExtent(machine_extent) &&
+        machine_->getMachineExtentWrapArounds(machine_extent_wrap_around)) {
       for (int i = 0; i < procDim; ++i) {
         delete [] procCoordinates[i];
       }
@@ -2838,8 +2840,10 @@ public:
     this->writeMapping2(comm_->getRank());
   #endif
 
-    delete []machine_extent_wrap_around;
-    if (machine_->getMachineExtent(machine_extent)) {
+    delete [] machine_extent_wrap_around;
+   
+    if (machine_->getMachineExtent(machine_extent) &&
+        machine_->getMachineExtentWrapArounds(machine_extent_wrap_around)) {
       for (int i = 0; i < procDim; ++i) {
         delete [] procCoordinates[i];
       }
