@@ -2064,9 +2064,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     os << *prefix << "Build test matrix and source Map" << std::endl;
     std::cerr << os.str ();
   }
-std::cout << Comm->getRank() << " KDDKDD build A" << std::endl;
   build_test_matrix<CrsMatrixType>(Comm,A);
-std::cout << Comm->getRank() << " KDDKDD build A done" << std::endl;
   GST num_global = A->getRowMap()->getGlobalNumElements();
   MapSource = A->getRowMap();
 
@@ -2094,13 +2092,9 @@ std::cout << Comm->getRank() << " KDDKDD build A done" << std::endl;
     }
 
     test_err=0;
-std::cout << Comm->getRank() << " KDDKDD build B" << std::endl;
     B = rcp(new CrsMatrixType(MapTarget,0));
-std::cout << Comm->getRank() << " KDDKDD build B import" << std::endl;
     B->doImport(*A, *Importer, Tpetra::INSERT);
-std::cout << Comm->getRank() << " KDDKDD build B fillComplete" << std::endl;
     B->fillComplete(A->getDomainMap(),A->getRangeMap());
-std::cout << Comm->getRank() << " KDDKDD build B done" << std::endl;
     size_t nnz1=B->getNodeNumEntries();
 
     // Call the P&PWOPIDs
