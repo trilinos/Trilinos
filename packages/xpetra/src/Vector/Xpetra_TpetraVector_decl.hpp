@@ -164,7 +164,7 @@ namespace Xpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename TPETRA_DEPRECATED Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node > &weights) const;
+    TPETRA_DEPRECATED typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node > &weights) const;
 #endif
 
 
