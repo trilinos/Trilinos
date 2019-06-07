@@ -392,7 +392,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Rule for boundary duplication
   // For any two ranks that share an interface:
-  // the lowest ranks owns the interface and the highest rank gets extra nodes
+  // the lowest rank owns the interface and the highest rank gets extra nodes
 
   // First we count how many nodes the region needs to send and receive
   // and allocate arrays accordingly
@@ -504,7 +504,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
       // Send node of back-right corner
       sendGIDs[countIDs] = startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-      sendPIDs[countIDs] = myRank + procsPerDim[1] + 1;
+      sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
       sendLIDs[countIDs] = lNodesPerDim[1]*lNodesPerDim[0] - 1;
       ++countIDs;
     } else if(backBC == 0) {
@@ -813,13 +813,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         sendGIDs[countIDs] = i
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
           + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1];
+        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
         ++countIDs;
       }
       // Send node of top-back-right corner
       sendGIDs[countIDs] = startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
         + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-      sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1] + 1;
+      sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0] + 1;
       ++countIDs;
 
     } else if( (topBC == 0) && (backBC == 0) ) {
@@ -854,7 +854,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         sendGIDs[countIDs] = i
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
           + (lNodesPerDim[0] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1];
+        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
         ++countIDs;
       }
 

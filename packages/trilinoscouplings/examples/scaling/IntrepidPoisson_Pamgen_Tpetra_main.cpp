@@ -323,6 +323,8 @@ main (int argc, char *argv[])
             *out<<"*** Avatar Setup ***"<<std::endl;
             avatar.Setup();
             avatar.SetMueLuParameters(problemFeatures,mueluParams, true);
+            //  Do this twice to make sure this guy is re-callable.
+            avatar.SetMueLuParameters(problemFeatures,mueluParams, true);
 
             *out<<"*** Updated MueLu Parameters ***\n"<<mueluParams<<std::endl;
             avatar.Cleanup();

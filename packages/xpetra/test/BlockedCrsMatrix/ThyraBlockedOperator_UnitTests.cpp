@@ -969,7 +969,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ReadWriteMatrixMatrixMa
 #endif
   tname = "_" + tname;
 
-  Xpetra::IO<Scalar, LO, GO, Node>::WriteBlockedCrsMatrix(tname, *bMat);
+  const bool alwaysWriteMaps = true;
+  Xpetra::IO<Scalar, LO, GO, Node>::WriteBlockedCrsMatrix(tname, *bMat, alwaysWriteMaps);
   Teuchos::RCP<const Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bMat2 = Xpetra::IO<Scalar, LO, GO, Node>::ReadBlockedCrsMatrix(tname, lib, comm);
 
   TEST_EQUALITY(bMat->getMatrix(0,0)->getGlobalNumEntries(),bMat2->getMatrix(0,0)->getGlobalNumEntries());
