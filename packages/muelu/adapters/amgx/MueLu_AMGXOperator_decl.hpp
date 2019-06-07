@@ -182,8 +182,8 @@ namespace MueLu {
       RCP<Teuchos::Time> amgxTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: initialize");
       amgxTimer->start();
       // Initialize
-      AMGX_SAFE_CALL(AMGX_initialize());
-      AMGX_SAFE_CALL(AMGX_initialize_plugins());
+      //AMGX_SAFE_CALL(AMGX_initialize());
+      //AMGX_SAFE_CALL(AMGX_initialize_plugins());
 
       /*system*/
       //AMGX_SAFE_CALL(AMGX_register_print_callback(&print_callback));
