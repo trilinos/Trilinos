@@ -34,9 +34,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
     echo "***"
     echo "*** ERROR: GNU COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only GNU compilers supported on this system are:"
-    echo "***   gnu (defaults to gnu-6.1.0)"
-    echo "***   gnu-6.1.0 (default)"
-    echo "***   gnu-7.2.0"
+    echo "***   gnu (defaults to gnu-7.2.0)"
+    echo "***   gnu-6.1.0"
+    echo "***   gnu-7.2.0 (default)"
     echo "***"
     return
   fi
@@ -113,15 +113,15 @@ if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   # many to be safe and avoid time-outs.
 else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
+  export OMP_NUM_THREADS=1
+  export OMP_PROC_BIND=false
+  unset OMP_PLACES
   # NOTE: NOTE: When running in serial, the second hyperthread can't seem to
   # run a sperate MPI process and if you try to run with as many they you get
   # a bunch of failures that say "libgomp: Thread creation failed: Resource
   # temporarily unavailable".  So we can only run with as many MPI processes
   # as there are cores on the machine.  But we want to be conservative and
   # instead run with half that many to be safe and avoid time-outs.
-  export OMP_NUM_THREADS=1
-  export OMP_PROC_BIND=false
-  unset OMP_PLACES
 fi
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-3.9.0" ]] ; then
