@@ -243,11 +243,47 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    LO numMyRows = rowMap.getNodeNumElements();
    LO maxNumEntries = A->getGlobalMaxNumRowEntries();
 
-   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(rcpFromRef(rowMap),maxNumEntries);
-
    // for extraction
    std::vector<GO> indices(maxNumEntries);
    std::vector<ST> values(maxNumEntries);
+
+   // for counting row sizes
+   std::vector<size_t> numEntriesPerRow(numMyRows,0);
+
+   // Count the sizes of each row, using same logic as insertion below
+   for(LO localRow=0;localRow<numMyRows;localRow++) {
+      size_t numEntries = -1; 
+      GO globalRow = gRowMap.getGlobalElement(localRow);
+      GO contigRow = rowMap.getGlobalElement(localRow);
+
+      TEUCHOS_ASSERT(globalRow>=0);
+      TEUCHOS_ASSERT(contigRow>=0);
+
+      // extract a global row copy
+      localA.getGlobalRowCopy(globalRow, Teuchos::ArrayView<GO>(indices), Teuchos::ArrayView<ST>(values), numEntries);
+      LO numOwnedCols = 0;
+      for(size_t localCol=0;localCol<numEntries;localCol++) {
+         GO globalCol = indices[localCol];
+
+         // determinate which block this column ID is in
+         int block = globalCol / numGlobalVars;
+         
+         bool inFamily = true; 
+ 
+         // test the beginning of the block
+         inFamily &= (block*numGlobalVars+colBlockOffset <= globalCol);
+         inFamily &= ((block*numGlobalVars+colBlockOffset+colFamilyCnt) > globalCol);
+
+         // is this column in the variable family
+         if(inFamily) {
+            numOwnedCols++;
+         }
+      }
+      numEntriesPerRow[localRow] += numOwnedCols;
+   }
+
+   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = 
+      rcp(new Tpetra::CrsMatrix<ST,LO,GO,NT>(rcpFromRef(rowMap), Teuchos::ArrayView<const size_t>(numEntriesPerRow)));
 
    // for insertion
    std::vector<GO> colIndices(maxNumEntries);
