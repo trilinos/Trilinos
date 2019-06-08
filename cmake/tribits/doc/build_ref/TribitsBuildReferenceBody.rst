@@ -3347,6 +3347,58 @@ This will ensure that every package that builds correctly will get installed.
 (The default 'install' target aborts on the first file install failure.)
 
 
+Installation Testing
+====================
+
+The CMake project <Project> has built-in support for testing an installation
+of itself using its own tests and examples.  The way it works is to configure,
+build, and install just the libraries and header files using::
+
+  $ mkdir BUILD_LIBS
+  $ cd BUILD_LIBS/
+
+  $ cmake \
+    -DCMAKE_INSTLAL_PREFIX=<install-dir> \
+    -D<Project>_ENABLE_ALL_PACKAGES=ON \
+    -D<Project>_ENABLE_TESTS=OFF \
+    [other options] \
+    <projectDir>
+
+  $ make -j16 install   # or ninja -j16
+
+and then create a different build directory to configure and build just the
+tests and examples (not the libraries) against the pre-installed libraries and
+header files using::
+
+  $ mkdir BUILD_TESTS
+  $ cd BUILD_TESTS/
+
+  $ cmake \
+    -D<Project>_ENABLE_ALL_PACKAGES=ON \
+    -D<Project>_ENABLE_TESTS=ON \
+    -D<Project>_ENABLE_INSTALLATION_TESTING=ON \
+    -D<Project>_INSTALLATION_DIR=<install-dir> \
+    [other options] \
+    <projectDir>
+
+  $ make -j16  # or ninja -j16
+
+  $ ctest -j16
+
+If that second project builds and all the tests pass, then the project was
+installed correctly.  This uses the project's own tests and examples to test
+the installation of the project.  The library source and header files are
+unused in the second project build.  In fact, you can delete them and ensure
+that they are not used in the build and testing of the tests and examples!
+
+This can also be used for testing backward compatibility of the project (or
+perhaps for a subset of packages).  In this case, build and install the
+libraries and header files for a newer version of the project and then
+configure, build, and run the tests and examples for an older version of the
+project sources pointing to the installed header files and libraries from the
+newer version.
+
+
 Packaging
 =========
 
