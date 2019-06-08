@@ -523,7 +523,7 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
       }
 
       if (commonRegions.size() > 1) {
-        vals[c] *= 0.5;
+        vals[c] *= (1.0/ ((double) commonRegions.size())) ;
       }
     }
 
