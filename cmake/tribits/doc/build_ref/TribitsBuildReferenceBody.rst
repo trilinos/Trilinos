@@ -3387,7 +3387,7 @@ header files using::
 
 If that second project builds and all the tests pass, then the project was
 installed correctly.  This uses the project's own tests and examples to test
-the installation of the project.  The library source and heard files are
+the installation of the project.  The library source and header files are
 unused in the second project build.  In fact, you can delete them and ensure
 that they are not used in the build and testing of the tests and examples!
 
