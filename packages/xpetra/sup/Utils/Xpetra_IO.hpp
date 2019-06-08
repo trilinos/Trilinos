@@ -442,7 +442,8 @@ namespace Xpetra {
         RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >    colMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, n, (myRank == 0 ? n : 0), indexBase, comm), domainMap = colMap;
         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A   = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, 1);
 
-        TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
+        //2019-06-07 JHU I don't see why this should matter.
+        //TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
 
         if (myRank == 0) {
           Teuchos::Array<GlobalOrdinal> inds;
@@ -563,7 +564,8 @@ namespace Xpetra {
 
         RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap, colMap, 1);
 
-        TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
+        //2019-06-07 JHU I don't see why this should matter.
+        //TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
 
         Teuchos::ArrayView<const GlobalOrdinal> rowElements = rowMap->getNodeElementList();
         Teuchos::ArrayView<const GlobalOrdinal> colElements = colMap->getNodeElementList();
@@ -1025,7 +1027,8 @@ namespace Xpetra {
         RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >    colMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, n, (myRank == 0 ? n : 0), indexBase, comm), domainMap = colMap;
         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A   = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, 1);
 
-        TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GlobalOrdinal), Exceptions::RuntimeError, "Incompatible sizes");
+        //2019-06-07 JHU I don't see why this should matter.
+        //TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GlobalOrdinal), Exceptions::RuntimeError, "Incompatible sizes");
 
         if (myRank == 0) {
           Teuchos::Array<GlobalOrdinal> inds;
@@ -1150,7 +1153,8 @@ namespace Xpetra {
 
         RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap, colMap, 1);
 
-        TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GlobalOrdinal), Exceptions::RuntimeError, "Incompatible sizes");
+        //2019-06-07 JHU I don't see why this should matter.
+        //TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GlobalOrdinal), Exceptions::RuntimeError, "Incompatible sizes");
 
         Teuchos::ArrayView<const GlobalOrdinal> rowElements = rowMap->getNodeElementList();
         Teuchos::ArrayView<const GlobalOrdinal> colElements = colMap->getNodeElementList();
