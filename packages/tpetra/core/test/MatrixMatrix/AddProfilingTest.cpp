@@ -80,7 +80,9 @@ RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getTestMatrix(RCP<Tpetra::Map<LO, GO, NT>
     RCP<Tpetra::Map<LO, GO, NT>>& colMap, int seed, RCP<const Comm<int>>& comm)
 {
   //create a non-overlapping distributed row map
-  auto mat = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NT>(rowMap, colMap, NNZ_PER_ROW));
+  size_t maxNnzPerRow = std::min(comm->getSize() * NNZ_PER_ROW, NUM_ROWS); 
+        //since square matrix and each proc inserting NNZ_PER_ROW in each global row
+  auto mat = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NT>(rowMap, colMap, maxNnzPerRow));
   //get consistent results between trials
   srand(comm->getRank() * 7 + 42 + seed);
   auto myCols = colMap->getNodeElementList();

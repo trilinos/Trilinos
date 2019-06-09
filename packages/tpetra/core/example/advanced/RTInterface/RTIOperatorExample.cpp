@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
   //
   // Create a finite-difference stencil using a CrsMatrix
   //
-  auto FDMatrix = Tpetra::createCrsMatrix<double>(map);
+  auto FDMatrix = Tpetra::createCrsMatrix<double>(map,3);
   for (int r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
     if (r == map->getMinAllGlobalIndex()) {
       FDMatrix->insertGlobalValues(r, Teuchos::tuple<int>(r,r+1), Teuchos::tuple<double>(2.0,-1.0));

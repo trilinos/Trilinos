@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 
     RCP<const map_type> UniqueMap = rcp (new map_type (-1, uniqueMapArray, 0, TeuchosComm));
 
-    RCP<crs_matrix_type> K = rcp (new crs_matrix_type (UniqueMap,1));
+    RCP<crs_matrix_type> K = rcp (new crs_matrix_type (UniqueMap,10));
 
     for (LO i = 0; i < static_cast<LO>(UniqueMap->getNodeNumElements()); ++i) {
       LO numEntries = 10-i;
