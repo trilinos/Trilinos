@@ -57,9 +57,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../..)
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
-IF (TPL_ENABLE_MPI)
-ENDIF()
-
 #
 # C) Define the targets for package's library(s)
 #
