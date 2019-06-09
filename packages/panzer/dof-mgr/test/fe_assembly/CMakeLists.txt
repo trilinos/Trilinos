@@ -5,10 +5,9 @@ SET(UNIT_TEST_DRIVER ${PANZER_UNIT_TEST_MAIN})
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Test_FE_Assembly_HEX
   SOURCES test_fe_assembly_HEX.cpp ../cartesian_topology/CartesianConnManager.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
+  NUM_MPI_PROCS 4
+  COMM mpi
   PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
   )
 
 
