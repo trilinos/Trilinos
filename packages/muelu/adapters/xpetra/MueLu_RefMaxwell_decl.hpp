@@ -55,6 +55,7 @@
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
+#include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR

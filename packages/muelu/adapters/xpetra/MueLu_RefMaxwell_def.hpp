@@ -69,6 +69,7 @@
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_Utilities.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
@@ -1046,8 +1047,25 @@ namespace MueLu {
       coarseLevel.Request("P",TentativePFact.get());
       coarseLevel.Request("Coordinates",Tfact.get());
 
+      RCP<AggregationExportFactory> aggExport;
+      if (parameterList_.get("aggregation: export visualization data",false)) {
+        aggExport = rcp(new AggregationExportFactory());
+        ParameterList aggExportParams;
+        aggExportParams.set("aggregation: output filename", "aggs.vtk");
+        aggExportParams.set("aggregation: output file: agg style", "Jacks");
+        aggExport->SetParameterList(aggExportParams);
+
+        aggExport->SetFactory("Aggregates", UncoupledAggFact);
+        aggExport->SetFactory("UnAmalgamationInfo", amalgFact);
+        fineLevel.Request("Aggregates",UncoupledAggFact.get());
+        fineLevel.Request("UnAmalgamationInfo",amalgFact.get());
+      }
+
       coarseLevel.Get("P",P_nodal,TentativePFact.get());
       coarseLevel.Get("Coordinates",CoordsH_,Tfact.get());
+
+      if (parameterList_.get("aggregation: export visualization data",false))
+        aggExport->Build(fineLevel, coarseLevel);
     }
     if (dump_matrices_)
       Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal.mat"), *P_nodal);
