@@ -300,8 +300,20 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
 #ifdef HAVE_MUELU_CUDA
       if(profileSolve) cudaProfilerStart();
 #endif
-      H->IsPreconditioner(false);
-      H->Iterate(*B, *X, maxIts);
+      if(useAMGX) {
+#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+	// Do a fixed-point iteraiton without convergence checks
+	RCP<MultiVector> R = MultiVectorFactory::Build(X->getMap(), X->getNumVectors());
+	for(int i=0; i<maxIts; i++) {
+	  Utilities::Residual(*A, *X, *B, *R);
+	  Prec->apply(*R,*X); 
+ 	}
+#endif
+      }
+      else {
+	H->IsPreconditioner(false);
+	H->Iterate(*B, *X, maxIts);
+      }
 #ifdef HAVE_MUELU_CUDA
       if(profileSolve) cudaProfilerStop();
 #endif
