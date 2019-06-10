@@ -112,7 +112,7 @@ namespace panzer {
 
         // Based on descriptor, currently assumes there should only be one workset
         panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-        const auto& worksets = worksetContainer_->getWorksets(wd);
+        const auto worksets = worksetContainer_->getWorksets(wd);
 
         for (const auto& workset : *worksets) {
 
@@ -218,10 +218,10 @@ namespace panzer {
 
         for (const auto& workset : *worksets) {
 
-          const auto& basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
+          const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
-          const auto& unweightedBasis = basisValues.basis_vector;
-          const auto& weightedBasis = basisValues.weighted_basis_vector;
+          const auto unweightedBasis = basisValues.basis_vector;
+          const auto weightedBasis = basisValues.weighted_basis_vector;
 
           // Offsets (this assumes UVM, need to fix)
           const std::vector<LO>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
