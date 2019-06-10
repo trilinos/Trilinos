@@ -277,11 +277,11 @@ evaluateFields(typename TRAITS::EvalData workset)
      const auto& kokkosDirichletCounter = tpetraDirichletCounter.template getLocalView<PHX::mem_space>();
 
      // Class data fields for lambda capture
-     const auto& fieldOffsets = fieldOffsets_[fieldIndex];
-     const auto& basisIndices = basisIndexForMDFieldOffsets_[fieldIndex];
-     const auto& worksetLIDs = worksetLIDs_;
-     const auto& fieldValues = scatterFields_[fieldIndex];
-     const auto& applyBC = applyBC_[fieldIndex].get_static_view();
+     const auto fieldOffsets = fieldOffsets_[fieldIndex];
+     const auto basisIndices = basisIndexForMDFieldOffsets_[fieldIndex];
+     const auto worksetLIDs = worksetLIDs_;
+     const auto fieldValues = scatterFields_[fieldIndex];
+     const auto applyBC = applyBC_[fieldIndex].get_static_view();
      const bool checkApplyBC = checkApplyBC_;
 
      if (!scatterIC_) {
