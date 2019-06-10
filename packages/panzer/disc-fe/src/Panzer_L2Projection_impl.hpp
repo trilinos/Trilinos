@@ -116,10 +116,10 @@ namespace panzer {
 
         for (const auto& workset : *worksets) {
 
-          const auto& basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
+          const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
-          const auto& unweightedBasis = basisValues.basis_scalar;
-          const auto& weightedBasis = basisValues.weighted_basis_scalar;
+          const auto unweightedBasis = basisValues.basis_scalar;
+          const auto weightedBasis = basisValues.weighted_basis_scalar;
 
           // Offsets (this assumes UVM, need to fix)
           const std::vector<LO>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
