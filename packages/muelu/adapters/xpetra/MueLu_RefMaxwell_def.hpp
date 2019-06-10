@@ -349,7 +349,7 @@ namespace MueLu {
       coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
       fineLevel.SetLevelID(0);
       coarseLevel.SetLevelID(1);
-      fineLevel.Set("A",M1_Matrix_);
+      fineLevel.Set("A",Ms_Matrix_);
       coarseLevel.Set("P",D0_Matrix_);
       coarseLevel.setlib(M1_Matrix_->getDomainMap()->lib());
       fineLevel.setlib(M1_Matrix_->getDomainMap()->lib());
@@ -915,6 +915,7 @@ namespace MueLu {
     if (dump_matrices_) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): dumping data" << std::endl;
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.mat"), *SM_Matrix_);
+      if(!Ms_Matrix_.is_null())    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("Ms.mat"), *Ms_Matrix_);
       if(!M1_Matrix_.is_null())    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M1.mat"), *M1_Matrix_);
       if(!M0inv_Matrix_.is_null()) Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M0inv.mat"), *M0inv_Matrix_);
 #ifndef HAVE_MUELU_KOKKOS_REFACTOR
@@ -1942,6 +1943,7 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   initialize(const Teuchos::RCP<Matrix> & D0_Matrix,
+             const Teuchos::RCP<Matrix> & Ms_Matrix,
              const Teuchos::RCP<Matrix> & M0inv_Matrix,
              const Teuchos::RCP<Matrix> & M1_Matrix,
              const Teuchos::RCP<MultiVector>  & Nullspace,
@@ -1950,6 +1952,7 @@ namespace MueLu {
   {
     // some pre-conditions
     TEUCHOS_ASSERT(D0_Matrix!=Teuchos::null);
+    TEUCHOS_ASSERT(Ms_Matrix!=Teuchos::null);
     TEUCHOS_ASSERT(M1_Matrix!=Teuchos::null);
 
     HierarchyH_ = Teuchos::null;
@@ -1964,6 +1967,7 @@ namespace MueLu {
 
     D0_Matrix_ = D0_Matrix;
     M0inv_Matrix_ = M0inv_Matrix;
+    Ms_Matrix_ = Ms_Matrix;
     M1_Matrix_ = M1_Matrix;
     Coords_ = Coords;
     Nullspace_ = Nullspace;

@@ -367,6 +367,29 @@ namespace Thyra {
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix M1.");
 
+          if (paramList.isParameter("Ms")) {
+            if (paramList.isType<Teuchos::RCP<TpCrsMat> >("Ms")) {
+              RCP<TpCrsMat> tMs = paramList.get<RCP<TpCrsMat> >("Ms");
+              paramList.remove("Ms");
+              RCP<XpCrsMat> xMs = rcp_dynamic_cast<XpCrsMat>(tMs, true);
+              paramList.set<RCP<XpCrsMat> >("Ms", xMs);
+            } else if (paramList.isType<Teuchos::RCP<const ThyLinOpBase> >("Ms")) {
+              RCP<const ThyLinOpBase> thyMs = paramList.get<RCP<const ThyLinOpBase> >("Ms");
+              paramList.remove("Ms");
+              RCP<const XpCrsMat> crsMs = XpThyUtils::toXpetra(thyMs);
+              TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(crsMs));
+              // MueLu needs a non-const object as input
+              RCP<XpCrsMat> crsMsNonConst = Teuchos::rcp_const_cast<XpCrsMat>(crsMs);
+              TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(crsMsNonConst));
+              // wrap as an Xpetra::Matrix that MueLu can work with
+              RCP<XpMat> Ms = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsMsNonConst));
+              paramList.set<RCP<XpMat> >("Ms", Ms);
+            } else if (paramList.isType<Teuchos::RCP<XpMat> >("Ms")) {
+              // do nothing
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter Ms has wrong type.");
+          }
+
           if (paramList.isParameter("D0")) {
             if(paramList.isType<Teuchos::RCP<TpCrsMat> >("D0")) {
               RCP<TpCrsMat> tD0 = paramList.get<RCP<TpCrsMat> >("D0");
@@ -467,6 +490,33 @@ namespace Thyra {
               TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter M1 has wrong type.");
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix M1.");
+
+          if (paramList.isParameter("Ms")) {
+            if (paramList.isType<Teuchos::RCP<Epetra_CrsMatrix> >("Ms")) {
+              RCP<Epetra_CrsMatrix> eMs = paramList.get<RCP<Epetra_CrsMatrix> >("Ms");
+              paramList.remove("Ms");
+              RCP<XpEpCrsMat> xeMs = Teuchos::rcp(new XpEpCrsMat(eMs));
+              RCP<XpCrsMat> xCrsMs = rcp_dynamic_cast<XpCrsMat>(xeMs, true);
+              RCP<XpCrsMatWrap> xwMs = Teuchos::rcp(new XpCrsMatWrap(xCrsMs));
+              RCP<XpMat> xMs = rcp_dynamic_cast<XpMat>(xwMs);
+              paramList.set<RCP<XpMat> >("Ms", xMs);
+            }
+            else if (paramList.isType<Teuchos::RCP<const ThyLinOpBase> >("Ms")) {
+              RCP<const ThyLinOpBase> thyMs = paramList.get<RCP<const ThyLinOpBase> >("Ms");
+              paramList.remove("Ms");
+              RCP<const XpCrsMat> crsMs = XpThyUtils::toXpetra(thyMs);
+              TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(crsMs));
+              // MueLu needs a non-const object as input
+              RCP<XpCrsMat> crsMsNonConst = Teuchos::rcp_const_cast<XpCrsMat>(crsMs);
+              TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(crsMsNonConst));
+              // wrap as an Xpetra::Matrix that MueLu can work with
+              RCP<XpMat> Ms = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsMsNonConst));
+              paramList.set<RCP<XpMat> >("Ms", Ms);
+            } else if (paramList.isType<Teuchos::RCP<XpMat> >("Ms")) {
+              // do nothing
+            } else
+              TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter Ms has wrong type.");
+          }
 
           if (paramList.isParameter("D0")) {
             if (paramList.isType<Teuchos::RCP<Epetra_CrsMatrix> >("D0")) {

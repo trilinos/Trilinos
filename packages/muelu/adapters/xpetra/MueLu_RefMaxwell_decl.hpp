@@ -154,6 +154,32 @@ namespace MueLu {
      *
      * \param[in] SM_Matrix Jacobian
      * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] Ms_Matrix Edge mass matrix for the nodal aggregates
+     * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
+     * \param[in] M1_Matrix Edge mass matrix for the add on
+     * \param[in] Nullspace Null space (needed for periodic)
+     * \param[in] Coords Nodal coordinates
+     * \param[in] List Parameter list
+     * \param[in] ComputePrec If true, compute the preconditioner immediately
+     */
+    RefMaxwell(const Teuchos::RCP<Matrix> & SM_Matrix,
+               const Teuchos::RCP<Matrix> & D0_Matrix,
+               const Teuchos::RCP<Matrix> & Ms_Matrix,
+               const Teuchos::RCP<Matrix> & M0inv_Matrix,
+               const Teuchos::RCP<Matrix> & M1_Matrix,
+               const Teuchos::RCP<MultiVector> & Nullspace,
+               const Teuchos::RCP<RealValuedMultiVector> & Coords,
+               Teuchos::ParameterList& List,
+               bool ComputePrec = true)
+    {
+      initialize(D0_Matrix,Ms_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+      resetMatrix(SM_Matrix,ComputePrec);
+    }
+
+    /** Constructor with Jacobian (with add on)
+     *
+     * \param[in] SM_Matrix Jacobian
+     * \param[in] D0_Matrix Discrete Gradient
      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
      * \param[in] M1_Matrix Edge mass matrix for the
      * \param[in] Nullspace Null space (needed for periodic)
@@ -170,7 +196,7 @@ namespace MueLu {
                Teuchos::ParameterList& List,
                bool ComputePrec = true)
     {
-      initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+      initialize(D0_Matrix,M1_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
       resetMatrix(SM_Matrix,ComputePrec);
     }
 
@@ -190,7 +216,7 @@ namespace MueLu {
                const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List) : SM_Matrix_(Teuchos::null)
     {
-      initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+      initialize(D0_Matrix,M1_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
     }
 
     /** Constructor with Jacobian (no add on)
@@ -211,7 +237,7 @@ namespace MueLu {
                Teuchos::ParameterList& List,
                bool ComputePrec)
     {
-      initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
+      initialize(D0_Matrix,M1_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
       resetMatrix(SM_Matrix,ComputePrec);
     }
 
@@ -229,7 +255,7 @@ namespace MueLu {
                const Teuchos::RCP<RealValuedMultiVector>  & Coords,
                Teuchos::ParameterList& List) : SM_Matrix_(Teuchos::null)
     {
-      initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
+      initialize(D0_Matrix,M1_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
     }
 
     /** Constructor with parameter list
@@ -246,10 +272,15 @@ namespace MueLu {
       RCP<MultiVector> Nullspace = List.get<RCP<MultiVector> >("Nullspace", Teuchos::null);
       RCP<RealValuedMultiVector> Coords = List.get<RCP<RealValuedMultiVector> >("Coordinates", Teuchos::null);
       RCP<Matrix> D0_Matrix = List.get<RCP<Matrix> >("D0");
+      RCP<Matrix> Ms_Matrix;
+      if (List.isType<Matrix>("Ms"))
+        Ms_Matrix = List.get<RCP<Matrix> >("Ms");
+      else
+        Ms_Matrix = List.get<RCP<Matrix> >("M1");
       RCP<Matrix> M1_Matrix = List.get<RCP<Matrix> >("M1");
       RCP<Matrix> M0inv_Matrix = List.get<RCP<Matrix> >("M0inv", Teuchos::null);
 
-      initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+      initialize(D0_Matrix,Ms_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
 
       if (SM_Matrix != Teuchos::null)
         resetMatrix(SM_Matrix,ComputePrec);
@@ -313,13 +344,15 @@ namespace MueLu {
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
      *
      * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] Ms_Matrix Edge mass matrix for nodal aggregates
      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
-     * \param[in] M1_Matrix Edge mass matrix
+     * \param[in] M1_Matrix Edge mass matrix for add on
      * \param[in] Nullspace Null space (needed for periodic)
      * \param[in] Coords Nodal coordinates
      * \param[in] List Parameter list
      */
     void initialize(const Teuchos::RCP<Matrix> & D0_Matrix,
+                    const Teuchos::RCP<Matrix> & Ms_Matrix,
                     const Teuchos::RCP<Matrix> & M0inv_Matrix,
                     const Teuchos::RCP<Matrix> & M1_Matrix,
                     const Teuchos::RCP<MultiVector> & Nullspace,
