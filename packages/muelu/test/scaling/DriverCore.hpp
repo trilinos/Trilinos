@@ -375,7 +375,16 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         using tMV = Tpetra::MultiVector<SC, LO, GO, NO>;
         using tOP = Tpetra::Operator<SC, LO, GO, NO>;
 
-        Teuchos::RCP<tOP> belosPrecTpetra = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
+        Teuchos::RCP<tOP> belosPrecTpetra;
+	if(useAMGX) {
+#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+	  RCP<Xpetra::TpetraOperator<SC,LO,GO,NO> > xto = Teuchos::rcp_dynamic_cast<Xpetra::TpetraOperator<SC,LO,GO,NO> >(Prec);
+	  belosPrecTpetra = xto->getOperator();
+#endif
+	}
+	else {
+	  belosPrecTpetra = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
+	}
 
         // Construct a Belos LinearProblem object
         RCP<Belos::LinearProblem<SC, tMV, tOP> > belosProblem = rcp(new Belos::LinearProblem<SC, tMV, tOP>(Atpetra, Xtpetra, Btpetra));
