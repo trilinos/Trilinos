@@ -37,7 +37,7 @@ module load atdm-ninja_fortran/1.7.2
 # to one that has the proper sym-links from python -> python3
 module unload sems-python
 # module load sierra-python/3.6.3 - permissions do not allow this, but the execs are ok
-export PATH=/projects/sierra/linux_rh7/install/Python/3.6..3/bin:${PATH}
+export PATH=/projects/sierra/linux_rh7/install/Python/3.6.3/bin:${PATH}
 PATH=/projects/sierra/linux_rh7/install/Python/extras/bin:${PATH}
 export PYTHONPATH=/projects/sierra/linux_rh7/install/Python/extras/lib/python3.6/site-packages:${PYTHONPATH}
 export MANPATH=/projects/sierra/linux_rh7/install/Python/3.6.3/share/man:${MANPATH}
