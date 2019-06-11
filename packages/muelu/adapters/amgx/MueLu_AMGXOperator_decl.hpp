@@ -97,7 +97,7 @@ namespace MueLu {
     AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > &InA, Teuchos::ParameterList &paramListIn) { }
 
     //! Destructor.
-    virtual ~AMGXOperator() { }
+    virtual ~AMGXOperator() {}
 
     //@}
 
@@ -150,6 +150,7 @@ namespace MueLu {
     typedef Tpetra::Map<LO,GO,NO>            Map;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> MultiVector;
 
+   
     void printMaps(Teuchos::RCP<const Teuchos::Comm<int> >& comm, const std::vector<std::vector<int> >& vec, const std::vector<int>& perm,
                    const int* nbrs, const Map& map, const std::string& label) {
       for (int p = 0; p < comm->getSize(); p++) {
@@ -178,13 +179,15 @@ namespace MueLu {
       RCP<const Teuchos::Comm<int> > comm = inA->getRowMap()->getComm();
       int numProcs = comm->getSize();
       int myRank   = comm->getRank();
+     
 
       RCP<Teuchos::Time> amgxTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: initialize");
       amgxTimer->start();
       // Initialize
       //AMGX_SAFE_CALL(AMGX_initialize());
       //AMGX_SAFE_CALL(AMGX_initialize_plugins());
-
+    
+                
       /*system*/
       //AMGX_SAFE_CALL(AMGX_register_print_callback(&print_callback));
       AMGX_SAFE_CALL(AMGX_install_signal_handler());
@@ -211,6 +214,8 @@ namespace MueLu {
 
       // TODO: we probably need to add "exception_handling=1" to the parameter list
       // to switch on internal error handling (with no need for AMGX_SAFE_CALL)
+
+      //AMGX_SAFE_CALL(AMGX_config_add_parameters(&Config_, "exception_handling=1"))
 
 #define NEW_COMM
 #ifdef NEW_COMM
@@ -447,8 +452,19 @@ namespace MueLu {
     }
 
     //! Destructor.
-    virtual ~AMGXOperator() { }
+    virtual ~AMGXOperator()
+    {
+      AMGX_solver_destroy(Solver_);
+      AMGX_vector_destroy(X_);
+      AMGX_vector_destroy(Y_);
+      AMGX_matrix_destroy(A_);
+      AMGX_resources_destroy(Resources_);
+      AMGX_SAFE_CALL(AMGX_config_destroy(Config_));
+      //AMGX_SAFE_CALL(AMGX_finalize_plugins());
+      //AMGX_SAFE_CALL(AMGX_finalize()); 
+    }
 
+   
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const Map> getDomainMap() const;
 
