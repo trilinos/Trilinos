@@ -37,7 +37,6 @@ C
       CHARACTER*(*) TYPE
       CHARACTER*(*) NAMLST(NUMNM), OLD, NEW
       CHARACTER*1024 STRING
-      CHARACTER*16 STRA, STRB
 
 C ... Determine location of NAME to be changed
 

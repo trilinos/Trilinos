@@ -463,7 +463,7 @@ C       color is on
 C
 C       define some kind of color table
 C
-        DO 120 IC=0,7
+        DO IC=0,7
         COLDEF(1)=0.
         COLDEF(2)=0.
         COLDEF(3)=0.
@@ -487,7 +487,7 @@ C
           COLDEF(2)=1.
           COLDEF(3)=1.
         END IF
-          DO 115 IK=0,255,8
+          DO IK=0,255,8
           DUMMY(1) = IC+IK
           CALL VDSTCO(1,DUMMY,COLDEF,0)
           IF(IC.EQ.0) THEN
@@ -495,8 +495,8 @@ C
             COLDEF(2)=0.2
             COLDEF(3)=0.2
           END IF
-  115     CONTINUE
-  120   CONTINUE
+       end do
+      end do
       END IF
       VECTOR(1)=7.
       VECTOR(2)=0.
@@ -804,25 +804,25 @@ C
 
 C Strip off any leading blanks
       ISTART = 0
-      DO 10 I=1,LENGTH
-       IF(NAME(I:I) .NE. ' ')THEN
-         ISTART = I
-         GOTO 11
-       ENDIF
-10    CONTINUE
-11    CONTINUE
+      DO I=1,LENGTH
+         IF(NAME(I:I) .NE. ' ')THEN
+            ISTART = I
+            GOTO 11
+         ENDIF
+      end do
+ 11   CONTINUE
 
 C Strip off trailing blanks
       IEND = 0
       IF(ISTART.GT.0)THEN
-        DO 20 I=LENGTH,1,-1
-         IF(NAME(I:I) .NE. ' ')THEN
-           IEND = I
-           GOTO 21
-         ENDIF
-20      CONTINUE
+         DO I=LENGTH,1,-1
+            IF(NAME(I:I) .NE. ' ')THEN
+               IEND = I
+               GOTO 21
+            ENDIF
+         end do
       ENDIF
-21    CONTINUE
+ 21   CONTINUE
       PSTNAM=NAME(ISTART:IEND)
       RETURN
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -1013,9 +1013,9 @@ C           (7)=CHARACTER BOX X
 C
       INTEGER I
 C
-      DO 100 I=1,7
+      DO I=1,7
          ATTARR(I)=VECTOR(I)
-  100 CONTINUE
+      end do
 C
       RETURN
       END
@@ -1799,9 +1799,9 @@ C CHECK FOR VALID INDEXES.
             CALL VBERRH(724,5)
             GOTO 100
          END IF
-           CLRARY(1,I)=PCOLS(1,INDEXN)
-           CLRARY(2,I)=PCOLS(2,INDEXN)
-           CLRARY(3,I)=PCOLS(3,INDEXN)
+         CLRARY(1,I)=PCOLS(1,INDEXN)
+         CLRARY(2,I)=PCOLS(2,INDEXN)
+         CLRARY(3,I)=PCOLS(3,INDEXN)
   100    CONTINUE
 C
   999 RETURN
@@ -2434,9 +2434,9 @@ C MOVE TO FIRST POINT
       CALL VIMOVA(XARRAY(1),YARRAY(1))
 C
 C CALL VDLINA TO DRAW POINTS FROM 1ST POINT TO NTH POINT
-      DO 100 I=2,NPTS
+      DO I=2,NPTS
         CALL VILINA(XARRAY(I),YARRAY(I))
-100   CONTINUE
+      end do
 C
 C THEN DRAW A LINE TO THE FIRST POINT TO CLOSE THE POLYGON
       CALL VILINA(XARRAY(1),YARRAY(1))
@@ -2577,7 +2577,7 @@ C
 c      CALL VDSTCS(VECTOR(6))
       CALL VDSTFC(NINT(VECTOR(1)))
       CALL PSTBUF(0,' ')
-  380 KEMPTY=0
+      KEMPTY=0
 C
       RETURN
       END
@@ -3672,7 +3672,7 @@ C
         KPSTBG=0
         KPSTCI=0
         IONCE=1
-   20   IF(ARG.EQ.' ' .and. bltans .eq. ' ') THEN
+        IF(ARG.EQ.' ' .and. bltans .eq. ' ') THEN
           WRITE(*,10)
    10     FORMAT(/,' This VDI PostScript driver has seven options.',/,
      &     '     1. black & white, no polygon fill',/,

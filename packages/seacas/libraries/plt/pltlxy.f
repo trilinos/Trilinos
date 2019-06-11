@@ -61,7 +61,6 @@ C=======================================================================
       COMMON /MAPPAR/MAPP(11)
       REAL MAPP
       COMMON /STORAG/MEMORY(1000)
-      LOGICAL CPUIFC
       REAL MINEXX,MAXEXX,MINEXY,MAXEXY
       CHARACTER*(*) XLAB,XUNIT,YLAB,YUNIT
       DIMENSION X(1),Y(1)

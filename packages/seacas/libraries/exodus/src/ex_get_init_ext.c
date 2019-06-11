@@ -50,11 +50,6 @@
 
 #include "exodusII.h"     // for ex_init_params, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for free, malloc
-#include <string.h>    // for ex_copy_string
-#include <sys/types.h> // for int64_t
 
 /* Used to reduce repeated code below */
 static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimension_name,

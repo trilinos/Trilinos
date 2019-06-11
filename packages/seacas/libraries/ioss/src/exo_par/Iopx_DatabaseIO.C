@@ -475,9 +475,11 @@ namespace Iopx {
 
     int par_mode = get_parallel_io_mode(properties);
 
-    MPI_Info    info        = MPI_INFO_NULL;
-    int         app_opt_val = ex_opts(EX_VERBOSE);
-    std::string filename    = get_filename();
+    MPI_Info info        = MPI_INFO_NULL;
+    int      app_opt_val = ex_opts(EX_VERBOSE);
+    Ioss::DatabaseIO::openDatabase__();
+
+    std::string filename = get_dwname();
 
     Ioss::FileInfo file(filename);
     std::string    path = file.pathname();
@@ -787,10 +789,11 @@ namespace Iopx {
           // a warning if there is a corrupt step on processor
           // 0... Need better warnings which won't overload in the
           // worst case...
-          fmt::print(IOSS_WARNING,
-                     "Skipping step {} at time {} in database file\n\t{}.\nThe data for that step "
-                     "is possibly corrupt.\n",
-                     i + 1, tsteps[i], get_filename());
+          fmt::print(
+              IOSS_WARNING,
+              "Skipping step {:n} at time {} in database file\n\t{}.\nThe data for that step "
+              "is possibly corrupt.\n",
+              i + 1, tsteps[i], get_filename());
         }
       }
     }
@@ -3657,19 +3660,19 @@ int64_t DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb, void *ids, 
   }
 
   elemMap.set_size(elementCount);
-  return handle_block_ids(eb, EX_ELEM_MAP, elemMap, ids, num_to_get, offset, count);
+  return handle_block_ids(eb, EX_ELEM_MAP, elemMap, ids, num_to_get, offset);
 }
 
 int64_t DatabaseIO::handle_face_ids(const Ioss::FaceBlock *eb, void *ids, size_t num_to_get) const
 {
   faceMap.set_size(faceCount);
-  return handle_block_ids(eb, EX_FACE_MAP, faceMap, ids, num_to_get, 0, 0);
+  return handle_block_ids(eb, EX_FACE_MAP, faceMap, ids, num_to_get, 0);
 }
 
 int64_t DatabaseIO::handle_edge_ids(const Ioss::EdgeBlock *eb, void *ids, size_t num_to_get) const
 {
   edgeMap.set_size(edgeCount);
-  return handle_block_ids(eb, EX_EDGE_MAP, edgeMap, ids, num_to_get, 0, 0);
+  return handle_block_ids(eb, EX_EDGE_MAP, edgeMap, ids, num_to_get, 0);
 }
 
 void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Ioss::Field &field,
@@ -3890,7 +3893,7 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
 
       if (ierr < 0) {
         std::ostringstream extra_info;
-        fmt::print(extra_info, "Outputting component {} of field '{}' at step {} on {} '{}'.", i,
+        fmt::print(extra_info, "Outputting component {} of field '{}' at step {:n} on {} '{}'.", i,
                    field_name, step, ge->type_string(), ge->name());
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__, extra_info.str());
       }

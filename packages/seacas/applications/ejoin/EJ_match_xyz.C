@@ -128,7 +128,9 @@ void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> 
   }
   else {
     std::vector<INT> dummy;
-    eliminate_omitted_nodes(part_mesh, dummy, local_node_map);
+    bool             fill_global = false;
+    eliminate_omitted_nodes(part_mesh, dummy, local_node_map, fill_global);
+    SMART_ASSERT(dummy.empty());
 
     // The local_node_map is not quite in the correct format after the
     // call to 'eliminate_omitted_nodes'.  We need all non-omitted

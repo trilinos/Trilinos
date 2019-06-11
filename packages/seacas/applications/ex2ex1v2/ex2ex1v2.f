@@ -70,9 +70,9 @@ C      --A - the dynamic memory base array
       CHARACTER*8 STR8
       character*2048 netfil, ndbfil, errmsg
       character*(mxstln) name
-      LOGICAL WHOTIM, hist
+      LOGICAL WHOTIM
       real wtime, htime
-      integer hisid, cpuws, iows
+      integer cpuws, iows
       LOGICAL MDEBUG
 
       data (qainfo(i), i=1,3) / 'ex2ex1v2', '20110616', 'v 2.08  ' /
@@ -85,7 +85,7 @@ C      --A - the dynamic memory base array
      &   ' TRANSLATOR',' ', ' ')
       call exinq (netid, EXLBVR, idummy, exlibversion, name, nerr)
       write(*,'(A,F6.3)')'ExodusII Library version ',
-     1		exlibversion
+     1          exlibversion
 
       CALL MDINIT (A)
       CALL MCINIT (C)
@@ -117,7 +117,7 @@ C .. Get filename from command line.  If not specified, emit error message
       end if
 
 c
-c	open the netcdf file
+c       open the netcdf file
 c
       net = 11
       CALL get_argument(1,netfil, lnam)
@@ -148,7 +148,7 @@ C       open the output database and write the initial variables
       END IF
       write(*,*) 'Output file name: ',ndbfil(1:lnam)
 c
-c	get initialization parameters from regular netcdf file
+c       get initialization parameters from regular netcdf file
 c
       CALL EXGINI (netid, title, ndim, numnp, numel,
      &       nelblk, numnps, numess, nerr)
@@ -157,7 +157,7 @@ c
         goto 140
       endif
 c
-c	get the length of the node sets node list
+c       get the length of the node sets node list
 c
       if (numnps .gt. 0) then
          CALL EXINQ (netid, EXNSNL, lnpsnl, dummy, cdummy, nerr)
@@ -171,7 +171,7 @@ c
 c
       if (numess .gt. 0) then
 c
-c	get the length of the side sets node list
+c       get the length of the side sets node list
 c
         CALL EXINQ (netid, EXSSNL, lessnl, dummy, cdummy, nerr)
         if (nerr .lt. 0) then
@@ -179,7 +179,7 @@ c
            goto 140
         endif
 c
-c	get the length of the side sets distribution factor list
+c       get the length of the side sets distribution factor list
 c
          CALL EXINQ (netid, EXSSDF, lessdl, dummy, cdummy, nerr)
          if (nerr .lt. 0) then
@@ -187,7 +187,7 @@ c
            goto 140
          endif
 c
-c	get the length of the side sets element list
+c       get the length of the side sets element list
 c
          CALL EXINQ (netid, EXSSEL, lessel, dummy, cdummy, nerr)
          if (nerr .lt. 0) then
@@ -339,14 +339,14 @@ C   --Read the element blocks
 
 C   --Read the node sets
 
-      CALL MDRSRV ('IDNPS',  KIDNS, NUMNPS)	! Node set ids array
-      CALL MDRSRV ('NNNPS', KNNNS, NUMNPS)	! Node set node count array
-      CALL MDRSRV ('NDNPS', KNDNS, NUMNPS)	! Node set df count array
-      CALL MDRSRV ('IXNNPS', KIXNNS, NUMNPS)	! Node set nodes index array
-      CALL MDRSRV ('IXDNPS', KIXDNS, NUMNPS)	! Node set df index array
-      CALL MDRSRV ('LSTNPS', KLSTNS, LNPSNL)	! Node set node list array
-      CALL MDRSRV ('FACNPS', KFACNS, LNPSNL)	! Node set df list array
-      CALL MDRSRV ('XFACNP', KXFACN, LNPSNL)	! Expanded df list array
+      CALL MDRSRV ('IDNPS',  KIDNS, NUMNPS)     ! Node set ids array
+      CALL MDRSRV ('NNNPS', KNNNS, NUMNPS)      ! Node set node count array
+      CALL MDRSRV ('NDNPS', KNDNS, NUMNPS)      ! Node set df count array
+      CALL MDRSRV ('IXNNPS', KIXNNS, NUMNPS)    ! Node set nodes index array
+      CALL MDRSRV ('IXDNPS', KIXDNS, NUMNPS)    ! Node set df index array
+      CALL MDRSRV ('LSTNPS', KLSTNS, LNPSNL)    ! Node set node list array
+      CALL MDRSRV ('FACNPS', KFACNS, LNPSNL)    ! Node set df list array
+      CALL MDRSRV ('XFACNP', KXFACN, LNPSNL)    ! Expanded df list array
       CALL MDSTAT (NERR, MEM)
 
 
@@ -366,14 +366,14 @@ C
       do 64 i=0, numnps-1
         if (ia(kndns+i) .eq. 0) then
           do 60 ii=0, ia(knnns+i)-1
-	    a(kxfacn+ia(kixnns+i)-1+ii) = 1.0! Force unity distribution factor
-60	  continue
+            a(kxfacn+ia(kixnns+i)-1+ii) = 1.0! Force unity distribution factor
+60        continue
         else
-	  do 62 ii=0, ia(kndns+i)-1
-	    a(kxfacn+ia(kixnns+i)-1+ii) = a(kfacns+ia(kixdns+i)-1+ii)
-62	  continue
-	endif
-64	continue
+          do 62 ii=0, ia(kndns+i)-1
+            a(kxfacn+ia(kixnns+i)-1+ii) = a(kfacns+ia(kixdns+i)-1+ii)
+62        continue
+        endif
+64      continue
 
       CALL DBONPS (NDB, NUMNPS, LNPSNL,
      &   A(KIDNS), A(KNNNS), A(KIXNNS), A(KLSTNS), A(KXFACN))
@@ -391,31 +391,31 @@ C
 
 C   --Read the side sets
 
-      CALL MDRSRV ('IDESS', KIDSS, NUMESS)	! side set id array
+      CALL MDRSRV ('IDESS', KIDSS, NUMESS)      ! side set id array
 c     write(*,*)'side set id array size: ',numess
-      CALL MDRSRV ('NEESS', KNESS, NUMESS)	! number of ss elems array
+      CALL MDRSRV ('NEESS', KNESS, NUMESS)      ! number of ss elems array
 c     write(*,*)'number of side set elements  array size: ',numess
-      CALL MDRSRV ('NDESS', KNDSS, NUMESS)	! number of dist factors array
+      CALL MDRSRV ('NDESS', KNDSS, NUMESS)      ! number of dist factors array
 c     write(*,*)'number of dist factors array size: ',numess
-      CALL MDRSRV ('NNESS', KNNSS, NUMESS)	! number of nodes array
+      CALL MDRSRV ('NNESS', KNNSS, NUMESS)      ! number of nodes array
 c     write(*,*)'number of side set nodes array size: ',numess
-      CALL MDRSRV ('IXEESS', KIXESS, NUMESS)	! index into elements array
+      CALL MDRSRV ('IXEESS', KIXESS, NUMESS)    ! index into elements array
 c     write(*,*)'index into side set elements array size: ',numess
-      CALL MDRSRV ('IXDESS', KIXDSS, NUMESS)	! index into dist factors array
+      CALL MDRSRV ('IXDESS', KIXDSS, NUMESS)    ! index into dist factors array
 c     write(*,*)'index into side set dist factors  array size: ',numess
-      CALL MDRSRV ('IXNESS', KIXNSS, NUMESS)	! index into nodes array
+      CALL MDRSRV ('IXNESS', KIXNSS, NUMESS)    ! index into nodes array
 c     write(*,*)'index into side set nodes array size: ',numess
-      CALL MDRSRV ('LTEESS', KLTESS, LESSEL)	! element list
+      CALL MDRSRV ('LTEESS', KLTESS, LESSEL)    ! element list
 c     write(*,*)'side set element list array size: ',lessel
-      CALL MDRSRV ('LTNESS', KLTNSS, LESSNL)	! node list (21 is max possible)
+      CALL MDRSRV ('LTNESS', KLTNSS, LESSNL)    ! node list (21 is max possible)
 c     write(*,*)'side set node list array size: ',lessnl
-      CALL MDRSRV ('LTNNSS', KLTNNS, LESSEL)	! node count array
+      CALL MDRSRV ('LTNNSS', KLTNNS, LESSEL)    ! node count array
 c     write(*,*)'side set node count array size: ',lessel
-      CALL MDRSRV ('LTSESS', KLTSSS, LESSEL)	! side list
+      CALL MDRSRV ('LTSESS', KLTSSS, LESSEL)    ! side list
 c     write(*,*)'side set side list array size: ',lessel
-      CALL MDRSRV ('FACESS', KFACSS, LESSDL)	! dist factors list
+      CALL MDRSRV ('FACESS', KFACSS, LESSDL)    ! dist factors list
 c     write(*,*)'side set dist factors list array size: ',lessdl
-      CALL MDRSRV ('XFACES', KXFACS, LESSNL)	! dist factors list(w/all DF)
+      CALL MDRSRV ('XFACES', KXFACS, LESSNL)    ! dist factors list(w/all DF)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 130
 
@@ -430,11 +430,11 @@ c     write(*,*)'side set dist factors list array size: ',lessdl
 
 C Convert sides to nodes
 
-        isoff = 0		! offset into element list for current side set
-        nodcnt = 0		! node count for current side set
-        do 104 i=0,numess-1	! loop thru ss elem blks
+        isoff = 0               ! offset into element list for current side set
+        nodcnt = 0              ! node count for current side set
+        do 104 i=0,numess-1     ! loop thru ss elem blks
 
-          ia(kixnss+i)=nodcnt+1				! update index array
+          ia(kixnss+i)=nodcnt+1                         ! update index array
 
           call exgsp(netid,ia(kidss+i),nsess,ndess,nerr)! get num of sides & df
           if (nerr .lt. 0) then
@@ -446,14 +446,14 @@ c         write(*,*)' # of sides: ',nsess
 c         write(*,*)' # of dist factors: ',ndess
 
           call exgssn(netid,ia(kidss+i),a(kltnns+isoff),
-     &               a(kltnss+nodcnt),nerr)		! get side set nodes
+     &               a(kltnss+nodcnt),nerr)             ! get side set nodes
           if (nerr .lt. 0) then
              call exerr('ex2ex1v2', 'Error from exgssn', exlmsg)
              goto 140
           endif
           nness = 0
-          do 102 ii=0,nsess-1				! sum node counts to
-            nness=nness+ia(kltnns+isoff+ii)		! calculate next index
+          do 102 ii=0,nsess-1                           ! sum node counts to
+            nness=nness+ia(kltnns+isoff+ii)             ! calculate next index
 102       continue
 c         write(*,*)' # of nodes: ',nness
           ia(knnss+i)=nness
@@ -469,14 +469,14 @@ C
       do 110 i=0, numess-1
         if (ia(kndss+i) .eq. 0) then
           do 106 ii=0, ia(knnss+i)-1
-	    a(kxfacs+ia(kixnss+i)-1+ii) = 1.0! Force unity distribution factor
-106	  continue
+            a(kxfacs+ia(kixnss+i)-1+ii) = 1.0! Force unity distribution factor
+106       continue
         else
-	  do 108 ii=0, ia(knnss+i)-1
-	    a(kxfacs+ia(kixnss+i)-1+ii) = a(kfacss+ia(kixdss+i)-1+ii)
-108	  continue
-	endif
-110	continue
+          do 108 ii=0, ia(knnss+i)-1
+            a(kxfacs+ia(kixnss+i)-1+ii) = a(kfacss+ia(kixdss+i)-1+ii)
+108       continue
+        endif
+110     continue
 
       CALL DBOESS (NDB, NUMESS, LESSEL, LESSNL,
      &   A(KIDSS), A(KNESS), A(KNNSS), A(KIXESS), A(KIXNSS),
@@ -564,18 +564,8 @@ c
          call exerr('ex2ex1v2', 'Error from exgvp', exlmsg)
          goto 140
       endif
-c
-C   --Read in the number of history variable names
-c
-      if (hist) then
-        call exgvp (hisid, 'h', nvarhi, nerr)
-        if (nerr .lt. 0) then
-           call exerr('ex2ex1v2', 'Error from exgvp', exlmsg)
-           goto 140
-        endif
-      else
-        nvarhi = 0
-      end if
+
+      nvarhi = 0
 
       call mdrsrv ('ISEVOK', kievok, nvarel*nelblk)
       CALL MDSTAT (NERR, MEM)
@@ -633,13 +623,6 @@ c
 c       read in the history variable names
 c
       ixhv = ixnv + nvarnp
-      if (nvarhi .gt. 0) then
-        call exgvan (hisid, 'h', nvarhi, mames(ixhv), nerr)
-        if (nerr .lt. 0) then
-           call exerr('ex2ex1v2', 'Error from exgvan', exlmsg)
-           goto 140
-        endif
-      end if
 c
 c       read coordinate names
 c
@@ -691,12 +674,6 @@ c
       endif
       numstp = ntime
 
-      if (nvarhi .gt. 0) then
-        call exinq (hisid, EXTIMS, nhtime, s, name, nerr)
-        numstp = nhtime
-        if (nerr .gt. 0) goto 140
-      endif
-
 c
 c       read the time step information
 c
@@ -714,28 +691,13 @@ c
 c
 c         get history information
 c
-        if (nvarhi .gt. 0) then
-          whotim = .false.
-          call exgtim(hisid, ihstep, htime, nerr)
-          if (nerr .lt. 0) then
-             call exerr('ex2ex1v2', 'Error from exgtim', exlmsg)
-             goto 140
-          endif
-
-          call exggv (hisid, ihstep, nvarhi, a(kvarhi), nerr)
-          if (nerr .lt. 0) then
-             call exerr('ex2ex1v2', 'Error from exggv', exlmsg)
-             goto 140
-          endif
-        else
-          whotim = .true.
-          call exgtim(netid, ihstep, wtime, nerr)
-          if (nerr .lt. 0) then
-             call exerr('ex2ex1v2', 'Error from exgtim', exlmsg)
-             goto 140
-          endif
-          htime = wtime
-        end if
+        whotim = .true.
+        call exgtim(netid, ihstep, wtime, nerr)
+        if (nerr .lt. 0) then
+           call exerr('ex2ex1v2', 'Error from exgtim', exlmsg)
+           goto 140
+        endif
+        htime = wtime
 c
 c          If a whole time step, do global, nodal, and element
 c          variables for the time step.
@@ -812,7 +774,6 @@ c
       CALL MDDEL ('VAREL')
       CALL MDDEL ('NUMELB')
 
-120   CONTINUE
       CALL INTSTR (1, 0, IHSTEP-1, STR8, LSTR)
       WRITE (*, 10010) STR8(:LSTR)
 10010  FORMAT (/, 4X, A,
@@ -830,12 +791,7 @@ c       close all files
 c
       CLOSE (NDB, IOSTAT=IDUM)
 
-      if (nvarhi .gt. 0) then
-        if (hisid .ge. 0) call exclos (hisid, ierr)
-      endif
-
-999   if (netid .ge. 0 ) call exclos (netid, ierr)
-
+      if (netid .ge. 0 ) call exclos (netid, ierr)
 
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))
@@ -888,7 +844,7 @@ C   --   QATMP  - IN - the QA records containing size = 32
       IF (NQAREC .GT. 0) THEN
          DO 50 I = 1, NQAREC
             DO 75 J = 1, 4
-               QAREC(J,I) = QATMP(J,I)
+               QAREC(J,I) = QATMP(J,I)(:8)
  75         CONTINUE
  50      CONTINUE
       END IF

@@ -38,7 +38,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include <stdio.h>
 
 /*
  *  reads the element block ids from the database

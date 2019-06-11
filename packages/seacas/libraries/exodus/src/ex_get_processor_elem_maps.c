@@ -52,9 +52,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, VAR_INT_E_STAT, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
 
 int ex_get_processor_elem_maps(int exoid, void_int *elem_mapi, void_int *elem_mapb, int processor)
 {

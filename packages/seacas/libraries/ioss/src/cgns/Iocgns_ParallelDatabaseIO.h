@@ -95,7 +95,7 @@ namespace Iocgns {
 
     void release_memory__() override;
 
-    int get_file_pointer() const;
+    int get_file_pointer() const override;
     int get_serial_file_pointer() const;
 
     bool node_major() const override { return false; }

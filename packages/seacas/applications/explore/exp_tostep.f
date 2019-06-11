@@ -65,7 +65,6 @@ C   --      of /DBNUMS/
       INTEGER ISEVOK(NVAREL,*)
       REAL VARGL(*), VARNP(*), VAREL(*)
 
-      CHARACTER*80 ERRMSG
       CHARACTER*5 STRA
 
       LOGICAL FIRST

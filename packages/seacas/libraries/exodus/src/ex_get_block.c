@@ -55,7 +55,6 @@
 
 #include "exodusII.h" // for ex_block, void_int, etc
 #include "exodusII_int.h"
-#include <sys/types.h> // for int64_t
 
 /*
  * reads the parameters used to describe an edge, face, or element block

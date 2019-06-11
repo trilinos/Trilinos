@@ -56,7 +56,7 @@ namespace {
 
 template <typename INT>
 void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_node_map,
-                             std::vector<INT> &local_node_map)
+                             std::vector<INT> &local_node_map, bool fill_global)
 {
   size_t offset     = 0;
   size_t j          = 0;
@@ -74,7 +74,9 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
       for (size_t i = 0; i < node_status.size(); i++) {
         if (node_status[i] != 1) {
           local_node_map[offset + i] = j;
-          global_node_map.push_back(j + 1);
+          if (fill_global) {
+            global_node_map.push_back(j + 1);
+          }
           j++;
         }
         else {
@@ -85,7 +87,9 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
     else {
       for (size_t i = 0; i < loc_size; i++) {
         local_node_map[offset + i] = j;
-        global_node_map.push_back(j + 1);
+        if (fill_global) {
+          global_node_map.push_back(j + 1);
+        }
         j++;
       }
     }
@@ -94,10 +98,10 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
 }
 
 template void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<int> &global_node_map,
-                                      std::vector<int> &local_node_map);
+                                      std::vector<int> &local_node_map, bool fill_global);
 template void eliminate_omitted_nodes(RegionVector &        part_mesh,
                                       std::vector<int64_t> &global_node_map,
-                                      std::vector<int64_t> &local_node_map);
+                                      std::vector<int64_t> &local_node_map, bool fill_global);
 
 template <typename INT>
 void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,

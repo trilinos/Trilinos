@@ -218,9 +218,6 @@ namespace {
     }
     return min_proc;
   }
-  void validate_blocks(const Ioss::StructuredBlockContainer &blocks) {}
-  void validate_blocks(const Ioss::ElementBlockContainer &blocks) {}
-
   void add_bc_to_block(Ioss::StructuredBlock *block, const std::string &boco_name,
                        const std::string &fam_name, int ibc, cgsize_t *range, CG_BCType_t bocotype,
                        bool is_parallel_io)
@@ -307,7 +304,7 @@ namespace {
     }
   }
 
-  void sync_transient_variables_fpp(Ioss::Region *region, int myProcessor)
+  void sync_transient_variables_fpp(Ioss::Region *region)
   {
     // With an fpp read, certain blocks may only be on certain
     // processors -- This consistency is addressed elsewhere; however,
@@ -589,6 +586,7 @@ namespace {
     // 3 int[3] transform; (values range from -3 to +3 (could store as single int)
     // CGNS_MAX_NAME_LENGTH characters + 17 ints / connection.
 
+    PAR_UNUSED(region);
 #ifdef SEACAS_HAVE_MPI
     const int BYTE_PER_NAME = CGNS_MAX_NAME_LENGTH;
     const int INT_PER_ZGC   = 17;
@@ -895,7 +893,6 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   // Just getting processor element count here...
   region.get_database()->progress("\tElement Blocks");
   const auto &element_blocks = region.get_element_blocks();
-  validate_blocks(element_blocks);
 
   size_t element_count = 0;
   for (const auto &eb : element_blocks) {
@@ -915,7 +912,6 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
 
   region.get_database()->progress("\tStructured Blocks");
   const auto &structured_blocks = region.get_structured_blocks();
-  validate_blocks(structured_blocks);
 
   // If `is_parallel` and `!is_parallel_io`, then writing file-per-processor
   bool is_parallel = region.get_database()->util().parallel_size() > 1;
@@ -1997,7 +1993,7 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
     }
     bool is_parallel = region->get_database()->util().parallel_size() > 1;
     if (is_parallel && !is_parallel_io) {
-      sync_transient_variables_fpp(region, myProcessor);
+      sync_transient_variables_fpp(region);
     }
   }
 }
@@ -2033,8 +2029,251 @@ int Iocgns::Utils::get_step_times(int cgns_file_ptr, std::vector<double> &timest
   return num_timesteps;
 }
 
+void Iocgns::Utils::set_line_decomposition(int cgns_file_ptr, const std::string &line_decomposition,
+                                           std::vector<Iocgns::StructuredZoneData *> &zones,
+                                           int rank, bool verbose)
+{
+  // The "line_decomposition" string is a list of 0 or more BC
+  // (Family) names.  For all structured zones which this BC
+  // touches, the ordinal of the face (i,j,k) will be set such that
+  // a parallel decomposition will not split the zone along this
+  // ordinal.  For example, if the BC "wall1" has the definition
+  // [1->1, 1->5, 1->8], then it is on the constant 'i' face of the
+  // zone and therefore, the zone will *not* be split along the 'i'
+  // ordinal.
+
+  // Get names of all valid 'bcs' on the mesh
+  int base         = 1;
+  int num_families = 0;
+  CGCHECKNP(cg_nfamilies(cgns_file_ptr, base, &num_families));
+
+  std::vector<std::string> families;
+  families.reserve(num_families);
+  for (int family = 1; family <= num_families; family++) {
+    char name[CGNS_MAX_NAME_LENGTH + 1];
+    int  num_bc  = 0;
+    int  num_geo = 0;
+    CGCHECKNP(cg_family_read(cgns_file_ptr, base, family, name, &num_bc, &num_geo));
+    if (num_bc > 0) {
+      Ioss::Utils::fixup_name(name);
+      families.push_back(name);
+    }
+  }
+
+  // Slit into fields using the commas as delimiters
+  auto bcs = Ioss::tokenize(line_decomposition, ",");
+  for (auto &bc : bcs) {
+    Ioss::Utils::fixup_name(bc);
+    if (std::find(families.begin(), families.end(), bc) == families.end()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: CGNS: The family/bc name '{}' specified as a line decomposition surface "
+                 "does not exist on this CGNS file.\n"
+                 "             Valid names are: ",
+                 bc);
+      for (const auto &fam : families) {
+        fmt::print(errmsg, "'{}', ", fam);
+      }
+      IOSS_ERROR(errmsg);
+    }
+  }
+
+  for (auto zone : zones) {
+    // Read BCs applied to this zone and see if they match any of
+    // the BCs in 'bcs' list.  If so, determine the face the BC is
+    // applied to and set the m_lineOrdinal to the ordinal
+    // perpendicular to this face.
+    int izone = zone->m_zone;
+    int num_bcs;
+    CGCHECKNP(cg_nbocos(cgns_file_ptr, base, izone, &num_bcs));
+
+    for (int ibc = 0; ibc < num_bcs; ibc++) {
+      char              boconame[CGNS_MAX_NAME_LENGTH + 1];
+      CG_BCType_t       bocotype;
+      CG_PointSetType_t ptset_type;
+      cgsize_t          npnts;
+      cgsize_t          NormalListSize;
+      CG_DataType_t     NormalDataType;
+      int               ndataset;
+
+      // All we really want from this is 'boconame'
+      CGCHECKNP(cg_boco_info(cgns_file_ptr, base, izone, ibc + 1, boconame, &bocotype, &ptset_type,
+                             &npnts, nullptr, &NormalListSize, &NormalDataType, &ndataset));
+
+      if (bocotype == CG_FamilySpecified) {
+        // Need to get boconame from cg_famname_read
+        CGCHECKNP(
+            cg_goto(cgns_file_ptr, base, "Zone_t", izone, "ZoneBC_t", 1, "BC_t", ibc + 1, "end"));
+        CGCHECKNP(cg_famname_read(boconame));
+      }
+
+      Ioss::Utils::fixup_name(boconame);
+      if (std::find(bcs.begin(), bcs.end(), boconame) != bcs.end()) {
+        cgsize_t range[6];
+        CGCHECKNP(cg_boco_read(cgns_file_ptr, base, izone, ibc + 1, range, nullptr));
+
+        // There are some BC that are applied on an edge or a vertex;
+        // Don't want those, so filter them out at this time...
+        bool i = range[0] == range[3];
+        bool j = range[1] == range[4];
+        bool k = range[2] == range[5];
+
+        int sum = (i ? 1 : 0) + (j ? 1 : 0) + (k ? 1 : 0);
+        // Only set m_lineOrdinal if only a single ordinal selected.
+        if (sum == 1) {
+          int ordinal = -1;
+          if (i) {
+            ordinal = 0;
+          }
+          else if (j) {
+            ordinal = 1;
+          }
+          else if (k) {
+            ordinal = 2;
+          }
+          if (zone->m_lineOrdinal == -1) {
+            zone->m_lineOrdinal = ordinal;
+            if (verbose && rank == 0) {
+              fmt::print(stderr, "Setting line ordinal to {} on {} for surface: {}\n",
+                         zone->m_lineOrdinal, zone->m_name, boconame);
+            }
+          }
+          else if (zone->m_lineOrdinal != ordinal && rank == 0) {
+            fmt::print(
+                IOSS_WARNING,
+                "CGNS: Zone {0} named {1} has multiple line decomposition ordinal "
+                "specifications. Both ordinal {2} and {3} have been specified.  Keeping {3}\n",
+                izone, zone->m_name, ordinal, zone->m_lineOrdinal);
+          }
+        }
+      }
+    }
+  }
+}
+
+void Iocgns::Utils::decompose_model(std::vector<Iocgns::StructuredZoneData *> &zones,
+                                    int proc_count, int rank, double load_balance_threshold,
+                                    bool verbose)
+{
+  size_t work = 0;
+  for (const auto &z : zones) {
+    work += z->work();
+    assert(z->is_active());
+  }
+
+  double avg_work = (double)work / proc_count;
+
+  if (verbose) {
+    auto num_active = zones.size();
+    if (rank == 0) {
+      fmt::print(
+          stderr,
+          "Decomposing structured mesh with {} zones for {} processors.\nAverage workload is {:n}, "
+          "Load Balance Threshold is {}, Work range {:n} to {:n}\n",
+          num_active, proc_count, (size_t)avg_work, load_balance_threshold,
+          (size_t)(avg_work / load_balance_threshold), (size_t)(avg_work * load_balance_threshold));
+    }
+  }
+
+  if (avg_work < 1.0) {
+    if (rank == 0) {
+      fmt::print(stderr, "ERROR: Model size too small to distribute over {} processors.\n",
+                 proc_count);
+    }
+    std::exit(EXIT_FAILURE);
+  }
+
+  if (verbose) {
+    if (rank == 0) {
+      fmt::print(stderr,
+                 "========================================================================\n");
+      fmt::print(stderr, "Pre-Splitting: (Average = {:n}, LB Threshold = {}\n", (size_t)avg_work,
+                 load_balance_threshold);
+    }
+  }
+  // Split all blocks where block->work() > avg_work * load_balance_threshold
+  size_t new_zone_id =
+      Utils::pre_split(zones, avg_work, load_balance_threshold, rank, proc_count, verbose);
+
+  // At this point, there should be no zone with block->work() > avg_work * load_balance_threshold
+  if (verbose) {
+    if (rank == 0) {
+      fmt::print(stderr,
+                 "========================================================================\n");
+    }
+  }
+  size_t num_split = 0;
+  size_t px        = 0;
+  do {
+    std::vector<size_t> work_vector(proc_count);
+    Utils::assign_zones_to_procs(zones, work_vector, verbose);
+
+    // Calculate workload ratio for each processor...
+    px = 0; // Number of processors where workload ratio exceeds threshold.
+    std::vector<bool> exceeds(proc_count);
+    for (size_t i = 0; i < work_vector.size(); i++) {
+      double workload_ratio = double(work_vector[i]) / avg_work;
+      if (verbose && rank == 0) {
+        fmt::print(stderr, "\nProcessor {} work: {:n}, workload ratio: {}", i, work_vector[i],
+                   workload_ratio);
+      }
+      if (workload_ratio > load_balance_threshold) {
+        exceeds[i] = true;
+        px++;
+      }
+    }
+    if (verbose && rank == 0) {
+      fmt::print(stderr, "\n\nWorkload threshold exceeded on {} processors.\n", px);
+    }
+    bool single_zone = zones.size() == 1;
+    if (single_zone) {
+      auto active = std::count_if(zones.begin(), zones.end(),
+                                  [](Iocgns::StructuredZoneData *a) { return a->is_active(); });
+      if (active >= proc_count) {
+        px = 0;
+      }
+    }
+    num_split = 0;
+    if (px > 0) {
+      auto zone_new(zones);
+      for (auto zone : zones) {
+        if (zone->is_active() && exceeds[zone->m_proc]) {
+          // Since 'zones' is sorted from most work to least,
+          // we just iterate zones and check whether the zone
+          // is on a proc where the threshold was exceeded.
+          // if so, split the block and set exceeds[proc] to false;
+          // Exit the loop when num_split >= px.
+          auto children = zone->split(new_zone_id, zone->work() / 2.0, rank, verbose);
+          if (children.first != nullptr && children.second != nullptr) {
+            zone_new.push_back(children.first);
+            zone_new.push_back(children.second);
+
+            new_zone_id += 2;
+            exceeds[zone->m_proc] = false;
+            num_split++;
+            if (num_split >= px) {
+              break;
+            }
+          }
+        }
+      }
+      std::swap(zone_new, zones);
+    }
+    if (verbose) {
+      auto active = std::count_if(zones.begin(), zones.end(),
+                                  [](Iocgns::StructuredZoneData *a) { return a->is_active(); });
+      if (rank == 0) {
+        fmt::print(stderr, "Number of active zones = {}, average work = {:n}\n", active,
+                   (size_t)avg_work);
+        fmt::print(stderr,
+                   "========================================================================\n");
+      }
+    }
+  } while (px > 0 && num_split > 0);
+}
+
 void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData *> &all_zones,
-                                          std::vector<size_t> &                      work_vector)
+                                          std::vector<size_t> &work_vector, bool verbose)
 {
   for (auto &zone : all_zones) {
     zone->m_proc = -1;
@@ -2060,6 +2299,12 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
   for (; i < work_vector.size(); i++) {
     auto &zone   = zones[i];
     zone->m_proc = i;
+    if (verbose) {
+      fmt::print(
+          stderr,
+          "Assigning zone '{}' with work {:n} to processor {}. Changing work from {:n} to {:n}\n",
+          zone->m_name, zone->work(), zone->m_proc, work_vector[i], zone->work() + work_vector[i]);
+    }
     work_vector[i] += zone->work();
     proc_adam_map.insert(std::make_pair(zone->m_adam->m_zone, zone->m_proc));
   }
@@ -2076,6 +2321,13 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
       auto success = proc_adam_map.insert(std::make_pair(zone->m_adam->m_zone, proc));
       if (success.second) {
         zone->m_proc = proc;
+        if (verbose) {
+          fmt::print(stderr,
+                     "Assigning zone '{}' with work {:n} to processor {}. Changing work from {:n} "
+                     "to {:n}\n",
+                     zone->m_name, zone->work(), zone->m_proc, work_vector[proc],
+                     zone->work() + work_vector[proc]);
+        }
         work_vector[proc] += zone->work();
       }
       else {
@@ -2093,7 +2345,7 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
 }
 
 size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones, double avg_work,
-                                double load_balance, int proc_rank, int proc_count)
+                                double load_balance, int proc_rank, int proc_count, bool verbose)
 {
   auto   new_zones(zones);
   size_t new_zone_id = zones.size() + 1;
@@ -2196,7 +2448,7 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
               work_average = zone->work() / (double(split_cnt) / double(max_power_2));
             }
 
-            auto children = zone->split(new_zone_id, work_average, load_balance, proc_rank);
+            auto children = zone->split(new_zone_id, work_average, proc_rank, verbose);
             if (children.first != nullptr && children.second != nullptr) {
               new_zones.push_back(children.first);
               new_zones.push_back(children.second);
@@ -2231,7 +2483,7 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
         // which will be < avg_work.
         double mod_work = work - avg_work * split_cnt;
         if (mod_work > max_avg - avg_work) {
-          auto children = zone->split(new_zone_id, mod_work, load_balance, proc_rank);
+          auto children = zone->split(new_zone_id, mod_work, proc_rank, verbose);
           if (children.first != nullptr && children.second != nullptr) {
             new_zones.push_back(children.first);
             new_zones.push_back(children.second);
@@ -2269,7 +2521,7 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
               if (max_power_2 == split_cnt) {
                 max_power_2 /= 2;
               }
-              auto children = zone->split(new_zone_id, work_average, load_balance, proc_rank);
+              auto children = zone->split(new_zone_id, work_average, proc_rank, verbose);
               if (children.first != nullptr && children.second != nullptr) {
                 new_zones.push_back(children.first);
                 new_zones.push_back(children.second);
@@ -2292,7 +2544,7 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
   if (zones.size() < (size_t)proc_count && load_balance > 1.05) {
     // Tighten up the load_balance factor to get some decomposition going...
     double new_load_balance = (1.0 + load_balance) / 2.0;
-    new_zone_id             = pre_split(zones, avg_work, new_load_balance, proc_rank, proc_count);
+    new_zone_id = pre_split(zones, avg_work, new_load_balance, proc_rank, proc_count, verbose);
   }
   return new_zone_id;
 }

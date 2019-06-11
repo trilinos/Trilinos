@@ -50,6 +50,7 @@
 #include <string>  // for string
 #include <utility> // for pair
 #include <vector>  // for vector
+
 namespace Ioss {
   class CommSet;
   class EdgeBlock;
@@ -146,11 +147,52 @@ namespace Ioss {
     // being closed and destructed.
     virtual void finalize_database() {}
 
+    // Let's save the name on disk after Filename gets modified, e.g: decoded_filename
+    void set_pfsname(const std::string &name) const { pfsName = name; }
+
+    std::string get_pfsname() const { return pfsName; }
+
+    /** \brief this will be the name in BB namespace
+     */
+    void set_dwname(const std::string &name) const { bbName = name; }
+
+    std::string get_dwname() const
+    {
+      if (!bbName.empty() && !is_input() && using_dw()) {
+        return bbName;
+      }
+      else {
+        return get_filename();
+      }
+    }
+
+    /** \brief We call this ONLY after we assure that using_dw() is TRUE
+     *  \ returns mount point of Datawarp namespace, e.g: `/opt/cray/....<jobid>`
+     */
+    std::string get_dwPath() const { return dwPath; }
+
+    /** Determine whether Cray Datawarp module is loaded and we have BB capacity allocated for this
+     * job ( i.e: DW_JOB_STRIPED is set) && IOSS property to use DATAWARP is set to Y/YES (i.e
+     * enviromental variable ENABLE_DATAWARP) . If we are using DW then set some pathnames for
+     * writing directly to BB instead of PFS(i.e Lustre)
+     */
+    void check_setDW() const;
+
+    /** Set if  Cray Datawarp exists and allocated space is found , i.e PATH to DW name space
+     */
+    bool using_dw() const { return usingDataWarp; }
+
     /** \brief Get the file name associated with the database.
      *
      *  \returns The database file name.
      */
     std::string get_filename() const { return DBFilename; }
+
+    /** For the database types that support it, return an integer `handle`
+     * through which a client can directly access the underlying file.
+     * Please use sparingly and with discretion. Basically, a kluge
+     */
+    virtual int get_file_pointer() const { return 0; }
 
     /** \brief Get a file-per-processor filename associated with the database.
      *
@@ -184,6 +226,21 @@ namespace Ioss {
     void create_path(const std::string &filename) const;
 
     void set_region(Region *region) { region_ = region; }
+
+    /** \brief If we are planning to use BB(aka Burst Buffer) service, we will call
+     *   simple C API provided by Cray DataWarp module.
+     *
+     *   Note:  We would only like to use BB during write to avoid cache coherency issues during
+     * read. `dwPath` is the DW namespace which gets set during runtime from environment variable
+     * DW_JOB_STRIPED. Afterword, `using_dw()` function is used extensively for filename redirection
+     * for all related subsequent functions(e.g: get_filename, get_file_ptr etc) once burst buffer
+     * is found and set to be used.
+     */
+    void openDW(const std::string &filename) const;
+
+    /** \brief  Function which invokes stageout  from BB to Disk, prior to completion of final close
+     */
+    void closeDW() const;
 
     void openDatabase() const
     {
@@ -548,6 +605,19 @@ namespace Ioss {
     std::string         DBFilename;
     mutable std::string decodedFilename;
 
+    /*!
+     * `bbName` is a temporary swizzled name which resides inside Burst Buffer namespace.
+     * This is a private trivial mapped name vs original `DBFilename` (which resides in
+     * permament storage backed by parallel filesystem.
+     * `dwPath` is global BB mountpoint for current job with requested capacity via SLURM \c \#DW
+     * directive. `usingDataWarp`  -- a boolean, for convenience of use so that we don't have to do
+     * getenv() calls to see if BB present.
+     */
+    mutable std::string bbName{};
+    mutable std::string pfsName{};
+    mutable std::string dwPath{};
+    mutable bool        usingDataWarp{false};
+
     mutable Ioss::State dbState{STATE_INVALID};
 
     bool isParallel{false}; //!< true if running in parallel
@@ -624,8 +694,13 @@ namespace Ioss {
 
     mutable std::vector<std::vector<bool>> blockAdjacency;
 
+    virtual void openDatabase__() const;
+    virtual void closeDatabase__() const;
+    virtual void flush_database__() const {}
+
   private:
-    virtual bool ok__(bool write_message, std::string *error_message, int *bad_count) const
+    virtual bool ok__(bool /* write_message */, std::string * /* error_message */,
+                      int *bad_count) const
     {
       if (bad_count != nullptr) {
         *bad_count = 0;
@@ -651,12 +726,9 @@ namespace Ioss {
       elemMap.release_memory();
     }
 
-    virtual void openDatabase__() const {}
-    virtual void closeDatabase__() const {}
-    virtual void flush_database__() const {}
+    virtual bool open_group__(const std::string & /* group_name */) { return false; }
+    virtual bool create_subgroup__(const std::string & /* group_name */) { return false; }
 
-    virtual bool open_group__(const std::string &group_name) { return false; }
-    virtual bool create_subgroup__(const std::string &group_name) { return false; }
     virtual bool begin__(Ioss::State state) = 0;
     virtual bool end__(Ioss::State state)   = 0;
 
@@ -669,8 +741,8 @@ namespace Ioss {
     void get_block_adjacencies__(const Ioss::ElementBlock *eb,
                                  std::vector<std::string> &block_adjacency) const;
 
-    virtual void compute_block_membership__(Ioss::SideBlock *         efblock,
-                                            std::vector<std::string> &block_membership) const
+    virtual void compute_block_membership__(Ioss::SideBlock * /* efblock */,
+                                            std::vector<std::string> & /* block_membership */) const
     {
     }
 

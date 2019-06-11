@@ -35,11 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for free, malloc
-#include <sys/types.h> // for int64_t
 
 static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_entity_id obj_id,
                           const char *VOBJID, const char *VOBJTAB, const char *DNUMOBJ,
