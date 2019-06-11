@@ -75,9 +75,9 @@ Environment:
   pwd = {cwd}
 
 JOB_BASE_NAME = TEST_JOB_BASE_NAME
-WORKSPACE = /dev/null/TEST_WORKSPACE
 JOB_NAME = TEST_JOB_NAME
 NODE_NAME = TEST_NODE_NAME
+WORKSPACE = /dev/null/TEST_WORKSPACE
 
 ================================================================================
 '''.format(cwd=os.getcwd())

@@ -26,6 +26,7 @@ ${SCRIPTPATH}/PullRequestLinuxDriver-Merge.py ${TRILINOS_SOURCE_REPO:?} \
                                               ${TRILINOS_TARGET_REPO:?} \
                                               ${TRILINOS_TARGET_BRANCH:?} \
                                               ${TRILINOS_SOURCE_SHA:?} \
+                                              ${BUILD_NUMBER} \
                                               ${WORKSPACE:?}
 
 # Call the script to handle driving the testing

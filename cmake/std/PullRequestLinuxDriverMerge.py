@@ -48,7 +48,9 @@ Environment:
   pwd = {cwd}
 '''.format(workspace=workspace,
            cwd=os.getcwd()), file=sys.stdout)
-    for key in os.environ:
+    keys = os.environ.keys()
+    keys.sort()
+    for key in keys:
         print(key +' = ' + os.environ[key])
     print('''
 ================================================================================''',
