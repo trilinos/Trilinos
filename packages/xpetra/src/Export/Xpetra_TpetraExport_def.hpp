@@ -497,7 +497,7 @@ class TpetraExport<int, long long, EpetraNode>
 
 
     //! TpetraExport constructor to wrap a Tpetra::Export object
-    TpetraExport(const RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>>& exp) : export_(exp)
+    TpetraExport(const RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>>& exp) 
     {
         XPETRA_TPETRA_ETI_EXCEPTION(typeid(TpetraExport<LocalOrdinal, GlobalOrdinal, EpetraNode>).name(),
                                     typeid(TpetraExport<LocalOrdinal, GlobalOrdinal, EpetraNode>).name(),
