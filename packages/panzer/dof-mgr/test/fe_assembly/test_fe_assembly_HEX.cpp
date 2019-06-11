@@ -52,12 +52,12 @@
 
 int main(int argc, char *argv[]) {
 
-  Kokkos::initialize();
+  Kokkos::initialize(argc, argv);
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   
   const int r_val = Intrepid2::Test::feAssemblyHex<double,PHX::Device>(argc, argv);
 
-  Kokkos::finalize();
+  Kokkos::finalize_all();
   return r_val;
 }
 
