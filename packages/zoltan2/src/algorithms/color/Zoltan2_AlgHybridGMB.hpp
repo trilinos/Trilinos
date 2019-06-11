@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <iostream>
+#include <queue>
 
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
@@ -153,7 +154,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
     typedef typename Adapter::scalar_t scalar_t;
     typedef typename Adapter::base_adapter_t base_adapter_t;
     typedef Tpetra::Map<lno_t, gno_t> map_t;
-    typedef VtxColor femv_scalar_t;
+    typedef int femv_scalar_t;
     typedef Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t> femv_t;
     
   private:
@@ -257,11 +258,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
     //This function is templated twice to avoid explicitly coding all possible
     //Execution space situations. We can just template the function call and 
     //have the compiler do that work.
-    template <typename ExecutionSpace, typename TempMemorySpace, 
+    template <class ExecutionSpace, typename TempMemorySpace, 
               typename MemorySpace>
     void colorInterior(const size_t nVtx, Teuchos::ArrayView<const lno_t> adjs,
                        Teuchos::ArrayView<const offset_t> offsets, 
-                       Teuchos::ArrayRCP<int> colors){ 
+                       Teuchos::ArrayRCP<int> colors,
+                       Teuchos::RCP<femv_t> femv){
       typedef Kokkos::Device<ExecutionSpace, MemorySpace> device;
       Kokkos::View<offset_t*, device> offset_view("degree_offsets", 
                                                   offsets.size());
@@ -299,7 +301,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       kh.set_shmem_size(shmemsize);
       kh.set_suggested_team_size(team_size);
       kh.set_suggested_vector_size(vector_size);
-  
+       
       kh.set_dynamic_scheduling(use_dynamic_scheduling);
       kh.set_verbose(verbose);
     
@@ -332,6 +334,14 @@ class AlgHybridGMB : public Algorithm<Adapter>
           kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
       }
      
+      //set the initial coloring of the kh.get_graph_coloring_handle() to be
+      //the data view from the femv.
+      //femv->switchActiveMultiVector();
+      Kokkos::View<int**,Kokkos::LayoutLeft> femvColors = femv->template getLocalView<MemorySpace>();
+      kh.get_graph_coloring_handle()->set_vertex_colors(subview(femvColors,Kokkos::ALL(),0));
+      //need to somehow get a 1D view from this!
+      //kh.get_graph_coloring_handle()->set_vertex_colors(femvColors);
+      
       KokkosGraph::Experimental::graph_color_symbolic(&kh, nVtx,nVtx,
                                                       offset_view,adjs_view);
       std::cout << std::endl << 
@@ -345,6 +355,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
       KokkosKernels::Impl::print_1Dview(
                            kh.get_graph_coloring_handle()->get_vertex_colors());
       
+      numColors = kh.get_graph_coloring_handle()->get_num_colors();
+            
       auto host_view = Kokkos::create_mirror_view(
                          kh.get_graph_coloring_handle()->get_vertex_colors());
       Kokkos::deep_copy(host_view, 
@@ -365,7 +377,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
     RCP<Teuchos::ParameterList> pl;
     RCP<Environment> env;
     RCP<const Teuchos::Comm<int> > comm;
-
+    int numColors;
+    
   public:
     AlgHybridGMB(
       const RCP<const base_adapter_t> &adapter_, 
@@ -373,10 +386,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
       const RCP<Environment> &env_,
       const RCP<const Teuchos::Comm<int> > &comm_)
     : adapter(adapter_), pl(pl_), env(env_), comm(comm_) {
-      
+
+      numColors = 4;
       modelFlag_t flags;
       flags.reset();
       buildModel(flags);
+
     }
 
 
@@ -414,33 +429,35 @@ class AlgHybridGMB : public Algorithm<Adapter>
                                                          reorderAdjs_vec);
       ArrayView<const offset_t> reorderOffsets = Teuchos::arrayViewFromVector(
                                                          reorderOffsets_vec);
-      
+     
+      std::vector<gno_t> ownedReorderGIDs;
+      for(int i = 0; i < nVtx; i++){
+        ownedReorderGIDs.push_back(reorderGIDs[i]);
+      }
+       
       Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
                                              <Tpetra::global_size_t>::invalid();
-      RCP<const map_t> mapOwned = rcp(new map_t(dummy, vtxIDs, 0, comm));
+      RCP<const map_t> mapOwned = rcp(new map_t(dummy, 
+                                      Teuchos::arrayViewFromVector(ownedReorderGIDs),
+                                           0, comm));
       RCP<const map_t> mapWithCopies = rcp(new map_t(dummy, 
                                       Teuchos::arrayViewFromVector(reorderGIDs),
                                            0, comm));
       
-      for(size_t i = 0; i < reorderGIDs.size(); i++){
-        printf("--Rank %d: Reordered %u is global %u\n",comm->getRank(),
-                                                        i,reorderGIDs[i]);
-      }
        
       //TODO: create FEMultiVector of some type, need to figure out what is
       //appropriate.
       //relevant lines from VtxLabel:
-         typedef Tpetra::Import<lno_t, gno_t> import_t;
+      typedef Tpetra::Import<lno_t, gno_t> import_t;
       //   typedef Tpetra::FEMultiVector<scalar_t, lno_t, gno_t> femv_t;
       //                                 ^-----Need to figure out what type 
       //                                       this should be
-         Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned, 
+      Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned, 
                                                             mapWithCopies));
-         Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned, 
+      Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned, 
                                                     importer, 1, true));
       //                                 could change,--------^ 
       //                                 potentially? (#vectors in multivector)
-
 
       //Get color array to fill
       ArrayRCP<int> colors = solution->getColorsRCP();
@@ -452,15 +469,15 @@ class AlgHybridGMB : public Algorithm<Adapter>
       // call actual coloring function
       // THESE ARGUMENTS WILL NEED TO CHANGE,
       // THESE ARE A COPY OF THE EXISTING ALGORITHM CLASS.
-      hybridGMB(nVtx, reorderAdjs, reorderOffsets,colors);
+      hybridGMB(nVtx, nInterior, reorderAdjs, reorderOffsets,colors,femv);
       
       comm->barrier();
     }
     
-    void hybridGMB(const size_t nVtx, Teuchos::ArrayView<const lno_t> adjs, 
+    void hybridGMB(const size_t nVtx,lno_t nInterior, Teuchos::ArrayView<const lno_t> adjs, 
                    Teuchos::ArrayView<const offset_t> offsets, 
-                   Teuchos::ArrayRCP<int> colors){
-       
+                   Teuchos::ArrayRCP<int> colors, Teuchos::RCP<femv_t> femv){
+      
       bool use_cuda = pl->get<bool>("Hybrid_use_cuda",false);
       bool use_openmp = pl->get<bool>("Hybrid_use_openmp",false);
       bool use_serial = pl->get<bool>("Hybrid_use_serial",false);
@@ -471,37 +488,131 @@ class AlgHybridGMB : public Algorithm<Adapter>
         this->colorInterior<Kokkos::DefaultExecutionSpace,
                             Kokkos::DefaultExecutionSpace::memory_space,
                             Kokkos::DefaultExecutionSpace::memory_space> 
-                     (nVtx, adjs, offsets, colors);
+                     (nInterior, adjs, offsets, colors,femv);
       } else if (use_cuda) {
         //use the cuda spaces
         #ifdef KOKKOS_ENABLE_CUDA
         this->colorInterior<Kokkos::Cuda, Kokkos::Cuda::memory_space, 
                             Kokkos::Cuda::memory_space>
-                     (nVtx, adjs, offsets, colors);
+                     (nInterior, adjs, offsets, colors,femv);
         #endif
       } else if (use_openmp) {
         //use openmp spaces
         #ifdef KOKKOS_ENABLE_OPENMP
         this->colorInterior<Kokkos::OpenMP, Kokkos::OpenMP::memory_space, 
                             Kokkos::OpenMP::memory_space>
-                     (nVtx, adjs, offsets, colors);
+                     (nInterior, adjs, offsets, colors,femv);
         #endif
       } else if (use_serial) {
         //use serial spaces
         this->colorInterior<Kokkos::Serial, Kokkos::Serial::memory_space, 
                             Kokkos::Serial::memory_space> 
-                     (nVtx, adjs, offsets, colors);
+                     (nInterior, adjs, offsets, colors,femv);
       }
        
-      //color the interior vertices (maybe)
+      printf("*****AFTER INTERNAL COLORING*********\n");
+      for(int i = 0; i < femv->getData(0).size(); i++){
+        printf("--Rank %d: vertex %u color %d\n",comm->getRank(),i, femv->getData(0)[i]);
+      }
 
+
+      int batch_size = pl->get<int>("Hybrid_batch_size",1); //1 is for testing only, should be 100!
       //color boundary vertices using FEMultiVector (definitely)
-
+      //create a queue of vertices to color
+      std::queue<lno_t> recoloringQueue;
+      std::queue<lno_t> conflictQueue;
+      Teuchos::ArrayRCP<bool> forbiddenColors;
+      forbiddenColors.resize(numColors);
+      for(int i = 0; i < numColors; i++) forbiddenColors[i] = false;
+      printf("--Rank %d: batch size: %d\n",comm->getRank(),batch_size);
+      //for each batch of boundary vertices
+      //femv->switchActiveMultiVector();
+      for(size_t i = nInterior; i < nVtx; i += batch_size){
+      //  add next batch (an argument to this class?) to the queue
+          for(size_t j = i; j < i+batch_size; j++){
+            if(j < nVtx) {
+              printf("--Rank %d: pushing %d on the queue\n",comm->getRank(),j);
+              recoloringQueue.push(j);
+            }
+          }
+      //  while the queue is not empty
+          while(recoloringQueue.size() > 0){
+      //    color everything in the recoloring queue, put everything on conflict queue
+            while(recoloringQueue.size() > 0) {
+               printf("--Rank %d: coloring vertex %u\n",comm->getRank(),recoloringQueue.front());
+               lno_t currVtx = recoloringQueue.front();
+               recoloringQueue.pop();
+               conflictQueue.push(currVtx);
+               for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
+                 
+                 int nborColor = femv->getData(0)[adjs[nborIdx]];
+                 if(nborColor > 0){
+                   forbiddenColors[nborColor-1] = true;
+                 } //else {
+                   //reallocate more indices to the array (hopefully an infrequent operation)
+                 //  bool* tmp = new bool[nborColor];
+                 //  for(int i = 0; i < numColors; i++){
+                 //    tmp[i] = forbiddenColors[i];
+                 //  }
+                 //  numColors = nborColor;
+                 //  delete [] forbiddenColors;
+                 //  forbiddenColors = tmp;
+                 //  forbiddenColors[nborColor-1] = true;
+                 //}
+               }
+               //pick the color for currVtx based on the forbidden array
+               bool colored = false;
+               for(int i = 0; i < numColors; i++){
+                 if(!forbiddenColors[i]) {
+                   femv->replaceLocalValue(currVtx,0,i+1);
+                   colors[currVtx] = i+1;
+                   colored = true;
+                 }
+               }
+               if(!colored){
+                 colors[currVtx] = numColors+1;
+                 femv->replaceLocalValue(currVtx,0,colors[currVtx]);
+                 numColors++;
+                 forbiddenColors.resize(numColors);
+               }
+               printf("--Rank %d: colored vtx %u color %d\n",comm->getRank(),currVtx,colors[currVtx]);
+            }
+            
+      //    communicate
+            femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
+      //    check for conflicts with the vertices that were just colored
+            while(conflictQueue.size() > 0){
+      //      if conflicts were detected put them on the recoloring queue
+              lno_t currVtx = conflictQueue.front();
+              conflictQueue.pop();
+              bool conflict = false;
+              int currColor = femv->getData(0)[currVtx];
+              for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
+                int nborColor = femv->getData(0)[adjs[nborIdx]];
+                if(nborColor == currColor) {
+                  printf("--Rank %d: vtx %u conflicts with vtx %u\n",comm->getRank(),currVtx,adjs[nborIdx]);
+                  conflict = true;
+                }
+              }
+              if(conflict) {
+                recoloringQueue.push(currVtx);
+                printf("--Rank %d: putting vertex %u on the recoloring queue\n",comm->getRank(),currVtx);
+              }
+            }
+          }
+      }
+       
+      //need to handle half-done batches?
+      
       //color interior vertices if not colored yet. 
       //(must alter Kokkos-Kernels to allow partial colorings)
       //As long as the initial coloring is untouched, we can pass the whole 
       //graph to the kokkos-kernels coloring.
       
+      //print the coloring
+      for(int i = 0; i < colors.size(); i++){
+        printf("--Rank %d: local vtx %u is color %d\n",comm->getRank(),i,colors[i]);
+      }
     }
 };
 
