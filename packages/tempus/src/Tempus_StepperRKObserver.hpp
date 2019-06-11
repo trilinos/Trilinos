@@ -55,6 +55,11 @@ public:
     Stepper<Scalar> & /* stepper */){}
 
   /// Observe Stepper before Explicit evaluation of Implicit ODE ME.
+  virtual void observeBeforeImplicitExplicitly(
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Stepper<Scalar> & /* stepper */){}
+
+  /// Observe Stepper before Explicit evaluation of Implicit ODE ME.
   virtual void observeBeforeExplicit(
     Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
     Stepper<Scalar> & /* stepper */){}

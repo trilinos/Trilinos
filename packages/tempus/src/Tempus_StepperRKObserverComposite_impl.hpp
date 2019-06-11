@@ -48,6 +48,15 @@ void StepperRKObserverComposite<Scalar>::observeBeforeExplicit(
 }
 
 template<class Scalar>
+void StepperRKObserverComposite<Scalar>::observeBeforeImplicitExplicitly(
+    Teuchos::RCP<SolutionHistory<Scalar> > sh,
+    Stepper<Scalar> & stepper)
+{
+  for(auto& o : observers_)
+    o->observeBeforeImplicitExplicitly(sh,stepper);
+}
+
+template<class Scalar>
 void StepperRKObserverComposite<Scalar>::observeBeforeSolve(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
     Stepper<Scalar> & stepper)

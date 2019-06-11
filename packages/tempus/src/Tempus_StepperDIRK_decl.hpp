@@ -13,9 +13,7 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperObserverComposite.hpp"
 #include "Tempus_StepperRKObserverComposite.hpp"
-#include "Tempus_StepperDIRKObserver.hpp"
 
 
 namespace Tempus {

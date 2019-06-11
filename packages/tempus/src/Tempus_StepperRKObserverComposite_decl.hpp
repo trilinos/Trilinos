@@ -44,6 +44,11 @@ public:
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
     Stepper<Scalar> & stepperRK) override;
 
+  /// Observe Stepper before Explicit evaluation of Implicit ODE ME.
+  virtual void observeBeforeImplicitExplicitly(
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Stepper<Scalar> & /* stepper */) override;
+
   /// Observe Stepper before  evaluation of Implicit ODE ME.
   virtual void observeBeforeExplicit(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
