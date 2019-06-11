@@ -6,10 +6,10 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepperExplicitRKObserverComposite_decl_hpp
-#define Tempus_StepperExplicitRKObserverComposite_decl_hpp
+#ifndef Tempus_StepperRKObserverComposite_decl_hpp
+#define Tempus_StepperRKObserverComposite_decl_hpp
 
-#include "Tempus_StepperExplicitRKObserver.hpp"
+#include "Tempus_StepperRKObserver.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include <vector>
 
@@ -17,22 +17,22 @@ namespace Tempus {
 
 /** \brief This observer is a composite observer,
  *
- *  which takes other StepperExplicitRKObservers and sequentially calls each
+ *  which takes other StepperRKObservers and sequentially calls each
  *  individual observer function.
  */
 template<class Scalar>
-class StepperExplicitRKObserverComposite
-  : virtual public Tempus::StepperExplicitRKObserver<Scalar>
+class StepperRKObserverComposite
+  : virtual public Tempus::StepperRKObserver<Scalar>
 {
 public:
 
   /// Default constructor
-  StepperExplicitRKObserverComposite();
+  StepperRKObserverComposite();
 
   /// Destructor
-  virtual ~StepperExplicitRKObserverComposite();
+  virtual ~StepperRKObserverComposite();
 
-  /// \name Override StepperExplicitRKObserver basic methods
+  /// \name Override StepperRKObserver basic methods
   //@{
   /// Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
@@ -42,35 +42,45 @@ public:
   /// Observe Stepper at beginning of each stage.
   virtual void observeBeginStage(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperExplicitRK<Scalar> & stepperExplicitRK) override;
+    Stepper<Scalar> & stepperRK) override;
 
-  /// Observe Stepper before Explicit evaluation of Implicit ODE ME.
+  /// Observe Stepper before  evaluation of Implicit ODE ME.
   virtual void observeBeforeExplicit(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperExplicitRK<Scalar> & stepperExplicitRK) override;
+    Stepper<Scalar> & stepperRK) override;
+
+  /// Observe Stepper before nonlinear solve.
+  virtual void observeBeforeSolve(
+    Teuchos::RCP<SolutionHistory<Scalar> > sh ,
+    Stepper<Scalar> & stepperRK) override;
+
+  /// Observe Stepper after nonlinear solve.
+  virtual void observeAfterSolve(
+    Teuchos::RCP<SolutionHistory<Scalar> >  sh ,
+    Stepper<Scalar> & stepperRK) override;
 
   /// Observe Stepper at end of each stage.
   virtual void observeEndStage(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperExplicitRK<Scalar> & stepperExplicitRK) override;
+    Stepper<Scalar> & stepperRK) override;
 
   /// Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
     Stepper<Scalar> & stepper) override;
 
-    // add observer to the composite observer list
-    void addObserver(const Teuchos::RCP<StepperExplicitRKObserver<Scalar> > &observer);
+  // add observer to the composite observer list
+  void addObserver(const Teuchos::RCP<StepperRKObserver<Scalar> > &observer);
 
-    // clear all observer from the composite observer list
-    void clearObservers();
+  // clear all observer from the composite observer list
+  void clearObservers();
   //@}
 
 private:
 
-  std::vector<Teuchos::RCP<StepperExplicitRKObserver<Scalar > > > observers_;
+  std::vector<Teuchos::RCP<StepperRKObserver<Scalar > > > observers_;
 
 };
 
 } // namespace Tempus
-#endif // Tempus_StepperExplicitRKObserverComposite_decl_hpp
+#endif // Tempus_StepperRKObserverComposite_decl_hpp

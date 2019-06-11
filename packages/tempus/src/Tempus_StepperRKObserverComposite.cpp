@@ -9,11 +9,11 @@
 #include "Tempus_ExplicitTemplateInstantiation.hpp"
 
 #ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION
-#include "Tempus_StepperExplicitRKObserverComposite.hpp"
-#include "Tempus_StepperExplicitRKObserverComposite_impl.hpp"
+#include "Tempus_StepperRKObserverComposite.hpp"
+#include "Tempus_StepperRKObserverComposite_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperExplicitRKObserverComposite)
+  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperRKObserverComposite)
 }
 
 #endif

@@ -12,8 +12,9 @@
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
 #include "Tempus_RKButcherTableau.hpp"
-#include "Tempus_StepperObserverComposite.hpp"
-#include "Tempus_StepperExplicitRKObserverComposite.hpp"
+//#include "Tempus_StepperObserverComposite.hpp"
+//#include "Tempus_StepperExplicitRKObserverComposite.hpp"
+#include "Tempus_StepperRKObserverComposite.hpp"
 
 
 namespace Tempus {
@@ -187,8 +188,8 @@ protected:
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >     stageXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >                   stageX_;
 
-  Teuchos::RCP<StepperObserverComposite<Scalar> >            stepperObserver_;
-  Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >  stepperExplicitRKObserver_;
+  Teuchos::RCP<StepperRKObserverComposite<Scalar> >          stepperObserver_;
+  //Teuchos::RCP<StepperExplicitRKObserverComposite<Scalar> >  stepperExplicitRKObserver_;
 
   // For Embedded RK
   Teuchos::RCP<Thyra::VectorBase<Scalar> >                   ee_;
