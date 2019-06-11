@@ -283,7 +283,7 @@ namespace panzer
        *  \brief The fields to which we'll contribute, or in which we'll store,
        *         the result of computing this integral.
        */
-      std::vector<PHX::MDField<ScalarT, Cell, BASIS>> fields_;
+      Kokkos::View<PHX::MDField<ScalarT, Cell, BASIS>*> fields_;
 
       /**
        *  \brief A field representing the vector-valued function we're
