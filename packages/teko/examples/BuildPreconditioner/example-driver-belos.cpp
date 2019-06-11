@@ -129,8 +129,7 @@ int main(int argc,char * argv[])
    // read in the CRS matrix
    RCP<TP_Crs> crsMat = Tpetra::MatrixMarket::Reader<TP_Crs>::readSparseFile("../data/nsjac.mm", Tpetra::getDefaultComm());
 
-   Teuchos::RCP<NT> node; // only for type deduction; null ok
-   RCP<TP_Crs> zeroCrsMat = crsMat->clone(node);
+   RCP<TP_Crs> zeroCrsMat = rcp(new TP_Crs(*crsMat, Teuchos::Copy));
    zeroCrsMat->resumeFill();
    zeroCrsMat->setAllToScalar(0.0);
    zeroCrsMat->fillComplete();
