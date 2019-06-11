@@ -165,6 +165,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5" ]] ; then
   module load sems-intel/18.0.5
   module load atdm-env
   module load atdm-mkl/18.0.5
+  export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
