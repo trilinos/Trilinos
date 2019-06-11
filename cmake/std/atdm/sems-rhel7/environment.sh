@@ -41,13 +41,14 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "INTEL" ]] ; then
     export ATDM_CONFIG_COMPILER=INTEL-18.0.5
-  elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-17.0.1" ]] ; then
+  elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-17.0.1" ]] || [[ "$ATDM_CONFIG_COMPILER" != "INTEL-18.0.5" ]]; then
     echo
     echo "***"
     echo "*** ERROR: INTEL COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only INTEL compilers supported on this system are:"
-    echo "***   intel (defaults to intel-17.0.1)"
+    echo "***   intel (defaults to intel-18.0.5)"
     echo "***   intel-17.0.1"
+    echo "***   intel-18.0.5"
     echo "***"
     return
   fi
