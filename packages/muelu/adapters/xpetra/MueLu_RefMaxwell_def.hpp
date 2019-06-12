@@ -306,12 +306,14 @@ namespace MueLu {
       Coords_->norm2(norms);
       for (size_t i=0;i<Coords_->getNumVectors();i++)
         norms[i] = ((realMagnitudeType)1.0)/norms[i];
-      Coords_->scale(norms());
       Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
 
       // Cast coordinates to Scalar so they can be multiplied against D0
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       RCP<MultiVector> CoordsSC;
+      Array<Scalar> normsSC(Coords_->getNumVectors());
+      for (size_t i=0;i<Coords_->getNumVectors();i++)
+        normsSC[i] = (SC) norms[i];
       if (useKokkos_)
         CoordsSC = Utilities_kokkos::RealValuedToScalarMultiVector(Coords_);
       else
@@ -320,6 +322,7 @@ namespace MueLu {
       RCP<MultiVector> CoordsSC = Utilities::RealValuedToScalarMultiVector(Coords_);
 #endif
       D0_Matrix_->apply(*CoordsSC,*Nullspace_);
+      Nullspace_->scale(normsSC());
     }
     else {
       GetOStream(Errors) << "MueLu::RefMaxwell::compute(): either the nullspace or the nodal coordinates must be provided." << std::endl;
