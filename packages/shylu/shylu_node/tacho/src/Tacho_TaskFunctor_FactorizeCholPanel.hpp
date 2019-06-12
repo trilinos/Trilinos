@@ -106,36 +106,17 @@ namespace Tacho {
               });
           } else {
             Kokkos::single(Kokkos::PerTeam(member), [&]() {
-                // allocate dependence array to handle variable number of children schur contributions
-                future_type *dep = NULL, depbuf[MaxDependenceSize];
-                size_t depbuf_size = _s.nchildren > MaxDependenceSize ? _s.nchildren*sizeof(future_type) : 0;
-                if (depbuf_size) {
-                  dep = (future_type*)sched.queue().get_memory_pool().allocate(depbuf_size);
-                  clear((char*)dep, depbuf_size);
-                } else {
-                  dep = &depbuf[0];
-                }
-
                 // spawn children tasks and this (their parent) depends on the children tasks
-                if (dep == NULL) {
-                  Kokkos::respawn(this, sched, Kokkos::TaskPriority::Regular);
-                } else {
-                  for (ordinal_type i=0;i<_s.nchildren;++i) {
+                auto f_when_all = sched.when_all(_s.nchildren, [&](const ordinal_type i) { 
                     auto f = Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::Regular),
                                                 TaskFunctor_FactorizeCholPanel(_bufpool, _info, _s.children[i], _nb));
                     TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
-                    dep[i] = f;
-                  }
-                  
-                  // respawn with updating state
-                  _state = 1;
-                  Kokkos::respawn(this, sched.when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
-                  
-                  if (depbuf_size) {
-                    for (ordinal_type i=0;i<_s.nchildren;++i) (dep+i)->~future_type();
-                    sched.queue().get_memory_pool().deallocate(dep, depbuf_size);
-                  }
-                }
+                    return f;
+                  });
+                
+                // respawn with updating state
+                _state = 1;
+                Kokkos::respawn(this, f_when_all, Kokkos::TaskPriority::Regular);
               });
           }
           break;
