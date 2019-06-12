@@ -21,6 +21,8 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosGraph_Distance1ColorHandle.hpp"
+
+#include "zz_rand.h"
 //////////////////////////////////////////////
 //! \file Zoltan2_AlgHybridGMB.hpp
 //! \brief A hybrid version of the framework proposed by Gebremedhin, Manne, 
@@ -459,12 +461,18 @@ class AlgHybridGMB : public Algorithm<Adapter>
       for(size_t i=0; i<nVtx; i++){
         colors[i] = 0;
       } 
-            
       
+      //taken directly from the Zoltan coloring implementation 
+      std::vector<int> rand(reorderGIDs.size());
+      for(int i = 0; i < reorderGIDs.size(); i++){
+        Zoltan_Srand((unsigned int) reorderGIDs[i], NULL);
+        rand[i] = (int) (((double) Zoltan_Rand(NULL)/(double) ZOLTAN_RAND_MAX)*100000000);
+      }
+
       // call actual coloring function
       // THESE ARGUMENTS WILL NEED TO CHANGE,
       // THESE ARE A COPY OF THE EXISTING ALGORITHM CLASS.
-      hybridGMB(nVtx, nInterior, reorderAdjs, reorderOffsets,colors,femv,reorderGIDs);
+      hybridGMB(nVtx, nInterior, reorderAdjs, reorderOffsets,colors,femv,reorderGIDs,rand);
       
       comm->barrier();
     }
@@ -472,7 +480,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
     void hybridGMB(const size_t nVtx,lno_t nInterior, Teuchos::ArrayView<const lno_t> adjs, 
                    Teuchos::ArrayView<const offset_t> offsets, 
                    Teuchos::ArrayRCP<int> colors, Teuchos::RCP<femv_t> femv,
-                   std::vector<gno_t> reorderGIDs){
+                   std::vector<gno_t> reorderGIDs,
+                   std::vector<int> rand){
       
       bool use_cuda = pl->get<bool>("Hybrid_use_cuda",false);
       bool use_openmp = pl->get<bool>("Hybrid_use_openmp",false);
@@ -506,7 +515,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                      (nInterior, adjs, offsets, colors,femv);
       }
        
-      int batch_size = pl->get<int>("Hybrid_batch_size",1); //1 is for testing only, should be 100!
+      int batch_size = pl->get<int>("Hybrid_batch_size",100);
       //color boundary vertices using FEMultiVector (definitely)
       //create a queue of vertices to color
       std::queue<lno_t> recoloringQueue;
@@ -577,7 +586,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
               int currColor = femv->getData(0)[currVtx];
               for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
                 int nborColor = femv->getData(0)[adjs[nborIdx]];
-                if(nborColor == currColor && reorderGIDs[currVtx] > reorderGIDs[adjs[nborIdx]]) {
+                if(nborColor == currColor && rand[currVtx] > rand[adjs[nborIdx]]) {
                   printf("--Rank %d: vtx %u conflicts with vtx %u\n",comm->getRank(),currVtx,adjs[nborIdx]);
                   conflict = true;
                 }
