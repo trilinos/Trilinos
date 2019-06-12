@@ -231,9 +231,7 @@ void StepperDIRK<Scalar>::takeStep(
     bool pass = true;
     Thyra::SolveStatus<Scalar> sStatus;
     for (int i=0; i < numStages; ++i) {
-      //if (!Teuchos::is_null(stepperDIRKObserver_))
-        //stepperDIRKObserver_->observeBeginStage(solutionHistory, *this);
-    this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
 
       if ( i == 0 && this->getUseFSAL() &&
            workingState->getNConsecutiveFailures() == 0 ) {
@@ -270,8 +268,6 @@ void StepperDIRK<Scalar>::takeStep(
               inArgs.set_x_dot(Teuchos::null);
             outArgs.set_f(stageXDot_[i]);
 
-            //if (!Teuchos::is_null(stepperDIRKObserver_))
-              //stepperDIRKObserver_->observeBeforeExplicit(solutionHistory,*this);
             this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
             this->wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
           }
@@ -290,24 +286,18 @@ void StepperDIRK<Scalar>::takeStep(
               timeDer, dt, alpha, beta));
           p->stageNumber_ = i;
 
-          //if (!Teuchos::is_null(stepperDIRKObserver_))
-            //stepperDIRKObserver_->observeBeforeSolve(solutionHistory, *this);
           this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 
           sStatus = this->solveImplicitODE(stageX_, stageXDot_[i], ts, p);
 
           if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass=false;
 
-          //if (!Teuchos::is_null(stepperDIRKObserver_))
-            //stepperDIRKObserver_->observeAfterSolve(solutionHistory, *this);
           this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
 
           timeDer->compute(stageX_, stageXDot_[i]);
         }
       }
 
-      //if (!Teuchos::is_null(stepperDIRKObserver_))
-        //stepperDIRKObserver_->observeEndStage(solutionHistory, *this);
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
 

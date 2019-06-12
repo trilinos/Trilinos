@@ -14,7 +14,6 @@
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
 #include "Tempus_StepperRKObserverComposite.hpp"
-//#include "Tempus_StepperIMEX_RKObserver.hpp"
 
 
 namespace Tempus {
@@ -369,7 +368,6 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
   Teuchos::RCP<StepperRKObserverComposite<Scalar> >        stepperObserver_;
-  //Teuchos::RCP<StepperIMEX_RKObserver<Scalar> >  stepperIMEX_RKObserver_;
 
 };
 

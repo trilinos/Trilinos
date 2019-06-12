@@ -561,9 +561,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
-      //if (!Teuchos::is_null(stepperIMEX_RKObserver_))
-        //stepperIMEX_RKObserver_->observeBeginStage(solutionHistory, *this);
-    this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j = 0; j < i; ++j) {
         if (AHat(i,j) != Teuchos::ScalarTraits<Scalar>::zero())
@@ -584,9 +582,6 @@ void StepperIMEX_RK<Scalar>::takeStep(
           assign(stageG_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           Thyra::assign(stageX_.ptr(), *xTilde_);
-          //if (!Teuchos::is_null(stepperIMEX_RKObserver_))
-            //stepperIMEX_RKObserver_->
-              //observeBeforeImplicitExplicitly(solutionHistory, *this);
           this->stepperObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
           evalImplicitModelExplicitly(stageX_, ts, dt, i, stageG_[i]);
         }
@@ -604,8 +599,6 @@ void StepperIMEX_RK<Scalar>::takeStep(
          Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta));
         p->stageNumber_ = i;
 
-        //if (!Teuchos::is_null(stepperIMEX_RKObserver_))
-          //stepperIMEX_RKObserver_->observeBeforeSolve(solutionHistory, *this);
         this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 
         const Thyra::SolveStatus<Scalar> sStatus =
@@ -613,20 +606,14 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
-        //if (!Teuchos::is_null(stepperIMEX_RKObserver_))
-          //stepperIMEX_RKObserver_->observeAfterSolve(solutionHistory, *this);
         this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
 
         // Update contributions to stage values
         Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *stageX_, alpha, *xTilde_);
       }
 
-      //if (!Teuchos::is_null(stepperIMEX_RKObserver_))
-        //stepperIMEX_RKObserver_->observeBeforeExplicit(solutionHistory, *this);
       this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
       evalExplicitModel(stageX_, tHats, dt, i, stageF_[i]);
-      //if (!Teuchos::is_null(stepperIMEX_RKObserver_))
-        //stepperIMEX_RKObserver_->observeEndStage(solutionHistory, *this);
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
 
