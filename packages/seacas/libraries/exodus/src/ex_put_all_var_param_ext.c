@@ -47,11 +47,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_get_dimension, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for malloc, NULL, free
-#include <sys/types.h> // for int64_t
 
 static int  define_dimension(int exoid, const char *DIMENSION, int count, const char *label,
                              int *dimid);

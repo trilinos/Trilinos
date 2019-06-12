@@ -51,11 +51,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for NULL, free, malloc
-#include <sys/types.h> // for int64_t
 
 /*!
  * writes the set ID's, set entry count array, set entry pointers array,

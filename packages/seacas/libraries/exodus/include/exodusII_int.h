@@ -58,6 +58,10 @@
 #include <inttypes.h>
 #endif
 
+#include <assert.h>
+#include <ctype.h>
+#include <string.h>
+
 #ifndef __APPLE__
 #if defined __STDC__ || defined __cplusplus
 #include <stdlib.h>
@@ -80,6 +84,8 @@
 #define __func__ __FUNCTION__
 #define snprintf _snprintf
 #endif
+
+#define snprintf_nowarn(...) (snprintf(__VA_ARGS__) < 0 ? abort() : (void)0)
 
 #ifdef __cplusplus
 extern "C" {

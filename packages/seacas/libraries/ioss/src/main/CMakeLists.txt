@@ -29,10 +29,10 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_ADD_EXECUTABLE(
-  cgns-decomp
+  cgns_decomp
   NOEXEPREFIX
   NOEXESUFFIX
-  SOURCES cgns-decomp.C
+  SOURCES cgns_decomp.C
   )
 ENDIF()
 
@@ -146,7 +146,7 @@ ENDIF()
 install_executable(cth_pressure_map)
 IF (TPL_ENABLE_CGNS)
 install_executable(struc_to_unstruc)
-install_executable(cgns-decomp)
+install_executable(cgns_decomp)
 ENDIF()
 install_executable(io_shell)
 install_executable(shell_to_hex)

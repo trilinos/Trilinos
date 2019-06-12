@@ -33,12 +33,6 @@
  *
  */
 
-#define __STDC_FORMAT_MACROS
-#include <cinttypes>
-#ifndef PRId64
-#error "PRId64 not defined"
-#endif
-
 #include <EP_ExodusEntity.h> // for Block, Mesh
 #include <EP_Internals.h>    // for Internals, Redefine
 

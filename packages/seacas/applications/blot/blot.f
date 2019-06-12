@@ -174,8 +174,8 @@ C ... Used for hardcopy device drivers...
       CHARACTER*1 C(1)
 C      --A - the dynamic memory base array
 
-      character*2048 scratch
-      character*256  option, value
+      character*2048 scratch, value
+      character*256  option
 
       LOGICAL MESHOK, DTOK, LNOK, SPOK, TPOK
       LOGICAL MAPND, MAPEL

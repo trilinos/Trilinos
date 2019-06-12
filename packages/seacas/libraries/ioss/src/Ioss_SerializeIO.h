@@ -64,7 +64,7 @@ namespace Ioss {
      *
      * @param database_io	a <code>DatabaseIO</code> variable ...
      */
-    explicit SerializeIO(const DatabaseIO *database_io, int manual_owner_processor = -1);
+    explicit SerializeIO(const DatabaseIO *database_io);
     SerializeIO(const SerializeIO &from) = delete;
     SerializeIO &operator=(const SerializeIO &from) = delete;
     ~SerializeIO();

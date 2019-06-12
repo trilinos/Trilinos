@@ -56,9 +56,6 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, DIM_ECNT_CMAP, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
 
 int ex_put_elem_cmap(int exoid, ex_entity_id map_id, void_int *elem_ids, void_int *side_ids,
                      void_int *proc_ids, int processor)

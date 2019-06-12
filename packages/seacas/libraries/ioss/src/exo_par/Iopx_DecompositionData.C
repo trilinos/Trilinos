@@ -808,12 +808,13 @@ namespace Iopx {
     return ierr;
   }
 
+#ifndef DOXYGEN_SKIP_THIS
   template void DecompositionData<int>::get_block_connectivity(int filePtr, int *data, int64_t id,
                                                                size_t blk_seq, size_t nnpe) const;
   template void DecompositionData<int64_t>::get_block_connectivity(int filePtr, int64_t *data,
                                                                    int64_t id, size_t blk_seq,
                                                                    size_t nnpe) const;
-
+#endif
   /// relates DecompositionData::get_block_connectivity
   template <typename INT>
   void DecompositionData<INT>::get_block_connectivity(int filePtr, INT *data, int64_t id,
@@ -902,12 +903,14 @@ namespace Iopx {
     }
   }
 
+#ifndef DOXYGEN_SKIP_THIS
   template void DecompositionDataBase::communicate_node_data(int *file_data, int *ioss_data,
                                                              size_t comp_count) const;
   template void DecompositionDataBase::communicate_node_data(int64_t *file_data, int64_t *ioss_data,
                                                              size_t comp_count) const;
   template void DecompositionDataBase::communicate_node_data(double *file_data, double *ioss_data,
                                                              size_t comp_count) const;
+#endif
 
   template <typename T>
   void DecompositionDataBase::communicate_node_data(T *file_data, T *ioss_data,
@@ -926,6 +929,7 @@ namespace Iopx {
     }
   }
 
+#ifndef DOXYGEN_SKIP_THIS
   template void DecompositionDataBase::communicate_element_data(int *file_data, int *ioss_data,
                                                                 size_t comp_count) const;
   template void DecompositionDataBase::communicate_element_data(int64_t *file_data,
@@ -934,6 +938,7 @@ namespace Iopx {
   template void DecompositionDataBase::communicate_element_data(double *file_data,
                                                                 double *ioss_data,
                                                                 size_t  comp_count) const;
+#endif
 
   template <typename T>
   void DecompositionDataBase::communicate_element_data(T *file_data, T *ioss_data,

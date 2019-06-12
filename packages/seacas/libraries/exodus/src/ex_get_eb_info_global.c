@@ -51,7 +51,6 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, etc
-#include <stdio.h>
 
 int ex_get_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts)
 {

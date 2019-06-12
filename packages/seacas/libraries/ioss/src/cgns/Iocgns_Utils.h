@@ -208,10 +208,15 @@ namespace Iocgns {
                                         char suffix_separator, int myProcessor,
                                         bool is_parallel_io);
 
+    static void   set_line_decomposition(int cgns_file_ptr, const std::string &line_decomposition,
+                                         std::vector<Iocgns::StructuredZoneData *> &zones, int rank,
+                                         bool verbose);
+    static void   decompose_model(std::vector<Iocgns::StructuredZoneData *> &zones, int proc_count,
+                                  int rank, double load_balance_threshold, bool verbose);
     static size_t pre_split(std::vector<Iocgns::StructuredZoneData *> &zones, double avg_work,
-                            double load_balance, int proc_rank, int proc_count);
+                            double load_balance, int proc_rank, int proc_count, bool verbose);
     static void   assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData *> &zones,
-                                        std::vector<size_t> &                      work_vector);
+                                        std::vector<size_t> &work_vector, bool verbose);
     static void   show_config();
   };
 } // namespace Iocgns

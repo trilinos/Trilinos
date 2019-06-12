@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, VAR_WHOLE_TIME, etc
-#include <stdio.h>
 
 /*!
 

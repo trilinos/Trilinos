@@ -4,7 +4,7 @@ import os
 
 """
 
-exodus.py v 1.07 (beta) is a python wrapper of some of the exodus library
+exodus.py v 1.10 (beta) is a python wrapper of some of the exodus library
 
 Copyright(C) 2018 National Technology & Engineering Solutions of
 Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
@@ -42,10 +42,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.09 (beta-cmake)"
+EXODUS_PY_VERSION = "1.10 (beta-cmake)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.09 (beta-cmake), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.10 (beta-cmake), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -410,6 +410,10 @@ class exodus:
           e.put_info_ext(self,info_struct)
           -> put initialization information into exodus file
         """
+        if len(p.title)>MAX_LINE_LENGTH: 
+            print('WARNING: Exodus title "%s" exceeds the maximum line length (%i). It will be truncated.' % (p.title,MAX_LINE_LENGTH))
+            p.title = p.title[-1*MAX_LINE_LENGTH:]
+
         self.Title = create_string_buffer(p.title, MAX_LINE_LENGTH + 1)
         self.numDim = c_longlong(p.num_dim)
         self.numNodes = c_longlong(p.num_nodes)

@@ -135,8 +135,7 @@ namespace {
                          const Ioss::MeshCopyOptions &options, int rank);
   void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region,
                          const Ioss::MeshCopyOptions &options, int rank);
-  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region,
-                                  const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region);
 
   template <typename T>
   void transfer_fields(const std::vector<T *> &entities, Ioss::Region &output_region,
@@ -275,7 +274,7 @@ std::string Ioss::Utils::decode_filename(const std::string &filename, int proces
   // Examples: basename.8.1, basename.64.03, basename.128.001
 
   // Create a std::string containing the total number of processors
-  size_t proc_width = std::floor(std::log10(num_processors)) + 1;
+  size_t proc_width = number_width(num_processors);
 
   std::string decoded_filename =
       fmt::format("{}.{}.{:0{}}", filename, num_processors, processor, proc_width);
@@ -1572,7 +1571,7 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     transfer_sidesets(region, output_region, options, rank);
     transfer_commsets(region, output_region, options, rank);
 
-    transfer_coordinate_frames(region, output_region, options, rank);
+    transfer_coordinate_frames(region, output_region);
 
     if (options.debug && rank == 0) {
       fmt::print(stderr, "END STATE_DEFINE_MODEL...\n");
@@ -2214,8 +2213,7 @@ namespace {
     }
   }
 
-  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region,
-                                  const Ioss::MeshCopyOptions &options, int rank)
+  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region)
   {
     const Ioss::CoordinateFrameContainer &cf = region.get_coordinate_frames();
     for (const auto &frame : cf) {

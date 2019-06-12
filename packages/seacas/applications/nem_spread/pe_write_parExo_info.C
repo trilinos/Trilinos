@@ -52,6 +52,12 @@
 template <typename INT> struct ELEM_COMM_MAP;
 template <typename INT> struct NODE_COMM_MAP;
 
+#if defined(__GNUC__) && __GNUC__ >= 7
+#define FALL_THROUGH [[gnu::fallthrough]]
+#else
+ #define FALL_THROUGH ((void)0)
+#endif /* __GNUC__ >= 7 */
+
 namespace {
   template <typename INT>
   void reverse_map(INT *global, int p01, size_t gsize, INT *glmap, INT *index, INT *mapout);
@@ -605,9 +611,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   if (itotal_nodes > 0) {
     switch (globals.Num_Dim) {
     case 3: z_coord = globals.Coor[iproc][2];
-    /* FALLTHROUGH */
+      FALL_THROUGH;
     case 2: y_coord = globals.Coor[iproc][1];
-    /* FALLTHROUGH */
+      FALL_THROUGH;
     case 1: x_coord = globals.Coor[iproc][0]; break;
     }
   }

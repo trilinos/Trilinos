@@ -80,7 +80,7 @@ namespace Iocgns {
   class DecompositionDataBase
   {
   public:
-    DecompositionDataBase(MPI_Comm comm) {}
+    DecompositionDataBase() {}
 
     virtual ~DecompositionDataBase();
     virtual void   decompose_model(int serFilePtr, int filePtr, Ioss::MeshType mesh_type) = 0;

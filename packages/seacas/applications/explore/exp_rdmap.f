@@ -51,7 +51,6 @@ C   --   ISEOF - IN/OUT - set true if end of file read
       LOGICAL ISEOF
 
       CHARACTER*80 ERRMSG
-      CHARACTER*1  cdum
 
       CALL INIINT (NUMEL, 0, MAPEL)
 

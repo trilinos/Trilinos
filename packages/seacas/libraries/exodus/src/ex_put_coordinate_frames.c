@@ -53,9 +53,6 @@
 
 #include "exodusII.h"     // for ex_err, EXERRVAL, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include <assert.h>       // for assert
-#include <stdio.h>
-#include <string.h> // for strchr
 
 int ex_put_coordinate_frames(int exoid, int nframes, const void_int *cf_ids, void *pt_coordinates,
                              const char *tags)

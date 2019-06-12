@@ -64,7 +64,7 @@ c
 c  create EXODUS II files
 c
       exoid = excre ("test-nsided.exo",
-     1	 	     EXCLOB, cpu_word_size, io_word_size, ierr)
+     1               EXCLOB, cpu_word_size, io_word_size, ierr)
       write (iout,'("after excre for test-nsided.exo, id: ", i8)') exoid
       write (iout,'("  cpu word size: ",i4," io word size: ",i4)')
      1                  cpu_word_size, io_word_size
@@ -270,7 +270,7 @@ c
       cname = "nsided"
 
       call expelb (exoid,ebids(1),cname,num_elem_in_block(1),
-     1		num_nodes_per_elem(1),numattr(1),ierr)
+     1          num_nodes_per_elem(1),numattr(1),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)

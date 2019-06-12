@@ -57,7 +57,6 @@ C     what it would be on VMS if undefined.
  2780 CONTINUE
       IF (.NOT.MEMFRE(IBT,MEMRY)) THEN
          WRITE (6,*) 'Error deallocating old segment.'
-         CALL CPUTBK(.TRUE.)
          MEMEXT = .FALSE.
          RETURN
 

@@ -53,8 +53,6 @@
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
 #include "exodusII_int.h" // for ex_check_valid_file_id, etc
-#include <inttypes.h>     // for PRId64
-#include <stdio.h>        // for snprintf, NULL
 
 /*!
  * writes the set entry list and set extra list for a single set

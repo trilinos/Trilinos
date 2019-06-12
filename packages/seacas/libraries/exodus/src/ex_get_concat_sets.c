@@ -55,9 +55,6 @@
 
 #include "exodusII.h"     // for ex_set_specs, ex_err, etc
 #include "exodusII_int.h" // for ex_check_valid_file_id, etc
-#include <stddef.h>       // for NULL, size_t
-#include <stdint.h>       // for int64_t
-#include <stdio.h>        // for snprintf
 
 int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *set_specs)
 {

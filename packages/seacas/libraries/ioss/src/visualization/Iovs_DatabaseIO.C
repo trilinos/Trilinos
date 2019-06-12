@@ -242,7 +242,7 @@ namespace Iovs {
   }
 
   ParaViewCatalystIossAdapterBase *
-  DatabaseIO::load_plugin_library(const std::string &plugin_name,
+    DatabaseIO::load_plugin_library(const std::string &/*plugin_name*/,
                                   const std::string &plugin_library_name)
   {
 
@@ -371,7 +371,7 @@ namespace Iovs {
     return true;
   }
 
-  bool DatabaseIO::end_state__(int state, double time)
+  bool DatabaseIO::end_state__(int /*state*/, double /*time*/)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -852,7 +852,7 @@ namespace Iovs {
 
   size_t handle_block_ids(const Ioss::EntityBlock *eb, Ioss::State db_state, Ioss::Map &entity_map,
                           void *ids, size_t int_byte_size, size_t num_to_get,
-                          /*int file_pointer,*/ int my_processor)
+                          /*int file_pointer,*/ int /*my_processor*/)
   {
     // std::cerr << "DatabaseIO::handle_block_ids executing\n";
     /*!
@@ -1015,7 +1015,7 @@ namespace Iovs {
   }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field,
-                                         void *data, size_t data_size) const
+                                         void */*data*/, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
     if (field.get_name() == "ids") {
