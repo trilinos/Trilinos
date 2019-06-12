@@ -44,42 +44,42 @@ public:
   /// Destructor
   virtual ~StepperRKObserver(){}
 
-  /// Observe Stepper at beginning of takeStep.
+  /// 1.) Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
     Stepper<Scalar> & /* stepper */){}
 
-  /// Observe Stepper at beginning of each stage.
+  /// 2.) Observe Stepper at beginning of each stage.
   virtual void observeBeginStage(
     Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
     Stepper<Scalar> & /* stepper */){}
 
-  /// Observe Stepper before Explicit evaluation of Implicit ODE ME.
+  /// 3.) Observe Stepper before Explicit evaluation of Implicit ODE ME (IMEX).
   virtual void observeBeforeImplicitExplicitly(
     Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
     Stepper<Scalar> & /* stepper */){}
 
-  /// Observe Stepper before Explicit evaluation of Implicit ODE ME.
-  virtual void observeBeforeExplicit(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Stepper<Scalar> & /* stepper */){}
-
-  /// Observe Stepper before nonlinear solve.
+  /// 4.) Observe Stepper before nonlinear solve (DIRK/IMEX).
   virtual void observeBeforeSolve(
     Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
     Stepper<Scalar> & /* stepper */){}
 
-  /// Observe Stepper after nonlinear solve.
+  /// 5.) Observe Stepper after nonlinear solve (DIRK/IMEX).
   virtual void observeAfterSolve(
     Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
     Stepper<Scalar> & /* stepper */){}
 
-  /// Observe Stepper at end of each stage.
+  /// 6.) Observe Stepper before Explicit evaluation of Implicit ODE ME (IMEX).
+  virtual void observeBeforeExplicit(
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Stepper<Scalar> & /* stepper */){}
+
+  /// 7.) Observe Stepper at end of each stage.
   virtual void observeEndStage(
     Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
     Stepper<Scalar> & /* stepper */){}
 
-  /// Observe Stepper at end of takeStep.
+  /// 8.) Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
     Stepper<Scalar> & /* stepper */){}

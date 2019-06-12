@@ -39,15 +39,6 @@ void StepperRKObserverComposite<Scalar>::observeBeginStage(
 }
 
 template<class Scalar>
-void StepperRKObserverComposite<Scalar>::observeBeforeExplicit(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Stepper<Scalar> & stepper)
-{
-  for(auto& o : observers_)
-    o->observeBeforeExplicit(sh,stepper);
-}
-
-template<class Scalar>
 void StepperRKObserverComposite<Scalar>::observeBeforeImplicitExplicitly(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
     Stepper<Scalar> & stepper)
@@ -74,6 +65,14 @@ void StepperRKObserverComposite<Scalar>::observeAfterSolve(
     o->observeAfterSolve(sh,stepper);
 }
 
+template<class Scalar>
+void StepperRKObserverComposite<Scalar>::observeBeforeExplicit(
+    Teuchos::RCP<SolutionHistory<Scalar> > sh,
+    Stepper<Scalar> & stepper)
+{
+  for(auto& o : observers_)
+    o->observeBeforeExplicit(sh,stepper);
+}
 template<class Scalar>
 void StepperRKObserverComposite<Scalar>::observeEndStage(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
