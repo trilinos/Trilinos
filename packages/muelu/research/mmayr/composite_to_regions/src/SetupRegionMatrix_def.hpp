@@ -73,10 +73,10 @@ using Teuchos::Array;
  *
  */
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-std::vector<int> findCommonRegions(const GlobalOrdinal nodeA, ///< GID of first node
-                                   const GlobalOrdinal nodeB, ///< GID of second node
-                                   const Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& nodesToRegions ///< mapping of nodes to regions
-                                   )
+Teuchos::Array<int> findCommonRegions(const GlobalOrdinal nodeA, ///< GID of first node
+                                      const GlobalOrdinal nodeB, ///< GID of second node
+                                      const Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& nodesToRegions ///< mapping of nodes to regions
+                                      )
 {
 #include "Xpetra_UseShortNamesOrdinal.hpp"
 
@@ -101,7 +101,7 @@ std::vector<int> findCommonRegions(const GlobalOrdinal nodeA, ///< GID of first 
   commonRegions.resize(it - commonRegions.begin());
 
   // remove '-1' entries
-  std::vector<int> finalCommonRegions;
+  Teuchos::Array<int> finalCommonRegions;
   for (std::size_t i = 0; i < commonRegions.size(); ++i) {
     if (commonRegions[i] != -1)
       finalCommonRegions.push_back(commonRegions[i]);
@@ -503,35 +503,33 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
    */
 
 
-  // copy and modify the composite matrix
-  RCP<Matrix> ACompSplit = MatrixFactory::BuildCopy(AComp);
-  ACompSplit->resumeFill();
+  // // copy and modify the composite matrix
+  // RCP<Matrix> ACompSplit = MatrixFactory::BuildCopy(AComp);
+  // ACompSplit->resumeFill();
 
-  for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(ACompSplit->getNodeNumRows()); row++) { // loop over local rows of composite matrix
-    GlobalOrdinal rowGID = ACompSplit->getRowMap()->getGlobalElement(row);
-    std::size_t numEntries = ACompSplit->getNumEntriesInLocalRow(row); // number of entries in this row
-    Teuchos::Array<Scalar> vals(numEntries); // non-zeros in this row
-    Teuchos::Array<LocalOrdinal> inds(numEntries); // local column indices
-    ACompSplit->getLocalRowCopy(row, inds, vals, numEntries);
+  // for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(ACompSplit->getNodeNumRows()); row++) { // loop over local rows of composite matrix
+  //   GlobalOrdinal rowGID = ACompSplit->getRowMap()->getGlobalElement(row);
+  //   std::size_t numEntries = ACompSplit->getNumEntriesInLocalRow(row); // number of entries in this row
+  //   Teuchos::Array<Scalar> vals(numEntries); // non-zeros in this row
+  //   Teuchos::Array<LocalOrdinal> inds(numEntries); // local column indices
+  //   ACompSplit->getLocalRowCopy(row, inds, vals, numEntries);
 
-    for (std::size_t c = 0; c < Teuchos::as<std::size_t>(inds.size()); ++c) { // loop over all entries in this row
-      LocalOrdinal col = inds[c];
-      GlobalOrdinal colGID = ACompSplit->getColMap()->getGlobalElement(col);
-      std::vector<int> commonRegions;
-      if (rowGID != colGID) { // Skip the diagonal entry. It will be processed later.
-        commonRegions = findCommonRegions(rowGID, colGID, *regionsPerGIDWithGhosts);
-      }
+  //   for (std::size_t c = 0; c < Teuchos::as<std::size_t>(inds.size()); ++c) { // loop over all entries in this row
+  //     LocalOrdinal col = inds[c];
+  //     GlobalOrdinal colGID = ACompSplit->getColMap()->getGlobalElement(col);
+  //     Array<int> commonRegions;
+  //     if (rowGID != colGID) { // Skip the diagonal entry. It will be processed later.
+  //       commonRegions = findCommonRegions(rowGID, colGID, *regionsPerGIDWithGhosts);
+  //     }
 
-      if (commonRegions.size() > 1) {
-        vals[c] *= (1.0/ ((double) commonRegions.size())) ;
-      }
-    }
+  //     if (commonRegions.size() > 1) {
+  //       vals[c] *= (1.0 / static_cast<double>(commonRegions.size()));
+  //     }
+  //   }
 
-    ACompSplit->replaceLocalValues(row, inds, vals);
-  }
-
-//  ACompSplit->fillComplete();
-  ACompSplit->fillComplete(AComp->getDomainMap(), AComp->getRangeMap());
+  //   ACompSplit->replaceLocalValues(row, inds, vals);
+  // }
+  // ACompSplit->fillComplete(AComp->getDomainMap(), AComp->getRangeMap());
 
   // Import data from ACompSplit into the quasiRegion matrices
   // Since the stencil size does not grow between composite and region format
@@ -540,11 +538,35 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
   for (int j = 0; j < maxRegPerProc; j++) {
     quasiRegionGrpMats[j] = MatrixFactory::Build(rowMapPerGrp[j],
                                                  colMapPerGrp[j],
-                                                 ACompSplit->getCrsGraph()->getNodeMaxNumRowEntries(),
+                                                 AComp->getCrsGraph()->getNodeMaxNumRowEntries(),
                                                  Xpetra::DynamicProfile);
-    quasiRegionGrpMats[j]->doImport(*ACompSplit,
+    quasiRegionGrpMats[j]->doImport(*AComp,
                                     *(rowImportPerGrp[j]),
                                     Xpetra::INSERT);
+
+    for (LO row = 0; row < Teuchos::as<LO>(quasiRegionGrpMats[j]->getNodeNumRows()); ++row) { // loop over local rows of composite matrix
+      GO rowGID = rowMapPerGrp[j]->getGlobalElement(row);
+      std::size_t numEntries = quasiRegionGrpMats[j]->getNumEntriesInLocalRow(row); // number of entries in this row
+      Teuchos::Array<SC> vals(numEntries); // non-zeros in this row
+      Teuchos::Array<LO> inds(numEntries); // local column indices
+      quasiRegionGrpMats[j]->getLocalRowCopy(row, inds, vals, numEntries);
+
+      for (std::size_t c = 0; c < Teuchos::as<std::size_t>(inds.size()); ++c) { // loop over all entries in this row
+        LocalOrdinal col = inds[c];
+        GlobalOrdinal colGID = colMapPerGrp[j]->getGlobalElement(col);
+        Array<int> commonRegions;
+        if (rowGID != colGID) { // Skip the diagonal entry. It will be processed later.
+          commonRegions = findCommonRegions(rowGID, colGID, *regionsPerGIDWithGhosts);
+        }
+
+        if (commonRegions.size() > 1) {
+          vals[c] *= (1.0 / static_cast<double>(commonRegions.size()));
+        }
+      }
+
+      quasiRegionGrpMats[j]->replaceLocalValues(row, inds, vals);
+    }
+
     quasiRegionGrpMats[j]->fillComplete();
   }
 }

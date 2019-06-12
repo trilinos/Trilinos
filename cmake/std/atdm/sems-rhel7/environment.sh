@@ -41,13 +41,15 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "INTEL" ]] ; then
     export ATDM_CONFIG_COMPILER=INTEL-18.0.5
-  elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-17.0.1" ]] ; then
+  elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-17.0.1" ]] \
+    && [[ "$ATDM_CONFIG_COMPILER" != "INTEL-18.0.5" ]]; then
     echo
     echo "***"
     echo "*** ERROR: INTEL COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only INTEL compilers supported on this system are:"
-    echo "***   intel (defaults to intel-17.0.1)"
+    echo "***   intel (defaults to intel-18.0.5)"
     echo "***   intel-17.0.1"
+    echo "***   intel-18.0.5"
     echo "***"
     return
   fi
@@ -165,6 +167,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5" ]] ; then
   module load sems-intel/18.0.5
   module load atdm-env
   module load atdm-mkl/18.0.5
+  export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
