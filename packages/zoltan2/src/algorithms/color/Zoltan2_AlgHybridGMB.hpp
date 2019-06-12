@@ -336,11 +336,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
      
       //set the initial coloring of the kh.get_graph_coloring_handle() to be
       //the data view from the femv.
-      //femv->switchActiveMultiVector();
       Kokkos::View<int**,Kokkos::LayoutLeft> femvColors = femv->template getLocalView<MemorySpace>();
       kh.get_graph_coloring_handle()->set_vertex_colors(subview(femvColors,Kokkos::ALL(),0));
-      //need to somehow get a 1D view from this!
-      //kh.get_graph_coloring_handle()->set_vertex_colors(femvColors);
       
       KokkosGraph::Experimental::graph_color_symbolic(&kh, nVtx,nVtx,
                                                       offset_view,adjs_view);
@@ -356,20 +353,18 @@ class AlgHybridGMB : public Algorithm<Adapter>
                            kh.get_graph_coloring_handle()->get_vertex_colors());
       
       numColors = kh.get_graph_coloring_handle()->get_num_colors();
-            
+      
+      //all this code should be unnecessary if we can pass in the Kokkos::View to the
+      //coloring correctly.
       auto host_view = Kokkos::create_mirror_view(
                          kh.get_graph_coloring_handle()->get_vertex_colors());
       Kokkos::deep_copy(host_view, 
                          kh.get_graph_coloring_handle()->get_vertex_colors());
       auto nr = host_view.extent(0);
-      for(auto i = 0; i < nr; i++){
+      for(auto i = 0; i < nr; i++){ 
         colors[i] = host_view(i);
+        femv->replaceLocalValue(i,0, host_view(i)); 
       }
-      /*Kokkos::parallel_for("Copy_Colors", kh.get_graph_coloring_handle()->
-                                          get_vertex_colors().size(), 
-                           KOKKOS_LAMBDA (const int& i) {
-        colors[i] = kh.get_graph_coloring_handle()->get_vertex_colors()(i);
-      });*/
     }
     
     RCP<const base_adapter_t> adapter;
@@ -469,14 +464,15 @@ class AlgHybridGMB : public Algorithm<Adapter>
       // call actual coloring function
       // THESE ARGUMENTS WILL NEED TO CHANGE,
       // THESE ARE A COPY OF THE EXISTING ALGORITHM CLASS.
-      hybridGMB(nVtx, nInterior, reorderAdjs, reorderOffsets,colors,femv);
+      hybridGMB(nVtx, nInterior, reorderAdjs, reorderOffsets,colors,femv,reorderGIDs);
       
       comm->barrier();
     }
     
     void hybridGMB(const size_t nVtx,lno_t nInterior, Teuchos::ArrayView<const lno_t> adjs, 
                    Teuchos::ArrayView<const offset_t> offsets, 
-                   Teuchos::ArrayRCP<int> colors, Teuchos::RCP<femv_t> femv){
+                   Teuchos::ArrayRCP<int> colors, Teuchos::RCP<femv_t> femv,
+                   std::vector<gno_t> reorderGIDs){
       
       bool use_cuda = pl->get<bool>("Hybrid_use_cuda",false);
       bool use_openmp = pl->get<bool>("Hybrid_use_openmp",false);
@@ -510,12 +506,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
                      (nInterior, adjs, offsets, colors,femv);
       }
        
-      printf("*****AFTER INTERNAL COLORING*********\n");
-      for(int i = 0; i < femv->getData(0).size(); i++){
-        printf("--Rank %d: vertex %u color %d\n",comm->getRank(),i, femv->getData(0)[i]);
-      }
-
-
       int batch_size = pl->get<int>("Hybrid_batch_size",1); //1 is for testing only, should be 100!
       //color boundary vertices using FEMultiVector (definitely)
       //create a queue of vertices to color
@@ -527,16 +517,18 @@ class AlgHybridGMB : public Algorithm<Adapter>
       printf("--Rank %d: batch size: %d\n",comm->getRank(),batch_size);
       //for each batch of boundary vertices
       //femv->switchActiveMultiVector();
-      for(size_t i = nInterior; i < nVtx; i += batch_size){
-      //  add next batch (an argument to this class?) to the queue
-          for(size_t j = i; j < i+batch_size; j++){
-            if(j < nVtx) {
-              printf("--Rank %d: pushing %d on the queue\n",comm->getRank(),j);
-              recoloringQueue.push(j);
-            }
-          }
+      bool done = false;
+      int i = nInterior;
       //  while the queue is not empty
-          while(recoloringQueue.size() > 0){
+          while(recoloringQueue.size() > 0 || !done){
+        //  add next batch (an argument to this class?) to the queue
+            for(size_t j = i; j < i+batch_size; j++){
+              if(j < nVtx) {
+                printf("--Rank %d: pushing %d on the queue\n",comm->getRank(),j);
+                recoloringQueue.push(j);
+              }
+            }
+            if(i < nVtx) i+= batch_size;
       //    color everything in the recoloring queue, put everything on conflict queue
             while(recoloringQueue.size() > 0) {
                printf("--Rank %d: coloring vertex %u\n",comm->getRank(),recoloringQueue.front());
@@ -548,17 +540,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                  int nborColor = femv->getData(0)[adjs[nborIdx]];
                  if(nborColor > 0){
                    forbiddenColors[nborColor-1] = true;
-                 } //else {
-                   //reallocate more indices to the array (hopefully an infrequent operation)
-                 //  bool* tmp = new bool[nborColor];
-                 //  for(int i = 0; i < numColors; i++){
-                 //    tmp[i] = forbiddenColors[i];
-                 //  }
-                 //  numColors = nborColor;
-                 //  delete [] forbiddenColors;
-                 //  forbiddenColors = tmp;
-                 //  forbiddenColors[nborColor-1] = true;
-                 //}
+                 } 
                }
                //pick the color for currVtx based on the forbidden array
                bool colored = false;
@@ -567,7 +549,11 @@ class AlgHybridGMB : public Algorithm<Adapter>
                    femv->replaceLocalValue(currVtx,0,i+1);
                    colors[currVtx] = i+1;
                    colored = true;
+                   break;
                  }
+               }
+               for(int i = 0; i < numColors; i++){
+                 forbiddenColors[i] = false;
                }
                if(!colored){
                  colors[currVtx] = numColors+1;
@@ -579,7 +565,9 @@ class AlgHybridGMB : public Algorithm<Adapter>
             }
             
       //    communicate
+            femv->switchActiveMultiVector();
             femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
+            femv->switchActiveMultiVector();
       //    check for conflicts with the vertices that were just colored
             while(conflictQueue.size() > 0){
       //      if conflicts were detected put them on the recoloring queue
@@ -589,7 +577,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
               int currColor = femv->getData(0)[currVtx];
               for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
                 int nborColor = femv->getData(0)[adjs[nborIdx]];
-                if(nborColor == currColor) {
+                if(nborColor == currColor && reorderGIDs[currVtx] > reorderGIDs[adjs[nborIdx]]) {
                   printf("--Rank %d: vtx %u conflicts with vtx %u\n",comm->getRank(),currVtx,adjs[nborIdx]);
                   conflict = true;
                 }
@@ -599,8 +587,16 @@ class AlgHybridGMB : public Algorithm<Adapter>
                 printf("--Rank %d: putting vertex %u on the recoloring queue\n",comm->getRank(),currVtx);
               }
             }
+            //do a reduction to determine if we're done
+            int globalDone = 0;
+            int localDone = recoloringQueue.size() + (nVtx > i);
+            //comm->reduceAll(Teuchos::REDUCE_SUM,sizeof(int),&localDone, &globalDone);
+            Teuchos::reduceAll<int, int>(*comm,Teuchos::REDUCE_MAX,1, &localDone, &globalDone);
+            //We're only allowed to stop once everyone has no work to do.
+            //collectives will hang if one process exits. 
+            done = !globalDone;
           }
-      }
+        
        
       //need to handle half-done batches?
       
@@ -610,8 +606,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //graph to the kokkos-kernels coloring.
       
       //print the coloring
-      for(int i = 0; i < colors.size(); i++){
-        printf("--Rank %d: local vtx %u is color %d\n",comm->getRank(),i,colors[i]);
+      for(int i = 0; i < femv->getData(0).size(); i++){
+        printf("--Rank %d: local vtx %u is color %d\n",comm->getRank(),i,femv->getData(0)[i]);
       }
     }
 };
