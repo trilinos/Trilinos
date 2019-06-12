@@ -154,6 +154,16 @@ public:
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
+     *
+     * The pair consists of the field block index (pair.first) and the
+     * corresponding gid (pair.second) within that field block. The
+     * field block is used to access the sub-DOFManager that the field
+     * is assigned to.
+     *
+     * NOTE: This function is temporary and is only used by the Epetra
+     * Blocked Gather/Scatters. It is an inefficient path to access
+     * data and has been deprecated. When Epetra support is dropped,
+     * this function will be removed.
      */
   void getElementGIDsPair(panzer::LocalOrdinal localElmtId,std::vector<std::pair<int,GlobalOrdinal>> & gids,const std::string & blockIdHint="") const;
 
