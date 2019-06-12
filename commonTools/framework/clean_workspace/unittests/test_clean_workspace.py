@@ -138,7 +138,8 @@ class TestCleanSpaceByDate(unittest.TestCase):
         with mock.patch.dict('os.environ',
                              {'WORKSPACE': '/scratch/Trilinos/foo/bar'}):
             with mock.patch('clean_workspace.Cleaner.force_clean_space') as force_clean, \
-                 mock.patch('clean_workspace.update_last_clean_date') as update:
+                 mock.patch('clean_workspace.update_last_clean_date') as update, \
+                 mock.patch("clean_sentinel.open", side_effect=IOError):
                 cleanerInst.clean_space_by_date()
             force_clean.assert_not_called()
             update.assert_not_called()
@@ -174,7 +175,8 @@ class TestCleanSpaceByDate(unittest.TestCase):
             cleanerInst.args = test_args
             with mock.patch('clean_workspace.Cleaner.force_clean_space') as force_clean, \
                  mock.patch('clean_workspace.update_last_clean_date') as update, \
-                 mock.patch('clean_workspace.print') as m_print:
+                 mock.patch('clean_workspace.print') as m_print, \
+                 mock.patch("clean_sentinel.open", side_effect=IOError):
                 cleanerInst.clean_space_by_date()
             force_clean.assert_called_once_with()
             update.assert_called_once_with()
