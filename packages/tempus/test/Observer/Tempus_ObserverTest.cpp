@@ -16,6 +16,9 @@
 #include "Tempus_IntegratorObserverLogging.hpp"
 #include "Tempus_IntegratorObserverComposite.hpp"
 
+#include "Tempus_StepperRKObserverLogging.hpp"
+#include "Tempus_StepperRKObserverComposite.hpp"
+
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
@@ -227,6 +230,129 @@ TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) {
         counters.find(loggingObs2->nameObserveEndTimeStep_       )->second,11);
   TEST_EQUALITY(
         counters.find(loggingObs2->nameObserveEndIntegrator_     )->second, 1);
+}
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(Observer, StepperRKObserverLogging)
+{
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_Observer_SinCos.xml");
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  RCP<SinCosModel<double> > model =
+    Teuchos::rcp(new SinCosModel<double> (scm_pl));
+
+  // Setup the Integrator and reset initial time step
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  pl->sublist("Demo Integrator").set("Stepper Name", "Demo RK Stepper");
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>(pl, model);
+
+  //asm("int $3");
+  //std::cout << "SIDAFA: got here!!" << std::endl;
+
+  RCP<Tempus::StepperRKObserverLogging<double> > loggingObs =
+    Teuchos::rcp(new Tempus::StepperRKObserverLogging<double>);
+
+  // set the stepper observer
+  integrator->getStepper()->setObserver(loggingObs);
+
+  // Integrate to timeMax
+  bool integratorStatus = integrator->advanceTime();
+  TEST_ASSERT(integratorStatus)
+
+  // Test if at 'Final Time'
+  double time = integrator->getTime();
+  double timeFinal = pl->sublist("Demo Integrator")
+    .sublist("Time Step Control").get<double>("Final Time");
+  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+  // Construct the reference counter and order for comparison.
+  std::map<std::string,int> refCounters;
+  std::list<std::string> refOrder;
+/*
+  refCounters[loggingObs->nameObserveStartIntegrator_   ] = 1;
+  refCounters[loggingObs->nameObserveStartTimeStep_     ] = 10;
+  refCounters[loggingObs->nameObserveNextTimeStep_      ] = 10;
+  refCounters[loggingObs->nameObserveBeforeTakeStep_    ] = 10;
+  refCounters[loggingObs->nameObserveAfterTakeStep_     ] = 10;
+  refCounters[loggingObs->nameObserveAfterCheckTimeStep_] = 10;
+  refCounters[loggingObs->nameObserveEndTimeStep_       ] = 10;
+  refCounters[loggingObs->nameObserveEndIntegrator_     ] = 1;
+
+  refOrder.push_back(loggingObs->nameObserveStartIntegrator_ );
+  for (int i=0 ; i<10; ++i) {
+    refOrder.push_back(loggingObs->nameObserveStartTimeStep_     );
+    refOrder.push_back(loggingObs->nameObserveNextTimeStep_      );
+    refOrder.push_back(loggingObs->nameObserveBeforeTakeStep_    );
+    refOrder.push_back(loggingObs->nameObserveAfterTakeStep_     );
+    refOrder.push_back(loggingObs->nameObserveAfterCheckTimeStep_);
+    refOrder.push_back(loggingObs->nameObserveEndTimeStep_       );
+  }
+  refOrder.push_back(loggingObs->nameObserveEndIntegrator_       );
+
+  const std::map<std::string,int>& counters = *(loggingObs->getCounters());
+  const std::list<std::string>&    order    = *(loggingObs->getOrder());
+
+  // Compare against reference.
+  TEST_EQUALITY(
+       counters.find(loggingObs->nameObserveStartIntegrator_   )->second,
+    refCounters.find(loggingObs->nameObserveStartIntegrator_   )->second);
+  TEST_EQUALITY(
+       counters.find(loggingObs->nameObserveStartTimeStep_     )->second,
+    refCounters.find(loggingObs->nameObserveStartTimeStep_     )->second);
+  TEST_EQUALITY(
+       counters.find(loggingObs->nameObserveNextTimeStep_      )->second,
+    refCounters.find(loggingObs->nameObserveNextTimeStep_      )->second);
+  TEST_EQUALITY(
+       counters.find(loggingObs->nameObserveBeforeTakeStep_    )->second,
+    refCounters.find(loggingObs->nameObserveBeforeTakeStep_    )->second);
+  TEST_EQUALITY(
+       counters.find(loggingObs->nameObserveAfterTakeStep_     )->second,
+    refCounters.find(loggingObs->nameObserveAfterTakeStep_     )->second);
+  TEST_EQUALITY(
+       counters.find(loggingObs->nameObserveAfterCheckTimeStep_)->second,
+    refCounters.find(loggingObs->nameObserveAfterCheckTimeStep_)->second);
+  TEST_EQUALITY(
+       counters.find(loggingObs->nameObserveEndTimeStep_       )->second,
+    refCounters.find(loggingObs->nameObserveEndTimeStep_       )->second);
+  TEST_EQUALITY(
+       counters.find(loggingObs->nameObserveEndIntegrator_     )->second,
+    refCounters.find(loggingObs->nameObserveEndIntegrator_     )->second);
+
+  TEUCHOS_ASSERT(order.size() == refOrder.size());
+  std::list<std::string>::const_iterator orderIter = order.begin();
+  std::list<std::string>::const_iterator refOrderIter = refOrder.begin();
+  for ( ; orderIter != order.end(); ++orderIter,++refOrderIter) {
+    //std::cout << *orderIter << std::endl;
+    TEST_EQUALITY(*orderIter, *refOrderIter);
+  }
+
+  // Test the reset.
+  loggingObs->resetLogCounters();
+  TEST_EQUALITY(
+    counters.find(loggingObs->nameObserveStartIntegrator_   )->second, 0);
+  TEST_EQUALITY(
+    counters.find(loggingObs->nameObserveStartTimeStep_     )->second, 0);
+  TEST_EQUALITY(
+    counters.find(loggingObs->nameObserveNextTimeStep_      )->second, 0);
+  TEST_EQUALITY(
+    counters.find(loggingObs->nameObserveBeforeTakeStep_    )->second, 0);
+  TEST_EQUALITY(
+    counters.find(loggingObs->nameObserveAfterTakeStep_     )->second, 0);
+  TEST_EQUALITY(
+    counters.find(loggingObs->nameObserveAfterCheckTimeStep_)->second, 0);
+  TEST_EQUALITY(
+    counters.find(loggingObs->nameObserveEndTimeStep_       )->second, 0);
+  TEST_EQUALITY(
+    counters.find(loggingObs->nameObserveEndIntegrator_     )->second, 0);
+  TEST_EQUALITY(order.size(), 0);
+*/
+  Teuchos::TimeMonitor::summarize();
 }
 
 
