@@ -785,9 +785,6 @@ using Teuchos::VERB_HIGH;
 using Teuchos::VERB_LOW;
 using Teuchos::VERB_MEDIUM;
 using Teuchos::VERB_NONE;
-using Tpetra::DynamicProfile;
-using Tpetra::ProfileType;
-using Tpetra::StaticProfile;
 using Tpetra::TestingUtilities::getDefaultComm;
 typedef Tpetra::global_size_t GST;
 

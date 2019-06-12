@@ -314,6 +314,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   B->scale(one/norms[0]);
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
+#ifdef MATLAB_COMPARE
+  B->putScalar(zero);
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("rhs.mm",*B);
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("x.mm",*X);
+#endif
   out << galeriStream.str();
 
   comm->barrier();
@@ -853,7 +858,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       for(LO i = 0; i < lNodesPerDim[0]; ++i) {
         sendGIDs[countIDs] = i
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-          + (lNodesPerDim[0] - 1)*gNodesPerDim[0];
+          + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
         sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
         ++countIDs;
       }
@@ -1084,8 +1089,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
   } // end of regionsPerGIDView's scope
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "regionsPerGID:" << std::endl;
   // regionsPerGID->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
   comm->barrier();
   tm = Teuchos::null;
@@ -1114,12 +1121,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
 
   RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGIDWithGhosts
-    = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(A->getColMap(), maxRegPerGID, false);
+    = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(rowMapPerGrp[0], maxRegPerGID, false);
   RCP<Import> regionsPerGIDImport = ImportFactory::Build(A->getRowMap(), A->getColMap());
-  regionsPerGIDWithGhosts->doImport(*regionsPerGID, *regionsPerGIDImport, Xpetra::INSERT);
+  regionsPerGIDWithGhosts->doImport(*regionsPerGID, *rowImportPerGrp[0], Xpetra::INSERT);
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "regionsPerGIDWithGhosts:" << std::endl;
   // regionsPerGIDWithGhosts->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
   std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > quasiRegionGrpMats(1);
   MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), maxRegPerProc,
@@ -1131,14 +1140,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                      revisedRowMapPerGrp, revisedColMapPerGrp,
                      rowImportPerGrp, maxRegPerProc, quasiRegionGrpMats, regionGrpMats);
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "composite A:" << std::endl;
   // A->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "quasi-region A:" << std::endl;
   // quasiRegionGrpMats[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "region A:" << std::endl;
   // regionGrpMats[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
   comm->barrier();
   tm = Teuchos::null;
@@ -1313,7 +1328,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // Output current residual norm to screen (on proc 0 only)
         if (myRank == 0)
           {
+#ifdef MATLAB_COMPARE
+printf("%d: %24.17e\n",cycle,normRes);
+#else
             std::cout << cycle << "\t" << normRes << std::endl;
+#endif
             (*log) << cycle << "\t" << normRes << "\n";
           }
 

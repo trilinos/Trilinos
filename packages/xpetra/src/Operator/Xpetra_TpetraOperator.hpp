@@ -121,6 +121,9 @@ namespace Xpetra {
     //! TpetraOperator constructor to wrap a Tpetra::Operator object
     TpetraOperator(const Teuchos::RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &op) : op_(op) { } //TODO removed const
 
+    //! Gets the operator out
+    RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return op_;}
+
     //@}
 
   private:
@@ -189,7 +192,11 @@ namespace Xpetra {
     //! TpetraOperator constructor to wrap a Tpetra::Operator object
     TpetraOperator(const Teuchos::RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &op) { }
 
-    //@}
+    //! Gets the operator out
+    RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return Teuchos::null;}
+
+
+  //@}
 
   }; // TpetraOperator class
 #endif
@@ -253,6 +260,8 @@ namespace Xpetra {
     //! TpetraOperator constructor to wrap a Tpetra::Operator object
     TpetraOperator(const Teuchos::RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &op) { }
 
+    //! Gets the operator out
+    RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return Teuchos::null;}
     //@}
 
   }; // TpetraOperator class
