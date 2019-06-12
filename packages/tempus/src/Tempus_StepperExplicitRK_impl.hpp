@@ -302,9 +302,14 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i=0; i < numStages; ++i) {
-      //if (!Teuchos::is_null(stepperExplicitRKObserver_))
-        //stepperExplicitRKObserver_->observeBeginStage(solutionHistory, *this);
-      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+        this->stepperObserver_->observeBeginStage(solutionHistory, *this);
+
+        // ???: is it a good idea to leave this (no-op) here?
+        this->stepperObserver_
+            ->observeBeforeImplicitExplicitly(solutionHistory, *this);
+
+        // ???: is it a good idea to leave this (no-op) here?
+        this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 
       if ( i == 0 && this->getUseFSAL() &&
            workingState->getNConsecutiveFailures() == 0 ) {
@@ -323,16 +328,14 @@ void StepperExplicitRK<Scalar>::takeStep(
         }
         const Scalar ts = time + c(i)*dt;
 
-        //if (!Teuchos::is_null(stepperExplicitRKObserver_))
-          //stepperExplicitRKObserver_->observeBeforeExplicit(solutionHistory,
-                                                            //*this);
+        // ???: is it a good idea to leave this (no-op) here?
+        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+
         this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
         // Evaluate xDot = f(x,t).
         this->evaluateExplicitODE(stageXDot_[i], stageX_, ts);
       }
 
-      //if (!Teuchos::is_null(stepperExplicitRKObserver_))
-        //stepperExplicitRKObserver_->observeEndStage(solutionHistory, *this);
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
     }
 

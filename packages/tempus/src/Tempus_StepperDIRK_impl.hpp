@@ -233,6 +233,10 @@ void StepperDIRK<Scalar>::takeStep(
     for (int i=0; i < numStages; ++i) {
         this->stepperObserver_->observeBeginStage(solutionHistory, *this);
 
+        // ???: is it a good idea to leave this (no-op) here?
+        this->stepperObserver_
+            ->observeBeforeImplicitExplicitly(solutionHistory, *this);
+
       if ( i == 0 && this->getUseFSAL() &&
            workingState->getNConsecutiveFailures() == 0 ) {
 
