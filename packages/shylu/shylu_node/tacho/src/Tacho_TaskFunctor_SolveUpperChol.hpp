@@ -31,7 +31,7 @@ namespace Tacho {
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
     private:
-      scheduler_type _sched;
+      //scheduler_type _sched;
       memory_pool_type _bufpool;
 
       supernode_info_type _info;
