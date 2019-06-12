@@ -661,13 +661,13 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
           if (err > ATOL*TOL) {
             sout << "S\n" << *S << endl;
             sout << "S_out\n" << *S_outs[o] << endl;
-            sout << "B_out\n" << *B_outs[o] << endl;
+            sout << "B_out\n" << Print(*B_outs[o]) << endl;
             if (C_outs[o].size() > 0) {
               sout << "X1\n" << *X1 << endl;
-              sout << "C_out[1]\n" << *C_outs[o][0] << endl;
+              sout << "C_out[1]\n" << Print(*C_outs[o][0]) << endl;
               if (C_outs[o].size() > 1) {
                 sout << "X22n" << *X2 << endl;
-                sout << "C_out[2]\n" << *C_outs[o][1] << endl;
+                sout << "C_out[2]\n" << Print(*C_outs[o][1]) << endl;
               }
             }
           }

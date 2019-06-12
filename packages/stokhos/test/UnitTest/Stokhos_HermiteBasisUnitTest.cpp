@@ -136,7 +136,7 @@ namespace HermiteBasisUnitTest {
     if (!success) {
       out << "\n Error, mat.normInf() < atol = " << mat.normInf() 
 	  << " < " << setup.atol << ": failed!\n";
-      out << "mat = " << mat << std::endl;
+      out << "mat = " << Print(mat) << std::endl;
     }
   }
 
