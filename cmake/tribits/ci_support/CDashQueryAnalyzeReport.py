@@ -1055,7 +1055,7 @@ def dateFromBuildStartTime(buildStartTime):
 #
 # Inputs:
 #
-#   testHistoryLOD [in]: List of test dicts for the same test.  Neigher this
+#   testHistoryLOD [in]: List of test dicts for the same test.  Neither this
 #   list nor its elements are modified in this call.  The base list object is
 #   shallow copied before it is sorted and returned.
 #
