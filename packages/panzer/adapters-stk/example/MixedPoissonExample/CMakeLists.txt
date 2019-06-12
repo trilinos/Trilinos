@@ -81,7 +81,7 @@ FOREACH( ORDER 1)
     TEST_2 CMND python
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
          ${ORDER}
-         MPE-ConvTest-Hex-p${ORDER}-
+         MPE-Multiblock-ConvTest-Hex-p${ORDER}-
          6
          12
       PASS_REGULAR_EXPRESSION "Test Passed"

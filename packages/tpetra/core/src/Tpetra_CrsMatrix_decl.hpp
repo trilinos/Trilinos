@@ -5038,8 +5038,8 @@ namespace Tpetra {
                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-    return Teuchos::rcp (new matrix_type (map, maxNumEntriesPerRow,
-                                          DynamicProfile, params));
+    const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
+    return Teuchos::rcp (new matrix_type (map, maxNumEntriesPerRow, pftype, params));
   }
 
   template<class CrsMatrixType>

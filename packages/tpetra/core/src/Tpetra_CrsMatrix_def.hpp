@@ -73,6 +73,7 @@
 #include "Tpetra_Details_crsUtils.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
 #include <memory>
 #include <sstream>
@@ -2420,6 +2421,7 @@ namespace Tpetra {
       RowInfo rowInfo = graph.getRowInfo (lclRow);
 
       if (! graph.colMap_.is_null ()) { // We have a column Map.
+
         const map_type& colMap = * (graph.colMap_);
         size_t curOffset = 0;
         while (curOffset < numInputEnt) {

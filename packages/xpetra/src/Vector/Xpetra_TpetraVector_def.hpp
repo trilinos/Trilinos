@@ -118,9 +118,12 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Scalar TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node > &a) const
 { XPETRA_MONITOR("TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot"); return getTpetra_Vector()->dot(*toTpetra(a)); }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+TPETRA_DEPRECATED
 typename Teuchos::ScalarTraits< Scalar >::magnitudeType TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node > &weights) const
 { XPETRA_MONITOR("TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted"); return getTpetra_Vector()->normWeighted(*toTpetra(weights)); }
+#endif
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (vec)
@@ -259,9 +262,10 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //! Computes dot product of this Vector against input Vector x.
     Scalar dot(const Vector &a) const { return Teuchos::ScalarTraits< Scalar >::zero(); }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector &weights) const { return Teuchos::ScalarTraits< Scalar >::magnitude(Teuchos::ScalarTraits< Scalar >::zero()); }
-
+    TPETRA_DEPRECATED typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector &weights) const { return Teuchos::ScalarTraits< Scalar >::magnitude(Teuchos::ScalarTraits< Scalar >::zero()); }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
     //@{
@@ -421,8 +425,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     Scalar dot(const Vector &a) const { return Teuchos::ScalarTraits< Scalar >::zero(); }
 
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector &weights) const { return Teuchos::ScalarTraits< Scalar >::magnitude(Teuchos::ScalarTraits< Scalar >::zero()); }
-
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector &weights) const { return Teuchos::ScalarTraits< Scalar >::magnitude(Teuchos::ScalarTraits< Scalar >::zero()); }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! @name Xpetra specific
     //@{
