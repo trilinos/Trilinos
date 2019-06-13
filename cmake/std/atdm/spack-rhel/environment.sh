@@ -1,6 +1,7 @@
 ################################################################################
 #
-# Set up env using spack build tpls on RHEL6 for ATMD builds of Trilinos
+# Set up env using spack build tpls on Linux RHEL platforms for ATMD builds of
+# Trilinos
 #
 # This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
@@ -42,13 +43,13 @@ if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
 else
   echo
   echo "***"
-  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on RHEL6 ATDM builds"
+  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on RHEL ATDM builds"
   echo "*** remove '$ATDM_CONFIG_KOKKOS_ARCH' from ATDM_CONFIG_BUILD_NAME=$ATDM_CONFIG_BUILD_NAME"
   echo "***"
   return
 fi
 
-echo "Using SPACK RHEL6 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+echo "Using SPACK RHEL compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
