@@ -104,7 +104,7 @@ namespace MueLu {
 
     Parameter list options:
     - <tt>refmaxwell: mode</tt> - a <tt>string</tt> specifying the order of solve of the block system.
-                                  Allowed values are: "additive" (default), "121", "212"
+                                  Allowed values are: "additive" (default), "121", "212", "1", "2"
     - <tt>refmaxwell: disable addon</tt> - <tt>bool</tt> specifing whether the addon should be built for stabilization.
                                            Default: "true"
     - <tt>refmaxwell: use as preconditioner</tt> - <tt>bool</tt> specifing whether RefMaxwell is used as a preconditioner or as a solver.
@@ -375,7 +375,10 @@ namespace MueLu {
     void applyInverse212(const MultiVector& RHS, MultiVector& X) const;
 
     //! apply solve to 1-1 block only
-    void applyInverse11only(const MultiVector& RHS, MultiVector& X) const;
+    void applyInverse11(const MultiVector& RHS, MultiVector& X) const;
+
+    //! apply solve to 2-2 block only
+    void applyInverse22(const MultiVector& RHS, MultiVector& X) const;
 
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;

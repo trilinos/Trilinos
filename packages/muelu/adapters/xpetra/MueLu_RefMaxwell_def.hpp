@@ -1764,38 +1764,11 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const MultiVector& RHS, MultiVector& X) const {
 
     // precondition (1,1)-block
-    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
-    R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
-    solveH();
-    P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
-    X.update(one, *residual_, one);
-    if (!ImporterH_.is_null()) {
-      P11res_.swap(P11resTmp_);
-      P11x_.swap(P11xTmp_);
-    }
-
+    applyInverse11(RHS,X);
     // precondition (2,2)-block
-    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
-    D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
-    solve22();
-    D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
-    X.update(one, *residual_, one);
-    if (!Importer22_.is_null()) {
-      D0res_.swap(D0resTmp_);
-      D0x_.swap(D0xTmp_);
-    }
-
+    applyInverse22(RHS,X);
     // precondition (1,1)-block
-    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
-    R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
-    solveH();
-    P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
-    X.update(one, *residual_, one);
-    if (!ImporterH_.is_null()) {
-      P11res_.swap(P11resTmp_);
-      P11x_.swap(P11xTmp_);
-    }
+    applyInverse11(RHS,X);
 
   }
 
@@ -1804,58 +1777,59 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const MultiVector& RHS, MultiVector& X) const {
 
     // precondition (2,2)-block
-    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
-    D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
-    solve22();
-    D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
-    X.update(one, *residual_, one);
-    if (!Importer22_.is_null()) {
-      D0res_.swap(D0resTmp_);
-      D0x_.swap(D0xTmp_);
-    }
-
+    applyInverse22(RHS,X);
     // precondition (1,1)-block
-    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
-    R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
-    solveH();
-    P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
-    X.update(one, *residual_, one);
-    if (!ImporterH_.is_null()) {
-      P11res_.swap(P11resTmp_);
-      P11x_.swap(P11xTmp_);
-    }
-
+    applyInverse11(RHS,X);
     // precondition (2,2)-block
-    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
-    D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
-    solve22();
-    D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
-    X.update(one, *residual_, one);
-    if (!Importer22_.is_null()) {
-      D0res_.swap(D0resTmp_);
-      D0x_.swap(D0xTmp_);
-    }
+    applyInverse22(RHS,X);
 
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse11only(const MultiVector& RHS, MultiVector& X) const {
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse11(const MultiVector& RHS, MultiVector& X) const {
 
-    // compute residuals
     Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-    Utilities::Residual(*SM_Matrix_, X, RHS,*residual_);
-    R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
 
-    solveH();
+    { // compute residual
+      Teuchos::TimeMonitor tmRes(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: residual calculation"));
+      Utilities::Residual(*SM_Matrix_, X, RHS,*residual_);
+      R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
+    }
 
-    // update current solution
-    P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
-    X.update(one, *residual_, one);
+    { // solve coarse (1,1) block
+      Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve coarse (1,1)"));
+      solveH();
+    }
 
-    if (!ImporterH_.is_null()) {
-      P11res_.swap(P11resTmp_);
-      P11x_.swap(P11xTmp_);
+    { // update current solution
+      Teuchos::TimeMonitor tmUp(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: update"));
+      P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
+      X.update(one, *residual_, one);
+    }
+
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse22(const MultiVector& RHS, MultiVector& X) const {
+
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+
+    { // compute residual
+      Teuchos::TimeMonitor tmRes(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: residual calculation"));
+      Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
+      D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
+    }
+
+    { // solve (2,2) block
+      Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve (2,2)"));
+      solve22();
+    }
+
+    { //update current solution
+      Teuchos::TimeMonitor tmUp(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: update"));
+      D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
+      X.update(one, *residual_, one);
     }
 
   }
@@ -1910,8 +1884,10 @@ namespace MueLu {
       applyInverse121(RHS,X);
     else if(mode_=="212")
       applyInverse212(RHS,X);
-    else if(mode_=="11only")
-      applyInverse11only(RHS,X);
+    else if(mode_=="1")
+      applyInverse11(RHS,X);
+    else if(mode_=="2")
+      applyInverse22(RHS,X);
     else if(mode_=="none") {
       // do nothing
     }
