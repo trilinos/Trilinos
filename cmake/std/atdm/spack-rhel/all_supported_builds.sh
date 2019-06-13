@@ -3,8 +3,10 @@
 export ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX=Trilinos-atdm-
 
 export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
-  spack-rhel-gnu-debug-openmp
-  spack-rhel-gnu-debug-serial
-  spack-rhel-gnu-opt-openmp
-  spack-rhel-gnu-opt-serial
+  spack-rhel-gnu-7.2.0-openmp-debug
+  spack-rhel-gnu-7.2.0-openmp-release
+  spack-rhel-gnu-7.2.0-openmp-release-debug
+  spack-rhel-gnu-7.2.0-serial-debug
+  spack-rhel-gnu-7.2.0-serial-release
+  spack-rhel-gnu-7.2.0-serial-release-debug
   )
