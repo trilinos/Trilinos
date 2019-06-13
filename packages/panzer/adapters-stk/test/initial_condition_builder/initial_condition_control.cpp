@@ -52,7 +52,7 @@ using Teuchos::rcp;
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
@@ -128,8 +128,8 @@ namespace panzer {
     RCP<panzer::ConnManager> conn_manager
            = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    RCP<panzer::DOFManager<int,int> > dofManager
-        = rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
+    RCP<panzer::DOFManager> dofManager
+        = rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
     dofManager->addField(densDesc.fieldName, constFP);
     dofManager->addField(condDesc.fieldName, hgradFP);
     dofManager->buildGlobalUnknowns();

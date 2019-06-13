@@ -122,7 +122,7 @@ namespace panzer {
   struct RespFactoryFunc_Builder {
     MPI_Comm comm;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
-    Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer;
+    Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer;
 
     template <typename T>
     Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
@@ -250,8 +250,8 @@ namespace panzer {
           = buildResponseLibrary(physics_blocks,cm_factory,closure_models,user_data);
     RCP<ResponseLibrary<Traits> > rLibrary = data.first;
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof = data.second;
-    RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer
-        = user_data.sublist("Panzer Data").get<RCP<panzer::UniqueGlobalIndexer<int,int> > >("DOF Manager");
+    RCP<const panzer::GlobalIndexer> globalIndexer
+        = user_data.sublist("Panzer Data").get<RCP<panzer::GlobalIndexer> >("DOF Manager");
 
     RespFactoryFunc_Builder builder;
     builder.comm = MPI_COMM_WORLD;
@@ -478,10 +478,10 @@ namespace panzer {
     const Teuchos::RCP<panzer::ConnManager> conn_manager
            = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int> > indexerFactory
-          = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);
-    const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
-          = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
+    Teuchos::RCP<const panzer::GlobalIndexerFactory > indexerFactory
+          = Teuchos::rcp(new panzer::DOFManagerFactory);
+    const Teuchos::RCP<panzer::GlobalIndexer> dofManager
+          = indexerFactory->buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));

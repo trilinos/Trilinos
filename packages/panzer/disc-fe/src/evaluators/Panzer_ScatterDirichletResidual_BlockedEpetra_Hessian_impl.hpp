@@ -57,8 +57,8 @@ namespace panzer {
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
-ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                       const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer<LO,int> > > & rIndexers,
+                                       const std::vector<Teuchos::RCP<const GlobalIndexer<LO,int> > > & cIndexers,
                                        const Teuchos::ParameterList& p,
                                        bool /* useDiscreteAdjoint */)
    : rowIndexers_(rIndexers)

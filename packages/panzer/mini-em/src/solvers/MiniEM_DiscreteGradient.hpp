@@ -49,9 +49,8 @@ void addDiscreteGradientToRequestHandler(
 
   typedef double Scalar;
   typedef int LocalOrdinalEpetra;
-  typedef int GlobalOrdinalEpetra;
   typedef int LocalOrdinalTpetra;
-  typedef panzer::Ordinal64 GlobalOrdinalTpetra;
+  typedef panzer::GlobalOrdinal GlobalOrdinalTpetra;
 
   typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> tpetraBlockedLinObjFactory;
   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> epetraBlockedLinObjFactory;
@@ -66,12 +65,12 @@ void addDiscreteGradientToRequestHandler(
   if (tblof != Teuchos::null) {
     typedef LocalOrdinalTpetra LocalOrdinal;
     typedef GlobalOrdinalTpetra GlobalOrdinal;
-    typedef panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> UGI;
+    typedef panzer::GlobalIndexer UGI;
     typedef typename panzer::BlockedTpetraLinearObjContainer<Scalar,LocalOrdinal,GlobalOrdinal> linObjContainer;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> matrix;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> map;
 
-    RCP<const panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> > blockedDOFMngr = tblof->getGlobalIndexer();
+    RCP<const panzer::BlockedDOFManager> blockedDOFMngr = tblof->getGlobalIndexer();
 
     // get global indexers for edges and nodes
     std::vector<RCP<UGI> > fieldDOFMngrs = blockedDOFMngr->getFieldDOFManagers();
@@ -157,14 +156,12 @@ void addDiscreteGradientToRequestHandler(
     // add gradient callback to request handler
     reqHandler->addRequestCallback(Teuchos::rcp(new GradientRequestCallback(thyra_gradient)));
   } else if (eblof != Teuchos::null) {
-    typedef LocalOrdinalEpetra LocalOrdinal;
-    typedef GlobalOrdinalEpetra GlobalOrdinal;
-    typedef panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> UGI;
+    typedef panzer::GlobalIndexer UGI;
     typedef typename panzer::BlockedEpetraLinearObjContainer linObjContainer;
     typedef Epetra_CrsMatrix matrix;
     typedef Epetra_Map map;
 
-    RCP<const panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> > blockedDOFMngr = eblof->getGlobalIndexer();
+    RCP<const panzer::BlockedDOFManager> blockedDOFMngr = eblof->getGlobalIndexer();
 
     // get global indexers for edges and nodes
     std::vector<RCP<UGI> > fieldDOFMngrs = blockedDOFMngr->getFieldDOFManagers();
@@ -206,9 +203,9 @@ void addDiscreteGradientToRequestHandler(
       for(std::size_t elemIter = 0; elemIter < elementIds.size(); ++elemIter){
 
         // get IDs for edges and nodes
-        std::vector<GlobalOrdinal> eGIDs;
+        std::vector<panzer::GlobalOrdinal> eGIDs;
         eUgi->getElementGIDs(elementIds[elemIter],eGIDs);
-        std::vector<GlobalOrdinal> nGIDs;
+        std::vector<panzer::GlobalOrdinal> nGIDs;
         nUgi->getElementGIDs(elementIds[elemIter],nGIDs);
         auto eLIDs = eUgi->getElementLIDs(elementIds[elemIter]);
         auto nLIDs = nUgi->getElementLIDs(elementIds[elemIter]);

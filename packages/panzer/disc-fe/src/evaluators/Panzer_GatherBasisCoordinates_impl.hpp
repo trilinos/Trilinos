@@ -46,7 +46,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 

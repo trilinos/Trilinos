@@ -64,8 +64,7 @@ namespace Thyra {
 
 namespace panzer {
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class UniqueGlobalIndexer;
+class GlobalIndexer;
 
 /** \brief Pushes residual values into the residual vector for a 
            Newton-based solve
@@ -112,12 +111,12 @@ class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,
   
 public:
 
-  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & /* cIndexers */)
+  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                                         const std::vector<Teuchos::RCP<const GlobalIndexer> > & /* cIndexers */)
      : rowIndexers_(rIndexers) {}
   
-  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                                         const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                                          const Teuchos::ParameterList& p,
                                          bool useDiscreteAdjoint=false);
   
@@ -140,8 +139,8 @@ private:
   // fields that need to be scattered will be put in this vector
   std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
-  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > rowIndexers_;
-  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > colIndexers_;
+  std::vector<Teuchos::RCP<const GlobalIndexer> > rowIndexers_;
+  std::vector<Teuchos::RCP<const GlobalIndexer> > colIndexers_;
 
   std::vector<int> indexerIds_;   // block index
   std::vector<int> subFieldIds_; // sub field numbers
@@ -184,12 +183,12 @@ class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,G
   
 public:
 
-  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & /* cIndexers */)
+  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                                         const std::vector<Teuchos::RCP<const GlobalIndexer> > & /* cIndexers */)
      : rowIndexers_(rIndexers) {}
   
-  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                                         const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                                          const Teuchos::ParameterList& p,
                                          bool useDiscreteAdjoint=false);
   
@@ -212,8 +211,8 @@ private:
   // fields that need to be scattered will be put in this vector
   std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
-  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > rowIndexers_;
-  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > colIndexers_;
+  std::vector<Teuchos::RCP<const GlobalIndexer> > rowIndexers_;
+  std::vector<Teuchos::RCP<const GlobalIndexer> > colIndexers_;
 
   std::vector<int> indexerIds_;   // block index
   std::vector<int> subFieldIds_; // sub field numbers
@@ -256,12 +255,12 @@ class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,
   
 public:
 
-  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers)
+  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                                         const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers)
      : rowIndexers_(rIndexers), colIndexers_(cIndexers) {}
   
-  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                                         const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                                          const Teuchos::ParameterList& p,
                                          bool useDiscreteAdjoint=false);
 
@@ -285,8 +284,8 @@ private:
   // fields that need to be scattered will be put in this vector
   std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
-  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > rowIndexers_;
-  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > colIndexers_;
+  std::vector<Teuchos::RCP<const GlobalIndexer> > rowIndexers_;
+  std::vector<Teuchos::RCP<const GlobalIndexer> > colIndexers_;
 
   std::vector<int> indexerIds_;   // block index
   std::vector<int> subFieldIds_; // sub field numbers

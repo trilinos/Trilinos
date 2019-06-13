@@ -51,7 +51,7 @@
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_GatherIntegrationCoordinates.hpp"
 #include "Panzer_GatherOrientation.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -368,7 +368,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer;
+  Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer;
   if(lof!=Teuchos::null) 
     globalIndexer = lof->getRangeGlobalIndexer();
   

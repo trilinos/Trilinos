@@ -66,7 +66,7 @@ ResponseLibrary<TraitsT>::ResponseLibrary()
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
-                                          const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                                          const Teuchos::RCP<const GlobalIndexer> & ugi,
                                           const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof,
                                           bool residualType)
    : nextBC_id(0), closureModelByEBlock_(false), disableGather_(false)
@@ -89,7 +89,7 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
 template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 initialize(const Teuchos::RCP<WorksetContainer> & wc,
-           const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+           const Teuchos::RCP<const GlobalIndexer> & ugi,
            const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof)
 {
    disableScatter_ = true;
@@ -103,7 +103,7 @@ initialize(const Teuchos::RCP<WorksetContainer> & wc,
 template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 initializeResidualType(const Teuchos::RCP<WorksetContainer> & wc,
-                       const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                       const Teuchos::RCP<const GlobalIndexer> & ugi,
                        const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof)
 {
    disableScatter_ = false; // we want equation set scatters for this

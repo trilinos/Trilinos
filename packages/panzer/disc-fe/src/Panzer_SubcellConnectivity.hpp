@@ -51,7 +51,6 @@
 
 namespace panzer {
 
-template <typename LO, typename GO>
 struct LocalMeshPartition;
 
 class SubcellConnectivity
@@ -199,7 +198,7 @@ public:
    *
    * \param[in] partition Partition of mesh
    */
-  void setup(const panzer::LocalMeshPartition<int,panzer::Ordinal64> & partition);
+  void setup(const panzer::LocalMeshPartition & partition);
 
 };
 

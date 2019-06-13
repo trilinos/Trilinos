@@ -48,7 +48,7 @@ namespace panzer
 
 void
 FaceConnectivity::
-setup(const panzer::LocalMeshPartition<int,panzer::Ordinal64> & partition)
+setup(const panzer::LocalMeshPartition & partition)
 {
   const int num_cells = partition.cell_to_faces.extent(0);
   const int num_faces = partition.face_to_cells.extent(0);

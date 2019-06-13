@@ -40,15 +40,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __UnitTest_UniqueGlobalIndexer_hpp__
-#define __UnitTest_UniqueGlobalIndexer_hpp__
+#ifndef __UnitTest_GlobalIndexer_hpp__
+#define __UnitTest_GlobalIndexer_hpp__
 
 #include <vector>
 #include <string>
 
 #include "Teuchos_RCP.hpp"
-
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 namespace panzer {
 namespace unit_test {
@@ -58,11 +57,11 @@ namespace unit_test {
   * There is one element block called "block_0" with two elements. Each element
   * resides on a different processor.
   */
-class UniqueGlobalIndexer : public virtual panzer::UniqueGlobalIndexer<short,int> {
+class GlobalIndexer : public virtual panzer::GlobalIndexer {
 public:
-   UniqueGlobalIndexer(int rank,int procCount);
+   GlobalIndexer(int rank,int procCount);
 
-   ~UniqueGlobalIndexer() {}
+   ~GlobalIndexer() {}
 
    /** \brief Get the number used for access to this
      *        field
@@ -109,14 +108,14 @@ public:
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<short> & getElementBlock(const std::string & blockId) const;
+  virtual const std::vector<panzer::LocalOrdinal> & getElementBlock(const std::string & blockId) const;
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(short localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
+   virtual void getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<panzer::GlobalOrdinal> & gids,const std::string & blockId="") const;
 
-   virtual void getElementOrientation(short /* localElmtId */, std::vector<double> & /* gidsOrientation */) const
+   virtual void getElementOrientation(panzer::LocalOrdinal /* localElmtId */, std::vector<double> & /* gidsOrientation */) const
    { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular
@@ -139,7 +138,7 @@ public:
    // virtual const std::vector<int> & 
    virtual const std::pair<std::vector<int>,std::vector<int> > & 
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
-                                                               int subcellDim,int subcellId) const;
+                              int subcellDim,int subcellId) const;
 
    /**
     *  \brief Get the set of indices owned by this processor.
@@ -149,9 +148,7 @@ public:
     *
     *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
     */
-   virtual void
-   getOwnedIndices(
-     std::vector<int>& indices) const;
+   virtual void getOwnedIndices(std::vector<panzer::GlobalOrdinal>& indices) const;
 
    /**
     *  \brief Get the set of indices ghosted for this processor.
@@ -161,9 +158,7 @@ public:
     *
     *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
     */
-   virtual void
-   getGhostedIndices(
-     std::vector<int>& indices) const;
+   virtual void getGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const;
 
    /**
     *  \brief Get the set of owned and ghosted indices for this processor.
@@ -173,9 +168,13 @@ public:
     *
     *  \throws `std::logic_error` If the processor rank is neither 0 nor 1.
     */
-   virtual void
-   getOwnedAndGhostedIndices(
-     std::vector<int>& indices) const;
+   virtual void getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const;
+
+   // Epetra accessors. Will be deprecated.
+   virtual void getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
+   virtual void getOwnedIndicesAsInt(std::vector<int>& indices) const;
+   virtual void getGhostedIndicesAsInt(std::vector<int>& indices) const;
+   virtual void getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const;
 
    /**
     *  \brief Get the number of indices owned by this processor.
@@ -184,8 +183,7 @@ public:
     *
     *  \returns The number of indices owned by this processor.
     */
-   virtual int
-   getNumOwned() const;
+   virtual int getNumOwned() const;
 
    /**
     *  \brief Get the number of indices ghosted for this processor.
@@ -194,8 +192,7 @@ public:
     *
     *  \returns The number of indices ghosted for this processor.
     */
-   virtual int
-   getNumGhosted() const;
+   virtual int getNumGhosted() const;
 
    /**
     *  \brief Get the number of owned and ghosted indices for this processor.
@@ -204,12 +201,11 @@ public:
     *
     *  \returns The number of owned and ghosted indices for this processor.
     */
-   virtual int
-   getNumOwnedAndGhosted() const;
+   virtual int getNumOwnedAndGhosted() const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const;
+   virtual void ownedIndices(const std::vector<panzer::GlobalOrdinal> & indices,std::vector<bool> & isOwned) const;
 
    int getElementBlockGIDCount(const std::string &) const;
    int getElementBlockGIDCount(const std::size_t &) const;
@@ -221,9 +217,9 @@ public:
 
 private:
    int procRank_;
-   mutable Teuchos::RCP<std::vector<short> > elements_b0_; // local element IDs
-   mutable Teuchos::RCP<std::vector<short> > elements_b1_; // local element IDs
-   std::vector<short> emptyElements_; // empty element IDs
+   mutable Teuchos::RCP<std::vector<panzer::LocalOrdinal> > elements_b0_; // local element IDs
+   mutable Teuchos::RCP<std::vector<panzer::LocalOrdinal> > elements_b1_; // local element IDs
+   std::vector<panzer::LocalOrdinal> emptyElements_; // empty element IDs
    mutable Teuchos::RCP<std::vector<int> > field0Offset_b0_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field1Offset_b0_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field0Offset_b1_; // local element IDs
