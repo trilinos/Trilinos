@@ -102,15 +102,12 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]; then
   SPACK_GCC_COMPILER_TO_LOAD=`module avail 2>&1 | grep spack-gcc/7.2.0`
   module load ${SPACK_GCC_COMPILER_TO_LOAD}
   export OMPI_CXX=`which g++`
+  export OMPI_CC=`which gcc`
+  export OMPI_FC=`which gfortran`
 
   module load gcc-7.2.0/spack-netlib-lapack/3.8.0
   export BLAS_ROOT=$NETLIB_LAPACK_ROOT
   export LAPACK_ROOT=$NETLIB_LAPACK_ROOT
-
-  export OMPI_CC=`which gcc`
-  export OMPI_FC=`which gfortran`
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib64;-llapack"
-  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib64;-lblas"
 
   module load gcc-7.2.0/spack-binutils/2.31.1
   module load gcc-7.2.0/spack-gettext/0.19.8.1 # for binutils
@@ -144,9 +141,8 @@ fi
 export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=-lhwloc
 
-#echo BOOST_ROOT=${BOOST_ROOT}
-#echo HDF5_ROOT=${HDF5_ROOT}
-#echo NETCDF_ROOT=${NETCDF_ROOT}
+export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib64;-llapack"
+export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib64;-lblas"
 
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a;-ldl"
 #echo ATDM_CONFIG_HDF5_LIBS=$ATDM_CONFIG_HDF5_LIBS
