@@ -49,9 +49,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include <assert.h>       // for assert
-#include <stdio.h>
-#include <stdlib.h> // for free, malloc
 
 /*!
  * defines the number of node and element maps. It is more efficient

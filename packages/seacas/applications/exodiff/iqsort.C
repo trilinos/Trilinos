@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include "iqsort.h"
+#include <fmt/ostream.h>
 
 namespace {
   template <typename INT> void swap_(INT v[], size_t i, size_t j);
@@ -51,7 +52,9 @@ template <typename T, typename INT> void index_qsort(const T v[], INT iv[], size
   }
   iqsort(v, iv, 0, N - 1);
   iisort(v, iv, N);
+#if defined(DEBUG_QSORT)
   check(v, iv, N);
+#endif
 }
 
 // The following are not part of the public interface...
@@ -154,13 +157,11 @@ namespace {
 
   template <typename T, typename INT> void check(const T v[], INT iv[], size_t N)
   {
-#if defined(DEBUG_QSORT)
-    std::cerr << "Checking sort of " << N + 1 << " values\n";
+    fmt::print(stderr, "Checking sort of {:n} values\n", N + 1);
     size_t i;
     for (i = 1; i < N; i++) {
       SMART_ASSERT(v[iv[i - 1]] <= v[iv[i]]);
     }
-#endif
   }
 } // namespace
 

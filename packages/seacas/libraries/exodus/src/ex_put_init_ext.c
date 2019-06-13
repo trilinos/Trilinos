@@ -51,10 +51,6 @@
 
 #include "exodusII.h"     // for ex_init_params, ex_err, etc
 #include "exodusII_int.h" // for nc_flt_code, etc
-#include <stddef.h>       // for size_t, NULL
-#include <stdio.h>        // for snprintf
-#include <stdlib.h>       // for free, malloc
-#include <string.h>       // for strlen
 
 static void write_dummy_names(int exoid, ex_entity_type obj_type, int num)
 {

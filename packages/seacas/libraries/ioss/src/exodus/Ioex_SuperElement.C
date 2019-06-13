@@ -32,19 +32,19 @@
 
 #include <exodus/Ioex_SuperElement.h> // for SuperElement
 
-#include <Ioss_Field.h>    // for Field, etc
-#include <Ioss_Property.h> // for Property, etc
-#include <Ioss_Utils.h>    // for IOSS_ERROR, Utils
+#include <Ioss_Field.h>
+#include <Ioss_Property.h>
+#include <Ioss_Utils.h>
 
-#include <cassert>  // for assert
-#include <cstddef>  // for size_t, nullptr
-#include <iostream> // for operator<<, basic_ostream, etc
-#include <netcdf.h> // for NC_NOERR, nc_close, etc
-#include <string>   // for char_traits, operator<<, etc
+#include <cassert>
+#include <cstddef>
+#include <fmt/ostream.h>
+#include <netcdf.h>
+#include <string>
 
-#include <Ioss_FieldManager.h>    // for FieldManager
-#include <Ioss_GroupingEntity.h>  // for GroupingEntity
-#include <Ioss_PropertyManager.h> // for PropertyManager
+#include <Ioss_FieldManager.h>
+#include <Ioss_GroupingEntity.h>
+#include <Ioss_PropertyManager.h>
 
 namespace {
   int nc_get_array(int ncid, const char *name, double *data)
@@ -76,13 +76,13 @@ namespace {
         *count = 0;
         return 0;
       }
-      errmsg << "ERROR: Failed to locate number of " << label << " in superelement file.";
+      fmt::print(errmsg, "ERROR: Failed to locate number of {} in superelement file.", label);
       IOSS_ERROR(errmsg);
     }
 
     status = nc_inq_dimlen(ncid, dimid, count);
     if (status != NC_NOERR) {
-      errmsg << "ERROR: failed to get number of " << label << " in superelement file.";
+      fmt::print(errmsg, "ERROR: Failed to get number of {} in superelement file.", label);
       IOSS_ERROR(errmsg);
     }
     return status;
@@ -104,7 +104,7 @@ Ioex::SuperElement::SuperElement(std::string filename, const std::string &my_nam
   int status = nc_open(local_filename.c_str(), NC_NOWRITE, &filePtr);
   if (status != NC_NOERR) {
     std::ostringstream errmsg;
-    errmsg << "ERROR: Failed to open superelement file '" << local_filename << "'.";
+    fmt::print(errmsg, "ERROR: Failed to open superelement file '{}'.", local_filename);
     IOSS_ERROR(errmsg);
   }
 
@@ -179,8 +179,8 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "cbmap", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load coordinate data field 'cbmap' from file '" << fileName
-             << "'.";
+      fmt::print(errmsg, "ERROR: Could not load coordinate data field 'cbmap' from file '{}'.",
+                 fileName);
       IOSS_ERROR(errmsg);
     }
   }
@@ -190,8 +190,9 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
 
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load coordinate data field 'node_num_map' from file '" << fileName
-             << "'.";
+      fmt::print(errmsg,
+                 "ERROR: Could not load coordinate data field 'node_num_map' from file '{}'.",
+                 fileName);
       IOSS_ERROR(errmsg);
     }
   }
@@ -200,8 +201,8 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "coordx", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load coordinate data field 'coordx' from file '" << fileName
-             << "'.";
+      fmt::print(errmsg, "ERROR: Could not load coordinate data field 'coordx' from file '{}'.",
+                 fileName);
       IOSS_ERROR(errmsg);
     }
   }
@@ -210,8 +211,8 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "coordy", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load coordinate data field 'coordy' from file '" << fileName
-             << "'.";
+      fmt::print(errmsg, "ERROR: Could not load coordinate data field 'coordy' from file '{}'.",
+                 fileName);
       IOSS_ERROR(errmsg);
     }
   }
@@ -220,8 +221,8 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "coordz", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load coordinate data field 'coordz' from file '" << fileName
-             << "'.";
+      fmt::print(errmsg, "ERROR: Could not load coordinate data field 'coordz' from file '{}'.",
+                 fileName);
       IOSS_ERROR(errmsg);
     }
   }
@@ -230,7 +231,8 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "Kr", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load stiffness matrix field 'Kr' from file '" << fileName << "'.";
+      fmt::print(errmsg, "ERROR: Could not load stiffness matrix field 'Kr' from file '{}'.",
+                 fileName);
       IOSS_ERROR(errmsg);
     }
   }
@@ -239,7 +241,7 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "Mr", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load mass matrix field 'Mr' from file '" << fileName << "'.";
+      fmt::print(errmsg, "ERROR: Could not load mass matrix field 'Mr' from file '{}'.", fileName);
       IOSS_ERROR(errmsg);
     }
   }
@@ -248,8 +250,9 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "InertiaTensor", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load inertia matrix field 'InertiaTensor' from file '" << fileName
-             << "'.";
+      fmt::print(errmsg,
+                 "ERROR: Could not load inertia matrix field 'InertialTensor' from file '{}'.",
+                 fileName);
       IOSS_ERROR(errmsg);
     }
   }
@@ -258,14 +261,14 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "MassInertia", reinterpret_cast<double *>(data));
     if (status != 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Could not load mass inertia matrix field 'MassInertia' from file '"
-             << fileName << "'.";
+      fmt::print(errmsg, "ERROR: Could not mass inertia matrix field 'MassInertia' from file '{}'.",
+                 fileName);
       IOSS_ERROR(errmsg);
     }
   }
   else {
-    std::cerr << "WARNING: " << type() << " '" << name() << "'. Unknown input field '"
-              << field.get_name() << "'";
+    fmt::print(stderr, "WARNING: {} '{}'. Unknown input field '{}'", type(), name(),
+               field.get_name());
     return -4;
   }
   return num_to_get;

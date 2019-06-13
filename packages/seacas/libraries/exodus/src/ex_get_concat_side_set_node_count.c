@@ -50,14 +50,6 @@
 
 #include "exodusII.h"     // for ex_err, EX_MSG, etc
 #include "exodusII_int.h" // for elem_blk_parm, EX_FATAL, etc
-#include <assert.h>       // for assert
-#include <ctype.h>        // for toupper
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for malloc, NULL, free
-#include <string.h>    // for strncmp, strlen
-#include <sys/types.h> // for int64_t
 
 /*! \endcond */
 

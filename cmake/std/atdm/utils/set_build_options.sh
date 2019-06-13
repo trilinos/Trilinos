@@ -117,8 +117,14 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17.0.1"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL-17.0.1
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-17.0.1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.2
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.5"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-18.0.5
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-18.0.5
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-3.9.0"* ]]; then

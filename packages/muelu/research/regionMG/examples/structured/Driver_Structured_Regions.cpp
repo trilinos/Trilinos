@@ -147,7 +147,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   SC zero = STS::zero(), one = STS::one();
   using real_type = typename STS::coordinateType;
   using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
-  const real_type realOne = Teuchos::ScalarTraits<real_type>::one();
 
   // =========================================================================
   // Parameters initialization
@@ -315,6 +314,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   B->scale(one/norms[0]);
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
+#ifdef MATLAB_COMPARE
+  B->putScalar(zero);
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("rhs.mm",*B);
+  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("x.mm",*X);
+#endif
   out << galeriStream.str();
 
   comm->barrier();
@@ -393,7 +397,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Rule for boundary duplication
   // For any two ranks that share an interface:
-  // the lowest ranks owns the interface and the highest rank gets extra nodes
+  // the lowest rank owns the interface and the highest rank gets extra nodes
 
   // First we count how many nodes the region needs to send and receive
   // and allocate arrays accordingly
@@ -505,7 +509,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
       // Send node of back-right corner
       sendGIDs[countIDs] = startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-      sendPIDs[countIDs] = myRank + procsPerDim[1] + 1;
+      sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
       sendLIDs[countIDs] = lNodesPerDim[1]*lNodesPerDim[0] - 1;
       ++countIDs;
     } else if(backBC == 0) {
@@ -543,7 +547,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // Received nodes
     if( (bottomBC == 0) && (frontBC == 0) && (leftBC == 0) ) {
       numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
-        + (lNodesPerDim[0] + 1)*lNodesPerDim[2]        // front face
+        + lNodesPerDim[0]*(lNodesPerDim[2] + 1)        // front face
         + (lNodesPerDim[1] + 1)*(lNodesPerDim[2] + 1); // left face
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
@@ -606,8 +610,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     // Two faces received
     } else if( (bottomBC == 0) && (frontBC == 0) ) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
-        + lNodesPerDim[0]*(lNodesPerDim[2] + 1);       // front face;
+      numReceive = lNodesPerDim[0]*(lNodesPerDim[1] + lNodesPerDim[2] + 1);
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
       receiveLIDs.resize(numReceive);
@@ -672,7 +675,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
 
     } else if( (frontBC == 0) && (leftBC == 0) ) {
-      numReceive = lNodesPerDim[2]*(lNodesPerDim[1] + lNodesPerDim[0] + 1);
+      numReceive = lNodesPerDim[2]*(lNodesPerDim[0] + lNodesPerDim[1] + 1);
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
       receiveLIDs.resize(numReceive);
@@ -814,14 +817,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       for(LO i = 0; i < lNodesPerDim[0]; ++i) {
         sendGIDs[countIDs] = i
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-          + (lNodesPerDim[0] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1];
+          + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
         ++countIDs;
       }
       // Send node of top-back-right corner
       sendGIDs[countIDs] = startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-        + (lNodesPerDim[0] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
-      sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1] + 1;
+        + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+      sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0] + 1;
       ++countIDs;
 
     } else if( (topBC == 0) && (backBC == 0) ) {
@@ -855,8 +858,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       for(LO i = 0; i < lNodesPerDim[0]; ++i) {
         sendGIDs[countIDs] = i
           + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[1]*gNodesPerDim[0]
-          + (lNodesPerDim[0] - 1)*gNodesPerDim[0];
-        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[1];
+          + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+        sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0] + procsPerDim[0];
         ++countIDs;
       }
 
@@ -940,7 +943,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           sendGIDs[countIDs] = j*gNodesPerDim[0] + i
-            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[0]*gNodesPerDim[0];
+            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[0]*gNodesPerDim[1];
           sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
           ++countIDs;
         }
@@ -1013,7 +1016,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Using receiveGIDs, rNodesPerDim and numLocalRegionNodes, build quasi-region row map
   // This will potentially be done by the application or in a MueLu interface but for now
-  // doing it in the driver seem to avoid design hassle...
+  // doing it in the driver seems to avoid design hassle...
   LO interfaceCount = 0, compositeIdx = 0;
   Array<LO> regionIJK(3);
   for(LO nodeRegionIdx = 0; nodeRegionIdx < numLocalRegionNodes; ++nodeRegionIdx) {
@@ -1086,8 +1089,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
   } // end of regionsPerGIDView's scope
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "regionsPerGID:" << std::endl;
   // regionsPerGID->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
   comm->barrier();
   tm = Teuchos::null;
@@ -1116,12 +1121,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
 
   RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGIDWithGhosts
-    = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(A->getColMap(), maxRegPerGID, false);
+    = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(rowMapPerGrp[0], maxRegPerGID, false);
   RCP<Import> regionsPerGIDImport = ImportFactory::Build(A->getRowMap(), A->getColMap());
-  regionsPerGIDWithGhosts->doImport(*regionsPerGID, *regionsPerGIDImport, Xpetra::INSERT);
+  regionsPerGIDWithGhosts->doImport(*regionsPerGID, *rowImportPerGrp[0], Xpetra::INSERT);
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "regionsPerGIDWithGhosts:" << std::endl;
   // regionsPerGIDWithGhosts->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
   std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > quasiRegionGrpMats(1);
   MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), maxRegPerProc,
@@ -1133,14 +1140,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                      revisedRowMapPerGrp, revisedColMapPerGrp,
                      rowImportPerGrp, maxRegPerProc, quasiRegionGrpMats, regionGrpMats);
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "composite A:" << std::endl;
   // A->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "quasi-region A:" << std::endl;
   // quasiRegionGrpMats[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
+  // sleep(1);
   // if(myRank == 0) std::cout << "region A:" << std::endl;
   // regionGrpMats[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  // sleep(1);
 
   comm->barrier();
   tm = Teuchos::null;
@@ -1278,7 +1291,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     /////////////////////////////////////////////////////////////////////////
 
     // define max iteration counts
-    const int maxFineIter = 20;
     const int maxCoarseIter = 100;
 
     // Prepare output of residual norm to file
@@ -1293,6 +1305,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
 
     // Richardson iterations
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni;
     for (int cycle = 0; cycle < maxIts; ++cycle) {
       // check for convergence
       {
@@ -1310,15 +1323,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
                             rowImportPerGrp, Xpetra::ADD);
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
+        if(cycle == 0) { normResIni = normRes; }
 
         // Output current residual norm to screen (on proc 0 only)
         if (myRank == 0)
           {
+#ifdef MATLAB_COMPARE
+printf("%d: %24.17e\n",cycle,normRes);
+#else
             std::cout << cycle << "\t" << normRes << std::endl;
+#endif
             (*log) << cycle << "\t" << normRes << "\n";
           }
 
-        if (normRes < tol)
+        if ((normRes/normResIni) < tol)
           break;
       }
 

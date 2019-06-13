@@ -33,8 +33,9 @@
  *
  */
 
-#include <cstdio>  // for printf, fprintf, stderr
+#include <cstdio>  // for stderr
 #include <cstdlib> // for exit
+#include <fmt/ostream.h>
 
 /*************************************************************************/
 /*************************************************************************/
@@ -43,7 +44,7 @@ void check_exodus_error(int error, const char function_name[])
 {
 
   if (error == -1) {
-    fprintf(stderr, "ERROR returned from %s!\n", function_name);
+    fmt::print(stderr, "ERROR returned from {}!\n", function_name);
     exit(1);
   }
 
@@ -58,9 +59,9 @@ void print_line(const char *charstr, int ntimes)
 {
   int i;
   for (i = 0; i < ntimes; i++) {
-    printf("%c", *charstr);
+    fmt::print("{}", *charstr);
   }
-  printf("\n");
+  fmt::print("\n");
 }
 
 /*****************************************************************************/

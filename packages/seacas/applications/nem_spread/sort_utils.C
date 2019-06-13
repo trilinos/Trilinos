@@ -37,9 +37,9 @@
 #if DEBUG_SORT
 #include <cassert>
 #include <cstdio>
+#include <fmt/ostream.h>
 #endif
 
-#include "rf_format.h"
 #include <cstddef> // for size_t
 #include <cstdint> // for int64_t
 
@@ -274,7 +274,7 @@ template <typename INT> void indexed_sort(INT v[], INT iv[], size_t N)
   }
 
 #if DEBUG_SORT
-  fprintf(stderr, "Checking sort of " ST_ZU " values\n", static_cast<size_t>(count) + 1);
+  fmt::print(stderr, "Checking sort of {:n} values\n", count + 1);
   for (size_t i = 1; i < N; i++) {
     assert(v[iv[i - 1]] <= v[iv[i]]);
   }
@@ -290,7 +290,7 @@ template <typename INT> void gds_iqsort(INT v[], INT iv[], size_t N)
   gds_iisort(v, iv, N);
 
 #if defined(DEBUG_QSORT)
-  fprintf(stderr, "Checking sort of " ST_ZU " values\n", (size_t)N + 1);
+  fmt::print(stderr, "Checking sort of {:n} values\n", N + 1);
   size_t i;
   for (i = 1; i < N; i++) {
     assert(v[iv[i - 1]] <= v[iv[i]]);
@@ -307,7 +307,7 @@ template <typename INT> void gds_qsort(INT v[], size_t N)
   gds_isort(v, N);
 
 #if defined(DEBUG_QSORT)
-  fprintf(stderr, "Checking sort of " ST_ZU " values\n", (size_t)N + 1);
+  fmt::print(stderr, "Checking sort of {:n} values\n", N + 1);
   for (size_t i = 1; i < N; i++) {
     assert(v[i - 1] <= v[i]);
   }

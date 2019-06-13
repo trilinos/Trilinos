@@ -36,7 +36,7 @@
 
 template <typename INT>
 void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_node_map,
-                             std::vector<INT> &local_node_map);
+                             std::vector<INT> &local_node_map, bool fill_global);
 
 template <typename INT>
 void build_reverse_node_map(Ioss::Region &output_region, RegionVector &part_mesh,

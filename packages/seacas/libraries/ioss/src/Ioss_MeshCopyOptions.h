@@ -43,5 +43,6 @@ namespace Ioss {
     bool   verbose{false};
     bool   ints_64_bit{false};
     bool   delete_timesteps{false};
+    bool   reverse{false}; // Used for testing CGNS
   };
 } // namespace Ioss

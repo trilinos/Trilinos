@@ -163,6 +163,7 @@ namespace Xpetra {
       vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
       return vv;
     }
+
     RCP<     Vector> ExtractVector(RCP<           Vector>& full, size_t block, bool bThyraMode = false) const {
       XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps() << " partial blocks.");
       XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block,false) == null, Xpetra::Exceptions::RuntimeError,
@@ -176,6 +177,7 @@ namespace Xpetra {
       vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
       return vv;
     }
+
     RCP<MultiVector> ExtractVector(RCP<const MultiVector>& full, size_t block, bool bThyraMode = false) const {
       XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps() << " partial blocks.");
       XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block,false) == null, Xpetra::Exceptions::RuntimeError,
@@ -207,6 +209,7 @@ namespace Xpetra {
         return bfull->getMultiVector(block,bThyraMode);
       }
     }
+
     RCP<MultiVector> ExtractVector(RCP<      MultiVector>& full, size_t block, bool bThyraMode = false) const {
       XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps() << " partial blocks.");
       XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block,false) == null, Xpetra::Exceptions::RuntimeError,
@@ -237,6 +240,7 @@ namespace Xpetra {
         return bfull->getMultiVector(block,bThyraMode);
       }
     }
+
     RCP<MultiVector> ExtractVector(RCP<const BlockedMultiVector>& full, size_t block, bool bThyraMode = false) const {
       XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps() << " partial blocks.");
       XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block,false) == null, Xpetra::Exceptions::RuntimeError,
@@ -246,6 +250,7 @@ namespace Xpetra {
       Teuchos::RCP<MultiVector> vv = full->getMultiVector(block,bThyraMode);
       return vv;
     }
+
     RCP<MultiVector> ExtractVector(RCP<      Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& full, size_t block, bool bThyraMode = false) const {
       XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps() << " partial blocks.");
       XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block,false) == null, Xpetra::Exceptions::RuntimeError,

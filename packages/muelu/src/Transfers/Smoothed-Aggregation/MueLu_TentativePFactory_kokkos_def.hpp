@@ -514,7 +514,7 @@ namespace MueLu {
 
                                  auto aggregate = aggGraph.rowConst(i);
 
-                                 typename Teuchos::ScalarTraits<Scalar>::coordinateType sum = 0.0; // do not use Scalar here (Stokhos)
+                                 coordinate_type sum = 0.0; // do not use Scalar here (Stokhos)
                                  for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
                                    sum += fineCoordsRandomView(aggregate(colID),j);
 
@@ -566,6 +566,7 @@ namespace MueLu {
     const size_t NSDim    = fineNullspace->getNumVectors();
 
     typedef Kokkos::ArithTraits<SC>     ATS;
+    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
     const SC zero = ATS::zero(), one = ATS::one();
 
     const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -760,13 +761,13 @@ namespace MueLu {
             // Extract the piece of the nullspace corresponding to the aggregate, and
             // put it in the flat array, "localQR" (in column major format) for the
             // QR routine. Trivial in 1D.
-            auto norm = ATS::magnitude(zero);
+            auto norm = impl_ATS::magnitude(zero);
 
             // Calculate QR by hand
             // FIXME: shouldn't there be stridedblock here?
             // FIXME_KOKKOS: shouldn't there be stridedblock here?
             for (decltype(aggSize) k = 0; k < aggSize; k++) {
-              auto dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
+              auto dnorm = impl_ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
               norm += dnorm*dnorm;
             }
             norm = sqrt(norm);
@@ -857,7 +858,7 @@ namespace MueLu {
         Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:for2", range_type(0, nnzEstimate),
           KOKKOS_LAMBDA(const LO j) {
             colsAux(j) = INVALID;
-            valsAux(j) = zero;
+            valsAux(j) = impl_ATS::zero();
           });
       }
 

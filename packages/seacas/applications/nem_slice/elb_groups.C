@@ -38,14 +38,14 @@
  * Functions contained in this file:
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-#include "elb.h"        // for Problem_Description, etc
-#include "elb_elem.h"   // for elem_name_from_enum
-#include "elb_err.h"    // for Gen_Error
-#include "elb_format.h" // for ST_ZU
+#include "elb.h"      // for Problem_Description, etc
+#include "elb_elem.h" // for elem_name_from_enum
+#include "elb_err.h"  // for Gen_Error
 #include "elb_groups.h"
-#include <cstdio>      // for printf, sscanf, nullptr
-#include <cstdlib>     // for free, malloc
-#include <cstring>     // for strchr, strlen
+#include <cstdio>  // for sscanf, nullptr
+#include <cstdlib> // for free, malloc
+#include <cstring> // for strchr, strlen
+#include <fmt/format.h>
 #include <sys/types.h> // for ssize_t
 #include <vector>      // for vector
 
@@ -144,15 +144,15 @@ template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_De
 
   {
     size_t first_el = 0;
-    printf("\nNumber of blocks: " ST_ZU "\n", mesh->num_el_blks);
-    printf("Block ID and associated groups:\n");
-    printf("   block   #elems  group   type\n");
+    fmt::print("\nNumber of blocks: {}\n", mesh->num_el_blks);
+    fmt::print("Block ID and associated groups:\n");
+    fmt::print("   block   #elems  group   type\n");
     for (i = 0; i < mesh->num_el_blks; i++) {
-      printf("%8lu%8lu%8d%8s\n", (size_t)mesh->eb_ids[i], (size_t)mesh->eb_cnts[i],
-             prob->group_no[i], elem_name_from_enum(mesh->elem_type[first_el]));
+      fmt::print("{:8d}{:8d}{:8d}{:8s}\n", (size_t)mesh->eb_ids[i], (size_t)mesh->eb_cnts[i],
+                 prob->group_no[i], elem_name_from_enum(mesh->elem_type[first_el]));
       first_el += mesh->eb_cnts[i];
     }
-    printf("There are %d groups of blocks\n", prob->num_groups);
+    fmt::print("There are {} groups of blocks\n", prob->num_groups);
   }
 
   /* finished with the group designator string */
@@ -244,7 +244,7 @@ int get_group_info(Machine_Description *machine, Problem_Description *prob,
     nproc = ilog2i(machine->procs_per_box);
   }
   for (int i = 0; i < prob->num_groups; i++) {
-    nprocg[i] = int((nproc * (nelemg[i] + .5)) / static_cast<float>(prob->num_vertices));
+    nprocg[i] = int((nproc * (nelemg[i] + 0.5f)) / static_cast<float>(prob->num_vertices));
     if (nelemg[i] && !nprocg[i]) {
       nprocg[i] = 1;
     }
@@ -283,9 +283,9 @@ int get_group_info(Machine_Description *machine, Problem_Description *prob,
       return 0;
     }
   }
-  printf("Load balance information\n");
+  fmt::print("Load balance information\n");
   for (int i = 0; i < prob->num_groups; i++) {
-    printf("group[%d]  #elements=%-10d  #proc=%d\n", i, nelemg[i], nprocg[i]);
+    fmt::print("group[{}]  #elements={:10d}  #proc={}\n", i, nelemg[i], nprocg[i]);
   }
 
   return 1;
@@ -342,12 +342,12 @@ namespace {
             }
           }
           else {
-            printf("Error reading descriptor '%s'\n", d);
-            printf("                          ");
+            fmt::print("Error reading descriptor '{}'\n", d);
+            fmt::print("                          ");
             for (c = 0; c < qn; c++) {
-              printf(" ");
+              fmt::print(" ");
             }
-            printf("^\n");
+            fmt::print("^\n");
             return;
           }
         }

@@ -11,7 +11,11 @@ sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
 
 
 import unittest
-import mock
+try:
+    import mock
+except ImportError:
+    import unittest.mock as mock
+
 from datetime import datetime
 import pickle
 
@@ -32,7 +36,8 @@ class TestCleanReferenceDate(unittest.TestCase):
         """Test that the function returns the expected date"""
         testDate = datetime(2019, 2, 4, hour=10, minute=45,
                             second=0, microsecond=0, tzinfo=None)
-        self.assertEqual(testDate, clean_reference_date())
+        with mock.patch("clean_sentinel.open", side_effect=IOError):
+            self.assertEqual(testDate, clean_reference_date())
 
     def test_stored_date(self):
         """If a different date has been stored make sure it gets retrieved"""
@@ -113,12 +118,14 @@ class TestUpdateLastCleanDate(unittest.TestCase):
     def test_update_last_clean_date_writes(self):
         """Test that the current date is stored"""
         with mock.patch('clean_sentinel.pickle.dump') as p_save, \
+             mock.patch('clean_sentinel.datetime') as dt, \
              mock.patch('clean_sentinel.open') as pFile, \
              mock.patch.dict('os.environ',
                              {'WORKSPACE': '/scratch/trilinos/foo/bar'}):
             self.assertEqual(None, update_last_clean_date())
-        p_save.assert_called_once()
-        pFile.assert_called_once()
+        p_save.assert_called_once_with(dt.now(),
+                                       pFile.return_value.__enter__())
+        pFile.assert_called_once_with('/scratch/trilinos/foo/bar/lastCleanDate', 'w')
 
     def test_update_last_clean_date_raises_with_no_file(self):
         """Test that the current date is stored"""

@@ -32,21 +32,19 @@
 
 #include <Ioss_CodeTypes.h>
 
-#include <iomanip>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-
-#define OUTPUT std::cerr
-
 #include <Ioss_ConcreteVariableType.h>
+#include <Ioss_ElementTopology.h>
 #include <Ioss_Initializer.h>
 #include <Ioss_NullEntity.h>
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
 
-#include <Ioss_ElementTopology.h>
+#include <fmt/ostream.h>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
 
 // ========================================================================
 static int  test_all_elements();
@@ -54,7 +52,7 @@ static void test_aliases(const Ioss::NameList &elements);
 static bool test_element(const std::string &type);
 // ========================================================================
 
-int main(int argc, char *argv[])
+int main(int /* argc */, char *argv[])
 {
   Ioss::StorageInitializer initialize_storage;
   Ioss::Initializer        initialize_topologies;
@@ -65,15 +63,15 @@ int main(int argc, char *argv[])
   // but some clients use it, so need to make sure it compiles
   // correctly.
   std::unique_ptr<Ioss::NullEntity> entity{new Ioss::NullEntity()};
-  std::cout << "\nThe null entity type is " << entity->type_string() << " and it contains "
-            << entity->contains_string() << "\n";
+  fmt::print(stderr, "\nThe null entity type is '{}' and it contains '{}'\n", entity->type_string(),
+             entity->contains_string());
 
-  OUTPUT << "\n" << argv[0];
+  fmt::print(stderr, "{}\n", argv[0]);
   if (err_count == 0) {
-    OUTPUT << "\nSIERRA execution successful." << '\n';
+    fmt::print(stderr, "\nSIERRA execution successful.\n");
     return EXIT_SUCCESS;
   }
-  OUTPUT << "\nSIERRA execution failed." << '\n';
+  fmt::print(stderr, "\nSIERRA execution failed.\n");
   return EXIT_FAILURE;
 }
 
@@ -84,15 +82,14 @@ int test_all_elements()
   Ioss::NameList elements;
   int            element_count = Ioss::ElementTopology::describe(&elements);
 
-  OUTPUT.setf(std::ios::left);
   for (int i = 0; i < element_count; i++) {
-    OUTPUT << "Testing element: " << std::setw(20) << elements[i];
+    fmt::print(stderr, "Testing element: {:<25}", elements[i]);
     bool result = test_element(elements[i]);
     if (result || elements[i] == "unknown" || elements[i] == "invalid_topology") {
-      OUTPUT << "OK" << '\n';
+      fmt::print(stderr, " OK\n");
     }
     else {
-      OUTPUT << "\n        element: " << std::setw(20) << elements[i] << "FAIL" << '\n';
+      fmt::print(stderr, "\n        element: {:<25}FAIL\n", elements[i]);
       err_count++;
     }
   }
@@ -102,10 +99,10 @@ int test_all_elements()
   // Check that asking for invalid element returns nullptr pointer.
   Ioss::ElementTopology *invalid = Ioss::ElementTopology::factory("Greg", true);
   if (invalid == nullptr) {
-    OUTPUT << "Testing request for invalid element: " << std::setw(40) << "OK" << '\n';
+    fmt::print(stderr, "Testing request for invalid element: OK\n");
   }
   else {
-    OUTPUT << "Testing request for invalid element: " << std::setw(40) << "FAIL" << '\n';
+    fmt::print(stderr, "Testing request for invalid element: FAIL\n");
     err_count++;
   }
   return err_count;
@@ -119,28 +116,28 @@ bool test_element(const std::string &type)
   bool                   result  = true;
   Ioss::ElementTopology *element = Ioss::ElementTopology::factory(type);
   if (element == nullptr) {
-    OUTPUT << "ERROR: Element type '" << type << "' could not be constructed.";
+    fmt::print(stderr, "ERROR: Element type '{}' could not be constructed.", type);
     // Must return since we have a nullptr pointer and can't do further tests...
     return false;
   }
 
   // See if the name is an alias for another element (type != name())
   std::string name = element->name();
-  OUTPUT << "(" << name << ")\t\t";
+  fmt::print(stderr, "({})\t\t", name);
 
   // Check that name is alias for name...
   if (!element->is_alias(type)) {
-    OUTPUT << "\n\tName is not valid alias";
+    fmt::print(stderr, "\n\tName is not valid alias");
     result = false;
   }
 
   // Check that master element name is an alias...
   if (!element->is_alias(element->master_element_name())) {
     if (element->name() == "edge2d2" || element->name() == "edge2d3") { // kluge
-      OUTPUT << "\n\tMaster element name is not valid alias (ignore) ";
+      fmt::print(stderr, "\n\tMaster element name is not valid alias (ignore) ");
     }
     else {
-      OUTPUT << "\n\tMaster element name is not valid alias";
+      fmt::print(stderr, "\n\tMaster element name is not valid alias");
       result = false;
     }
   }
@@ -148,7 +145,7 @@ bool test_element(const std::string &type)
   // Check that the hash id method of selecting the element returns the correct element.
   unsigned int hash_val = Ioss::ElementTopology::get_unique_id(name);
   if (Ioss::ElementTopology::factory(hash_val) != element) {
-    OUTPUT << "\n\tElement to hash value conversion is not valid";
+    fmt::print(stderr, "\n\tElement to hash value conversion is not valid");
     result = false;
   }
 
@@ -159,25 +156,25 @@ bool test_element(const std::string &type)
 
   int nn = element->number_nodes();
   if (nn <= 0) {
-    OUTPUT << "\n\tInvalid node count";
+    fmt::print(stderr, "\n\tInvalid node count");
     result = false;
   }
 
   int ncn = element->number_corner_nodes();
   if (ncn <= 0 || ncn > nn) {
-    OUTPUT << "\n\tInvalid corner node count";
+    fmt::print(stderr, "\n\tInvalid corner node count");
     result = false;
   }
 
   int ne = element->number_edges();
   if (ne < 0) {
-    OUTPUT << "\n\tInvalid edge count";
+    fmt::print(stderr, "\n\tInvalid edge count");
     result = false;
   }
 
   int nf = element->number_faces();
   if (nf < 0) {
-    OUTPUT << "\n\tInvalid face count";
+    fmt::print(stderr, "\n\tInvalid face count");
     result = false;
   }
 
@@ -185,7 +182,7 @@ bool test_element(const std::string &type)
   if (element->parametric_dimension() == 3) {
     int euler = ncn - ne + nf;
     if (euler != 2) {
-      OUTPUT << "\n\tEuler's formula violated (V-E+F=2), value = " << euler << "\n";
+      fmt::print(stderr, "\n\tEuler's formula violated (V-E+F=2), value = {}\n", euler);
       result = false;
     }
   }
@@ -193,14 +190,14 @@ bool test_element(const std::string &type)
   int nne = element->number_nodes_edge(0);
   if (nne == -1) {
     if (homo_edges) {
-      OUTPUT << "\n\tInconsistent edge homogeneity...\n";
+      fmt::print(stderr, "\n\tInconsistent edge homogeneity...\n");
       result = false;
     }
     else {
       for (int edge = 1; edge <= ne; edge++) {
         int nnei = element->number_nodes_edge(edge);
         if (nnei < 0 || nnei > nn) {
-          OUTPUT << "\n\tInconsistent nodes per edge...\n";
+          fmt::print(stderr, "\n\tInconsistent nodes per edge...\n");
           result = false;
         }
       }
@@ -208,14 +205,14 @@ bool test_element(const std::string &type)
   }
   else {
     if (nne < 0 || nne > nn) {
-      OUTPUT << "\n\tInconsistent nodes per edge...\n";
+      fmt::print(stderr, "\n\tInconsistent nodes per edge...\n");
       result = false;
     }
   }
 
   int nnf = element->number_nodes_face(0);
   if (nnf > nn || nnf < -1) {
-    OUTPUT << "\n\tInvalid face node count";
+    fmt::print(stderr, "\n\tInvalid face node count");
     result = false;
   }
 
@@ -224,25 +221,26 @@ bool test_element(const std::string &type)
     for (int i = 0; i <= nf; i++) {
       Ioss::ElementTopology *face = element->face_type(i);
       if (face == nullptr && i > 0) {
-        OUTPUT << "\n\tBad face type for face " << i;
+        fmt::print(stderr, "\n\tBad face type for face {}", i);
         result = false;
       }
       else if (face == nullptr && i == 0 && homo_faces) {
-        OUTPUT << "\n\tHomogenous faces, but null face_type";
+        fmt::print(stderr, "\n\tHomogenous faces, but null face_type");
         result = false;
       }
       else if (face != nullptr) {
         unsigned int nnfi = element->number_nodes_face(i);
         if (nnfi != static_cast<unsigned int>(face->number_nodes())) {
-          OUTPUT << "\n\tNode count mismatch on face " << i;
+          fmt::print(stderr, "\n\tNode count mismatch on face {}", i);
           result = false;
         }
         if (i != 0) {
           std::vector<int> conn = element->face_connectivity(i);
           if (nnfi != conn.size()) {
-            OUTPUT << "\n\tNode count and face connectivity size "
-                      "mismatch on face "
-                   << i;
+            fmt::print(stderr,
+                       "\n\tNode count and face connectivity size "
+                       "mismatch on face {}",
+                       i);
             result = false;
           }
         }
@@ -254,25 +252,26 @@ bool test_element(const std::string &type)
     for (int i = 0; i <= ne; i++) {
       Ioss::ElementTopology *edge = element->edge_type(i);
       if (edge == nullptr && i > 0) {
-        OUTPUT << "\n\tBad edge type for edge " << i;
+        fmt::print(stderr, "\n\tBad edge type for edge {}", i);
         result = false;
       }
       else if (edge == nullptr && i == 0 && homo_edges) {
-        OUTPUT << "\n\tHomogenous edges, but null edge_type";
+        fmt::print(stderr, "\n\tHomogenous edges, but null edge_type");
         result = false;
       }
       else if (edge != nullptr) {
         unsigned int nnei = element->number_nodes_edge(i);
         if (nnei != static_cast<unsigned int>(edge->number_nodes())) {
-          OUTPUT << "\n\tNode count mismatch on edge " << i;
+          fmt::print(stderr, "\n\tNode count mismatch on edge {}", i);
           result = false;
         }
         if (i != 0) {
           std::vector<int> conn = element->edge_connectivity(i);
           if (nnei != conn.size()) {
-            OUTPUT << "\n\tNode count and edge connectivity size "
-                      "mismatch on edge "
-                   << i;
+            fmt::print(stderr,
+                       "\n\tNode count and edge connectivity size "
+                       "mismatch on edge {}",
+                       i);
             result = false;
           }
         }
@@ -283,14 +282,14 @@ bool test_element(const std::string &type)
   // Variable types...
   const Ioss::VariableType *vt = Ioss::VariableType::factory(element->name());
   if (vt == nullptr) {
-    OUTPUT << "\n\tVariable Type does not exist for this name";
+    fmt::print(stderr, "\n\tVariable Type does not exist for this name");
     result = false;
   }
   else {
     // See if component counts match...
     int vt_comp = vt->component_count();
     if (nn != vt_comp) {
-      OUTPUT << "\n\tNode count does not match component count";
+      fmt::print(stderr, "\n\tNode count does not match component count");
       result = false;
     }
   }
@@ -319,7 +318,7 @@ bool test_element(const std::string &type)
       unsigned int fncn           = element->face_type(i)->number_corner_nodes();
       unsigned int num_edges_face = element->number_edges_face(i);
       if (fncn != num_edges_face) {
-        OUTPUT << "\n\tFace corner node count should match edges/face for face " << i;
+        fmt::print(stderr, "\n\tFace corner node count should match edges/face for face {}", i);
         result = false;
       }
 
@@ -329,7 +328,7 @@ bool test_element(const std::string &type)
       // Edges defining face...
       std::vector<int> face_edge_conn = element->face_edge_connectivity(i);
       if (num_edges_face != face_edge_conn.size()) {
-        OUTPUT << "\n\tEdges per face mismatch for face " << i;
+        fmt::print(stderr, "\n\tEdges per face mismatch for face {}", i);
         result = false;
       }
       else {
@@ -341,26 +340,28 @@ bool test_element(const std::string &type)
           if ((edge_conn[0] != face_conn[j] && edge_conn[1] != face_conn[j]) ||
               (edge_conn[0] != face_conn[(j + 1) % fncn] &&
                edge_conn[1] != face_conn[(j + 1) % fncn])) {
-            OUTPUT << "\n\tEdge Connectivity does not match face "
-                      "connectivity for edge "
-                   << j + 1 << " on face " << i << "\nEdge: " << edge_conn[0] << " " << edge_conn[1]
-                   << "\nFace: " << face_conn[j] << " " << face_conn[(j + 1) % fncn] << "\n";
+            fmt::print(stderr,
+                       "\n\tEdge Connectivity does not match face connectivity for edge {} on face "
+                       "{}\nEdge: {} {}\nFace: {} {}\n",
+                       j + 1, i, edge_conn[0], edge_conn[1], face_conn[j],
+                       face_conn[(j + 1) % fncn]);
 
             result = false;
           }
           if (order == 2) {
             if (edge_conn.size() != 3) {
-              OUTPUT << "\n\tInvalid edge connectivity count.";
+              fmt::print(stderr, "\n\tInvalid edge connectivity count.");
               result = false;
             }
             if (face_conn.size() < fncn + num_edges_face) {
-              OUTPUT << "\n\tInvalid face connectivity count.";
+              fmt::print(stderr, "\n\tInvalid face connectivity count.");
               result = false;
             }
             if (edge_conn[2] != face_conn[fncn + j]) {
-              OUTPUT << "\n\tMid-Side Node Edge Connectivity does not match face "
-                        "connectivity for edge "
-                     << j + 1 << " on face " << i;
+              fmt::print(stderr,
+                         "\n\tMid-Side Node Edge Connectivity does not match face "
+                         "connectivity for edge {} on face {}",
+                         j + 1, i);
               result = false;
             }
           }
@@ -374,19 +375,19 @@ bool test_element(const std::string &type)
 void test_aliases(const Ioss::NameList &elements)
 {
   int count = elements.size();
-  OUTPUT << "\n\nTesting Element Topology Aliases...\n";
+  fmt::print(stderr, "\n\nTesting Element Topology Aliases...\n");
 
   for (int i = 0; i < count; i++) {
     Ioss::ElementTopology *el_top = Ioss::ElementTopology::factory(elements[i]);
     if (el_top->name() == elements[i]) {
-      OUTPUT << "Element: " << std::setw(20) << elements[i] << "(" << el_top->master_element_name()
-             << ") has the following aliases:\n\t";
+      fmt::print(stderr, "Element: {:<25}({}) has the following aliases:\n\t", elements[i],
+                 el_top->master_element_name());
       for (int j = 0; j < count; j++) {
         if (i != j && el_top->is_alias(elements[j])) {
-          OUTPUT << elements[j] << ", ";
+          fmt::print(stderr, "{}, ", elements[j]);
         }
       }
-      OUTPUT << '\n';
+      fmt::print(stderr, "\n");
     }
   }
 }

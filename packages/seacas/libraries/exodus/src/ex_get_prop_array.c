@@ -54,8 +54,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_PROP_NAME, etc
-#include <stdio.h>
-#include <string.h> // for memset, strcmp
 
 /*!
 

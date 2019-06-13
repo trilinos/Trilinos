@@ -52,9 +52,6 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, DIM_NUM_BOR_NODES, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
 
 int ex_put_processor_node_maps(int exoid, void_int *node_mapi, void_int *node_mapb,
                                void_int *node_mape, int proc_id)

@@ -33,9 +33,6 @@
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "exodusII.h"
 #include "exodusII_int.h"
 
@@ -326,7 +323,6 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
         return (EX_FATAL);
       }
       ex_copy_string(ret_char, tmp_title, MAX_LINE_LENGTH + 1);
-      ret_char[MAX_LINE_LENGTH] = '\0';
     }
     break;
 

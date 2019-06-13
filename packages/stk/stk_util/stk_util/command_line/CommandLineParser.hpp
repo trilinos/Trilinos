@@ -109,7 +109,8 @@ public:
         ParseState state = ParseError;
         try
         {
-            boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(optionsDesc).positional(positionalDesc).run(), varMap);
+            char** nonconst_argv = const_cast<char**>(argv);
+            boost::program_options::store(boost::program_options::command_line_parser(argc, nonconst_argv).options(optionsDesc).positional(positionalDesc).run(), varMap);
             if(is_option_provided("help"))
                 return ParseHelpOnly;
             if(is_option_provided("version"))

@@ -37,10 +37,11 @@
 #include <Ioss_Utils.h> // for IOSS_ERROR
 #include <algorithm>    // for adjacent_find, lower_bound, etc
 #include <cstddef>      // for size_t
-#include <iterator>     // for insert_iterator, inserter
+#include <fmt/ostream.h>
+#include <iterator> // for insert_iterator, inserter
 #include <numeric>
-#include <sstream>     // for operator<<, basic_ostream, etc
-#include <string>      // for char_traits, operator<<, etc
+#include <sstream>
+#include <string>
 #include <sys/types.h> // for ssize_t
 #include <utility>     // for pair, make_pair
 #include <vector>      // for vector, vector<>::iterator, etc
@@ -200,9 +201,10 @@ void Ioss::Map::build_reverse_map__(int64_t num_to_get, int64_t offset)
 
       if (m_map[local_id] <= 0) {
         std::ostringstream errmsg;
-        errmsg << "\nERROR: " << m_entityType << " map detected non-positive global id "
-               << m_map[local_id] << " for " << m_entityType << " with local id " << local_id
-               << " on processor " << m_myProcessor << ".\n";
+        fmt::print(errmsg,
+                   "\nERROR: {0} map detected non-positive global id {1} for {0} with local id {2} "
+                   "on processor {3}.\n",
+                   m_entityType, m_map[local_id], local_id, m_myProcessor);
         IOSS_ERROR(errmsg);
       }
     }
@@ -246,10 +248,11 @@ void Ioss::Map::verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map)
   if (dup != reverse_map.end()) {
     auto               other = dup + 1;
     std::ostringstream errmsg;
-    errmsg << "\nERROR: Duplicate " << m_entityType << " global id detected on processor "
-           << m_myProcessor << ", filename '" << m_filename << "'.\n"
-           << "       Global id " << (*dup).first << " assigned to local " << m_entityType << "s "
-           << (*dup).second << " and " << (*other).second << ".\n";
+    fmt::print(errmsg,
+               "\nERROR: Duplicate {0} global id detected on processor {1}, filename '{2}'.\n"
+               "       Global id {3} assigned to local {0}s {4} and {5}.\n",
+               m_entityType, m_myProcessor, m_filename, (*dup).first, (*dup).second,
+               (*other).second);
     IOSS_ERROR(errmsg);
   }
 }
@@ -308,9 +311,10 @@ bool Ioss::Map::set_map(INT *ids, size_t count, size_t offset, bool in_define_mo
     }
     if (ids[i] <= 0) {
       std::ostringstream errmsg;
-      errmsg << "\nERROR: " << m_entityType << " mapping routines detected non-positive global id "
-             << ids[i] << " for local id " << local_id << " on processor " << m_myProcessor
-             << ", filename '" << m_filename << "'.\n";
+      fmt::print(errmsg,
+                 "\nERROR: {} mapping routines detected non-positive global id {}"
+                 " for local id {} on processor {}, filename '{}'.\n",
+                 m_entityType, ids[i], local_id, m_myProcessor, m_filename);
       IOSS_ERROR(errmsg);
     }
   }
@@ -340,8 +344,10 @@ void Ioss::Map::set_default(size_t count, size_t offset)
   set_is_sequential(true);
 }
 
+#ifndef DOXYGEN_SKIP_THIS
 template void Ioss::Map::reverse_map_data(int *data, size_t count) const;
 template void Ioss::Map::reverse_map_data(int64_t *data, size_t count) const;
+#endif
 
 template <typename INT> void Ioss::Map::reverse_map_data(INT *data, size_t count) const
 {
@@ -371,8 +377,10 @@ void Ioss::Map::reverse_map_data(void *data, const Ioss::Field &field, size_t co
   }
 }
 
+#ifndef DOXYGEN_SKIP_THIS
 template void Ioss::Map::map_data(int *data, size_t count) const;
 template void Ioss::Map::map_data(int64_t *data, size_t count) const;
+#endif
 
 template <typename INT> void Ioss::Map::map_data(INT *data, size_t count) const
 {
@@ -401,8 +409,10 @@ void Ioss::Map::map_data(void *data, const Ioss::Field &field, size_t count) con
   }
 }
 
+#ifndef DOXYGEN_SKIP_THIS
 template void Ioss::Map::map_implicit_data(int *data, size_t count, size_t offset) const;
 template void Ioss::Map::map_implicit_data(int64_t *data, size_t count, size_t offset) const;
+#endif
 
 template <typename INT>
 void Ioss::Map::map_implicit_data(INT *ids, size_t count, size_t offset) const
@@ -569,13 +579,24 @@ int64_t Ioss::Map::global_to_local__(int64_t global, bool must_exist) const
   else {
     local = global - m_offset;
   }
-  if (local > static_cast<int64_t>(m_map.size()) - 1 || (local <= 0 && must_exist)) {
+  if (local > static_cast<int64_t>(m_map.size()) - 1) {
     std::ostringstream errmsg;
-    errmsg << "ERROR: Ioss Mapping routines detected " << m_entityType
-           << " with global id equal to " << global << " returns a local id of " << local
-           << " which is invalid\n"
-           << "on processor " << m_myProcessor << ", filename '" << m_filename << "'.\n"
-           << "This should not happen, please report.\n";
+    fmt::print(errmsg,
+               "ERROR: Ioss Mapping routines detected {0} with global id equal to {1} returns a "
+               "local id of {2} which is\n"
+               "larger than the local {0} count on processor {3}, filename '{4}'.\n"
+               "This should not happen, please report.\n",
+               m_entityType, global, local, m_myProcessor, m_filename);
+    IOSS_ERROR(errmsg);
+  }
+  else if (local <= 0 && must_exist) {
+    std::ostringstream errmsg;
+    fmt::print(errmsg,
+               "ERROR: Ioss Mapping routines could not find a {0} with global id equal to {1} in "
+               "the {0} map\n"
+               "on processor {2}, filename '{3}'.\n"
+               "This should not happen, please report.\n",
+               m_entityType, global, m_myProcessor, m_filename);
     IOSS_ERROR(errmsg);
   }
   return local;

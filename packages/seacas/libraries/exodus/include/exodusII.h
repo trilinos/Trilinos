@@ -68,8 +68,8 @@
 #endif
 
 /* EXODUS version number */
-#define EX_API_VERS 7.19f
-#define EX_API_VERS_NODOT 719
+#define EX_API_VERS 7.20f
+#define EX_API_VERS_NODOT 720
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT EX_API_VERS_NODOT
@@ -1033,6 +1033,9 @@ EXODUS_EXPORT int ex_put_elem_cmap(int          exoid,    /* NetCDF/Exodus file 
                                    void_int *   proc_ids, /* Vector of processor IDs */
                                    int          processor /* This processor ID */
 );
+
+/* Utility function to replace strncpy, strcpy -- guarantee null termination */
+char *ex_copy_string(char *dest, char const *source, size_t elements);
 
 /* Deprecated Code Handling Options:
  * 1. Ignore -- treat deprecated functions as normal non-deprecated functions (default)

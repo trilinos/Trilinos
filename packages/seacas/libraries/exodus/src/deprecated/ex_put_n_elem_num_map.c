@@ -53,7 +53,6 @@
  *****************************************************************************/
 
 #include "exodusII.h" // for ex_put_partial_id_map, etc
-#include <stdint.h>   // for int64_t
 
 /*!
  * \deprecated Use ex_put_partial_id_map()(exoid, EX_ELEM_MAP, start_ent, num_ents, elem_map)

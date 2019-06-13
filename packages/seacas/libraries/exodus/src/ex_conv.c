@@ -47,8 +47,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_file_item, EX_FATAL, etc
-#include <stdio.h>
-#include <stdlib.h> // for NULL, free, malloc
 
 /*! \file
  * this file contains code needed to support the various floating point word
