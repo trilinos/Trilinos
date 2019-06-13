@@ -243,10 +243,10 @@ int main( int argc, char *argv[] ) {
       }
     }
 
-    *outStream << "\nA = " << Print(*A);
-    *outStream << "\nb = " << Print(*b);
-    *outStream << "\nC = " << Print(*C);
-    *outStream << "\nd = " << Print(*d);
+    *outStream << "\nA = " << printMat(*A);
+    *outStream << "\nb = " << printMat(*b);
+    *outStream << "\nC = " << printMat(*C);
+    *outStream << "\nd = " << printMat(*d);
     
 
     auto x = rcp( new Vector{Nopt,1} );

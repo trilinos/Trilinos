@@ -1114,7 +1114,7 @@ operator<<(std::ostream &out,
 /// \brief Return SerialBandDenseMatrix ostream manipulator Use as:
 template<typename OrdinalType, typename ScalarType> 
 SerialBandDenseMatrixPrinter<OrdinalType,ScalarType>
-Print(const SerialBandDenseMatrix<OrdinalType,ScalarType> &obj) 
+printMat(const SerialBandDenseMatrix<OrdinalType,ScalarType> &obj) 
 { 
   return SerialBandDenseMatrixPrinter<OrdinalType,ScalarType>(obj); 
 }

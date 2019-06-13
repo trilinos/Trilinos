@@ -373,7 +373,7 @@ operator<<(std::ostream &out,
 /// \brief Return SerialDenseVector ostream manipulator Use as:
 template<typename OrdinalType, typename ScalarType>
 SerialDenseVectorPrinter<OrdinalType,ScalarType>
-Print(const SerialDenseVector<OrdinalType,ScalarType> &obj)
+printMat(const SerialDenseVector<OrdinalType,ScalarType> &obj)
 {
   return SerialDenseVectorPrinter<OrdinalType,ScalarType>(obj);
 }

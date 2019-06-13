@@ -680,7 +680,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           {
             std::stringstream os;
             os << "KK before HEEV...\n"
-              << Print(*state.KK) << "\n";
+              << printMat(*state.KK) << "\n";
             *out << os.str();
           }
 #       endif
@@ -696,7 +696,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             *out << "Ritz values from heev(KK):\n";
             for (unsigned int i=0; i<theta.size(); i++) *out << theta[i] << " ";
             os << "\nRitz vectors from heev(KK):\n" 
-                                                 << Print(S) << "\n";
+                                                 << printMat(S) << "\n";
             *out << os.str();
           }
 #       endif
@@ -716,7 +716,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             *out << "Ritz values from heev(KK) after sorting:\n";
             std::copy(theta.begin(), theta.end(), std::ostream_iterator<ScalarType>(*out, " "));
             os << "\nRitz vectors from heev(KK) after sorting:\n" 
-              << Print(S) << "\n";
+              << printMat(S) << "\n";
             *out << os.str();
           }
 #       endif
@@ -727,7 +727,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           {
             std::stringstream os;
             os << "Significant primitive Ritz vectors:\n"
-              << Print(Sr) << "\n";
+              << printMat(Sr) << "\n";
             *out << os.str();
           }
 #       endif
@@ -757,7 +757,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           {
             std::stringstream os;
             os << "Sr'*KK*Sr:\n"
-              << Print(newKK) << "\n";
+              << printMat(newKK) << "\n";
             *out << os.str();
           }
 #       endif

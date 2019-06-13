@@ -176,10 +176,10 @@ class RKButcherTableau :
           out << this->description() << std::endl;
           out << this->getDescription() << std::endl;
           out << "number of Stages = " << this->numStages() << std::endl;
-          out << "A = " << Print(this->A()) << std::endl;
-          out << "b = " << Print(this->b()) << std::endl;
-          out << "c = " << Print(this->c()) << std::endl;
-          out << "bstar = " << Print(this->bstar()) << std::endl;
+          out << "A = " << printMat(this->A()) << std::endl;
+          out << "b = " << printMat(this->b()) << std::endl;
+          out << "c = " << printMat(this->c()) << std::endl;
+          out << "bstar = " << printMat(this->bstar()) << std::endl;
           out << "order    = " << this->order()    << std::endl;
           out << "orderMin = " << this->orderMin() << std::endl;
           out << "orderMax = " << this->orderMax() << std::endl;
