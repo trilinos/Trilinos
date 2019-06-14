@@ -103,6 +103,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 struct ML_Wrapper{
   static void Generate_ML_RefMaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& SM,
                                                    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& D0,
+                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Node> >& Ms,
                                                    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& M0inv,
                                                    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& M1,
                                                    Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& nullspace,
@@ -118,6 +119,7 @@ template<class GlobalOrdinal>
 struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> {
   static void Generate_ML_RefMaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& SM,
                                                    Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& D0,
+                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& Ms,
                                                    Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& M0inv,
                                                    Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& M1,
                                                    Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& nullspace,
@@ -135,11 +137,12 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
     RCP<const Epetra_CrsMatrix> epetraSM    = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(SM);
     RCP<const Epetra_CrsMatrix> epetraD0    = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(D0);
     RCP<const Epetra_CrsMatrix> epetraM0inv = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(M0inv);
+    RCP<const Epetra_CrsMatrix> epetraMs    = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(Ms);
     RCP<const Epetra_CrsMatrix> epetraM1    = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(M1);
     mueluList.set("D0",epetraD0);
+    mueluList.set("Ms",epetraMs);
     mueluList.set("M0inv",epetraM0inv);
     mueluList.set("M1",epetraM1);
-    mueluList.set("Ms",epetraM1);
     if(!coords.is_null()) {
       RCP<const Epetra_MultiVector> epetraCoord =  MueLu::Utilities<coordinate_type,LO,GO,NO>::MV2EpetraMV(coords);
       if(epetraCoord->NumVectors() > 0)  mueluList.sublist("refmaxwell: 11list").set("x-coordinates",(*epetraCoord)[0]);
@@ -218,7 +221,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
     bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
     
-    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="";
+    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="", Ms_file="";
 
     if (!TYPE_EQUAL(SC, std::complex<double>)) {
       S_file = "S.mat";
@@ -239,6 +242,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 
     clp.setOption("S", &S_file);
     clp.setOption("SM", &SM_file);
+    clp.setOption("Ms", &Ms_file);
     clp.setOption("M1", &M1_file);
     clp.setOption("M0", &M0_file);
     clp.setOption("M0inv", &M0inv_file);
@@ -273,6 +277,11 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     RCP<const Map> edge_map = D0_Matrix->getRangeMap();
     // edge mass matrix
     RCP<Matrix> M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
+    RCP<Matrix> Ms_Matrix;
+    if (Ms_file != "")
+      Ms_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(Ms_file, edge_map);
+    else
+      Ms_Matrix = M1_Matrix;
     // build stiffness plus mass matrix (SM_Matrix)
     RCP<Matrix> SM_Matrix;
     if (SM_file == "") {
@@ -344,7 +353,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner;
       if (precType=="MueLu-RefMaxwell")
         preconditioner
-          = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
+          = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Ms_Matrix,M0inv_Matrix,
                                                     M1_Matrix,nullspace,coords,params) );
 
 
@@ -480,7 +489,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
     bool        use_stacked_timer = false;              clp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "use stacked timer");
 
-    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="";
+    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file, rhs_file="", nullspace_file="", Ms_file="", sol_file="";
     S_file = "S.mat";
     SM_file = "";
     M1_file = "M1.mat";
@@ -491,6 +500,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 
     clp.setOption("S", &S_file);
     clp.setOption("SM", &SM_file);
+    clp.setOption("Ms", &Ms_file);
     clp.setOption("M1", &M1_file);
     clp.setOption("M0", &M0_file);
     clp.setOption("M0inv", &M0inv_file);
@@ -532,6 +542,11 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     RCP<const Map> edge_map = D0_Matrix->getRangeMap();
     // edge mass matrix
     RCP<Matrix> M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
+    RCP<Matrix> Ms_Matrix;
+    if (Ms_file != "")
+      Ms_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(Ms_file, edge_map);
+    else
+      Ms_Matrix = M1_Matrix;
     // build stiffness plus mass matrix (SM_Matrix)
     RCP<Matrix> SM_Matrix;
     if (SM_file == "") {
@@ -601,12 +616,12 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       // construct preconditioner
       RCP<Operator> preconditioner;
       if (precType=="MueLu-RefMaxwell")
-        preconditioner = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
+        preconditioner = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Ms_Matrix,M0inv_Matrix,
                                                                  M1_Matrix,nullspace,coords,params) );
       else if (precType=="ML-RefMaxwell") {
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
         TEUCHOS_ASSERT(lib==Xpetra::UseEpetra);
-        ML_Wrapper<SC, LO, GO, NO>::Generate_ML_RefMaxwellPreconditioner(SM_Matrix,D0_Matrix,M0inv_Matrix,
+        ML_Wrapper<SC, LO, GO, NO>::Generate_ML_RefMaxwellPreconditioner(SM_Matrix,D0_Matrix,Ms_Matrix,M0inv_Matrix,
                                                                          M1_Matrix,nullspace,coords,params,preconditioner);
 #else
         throw std::runtime_error("ML not available.");
@@ -692,6 +707,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("D0",D0_Matrix);
       SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M0inv",M0inv_Matrix);
       SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M1",M1_Matrix);
+      SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Ms",Ms_Matrix);
       SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Coordinates",coords);
 
       // Build Thyra linear algebra objects
