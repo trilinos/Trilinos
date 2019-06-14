@@ -208,21 +208,36 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
-  if (obs == Teuchos::null) {
-    // Create default observer, otherwise keep current observer.
-    if (this->stepperObserver_ == Teuchos::null) {
-      stepperExplicitRKObserver_ =
-        Teuchos::rcp(new StepperExplicitRKObserver<Scalar>());
-      this->stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
-          (stepperExplicitRKObserver_);
-     }
-  } else {
-    this->stepperObserver_ = obs;
-    stepperExplicitRKObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> >
-        (this->stepperObserver_);
+
+  if (stepperObserver_ == Teuchos::null) {
+    stepperObserver_ = Teuchos::rcp(new StepperObserverComposite<Scalar>);
   }
+
+  if (obs == Teuchos::null) {
+      auto stepperExplicitRKObserver =
+        Teuchos::rcp(new StepperExplicitRKObserver<Scalar>());
+      if (stepperExplicitRKObserver_  == Teuchos::null) {
+        stepperExplicitRKObserver_ =
+          Teuchos::rcp(new StepperExplicitRKObserverComposite<Scalar>());
+      }
+      stepperExplicitRKObserver_->addObserver(stepperExplicitRKObserver);
+      stepperObserver_->addObserver(
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
+	(stepperExplicitRKObserver, true));
+  } else {
+    stepperObserver_->addObserver(obs);
+    if (Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> >
+      (obs) != Teuchos::null) {
+        if (stepperExplicitRKObserver_  == Teuchos::null) {
+          stepperExplicitRKObserver_ =
+            Teuchos::rcp(new StepperExplicitRKObserverComposite<Scalar>());
+        }
+        stepperExplicitRKObserver_->addObserver(
+        Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> >
+        (obs));
+    }
+  }
+
 }
 
 

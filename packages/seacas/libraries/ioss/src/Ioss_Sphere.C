@@ -40,6 +40,7 @@
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
+  const char *Sphere::name = "sphere";
   class St_Sphere : public ElementVariableType
   {
   public:

@@ -55,10 +55,6 @@
 
 #include "exodusII.h"     // for ex_block, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_NAME_ELB, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <string.h> // for strcpy
 
 /*
  * reads the parameters used to describe an edge, face, or element block
@@ -94,9 +90,9 @@ int ex_get_block_param(int exoid, ex_block *block)
   if (blk_id_ndx <= 0) {
     ex_get_err(NULL, NULL, &status);
     if (status != 0) {
-      strcpy(block->topology, "NULL"); /* NULL element type name */
-      block->num_entry           = 0;  /* no elements            */
-      block->num_nodes_per_entry = 0;  /* no nodes               */
+      ex_copy_string(block->topology, "NULL", MAX_STR_LENGTH + 1); /* NULL element type name */
+      block->num_entry           = 0;                              /* no elements            */
+      block->num_nodes_per_entry = 0;                              /* no nodes               */
       block->num_edges_per_entry = 0;
       block->num_faces_per_entry = 0;
       block->num_attribute       = 0; /* no attributes          */

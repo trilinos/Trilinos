@@ -62,6 +62,22 @@ function test_pr_constraints_master()
 }
 
 
+function framework_tests_only()
+{
+    pkg_file=${1:?}
+    cat << EOF > ${pkg_file}
+
+MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
+  MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
+  SET(\${VAR_NAME} \${VAR_VAL} CACHE BOOL "Set in packageEnables.cmake")
+ENDMACRO()
+
+PR_ENABLE_BOOL(Trilinos_ENABLE_TrilinosFrameworkTests ON)
+
+EOF
+
+}
+
 
 # This script expects to start out in the root level of the Jenkins workspace.
 # Let's make sure we're there.
@@ -266,6 +282,20 @@ elif [ "Trilinos_pullrequest_intel_17.0.1" == "${JOB_BASE_NAME:?}" ] ; then
         echo -e "There was an issue loading the intel environment. The error code was: $ierror"
         exit $ierror
     fi
+elif [ "Trilinos_pullrequest_python_2" == "${JOB_BASE_NAME:?}" ]; then
+    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestPython2TestingEnv.sh
+    ierror=$?
+    if [[ $ierror != 0 ]]; then
+        echo -e "There was an issue loading the python2 environment. The error code was: $ierror"
+        exit $ierror
+    fi
+elif [ "Trilinos_pullrequest_python_3" == "${JOB_BASE_NAME:?}" ]; then
+    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestPython3TestingEnv.sh
+    ierror=$?
+    if [[ $ierror != 0 ]]; then
+        echo -e "There was an issue loading the python3 environment. The error code was: $ierror"
+        exit $ierror
+    fi
 else
     ierror=42
     echo -e "ERROR: Unable to find matching environment for job: ${JOB_BASE_NAME:?}"
@@ -380,6 +410,12 @@ else
         CONFIG_SCRIPT=PullRequestLinuxGCC7.3.0TestingSettings.cmake
     elif [ "Trilinos_pullrequest_cuda_9.2" == "${JOB_BASE_NAME:?}" ]; then
         CONFIG_SCRIPT=PullRequestLinuxCuda9.2TestingSettings.cmake
+    elif [ "Trilinos_pullrequest_python_2" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxPython2.cmake
+        framework_tests_only ../packageEnables.cmake
+    elif [ "Trilinos_pullrequest_python_3" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxPython3.cmake
+        framework_tests_only ../packageEnables.cmake
     fi
 fi
 

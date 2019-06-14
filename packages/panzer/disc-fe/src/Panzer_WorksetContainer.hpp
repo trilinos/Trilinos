@@ -56,7 +56,7 @@
 namespace panzer {
 
 // forward declaration
-class UniqueGlobalIndexerBase;
+class GlobalIndexer;
 
 /** \brief Class that provides access to worksets on
   * each element block and side set.
@@ -136,7 +136,7 @@ public:
    /** Set the global indexer. This is used solely for accessing the
      * orientations.
      */
-   void setGlobalIndexer(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
+   void setGlobalIndexer(const Teuchos::RCP<const panzer::GlobalIndexer> & ugi);
 
    /** Add a basis to the worksets (if required). If reuqired this will clear
      * the workset reconstructing all the arrays. Add to all element blocks.
@@ -153,7 +153,7 @@ private:
      * global indexer. If an exception is raised, saying it wasn't null then this method
      * has been previously called.
      */
-   void applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
+   void applyOrientations(const Teuchos::RCP<const panzer::GlobalIndexer> & ugi);
 
    /** Using the stored global indexer, set the orientations for a volume workset on a
      * specified element block.
@@ -202,7 +202,7 @@ private:
 
    std::size_t worksetSize_;
 
-   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer_;
+   Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer_;
 
    Teuchos::RCP<std::vector<Intrepid2::Orientation> >  orientations_;
 };

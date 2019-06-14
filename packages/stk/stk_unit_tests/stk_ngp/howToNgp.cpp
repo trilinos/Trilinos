@@ -19,10 +19,9 @@
 #include <stk_util/stk_config.h>
 #include <stk_io/FillMesh.hpp>
 #include <stk_unit_test_utils/getOption.h>
-
 #include "NgpUnitTestUtils.hpp"
 
-typedef Kokkos::DualView<int*, Kokkos::LayoutRight, ngp::ExecSpace> IntViewType;
+using IntDualViewType = Kokkos::DualView<int*, ngp::ExecSpace>;
 
 extern int gl_argc;
 extern char** gl_argv;
@@ -500,7 +499,7 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
     EXPECT_EQ(4u, elems.size());
 
     unsigned numResults = 2;
-    IntViewType result = ngp_unit_test_utils::create_dualview<IntViewType>("result",numResults);
+    IntDualViewType result = ngp_unit_test_utils::create_dualview<IntDualViewType>("result",numResults);
     enum {ELEM_FACE_CHECK = 0, FACE_NODE_CHECK = 1};
 
     ngp::Mesh ngpMesh(bulk);
@@ -535,8 +534,8 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
         });
     });
 
-    result.modify<IntViewType::execution_space>();
-    result.sync<IntViewType::host_mirror_space>();
+    result.modify<IntDualViewType::execution_space>();
+    result.sync<IntDualViewType::host_mirror_space>();
 
     EXPECT_EQ(2, result.h_view(ELEM_FACE_CHECK)); //expected 2 elements that had faces
     EXPECT_EQ(2, result.h_view(FACE_NODE_CHECK)); //expected 2 faces that had nodes
@@ -580,15 +579,15 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
   Kokkos::deep_copy(fields, hostFields);
 
   unsigned numResults = 2;
-  IntViewType result = ngp_unit_test_utils::create_dualview<IntViewType>("result",numResults);
+  IntDualViewType result = ngp_unit_test_utils::create_dualview<IntDualViewType>("result",numResults);
 
   Kokkos::parallel_for(2, KOKKOS_LAMBDA(const unsigned& i)
   {
     result.d_view(i) = fields(i).get_ordinal() == i ? 1 : 0;
   });
 
-  result.modify<IntViewType::execution_space>();
-  result.sync<IntViewType::host_mirror_space>();
+  result.modify<IntDualViewType::execution_space>();
+  result.sync<IntDualViewType::host_mirror_space>();
 
   EXPECT_EQ(1, result.h_view(0));
   EXPECT_EQ(1, result.h_view(1));
@@ -859,20 +858,58 @@ protected:
 TEST_F(NgpReduceHowTo, getMinFieldValue)
 {
     int expectedMinVal = 1;
-    EXPECT_EQ(expectedMinVal, ngp::get_field_min(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
+    int actualMinVal = ngp::get_field_min(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part());
+    EXPECT_EQ(expectedMinVal, actualMinVal);
 }
 
 TEST_F(NgpReduceHowTo, getMaxFieldValue)
 {
-    EXPECT_EQ(get_num_elems(), ngp::get_field_max(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
+    int max_val = ngp::get_field_max(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part());
+    EXPECT_EQ(get_num_elems(), max_val);
 }
 
 TEST_F(NgpReduceHowTo, getSumFieldValue)
 {
     int numElems = get_num_elems();
     int expectedSum = numElems*(numElems+1)/2;
-    EXPECT_EQ(expectedSum, ngp::get_field_sum(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
+    int sum_val = ngp::get_field_sum(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part());
+    EXPECT_EQ(expectedSum, sum_val);
 }
+//TEST_F(NgpReduceHowTo, minMaxPairWiseReduction)
+//{
+//    Kokkos::MinMaxScalar<int> minMaxVal;
+//    Kokkos::MinMax<int> minMax(minMaxVal);
+//    ngp::get_field_reduction
+//      (ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part(), minMax);
+//    EXPECT_EQ(1, minMaxVal.min_val);
+//    EXPECT_EQ(get_num_elems(), minMaxVal.max_val);
+//}
+//TEST_F(NgpReduceHowTo, minLocReduction)
+//{
+//    int expectedMin = 1;
+//    int expectedMinLoc = 0;
+//    Kokkos::ValLocScalar<int,int> minLocVal;
+//    Kokkos::MinLoc<int,int> minLoc (minLocVal);
+//    ngp::get_field_reduction
+//      (ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part(), minLoc);
+//    EXPECT_EQ(expectedMin, minLocVal.val);
+//    EXPECT_EQ(expectedMinLoc, minLocVal.loc);
+//}
+//TEST_F(NgpReduceHowTo, minMaxLocReduction)
+//{
+//    int expectedMin = 1;
+//    int expectedMinLoc = 0;
+//    int expectedMax = get_num_elems();
+//    int expectedMaxLoc = 3;
+//    Kokkos::MinMaxLocScalar<int,int> minMaxLocVal;
+//    Kokkos::MinMaxLoc<int,int> minMaxLoc (minMaxLocVal);
+//    ngp::get_field_reduction
+//      (ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part(), minMaxLoc);
+//    EXPECT_EQ(expectedMin, minMaxLocVal.min_val);
+//    EXPECT_EQ(expectedMinLoc, minMaxLocVal.min_loc);
+//    EXPECT_EQ(expectedMax, minMaxLocVal.max_val);
+//    EXPECT_EQ(expectedMaxLoc, minMaxLocVal.max_loc);
+//}
 
 template <typename T>
 void fill_field_on_device(stk::mesh::BulkData & bulk,
@@ -984,6 +1021,28 @@ NGP_TEST_F(NgpHowTo, ReuseNgpFieldNewFieldManager)
 #endif
 
     check_field_on_device(get_bulk(), ngpMesh, fieldManager, stkField.mesh_meta_data_ordinal(), expectedValue);
+}
+
+NGP_TEST_F(NgpHowTo, CopyAndDestroyFieldManager)
+{
+    int numStates = 1;
+    double initialValue = 0.0;
+    stk::mesh::Field<double> & stkField = create_field_with_num_states_and_init(get_meta(), "field01", numStates, initialValue);
+
+    setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+
+    ngp::Mesh ngpMesh(get_bulk());
+    ngp::FieldManager fieldManager(get_bulk());
+    ngp::Field<double> & ngpField = fieldManager.get_field<double>(stkField.mesh_meta_data_ordinal());
+    stk::mesh::EntityRank rank = ngpField.get_rank();
+
+    {
+       ngp::FieldManager fieldManagerCopy(fieldManager);
+       ngp::Field<double> & ngpFieldCopy = fieldManagerCopy.get_field<double>(stkField.mesh_meta_data_ordinal());
+       EXPECT_EQ(rank, ngpField.get_rank());
+       EXPECT_EQ(rank, ngpFieldCopy.get_rank());
+    }
+    EXPECT_EQ(rank, ngpField.get_rank());
 }
 
 

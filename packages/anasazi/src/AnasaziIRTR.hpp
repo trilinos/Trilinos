@@ -889,15 +889,15 @@ namespace Anasazi {
         MVT::MvTransMv(ONE,*this->delta_,*this->Adelta_,AA);
         MVT::MvTransMv(ONE,*this->delta_,*this->Bdelta_,BB);
       }
-      this->om_->stream(Debug) << "AA: " << std::endl << AA << std::endl;;
-      this->om_->stream(Debug) << "BB: " << std::endl << BB << std::endl;;
+      this->om_->stream(Debug) << "AA: " << std::endl << printMat(AA) << std::endl;;
+      this->om_->stream(Debug) << "BB: " << std::endl << printMat(BB) << std::endl;;
       {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerDS_ );
 #endif
         ret = Utils::directSolver(AA.numRows(),AA,Teuchos::rcpFromRef(BB),S,newtheta,rank,1);
       }
-      this->om_->stream(Debug) << "S: " << std::endl << S << std::endl;;
+      this->om_->stream(Debug) << "S: " << std::endl << printMat(S) << std::endl;;
       TEUCHOS_TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::IRTR::iterate(): failure solving projected eigenproblem after retraction. ret == " << ret);
       TEUCHOS_TEST_FOR_EXCEPTION(rank != AA.numRows(),RTRRitzFailure,"Anasazi::IRTR::iterate(): retracted iterate failed in Ritz analysis. rank == " << rank);
 

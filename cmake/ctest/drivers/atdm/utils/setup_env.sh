@@ -25,6 +25,12 @@ if [ "${Trilinos_REPOSITORY_LOCATION}" == "" ] ; then
   export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
 fi
 
+unset http_proxy
+# NOTE: Above we have to unset http_proxy to allow the second submit to the
+# testing-dev.sandia.gov/cdash/ site which the jenkins job sets.  But we can't
+# unset https_proxy which is needed for the git operations with
+# https://github.com.
+
 #
 # C) Setup install-releated stuff
 #

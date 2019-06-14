@@ -28,7 +28,6 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 

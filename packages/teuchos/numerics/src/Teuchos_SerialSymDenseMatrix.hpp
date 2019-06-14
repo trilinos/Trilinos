@@ -402,7 +402,11 @@ class SerialSymDenseMatrix : public CompObject, public BLAS<OrdinalType,ScalarTy
   //! @name I/O methods.
   //@{
   //! Print method.  Defines the behavior of the std::ostream << operator
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
   virtual void print(std::ostream& os) const;
+#else
+  virtual std::ostream& print(std::ostream& os) const;
+#endif
 
   //@}
 
@@ -1010,7 +1014,11 @@ int SerialSymDenseMatrix<OrdinalType, ScalarType>::scale( const SerialSymDenseMa
 */
 
 template<typename OrdinalType, typename ScalarType>
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
 void SerialSymDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
+#else
+std::ostream& SerialSymDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
+#endif
 {
   os << std::endl;
   if(valuesCopied_)
@@ -1033,6 +1041,9 @@ void SerialSymDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) cons
       os << std::endl;
     }
   }
+#ifdef TEUCHOS_HIDE_DEPRECATED_CODE
+  return os;
+#endif
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -1184,6 +1195,35 @@ std::ostream& operator<< (std::ostream& os, const Teuchos::SerialSymDenseMatrix<
   return os;
 }
 #endif
+
+/// \brief Ostream manipulator for SerialSymDenseMatrix 
+template<typename OrdinalType, typename ScalarType>
+struct SerialSymDenseMatrixPrinter {
+public:
+  const SerialSymDenseMatrix<OrdinalType,ScalarType> &obj;
+  SerialSymDenseMatrixPrinter(
+        const SerialSymDenseMatrix<OrdinalType,ScalarType> &obj_in)
+      : obj(obj_in) {}
+};
+
+/// \brief Output SerialSymDenseMatrix object through its stream manipulator. 
+template<typename OrdinalType, typename ScalarType>
+std::ostream&
+operator<<(std::ostream &out,
+           const SerialSymDenseMatrixPrinter<OrdinalType,ScalarType> printer)
+{
+  printer.obj.print(out);
+  return out;
+}
+
+/// \brief Return SerialSymDenseMatrix ostream manipulator Use as:
+template<typename OrdinalType, typename ScalarType>
+SerialSymDenseMatrixPrinter<OrdinalType,ScalarType>
+printMat(const SerialSymDenseMatrix<OrdinalType,ScalarType> &obj)
+{
+  return SerialSymDenseMatrixPrinter<OrdinalType,ScalarType>(obj);
+}
+
 
 } // namespace Teuchos
 

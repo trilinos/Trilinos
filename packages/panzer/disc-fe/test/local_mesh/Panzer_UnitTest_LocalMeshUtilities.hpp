@@ -59,12 +59,11 @@
 namespace panzer {
 
 // Generate a mesh info object
-template<typename LO, typename GO>
 inline
-Teuchos::RCP<panzer::LocalMeshInfo<LO,GO>>
+Teuchos::RCP<panzer::LocalMeshInfo>
 generateLocalMeshInfo()
 {
-  Teuchos::RCP<panzer::LocalMeshInfo<LO,GO>> mesh_info(new panzer::LocalMeshInfo<LO,GO>());
+  Teuchos::RCP<panzer::LocalMeshInfo> mesh_info(new panzer::LocalMeshInfo);
 
   // Local (=global) mesh indexes (4 owned, 2 virtual)
   //     v    o    o    o    o    v
@@ -107,7 +106,7 @@ generateLocalMeshInfo()
     mesh.cell_vertices = Kokkos::View<double***>("vertices",6,2,1);
 
     // Set local cells
-    mesh.local_cells = Kokkos::View<LO*>("local_cells",6);
+    mesh.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cells",6);
     mesh.local_cells(0) = 0;
     mesh.local_cells(1) = 1;
     mesh.local_cells(2) = 2;
@@ -116,7 +115,7 @@ generateLocalMeshInfo()
     mesh.local_cells(5) = 5;
 
     // Set global cells
-    mesh.global_cells = Kokkos::View<GO*>("global_cells",6);
+    mesh.global_cells = Kokkos::View<panzer::GlobalOrdinal*>("global_cells",6);
     mesh.global_cells(0) = 0;
     mesh.global_cells(1) = 1;
     mesh.global_cells(2) = 2;
@@ -125,7 +124,7 @@ generateLocalMeshInfo()
     mesh.global_cells(5) = 5;
 
     // Set face to cells
-    mesh.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells",5);
+    mesh.face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",5);
     mesh.face_to_cells(0,0) = 0; mesh.face_to_cells(0,1) = 4;
     mesh.face_to_cells(1,0) = 0; mesh.face_to_cells(1,1) = 1;
     mesh.face_to_cells(2,0) = 1; mesh.face_to_cells(2,1) = 2;
@@ -133,7 +132,7 @@ generateLocalMeshInfo()
     mesh.face_to_cells(4,0) = 3; mesh.face_to_cells(4,1) = 5;
 
     // Set face to local face indexes
-    mesh.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx",5);
+    mesh.face_to_lidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_lidx",5);
     mesh.face_to_lidx(0,0) = 0; mesh.face_to_lidx(0,1) = 0;
     mesh.face_to_lidx(1,0) = 1; mesh.face_to_lidx(1,1) = 0;
     mesh.face_to_lidx(2,0) = 1; mesh.face_to_lidx(2,1) = 0;
@@ -141,7 +140,7 @@ generateLocalMeshInfo()
     mesh.face_to_lidx(4,0) = 1; mesh.face_to_lidx(4,1) = 0;
 
     // Set cell to faces
-    mesh.cell_to_faces = Kokkos::View<LO**>("cell_to_faces",6,2);
+    mesh.cell_to_faces = Kokkos::View<panzer::LocalOrdinal**>("cell_to_faces",6,2);
     mesh.cell_to_faces(0,0) = 0; mesh.cell_to_faces(0,1) = 1;
     mesh.cell_to_faces(1,0) = 1; mesh.cell_to_faces(1,1) = 2;
     mesh.cell_to_faces(2,0) = 2; mesh.cell_to_faces(2,1) = 3;
@@ -161,7 +160,7 @@ generateLocalMeshInfo()
     //  -------------------------------
     //       0    1    2
 
-    LocalMeshBlockInfo<LO,GO> & block = mesh_info->element_blocks["block0"];
+    LocalMeshBlockInfo & block = mesh_info->element_blocks["block0"];
     block.element_block_name = "block0";
     block.cell_topology = cell_topology;
 
@@ -174,33 +173,33 @@ generateLocalMeshInfo()
     block.cell_vertices = Kokkos::View<double***>("vertices",4,2,1);
 
     // Set local cells
-    block.local_cells = Kokkos::View<LO*>("local_cells",4);
+    block.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cells",4);
     block.local_cells(0) = 0;
     block.local_cells(1) = 1;
     block.local_cells(2) = 2;
     block.local_cells(3) = 3;
 
     // Set global cells
-    block.global_cells = Kokkos::View<GO*>("global_cells",4);
+    block.global_cells = Kokkos::View<panzer::GlobalOrdinal*>("global_cells",4);
     block.global_cells(0) = 0;
     block.global_cells(1) = 1;
     block.global_cells(2) = 2;
     block.global_cells(3) = 4;
 
     // Set face to cells
-    block.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells",3);
+    block.face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",3);
     block.face_to_cells(0,0) = 0; block.face_to_cells(0,1) = 3;
     block.face_to_cells(1,0) = 0; block.face_to_cells(1,1) = 1;
     block.face_to_cells(2,0) = 1; block.face_to_cells(2,1) = 2;
 
     // Set face to local face indexes
-    block.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx",3);
+    block.face_to_lidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_lidx",3);
     block.face_to_lidx(0,0) = 0; block.face_to_lidx(0,1) = 0;
     block.face_to_lidx(1,0) = 1; block.face_to_lidx(1,1) = 0;
     block.face_to_lidx(2,0) = 1; block.face_to_lidx(2,1) = 0;
 
     // Set cell to faces
-    block.cell_to_faces = Kokkos::View<LO**>("cell_to_faces",4,2);
+    block.cell_to_faces = Kokkos::View<panzer::LocalOrdinal**>("cell_to_faces",4,2);
     block.cell_to_faces(0,0) = 0; block.cell_to_faces(0,1) = 1;
     block.cell_to_faces(1,0) = 1; block.cell_to_faces(1,1) = 2;
     block.cell_to_faces(2,0) = 2; block.cell_to_faces(2,1) =-1;
@@ -219,7 +218,7 @@ generateLocalMeshInfo()
     //  -------------------------------
     //                 0    1    2
 
-    LocalMeshBlockInfo<LO,GO> & block = mesh_info->element_blocks["block1"];
+    LocalMeshBlockInfo & block = mesh_info->element_blocks["block1"];
     block.element_block_name = "block1";
     block.cell_topology = cell_topology;
 
@@ -232,33 +231,33 @@ generateLocalMeshInfo()
     block.cell_vertices = Kokkos::View<double***>("vertices",4,2,1);
 
     // Set local cells
-    block.local_cells = Kokkos::View<LO*>("local_cells",4);
+    block.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cells",4);
     block.local_cells(0) = 0;
     block.local_cells(1) = 1;
     block.local_cells(2) = 2;
     block.local_cells(3) = 3;
 
     // Set global cells
-    block.global_cells = Kokkos::View<GO*>("global_cells",4);
+    block.global_cells = Kokkos::View<panzer::GlobalOrdinal*>("global_cells",4);
     block.global_cells(0) = 2;
     block.global_cells(1) = 3;
     block.global_cells(2) = 1;
     block.global_cells(3) = 5;
 
     // Set face to cells
-    block.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells",3);
+    block.face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",3);
     block.face_to_cells(0,0) = 0; block.face_to_cells(0,1) = 2;
     block.face_to_cells(1,0) = 0; block.face_to_cells(1,1) = 1;
     block.face_to_cells(2,0) = 1; block.face_to_cells(2,1) = 3;
 
     // Set face to local face indexes
-    block.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx",3);
+    block.face_to_lidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_lidx",3);
     block.face_to_lidx(0,0) = 0; block.face_to_lidx(0,1) = 0;
     block.face_to_lidx(1,0) = 1; block.face_to_lidx(1,1) = 0;
     block.face_to_lidx(2,0) = 1; block.face_to_lidx(2,1) = 0;
 
     // Set cell to faces
-    block.cell_to_faces = Kokkos::View<LO**>("cell_to_faces",4,2);
+    block.cell_to_faces = Kokkos::View<panzer::LocalOrdinal**>("cell_to_faces",4,2);
     block.cell_to_faces(0,0) = 0; block.cell_to_faces(0,1) = 1;
     block.cell_to_faces(1,0) = 1; block.cell_to_faces(1,1) = 2;
     block.cell_to_faces(2,0) = 0; block.cell_to_faces(2,1) =-1;
@@ -275,7 +274,7 @@ generateLocalMeshInfo()
     //  -------------------------------
     //       0
 
-    LocalMeshSidesetInfo<LO,GO> & sideset = mesh_info->sidesets["block0"]["sideset0"];
+    LocalMeshSidesetInfo & sideset = mesh_info->sidesets["block0"]["sideset0"];
     sideset.element_block_name = "block0";
     sideset.sideset_name = "sideset0";
     sideset.cell_topology = cell_topology;
@@ -289,25 +288,25 @@ generateLocalMeshInfo()
     sideset.cell_vertices = Kokkos::View<double***>("vertices",2,2,1);
 
     // Set local cells
-    sideset.local_cells = Kokkos::View<LO*>("local_cells",2);
+    sideset.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cells",2);
     sideset.local_cells(0) = 0;
     sideset.local_cells(1) = 1;
 
     // Set global cells
-    sideset.global_cells = Kokkos::View<GO*>("global_cells",2);
+    sideset.global_cells = Kokkos::View<panzer::GlobalOrdinal*>("global_cells",2);
     sideset.global_cells(0) = 0;
     sideset.global_cells(1) = 4;
 
     // Set face to cells
-    sideset.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells",1);
+    sideset.face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",1);
     sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
 
     // Set face to local face indexes
-    sideset.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx",1);
+    sideset.face_to_lidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_lidx",1);
     sideset.face_to_lidx(0,0) = 0; sideset.face_to_lidx(0,1) = 0;
 
     // Set cell to faces
-    sideset.cell_to_faces = Kokkos::View<LO**>("cell_to_faces",2,2);
+    sideset.cell_to_faces = Kokkos::View<panzer::LocalOrdinal**>("cell_to_faces",2,2);
     sideset.cell_to_faces(0,0) = 0; sideset.cell_to_faces(0,1) =-1;
     sideset.cell_to_faces(1,0) = 0; sideset.cell_to_faces(1,1) =-1;
   }
@@ -322,7 +321,7 @@ generateLocalMeshInfo()
     //  -------------------------------
     //                           0
 
-    LocalMeshSidesetInfo<LO,GO> & sideset = mesh_info->sidesets["block1"]["sideset1"];
+    LocalMeshSidesetInfo & sideset = mesh_info->sidesets["block1"]["sideset1"];
     sideset.element_block_name = "block1";
     sideset.sideset_name = "sideset1";
     sideset.cell_topology = cell_topology;
@@ -336,25 +335,25 @@ generateLocalMeshInfo()
     sideset.cell_vertices = Kokkos::View<double***>("vertices",2,2,1);
 
     // Set local cells
-    sideset.local_cells = Kokkos::View<LO*>("local_cells",2);
+    sideset.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cells",2);
     sideset.local_cells(0) = 0;
     sideset.local_cells(1) = 1;
 
     // Set global cells
-    sideset.global_cells = Kokkos::View<GO*>("global_cells",2);
+    sideset.global_cells = Kokkos::View<panzer::GlobalOrdinal*>("global_cells",2);
     sideset.global_cells(0) = 3;
     sideset.global_cells(1) = 5;
 
     // Set face to cells
-    sideset.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells",1);
+    sideset.face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",1);
     sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
 
     // Set face to local face indexes
-    sideset.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx",1);
+    sideset.face_to_lidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_lidx",1);
     sideset.face_to_lidx(0,0) = 0; sideset.face_to_lidx(0,1) = 0;
 
     // Set cell to faces
-    sideset.cell_to_faces = Kokkos::View<LO**>("cell_to_faces",2,2);
+    sideset.cell_to_faces = Kokkos::View<panzer::LocalOrdinal**>("cell_to_faces",2,2);
     sideset.cell_to_faces(0,0) = 0; sideset.cell_to_faces(0,1) =-1;
     sideset.cell_to_faces(1,0) = 0; sideset.cell_to_faces(1,1) =-1;
   }
@@ -369,7 +368,7 @@ generateLocalMeshInfo()
     //  -------------------------------
     //                 0
 
-    LocalMeshSidesetInfo<LO,GO> & sideset = mesh_info->sidesets["block0"]["sideset2"];
+    LocalMeshSidesetInfo & sideset = mesh_info->sidesets["block0"]["sideset2"];
     sideset.element_block_name = "block0";
     sideset.sideset_name = "sideset2";
     sideset.cell_topology = cell_topology;
@@ -383,25 +382,25 @@ generateLocalMeshInfo()
     sideset.cell_vertices = Kokkos::View<double***>("vertices",2,2,1);
 
     // Set local cells
-    sideset.local_cells = Kokkos::View<LO*>("local_cells",2);
+    sideset.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cells",2);
     sideset.local_cells(0) = 0;
     sideset.local_cells(1) = 1;
 
     // Set global cells
-    sideset.global_cells = Kokkos::View<GO*>("global_cells",2);
+    sideset.global_cells = Kokkos::View<panzer::GlobalOrdinal*>("global_cells",2);
     sideset.global_cells(0) = 1;
     sideset.global_cells(1) = 2;
 
     // Set face to cells
-    sideset.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells",1);
+    sideset.face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",1);
     sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
 
     // Set face to local face indexes
-    sideset.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx",1);
+    sideset.face_to_lidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_lidx",1);
     sideset.face_to_lidx(0,0) = 1; sideset.face_to_lidx(0,1) = 0;
 
     // Set cell to faces
-    sideset.cell_to_faces = Kokkos::View<LO**>("cell_to_faces",2,2);
+    sideset.cell_to_faces = Kokkos::View<panzer::LocalOrdinal**>("cell_to_faces",2,2);
     sideset.cell_to_faces(0,0) =-1; sideset.cell_to_faces(0,1) = 0;
     sideset.cell_to_faces(1,0) = 0; sideset.cell_to_faces(1,1) =-1;
   }
@@ -414,7 +413,7 @@ generateLocalMeshInfo()
     //  -------------------------------
     //                 0
 
-    LocalMeshSidesetInfo<LO,GO> & sideset = mesh_info->sidesets["block1"]["sideset2"];
+    LocalMeshSidesetInfo & sideset = mesh_info->sidesets["block1"]["sideset2"];
     sideset.element_block_name = "block1";
     sideset.sideset_name = "sideset2";
     sideset.cell_topology = cell_topology;
@@ -428,25 +427,25 @@ generateLocalMeshInfo()
     sideset.cell_vertices = Kokkos::View<double***>("vertices",2,2,1);
 
     // Set local cells
-    sideset.local_cells = Kokkos::View<LO*>("local_cells",2);
+    sideset.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cells",2);
     sideset.local_cells(0) = 0;
     sideset.local_cells(1) = 1;
 
     // Set global cells
-    sideset.global_cells = Kokkos::View<GO*>("global_cells",2);
+    sideset.global_cells = Kokkos::View<panzer::GlobalOrdinal*>("global_cells",2);
     sideset.global_cells(0) = 2;
     sideset.global_cells(1) = 1;
 
     // Set face to cells
-    sideset.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells",1);
+    sideset.face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",1);
     sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
 
     // Set face to local face indexes
-    sideset.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx",1);
+    sideset.face_to_lidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_lidx",1);
     sideset.face_to_lidx(0,0) = 0; sideset.face_to_lidx(0,1) = 1;
 
     // Set cell to faces
-    sideset.cell_to_faces = Kokkos::View<LO**>("cell_to_faces",2,2);
+    sideset.cell_to_faces = Kokkos::View<panzer::LocalOrdinal**>("cell_to_faces",2,2);
     sideset.cell_to_faces(0,0) = 0; sideset.cell_to_faces(0,1) =-1;
     sideset.cell_to_faces(1,0) =-1; sideset.cell_to_faces(1,1) = 0;
   }
@@ -456,13 +455,12 @@ generateLocalMeshInfo()
 
 
 // Generate a mesh info object
-template<typename LO, typename GO>
 inline
-Teuchos::RCP<panzer::LocalMeshInfoBase<LO,GO>>
+Teuchos::RCP<panzer::LocalMeshInfoBase>
 generateLocalMeshInfoBase()
 {
-  Teuchos::RCP<panzer::LocalMeshInfoBase<LO,GO>> block_rcp(new panzer::LocalMeshInfoBase<LO,GO>());
-  panzer::LocalMeshInfoBase<LO,GO> & block = *block_rcp;
+  Teuchos::RCP<panzer::LocalMeshInfoBase> block_rcp(new panzer::LocalMeshInfoBase);
+  panzer::LocalMeshInfoBase & block = *block_rcp;
 
   // Local mesh indexes (3 owned, 1 ghost, 1 virtual)
   //    g   o   o   o   v
@@ -480,7 +478,7 @@ generateLocalMeshInfoBase()
   block.cell_vertices = Kokkos::View<double***>("vertices",5,2,1);
 
   // Set local cells
-  block.local_cells = Kokkos::View<LO*>("local_cells",5);
+  block.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cells",5);
   block.local_cells(0) = 0;
   block.local_cells(1) = 1;
   block.local_cells(2) = 2;
@@ -488,7 +486,7 @@ generateLocalMeshInfoBase()
   block.local_cells(4) = 4;
 
   // Set global cells - arbitrary
-  block.global_cells = Kokkos::View<GO*>("global_cells",5);
+  block.global_cells = Kokkos::View<panzer::GlobalOrdinal*>("global_cells",5);
   block.global_cells(0) = 8;
   block.global_cells(1) = 6;
   block.global_cells(2) = 2;
@@ -496,21 +494,21 @@ generateLocalMeshInfoBase()
   block.global_cells(4) = 9;
 
   // Set face to cells
-  block.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells",4);
+  block.face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",4);
   block.face_to_cells(0,0) = 0; block.face_to_cells(0,1) = 3;
   block.face_to_cells(1,0) = 0; block.face_to_cells(1,1) = 1;
   block.face_to_cells(2,0) = 1; block.face_to_cells(2,1) = 2;
   block.face_to_cells(3,0) = 2; block.face_to_cells(3,1) = 4;
 
   // Set face to local face indexes
-  block.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx",4);
+  block.face_to_lidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_lidx",4);
   block.face_to_lidx(0,0) = 0; block.face_to_lidx(0,1) = 0;
   block.face_to_lidx(1,0) = 1; block.face_to_lidx(1,1) = 0;
   block.face_to_lidx(2,0) = 1; block.face_to_lidx(2,1) = 0;
   block.face_to_lidx(3,0) = 1; block.face_to_lidx(3,1) = 0;
 
   // Set cell to faces
-  block.cell_to_faces = Kokkos::View<LO**>("cell_to_faces",5,2);
+  block.cell_to_faces = Kokkos::View<panzer::LocalOrdinal**>("cell_to_faces",5,2);
   block.cell_to_faces(0,0) = 0; block.cell_to_faces(0,1) = 1;
   block.cell_to_faces(1,0) = 1; block.cell_to_faces(1,1) = 2;
   block.cell_to_faces(2,0) = 2; block.cell_to_faces(2,1) = 3;

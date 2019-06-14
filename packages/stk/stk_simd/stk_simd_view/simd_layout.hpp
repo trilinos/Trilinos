@@ -113,6 +113,8 @@ struct LayoutRight {
   //! Tag this class as a kokkos array layout
   typedef LayoutRight array_layout ;
 
+  enum { is_extent_constructible = true };
+
   size_t dimension[ Kokkos::ARRAY_LAYOUT_MAX_RANK ];
 
   LayoutRight( LayoutRight const & ) = default ;
@@ -132,6 +134,8 @@ template <typename RealType>
 struct LayoutLeft {
   //! Tag this class as a kokkos array layout
   typedef LayoutLeft array_layout ;
+
+  enum { is_extent_constructible = true };
 
   size_t dimension[ Kokkos::ARRAY_LAYOUT_MAX_RANK ];
 

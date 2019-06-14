@@ -47,6 +47,7 @@
 #include <cmath>
 #include <cstdlib> // for exit, EXIT_FAILURE
 #include <cstring>
+#include <fmt/ostream.h>
 #include <iostream> // for operator<<, ostringstream, etc
 #include <iterator> // for distance
 #include <map>      // for map
@@ -169,10 +170,10 @@ namespace Iopx {
     generate_adjacency_list(filePtr, m_decomposition);
 
 #if IOSS_DEBUG_OUTPUT
-    std::cerr << "Processor " << m_processor << " has " << decomp_elem_count()
-              << " elements; offset = " << decomp_elem_offset() << "\n";
-    std::cerr << "Processor " << m_processor << " has " << decomp_node_count()
-              << " nodes; offset = " << decomp_node_offset() << ".\n";
+    fmt::print(stderr, "Processor {} has {} elements; offset = {}\n", m_processor,
+               decomp_elem_count(), decomp_elem_offset());
+    fmt::print(stderr, "Processor {} has {} nodes; offset = {}\n", m_processor, decomp_node_count(),
+               decomp_node_offset());
 #endif
 
     if (m_decomposition.needs_centroids()) {
@@ -238,8 +239,8 @@ namespace Iopx {
       pu.hwm_memory_stats(min, max, avg);
       int64_t MiB = 1024 * 1024;
       if (m_processor == 0) {
-        std::cerr << "\n\tHigh Water Memory at end of Decomposition: " << min / MiB << "M  "
-                  << max / MiB << "M  " << avg / MiB << "M\n";
+        fmt::print(stderr, "\n\tHigh Water Memory at end of Decomposition: {}M  {}M  {}M\n",
+                   min / MiB, max / MiB, avg / MiB);
       }
     }
   }
@@ -300,14 +301,13 @@ namespace Iopx {
     // can cause hard to track down problems...
     if (decomposition.m_globalElementCount != decomposition.m_fileBlockIndex[block_count]) {
       if (m_processor == 0) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: The sum of the element counts in each element block gives a total of "
-               << decomposition.m_fileBlockIndex[block_count]
-               << " elements.\n       This does not match the total element count of "
-               << decomposition.m_globalElementCount
-               << " which indicates a corrupt mesh description.\n"
-               << "       Contact gdsjaar@sandia.gov for more details.\n";
-        std::cerr << errmsg.str();
+        fmt::print(stderr,
+                   "ERROR: The sum of the element counts in each element block gives a total of {} "
+                   "elements.\n"
+                   "       This does not match the total element count of {} which indicates a "
+                   "corrupt mesh description.\n"
+                   "       Contact gdsjaar@sandia.gov for more details.\n",
+                   decomposition.m_fileBlockIndex[block_count], decomposition.m_globalElementCount);
       }
       exit(EXIT_FAILURE);
     }
@@ -315,14 +315,12 @@ namespace Iopx {
     // Make sure 'sum' can fit in INT...
     INT tmp_sum = (INT)sum;
     if ((size_t)tmp_sum != sum) {
-      std::ostringstream errmsg;
-      errmsg << "ERROR: The decomposition of this mesh requires 64-bit integers, but is being\n"
-             << "       run with 32-bit integer code. Please rerun with the property "
-                "INTEGER_SIZE_API\n"
-             << "       set to 8. The details of how to do this vary with the code that is being "
-                "run.\n"
-             << "       Contact gdsjaar@sandia.gov for more details.\n";
-      std::cerr << errmsg.str();
+      fmt::print(
+          stderr,
+          "ERROR: The decomposition of this mesh requires 64-bit integers, but is being\n"
+          "       run with 32-bit integer code. Please rerun with the property INTEGER_SIZE_API\n"
+          "       set to 8. The details of how to do this vary with the code that is being run.\n"
+          "       Contact gdsjaar@sandia.gov for more details.\n");
       exit(EXIT_FAILURE);
     }
 
@@ -350,8 +348,8 @@ namespace Iopx {
         std::vector<INT> connectivity(overlap * element_nodes);
         size_t           blk_start = std::max(b_start, p_start) - b_start + 1;
 #if IOSS_DEBUG_OUTPUT
-        std::cerr << "Processor " << m_processor << " has " << overlap
-                  << " elements on element block " << id << "\n";
+        fmt::print(stderr, "Processor {} has {} elements on element block {}\n", m_processor,
+                   overlap, id);
 #endif
         ex_get_partial_conn(filePtr, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity),
                             nullptr, nullptr);
@@ -422,13 +420,12 @@ namespace Iopx {
     size_t one = 1;
     if (entitylist_size >= one << 31) {
       if (m_processor == 0) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: The sum of the " << set_type_name
-               << " entity counts is larger than 2.1 Billion "
-               << " which cannot be correctly handled with the current IOSS decomposition "
-               << " implementation.\n"
-               << "       Contact gdsjaar@sandia.gov for more details.\n";
-        std::cerr << errmsg.str();
+        fmt::print(stderr,
+                   "ERROR: The sum of the {} entity counts is larger than 2.1 Billion "
+                   " which cannot be correctly handled with the current IOSS decomposition "
+                   "implementation.\n"
+                   "       Contact gdsjaar@sandia.gov for more details.\n",
+                   set_type_name);
       }
       exit(EXIT_FAILURE);
     }
@@ -446,8 +443,8 @@ namespace Iopx {
         ssize_t to_read = std::min(remain, entitys_to_read);
         if (m_processor == root) {
 #if IOSS_DEBUG_OUTPUT
-          std::cerr << set_type_name << " " << sets[i].id << " reading " << to_read
-                    << " entities from offset " << set_entities_read[i] + 1 << "\n";
+          fmt::print(stderr, "{} {} reading {} entities from offset {}\n", set_type_name,
+                     sets[i].id, to_read, set_entities_read[i] + 1);
 #endif
           // Read the entitylists on root processor.
           ex_get_partial_set(filePtr, set_type, sets[i].id, set_entities_read[i] + 1, to_read,
@@ -811,12 +808,13 @@ namespace Iopx {
     return ierr;
   }
 
+#ifndef DOXYGEN_SKIP_THIS
   template void DecompositionData<int>::get_block_connectivity(int filePtr, int *data, int64_t id,
                                                                size_t blk_seq, size_t nnpe) const;
   template void DecompositionData<int64_t>::get_block_connectivity(int filePtr, int64_t *data,
                                                                    int64_t id, size_t blk_seq,
                                                                    size_t nnpe) const;
-
+#endif
   /// relates DecompositionData::get_block_connectivity
   template <typename INT>
   void DecompositionData<INT>::get_block_connectivity(int filePtr, INT *data, int64_t id,
@@ -905,12 +903,14 @@ namespace Iopx {
     }
   }
 
+#ifndef DOXYGEN_SKIP_THIS
   template void DecompositionDataBase::communicate_node_data(int *file_data, int *ioss_data,
                                                              size_t comp_count) const;
   template void DecompositionDataBase::communicate_node_data(int64_t *file_data, int64_t *ioss_data,
                                                              size_t comp_count) const;
   template void DecompositionDataBase::communicate_node_data(double *file_data, double *ioss_data,
                                                              size_t comp_count) const;
+#endif
 
   template <typename T>
   void DecompositionDataBase::communicate_node_data(T *file_data, T *ioss_data,
@@ -929,6 +929,7 @@ namespace Iopx {
     }
   }
 
+#ifndef DOXYGEN_SKIP_THIS
   template void DecompositionDataBase::communicate_element_data(int *file_data, int *ioss_data,
                                                                 size_t comp_count) const;
   template void DecompositionDataBase::communicate_element_data(int64_t *file_data,
@@ -937,6 +938,7 @@ namespace Iopx {
   template void DecompositionDataBase::communicate_element_data(double *file_data,
                                                                 double *ioss_data,
                                                                 size_t  comp_count) const;
+#endif
 
   template <typename T>
   void DecompositionDataBase::communicate_element_data(T *file_data, T *ioss_data,
@@ -1040,16 +1042,15 @@ namespace Iopx {
       }
     }
 
-    std::ostringstream errmsg;
     if (type != EX_NODE_SET && type != EX_SIDE_SET) {
-      errmsg << "ERROR: Invalid set type specified in get_decomp_set. Only node set or side set "
-                "supported\n";
+      fmt::print(stderr,
+                 "ERROR: Invalid set type specified in get_decomp_set. Only node set or side set "
+                 "supported\n");
     }
     else {
       std::string typestr = type == EX_NODE_SET ? "node set" : "side set";
-      errmsg << "ERROR: Count not find " << typestr << " " << id << "\n";
+      fmt::print(stderr, "ERROR: Count not find {} {}\n", typestr, id);
     }
-    std::cerr << errmsg.str();
     exit(EXIT_FAILURE);
     return node_sets[0];
   }
@@ -1600,10 +1601,9 @@ namespace Iopx {
                             comm_, &status);
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Recv error on processor " << m_processor
-               << " receiving nodes_per_face sideset data";
-        std::cerr << errmsg.str();
+        fmt::print(stderr,
+                   "ERROR: MPI_Recv error on processor {} receiving nodes_per_face sideset data",
+                   m_processor);
       }
       df_count = nodes_per_face.back();
     }
@@ -1642,10 +1642,9 @@ namespace Iopx {
           MPI_Recv(TOPTR(file_data), file_data.size(), MPI_DOUBLE, set.root_, 333, comm_, &status);
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Recv error on processor " << m_processor
-               << " receiving nodes_per_face sideset data";
-        std::cerr << errmsg.str();
+        fmt::print(stderr,
+                   "ERROR: MPI_Recv error on processor {} receiving nodes_per_face sideset data",
+                   m_processor);
       }
     }
 

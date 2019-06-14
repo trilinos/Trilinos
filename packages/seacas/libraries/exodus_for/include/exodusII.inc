@@ -297,7 +297,7 @@
       integer EX_EDGE_MAP, EX_FACE_MAP, EX_GLOBAL, EX_COORDINATE
       integer EX_INVALID
     
-      parameter (EX_NODAL       = 14)	   !     nodal "block" for variables
+      parameter (EX_NODAL       = 14)      !     nodal "block" for variables
       parameter (EX_NODE_BLOCK  = 14)      !     alias for EX_NODAL         
       parameter (EX_NODE_SET    =  2)      !     node set property code     
       parameter (EX_EDGE_BLOCK  =  6)      !     edge block property code   

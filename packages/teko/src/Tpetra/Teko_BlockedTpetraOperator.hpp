@@ -142,10 +142,8 @@ public:
    virtual bool HasNormInf() const { return false; }
    virtual const Teuchos::Comm<int> & Comm() const { return *fullContent_->getRangeMap()->getComm(); }
 
-   #ifndef Teko_DEBUG_OFF
    //! Helps perform sanity checks
    bool testAgainstFullOperator(int count,ST tol) const;
-   #endif
 
 protected:
    // gooey center of this shell

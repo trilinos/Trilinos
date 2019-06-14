@@ -925,8 +925,8 @@ namespace Anasazi {
 #endif
         MVT::MvTransMv(ONE,*XpEta,*XpEta,BB);
       }
-      this->om_->stream(Debug) << "AA: " << std::endl << AA << std::endl;;
-      this->om_->stream(Debug) << "BB: " << std::endl << BB << std::endl;;
+      this->om_->stream(Debug) << "AA: " << std::endl << printMat(AA) << std::endl;;
+      this->om_->stream(Debug) << "BB: " << std::endl << printMat(BB) << std::endl;;
       // do the direct solve
       // save old theta first
       std::vector<MagnitudeType> oldtheta(this->theta_);
@@ -936,8 +936,8 @@ namespace Anasazi {
 #endif
         ret = Utils::directSolver(this->blockSize_,AA,Teuchos::rcpFromRef(BB),S,this->theta_,rank,1);
       }
-      this->om_->stream(Debug) << "S: " << std::endl << S << std::endl;;
-      TEUCHOS_TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::SIRTR::iterate(): failure solving projected eigenproblem after retraction. ret == " << ret << "AA: " << AA << std::endl << "BB: " << BB << std::endl);
+      this->om_->stream(Debug) << "S: " << std::endl << printMat(S) << std::endl;;
+      TEUCHOS_TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::SIRTR::iterate(): failure solving projected eigenproblem after retraction. ret == " << ret << "AA: " << printMat(AA) << std::endl << "BB: " << printMat(BB) << std::endl);
       TEUCHOS_TEST_FOR_EXCEPTION(rank != this->blockSize_,RTRRitzFailure,"Anasazi::SIRTR::iterate(): retracted iterate failed in Ritz analysis. rank == " << rank);
 
       //

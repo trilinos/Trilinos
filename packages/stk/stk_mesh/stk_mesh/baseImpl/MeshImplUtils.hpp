@@ -70,6 +70,9 @@ void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<Entity
 void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity upward_entity,
         stk::mesh::Entity entity, const stk::mesh::Entity* nodes);
 
+void delete_upward_relations(stk::mesh::BulkData& bulkData,
+                                             const stk::mesh::Entity& entity);
+
 void delete_entities_and_upward_relations(stk::mesh::BulkData &bulkData, const stk::mesh::EntityVector &entities);
 
 void internal_generate_parallel_change_lists( const BulkData & mesh ,

@@ -104,6 +104,7 @@ public:
     virtual void entity_parts_removed(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts);
 
     void set_active(bool active);
+    bool get_active_flag() const { return isActive; }
 
 private:
     stk::mesh::BulkData &bulkData;
@@ -115,6 +116,6 @@ private:
 
 void toggle_sideset_updaters(stk::mesh::BulkData& bulk, bool flag);
 
-}} // end stk mesh namespaces
+}} // end stk io namespaces
 
 #endif

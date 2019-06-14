@@ -35,9 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_FILE_ID_MASK, etc
-#include <stdio.h>
-#include <stdlib.h> // for NULL
-#include <string.h> // for strchr
 
 /**
  * Given an exoid and group name (NULL gets root group), return id of that

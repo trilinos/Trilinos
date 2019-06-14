@@ -58,7 +58,7 @@
 
 namespace panzer {
 
-class UniqueGlobalIndexerBase;
+class GlobalIndexer;
 
 /** \brief Reorders the ad values of a specified field to match a different
            unique global indexer.
@@ -77,8 +77,8 @@ public:
                             const std::vector<std::string> & inFieldNames,
                             const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
                             const std::string & elementBlock,
-                            const UniqueGlobalIndexerBase & indexerSrc,
-                            const UniqueGlobalIndexerBase & indexerDest);
+                            const GlobalIndexer & indexerSrc,
+                            const GlobalIndexer & indexerDest);
 
   ReorderADValues_Evaluator(const std::string & outPrefix,
                             const std::vector<std::string> & inFieldNames,
@@ -86,8 +86,8 @@ public:
                             const std::vector<std::string> & outDOFs,
                             const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
                             const std::string & elementBlock,
-                            const UniqueGlobalIndexerBase & indexerSrc,
-                            const UniqueGlobalIndexerBase & indexerDest);
+                            const GlobalIndexer & indexerSrc,
+                            const GlobalIndexer & indexerDest);
 
   void evaluateFields(typename TRAITS::EvalData d);
 
@@ -120,8 +120,8 @@ public:
                             const std::vector<std::string> & inFieldNames,
                             const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
                             const std::string & elementBlock,
-                            const UniqueGlobalIndexerBase & indexerSrc,
-                            const UniqueGlobalIndexerBase & indexerDest);
+                            const GlobalIndexer & indexerSrc,
+                            const GlobalIndexer & indexerDest);
 
   ReorderADValues_Evaluator(const std::string & outPrefix,
                             const std::vector<std::string> & inFieldNames,
@@ -129,8 +129,8 @@ public:
                             const std::vector<std::string> & outDOFs,
                             const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
                             const std::string & elementBlock,
-                            const UniqueGlobalIndexerBase & indexerSrc,
-                            const UniqueGlobalIndexerBase & indexerDest);
+                            const GlobalIndexer & indexerSrc,
+                            const GlobalIndexer & indexerDest);
   
   void evaluateFields(typename TRAITS::EvalData workset);
   
@@ -138,15 +138,15 @@ private:
   typedef typename TRAITS::Jacobian::ScalarT ScalarT;
 
   void buildSrcToDestMap(const std::string & elementBlock,
-                         const UniqueGlobalIndexerBase & indexerSrc,
-                         const UniqueGlobalIndexerBase & indexerDest);
+                         const GlobalIndexer & indexerSrc,
+                         const GlobalIndexer & indexerDest);
 
   // Build a source to destination map using all the pairs
   // of field numers in the <code>fieldNumberMaps</code>
   void buildSrcToDestMap(const std::string & elementBlock,
                          const std::map<int,int> & fieldNumberMaps,
-                         const UniqueGlobalIndexerBase & indexerSrc,
-                         const UniqueGlobalIndexerBase & indexerDest);
+                         const GlobalIndexer & indexerSrc,
+                         const GlobalIndexer & indexerDest);
 
   // fields to be modified
   std::vector< PHX::MDField<const ScalarT> > inFields_;

@@ -768,6 +768,10 @@ namespace MueLuTests {
     out << "Tests application of the permutation matrix to matrix A." << std::endl;
     out << std::endl;
 
+    using TST                   = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     int numProcs = comm->getSize();
     int myRank   = comm->getRank();
@@ -880,8 +884,7 @@ namespace MueLuTests {
     RCP<Vector> P_Av = VectorFactory::Build(importer->getTargetMap(), false);
     RCP<Vector> PA_v = VectorFactory::Build(permutedA->getRangeMap(), false);
 
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-    Scalar zero = STS::zero(), one = STS::one();
+    const Scalar zero = TST::zero(), one = TST::one();
 
     permutedA->apply(*randVec, *PA_v, Teuchos::NO_TRANS, one, zero);
 
@@ -891,10 +894,10 @@ namespace MueLuTests {
     RCP<MultiVector> diff = VectorFactory::Build(permutedA->getRangeMap());
     diff->update(one, *P_Av, -one, *PA_v, zero);
 
-    Teuchos::Array<typename STS::magnitudeType> norms(1);
+    Teuchos::Array<magnitude_type> norms(1);
     diff->norm2(norms);
     out << "||diff|| = " << norms[0] << std::endl;
-    TEST_EQUALITY(norms[0] < 1e-14, true);
+    TEST_EQUALITY(norms[0] < 100*TMT::eps(), true);
 
   } // Correctness
 

@@ -71,9 +71,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include <assert.h>       // for assert
-#include <stddef.h>       // for size_t
-#include <stdio.h>
 
 /*!
  * Coordinate frames are stored in the database as a series of three

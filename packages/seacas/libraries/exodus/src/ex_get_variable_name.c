@@ -52,7 +52,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include <stdio.h>
 
 /*!
  * \ingroup ResultsData

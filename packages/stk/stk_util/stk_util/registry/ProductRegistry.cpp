@@ -41,6 +41,10 @@
 #define STK_VERSION "0.2a"
 #endif
 
+#ifndef STK_VERSION
+#define STK_VERSION "0.2a"
+#endif
+
 namespace stk {
 
 const std::string

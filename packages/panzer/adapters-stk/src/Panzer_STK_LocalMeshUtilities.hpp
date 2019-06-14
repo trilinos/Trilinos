@@ -45,25 +45,22 @@
 
 namespace panzer
 {
-template <typename LO, typename GO>
-struct LocalMeshInfo;
+  struct LocalMeshInfo;
 }
 
 namespace panzer_stk
 {
   class STK_Interface;
 
-/** Create a structure containing information about the local portion of a given element block
-  *
-  * \param[in] mesh Reference to STK mesh interface
-  *
-  * \returns Structure containing local mesh information
-  */
-template <typename LO, typename GO>
-void
-generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
-                      panzer::LocalMeshInfo<LO,GO> & mesh_info);
-
+  /** Create a structure containing information about the local portion of a given element block
+   *
+   * \param[in] mesh Reference to STK mesh interface
+   *
+   * \returns Structure containing local mesh information
+   */
+  void
+  generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
+                        panzer::LocalMeshInfo & mesh_info);
 }
 
 #endif

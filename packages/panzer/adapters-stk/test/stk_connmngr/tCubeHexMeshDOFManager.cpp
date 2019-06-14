@@ -121,7 +121,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildHexMesh(Comm,2,2,2,1,1,1);
    RCP<panzer::ConnManager> connManager
          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
@@ -142,8 +142,8 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    dofManager->printFieldInformation(out);
 
    if(numProcs==1) {
-      std::vector<int> gids_v;
-      int * gids = 0;
+      std::vector<panzer::GlobalOrdinal> gids_v;
+      panzer::GlobalOrdinal * gids = nullptr;
 
       TEST_ASSERT(false);
 
@@ -202,7 +202,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 
    // check that owned is_subset owned_and_ghosted
    //////////////////////////////////////////////////////////////////////////
-   std::vector<int> owned, owned_and_ghosted;
+   std::vector<panzer::GlobalOrdinal> owned, owned_and_ghosted;
    dofManager->getOwnedIndices(owned);
    dofManager->getOwnedAndGhostedIndices(owned_and_ghosted);
 
@@ -243,7 +243,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex_face_orientations)
 
    RCP<panzer::ConnManager> connManager =
        Teuchos::rcp(new panzer_stk::STKConnManager(buildHexMesh(Comm,2,2,2,1,1,1)));
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);

@@ -56,7 +56,7 @@ C   --   SQZSTR - (STRLIB) Delete extra blanks from string
       REAL TIMES(*)
       LOGICAL WHOTIM(*)
 
-      CHARACTER*5 ISTRA, ISTRB
+      CHARACTER*5 ISTRA
       CHARACTER*20 RSTR(3)
       REAL RNUM(3)
 

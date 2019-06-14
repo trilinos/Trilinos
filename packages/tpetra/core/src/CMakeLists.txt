@@ -414,5 +414,5 @@ SET_PROPERTY(
 # / from this directory, or to / from the 'impl' subdirectory.  That ensures
 # that running "make" will also rerun CMake in order to regenerate Makefiles.
 #
-# Here is another such change.  Verily, I make yet another change.  Another!
+# Another change!  Another!
 #

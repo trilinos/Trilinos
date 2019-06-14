@@ -52,8 +52,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_comp_ws, EX_FATAL, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
 
 /*!
  Internal function. Do not use in client code.

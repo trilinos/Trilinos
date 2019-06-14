@@ -136,8 +136,8 @@ TEST(stkMeshHowTo, declareVectorFields_putFieldLengthWithoutCartesian3dParam)
     BadVectorField& displacements = metaData.declare_field<BadVectorField>(stk::topology::NODE_RANK, "displacements");
 
     unsigned fieldLength = 3;
-    stk::mesh::put_field_on_mesh(velocities, metaData.universal_part(), fieldLength, nullptr);
-    stk::mesh::put_field_on_mesh(displacements, metaData.universal_part(), fieldLength, nullptr);
+    stk::mesh::put_field_on_mesh(velocities, metaData.universal_part(), fieldLength, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(displacements, metaData.universal_part(), fieldLength, static_cast<double*>(nullptr));
 
     stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
     create_single_tet_element(mesh);

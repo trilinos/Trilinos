@@ -2422,11 +2422,12 @@ To turn off CMake configure-time development-mode checking, set::
   -D <Project>_ENABLE_DEVELOPMENT_MODE=OFF
 
 This turns off a number of CMake configure-time checks for the <Project>
-TriBITS/CMake files including checking the package dependencies.  These checks
-can be expensive and may also not be appropriate for a tarball release of the
-software.  However, this also turns off strong compiler warnings so this is
-not recommended by default (see `<TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS`_).
-For a release of <Project> this option is set OFF by default.
+TriBITS/CMake files including checking the package dependencies and other
+usage of TriBITS.  These checks can be expensive and may also not be
+appropriate for a tarball release of the software.  However, this also turns
+off strong compiler warnings so this is not recommended by default (see
+`<TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS`_).  For a release of <Project>
+this option is set OFF by default.
 
 One of the CMake configure-time debug-mode checks performed as part of
 ``<Project>_ENABLE_DEVELOPMENT_MODE=ON`` is to assert the existence of TriBITS
@@ -2434,16 +2435,16 @@ package directories.  In development mode, the failure to find a package
 directory is usually a programming error (i.e. a miss-spelled package
 directory name).  But in a tarball release of the project, package directories
 may be purposefully missing (see `Creating a tarball of the source tree`_) and
-must be ignored.  When building from a reduced tarball created from the
+must be ignored.  When building from a reduced source tarball created from the
 development sources, set::
 
   -D <Project>_ASSERT_MISSING_PACKAGES=OFF
 
-Setting this off will cause the TriBITS CMake configure to simply ignore any
-missing packages and turn off all dependencies on these missing packages.
+Setting this ``OFF`` will cause the TriBITS CMake configure to simply ignore
+any missing packages and turn off all dependencies on these missing packages.
 
 Another type of checking is for optional inserted/external packages
-(e.g. packages who's source can optionally be included in and is flagged with
+(e.g. packages who's source can optionally be included and is flagged with
 ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()``).  Any of these package
 directories that are missing result in the packages being silently ignored by
 default.  However, notes on what missing packages are being ignored can
@@ -2454,6 +2455,24 @@ printed by configuring with::
 These warnings (starting with 'NOTE', not 'WARNING' that would otherwise
 trigger warnings in CDash) about missing inserted/external packages will print
 regardless of the setting for ``<Project>_ASSERT_MISSING_PACKAGES``.
+
+Finally, ``<Project>_ENABLE_DEVELOPMENT_MODE=ON`` results in a number of
+checks for invalid usage of TriBITS in the project's ``CMakeList.txt`` files
+and will abort configure with a fatal error on the first check failure. This
+is appropriate for development mode when a project is clean of all such
+invalid usage patterns but there are times when it makes sense to report these
+check failures in different ways (such as when upgrading TriBITS in a project
+that has some invalid usage patterns that just happen work but may be
+disallowed in future versions of TriBITS).  To change how these invalid usage
+checks are handled, set::
+
+  -D <Project>_ASSERT_CORRECT_TRIBITS_USAGE=<check-mode>
+
+where ``<check-mode>`` can be 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', or
+'IGNORE'.
+
+For ``<Project>_ENABLE_DEVELOPMENT_MODE=OFF``, the default for
+``<Project>_ASSERT_CORRECT_TRIBITS_USAGE`` is actually set to ``IGNORE``.
 
 
 Building (Makefile generator)
@@ -3326,6 +3345,58 @@ and run the custom install target::
 
 This will ensure that every package that builds correctly will get installed.
 (The default 'install' target aborts on the first file install failure.)
+
+
+Installation Testing
+====================
+
+The CMake project <Project> has built-in support for testing an installation
+of itself using its own tests and examples.  The way it works is to configure,
+build, and install just the libraries and header files using::
+
+  $ mkdir BUILD_LIBS
+  $ cd BUILD_LIBS/
+
+  $ cmake \
+    -DCMAKE_INSTLAL_PREFIX=<install-dir> \
+    -D<Project>_ENABLE_ALL_PACKAGES=ON \
+    -D<Project>_ENABLE_TESTS=OFF \
+    [other options] \
+    <projectDir>
+
+  $ make -j16 install   # or ninja -j16
+
+and then create a different build directory to configure and build just the
+tests and examples (not the libraries) against the pre-installed libraries and
+header files using::
+
+  $ mkdir BUILD_TESTS
+  $ cd BUILD_TESTS/
+
+  $ cmake \
+    -D<Project>_ENABLE_ALL_PACKAGES=ON \
+    -D<Project>_ENABLE_TESTS=ON \
+    -D<Project>_ENABLE_INSTALLATION_TESTING=ON \
+    -D<Project>_INSTALLATION_DIR=<install-dir> \
+    [other options] \
+    <projectDir>
+
+  $ make -j16  # or ninja -j16
+
+  $ ctest -j16
+
+If that second project builds and all the tests pass, then the project was
+installed correctly.  This uses the project's own tests and examples to test
+the installation of the project.  The library source and header files are
+unused in the second project build.  In fact, you can delete them and ensure
+that they are not used in the build and testing of the tests and examples!
+
+This can also be used for testing backward compatibility of the project (or
+perhaps for a subset of packages).  In this case, build and install the
+libraries and header files for a newer version of the project and then
+configure, build, and run the tests and examples for an older version of the
+project sources pointing to the installed header files and libraries from the
+newer version.
 
 
 Packaging

@@ -44,7 +44,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr const char *name = "tri4a";
+    static const char *name;
 
     static void factory();
     ~Tri4a() override;

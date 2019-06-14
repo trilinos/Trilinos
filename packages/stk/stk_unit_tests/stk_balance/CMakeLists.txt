@@ -36,13 +36,20 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
     stk_balance_unit_tester
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     DEPLIBS
-    ARGS "--gtest_filter=BalanceCommandLine.*:BasicColoring.*"
     COMM serial mpi
-    NUM_MPI_PROCS 1-4
+    )
+
+TRIBITS_ADD_TEST(
+    stk_balance_unit_tester
+    NAME STK_Balance_basic
+    ARGS "--gtest_filter=BasicLoadBalance.*"
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
     )
 

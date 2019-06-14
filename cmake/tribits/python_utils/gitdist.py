@@ -383,6 +383,9 @@ or two lines per repo using (for example):
   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
     | grep -v "^$" &> RepoVersion.txt
 
+(See the alias 'gitdist-repo-versions' defined in the file
+'gitdist-setup.sh'.)
+
 This allows checking out consistent versions of the set git repos, diffing two
 consistent versions of the set of git repos, etc.
 
@@ -438,14 +441,18 @@ helpTopicsDict.update( { 'repo-versions' : repoVersionFilesHelp } )
 usefulAliasesHelp =r"""
 USEFUL ALIASES:
 
-A few very useful (bash) shell aliases to use along with the gitdist script
-are:
+A few very useful (bash) shell aliases and setup commands to use with gitdist
+include:
 
   $ alias gitdist-status="gitdist dist-repo-status"
   $ alias gitdist-mod="gitdist --dist-mod-only"
   $ alias gitdist-mod-status="gitdist dist-repo-status --dist-mod-only"
+  $ alias gitdist-repo-versions="gitdist --dist-no-color log -1 \
+    --pretty=format:\"%h [%ad] <%ae>%n%s\" | grep -v \"^$\""
 
-(i.e. add these to your ~/.bash_profile file.)
+These are added by sourcing the provided file 'gitdist-setup.sh' (which should
+be sourced in your ~/.bash_profile file.) which also adds some useful
+commandline tab completions.
 
 This avoids lots of extra typing as these gitdist arguments are used a lot.
 For example, to see the compact status table of all your local git repos, do:
@@ -466,7 +473,7 @@ or
   $ gitdist-mod local-stat
 
 (where 'local-stat' is a useful git alias defined in the script
-'git-config-alias.sh').
+'git-config-alias.sh' which adds these to your ~/.gitconf file).
 """
 helpTopicsDict.update( { 'aliases' : usefulAliasesHelp } )
 

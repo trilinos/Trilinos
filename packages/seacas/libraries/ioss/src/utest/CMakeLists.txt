@@ -33,6 +33,7 @@ TRIBITS_ADD_TEST(
 )
 
 IF (TPL_ENABLE_CGNS)
+SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp.C PROPERTIES COMPILE_FLAGS -O0)
 TRIBITS_ADD_EXECUTABLE(
  Utst_structured_decomp
  SOURCES Utst_structured_decomp.C

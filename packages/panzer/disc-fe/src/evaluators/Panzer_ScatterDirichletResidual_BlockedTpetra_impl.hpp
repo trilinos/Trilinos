@@ -52,7 +52,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
@@ -71,7 +71,7 @@
 
 template <typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterDirichletResidual_BlockedTpetra<EvalT,TRAITS,LO,GO,NodeT>::
-ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */,
+ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & /* indexer */,
                                        const Teuchos::ParameterList& p)
 {
   std::string scatterName = p.get<std::string>("Scatter Name");
@@ -106,7 +106,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
 
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
-ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
@@ -277,11 +277,11 @@ evaluateFields(typename TRAITS::EvalData workset)
      const auto& kokkosDirichletCounter = tpetraDirichletCounter.template getLocalView<PHX::mem_space>();
 
      // Class data fields for lambda capture
-     const auto& fieldOffsets = fieldOffsets_[fieldIndex];
-     const auto& basisIndices = basisIndexForMDFieldOffsets_[fieldIndex];
-     const auto& worksetLIDs = worksetLIDs_;
-     const auto& fieldValues = scatterFields_[fieldIndex];
-     const auto& applyBC = applyBC_[fieldIndex].get_static_view();
+     const auto fieldOffsets = fieldOffsets_[fieldIndex];
+     const auto basisIndices = basisIndexForMDFieldOffsets_[fieldIndex];
+     const auto worksetLIDs = worksetLIDs_;
+     const auto fieldValues = scatterFields_[fieldIndex];
+     const auto applyBC = applyBC_[fieldIndex].get_static_view();
      const bool checkApplyBC = checkApplyBC_;
 
      if (!scatterIC_) {
@@ -326,7 +326,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
-ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")

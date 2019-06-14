@@ -31,7 +31,6 @@ module load sems-cmake/3.10.3
 # available in main-line Ninja) to significantly speed up
 # compile and link times.
 module load atdm-env
-module load atdm-cmake/3.11.1
 module load atdm-ninja_fortran/1.7.2
 
 # add the OpenMP environment variable we need

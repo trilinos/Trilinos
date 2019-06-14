@@ -407,6 +407,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     nodeCoord(i,1)=nodeCoordy[i];
     nodeCoord(i,2)=nodeCoordz[i];
   }
+  delete [] nodeCoordx; delete[] nodeCoordy; delete [] nodeCoordz;
 
   // Get the "time" value for the RTC
   double time = 0.0;
@@ -673,6 +674,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   }
   delete [] elements;
   elements = NULL;
+
+  for(int i=0;i< (int)edge_vector.size(); i++) delete edge_vector[i];
+  edge_vector.resize(0);
+  for(int i=0;i< (int)face_vector.size(); i++) delete face_vector[i];
+  face_vector.resize(0);
 
 
 /**********************************************************************************/

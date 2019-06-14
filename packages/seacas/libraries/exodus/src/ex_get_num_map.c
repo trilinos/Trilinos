@@ -52,8 +52,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include <inttypes.h>     // for PRId64
-#include <stdio.h>
 
 /*
  * reads the map with specified ID

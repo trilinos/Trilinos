@@ -75,7 +75,7 @@ public:
 
     void change_entity_owner( const EntityProcVec & arg_change);
 
-    void internal_resolve_shared_modify_delete();
+    void internal_resolve_shared_modify_delete(stk::mesh::EntityVector & entitiesNoLongerShared);
 
     bool did_any_shared_entity_change_parts () const { return m_did_any_shared_entity_change_parts; }
     void set_shared_entity_changed_parts() { m_did_any_shared_entity_change_parts = true; }

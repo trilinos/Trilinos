@@ -89,6 +89,13 @@ ELSE()
    SET(Teko_ENABLE_DEV_MODE OFF)
 ENDIF()
 
+# enable development mode
+IF(${PROJECT_NAME}_ENABLE_DEBUG_MSGS)
+   SET(Teko_DEBUG_OFF OFF)
+ELSE()
+   SET(Teko_DEBUG_OFF ON)
+ENDIF()
+
 #
 # C) Add the libraries, tests, and examples
 #

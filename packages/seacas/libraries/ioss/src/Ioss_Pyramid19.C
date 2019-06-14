@@ -40,6 +40,7 @@
 #include <cstddef> // for nullptr
 
 namespace Ioss {
+  const char *Pyramid19::name = "pyramid19";
   class St_Pyramid19 : public ElementVariableType
   {
   public:

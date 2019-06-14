@@ -55,12 +55,9 @@
 #include "exodusII.h"
 #if defined(PARALLEL_AWARE_EXODUS)
 
-#include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, etc
-#include <mpi.h>          // for MPI_Comm, MPI_Info, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <string.h>
+#include "exodusII.h"
+#include "exodusII_int.h"
+#include <mpi.h>
 /*!
 
 \note The ex_open_par_int() is an internal function called by

@@ -61,7 +61,7 @@
     }                                                                                              \
   } while (0)
 
-int main(int argc, char **argv)
+int main()
 {
   ex_opts(EX_VERBOSE);
 
@@ -277,14 +277,14 @@ int main(int argc, char **argv)
   std::vector<double> elem_var_vals(4);
 
   for (int i = 0; i < num_time_steps; i++) {
-    double time_value = (float)(i + 1) / 100.;
+    double time_value = (double)(i + 1) / 100.;
 
     /* write time value */
     EXCHECK(ex_put_time(exoid, whole_time_step, &time_value));
 
     // write global variables
     for (int j = 0; j < num_glo_vars; j++) {
-      glob_var_vals[j] = (float)(j + 2) * time_value;
+      glob_var_vals[j] = (double)(j + 2) * time_value;
     }
 
     EXCHECK(
@@ -293,7 +293,7 @@ int main(int argc, char **argv)
     // write nodal variables
     for (int k = 1; k <= num_nod_vars; k++) {
       for (int j = 0; j < num_nodes; j++) {
-        nodal_var_vals[j] = (float)k + ((float)(j + 1) * time_value);
+        nodal_var_vals[j] = (double)k + ((double)(j + 1) * time_value);
       }
       EXCHECK(ex_put_var(exoid, whole_time_step, EX_NODAL, k, 1, num_nodes, TOPTR(nodal_var_vals)));
     }
@@ -302,7 +302,7 @@ int main(int argc, char **argv)
     for (int k = 1; k <= num_ele_vars; k++) {
       for (int j = 0; j < num_elem_blk; j++) {
         for (int m = 0; m < blocks[j].num_entry; m++) {
-          elem_var_vals[m] = (float)(k + 1) + (float)(j + 2) + ((float)(m + 1) * time_value);
+          elem_var_vals[m] = (double)(k + 1) + (double)(j + 2) + ((double)(m + 1) * time_value);
         }
         EXCHECK(ex_put_var(exoid, whole_time_step, EX_ELEM_BLOCK, k, blocks[j].id,
                            blocks[j].num_entry, TOPTR(elem_var_vals)));

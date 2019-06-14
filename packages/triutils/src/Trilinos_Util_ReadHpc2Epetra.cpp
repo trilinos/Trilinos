@@ -80,7 +80,9 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
     exit(1);
   }
   int_type numGlobalEquations, total_nnz;
+#ifndef NDEBUG
   int cnt;
+#endif
   // mfh 24 Mar 2015: We use temporaries of the type corresponding to
   // the sscanf format specifiers, in order to avoid compiler warnings
   // about the sscanf output arguments' types not matching their
@@ -89,10 +91,15 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
   // the warning is easy to fix.
   if(sizeof(int) == sizeof(int_type)) {
     int numGlobalEquations_int, total_nnz_int;
-
-    cnt = fscanf(in_file,"%d",&numGlobalEquations_int);
+#ifndef NDEBUG
+    cnt =
+#endif
+    fscanf(in_file,"%d",&numGlobalEquations_int);
     assert(cnt > 0);
-    cnt = fscanf(in_file,"%d",&total_nnz_int);
+#ifndef NDEBUG
+    cnt =
+#endif
+    fscanf(in_file,"%d",&total_nnz_int);
     assert(cnt > 0);
 
     numGlobalEquations = static_cast<int_type> (numGlobalEquations_int);
@@ -100,10 +107,15 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
   }
   else if(sizeof(long long) == sizeof(int_type)) {
     long long numGlobalEquations_ll, total_nnz_ll;
-
-    cnt = fscanf(in_file,"%lld",&numGlobalEquations_ll);
+#ifndef NDEBUG
+    cnt =
+#endif
+    fscanf(in_file,"%lld",&numGlobalEquations_ll);
     assert(cnt > 0);
-    cnt = fscanf(in_file,"%lld",&total_nnz_ll);
+#ifndef NDEBUG
+    cnt =
+#endif
+    fscanf(in_file,"%lld",&total_nnz_ll);
     assert(cnt > 0);
 
     numGlobalEquations = static_cast<int_type> (numGlobalEquations_ll);
@@ -136,7 +148,10 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
   int max_nnz = 0;
 
   for (int i=0; i<numGlobalEquations; i++) {
-    cnt = fscanf(in_file, "%d",lp); /* row #, nnz in row */
+#ifndef NDEBUG
+    cnt =
+#endif
+    fscanf(in_file, "%d",lp); /* row #, nnz in row */
     assert(cnt > 0);
     if (map->MyGID(i)) max_nnz = EPETRA_MAX(max_nnz,l);
   }
@@ -148,7 +163,10 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
   {
     for (int_type i=0; i<numGlobalEquations; i++) {
       int cur_nnz;
-      cnt = fscanf(in_file, "%d",&cur_nnz);
+#ifndef NDEBUG
+      cnt =
+#endif
+      fscanf(in_file, "%d",&cur_nnz);
       assert(cnt > 0);
       if (map->MyGID(i)) // See if nnz for row should be added
       {
@@ -157,7 +175,10 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
         int nnz_kept = 0;
         for (int j=0; j<cur_nnz; j++)
         {
-          cnt = fscanf(in_file, "%lf %d",vp,lp);
+#ifndef NDEBUG
+          cnt =
+#endif
+          fscanf(in_file, "%lf %d",vp,lp);
           assert(cnt > 0);
           if (v!=0.0) {
             list_of_vals[nnz_kept] = v;
@@ -169,7 +190,10 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
       }
       else
         for (int j=0; j<cur_nnz; j++) {
-          cnt = fscanf(in_file, "%lf %d",vp,lp); // otherwise read and discard
+#ifndef NDEBUG
+          cnt =
+#endif
+          fscanf(in_file, "%lf %d",vp,lp); // otherwise read and discard
           assert(cnt > 0);
         }
     }
@@ -183,14 +207,20 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
           std::cout << "Process "<< rank <<" of "
                     << size <<" getting RHS " << i
                     << std::endl;
-        cnt = fscanf(in_file, "%lf %lf %lf",&xt, &bt, &xxt);
+#ifndef NDEBUG
+        cnt =
+#endif
+        fscanf(in_file, "%lf %lf %lf",&xt, &bt, &xxt);
         assert(cnt > 0);
         int cur_local_row = map->LID(i);
         (*x)[cur_local_row] = xt;
         (*b)[cur_local_row] = bt;
         (*xexact)[cur_local_row] = xxt;
       } else {
-        cnt = fscanf(in_file, "%lf %lf %lf",vp, vp, vp); // or thrown away
+#ifndef NDEBUG
+        cnt =
+#endif
+        fscanf(in_file, "%lf %lf %lf",vp, vp, vp); // or thrown away
         assert(cnt > 0);
       }
     }
