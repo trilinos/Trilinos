@@ -316,7 +316,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
   size_t numLocal = 10;
   GraphPack<LO,GO,Node> pack;
   generate_fem1d_graph(numLocal,comm,pack);
-  
+
   // Make the graph    
   // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
   // not being handled correctly. 
@@ -335,7 +335,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
   }
   graph->endFill();
 
-
   // Generate the "local stiffness matrix"
   std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
   auto kokkosValues = generate_fem1d_element_values_kokkos<Scalar, Node>();
@@ -352,12 +351,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
     for(size_t j=0; j<k_e2n.extent(1); j++) {
       LO gid_j = k_e2n(i, j);
       for(size_t k=0; k<k_e2n.extent(1); k++) {
-        const LO gid_k = k_e2n(i, k);
+        LO gid_k = k_e2n(i, k);
 	localMat.sumIntoValues(gid_j,&gid_k,1,&kokkosValues(j, k));
       }
     }
   });
   mat1.endFill();
+  
 
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
@@ -370,7 +370,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
   }
   mat2.fillComplete();
 
-  out << "comparing matrices now" << endl;
   success = compare<Scalar,LO,GO,Node>::compare_final_matrix_structure(out,mat1,mat2);
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
@@ -472,7 +471,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   }
   graph->endFill();
 
-
   // Generate the "local stiffness matrix"
   std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
   auto kokkosValues = generate_fem1d_element_values_kokkos<Scalar, Node>();
@@ -516,11 +514,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
 // INSTANTIATIONS
 //
 
+
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_Kokkos, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO, GO, SCALAR, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_Kokkos, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
