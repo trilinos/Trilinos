@@ -56,7 +56,7 @@ namespace panzer {
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 ScatterResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
-ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* indexer */,
+ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & /* indexer */,
                        const Teuchos::ParameterList& p) 
 {
   std::string scatterName = p.get<std::string>("Scatter Name");

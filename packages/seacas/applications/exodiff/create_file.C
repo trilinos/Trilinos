@@ -301,7 +301,7 @@ namespace {
       }
     }
     else {
-      fmt::print("No {} variables will be differenced.\n");
+      fmt::print("No {} variables will be differenced.\n", type);
     }
   }
 

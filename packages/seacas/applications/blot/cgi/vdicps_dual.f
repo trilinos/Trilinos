@@ -2569,7 +2569,7 @@ C
 c      CALL VDSTCS(VECTOR(6))
       CALL WCPSFC(NINT(VECTOR(1)))
       CALL PSTBUF(0,' ')
-  380 KEMPTY=0
+      KEMPTY=0
 C
       RETURN
       END
@@ -3615,7 +3615,6 @@ C GET THE TIME AND DATE
       KJDATE(2)=0
       KJDATE(3)=0
 C
-999   RETURN
       END
       SUBROUTINE PSTSEL(KARG)
 C
@@ -3667,7 +3666,7 @@ C
         KPSTBG=0
         KPSTCI=0
         IONCE=1
-   20   IF(ARG.EQ.' ' .and. bltans .eq. ' ') THEN
+        IF(ARG.EQ.' ' .and. bltans .eq. ' ') THEN
           WRITE(*,10)
    10     FORMAT(/,' This VDI PostScript driver has seven options.',/,
      &     '     1. black & white, no polygon fill',/,

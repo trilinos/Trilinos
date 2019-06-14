@@ -3263,9 +3263,7 @@ namespace {
     else {
       suffix = "s";
     }
-    std::ostringstream os;
-    os << std::showpoint << std::setprecision(3) << seconds << suffix;
-    return os.str();
+    return fmt::format("{:.3}{}", seconds, suffix);
   }
 
   int get_width(int max_value)

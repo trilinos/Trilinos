@@ -90,6 +90,9 @@ namespace Ioss {
 
   int FileInfo::parallel_exists(MPI_Comm communicator, std::string &where) const
   {
+    PAR_UNUSED(communicator);
+    PAR_UNUSED(where);
+
 #ifdef SEACAS_HAVE_MPI
     int my_rank = 0;
     int my_size = 1;

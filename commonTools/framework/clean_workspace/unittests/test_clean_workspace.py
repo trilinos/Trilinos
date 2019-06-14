@@ -114,20 +114,15 @@ class TestParseArgs(unittest.TestCase):
 class TestForceCleanSpace(unittest.TestCase):
 
     def test_calls(self):
-        """This function does the final cleanup  so its just module loads and a subprocess call"""
+        """This function does the final cleanup  so its just os.unlink"""
         test_args = Namespace()
         setattr(test_args, 'dir', os.path.join(os.path.sep, 'dev', 'null'))
         setattr(test_args, 'force_clean', True)
         cleanerInst = Cleaner()
         cleanerInst.args = test_args
-        with mock.patch('clean_workspace.module') as mod, \
-             mock.patch('os.chdir') as m_chdir, \
-             mock.patch('clean_workspace.subprocess.check_call') as check_call:
+        with mock.patch('os.unlink') as m_unlink:
             cleanerInst.force_clean_space()
-        mod.assert_has_calls([mock.call('load', 'sems-env'),
-                              mock.call('load', 'sems-ninja_fortran/1.8.2')])
-        m_chdir.assert_called_once_with(test_args.dir)
-        check_call.assert_called_once_with(['make', 'clean'])
+        m_unlink.assert_called_once_with(test_args.dir)
 
 
 class TestCleanSpaceByDate(unittest.TestCase):
@@ -138,7 +133,8 @@ class TestCleanSpaceByDate(unittest.TestCase):
         with mock.patch.dict('os.environ',
                              {'WORKSPACE': '/scratch/Trilinos/foo/bar'}):
             with mock.patch('clean_workspace.Cleaner.force_clean_space') as force_clean, \
-                 mock.patch('clean_workspace.update_last_clean_date') as update:
+                 mock.patch('clean_workspace.update_last_clean_date') as update, \
+                 mock.patch("clean_sentinel.open", side_effect=IOError):
                 cleanerInst.clean_space_by_date()
             force_clean.assert_not_called()
             update.assert_not_called()
@@ -174,7 +170,8 @@ class TestCleanSpaceByDate(unittest.TestCase):
             cleanerInst.args = test_args
             with mock.patch('clean_workspace.Cleaner.force_clean_space') as force_clean, \
                  mock.patch('clean_workspace.update_last_clean_date') as update, \
-                 mock.patch('clean_workspace.print') as m_print:
+                 mock.patch('clean_workspace.print') as m_print, \
+                 mock.patch("clean_sentinel.open", side_effect=IOError):
                 cleanerInst.clean_space_by_date()
             force_clean.assert_called_once_with()
             update.assert_called_once_with()

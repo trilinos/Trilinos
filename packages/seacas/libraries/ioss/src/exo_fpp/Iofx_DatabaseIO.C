@@ -717,7 +717,7 @@ namespace Iofx {
             // 0... Need better warnings which won't overload in the
             // worst case...
             fmt::print(IOSS_WARNING,
-                       "Skipping step {} at time {} in database file\n\t{}.\n"
+                       "Skipping step {:n} at time {} in database file\n\t{}.\n"
                        "\tThe data for that step is possibly corrupt since the last time written "
                        "successfully was {}.\n",
                        i + 1, tsteps[i], get_filename(), last_time);
@@ -4239,21 +4239,21 @@ int64_t DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb, void *ids,
 {
   elemMap.set_size(elementCount);
   size_t offset = eb->get_offset();
-  return handle_block_ids(eb, EX_ELEM_MAP, elemMap, ids, num_to_get, offset, 0);
+  return handle_block_ids(eb, EX_ELEM_MAP, elemMap, ids, num_to_get, offset);
 }
 
 int64_t DatabaseIO::handle_face_ids(const Ioss::FaceBlock *eb, void *ids, size_t num_to_get) const
 {
   faceMap.set_size(faceCount);
   size_t offset = eb->get_offset();
-  return handle_block_ids(eb, EX_FACE_MAP, faceMap, ids, num_to_get, offset, 0);
+  return handle_block_ids(eb, EX_FACE_MAP, faceMap, ids, num_to_get, offset);
 }
 
 int64_t DatabaseIO::handle_edge_ids(const Ioss::EdgeBlock *eb, void *ids, size_t num_to_get) const
 {
   edgeMap.set_size(edgeCount);
   size_t offset = eb->get_offset();
-  return handle_block_ids(eb, EX_EDGE_MAP, edgeMap, ids, num_to_get, offset, 0);
+  return handle_block_ids(eb, EX_EDGE_MAP, edgeMap, ids, num_to_get, offset);
 }
 
 void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Ioss::Field &field,
@@ -4404,7 +4404,7 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
 
     if (ierr < 0) {
       std::ostringstream extra_info;
-      fmt::print(extra_info, "Outputting field {} at step {} on {} {}.", field.get_name(), step,
+      fmt::print(extra_info, "Outputting field {} at step {:n} on {} {}.", field.get_name(), step,
                  ge->type_string(), ge->name());
       Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__, extra_info.str());
     }
@@ -4461,7 +4461,7 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
 
       if (ierr < 0) {
         std::ostringstream extra_info;
-        fmt::print(extra_info, "Outputting component {} of field {} at step {} on {} {}.", i,
+        fmt::print(extra_info, "Outputting component {} of field {} at step {:n} on {} {}.", i,
                    field_name, step, ge->type_string(), ge->name());
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__, extra_info.str());
       }

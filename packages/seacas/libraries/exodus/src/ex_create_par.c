@@ -155,7 +155,6 @@ exoid = ex_create ("test.exo"       \comment{filename path}
 
 #include "exodusII_int.h"
 #include <mpi.h>
-#include <stdlib.h>
 
 /* NOTE: Do *not* call `ex_create_par_int()` directly.  The public API
  *       function name is `ex_create_par()` which is a wrapper that calls

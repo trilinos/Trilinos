@@ -126,6 +126,7 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
 bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &value,
                                           bool sync_parallel) const
 {
+  PAR_UNUSED(sync_parallel);
 #ifdef SEACAS_HAVE_MPI
   char *            result_string = nullptr;
   std::vector<char> broadcast_string;
@@ -190,8 +191,9 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, int &value,
 
 bool Ioss::ParallelUtils::get_environment(const std::string &name, bool sync_parallel) const
 {
-// Return true if 'name' defined, no matter what the value.
-// Return false if 'name' not defined.
+  // Return true if 'name' defined, no matter what the value.
+  // Return false if 'name' not defined.
+  PAR_UNUSED(sync_parallel);
 #ifdef SEACAS_HAVE_MPI
   char *result_string = nullptr;
   int   string_length = 0;
@@ -284,6 +286,7 @@ void Ioss::ParallelUtils::hwm_memory_stats(int64_t &min, int64_t &max, int64_t &
 // Used by some applications for uniquely identifying an entity.
 int64_t Ioss::ParallelUtils::generate_guid(size_t id, int rank) const
 {
+  PAR_UNUSED(rank);
 #ifdef SEACAS_HAVE_MPI
   static size_t lpow2 = 0;
   if (lpow2 == 0) {
@@ -300,6 +303,8 @@ int64_t Ioss::ParallelUtils::generate_guid(size_t id, int rank) const
 
 void Ioss::ParallelUtils::attribute_reduction(const int length, char buffer[]) const
 {
+  PAR_UNUSED(length);
+  PAR_UNUSED(buffer);
 #ifdef SEACAS_HAVE_MPI
   if (1 < parallel_size()) {
     static_assert(sizeof(char) == 1, "");
@@ -396,6 +401,7 @@ template double Ioss::ParallelUtils::global_minmax(double, Ioss::ParallelUtils::
 template <typename T>
 T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax which) const
 {
+  PAR_UNUSED(which);
   T minmax = local_minmax;
 
 #ifdef SEACAS_HAVE_MPI
@@ -561,6 +567,7 @@ template <typename T>
 int Ioss::ParallelUtils::gather(int num_vals, int size_per_val, std::vector<T> &my_values,
                                 std::vector<T> &result) const
 {
+  PAR_UNUSED(size_per_val);
 #ifdef SEACAS_HAVE_MPI
   std::vector<int> vals_per_proc;
   gather(num_vals, vals_per_proc);

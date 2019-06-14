@@ -36,7 +36,7 @@ c
 c This is a test program for the Fortran binding of the EXODUS II
 c database write routines. It tests multiple simultaneous output files.
 c
-c     09/07/93	V.R. Yarberry - Revised for 2.00 API
+c     09/07/93  V.R. Yarberry - Revised for 2.00 API
 
       include 'exodusII.inc'
 
@@ -100,7 +100,7 @@ c
       exoid = excre ("test.exo",
      1               EXCLOB, cpu_word_size, io_word_size, ierr)
       write (iout,'("after excre for test.exo,id: ",i4,", err=",i3)')
-     1		 exoid, ierr
+     1           exoid, ierr
       write (iout,'("  cpu word size: ",i4," io word size: ",i4)')
      1                  cpu_word_size, io_word_size
       write (iout, '("after excre, error = ", i4)' ) ierr
@@ -108,7 +108,7 @@ c
       exoid2= excre ("test2.exo",
      1               EXCLOB, cpu_word_size, io_word_size, ierr)
       write (iout,'("after excre for test2.exo,id: ",i4,", err=",i3)')
-     1		 exoid2, ierr
+     1           exoid2, ierr
       write (iout, '("after excre (2), error = ", i4)' ) ierr
 
 c
@@ -414,11 +414,11 @@ c
       cname = "quad"
 
       call expelb (exoid,ebids(1),cname,num_elem_in_block(1),
-     1		num_nodes_per_elem(1),numattr(1),ierr)
+     1          num_nodes_per_elem(1),numattr(1),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
       call expelb (exoid,ebids(2),cname,num_elem_in_block(2),
-     1		num_nodes_per_elem(2),numattr(2),ierr)
+     1          num_nodes_per_elem(2),numattr(2),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
       cname = "hex"
@@ -463,11 +463,11 @@ c
       cname2 = "quad"
 
       call expelb(exoid2,ebids2(1),cname2,num_elem_in_block2(1),
-     1		num_nodes_per_elem2(1),numattr2(1),ierr)
+     1          num_nodes_per_elem2(1),numattr2(1),ierr)
       write (iout, '("after expelb (2), error = ", i4)' ) ierr
 
       call expelb(exoid2,ebids2(2),cname2,num_elem_in_block2(2),
-     1		num_nodes_per_elem2(2),numattr2(2),ierr)
+     1          num_nodes_per_elem2(2),numattr2(2),ierr)
       write (iout, '("after expelb (2), error = ", i4)' ) ierr
 
       cname2 = "hex"

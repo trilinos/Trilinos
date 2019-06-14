@@ -210,7 +210,11 @@ namespace Teuchos {
   //! @name I/O methods.
   //@{
     //! Print method.  Define the behavior of the std::ostream << operator inherited from the Object class.
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
     virtual void print(std::ostream& os) const;
+#else
+    std::ostream& print(std::ostream& os) const;
+#endif
   //@}
 };
 
@@ -281,7 +285,11 @@ namespace Teuchos {
   }
 
   template<typename OrdinalType, typename ScalarType>
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
   void SerialDenseVector<OrdinalType, ScalarType>::print(std::ostream& os) const
+#else
+  std::ostream& SerialDenseVector<OrdinalType, ScalarType>::print(std::ostream& os) const
+#endif
   {
     os << std::endl;
     if(this->valuesCopied_)
@@ -297,6 +305,9 @@ namespace Teuchos {
       }
       os << std::endl;
     }
+#ifdef TEUCHOS_HIDE_DEPRECATED_CODE
+    return os;
+#endif
   }
 
   //----------------------------------------------------------------------------------------------------
@@ -338,6 +349,35 @@ namespace Teuchos {
 #endif
     return(this->values_[index]);
   }
+
+/// \brief Ostream manipulator for SerialDenseVector 
+template<typename OrdinalType, typename ScalarType>
+struct SerialDenseVectorPrinter {
+public:
+  const SerialDenseVector<OrdinalType,ScalarType> &obj;
+  SerialDenseVectorPrinter(
+        const SerialDenseVector<OrdinalType,ScalarType> &obj_in)
+      : obj(obj_in) {}
+};
+
+/// \brief Output SerialDenseVector object through its stream manipulator. 
+template<typename OrdinalType, typename ScalarType>
+std::ostream&
+operator<<(std::ostream &out,
+           const SerialDenseVectorPrinter<OrdinalType,ScalarType> printer)
+{
+  printer.obj.print(out);
+  return out;
+}
+
+/// \brief Return SerialDenseVector ostream manipulator Use as:
+template<typename OrdinalType, typename ScalarType>
+SerialDenseVectorPrinter<OrdinalType,ScalarType>
+printMat(const SerialDenseVector<OrdinalType,ScalarType> &obj)
+{
+  return SerialDenseVectorPrinter<OrdinalType,ScalarType>(obj);
+}
+
 
 } // namespace Teuchos
 

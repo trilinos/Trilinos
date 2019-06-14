@@ -50,7 +50,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include <stdio.h>
 
 /*!
 The function ex_put_map() writes out the optional element order map to

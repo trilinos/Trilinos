@@ -24,8 +24,7 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern();
 int main(int argc,char * argv[])
 {
   using CCM = panzer::unit_test::CartesianConnManager;
-  typedef panzer::DOFManager<int,panzer::Ordinal64> DOFManager;
-
+  using panzer::DOFManager;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -71,9 +70,9 @@ int main(int argc,char * argv[])
     // build the topology
     RCP<CCM> connManager = rcp(new CCM);
     connManager->initialize(comm,
-                            Teuchos::as<panzer::Ordinal64>(nx),
-                            Teuchos::as<panzer::Ordinal64>(ny),
-                            Teuchos::as<panzer::Ordinal64>(nz),
+                            Teuchos::as<panzer::GlobalOrdinal>(nx),
+                            Teuchos::as<panzer::GlobalOrdinal>(ny),
+                            Teuchos::as<panzer::GlobalOrdinal>(nz),
                             px,py,pz,bx,by,bz);
   
     // build the dof manager, and assocaite with the topology

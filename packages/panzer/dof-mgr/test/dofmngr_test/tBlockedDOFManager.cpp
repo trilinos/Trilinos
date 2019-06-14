@@ -104,7 +104,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
    int numProc = eComm->NumProc();
 
    RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager<int,int> dofManager; 
+   BlockedDOFManager dofManager; 
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManager,MPI_COMM_WORLD);
 
@@ -155,7 +155,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    int numProc = eComm->NumProc();
 
    RCP<ConnManager> connManger = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager<int,int> dofManager; 
+   BlockedDOFManager dofManager; 
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
@@ -205,11 +205,11 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    dofManager.registerFields(true);
    TEST_ASSERT(dofManager.fieldsRegistered());
-   const std::vector<RCP<panzer::UniqueGlobalIndexer<int,int> > > & subManagers = 
+   const std::vector<RCP<panzer::GlobalIndexer>> & subManagers = 
          dofManager.getFieldDOFManagers();
    TEST_EQUALITY(subManagers.size(),fieldOrder.size());
 
-   typedef panzer::DOFManager<int,int> DOFManager;
+   using panzer::DOFManager;
 
    TEST_EQUALITY(subManagers[0]->getNumFields(),2);
    TEST_EQUALITY(rcp_dynamic_cast<DOFManager>(subManagers[0])->getFieldPattern("block_0","Ux"),patternC1);
@@ -267,6 +267,8 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
 }
 
+/* NOTE: disabled as Blocked manager doesn't handle gids anymore.
+
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 {
 
@@ -287,7 +289,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    int numProc = eComm->NumProc();
 
    RCP<ConnManager> connManger = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager<int,int> dofManager; 
+   BlockedDOFManager dofManager; 
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
@@ -317,16 +319,16 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
    TEST_ASSERT(dofManager.getGeometricFieldPattern()!=Teuchos::null);
 
-   std::vector<BlockedDOFManager<int,int>::GlobalOrdinal> ownedAndGhosted, owned;
+   std::vector<panzer::GlobalOrdinal> ownedAndGhosted, owned;
    std::vector<bool> ownedAndGhosted_bool, owned_bool;
    dofManager.getOwnedAndGhostedIndices(ownedAndGhosted);
    dofManager.getOwnedIndices(owned);
-/*
-   if(myRank==0)
-   { TEST_EQUALITY(ownedAndGhosted.size(),39); }
-   else
-   { TEST_EQUALITY(ownedAndGhosted.size(),30); }
-*/
+
+   // if(myRank==0)
+   // { TEST_EQUALITY(ownedAndGhosted.size(),39); }
+   // else
+   // { TEST_EQUALITY(ownedAndGhosted.size(),30); }
+
 
    int sum = 0;
    int mySize = (int) owned.size();
@@ -383,6 +385,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    }
 
 }
+*/
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 {
@@ -404,7 +407,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    int numProc = eComm->NumProc();
 
    RCP<ConnManager> connManger = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager<int,int> dofManager; 
+   BlockedDOFManager dofManager; 
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
@@ -429,6 +432,8 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    dofManager.setFieldOrder(fieldOrder);
 
    dofManager.buildGlobalUnknowns();
+
+   /* NOTE: disabled since BlockManager can't do this anymore...
 
    // check from element block 0
    std::vector<std::pair<int,int> > gids;
@@ -545,7 +550,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       const std::pair<std::vector<int>,std::vector<int> > * vec = 0;
       const std::pair<std::vector<int>,std::vector<int> > * sub_vec = 0;
 
-      Teuchos::RCP<const UniqueGlobalIndexer<int,int> > subManager;
+      Teuchos::RCP<const GlobalIndexer> subManager;
    
       // block 0
       subManager = dofManager.getFieldDOFManagers()[2];
@@ -558,13 +563,13 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       for(std::size_t i=0;i<vec->first.size();i++) 
          TEST_EQUALITY(vec->first[i],dofManager.getBlockGIDOffset("block_2",2)+sub_vec->first[i]);
    }
-
+   */
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
 {
 
-   BlockedDOFManager<int,int> dofManager; 
+   BlockedDOFManager dofManager; 
    dofManager.setUseDOFManagerFEI(false);
 
    std::set<std::string> validFields;
@@ -681,7 +686,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
    // Setup two DOF managers that will correspond to the blocks of the 
    // system.
    /////////////////////////////////////////////////////////////////////////
-   DOFManager<int,int> dofManager[2]; 
+   DOFManager dofManager[2]; 
 
    dofManager[0].setConnManager(connManager,MPI_COMM_WORLD);
    dofManager[0].addField("T",patternC1); // add it to all three blocks
@@ -699,14 +704,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
    dofManager[0].getFieldOrder(fieldOrder[0]);
    dofManager[1].getFieldOrder(fieldOrder[1]);
 
-   std::vector<RCP<panzer::UniqueGlobalIndexer<int,int> > > ugi_vector;
+   std::vector<RCP<panzer::GlobalIndexer>> ugi_vector;
    ugi_vector.push_back(Teuchos::rcpFromRef(dofManager[0]));
    ugi_vector.push_back(Teuchos::rcpFromRef(dofManager[1]));
 
    // Setup the BlockedDOFManager using the previously constructed
    // DOF managers
    ////////////////////////////////////////////////////////
-   BlockedDOFManager<int,int> blkDofManager; 
+   BlockedDOFManager blkDofManager; 
    blkDofManager.setUseDOFManagerFEI(false);
    blkDofManager.setConnManager(connManager,MPI_COMM_WORLD);
    blkDofManager.setFieldOrder(fieldOrder);
@@ -794,7 +799,8 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
 
    // verify the GIDs are correct
    /////////////////////////////////////////////////////////
-   typedef BlockedDOFManager<int,int>::GlobalOrdinal GIDType;
+
+   /* NOTE: disabled since Blocked manager can't return std::pairs anymore...
 
    for(std::size_t eb=0;eb<eBlocks.size();eb++) {
      std::string block_name = eBlocks[eb];
@@ -803,9 +809,10 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
      int offset1 = blkDofManager.getBlockGIDOffset(block_name,1);
 
      const std::vector<int> & elements = dofManager[0].getElementBlock(block_name);
+
      for(std::size_t i=0;i<elements.size();i++) {
-       std::vector<GIDType> blkgids;
-       std::vector<int> gids0, gids1;
+       std::vector<panzer::GlobalOrdinal> blkgids;
+       std::vector<panzer::GlobalOrdinal> gids0, gids1;
        dofManager[0].getElementGIDs(elements[i],gids0);
        dofManager[1].getElementGIDs(elements[i],gids1);
        blkDofManager.getElementGIDs(elements[i],blkgids);
@@ -820,6 +827,8 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
        }
      }
    }
+
+   */
 }
 
 }

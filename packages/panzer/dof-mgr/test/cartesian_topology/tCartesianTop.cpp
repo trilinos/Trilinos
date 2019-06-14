@@ -80,7 +80,7 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 // test that you can correctly compute a rank index from a global processor id
 TEUCHOS_UNIT_TEST(tCartesianTop, computeMyRankTriplet)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
+  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
   typedef CCM::Triplet<int> Triplet;
 
   // test 2D
@@ -109,8 +109,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, computeMyRankTriplet)
 // test that you can correctly compute a rank index from a grobal processor id
 TEUCHOS_UNIT_TEST(tCartesianTop, computeLocalElementGlobalTriplet)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef CCM::Triplet<Ordinal64> Triplet;
+  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
+  typedef CCM::Triplet<panzer::GlobalOrdinal> Triplet;
 
   // test 2D
   {
@@ -137,8 +137,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, computeLocalElementGlobalTriplet)
 
 TEUCHOS_UNIT_TEST(tCartesianTop, computeLocalElementIndex)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef CCM::Triplet<Ordinal64> Triplet;
+  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
+  typedef CCM::Triplet<panzer::GlobalOrdinal> Triplet;
 
   // test 2D
   {
@@ -165,13 +165,13 @@ TEUCHOS_UNIT_TEST(tCartesianTop, computeLocalElementIndex)
 
 TEUCHOS_UNIT_TEST(tCartesianTop, computeGlobalElementIndex)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef CCM::Triplet<Ordinal64> Triplet;
+  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
+  typedef CCM::Triplet<panzer::GlobalOrdinal> Triplet;
 
   // test 2D
   {
-    Ordinal64 t0 = CCM::computeGlobalElementIndex(Triplet(1,1,0),Triplet(4,3,1));
-    Ordinal64 t1 = CCM::computeGlobalElementIndex(Triplet(3,2,0),Triplet(4,3,1));
+    panzer::GlobalOrdinal t0 = CCM::computeGlobalElementIndex(Triplet(1,1,0),Triplet(4,3,1));
+    panzer::GlobalOrdinal t1 = CCM::computeGlobalElementIndex(Triplet(3,2,0),Triplet(4,3,1));
 
     TEST_EQUALITY(t0, 5);
     TEST_EQUALITY(t1,11);
@@ -179,8 +179,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, computeGlobalElementIndex)
 
   // test 3D
   {
-    Ordinal64 t0 = CCM::computeGlobalElementIndex(Triplet( 1,1,3),Triplet(4,3,6));
-    Ordinal64 t1 = CCM::computeGlobalElementIndex(Triplet( 3,2,5),Triplet(4,3,6));
+    panzer::GlobalOrdinal t0 = CCM::computeGlobalElementIndex(Triplet( 1,1,3),Triplet(4,3,6));
+    panzer::GlobalOrdinal t1 = CCM::computeGlobalElementIndex(Triplet( 3,2,5),Triplet(4,3,6));
 
     TEST_EQUALITY(t0, 5+3*12);
     TEST_EQUALITY(t1,11+5*12);
@@ -190,8 +190,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, computeGlobalElementIndex)
 // This test checks functions used to generate the topology are correct
 TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef CCM::Triplet<Ordinal64> TripletGO;
+  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
+  typedef CCM::Triplet<panzer::GlobalOrdinal> TripletGO;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -208,11 +208,11 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
 
   // mesh description
-  Ordinal64 nx = 10, ny = 7;
+  panzer::GlobalOrdinal nx = 10, ny = 7;
   int px = np, py = 1;
   int bx =  1, by = 2;
 
-  RCP<CartesianConnManager<int,Ordinal64> > connManager = rcp(new CartesianConnManager<int,Ordinal64>);
+  RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
   connManager->initialize(comm,nx,ny,px,py,bx,by);
 
   // test element blocks are computed properly and sized appropriately
@@ -233,8 +233,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
     auto myElements = connManager->getMyElementsTriplet();
     auto myOffset = connManager->getMyOffsetTriplet();
 
-    Ordinal64 n = nx / px;
-    Ordinal64 r = nx - n * px;
+    panzer::GlobalOrdinal n = nx / px;
+    panzer::GlobalOrdinal r = nx - n * px;
 
     TEST_EQUALITY(myElements.x,n + (r>rank ? 1 : 0));
     TEST_EQUALITY(myOffset.x,n*rank+std::min(Teuchos::as<int>(r),rank));
@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
 
   // test that the elements are in the right blocks
   {
-    Ordinal64 blk0[4],blk1[4];
+    panzer::GlobalOrdinal blk0[4],blk1[4];
     blk0[0] = connManager->computeLocalElementIndex(TripletGO(2,2,0));
     blk0[1] = connManager->computeLocalElementIndex(TripletGO(5,2,0));
     blk0[2] = connManager->computeLocalElementIndex(TripletGO(7,2,0));
@@ -307,7 +307,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
 
 TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
+  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -320,7 +320,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
   // int rank = comm.getRank();
 
   // mesh description
-  Ordinal64 nx = 10, ny = 7;
+  panzer::GlobalOrdinal nx = 10, ny = 7;
   int px = np, py = 1;
   int bx =  1, by = 2;
 
@@ -330,7 +330,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
     RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
     // build the topology
-    RCP<CartesianConnManager<int,Ordinal64> > connManager = rcp(new CartesianConnManager<int,Ordinal64>);
+    RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
     connManager->initialize(comm,nx,ny,px,py,bx,by);
     connManager->buildConnectivity(*fp);
 
@@ -357,14 +357,14 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
 
   // test 2D Q2 discretization
   {
-    panzer::Ordinal64 totalNodes = (bx*nx+1)*(by*ny+1);
-    panzer::Ordinal64 totalEdges = (bx*nx+1)*(by*ny)+(bx*nx)*(by*ny+1);
+    panzer::GlobalOrdinal totalNodes = (bx*nx+1)*(by*ny+1);
+    panzer::GlobalOrdinal totalEdges = (bx*nx+1)*(by*ny)+(bx*nx)*(by*ny+1);
 
     // field pattern for basis required
     RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
 
     // build the topology
-    RCP<CartesianConnManager<int,Ordinal64> > connManager = rcp(new CartesianConnManager<int,Ordinal64>);
+    RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
     connManager->initialize(comm,nx,ny,px,py,bx,by);
     connManager->buildConnectivity(*fp);
 
@@ -403,8 +403,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
 // This test checks functions used to generate the topology are correct
 TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef CCM::Triplet<Ordinal64> TripletGO;
+  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
+  typedef CCM::Triplet<panzer::GlobalOrdinal> TripletGO;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -421,11 +421,11 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer> >();
 
   // mesh description
-  Ordinal64 nx = 10, ny = 7, nz = 4;
+  panzer::GlobalOrdinal nx = 10, ny = 7, nz = 4;
   int px = np, py = 1, pz = 1;
   int bx =  1, by = 2, bz = 1;
 
-  RCP<CartesianConnManager<int,Ordinal64> > connManager = rcp(new CartesianConnManager<int,Ordinal64>);
+  RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
   connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
 
   // test element blocks are computed properly and sized appropriately
@@ -446,8 +446,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
     auto myElements = connManager->getMyElementsTriplet();
     auto myOffset = connManager->getMyOffsetTriplet();
 
-    Ordinal64 n = nx / px;
-    Ordinal64 r = nx - n * px;
+    panzer::GlobalOrdinal n = nx / px;
+    panzer::GlobalOrdinal r = nx - n * px;
 
     TEST_EQUALITY(myElements.x,n + (r>rank ? 1 : 0));
     TEST_EQUALITY(myOffset.x,n*rank+std::min(Teuchos::as<int>(r),rank));
@@ -461,7 +461,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
 
   // test that the elements are in the right blocks
   {
-    Ordinal64 blk0[4],blk1[4];
+    panzer::GlobalOrdinal blk0[4],blk1[4];
     blk0[0] = connManager->computeLocalElementIndex(TripletGO(2,2,3));
     blk0[1] = connManager->computeLocalElementIndex(TripletGO(5,2,3));
     blk0[2] = connManager->computeLocalElementIndex(TripletGO(7,2,3));
@@ -520,7 +520,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
 
 TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
+  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -533,11 +533,11 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
   // int rank = comm.getRank();
 
   // mesh description
-  Ordinal64 nx = 10, ny = 7, nz = 4;
+  panzer::GlobalOrdinal nx = 10, ny = 7, nz = 4;
   int px = np, py = 1, pz = 1;
   int bx =  1, by = 2, bz = 1;
 /*
-  Ordinal64 nx = 4, ny = 1, nz = 2;
+  panzer::GlobalOrdinal nx = 4, ny = 1, nz = 2;
   int px = np, py = 1, pz = 1;
   int bx =  1, by = 1, bz = 1;
 */
@@ -548,7 +548,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
     RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
 
     // build the topology
-    RCP<CartesianConnManager<int,Ordinal64> > connManager = rcp(new CartesianConnManager<int,Ordinal64>);
+    RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
     connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
     connManager->buildConnectivity(*fp);
 
@@ -580,15 +580,15 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
 
   // test 3D Q2 discretization
   {
-    panzer::Ordinal64 totalNodes = (bx*nx+1)*(by*ny+1)*(bz*nz+1);
-    panzer::Ordinal64 totalEdges = (bx*nx+1)*(by*ny)*(bz*nz+1)+(bx*nx)*(by*ny+1)*(bz*nz+1)+(bx*nx+1)*(by*ny+1)*(bz*nz);
-    panzer::Ordinal64 totalFaces = (bx*nx+1)*(by*ny)*(bz*nz)+(bx*nx)*(by*ny+1)*(bz*nz)+(bx*nx)*(by*ny)*(bz*nz+1);
+    panzer::GlobalOrdinal totalNodes = (bx*nx+1)*(by*ny+1)*(bz*nz+1);
+    panzer::GlobalOrdinal totalEdges = (bx*nx+1)*(by*ny)*(bz*nz+1)+(bx*nx)*(by*ny+1)*(bz*nz+1)+(bx*nx+1)*(by*ny+1)*(bz*nz);
+    panzer::GlobalOrdinal totalFaces = (bx*nx+1)*(by*ny)*(bz*nz)+(bx*nx)*(by*ny+1)*(bz*nz)+(bx*nx)*(by*ny)*(bz*nz+1);
 
     // field pattern for basis required
     RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer> >();
 
     // build the topology
-    RCP<CartesianConnManager<int,Ordinal64> > connManager = rcp(new CartesianConnManager<int,Ordinal64>);
+    RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
     connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
     connManager->buildConnectivity(*fp);
 

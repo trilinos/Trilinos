@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_compress_variable, etc
-#include <stdio.h>
 
 /*! \cond INTERNAL */
 static int ex_prepare_result_var(int exoid, int num_vars, char *type_name, char *dim_name,

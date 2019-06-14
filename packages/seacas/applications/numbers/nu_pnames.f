@@ -84,14 +84,9 @@ C
      $              (NAMEGV(I),I=1,NVARGL),
      $              (NAMENV(I),I=1,NVARNP),
      $              (NAMEEV(I),I=1,NVAREL)
-C      PRINT 1000
- 1000 FORMAT (/T6,'Coordinate',T18,'History',T30,'Global',T42,
-     *            'Nodal',T54,'Element',T66,'Block',
-     *        /T6,'----------',T18,'-------',T30,'------',T42,
-     *            '-----',T54,'-------',T66,'-----')
-C
+
       NROW = MAX(NDIM, NELBLK, NVARHI, NVARGL, NVARNP, NVAREL)
-C
+
       IF (.FALSE.) THEN
       DO 10 I=1, NROW+1
          DO 5 J=1,6
@@ -124,8 +119,5 @@ C
       STOP 'PNAMES'
  2100 CONTINUE
       PRINT *, 'Read error during names transfer'
-      STOP 'PNAMES'
- 2200 CONTINUE
-      PRINT *, 'Write error during names transfer'
       STOP 'PNAMES'
       END

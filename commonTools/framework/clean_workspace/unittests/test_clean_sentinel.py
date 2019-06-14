@@ -36,7 +36,8 @@ class TestCleanReferenceDate(unittest.TestCase):
         """Test that the function returns the expected date"""
         testDate = datetime(2019, 2, 4, hour=10, minute=45,
                             second=0, microsecond=0, tzinfo=None)
-        self.assertEqual(testDate, clean_reference_date())
+        with mock.patch("clean_sentinel.open", side_effect=IOError):
+            self.assertEqual(testDate, clean_reference_date())
 
     def test_stored_date(self):
         """If a different date has been stored make sure it gets retrieved"""

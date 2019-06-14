@@ -52,7 +52,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_PtrFromStlVector.hpp"
@@ -70,8 +70,8 @@
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterResidual_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
-ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                       const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* cIndexer */,
+ScatterResidual_Epetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
+                       const Teuchos::RCP<const panzer::GlobalIndexer> & /* cIndexer */,
                        const Teuchos::ParameterList& p,
                        bool useDiscreteAdjoint)
   : globalIndexer_(indexer) 
@@ -183,8 +183,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
-ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                       const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* cIndexer */,
+ScatterResidual_Epetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
+                       const Teuchos::RCP<const panzer::GlobalIndexer> & /* cIndexer */,
                        const Teuchos::ParameterList& p,
                        bool /* useDiscreteAdjoint */)
   : globalIndexer_(indexer) 
@@ -297,8 +297,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
-ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                       const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
+ScatterResidual_Epetra(const Teuchos::RCP<const GlobalIndexer> & indexer,
+                       const Teuchos::RCP<const panzer::GlobalIndexer> & cIndexer,
                        const Teuchos::ParameterList& p,
                        bool useDiscreteAdjoint)
    : globalIndexer_(indexer)
@@ -392,7 +392,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer_->get_A();
 
-   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> >&
+   const Teuchos::RCP<const panzer::GlobalIndexer>&
      colGlobalIndexer = useColumnIndexer ? colGlobalIndexer_ : globalIndexer_;
    
    // NOTE: A reordering of these loops will likely improve performance

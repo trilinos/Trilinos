@@ -71,7 +71,7 @@
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_String_Utilities.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_ExplicitModelEvaluator.hpp"
 #include "Panzer_ParameterLibraryUtilities.hpp"
 
@@ -421,26 +421,26 @@ namespace panzer_stk {
     ////////////////////////////////////////////////////////////////////////////////////////
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
-    Teuchos::RCP<panzer::UniqueGlobalIndexerBase> globalIndexer;
+    Teuchos::RCP<panzer::GlobalIndexer> globalIndexer;
 
     std::string loadBalanceString = ""; // what is the load balancing information
     bool blockedAssembly = false;
 
-    if(panzer::BlockedDOFManagerFactory<int,int>::requiresBlocking(field_order) && !useTpetra) {
+    if(panzer::BlockedDOFManagerFactory::requiresBlocking(field_order) && !useTpetra) {
 
        // use a blocked DOF manager
        blockedAssembly = true;
 
-       panzer::BlockedDOFManagerFactory<int,int> globalIndexerFactory;
+       panzer::BlockedDOFManagerFactory globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
 
-       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
+       Teuchos::RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
        Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > bloLinObjFactory
         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,
-                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager<int,int> >(dofManager)));
+                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager)));
 
        // parse any explicitly excluded pairs or blocks
        const std::string excludedBlocks = assembly_params.get<std::string>("Excluded Blocks");
@@ -465,22 +465,22 @@ namespace panzer_stk {
        // build load balancing string for informative output
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
-    else if(panzer::BlockedDOFManagerFactory<int,panzer::Ordinal64>::requiresBlocking(field_order) && useTpetra) {
+    else if(panzer::BlockedDOFManagerFactory::requiresBlocking(field_order) && useTpetra) {
 
        // use a blocked DOF manager
        blockedAssembly = true;
 
        TEUCHOS_ASSERT(!use_dofmanager_fei);
-       panzer::BlockedDOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
+       panzer::BlockedDOFManagerFactory globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(false);
 
-       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,panzer::Ordinal64> > > dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
+       Teuchos::RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
-       Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> > bloLinObjFactory
-        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(mpi_comm,
-                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager<int,panzer::Ordinal64> >(dofManager)));
+       Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> > bloLinObjFactory
+        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(mpi_comm,
+                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager)));
 
        // parse any explicitly excluded pairs or blocks
        const std::string excludedBlocks = assembly_params.get<std::string>("Excluded Blocks");
@@ -509,15 +509,15 @@ namespace panzer_stk {
        // use a flat DOF manager
 
        TEUCHOS_ASSERT(!use_dofmanager_fei);
-       panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
+       panzer::DOFManagerFactory globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(false);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
-       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
+       Teuchos::RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
        TEUCHOS_ASSERT(!useDiscreteAdjoint); // safety check
-       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(mpi_comm,dofManager));
+       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(mpi_comm,dofManager));
 
        // build load balancing string for informative output
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
@@ -528,12 +528,12 @@ namespace panzer_stk {
          buildInterfaceConnections(bcs, conn_manager);
 
        // use a flat DOF manager
-       panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+       panzer::DOFManagerFactory globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
        globalIndexerFactory.setUseNeighbors(has_interface_condition);
-       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,
+       Teuchos::RCP<panzer::GlobalIndexer> dofManager
+         = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,
                                                          field_order);
        globalIndexer = dofManager;
 
@@ -907,7 +907,7 @@ namespace panzer_stk {
   writeInitialConditions(const Thyra::ModelEvaluator<ScalarT> & model,
                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                          const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                         const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
+                         const Teuchos::RCP<const panzer::GlobalIndexer> & ugi,
                          const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                          const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
@@ -1496,7 +1496,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory<ScalarT>::
   initializeSolnWriterResponseLibrary(const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                                      const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
+                                      const Teuchos::RCP<const panzer::GlobalIndexer> & ugi,
                                       const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                       const Teuchos::RCP<panzer_stk::STK_Interface> & mesh) const
   {
@@ -1528,7 +1528,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
   buildLOWSFactory(bool blockedAssembly,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                   const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer,
                    const Teuchos::RCP<panzer::ConnManager> & conn_manager,
                    const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm

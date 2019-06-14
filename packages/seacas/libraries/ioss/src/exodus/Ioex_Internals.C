@@ -967,6 +967,7 @@ int Internals::write_meta_data(Mesh &mesh)
 
 void Internals::get_global_counts(Mesh &mesh)
 {
+  PAR_UNUSED(mesh);
 #if defined(SEACAS_HAVE_MPI)
   std::vector<int64_t> counts;
   std::vector<int64_t> global_counts;

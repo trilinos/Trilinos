@@ -114,7 +114,7 @@ namespace panzer {
 
     // build connection manager and field manager
     const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-    RCP<panzer::DOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
+    RCP<panzer::DOFManager> dofManager = Teuchos::rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
     dofManager->addField(fieldName_q1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_q1->getIntrepid2Basis())));
     dofManager->addField(fieldName_qedge1,Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis_qedge1->getIntrepid2Basis())));
     dofManager->setOrientationsRequired(true);
@@ -135,8 +135,8 @@ namespace panzer {
        pl.set("DOF Names",dofNames);
        pl.set("Basis",basis_q1);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
+         = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,panzer::GlobalOrdinal>(dofManager,pl));
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
        evalField_q1 = evaluator->evaluatedFields()[0];
@@ -158,7 +158,7 @@ namespace panzer {
        pl.set("Basis",basis_qedge1);
 
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
+         = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,panzer::GlobalOrdinal>(dofManager,pl));
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
        evalField_qedge1 = evaluator->evaluatedFields()[0];

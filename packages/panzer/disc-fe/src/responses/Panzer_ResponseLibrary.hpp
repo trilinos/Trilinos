@@ -64,7 +64,7 @@
 
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_WorksetDescriptor.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_TypeAssocMap.hpp"
 
@@ -99,7 +99,7 @@ public:
      * by setting the <code>residualType</code> argument to true.
      */
    ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
-                   const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                   const Teuchos::RCP<const GlobalIndexer> & ugi,
                    const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof,
                    bool residualType=false); 
 
@@ -108,7 +108,7 @@ public:
    /** Initialize the response library with the appropriate objects.
      */
    void initialize(const Teuchos::RCP<WorksetContainer> & wc,
-                   const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                   const Teuchos::RCP<const GlobalIndexer> & ugi,
                    const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof); 
 
    /** Initialize the response library with the appropriate objects. This is
@@ -117,7 +117,7 @@ public:
      * be raised. 
      */
    void initializeResidualType(const Teuchos::RCP<WorksetContainer> & wc,
-                               const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                               const Teuchos::RCP<const GlobalIndexer> & ugi,
                                const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof); 
 
 
@@ -139,7 +139,7 @@ public:
    { return wkstContainer_; }
 
    //! Get the internally stored global indexer
-   Teuchos::RCP<const UniqueGlobalIndexerBase> getGlobalIndexer() const 
+   Teuchos::RCP<const GlobalIndexer> getGlobalIndexer() const 
    { return globalIndexer_; }
 
    //! Get the internally stored linear object factory
@@ -323,7 +323,7 @@ protected:
 private:
 
    Teuchos::RCP<WorksetContainer> wkstContainer_;
-   Teuchos::RCP<const UniqueGlobalIndexerBase> globalIndexer_;
+   Teuchos::RCP<const GlobalIndexer> globalIndexer_;
    Teuchos::RCP<const LinearObjFactory<TraitsT> > linObjFactory_;
 
    typedef TypeAssocMap<panzer::Traits::EvalTypes,Teuchos::RCP<ResponseBase> > Response_TemplateManager;
