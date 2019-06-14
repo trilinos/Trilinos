@@ -120,7 +120,6 @@ struct compare {
   }
 };
 
-
 template<class LO, class GO, class Node>
 struct compare<int,LO,GO,Node> {
   static bool compare_final_matrix_structure(Teuchos::FancyOStream &out,Tpetra::CrsMatrix<int,LO,GO,Node> & g1, Tpetra::CrsMatrix<int,LO,GO,Node> & g2) {
@@ -134,7 +133,6 @@ struct compare<long long,LO,GO,Node> {
     return compare_final_matrix_structure_impl(out,g1,g2,0);
   }
 };
-
 
 template<class LO, class GO, class Node>
 class GraphPack {
@@ -228,7 +226,6 @@ std::vector<std::vector<Scalar> > generate_fem1d_element_values() {
 
 template<class Scalar, class Node>
 Kokkos::View<Scalar*[2], Kokkos::LayoutLeft, typename Node::device_type > generate_fem1d_element_values_kokkos() {
-
   Kokkos::View<Scalar*[2], Kokkos::LayoutLeft, typename Node::device_type > mat;
 
   Kokkos::resize(mat, 2);
@@ -331,7 +328,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
       GO gid_j = pack.element2node[i][j];
       for(size_t k=0; k<pack.element2node[i].size(); k++) {
         GO gid_k = pack.element2node[i][k];
-        //        printf("Inserting (%d,%d)\n",gid_j,gid_k);
+        //printf("Inserting (%d,%d)\n",gid_j,gid_k);
         graph->insertGlobalIndices(gid_j,1,&gid_k);
       }
     }
@@ -350,18 +347,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
   mat1.beginFill();
   auto k_e2n = pack.k_element2node;
 
-  Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::execution_space>(0,numLocal), 
-		       KOKKOS_LAMBDA(const size_t i) {
+  out << "getting local matrix" << endl;
+  auto localMat = mat1.getLocalMatrix();
+  Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::execution_space>(0,k_e2n.extent(0)), 
+		       KOKKOS_LAMBDA(const size_t& i) {
     for(size_t j=0; j<k_e2n.extent(1); j++) {
-      GO gid_j = k_e2n(i, j);
+      LO gid_j = k_e2n(i, j);
       for(size_t k=0; k<k_e2n.extent(1); k++) {
-        GO gid_k = k_e2n(i, k);
-        mat1.sumIntoGlobalValues(gid_j,1,kokkosValues(j,k),&gid_k);
+        const LO gid_k = k_e2n(i, k);
+	localMat.sumIntoValues(gid_j,&gid_k,1,&kokkosValues(j, k));
       }
     }
   });
-  mat1.endFill();
 
+  out << "summing matrix 2 into globals" << endl;
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
@@ -371,8 +370,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
       }
     }
   }
+  mat1.endFill();
   mat2.fillComplete();
 
+  out << "comparing matrices now" << endl;
   success = compare<Scalar,LO,GO,Node>::compare_final_matrix_structure(out,mat1,mat2);
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
@@ -405,7 +406,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, S
       for(size_t k=0; k<pack.element2node[i].size(); k++) {
         GO gid_k = pack.element2node[i][k];
         LO lid_k = pack.overlapMap->getLocalElement(gid_k);
-        //        printf("[%d] Inserting gid (%d,%d) lid (%d,%d)\n",comm->getRank(),gid_j,gid_k,lid_j,lid_k);fflush(stdout);
+        //printf("[%d] Inserting gid (%d,%d) lid (%d,%d)\n",comm->getRank(),gid_j,gid_k,lid_j,lid_k);fflush(stdout);
         graph->insertLocalIndices(lid_j,1,&lid_k);
       }
     }
