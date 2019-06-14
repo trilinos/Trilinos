@@ -853,8 +853,8 @@ documentation](https://gitlab.sandia.gov/atdm/atdm-spack-scripts/blob/master/REA
 **WARNING:** This Spack env is still under development and may change in the
 future.
 
-Once logged onto a Linux machine with the SNL ATDM Spack mdoules isntaleld,
-one can directly configure, build, and run tests using the `sems-rhel7` env.
+Once logged onto a Linux machine with the SNL ATDM Spack mdoules installed,
+one can directly configure, build, and run tests using the `spack-rhel` env.
 For example, to configure, build and run the tests for `MueLu` one would clone
 Trilinos on the `develop` branch and then do the following:
 
