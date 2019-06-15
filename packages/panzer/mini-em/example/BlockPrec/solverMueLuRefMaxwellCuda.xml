@@ -16,12 +16,14 @@
                 <ParameterList name="smoother: pre params">
                   <Parameter name="chebyshev: degree" type="int" value="2"/>
                   <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/>
+                  <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
                 </ParameterList>
 
                 <Parameter name="smoother: post type" type="string" value="CHEBYSHEV"/>
                 <ParameterList name="smoother: post params">
                   <Parameter name="chebyshev: degree" type="int" value="2"/>
                   <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/>
+                  <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
                 </ParameterList>
 
                 <ParameterList name="refmaxwell: 11list">
@@ -33,12 +35,14 @@
                   <ParameterList name="smoother: pre params">
                     <Parameter name="chebyshev: degree" type="int" value="2"/>
                     <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/>
+                    <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
                   </ParameterList>
 
                   <Parameter name="smoother: post type" type="string" value="CHEBYSHEV"/>
                   <ParameterList name="smoother: post params">
                     <Parameter name="chebyshev: degree" type="int" value="2"/>
                     <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/>
+                    <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
                   </ParameterList>
 
                   <Parameter name="repartition: target rows per proc" type="int" value="100000"/>
@@ -54,12 +58,14 @@
                   <ParameterList name="smoother: pre params">
                     <Parameter name="chebyshev: degree" type="int" value="2"/>
                     <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/>
+                    <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
                   </ParameterList>
 
                   <Parameter name="smoother: post type" type="string" value="CHEBYSHEV"/>
                   <ParameterList name="smoother: post params">
                     <Parameter name="chebyshev: degree" type="int" value="2"/>
                     <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/>
+                    <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
                   </ParameterList>
 
                   <Parameter name="repartition: target rows per proc" type="int" value="100000"/>
