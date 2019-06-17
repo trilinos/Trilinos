@@ -89,22 +89,23 @@ export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 #
 # Usage:
 #
-#   atdm_run_script_on_comput_node <script_to_run> <output_file> \
+#   atdm_run_script_on_compute_node <script_to_run> <output_file> \
 #     [<timeout>] [<account>]
 #
 # If <timeout> and/or <account> are not given, then defaults are provided that
 # work for the Jenkins driver process.
 #
-# In this case, sbatch is used to run the script but it also sends ouptut to
+# In this case, 'sbatch' is used to run the script but it also sends output to
 # STDOUT in real-time while it is running in addition to writing to the
-# <outout_file>.  The job name for the sbatch script is taken from the env var
-# 'ATDM_CONFIG_BUILD_NAME'.  This works for local builds since ATDM_CONFIG_BUILD_NAME.
+# <output_file>.  The job name for the sbatch script is taken from the env var
+# 'ATDM_CONFIG_BUILD_NAME'.  This works for local builds as well as Jenkins
+# builds since ATDM_CONFIG_BUILD_NAME is set by the atdm/load-env.sh script.
 #
-# Note that you can pass in the script to run with arguments such as with
-# "<some-script> <arg1> <arg2>" and it will work.  But note that this has to
-# be bash script that 'sbatch' can copy and run form a temp location and it
-# still has to work.  So the script has to use absolute directory paths, not
-# relative paths or asume sym links, etc.
+# Note that you can pass in the script to run with arguments with quotes such
+# as with "<some-script> <arg1> <arg2>" and it will work.  But note that this
+# has to be bash script that 'sbatch' can copy and run form a temp location
+# and it still has to work.  So the script has to use absolute directory
+# paths, not relative paths or assume sym links, etc.
 #
 function atdm_run_script_on_compute_node {
 
