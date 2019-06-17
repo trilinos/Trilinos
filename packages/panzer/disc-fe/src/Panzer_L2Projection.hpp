@@ -6,6 +6,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "PanzerCore_config.hpp"
 #include "Panzer_BasisDescriptor.hpp"
 #include "Panzer_IntegrationDescriptor.hpp"
 #include "Tpetra_Map.hpp" // for KokkosDeviceWrapperNode
@@ -24,14 +25,13 @@ namespace panzer {
   class BasisDescriptor;
   class IntegrationDescriptor;
   class ConnManager;
-  template<typename LO,typename GO> class DOFManager;
-  template<typename LO,typename GO> class UniqueGlobalIndexer;
+  class DOFManager;
+  class GlobalIndexer;
   class WorksetContainer;
 
   /** \brief Unified set of tools for building objects for lumped and
       consistent L2 projects between bases.
   */
-  template<typename LO, typename GO>
   class L2Projection {
 
     panzer::BasisDescriptor targetBasisDescriptor_;
@@ -41,8 +41,7 @@ namespace panzer {
     std::vector<std::string> elementBlockNames_;
     mutable Teuchos::RCP<panzer::WorksetContainer> worksetContainer_;
     bool setupCalled_;
-
-    Teuchos::RCP<panzer::DOFManager<LO,GO>> targetGlobalIndexer_;
+    Teuchos::RCP<panzer::DOFManager> targetGlobalIndexer_;
 
   public:
 
@@ -66,7 +65,7 @@ namespace panzer {
                const Teuchos::RCP<panzer::WorksetContainer> worksetContainer = Teuchos::null);
 
     /// Returns the target global indexer. Will be null if setup() has not been called.
-    Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO>> getTargetGlobalIndexer() const;
+    Teuchos::RCP<panzer::GlobalIndexer> getTargetGlobalIndexer() const;
 
     /** \brief Allocates, fills and returns a mass matrix for L2
         projection onto a target basis.
@@ -75,7 +74,7 @@ namespace panzer {
         \param elementBlockMultipliers (optional) If non-null, a multiplier will be used for each element block. The elements should be ordered corresponding to commManger block ordering. 
         \returns Filled mass matrix in a Tpetra::CrsMatrix
     */
-    Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+    Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
       buildMassMatrix(bool use_lumping=false,
                       const std::unordered_map<std::string,double>* elementBlockMultipliers = nullptr);
 
@@ -101,7 +100,7 @@ namespace panzer {
 
         \returns Filled inverse lumped mass matrix in a Tpetra::MultiVector (diagonal entries mass matrix)
     */
-    Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+    Teuchos::RCP<Tpetra::MultiVector<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
       buildInverseLumpedMassMatrix();
 
     /** \brief Allocates, fills and returns a rectangular matrix for
@@ -121,9 +120,9 @@ namespace panzer {
 
         \returns Alocated and filled Tpetra::CrsMatrix
     */
-    Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-      buildRHSMatrix(const panzer::UniqueGlobalIndexer<LO,GO>& sourceDOFManager,
-                     const Teuchos::RCP<const Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
+    Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+      buildRHSMatrix(const panzer::GlobalIndexer& sourceDOFManager,
+                     const Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
                      const std::string& sourceFieldName,
                      const panzer::BasisDescriptor& sourceBasisDescriptor,
                      const int vectorOrGradientDirectionIndex = -1);

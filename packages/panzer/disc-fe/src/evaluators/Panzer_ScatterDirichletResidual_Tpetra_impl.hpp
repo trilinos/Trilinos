@@ -48,7 +48,7 @@
 
 #include "Phalanx_DataLayout.hpp"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
@@ -66,7 +66,7 @@
 
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
-ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
+ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const GlobalIndexer> & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
@@ -257,7 +257,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
-ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
+ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const GlobalIndexer> & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
@@ -484,7 +484,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
-ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
+ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const GlobalIndexer> & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")

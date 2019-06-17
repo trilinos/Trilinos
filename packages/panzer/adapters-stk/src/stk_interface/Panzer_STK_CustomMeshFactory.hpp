@@ -43,7 +43,7 @@
 #ifndef __Panzer_STK_CustomMeshFactory_hpp__
 #define __Panzer_STK_CustomMeshFactory_hpp__
 
-#include <Panzer_Traits.hpp> // for Ordinal64
+#include <Panzer_Traits.hpp> // for panzer::GlobalOrdinal
 #include <Panzer_STK_MeshFactory.hpp>
 #include <Panzer_STK_Interface.hpp>
 

@@ -46,7 +46,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
@@ -60,7 +60,7 @@
 template<typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::GatherTangent_Tpetra<EvalT, TRAITS,LO,GO,NodeT>::
 GatherTangent_Tpetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)

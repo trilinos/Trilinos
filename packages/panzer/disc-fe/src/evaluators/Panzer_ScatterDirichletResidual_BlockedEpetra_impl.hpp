@@ -52,8 +52,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
@@ -78,8 +78,8 @@
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
-ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                       const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                                       const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                                        const Teuchos::ParameterList& p,
                                        bool /* useDiscreteAdjoint */)
    : rowIndexers_(rIndexers)
@@ -290,8 +290,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
-ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                       const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                                       const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                                        const Teuchos::ParameterList& p,
                                        bool /* useDiscreteAdjoint */)
    : rowIndexers_(rIndexers)
@@ -503,8 +503,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
-ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                       const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
+                                       const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                                        const Teuchos::ParameterList& p,
                                        bool /* useDiscreteAdjoint */)
    : rowIndexers_(rIndexers)

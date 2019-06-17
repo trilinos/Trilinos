@@ -54,8 +54,8 @@
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GatherSolution_Input.hpp"
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Phalanx
@@ -78,7 +78,7 @@ template<typename TRAITS, typename LO, typename GO>
 panzer::
 GatherSolution_BlockedEpetra<panzer::Traits::Residual, TRAITS, LO, GO>::
 GatherSolution_BlockedEpetra(
-  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+  const std::vector<Teuchos::RCP<const GlobalIndexer>>&
     indexers,
   const Teuchos::ParameterList& p)
   :
@@ -329,7 +329,7 @@ evaluateFields(
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_BlockedEpetra<panzer::Traits::Tangent, TRAITS, LO, GO>::
 GatherSolution_BlockedEpetra(
-  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+  const std::vector<Teuchos::RCP<const GlobalIndexer>>&
     indexers,
   const Teuchos::ParameterList& p)
   :
@@ -609,7 +609,7 @@ template<typename TRAITS, typename LO, typename GO>
 panzer::
 GatherSolution_BlockedEpetra<panzer::Traits::Jacobian, TRAITS, LO, GO>::
 GatherSolution_BlockedEpetra(
-  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+  const std::vector<Teuchos::RCP<const GlobalIndexer>>&
     indexers,
   const Teuchos::ParameterList& p)
   :

@@ -61,11 +61,8 @@ namespace panzer {
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 class BlockedTpetraLinearObjContainer;
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class UniqueGlobalIndexer; //forward declaration
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class BlockedDOFManager; //forward declaration
+class GlobalIndexer;
+class BlockedDOFManager;
 
 /** \brief Gathers tangent vectors dx/dp for computing df/dx*dx/dp + df/dp into
     the nodal fields of the field manager.
@@ -85,10 +82,10 @@ class GatherTangent_BlockedTpetra
     public panzer::CloneableEvaluator  {
 public:
 
-   GatherTangent_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
+   GatherTangent_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer)
      : gidIndexer_(indexer) {}
 
-   GatherTangent_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+   GatherTangent_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                                 const Teuchos::ParameterList& p);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
@@ -117,7 +114,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,GO> > gidIndexer_;
+  Teuchos::RCP<const BlockedDOFManager> gidIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 

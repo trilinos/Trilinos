@@ -51,27 +51,26 @@
 
 namespace panzer
 {
-class WorksetDescriptor;
-struct WorksetNeeds;
-template<typename LO, typename GO>
-struct LocalMeshInfo;
+  class WorksetDescriptor;
+  struct WorksetNeeds;
+  struct LocalMeshInfo;
 }
 
 namespace panzer
 {
 
-/** Build worksets for a partitioned mesh
-  *
-  * \param[in] mesh_info Mesh info object
-  * \param[in] description Description of workset
-  * \param[in] needs Requirements for workset
-  *
-  * \returns vector of worksets for the corresponding element block.
-  */
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildPartitionedWorksets(const panzer::LocalMeshInfo<int,panzer::Ordinal64> & mesh_info,
-                         const panzer::WorksetDescriptor & description,
-                         const panzer::WorksetNeeds & needs);
+  /** Build worksets for a partitioned mesh
+   *
+   * \param[in] mesh_info Mesh info object
+   * \param[in] description Description of workset
+   * \param[in] needs Requirements for workset
+   *
+   * \returns vector of worksets for the corresponding element block.
+   */
+  Teuchos::RCP<std::vector<panzer::Workset> >
+  buildPartitionedWorksets(const panzer::LocalMeshInfo & mesh_info,
+                           const panzer::WorksetDescriptor & description,
+                           const panzer::WorksetNeeds & needs);
 
 }
 

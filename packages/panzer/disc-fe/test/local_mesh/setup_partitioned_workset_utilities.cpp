@@ -65,9 +65,6 @@
 
 namespace panzer {
 
-using LO=int;
-using GO=panzer::Ordinal64;
-
 TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 {
 
@@ -77,7 +74,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 
   // Test empty mesh
   {
-    panzer::LocalMeshInfo<LO,GO> empty_mesh;
+    panzer::LocalMeshInfo empty_mesh;
 
     panzer::WorksetDescriptor description("block",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     panzer::WorksetNeeds needs;
@@ -94,7 +91,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
   }
 
   // Generate a local mesh info object
-  Teuchos::RCP<panzer::LocalMeshInfo<LO,GO>> mesh_info = generateLocalMeshInfo<LO,GO>();
+  Teuchos::RCP<panzer::LocalMeshInfo> mesh_info = generateLocalMeshInfo();
 
   // Test bad descriptors
   {

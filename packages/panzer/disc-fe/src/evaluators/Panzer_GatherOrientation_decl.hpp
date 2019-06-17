@@ -57,8 +57,7 @@
 
 namespace panzer {
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class UniqueGlobalIndexer; //forward declaration
+class GlobalIndexer; //forward declaration
 
 /** \brief Gathers orientations per field from the global indexer and
     stores them in the field manager.
@@ -71,16 +70,16 @@ class GatherOrientation
    
 public:
 
-  GatherOrientation(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer)
+  GatherOrientation(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer)
   { indexers_.push_back(indexer); }
 
-  GatherOrientation(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+  GatherOrientation(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
                         const Teuchos::ParameterList& p);
 
-  GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > & indexers)
+  GatherOrientation(const std::vector<Teuchos::RCP<const GlobalIndexer>> & indexers)
      : indexers_(indexers) {}
 
-  GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > & indexers,
+  GatherOrientation(const std::vector<Teuchos::RCP<const GlobalIndexer>> & indexers,
                     const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
@@ -97,9 +96,9 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer_;
 
-  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > indexers_;
+  std::vector<Teuchos::RCP<const GlobalIndexer>> indexers_;
 
   std::vector<int> indexerIds_;   // block index
   std::vector<int> subFieldIds_; // sub field numbers
