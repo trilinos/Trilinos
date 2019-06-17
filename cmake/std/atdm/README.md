@@ -609,7 +609,7 @@ and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
 'white' and 'ride'.
 
-Note that one can also run the same build a tests using the <a
+Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -653,7 +653,7 @@ and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
 'hansen' and 'shiller'.
 
-Note that one can also run the same build a tests using the <a
+Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -777,7 +777,7 @@ NOTE: Above including `sems-rhel6` in the build name
 CEE LAN RHEL6 machine to be explicit that the SEMS env is being used and not
 the <a href="#cee-rhel6-environment">CEE RHEL6 env</a>.
 
-One can also run the same build a tests using the <a
+One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -819,7 +819,7 @@ $ make NP=16
 $ ctest -j8
 ```
 
-One can also run the same build a tests using the <a
+One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -877,7 +877,7 @@ $ make NP=16
 $ ctest -j8
 ```
 
-One can also run the same build a tests using the <a
+One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -924,7 +924,7 @@ NOTE: Above one must include `cee-rhel6` in the build name
 LAN RHEL6 machine or the <a href="#sems-rhel6-environment">sems-rhel6</a> env
 will be used by default.
 
-One can also run the same build a tests using the <a
+One can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
@@ -977,7 +977,7 @@ and building on the login node, one can also do these on the compute nodes as
 well.  In fact, that is what the CTest -S drivers do in automated testing on
 'waterman'.
 
-Note that one can also run the same build a tests using the <a
+Note that one can also run the same build and tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
