@@ -72,9 +72,9 @@
           </ParameterList>
 
           <!-- <ParameterList name="Q_B Preconditioner"> -->
-          <!--   <Parameter name="Prec Type" type="string" value="MueLu-Tpetra"/> -->
+          <!--   <Parameter name="Prec Type" type="string" value="MueLu"/> -->
           <!--   <ParameterList name="Prec Types"> -->
-          <!--     <ParameterList name="MueLu-Tpetra"> -->
+          <!--     <ParameterList name="MueLu"> -->
           <!--       <Parameter name="verbosity" type="string" value="high"/> -->
           <!--       <Parameter name="hierarchy label" type="string" value="Q_B"/> -->
           <!--       <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/> -->
@@ -143,9 +143,9 @@
           </ParameterList>
 
           <ParameterList name="S_E Preconditioner">
-            <Parameter name="Type" type="string" value="MueLuRefMaxwell-Tpetra"/>
+            <Parameter name="Type" type="string" value="MueLuRefMaxwell"/>
             <ParameterList name="Preconditioner Types">
-              <ParameterList name="MueLuRefMaxwell-Tpetra">
+              <ParameterList name="MueLuRefMaxwell">
                 <Parameter name="parameterlist: syntax" type="string" value="muelu"/>
                 <Parameter name="verbosity" type="string" value="extreme"/>
                 <Parameter name="refmaxwell: use as preconditioner" type="bool" value="true"/>

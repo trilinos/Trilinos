@@ -280,14 +280,21 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
        {
          Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Get coordinates"));
          // Get coordinates
-         if (useTpetra) {
-           TEUCHOS_ASSERT(S_E_prec_type_ == "MueLuRefMaxwell-Tpetra");
+#ifndef PANZER_HIDE_DEPRECATED_CODE
+         if (useTpetra && ((S_E_prec_type_ == "MueLuRefMaxwell") || (S_E_prec_type_ == "MueLuRefMaxwell-Tpetra"))) {
+#else
+         if (useTpetra && (S_E_prec_type_ == "MueLuRefMaxwell")) {
+#endif
            typedef int LocalOrdinal;
            typedef panzer::GlobalOrdinal GlobalOrdinal;
 
            Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal> > Coordinates = S_E_prec_pl.get<Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal> > >("Coordinates");
            S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
-         } else if (S_E_prec_type_ == "MueLuRefMaxwell") {
+#ifndef PANZER_HIDE_DEPRECATED_CODE
+         } else if (!useTpetra && ((S_E_prec_type_ == "MueLuRefMaxwell") || (S_E_prec_type_ == "MueLuRefMaxwell-Tpetra"))) {
+#else
+         } else if (!useTpetra && (S_E_prec_type_ == "MueLuRefMaxwell")) {
+#endif
            Teuchos::RCP<Epetra_MultiVector> Coordinates = S_E_prec_pl.get<Teuchos::RCP<Epetra_MultiVector> >("Coordinates");
            S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
          } else if (S_E_prec_type_ == "ML") {
