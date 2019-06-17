@@ -197,7 +197,7 @@ public:
                               const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
                               const Teuchos::RCP<GlobalEvaluationData> & ged,
                               const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial,
-                              const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi=Teuchos::null);
+                              const Teuchos::RCP<const GlobalIndexer> & ugi=Teuchos::null);
 
   /** Add a global evaluation data object that will be filled as a side
     * effect when evalModel is called. This is useful for building things
@@ -605,7 +605,7 @@ private: // data members
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_value;
 
     // for distributed parameters
-    Teuchos::RCP<const UniqueGlobalIndexerBase> global_indexer;
+    Teuchos::RCP<const GlobalIndexer> global_indexer;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > dfdp_rl;
         // for residual sensitivities with respect to a distributed parameter
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > dgdp_rl;
@@ -637,7 +637,7 @@ private: // data members
   Teuchos::RCP<ParameterObject> createDistributedParameter(const std::string & key,
                         const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial,
-                        const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi) const;
+                        const Teuchos::RCP<const GlobalIndexer> & ugi) const;
 
   double t_init_;
 

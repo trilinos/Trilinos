@@ -291,16 +291,16 @@ int main(int argc,char * argv[])
      // build DOF Manager and linear object factory
      /////////////////////////////////////////////////////////////
 
-     RCP<panzer::UniqueGlobalIndexerBase> dofManager;
+     RCP<panzer::GlobalIndexer> dofManager;
      Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
 
      // build the connection manager
      if(!useTpetra) {
        const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-       panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-       RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager_int
-             = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+       panzer::DOFManagerFactory globalIndexerFactory;
+       RCP<panzer::GlobalIndexer> dofManager_int
+             = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
        dofManager = dofManager_int;
 
        // construct some linear algebra object, build object to pass to evaluators
@@ -309,13 +309,13 @@ int main(int argc,char * argv[])
      else {
        const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-       panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
-       RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager_long
-             = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+       panzer::DOFManagerFactory globalIndexerFactory;
+       RCP<panzer::GlobalIndexer> dofManager_long
+             = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
        dofManager = dofManager_long;
 
        // construct some linear algebra object, build object to pass to evaluators
-       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(comm,dofManager_long));
+       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(comm,dofManager_long));
      }
 
      // build worksets
@@ -575,7 +575,7 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
 
 void solveTpetraSystem(panzer::LinearObjContainer & container)
 {
-  typedef panzer::TpetraLinearObjContainer<double,int,panzer::Ordinal64> LOC;
+  typedef panzer::TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> LOC;
 
   LOC & tp_container = Teuchos::dyn_cast<LOC>(container);
 
@@ -585,11 +585,11 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   // only copied shallowly and will be overwritten by the solve, so we
   // make a deep copy here.  That way we can compare the result
   // against the original X_guess.
-  typedef Tpetra::MultiVector<double,int,panzer::Ordinal64> MV;
-  typedef Tpetra::Operator<double,int,panzer::Ordinal64> OP;
+  typedef Tpetra::MultiVector<double,int,panzer::GlobalOrdinal> MV;
+  typedef Tpetra::Operator<double,int,panzer::GlobalOrdinal> OP;
   typedef Belos::LinearProblem<double,MV, OP> ProblemType;
   Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
-  auto prec = Ifpack2::Factory::create<Tpetra::RowMatrix<double,int,panzer::Ordinal64>>("RELAXATION",tp_container.get_A(),4);
+  auto prec = Ifpack2::Factory::create<Tpetra::RowMatrix<double,int,panzer::GlobalOrdinal>>("RELAXATION",tp_container.get_A(),4);
   Teuchos::ParameterList precParams;
   precParams.set("relaxation: type", "Gauss-Seidel");
   prec->setParameters(precParams);

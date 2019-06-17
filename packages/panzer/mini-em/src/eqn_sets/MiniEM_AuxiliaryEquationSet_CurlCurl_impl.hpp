@@ -146,9 +146,8 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
    typedef double Scalar;
    typedef int LocalOrdinalEpetra;
-   typedef int GlobalOrdinalEpetra;
    typedef int LocalOrdinalTpetra;
-   typedef panzer::Ordinal64 GlobalOrdinalTpetra;
+   typedef panzer::GlobalOrdinal GlobalOrdinalTpetra;
 
    typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> blockedTpetraLinObjFactory;
    typedef typename panzer::TpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> tpetraLinObjFactory;
@@ -171,14 +170,14 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       = Teuchos::rcp_dynamic_cast<const blockedEpetraLinObjFactory>(Teuchos::rcpFromRef(lof));
 
    if(tblof != Teuchos::null) {
-     Teuchos::RCP<const panzer::BlockedDOFManager<LocalOrdinalTpetra,GlobalOrdinalTpetra> > blockedDOFMngr = tblof->getGlobalIndexer();
+     Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr = tblof->getGlobalIndexer();
      TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null);
 
      pFieldNum = blockedDOFMngr->getFieldNum(fieldStr);
      blockIndex = blockedDOFMngr->getFieldBlock(pFieldNum);
 
      // get the unique global indexer for just this field
-     Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalTpetra,GlobalOrdinalTpetra> > ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
+     Teuchos::RCP<panzer::GlobalIndexer> ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
 
      // build a new linear object factory
      nlof = Teuchos::rcp(new tpetraLinObjFactory(Teuchos::rcp(new Teuchos::MpiComm<int>(tblof->getComm())).getConst(),ugi));
@@ -203,14 +202,14 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
      }
 
    } else if(eblof != Teuchos::null) {
-     Teuchos::RCP<const panzer::BlockedDOFManager<LocalOrdinalEpetra,GlobalOrdinalEpetra> > blockedDOFMngr = eblof->getGlobalIndexer();
+     Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr = eblof->getGlobalIndexer();
      TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null);
 
      pFieldNum = blockedDOFMngr->getFieldNum(fieldStr);
      blockIndex = blockedDOFMngr->getFieldBlock(pFieldNum);
 
      // get the unique global indexer for just this field
-     Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalEpetra,GlobalOrdinalEpetra> > ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
+     Teuchos::RCP<panzer::GlobalIndexer> ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
 
      // build a new linear object factory
      nlof = Teuchos::rcp(new epetraLinObjFactory(Teuchos::rcp(new Teuchos::MpiComm<int>(eblof->getComm())).getConst(),ugi));

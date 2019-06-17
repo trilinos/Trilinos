@@ -46,7 +46,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
@@ -63,7 +63,7 @@
 template <typename EvalT,typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 panzer::GatherTangent_BlockedTpetra<EvalT, TRAITS,S,LO,GO,NodeT>::
 GatherTangent_BlockedTpetra(
-  const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  const Teuchos::RCP<const BlockedDOFManager> & indexer,
   const Teuchos::ParameterList& p)
   : gidIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)
@@ -163,7 +163,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       LO cellLocalId = localCellIds[worksetCellIndex];
 
-      gidIndexer_->getElementGIDs(cellLocalId,GIDs,blockId);
+      gidIndexer_->getElementGIDsPair(cellLocalId,GIDs,blockId);
 
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());

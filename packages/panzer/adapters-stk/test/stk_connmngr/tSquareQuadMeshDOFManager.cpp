@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
@@ -150,7 +150,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    TEST_EQUALITY(uy_offsets.size(),ux_offsets.size());
 
    if(myRank==0) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),12);
@@ -179,7 +179,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
       }
    }
    else if(myRank==1) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),12);
@@ -228,7 +228,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
 
@@ -260,7 +260,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
    TEST_EQUALITY(uy_offsets.size(),ux_offsets.size());
 
    if(myRank==0) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),12);
@@ -279,7 +279,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
       }
    }
    else if(myRank==1) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),12);
@@ -320,15 +320,15 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, ghosted_owned_indices)
 
    // build DOF manager
    RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
 
-   // test UniqueGlobalIndexer
-   RCP<panzer::UniqueGlobalIndexer<int,int> > glbNum = dofManager;
+   // test GlobalIndexer
+   RCP<panzer::GlobalIndexer> glbNum = dofManager;
 
-   std::vector<int> owned, ownedAndGhosted;
+   std::vector<panzer::GlobalOrdinal> owned, ownedAndGhosted;
    glbNum->getOwnedIndices(owned);
    glbNum->getOwnedAndGhostedIndices(ownedAndGhosted);
 
@@ -404,20 +404,20 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
 
    // build DOF manager
    RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager_fluids = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager_fluids = rcp(new panzer::DOFManager());
    dofManager_fluids->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager_fluids->addField("ux",patternC2);
    dofManager_fluids->addField("uy",patternC2);
    dofManager_fluids->addField("p",patternC1);
    dofManager_fluids->buildGlobalUnknowns();
 
-   RCP<panzer::DOFManager<int,int> > dofManager_temp = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager_temp = rcp(new panzer::DOFManager());
    dofManager_temp->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager_temp->addField("T",patternC1);
    dofManager_temp->buildGlobalUnknowns(dofManager_fluids->getGeometricFieldPattern());
 
    if(myRank==0) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager_temp->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),4);
@@ -434,7 +434,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
       TEST_EQUALITY(gids[3],4);
    }
    else if(myRank==1) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager_temp->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),4);
@@ -533,7 +533,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -557,7 +557,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
    // unfortunatly this mesh is completly uniform
    double standardO[] = { 1.0, 1.0, -1.0, -1.0 };
    if(myRank==0) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       std::vector<double> orientation;
 
       // element 0
@@ -597,7 +597,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
          TEST_EQUALITY(orientation[i+4],standardO[i]);
    }
    else if(myRank==1) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
       std::vector<double> orientation;
 
       // element 0
@@ -658,7 +658,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -738,7 +738,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations_fa
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -773,7 +773,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_q2q1)
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
@@ -828,7 +828,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_q2q1)
    TEST_EQUALITY(p_offsets[3],11);
 
    if(myRank==0) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),9+9+4);
@@ -863,7 +863,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_q2q1)
       TEST_EQUALITY(gids[20],34); TEST_EQUALITY(gids[21],35);
    }
    else if(myRank==1) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),9+9+4);
@@ -898,7 +898,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_q2q1)
       TEST_EQUALITY(gids[20],57); TEST_EQUALITY(gids[21],58);
    }
 
-   std::vector<int> owned, ownedAndGhosted;
+   std::vector<panzer::GlobalOrdinal> owned, ownedAndGhosted;
    dofManager->getOwnedIndices(owned);
    dofManager->getOwnedAndGhostedIndices(ownedAndGhosted);
 
@@ -933,9 +933,9 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,4,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
-   RCP<panzer::DOFManager<int,int> > dofManager_noNeighbors =
-    rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager> dofManager = rcp(new panzer::DOFManager());
+   RCP<panzer::DOFManager> dofManager_noNeighbors =
+    rcp(new panzer::DOFManager());
    dofManager->useNeighbors(true);
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
@@ -962,7 +962,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
    TEST_EQUALITY(dofManager->getNumberElementGIDArrays(),6)
 
    if(myRank==0) {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       for(int i=0;i<6;i++) {
         dofManager->getElementGIDs(i,gids);
@@ -990,7 +990,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
       TEST_EQUALITY(gids[9],24); TEST_EQUALITY(gids[10],25); TEST_EQUALITY(gids[11],26);
    }
    else {
-      std::vector<int> gids;
+      std::vector<panzer::GlobalOrdinal> gids;
 
       for(int i=0;i<6;i++) {
         dofManager->getElementGIDs(i,gids);
@@ -1010,7 +1010,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
 
    // owned vector
    {
-     std::vector<int> owned, owned_noNeighbors;
+     std::vector<panzer::GlobalOrdinal> owned, owned_noNeighbors;
      dofManager->getOwnedIndices(owned);
      dofManager_noNeighbors->getOwnedIndices(owned_noNeighbors);
      TEST_EQUALITY(owned.size(),owned_noNeighbors.size());
@@ -1023,15 +1023,15 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
 
    // owned and ghosted vector
    {
-     std::vector<int> ghosted;
+     std::vector<panzer::GlobalOrdinal> ghosted;
      dofManager->getOwnedAndGhostedIndices(ghosted);
 
-     std::set<int> ghosted_set;
+     std::set<panzer::GlobalOrdinal> ghosted_set;
      ghosted_set.insert(ghosted.begin(),ghosted.end());
      TEST_EQUALITY(ghosted_set.size(),ghosted.size()); // make sure there are no duplicated entries
 
      for(int e=0;e<6;e++) {
-       std::vector<int> gids;
+       std::vector<panzer::GlobalOrdinal> gids;
 
        dofManager->getElementGIDs(e,gids);
        bool allFound = true;

@@ -6,14 +6,14 @@ SET(UNIT_TEST_DRIVER
 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   tTpetraLinearObjFactory
-#   SOURCES tTpetraLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+#   SOURCES tTpetraLinearObjFactory.cpp UnitTest_GlobalIndexer.cpp ${UNIT_TEST_DRIVER}
 #   COMM mpi
 #   NUM_MPI_PROCS 2
 #   )
 # 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   tBlockedLinearObjFactory
-#   SOURCES tBlockedLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp 
+#   SOURCES tBlockedLinearObjFactory.cpp UnitTest_GlobalIndexer.cpp 
 #           ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test/UnitTest_ConnManager.cpp
 #           ${UNIT_TEST_DRIVER}
 #   COMM mpi
@@ -22,14 +22,14 @@ SET(UNIT_TEST_DRIVER
 # 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   tBlockedTpetraLinearObjFactory
-#   SOURCES tBlockedTpetraLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+#   SOURCES tBlockedTpetraLinearObjFactory.cpp UnitTest_GlobalIndexer.cpp ${UNIT_TEST_DRIVER}
 #   COMM mpi
 #   NUM_MPI_PROCS 2
 #   )
 # 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   tEpetra_GlbEvalData
-#   SOURCES tEpetra_GlbEvalData.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+#   SOURCES tEpetra_GlbEvalData.cpp UnitTest_GlobalIndexer.cpp ${UNIT_TEST_DRIVER}
 #   COMM mpi
 #   NUM_MPI_PROCS 2
 #   )
@@ -49,7 +49,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
           tBlockedTpetraLinearObjFactory.cpp 
           tTpetra_GlbEvalData.cpp 
           tEpetra_GlbEvalData.cpp 
-          UnitTest_UniqueGlobalIndexer.cpp 
+          UnitTest_GlobalIndexer.cpp 
           ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp
           ${UNIT_TEST_DRIVER}
   COMM mpi
@@ -64,8 +64,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tEpetra_LOF_FilteredUGI
-  SOURCES tEpetra_LOF_FilteredUGI.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
+  tEpetra_LOF_FilteredGlobalIndexer
+  SOURCES tEpetra_LOF_FilteredGlobalIndexer.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
   COMM mpi
   NUM_MPI_PROCS 2
   )
