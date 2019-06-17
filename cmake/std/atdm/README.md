@@ -565,7 +565,7 @@ example, skip configure, skip the build, skip running tests, etc.
 
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
-* <a href="#chamaserrano">chama/serrano/eclipse/ghost</a>
+* <a href="#chamaserrano">chama/serrano/skybridge/eclipse/ghost</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
@@ -664,12 +664,12 @@ $ srun ./checkin-test-atdm.sh intel-opt-openmp \
 ```
 
 
-### chama/serrano
+### chama/serrano/skybridge
 
-Once logged on to the TLCC-2 machine 'chama' or the CTS-1 'serrano', 'eclipse'
-or 'ghost' machines, one can directly configure and build on the login node
-(being careful not to overload the node) using the `chama` and `serrano` envs,
-respectively.  But to run the tests, one must run on the compute nodes using
+Once logged on to the TLCC-2 machine 'chama', a CTS-1 machine ('serrano', 'eclipse'
+or 'ghost') or skybridge, one can directly configure and build on the login node
+(being careful not to overload the node) using the `chama`,  `serrano`, or skybridge 
+envs respectively.  But to run the tests, one must run on the compute nodes using
 the `srun` command.  For example, to configure, build and run the tests for
 say `MueLu` on 'serrano', (after cloning Trilinos on the `develop` branch) one
 would do:
@@ -1362,5 +1362,7 @@ they support are:
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   'shiller' and the mirror SON machine 'hansen'.
+
+* `skybridge/`: Supports SNL HPC machine 'skybridge'.
 
 * `waterman/`: Supports GNU and CUDA builds on the SRN machine 'waterman'.
