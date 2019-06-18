@@ -14,7 +14,7 @@ sys.dont_write_bytecode = True
 import os
 
 import argparse
-import subprocess
+import shutil
 
 from clean_sentinel import clean_reference_date
 from clean_sentinel import last_clean_date
@@ -59,7 +59,7 @@ class Cleaner(object):
         """Do the actual cleanup
              basically just os.unlink()
         """
-        os.unlink(self.args.dir)
+        shutil.rmtree(self.args.dir)
 
     def clean_space_by_date(self):
         if last_clean_date() < clean_reference_date():

@@ -120,7 +120,7 @@ class TestForceCleanSpace(unittest.TestCase):
         setattr(test_args, 'force_clean', True)
         cleanerInst = Cleaner()
         cleanerInst.args = test_args
-        with mock.patch('os.unlink') as m_unlink:
+        with mock.patch('shutil.rmtree') as m_unlink:
             cleanerInst.force_clean_space()
         m_unlink.assert_called_once_with(test_args.dir)
 
