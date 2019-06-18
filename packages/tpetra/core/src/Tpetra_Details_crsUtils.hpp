@@ -236,6 +236,7 @@ size_t
 find_crs_indices(
     typename Pointers::value_type const row,
     Pointers const& row_ptrs,
+    const size_t curNumEntries,
     Indices1 const& cur_indices,
     Indices2 const& new_indices,
     IndexMap&& map,
@@ -247,8 +248,8 @@ find_crs_indices(
   using ordinal = typename Indices1::value_type;
   auto invalid_ordinal = Teuchos::OrdinalTraits<ordinal>::invalid();
 
-  auto const start = row_ptrs[row];
-  auto const end = row_ptrs[row + 1];
+  const size_t start = static_cast<size_t> (row_ptrs[row]);
+  const size_t end = start + curNumEntries;
   size_t num_found = 0;
   for (size_t k = 0; k < new_indices.size(); k++)
   {
@@ -438,6 +439,7 @@ size_t
 findCrsIndices(
     typename Pointers::value_type const row,
     Pointers const& rowPtrs,
+    const size_t curNumEntries,
     Indices1 const& curIndices,
     Indices2 const& newIndices,
     Callback&& cb)
@@ -447,7 +449,7 @@ findCrsIndices(
     "Expected views to have same value type");
   // Provide a unit map for the more general find_crs_indices
   using ordinal = typename Indices2::value_type;
-  auto numFound = impl::find_crs_indices(row, rowPtrs, curIndices, newIndices,
+  auto numFound = impl::find_crs_indices(row, rowPtrs, curNumEntries, curIndices, newIndices,
     [=](ordinal ind){ return ind; }, cb);
   return numFound;
 }
@@ -457,12 +459,13 @@ size_t
 findCrsIndices(
     typename Pointers::value_type const row,
     Pointers const& rowPtrs,
+    const size_t curNumEntries,
     Indices1 const& curIndices,
     Indices2 const& newIndices,
     IndexMap&& map,
     Callback&& cb)
 {
-  return impl::find_crs_indices(row, rowPtrs, curIndices, newIndices, map, cb);
+  return impl::find_crs_indices(row, rowPtrs, curNumEntries, curIndices, newIndices, map, cb);
 }
 
 } // namespace Details
