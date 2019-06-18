@@ -71,7 +71,7 @@ RCP<const map_type>
 createRowAndColMap (RCP<const Teuchos::Comm<int> > comm,
                     const LO lclNumInds)
 {
-  TM mon (*TM::getNewCounter ("createRowAndColMap"));
+  //TM mon (*TM::getNewCounter ("createRowAndColMap"));
 
   const int numProcs = comm->getSize ();
   const GO gblNumInds = GO (numProcs) * GO (lclNumInds);
@@ -85,7 +85,7 @@ RCP<crs_matrix_type>
 createCrsMatrix (RCP<const map_type> rowAndColMap,
                  const size_t maxNumEntPerRow)
 {
-  TM mon (*TM::getNewCounter ("CrsMatrix constructor"));
+  //TM mon (*TM::getNewCounter ("CrsMatrix constructor"));
 
   return rcp (new crs_matrix_type (rowAndColMap, rowAndColMap,
                                    maxNumEntPerRow,
@@ -96,7 +96,7 @@ RCP<crs_graph_type>
 createCrsGraph (RCP<const map_type> rowAndColMap,
                 const size_t maxNumEntPerRow)
 {
-  TM mon (*TM::getNewCounter ("CrsGraph constructor"));
+  //TM mon (*TM::getNewCounter ("CrsGraph constructor"));
 
   return rcp (new crs_graph_type (rowAndColMap, rowAndColMap,
                                   maxNumEntPerRow,
@@ -109,7 +109,7 @@ populateCrsMatrix (crs_matrix_type& A,
                    const LO lclColInds[],
                    const double vals[])
 {
-  TM mon (*TM::getNewCounter ("CrsMatrix::insertLocalValues loop"));
+  //TM mon (*TM::getNewCounter ("CrsMatrix::insertLocalValues loop"));
 
   const LO lclNumRows (A.getNodeNumRows ());
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -122,7 +122,7 @@ populateCrsGraph (crs_graph_type& G,
                   const LO numToInsert,
                   const LO lclColInds[])
 {
-  TM mon (*TM::getNewCounter ("CrsGraph::insertLocalIndices loop"));
+  //TM mon (*TM::getNewCounter ("CrsGraph::insertLocalIndices loop"));
 
   const LO lclNumRows (G.getNodeNumRows ());
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -155,9 +155,16 @@ doSumIntoLocalValues (const std::string& label,
 
   const LO lclNumRows (A.getNodeNumRows ());
 
+  bool good = true;
   for (int trial = 0; trial < numTrials; ++trial) {
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-      (void) A.sumIntoLocalValues (lclRow, numToInsert, vals, lclColInds, use_atomics);
+      const LO numInserted =
+        A.sumIntoLocalValues (lclRow, numToInsert, vals,
+                              lclColInds, use_atomics);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numInserted != numToInsert, std::logic_error,
+         "doSumIntoLocalValues failed: numInserted=" << numInserted
+         << " != numToInsert=" << numToInsert << ".");
     }
   }
 }
@@ -172,16 +179,22 @@ doKokkosSumIntoLocalValues (const std::string& label,
 {
   TM mon (*TM::getNewCounter (label));
 
-  constexpr bool is_sorted = false;
+  auto A_lcl = A.getLocalMatrix ();
+  const bool is_sorted = A.getCrsGraph ()->isSorted ();
   constexpr bool use_atomics = false;
 
-  auto A_lcl = A.getLocalMatrix ();
-  const LO lclNumRows (A.getNodeNumRows ());
+  TM mon2 (*TM::getNewCounter (label + ": after getLocalMatrix"));
 
+  const LO lclNumRows (A.getNodeNumRows ());
   for (int trial = 0; trial < numTrials; ++trial) {
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-      (void) A_lcl.sumIntoValues (lclRow, lclColInds, numToInsert,
-                                  vals, is_sorted, use_atomics);
+      const LO numInserted =
+        A_lcl.sumIntoValues (lclRow, lclColInds, numToInsert,
+                             vals, is_sorted, use_atomics);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numInserted != numToInsert, std::logic_error,
+         "doKokkosSumIntoLocalValues failed: numInserted=" <<
+         numInserted << " != numToInsert=" << numToInsert << ".");
     }
   }
 }
@@ -249,14 +262,24 @@ benchmarkCrsMatrixSumIntoLocalValues (const CmdLineArgs args)
                                      lclColInds.data ());
     crs_matrix_type A (G);
     {
-      TM mon2 (*TM::getNewCounter ("(const graph) CrsMatrix fillComplete"));
+      // TM mon2 (*TM::getNewCounter ("(const graph) CrsMatrix fillComplete"));
       A.fillComplete ();
     }
 
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! A.isStaticGraph (), std::logic_error, "A does not have a "
+       "\"static\" (const) graph after calling fillComplete and before "
+       "calling resumeFill, even though we created it that way.");
+
     if (args.resumeFill) {
-      TM mon2 (*TM::getNewCounter ("(const graph) CrsMatrix resumeFill"));
+      // TM mon2 (*TM::getNewCounter ("(const graph) CrsMatrix resumeFill"));
       A.resumeFill ();
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! A.isStaticGraph (), std::logic_error, "A does not have a "
+       "\"static\" (const) graph after calling fillComplete and "
+       "resumeFill, even though we created it that way.");
 
     doSumIntoLocalValues ("(const graph) sumIntoLocalValues: "
                           "after first fillComplete",
