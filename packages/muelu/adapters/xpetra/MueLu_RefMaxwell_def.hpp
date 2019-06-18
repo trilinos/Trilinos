@@ -309,11 +309,11 @@ namespace MueLu {
       Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
 
       // Cast coordinates to Scalar so they can be multiplied against D0
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-      RCP<MultiVector> CoordsSC;
       Array<Scalar> normsSC(Coords_->getNumVectors());
       for (size_t i=0;i<Coords_->getNumVectors();i++)
         normsSC[i] = (SC) norms[i];
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      RCP<MultiVector> CoordsSC;
       if (useKokkos_)
         CoordsSC = Utilities_kokkos::RealValuedToScalarMultiVector(Coords_);
       else
