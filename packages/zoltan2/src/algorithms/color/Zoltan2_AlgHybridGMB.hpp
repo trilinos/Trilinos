@@ -168,6 +168,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                                  ArrayView<const offset_t> offsets, 
                                  std::vector<lno_t>& reorderAdjs, 
                                  std::vector<offset_t>&reorderOffsets,
+                                 std::vector<lno_t>& reorderToLocal,
                                  lno_t& nInterior) {
       std::unordered_map<gno_t, lno_t> globalToLocal; 
       
@@ -251,6 +252,13 @@ class AlgHybridGMB : public Algorithm<Adapter>
             globalToLocal[globalAdjs[offsets[i]+j]];
         }
       }
+      
+      reorderToLocal.resize(ownedGIDs.size());
+      for(size_t i = 0; i < ownedGIDs.size(); i++){
+        //printf("--Rank %d: reordered ID %d is local ID %d\n",comm->getRank(),globalToLocal[ownedGIDs[i]],i);
+        reorderToLocal[globalToLocal[ownedGIDs[i]]] = i;
+      }
+      
       printf("--Rank %d: done reordering graph\n", comm->getRank());
       return finalLocalToGlobal;
     } 
@@ -339,7 +347,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //set the initial coloring of the kh.get_graph_coloring_handle() to be
       //the data view from the femv.
       Kokkos::View<int**,Kokkos::LayoutLeft> femvColors = femv->template getLocalView<MemorySpace>();
-      kh.get_graph_coloring_handle()->set_vertex_colors(subview(femvColors,Kokkos::ALL(),0));
+      //printf("--Rank %d: femv view reference count before subview: %d\n",comm->getRank(),femvColors.use_count());
+      auto sv = subview(femvColors, Kokkos::ALL, 0);
+      //printf("--Rank %d: femv view reference count after subview: %d\n",comm->getRank(),femvColors.use_count());
+      
+      kh.get_graph_coloring_handle()->set_vertex_colors(sv);
+      //printf("--Rank %d: femv view reference count after set vertex colors: %d\n",comm->getRank(),femvColors.use_count());
       
       KokkosGraph::Experimental::graph_color_symbolic(&kh, nVtx,nVtx,
                                                       offset_view,adjs_view);
@@ -358,15 +371,15 @@ class AlgHybridGMB : public Algorithm<Adapter>
       
       //all this code should be unnecessary if we can pass in the Kokkos::View to the
       //coloring correctly.
-      auto host_view = Kokkos::create_mirror_view(
-                         kh.get_graph_coloring_handle()->get_vertex_colors());
-      Kokkos::deep_copy(host_view, 
-                         kh.get_graph_coloring_handle()->get_vertex_colors());
-      auto nr = host_view.extent(0);
-      for(auto i = 0; i < nr; i++){ 
-        colors[i] = host_view(i);
-        femv->replaceLocalValue(i,0, host_view(i)); 
-      }
+      //auto host_view = Kokkos::create_mirror_view(
+      //                   kh.get_graph_coloring_handle()->get_vertex_colors());
+      //Kokkos::deep_copy(host_view, 
+      //                   kh.get_graph_coloring_handle()->get_vertex_colors());
+      //auto nr = host_view.extent(0);
+      //for(auto i = 0; i < nr; i++){ 
+        //colors[i] = host_view(i);
+        //femv->replaceLocalValue(i,0, host_view(i)); 
+      //}
     }
     
     RCP<const base_adapter_t> adapter;
@@ -416,11 +429,13 @@ class AlgHybridGMB : public Algorithm<Adapter>
       lno_t nInterior;
       std::vector<lno_t> reorderAdjs_vec(adjs.size());
       std::vector<offset_t> reorderOffsets_vec(offsets.size());
+      std::vector<lno_t> reorderToLocal;
       std::vector<gno_t> reorderGIDs = reorderGraph(vtxIDs,
                                                       adjs,
                                                       offsets,
                                                       reorderAdjs_vec,
                                                       reorderOffsets_vec,
+                                                      reorderToLocal,
                                                       nInterior); 
       ArrayView<const lno_t> reorderAdjs = Teuchos::arrayViewFromVector(
                                                          reorderAdjs_vec);
@@ -474,6 +489,18 @@ class AlgHybridGMB : public Algorithm<Adapter>
       // THESE ARE A COPY OF THE EXISTING ALGORITHM CLASS.
       hybridGMB(nVtx, nInterior, reorderAdjs, reorderOffsets,colors,femv,reorderGIDs,rand);
       
+      for(int i = 0; i < colors.size(); i++){
+        colors[reorderToLocal[i]] = femv->getData(0)[i];
+      }
+     
+      //test validation on simple
+      /*if(comm->getRank() == 0){
+        colors[reorderToLocal[12]] = 3;
+      }
+      if(comm->getRank() == 1){
+        colors[reorderToLocal[11]] = 3;
+      }*/
+       
       comm->barrier();
     }
     
@@ -556,7 +583,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                for(int i = 0; i < numColors; i++){
                  if(!forbiddenColors[i]) {
                    femv->replaceLocalValue(currVtx,0,i+1);
-                   colors[currVtx] = i+1;
+                   //colors[currVtx] = i+1;
                    colored = true;
                    break;
                  }
@@ -565,8 +592,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
                  forbiddenColors[i] = false;
                }
                if(!colored){
-                 colors[currVtx] = numColors+1;
-                 femv->replaceLocalValue(currVtx,0,colors[currVtx]);
+                 //colors[currVtx] = numColors+1;
+                 femv->replaceLocalValue(currVtx,0,numColors+1);
                  numColors++;
                  forbiddenColors.resize(numColors);
                }

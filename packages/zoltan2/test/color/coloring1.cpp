@@ -50,6 +50,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Import.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
@@ -79,6 +80,7 @@ typedef zscalar_t z2TestScalar;
 typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> Vector;
 typedef Vector::node_type Node;
+typedef Tpetra::Import<z2TestLO, z2TestGO> Import;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 
@@ -103,6 +105,39 @@ int validateColoring(RCP<SparseMatrix> A, int *color)
   }
 
   return nconflicts;
+}
+
+int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
+  int nconflicts = 0;
+  
+  RCP<const SparseMatrix::map_type> rowMap = A->getRowMap();
+  RCP<const SparseMatrix::map_type> colMap = A->getColMap();
+  Vector R = Vector(rowMap);
+  //put the colors in the scalar entries of R.
+  for(zlno_t i = 0; i < A->getNodeNumRows(); i++){
+    R.replaceLocalValue(i,color[i]);
+  }
+  Vector C = Vector(colMap);
+  Import imp = Import(rowMap, colMap);
+  C.doImport(R, imp, Tpetra::REPLACE);
+  
+  Teuchos::ArrayView<const zlno_t> indices;
+  Teuchos::ArrayView<const zscalar_t> values; // Not used
+
+  // Count conflicts in the graph.
+  // Loop over local rows, treat local column indices as edges.
+  zlno_t n = A->getNodeNumRows();
+  for (zlno_t i=0; i<n; i++) {
+    A->getLocalRowView(i, indices, values);
+    for (zlno_t j=0; j<indices.size(); j++) {
+      if ((indices[j]!=i) && (C.getData()[i]==C.getData()[indices[j]])){
+        nconflicts++;
+        //std::cout << "Debug: found conflict (" << i << ", " << indices[j] << ")" << std::endl;
+      }
+    }
+  }
+  
+  return nconflicts;  
 }
 
 int checkBalance(zlno_t n, int *color)
@@ -136,9 +171,9 @@ int checkBalance(zlno_t n, int *color)
     }
   }
 
-  std::cout << "Color size[0:2] = " << colorCount[0] << ", " << colorCount[1] << ", " << colorCount[2] << std::endl;
-  std::cout << "Largest color class = " << largest << " with " << colorCount[largest] << " vertices." << std::endl;
-  std::cout << "Smallest color class = " << smallest << " with " << colorCount[smallest] << " vertices." << std::endl;
+  //std::cout << "Color size[0:2] = " << colorCount[0] << ", " << colorCount[1] << ", " << colorCount[2] << std::endl;
+  //std::cout << "Largest color class = " << largest << " with " << colorCount[largest] << " vertices." << std::endl;
+  //std::cout << "Smallest color class = " << smallest << " with " << colorCount[smallest] << " vertices." << std::endl;
 
   return 0;
 }
@@ -245,8 +280,8 @@ int main(int narg, char** arg)
   std::cout << "Going to get results" << std::endl;
   // Check that the solution is really a coloring
   checkLength = soln->getColorsSize();
-  checkColoring = soln->getColors();
-
+  if(checkLength >0) checkColoring = soln->getColors();
+  //checkLength = checkColoring.size();
   if (outputFile != "") {
     std::ofstream colorFile;
 
@@ -261,26 +296,31 @@ int main(int narg, char** arg)
     }
     colorFile.close();
   }
-
+  
   // Print # of colors on each proc.
-  std::cout << "No. of colors on proc " << me << " : " << soln->getNumColors() << std::endl;
+  if(checkLength>0) std::cout << "No. of colors on proc " << me << " : " << soln->getNumColors() << std::endl;
 
   std::cout << "Going to validate the soln" << std::endl;
   // Verify that checkColoring is a coloring
-  testReturn = validateColoring(Matrix, checkColoring);
-
-  // Check balance (not part of pass/fail for now)
-  checkBalance((zlno_t)checkLength, checkColoring);
-
+  if(colorAlg == "Hybrid"){
+    //need to check a distributed coloring
+    testReturn = validateDistributedColoring(Matrix, checkColoring);
+  } else if (checkLength > 0){
+    testReturn = validateColoring(Matrix, checkColoring);
+  }
+    // Check balance (not part of pass/fail for now)
+  if(checkLength > 0) checkBalance((zlno_t)checkLength, checkColoring);
+  
   } catch (std::exception &e){
       std::cout << "Exception caught in coloring" << std::endl;
       std::cout << e.what() << std::endl;
       std::cout << "FAIL" << std::endl;
       return 0;
   }
-
+  int numGlobalConflicts = 0;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX,1,&testReturn,&numGlobalConflicts);
   if (me == 0) {
-    if (testReturn)
+    if (numGlobalConflicts > 0)
       std::cout << "Solution is not a valid coloring; FAIL" << std::endl;
     else
       std::cout << "PASS" << std::endl;
