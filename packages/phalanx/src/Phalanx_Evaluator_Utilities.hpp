@@ -52,7 +52,7 @@
 namespace PHX {
 
   // Forward declaration
-  template<typename DataT, int Rank> class Field;
+  template<typename DataT, int Rank, typename Layout> class Field;
 
   // Forward declaration
   template <typename DataT,

@@ -83,8 +83,8 @@ namespace PHX {
     void addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
 			   Tag4,Tag5,Tag6,Tag7>& f);
 
-    template<typename DataT,int Rank>
-    void addEvaluatedField(const PHX::Field<DataT,Rank>& f);
+    template<typename DataT,int Rank,typename Layout>
+    void addEvaluatedField(const PHX::Field<DataT,Rank,Layout>& f);
 
     template<typename DataT,typename... Properties>
     void addEvaluatedField(const PHX::FieldTag& ft,
@@ -98,8 +98,8 @@ namespace PHX {
     void addContributedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
                              Tag4,Tag5,Tag6,Tag7>& f);
 
-    template<typename DataT,int Rank>
-    void addContributedField(const PHX::Field<DataT,Rank>& f);
+    template<typename DataT,int Rank,typename Layout>
+    void addContributedField(const PHX::Field<DataT,Rank,Layout>& f);
 
     template<typename DataT,typename... Properties>
     void addContributedField(const PHX::FieldTag& ft,
@@ -121,8 +121,8 @@ namespace PHX {
     void addDependentField(const PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,
 			   Tag4,Tag5,Tag6,Tag7>& f);
 
-    template<typename DataT,int Rank>
-    void addDependentField(const PHX::Field<const DataT,Rank>& f);
+    template<typename DataT,int Rank,typename Layout>
+    void addDependentField(const PHX::Field<const DataT,Rank,Layout>& f);
 
     /** Add dependent field using raw Kokkos::View, DataT must be const. 
 

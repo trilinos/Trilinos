@@ -65,7 +65,7 @@ namespace PHX {
            typename Tag0, typename Tag1, typename Tag2, typename Tag3,
            typename Tag4, typename Tag5, typename Tag6, typename Tag7> class MDField;
 
-  template<typename DataT,int Rank> class Field;
+  template<typename DataT,int Rank,typename Layout> class Field;
 }
 
 namespace Kokkos {
@@ -113,15 +113,15 @@ namespace PHX {
     void getFieldData(PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
 		      Tag6,Tag7>& f);
 
-    template<typename EvalT, typename DataT, int Rank>
-    void getFieldData(PHX::Field<DataT,Rank>& f);
+    template<typename EvalT, typename DataT, int Rank, typename Layout>
+    void getFieldData(PHX::Field<DataT,Rank,Layout>& f);
 
-    template<typename EvalT, typename DataT, int Rank>
-    void getFieldData(PHX::Field<const DataT,Rank>& f);
+    template<typename EvalT, typename DataT, int Rank, typename Layout>
+    void getFieldData(PHX::Field<const DataT,Rank,Layout>& f);
 
-    template<typename EvalT, typename DataT>
+    template<typename EvalT, typename DataT,typename Layout>
     void getFieldData(const PHX::FieldTag& ft,
-                      PHX::View<DataT>& f);
+                      Kokkos::View<DataT,Layout,PHX::Device>& f);
 
     /*! \brief Allows the user to manage the memory allocation of a
         particular field and dynamically set/swap the memory at any
@@ -168,8 +168,8 @@ namespace PHX {
         user must allocate the field correctly (remember Sacado AD
         types must have the extra dimensions sized correctly).
     */
-    template<typename EvalT, typename DataT, int Rank>
-    void setUnmanagedField(PHX::Field<DataT,Rank>& f);
+    template<typename EvalT, typename DataT, int Rank, typename Layout>
+    void setUnmanagedField(PHX::Field<DataT,Rank,Layout>& f);
 
     /*! \brief Allows the user to manage the memory allocation of a
         particular field and dynamically set/swap the memory at any
@@ -183,9 +183,9 @@ namespace PHX {
         user must allocate the field correctly (remember Sacado AD
         types must have the extra dimensions sized correctly).
     */
-    template<typename EvalT, typename DataT>
+    template<typename EvalT, typename DataT, typename Layout>
     void setUnmanagedField(const FieldTag& ft,
-                           PHX::View<DataT>& f);
+                           Kokkos::View<DataT,Layout,PHX::Device>& f);
 
     /*! \brief Makes two fields point to (alias) the same memory for all evaluation types.
 

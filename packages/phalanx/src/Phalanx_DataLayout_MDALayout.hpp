@@ -157,6 +157,8 @@ namespace PHX {
 
     virtual PHX::Device::size_type size() const override;
 
+    virtual PHX::DataLayout::KokkosLayoutType kokkosLayout() const override;
+
     virtual std::string identifier() const override;
 
     virtual void print(std::ostream& os, int offset) const override;
