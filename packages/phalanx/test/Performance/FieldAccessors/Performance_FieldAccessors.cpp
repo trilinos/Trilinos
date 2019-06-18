@@ -211,18 +211,18 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     phx_ct_field phx_ct_a("phx_ct_a", dl);
     phx_ct_field phx_ct_b("phx_ct_a", dl);
     phx_ct_field phx_ct_c("phx_ct_a", dl);
-    phx_ct_a.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_ct_a.fieldTag()));
-    phx_ct_b.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_ct_b.fieldTag()));
-    phx_ct_c.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_ct_c.fieldTag()));
+    phx_ct_a.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_ct_a.fieldTag()));
+    phx_ct_b.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_ct_b.fieldTag()));
+    phx_ct_c.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_ct_c.fieldTag()));
 
     // Runtime PHX::MDField
     typedef MDField<double> phx_rt_field;
     phx_rt_field phx_rt_a("phx_rt_a", dl);
     phx_rt_field phx_rt_b("phx_rt_b", dl);
     phx_rt_field phx_rt_c("phx_rt_c", dl);
-    phx_rt_a.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_rt_a.fieldTag()));
-    phx_rt_b.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_rt_b.fieldTag()));
-    phx_rt_c.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_rt_c.fieldTag()));
+    phx_rt_a.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_rt_a.fieldTag()));
+    phx_rt_b.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_rt_b.fieldTag()));
+    phx_rt_c.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_rt_c.fieldTag()));
     
     // Kokkos View
     typedef Kokkos::View<double***,PHX::Device> kokkos_field;

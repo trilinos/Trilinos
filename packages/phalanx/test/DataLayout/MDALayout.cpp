@@ -766,4 +766,5 @@ TEUCHOS_UNIT_TEST(DataLayout, basic)
     cout << "...passed:\n" << output.str() << endl;
   }
 
+  TEST_ASSERT(prank7.kokkosLayout() == PHX::DataLayout::KokkosLayoutType::Default);
 }

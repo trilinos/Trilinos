@@ -574,6 +574,16 @@ size() const
 //**********************************************************************
 template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+PHX::DataLayout::KokkosLayoutType
+PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+kokkosLayout() const
+{
+  return PHX::DataLayout::KokkosLayoutType::Default;
+}
+
+//**********************************************************************
+template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 std::string PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 identifier() const
 { 

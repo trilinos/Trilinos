@@ -294,12 +294,12 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     out << "Testing setFieldData()...";
     const size_type derivative_dim = 8;
     const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
-    PHX::any a_mem = PHX::KokkosViewFactory<double,PHX::Device>::buildView(a.fieldTag());
-    PHX::any b_mem = PHX::KokkosViewFactory<double,PHX::Device>::buildView(b.fieldTag());
-    PHX::any c_mem = PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(c.fieldTag(),ddims);
-    PHX::any d_mem = PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(d.fieldTag(),ddims);
-    PHX::any e_mem = PHX::KokkosViewFactory<double,PHX::Device>::buildView(e.fieldTag());
-    PHX::any f_mem = PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(f.fieldTag(),ddims);
+    PHX::any a_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(a.fieldTag());
+    PHX::any b_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(b.fieldTag());
+    PHX::any c_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(c.fieldTag(),ddims);
+    PHX::any d_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(d.fieldTag(),ddims);
+    PHX::any e_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(e.fieldTag());
+    PHX::any f_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f.fieldTag(),ddims);
 
     a.setFieldData(a_mem);
     b.setFieldData(b_mem);
@@ -450,13 +450,13 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
       MDField<const double> c_f7("CONST Test7",d7);
       
       // Note that the factory never uses a const scalar type
-      c_f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(c_f1.fieldTag()));
-      c_f2.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(c_f2.fieldTag()));
-      c_f3.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(c_f3.fieldTag()));
-      c_f4.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(c_f4.fieldTag()));
-      c_f5.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(c_f5.fieldTag()));
-      c_f6.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(c_f6.fieldTag()));
-      c_f7.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(c_f7.fieldTag()));
+      c_f1.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f1.fieldTag()));
+      c_f2.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f2.fieldTag()));
+      c_f3.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f3.fieldTag()));
+      c_f4.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f4.fieldTag()));
+      c_f5.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f5.fieldTag()));
+      c_f6.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f6.fieldTag()));
+      c_f7.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f7.fieldTag()));
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -469,13 +469,13 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     MDField<MyTraits::FadType> f6_fad("FTest6",d6);
     MDField<MyTraits::FadType> f7_fad("FTest7",d7);
 
-    f1_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(f1.fieldTag(), ddims));
-    f2_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(f2.fieldTag(), ddims));
-    f3_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(f3.fieldTag(), ddims));
-    f4_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(f4.fieldTag(), ddims));
-    f5_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(f5.fieldTag(), ddims));
-    f6_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(f6.fieldTag(), ddims));
-    f7_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(f7.fieldTag(), ddims));
+    f1_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f1.fieldTag(), ddims));
+    f2_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f2.fieldTag(), ddims));
+    f3_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f3.fieldTag(), ddims));
+    f4_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f4.fieldTag(), ddims));
+    f5_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f5.fieldTag(), ddims));
+    f6_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f6.fieldTag(), ddims));
+    f7_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f7.fieldTag(), ddims));
 
     // Access last entry in contiguous array
     f1_fad(99) = MyTraits::FadType(1.0);

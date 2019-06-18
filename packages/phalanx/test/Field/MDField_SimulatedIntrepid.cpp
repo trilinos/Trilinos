@@ -97,7 +97,7 @@ namespace phalanx_test {
 
     typedef PHX::MDField<double>::size_type size_type;
     PHX::MDField<double> b("density",dl);
-    b.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(b.fieldTag()));
+    b.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(b.fieldTag()));
     
     for (size_type i=0; i < b.dimension(0); ++i)
       for (size_type j=0; j < b.dimension(1); ++j)
