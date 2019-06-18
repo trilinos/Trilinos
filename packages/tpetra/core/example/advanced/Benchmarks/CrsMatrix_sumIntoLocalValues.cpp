@@ -155,7 +155,6 @@ doSumIntoLocalValues (const std::string& label,
 
   const LO lclNumRows (A.getNodeNumRows ());
 
-  bool good = true;
   for (int trial = 0; trial < numTrials; ++trial) {
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       const LO numInserted =
@@ -204,7 +203,6 @@ struct CmdLineArgs {
   int maxNumEntPerRow = 28;
   int numToInsert = 27;
   int numTrials = 100;
-  bool resumeFill = false;
 };
 
 void
@@ -233,21 +231,26 @@ benchmarkCrsMatrixSumIntoLocalValues (const CmdLineArgs args)
                           vals.data (), args.numTrials);
     {
       {
-        TM mon2 (*TM::getNewCounter ("(nonconst graph) "
-                                     "CrsMatrix fillComplete"));
+        // TM mon2 (*TM::getNewCounter ("(nonconst graph) "
+        //                              "CrsMatrix fillComplete"));
         A->fillComplete ();
       }
-
-      if (args.resumeFill) {
-        TM mon2 (*TM::getNewCounter ("(nonconst graph) CrsMatrix "
-                                     "resumeFill"));
+      {
+        // TM mon2 (*TM::getNewCounter ("(nonconst graph) CrsMatrix "
+        //                              "resumeFill"));
         A->resumeFill ();
       }
     }
-    doSumIntoLocalValues ("(nonconst graph) sumIntoLocalValues: "
-                          "after first fillComplete",
-                          *A, LO (args.numToInsert), lclColInds.data (),
-                          vals.data (), args.numTrials);
+    try {
+      doSumIntoLocalValues ("(nonconst graph) sumIntoLocalValues: "
+                            "after first fillComplete",
+                            *A, LO (args.numToInsert), lclColInds.data (),
+                            vals.data (), args.numTrials);
+    }
+    catch (std::exception& e) {
+      std::cerr << "Oh no!  doSumIntoLocalValues for nonconst graph "
+        "threw: " << e.what () << endl;
+    }
     doKokkosSumIntoLocalValues ("(nonconst graph) Kokkos sumInto",
                                 *A, LO (args.numToInsert),
                                 lclColInds.data (), vals.data (),
@@ -271,7 +274,7 @@ benchmarkCrsMatrixSumIntoLocalValues (const CmdLineArgs args)
        "\"static\" (const) graph after calling fillComplete and before "
        "calling resumeFill, even though we created it that way.");
 
-    if (args.resumeFill) {
+    {
       // TM mon2 (*TM::getNewCounter ("(const graph) CrsMatrix resumeFill"));
       A.resumeFill ();
     }
@@ -281,10 +284,16 @@ benchmarkCrsMatrixSumIntoLocalValues (const CmdLineArgs args)
        "\"static\" (const) graph after calling fillComplete and "
        "resumeFill, even though we created it that way.");
 
-    doSumIntoLocalValues ("(const graph) sumIntoLocalValues: "
-                          "after first fillComplete",
-                          A, LO (args.numToInsert), lclColInds.data (),
-                          vals.data (), args.numTrials);
+    try {
+      doSumIntoLocalValues ("(const graph) sumIntoLocalValues: "
+                            "after first fillComplete",
+                            A, LO (args.numToInsert), lclColInds.data (),
+                            vals.data (), args.numTrials);
+    }
+    catch (std::exception& e) {
+      std::cerr << "Oh no!  doSumIntoLocalValues for const graph "
+        "threw: " << e.what () << endl;
+    }
     doKokkosSumIntoLocalValues ("(const graph) Kokkos sumInto",
                                 A, LO (args.numToInsert),
                                 lclColInds.data (), vals.data (),
@@ -315,9 +324,6 @@ main (int argc, char* argv[])
   cmdp.setOption ("numTrials", &cmdLineArgs.numTrials,
                   "Number of times to repeat each operation in a "
                   "timing loop");
-  cmdp.setOption ("resumeFill", "noResumeFill", &cmdLineArgs.resumeFill,
-                  "Call resumeFill after first fillComplete (it gets "
-                  "slower if you do, even though you're supposed to");
 
   const CommandLineProcessor::EParseCommandLineReturn parseResult =
     cmdp.parse (argc, argv);
@@ -334,8 +340,7 @@ main (int argc, char* argv[])
   cout << "lclNumInds: " << cmdLineArgs.lclNumInds << endl
        << "maxNumEntPerRow: " << cmdLineArgs.maxNumEntPerRow << endl
        << "numToInsert: " << cmdLineArgs.numToInsert << endl
-       << "numTrials: " << cmdLineArgs.numTrials << endl
-       << "resumeFill: " << (cmdLineArgs.resumeFill ? "true" : "false") << endl;
+       << "numTrials: " << cmdLineArgs.numTrials << endl;
   benchmarkCrsMatrixSumIntoLocalValues (cmdLineArgs);
 
   auto comm = Tpetra::getDefaultComm ();
