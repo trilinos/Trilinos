@@ -270,23 +270,24 @@ class AlgHybridGMB : public Algorithm<Adapter>
     //have the compiler do that work.
     template <class ExecutionSpace, typename TempMemorySpace, 
               typename MemorySpace>
-    void colorInterior(const size_t nVtx, Teuchos::ArrayView<const lno_t> adjs,
-                       Teuchos::ArrayView<const offset_t> offsets, 
+    void colorInterior(const size_t nVtx, 
+                       Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace,MemorySpace> > adjs_view,
+                       Kokkos::View<offset_t*, Kokkos::Device<ExecutionSpace,MemorySpace> > offset_view, 
                        Teuchos::ArrayRCP<int> colors,
                        Teuchos::RCP<femv_t> femv){
-      typedef Kokkos::Device<ExecutionSpace, MemorySpace> device;
-      Kokkos::View<offset_t*, device> offset_view("degree_offsets", 
-                                                  offsets.size());
-      Kokkos::View<lno_t*, device> adjs_view("adjacency_list",adjs.size());
+      //typedef Kokkos::Device<ExecutionSpace, MemorySpace> device;
+      //Kokkos::View<offset_t*, device> offset_view("degree_offsets", 
+      //                                            offsets.size());
+      //Kokkos::View<lno_t*, device> adjs_view("adjacency_list",adjs.size());
       //copy from the arrayviews into the Kokkos::Views
-      Kokkos::parallel_for("Init_Offsets",offsets.size(),
-                           KOKKOS_LAMBDA (const int& i) {
-        offset_view(i) = offsets[i];
-      });
-      Kokkos::parallel_for("Init_Adjacencies", adjs.size(), 
-                           KOKKOS_LAMBDA (const int& i) {
-        adjs_view(i) = adjs[i];
-      });
+      //Kokkos::parallel_for("Init_Offsets",offsets.size(),
+      //                     KOKKOS_LAMBDA (const int& i) {
+      //  offset_view(i) = offsets[i];
+      //});
+      //Kokkos::parallel_for("Init_Adjacencies", adjs.size(), 
+      //                     KOKKOS_LAMBDA (const int& i) {
+      //  adjs_view(i) = adjs[i];
+      //});
       
       //default values are taken from KokkosKernels_TestParameters.hpp
       
@@ -350,12 +351,14 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //printf("--Rank %d: femv view reference count before subview: %d\n",comm->getRank(),femvColors.use_count());
       auto sv = subview(femvColors, Kokkos::ALL, 0);
       //printf("--Rank %d: femv view reference count after subview: %d\n",comm->getRank(),femvColors.use_count());
-      
-      kh.get_graph_coloring_handle()->set_vertex_colors(sv);
+      Kokkos::View<int*,Kokkos::Device<ExecutionSpace, MemorySpace> > device_color("device_Color",sv.extent(0));
+      Kokkos::deep_copy(device_color, sv); 
+      kh.get_graph_coloring_handle()->set_vertex_colors(device_color);
       //printf("--Rank %d: femv view reference count after set vertex colors: %d\n",comm->getRank(),femvColors.use_count());
       
       KokkosGraph::Experimental::graph_color_symbolic(&kh, nVtx,nVtx,
                                                       offset_view,adjs_view);
+      Kokkos::fence();
       std::cout << std::endl << 
           "Time: " << 
           kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
@@ -368,7 +371,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                            kh.get_graph_coloring_handle()->get_vertex_colors());
       
       numColors = kh.get_graph_coloring_handle()->get_num_colors();
-      
+      Kokkos::deep_copy(sv, device_color); 
       //all this code should be unnecessary if we can pass in the Kokkos::View to the
       //coloring correctly.
       //auto host_view = Kokkos::create_mirror_view(
@@ -510,36 +513,83 @@ class AlgHybridGMB : public Algorithm<Adapter>
                    std::vector<gno_t> reorderGIDs,
                    std::vector<int> rand){
       
+      //make host views to deep_copy into the device views
+      
+      Kokkos::View<offset_t*> host_offsets("Host Offset view", offsets.size());
+      for(int i = 0; i < offsets.size(); i++){
+        host_offsets(i) = offsets[i];
+      }
+      Kokkos::View<lno_t*>    host_adjs("Host Adjacencies view", adjs.size());
+      for(int i = 0; i < adjs.size(); i++){
+        host_adjs(i) = adjs[i];
+      }
       bool use_cuda = pl->get<bool>("Hybrid_use_cuda",false);
       bool use_openmp = pl->get<bool>("Hybrid_use_openmp",false);
       bool use_serial = pl->get<bool>("Hybrid_use_serial",false);
       //do the kokkos stuff in here (assume that the user checked for the option they selected)
       //Might want to enable multi-memory stuff?
       if(use_cuda + use_openmp + use_serial == 0){
+        typedef Kokkos::Device<Kokkos::DefaultExecutionSpace, 
+                               Kokkos::DefaultExecutionSpace::memory_space> device;
+        Kokkos::View<offset_t*, device> offset_view("degree_offsets", 
+                                                    offsets.size());
+        Kokkos::View<lno_t*, device> adjs_view("adjacency_list",adjs.size());
+        //copy from the arrayviews into the Kokkos::Views
+        Kokkos::deep_copy(offset_view,host_offsets);
+        Kokkos::deep_copy(adjs_view, host_adjs);
+
         //use the default spaces to run the KokkosKernels coloring
         this->colorInterior<Kokkos::DefaultExecutionSpace,
                             Kokkos::DefaultExecutionSpace::memory_space,
                             Kokkos::DefaultExecutionSpace::memory_space> 
-                     (nInterior, adjs, offsets, colors,femv);
+                     (nInterior, adjs_view, offset_view, colors,femv);
       } else if (use_cuda) {
         //use the cuda spaces
         #ifdef KOKKOS_ENABLE_CUDA
+        typedef Kokkos::Device<Kokkos::Cuda, 
+                               Kokkos::Cuda::memory_space> device;
+        Kokkos::View<offset_t*, device> offset_view("degree_offsets", 
+                                                    offsets.size());
+        Kokkos::View<lno_t*, device> adjs_view("adjacency_list",adjs.size());
+        //copy from the arrayviews into the Kokkos::Views
+        Kokkos::deep_copy(offset_view, host_offsets);
+        Kokkos::deep_copy(adjs_view, host_adjs);
+
         this->colorInterior<Kokkos::Cuda, Kokkos::Cuda::memory_space, 
                             Kokkos::Cuda::memory_space>
-                     (nInterior, adjs, offsets, colors,femv);
+                     (nInterior, adjs_view, offset_view, colors,femv);
         #endif
       } else if (use_openmp) {
         //use openmp spaces
         #ifdef KOKKOS_ENABLE_OPENMP
+        typedef Kokkos::Device<Kokkos::OpenMP, 
+                               Kokkos::OpenMP::memory_space> device;
+        Kokkos::View<offset_t*, device> offset_view("degree_offsets", 
+                                                    offsets.size());
+        Kokkos::View<lno_t*, device> adjs_view("adjacency_list",adjs.size());
+        //copy from the arrayviews into the Kokkos::Views
+        Kokkos::deep_copy(offset_view, host_offsets);
+        Kokkos::deep_copy(adjs_view, host_adjs);
+
         this->colorInterior<Kokkos::OpenMP, Kokkos::OpenMP::memory_space, 
                             Kokkos::OpenMP::memory_space>
-                     (nInterior, adjs, offsets, colors,femv);
+                     (nInterior, adjs_view, offset_view, colors,femv);
         #endif
       } else if (use_serial) {
         //use serial spaces
+
+        typedef Kokkos::Device<Kokkos::Serial, 
+                               Kokkos::Serial::memory_space> device;
+        Kokkos::View<offset_t*, device> offset_view("degree_offsets", 
+                                                    offsets.size());
+        Kokkos::View<lno_t*, device> adjs_view("adjacency_list",adjs.size());
+        //copy from the arrayviews into the Kokkos::Views
+        Kokkos::deep_copy(offset_view, host_offsets);
+        Kokkos::deep_copy(adjs_view, host_adjs);
+
         this->colorInterior<Kokkos::Serial, Kokkos::Serial::memory_space, 
                             Kokkos::Serial::memory_space> 
-                     (nInterior, adjs, offsets, colors,femv);
+                     (nInterior, adjs_view, offset_view, colors,femv);
       }
        
       int batch_size = pl->get<int>("Hybrid_batch_size",100);
