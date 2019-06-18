@@ -41,10 +41,10 @@
 // @HEADER
 */
 
-#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Map.hpp"
-#include "Tpetra_Details_Profiling.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -61,12 +61,13 @@ using Teuchos::REDUCE_MIN;
 using Teuchos::reduceAll;
 using TM = Teuchos::TimeMonitor;
 using std::endl;
+using crs_graph_type = Tpetra::CrsGraph<>;
 using crs_matrix_type = Tpetra::CrsMatrix<>;
 using map_type = Tpetra::Map<>;
 using LO = map_type::local_ordinal_type;
 using GO = map_type::global_ordinal_type;
 
-RCP<const Tpetra::Map<> >
+RCP<const map_type>
 createRowAndColMap (RCP<const Teuchos::Comm<int> > comm,
                     const LO lclNumInds)
 {
@@ -80,7 +81,7 @@ createRowAndColMap (RCP<const Teuchos::Comm<int> > comm,
   return rowAndColMap;
 }
 
-RCP<Tpetra::CrsMatrix<> >
+RCP<crs_matrix_type>
 createCrsMatrix (RCP<const map_type> rowAndColMap,
                  const size_t maxNumEntPerRow)
 {
@@ -91,18 +92,54 @@ createCrsMatrix (RCP<const map_type> rowAndColMap,
                                    Tpetra::StaticProfile));
 }
 
+RCP<crs_graph_type>
+createCrsGraph (RCP<const map_type> rowAndColMap,
+                const size_t maxNumEntPerRow)
+{
+  TM mon (*TM::getNewCounter ("CrsGraph constructor"));
+
+  return rcp (new crs_graph_type (rowAndColMap, rowAndColMap,
+                                  maxNumEntPerRow,
+                                  Tpetra::StaticProfile));
+}
+
 void
 populateCrsMatrix (crs_matrix_type& A,
-                   const Tpetra::CrsMatrix<>::local_ordinal_type numToInsert,
-                   const Tpetra::CrsMatrix<>::local_ordinal_type lclColInds[],
+                   const LO numToInsert,
+                   const LO lclColInds[],
                    const double vals[])
 {
-  TM mon (*TM::getNewCounter ("insertLocalValues loop"));
+  TM mon (*TM::getNewCounter ("CrsMatrix::insertLocalValues loop"));
 
   const LO lclNumRows (A.getNodeNumRows ());
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
     A.insertLocalValues (lclRow, numToInsert, vals, lclColInds);
   }
+}
+
+void
+populateCrsGraph (crs_graph_type& G,
+                  const LO numToInsert,
+                  const LO lclColInds[])
+{
+  TM mon (*TM::getNewCounter ("CrsGraph::insertLocalIndices loop"));
+
+  const LO lclNumRows (G.getNodeNumRows ());
+  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+    G.insertLocalIndices (lclRow, numToInsert, lclColInds);
+  }
+}
+
+RCP<const crs_graph_type>
+createFinishedCrsGraph (RCP<const map_type> rowAndColMap,
+                        const size_t maxNumEntPerRow,
+                        const LO numToInsert,
+                        const LO lclColInds[])
+{
+  RCP<crs_graph_type> G = createCrsGraph (rowAndColMap, maxNumEntPerRow);
+  populateCrsGraph (*G, numToInsert, lclColInds);
+  G->fillComplete ();
+  return Teuchos::rcp_const_cast<const crs_graph_type> (G);
 }
 
 void
@@ -114,12 +151,13 @@ doSumIntoLocalValues (const std::string& label,
                       const int numTrials)
 {
   TM mon (*TM::getNewCounter (label));
+  constexpr bool use_atomics = false;
 
   const LO lclNumRows (A.getNodeNumRows ());
 
   for (int trial = 0; trial < numTrials; ++trial) {
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-      (void) A.sumIntoLocalValues (lclRow, numToInsert, vals, lclColInds);
+      (void) A.sumIntoLocalValues (lclRow, numToInsert, vals, lclColInds, use_atomics);
     }
   }
 }
@@ -135,7 +173,7 @@ doKokkosSumIntoLocalValues (const std::string& label,
   TM mon (*TM::getNewCounter (label));
 
   constexpr bool is_sorted = false;
-  constexpr bool force_atomic = false;
+  constexpr bool use_atomics = false;
 
   auto A_lcl = A.getLocalMatrix ();
   const LO lclNumRows (A.getNodeNumRows ());
@@ -143,7 +181,7 @@ doKokkosSumIntoLocalValues (const std::string& label,
   for (int trial = 0; trial < numTrials; ++trial) {
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       (void) A_lcl.sumIntoValues (lclRow, lclColInds, numToInsert,
-                                  vals, is_sorted, force_atomic);
+                                  vals, is_sorted, use_atomics);
     }
   }
 }
@@ -163,36 +201,72 @@ benchmarkCrsMatrixSumIntoLocalValues (const CmdLineArgs args)
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   auto rowAndColMap = createRowAndColMap (comm, LO (args.lclNumInds));
-  auto A = createCrsMatrix (rowAndColMap, size_t (args.maxNumEntPerRow));
+
 
   std::vector<LO> lclColInds (size_t (args.numToInsert));
   std::vector<double> vals (size_t (args.numToInsert), 0.0);
   // Skip 0, so that search isn't completely trivial.
   std::iota (lclColInds.begin (), lclColInds.end (), LO (1));
 
-  populateCrsMatrix (*A, LO (args.numToInsert),
-                     lclColInds.data (), vals.data ());
-  doSumIntoLocalValues ("sumIntoLocalValues: before first fillComplete",
-                        *A, LO (args.numToInsert), lclColInds.data (),
-                        vals.data (), args.numTrials);
+  // CrsMatrix with nonconst graph
   {
+    auto A = createCrsMatrix (rowAndColMap,
+                              size_t (args.maxNumEntPerRow));
+    populateCrsMatrix (*A, LO (args.numToInsert),
+                       lclColInds.data (), vals.data ());
+    doSumIntoLocalValues ("(nonconst graph) sumIntoLocalValues: "
+                          "before first fillComplete",
+                          *A, LO (args.numToInsert), lclColInds.data (),
+                          vals.data (), args.numTrials);
     {
-      TM mon2 (*TM::getNewCounter ("CrsMatrix fillComplete"));
-      A->fillComplete ();
+      {
+        TM mon2 (*TM::getNewCounter ("(nonconst graph) "
+                                     "CrsMatrix fillComplete"));
+        A->fillComplete ();
+      }
+
+      if (args.resumeFill) {
+        TM mon2 (*TM::getNewCounter ("(nonconst graph) CrsMatrix "
+                                     "resumeFill"));
+        A->resumeFill ();
+      }
+    }
+    doSumIntoLocalValues ("(nonconst graph) sumIntoLocalValues: "
+                          "after first fillComplete",
+                          *A, LO (args.numToInsert), lclColInds.data (),
+                          vals.data (), args.numTrials);
+    doKokkosSumIntoLocalValues ("(nonconst graph) Kokkos sumInto",
+                                *A, LO (args.numToInsert),
+                                lclColInds.data (), vals.data (),
+                                args.numTrials);
+  }
+
+  // CrsMatrix with const graph
+  {
+    auto G = createFinishedCrsGraph (rowAndColMap,
+                                     size_t (args.maxNumEntPerRow),
+                                     LO (args.numToInsert),
+                                     lclColInds.data ());
+    crs_matrix_type A (G);
+    {
+      TM mon2 (*TM::getNewCounter ("(const graph) CrsMatrix fillComplete"));
+      A.fillComplete ();
     }
 
     if (args.resumeFill) {
-      TM mon2 (*TM::getNewCounter ("CrsMatrix resumeFill"));
-      A->resumeFill ();
+      TM mon2 (*TM::getNewCounter ("(const graph) CrsMatrix resumeFill"));
+      A.resumeFill ();
     }
+
+    doSumIntoLocalValues ("(const graph) sumIntoLocalValues: "
+                          "after first fillComplete",
+                          A, LO (args.numToInsert), lclColInds.data (),
+                          vals.data (), args.numTrials);
+    doKokkosSumIntoLocalValues ("(const graph) Kokkos sumInto",
+                                A, LO (args.numToInsert),
+                                lclColInds.data (), vals.data (),
+                                args.numTrials);
   }
-  doSumIntoLocalValues ("sumIntoLocalValues: after first fillComplete",
-                        *A, LO (args.numToInsert), lclColInds.data (),
-                        vals.data (), args.numTrials);
-  doKokkosSumIntoLocalValues ("Kokkos sumInto",
-                              *A, LO (args.numToInsert),
-                              lclColInds.data (), vals.data (),
-                              args.numTrials);
 }
 
 } // namespace (anonymous)
