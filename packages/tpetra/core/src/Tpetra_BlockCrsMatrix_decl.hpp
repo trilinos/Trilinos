@@ -39,19 +39,18 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DECL_HPP
-#define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DECL_HPP
+#ifndef TPETRA_BLOCKCRSMATRIX_DECL_HPP
+#define TPETRA_BLOCKCRSMATRIX_DECL_HPP
 
-/// \file Tpetra_Experimental_BlockCrsMatrix_decl.hpp
-/// \brief Declaration of Tpetra::Experimental::BlockCrsMatrix
+/// \file Tpetra_BlockCrsMatrix_decl.hpp
+/// \brief Declaration of Tpetra::BlockCrsMatrix
 
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
+#include "Tpetra_BlockMultiVector_decl.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 
 namespace Tpetra {
-namespace Experimental {
 
 /// \class BlockCrsMatrix
 /// \brief Sparse matrix whose entries are small dense square blocks,
@@ -317,7 +316,7 @@ public:
   /// The following pseudocode shows how to wrap your std::ostream
   /// object in a Teuchos::FancyOStream, and pass it into this method:
   /// \code
-  /// Tpetra::Experimental::BlockCrsMatrix<...> A (...);
+  /// Tpetra::BlockCrsMatrix<...> A (...);
   /// // ...
   /// std::ostream& yourObject = ...;
   /// Teuchos::RCP<Teuchos::FancyOStream> wrappedStream =
@@ -1380,7 +1379,6 @@ public:
   //@}
 };
 
-} // namespace Experimental
 } // namespace Tpetra
 
-#endif // TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DECL_HPP
+#endif // TPETRA_BLOCKCRSMATRIX_DECL_HPP

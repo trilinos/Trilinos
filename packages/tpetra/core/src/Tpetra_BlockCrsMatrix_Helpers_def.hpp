@@ -39,12 +39,12 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS_DEF_HPP
-#define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS_DEF_HPP
+#ifndef TPETRA_BLOCKCRSMATRIX_HELPERS_DEF_HPP
+#define TPETRA_BLOCKCRSMATRIX_HELPERS_DEF_HPP
 
-/// \file Tpetra_Experimental_BlockCrsMatrix_Helpers_def.hpp
+/// \file Tpetra_BlockCrsMatrix_Helpers_def.hpp
 
-#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockCrsMatrix.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_HashTable.hpp"
 #include "Tpetra_Import.hpp"
@@ -56,7 +56,6 @@
 #include <fstream>
 
 namespace Tpetra {
-namespace Experimental {
 
   template<class Scalar, class LO, class GO, class Node>
   void blockCrsMatrixWriter(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::string const &fileName) {
@@ -122,7 +121,7 @@ namespace Experimental {
       os << "%%MatrixMarket matrix coordinate " << dataTypeStr << " general" << std::endl;
       os << "% time stamp: " << ctime(&now);
       os << "% written from " << numProcs << " processes" << std::endl;
-      os << "% point representation of Tpetra::Experimental::BlockCrsMatrix" << std::endl;
+      os << "% point representation of Tpetra::BlockCrsMatrix" << std::endl;
       size_t numRows = A.getGlobalNumRows();
       size_t numCols = A.getGlobalNumCols();
       os << "% " << numRows << " block rows, " << numCols << " block columns" << std::endl;
@@ -163,7 +162,7 @@ namespace Experimental {
         }
         // The following import map should be non-trivial only on PE 0.
         TEUCHOS_TEST_FOR_EXCEPTION(myRank>0 && curStripSize!=0,
-          std::runtime_error, "Tpetra::Experimental::blockCrsMatrixWriter: (pid "
+          std::runtime_error, "Tpetra::blockCrsMatrixWriter: (pid "
           << myRank << ") map size should be zero, but is " << curStripSize);
         RCP<map_type> importMeshGidMap = rcp(new map_type(TOT::invalid(), importMeshGidList(), A.getIndexBase(), comm));
         import_type gidImporter(allMeshGidsMap, importMeshGidMap);
@@ -211,22 +210,22 @@ namespace Experimental {
     const size_t meshRowOffset = rowMap->getIndexBase();
     const size_t meshColOffset = colMap->getIndexBase();
     TEUCHOS_TEST_FOR_EXCEPTION(meshRowOffset != meshColOffset,
-      std::runtime_error, "Tpetra::Experimental::writeMatrixStrip: "
+      std::runtime_error, "Tpetra::writeMatrixStrip: "
       "mesh row index base != mesh column index base");
 
     if (myRank !=0) {
 
       TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumRows() != 0,
-        std::runtime_error, "Tpetra::Experimental::writeMatrixStrip: pid "
+        std::runtime_error, "Tpetra::writeMatrixStrip: pid "
         << myRank << " should have 0 rows but has " << A.getNodeNumRows());
       TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumCols() != 0,
-        std::runtime_error, "Tpetra::Experimental::writeMatrixStrip: pid "
+        std::runtime_error, "Tpetra::writeMatrixStrip: pid "
         << myRank << " should have 0 columns but has " << A.getNodeNumCols());
 
     } else {
 
       TEUCHOS_TEST_FOR_EXCEPTION(numRows != A.getNodeNumRows(),
-        std::runtime_error, "Tpetra::Experimental::writeMatrixStrip: "
+        std::runtime_error, "Tpetra::writeMatrixStrip: "
         "number of rows on pid 0 does not match global number of rows");
 
 
@@ -285,7 +284,7 @@ namespace Experimental {
       if (precisionChanged)
         os.precision(oldPrecision);
       TEUCHOS_TEST_FOR_EXCEPTION(err != 0,
-        std::runtime_error, "Tpetra::Experimental::writeMatrixStrip: "
+        std::runtime_error, "Tpetra::writeMatrixStrip: "
         "error getting view of local row " << localRowInd);
 
     }
@@ -309,7 +308,7 @@ namespace Experimental {
       using Teuchos::ArrayView;
       using Teuchos::RCP;
 
-      typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+      typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
       typedef Tpetra::Map<LO,GO,Node>                                 map_type;
       typedef Tpetra::CrsGraph<LO,GO,Node>                            crs_graph_type;
 
@@ -446,7 +445,6 @@ namespace Experimental {
 
   }
 
-} // namespace Experimental
 } // namespace Tpetra
 
 //
@@ -455,20 +453,18 @@ namespace Experimental {
 //
 // Must be expanded from within the Tpetra namespace!
 //
-#define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS_INSTANT(S,LO,GO,NODE) \
-  template void Experimental::blockCrsMatrixWriter(Experimental::BlockCrsMatrix<S,LO,GO,NODE> const &A, std::string const &fileName); \
-  template void Experimental::blockCrsMatrixWriter(Experimental::BlockCrsMatrix<S,LO,GO,NODE> const &A, std::string const &fileName, Teuchos::ParameterList const &params); \
-  template void Experimental::blockCrsMatrixWriter(Experimental::BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os); \
-  template void Experimental::blockCrsMatrixWriter(Experimental::BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
-  template void Experimental::writeMatrixStrip(Experimental::BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
-  template Teuchos::RCP<Experimental::BlockCrsMatrix<S, LO, GO, NODE> > Experimental::convertToBlockCrsMatrix(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize);
+#define TPETRA_BLOCKCRSMATRIX_HELPERS_INSTANT(S,LO,GO,NODE) \
+  template void blockCrsMatrixWriter(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::string const &fileName); \
+  template void blockCrsMatrixWriter(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::string const &fileName, Teuchos::ParameterList const &params); \
+  template void blockCrsMatrixWriter(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os); \
+  template void blockCrsMatrixWriter(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
+  template void writeMatrixStrip(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
+  template Teuchos::RCP<BlockCrsMatrix<S, LO, GO, NODE> > convertToBlockCrsMatrix(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize);
 
 //
 // Explicit instantiation macro for createMeshMap.
 //
-// Must be expanded from within the Tpetra::Experimental namespace!
-//
-#define TPETRA_EXPERIMENTAL_CREATEMESHMAP_INSTANT(LO,GO,NODE) \
+#define TPETRA_CREATEMESHMAP_INSTANT(LO,GO,NODE) \
   template Teuchos::RCP<const Map<LO,GO,NODE> > createMeshMap (const LO& blockSize, const Map<LO,GO,NODE>& pointMap);
 
-#endif // TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS_DEF_HPP
+#endif // TPETRA_BLOCKCRSMATRIX_HELPERS_DEF_HPP

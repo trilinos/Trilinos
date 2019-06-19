@@ -39,11 +39,11 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
-#define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
+#ifndef TPETRA_BLOCKMULTIVECTOR_DEF_HPP
+#define TPETRA_BLOCKMULTIVECTOR_DEF_HPP
 
 #include "Tpetra_Details_Behavior.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockView.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 
 namespace { // anonymous
@@ -85,7 +85,7 @@ namespace { // anonymous
   /// \note To Tpetra developers: This function exists to smooth over
   ///   differences between the "classic" and current ("Kokkos
   ///   refactor," circa 2014/5) versions of Tpetra::MultiVector.  It
-  ///   also makes the Tpetra::Experimental::BlockMultiVector
+  ///   also makes the Tpetra::BlockMultiVector
   ///   implementation below a bit easier to read.
   template<class S, class LO, class GO, class N>
   typename Tpetra::MultiVector<S, LO, GO, N>::impl_scalar_type*
@@ -97,7 +97,6 @@ namespace { // anonymous
 } // namespace (anonymous)
 
 namespace Tpetra {
-namespace Experimental {
 
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::mv_type
@@ -115,7 +114,7 @@ getBlockMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src)
   typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
   const BMV* src_bmv = dynamic_cast<const BMV*> (&src);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    src_bmv == nullptr, std::invalid_argument, "Tpetra::Experimental::"
+    src_bmv == nullptr, std::invalid_argument, "Tpetra::"
     "BlockMultiVector: The source object of an Import or Export to a "
     "BlockMultiVector, must also be a BlockMultiVector.");
   return Teuchos::rcp (src_bmv, false); // nonowning RCP
@@ -193,7 +192,7 @@ BlockMultiVector (const mv_type& X_mv,
       X_view_const = X_mv.subView (Teuchos::Range1D (0, numCols-1));
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
-      X_view_const.is_null (), std::logic_error, "Tpetra::Experimental::"
+      X_view_const.is_null (), std::logic_error, "Tpetra::"
       "BlockMultiVector constructor: X_mv.subView(...) returned null.  This "
       "should never happen.  Please report this bug to the Tpetra developers.");
 
@@ -203,7 +202,7 @@ BlockMultiVector (const mv_type& X_mv,
     RCP<mv_type> X_view = Teuchos::rcp_const_cast<mv_type> (X_view_const);
     TEUCHOS_TEST_FOR_EXCEPTION(
       X_view->getCopyOrView () != Teuchos::View, std::logic_error, "Tpetra::"
-      "Experimental::BlockMultiVector constructor: We just set a MultiVector "
+      "BlockMultiVector constructor: We just set a MultiVector "
       "to have view semantics, but it claims that it doesn't have view "
       "semantics.  This should never happen.  "
       "Please report this bug to the Tpetra developers.");
@@ -430,7 +429,7 @@ getLocalBlock (const LO localRowIndex,
 // #ifdef HAVE_TPETRA_DEBUG
 //   TEUCHOS_TEST_FOR_EXCEPTION
 //     (mv_.need_sync_host (), std::runtime_error,
-//      "Tpetra::Experimental::BlockMultiVector::getLocalBlock: This method "
+//      "Tpetra::BlockMultiVector::getLocalBlock: This method "
 //      "accesses host data, but the object is not in sync on host." );
 // #endif // HAVE_TPETRA_DEBUG
 
@@ -834,11 +833,11 @@ unpackAndCombineImpl
         deep_copy (X_dst, X_src);
       }
       else if (combineMode == ADD) {
-        using ::Tpetra::Experimental::AXPY;
+        using ::Tpetra::AXPY;
         AXPY (static_cast<IST> (KAT::one ()), X_src, X_dst);
       }
       else if (combineMode == ABSMAX) {
-        ::Tpetra::Experimental::Impl::absMax (X_dst, X_src);
+        ::Tpetra::Impl::absMax (X_dst, X_src);
       }
     }
   }
@@ -952,8 +951,8 @@ public:
       auto Y_curBlk = Kokkos::subview(Y_, kslice, i);
       // Y_curBlk := alpha * D_curBlk * X_curBlk.
       // Recall that GEMV does an update (+=) of the last argument.
-      Tpetra::Experimental::FILL(Y_curBlk, zero);
-      Tpetra::Experimental::GEMV(alpha_, D_curBlk, X_curBlk, Y_curBlk);
+      Tpetra::FILL(Y_curBlk, zero);
+      Tpetra::GEMV(alpha_, D_curBlk, X_curBlk, Y_curBlk);
     }
   }
 };
@@ -1035,12 +1034,12 @@ public:
     auto Y_curBlk = subview (Y_, kslice);
     // Y_curBlk := beta * Y_curBlk + alpha * D_curBlk * Z_curBlk
     if (beta_ == KAT::zero ()) {
-      Tpetra::Experimental::FILL (Y_curBlk, KAT::zero ());
+      Tpetra::FILL (Y_curBlk, KAT::zero ());
     }
     else if (beta_ != KAT::one ()) {
-      Tpetra::Experimental::SCAL (beta_, Y_curBlk);
+      Tpetra::SCAL (beta_, Y_curBlk);
     }
-    Tpetra::Experimental::GEMV (alpha_, D_curBlk, Z_curBlk, Y_curBlk);
+    Tpetra::GEMV (alpha_, D_curBlk, Z_curBlk, Y_curBlk);
   }
 };
 
@@ -1163,7 +1162,6 @@ blockJacobiUpdate (const Scalar& alpha,
   }
 }
 
-} // namespace Experimental
 } // namespace Tpetra
 
 //
@@ -1171,9 +1169,7 @@ blockJacobiUpdate (const Scalar& alpha,
 //
 // Must be expanded from within the Tpetra namespace!
 //
-#define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_INSTANT(S,LO,GO,NODE) \
-  namespace Experimental { \
-    template class BlockMultiVector< S, LO, GO, NODE >; \
-  }
+#define TPETRA_BLOCKMULTIVECTOR_INSTANT(S,LO,GO,NODE) \
+  template class BlockMultiVector< S, LO, GO, NODE >; 
 
-#endif // TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
+#endif // TPETRA_BLOCKMULTIVECTOR_DEF_HPP

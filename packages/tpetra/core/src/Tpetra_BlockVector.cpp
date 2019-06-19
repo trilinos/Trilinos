@@ -41,18 +41,18 @@
 // @HEADER
 */
 
-#include "Tpetra_Experimental_BlockVector_decl.hpp"
+#include "Tpetra_BlockVector_decl.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#include "Tpetra_Experimental_BlockVector_def.hpp"
+#include "Tpetra_BlockVector_def.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 
 namespace Tpetra {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(TPETRA_EXPERIMENTAL_BLOCKVECTOR_INSTANT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(TPETRA_BLOCKVECTOR_INSTANT)
 
 } // namespace Tpetra
 

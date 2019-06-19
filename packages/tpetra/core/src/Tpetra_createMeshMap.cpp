@@ -43,19 +43,17 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#include "Tpetra_Experimental_BlockCrsMatrix_Helpers_decl.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix_Helpers_def.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers_decl.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers_def.hpp"
 
 #include "TpetraCore_ETIHelperMacros.h"
 
 namespace Tpetra {
-  namespace Experimental {
-
-    TPETRA_ETI_MANGLING_TYPEDEFS()
-
-    TPETRA_INSTANTIATE_LGN( TPETRA_EXPERIMENTAL_CREATEMESHMAP_INSTANT )
-
-  } // namespace Experimental
+  
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+  
+  TPETRA_INSTANTIATE_LGN( TPETRA_CREATEMESHMAP_INSTANT )
+  
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_TPETRA_INSTANTIATION

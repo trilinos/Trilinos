@@ -39,17 +39,16 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DECL_HPP
-#define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DECL_HPP
+#ifndef TPETRA_BLOCKMULTIVECTOR_DECL_HPP
+#define TPETRA_BLOCKMULTIVECTOR_DECL_HPP
 
-#include "Tpetra_Experimental_BlockMultiVector_fwd.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix_fwd.hpp"
+#include "Tpetra_BlockMultiVector_fwd.hpp"
+#include "Tpetra_BlockCrsMatrix_fwd.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include <memory>
 #include <utility>
 
 namespace Tpetra {
-namespace Experimental {
 
 /// \class BlockMultiVector
 /// \brief MultiVector for multiple degrees of freedom per mesh point
@@ -799,7 +798,6 @@ private:
      const CombineMode combineMode);
 };
 
-} // namespace Experimental
 } // namespace Tpetra
 
-#endif // TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DECL_HPP
+#endif // TPETRA_BLOCKMULTIVECTOR_DECL_HPP

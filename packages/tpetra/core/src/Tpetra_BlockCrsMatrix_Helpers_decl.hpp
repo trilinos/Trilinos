@@ -39,12 +39,12 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS_DECL_HPP
-#define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS_DECL_HPP
+#ifndef TPETRA_BLOCKCRSMATRIX_HELPERS_DECL_HPP
+#define TPETRA_BLOCKCRSMATRIX_HELPERS_DECL_HPP
 
-/// \file Tpetra_Experimental_BlockCrsMatrix_Helpers_decl.hpp
+/// \file Tpetra_BlockCrsMatrix_Helpers_decl.hpp
 
-#include "Tpetra_Experimental_BlockCrsMatrix_fwd.hpp"
+#include "Tpetra_BlockCrsMatrix_fwd.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_Map_fwd.hpp"
 #include "Teuchos_RCP.hpp"
@@ -58,7 +58,6 @@ namespace Teuchos {
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
-namespace Experimental {
 
   /// \brief Helper function to write a BlockCrsMatrix.  Calls the 3-argument version.
   template<class Scalar, class LO, class GO, class Node>
@@ -108,7 +107,6 @@ namespace Experimental {
   Teuchos::RCP<const Tpetra::Map<LO,GO,Node>>
   createMeshMap(LO const &blockSize, const Tpetra::Map<LO,GO,Node> &pointMap);
 
-} // namespace Experimental
 } // namespace Tpetra
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS_DECL_HPP

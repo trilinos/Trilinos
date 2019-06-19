@@ -39,16 +39,16 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_EXPERIMENTAL_BLOCKVIEW_HPP
-#define TPETRA_EXPERIMENTAL_BLOCKVIEW_HPP
+#ifndef TPETRA_BLOCKVIEW_HPP
+#define TPETRA_BLOCKVIEW_HPP
 
-/// \file Tpetra_Experimental_BlockView.hpp
+/// \file Tpetra_BlockView.hpp
 /// \brief Linear algebra kernels for small dense matrices and vectors
 ///
 /// This file declares and defines generic computational kernels for
 /// small dense linear algebra operations, with matrices and vectors
 /// stored as Kokkos::View.  The operations are meant as helpers for
-/// Tpetra::Experimental::BlockCrsMatrix.
+/// Tpetra::BlockCrsMatrix.
 
 #include "TpetraCore_config.h"
 #include "Kokkos_ArithTraits.hpp"
@@ -60,14 +60,6 @@ namespace Tpetra {
 ///   public release, but are ready for evaluation by friendly expert
 ///   users.
 ///
-/// \warning Expect header files, classes, functions, and other
-///   interfaces to change or disappear.  Anything in this namespace
-///   is under active development and evaluation.  Documentation may
-///   be sparse or not exist yet.  Generally, unit tests will exist,
-///   but coverage may be lacking.  If you understand these caveats
-///   and accept them, please feel free to take a look inside and try
-///   things out.
-namespace Experimental {
 
 namespace Impl {
 
@@ -178,7 +170,7 @@ absMax (const ViewType2& Y, const ViewType1& X)
   AbsMax<ViewType1, ViewType2, rank>::run (Y, X);
 }
 
-/// \brief Implementation of Tpetra::Experimental::SCAL function.
+/// \brief Implementation of Tpetra::SCAL function.
 ///
 /// This is the "generic" version that we don't implement.
 /// We actually implement versions for ViewType rank 1 or rank 2.
@@ -192,7 +184,7 @@ struct SCAL {
   run (const CoefficientType& alpha, const ViewType& x);
 };
 
-/// \brief Implementation of Tpetra::Experimental::SCAL function, for
+/// \brief Implementation of Tpetra::SCAL function, for
 ///   ViewType rank 1 (i.e., a vector).
 template<class ViewType,
          class CoefficientType,
@@ -211,7 +203,7 @@ struct SCAL<ViewType, CoefficientType, LayoutType, IndexType, 1> {
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::SCAL function, for
+/// \brief Implementation of Tpetra::SCAL function, for
 ///   ViewType rank 2 (i.e., a matrix).
 template<class ViewType,
          class CoefficientType,
@@ -234,7 +226,7 @@ struct SCAL<ViewType, CoefficientType, LayoutType, IndexType, 2> {
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::SCAL function, for
+/// \brief Implementation of Tpetra::SCAL function, for
 ///   ViewType rank 2 (i.e., a matrix), and LayoutType = LayoutRight.
 ///
 /// For LayoutRight (or LayoutLeft) input, we can flatten indexing
@@ -258,7 +250,7 @@ struct SCAL<ViewType, CoefficientType, Kokkos::LayoutRight, IndexType, 2> {
 };
 
 
-/// \brief Implementation of Tpetra::Experimental::FILL function.
+/// \brief Implementation of Tpetra::FILL function.
 ///
 /// This is the "generic" version that we don't implement.
 /// We actually implement versions for ViewType rank 1 or rank 2.
@@ -272,7 +264,7 @@ struct FILL {
   run (const ViewType& x, const InputType& val);
 };
 
-/// \brief Implementation of Tpetra::Experimental::FILL function, for
+/// \brief Implementation of Tpetra::FILL function, for
 ///   ViewType rank 1 (i.e., a vector).
 template<class ViewType,
          class InputType,
@@ -289,7 +281,7 @@ struct FILL<ViewType, InputType, LayoutType, IndexType, 1> {
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::FILL function, for
+/// \brief Implementation of Tpetra::FILL function, for
 ///   ViewType rank 2 (i.e., a matrix).
 template<class ViewType,
          class InputType,
@@ -309,7 +301,7 @@ struct FILL<ViewType, InputType, LayoutType, IndexType, 2> {
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::AXPY function.
+/// \brief Implementation of Tpetra::AXPY function.
 ///
 /// This is the "generic" version that we don't implement.
 /// We actually implement versions for ViewType rank 1 or rank 2.
@@ -327,7 +319,7 @@ struct AXPY {
        const ViewType2& y);
 };
 
-/// \brief Implementation of Tpetra::Experimental::AXPY function, for
+/// \brief Implementation of Tpetra::AXPY function, for
 ///   ViewType1 and ViewType2 rank 1 (i.e., vectors).
 template<class CoefficientType,
          class ViewType1,
@@ -355,7 +347,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, Ind
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::AXPY function, for
+/// \brief Implementation of Tpetra::AXPY function, for
 ///   ViewType1 and ViewType2 rank 2 (i.e., matrices).
 template<class CoefficientType,
          class ViewType1,
@@ -386,7 +378,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, Ind
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::AXPY function, for
+/// \brief Implementation of Tpetra::AXPY function, for
 ///   ViewType1 and ViewType2 rank 2 (i.e., matrices), when both
 ///   ViewType1 and ViewType2 have LayoutRight.
 template<class CoefficientType,
@@ -419,7 +411,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::AXPY function, for
+/// \brief Implementation of Tpetra::AXPY function, for
 ///   ViewType1 and ViewType2 rank 2 (i.e., matrices), when both
 ///   ViewType1 and ViewType2 have LayoutLeft.
 template<class CoefficientType,
@@ -451,7 +443,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutLeft, Kokkos::L
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::COPY function.
+/// \brief Implementation of Tpetra::COPY function.
 ///
 /// This is the "generic" version that we don't implement.
 /// We actually implement versions for ViewType rank 1 or rank 2.
@@ -466,7 +458,7 @@ struct COPY {
   run (const ViewType1& x, const ViewType2& y);
 };
 
-/// \brief Implementation of Tpetra::Experimental::COPY function, for
+/// \brief Implementation of Tpetra::COPY function, for
 ///   ViewType1 and ViewType2 rank 1 (i.e., vectors).
 template<class ViewType1,
          class ViewType2,
@@ -485,7 +477,7 @@ struct COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 1> {
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::COPY function, for
+/// \brief Implementation of Tpetra::COPY function, for
 ///   ViewType1 and ViewType2 rank 2 (i.e., matrices).
 template<class ViewType1,
          class ViewType2,
@@ -509,7 +501,7 @@ struct COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 2> {
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::COPY function, for
+/// \brief Implementation of Tpetra::COPY function, for
 ///   ViewType1 and ViewType2 rank 2 (i.e., matrices), where both have
 ///   LayoutRight (row-major order, with contiguous storage).
 template<class ViewType1,
@@ -534,7 +526,7 @@ struct COPY<ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::LayoutRight, Inde
   }
 };
 
-/// \brief Implementation of Tpetra::Experimental::COPY function, for
+/// \brief Implementation of Tpetra::COPY function, for
 ///   ViewType1 and ViewType2 rank 2 (i.e., matrices), where both have
 ///   LayoutLeft (row-major order, with contiguous storage).
 template<class ViewType1,
@@ -1340,7 +1332,6 @@ GEMV (const char trans,
 
 #endif // 0
 
-} // namespace Experimental
 } // namespace Tpetra
 
-#endif // TPETRA_EXPERIMENTAL_BLOCKVIEW_HPP
+#endif // TPETRA_BLOCKVIEW_HPP

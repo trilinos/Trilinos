@@ -39,11 +39,10 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP
-#define TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP
+#ifndef TPETRA_BLOCKVECTOR_DEF_HPP
+#define TPETRA_BLOCKVECTOR_DEF_HPP
 
 namespace Tpetra {
-namespace Experimental {
 
   template<class Scalar, class LO, class GO, class Node>
   BlockVector<Scalar, LO, GO, Node>::
@@ -81,7 +80,7 @@ namespace Experimental {
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       X_mv.getNumVectors () != 1, std::invalid_argument,
-      "Tpetra::Experimental::BlockVector: Input MultiVector has "
+      "Tpetra::BlockVector: Input MultiVector has "
       << X_mv.getNumVectors () << " != 1 columns.");
   }
 
@@ -174,7 +173,6 @@ namespace Experimental {
     }
   }
 
-} // namespace Experimental
 } // namespace Tpetra
 
 //
@@ -182,9 +180,7 @@ namespace Experimental {
 //
 // Must be expanded from within the Tpetra namespace!
 //
-#define TPETRA_EXPERIMENTAL_BLOCKVECTOR_INSTANT(S,LO,GO,NODE) \
-  namespace Experimental { \
-    template class BlockVector< S, LO, GO, NODE >; \
-  }
+#define TPETRA_BLOCKVECTOR_INSTANT(S,LO,GO,NODE) \
+  template class BlockVector< S, LO, GO, NODE >; 
 
-#endif // TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP
+#endif // TPETRA_BLOCKVECTOR_DEF_HPP

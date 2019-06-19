@@ -39,24 +39,22 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_FWD_HPP
-#define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_FWD_HPP
+#ifndef TPETRA_BLOCKMULTIVECTOR_FWD_HPP
+#define TPETRA_BLOCKMULTIVECTOR_FWD_HPP
 
 #include "Tpetra_Details_DefaultTypes.hpp"
 
-/// \file Tpetra_Experimental_BlockMultiVector_fwd.hpp
-/// \brief Forward declaration of Tpetra::Experimental::BlockMultiVector.
+/// \file Tpetra_BlockMultiVector_fwd.hpp
+/// \brief Forward declaration of Tpetra::BlockMultiVector.
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
-namespace Experimental {
 template<class SC = ::Tpetra::Details::DefaultTypes::scalar_type,
          class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
          class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
          class NT = ::Tpetra::Details::DefaultTypes::node_type>
 class BlockMultiVector;
-} // namespace Experimental
 } // namespace Tpetra
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-#endif // TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_FWD_HPP
+#endif // TPETRA_BLOCKMULTIVECTOR_FWD_HPP

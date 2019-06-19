@@ -39,17 +39,17 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DEF_HPP
-#define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DEF_HPP
+#ifndef TPETRA_BLOCKCRSMATRIX_DEF_HPP
+#define TPETRA_BLOCKCRSMATRIX_DEF_HPP
 
-/// \file Tpetra_Experimental_BlockCrsMatrix_def.hpp
-/// \brief Definition of Tpetra::Experimental::BlockCrsMatrix
+/// \file Tpetra_BlockCrsMatrix_def.hpp
+/// \brief Definition of Tpetra::BlockCrsMatrix
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
-#include "Tpetra_Experimental_BlockMultiVector.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockMultiVector.hpp"
+#include "Tpetra_BlockView.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
 #ifdef HAVE_TPETRA_DEBUG
@@ -90,7 +90,6 @@
 
 
 namespace Tpetra {
-namespace Experimental {
 
 namespace Impl {
 
@@ -267,10 +266,10 @@ public:
   KOKKOS_INLINE_FUNCTION void
   operator () (const typename policy_type::member_type& member) const
   {
-    using ::Tpetra::Experimental::COPY;
-    using ::Tpetra::Experimental::FILL;
-    using ::Tpetra::Experimental::SCAL;
-    using ::Tpetra::Experimental::GEMV;
+    using ::Tpetra::COPY;
+    using ::Tpetra::FILL;
+    using ::Tpetra::SCAL;
+    using ::Tpetra::GEMV;
     using Kokkos::Details::ArithTraits;
     // I'm not writing 'using Kokkos::make_pair;' here, because that
     // may break builds for users who make the mistake of putting
@@ -455,10 +454,10 @@ public:
   KOKKOS_INLINE_FUNCTION void
   operator () (const local_ordinal_type& lclRow) const
   {
-    using ::Tpetra::Experimental::COPY;
-    using ::Tpetra::Experimental::FILL;
-    using ::Tpetra::Experimental::SCAL;
-    using ::Tpetra::Experimental::GEMV;
+    using ::Tpetra::COPY;
+    using ::Tpetra::FILL;
+    using ::Tpetra::SCAL;
+    using ::Tpetra::GEMV;
     using Kokkos::Details::ArithTraits;
     // I'm not writing 'using Kokkos::make_pair;' here, because that
     // may break builds for users who make the mistake of putting
@@ -636,7 +635,7 @@ public:
   typedef typename ::Tpetra::CrsGraph<LO, GO, Node> global_graph_type;
   typedef typename global_graph_type::local_graph_type local_graph_type;
   typedef typename local_graph_type::row_map_type row_offsets_type;
-  typedef typename ::Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node>::impl_scalar_type IST;
+  typedef typename ::Tpetra::BlockMultiVector<Scalar, LO, GO, Node>::impl_scalar_type IST;
   typedef Kokkos::View<IST***, device_type, Kokkos::MemoryUnmanaged> diag_type;
   typedef Kokkos::View<const IST*, device_type, Kokkos::MemoryUnmanaged> values_type;
 
@@ -732,7 +731,7 @@ public:
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
+      ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
       "rows (isSorted() is false).  This class assumes sorted rows.");
 
@@ -744,7 +743,7 @@ public:
     // generally does with gcc at least, in my experience.
     const bool blockSizeIsNonpositive = (blockSize + 1 <= 1);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      blockSizeIsNonpositive, std::invalid_argument, "Tpetra::Experimental::"
+      blockSizeIsNonpositive, std::invalid_argument, "Tpetra::"
       "BlockCrsMatrix constructor: The input blockSize = " << blockSize <<
       " <= 0.  The block size must be positive.");
 
@@ -794,7 +793,7 @@ public:
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
+      ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
       "rows (isSorted() is false).  This class assumes sorted rows.");
 
@@ -806,7 +805,7 @@ public:
     // generally does with gcc at least, in my experience.
     const bool blockSizeIsNonpositive = (blockSize + 1 <= 1);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      blockSizeIsNonpositive, std::invalid_argument, "Tpetra::Experimental::"
+      blockSizeIsNonpositive, std::invalid_argument, "Tpetra::"
       "BlockCrsMatrix constructor: The input blockSize = " << blockSize <<
       " <= 0.  The block size must be positive.");
 
@@ -903,7 +902,7 @@ public:
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
     TEUCHOS_TEST_FOR_EXCEPTION(
       mode != Teuchos::NO_TRANS && mode != Teuchos::TRANS && mode != Teuchos::CONJ_TRANS,
-      std::invalid_argument, "Tpetra::Experimental::BlockCrsMatrix::apply: "
+      std::invalid_argument, "Tpetra::BlockCrsMatrix::apply: "
       "Invalid 'mode' argument.  Valid values are Teuchos::NO_TRANS, "
       "Teuchos::TRANS, and Teuchos::CONJ_TRANS.");
 
@@ -916,7 +915,7 @@ public:
     }
     catch (std::invalid_argument& e) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "Tpetra::Experimental::BlockCrsMatrix::"
+        true, std::invalid_argument, "Tpetra::BlockCrsMatrix::"
         "apply: Either the input MultiVector X or the output MultiVector Y "
         "cannot be viewed as a BlockMultiVector, given this BlockCrsMatrix's "
         "graph.  BlockMultiVector's constructor threw the following exception: "
@@ -931,25 +930,25 @@ public:
       const_cast<this_type*> (this)->applyBlock (X_view, Y_view, mode, alpha, beta);
     } catch (std::invalid_argument& e) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "Tpetra::Experimental::BlockCrsMatrix::"
+        true, std::invalid_argument, "Tpetra::BlockCrsMatrix::"
         "apply: The implementation method applyBlock complained about having "
         "an invalid argument.  It reported the following: " << e.what ());
     } catch (std::logic_error& e) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "Tpetra::Experimental::BlockCrsMatrix::"
+        true, std::invalid_argument, "Tpetra::BlockCrsMatrix::"
         "apply: The implementation method applyBlock complained about a "
         "possible bug in its implementation.  It reported the following: "
         << e.what ());
     } catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "Tpetra::Experimental::BlockCrsMatrix::"
+        true, std::invalid_argument, "Tpetra::BlockCrsMatrix::"
         "apply: The implementation method applyBlock threw an exception which "
         "is neither std::invalid_argument nor std::logic_error, but is a "
         "subclass of std::exception.  It reported the following: "
         << e.what ());
     } catch (...) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+        true, std::logic_error, "Tpetra::BlockCrsMatrix::"
         "apply: The implementation method applyBlock threw an exception which "
         "is not an instance of a subclass of std::exception.  This probably "
         "indicates a bug.  Please report this to the Tpetra developers.");
@@ -967,7 +966,7 @@ public:
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       X.getBlockSize () != Y.getBlockSize (), std::invalid_argument,
-      "Tpetra::Experimental::BlockCrsMatrix::applyBlock: "
+      "Tpetra::BlockCrsMatrix::applyBlock: "
       "X and Y have different block sizes.  X.getBlockSize() = "
       << X.getBlockSize () << " != Y.getBlockSize() = "
       << Y.getBlockSize () << ".");
@@ -978,7 +977,7 @@ public:
       applyBlockTrans (X, Y, mode, alpha, beta);
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "Tpetra::Experimental::BlockCrsMatrix::"
+        true, std::invalid_argument, "Tpetra::BlockCrsMatrix::"
         "applyBlock: Invalid 'mode' argument.  Valid values are "
         "Teuchos::NO_TRANS, Teuchos::TRANS, and Teuchos::CONJ_TRANS.");
     }
@@ -990,7 +989,7 @@ public:
   setAllToScalar (const Scalar& alpha)
   {
 #ifdef HAVE_TPETRA_DEBUG
-    const char prefix[] = "Tpetra::Experimental::BlockCrsMatrix::setAllToScalar: ";
+    const char prefix[] = "Tpetra::BlockCrsMatrix::setAllToScalar: ";
 #endif // HAVE_TPETRA_DEBUG
 
     if (this->need_sync_device ()) {
@@ -1025,7 +1024,7 @@ public:
   {
 #ifdef HAVE_TPETRA_DEBUG
     const char prefix[] =
-      "Tpetra::Experimental::BlockCrsMatrix::replaceLocalValues: ";
+      "Tpetra::BlockCrsMatrix::replaceLocalValues: ";
 #endif // HAVE_TPETRA_DEBUG
 
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
@@ -1261,7 +1260,7 @@ public:
     // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
     // interface for block Gauss-Seidel.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::"
       "gaussSeidelCopy: Not implemented.");
   }
 
@@ -1280,7 +1279,7 @@ public:
     // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
     // interface for block Gauss-Seidel.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::"
       "reorderedGaussSeidelCopy: Not implemented.");
   }
 
@@ -1437,7 +1436,7 @@ public:
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vIn, pointOffset);
 
-        ::Tpetra::Experimental::Impl::absMax (A_old, A_new);
+        ::Tpetra::Impl::absMax (A_old, A_new);
         hint = relBlockOffset + 1;
         ++validCount;
       }
@@ -1456,7 +1455,7 @@ public:
   {
 #ifdef HAVE_TPETRA_DEBUG
     const char prefix[] =
-      "Tpetra::Experimental::BlockCrsMatrix::sumIntoLocalValues: ";
+      "Tpetra::BlockCrsMatrix::sumIntoLocalValues: ";
 #endif // HAVE_TPETRA_DEBUG
 
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
@@ -1529,7 +1528,7 @@ public:
   {
 #ifdef HAVE_TPETRA_DEBUG
     const char prefix[] =
-      "Tpetra::Experimental::BlockCrsMatrix::getLocalRowView: ";
+      "Tpetra::BlockCrsMatrix::getLocalRowView: ";
 #endif // HAVE_TPETRA_DEBUG
 
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
@@ -1691,7 +1690,7 @@ public:
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vIn, pointOffset);
-        ::Tpetra::Experimental::Impl::absMax (A_old, A_new);
+        ::Tpetra::Impl::absMax (A_old, A_new);
         ++validCount;
       }
     }
@@ -1769,7 +1768,7 @@ public:
     (void) beta;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::apply: "
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::apply: "
       "transpose and conjugate transpose modes are not yet implemented.");
   }
 
@@ -1899,7 +1898,7 @@ public:
                           const Scalar alpha,
                           const Scalar beta)
   {
-    using ::Tpetra::Experimental::Impl::bcrsLocalApplyNoTrans;
+    using ::Tpetra::Impl::bcrsLocalApplyNoTrans;
 
     const impl_scalar_type alpha_impl = alpha;
     const auto graph = this->graph_.getLocalGraph ();
@@ -2008,7 +2007,7 @@ public:
   {
 #ifdef HAVE_TPETRA_DEBUG
     const char prefix[] =
-      "Tpetra::Experimental::BlockCrsMatrix::getConstLocalBlockFromAbsOffset: ";
+      "Tpetra::BlockCrsMatrix::getConstLocalBlockFromAbsOffset: ";
 #endif // HAVE_TPETRA_DEBUG
 
     if (absBlockOffset >= ptrHost_[rowMeshMap_.getNodeNumElements ()]) {
@@ -2069,7 +2068,7 @@ public:
   {
 #ifdef HAVE_TPETRA_DEBUG
     const char prefix[] =
-      "Tpetra::Experimental::BlockCrsMatrix::getNonConstLocalBlockFromAbsOffset: ";
+      "Tpetra::BlockCrsMatrix::getNonConstLocalBlockFromAbsOffset: ";
 #endif // HAVE_TPETRA_DEBUG
 
     if (absBlockOffset >= ptrHost_[rowMeshMap_.getNodeNumElements ()]) {
@@ -3484,7 +3483,7 @@ public:
     using Teuchos::wait;
     using std::endl;
 #ifdef HAVE_TPETRA_DEBUG
-    const char prefix[] = "Tpetra::Experimental::BlockCrsMatrix::describe: ";
+    const char prefix[] = "Tpetra::BlockCrsMatrix::describe: ";
 #endif // HAVE_TPETRA_DEBUG
 
     // Set default verbosity if applicable.
@@ -3879,7 +3878,7 @@ public:
                     size_t &/* NumEntries */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowCopy: "
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::getGlobalRowCopy: "
       "This class doesn't support global matrix indexing.");
 
   }
@@ -3892,7 +3891,7 @@ public:
                     Teuchos::ArrayView<const Scalar> &/* values */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::getGlobalRowView: "
       "This class doesn't support global matrix indexing.");
 
   }
@@ -3905,7 +3904,7 @@ public:
                    Teuchos::ArrayView<const Scalar>& /* values */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getLocalRowView: "
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::getLocalRowView: "
       "This class doesn't support local matrix indexing.");
   }
 
@@ -3916,7 +3915,7 @@ public:
   {
 #ifdef HAVE_TPETRA_DEBUG
     const char prefix[] =
-      "Tpetra::Experimental::BlockCrsMatrix::getLocalDiagCopy: ";
+      "Tpetra::BlockCrsMatrix::getLocalDiagCopy: ";
 #endif // HAVE_TPETRA_DEBUG
 
     const size_t lclNumMeshRows = graph_.getNodeNumRows ();
@@ -3968,7 +3967,7 @@ public:
   leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& /* x */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::leftScale: "
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::leftScale: "
       "not implemented.");
 
   }
@@ -3979,7 +3978,7 @@ public:
   rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& /* x */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::rightScale: "
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::rightScale: "
       "not implemented.");
 
   }
@@ -3998,21 +3997,16 @@ public:
   getFrobeniusNorm () const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getFrobeniusNorm: "
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::getFrobeniusNorm: "
       "not implemented.");
   }
 
-} // namespace Experimental
 } // namespace Tpetra
 
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra namespace!
-//
-#define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_INSTANT(S,LO,GO,NODE) \
-  namespace Experimental { \
-    template class BlockCrsMatrix< S, LO, GO, NODE >; \
-  }
+#define TPETRA_BLOCKCRSMATRIX_INSTANT(S,LO,GO,NODE) \
+    template class BlockCrsMatrix< S, LO, GO, NODE >; 
 
-#endif // TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DEF_HPP
+#endif // TPETRA_BLOCKCRSMATRIX_DEF_HPP
