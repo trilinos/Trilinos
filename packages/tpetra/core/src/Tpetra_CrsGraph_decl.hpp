@@ -402,7 +402,7 @@ namespace Tpetra {
     TPETRA_DEPRECATED
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-	      const ProfileType pftype = DynamicProfile,
+	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -488,7 +488,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-	      const ProfileType pftype = DynamicProfile,
+	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -2876,7 +2876,7 @@ namespace Tpetra {
           fillCompleteClone = params->get ("fillComplete clone", fillCompleteClone);
           useLocalIndices = params->get ("Locally indexed clone", useLocalIndices);
           if (params->get ("Static profile clone", true) == false) {
-            pftype = DynamicProfile;
+            pftype = ProfileType(StaticProfile+1); // DynamicProfile (Tpetra_ConfigDefs.h)
           }
           debug = params->get ("Debug", debug);
         }
