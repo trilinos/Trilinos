@@ -88,6 +88,11 @@ source ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
 # Set other vaues to empty by default
 source ${ATDM_CONFIG_SCRIPT_DIR}/utils/unset_atdm_config_vars_environment.sh
 
+# Abort if the set_build_options script aborted (but after enviornment.sh vars unset)!
+if [ "${ATDM_CONFIG_FINISHED_SET_BUILD_OPTIONS}" != "1" ]; then
+  return
+fi
+
 # Set the location for NVCC wrapper for source dir unless this is from an
 # install of Trilinos!
 if [[ "${ATDM_SCRIPT_DIR}" == *"atdm-trilinos" ]] ; then

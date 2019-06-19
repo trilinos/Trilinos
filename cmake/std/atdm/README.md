@@ -166,7 +166,6 @@ Kokkos threading / backend model variable `<NODE_TYPE>` (default is
 `<NODE_TYPE>=SERIAL` unless `<COMPILER>=CUDA`):
 
 * `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
-* `pthread`: Use Pthreads for host threading (`NODE_TYPE=THREAD`)
 * `openmp`: Use OpenMP for host threading (`NODE_TYPE=OPENMP`)
 
 If `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.) is given, then `<NODE_TYPE>` is
