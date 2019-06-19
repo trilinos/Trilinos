@@ -347,17 +347,17 @@ class AlgHybridGMB : public Algorithm<Adapter>
      
       //set the initial coloring of the kh.get_graph_coloring_handle() to be
       //the data view from the femv.
-      Kokkos::View<int**,Kokkos::LayoutLeft> femvColors = femv->template getLocalView<MemorySpace>();
+      Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<MemorySpace>();
       //printf("--Rank %d: femv view reference count before subview: %d\n",comm->getRank(),femvColors.use_count());
-      auto sv = subview(femvColors, Kokkos::ALL, 0);
+      Kokkos::View<int*, Tpetra::Map<>::device_type >  sv = subview(femvColors, Kokkos::ALL, 0);
       //printf("--Rank %d: femv view reference count after subview: %d\n",comm->getRank(),femvColors.use_count());
-      Kokkos::View<int*,Kokkos::Device<ExecutionSpace, MemorySpace> > device_color("device_Color",sv.extent(0));
-      Kokkos::deep_copy(device_color, sv); 
-      kh.get_graph_coloring_handle()->set_vertex_colors(device_color);
+      //Kokkos::View<int*,Tpetra::Map<>::device_type > device_color("device_Color",sv.extent(0));
+      //Kokkos::deep_copy(device_color, sv); 
+      kh.get_graph_coloring_handle()->set_vertex_colors(sv);
       //printf("--Rank %d: femv view reference count after set vertex colors: %d\n",comm->getRank(),femvColors.use_count());
       
-      KokkosGraph::Experimental::graph_color_symbolic(&kh, nVtx,nVtx,
-                                                      offset_view,adjs_view);
+      KokkosGraph::Experimental::graph_color_symbolic(&kh, nVtx, nVtx, 
+                                                      offset_view, adjs_view);
       Kokkos::fence();
       std::cout << std::endl << 
           "Time: " << 
@@ -371,7 +371,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                            kh.get_graph_coloring_handle()->get_vertex_colors());
       
       numColors = kh.get_graph_coloring_handle()->get_num_colors();
-      Kokkos::deep_copy(sv, device_color); 
+      //Kokkos::deep_copy(sv, device_color); 
       //all this code should be unnecessary if we can pass in the Kokkos::View to the
       //coloring correctly.
       //auto host_view = Kokkos::create_mirror_view(
@@ -515,15 +515,21 @@ class AlgHybridGMB : public Algorithm<Adapter>
       
       //make host views to deep_copy into the device views
       
-      Kokkos::View<offset_t*> host_offsets("Host Offset view", offsets.size());
+      Kokkos::View<offset_t*, Tpetra::Map<>::device_type> host_offsets("Host Offset view", offsets.size());
       for(int i = 0; i < offsets.size(); i++){
         host_offsets(i) = offsets[i];
       }
-      Kokkos::View<lno_t*>    host_adjs("Host Adjacencies view", adjs.size());
+      Kokkos::View<lno_t*, Tpetra::Map<>::device_type> host_adjs("Host Adjacencies view", adjs.size());
       for(int i = 0; i < adjs.size(); i++){
         host_adjs(i) = adjs[i];
       }
-      bool use_cuda = pl->get<bool>("Hybrid_use_cuda",false);
+      
+      this->colorInterior<Tpetra::Map<>::execution_space,
+                          Tpetra::Map<>::memory_space,
+                          Tpetra::Map<>::memory_space>
+                 (nInterior, host_adjs, host_offsets, colors, femv);
+      
+      /*bool use_cuda = pl->get<bool>("Hybrid_use_cuda",false);
       bool use_openmp = pl->get<bool>("Hybrid_use_openmp",false);
       bool use_serial = pl->get<bool>("Hybrid_use_serial",false);
       //do the kokkos stuff in here (assume that the user checked for the option they selected)
@@ -543,6 +549,11 @@ class AlgHybridGMB : public Algorithm<Adapter>
                             Kokkos::DefaultExecutionSpace::memory_space,
                             Kokkos::DefaultExecutionSpace::memory_space> 
                      (nInterior, adjs_view, offset_view, colors,femv);
+        //try to use femv's execution space stuff?
+        this->colorInterior<femv_t::execution_space,
+                            femv_t::device_type::memory_space,
+                            femv_t::device_type::memory_space>
+                   (nInterior, adjs_view, offset_view, colors, femv);
       } else if (use_cuda) {
         //use the cuda spaces
         #ifdef KOKKOS_ENABLE_CUDA
@@ -590,7 +601,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
         this->colorInterior<Kokkos::Serial, Kokkos::Serial::memory_space, 
                             Kokkos::Serial::memory_space> 
                      (nInterior, adjs_view, offset_view, colors,femv);
-      }
+      }*/
        
       int batch_size = pl->get<int>("Hybrid_batch_size",100);
       //color boundary vertices using FEMultiVector (definitely)
