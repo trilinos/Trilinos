@@ -44,5 +44,6 @@ namespace Ioss {
     bool   ints_64_bit{false};
     bool   delete_timesteps{false};
     bool   reverse{false}; // Used for testing CGNS
+    bool   add_proc_id{false}; // CGNS: Add proc_id field.
   };
 } // namespace Ioss

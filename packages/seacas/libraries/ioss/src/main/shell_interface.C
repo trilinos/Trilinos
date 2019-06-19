@@ -189,6 +189,10 @@ void IOShell::Interface::enroll_options()
                   "\t\tElements assigned randomly to processors in a way that preserves balance\n"
                   "\t\t(do *not* use for a real run)",
                   nullptr);
+  options_.enroll("add_processor_id_field", Ioss::GetLongOption::NoValue,
+		  "For CGNS, add a cell-centered field whose value is the processor id of that cell",
+		  nullptr);
+
   options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
                   "Number of processors that can perform simultaneous IO operations in "
                   "a parallel run; 0 to disable",
@@ -335,6 +339,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   ints_64_bit  = (options_.retrieve("64-bit") != nullptr);
   ints_32_bit  = (options_.retrieve("32-bit") != nullptr);
   reals_32_bit = (options_.retrieve("float") != nullptr);
+  add_processor_id_field = (options_.retrieve("add_processor_id_field") != nullptr);
 
   if (options_.retrieve("netcdf4") != nullptr) {
     netcdf4 = true;

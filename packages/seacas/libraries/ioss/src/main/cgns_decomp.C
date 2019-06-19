@@ -82,15 +82,13 @@ namespace {
         exit(EXIT_SUCCESS);
       }
 
-      {
+      if (options_.retrieve("output") != nullptr) {
         const std::string temp = options_.retrieve("output");
-        if (!temp.empty()) {
-          histogram            = temp.find("h") != std::string::npos;
-          work_per_processor   = temp.find("w") != std::string::npos;
-          zone_proc_assignment = temp.find("z") != std::string::npos;
-          verbose              = temp.find("v") != std::string::npos;
-          communication_map    = temp.find("c") != std::string::npos;
-        }
+        histogram              = temp.find("h") != std::string::npos;
+        work_per_processor     = temp.find("w") != std::string::npos;
+        zone_proc_assignment   = temp.find("z") != std::string::npos;
+        verbose                = temp.find("v") != std::string::npos;
+        communication_map      = temp.find("c") != std::string::npos;
       }
       verbose = options_.retrieve("verbose") != nullptr;
 
@@ -122,6 +120,13 @@ namespace {
         const char *temp = options_.retrieve("line_decomposition");
         if (temp != nullptr) {
           line_decomposition = temp;
+        }
+      }
+
+      {
+        const char *temp = options_.retrieve("db_type");
+        if (temp != nullptr) {
+          filetype = temp;
         }
       }
 
@@ -160,9 +165,11 @@ namespace {
                       "this ordinal.",
                       nullptr);
       options_.enroll("load_balance", Ioss::GetLongOption::MandatoryValue,
-                      "Max ratio of processor work to average.", nullptr);
+                      "Max ratio of processor work to average. [default 1.4]", nullptr);
       options_.enroll("verbose", Ioss::GetLongOption::NoValue,
                       "Print additional decomposition information", nullptr);
+      options_.enroll("db_type", Ioss::GetLongOption::MandatoryValue,
+                      "Database Type: gen_struc or cgns. Default is cgns.", nullptr);
       options_.enroll("output", Ioss::GetLongOption::MandatoryValue,
                       "What is printed: z=zone-proc assignment, h=histogram, w=work-per-processor, "
                       "c=comm map, v=verbose.",
@@ -173,6 +180,7 @@ namespace {
     int                 ordinal{-1};
     double              load_balance{1.4};
     std::string         filename{};
+    std::string         filetype{"cgns"};
     std::string         line_decomposition{};
     bool                verbose{false};
     bool                histogram{true};
@@ -418,7 +426,7 @@ namespace {
     fmt::print("\n");
   }
   void describe_decomposition(std::vector<Iocgns::StructuredZoneData *> &zones,
-                              const Interface &                          interface)
+                              size_t orig_zone_count, const Interface &interface)
   {
     size_t proc_count = interface.proc_count;
     bool   verbose    = interface.verbose;
@@ -444,12 +452,11 @@ namespace {
     }
     size_t ord_width = Ioss::Utils::number_width(max_ordinal, false);
     double avg_work  = total_work / (double)proc_count;
-    size_t zcount    = zones.size();
 
     // Print work/processor map...
-    fmt::print("\nDecomposition for {} zones over {:n} processors; Total work = {:n}; Average = "
+    fmt::print("\nDecomposing {:n} zones over {:n} processors; Total work = {:n}; Average = "
                "{:n} (goal)\n",
-               zcount, proc_count, (size_t)total_work, (size_t)avg_work);
+               orig_zone_count, proc_count, (size_t)total_work, (size_t)avg_work);
 
     // Get max name length for all zones...
     size_t name_len = 0;
@@ -569,20 +576,22 @@ namespace {
     }
 
     // Calculate "nodal inflation" -- number of new surface nodes created...
-    auto nodal_work =
-        std::accumulate(zones.begin(), zones.end(), 0, [](size_t a, Iocgns::StructuredZoneData *b) {
-          return a + (b->m_parent == nullptr ? b->node_count() : 0);
-        });
+    auto nodal_work = std::accumulate(zones.begin(), zones.end(), (size_t)0,
+                                      [](size_t a, Iocgns::StructuredZoneData *b) {
+                                        return a + (b->m_parent == nullptr ? b->node_count() : 0);
+                                      });
 
-    auto new_nodal_work =
-        std::accumulate(zones.begin(), zones.end(), 0, [](size_t a, Iocgns::StructuredZoneData *b) {
-          return a + (b->is_active() ? b->node_count() : 0);
-        });
+    if (nodal_work > 0) {
+      auto new_nodal_work = std::accumulate(zones.begin(), zones.end(), (size_t)0,
+                                            [](size_t a, Iocgns::StructuredZoneData *b) {
+                                              return a + (b->is_active() ? b->node_count() : 0);
+                                            });
 
-    auto delta = new_nodal_work - nodal_work;
-    fmt::print("Nodal Inflation:\n\tOriginal Node Count = {:n}, Decomposed Node Count = {:n}, "
-               "Created = {:n}, Ratio = {:.2f}\n\n",
-               nodal_work, new_nodal_work, delta, (double)new_nodal_work / nodal_work);
+      auto delta = new_nodal_work - nodal_work;
+      fmt::print("Nodal Inflation:\n\tOriginal Node Count = {:n}, Decomposed Node Count = {:n}, "
+                 "Created = {:n}, Ratio = {:.2f}\n\n",
+                 nodal_work, new_nodal_work, delta, (double)new_nodal_work / nodal_work);
+    }
 
     // Imbalance penalty -- max work / avg work.  If perfect balance, then all processors would have
     // "avg_work" work to do. With current decomposition, every processor has to wait until
@@ -606,7 +615,7 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  std::string in_type = "cgns";
+  std::string in_type = interface.filetype;
 
   codename   = argv[0];
   size_t ind = codename.find_last_of('/', codename.size());
@@ -647,16 +656,20 @@ int main(int argc, char *argv[])
     }
     zones.back()->m_zoneConnectivity = iblock->m_zoneConnectivity;
   }
-  Iocgns::Utils::set_line_decomposition(dbi->get_file_pointer(), interface.line_decomposition,
-                                        zones, 0, interface.verbose);
+
+  if (in_type == "cgns") {
+    Iocgns::Utils::set_line_decomposition(dbi->get_file_pointer(), interface.line_decomposition,
+                                          zones, 0, interface.verbose);
+  }
 
   region.output_summary(std::cout, false);
 
+  size_t orig_zone_count = zones.size();
   Iocgns::Utils::decompose_model(zones, interface.proc_count, 0, interface.load_balance,
                                  interface.verbose);
   update_zgc_data(zones, interface.proc_count);
 
-  describe_decomposition(zones, interface);
+  describe_decomposition(zones, orig_zone_count, interface);
 
   validate_decomposition(zones, interface.proc_count);
 

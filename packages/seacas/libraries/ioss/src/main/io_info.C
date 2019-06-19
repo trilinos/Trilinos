@@ -366,12 +366,12 @@ namespace {
         info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
-	std::vector<std::string> blocks;
-	eb->get_block_adjacencies(blocks);
-	fmt::print("\tAdjacent to  {} edge block(s):\t", blocks.size());
-	for (auto block : blocks) {
-	  fmt::print("{}  ", block);
-	}
+        std::vector<std::string> blocks;
+        eb->get_block_adjacencies(blocks);
+        fmt::print("\tAdjacent to  {} edge block(s):\t", blocks.size());
+        for (auto block : blocks) {
+          fmt::print("{}  ", block);
+        }
 #endif
         info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
         fmt::print("\n");
@@ -401,12 +401,12 @@ namespace {
         info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
-	std::vector<std::string> blocks;
-	eb->get_block_adjacencies(blocks);
-	fmt::print("\tAdjacent to  {} face block(s):\t", blocks.size());
-	for (auto block : blocks) {
-	  fmt::print("{}  ", block);
-	}
+        std::vector<std::string> blocks;
+        eb->get_block_adjacencies(blocks);
+        fmt::print("\tAdjacent to  {} face block(s):\t", blocks.size());
+        for (auto block : blocks) {
+          fmt::print("{}  ", block);
+        }
 #endif
         info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
         fmt::print("\n");

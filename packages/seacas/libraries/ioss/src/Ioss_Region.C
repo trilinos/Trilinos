@@ -477,31 +477,46 @@ namespace Ioss {
       }
     }
 
+    int64_t total_nodes    = get_property("node_count").get_int();
+    int64_t total_elements = get_property("element_count").get_int();
+    auto    max_entity = std::max({total_sides, total_es_elements, total_fs_faces, total_es_edges,
+                                total_ns_nodes, total_cells, total_nodes, total_elements});
+    auto    max_sb     = std::max(
+        {get_property("spatial_dimension").get_int(), get_property("node_block_count").get_int(),
+         get_property("edge_block_count").get_int(), get_property("face_block_count").get_int(),
+         get_property("element_block_count").get_int(),
+         get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
+         get_property("edge_set_count").get_int(), get_property("face_set_count").get_int(),
+         get_property("element_set_count").get_int(), get_property("side_set_count").get_int()});
+
+    int num_width = Ioss::Utils::number_width(max_entity, true) + 2;
+    int sb_width  = Ioss::Utils::number_width(max_sb, true) + 2;
+
     fmt::print(
         strm,
         "\n Database: {0}\n"
         " Mesh Type = {1}\n\n"
-        " Number of spatial dimensions = {2:10n}\n"
-        " Number of node blocks        = {7:10n}\t"
-        " Number of nodes              = {3:14n}\n"
-        " Number of edge blocks        = {8:10n}\t"
-        " Number of edges              = {4:14n}\n"
-        " Number of face blocks        = {9:10n}\t"
-        " Number of faces              = {5:14n}\n"
-        " Number of element blocks     = {10:10n}\t"
-        " Number of elements           = {6:14n}\n"
-        " Number of structured blocks  = {11:10n}\t"
-        " Number of cells              = {17:14n}\n"
-        " Number of node sets          = {12:10n}\t"
-        " Length of node list          = {18:14n}\n"
-        " Number of edge sets          = {13:10n}\t"
-        " Length of edge list          = {19:14n}\n"
-        " Number of face sets          = {14:10n}\t"
-        " Length of face list          = {20:14n}\n"
-        " Number of element sets       = {15:10n}\t"
-        " Length of element list       = {21:14n}\n"
-        " Number of element side sets  = {16:10n}\t"
-        " Length of element sides      = {22:14n}\n\n",
+        " Number of spatial dimensions = {2:{24}n}\n"
+        " Number of node blocks        = {7:{24}n}\t"
+        " Number of nodes              = {3:{23}n}\n"
+        " Number of edge blocks        = {8:{24}n}\t"
+        " Number of edges              = {4:{23}n}\n"
+        " Number of face blocks        = {9:{24}n}\t"
+        " Number of faces              = {5:{23}n}\n"
+        " Number of element blocks     = {10:{24}n}\t"
+        " Number of elements           = {6:{23}n}\n"
+        " Number of structured blocks  = {11:{24}n}\t"
+        " Number of cells              = {17:{23}n}\n"
+        " Number of node sets          = {12:{24}n}\t"
+        " Length of node list          = {18:{23}n}\n"
+        " Number of edge sets          = {13:{24}n}\t"
+        " Length of edge list          = {19:{23}n}\n"
+        " Number of face sets          = {14:{24}n}\t"
+        " Length of face list          = {20:{23}n}\n"
+        " Number of element sets       = {15:{24}n}\t"
+        " Length of element list       = {21:{23}n}\n"
+        " Number of element side sets  = {16:{24}n}\t"
+        " Length of element sides      = {22:{23}n}\n\n",
         get_database()->get_filename(), mesh_type_string(),
         get_property("spatial_dimension").get_int(), get_property("node_count").get_int(),
         get_property("edge_count").get_int(), get_property("face_count").get_int(),
@@ -511,8 +526,8 @@ namespace Ioss {
         get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
         get_property("edge_set_count").get_int(), get_property("face_set_count").get_int(),
         get_property("element_set_count").get_int(), get_property("side_set_count").get_int(),
-        total_cells, total_ns_nodes, total_es_edges, total_fs_faces, total_es_elements,
-        total_sides);
+        total_cells, total_ns_nodes, total_es_edges, total_fs_faces, total_es_elements, total_sides,
+        num_width, sb_width);
 
     if (do_transient && get_property("state_count").get_int() > 0) {
       fmt::print(strm, " Number of global variables       = {:10n}\n", field_count());

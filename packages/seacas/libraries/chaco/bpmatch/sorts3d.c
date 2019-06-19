@@ -49,7 +49,7 @@ void sorts3d(
   int *temp[13];    /* place holders for indices */
   int  i, j;        /* loop counter */
 
-  void mergesort();
+  void ch_mergesort(double *vals, int nvals, int *indices, int *space);
 
   space = smalloc(nvtxs * sizeof(int));
 
@@ -57,19 +57,19 @@ void sorts3d(
     temp[i] = smalloc(nvtxs * sizeof(int));
   }
 
-  mergesort(vals[0][1], nvtxs, temp[0], space);
-  mergesort(vals[0][2], nvtxs, temp[1], space);
-  mergesort(vals[0][4], nvtxs, temp[2], space);
-  mergesort(vals[0][3], nvtxs, temp[3], space);
-  mergesort(vals[1][2], nvtxs, temp[4], space);
-  mergesort(vals[0][5], nvtxs, temp[5], space);
-  mergesort(vals[1][4], nvtxs, temp[6], space);
-  mergesort(vals[0][6], nvtxs, temp[7], space);
-  mergesort(vals[2][4], nvtxs, temp[8], space);
-  mergesort(vals[0][7], nvtxs, temp[9], space);
-  mergesort(vals[1][6], nvtxs, temp[10], space);
-  mergesort(vals[2][5], nvtxs, temp[11], space);
-  mergesort(vals[3][4], nvtxs, temp[12], space);
+  ch_mergesort(vals[0][1], nvtxs, temp[0], space);
+  ch_mergesort(vals[0][2], nvtxs, temp[1], space);
+  ch_mergesort(vals[0][4], nvtxs, temp[2], space);
+  ch_mergesort(vals[0][3], nvtxs, temp[3], space);
+  ch_mergesort(vals[1][2], nvtxs, temp[4], space);
+  ch_mergesort(vals[0][5], nvtxs, temp[5], space);
+  ch_mergesort(vals[1][4], nvtxs, temp[6], space);
+  ch_mergesort(vals[0][6], nvtxs, temp[7], space);
+  ch_mergesort(vals[2][4], nvtxs, temp[8], space);
+  ch_mergesort(vals[0][7], nvtxs, temp[9], space);
+  ch_mergesort(vals[1][6], nvtxs, temp[10], space);
+  ch_mergesort(vals[2][5], nvtxs, temp[11], space);
+  ch_mergesort(vals[3][4], nvtxs, temp[12], space);
 
   sfree(space);
 

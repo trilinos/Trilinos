@@ -62,7 +62,7 @@ namespace Ioss {
     /**
      * Creates a new <code>SerializeIO</code> instance.
      *
-     * @param database_io	a <code>DatabaseIO</code> variable ...
+     * @param database_io       a <code>DatabaseIO</code> variable ...
      */
     explicit SerializeIO(const DatabaseIO *database_io);
     SerializeIO(const SerializeIO &from) = delete;

@@ -92,7 +92,7 @@ alias.
 
 \arg EX_NORMAL_MODEL Create a standard model.
 
-\arg EX_64BIT_DATA	To create a model using the CDF5 format which uses the
+\arg EX_64BIT_DATA      To create a model using the CDF5 format which uses the
                         classic model but has 64-bit dimensions and sizes.
                         This type will also be created if the
                         environment variable EXODUS_NETCDF5 is defined in the
@@ -100,7 +100,7 @@ alias.
                         output if
                         this environment variable is found.
 
-\arg EX_NETCDF4	To create a model using the HDF5-based NetCDF-4
+\arg EX_NETCDF4 To create a model using the HDF5-based NetCDF-4
                         output. An HDF5-based NetCDF-4 file will also be created
 if the
                         environment variable EXODUS_NETCDF4 is defined in the
@@ -108,11 +108,11 @@ if the
 output if
                         this environment variable is found.
 
-\arg EX_NOSHARE	Do not open the underlying NetCDF file in \e share
+\arg EX_NOSHARE Do not open the underlying NetCDF file in \e share
 mode. See the
                         NetCDF documentation for more details.
 
-\arg EX_SHARE	Do open the underlying NetCDF file in \e share mode. See
+\arg EX_SHARE   Do open the underlying NetCDF file in \e share mode. See
 the NetCDF
                         documentation for more details.
 
