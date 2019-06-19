@@ -2354,22 +2354,21 @@ namespace Tpetra {
                    std::function<void(const size_t, const size_t, const size_t)> fun) const
   {
     const char tfecfFuncName[] = "findLocalIndices: ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        this->getProfileType() != StaticProfile,
-        std::runtime_error,
-        "findLocalIndices requires the graph have StaticProfile");
-
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->getProfileType() != StaticProfile, std::runtime_error,
+       "findLocalIndices requires that the graph have StaticProfile.");
+#endif // HAVE_TPETRA_DEBUG
     using LO = LocalOrdinal;
-    using Kokkos::View;
-    using Kokkos::MemoryUnmanaged;
-    using inp_view_type = View<const LO*, execution_space, MemoryUnmanaged>;
+    using inp_view_type = Kokkos::View<const LO*, Kokkos::HostSpace,
+      Kokkos::MemoryUnmanaged>;
     inp_view_type inputInds(indices.getRawPtr(), indices.size());
 
     size_t numFound = 0;
     LO lclRow = rowInfo.localRow;
     if (this->isLocallyIndexed())
     {
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_lclInds1D_, inputInds, fun);
     }
     else if (this->isGloballyIndexed())
@@ -2378,7 +2377,7 @@ namespace Tpetra {
         return Teuchos::OrdinalTraits<size_t>::invalid();
       const auto& colMap = *(this->colMap_);
       auto map = [&](LO const lclInd){return colMap.getGlobalElement(lclInd);};
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_gblInds1D_, inputInds, map, fun);
     }
     return numFound;
@@ -2414,12 +2413,12 @@ namespace Tpetra {
         return invalidCount;
       const auto& colMap = *(this->colMap_);
       auto map = [&](GO const gblInd){return colMap.getLocalElement(gblInd);};
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_lclInds1D_, inputInds, map, fun);
     }
     else if (this->isGloballyIndexed())
     {
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_gblInds1D_, inputInds, fun);
     }
     return numFound;

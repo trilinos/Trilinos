@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
       lapack.POTRF('U',yTx1.numCols(),yTx1.values(),yTx1.stride(),&info);
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error,
           "New <Y1,X1> not s.p.d.: couldn't computed Cholesky: info == " << info
-          << "\nyTx1: \n" << yTx1);
+          << "\nyTx1: \n" << printMat(yTx1));
 
       // X2 ortho to Y1
       MVT::MvRandom(*X2);
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
       lapack.POTRF('U',yTx2.numCols(),yTx2.values(),yTx2.stride(),&info);
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error,
           "New <Y2,X2> not s.p.d.: couldn't computed Cholesky: info == " << info
-          << "\nyTx2: \n" << yTx2);
+          << "\nyTx2: \n" << printMat(yTx2));
     }
     MyOM->stream(Warnings) << endl;
 

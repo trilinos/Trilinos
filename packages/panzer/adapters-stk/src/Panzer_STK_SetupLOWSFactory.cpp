@@ -177,8 +177,13 @@ namespace {
 
     #ifdef PANZER_HAVE_MUELU
     {
+      Stratimikos::enableMueLu<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu");
+      Stratimikos::enableMueLuRefMaxwell<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell");
+      #ifndef PANZER_HIDE_DEPRECATED_CODE
+      // the next two are only for backwards compatibility
       Stratimikos::enableMueLu<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
       Stratimikos::enableMueLuRefMaxwell<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell-Tpetra");
+      #endif
     }
     #endif // MUELU
     #ifdef PANZER_HAVE_IFPACK2
@@ -343,7 +348,7 @@ namespace {
              }
 
              // inject coordinates into parameter list
-             Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu-Tpetra");
+             Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu");
              muelu_params.set<RCP<MV> >("Coordinates",coords);
           }
           #endif
