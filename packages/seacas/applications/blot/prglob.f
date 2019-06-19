@@ -49,7 +49,7 @@ C   --   VARGL - IN - the global variables for the time step
       INTEGER LISGV(0:*)
       CHARACTER*(*) NAMEGV(*)
       REAL VARGL(*)
-      INTEGER GETPRC, PRTLEN
+      INTEGER PRTLEN
       CHARACTER*128 FMT1, FMT
 
       PRTLEN = 16

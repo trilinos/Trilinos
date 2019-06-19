@@ -681,13 +681,13 @@ C
         INSUB  = 1
         ICOMPL = 1
         IF (IM .GT. 1)THEN
-          IDBBM1 = IA(NMAP-5+IMOFF)
+          IDBBM1 = IA(NMAP-5)
           IF (IDBLKB .EQ. IDBBM1)THEN
             INSUB = 2
           END IF
         END IF
         IF (IM .LT. IMP)THEN
-          IDBBP1 = IA(NMAP+1+IMOFF)
+          IDBBP1 = IA(NMAP+1)
           IF (IDBLKB .EQ. IDBBP1)THEN
             ICOMPL = 0
           END IF

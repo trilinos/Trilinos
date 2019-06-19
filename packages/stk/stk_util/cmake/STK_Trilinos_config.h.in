@@ -34,10 +34,18 @@
  */
 #cmakedefine HAVE_STK_Trilinos
 
-/* Define to indicate that the STKIO subpackage is enabled */
-#cmakedefine HAVE_STKIO
+#cmakedefine STK_SHOW_DEPRECATED_WARNINGS
 
-#cmakedefine HAVE_STK_KokkosCore
+#cmakedefine STK_HAVE_BOOST
+#cmakedefine STK_HAVE_BOOSTLIB
+
+#cmakedefine STK_HAVE_KOKKOSCORE
+
+#cmakedefine STK_HAVE_STKMESH
+
+#cmakedefine STK_HAVE_STKIO
+
+#cmakedefine STK_HAVE_STKNGP_TEST
 
 #cmakedefine HAVE_MPI
 

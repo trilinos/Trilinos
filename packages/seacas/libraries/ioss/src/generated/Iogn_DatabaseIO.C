@@ -71,8 +71,8 @@ namespace {
   }
 
   template <typename INT>
-  void fill_transient_data(const Ioss::GroupingEntity *entity, size_t component_count, double *data,
-                           INT *ids, size_t count, double offset = 0.0)
+  void fill_transient_data(size_t component_count, double *data, INT *ids, size_t count,
+                           double offset = 0.0)
   {
     if (component_count == 1) {
       for (size_t i = 0; i < count; i++) {
@@ -93,14 +93,12 @@ namespace {
   {
     const Ioss::Field &ids = entity->get_fieldref("ids");
     if (ids.is_type(Ioss::Field::INTEGER)) {
-      fill_transient_data(entity, field.raw_storage()->component_count(),
-                          reinterpret_cast<double *>(data), reinterpret_cast<int *>(id_data), count,
-                          offset);
+      fill_transient_data(field.raw_storage()->component_count(), reinterpret_cast<double *>(data),
+                          reinterpret_cast<int *>(id_data), count, offset);
     }
     else {
-      fill_transient_data(entity, field.raw_storage()->component_count(),
-                          reinterpret_cast<double *>(data), reinterpret_cast<int64_t *>(id_data),
-                          count, offset);
+      fill_transient_data(field.raw_storage()->component_count(), reinterpret_cast<double *>(data),
+                          reinterpret_cast<int64_t *>(id_data), count, offset);
     }
   }
 

@@ -209,7 +209,8 @@ main (int argc, char* argv[])
   TestMatrix = transposer.createTranspose(); //, TestMatrix/*, tMap*/);
 
   RCP<crs_matrix_type > diffMatrix =
-    Tpetra::createCrsMatrix<Scalar, LO, GO> (TestMatrix->getRowMap ());
+    Tpetra::createCrsMatrix<Scalar, LO, GO> (TestMatrix->getRowMap (),
+                                             AT.getGlobalMaxNumRowEntries());
 
   // Apparently there is a problem with ADD because while these two matrices are
   // identical when I add them together I don't get 0 like I should. In fact

@@ -37,6 +37,7 @@
 #include <Ioss_Field.h>
 #include <algorithm> // for sort, lower_bound, copy, etc
 #include <cassert>
+#include <cmath>
 #include <cstddef>   // for size_t
 #include <cstdint>   // for int64_t
 #include <cstdlib>   // for nullptrr
@@ -187,6 +188,24 @@ namespace Ioss {
       vec.clear();
       vec.shrink_to_fit();
       assert(vec.capacity() == 0);
+    }
+
+    /**
+     * Returns the number of digits required to print the number.
+     * If `use_commas` is specified, then the width will be adjusted
+     * to account for the comma used every 3 digits.
+     * (1,234,567,890 would return 13)
+     * Typically used with the `fmt::print()` functions as:
+     * `fmt::print("{:{}n}", number, number_width(number,true))`
+     * `fmt::print("{:{}d}", number, number_width(number,false))`
+     */
+    inline static int number_width(const size_t number, bool use_commas = false)
+    {
+      int width = std::floor(std::log10(number)) + 1;
+      if (use_commas) {
+        width += (width / 3);
+      }
+      return width;
     }
 
     inline static int power_2(int count)

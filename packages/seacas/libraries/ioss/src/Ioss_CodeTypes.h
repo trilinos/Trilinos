@@ -76,7 +76,13 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
 
 #if defined(SEACAS_HAVE_MPI)
 #include <mpi.h>
+#define PAR_UNUSED(x)
 #else
+#define PAR_UNUSED(x)                                                                              \
+  do {                                                                                             \
+    (void)(x);                                                                                     \
+  } while (0)
+
 #ifndef MPI_COMM_WORLD
 #define MPI_COMM_WORLD 0
 using MPI_Comm       = int;

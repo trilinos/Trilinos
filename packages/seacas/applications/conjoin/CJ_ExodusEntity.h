@@ -84,9 +84,9 @@ namespace Excn {
     Block() { copy_string(elType, ""); }
 
     Block(const Block &other)
-        : name_(other.name_), id(other.id), elementCount(other.elementCount),
-          nodesPerElement(other.nodesPerElement), attributeCount(other.attributeCount),
-          offset_(other.offset_), position_(other.position_)
+        : truthTable(other.truthTable), attributeNames(other.attributeNames), name_(other.name_),
+          id(other.id), elementCount(other.elementCount), nodesPerElement(other.nodesPerElement),
+          attributeCount(other.attributeCount), offset_(other.offset_), position_(other.position_)
     {
       copy_string(elType, other.elType);
     }
@@ -108,6 +108,8 @@ namespace Excn {
 
     Block &operator=(const Block &other)
     {
+      truthTable      = other.truthTable;
+      attributeNames  = other.attributeNames;
       id              = other.id;
       elementCount    = other.elementCount;
       nodesPerElement = other.nodesPerElement;

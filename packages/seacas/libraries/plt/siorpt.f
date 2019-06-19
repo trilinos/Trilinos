@@ -73,7 +73,6 @@ C=======================================================================
          WRITE (6,10) LOCLIN
          LOCLIN = '#Error message: '//ERRMSG
          WRITE (6,10) LOCLIN
-         CALL CPUTBK(.FALSE.)
 
       ELSE IF (DISP.EQ.4) THEN
          LOCLIN = '#PLT error (fatal) in module '//ERRMOD(1:L)//' at '//
@@ -81,7 +80,6 @@ C=======================================================================
          WRITE (6,10) LOCLIN
          LOCLIN = '#Error message: '//ERRMSG
          WRITE (6,10) LOCLIN
-         CALL CPUTBK(.TRUE.)
 
       ELSE
          LOCLIN = '#PLT error (fatal) in module '//ERRMOD(1:L)//' at '//
@@ -89,7 +87,6 @@ C=======================================================================
          WRITE (6,10) LOCLIN
          LOCLIN = '#Error message: '//ERRMSG
          WRITE (6,10) LOCLIN
-         CALL CPUTBK(.TRUE.)
       END IF
 
       RETURN

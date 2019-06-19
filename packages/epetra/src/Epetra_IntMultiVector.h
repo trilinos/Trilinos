@@ -716,7 +716,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntMultiVector: public Epetra_DistObject, pub
 
   // Expert-only function
   //  SuperLU defines Reduce to be a macro in util.h
+#ifdef Reduce
 #undef Reduce
+#endif
   int Reduce();
 
  protected:

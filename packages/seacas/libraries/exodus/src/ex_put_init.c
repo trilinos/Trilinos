@@ -35,8 +35,6 @@
 
 #include "exodusII.h" // for ex_init_params, etc
 #include "exodusII_int.h"
-#include <stdint.h> // for int64_t
-#include <string.h> // for ex_copy_string
 
 /*!
 

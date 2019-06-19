@@ -174,8 +174,8 @@ C ... Used for hardcopy device drivers...
       CHARACTER*1 C(1)
 C      --A - the dynamic memory base array
 
-      character*2048 scratch
-      character*256  option, value
+      character*2048 scratch, value
+      character*256  option
 
       LOGICAL MESHOK, DTOK, LNOK, SPOK, TPOK
       LOGICAL MAPND, MAPEL
@@ -322,7 +322,7 @@ C ... By default, map both nodes and elements
      *      option(:lo) .eq. '--basename') then
             CALL get_argument(i,value,  lv)
             i = i + 1
-            basenam(:lv) = value(:lv)
+            basenam = value(:lv)
 
           else if (option(:lo) .eq. '-ps_option' .or.
      *        option(:lo) .eq. '--ps_option') then

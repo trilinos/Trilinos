@@ -957,7 +957,6 @@ C
      &               LCON, NLPS, IFLINE, ILLIST, NSPR, IFSIDE, ISLIST,
      &               LINKP, LINKL, LINKS, LINKR, II, ALPHA)
                   LASTP = 0
-                  CALL ALPCLR (DEV1)
                   CALL DMESS (DEV1, ' POINT AND ASSOCIATED DATA '//
      &               'DELETED')
                ELSE
@@ -999,7 +998,6 @@ C
                   CALL DLINE (MP, ML, COOR, LINKP, KNUM, LT, IP1, IP2,
      &               IP3, NUMPLT, DUM1, DUM2, TEST, GETMAX, DUM3, DUM4,
      &               DUM5, DUM6)
-                  CALL ALPCLR (DEV1)
                   CALL DMESS (DEV1, ' LINE DELETION ABORTED')
                END IF
                CALL PLTFLU

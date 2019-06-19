@@ -57,7 +57,6 @@
 
 #include "exodusII.h" // for ex_init_params, void_int, etc
 #include "exodusII_int.h"
-#include <stdint.h> // for int64_t
 
 /*!
 

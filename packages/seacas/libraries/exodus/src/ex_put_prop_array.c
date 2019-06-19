@@ -35,9 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_PROP_NAME, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <string.h> // for memset, strlen, etc
 
 /*!
 

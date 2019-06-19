@@ -54,11 +54,6 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, EX_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for malloc
-#include <string.h>    // for strlen
-#include <sys/types.h> // for int64_t
 
 /* Global variables */
 char *ne_ret_string;

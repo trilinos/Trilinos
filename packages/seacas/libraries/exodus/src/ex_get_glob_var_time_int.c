@@ -35,8 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_comp_ws, EX_FATAL, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
 
 /*!
  The function ex_get_glob_var_time() reads the values of a

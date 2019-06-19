@@ -41,7 +41,7 @@ main (int argc, char **argv)
   ArrayView<const GO> myGlobalElements = map->getNodeElementList ();
 
   // Create a Tpetra sparse matrix with the given row Map.
-  sparse_mat_type A (map, 0);
+  sparse_mat_type A (map, 3);
 
   // Fill the sparse matrix, one row at a time.
   const ST two    = static_cast<ST> ( 2.0);

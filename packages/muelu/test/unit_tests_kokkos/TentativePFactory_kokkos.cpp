@@ -86,6 +86,9 @@ namespace MueLuTests {
 
     out << "Test QR with user-supplied nullspace" << std::endl;
 
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
+
     Level fineLevel, coarseLevel;
     TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
@@ -143,18 +146,18 @@ namespace MueLuTests {
     //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
     diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
 
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
+    Teuchos::Array<magnitude_type> norms(NSdim);
     diff->norm2(norms);
     for (LO i=0; i<NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-      TEST_EQUALITY(norms[i]<1e-12, true);
+      TEST_COMPARE_CONST(norms[i], <, 100*TMT::eps());
     }
 
     Teuchos::ArrayRCP<const double> col1 = coarseNullSpace->getData(0);
     Teuchos::ArrayRCP<const double> col2 = coarseNullSpace->getData(1);
     TEST_EQUALITY(col1.size() == col2.size(), true);
 
-  } //MakeTentative  Lapack QR
+  } // MakeTentative  Lapack QR
 #endif
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentative, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -162,7 +165,10 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
-    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    using STS            = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
 
     if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
       out << "skipping test for linAlgebra==UseEpetra" << std::endl;
@@ -239,7 +245,7 @@ namespace MueLuTests {
     diff->norm2(norms);
     for (LO i = 0; i < NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-      TEST_EQUALITY(norms[i] < 1e-12, true);
+      TEST_COMPARE_CONST(norms[i], <, 100*TMT::eps());
     }
 
     // Check normalization and orthogonality of prolongator columns by
@@ -247,20 +253,24 @@ namespace MueLuTests {
     RCP<Matrix> PtentTPtent = MatrixMatrix::Multiply(*Ptent, true, *Ptent, false, out);
     RCP<Vector> diagVec     = VectorFactory::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
+    if (STS::name().find("complex") == std::string::npos) { //skip check for Scalar=complex
+      TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
+      TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(), 100*TMT::eps());
+    }
     if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->norm1(),                     diagVec->getGlobalLength());
-    TEST_EQUALITY(diagVec->normInf()-1 < 1e-12,         true);
-    if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-    TEST_EQUALITY(diagVec->meanValue(),                 1.0);
+      TEST_FLOATING_EQUALITY(STS::magnitude(diagVec->meanValue()), TMT::one(), 100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(),   diagVec->getGlobalLength());
-  }
+  } // MakeTentative
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeVectorBasedUsingDefaultNullSpace, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
-    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    using STS            = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
 
     if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
       out << "skipping test for linAlgebra==UseEpetra" << std::endl;
@@ -339,10 +349,10 @@ namespace MueLuTests {
     // diff = fineNS - (P*coarseNS)
     diff->update(1.0, *fineNullSpace, -1.0, *PtN, 0.0);
 
-    Array<typename STS::magnitudeType> norms(NSdim);
+    Array<magnitude_type> norms(NSdim);
     diff->norm2(norms);
     for (decltype(NSdim) i = 0; i < NSdim; ++i)
-      TEST_EQUALITY(norms[i] < 1e-12, true);
+      TEST_COMPARE_CONST(norms[i], <, 100*TMT::eps());
 
     // Check normalization and orthogonality of prolongator columns by
     // making sure that P^T*P = I
@@ -350,19 +360,22 @@ namespace MueLuTests {
     RCP<Vector> diagVec     = VectorFactory::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(STS::magnitude(diagVec->norm1() - diagVec->getGlobalLength()) < 1e-13, true);
-    TEST_EQUALITY(STS::magnitude(diagVec->normInf() - 1.0) < 1e-12, true);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), STS::magnitude(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(), 100*TMT::eps());
     if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(Teuchos::ScalarTraits<SC>::magnitude(diagVec->meanValue() - 1.0) < 1e-14, true);
+      TEST_FLOATING_EQUALITY(STS::magnitude(diagVec->meanValue()), TMT::one(), 100*TMT::eps());
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
-  }
+  } // MakeTentativeVectorBasedUsingDefaultNullSpace
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeUsingDefaultNullSpace, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
-    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    using STS            = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
 
     if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
       out << "skipping test for linAlgebra==UseEpetra" << std::endl;
@@ -431,10 +444,10 @@ namespace MueLuTests {
     //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
     diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
 
-    Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
+    Teuchos::Array<magnitude_type> norms(NSdim);
     diff->norm2(norms);
     for (LO i=0; i<NSdim; ++i)
-      TEST_EQUALITY(norms[i] < 1e-12, true);
+      TEST_COMPARE_CONST(norms[i], <, 100*TMT::eps());
 
   } //MakeTentativeUsingDefaultNullSpace
 
@@ -627,7 +640,11 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> results(2);
+    using TST            = Teuchos::ScalarTraits<SC>;
+    using magnitude_type = typename TST::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitudeType>;
+
+    Teuchos::Array<magnitude_type> results(2);
 
     // run test only on 1 proc
     if(comm->getSize() == 1)
@@ -654,7 +671,7 @@ namespace MueLuTests {
         // build nullspace
         RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
         nullSpace->putScalar( (SC) 1.0);
-        Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+        Teuchos::Array<magnitude_type> norms(1);
         nullSpace->norm1(norms);
         if (comm->getRank() == 0)
           out << "||NS|| = " << norms[0] << std::endl;
@@ -721,9 +738,9 @@ namespace MueLuTests {
         Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LO,GO,Node>::Multiply(*P1,true,*P1,false,out);
         Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO,Node> > diagVec = Xpetra::VectorFactory<Scalar,LO,GO,Node>::Build(PtentTPtent->getRowMap());
         PtentTPtent->getLocalDiagCopy(*diagVec);
-        TEST_EQUALITY(diagVec->norm1()-diagVec->getGlobalLength() < 1e-12, true);
-        TEST_EQUALITY(diagVec->normInf()-1 < 1e-12, true);
-        TEST_EQUALITY(diagVec->meanValue()-1 < 1e-12, true);
+        TEST_FLOATING_EQUALITY(diagVec->norm1(), TST::magnitude(diagVec->getGlobalLength()), 100*TMT:eps());
+        TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(), 100*TMT:eps());
+        TEST_FLOATING_EQUALITY(diagVec->meanValue(), TMT::one(), 100*TMT:eps());
         TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
         // Define RHS
@@ -750,7 +767,7 @@ namespace MueLuTests {
         }
       }
 
-      TEST_FLOATING_EQUALITY(results[0], results[1], 1e-14); // check results of EPETRA vs TPETRA
+      TEST_FLOATING_EQUALITY(results[0], results[1], 100*TMT::eps()); // check results of EPETRA vs TPETRA
     } // comm->getSize == 1
 
   } // TentativePFactory_EpetraVsTpetra

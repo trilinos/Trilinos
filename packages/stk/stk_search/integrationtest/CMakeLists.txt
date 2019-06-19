@@ -38,12 +38,36 @@ FILE(GLOB SOURCES *.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UnitTestPerformance.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UnitTestNaluPerformance.cpp)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
     search_integration_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
+    COMM serial mpi
+    )
+
+IF(TPL_ENABLE_BoostLib)
+
+TRIBITS_ADD_TEST(
+    search_integration_tests
+    NAME STKSearch_integration_tests
     ARGS ""
     COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
     NUM_MPI_PROCS 1
-    )
+)
+
+else()
+
+TRIBITS_ADD_TEST(
+    search_integration_tests
+    NAME STKSearch_integration_tests
+    ARGS "--gtest_filter=*KDTREE"
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+    NUM_MPI_PROCS 1
+)
+
+ENDIF()
 

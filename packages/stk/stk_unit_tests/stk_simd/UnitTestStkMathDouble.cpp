@@ -22,7 +22,7 @@ TEST(StkSimd, StkMathDouble_sqrt)
 
 TEST(StkSimd, StkMathDouble_cbrt)
 {
-  const double epsilon = std::numeric_limits<double>::epsilon();
+  const double epsilon = 1.e-14;
   EXPECT_NEAR( stk::math::cbrt(a), std::pow(a,1.0/3.0), epsilon );
   // This fails on gcc debug, the above check does pass on gcc debug.
   // not sure what is different between the two checks.....

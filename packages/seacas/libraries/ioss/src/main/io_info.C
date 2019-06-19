@@ -57,7 +57,6 @@ namespace {
   void info_elementsets(Ioss::Region &region, bool summary);
 
   void info_sidesets(Ioss::Region &region, const Info::Interface &interface, bool summary);
-  void info_commsets(Ioss::Region &region, bool summary);
   void info_coordinate_frames(Ioss::Region &region, bool summary);
 
   void info_aliases(Ioss::Region &region, Ioss::GroupingEntity *ige, bool nl_pre, bool nl_post);
@@ -575,18 +574,6 @@ namespace {
     }
   }
 
-  void info_commsets(Ioss::Region &region, bool summary)
-  {
-#if 0
-    // NOTE: This doesn't really do anything...
-    const Ioss::CommSetContainer &css = region.get_commsets();
-    for (auto cs : css) {
-      std::string type = cs->get_property("entity_type").get_string();
-    }
-#endif
-    fmt::print("\n");
-  }
-
   void info_coordinate_frames(Ioss::Region &region, bool summary)
   {
     const Ioss::CoordinateFrameContainer &cf = region.get_coordinate_frames();
@@ -655,7 +642,7 @@ namespace {
     }
   }
 
-  void info_properties(Ioss::GroupingEntity *ige)
+  void info_properties(Ioss::GroupingEntity * /* ige */)
   {
 #if 0
     Ioss::NameList properties;
@@ -724,7 +711,6 @@ namespace Ioss {
     info_elementsets(region, summary);
 
     info_sidesets(region, interface, summary);
-    info_commsets(region, summary);
     info_coordinate_frames(region, summary);
     if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
       std::pair<int, double> state_time_max = region.get_max_time();
@@ -751,7 +737,6 @@ namespace Ioss {
       info_elementsets(region, summary);
 
       info_sidesets(region, interface, summary);
-      info_commsets(region, summary);
       info_coordinate_frames(region, summary);
     }
 

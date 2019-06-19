@@ -51,28 +51,3 @@ TokenList Ioss::tokenize(const std::string &str, const std::string &separators)
   }
   return tokens;
 }
-
-#if 0
-#include <iostream>
-
-
-int main()
-{
-  char s[128];
-  while(!std::cin.eof()) {
-    std::cout << "Enter a string: ";
-    std::cin.getline(s,128);
-    std::string input_line(s);
-    if (input_line != "quit") {
-      auto tokens = Ioss::tokenize(input_line, ": \t\r\v\n");
-      std::cout << "There were " << tokens.size() << " tokens in the line\n";
-      for (auto token : tokens) {
-	std::cout << "'" << token << "'\t";
-      }
-      std::cout << '\n';
-    } else {
-      exit(0);
-    }
-  }
-}
-#endif

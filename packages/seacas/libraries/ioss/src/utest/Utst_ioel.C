@@ -52,7 +52,7 @@ static void test_aliases(const Ioss::NameList &elements);
 static bool test_element(const std::string &type);
 // ========================================================================
 
-int main(int argc, char *argv[])
+int main(int /* argc */, char *argv[])
 {
   Ioss::StorageInitializer initialize_storage;
   Ioss::Initializer        initialize_topologies;

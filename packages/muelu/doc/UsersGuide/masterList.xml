@@ -1333,7 +1333,7 @@ optimized neighbor discovery for Importer construction.</description>
       <name>refmaxwell: mode</name>
       <type>string</type>
       <default>"additive"</default>
-      <description>Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212"</description>
+      <description>Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"</description>
       <name-ML>refmaxwell: mode</name-ML>
       <type-ML>int</type-ML>
       <default-ML>"additive"</default-ML>

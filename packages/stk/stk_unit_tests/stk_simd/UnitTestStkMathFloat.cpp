@@ -22,7 +22,7 @@ TEST(StkSimd, StkMathFloat_sqrt)
 
 TEST(StkSimd, StkMathFloat_cbrt)
 {
-  const float epsilon = 2 * std::numeric_limits<float>::epsilon();
+  const float epsilon = 1.e-6;
   EXPECT_NEAR( stk::math::cbrt(a), std::pow(a, float(1.0/3.0) ), epsilon );
 }
 
@@ -43,7 +43,7 @@ TEST(StkSimd, StkMathFloat_exp)
 
 TEST(StkSimd, StkMathFloat_pow)
 {
-  const float epsilon = 2 * std::numeric_limits<float>::epsilon();
+  const float epsilon = 1.e-6;
   EXPECT_NEAR( stk::math::pow(a,d), std::pow(a,d), epsilon );
   EXPECT_NEAR( stk::math::pow(a,b), std::pow(a,b), epsilon );
 }
