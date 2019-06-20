@@ -1,4 +1,5 @@
 #BlockedCrsMatrix
+BlockedVector
 #CrsMatrix
 #CrsMatrixFactory
 #CrsMatrixUtils
