@@ -433,6 +433,16 @@ IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
   ATDM_SET_ENABLE(Trilinos_ENABLE_MueLu OFF)
 ENDIF()
 
+# Disable Zoltan2_XpetraEpertraMatrix exec that does not build with no global
+# int instatiation (see #5411)
+ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_EXE_DISABLE ON)
+ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_MPI_4_DISABLE ON)
+
+# Disable Piro_ThyraSolver exec that does not build with no global int
+# instantiation (see #5412)
+ATDM_SET_ENABLE(Piro_ThyraSolver_EXE_DISABLE ON)
+ATDM_SET_ENABLE(Piro_ThyraSolver_MPI_4_DISABLE ON)
+
 #
 # H) ATDM env config install hooks
 #
