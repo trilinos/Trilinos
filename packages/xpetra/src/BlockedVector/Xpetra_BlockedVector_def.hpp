@@ -100,7 +100,7 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-operator=(const MultiVector& rhs)
+operator=(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
 {
     assign(rhs);      // dispatch to protected virtual method
     return *this;
@@ -185,35 +185,40 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::putScalar(const Scalar
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getVector(size_t j) const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+getVector(size_t j) const
 {
     return BlockedMultiVector::getVector(j);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getVectorNonConst(size_t j)
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+getVectorNonConst(size_t j)
 {
     return BlockedMultiVector::getVectorNonConst(j);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::ArrayRCP<const Scalar>
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getData(size_t j) const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+getData(size_t j) const
 {
     return BlockedMultiVector::getData(j);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::ArrayRCP<Scalar>
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDataNonConst(size_t j)
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+getDataNonConst(size_t j)
 {
     return BlockedMultiVector::getDataNonConst(j);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot(const MultiVector& A, const Teuchos::ArrayView<Scalar>& dots) const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+dot(const MultiVector& A, const Teuchos::ArrayView<Scalar>& dots) const
 {
     BlockedMultiVector::dot(A, dots);
     return;
@@ -221,7 +226,8 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot(const MultiVector&
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Scalar
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot(const Vector& A) const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+dot(const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A) const
 {
     Teuchos::Array<Scalar> dots = Teuchos::Array<Scalar>(1);
     BlockedMultiVector::dot(A, dots);
@@ -230,7 +236,8 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot(const Vector& A) c
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::abs(const MultiVector& A)
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+abs(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
 {
     BlockedMultiVector::abs(A);
     return;
@@ -238,7 +245,8 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::abs(const MultiVector&
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::reciprocal(const MultiVector& A)
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+reciprocal(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
 {
     BlockedMultiVector::reciprocal(A);
     return;
@@ -246,7 +254,8 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::reciprocal(const Multi
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::scale(const Scalar& alpha)
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+scale(const Scalar& alpha)
 {
     BlockedMultiVector::scale(alpha);
     return;
@@ -254,7 +263,8 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::scale(const Scalar& al
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::scale(Teuchos::ArrayView<const Scalar> alpha)
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+scale(Teuchos::ArrayView<const Scalar> alpha)
 {
     BlockedMultiVector::scale(alpha);
     return;
@@ -262,7 +272,10 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::scale(Teuchos::ArrayVi
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::update(const Scalar& alpha, const MultiVector& A, const Scalar& beta)
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+update(const Scalar& alpha, 
+       const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, 
+       const Scalar& beta)
 {
     BlockedMultiVector::update(alpha, A, beta);
     return;
@@ -270,11 +283,12 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::update(const Scalar& a
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::update(const Scalar&      alpha,
-                                                                 const MultiVector& A,
-                                                                 const Scalar&      beta,
-                                                                 const MultiVector& B,
-                                                                 const Scalar&      gamma)
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+update(const Scalar&      alpha,
+       const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+       const Scalar&      beta,
+       const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+       const Scalar&      gamma)
 {
     BlockedMultiVector::update(alpha, A, beta, B, gamma);
     return;
@@ -282,7 +296,8 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::update(const Scalar&  
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm1() const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+norm1() const
 {
     Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norm =
       Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1);
@@ -292,7 +307,8 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm1() const
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm2() const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+norm2() const
 {
     Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norm =
       Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1);
@@ -300,50 +316,59 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm2() const
     return norm[ 0 ];
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::normInf() const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+normInf() const
 {
-    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norm =
-      Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1);
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> 
+        norm = Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1);
     this->normInf(norm);
     return norm[ 0 ];
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm1(
-  const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const
 {
     BlockedMultiVector::norm1(norms);
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm2(
-  const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const
 {
     BlockedMultiVector::norm2(norms);
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::normInf(
-  const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const
 {
     BlockedMultiVector::normInf(norms);
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::meanValue(const Teuchos::ArrayView<Scalar>& /* means */) const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+meanValue(const Teuchos::ArrayView<Scalar>& /* means */) const
 {
     throw Xpetra::Exceptions::RuntimeError("BlockedVector::meanValue: Not (yet) supported by BlockedVector.");
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Scalar
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::meanValue() const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+meanValue() const
 {
     throw Xpetra::Exceptions::RuntimeError("BlockedVector::meanValue: Not (yet) supported by BlockedVector.");
 }
@@ -355,8 +380,8 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 multiply(Teuchos::ETransp /* transA */,
          Teuchos::ETransp /* transB */,
          const Scalar&    /* alpha */,
-         const Vector&    /* A */,
-         const Vector&    /* B */,
+         const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&    /* A */,
+         const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&    /* B */,
          const Scalar&    /* beta */)
 {
     throw Xpetra::Exceptions::RuntimeError("BlockedVector::multiply: Not (yet) supported by BlockedVector.");
@@ -369,8 +394,8 @@ BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 multiply(Teuchos::ETransp   /* transA */,
          Teuchos::ETransp   /* transB */,
          const Scalar&      /* alpha */,
-         const MultiVector& /* A */,
-         const MultiVector& /* B */,
+         const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* A */,
+         const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* B */,
          const Scalar&      /* beta */)
 {
     throw Xpetra::Exceptions::RuntimeError("BlockedVector::multiply: Not (yet) supported by BlockedVector.");
@@ -382,7 +407,7 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 elementWiseMultiply( Scalar /* scalarAB */,
                      const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* A */,
-                     const MultiVector& /* B */,
+                     const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* B */,
                      Scalar /* scalarThis */)
 {
     throw Xpetra::Exceptions::RuntimeError("BlockedVector::elementWiseMultiply: Not (yet) supported by BlockedVector.");
@@ -394,7 +419,7 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 elementWiseMultiply( Scalar /* scalarAB */,
                      const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
-                     const Vector& B,
+                     const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
                      Scalar /* scalarThis */)
 {
     XPETRA_TEST_FOR_EXCEPTION(B.getMap()->isSameAs(*(this->getMap())) == false,
@@ -413,7 +438,7 @@ elementWiseMultiply( Scalar /* scalarAB */,
 
     RCP<const BlockedMap>                                                bmap  = this->getBlockedMap();
     RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> rcpA  = Teuchos::rcpFromRef(A);
-    RCP<const Vector>                                                    bmvec = Teuchos::rcpFromRef(B);
+    RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> bmvec = Teuchos::rcpFromRef(B);
     RCP<const BlockedVector> bbmvec = Teuchos::rcp_dynamic_cast<const BlockedVector>(bmvec);
     TEUCHOS_TEST_FOR_EXCEPTION(bbmvec.is_null() == true,
                                Xpetra::Exceptions::RuntimeError,
@@ -432,45 +457,55 @@ elementWiseMultiply( Scalar /* scalarAB */,
     }*/
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNumVectors() const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+getNumVectors() const
 {
     return 1;
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalLength() const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+getLocalLength() const
 {
     throw Xpetra::Exceptions::RuntimeError(
       "BlockedVector::getLocalLength: routine not implemented. It has no value as one must iterate on the partial vectors.");
     TEUCHOS_UNREACHABLE_RETURN(0);
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 global_size_t
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getGlobalLength() const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+getGlobalLength() const
 {
     return this->getBlockedMap()->getFullMap()->getGlobalNumElements();
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isSameSize(
-  const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* vec */) const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+isSameSize(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* vec */) const
 {
     throw Xpetra::Exceptions::RuntimeError(
       "BlockedVector::isSameSize: routine not implemented. It has no value as one must iterate on the partial vectors.");
     TEUCHOS_UNREACHABLE_RETURN(0);
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 std::string
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+description() const
 {
     return std::string("BlockedVector");
 }
+
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
@@ -481,6 +516,7 @@ describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) c
     for(size_t r = 0; r < this->getBlockedMap()->getNumMaps(); r++) getMultiVector(r)->describe(out, verbLevel);
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -488,6 +524,7 @@ replaceMap(const RCP<const Map>& map)
 {
     BlockedMultiVector::replaceMap(map);
 }
+
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
@@ -498,6 +535,7 @@ doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* source 
 {
     throw Xpetra::Exceptions::RuntimeError("BlockedVector::doImport: Not supported by BlockedVector.");
 }
+
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
@@ -509,6 +547,7 @@ doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* dest */
     throw Xpetra::Exceptions::RuntimeError("BlockedVector::doExport: Not supported by BlockedVector.");
 }
 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -518,6 +557,7 @@ doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* source 
 {
     throw Xpetra::Exceptions::RuntimeError("BlockedVector::doImport: Not supported by BlockedVector.");
 }
+
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
@@ -540,6 +580,7 @@ setSeed(unsigned int seed)
         getMultiVector(r)->setSeed(seed); 
     }
 }
+
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
@@ -595,6 +636,7 @@ Xpetra_randomize()
 //    }
 #endif      // HAVE_XPETRA_KOKKOS_REFACTOR
 
+
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -604,6 +646,7 @@ Xpetra_randomize()
         return this->getBlockedMap();
     }
 
+
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -611,6 +654,7 @@ Xpetra_randomize()
     {
         return BlockedMultiVector::getMultiVector(r);
     }
+
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
@@ -620,14 +664,18 @@ Xpetra_randomize()
         return BlockedMultiVector::getMultiVector(r, bThyraMode);
     }
 
+
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void 
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    setMultiVector(size_t r, Teuchos::RCP<const Vector> v, bool bThyraMode)
+    setMultiVector(size_t r,
+                   Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v, 
+                   bool bThyraMode)
     {
         BlockedMultiVector::setMultiVector(r, v, bThyraMode);
         return;
     }
+
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
@@ -637,18 +685,22 @@ Xpetra_randomize()
         return BlockedMultiVector::Merge();
     }
 
+
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void 
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    assign(const MultiVector& rhs)
+    assign(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
     {
         BlockedMultiVector::assign(rhs);
     }
 
+
     // template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    // virtual void BlockedVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::assign (const MultiVector& rhs)
-    //  throw Xpetra::Exceptions::RuntimeError("BlockedVector::assign: Not supported by BlockedVector.");
-    //}
+    // virtual void BlockedVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+    // assign (const XpetrA::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
+    // {
+    //     throw Xpetra::Exceptions::RuntimeError("BlockedVector::assign: Not supported by BlockedVector.");
+    // }
 
 }      // Xpetra namespace
 
