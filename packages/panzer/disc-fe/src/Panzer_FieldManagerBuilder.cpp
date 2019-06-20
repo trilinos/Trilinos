@@ -65,7 +65,7 @@
 #include "Panzer_StlMap_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_EquationSet_Factory.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 //#include "EpetraExt_BlockMapOut.h"
 
@@ -98,7 +98,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 
   phx_volume_field_managers_.clear();
 
-  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer = lo_factory.getRangeGlobalIndexer();
+  Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer = lo_factory.getRangeGlobalIndexer();
 
   for (std::size_t blkInd=0;blkInd<physicsBlocks.size();++blkInd) {
     RCP<panzer::PhysicsBlock> pb = physicsBlocks[blkInd];
@@ -177,7 +177,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
                             "panzer::FMB::setupBCFieldManagers: method function getWorksetContainer() returns null. "
                             "Plase call setWorksetContainer() before calling this method");
 
-  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer = lo_factory.getRangeGlobalIndexer();
+  Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer = lo_factory.getRangeGlobalIndexer();
 
   // for convenience build a map (element block id => physics block)
   std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks_map;
@@ -459,7 +459,7 @@ writeBCTextDependencyFiles(std::string filename_prefix) const
 //=======================================================================
 void panzer::FieldManagerBuilder::
 setKokkosExtendedDataTypeDimensions(const std::string & eblock,
-                                    const panzer::UniqueGlobalIndexerBase & globalIndexer,
+                                    const panzer::GlobalIndexer & globalIndexer,
                                     const Teuchos::ParameterList& user_data,
                                     PHX::FieldManager<panzer::Traits> & fm) const
 {

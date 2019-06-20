@@ -54,7 +54,7 @@
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_ConnManager.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_NodeType.hpp"
 #include "Panzer_HashUtils.hpp"
@@ -66,12 +66,12 @@
 
 namespace panzer {
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class BlockedDOFManager : public UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,GlobalOrdinalT> > {
+class BlockedDOFManager : public GlobalIndexer {
 public:
-   typedef std::pair<int,GlobalOrdinalT> GlobalOrdinal;
-   typedef LocalOrdinalT LocalOrdinal;
-   typedef std::map<int,std::string>::const_iterator const_field_iterator;
+   // typedef std::pair<int,GlobalOrdinalT> GlobalOrdinal;
+  using GlobalOrdinal = panzer::GlobalOrdinal;
+  using LocalOrdinal = panzer::LocalOrdinal;
+  using const_field_iterator = std::map<int,std::string>::const_iterator;
 
    virtual ~BlockedDOFManager() {}
 
@@ -85,7 +85,7 @@ public:
 
    ////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////
-   //! \defgroup UniqueGlobalIndexer_methods Methods required by the <code>UniqueGlobalIndexer</code> interface
+   //! \defgroup GlobalIndexer_methods Methods required by the <code>GlobalIndexer</code> interface
    //@{
 
    /** Get communicator associated with this manager.
@@ -150,11 +150,26 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinal> & gids,const std::string & blockIdHint="") const; // ?
+   void getElementGIDs(panzer::LocalOrdinal localElmtId,std::vector<GlobalOrdinal> & gids,const std::string & blockIdHint="") const; // ?
+
+   /** \brief Get the global IDs for a particular element. This function
+     * overwrites the <code>gids</code> variable.
+     *
+     * The pair consists of the field block index (pair.first) and the
+     * corresponding gid (pair.second) within that field block. The
+     * field block is used to access the sub-DOFManager that the field
+     * is assigned to.
+     *
+     * NOTE: This function is temporary and is only used by the Epetra
+     * Blocked Gather/Scatters. It is an inefficient path to access
+     * data and has been deprecated. When Epetra support is dropped,
+     * this function will be removed.
+     */
+  void getElementGIDsPair(panzer::LocalOrdinal localElmtId,std::vector<std::pair<int,GlobalOrdinal>> & gids,const std::string & blockIdHint="") const;
 
    /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
      */
-   virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const; // ?
+   virtual void getElementOrientation(panzer::LocalOrdinal localElmtId,std::vector<double> & gidsOrientation) const; // ?
 
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array.
@@ -184,9 +199,7 @@ public:
     *  \param[out] indices A `vector` that will be filled with the indices
     *              owned by this processor.
     */
-   virtual void
-   getOwnedIndices(
-     std::vector<GlobalOrdinal>& indices) const;
+   virtual void getOwnedIndices(std::vector<GlobalOrdinal>& indices) const;
 
    /**
     *  \brief Get the set of indices ghosted for this processor.
@@ -195,8 +208,7 @@ public:
     *              ghosted for this processor.
     */
    virtual void
-   getGhostedIndices(
-     std::vector<GlobalOrdinal>& indices) const;
+   getGhostedIndices(std::vector<GlobalOrdinal>& indices) const;
 
    /**
     *  \brief Get the set of owned and ghosted indices for this processor.
@@ -205,8 +217,13 @@ public:
     *              ghosted indices for this processor.
     */
    virtual void
-   getOwnedAndGhostedIndices(
-     std::vector<GlobalOrdinal>& indices) const;
+   getOwnedAndGhostedIndices(std::vector<GlobalOrdinal>& indices) const;
+  
+   // For backwards compatibility with Epetra. Will be deprecated.
+   void getElementGIDsAsInt(panzer::LocalOrdinal localElmtId,std::vector<int> & gids,const std::string & blockIdHint="") const;
+   virtual void getOwnedIndicesAsInt(std::vector<int>& indices) const;
+   virtual void getGhostedIndicesAsInt(std::vector<int>& indices) const;
+   virtual void getOwnedAndGhostedIndicesAsInt(std::vector<int>& indices) const;
 
    /**
     *  \brief Get the number of indices owned by this processor.
@@ -386,7 +403,7 @@ public:
      *
      * \note The type of global indexer, and agreement with the geometric field pattern are all checked.
      */
-   virtual void buildGlobalUnknowns(const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & fieldBlockManagers);
+   virtual void buildGlobalUnknowns(const std::vector<Teuchos::RCP<GlobalIndexer>> & fieldBlockManagers);
 
    /** Prints to an output stream the information about
      * the aggregated field.
@@ -416,7 +433,7 @@ public:
    /** Extract the field DOFManagers used underneath to define the
      * global unknowns.
      */
-   const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > &
+   const std::vector<Teuchos::RCP<GlobalIndexer>> &
    getFieldDOFManagers() const
    { return fieldBlockManagers_; }
 
@@ -481,28 +498,28 @@ protected:
 
    /** Build a new indexer. The concrete type is specified internally by this object (FEI version standard)
      */
-   Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > buildNewIndexer(const Teuchos::RCP<ConnManager> & connManager,
-                                                                                    MPI_Comm mpiComm) const;
+   Teuchos::RCP<GlobalIndexer> buildNewIndexer(const Teuchos::RCP<ConnManager> & connManager,
+                                                     MPI_Comm mpiComm) const;
 
    /** Do appropriate casting below and set orientations for a particular indexer. (handles FEI versus standard DOFManager)
      */
-   void setOrientationsRequired(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,bool required) const;
+   void setOrientationsRequired(const Teuchos::RCP<GlobalIndexer> & indexer,bool required) const;
 
    /** Do appropriate casting below and call buildGlobalUnknowns for a particular indexer. (handles FEI versus standard DOFManager)
      */
-   void buildGlobalUnknowns(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const Teuchos::RCP<const FieldPattern> & geomPattern) const;
+   void buildGlobalUnknowns(const Teuchos::RCP<GlobalIndexer> & indexer,const Teuchos::RCP<const FieldPattern> & geomPattern) const;
 
    /** Do appropriate casting below and call getElementBlockGIDCount for a particular indexer. (handles FEI versus standard DOFManager)
      */
-   int getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const std::string & elementBlock) const;
+   int getElementBlockGIDCount(const Teuchos::RCP<GlobalIndexer> & indexer,const std::string & elementBlock) const;
 
    /** Do appropriate casting below and call getElementBlockGIDCount for a particular indexer. (handles FEI versus standard DOFManager)
      */
-   int getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const std::size_t & blockIndex) const;
+   int getElementBlockGIDCount(const Teuchos::RCP<GlobalIndexer> & indexer,const std::size_t & blockIndex) const;
 
    /** Do appropriate casting below and call printFieldInformation for a particular indexer. (handles FEI versus standard DOFManager)
      */
-   void printFieldInformation(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,std::ostream & os) const;
+   void printFieldInformation(const Teuchos::RCP<GlobalIndexer> & indexer,std::ostream & os) const;
 
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
@@ -510,7 +527,7 @@ protected:
      * This method assumes that the activeFields are a legitimate ordering for the local field block.
      */
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
-                                     UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
+                                     GlobalIndexer & fieldBlockManager) const;
 
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
@@ -518,8 +535,7 @@ protected:
      * This method assumes that the activeFields are a legitimate ordering for the local field block.
      */
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
-                                     DOFManager<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
-
+                                     DOFManager & fieldBlockManager) const;
 
    // computes connectivity
    Teuchos::RCP<ConnManager> connMngr_;
@@ -550,7 +566,7 @@ protected:
    //@}
 
    // storage for fast lookups of GID ownership
-  std::unordered_set<GlobalOrdinal,panzer::pair_hash> ownedGIDHashTable_;
+  //std::unordered_set<GlobalOrdinal,panzer::pair_hash> ownedGIDHashTable_;
 
    std::vector<std::vector<std::string> > fieldOrder_;
 
@@ -559,7 +575,7 @@ protected:
    Teuchos::RCP<const FieldPattern> geomPattern_;
    Teuchos::RCP<Teuchos::MpiComm<int> > communicator_;
 
-   std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > fieldBlockManagers_;
+   std::vector<Teuchos::RCP<GlobalIndexer>> fieldBlockManagers_;
 
    MPI_Comm mpiComm_;
    int maxSubFieldNum_;

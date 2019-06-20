@@ -801,7 +801,7 @@ addDistributedParameter(const std::string & key,
                         const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
                         const Teuchos::RCP<GlobalEvaluationData> & ged,
                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial,
-                        const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi)
+                        const Teuchos::RCP<const GlobalIndexer> & ugi)
 {
   distrParamGlobalEvaluationData_.addDataObject(key,ged);
 
@@ -2310,7 +2310,7 @@ buildDistroParamDgDp_RL(
     // extract the linear object factory that has the correct sizing for
     // the sensitivity vector
     RCP<const LinearObjFactory<Traits> > param_lof = parameters_[p]->dfdp_rl->getLinearObjFactory();
-    RCP<const UniqueGlobalIndexerBase > param_ugi = parameters_[p]->global_indexer;
+    RCP<const GlobalIndexer > param_ugi = parameters_[p]->global_indexer;
 
     // the user wants global sensitivities, hooray! Build and setup the response library
     RCP<ResponseLibrary<Traits> > rLibrary
@@ -2406,7 +2406,7 @@ panzer::ModelEvaluator<Scalar>::
 createDistributedParameter(const std::string & key,
                            const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
                            const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial,
-                           const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi) const
+                           const Teuchos::RCP<const GlobalIndexer> & ugi) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;

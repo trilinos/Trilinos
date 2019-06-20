@@ -2473,19 +2473,6 @@ namespace Tpetra {
                           const impl_scalar_type newVals[],
                           const LocalOrdinal numElts) const
   {
-    if (graph.getProfileType() == StaticProfile)
-    {
-      Teuchos::ArrayView<const LocalOrdinal> indsT(inds, numElts);
-      auto fun =
-        [&](size_t const k, size_t const /*start*/, size_t const offset) {
-          rowVals[offset] = newVals[k];
-        };
-      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-      return graph.findLocalIndices(rowInfo, indsT, cb);
-    }
-
-    // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
-    // yanked once DynamicProfile is removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const bool sorted = graph.isSorted ();
@@ -2746,22 +2733,6 @@ namespace Tpetra {
                            const LocalOrdinal numElts,
                            const bool atomic) const
   {
-    if (graph.getProfileType() == StaticProfile)
-    {
-      Teuchos::ArrayView<const GlobalOrdinal> indsT(inds, numElts);
-      auto fun =
-        [&](size_t const k, size_t const /*start*/, size_t const offset) {
-          if (atomic)
-            Kokkos::atomic_add(&rowVals[offset], newVals[k]);
-          else
-            rowVals[offset] += newVals[k];
-        };
-      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-      return graph.findGlobalIndices(rowInfo, indsT, cb);
-    }
-
-    // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
-    // yanked once DynamicProfile is removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
@@ -2990,30 +2961,6 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
-    if (graph.getProfileType() == StaticProfile)
-    {
-      auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset)
-      {
-        if (atomic) {
-          // NOTE (mfh 30 Nov 2015) The commented-out code is
-          // wrong because another thread may have changed
-          // rowVals[offset] between those two lines of code.
-          volatile ST* const dest = &rowVals[offset];
-          (void) atomic_binary_function_update (dest, newVals[k], f);
-        }
-        else {
-          // use binary function f
-          rowVals[offset] = f(rowVals[offset], newVals[k]);
-        }
-      };
-      Teuchos::ArrayView<const LO> indsT(inds, numElts);
-      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-      return graph.findLocalIndices(rowInfo, indsT, cb);
-    }
-
-    // NOTE (DYNAMICPROFILE REMOVAL) (tjf Mar 2019)
-    // from this point down can be yanked once DynamicProfile is removed.
-
     //if (newVals.extent (0) != inds.extent (0)) {
     // The sizes of the input arrays must match.
     //return Tpetra::Details::OrdinalTraits<LO>::invalid ();
@@ -3123,27 +3070,6 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
-    if (graph.getProfileType() == StaticProfile)
-    {
-      auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset)
-      {
-        if (atomic) {
-          volatile ST* const dest = &rowVals[offset];
-          (void) atomic_binary_function_update(dest, newVals[k], f);
-        }
-        else {
-          // use binary function f
-          rowVals[offset] = f (rowVals[offset], newVals[k]);
-        }
-      };
-      Teuchos::ArrayView<const GO> indsT(inds, numElts);
-      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-      return graph.findGlobalIndices(rowInfo, indsT, cb);
-    }
-
-    // NOTE (DYNAMICPROFILE REMOVAL) (tjf Mar 2019)
-    // from this point down can be yanked once DynamicProfile is removed.
-
     //if (newVals.extent (0) != inds.extent (0)) {
     // The sizes of the input arrays must match.
     //return Tpetra::Details::OrdinalTraits<LO>::invalid ();
@@ -3247,23 +3173,6 @@ namespace Tpetra {
                           const LocalOrdinal numElts,
                           const bool atomic) const
   {
-    if (graph.getProfileType() == StaticProfile)
-    {
-      Teuchos::ArrayView<const LocalOrdinal> indsT(inds, numElts);
-      auto fun =
-        [&](size_t const k, size_t const /*start*/, size_t const offset) {
-          if (atomic)
-            Kokkos::atomic_add(&rowVals[offset], newVals[k]);
-          else
-            rowVals[offset] += newVals[k];
-        };
-      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-      return graph.findLocalIndices(rowInfo, indsT, cb);
-    }
-
-    // NOTE (DYNAMICPROFILE REMOVAL) (tjf Mar 2019)
-    // from this point down can be yanked once DynamicProfile is removed.
-
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 

@@ -335,10 +335,10 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
     switch (mesh->num_dims) {
     case 3:
       zptr = (mesh->coords) + 2 * (mesh->num_nodes);
-      /* FALLTHRU */
+      FALL_THROUGH;
     case 2:
       yptr = (mesh->coords) + (mesh->num_nodes);
-      /* FALLTHRU */
+      FALL_THROUGH;
     case 1: xptr = mesh->coords;
     }
 

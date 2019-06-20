@@ -43,6 +43,7 @@
 #ifndef __Panzer_STK_ParameterListCallbackBlocked_hpp__
 #define __Panzer_STK_ParameterListCallbackBlocked_hpp__
 
+#include "PanzerAdaptersSTK_config.hpp"
 #ifdef PANZER_HAVE_TEKO
 
 #include "Teuchos_RCP.hpp"
@@ -51,8 +52,8 @@
 #include "Teko_RequestCallback.hpp"
 
 #include "Panzer_STKConnManager.hpp"
-#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
-#include "Panzer_UniqueGlobalIndexer_EpetraUtilities.hpp"
+#include "Panzer_GlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalIndexer_EpetraUtilities.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 
 #include <vector>
@@ -66,12 +67,11 @@ class STKConnManager;
   * This particular class is usesd most frequently with an ML preconditioner that
   * requres the nodal coordinates for repartitioning.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node=panzer::TpetraNodeType>
 class ParameterListCallbackBlocked : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
 public:
   ParameterListCallbackBlocked(const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager,
-                        const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blkDofs,
-                        const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & auxBlkDofs=Teuchos::null);
+                               const Teuchos::RCP<const panzer::BlockedDOFManager> & blkDofs,
+                               const Teuchos::RCP<const panzer::BlockedDOFManager> & auxBlkDofs=Teuchos::null);
 
   Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
 
@@ -85,7 +85,7 @@ private:
   {
     // Check both the main and auxiliary UGIs.
     bool useAux(true);
-    std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer<int, GlobalOrdinalT>>>
+    std::vector<Teuchos::RCP<panzer::GlobalIndexer>>
       fieldDOFMngrs = blocked_ugi_->getFieldDOFManagers();
     for (int b(0); b < static_cast<int>(fieldDOFMngrs.size()); ++b)
     {
@@ -121,8 +121,8 @@ private:
 
   // Generally used members
   Teuchos::RCP<const panzer_stk::STKConnManager> connManager_;
-  Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > blocked_ugi_;
-  Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > aux_blocked_ugi_;
+  Teuchos::RCP<const panzer::BlockedDOFManager> blocked_ugi_;
+  Teuchos::RCP<const panzer::BlockedDOFManager> aux_blocked_ugi_;
 
   std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns_;
 
@@ -132,19 +132,16 @@ private:
   std::map<std::string,std::vector<double> > ycoords_;
   std::map<std::string,std::vector<double> > zcoords_;
 
-  mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node> > > arrayToVectorTpetra_;
-  mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node> > > arrayToVectorEpetra_;
+  mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVector> > arrayToVectorTpetra_;
+  mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVectorEpetra> > arrayToVectorEpetra_;
 
-  Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > coordsVecTp_;
+  Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > coordsVecTp_;
   Teuchos::RCP<Epetra_MultiVector> coordsVecEp_;
 
   bool returnTpetraObjects_;
-
 };
 
 }
-
-#include "Panzer_STK_ParameterListCallbackBlocked_impl.hpp"
 
 #endif // PANZER_HAVE_TEKO
 

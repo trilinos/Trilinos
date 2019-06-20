@@ -382,7 +382,8 @@ double ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh,
   }
   else {
     // Eliminate all nodes that were only connected to the omitted element blocks (if any).
-    eliminate_omitted_nodes(part_mesh, global_node_map, local_node_map);
+    bool fill_global = true;
+    eliminate_omitted_nodes(part_mesh, global_node_map, local_node_map, fill_global);
   }
 
   node_count    = global_node_map.size();
@@ -549,7 +550,7 @@ double ejoin(SystemInterface &interface, std::vector<Ioss::Region *> &part_mesh,
     int ostep = output_region.add_state(global_times[step]);
     output_region.begin_state(ostep);
     output_transient_state(output_region, part_mesh, global_times[step], local_node_map, interface);
-    fmt::print("\rWrote step {:4]/{:4}, time {}", step + 1, nsteps, global_times[step]);
+    fmt::print("\rWrote step {:4}/{:4}, time {}", step + 1, nsteps, global_times[step]);
     output_region.end_state(ostep);
     steps++;
   }
@@ -1025,8 +1026,7 @@ namespace {
     }
   }
 
-  void output_globals(Ioss::Region &output_region, RegionVector &part_mesh, double time,
-                      const IntVector &steps)
+  void output_globals(Ioss::Region &output_region, RegionVector &part_mesh)
   {
     for (const auto &pm : part_mesh) {
       Ioss::NameList fields;
@@ -1112,8 +1112,7 @@ namespace {
     }
   }
 
-  void output_element(Ioss::Region &output_region, RegionVector &part_mesh, double time,
-                      const IntVector &steps)
+  void output_element(Ioss::Region &output_region, RegionVector &part_mesh)
   {
     for (const auto &pm : part_mesh) {
       const Ioss::ElementBlockContainer &iebs = pm->get_element_blocks();
@@ -1139,8 +1138,7 @@ namespace {
     }
   }
 
-  void output_nset(Ioss::Region &output_region, RegionVector &part_mesh, double time,
-                   const IntVector &steps)
+  void output_nset(Ioss::Region &output_region, RegionVector &part_mesh)
   {
     if (output_region.get_nodesets().empty()) {
       return;
@@ -1170,8 +1168,7 @@ namespace {
     }
   }
 
-  void output_sset(Ioss::Region &output_region, RegionVector &part_mesh, double time,
-                   const IntVector &steps)
+  void output_sset(Ioss::Region &output_region, RegionVector &part_mesh)
   {
     const Ioss::SideSetContainer &os = output_region.get_sidesets();
     if (os.empty()) {
@@ -1244,15 +1241,15 @@ namespace {
       }
     }
 
-    output_globals(output_region, part_mesh, time, steps);
+    output_globals(output_region, part_mesh);
     output_nodal(output_region, part_mesh, local_node_map, interface);
-    output_element(output_region, part_mesh, time, steps);
+    output_element(output_region, part_mesh);
     output_nodal_nodeset_fields(output_region, part_mesh, interface);
     if (!interface.omit_nodesets()) {
-      output_nset(output_region, part_mesh, time, steps);
+      output_nset(output_region, part_mesh);
     }
     if (!interface.omit_sidesets()) {
-      output_sset(output_region, part_mesh, time, steps);
+      output_sset(output_region, part_mesh);
     }
 
     for (size_t p = 0; p < part_mesh.size(); p++) {

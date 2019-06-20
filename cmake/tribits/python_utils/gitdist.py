@@ -450,9 +450,9 @@ include:
   $ alias gitdist-repo-versions="gitdist --dist-no-color log -1 \
     --pretty=format:\"%h [%ad] <%ae>%n%s\" | grep -v \"^$\""
 
-These are added by sourcing the provided file 'gitdist-setup.sh' as well as
-some useful commandline tab completion (which be sourced in you
-~/.bash_profile file.)
+These are added by sourcing the provided file 'gitdist-setup.sh' (which should
+be sourced in your ~/.bash_profile file.) which also adds some useful
+commandline tab completions.
 
 This avoids lots of extra typing as these gitdist arguments are used a lot.
 For example, to see the compact status table of all your local git repos, do:
@@ -473,7 +473,7 @@ or
   $ gitdist-mod local-stat
 
 (where 'local-stat' is a useful git alias defined in the script
-'git-config-alias.sh').
+'git-config-alias.sh' which adds these to your ~/.gitconf file).
 """
 helpTopicsDict.update( { 'aliases' : usefulAliasesHelp } )
 

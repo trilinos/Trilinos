@@ -50,7 +50,6 @@
  *
  *****************************************************************************/
 #include "exodusII.h" // for ex_get_partial_id_map, etc
-#include <stdint.h>   // for int64_t
 
 /*
  *  reads the node numbering map from the database

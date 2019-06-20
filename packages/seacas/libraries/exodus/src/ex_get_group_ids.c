@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR
-#include <stdio.h>
 
 /**
  * Given a file or group 'parent' id, return the number of child groups and the

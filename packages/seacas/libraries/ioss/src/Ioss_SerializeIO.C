@@ -56,7 +56,7 @@ namespace Ioss {
   std::mutex SerializeIO::m_;
 #endif
 
-  SerializeIO::SerializeIO(const DatabaseIO *database_io, int manual_owner_processor)
+  SerializeIO::SerializeIO(const DatabaseIO *database_io)
       : m_databaseIO(database_io), m_activeFallThru(true), m_manualOwner(-1)
 
   {
@@ -75,10 +75,6 @@ namespace Ioss {
         s_groupSize = (s_size - 1) / s_groupFactor + 1;
       }
     }
-
-    m_manualOwner = (manual_owner_processor == -1 || s_groupFactor == 0)
-                        ? -1
-                        : manual_owner_processor / s_groupFactor;
 
     if (m_activeFallThru) {
       if (m_manualOwner != -1 && m_manualOwner != s_owner) {

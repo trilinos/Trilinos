@@ -43,12 +43,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#define __STDC_FORMAT_MACROS
-#include <cinttypes>
-#ifndef PRId64
-#error "PRId64 not defined"
-#endif
-
 namespace {
   std::string LowerCase(std::string name);
 
@@ -196,16 +190,17 @@ namespace SEAMS {
 
     // read database parameters
     static char title[MAX_LINE_LENGTH + 1];
-    int64_t     ndim, nnodes, nelems, nblks, nnsets, nssets;
-    ex_get_init(exoid, title, &ndim, &nnodes, &nelems, &nblks, &nnsets, &nssets);
+    int64_t     ndim, num_nodes, num_elements, num_elemblks, num_nodesets, num_sidesets;
+    ex_get_init(exoid, title, &ndim, &num_nodes, &num_elements, &num_elemblks, &num_nodesets,
+                &num_sidesets);
 
     aprepro->add_variable("ex_title", title);
     aprepro->add_variable("ex_dimension", ndim);
-    aprepro->add_variable("ex_node_count", nnodes);
-    aprepro->add_variable("ex_element_count", nelems);
-    aprepro->add_variable("ex_block_count", nblks);
-    aprepro->add_variable("ex_nodeset_count", nnsets);
-    aprepro->add_variable("ex_sideset_count", nssets);
+    aprepro->add_variable("ex_node_count", num_nodes);
+    aprepro->add_variable("ex_element_count", num_elements);
+    aprepro->add_variable("ex_block_count", num_elemblks);
+    aprepro->add_variable("ex_nodeset_count", num_nodesets);
+    aprepro->add_variable("ex_sideset_count", num_sidesets);
 
     { // Nemesis Information
       int  proc_count;
@@ -242,13 +237,14 @@ namespace SEAMS {
     // -- 'ex_sideset_info'
     int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
     ex_set_max_name_length(exoid, max_name_length);
-    char *name = new char[max_name_length + 1];
+    char *      name = new char[max_name_length + 1];
+    std::string str_name;
 
-    if (nblks > 0) {
-      auto array_data       = new array(nblks, 1);
-      auto array_block_info = new array(nblks, 4);
+    if (num_elemblks > 0) {
+      auto array_data       = new array(num_elemblks, 1);
+      auto array_block_info = new array(num_elemblks, 4);
 
-      std::vector<int64_t> ids(nblks);
+      std::vector<int64_t> ids(num_elemblks);
       ex_get_ids(exoid, EX_ELEM_BLOCK, ids.data());
 
       char    type[MAX_STR_LENGTH + 1];
@@ -260,7 +256,7 @@ namespace SEAMS {
       std::string topology;
 
       int64_t idx = 0;
-      for (int64_t i = 0; i < nblks; i++) {
+      for (int64_t i = 0; i < num_elemblks; i++) {
         ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], type, &nel, &nnel, 0, 0, &natr);
         array_data->data[i]           = ids[i];
         array_block_info->data[idx++] = ids[i];
@@ -270,7 +266,10 @@ namespace SEAMS {
 
         ex_get_name(exoid, EX_ELEM_BLOCK, ids[i], name);
         if (name[0] == '\0') {
-          sprintf(name, "block_%" PRId64, ids[i]);
+          str_name = "block_" + std::to_string(ids[i]);
+        }
+        else {
+          str_name = name;
         }
 
         if (i > 0) {
@@ -278,7 +277,7 @@ namespace SEAMS {
           names += ",";
         }
         topology += type;
-        names += name;
+        names += str_name;
       }
 
       topology = LowerCase(topology);
@@ -289,16 +288,16 @@ namespace SEAMS {
     }
 
     // Nodesets...
-    if (nnsets > 0) {
-      auto array_data     = new array(nnsets, 1);
-      auto array_set_info = new array(nnsets, 3);
+    if (num_nodesets > 0) {
+      auto array_data     = new array(num_nodesets, 1);
+      auto array_set_info = new array(num_nodesets, 3);
 
-      std::vector<int64_t> ids(nnsets);
+      std::vector<int64_t> ids(num_nodesets);
       ex_get_ids(exoid, EX_NODE_SET, ids.data());
 
       std::string names;
       int64_t     idx = 0;
-      for (int64_t i = 0; i < nnsets; i++) {
+      for (int64_t i = 0; i < num_nodesets; i++) {
         int64_t num_entry;
         int64_t num_dist;
         ex_get_set_param(exoid, EX_NODE_SET, ids[i], &num_entry, &num_dist);
@@ -309,13 +308,16 @@ namespace SEAMS {
 
         ex_get_name(exoid, EX_NODE_SET, ids[i], name);
         if (name[0] == '\0') {
-          sprintf(name, "nodeset_%" PRId64, ids[i]);
+          str_name = "nodeset_" + std::to_string(ids[i]);
+        }
+        else {
+          str_name = name;
         }
 
         if (i > 0) {
           names += ",";
         }
-        names += name;
+        names += str_name;
       }
 
       aprepro->add_variable("ex_nodeset_names", names);
@@ -324,16 +326,16 @@ namespace SEAMS {
     }
 
     // Sidesets...
-    if (nssets > 0) {
-      auto array_data     = new array(nssets, 1);
-      auto array_set_info = new array(nssets, 3);
+    if (num_sidesets > 0) {
+      auto array_data     = new array(num_sidesets, 1);
+      auto array_set_info = new array(num_sidesets, 3);
 
-      std::vector<int64_t> ids(nssets);
+      std::vector<int64_t> ids(num_sidesets);
       ex_get_ids(exoid, EX_SIDE_SET, ids.data());
 
       std::string names;
       int64_t     idx = 0;
-      for (int64_t i = 0; i < nssets; i++) {
+      for (int64_t i = 0; i < num_sidesets; i++) {
         int64_t num_entry;
         int64_t num_dist;
         ex_get_set_param(exoid, EX_SIDE_SET, ids[i], &num_entry, &num_dist);
@@ -344,13 +346,16 @@ namespace SEAMS {
 
         ex_get_name(exoid, EX_SIDE_SET, ids[i], name);
         if (name[0] == '\0') {
-          sprintf(name, "sideset_%" PRId64, ids[i]);
+          str_name = "sideset_" + std::to_string(ids[i]);
+        }
+        else {
+          str_name = name;
         }
 
         if (i > 0) {
           names += ",";
         }
-        names += name;
+        names += str_name;
       }
 
       aprepro->add_variable("ex_sideset_names", names);

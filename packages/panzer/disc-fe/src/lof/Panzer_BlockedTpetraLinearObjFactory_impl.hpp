@@ -47,7 +47,7 @@
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 // Thyra
 #include "Thyra_DefaultBlockedLinearOp.hpp"
@@ -72,7 +72,7 @@ using Teuchos::RCP;
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                              const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT> > & gidProvider)
+                              const Teuchos::RCP<const BlockedDOFManager> & gidProvider)
    : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(comm)
 {
   for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
@@ -88,7 +88,7 @@ BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > &
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                              const std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>>> & gidProviders)
+                              const std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> & gidProviders)
   : gidProviders_(gidProviders), comm_(comm)
 {
   makeRoomForBlocks(gidProviders_.size());
@@ -477,7 +477,7 @@ addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs)
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> >
+Teuchos::RCP<const GlobalIndexer>
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGlobalIndexer(int i) const
 {
@@ -1005,7 +1005,7 @@ buildTpetraGhostedGraph(int i,int j) const
 
    std::vector<std::string> elementBlockIds;
 
-   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > rowProvider, colProvider;
+   Teuchos::RCP<const GlobalIndexer> rowProvider, colProvider;
 
    rowProvider = getGlobalIndexer(i);
    colProvider = getGlobalIndexer(j);

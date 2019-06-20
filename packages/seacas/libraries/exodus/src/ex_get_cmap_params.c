@@ -61,10 +61,6 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, VAR_E_COMM_IDS, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
 
 int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_node_cnts,
                        void_int *elem_cmap_ids, void_int *elem_cmap_elem_cnts, int processor)

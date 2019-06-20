@@ -33,9 +33,6 @@
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "exodusII.h"
 #include "exodusII_int.h"
 

@@ -91,8 +91,6 @@ namespace {
                                       Iopg::TopologyMap &    side_map,
                                       Ioss::SurfaceSplitType split_type);
 
-  int get_file_pointer() { return 0; }
-
   const char *Version() { return "Iopg_DatabaseIO.C 2010/09/22"; }
 
   void pamgen_error(int exoid, int lineno, int /* processor */)

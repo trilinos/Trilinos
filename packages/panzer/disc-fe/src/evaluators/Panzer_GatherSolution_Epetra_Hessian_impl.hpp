@@ -62,7 +62,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 // Phalanx
 #include "Phalanx_DataLayout.hpp"
@@ -82,7 +82,7 @@
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_Epetra<panzer::Traits::Hessian, TRAITS, LO, GO>::
 GatherSolution_Epetra(
-  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO, GO>>& indexer,
+  const Teuchos::RCP<const panzer::GlobalIndexer>& indexer,
   const Teuchos::ParameterList&                                  p)
   :
   globalIndexer_(indexer)

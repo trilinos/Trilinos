@@ -61,7 +61,7 @@
     }                                                                                              \
   } while (0)
 
-int main(int argc, char **argv)
+int main()
 {
   ex_opts(EX_VERBOSE);
 

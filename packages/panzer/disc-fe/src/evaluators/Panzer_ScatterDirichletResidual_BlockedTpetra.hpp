@@ -63,11 +63,8 @@ namespace Thyra {
 
 namespace panzer {
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class BlockedDOFManager; //forward declaration
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class UniqueGlobalIndexer; //forward declaration
+class BlockedDOFManager;
+class GlobalIndexer;
 
 /** \brief Pushes residual values into the residual vector for a
            Newton-based solve
@@ -84,10 +81,10 @@ class ScatterDirichletResidual_BlockedTpetra
     public panzer::CloneableEvaluator  {
 public:
    typedef typename EvalT::ScalarT ScalarT;
-   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */)
+   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & /* indexer */)
    { }
 
-   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & gidProviders,
+   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & gidProviders,
                                           const Teuchos::ParameterList& p);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
@@ -117,10 +114,10 @@ class ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,
     public panzer::CloneableEvaluator  {
 
 public:
-  ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
+  ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer)
      : globalIndexer_(indexer) {}
 
-  ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                                   const Teuchos::ParameterList& p);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
@@ -153,12 +150,12 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const panzer::BlockedDOFManager<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::BlockedDOFManager> globalIndexer_;
 
   //! Vector of global indexers, one for each scattered field
   //! respectively. This is the global indexer for the Thyra
   //! ProductVector sub-block.
-  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO>>> fieldGlobalIndexers_;
+  std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> fieldGlobalIndexers_;
 
   //! Field IDs in the local product vector block (not global field id)
   std::vector<int> fieldIds_;
@@ -213,10 +210,10 @@ class ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,
     public panzer::CloneableEvaluator  {
 
 public:
-  ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
+  ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer)
      : globalIndexer_(indexer) {}
 
-  ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                                   const Teuchos::ParameterList& p);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
@@ -248,7 +245,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const panzer::BlockedDOFManager<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::BlockedDOFManager> globalIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
