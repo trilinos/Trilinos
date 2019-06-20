@@ -516,16 +516,16 @@ void ParameterList::modifyParameterList(ParameterList & valid_pl,
   ConstIterator itr;
   for (itr = valid_pl.begin(); itr != valid_pl.end(); ++itr){
     const std::string &entry_name = itr->first;
-    const ParameterEntry &entry = itr->second;
-    if (entry.isList() && depth > 0){
+    const ParameterEntry &cur_entry = itr->second;
+    if (cur_entry.isList() && depth > 0){
       ParameterList &valid_pl_sublist = valid_pl.sublist(entry_name, true);
       if(!valid_pl_sublist.disableRecursiveModification_){
         const ParameterEntry *validEntry = this->getEntryPtr(entry_name);
         TEUCHOS_TEST_FOR_EXCEPTION(
           !validEntry, Exceptions::InvalidParameterName
           ,"Error, the parameter {name=\""<<entry_name<<"\","
-          "type=\""<<entry.getAny(false).typeName()<<"\""
-          ",value=\""<<filterValueToString(entry)<<"\"}"
+          "type=\""<<cur_entry.getAny(false).typeName()<<"\""
+          ",value=\""<<filterValueToString(cur_entry)<<"\"}"
           "\nin the parameter (sub)list \""<<this->name()<<"\""
           "\nwas not found in the list of parameters during modification."
           "\n\nThe parameters and types are:\n"
@@ -558,14 +558,14 @@ void ParameterList::reconcileParameterList(ParameterList & valid_pl,
     for (auto itr = valid_cur_node.begin(); itr != valid_cur_node.end(); ++itr){
       const std::string &entry_name = itr->first;
       if (valid_cur_node.isSublist(entry_name)){
-        const ParameterEntry &entry = itr->second;
+        const ParameterEntry &cur_entry = itr->second;
         ParameterList &valid_cur_node_sublist = valid_cur_node.sublist(entry_name);
         if (!valid_cur_node_sublist.disableRecursiveReconciliation_){
           TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
             !cur_node.isSublist(entry_name), Exceptions::InvalidParameterName
             ,"Error, the parameter {name=\"" << entry_name <<"\","
-            "type=\"" << entry.getAny(false).typeName() << "\""
-            ",value=\"" << filterValueToString(entry) << "\"}"
+            "type=\"" << cur_entry.getAny(false).typeName() << "\""
+            ",value=\"" << filterValueToString(cur_entry) << "\"}"
             "\nin the parameter (sub)list \"" <<cur_node.name() << "\""
             "\nwas not found in the list of parameters during reconciliation."
             "\n\nThe parameters and types are:\n"

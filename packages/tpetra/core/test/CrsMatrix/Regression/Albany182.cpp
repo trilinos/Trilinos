@@ -1013,11 +1013,11 @@ namespace { // (anonymous)
     for (Tpetra::ProfileType profileType : pftypes) {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
       out << ">>> Target matrix is {";
-      if (profileType == Tpetra::DynamicProfile) {
-        out << "DynamicProfile";
+      if (profileType == Tpetra::StaticProfile) {
+        out << "StaticProfile";
       }
       else {
-        out << "StaticProfile";
+        out << "DynamicProfile";
       }
       out << ", locally indexed}" << endl;
 #else
