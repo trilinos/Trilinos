@@ -1,10 +1,11 @@
-#---------------------------------------------------------------
-#    Copyright 2006 - 2009 Sandia Corporation.
-#    Under the terms of Contract DE-AC04-94AL85000, there is a
-#    non-exclusive license for use of this work by or on behalf
-#    of the U.S. Government.  Export of this program may require
-#    a license from the United States Government.
-#---------------------------------------------------------------
+#--------------------------------------------------------------------
+#    Copyright 2002 - 2008, 2010, 2011 National Technology &         
+#    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   
+#    of Contract DE-NA0003525 with NTESS, there is a                 
+#    non-exclusive license for use of this work by or on behalf      
+#    of the U.S. Government.  Export of this program may require     
+#    a license from the United States Government.                    
+#--------------------------------------------------------------------
 
 #
 # The signature for Boost.build rules is described here:
@@ -137,7 +138,6 @@ install install-user-lib
     stk_util_util
     stk_util_command_line
     stk_util_unit_test_support
-    stk_util_use_case
   : <location>$(install-root)/stk/stk_util/lib
   ;
 
@@ -154,7 +154,6 @@ exe stk_util_doc_test
     [ glob $(stk_util-root)/../stk_doc_tests/stk_util/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//comparisonUtils
-    stk_util_use_case
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_doc_tests/stk_util
   ;
@@ -168,7 +167,6 @@ exe stk_util_utest
     [ glob $(stk_util-root)/../stk_unit_tests/stk_util/diag/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//comparisonUtils
-    stk_util_use_case
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_unit_tests/stk_util
   ;
@@ -177,7 +175,6 @@ exe stk_util_parallel_utest
   :
     [ glob $(stk_util-root)/../stk_unit_tests/stk_util/parallel/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_util_use_case
     /sierra/stk_unit_test_utils//comparisonUtils
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_unit_tests/stk_util/parallel
@@ -281,30 +278,6 @@ lib stk_util_registry
     ]
   ;
 
-lib stk_util_use_case
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-        [ glob $(stk_util-root)/stk_util/use_cases/*.cpp ]
-    ]
-    stk_util_util
-    stk_util_diag
-    stk_util_parallel
-    stk_util_environment
-  :
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(stk_util-root)/lib/libstk_util_use_case.a
-    ]
-    [ ifdevbuild
-        # Any parameters within this 'ifdevbuild' block apply to development
-        # builds only and will not be present for user builds.
-        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
-    ]
-  ;
-
 lib stk_util_diag
   :
     [ ifdevbuild
@@ -382,7 +355,6 @@ lib stk_util_unit_test_support
     # builds only and will not be present for user builds.
     [ glob $(stk_util-root)/stk_util/unit_test_support/*.cpp ]
     ]
-    stk_util_use_case
     /mpi//mpi
     /tpl/gtest//gtest
   :
