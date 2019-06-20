@@ -3728,7 +3728,7 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNode() const
   {
-    return graph_.getNode();
+    return Teuchos::null;
 
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE

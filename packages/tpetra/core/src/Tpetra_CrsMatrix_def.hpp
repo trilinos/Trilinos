@@ -807,7 +807,7 @@ namespace Tpetra {
   Teuchos::RCP<Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const {
-    return getCrsGraphRef ().getNode ();
+    return Teuchos::null;
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -8328,11 +8328,19 @@ namespace Tpetra {
       // Construct the result matrix C.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
       if (constructorSublist.is_null ()) {
-        C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile));
+        C = rcp (new crs_matrix_type (C_rowMap, 0, ProfileType(StaticProfile+1) /*DynamicProfile*/));
       } else {
-        C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile,
+        C = rcp (new crs_matrix_type (C_rowMap, 0, ProfileType(StaticProfile+1) /*DynamicProfile*/,
                                       constructorSublist));
       }
+#else
+      // true: !A_rowMap->isSameAs (*B_rowMap)
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
+                                 std::invalid_argument,
+                                 "Tpetra::CrsMatrix::add: The row maps must be the same for statically "
+                                 "allocated matrices in order to be sure that there is sufficient space "
+                                 "to do the addition");
+
 #endif
     }
 

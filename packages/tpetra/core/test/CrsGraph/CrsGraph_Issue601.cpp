@@ -109,7 +109,7 @@ namespace { // (anonymous)
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
       out << "ProfileType: "
-          << ((profileType == Tpetra::DynamicProfile) ? "Dynamic" : "Static")
+          << ((profileType == Tpetra::StaticProfile) ? "Static" : "Dynamic")
           << "Profile" << endl;
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
       Teuchos::OSTab tab2 (out);

@@ -1031,7 +1031,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const
   {
-    return rowMap_.is_null () ? Teuchos::null : rowMap_->getNode ();
+    return Teuchos::null;
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
