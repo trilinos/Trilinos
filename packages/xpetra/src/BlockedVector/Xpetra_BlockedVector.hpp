@@ -62,7 +62,7 @@ namespace Xpetra {
   template<class S, class LO, class GO, class N> class Vector;
   template<class S, class LO, class GO, class N> class MapExtractor;
   template<class S, class LO, class GO, class N> class VectorFactory;
-#endif
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
   template <class Scalar = double,
             class LocalOrdinal = Map<>::local_ordinal_type,
@@ -533,7 +533,7 @@ namespace Xpetra {
       return test;
     }
 
-#endif
+#endif  // HAVE_XPETRA_KOKKOS_REFACTOR
 
     //@}
 
