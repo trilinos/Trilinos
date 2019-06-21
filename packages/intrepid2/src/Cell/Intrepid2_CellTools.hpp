@@ -301,24 +301,6 @@ namespace Intrepid2 {
     */
     static void setSubcellParametrization();
 
-    /** \brief  Returns array with the coefficients of the parametrization maps for the edges or faces
-        of a reference cell topology.
-
-        See Intrepid2::CellTools::setSubcellParametrization and Section \ref sec_cell_topology_subcell_map
-        more information about parametrization maps.
-
-        \param  subcellParam      [out] - coefficients of the parameterization map for all subcells of
-                                          the specified dimension
-        \param  subcellDim        [in]  - dimension of subcells whose parametrization map is returned
-        \param  parentCell        [in]  - topology of the reference cell owning the subcells
-
-    */
-    static void
-    getSubcellParametrization(  subcellParamViewType &subcellParam,
-                               const ordinal_type          subcellDim,
-                               const shards::CellTopology  parentCell );
-
-
     /** \brief  Sets orientation-preserving parametrizations of reference edges and faces of cell
         topologies with reference cells. Used to populate Intrepid2::CellTools::SubcellParamData.
 
@@ -1077,6 +1059,27 @@ namespace Intrepid2 {
                          worksetCell, 
                          basis);
     }
+
+
+
+
+    /** \brief  Returns array with the coefficients of the parametrization maps for the edges or faces
+        of a reference cell topology.
+
+        See Intrepid2::CellTools::setSubcellParametrization and Section \ref sec_cell_topology_subcell_map
+        more information about parametrization maps.
+
+        \param  subcellParam      [out] - coefficients of the parameterization map for all subcells of
+                                          the specified dimension
+        \param  subcellDim        [in]  - dimension of subcells whose parametrization map is returned
+        \param  parentCell        [in]  - topology of the reference cell owning the subcells
+
+    */
+    static void
+    getSubcellParametrization(  subcellParamViewType &subcellParam,
+                               const ordinal_type          subcellDim,
+                               const shards::CellTopology  parentCell );
+
 
     /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
 

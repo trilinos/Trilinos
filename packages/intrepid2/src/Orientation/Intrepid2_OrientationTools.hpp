@@ -188,7 +188,7 @@ namespace Intrepid2 {
       */
       template<typename outPointViewType,
                typename refPointViewType>
-      inline
+      KOKKOS_INLINE_FUNCTION
       static void
       mapToModifiedReference(outPointViewType outPoints,
                              const refPointViewType refPoints,
