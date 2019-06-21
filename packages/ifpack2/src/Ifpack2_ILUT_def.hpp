@@ -464,8 +464,6 @@ void ILUT<MatrixType>::compute ()
     const scalar_type one  = STS::one ();
 
     const local_ordinal_type myNumRows = A_local_->getNodeNumRows ();
-    L_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 0));
-    U_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 0));
 
     // If this macro is defined, files containing the L and U factors
     // will be written. DON'T CHECK IN THE CODE WITH THIS MACRO ENABLED!!!
@@ -736,26 +734,26 @@ void ILUT<MatrixType>::compute ()
     }
 
     L_ = rcp (new crs_matrix_type (A_local_->getRowMap(), A_local_->getColMap(),
-                                   nnzPerRow()), Tpetra::StaticProfile);
+                                   nnzPerRow(), Tpetra::StaticProfile));
 
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
       L_->insertLocalValues (row_i, L_tmp_idx[row_i](), L_tmpv[row_i]());
     }
 
-    L_->fillComplete(); // FIXME (mfh 03 Apr 2013) Do we need domain and range Map?
+    L_->fillComplete(); 
 
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
       nnzPerRow[row_i] = U_tmp_idx[row_i].size();
     }
 
-    U_ = rcp (new crs_matrix_type (A_local_->getRowMap(), A_local_->getColMap(), 
-                                   nnzPerRow()), Tpetra::StaticProfile);
+    U_ = rcp (new crs_matrix_type (A_local_->getRowMap(), A_local_->getColMap(),
+                                   nnzPerRow(), Tpetra::StaticProfile));
 
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
       U_->insertLocalValues (row_i, U_tmp_idx[row_i](), U_tmpv[row_i]());
     }
 
-    U_->fillComplete(); // FIXME (mfh 03 Apr 2013) Do we need domain and range Map?
+    U_->fillComplete();
 
     L_solver_->setMatrix(L_);
     L_solver_->initialize ();
