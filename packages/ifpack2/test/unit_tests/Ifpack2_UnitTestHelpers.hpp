@@ -100,7 +100,7 @@ create_tridiag_graph (const LocalOrdinal num_rows_per_proc)
     rcp (new map_type (INVALID, num_rows_per_proc, indexBase, comm));
 
   RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
-    rcp (new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> (rowmap, 0));
+    rcp (new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> (rowmap, 3));
 
   Teuchos::Array<GlobalOrdinal> cols;
   const LocalOrdinal lclNumRows =
