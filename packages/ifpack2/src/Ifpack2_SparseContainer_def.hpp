@@ -126,6 +126,68 @@ void SparseContainer<MatrixType,InverseType>::setParameters(const Teuchos::Param
 
 //==============================================================================
 template<class MatrixType, class InverseType>
+void SparseContainer<MatrixType,InverseType>::findRowIndicesAndCounts(
+  int blockIndex,                        // block being processed
+  local_ordinal_type rowIndex,           // row being processed in this block
+  const Teuchos::ArrayView<const local_ordinal_type> &localRows,  
+  Teuchos::Array<local_ordinal_type> &Indices,  // Storage for row indices 
+                                                // of inputMatrix
+  Teuchos::Array<scalar_type> &Values,          // Storage for row values 
+                                                // of inputMatrix
+  Teuchos::Array<InverseGlobalOrdinal> &Indices_insert,  // Output: Indices to 
+                                                         // be inserted for
+                                                         // this row
+  Teuchos::Array<InverseScalar> &Values_insert, // Output: Value associated 
+                                                // with the inserted indices
+  size_t &num_entries_found                     // Output: number of Indices 
+                                                // to be inserted
+) const
+{
+  const InverseLocalOrdinal INVALID =
+        Teuchos::OrdinalTraits<InverseLocalOrdinal>::invalid ();
+  const size_t MatrixInNumRows = this->inputMatrix_->getNodeNumRows ();
+  const local_ordinal_type localRow = 
+        this->partitions_[this->partitionIndices_[blockIndex] + rowIndex];
+  size_t numEntries;
+  this->inputMatrix_->getLocalRowCopy(localRow,Indices(),Values(),numEntries);
+
+  num_entries_found = 0;
+  for(size_t k = 0; k < numEntries; ++k)
+  {
+    const local_ordinal_type localCol = Indices[k];
+
+    // Skip off-process elements
+    //
+    // FIXME (mfh 24 Aug 2013) This assumes the following:
+    //
+    // 1. The column and row Maps begin with the same set of
+    //    on-process entries, in the same order.  That is,
+    //    on-process row and column indices are the same.
+    // 2. All off-process indices in the column Map of the input
+    //    matrix occur after that initial set.
+    if(static_cast<size_t> (localCol) >= MatrixInNumRows)
+      continue;
+
+    // for local column IDs, look for each ID in the list
+    // of columns hosted by this object
+    InverseLocalOrdinal jj = INVALID;
+    for(local_ordinal_type kk = 0; kk < this->blockRows_[blockIndex]; kk++)
+    {
+      if(localRows[kk] == localCol)
+        jj = kk;
+    }
+
+    if (jj != INVALID)
+    {
+      Indices[num_entries_found] = localMaps_[blockIndex].getGlobalElement(jj);
+      Values[num_entries_found] = Values[k];
+      num_entries_found++;
+    }
+  }
+}
+
+//==============================================================================
+template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::initialize ()
 {
   using Teuchos::RCP;
@@ -141,13 +203,39 @@ void SparseContainer<MatrixType,InverseType>::initialize ()
   // local matrices to use for solves.
   diagBlocks_.reserve(this->numBlocks_);
   Inverses_.reserve(this->numBlocks_);
+
+  const size_t maxNumEntriesInRow = this->inputMatrix_->getNodeMaxNumRowEntries();
+  Teuchos::Array<scalar_type> Values;
+  Teuchos::Array<local_ordinal_type> Indices;
+  Teuchos::Array<InverseScalar> Values_insert;
+  Teuchos::Array<InverseGlobalOrdinal> Indices_insert;
+  Values.resize (maxNumEntriesInRow);
+  Indices.resize (maxNumEntriesInRow);
+  Values_insert.resize (maxNumEntriesInRow);
+  Indices_insert.resize (maxNumEntriesInRow);
+
   for(int i = 0; i < this->numBlocks_; i++)
   {
     // Create a local map for the block, with same size as block has rows.
     // Note: this map isn't needed elsewhere in SparseContainer, but the
     // diagBlocks_[...] will keep it alive
     RCP<InverseMap> tempMap(new InverseMap(this->blockRows_[i], 0, localComm_));
-    diagBlocks_.emplace_back(new InverseCrs(tempMap, 0));
+
+    // Count number of entries in diagBlock_'s row for matrix constructor
+    // This counting code should match the code in extract()
+    const local_ordinal_type numRows_ = this->blockRows_[i];
+    const Teuchos::ArrayView<const local_ordinal_type> localRows = 
+                                                       this->getLocalRows(i);
+    Teuchos::Array<size_t> nEntriesPerRow(numRows_);
+    for (local_ordinal_type j = 0; j < numRows_; j++)
+    {
+      size_t num_entries_found;
+      findRowIndicesAndCounts(i, j, localRows, Indices, Values,
+                              Indices_insert, Values_insert, num_entries_found);
+      nEntriesPerRow[j] = num_entries_found;
+    }
+    diagBlocks_.emplace_back(new InverseCrs(tempMap, nEntriesPerRow,
+                                            Tpetra::StaticProfile));
     // Create the inverse operator using the local matrix.  We give it
     // the matrix here, but don't call its initialize() or compute()
     // methods yet, since we haven't initialized the matrix yet.
@@ -575,48 +663,17 @@ extract ()
   Values_insert.resize (maxNumEntriesInRow);
   Indices_insert.resize (maxNumEntriesInRow);
 
-  const InverseLocalOrdinal INVALID = Teuchos::OrdinalTraits<InverseLocalOrdinal>::invalid ();
   for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
   {
     const local_ordinal_type numRows_ = this->blockRows_[i];
     const ArrayView<const local_ordinal_type> localRows = this->getLocalRows(i);
     for (local_ordinal_type j = 0; j < numRows_; j++)
     {
-      const local_ordinal_type localRow = this->partitions_[this->partitionIndices_[i] + j];
-      size_t numEntries;
-      A.getLocalRowCopy(localRow, Indices(), Values(), numEntries);
-      size_t num_entries_found = 0;
-      for(size_t k = 0; k < numEntries; ++k)
-      {
-        const local_ordinal_type localCol = Indices[k];
-        // Skip off-process elements
-        //
-        // FIXME (mfh 24 Aug 2013) This assumes the following:
-        //
-        // 1. The column and row Maps begin with the same set of
-        //    on-process entries, in the same order.  That is,
-        //    on-process row and column indices are the same.
-        // 2. All off-process indices in the column Map of the input
-        //    matrix occur after that initial set.
-        if(static_cast<size_t> (localCol) >= MatrixInNumRows)
-          continue;
-        // for local column IDs, look for each ID in the list
-        // of columns hosted by this object
-        InverseLocalOrdinal jj = INVALID;
-        for(local_ordinal_type kk = 0; kk < numRows_; kk++)
-        {
-          if(localRows[kk] == localCol)
-            jj = kk;
-        }
-        if (jj != INVALID)
-        {
-          Indices_insert[num_entries_found] = localMaps_[i].getGlobalElement(jj);
-          Values_insert[num_entries_found] = Values[k];
-          num_entries_found++;
-        }
-      }
+      size_t num_entries_found;
+      findRowIndicesAndCounts(i, j, localRows, Indices, Values, 
+                              Indices_insert, Values_insert, num_entries_found);
       diagBlocks_[i]->insertGlobalValues(j, Indices_insert (0, num_entries_found),
-                                        Values_insert (0, num_entries_found));
+                                            Values_insert (0, num_entries_found));
     }
     // FIXME (mfh 24 Aug 2013) If we generalize the current set of
     // assumptions on the column and row Maps (see note above), we may

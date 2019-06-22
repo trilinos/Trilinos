@@ -289,6 +289,27 @@ private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   SparseContainer (const SparseContainer<MatrixType,InverseType>& rhs);
 
+  /// \brief For a row of a block, identify entries to be inserted to diagBlocks_
+  //  Pulled into a separate function to allow separate counting and identification
+  ///  \param blockIndex,         [in]  block being processed
+  ///  \param rowIndex,           [in]  row being processed in this block
+  ///  \param localRows,          [in]  rows of the block
+  ///  \param Indices,            [in]  Storage for row indices of inputMatrix
+  ///  \param Values,             [in]  Storage for row values of inputMatrix
+  ///  \param Indices_insert,     [out] Indices to be inserted for this row
+  ///  \param Values_insert,      [out] Value associated with the index
+  ///  \param num_entries_found   [out] number of Indices to be inserted
+  void findRowIndicesAndCounts(
+    int blockIndex,
+    local_ordinal_type rowIndex,
+    const Teuchos::ArrayView<const local_ordinal_type> &localRows,
+    Teuchos::Array<local_ordinal_type> &Indices,
+    Teuchos::Array<scalar_type> &Values,
+    Teuchos::Array<InverseGlobalOrdinal> &Indices_insert,
+    Teuchos::Array<InverseScalar> &Values_insert,
+    size_t &num_entries_found
+  ) const;
+
   //! Extract the submatrices identified by the local indices set by the constructor.
   void extract ();
 
