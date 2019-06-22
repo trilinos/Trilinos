@@ -1,3 +1,19 @@
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  readSymmetricMatrixMarket
+  SOURCES readSymmetricMatrixMarket.cpp
+  ARGS "simple.mtx simple_sym.mtx"
+  NUM_MPI_PROCS 4
+  COMM mpi serial
+)
+
+# Command that copies files to the executable directory.
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_simple_files
+  SOURCE_FILES
+    simple.mtx
+    simple_sym.mtx
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)
 
 # This test compares Zoltan with Tpetra and Epetra.  Thus, it should run
 # only Tpetra and Zoltan with LO=GO=int, as Epetra does.
