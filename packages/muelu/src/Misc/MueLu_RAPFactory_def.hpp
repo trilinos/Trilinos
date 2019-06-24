@@ -240,6 +240,19 @@ namespace MueLu {
         if(pL.isSublist("matrixmatrix: kernel params"))
           RAPparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
+        if (coarseLevel.IsAvailable("RAP reuse data", this)) {
+          GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
+
+          RAPparams = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", this);
+
+          if (RAPparams->isParameter("graph"))
+            Ac = RAPparams->get< RCP<Matrix> >("graph");
+
+          // Some eigenvalue may have been cached with the matrix in the previous run.
+          // As the matrix values will be updated, we need to reset the eigenvalue.
+          Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+        }
+
         // We *always* need global constants for the RAP, but not for the temps
         RAPparams->set("compute global constants: temporaries",RAPparams->get("compute global constants: temporaries",false));
         RAPparams->set("compute global constants",true);
@@ -289,8 +302,8 @@ namespace MueLu {
         if(!Ac.is_null()) {std::ostringstream oss; oss << "A_" << coarseLevel.GetLevelID(); Ac->setObjectLabel(oss.str());}
         Set(coarseLevel, "A",         Ac);
 
-        // RAPparams->set("graph", Ac);
-        // Set(coarseLevel, "RAP reuse data", RAPparams);
+        RAPparams->set("graph", Ac);
+        Set(coarseLevel, "RAP reuse data", RAPparams);
       }
 
 
