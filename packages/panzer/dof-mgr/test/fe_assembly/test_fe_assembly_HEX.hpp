@@ -505,14 +505,17 @@ int feAssemblyHex(int argc, char *argv[]) {
     // ************************************ MATRIX ASSEMBLY **************************************
 
     auto matrixAndRhsAllocationTimer =  Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Allocation of Matrix and Rhs")));
-    
+   
+    auto importer = Teuchos::rcp(new fe_graph_t::import_type(ownedMap, ownedAndGhosted_map)); 
     auto A = Teuchos::rcp(new fe_matrix_t(feGraph));
-    auto b = Teuchos::rcp (new fe_multivector_t(domainMap, feGraph->getImporter(), 1));
+    auto b = Teuchos::rcp (new fe_multivector_t(domainMap, importer, 1));
+    //auto b = Teuchos::rcp (new fe_multivector_t(domainMap, feGraph->getImporter(), 1));
 
     matrixAndRhsAllocationTimer =  Teuchos::null;
 
     auto matrixAndRhsFillTimer =  Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Fill of Matrix and Rhs")));
     Teuchos::Array<global_ordinal_t> columnLocalIds(basisCardinality);
+    Teuchos::Array<global_ordinal_t> bLocalIds(basisCardinality);
     Teuchos::Array<scalar_t> columnScalarValues(basisCardinality);         // scalar values for each column
 
     //fill matrix
@@ -532,8 +535,10 @@ int feAssemblyHex(int argc, char *argv[]) {
       dofManager->getElementGIDs(elemId, elementGIDs);
 
 
-      for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++)
+      for(ordinal_type nodeId=0; nodeId<basisCardinality; nodeId++) {
+        bLocalIds[nodeId] = ownedAndGhosted_map->getLocalElement(elementGIDs[elmtOffset[nodeId]]);
         columnLocalIds[nodeId] = A->getColMap()->getLocalElement(elementGIDs[elmtOffset[nodeId]]);
+      }
 
       // For each node (row) on the current element:
       // - populate the values array
@@ -547,7 +552,7 @@ int feAssemblyHex(int argc, char *argv[]) {
           columnScalarValues[colId] = cellMatHost(elemId, nodeId, colId);
 
         A->sumIntoLocalValues(localRowId, columnLocalIds, columnScalarValues);
-        b->sumIntoLocalValue(columnLocalIds[nodeId], 0, cellRhsHost(elemId, nodeId));
+        b->sumIntoLocalValue(bLocalIds[nodeId], 0, cellRhsHost(elemId, nodeId));
       }
     }
 
@@ -562,11 +567,12 @@ int feAssemblyHex(int argc, char *argv[]) {
     //interpolate analytic solution into finite element space
     DynRankView ConstructWithLabel(basisCoeffsLI, numOwnedElems, basisCardinality);
     {
+      Teuchos::TimeMonitor liTimer =  *Teuchos::TimeMonitor::getNewTimer("Verification, locally interpolate analytic solution");
       DynRankView ConstructWithLabel(dofCoordsOriented, numOwnedElems, basisCardinality, dim);
       DynRankView ConstructWithLabel(dofCoeffsPhys, numOwnedElems, basisCardinality);
-
+      
       li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basis.getRawPtr(), POINTTYPE_EQUISPACED, elemOrts);
-
+ 
       DynRankView ConstructWithLabel(funAtDofPoints, numOwnedElems, basisCardinality);
       {
         DynRankView ConstructWithLabel(physDofPoints, numOwnedElems, numQPoints, dim);
@@ -577,10 +583,12 @@ int feAssemblyHex(int argc, char *argv[]) {
         Kokkos::parallel_for("loop for evaluating the function at DoF points", numOwnedElems,functor);
         Kokkos::fence(); //make sure that funAtDofPoints has been evaluated
       }
+    
       li::getBasisCoeffs(basisCoeffsLI, funAtDofPoints, dofCoeffsPhys);
     }
 
     {
+      Teuchos::TimeMonitor vTimer1 =  *Teuchos::TimeMonitor::getNewTimer("Verification, assemble solution");
       Tpetra::Vector<scalar_t> x(domainMap); //solution
       auto basisCoeffsLIHost = Kokkos::create_mirror_view(basisCoeffsLI);
       Kokkos::deep_copy(basisCoeffsLIHost,basisCoeffsLI);
@@ -597,8 +605,11 @@ int feAssemblyHex(int argc, char *argv[]) {
             x.replaceGlobalValue(gid, basisCoeffsLIHost(elemId, nodeId));
         }
       }
-
-      A->apply(x, *b, Teuchos::NO_TRANS, -1.0, 1.0);   // b - A x
+     
+      {
+        Teuchos::TimeMonitor vTimer2 =  *Teuchos::TimeMonitor::getNewTimer("Verification,compute rhs (matrix-vector product)");
+        A->apply(x, *b, Teuchos::NO_TRANS, -1.0, 1.0);   // b - A x
+      }
     }
 
     double res_l2_norm = b->getVector(0)->norm2();
