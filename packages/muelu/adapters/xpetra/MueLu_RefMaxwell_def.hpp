@@ -462,8 +462,8 @@ namespace MueLu {
 
           coarseLevel.setlib(AH_->getDomainMap()->lib());
           fineLevel.setlib(AH_->getDomainMap()->lib());
-          coarseLevel.setObjectLabel("RefMaxwell (1,1)");
-          fineLevel.setObjectLabel("RefMaxwell (1,1)");
+          coarseLevel.setObjectLabel("RefMaxwell coarse (1,1)");
+          fineLevel.setObjectLabel("RefMaxwell coarse (1,1)");
 
           // auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
           // ParameterList repartheurParams;
@@ -555,7 +555,7 @@ namespace MueLu {
           AH_ = MatrixFactory::Build(AH_, *ImporterH_, *ImporterH_, targetMap, targetMap, rcp(&XpetraList,false));
         }
         if (!AH_.is_null())
-            AH_->setObjectLabel("RefMaxwell (1,1)");
+          AH_->setObjectLabel("RefMaxwell coarse (1,1)");
       }
 #endif // HAVE_MPI
 
@@ -843,7 +843,7 @@ namespace MueLu {
           SM_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra &&
           A22_->getDomainMap()->lib() == Xpetra::UseTpetra &&
           D0_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || (defined(HAVE_MUELU_INST_DOUBLE_INT_INT)))
+#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
         ParameterList hiptmairPreList, hiptmairPostList, smootherPreList, smootherPostList;
 
         if (smootherList_.isSublist("smoother: pre params"))
@@ -1720,7 +1720,7 @@ namespace MueLu {
     // set fixed block size for vector nodal matrix
     size_t dim = Nullspace_->getNumVectors();
     AH_->SetFixedBlockSize(dim);
-    AH_->setObjectLabel("RefMaxwell (1,1)");
+    AH_->setObjectLabel("RefMaxwell coarse (1,1)");
 
   }
 
@@ -2154,6 +2154,28 @@ namespace MueLu {
 
     oss << std::endl;
 
+    if (useHiptmairSmoothing_) {
+      if (hiptmairPreSmoother_ != null && hiptmairPreSmoother_ == hiptmairPostSmoother_)
+        oss << "Smoother both : " << hiptmairPreSmoother_->description() << std::endl;
+      else {
+        oss << "Smoother pre  : "
+            << (hiptmairPreSmoother_ != null ?  hiptmairPreSmoother_->description() : "no smoother") << std::endl;
+        oss << "Smoother post : "
+            << (hiptmairPostSmoother_ != null ?  hiptmairPostSmoother_->description() : "no smoother") << std::endl;
+      }
+
+    } else {
+      if (PreSmoother_ != null && PreSmoother_ == PostSmoother_)
+        oss << "Smoother both : " << PreSmoother_->description() << std::endl;
+      else {
+        oss << "Smoother pre  : "
+            << (PreSmoother_ != null ?  PreSmoother_->description() : "no smoother") << std::endl;
+        oss << "Smoother post : "
+            << (PostSmoother_ != null ?  PostSmoother_->description() : "no smoother") << std::endl;
+      }
+    }
+    oss << std::endl;
+
     std::string outstr = oss.str();
 
 #ifdef HAVE_MPI
@@ -2168,6 +2190,12 @@ namespace MueLu {
 #endif
 
     out << outstr;
+
+    if (!HierarchyH_.is_null())
+      HierarchyH_->describe(out, GetVerbLevel());
+
+    if (!Hierarchy22_.is_null())
+      Hierarchy22_->describe(out, GetVerbLevel());
 
     if (IsPrint(Statistics2)) {
       // Print the grid of processors

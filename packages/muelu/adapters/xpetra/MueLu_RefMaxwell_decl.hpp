@@ -47,9 +47,10 @@
 #define MUELU_REFMAXWELL_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_ExplicitInstantiation.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 
+#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
