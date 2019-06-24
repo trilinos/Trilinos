@@ -617,7 +617,7 @@ void KokkosSPGEMM
       row_mapA, entriesA, valsA,
       transpose_col_xadj,transpose_col_adj, tranpose_vals);
 
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\t\tTranspose FlopsPerRowOuterCal BlockPartition FastAllocation";
     std::cout << " Outer Sort Collapse CopyToSLOW MultiWayMerge FinalCollapse Overall"<<std::endl;
@@ -642,7 +642,7 @@ void KokkosSPGEMM
   const_b_lno_row_view_t,
   size_t_view_t> fpr(b_row_cnt, transpose_col_xadj, row_mapB, flop_per_row);
   Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace> (0,b_row_cnt), fpr);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   KokkosKernels::Impl::
   exclusive_parallel_prefix_sum<size_t_view_t, MyExecSpace>
@@ -651,7 +651,7 @@ void KokkosSPGEMM
   auto num_flops = Kokkos::subview(flop_per_row, b_row_cnt);
   auto h_num_flops = Kokkos::create_mirror_view (num_flops);
   Kokkos::deep_copy (h_num_flops, num_flops);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   size_t num_required_flops = h_num_flops();
 
   if (KOKKOSKERNELS_VERBOSE){
@@ -708,7 +708,7 @@ void KokkosSPGEMM
       //    )
       , block_size);
 
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << timer1.seconds() << " ";
     //std::cout << "\t\tAllocation WITH FIRST TOUCH TIME:" << timer1.seconds() << std::endl<< std::endl;
@@ -746,7 +746,7 @@ void KokkosSPGEMM
 
 
 
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     if (KOKKOSKERNELS_VERBOSE){
       outerproducttime += timer1.seconds();
       //std::cout << "\t\tOuter Product TIME:" << timer1.seconds() << std::endl;
@@ -777,7 +777,7 @@ void KokkosSPGEMM
 
     timer1.reset();
     this->sort_triplets(fast_memory_triplets, num_block_flops);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     if (KOKKOSKERNELS_VERBOSE){
       sorttime += timer1.seconds();
       //std::cout << "\t\tTriplet Sort Time:" << timer1.seconds() << std::endl;
@@ -790,7 +790,7 @@ void KokkosSPGEMM
     size_type outsize = this->collapse_triplets_omp(
         fast_memory_triplets, num_block_flops, collapsed_fast_memory_triplets);
     overall_size += outsize;
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     if (KOKKOSKERNELS_VERBOSE){
       //std::cout << "\t\toutsize:" << outsize << std::endl;
       collapse_time += timer1.seconds();
@@ -807,7 +807,7 @@ void KokkosSPGEMM
     KokkosKernels::Impl::kk_copy_vector
     <fast_triplet_view_t, slow_triplet_view_t, MyExecSpace>(
         outsize,collapsed_fast_memory_triplets, host_triplet_arrays[bi]);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     if (KOKKOSKERNELS_VERBOSE){
       copy_to_slow_mem_time += timer1.seconds();
       //std::cout << "\t\tTriplet Copy To Slow Memory Time:" << timer1.seconds()  << std::endl << std::endl;

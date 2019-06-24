@@ -588,18 +588,18 @@ namespace KokkosSparse{
 
 
 
-      void initialize_symbolic(){
+      void initialize_symbolic()
+      {
         typename HandleType::GraphColoringHandleType *gchandle = this->handle->get_graph_coloring_handle();
 
 
-        if (gchandle == NULL){
-
-          this->handle->create_graph_coloring_handle();
-          //this->handle->create_gs_handle();
-          this->handle->get_gs_handle()->set_owner_of_coloring();
-          gchandle = this->handle->get_graph_coloring_handle();
+        if (gchandle == NULL)
+        {
+            this->handle->create_graph_coloring_handle();
+            //this->handle->create_gs_handle();
+            this->handle->get_gs_handle()->set_owner_of_coloring();
+            gchandle = this->handle->get_graph_coloring_handle();
         }
-
 
 
         const_lno_row_view_t xadj = this->row_map;
@@ -663,7 +663,7 @@ namespace KokkosSparse{
           <typename HandleType::GraphColoringHandleType::color_view_t,
            nnz_lno_persistent_work_view_t, MyExecSpace>
           (num_rows, numColors, colors, color_xadj, color_adj);
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
@@ -673,7 +673,7 @@ namespace KokkosSparse{
 
         nnz_lno_persistent_work_host_view_t  h_color_xadj = Kokkos::create_mirror_view (color_xadj);
         Kokkos::deep_copy (h_color_xadj , color_xadj);
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
@@ -691,18 +691,18 @@ namespace KokkosSparse{
             if (color_index_begin + 1 >= color_index_end ) continue;
             auto colorsubset =
               subview(color_adj, Kokkos::pair<row_lno_t, row_lno_t> (color_index_begin, color_index_end));
-            MyExecSpace::fence();
+            MyExecSpace().fence();
             Kokkos::sort (colorsubset);
             //TODO: MD 08/2017: If I remove the below fence, code fails on cuda.
             //I do not see any reason yet it to fail.
-            MyExecSpace::fence();
+            MyExecSpace().fence();
           }
         }
 #endif
 
 
 
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "SORT_TIME:" << timer.seconds() << std::endl;
         timer.reset();
@@ -720,7 +720,7 @@ namespace KokkosSparse{
                                                    permuted_xadj,
                                                    old_to_new_map));
         //std::cout << "create_permuted_xadj" << std::endl;
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "CREATE_PERMUTED_XADJ:" << timer.seconds() << std::endl;
@@ -732,7 +732,7 @@ namespace KokkosSparse{
         KokkosKernels::Impl::inclusive_parallel_prefix_sum
           <row_lno_persistent_work_view_t, MyExecSpace>
           (num_rows + 1, permuted_xadj);
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "INCLUSIVE_PPS:" << timer.seconds() << std::endl;
@@ -751,7 +751,7 @@ namespace KokkosSparse{
                                                    permuted_adj,
                                                    //newvals_,
                                                    old_to_new_map));
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "SYMBOLIC_FILL:" << timer.seconds() << std::endl;
@@ -1163,7 +1163,7 @@ namespace KokkosSparse{
                                                       block_matrix_size
                                                       ));
           }
-          MyExecSpace::fence();
+          MyExecSpace().fence();
           gsHandler->set_new_adj_val(permuted_adj_vals);
 
           scalar_persistent_work_view_t permuted_inverse_diagonal (Kokkos::ViewAllocateWithoutInitializing("permuted_inverse_diagonal"), num_rows * block_size );
@@ -1210,7 +1210,7 @@ namespace KokkosSparse{
 
           }
 
-          MyExecSpace::fence();
+          MyExecSpace().fence();
           this->handle->get_gs_handle()->set_permuted_inverse_diagonal(permuted_inverse_diagonal);
 
           this->handle->get_gs_handle()->set_call_numeric(true);
@@ -1268,7 +1268,7 @@ namespace KokkosSparse{
                                                           Permuted_Yvector
                                                           );
         }
-        MyExecSpace::fence();
+        MyExecSpace().fence();
         if(init_zero_x_vector){
           KokkosKernels::Impl::zero_vector<scalar_persistent_work_view_t, MyExecSpace>(num_cols * block_size, Permuted_Xvector);
         }
@@ -1281,7 +1281,7 @@ namespace KokkosSparse{
                                                                                                              Permuted_Xvector
                                                                                                              );
         }
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
 
 
@@ -1358,7 +1358,7 @@ namespace KokkosSparse{
                                                                                                            Permuted_Xvector,
                                                                                                            x_lhs_output_vec
                                                                                                            );
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         std::cout << "After X:";
@@ -1408,7 +1408,7 @@ namespace KokkosSparse{
                                                           Permuted_Yvector
                                                           );
         }
-        MyExecSpace::fence();
+        MyExecSpace().fence();
         if(init_zero_x_vector){
           KokkosKernels::Impl::zero_vector<scalar_persistent_work_view_t, MyExecSpace>(num_cols, Permuted_Xvector);
         }
@@ -1421,7 +1421,7 @@ namespace KokkosSparse{
                                                                                                              Permuted_Xvector
                                                                                                              );
         }
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
         row_lno_persistent_work_view_t permuted_xadj = gsHandler->get_new_xadj();
         nnz_lno_persistent_work_view_t permuted_adj = gsHandler->get_new_adj();
@@ -1476,7 +1476,7 @@ namespace KokkosSparse{
                                                                                                            Permuted_Xvector,
                                                                                                            x_lhs_output_vec
                                                                                                            );
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         std::cout << "--point After X:";
         KokkosKernels::Impl::print_1Dview(Permuted_Xvector);
@@ -1576,7 +1576,7 @@ namespace KokkosSparse{
                                    gs );
             }
 
-            MyExecSpace::fence();
+            MyExecSpace().fence();
           }
         }
         if (apply_backward){
@@ -1608,7 +1608,7 @@ namespace KokkosSparse{
                                      bigblock_team_fill_policy_t(numberOfTeams / team_row_chunk_size + 1 , suggested_team_size, vector_size),
                                      gs );
               }
-              MyExecSpace::fence();
+              MyExecSpace().fence();
               if (i == 0){
                 break;
               }
@@ -1643,7 +1643,7 @@ namespace KokkosSparse{
             //std::cout <<  "i:" << i << " color_index_begin:" << color_index_begin << " color_index_end:" << color_index_end << std::endl;
             Kokkos::parallel_for ("KokkosSparse::GaussSeidel::PSGS::forward",
                                   my_exec_space (color_index_begin, color_index_end) , gs);
-            MyExecSpace::fence();
+            MyExecSpace().fence();
           }
         }
         if (apply_backward && numColors){
@@ -1652,7 +1652,7 @@ namespace KokkosSparse{
             nnz_lno_t color_index_end = h_color_xadj(i + 1);
             Kokkos::parallel_for ("KokkosSparse::GaussSeidel::PSGS::backward",
                                   my_exec_space (color_index_begin, color_index_end) , gs);
-            MyExecSpace::fence();
+            MyExecSpace().fence();
             if (i == 0){
               break;
             }

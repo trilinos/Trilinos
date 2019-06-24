@@ -112,7 +112,11 @@ run_graphcolor_d2(crsMat_type                                                   
 
 
     // Print out messages based on coloring validation check.
-    if(!d2_coloring_is_valid)
+    if(d2_coloring_is_valid)
+    {
+        std::cout << std::endl << "Distance-2 Graph Coloring is VALID" << std::endl << std::endl;
+    }
+    else
     {
         std::cout << std::endl
                   << "Distance-2 Graph Coloring is NOT VALID" << std::endl
@@ -249,8 +253,8 @@ test_coloring_d2(lno_type numRows, size_type nnz, lno_type bandwidth, lno_type r
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                           \
     TEST_F(TestCategory, graph##_##graph_color_d2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
     {                                                                                           \
-        test_coloring_d2<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 30, 200, 10);          \
-        test_coloring_d2<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 30, 100, 10);          \
+        test_coloring_d2<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 30, 200, 10);          \
+        test_coloring_d2<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 30, 100, 10);          \
     }
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 #if(defined(KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_OFFSET_INT)) \

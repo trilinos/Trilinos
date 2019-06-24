@@ -1396,7 +1396,7 @@ void
 
   Kokkos::Impl::Timer timer1;
   pool_memory_space m_space(num_chunks, chunksize, -1,  my_pool_type);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\t\tPool Alloc Time:" << timer1.seconds() << std::endl;
@@ -1442,7 +1442,7 @@ void
   if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
 	  if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM){
 		  Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY_SPREADTEAM", gpu_team_policy4_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
-		    MyExecSpace::fence();
+		    MyExecSpace().fence();
 
 	  }
 	  else if (algorithm_to_run == SPGEMM_KK_MEMORY_BIGSPREADTEAM){
@@ -1452,7 +1452,7 @@ void
 
 		  Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY", gpu_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
 	  }
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
   else {
 	  if (algorithm_to_run == SPGEMM_KK_LP){
@@ -1474,7 +1474,7 @@ void
 			  Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::KKMEM::STATIC",  multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
 		  }
 	  }
-	  MyExecSpace::fence();
+	  MyExecSpace().fence();
   }
 
   if (KOKKOSKERNELS_VERBOSE){
@@ -1540,7 +1540,7 @@ void
 
   Kokkos::Impl::Timer timer1;
   pool_memory_space m_space(num_chunks, chunksize, -1,  my_pool_type);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\t\tPool Alloc Time:" << timer1.seconds() << std::endl;
@@ -1586,7 +1586,7 @@ void
 
   if (my_exec_space_ == KokkosKernels::Impl::Exec_CUDA){
     Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY2",  gpu_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
   else {
     if (use_dynamic_schedule){
@@ -1597,7 +1597,7 @@ void
 
       Kokkos::parallel_for( "KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY_STATIC", multicore_team_policy2_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
 
   if (KOKKOSKERNELS_VERBOSE){

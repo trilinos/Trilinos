@@ -45,8 +45,6 @@
 #define KOKKOSBLAS1_AXPBY_TPL_SPEC_DECL_HPP_
 
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-#include "KokkosBlas_Host_tpl.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
@@ -59,6 +57,13 @@ namespace {
       #endif 
   }
 }
+}
+}
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#include "KokkosBlas_Host_tpl.hpp"
+namespace KokkosBlas {
+namespace Impl {
 
 #define KOKKOSBLAS1_DAXPBY_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
