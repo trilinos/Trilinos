@@ -75,6 +75,8 @@ using Teuchos::RCP;
 
 typedef zlno_t z2TestLO;
 typedef zgno_t z2TestGO;
+//typedef uint64_t z2TestLO;
+//typedef uint64_t z2TestGO;
 typedef zscalar_t z2TestScalar;
 
 typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix;
@@ -186,6 +188,8 @@ int main(int narg, char** arg)
   std::string colorAlg = "SerialGreedy"; // Default algorithm is the serial greedy one.
   bool verbose = false;                  // Verbosity of output
   int testReturn = 0;
+  int totalColors = 0;
+  int localColors = 0;
 
   ////// Establish session.
   Tpetra::ScopeGuard tscope(&narg, &arg);
@@ -244,6 +248,7 @@ int main(int narg, char** arg)
 
   if (inputFile != ""){ // Input file specified; read a matrix
     uinput = rcp(new UserInputForTests(testDataFilePath, inputFile, comm, true));
+    printf("--Rank %d: Successfully read the file\n",comm->getRank());
   }
   else                  // Let Galeri generate a matrix
 
@@ -299,7 +304,13 @@ int main(int narg, char** arg)
   
   // Print # of colors on each proc.
   if(checkLength>0) std::cout << "No. of colors on proc " << me << " : " << soln->getNumColors() << std::endl;
-
+  if(checkLength>0){
+    localColors = soln->getNumColors();
+  }
+  
+  //colors are guaranteed to overlap, max will discard duplicates
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX,1,&localColors,&totalColors);
+  
   std::cout << "Going to validate the soln" << std::endl;
   // Verify that checkColoring is a coloring
   if(colorAlg == "Hybrid"){
@@ -322,8 +333,10 @@ int main(int narg, char** arg)
   if (me == 0) {
     if (numGlobalConflicts > 0)
       std::cout << "Solution is not a valid coloring; FAIL" << std::endl;
-    else
+    else{
+      std::cout << "Used " <<totalColors<< " colors\n"; 
       std::cout << "PASS" << std::endl;
+    }
   }
 
 }
