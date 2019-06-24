@@ -1067,7 +1067,14 @@ namespace MueLu {
       RAPparams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: triple product", bool, RAPparams);
+
+    // if "rap: triple product" has not been set and algorithm is "unsmoothed" switch triple product on
+    if (!paramList.isParameter("rap: triple product") &&
+        paramList.isType<std::string>("multigrid algorithm") &&
+        paramList.get<std::string>("multigrid algorithm") == "unsmoothed")
+      paramList.set("rap: triple product", true);
+    else
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: triple product", bool, RAPparams);
 
     try {
       if (paramList.isParameter("aggregation: allow empty prolongator columns")) {
