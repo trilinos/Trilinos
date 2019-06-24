@@ -77,9 +77,9 @@ private:
 
   // See #1088 for why this is not just device_type::memory_space.
 #ifdef KOKKOS_ENABLE_CUDA
-  static constexpr bool is_cuda =
-    std::is_same<execution_space, Kokkos::Cuda>::value;
-  using memory_space = typename std::conditional<is_cuda, Kokkos::CudaSpace,
+  using memory_space = typename std::conditional<
+    std::is_same<execution_space, Kokkos::Cuda>::value,
+    Kokkos::CudaHostPinnedSpace,
     typename NT::device_type::memory_space>::type;
 #else
   using memory_space = typename NT::device_type::memory_space;

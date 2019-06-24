@@ -373,25 +373,22 @@ computeNumPacketsAndOffsets(const OutputOffsetsViewType& outputOffsets,
 ///   2. int proces IDs
 ///
 template<class Packet,
-         class ColumnMap,
+         class LocalMapType,
          class BufferDeviceType,
-         class OtherDeviceType = typename ColumnMap::device_type>
+         class InputLidsType,
+         class InputPidsType>
 KOKKOS_FUNCTION
 size_t
-packRow(const ColumnMap& col_map,
+packRow(const LocalMapType& col_map,
         const Kokkos::View<Packet*, BufferDeviceType>& exports,
-        const typename PackTraits<
-          typename ColumnMap::local_ordinal_type,
-          OtherDeviceType>::input_array_type& lids_in,
-        const typename PackTraits<
-          int,
-          OtherDeviceType>::input_array_type& pids_in,
+        const InputLidsType& lids_in,
+        const InputPidsType& pids_in,
         const size_t offset,
         const size_t num_ent,
         const bool pack_pids)
 {
-  using LO = typename ColumnMap::local_ordinal_type;
-  using GO = typename ColumnMap::global_ordinal_type;
+  using LO = typename LocalMapType::local_ordinal_type;
+  using GO = typename LocalMapType::global_ordinal_type;
 
   if (num_ent == 0) {
     // Empty rows always take zero bytes, to ensure sparsity.
@@ -425,8 +422,7 @@ packRow(const ColumnMap& col_map,
 template<class Packet,
          class LocalGraph,
          class LocalMap,
-         class BufferDeviceType,
-         class OtherDeviceType = typename LocalGraph::device_type>
+         class BufferDeviceType>
 struct PackCrsGraphFunctor {
   using local_graph_type = LocalGraph;
   using local_map_type = LocalMap;
@@ -438,9 +434,9 @@ struct PackCrsGraphFunctor {
   using offsets_view_type = Kokkos::View<const size_t*, BufferDeviceType>;
   using exports_view_type = Kokkos::View<Packet*, BufferDeviceType>;
   using export_lids_view_type =
-    typename PackTraits<LO, OtherDeviceType>::input_array_type;
+    typename PackTraits<LO, BufferDeviceType>::input_array_type;
   using source_pids_view_type =
-    typename PackTraits<int, OtherDeviceType>::input_array_type;
+    typename PackTraits<int, BufferDeviceType>::input_array_type;
 
   using count_type =
     typename num_packets_per_lid_view_type::non_const_value_type;
@@ -543,13 +539,9 @@ struct PackCrsGraphFunctor {
     const auto row_end = local_graph.row_map[export_lid + 1];
     auto lids_in = Kokkos::subview (local_graph.entries,
                                     Kokkos::make_pair (row_beg, row_end));
-    using LMT = local_map_type;
-    using PT = Packet;
-    using BDT = BufferDeviceType;
-    using ODT = OtherDeviceType;
     size_t num_ent_packed_this_row =
-      packRow<PT,LMT,BDT,ODT> (local_col_map, exports, lids_in,
-                               source_pids, offset, num_ent, pack_pids);
+      packRow (local_col_map, exports, lids_in,
+               source_pids, offset, num_ent, pack_pids);
     if (num_ent_packed_this_row != num_packets_this_lid) {
       if (dst.first != 0) { // keep only the first error
         dst = Kokkos::make_pair (3, i);
@@ -568,8 +560,7 @@ struct PackCrsGraphFunctor {
 template<class Packet,
          class LocalGraph,
          class LocalMap,
-         class BufferDeviceType,
-         class OtherDeviceType>
+         class BufferDeviceType>
 void
 do_pack(const LocalGraph& local_graph,
         const LocalMap& local_map,
@@ -579,12 +570,12 @@ do_pack(const LocalGraph& local_graph,
             BufferDeviceType
         >::input_array_type& num_packets_per_lid,
         const typename PackTraits<
-            typename LocalMap::local_ordinal_type,
-            OtherDeviceType
+          typename LocalMap::local_ordinal_type,
+          BufferDeviceType
         >::input_array_type& export_lids,
         const typename PackTraits<
-            int,
-            OtherDeviceType
+          int,
+          BufferDeviceType
         >::input_array_type& source_pids,
         const Kokkos::View<const size_t*, BufferDeviceType>& offsets,
         const bool pack_pids)
@@ -619,7 +610,7 @@ do_pack(const LocalGraph& local_graph,
 
   using pack_functor_type =
     PackCrsGraphFunctor<Packet, LocalGraph, LocalMap,
-                        BufferDeviceType, OtherDeviceType>;
+                        BufferDeviceType>;
   pack_functor_type f (local_graph, local_map, exports,
                        num_packets_per_lid, export_lids,
                        source_pids, offsets, pack_pids);
@@ -687,16 +678,27 @@ do_pack(const LocalGraph& local_graph,
 ///   (i.e., a possibly different number of entries per row).
 template<typename LO, typename GO, typename NT>
 void
-packCrsGraph(const CrsGraph<LO,GO,NT>& sourceGraph,
-             Kokkos::DualView<typename CrsGraph<LO,GO,NT>::packet_type*,
-                              typename CrsGraph<LO,GO,NT>::buffer_device_type>& exports,
-             const Kokkos::View<size_t*,
-                                typename CrsGraph<LO,GO,NT>::buffer_device_type>& num_packets_per_lid,
-             const Kokkos::View<const LO*, typename NT::device_type>& export_lids,
-             const Kokkos::View<const int*, typename NT::device_type>& export_pids,
-             size_t& constant_num_packets,
-             const bool pack_pids,
-             Distributor& /* dist */)
+packCrsGraph
+(const CrsGraph<LO,GO,NT>& sourceGraph,
+ Kokkos::DualView<
+   typename CrsGraph<LO,GO,NT>::packet_type*,
+   typename CrsGraph<LO,GO,NT>::buffer_device_type
+ >& exports,
+ const Kokkos::View<
+   size_t*,
+   typename CrsGraph<LO,GO,NT>::buffer_device_type
+ >& num_packets_per_lid,
+ const Kokkos::View<
+   const LO*,
+   typename CrsGraph<LO, GO, NT>::buffer_device_type
+ >& export_lids,
+ const Kokkos::View<
+   const int*,
+   typename CrsGraph<LO, GO, NT>::buffer_device_type
+ >& export_pids,
+ size_t& constant_num_packets,
+ const bool pack_pids,
+ Distributor& /* dist */)
 {
   using Kokkos::View;
   typedef typename CrsGraph<LO,GO,NT>::packet_type packet_type;
@@ -714,17 +716,15 @@ packCrsGraph(const CrsGraph<LO,GO,NT>& sourceGraph,
   // (i.e., a possibly different number of entries per row).
   constant_num_packets = 0;
 
-  const size_t num_export_lids =
-    static_cast<size_t> (export_lids.extent (0));
+  const size_t num_export_lids (export_lids.extent (0));
   TEUCHOS_TEST_FOR_EXCEPTION
-    (num_export_lids !=
-     static_cast<size_t> (num_packets_per_lid.extent (0)),
+    (num_export_lids != size_t (num_packets_per_lid.extent (0)),
      std::invalid_argument, prefix << "num_export_lids.extent(0) = "
      << num_export_lids << " != num_packets_per_lid.extent(0) = "
      << num_packets_per_lid.extent (0) << ".");
   if (num_export_lids != 0) {
     TEUCHOS_TEST_FOR_EXCEPTION
-      (num_packets_per_lid.data () == NULL, std::invalid_argument,
+      (num_packets_per_lid.data () == nullptr, std::invalid_argument,
        prefix << "num_export_lids = "<< num_export_lids << " != 0, but "
        "num_packets_per_lid.data() = "
        << num_packets_per_lid.data () << " == NULL.");
@@ -786,8 +786,7 @@ packCrsGraph(const CrsGraph<LO,GO,NT>& sourceGraph,
     local_map_type;
   exports.modify_device ();
   auto exports_d = exports.view_device ();
-  using other_device_type = typename NT::device_type;
-  do_pack<packet_type,local_graph_type,local_map_type,buffer_device_type,other_device_type>
+  do_pack<packet_type,local_graph_type,local_map_type,buffer_device_type>
     (local_graph, local_col_map, exports_d, num_packets_per_lid,
      export_lids, export_pids, offsets, pack_pids);
   // If we got this far, we succeeded.
@@ -810,30 +809,13 @@ packCrsGraph(const CrsGraph<LO, GO, NT>& sourceGraph,
   typedef typename Kokkos::View<size_t*, device_type>::HostMirror::execution_space host_exec_space;
   typedef Kokkos::Device<host_exec_space, Kokkos::HostSpace> host_dev_type;
 
-  // mfh 23 Aug 2017: Fix for #1088 requires pack / unpack buffers to
-  // have a possibly different memory space (CudaSpace) than the
-  // default CUDA memory space (currently CudaUVMSpace).
-  typedef typename device_type::execution_space buffer_exec_space;
-#ifdef KOKKOS_ENABLE_CUDA
-  typedef typename std::conditional<
-      std::is_same<
-        buffer_exec_space, Kokkos::Cuda
-      >::value,
-      Kokkos::CudaSpace,
-      typename device_type::memory_space
-    >::type buffer_memory_space;
-#else
-  typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_ENABLE_CUDA
-  // @MFH: why not use CrsGraph<LO,GO,NT>::buffer_device_type???
-  typedef Kokkos::Device<buffer_exec_space,
-    buffer_memory_space> buffer_device_type;
+  using buffer_device_type = typename CrsGraph<LO, GO, NT>::buffer_device_type;
 
   // Convert all Teuchos::Array to Kokkos::View
 
   // This is an output array, so we don't have to copy to device here.
   // However, we'll have to remember to copy back to host when done.
-  typename local_graph_type::device_type outputDevice;
+  buffer_device_type outputDevice;
   auto num_packets_per_lid_d =
     create_mirror_view_from_raw_host_array (outputDevice,
                                             numPacketsPerLID.getRawPtr (),
@@ -847,13 +829,41 @@ packCrsGraph(const CrsGraph<LO, GO, NT>& sourceGraph,
                                             exportLIDs.size (), true,
                                             "export_lids");
   // Create an empty array of PIDs
-  Kokkos::View<int*, device_type> export_pids_d ("export_pids", 0);
+  Kokkos::View<int*, buffer_device_type> export_pids_d;
 
-  Kokkos::DualView<packet_type*,buffer_device_type> exports_dv ("exports", 0);
+  Kokkos::DualView<packet_type*, buffer_device_type> exports_dv;
   constexpr bool pack_pids = false;
-  PackCrsGraphImpl::packCrsGraph<LO,GO,NT>(
-      sourceGraph, exports_dv, num_packets_per_lid_d, export_lids_d,
-      export_pids_d, constantNumPackets, pack_pids, distor);
+
+  static_assert
+    (std::is_same<
+       typename decltype (num_packets_per_lid_d)::non_const_value_type,
+       size_t>::value,
+     "num_packets_per_lid_d's non_const_value_type should be size_t.");
+  static_assert
+    (std::is_same<
+       typename decltype (num_packets_per_lid_d)::device_type,
+       buffer_device_type>::value,
+     "num_packets_per_lid_d's buffer_device_type should be size_t.");
+  static_assert
+    (std::is_same<
+       typename decltype (export_lids_d)::device_type,
+       buffer_device_type>::value,
+     "export_lids_d's device_type should be buffer_device_type.");
+  static_assert
+    (std::is_same<
+       typename decltype (export_pids_d)::non_const_value_type,
+       int>::value,
+     "export_pids_d's non_const_value_type should be int.");
+  static_assert
+    (std::is_same<
+       typename decltype (export_pids_d)::device_type,
+       buffer_device_type>::value,
+     "export_pids_d's device_type should be buffer_device_type.");
+
+  PackCrsGraphImpl::packCrsGraph
+    (sourceGraph, exports_dv, num_packets_per_lid_d, export_lids_d,
+     export_pids_d, constantNumPackets, pack_pids, distor);
+
   // The counts are an output of packCrsGraph, so we have to copy
   // them back to host.
   Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h
@@ -967,12 +977,12 @@ packCrsGraphNew (const CrsGraph<LO,GO,NT>& sourceGraph,
 
   exports.modify_device ();
   using PackCrsGraphImpl::do_pack;
-  do_pack<PT, LGT, LMT, BDT, BDT> (local_graph, local_col_map,
-                                   exports.view_device (),
-                                   num_packets_per_lid.view_device (),
-                                   export_lids.view_device (),
-                                   export_pids.view_device (),
-                                   offsets, pack_pids);
+  do_pack<PT, LGT, LMT, BDT> (local_graph, local_col_map,
+                              exports.view_device (),
+                              num_packets_per_lid.view_device (),
+                              export_lids.view_device (),
+                              export_pids.view_device (),
+                              offsets, pack_pids);
 }
 
 template<typename LO, typename GO, typename NT>
@@ -993,8 +1003,6 @@ packCrsGraphWithOwningPIDs(const CrsGraph<LO, GO, NT>& sourceGraph,
   typedef typename Kokkos::DualView<packet_type*, buffer_device_type>::t_host::execution_space host_exec_space;
   typedef Kokkos::Device<host_exec_space, Kokkos::HostSpace> host_dev_type;
 
-  typename local_graph_type::device_type outputDevice;
-
   // Convert all Teuchos::Array to Kokkos::View
 
   // This is an output array, so we don't have to copy to device here.
@@ -1008,21 +1016,21 @@ packCrsGraphWithOwningPIDs(const CrsGraph<LO, GO, NT>& sourceGraph,
   // This is an input array, so we have to copy to device here.
   // However, we never need to copy it back to host.
   auto export_lids_d =
-    create_mirror_view_from_raw_host_array (outputDevice,
+    create_mirror_view_from_raw_host_array (buffer_device_type (),
                                             exportLIDs.getRawPtr (),
                                             exportLIDs.size (), true,
                                             "export_lids");
   // This is an input array, so we have to copy to device here.
   // However, we never need to copy it back to host.
   auto export_pids_d =
-    create_mirror_view_from_raw_host_array (outputDevice,
+    create_mirror_view_from_raw_host_array (buffer_device_type (),
                                             sourcePIDs.getRawPtr (),
                                             sourcePIDs.size (), true,
                                             "export_pids");
   constexpr bool pack_pids = true;
-  PackCrsGraphImpl::packCrsGraph<LO,GO,NT>(
-      sourceGraph, exports_dv, num_packets_per_lid_d, export_lids_d,
-      export_pids_d, constantNumPackets, pack_pids, distor);
+  PackCrsGraphImpl::packCrsGraph
+    (sourceGraph, exports_dv, num_packets_per_lid_d, export_lids_d,
+     export_pids_d, constantNumPackets, pack_pids, distor);
 
   // The counts are an output of packCrsGraph, so we
   // have to copy them back to host.

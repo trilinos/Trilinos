@@ -727,7 +727,7 @@ namespace Tpetra {
 #ifdef KOKKOS_ENABLE_CUDA
     using buffer_memory_space = typename std::conditional<
       std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
-      Kokkos::CudaSpace,
+      Kokkos::CudaHostPinnedSpace,
       typename device_type::memory_space>::type;
 #else
     using buffer_memory_space = typename device_type::memory_space;
