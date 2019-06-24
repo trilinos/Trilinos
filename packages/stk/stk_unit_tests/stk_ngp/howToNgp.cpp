@@ -875,41 +875,58 @@ TEST_F(NgpReduceHowTo, getSumFieldValue)
     int sum_val = ngp::get_field_sum(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part());
     EXPECT_EQ(expectedSum, sum_val);
 }
-//TEST_F(NgpReduceHowTo, minMaxPairWiseReduction)
-//{
-//    Kokkos::MinMaxScalar<int> minMaxVal;
-//    Kokkos::MinMax<int> minMax(minMaxVal);
-//    ngp::get_field_reduction
-//      (ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part(), minMax);
-//    EXPECT_EQ(1, minMaxVal.min_val);
-//    EXPECT_EQ(get_num_elems(), minMaxVal.max_val);
-//}
-//TEST_F(NgpReduceHowTo, minLocReduction)
-//{
-//    int expectedMin = 1;
-//    int expectedMinLoc = 0;
-//    Kokkos::ValLocScalar<int,int> minLocVal;
-//    Kokkos::MinLoc<int,int> minLoc (minLocVal);
-//    ngp::get_field_reduction
-//      (ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part(), minLoc);
-//    EXPECT_EQ(expectedMin, minLocVal.val);
-//    EXPECT_EQ(expectedMinLoc, minLocVal.loc);
-//}
-//TEST_F(NgpReduceHowTo, minMaxLocReduction)
-//{
-//    int expectedMin = 1;
-//    int expectedMinLoc = 0;
-//    int expectedMax = get_num_elems();
-//    int expectedMaxLoc = 3;
-//    Kokkos::MinMaxLocScalar<int,int> minMaxLocVal;
-//    Kokkos::MinMaxLoc<int,int> minMaxLoc (minMaxLocVal);
-//    ngp::get_field_reduction
-//      (ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part(), minMaxLoc);
-//    EXPECT_EQ(expectedMin, minMaxLocVal.min_val);
-//    EXPECT_EQ(expectedMinLoc, minMaxLocVal.min_loc);
-//    EXPECT_EQ(expectedMax, minMaxLocVal.max_val);
-//    EXPECT_EQ(expectedMaxLoc, minMaxLocVal.max_loc);
-//}
+TEST_F(NgpReduceHowTo, minMaxPairWiseReduction)
+{
+    Kokkos::MinMaxScalar<int> minMaxVal;
+    Kokkos::MinMax<int> minMax(minMaxVal);
+    ngp::get_field_reduction
+      (ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part(), minMax);
+    EXPECT_EQ(1, minMaxVal.min_val);
+    EXPECT_EQ(get_num_elems(), minMaxVal.max_val);
+}
+TEST_F(NgpReduceHowTo, minLocReduction)
+{
+    int expectedMin = 1;
+    int expectedMinLoc = 0;
+    Kokkos::ValLocScalar<int,int> minLocVal;
+    Kokkos::MinLoc<int,int> minLoc (minLocVal);
+    ngp::get_field_reduction
+      (ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part(), minLoc);
+    EXPECT_EQ(expectedMin, minLocVal.val);
+    EXPECT_EQ(expectedMinLoc, minLocVal.loc);
+}
+TEST_F(NgpReduceHowTo, minMaxLocReduction)
+{
+    int expectedMin = 1;
+    int expectedMinLoc = 0;
+    int expectedMax = get_num_elems();
+    int expectedMaxLoc = 3;
+    Kokkos::MinMaxLocScalar<int,int> minMaxLocVal;
+    Kokkos::MinMaxLoc<int,int> minMaxLoc (minMaxLocVal);
+    ngp::get_field_reduction
+      (ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part(), minMaxLoc);
+    EXPECT_EQ(expectedMin, minMaxLocVal.min_val);
+    EXPECT_EQ(expectedMinLoc, minMaxLocVal.min_loc);
+    EXPECT_EQ(expectedMax, minMaxLocVal.max_val);
+    EXPECT_EQ(expectedMaxLoc, minMaxLocVal.max_loc);
+}
+TEST_F(NgpReduceHowTo, minMaxLocReductionThroughAccessor)
+{
+    int expectedMin = 1;
+    int expectedMinLoc = 0;
+    int expectedMax = get_num_elems();
+    int expectedMaxLoc = 3;
+    Kokkos::MinMaxLocScalar<int,int> minMaxLocVal;
+    Kokkos::MinMaxLoc<int,int> minMaxLoc (minMaxLocVal);
+    ngp::FieldAccessFunctor<decltype(ngpMesh), decltype(ngpElemField), decltype(minMaxLoc), ngp::identity<int>>
+        accessor(ngpElemField, minMaxLoc);
+    ngp::get_field_reduction
+      (ngpMesh, get_bulk().mesh_meta_data().universal_part(), accessor);
+    EXPECT_EQ(expectedMin, minMaxLocVal.min_val);
+    EXPECT_EQ(expectedMinLoc, minMaxLocVal.min_loc);
+    EXPECT_EQ(expectedMax, minMaxLocVal.max_val);
+    EXPECT_EQ(expectedMaxLoc, minMaxLocVal.max_loc);
+}
 
 template <typename T>
 void fill_field_on_device(stk::mesh::BulkData & bulk,
