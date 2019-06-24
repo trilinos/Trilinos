@@ -247,7 +247,7 @@ namespace Intrepid2 {
           \param  cellOrt         [in]  - cell orientation number (zero is aligned with shards default configuration
       */
       template<typename JacobianViewType>
-      inline
+      KOKKOS_INLINE_FUNCTION
       static void
       getJacobianOfOrientationMap(JacobianViewType jacobian,
                              const unsigned cellTopoKey,
