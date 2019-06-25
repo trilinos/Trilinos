@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -452,102 +453,6 @@ void check_size_of_types()
 #endif
 }
 //----------------------------------------------------------------------
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED BulkData::BulkData( MetaData & mesh_meta_data
-                    , ParallelMachine parallel
-                    , enum AutomaticAuraOption auto_aura_option
-#ifdef SIERRA_MIGRATION
-                    , bool add_fmwk_data
-#endif
-                    , ConnectivityMap const* /*arg_connectivity_map*/
-                    , FieldDataManager *field_data_manager
-                    , unsigned bucket_capacity
-                    )
-  :
-#ifdef SIERRA_MIGRATION
-    m_check_invalid_rels(true),
-#endif
-    m_entity_comm_map(),
-    m_ghosting(),
-    m_mesh_meta_data( mesh_meta_data ),
-    m_mark_entity(),
-    m_add_node_sharing_called(false),
-    m_closure_count(),
-    m_mesh_indexes(),
-    m_entity_repo(new impl::EntityRepository()),
-    m_entity_comm_list(),
-    m_comm_list_updater(m_entity_comm_list),
-    m_deleted_entities_current_modification_cycle(),
-    m_ghost_reuse_map(),
-    m_entity_keys(),
-#ifdef SIERRA_MIGRATION
-    m_add_fmwk_data(add_fmwk_data),
-    m_fmwk_global_ids(),
-    m_fmwk_aux_relations(),
-    m_shouldSortFacesByNodeIds(false),
-#endif
-    m_autoAuraOption(auto_aura_option),
-    m_meshModification(*this),
-    m_parallel( parallel ),
-    m_volatile_fast_shared_comm_map(),
-    m_all_sharing_procs(mesh_meta_data.entity_rank_count()),
-    m_ghost_parts(),
-    m_deleted_entities(),
-    m_num_fields(-1), // meta data not necessarily committed yet
-    m_keep_fields_updated(true),
-    m_local_ids(),
-    m_default_field_data_manager(mesh_meta_data.entity_rank_count()),
-    m_field_data_manager(field_data_manager),
-    m_selector_to_buckets_map(),
-    m_bucket_repository(
-        *this,
-        mesh_meta_data.entity_rank_count(),
-        (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map()),
-        bucket_capacity),
-    m_use_identifiers_for_resolving_sharing(false),
-    m_modSummary(*this),
-    m_meshDiagnosticObserver(std::make_shared<stk::mesh::MeshDiagnosticObserver>(*this)),
-    m_sideSetData(*this),
-    m_soloSideIdGenerator(stk::parallel_machine_size(parallel), stk::parallel_machine_rank(parallel), std::numeric_limits<stk::mesh::EntityId>::max()),
-    m_supportsLargeIds(false)
-{
-  try {
-     mesh_meta_data.set_mesh_bulk_data(this);
-  }
-  catch(...) {
-      delete m_entity_repo;
-      throw;
-  }
-
-  m_entity_comm_map.setCommMapChangeListener(&m_comm_list_updater);
-
-  if (m_field_data_manager == NULL)
-  {
-      m_field_data_manager = &m_default_field_data_manager;
-  }
-
-  initialize_arrays();
-
-  m_ghost_parts.clear();
-  internal_create_ghosting( "shared" );
-  //shared part should reside in m_ghost_parts[0]
-  internal_create_ghosting( "shared_aura" );
-
-  check_size_of_types();
-
-  register_observer(m_meshDiagnosticObserver);
-
-//  m_meshDiagnosticObserver->enable_rule(stk::mesh::RULE_3);
-//  m_meshDiagnosticObserver->enable_rule(stk::mesh::SOLO_SIDES);
-
-#ifndef NDEBUG
-  //m_meshDiagnosticObserver->enable_rule(stk::mesh::RULE_3);
-#endif
-
-  m_meshModification.set_sync_state_synchronized();
-}
-#endif
-
 BulkData::BulkData( MetaData & mesh_meta_data
                     , ParallelMachine parallel
                     , enum AutomaticAuraOption auto_aura_option
@@ -1860,6 +1765,15 @@ void BulkData::allocate_field_data()
   }
 }
 
+void BulkData::reallocate_field_data(stk::mesh::FieldBase & field)
+{
+  const std::vector<FieldBase *> & field_set = mesh_meta_data().get_fields();
+  for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
+    const std::vector<Bucket*>& buckets = this->buckets(rank);
+    m_field_data_manager->reallocate_field_data(rank, buckets, field, field_set);
+  }
+}
+
 void BulkData::register_observer(std::shared_ptr<ModificationObserver> observer) const
 {
     notifier.register_observer(observer);
@@ -2467,19 +2381,6 @@ void BulkData::declare_relation( Entity e_from ,
   OrdinalVector ordinal_scratch, scratch2, scratch3;
   internal_declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, scratch2, scratch3);
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED void BulkData::declare_relation( Entity e_from ,
-                                 Entity e_to ,
-                                 const RelationIdentifier local_id ,
-                                 Permutation permut,
-                                 OrdinalVector& ordinal_scratch,
-                                 PartVector& part_scratch)
-{
-    OrdinalVector scratch2, scratch3;
-    internal_declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, scratch2, scratch3);
-}
-#endif
 
 void BulkData::declare_relation( Entity e_from ,
                                  Entity e_to ,

@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -122,8 +123,8 @@ namespace
       std::string header_line;
       std::string data_line;
 
-      std::string expected_header_line = "        Time |       Ages_1 |       Ages_2 |       Ages_3 |       Ages_4 |       Answer |           PI |    dbl_vec_1 |    dbl_vec_2 |    dbl_vec_3";
-      std::string expected_data_line = " 0.00000e+00 |           55 |           49 |           21 |           19 |           42 | -3.14159e+00 |  2.78000e+00 |  5.30000e+00 |  6.21000e+00";
+      std::string expected_header_line = "        Time\t      Ages_1\t      Ages_2\t      Ages_3\t      Ages_4\t      Answer\t          PI\t   dbl_vec_1\t   dbl_vec_2\t   dbl_vec_3";
+      std::string expected_data_line = " 0.00000e+00\t          55\t          49\t          21\t          19\t          42\t-3.14159e+00\t 2.78000e+00\t 5.30000e+00\t 6.21000e+00";
 
       EXPECT_TRUE(!std::getline(heartbeat, header_line).fail());
       EXPECT_STREQ(header_line.c_str(), expected_header_line.c_str());

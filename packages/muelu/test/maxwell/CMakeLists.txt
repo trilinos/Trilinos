@@ -29,7 +29,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    IF (${PACKAGE_NAME}_ENABLE_ML)
+    IF (${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_ENABLE_EPETRA)
       TRIBITS_ADD_TEST(
         Maxwell3D
         NAME "Maxwell3D-Tpetra-ML-list"
