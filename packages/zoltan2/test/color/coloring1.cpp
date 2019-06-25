@@ -57,6 +57,8 @@
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
 
+#include "ReadMatrixFromFile.hpp"
+
 using Teuchos::RCP;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -245,17 +247,19 @@ int main(int narg, char** arg)
   cmdp.parse(narg, arg);
 
   RCP<UserInputForTests> uinput;
-
-  if (inputFile != ""){ // Input file specified; read a matrix
-    uinput = rcp(new UserInputForTests(testDataFilePath, inputFile, comm, true));
-    printf("--Rank %d: Successfully read the file\n",comm->getRank());
+  RCP<SparseMatrix> Matrix;
+  if(inputFile.find("bin") != string::npos){//we're dealing with a binary file
+    Matrix = readMatrixFromFile<SparseMatrix>(inputFile,comm,true,false);
+  } else { 
+    if (inputFile != ""){ // Input file specified; read a matrix
+      uinput = rcp(new UserInputForTests(testDataFilePath, inputFile, comm, true));
+      printf("--Rank %d: Successfully read the file\n",comm->getRank());
+    }
+    else {                 // Let Galeri generate a matrix
+      uinput = rcp(new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true, true));
+    }
+    Matrix = uinput->getUITpetraCrsMatrix();
   }
-  else                  // Let Galeri generate a matrix
-
-    uinput = rcp(new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true, true));
-
-  RCP<SparseMatrix> Matrix = uinput->getUITpetraCrsMatrix();
-
   if (me == 0)
     std::cout << "NumRows     = " << Matrix->getGlobalNumRows() << std::endl
          << "NumNonzeros = " << Matrix->getGlobalNumEntries() << std::endl
@@ -313,7 +317,7 @@ int main(int narg, char** arg)
   
   std::cout << "Going to validate the soln" << std::endl;
   // Verify that checkColoring is a coloring
-  if(colorAlg == "Hybrid"){
+  if(colorAlg == "Hybrid" && comm->getSize() > 1){
     //need to check a distributed coloring
     testReturn = validateDistributedColoring(Matrix, checkColoring);
   } else if (checkLength > 0){
