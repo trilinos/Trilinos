@@ -70,7 +70,7 @@ set (TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH "Set by default for CUDA PR testi
 
 # Disable some packages that can't be tested with this PR build
 set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL
-  "Can' test Tacho with CUDA without RDC" FORCE)
+  "Can't test Tacho with CUDA without RDC" FORCE)
 
 # Temporary options to clean up build
 set (Teko_ModALPreconditioner_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
