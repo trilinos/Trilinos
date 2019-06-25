@@ -128,7 +128,7 @@ namespace DefaultTypes {
 #ifdef KOKKOS_ENABLE_CUDA
     typename std::conditional<
       std::is_same<typename ExecutionSpace::execution_space, Kokkos::Cuda>::value,
-      Kokkos::CudaHostPinnedSpace,
+      Kokkos::CudaSpace,
       typename ExecutionSpace::memory_space>::type;
 #else
     typename ExecutionSpace::memory_space;
