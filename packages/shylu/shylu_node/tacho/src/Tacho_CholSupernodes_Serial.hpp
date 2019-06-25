@@ -487,7 +487,7 @@ namespace Tacho {
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
-          const value_type one(1), zero(0);
+          const value_type one(1);
           const UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
 
           const ordinal_type offm = s.row_begin;

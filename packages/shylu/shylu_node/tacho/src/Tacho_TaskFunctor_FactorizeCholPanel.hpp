@@ -60,7 +60,6 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       ordinal_type factorize_internal(member_type &member, const ordinal_type n, const bool final) {
-        auto& sched = member.scheduler(); 
 
         const size_t team_size = member.team_size();
         const size_t bufsize = (_nb*n + _info.max_schur_size*team_size)*sizeof(mat_value_type);

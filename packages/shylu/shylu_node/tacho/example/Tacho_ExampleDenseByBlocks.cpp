@@ -33,23 +33,23 @@ using namespace Tacho;
 /// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
 #if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER)
 template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskScheduler<T>;
-static char * scheduler_name = "DeprecatedTaskScheduler";
+static const char * scheduler_name = "DeprecatedTaskScheduler";
 #endif
 #if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE)
 template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskSchedulerMultiple<T>;
-static char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
+static const char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
 #endif
 #if defined(TACHO_USE_TASKSCHEDULER)
 template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
-static char * scheduler_name = "TaskScheduler";
+static const char * scheduler_name = "TaskScheduler";
 #endif
 #if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
 template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
-static char * scheduler_name = "TaskSchedulerMultiple";
+static const char * scheduler_name = "TaskSchedulerMultiple";
 #endif
 #if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
 template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
-static char * scheduler_name = "ChaseLevTaskScheduler";
+static const char * scheduler_name = "ChaseLevTaskScheduler";
 #endif
 
 

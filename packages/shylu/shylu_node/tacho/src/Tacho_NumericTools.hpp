@@ -391,7 +391,7 @@ namespace Tacho {
           track_alloc(bufsize);
           
           /// recursive tree traversal
-          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.extent(0);
+          const ordinal_type member = 0, nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::Serial>
               ::factorize_recursive_serial(member, _info, _stree_roots(i), true, buf.data(), bufsize);
@@ -440,7 +440,7 @@ namespace Tacho {
           track_alloc(bufsize);
           
           /// recursive tree traversal
-          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.extent(0);
+          const ordinal_type member = 0, nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i)
             CholSupernodes<Algo::Workflow::SerialPanel>
               ::factorize_recursive_serial(member, 

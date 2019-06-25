@@ -56,7 +56,6 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       ordinal_type factorize_internal(member_type &member, const ordinal_type n, const bool final) {
-        auto& sched = member.scheduler(); 
 
         // ABR workssize and team private map size
         const size_t team_size = member.team_size();
