@@ -179,8 +179,9 @@ void SparseContainer<MatrixType,InverseType>::findRowIndicesAndCounts(
 
     if (jj != INVALID)
     {
-      Indices[num_entries_found] = localMaps_[blockIndex].getGlobalElement(jj);
-      Values[num_entries_found] = Values[k];
+      Indices_insert[num_entries_found] = 
+                     localMaps_[blockIndex].getGlobalElement(jj);
+      Values_insert[num_entries_found] = Values[k];
       num_entries_found++;
     }
   }
