@@ -873,7 +873,8 @@ namespace MueLu {
     AllocateLevelMultiVectors(X.getNumVectors());
 
     // Print residual information before iterating
-    MagnitudeType prevNorm = STS::magnitude(STS::one()), curNorm = STS::magnitude(STS::one());
+    typedef Teuchos::ScalarTraits<typename STS::magnitudeType> STM;
+    MagnitudeType prevNorm = STM::one(), curNorm = STM::one();
     rate_ = 1.0;
     if (startLevel == 0 && !isPreconditioner_ &&
         (IsPrint(Statistics1) || tol > 0)) {

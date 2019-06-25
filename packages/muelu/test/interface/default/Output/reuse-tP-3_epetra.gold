@@ -13,8 +13,8 @@ Level 1
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -25,6 +25,13 @@ aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
 
+Filtered matrix is not being constructed as no filtering is being done
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
@@ -58,6 +65,12 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -137,8 +150,8 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -149,6 +162,13 @@ aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
 
+Filtered matrix is not being constructed as no filtering is being done
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
@@ -182,6 +202,12 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -290,6 +316,30 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
+Build (MueLu::CoalesceDropFactory)
+Build (MueLu::AmalgamationFactory)
+[empty list]
+
+algorithm = "classical": threshold = 0, blocksize = 1
+aggregation: drop tol = 0   [default]
+aggregation: Dirichlet threshold = 0   [default]
+aggregation: drop scheme = classical   [default]
+lightweight wrap = 1
+
+Filtered matrix is not being constructed as no filtering is being done
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Reusing previous AP data
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
 Using original prolongator
 repartition: rebalance P and R = 0
 repartition: rebalance Nullspace = 1   [default]
@@ -352,8 +402,8 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -364,6 +414,13 @@ aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
 
+Filtered matrix is not being constructed as no filtering is being done
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
@@ -397,6 +454,12 @@ Domain GID offsets = {0}   [default]
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 

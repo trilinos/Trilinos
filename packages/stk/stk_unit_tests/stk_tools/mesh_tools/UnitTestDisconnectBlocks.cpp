@@ -3,6 +3,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/FillMesh.hpp>
@@ -1020,7 +1021,6 @@ TEST_F(TestDisconnectBlocks2D, disconnect_2block_2quad)
   stk::mesh::PartVector blocks = setup_mesh_2block_2quad();
 
   output_mesh("disconnect_2block_2quad_init.g", get_bulk());
-  get_bulk().dump_mesh_per_proc("initial_mesh");
 
   stk::tools::disconnect_all_blocks(get_bulk());
 
@@ -1031,12 +1031,34 @@ TEST_F(TestDisconnectBlocks2D, disconnect_2block_2quad)
   output_mesh("disconnect_2block_2quad.g", get_bulk());
 }
 
+TEST_F(TestDisconnectBlocks2D, disconnect_2block_2quad_updateGraph)
+{
+  stk::mesh::PartVector blocks = setup_mesh_2block_2quad();
+
+  get_bulk().initialize_face_adjacent_element_graph();
+  stk::tools::disconnect_all_blocks(get_bulk());
+
+  const stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
+  const stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+  if (get_bulk().is_valid(elem1)) {
+    EXPECT_EQ(0u, get_bulk().get_face_adjacent_element_graph().get_num_connected_elems(elem1));
+  }
+  if (get_bulk().is_valid(elem2)) {
+    EXPECT_EQ(0u, get_bulk().get_face_adjacent_element_graph().get_num_connected_elems(elem2));
+  }
+
+  create_all_sides(get_bulk(), get_meta().locally_owned_part(), {&get_meta().get_topology_root_part(stk::topology::LINE_2)}, false);
+
+  unsigned localNumSides = stk::mesh::count_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::EDGE_RANK));
+  unsigned numSides = stk::get_global_sum(get_bulk().parallel(), localNumSides);
+  EXPECT_EQ(8u, numSides);
+}
+
 TEST_F(TestDisconnectBlocks2D, disconnect_2block_2quad_reversed)
 {
   stk::mesh::PartVector blocks = setup_mesh_2block_2quad_reversed();
 
   output_mesh("disconnect_2block_2quad_reversed_init.g", get_bulk());
-  get_bulk().dump_mesh_per_proc("initial_mesh");
 
   stk::tools::disconnect_all_blocks(get_bulk());
 
