@@ -52,7 +52,7 @@
 
 namespace Tpetra {
   namespace Experimental {
-    using BlockMultiVector;
+    using Tpetra::BlockMultiVector;
   }
 }
 

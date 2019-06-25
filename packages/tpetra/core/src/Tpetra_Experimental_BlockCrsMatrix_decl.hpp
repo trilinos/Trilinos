@@ -56,7 +56,7 @@
 namespace Tpetra {
   namespace Experimental {
 
-    using BlockCrsMatrix;
+    using Tpetra::BlockCrsMatrix;
 
   } // namespace Experimental
 } // namespace Tpetra
