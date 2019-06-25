@@ -1031,7 +1031,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const
   {
-    return rowMap_.is_null () ? Teuchos::null : rowMap_->getNode ();
+    return Teuchos::null;
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -2353,8 +2353,8 @@ namespace Tpetra {
                    const Teuchos::ArrayView<const LocalOrdinal>& indices,
                    std::function<void(const size_t, const size_t, const size_t)> fun) const
   {
-    const char tfecfFuncName[] = "findLocalIndices: ";
 #ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "findLocalIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (this->getProfileType() != StaticProfile, std::runtime_error,
        "findLocalIndices requires that the graph have StaticProfile.");

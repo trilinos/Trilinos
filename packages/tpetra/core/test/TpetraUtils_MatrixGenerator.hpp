@@ -283,7 +283,7 @@ namespace Tpetra {
 
         // Construct the CrsMatrix, using the row map, with the
         // constructor specifying the number of nonzeros for each row.
-        Tpetra::ProfileType pftype = Tpetra::TPETRA_DEFAULT_PROFILE_TYPE;
+        Tpetra::ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
         RCP<sparse_matrix_type> A =
           rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow (), pftype));
 

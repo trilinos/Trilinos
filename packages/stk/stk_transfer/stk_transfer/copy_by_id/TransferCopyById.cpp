@@ -1,6 +1,7 @@
-// Copyright (c) 2015, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -48,6 +49,7 @@ void TransferCopyById::do_transfer(const KeyToTargetProcessor & key_to_target_pr
   const int num_proc = parallel_machine_size(comm);
   stk::CommSparse commSparse(comm);
   MeshIDSet remote_keys = m_search.get_remote_keys();
+
   for (int phase=0;phase<2;++phase)
   {
     KeyToTargetProcessor::const_iterator map_it = key_to_target_processor.begin();
@@ -59,14 +61,13 @@ void TransferCopyById::do_transfer(const KeyToTargetProcessor & key_to_target_pr
         if (0 == phase) {
           // copy directly from A to B:
           for (unsigned f=0 ; f<numValsb ; ++f) {
-            const double * f_dataA = mesha.field_data(key,f);
-            double * f_dataB = meshb.field_data(key,f);
+            const void * f_dataA = mesha.field_data(key,f);
+            void * f_dataB = meshb.field_data(key,f);
             const unsigned this_field_size_a = mesha.field_data_size(key,f);
             const unsigned this_field_size_b = meshb.field_data_size(key,f);
             unsigned fsize = std::min(this_field_size_a, this_field_size_b);
-            for (unsigned index=0 ; index<fsize ; ++index) {
-              f_dataB[index] = f_dataA[index];
-            }
+
+            std::memcpy(f_dataB, f_dataA, fsize);
           }
         }
         continue;
@@ -74,10 +75,10 @@ void TransferCopyById::do_transfer(const KeyToTargetProcessor & key_to_target_pr
       commSparse.send_buffer(target_proc).pack<Mesh_ID>(key);
       for (unsigned f=0; f<numValsb; ++f)  {
         const unsigned this_field_size = mesha.field_data_size(key,f);
-        // FIX to allow copying of int
-        const double * f_data = mesha.field_data(key,f);
+        const uint8_t * f_data = reinterpret_cast<const uint8_t *>(mesha.field_data(key,f));
+
         for (unsigned index=0 ; index<this_field_size ; ++index) {
-          commSparse.send_buffer(target_proc).pack<double>(f_data[index]);
+          commSparse.send_buffer(target_proc).pack<uint8_t>(f_data[index]);
         }
       }
     }
@@ -109,10 +110,10 @@ void TransferCopyById::do_transfer(const KeyToTargetProcessor & key_to_target_pr
           remote_keys.erase(key);
         }
         for (unsigned f=0 ; f<numValsb ; ++f) {
-          double * f_data = meshb.field_data(key,f);
+          uint8_t * f_data = reinterpret_cast<uint8_t*>(meshb.field_data(key,f));
           const unsigned this_field_size = meshb.field_data_size(key,f);
           for (unsigned index=0 ; index<this_field_size ; ++index) {
-            commSparse.recv_buffer(recv_proc).unpack<double>(f_data[index]);
+            commSparse.recv_buffer(recv_proc).unpack<uint8_t>(f_data[index]);
           }
         }
       }

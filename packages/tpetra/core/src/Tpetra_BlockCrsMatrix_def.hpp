@@ -3727,7 +3727,7 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNode() const
   {
-    return graph_.getNode();
+    return Teuchos::null;
 
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
@@ -4006,7 +4006,9 @@ public:
 //
 // Explicit instantiation macro
 //
+// Must be expanded from within the Tpetra namespace!
+//
 #define TPETRA_BLOCKCRSMATRIX_INSTANT(S,LO,GO,NODE) \
-    template class BlockCrsMatrix< S, LO, GO, NODE >; 
+  template class BlockCrsMatrix< S, LO, GO, NODE >;
 
 #endif // TPETRA_BLOCKCRSMATRIX_DEF_HPP
