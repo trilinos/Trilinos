@@ -14,7 +14,6 @@ ENDIF()
 
 IF ( TPL_ENABLE_BoostLib )
   ADD_SUBDIRECTORY(command_line)
-  ADD_SUBDIRECTORY(use_cases)
 ENDIF()
 
 IF (NOT ${PACAKGE_NAME}_ENABLE_SEACASAprepro_lib)
