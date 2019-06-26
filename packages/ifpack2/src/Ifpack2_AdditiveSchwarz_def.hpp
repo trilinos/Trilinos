@@ -175,15 +175,11 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::innerPrecName () const
 
   // As soon as one parameter option matches, ignore all others.
   for (int k = 0; k < numOptions && ! match; ++k) {
-    if (List_.isParameter (options[k])) {
-      // try-catch block protects against incorrect type errors.
-      //
-      // FIXME (mfh 04 Jan 2013) We should instead catch and report
-      // type errors.
-      try {
-        newName = List_.get<std::string> (options[k]);
-        match = true;
-      } catch (...) {}
+    const Teuchos::ParameterEntry* paramEnt =
+      List_.getEntryPtr (options[k]);
+    if (paramEnt != nullptr && paramEnt->isType<std::string> ()) {
+      newName = Teuchos::getValue<std::string> (*paramEnt);
+      match = true;
     }
   }
   return match ? newName : defaultInnerPrecName ();
@@ -803,46 +799,39 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   // values, which could be different than their values in the
   // original list.
 
-  bool gotCombineMode = false;
-  try {
-    CombineMode_ = getIntegralValue<Tpetra::CombineMode> (List_, "schwarz: combine mode");
-    gotCombineMode = true;
-  }
-  catch (Teuchos::Exceptions::InvalidParameterName&) {
-    // The caller didn't provide that parameter.  Just keep the
-    // existing value of CombineMode_.
-    gotCombineMode = true;
-  }
-  catch (Teuchos::Exceptions::InvalidParameterType&) {
-    // The user perhaps supplied it as an Tpetra::CombineMode enum
-    // value.  Let's try again (below).  If it doesn't succeed, we
-    // know that the type is wrong, so we can let it throw whatever
-    // exception it would throw.
-  }
-  // Try to get the combine mode as an integer.
-  if (! gotCombineMode) {
-    try {
+  const std::string cmParamName ("schwarz: combine mode");
+  if (plist->isParameter (cmParamName)) {
+    if (plist->isType<CombineMode> (cmParamName)) {
       CombineMode_ = plist->get ("schwarz: combine mode", CombineMode_);
-      gotCombineMode = true;
     }
-    catch (Teuchos::Exceptions::InvalidParameterType&) {}
-  }
-  // Try to get the combine mode as a string.  If this works, use the
-  // validator to convert to int.  This is painful, but necessary in
-  // order to do validation, since the input list doesn't come with a
-  // validator.
-  if (! gotCombineMode) {
-    const ParameterEntry& validEntry =
-      getValidParameters ()->getEntry ("schwarz: combine mode");
-    RCP<const ParameterEntryValidator> v = validEntry.validator ();
-    typedef StringToIntegralParameterEntryValidator<CombineMode> vs2e_type;
-    RCP<const vs2e_type> vs2e = rcp_dynamic_cast<const vs2e_type> (v, true);
+    else if (plist->isType<int> (cmParamName)) {
+      int cm = static_cast<int> (CombineMode_);
+      cm = plist->get ("schwarz: combine mode", cm);
+      CombineMode_ = static_cast<CombineMode> (cm);
+    }
+    else if (plist->isType<std::string> (cmParamName)) {
+      bool gotCombineMode = false;
+      try {
+        CombineMode_ = getIntegralValue<CombineMode> (List_, cmParamName);
+        gotCombineMode = true;
+      }
+      catch (...) {}
+      // Try to get the combine mode as a string.  If this works, use the
+      // validator to convert to int.  This is painful, but necessary in
+      // order to do validation, since the input list doesn't come with a
+      // validator.
+      if (! gotCombineMode) {
+        const ParameterEntry& validEntry =
+          getValidParameters ()->getEntry (cmParamName);
+        RCP<const ParameterEntryValidator> v = validEntry.validator ();
+        typedef StringToIntegralParameterEntryValidator<CombineMode> vs2e_type;
+        RCP<const vs2e_type> vs2e = rcp_dynamic_cast<const vs2e_type> (v, true);
 
-    const ParameterEntry& inputEntry = plist->getEntry ("schwarz: combine mode");
-    CombineMode_ = vs2e->getIntegralValue (inputEntry, "schwarz: combine mode");
-    gotCombineMode = true;
+        const ParameterEntry& inputEntry = plist->getEntry (cmParamName);
+        CombineMode_ = vs2e->getIntegralValue (inputEntry, cmParamName);
+      }
+    }
   }
-  (void) gotCombineMode; // forestall "set but not used" compiler warning
 
   OverlapLevel_ = plist->get ("schwarz: overlap level", OverlapLevel_);
 
@@ -927,8 +916,9 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     }
   }
 
-  NumIterations_ = plist->get<int>("schwarz: num iterations", NumIterations_);
-  ZeroStartingSolution_ = plist->get<bool>("schwarz: zero starting solution", ZeroStartingSolution_);
+  NumIterations_ = plist->get ("schwarz: num iterations", NumIterations_);
+  ZeroStartingSolution_ =
+    plist->get ("schwarz: zero starting solution", ZeroStartingSolution_);
 }
 
 
