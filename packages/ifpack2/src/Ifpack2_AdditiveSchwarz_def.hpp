@@ -230,7 +230,6 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::innerPrecParams () const
   return std::make_pair (params, match);
 }
 
-
 template<class MatrixType, class LocalInverseType>
 std::string
 AdditiveSchwarz<MatrixType, LocalInverseType>::defaultInnerPrecName ()
@@ -240,68 +239,24 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::defaultInnerPrecName ()
   return "ILUT";
 }
 
-
 template<class MatrixType, class LocalInverseType>
 AdditiveSchwarz<MatrixType, LocalInverseType>::
 AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
-  Matrix_ (A),
-  IsInitialized_ (false),
-  IsComputed_ (false),
-  IsOverlapping_ (false),
-  OverlapLevel_ (0),
-  CombineMode_ (Tpetra::ZERO),
-  UseReordering_ (false),
-  ReorderingAlgorithm_ ("none"),
-  FilterSingletons_ (false),
-  NumIterations_(1),
-  ZeroStartingSolution_(true),
-  UpdateDamping_(Teuchos::ScalarTraits<scalar_type>::one()),
-  NumInitialize_ (0),
-  NumCompute_ (0),
-  NumApply_ (0),
-  InitializeTime_ (0.0),
-  ComputeTime_ (0.0),
-  ApplyTime_ (0.0)
-{
-  Teuchos::ParameterList plist;
-  setParameters (plist); // Set parameters to default values
-}
+  Matrix_ (A)
+{}
 
 template<class MatrixType, class LocalInverseType>
 AdditiveSchwarz<MatrixType, LocalInverseType>::
 AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
                  const int overlapLevel) :
   Matrix_ (A),
-  IsInitialized_ (false),
-  IsComputed_ (false),
-  IsOverlapping_ (false),
-  OverlapLevel_ (overlapLevel),
-  CombineMode_ (Tpetra::ZERO),
-  UseReordering_ (false),
-  ReorderingAlgorithm_ ("none"),
-  FilterSingletons_ (false),
-  NumIterations_(1),
-  ZeroStartingSolution_(true),
-  UpdateDamping_(Teuchos::ScalarTraits<scalar_type>::one()),
-  NumInitialize_ (0),
-  NumCompute_ (0),
-  NumApply_ (0),
-  InitializeTime_ (0.0),
-  ComputeTime_ (0.0),
-  ApplyTime_ (0.0)
-{
-  Teuchos::ParameterList plist;
-  setParameters (plist); // Set parameters to default values
-}
-
-
-template<class MatrixType,class LocalInverseType>
-AdditiveSchwarz<MatrixType,LocalInverseType>::~AdditiveSchwarz () {}
-
+  OverlapLevel_ (overlapLevel)
+{}
 
 template<class MatrixType,class LocalInverseType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type > >
-AdditiveSchwarz<MatrixType,LocalInverseType>::getDomainMap() const
+AdditiveSchwarz<MatrixType,LocalInverseType>::
+getDomainMap () const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::"
