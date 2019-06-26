@@ -94,7 +94,6 @@ namespace Details {
 
 namespace Ifpack2 {
 
-
 template<class MatrixType, class LocalInverseType>
 bool
 AdditiveSchwarz<MatrixType, LocalInverseType>::hasInnerPrecName () const
@@ -414,7 +413,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     TimeMonitor timeMon (*timer);
 
     const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero ();
-    //const scalar_type ONE = Teuchos::ScalarTraits<scalar_type>::one (); // unused
     const size_t numVectors = B.getNumVectors ();
 
     // mfh 25 Apr 2015: Fix for currently failing
@@ -424,23 +422,29 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     }
 
     // set up for overlap communication
-    RCP<MV> OverlappingB,OverlappingY;
-    RCP<MV> globalOverlappingB;
-    if (IsOverlapping_) {
-      // MV's constructor fills with zeros.
-      OverlappingB = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
-      OverlappingY = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
+    MV* OverlappingB = nullptr;
+    MV* OverlappingY = nullptr;
+    {
+      RCP<const map_type> B_and_Y_map = IsOverlapping_ ?
+        OverlappingMatrix_->getRowMap () : localMap_;
+      if (overlapping_B_.get () == nullptr ||
+          overlapping_B_->getNumVectors () != numVectors) {
+        overlapping_B_.reset (new MV (B_and_Y_map, numVectors, false));
+      }
+      if (overlapping_Y_.get () == nullptr ||
+          overlapping_Y_->getNumVectors () != numVectors) {
+        overlapping_Y_.reset (new MV (B_and_Y_map, numVectors, false));
+      }
+      OverlappingB = overlapping_B_.get ();
+      OverlappingY = overlapping_Y_.get ();
+      // FIXME (mfh 25 Jun 2019) It's not clear whether we really need
+      // to fill with zeros here, but that's what was happening before.
+      OverlappingB->putScalar (ZERO);
+      OverlappingY->putScalar (ZERO);
     }
-    else {
-      // MV's constructor fills with zeros.
-      //
-      // localMap_ has the same number of indices on each process that
-      // Matrix_->getRowMap() does on that process.  Thus, we can do
-      // the Import step without creating a new MV, just by viewing
-      // OverlappingB using Matrix_->getRowMap ().
-      OverlappingB = rcp (new MV (localMap_, numVectors));
-      OverlappingY = rcp (new MV (localMap_, numVectors));
 
+    RCP<MV> globalOverlappingB;
+    if (! IsOverlapping_) {
       globalOverlappingB =
         OverlappingB->offsetViewNonConst (Matrix_->getRowMap (), 0);
 
@@ -455,8 +459,18 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       }
     }
 
-    RCP<MV> R = rcp(new MV(B.getMap(),numVectors));
-    RCP<MV> C = rcp(new MV(Y.getMap(),numVectors)); //TODO no need to initialize to zero?
+    if (R_.get () == nullptr || R_->getNumVectors () != numVectors) {
+      R_.reset (new MV (B.getMap (), numVectors, false));
+    }
+    if (C_.get () == nullptr || C_->getNumVectors () != numVectors) {
+      C_.reset (new MV (Y.getMap (), numVectors, false));
+    }
+    MV* R = R_.get ();
+    MV* C = C_.get ();
+
+    // FIXME (mfh 25 Jun 2019) It was never clear whether C had to be
+    // initialized to zero.  R definitely should not need this.
+    C->putScalar (ZERO);
 
     for (int ni=0; ni<NumIterations_; ++ni)
     {
@@ -737,9 +751,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             "is NaN or Inf.");
       }
 #endif // HAVE_IFPACK2_DEBUG
-    }
+    } // for each iteration
 
-  } // Stop timing here.
+  } // Stop timing here
 
 #ifdef HAVE_IFPACK2_DEBUG
   {
@@ -770,7 +784,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 template<class MatrixType,class LocalInverseType>
 void
 AdditiveSchwarz<MatrixType,LocalInverseType>::
-localApply(MV &OverlappingB, MV &OverlappingY) const
+localApply (MV& OverlappingB, MV& OverlappingY) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -1105,6 +1119,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
     IsInitialized_ = false;
     IsComputed_ = false;
+    overlapping_B_.reset (nullptr);
+    overlapping_Y_.reset (nullptr);
+    R_.reset (nullptr);
+    C_.reset (nullptr);
 
     RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
     RCP<const map_type> rowMap = Matrix_->getRowMap ();
@@ -1505,48 +1523,48 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     else {
       // Zoltan2 reordering
       typedef Tpetra::RowGraph
-	<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
+        <local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
       typedef Zoltan2::TpetraRowGraphAdapter<row_graph_type> z2_adapter_type;
       RCP<const row_graph_type> constActiveGraph =
-	Teuchos::rcp_const_cast<const row_graph_type>(ActiveMatrix->getGraph());
+        Teuchos::rcp_const_cast<const row_graph_type>(ActiveMatrix->getGraph());
       z2_adapter_type Zoltan2Graph (constActiveGraph);
-      
+
       typedef Zoltan2::OrderingProblem<z2_adapter_type> ordering_problem_type;
 #ifdef HAVE_MPI
       // Grab the MPI Communicator and build the ordering problem with that
       MPI_Comm myRawComm;
-      
+
       RCP<const MpiComm<int> > mpicomm =
-	rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
+        rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
       if (mpicomm == Teuchos::null) {
-	myRawComm = MPI_COMM_SELF;
+        myRawComm = MPI_COMM_SELF;
       } else {
-	myRawComm = * (mpicomm->getRawMpiComm ());
+        myRawComm = * (mpicomm->getRawMpiComm ());
       }
       ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist, myRawComm);
 #else
       ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist);
 #endif
       MyOrderingProblem.solve ();
-      
+
       {
-	typedef Zoltan2::LocalOrderingSolution<local_ordinal_type>
-	  ordering_solution_type;
-	
-	ordering_solution_type sol (*MyOrderingProblem.getLocalOrderingSolution());
-	
-	// perm[i] gives the where OLD index i shows up in the NEW
-	// ordering.  revperm[i] gives the where NEW index i shows
-	// up in the OLD ordering.  Note that perm is actually the
-	// "inverse permutation," in Zoltan2 terms.
-	perm = sol.getPermutationRCPConst (true);
-	revperm = sol.getPermutationRCPConst ();
+        typedef Zoltan2::LocalOrderingSolution<local_ordinal_type>
+          ordering_solution_type;
+
+        ordering_solution_type sol (*MyOrderingProblem.getLocalOrderingSolution());
+
+        // perm[i] gives the where OLD index i shows up in the NEW
+        // ordering.  revperm[i] gives the where NEW index i shows
+        // up in the OLD ordering.  Note that perm is actually the
+        // "inverse permutation," in Zoltan2 terms.
+        perm = sol.getPermutationRCPConst (true);
+        revperm = sol.getPermutationRCPConst ();
       }
     }
     // All reorderings here...
     ReorderedLocalizedMatrix_ = rcp (new reorder_filter_type (ActiveMatrix, perm, revperm));
-	  
-	
+
+
     ActiveMatrix = ReorderedLocalizedMatrix_;
 #else
     // This is a logic_error, not a runtime_error, because
@@ -1711,6 +1729,10 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     innerMatrix_ = Teuchos::null;
     SingletonMatrix_ = Teuchos::null;
     localMap_ = Teuchos::null;
+    overlapping_B_.reset (nullptr);
+    overlapping_Y_.reset (nullptr);
+    R_.reset (nullptr);
+    C_.reset (nullptr);
     DistributedImporter_ = Teuchos::null;
 
     Matrix_ = A;
@@ -1726,3 +1748,4 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   template class Ifpack2::AdditiveSchwarz< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_ADDITIVESCHWARZ_DECL_HPP
+

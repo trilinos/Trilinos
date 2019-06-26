@@ -59,6 +59,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_RowMatrix.hpp"
+#include <memory>
 #include <type_traits>
 
 namespace Trilinos {
@@ -94,8 +95,8 @@ preconditioner to a multivector.
 \section Ifpack2_AdditiveSchwarz_Alg Algorithm
 
 One-level overlapping domain decomposition preconditioners use local
-solvers of Dirichlet type. This means that the solver effectively 
-applies the inverse of the local matrix (possibly with overlap) 
+solvers of Dirichlet type. This means that the solver effectively
+applies the inverse of the local matrix (possibly with overlap)
 to the residual to be preconditioned.
 
 The preconditioner can be written as:
@@ -836,6 +837,14 @@ private:
   Teuchos::RCP<inner_solver_type> Inverse_;
   //! Local distributed map for filtering multivector with no overlap.
   Teuchos::RCP<const map_type> localMap_;
+  //! Cached local (possibly) overlapping input (multi)vector.
+  mutable std::unique_ptr<MV> overlapping_B_;
+  //! Cached local (possibly) overlapping output (multi)vector.
+  mutable std::unique_ptr<MV> overlapping_Y_;
+  //! Cached residual (multi)vector.
+  mutable std::unique_ptr<MV> R_;
+  //! Cached intermediate result (multi)vector.
+  mutable std::unique_ptr<MV> C_;
 
   /// \brief Import object used in apply().
   ///
