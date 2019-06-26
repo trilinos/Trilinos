@@ -303,8 +303,8 @@ private:
     int blockIndex,
     local_ordinal_type rowIndex,
     const Teuchos::ArrayView<const local_ordinal_type> &localRows,
-    Teuchos::Array<local_ordinal_type> &Indices,
-    Teuchos::Array<scalar_type> &Values,
+    const Teuchos::ArrayView<local_ordinal_type> &Indices,
+    const Teuchos::ArrayView<scalar_type> &Values,
     Teuchos::Array<InverseGlobalOrdinal> &Indices_insert,
     Teuchos::Array<InverseScalar> &Values_insert,
     size_t &num_entries_found

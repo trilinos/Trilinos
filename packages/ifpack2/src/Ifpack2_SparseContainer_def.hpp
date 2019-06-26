@@ -130,9 +130,10 @@ void SparseContainer<MatrixType,InverseType>::findRowIndicesAndCounts(
   int blockIndex,                        // block being processed
   local_ordinal_type rowIndex,           // row being processed in this block
   const Teuchos::ArrayView<const local_ordinal_type> &localRows,  
-  Teuchos::Array<local_ordinal_type> &Indices,  // Storage for row indices 
+  const Teuchos::ArrayView<local_ordinal_type> &Indices,
+                                                // Storage for row indices 
                                                 // of inputMatrix
-  Teuchos::Array<scalar_type> &Values,          // Storage for row values 
+  const Teuchos::ArrayView<scalar_type> &Values,// Storage for row values 
                                                 // of inputMatrix
   Teuchos::Array<InverseGlobalOrdinal> &Indices_insert,  // Output: Indices to 
                                                          // be inserted for
@@ -206,14 +207,10 @@ void SparseContainer<MatrixType,InverseType>::initialize ()
   Inverses_.reserve(this->numBlocks_);
 
   const size_t maxNumEntriesInRow = this->inputMatrix_->getNodeMaxNumRowEntries();
-  Teuchos::Array<scalar_type> Values;
-  Teuchos::Array<local_ordinal_type> Indices;
-  Teuchos::Array<InverseScalar> Values_insert;
-  Teuchos::Array<InverseGlobalOrdinal> Indices_insert;
-  Values.resize (maxNumEntriesInRow);
-  Indices.resize (maxNumEntriesInRow);
-  Values_insert.resize (maxNumEntriesInRow);
-  Indices_insert.resize (maxNumEntriesInRow);
+  Teuchos::Array<scalar_type> Values(maxNumEntriesInRow);
+  Teuchos::Array<local_ordinal_type> Indices(maxNumEntriesInRow);
+  Teuchos::Array<InverseScalar> Values_insert(maxNumEntriesInRow);
+  Teuchos::Array<InverseGlobalOrdinal> Indices_insert(maxNumEntriesInRow);
 
   for(int i = 0; i < this->numBlocks_; i++)
   {
@@ -231,7 +228,7 @@ void SparseContainer<MatrixType,InverseType>::initialize ()
     for (local_ordinal_type j = 0; j < numRows_; j++)
     {
       size_t num_entries_found;
-      findRowIndicesAndCounts(i, j, localRows, Indices, Values,
+      findRowIndicesAndCounts(i, j, localRows, Indices(), Values(),
                               Indices_insert, Values_insert, num_entries_found);
       nEntriesPerRow[j] = num_entries_found;
     }
@@ -654,15 +651,10 @@ extract ()
   }
 
   const size_t maxNumEntriesInRow = A.getNodeMaxNumRowEntries();
-  Array<scalar_type> Values;
-  Array<local_ordinal_type> Indices;
-  Array<InverseScalar> Values_insert;
-  Array<InverseGlobalOrdinal> Indices_insert;
-
-  Values.resize (maxNumEntriesInRow);
-  Indices.resize (maxNumEntriesInRow);
-  Values_insert.resize (maxNumEntriesInRow);
-  Indices_insert.resize (maxNumEntriesInRow);
+  Array<scalar_type> Values(maxNumEntriesInRow);
+  Array<local_ordinal_type> Indices(maxNumEntriesInRow);
+  Array<InverseScalar> Values_insert(maxNumEntriesInRow);
+  Array<InverseGlobalOrdinal> Indices_insert(maxNumEntriesInRow);
 
   for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
   {
@@ -671,7 +663,7 @@ extract ()
     for (local_ordinal_type j = 0; j < numRows_; j++)
     {
       size_t num_entries_found;
-      findRowIndicesAndCounts(i, j, localRows, Indices, Values, 
+      findRowIndicesAndCounts(i, j, localRows, Indices(), Values(), 
                               Indices_insert, Values_insert, num_entries_found);
       diagBlocks_[i]->insertGlobalValues(j, Indices_insert (0, num_entries_found),
                                             Values_insert (0, num_entries_found));
