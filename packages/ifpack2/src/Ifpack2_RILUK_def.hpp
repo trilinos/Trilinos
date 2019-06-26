@@ -47,6 +47,63 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 
+namespace { // (anonymous)
+
+  template<class ResultType, class ... CandidateTypes>
+  struct GetParamTryingTypes {};
+
+  template<class ResultType>
+  struct GetParamTryingTypes<ResultType> {
+    static void
+    get (ResultType& /* result */,
+         const Teuchos::ParameterEntry& /* ent */,
+         const std::string& paramName,
+         const char prefix[])
+    {
+      using Teuchos::TypeNameTraits;
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::invalid_argument, prefix << "\"" << paramName
+         << "\" parameter exists in input ParameterList, but does not "
+         "have the right type.  The proper type is "
+         << TypeNameTraits<ResultType>::name () << ".");
+    }
+  };
+
+  template<class ResultType, class First, class ... Rest>
+  struct GetParamTryingTypes<ResultType, First, Rest...> {
+    static void
+    get (ResultType& result,
+         const Teuchos::ParameterEntry& ent,
+         const std::string& paramName,
+         const char prefix[])
+    {
+      if (ent.template isType<First> ()) {
+        result = static_cast<ResultType> (Teuchos::getValue<First> (ent));
+      }
+      else {
+        using rest_type = GetParamTryingTypes<ResultType, Rest...>;
+        rest_type::get (result, ent, paramName, prefix);
+      }
+    }
+  };
+
+  template<class ResultType, class ... CandidateTypes>
+  void
+  getParamTryingTypes (ResultType& result,
+                       const Teuchos::ParameterList& params,
+                       const std::string& paramName,
+                       const char prefix[])
+  {
+    using Teuchos::ParameterEntry;
+    const ParameterEntry* ent = params.getEntryPtr (paramName);
+    if (ent != nullptr) {
+      using impl_type = GetParamTryingTypes<ResultType, CandidateTypes...>;
+      impl_type::get (result, *ent, paramName, prefix);
+    }
+  }
+
+} // namespace (anonymous)
+
 namespace Ifpack2 {
 
 template<class MatrixType>
@@ -191,7 +248,7 @@ size_t RILUK<MatrixType>::getNodeSmootherComplexity() const {
   // RILUK methods cost roughly one apply + the nnz in the upper+lower triangles
   if(!L_.is_null() && !U_.is_null())
     return A_->getNodeNumEntries() + L_->getNodeNumEntries() + U_->getNodeNumEntries();
-  else 
+  else
     return 0;
 }
 
@@ -269,9 +326,8 @@ void
 RILUK<MatrixType>::
 setParameters (const Teuchos::ParameterList& params)
 {
-  using Teuchos::as;
-  using Teuchos::Exceptions::InvalidParameterName;
-  using Teuchos::Exceptions::InvalidParameterType;
+  using GO = global_ordinal_type;
+  const char prefix[] = "Ifpack2::RILUK: ";
 
   // Default values of the various parameters.
   int fillLevel = 0;
@@ -279,117 +335,32 @@ setParameters (const Teuchos::ParameterList& params)
   magnitude_type relThresh = STM::one ();
   magnitude_type relaxValue = STM::zero ();
 
-  //
   // "fact: iluk level-of-fill" parsing is more complicated, because
   // we want to allow as many types as make sense.  int is the native
   // type, but we also want to accept magnitude_type (for
   // compatibility with ILUT) and double (for backwards compatibilty
   // with ILUT).
-  //
-
-  bool gotFillLevel = false;
-  try {
-    fillLevel = params.get<int> ("fact: iluk level-of-fill");
-    gotFillLevel = true;
+  {
+    const std::string paramName ("fact: iluk level-of-fill");
+    getParamTryingTypes<int, magnitude_type, double, int, GO>
+      (fillLevel, params, paramName, prefix);
   }
-  catch (InvalidParameterType&) {
-    // Throwing again in the catch block would just unwind the stack.
-    // Instead, we do nothing here, and check the Boolean outside to
-    // see if we got the value.
-  }
-  catch (InvalidParameterName&) {
-    gotFillLevel = true; // Accept the default value.
-  }
-
-  if (! gotFillLevel) {
-    try {
-      // Try global_ordinal_type.  The cast to int must succeed.
-      fillLevel = as<int> (params.get<global_ordinal_type> ("fact: iluk level-of-fill"));
-      gotFillLevel = true;
-    }
-    catch (InvalidParameterType&) {
-      // Try the next type.
-    }
-    // Don't catch InvalidParameterName here; we've already done that above.
-  }
-
-  if (! gotFillLevel) {
-    try {
-      // Try magnitude_type, for compatibility with ILUT.
-      // The cast from magnitude_type to int must succeed.
-      fillLevel = as<int> (params.get<magnitude_type> ("fact: iluk level-of-fill"));
-      gotFillLevel = true;
-    }
-    catch (InvalidParameterType&) {
-      // Try the next type.
-    }
-    // Don't catch InvalidParameterName here; we've already done that above.
-  }
-
-  if (! gotFillLevel) {
-    try {
-      // Try double, for compatibility with ILUT.
-      // The cast from double to int must succeed.
-      fillLevel = as<int> (params.get<double> ("fact: iluk level-of-fill"));
-      gotFillLevel = true;
-    }
-    catch (InvalidParameterType& e) {
-      // We're out of options.  The user gave us the parameter, but it
-      // doesn't have the right type.  The best thing for us to do in
-      // that case is to throw, telling the user to use the right
-      // type.
-      throw e;
-    }
-    // Don't catch InvalidParameterName here; we've already done that above.
-  }
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! gotFillLevel,
-    std::logic_error,
-    "Ifpack2::RILUK::setParameters: We should never get here!  "
-    "The method should either have read the \"fact: iluk level-of-fill\"  "
-    "parameter by this point, or have thrown an exception.  "
-    "Please let the Ifpack2 developers know about this bug.");
-
-  //
   // For the other parameters, we prefer magnitude_type, but allow
   // double for backwards compatibility.
-  //
-
-  try {
-    absThresh = params.get<magnitude_type> ("fact: absolute threshold");
+  {
+    const std::string paramName ("fact: absolute threshold");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (absThresh, params, paramName, prefix);
   }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    absThresh = as<magnitude_type> (params.get<double> ("fact: absolute threshold"));
+  {
+    const std::string paramName ("fact: relative threshold");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (relThresh, params, paramName, prefix);
   }
-  catch (InvalidParameterName&) {
-    // Accept the default value.
-  }
-
-  try {
-    relThresh = params.get<magnitude_type> ("fact: relative threshold");
-  }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    relThresh = as<magnitude_type> (params.get<double> ("fact: relative threshold"));
-  }
-  catch (InvalidParameterName&) {
-    // Accept the default value.
-  }
-
-  try {
-    relaxValue = params.get<magnitude_type> ("fact: relax value");
-  }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    relaxValue = as<magnitude_type> (params.get<double> ("fact: relax value"));
-  }
-  catch (InvalidParameterName&) {
-    // Accept the default value.
+  {
+    const std::string paramName ("fact: relax value");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (relaxValue, params, paramName, prefix);
   }
 
   // Forward to trisolvers.
@@ -586,7 +557,7 @@ checkOrderingConsistency (const row_matrix_type& A)
                              "The ordering of the local GIDs in the row and column maps is not the same"
                              << std::endl << "at index " << indexOfInconsistentGID
                              << ".  Consistency is required, as all calculations are done with"
-                             << std::endl << "local indexing.");  
+                             << std::endl << "local indexing.");
 }
 
 template<class MatrixType>
