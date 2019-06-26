@@ -47,7 +47,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockView.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -667,7 +667,7 @@ testArrowMatrixWithDense (bool& success, Teuchos::FancyOStream& out, const LO lc
   out << "Use dense matrix-matrix multiply to check that A == L*U" << endl;
 
   Kokkos::View<val_type**, HDT> A_copy ("A_copy", lclNumRows, lclNumCols);
-  Tpetra::Experimental::GEMM ("N", "N", ONE, L, U, ZERO, A_copy);
+  Tpetra::GEMM ("N", "N", ONE, L, U, ZERO, A_copy);
   for (LO i = 0; i < lclNumRows; ++i) {
     out << "Row " << i << endl;
     for (LO j = 0; j < lclNumCols; ++j) {
@@ -680,7 +680,7 @@ testArrowMatrixWithDense (bool& success, Teuchos::FancyOStream& out, const LO lc
   Kokkos::deep_copy (A_copy, A);
   Kokkos::View<LO*, HDT> ipiv ("ipiv", lclNumRows);
   int info = 0;
-  Tpetra::Experimental::GETF2 (A_copy, ipiv, info);
+  Tpetra::GETF2 (A_copy, ipiv, info);
   TEST_EQUALITY( info, 0 );
 
   for (LO i = 0; i < lclNumRows; ++i) {
@@ -712,7 +712,7 @@ testArrowMatrixWithDense (bool& success, Teuchos::FancyOStream& out, const LO lc
   // GETRS overwrites the input right-hand side with the solution.
   Kokkos::deep_copy (x, b);
 
-  Tpetra::Experimental::GETRS ("N", A_copy, ipiv, x, info);
+  Tpetra::GETRS ("N", A_copy, ipiv, x, info);
   TEST_EQUALITY( info, 0 );
 
   const val_type c_n_unscaled_expected = N - ((N - ONE)*N) / (TWO * d);
