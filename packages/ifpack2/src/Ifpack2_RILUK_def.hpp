@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ***********************************************************************
 //@HEADER
 */
@@ -46,63 +44,7 @@
 #include "Ifpack2_LocalFilter.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
-
-namespace { // (anonymous)
-
-  template<class ResultType, class ... CandidateTypes>
-  struct GetParamTryingTypes {};
-
-  template<class ResultType>
-  struct GetParamTryingTypes<ResultType> {
-    static void
-    get (ResultType& /* result */,
-         const Teuchos::ParameterEntry& /* ent */,
-         const std::string& paramName,
-         const char prefix[])
-    {
-      using Teuchos::TypeNameTraits;
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::invalid_argument, prefix << "\"" << paramName
-         << "\" parameter exists in input ParameterList, but does not "
-         "have the right type.  The proper type is "
-         << TypeNameTraits<ResultType>::name () << ".");
-    }
-  };
-
-  template<class ResultType, class First, class ... Rest>
-  struct GetParamTryingTypes<ResultType, First, Rest...> {
-    static void
-    get (ResultType& result,
-         const Teuchos::ParameterEntry& ent,
-         const std::string& paramName,
-         const char prefix[])
-    {
-      if (ent.template isType<First> ()) {
-        result = static_cast<ResultType> (Teuchos::getValue<First> (ent));
-      }
-      else {
-        using rest_type = GetParamTryingTypes<ResultType, Rest...>;
-        rest_type::get (result, ent, paramName, prefix);
-      }
-    }
-  };
-
-  template<class ResultType, class ... CandidateTypes>
-  void
-  getParamTryingTypes (ResultType& result,
-                       const Teuchos::ParameterList& params,
-                       const std::string& paramName,
-                       const char prefix[])
-  {
-    using Teuchos::ParameterEntry;
-    const ParameterEntry* ent = params.getEntryPtr (paramName);
-    if (ent != nullptr) {
-      using impl_type = GetParamTryingTypes<ResultType, CandidateTypes...>;
-      impl_type::get (result, *ent, paramName, prefix);
-    }
-  }
-
-} // namespace (anonymous)
+#include "Ifpack2_Details_getParamTryingTypes.hpp"
 
 namespace Ifpack2 {
 
@@ -326,6 +268,7 @@ void
 RILUK<MatrixType>::
 setParameters (const Teuchos::ParameterList& params)
 {
+  using Details::getParamTryingTypes;
   using GO = global_ordinal_type;
   const char prefix[] = "Ifpack2::RILUK: ";
 
