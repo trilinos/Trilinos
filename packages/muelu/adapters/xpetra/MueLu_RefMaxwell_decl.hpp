@@ -359,12 +359,6 @@ namespace MueLu {
                     const Teuchos::RCP<RealValuedMultiVector> & Coords,
                     Teuchos::ParameterList& List);
 
-    //! solve coarse (1,1) block
-    void solveH() const;
-
-    //! solve (2,2) block
-    void solve22() const;
-
     //! apply additive algorithm for 2x2 solve
     void applyInverseAdditive(const MultiVector& RHS, MultiVector& X) const;
 
@@ -375,10 +369,10 @@ namespace MueLu {
     void applyInverse212(const MultiVector& RHS, MultiVector& X) const;
 
     //! apply solve to 1-1 block only
-    void applyInverse11(const MultiVector& RHS, MultiVector& X) const;
+    void solveH(const MultiVector& RHS, MultiVector& X) const;
 
     //! apply solve to 2-2 block only
-    void applyInverse22(const MultiVector& RHS, MultiVector& X) const;
+    void solve22(const MultiVector& RHS, MultiVector& X) const;
 
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
@@ -408,7 +402,7 @@ namespace MueLu {
     Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
     Teuchos::RCP<Teuchos::ParameterList> A22_AP_reuse_data_, A22_RAP_reuse_data_;
     //! Some options
-    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_;
+    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_,implicitTranspose_;
     std::string mode_;
     //! Temporary memory
     mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_;
