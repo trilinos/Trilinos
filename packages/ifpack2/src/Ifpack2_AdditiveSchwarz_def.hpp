@@ -669,7 +669,6 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
     singletonFilter->UpdateLHS (ReducedY, OverlappingY);
   }
   else {
-
     // process reordering
     if (! UseReordering_) {
       Inverse_->solve (OverlappingY, OverlappingB);
@@ -755,36 +754,28 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   // original list.
 
   const std::string cmParamName ("schwarz: combine mode");
-  if (plist->isParameter (cmParamName)) {
-    if (plist->isType<CombineMode> (cmParamName)) {
-      CombineMode_ = plist->get ("schwarz: combine mode", CombineMode_);
+  const ParameterEntry* cmEnt = plist->getEntryPtr (cmParamName);
+  if (cmEnt != nullptr) {
+    if (cmEnt->isType<CombineMode> ()) {
+      CombineMode_ = Teuchos::getValue<CombineMode> (*cmEnt);
     }
-    else if (plist->isType<int> (cmParamName)) {
-      int cm = static_cast<int> (CombineMode_);
-      cm = plist->get ("schwarz: combine mode", cm);
+    else if (cmEnt->isType<int> ()) {
+      const int cm = Teuchos::getValue<int> (*cmEnt);
       CombineMode_ = static_cast<CombineMode> (cm);
     }
-    else if (plist->isType<std::string> (cmParamName)) {
-      bool gotCombineMode = false;
-      try {
-        CombineMode_ = getIntegralValue<CombineMode> (List_, cmParamName);
-        gotCombineMode = true;
-      }
-      catch (...) {}
-      // Try to get the combine mode as a string.  If this works, use the
-      // validator to convert to int.  This is painful, but necessary in
-      // order to do validation, since the input list doesn't come with a
-      // validator.
-      if (! gotCombineMode) {
-        const ParameterEntry& validEntry =
-          getValidParameters ()->getEntry (cmParamName);
-        RCP<const ParameterEntryValidator> v = validEntry.validator ();
-        typedef StringToIntegralParameterEntryValidator<CombineMode> vs2e_type;
-        RCP<const vs2e_type> vs2e = rcp_dynamic_cast<const vs2e_type> (v, true);
+    else if (cmEnt->isType<std::string> ()) {
+      // Try to get the combine mode as a string.  If this works, use
+      // the validator to convert to int.  This is painful, but
+      // necessary in order to do validation, since the input list may
+      // not necessarily come with a validator.
+      const ParameterEntry& validEntry =
+        getValidParameters ()->getEntry (cmParamName);
+      RCP<const ParameterEntryValidator> v = validEntry.validator ();
+      using vs2e_type = StringToIntegralParameterEntryValidator<CombineMode>;
+      RCP<const vs2e_type> vs2e = rcp_dynamic_cast<const vs2e_type> (v, true);
 
-        const ParameterEntry& inputEntry = plist->getEntry (cmParamName);
-        CombineMode_ = vs2e->getIntegralValue (inputEntry, cmParamName);
-      }
+      const ParameterEntry& inputEntry = plist->getEntry (cmParamName);
+      CombineMode_ = vs2e->getIntegralValue (inputEntry, cmParamName);
     }
   }
 
