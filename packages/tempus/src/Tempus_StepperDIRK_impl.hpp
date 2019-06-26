@@ -237,6 +237,10 @@ void StepperDIRK<Scalar>::takeStep(
     Teuchos::SerialDenseVector<int,Scalar> b = DIRK_ButcherTableau_->b();
     Teuchos::SerialDenseVector<int,Scalar> c = DIRK_ButcherTableau_->c();
 
+    // Reset non-zero initial guess.
+    if ( this->getResetInitialGuess() && (!this->getZeroInitialGuess()) )
+      Thyra::assign(stageX_.ptr(), *(currentState->getX()));
+
     // Compute stage solutions
     bool pass = true;
     Thyra::SolveStatus<Scalar> sStatus;
@@ -436,6 +440,7 @@ StepperDIRK<Scalar>::getValidParameters() const
   this->getValidParametersBasic(pl);
   pl->set<bool>("Initial Condition Consistency Check", false);
   pl->set<bool>("Zero Initial Guess", false);
+  pl->set<bool>("Reset Initial Guess", true);
   return pl;
 }
 
