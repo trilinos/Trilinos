@@ -152,7 +152,7 @@ struct Flush {
   void run() {
     double sum = 0;
     Kokkos::parallel_reduce("KokkosGraph::PerfTest::Flush", Kokkos::RangePolicy<SpaceType>(0,BufSize/sizeof(double)), *this, sum);
-    SpaceType::fence();
+    SpaceType().fence();
     std::cout << "Flush sum:" << sum << std::endl;
     FILE *fp = fopen("/dev/null", "w");
     fprintf(fp, "%f\n", sum);
@@ -341,7 +341,7 @@ void run_experiment(
 
       size_t num_triangles = 0;
       KokkosKernels::Impl::kk_reduce_view< Kokkos::View <size_t *,ExecSpace>, ExecSpace>(rowmap_size, row_mapC, num_triangles);
-      ExecSpace::fence();
+      ExecSpace().fence();
 
       symbolic_time = timer1.seconds();
       std::cout << "num_triangles:" << num_triangles << std::endl;

@@ -1008,7 +1008,7 @@ void KokkosSPGEMM
 
   Kokkos::Impl::Timer timer1;
   pool_memory_space m_space(num_chunks, accumulator_chunksize, pool_init_val,  my_pool_type);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tPool Alloc Time:" << timer1.seconds() << std::endl;
   }
@@ -1099,7 +1099,7 @@ void KokkosSPGEMM
 
     }
   }
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tKernel time:" << timer1.seconds() << std::endl<< std::endl;

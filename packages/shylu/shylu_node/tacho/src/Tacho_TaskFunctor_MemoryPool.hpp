@@ -8,15 +8,14 @@
 
 namespace Tacho {
 
-    template<typename ExecSpace>
+    template<typename SchedulerType>
     struct TaskFunctor_MemoryPool_Allocate {
-      typedef ExecSpace exec_space;
-      
-      // task scheduler/future
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::execution_space exec_space;
       typedef typename scheduler_type::member_type member_type;
+
       typedef void* value_type; // functor return type
-      typedef Kokkos::Future<void*,exec_space> future_type;
+      typedef Kokkos::BasicFuture<void*,scheduler_type> future_type;
       
       // memory pool
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
@@ -47,19 +46,18 @@ namespace Tacho {
       }
     };
     
-    template<typename ExecSpace>
+    template<typename SchedulerType>
     struct TaskFunctor_MemoryPool_Deallocate {
-      typedef ExecSpace exec_space;
-      
-      // task scheduler/future
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::execution_space exec_space;
       typedef typename scheduler_type::member_type member_type;
+
       typedef void value_type; // functor return type
-      typedef Kokkos::Future<void,exec_space> future_type;
+      typedef Kokkos::BasicFuture<void,scheduler_type> future_type;
       
       // memory pool
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
-      typedef Kokkos::Future<void*,exec_space> future_ptr_type;
+      typedef Kokkos::BasicFuture<void*,scheduler_type> future_ptr_type;
       
     private:
       memory_pool_type _pool;
@@ -88,18 +86,17 @@ namespace Tacho {
       }
     };
 
-    template<typename ExecSpace>
+    template<typename SchedulerType>
     struct TaskFunctor_MemoryPool_TestView {
-      typedef ExecSpace exec_space;
-      
-      // task scheduler/future
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::execution_space exec_space;
       typedef typename scheduler_type::member_type member_type;
+
       typedef Kokkos::View<double**,Kokkos::LayoutLeft,exec_space,Kokkos::MemoryUnmanaged> value_type;
-      typedef Kokkos::Future<value_type,exec_space> future_type;
+      typedef Kokkos::BasicFuture<value_type,scheduler_type> future_type;
 
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
-      typedef Kokkos::Future<void*,exec_space> future_ptr_type;
+      typedef Kokkos::BasicFuture<void*,scheduler_type> future_ptr_type;
 
     private:
       memory_pool_type _pool;
@@ -139,18 +136,17 @@ namespace Tacho {
       }
     };
     
-    template<typename ExecSpace>
+    template<typename SchedulerType>
     struct TaskFunctor_MemoryPool_TestViewSee {
-      typedef ExecSpace exec_space;
-      
-      // task scheduler/future
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::execution_space exec_space;
       typedef typename scheduler_type::member_type member_type;
+
       typedef void value_type;
-      typedef Kokkos::Future<exec_space> future_type;
+      typedef Kokkos::BasicFuture<scheduler_type> future_type;
       
       typedef Kokkos::View<double**,Kokkos::LayoutLeft,exec_space,Kokkos::MemoryUnmanaged> view_type;
-      typedef Kokkos::Future<view_type,exec_space> future_view_type;
+      typedef Kokkos::BasicFuture<view_type,scheduler_type> future_view_type;
       
       // memory pool
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;

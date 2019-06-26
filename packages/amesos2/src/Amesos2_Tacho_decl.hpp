@@ -96,6 +96,7 @@ public:
   typedef Tacho::ordinal_type                                  ordinal_type;
   typedef Tacho::size_type                                        size_type;
   typedef Kokkos::DefaultHostExecutionSpace                   HostSpaceType;
+  typedef Kokkos::TaskScheduler<HostSpaceType>                SchedulerType;
   typedef Kokkos::View<size_type*,HostSpaceType>            size_type_array;
   typedef Kokkos::View<ordinal_type*,HostSpaceType>      ordinal_type_array;
   typedef Kokkos::View<tacho_type*, HostSpaceType>         value_type_array;
@@ -203,7 +204,7 @@ private:
 
   // struct holds all data necessary to make a tacho factorization or solve call
   mutable struct TACHOData {
-    typename Tacho::Solver<tacho_type,HostSpaceType> solver;
+    typename Tacho::Solver<tacho_type,SchedulerType> solver;
 
     // TODO: Implement the paramter options - confirm which we want and which have been implemented
     // int num_kokkos_threads;
@@ -224,7 +225,7 @@ private:
 #else
   typedef Kokkos::Serial DeviceSpaceType;
 #endif
-  typedef typename Tacho::Solver<tacho_type,DeviceSpaceType>::value_type_matrix
+  typedef typename Tacho::Solver<tacho_type,SchedulerType>::value_type_matrix
     solve_array_t;
 
   // used as an internal workspace - possibly we can store this better in TACHOData

@@ -43,7 +43,7 @@ export JENKINS_DO_EXAMPLES=ON
 
 export QUEUE=rhel7F
 
-module load python
+module load python/2.7.12
 
 export KOKKOSKERNELS_PATH=${PWD}/kokkos-kernels
 

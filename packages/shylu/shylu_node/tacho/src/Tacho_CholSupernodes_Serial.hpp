@@ -40,13 +40,11 @@ namespace Tacho {
 
     template<>
     struct CholSupernodes<Algo::Workflow::Serial> {
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      factorize(SchedulerType &sched,
-                MemberType &member,
+      factorize(MemberType &member,
                 const SupernodeInfoType &info,
                 const typename SupernodeInfoType::value_type_matrix &ABR,
                 const ordinal_type sid) {
@@ -80,30 +78,29 @@ namespace Tacho {
         // m and n are available, then factorize the supernode block
         if (m > 0) {
           UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;
-          Chol<Uplo::Upper,CholAlgoType>::invoke(sched, member, ATL);
+          Chol<Uplo::Upper,CholAlgoType>::invoke(member, ATL);
 
           if (n > 0) {
+            const value_type one(1), zero(0);
             UnmanagedViewType<value_type_matrix> ATR(ptr, m, n); // ptr += m*n;
             Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
-              ::invoke(sched, member, Diag::NonUnit(), 1.0, ATL, ATR);
+              ::invoke(member, Diag::NonUnit(), one, ATL, ATR);
 
             TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.extent(0)) != n ||
                                  static_cast<ordinal_type>(ABR.extent(1)) != n,
                                  "ABR dimension does not match to supernodes");
             Herk<Uplo::Upper,Trans::ConjTranspose,HerkAlgoType>
-              ::invoke(sched, member, -1.0, ATR, 0.0, ABR);
+              ::invoke(member, -one, ATR, zero, ABR);
           }
         }
         return 0;
       }
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      update(SchedulerType &sched,
-             MemberType &member,
+      update(MemberType &member,
              const SupernodeInfoType &info,
              const typename SupernodeInfoType::value_type_matrix &ABR,
              const ordinal_type sid,
@@ -340,13 +337,11 @@ namespace Tacho {
         return 0;
       }
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      solve_lower(SchedulerType &sched,
-                  MemberType &member,
+      solve_lower(MemberType &member,
                   const SupernodeInfoType &info,
                   const typename SupernodeInfoType::value_type_matrix &xB,
                   const ordinal_type sid) {
@@ -375,37 +370,36 @@ namespace Tacho {
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
+          const value_type one(1), zero(0);
           const ordinal_type offm = s.row_begin;
           UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
           auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
 
           if (nrhs >= ThresholdSolvePhaseUsingBlas3)
             Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
-              ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+              ::invoke(member, Diag::NonUnit(), one, AL, xT);
           else
             Trsv<Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
-              ::invoke(sched, member, Diag::NonUnit(), AL, xT);
+              ::invoke(member, Diag::NonUnit(), AL, xT);
             
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
             if (nrhs >= ThresholdSolvePhaseUsingBlas3)
               Gemm<Trans::ConjTranspose,Trans::NoTranspose,GemmAlgoType>
-                ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
+                ::invoke(member, -one, AR, xT, zero, xB);
             else
               Gemv<Trans::ConjTranspose,GemmAlgoType>
-                ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
+                ::invoke(member, -one, AR, xT, zero, xB);
           }
         }
         return 0;
       }
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      update_solve_lower(SchedulerType &sched,
-                         MemberType &member,
+      update_solve_lower(MemberType &member,
                          const SupernodeInfoType &info,
                          const typename SupernodeInfoType::value_type_matrix &xB,
                          const ordinal_type sid) {
@@ -459,13 +453,11 @@ namespace Tacho {
         return 0;
       }
       
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      solve_upper(SchedulerType &sched,
-                  MemberType &member,
+      solve_upper(MemberType &member,
                   const SupernodeInfoType &info,
                   const typename SupernodeInfoType::value_type_matrix &xB,
                   const ordinal_type sid) {
@@ -495,6 +487,7 @@ namespace Tacho {
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
+          const value_type one(1);
           const UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
 
           const ordinal_type offm = s.row_begin;
@@ -504,28 +497,26 @@ namespace Tacho {
             const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
             if (nrhs >= ThresholdSolvePhaseUsingBlas3)
               Gemm<Trans::NoTranspose,Trans::NoTranspose,GemmAlgoType>
-                ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
+                ::invoke(member, -one, AR, xB, one, xT);
             else
               Gemv<Trans::NoTranspose,GemmAlgoType>
-                ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
+                ::invoke(member, -one, AR, xB, one, xT);
           }
           if (nrhs >= ThresholdSolvePhaseUsingBlas3)
             Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
-              ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+              ::invoke(member, Diag::NonUnit(), one, AL, xT);
           else
             Trsv<Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
-              ::invoke(sched, member, Diag::NonUnit(), AL, xT);
+              ::invoke(member, Diag::NonUnit(), AL, xT);
         }
         return 0;
       }
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      update_solve_upper(SchedulerType &sched,
-                         MemberType &member,
+      update_solve_upper(MemberType &member,
                          const SupernodeInfoType &info,
                          const typename SupernodeInfoType::value_type_matrix &xB,
                          const ordinal_type sid) {
@@ -559,13 +550,11 @@ namespace Tacho {
         return 0;
       }
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      factorize_recursive_serial(SchedulerType &sched,
-                                 MemberType &member,
+      factorize_recursive_serial(MemberType &member,
                                  const SupernodeInfoType &info,
                                  const ordinal_type sid,
                                  const bool final,
@@ -581,7 +570,7 @@ namespace Tacho {
         if (final) {
           // serial recursion
           for (ordinal_type i=0;i<s.nchildren;++i)
-            factorize_recursive_serial(sched, member, info, 
+            factorize_recursive_serial(member, info, 
                                        s.children[i], final, buf, bufsize);
         }
 
@@ -598,10 +587,10 @@ namespace Tacho {
           UnmanagedViewType<value_type_matrix> ABR((value_type*)buf, n, n);
 
           CholSupernodes<Algo::Workflow::Serial>
-            ::factorize(sched, member, info, ABR, sid);
+            ::factorize(member, info, ABR, sid);
 
           CholSupernodes<Algo::Workflow::Serial>
-            ::update(sched, member, info, ABR, sid,
+            ::update(member, info, ABR, sid,
                      bufsize - ABR.span()*sizeof(value_type),
                      (void*)((value_type*)buf + ABR.span()));
         }
@@ -609,13 +598,11 @@ namespace Tacho {
       }
 
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      solve_lower_recursive_serial(SchedulerType &sched,
-                                   MemberType &member,
+      solve_lower_recursive_serial(MemberType &member,
                                    const SupernodeInfoType &info,
                                    const ordinal_type sid,
                                    const bool final,
@@ -631,7 +618,7 @@ namespace Tacho {
         if (final) {
           // serial recursion
           for (ordinal_type i=0;i<s.nchildren;++i)
-            solve_lower_recursive_serial(sched, member, info, 
+            solve_lower_recursive_serial(member, info, 
                                          s.children[i], final, buf, bufsize);
         }
 
@@ -646,22 +633,20 @@ namespace Tacho {
           UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
 
           CholSupernodes<Algo::Workflow::Serial>
-            ::solve_lower(sched, member, info, xB, sid);
+            ::solve_lower(member, info, xB, sid);
 
           CholSupernodes<Algo::Workflow::Serial>
-            ::update_solve_lower(sched, member, info, xB, sid);
+            ::update_solve_lower(member, info, xB, sid);
         }
         return 0;
       }
 
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      solve_upper_recursive_serial(SchedulerType &sched,
-                                   MemberType &member,
+      solve_upper_recursive_serial(MemberType &member,
                                    const SupernodeInfoType &info,
                                    const ordinal_type sid,
                                    const bool final,
@@ -685,16 +670,16 @@ namespace Tacho {
           UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
 
           CholSupernodes<Algo::Workflow::Serial>
-            ::update_solve_upper(sched, member, info, xB, sid);
+            ::update_solve_upper(member, info, xB, sid);
 
           CholSupernodes<Algo::Workflow::Serial>
-            ::solve_upper(sched, member, info, xB, sid);
+            ::solve_upper(member, info, xB, sid);
         }
 
         if (final) {
           // serial recursion
           for (ordinal_type i=0;i<s.nchildren;++i)
-            solve_upper_recursive_serial(sched, member, info, 
+            solve_upper_recursive_serial(member, info, 
                                          s.children[i], final, buf, bufsize);
         }
         return 0;

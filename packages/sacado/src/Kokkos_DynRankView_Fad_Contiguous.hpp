@@ -693,6 +693,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
@@ -781,6 +782,7 @@ class ViewMapping< DstTraits , SrcTraits ,
 public:
 
   enum { is_assignable = true };
+  enum { is_assignable_data_type = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
   typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;

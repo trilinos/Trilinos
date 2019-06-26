@@ -834,9 +834,9 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     // FIXME (26 Apr 2016) Fences around (UVM) allocations only
     // temporarily needed for #227 debugging.  Should be able to
     // remove them after that's fixed.
-    execution_space::fence ();
+    execution_space().fence ();
     exports = exports_view_type ("exports", 0);
-    execution_space::fence ();
+    execution_space().fence ();
     return;
   }
 
@@ -857,14 +857,14 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     // FIXME (26 Apr 2016) Fences around (UVM) allocations only
     // temporarily needed for #227 debugging.  Should be able to
     // remove them after that's fixed.
-    execution_space::fence ();
+    execution_space().fence ();
     exports = exports_view_type ("exports", count);
     if (debug) {
       std::ostringstream os;
       os << "*** exports resized to " << count << std::endl;
       std::cerr << os.str ();
     }
-    execution_space::fence ();
+    execution_space().fence ();
   }
   if (debug) {
     std::ostringstream os;

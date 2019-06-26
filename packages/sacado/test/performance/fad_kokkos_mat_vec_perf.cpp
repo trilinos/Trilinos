@@ -249,13 +249,13 @@ do_time_fad(const size_t m, const size_t n, const size_t p, const size_t nloop,
 
   // Execute the kernel once to warm up
   run_mat_vec( A, b, c );
-  execution_space::fence();
+  execution_space().fence();
 
   wall_clock.reset();
   for (size_t l=0; l<nloop; l++) {
     run_mat_vec( A, b, c );
   }
-  execution_space::fence();
+  execution_space().fence();
 
   perf.time = wall_clock.seconds() / nloop;
   perf.flops = m*n*(2+4*p);
@@ -348,13 +348,13 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
 
   // Execute the kernel once to warm up
   run_mat_vec_hierarchical( A, b, c );
-  execution_space::fence();
+  execution_space().fence();
 
   wall_clock.reset();
   for (size_t l=0; l<nloop; l++) {
     run_mat_vec_hierarchical( A, b, c );
   }
-  execution_space::fence();
+  execution_space().fence();
 
   perf.time = wall_clock.seconds() / nloop;
   perf.flops = m*n*(2+4*p);
@@ -393,13 +393,13 @@ do_time_val(const size_t m, const size_t n, const size_t nloop,
 
   // Execute the kernel once to warm up
   run_mat_vec( A, b, c );
-  execution_space::fence();
+  execution_space().fence();
 
   wall_clock.reset();
   for (size_t l=0; l<nloop; l++) {
     run_mat_vec( A, b, c );
   }
-  execution_space::fence();
+  execution_space().fence();
 
   perf.time = wall_clock.seconds() / nloop;
   perf.flops = m*n*2;
