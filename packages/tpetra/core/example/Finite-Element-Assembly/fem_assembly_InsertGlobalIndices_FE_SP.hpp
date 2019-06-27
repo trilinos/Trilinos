@@ -476,12 +476,9 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   int numOwnedElements = mesh.getNumOwnedElements();
   int nperel = owned_element_to_node_ids.extent(1); 
   scalar_2d_array_t all_element_matrix("all_element_matrix",nperel*numOwnedElements);
-
   scalar_1d_array_t all_element_rhs("all_element_rhs",nperel*numOwnedElements);
   local_ordinal_view_t  all_lcids("all_lids",nperel*numOwnedElements);
   
-  //  Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
-  //  Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
   pair_type alln = pair_type(0,nperel);
   // Loop over elements
@@ -492,6 +489,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       auto element_rhs    = Kokkos::subview(all_element_rhs,location_pair);
       auto element_matrix = Kokkos::subview(all_element_matrix,location_pair,alln);
       auto element_lcids  = Kokkos::subview(all_lcids,location_pair);
+      // FIXME: As per Ellingwood
 
       // Get the contributions for the current element
       ReferenceQuad4(element_matrix);
@@ -512,9 +510,9 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
           auto row_values = Kokkos::subview(element_matrix,element_node_idx,alln);
           // Force atomics on sums
           // FIXME: I'm pretty sure rowvalues ain't right -- this is layout dependent
-          localMatrix.sumIntoValues(local_row_id,&(element_lcids(0)),nperel,&(row_values(0)),false,true);
+          localMatrix.sumIntoValues(local_row_id,&(element_lcids(0)),nperel,&(row_values(element_node_idx,0)),false,true);
 
-          Kokkos::atomic_add(&(element_rhs(local_col_id)),element_rhs[element_node_idx]);
+          Kokkos::atomic_add(&(element_rhs(element_node_idx)),element_rhs[element_node_idx]);
           //          fe_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
           //          rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
         }
