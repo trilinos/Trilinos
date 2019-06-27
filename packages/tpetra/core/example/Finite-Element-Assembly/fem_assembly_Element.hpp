@@ -70,7 +70,8 @@ namespace TpetraExamples
 //    2 |    -1   2  -1
 //    3 |-1      -1   2
 // 
-void ReferenceQuad4(scalar_2d_array_t & elementMatrix) {
+template <class ViewType>
+void ReferenceQuad4(ViewType & elementMatrix) {
   size_t lr[4] = {1,0,3,2};
   size_t ud[4] = {3,2,1,0};
 
@@ -97,6 +98,13 @@ void ReferenceQuad4RHS(Teuchos::Array<Scalar>& rhs) {
   rhs.resize(4);
   std::fill(rhs.begin(), rhs.end(), static_cast<Scalar>(.25));
 }
+
+template<class ViewType>
+void ReferenceQuad4RHS_Kokkos(ViewType& rhs) {
+  for(size_t i=0; i<rhs.extent(0); i++)
+    rhs[i] = static_cast<Scalar>(.25);
+}
+
 
 //
 // This function prints out the quad4 array in a nice way.
