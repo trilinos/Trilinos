@@ -2419,15 +2419,21 @@ namespace Tpetra {
       const size_t numInputEnt = indices.size ();
       RowInfo rowInfo = graph.getRowInfo (lclRow);
 
-      if (graph.isLocallyIndexed() && this->getProfileType() == StaticProfile) {
-        // Column map AND static profile. In this case, we must convert global
-        // indices to local and call insertLocalValues
+      if (!graph.colMap_.is_null() &&
+           graph.isLocallyIndexed() &&
+           this->getProfileType() == StaticProfile) {
+        // This branch is similar in function to the following branch, but for
+        // the special case that the target graph is locally indexed (and the
+        // profile type is StaticProfile). In this case, we cannot simply filter
+        // out global indices that don't exist on the receiving process and
+        // insert the remaining (global) indices, but we must convert them (the
+        // remaining global indices) to local and call `insertLocalValues`.
         const map_type& colMap = * (graph.colMap_);
         size_t curOffset = 0;
         while (curOffset < numInputEnt) {
-          // Find a sequence of input indices that are in the column
-          // Map on the calling process.  Doing a sequence at a time,
-          // instead of one at a time, amortizes some overhead.
+          // Find a sequence of input indices that are in the column Map on the
+          // calling process. Doing a sequence at a time, instead of one at a
+          // time, amortizes some overhead.
           Teuchos::Array<LO> lclIndices;
           size_t endOffset = curOffset;
           for ( ; endOffset < numInputEnt; ++endOffset) {
@@ -2437,16 +2443,16 @@ namespace Tpetra {
             else
               break;
           }
-          // curOffset, endOffset: half-exclusive range of indices in
-          // the column Map on the calling process.  If endOffset ==
-          // curOffset, the range is empty.
+          // curOffset, endOffset: half-exclusive range of indices in the column
+          // Map on the calling process. If endOffset == curOffset, the range is
+          // empty.
           const LO numIndInSeq = (endOffset - curOffset);
           if (numIndInSeq != 0) {
             this->insertLocalValues(lclRow, lclIndices(), values(curOffset, numIndInSeq));
           }
           // Invariant before the increment line: Either endOffset ==
-          // numInputEnt, or inputGblColInds[endOffset] is not in the
-          // column Map on the calling process.
+          // numInputEnt, or inputGblColInds[endOffset] is not in the column Map
+          // on the calling process.
 #ifdef HAVE_TPETRA_DEBUG
           const bool invariant = endOffset == numInputEnt ||
             colMap.getLocalElement (inputGblColInds[endOffset]) == OTLO::invalid ();
