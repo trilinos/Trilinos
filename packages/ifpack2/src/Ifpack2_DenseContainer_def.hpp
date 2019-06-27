@@ -45,7 +45,7 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
-#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_BlockMultiVector.hpp"
 
 #ifdef HAVE_MPI
 #  include <mpi.h>

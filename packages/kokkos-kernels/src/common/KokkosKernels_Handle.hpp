@@ -46,6 +46,7 @@
 #include "KokkosSparse_gauss_seidel_handle.hpp"
 #include "KokkosSparse_spgemm_handle.hpp"
 #include "KokkosSparse_spadd_handle.hpp"
+#include "KokkosSparse_sptrsv_handle.hpp"
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
 
@@ -136,6 +137,8 @@ public:
     this->gsHandle = right_side_handle.get_gs_handle();
     this->spgemmHandle = right_side_handle.get_spgemm_handle();
 
+    this->sptrsvHandle = right_side_handle.get_sptrsv_handle();
+
     this->team_work_size = right_side_handle.get_set_team_work_size();
     this->shared_memory_size = right_side_handle.get_shmem_size();
     this->suggested_team_size = right_side_handle.get_set_suggested_team_size();
@@ -150,6 +153,7 @@ public:
     is_owner_of_the_gs_handle = false;
     is_owner_of_the_spgemm_handle = false;
     is_owner_of_the_spadd_handle = false;
+    is_owner_of_the_sptrsv_handle = false;
     //return *this;
   }
 
@@ -190,6 +194,9 @@ public:
     typename KokkosSparse::SPADDHandle<row_lno_temp_work_view_t, nnz_lno_temp_work_view_t, scalar_temp_work_view_t, HandleExecSpace, HandleTempMemorySpace>
       SPADDHandleType;
 
+  typedef
+    typename KokkosSparse::Experimental::SPTRSVHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      SPTRSVHandleType;
 
 private:
 
@@ -199,6 +206,7 @@ private:
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
   SPADDHandleType *spaddHandle;
+  SPTRSVHandleType *sptrsvHandle;
 
   int team_work_size;
   size_t shared_memory_size;
@@ -214,6 +222,7 @@ private:
   bool is_owner_of_the_gs_handle;
   bool is_owner_of_the_spgemm_handle;
   bool is_owner_of_the_spadd_handle;
+  bool is_owner_of_the_sptrsv_handle;
 
 public:
 
@@ -223,6 +232,7 @@ public:
     , gsHandle(NULL)
     , spgemmHandle(NULL)
     , spaddHandle(NULL)
+    , sptrsvHandle(NULL)
     , team_work_size(-1)
     , shared_memory_size(16128)
     , suggested_team_size(-1)
@@ -235,6 +245,7 @@ public:
     , is_owner_of_the_gs_handle(true)
     , is_owner_of_the_spgemm_handle(true)
     , is_owner_of_the_spadd_handle(true)
+    , is_owner_of_the_sptrsv_handle(true)
   { }
 
   ~KokkosKernelsHandle(){
@@ -243,6 +254,7 @@ public:
     this->destroy_distance2_graph_coloring_handle();
     this->destroy_spgemm_handle();
     this->destroy_spadd_handle();
+    this->destroy_sptrsv_handle();
   }
 
 
@@ -499,6 +511,27 @@ public:
     {
       delete this->spaddHandle;
       this->spaddHandle = NULL;
+    }
+  }
+
+
+
+  SPTRSVHandleType *get_sptrsv_handle(){
+    return this->sptrsvHandle;
+  }
+  void create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows, bool lower_tri) {
+    this->destroy_sptrsv_handle();
+    this->is_owner_of_the_sptrsv_handle = true;
+    this->sptrsvHandle = new SPTRSVHandleType(algm, nrows, lower_tri);
+    this->sptrsvHandle->reset_handle(nrows);
+    this->sptrsvHandle->set_team_size(this->team_work_size);
+    this->sptrsvHandle->set_vector_size(this->vector_size);
+  }
+  void destroy_sptrsv_handle(){
+    if (is_owner_of_the_sptrsv_handle && this->sptrsvHandle != nullptr)
+    {
+      delete this->sptrsvHandle;
+      this->sptrsvHandle = nullptr;
     }
   }
 

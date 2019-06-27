@@ -220,13 +220,13 @@ test_product_tensor_matrix(
 
   //------------------------------
 
-  Device::fence();
+  Device().fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Kokkos::deep_copy( x, x0 ); // akin to import
     Stokhos::multiply( matrix , x , y );
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops_per_block = matrix.block.tensor().num_flops();
@@ -321,12 +321,12 @@ test_product_tensor_diagonal_matrix(
 
   //------------------------------
 
-  Device::fence();
+  Device().fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops_per_block = 2.0*stoch_length*stoch_length;
@@ -480,12 +480,12 @@ test_product_flat_commuted_matrix(
 
   //------------------------------
 
-  Device::fence();
+  Device().fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops = 2.0*1e-9*flat_graph_length / seconds_per_iter;
@@ -635,12 +635,12 @@ test_product_flat_original_matrix(
 
   //------------------------------
 
-  Device::fence();
+  Device().fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops = 2.0*1e-9*flat_graph_length / seconds_per_iter;
@@ -738,12 +738,12 @@ test_tiled_product_tensor_matrix(
 
   //------------------------------
 
-  Device::fence();
+  Device().fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops_per_block = matrix.block.tensor().num_flops();
@@ -848,12 +848,12 @@ test_simple_tiled_product_tensor_matrix(
 
   //------------------------------
 
-  Device::fence();
+  Device().fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops_per_block = matrix.block.tensor().num_flops();
@@ -953,12 +953,12 @@ test_lexo_block_tensor(
 
   //------------------------------
 
-  Device::fence();
+  Device().fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops_per_block = matrix.block.tensor().num_flops();
@@ -1061,12 +1061,12 @@ test_linear_tensor(
 
   //------------------------------
 
-  Device::fence();
+  Device().fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops_per_block = matrix.block.tensor().num_flops();
@@ -1161,7 +1161,7 @@ test_original_matrix_free_vec(
     Kokkos::deep_copy( y[block] , ScalarType(1.0) );
   }
 
-  Device::fence();
+  Device().fence();
   SparseMatOps smo;
   Kokkos::Impl::Timer clock ;
   int n_apply = 0;
@@ -1208,7 +1208,7 @@ test_original_matrix_free_vec(
     }
 
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops = 1.0e-9*(2.0*static_cast<double>(n_apply)*graph_length+
@@ -1299,7 +1299,7 @@ test_original_matrix_free_view(
     Kokkos::deep_copy( matrix[block].values , ScalarType(1.0) );
   }
 
-  Device::fence();
+  Device().fence();
   SparseMatOps smo;
   Kokkos::Impl::Timer clock ;
   int n_apply = 0;
@@ -1354,7 +1354,7 @@ test_original_matrix_free_view(
     }
 
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops = 1.0e-9*(2.0*static_cast<double>(n_apply)*graph_length+
@@ -1450,7 +1450,7 @@ test_original_matrix_free_kokkos(
                                 matrix_graph);
   }
 
-  Device::fence();
+  Device().fence();
   Kokkos::Impl::Timer clock ;
   int n_apply = 0;
   int n_add = 0;
@@ -1504,7 +1504,7 @@ test_original_matrix_free_kokkos(
     }
 
   }
-  Device::fence();
+  Device().fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops = 1.0e-9*(2.0*static_cast<double>(n_apply)*graph_length+

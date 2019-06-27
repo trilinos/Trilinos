@@ -8,27 +8,27 @@
 #include "KokkosBatched_Vector.hpp"
 
 namespace KokkosBatched {
-  namespace Experimental {
-    ///
-    /// Serial Householder 
-    ///
 
-    // level 1 operation (no blocking algorithm info avail)
-    template<typename ArgSide>
-    struct SerialApplyHouseholder {
-      template<typename uViewType,
-               typename tauViewType,
-               typename AViewType,
-               typename wViewType>
-      KOKKOS_INLINE_FUNCTION
-      static int
-      invoke(const uViewType &u2,
-             const tauViewType &tau,
-             const AViewType
-             const wViewType &w);
-    };
+  ///
+  /// Serial Householder 
+  ///
 
-  }
+  // level 1 operation (no blocking algorithm info avail)
+  template<typename ArgSide>
+  struct SerialApplyHouseholder {
+    template<typename uViewType,
+             typename tauViewType,
+             typename AViewType,
+             typename wViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const uViewType &u2,
+           const tauViewType &tau,
+           const AViewType
+           const wViewType &w);
+  };
+
 }
+
 
 #endif

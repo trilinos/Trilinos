@@ -255,7 +255,7 @@ public:
     const size_type shmem_factor = num_tiles == 1 ? 2 : 4;
     const size_type tensor_align = num_tiles == 1 ? tensor_dimension : tile_dim;
     const size_type shcap =
-      Kokkos::Impl::CudaTraits::SharedMemoryCapacity / 2;
+      Kokkos::Cuda().impl_internal_space_instance()->m_maxShmemPerBlock / 2;
     size_type bs = ((shcap / sizeof(VectorScalar) - dBlock.x*dBlock.y) / tensor_align - 1) / shmem_factor;
     if (bs % 2 == 0)
       --bs;

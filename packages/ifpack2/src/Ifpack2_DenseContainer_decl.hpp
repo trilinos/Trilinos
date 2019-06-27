@@ -53,7 +53,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
+#include "Tpetra_BlockCrsMatrix_decl.hpp"
 
 namespace Ifpack2 {
 
@@ -158,7 +158,7 @@ private:
   /// specialization of Tpetra::RowMatrix.
   typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
 
-  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> block_crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> block_crs_matrix_type;
   //@}
 
 public:
@@ -398,7 +398,7 @@ private:
   /// specialization of Tpetra::RowMatrix.
   typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
 
-  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> block_crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> block_crs_matrix_type;
   //@}
 
 public:

@@ -215,7 +215,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     }
 
     maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
-    PHX::Device::fence();
+    typename PHX::Device().fence();
   }
 
   // We will use one workset lid view for all fields, but has to be
@@ -452,7 +452,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
                                << "size and recompile!");
   }
 
-  PHX::Device::fence();
+  typename PHX::Device().fence();
 }
 
 // **********************************************************************
@@ -548,7 +548,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     jacTpetraBlocks("panzer::ScatterResidual_BlockedTpetra<Jacobian>::jacTpetraBlocks",numFieldBlocks,numFieldBlocks);
   Kokkos::deep_copy(jacTpetraBlocks,hostJacTpetraBlocks);
   Kokkos::deep_copy(blockExistsInJac,hostBlockExistsInJac);
-  PHX::Device::fence();
+  typename PHX::Device().fence();
 
   // worksetLIDs is larger for Jacobian than Residual fill. Need the
   // entire set of field offsets for derivative indexing no matter

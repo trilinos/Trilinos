@@ -12,16 +12,14 @@ namespace Tacho {
 
     template<typename ArgTrans>
     struct Gemv<ArgTrans,Algo::Internal> {
-      template<typename PolicyType,
-               typename MemberType,
+      template<typename MemberType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeB,
                typename ViewTypeC>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(PolicyType &policy,
-             MemberType &member,
+      invoke(MemberType &member,
              const ScalarType alpha,
              const ViewTypeA &A,
              const ViewTypeB &B,

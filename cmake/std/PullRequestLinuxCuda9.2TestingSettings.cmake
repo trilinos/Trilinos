@@ -68,6 +68,10 @@ set (TPL_ENABLE_BoostLib OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (TPL_ENABLE_Matio OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH "Set by default for CUDA PR testing")
 
+# Disable some packages that can't be tested with this PR build
+set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL
+  "Can't test Tacho with CUDA without RDC" FORCE)
+
 # Temporary options to clean up build
 set (Teko_ModALPreconditioner_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (MueLu_ParameterListInterpreterTpetra_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")

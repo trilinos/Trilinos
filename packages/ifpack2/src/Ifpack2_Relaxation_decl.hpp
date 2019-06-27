@@ -48,8 +48,8 @@
 #include "Ifpack2_Parameters.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Tpetra_CrsMatrix_decl.hpp" // Don't need the definition here
-#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
+#include "Tpetra_CrsMatrix.hpp" // Don't need the definition here
+#include "Tpetra_BlockCrsMatrix.hpp"
 #include <type_traits>
 #include <KokkosKernels_Handle.hpp>
 
@@ -584,9 +584,9 @@ private:
   /// implementation of various relaxation kernels.
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> crs_matrix_type;
-  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type,
+  typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_crs_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type,
+  typedef Tpetra::BlockMultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_multivector_type;
 
 
@@ -658,7 +658,7 @@ private:
                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
-  //! Apply Gauss-Seidel for a Tpetra::Experimental::BlockCrsMatrix specialization.
+  //! Apply Gauss-Seidel for a Tpetra::BlockCrsMatrix specialization.
   void
   ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
@@ -690,7 +690,7 @@ private:
                              const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
-  //! Apply symmetric Gauss-Seidel for a Tpetra::ExperimentalBlockCrsMatrix specialization.
+  //! Apply symmetric Gauss-Seidel for a Tpetra::BlockCrsMatrix specialization.
   void
   ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                              const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,

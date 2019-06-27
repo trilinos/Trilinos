@@ -55,8 +55,8 @@
 
 #include <Tpetra_Distributor.hpp>
 #include "Teuchos_FancyOStream.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp"
+#include "Tpetra_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_FancyOStream.hpp"
