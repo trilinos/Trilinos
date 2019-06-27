@@ -64,10 +64,11 @@ namespace Tacho {
       }
     };
 
-    template<typename ValueType, typename ExecSpace>
+    template<typename ValueType, typename SchedulerType>
     struct SupernodeInfo {
       typedef ValueType value_type;
-      typedef ExecSpace exec_space;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::execution_space exec_space;
 
       typedef CrsMatrixBase<value_type,exec_space> crs_matrix_type;
 
@@ -79,10 +80,10 @@ namespace Tacho {
       typedef Kokkos::View<ordinal_pair_type*,exec_space> ordinal_pair_type_array;
       typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> value_type_matrix;
 
-      typedef DenseMatrixView<value_type,exec_space> dense_block_type;
-      typedef DenseMatrixView<dense_block_type,exec_space> dense_matrix_of_blocks_type;
+      typedef DenseMatrixView<value_type,scheduler_type> dense_block_type;
+      typedef DenseMatrixView<dense_block_type,scheduler_type> dense_matrix_of_blocks_type;
       
-      typedef Kokkos::Future<int,exec_space> future_type;
+      typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
 
       struct Supernode {
         mutable int32_t lock;

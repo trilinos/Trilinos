@@ -8,7 +8,7 @@
 
 #include "KokkosKernels_TestUtils.hpp"
 
-using namespace KokkosBatched::Experimental;
+using namespace KokkosBatched;
 
 namespace Test {
 

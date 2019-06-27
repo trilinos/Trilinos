@@ -129,15 +129,15 @@ namespace phalanx_test {
     Kokkos::deep_copy(P, host_P);
     Kokkos::deep_copy(T, host_T);
 
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     Kokkos::parallel_for(num_cells, ComputeRho<double,PHX::Device>(rho, P, T, k));  
  
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     
     Kokkos::deep_copy(host_rho, rho);
 
-    PHX::Device::fence();
+    typename PHX::Device().fence();
    
     double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
 
@@ -233,15 +233,15 @@ namespace phalanx_test {
     Kokkos::deep_copy(T, host_T);
     Kokkos::deep_copy(k, host_k);
 
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     Kokkos::parallel_for(num_cells, ComputeRho2<FadType,PHX::Device>(rho, P, T, k));  
  
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     
     Kokkos::deep_copy(host_rho, rho);
 
-    PHX::Device::fence();
+    typename PHX::Device().fence();
    
     double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
 
@@ -421,13 +421,13 @@ namespace phalanx_test {
     // Initialize: Team parallel over cells and qp
     Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space,typename InitializeView<double,execution_space>::DataParallelTag>(num_cells,num_ip,1),
                          InitializeView<double,execution_space>(T,4.0));
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     Kokkos::parallel_for(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     Kokkos::View<double**,PHX::Device>::HostMirror host_rho = Kokkos::create_mirror_view(rho);
     Kokkos::deep_copy(host_rho,rho);
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     
     double tol = std::numeric_limits<double>::epsilon() * 100.0;
     for (int i=0; i< num_cells; i++)
@@ -472,7 +472,7 @@ namespace phalanx_test {
     Kokkos::wait(policy);
 
     Kokkos::deep_copy(host_rho,rho);
-    PHX::Device::fence();
+    typename PHX::Device().fence();
     
     for (int i=0; i< num_cells; i++)
       for (int j=0; j< num_ip; j++)

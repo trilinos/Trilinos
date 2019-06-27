@@ -338,7 +338,7 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
         using counts_memory_space = typename CountsViewType::memory_space;
         if (std::is_same<counts_memory_space, Kokkos::CudaUVMSpace>::value) {
           using counts_exec_space = typename counts_memory_space::execution_space;
-          counts_exec_space::fence (); // for UVM's sake.
+          counts_exec_space().fence (); // for UVM's sake.
         }
 #endif // KOKKOS_ENABLE_CUDA
         typedef ComputeOffsetsFromCounts<OffsetsViewType, CountsViewType,

@@ -145,7 +145,7 @@ namespace panzer {
       
       // Compute
       Kokkos::parallel_for(a.extent_int(0),ComputeA<panzer::Traits::RealType,PHX::Device,PHX::MDField<panzer::Traits::RealType,Cell,BASIS> > (a));
-      PHX::Device::fence();
+      typename PHX::Device().fence();
       
       // Check
       for (int cell = 0; cell < a.extent_int(0); ++cell)
@@ -176,7 +176,7 @@ namespace panzer {
       
       // Compute
       Kokkos::parallel_for(a.extent(0),ComputeB<PHX::Device,PHX::MDField<panzer::Traits::FadType,Cell,BASIS> > (a));
-      PHX::Device::fence();
+      typename PHX::Device().fence();
       
       // Check
       for (int cell = 0; cell < a.extent_int(0); ++cell) {

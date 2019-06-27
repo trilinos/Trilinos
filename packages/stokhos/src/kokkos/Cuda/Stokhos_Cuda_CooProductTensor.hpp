@@ -279,7 +279,7 @@ public:
     const size_type size_rows = sizeof(rows_type) * num_thread;
     const size_type size_vals = sizeof(VectorScalar) * num_thread;
     const size_type shcap =
-      Kokkos::Impl::CudaTraits::SharedMemoryCapacity / 2;
+      Kokkos::Cuda().impl_internal_space_instance()->m_maxShmemPerBlock / 2;
     size_type bs =
       ((shcap-size_rows-size_vals) / (sizeof(VectorScalar)*stoch_rows) - 1) / 2;
     if (bs % 2 == 0) --bs; // Make block-size odd to reduce bank conflicts

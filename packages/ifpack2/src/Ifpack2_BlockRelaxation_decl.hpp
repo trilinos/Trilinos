@@ -51,7 +51,7 @@
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_ContainerFactory.hpp"
 #include "Teuchos_Time.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
+#include "Tpetra_BlockCrsMatrix.hpp"
 #include <type_traits>
 
 namespace Ifpack2 {
@@ -132,8 +132,8 @@ private:
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
-  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> block_crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type,
+                                 global_ordinal_type, node_type> block_crs_matrix_type;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 public:
   //@}

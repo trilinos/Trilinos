@@ -4910,7 +4910,7 @@ namespace Tpetra {
         // Make sure that the GPU can see any updates made on host.
         // This code only reads the local graph, so we don't need a
         // fence afterwards.
-        execution_space::fence ();
+        execution_space().fence ();
 
         // mfh 01 May 2018: See GitHub Issue #2658.
         constexpr bool ignoreMapsForTriStruct = true;
@@ -4932,7 +4932,7 @@ namespace Tpetra {
       // Make sure that the GPU can see any updates made on host.
       // This code only reads the local graph, so we don't need a
       // fence afterwards.
-      execution_space::fence ();
+      execution_space().fence ();
 
       auto ptr = this->lclGraph_.row_map;
       const LO lclNumRows = ptr.extent(0) == 0 ?
@@ -6147,7 +6147,7 @@ namespace Tpetra {
 
     // We may be accessing UVM data on host below, so ensure that the
     // device is done accessing it.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     const map_type& rowMap = * (this->getRowMap ());
     const map_type* const colMapPtr = this->colMap_.getRawPtr ();
@@ -6310,7 +6310,7 @@ namespace Tpetra {
 
     // We may have accessed UVM data on host above, so ensure that the
     // device sees these changes.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (errCount != 0, std::logic_error, "Packing encountered "
@@ -6371,7 +6371,7 @@ namespace Tpetra {
 
     // We may be accessing UVM data on host below, so ensure that the
     // device is done accessing it.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     const map_type& rowMap = * (this->getRowMap ());
     const map_type* const colMapPtr = this->colMap_.getRawPtr ();
@@ -6470,7 +6470,7 @@ namespace Tpetra {
     // The graph may store its data in UVM memory, so make sure that
     // any device kernels are done modifying the graph's data before
     // reading the data.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     errCount = 0;
     Kokkos::parallel_scan

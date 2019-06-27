@@ -317,7 +317,7 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
 #else
           Kokkos::MV_Multiply(y,A,x);
 #endif
-        execution_space::fence();
+        execution_space().fence();
         Kokkos::deep_copy(h_y,y);
         Scalar error[numVecs];
         Scalar sum[numVecs];
@@ -350,7 +350,7 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
 #else
           Kokkos::MV_Multiply(y,A,x);
 #endif
-        execution_space::fence();
+        execution_space().fence();
         double time = timer.seconds();
         double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(LocalOrdinalType)) + numRows*sizeof(LocalOrdinalType)))/1024/1024;
         double vector_size = 2.0*numRows*numVecs*sizeof(Scalar)/1024/1024;
@@ -434,7 +434,7 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
 #else
           Kokkos::MV_Multiply(y,A,x);
 #endif
-        execution_space::fence();
+        execution_space().fence();
         Kokkos::deep_copy(h_y,y);
         Scalar error = 0;
         Scalar sum = 0;
@@ -461,7 +461,7 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
 #else
         Kokkos::MV_Multiply(y,A,x);
 #endif
-        execution_space::fence();
+        execution_space().fence();
         double time = timer.seconds();
         double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(int)) + numRows*sizeof(int)))/1024/1024;
         double vector_size = 2.0*numRows*sizeof(Scalar)/1024/1024;

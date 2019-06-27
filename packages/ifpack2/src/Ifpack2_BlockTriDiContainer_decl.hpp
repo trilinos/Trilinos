@@ -173,7 +173,7 @@ namespace Ifpack2 {
     //typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
     //typedef typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace> HostViewLocal;
 
-    typedef Tpetra::Experimental::BlockCrsMatrix
+    typedef Tpetra::BlockCrsMatrix
     <scalar_type,local_ordinal_type,global_ordinal_type,node_type> block_crs_matrix_type;
 
     /// \brief The (base class) type of the input matrix.

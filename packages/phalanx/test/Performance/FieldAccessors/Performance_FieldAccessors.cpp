@@ -291,7 +291,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
       TimeMonitor tm(*phx_ct_time_pf);
       for (size_type l=0; l < num_loops; ++l) {
 	Kokkos::parallel_for(num_cells,ComputeA<double,PHX::Device,phx_ct_field> (phx_ct_a,phx_ct_b,phx_ct_c));
-        PHX::Device::fence();
+        typename PHX::Device().fence();
       }
     }
         
@@ -310,7 +310,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
       TimeMonitor tm(*phx_rt_time_pf);
       for (size_type l=0; l < num_loops; ++l) {
 	Kokkos::parallel_for(num_cells,ComputeARuntime<double,PHX::Device,phx_rt_field> (phx_rt_a,phx_rt_b,phx_rt_c));
-        PHX::Device::fence();
+        typename PHX::Device().fence();
       }
     }
     
@@ -329,7 +329,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
       TimeMonitor tm(*k_time_pf);
       for (size_type l=0; l < num_loops; ++l)
 	Kokkos::parallel_for(num_cells,ComputeA<double,PHX::Device,kokkos_field>(kv_a,kv_b,kv_c));
-      PHX::Device::fence();
+      typename PHX::Device().fence();
     }
 
     cout << "Static Kokkos View (no parallel_for)" << endl;
@@ -351,7 +351,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
       TimeMonitor tm(*k_time_pf_static);
       for (size_type l=0; l < num_loops; ++l)
 	Kokkos::parallel_for(num_cells,ComputeA<double,PHX::Device,kokkos_field_static>(kvs_a,kvs_b,kvs_c));
-      PHX::Device::fence();
+      typename PHX::Device().fence();
     }
       
     cout << "Shards Array (no parallel_for)" << endl;

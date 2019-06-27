@@ -37,7 +37,6 @@ namespace Tacho {
       typedef typename future_type::value_type value_type;
 
     private:
-      scheduler_type _sched;
       scalar_type _alpha, _beta;
       dense_block_type _A, _C;
 
@@ -46,13 +45,11 @@ namespace Tacho {
       TaskFunctor_Herk() = delete;
 
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Herk(const scheduler_type &sched,
-                       const scalar_type alpha,
+      TaskFunctor_Herk(const scalar_type alpha,
                        const dense_block_type &A,
                        const scalar_type beta,
                        const dense_block_type &C)
-        : _sched(sched),
-          _alpha(alpha),
+        : _alpha(alpha),
           _beta(beta),
           _A(A),
           _C(C) {}
@@ -60,7 +57,7 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
         const int ierr = Herk<ArgUplo,ArgTrans,ArgAlgo>
-          ::invoke(_sched, member, _alpha, _A, _beta, _C);
+          ::invoke(member, _alpha, _A, _beta, _C);
 
         Kokkos::single(Kokkos::PerThread(member), [&] () {
             _C.set_future();
