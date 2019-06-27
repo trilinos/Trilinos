@@ -60,6 +60,7 @@
 // to wrap the user-provided Ifpack2::Preconditioner in
 // Ifpack2::AdditiveSchwarz::setInnerPreconditioner.
 #include "Ifpack2_Details_LinearSolver.hpp"
+#include "Ifpack2_Details_getParamTryingTypes.hpp"
 
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
 #include "Zoltan2_TpetraRowGraphAdapter.hpp"
@@ -710,7 +711,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::
 setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   using Tpetra::CombineMode;
-  using Teuchos::getIntegralValue;
   using Teuchos::ParameterEntry;
   using Teuchos::ParameterEntryValidator;
   using Teuchos::ParameterList;
@@ -718,6 +718,8 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::StringToIntegralParameterEntryValidator;
+  using Details::getParamTryingTypes;
+  const char prefix[] = "Ifpack2::AdditiveSchwarz: ";
 
   if (plist.is_null ()) {
     // Assume that the user meant to set default parameters by passing
@@ -807,7 +809,8 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   FilterSingletons_ = plist->get ("schwarz: filter singletons", FilterSingletons_);
 
   // Allow for damped Schwarz updates
-  UpdateDamping_ = Teuchos::as<scalar_type>(plist->get("schwarz: update damping",UpdateDamping_));
+  getParamTryingTypes<scalar_type, scalar_type, double>
+    (UpdateDamping_, *plist, "schwarz: update damping", prefix);
 
   // If the inner solver doesn't exist yet, don't create it.
   // initialize() creates it.
@@ -853,7 +856,7 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     else {
       // Extract and apply the sublist of parameters to give to the
       // inner solver, if there is such a sublist of parameters.
-      std::pair<Teuchos::ParameterList, bool> result = innerPrecParams ();
+      std::pair<ParameterList, bool> result = innerPrecParams ();
       if (result.second) {
         // FIXME (mfh 26 Aug 2015) Rewrite innerPrecParams() so this
         // isn't another deep copy.
@@ -885,7 +888,7 @@ getValidParameters () const
     const bool filterSingletons     = false;
     const int  numIterations        = 1;
     const bool zeroStartingSolution = true;
-    const double updateDamping      = 1;
+    const scalar_type updateDamping = Teuchos::ScalarTraits<scalar_type>::one ();
     ParameterList reorderingSublist;
     reorderingSublist.set ("order_method", std::string ("rcm"));
 
