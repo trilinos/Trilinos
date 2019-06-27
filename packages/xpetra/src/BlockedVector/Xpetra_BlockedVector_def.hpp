@@ -59,33 +59,37 @@ BlockedVector(const Teuchos::RCP<const BlockedMap>& map, bool zeroOut)
 { }
 
 
+#if 0  // WCMCLEN: C++ flags these c'tors as ambiguous -- probably because it can't distinguish RCP<const ...> vs. RCP<not-const ...>
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-BlockedVector( Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap, 
+BlockedVector( Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap,
                Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v)
     : Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, v)
 { }
+#endif
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-BlockedVector( Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap, 
+BlockedVector( Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap,
                Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v)
     : Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, v)
 { }
 
 
+#if 0  // WCMCLEN: C++ flags these c'tors as ambiguous -- probably because it can't distinguish RCP<const ...> vs. RCP<not-const ...>
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-BlockedVector( Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > mapExtractor, 
+BlockedVector( Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > mapExtractor,
                Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v)
     : Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mapExtractor, v)
 { }
+#endif
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-BlockedVector( Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > mapExtractor, 
+BlockedVector( Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > mapExtractor,
                Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v)
     : Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mapExtractor, v)
 { }
@@ -273,8 +277,8 @@ scale(Teuchos::ArrayView<const Scalar> alpha)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-update(const Scalar& alpha, 
-       const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, 
+update(const Scalar& alpha,
+       const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
        const Scalar& beta)
 {
     BlockedMultiVector::update(alpha, A, beta);
@@ -322,7 +326,7 @@ typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 normInf() const
 {
-    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> 
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
         norm = Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1);
     this->normInf(norm);
     return norm[ 0 ];
@@ -575,9 +579,9 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 setSeed(unsigned int seed)
 {
-    for(size_t r = 0; r < this->getBlockedMap()->getNumMaps(); ++r) 
-    { 
-        getMultiVector(r)->setSeed(seed); 
+    for(size_t r = 0; r < this->getBlockedMap()->getNumMaps(); ++r)
+    {
+        getMultiVector(r)->setSeed(seed);
     }
 }
 
@@ -587,9 +591,9 @@ void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 randomize(bool bUseXpetraImplementation)
 {
-    for(size_t r = 0; r < this->getBlockedMap()->getNumMaps(); ++r) 
-    { 
-        getMultiVector(r)->randomize(bUseXpetraImplementation); 
+    for(size_t r = 0; r < this->getBlockedMap()->getNumMaps(); ++r)
+    {
+        getMultiVector(r)->randomize(bUseXpetraImplementation);
     }
 }
 
@@ -638,7 +642,7 @@ Xpetra_randomize()
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
+    Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getMap() const
     {
@@ -648,7 +652,7 @@ Xpetra_randomize()
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+    Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getMultiVector(size_t r) const
     {
@@ -657,7 +661,7 @@ Xpetra_randomize()
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+    Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getMultiVector(size_t r, bool bThyraMode) const
     {
@@ -666,10 +670,10 @@ Xpetra_randomize()
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void 
+    void
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     setMultiVector(size_t r,
-                   Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v, 
+                   Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v,
                    bool bThyraMode)
     {
         BlockedMultiVector::setMultiVector(r, v, bThyraMode);
@@ -678,7 +682,7 @@ Xpetra_randomize()
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    Teuchos::RCP< Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+    Teuchos::RCP< Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Merge() const
     {
@@ -687,7 +691,7 @@ Xpetra_randomize()
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void 
+    void
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     assign(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
     {

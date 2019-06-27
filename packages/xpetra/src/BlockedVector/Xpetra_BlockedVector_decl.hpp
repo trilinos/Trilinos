@@ -99,6 +99,7 @@ class BlockedVector
 
     //! Constructor
 
+
     /*!
      * Const version of constructor which accepts a const version
      * of a blocked map
@@ -108,6 +109,8 @@ class BlockedVector
      */
     BlockedVector(const Teuchos::RCP<const BlockedMap>& map, bool zeroOut = true);
 
+
+#if 0  // WCMCLEN: C++ flags these c'tors as ambiguous -- probably because it can't distinguish RCP<const ...> vs. RCP<not-const ...>
     /*!
      * Const version of constructor which accepts a const version
      * of the vector
@@ -119,8 +122,10 @@ class BlockedVector
      * \param bmap BlockedMap object containing information about the block splitting
      * \param v Vector that is to be splitted into a blocked vector
      */
-    BlockedVector(Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap, 
+    BlockedVector(Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap,
                   Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> v);
+#endif
+
 
     /*!
      * NonConst version of constructor which accepts a const version
@@ -133,9 +138,11 @@ class BlockedVector
      * \param bmap BlockedMap object containing information about the block splitting
      * \param v Vector that is to be splitted into a blocked vector
      */
-    BlockedVector(Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap, 
+    BlockedVector(Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap,
                   Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> v);
 
+
+#if 0  // WCMCLEN: C++ flags these c'tors as ambiguous -- probably because it can't distinguish RCP<const ...> vs. RCP<not-const ...>
     /*!
      * Const version of constructor which accepts a const version
      * of the vector
@@ -149,6 +156,8 @@ class BlockedVector
      */
     BlockedVector(Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>> mapExtractor,
                   Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> v);
+#endif
+
 
     /*!
      * Non-const version of constructor which accepts a non-const version
@@ -164,8 +173,10 @@ class BlockedVector
     BlockedVector(Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>> mapExtractor,
                   Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> v);
 
+
     //! Destructor.
     virtual ~BlockedVector();
+
 
     /// \brief Assignment operator: Does a deep copy.
     ///
@@ -174,12 +185,14 @@ class BlockedVector
     ///
     /// \note This currently only works if both <tt>*this</tt> and the
     ///   input argument are instances of the same subclass.
-    BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& 
+    BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
     operator=(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
+
 
     //@}
     //! @name Post-construction modification routines
     //@{
+
 
     //! Replace value, using global (row) index.
     virtual void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar& value);
@@ -209,17 +222,20 @@ class BlockedVector
     //! Set all values in the vector with the given value.
     virtual void putScalar(const Scalar& value);
 
+
     //@}
+
 
     //! @name Data Copy and View get methods
     //@{
 
+
     //! Return a Vector which is a const view of column j.
-    virtual Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> 
+    virtual Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
     getVector(size_t j) const;
 
     //! Return a Vector which is a nonconst view of column j.
-    virtual Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> 
+    virtual Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
     getVectorNonConst(size_t j);
 
     //! Const view of the local values in a particular vector of this vector.
@@ -234,7 +250,7 @@ class BlockedVector
     //@{
 
     //! Compute dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i]).
-    virtual void dot(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, 
+    virtual void dot(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
                      const Teuchos::ArrayView<Scalar>& dots) const;
 
     virtual Scalar dot(const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A) const;
@@ -252,16 +268,16 @@ class BlockedVector
     //! Scale the current values of a vector, this[j] = alpha[j]*this[j].
     virtual void scale(Teuchos::ArrayView<const Scalar> alpha);
 
-    virtual void update(const Scalar& alpha, 
-                        const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, 
+    virtual void update(const Scalar& alpha,
+                        const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
                         const Scalar& beta);
 
 
     //! Update vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    virtual void update(const Scalar& alpha, 
-                        const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, 
-                        const Scalar& beta, 
-                        const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B, 
+    virtual void update(const Scalar& alpha,
+                        const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                        const Scalar& beta,
+                        const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
                         const Scalar& gamma);
 
     //! Compute 1-norm of vector.
@@ -315,10 +331,13 @@ class BlockedVector
                                      const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
                                      Scalar /* scalarThis */);
 
+
     //@}
+
 
     //! @name Attribute access functions
     //@{
+
 
     //! Number of columns in the Vector.
     virtual size_t getNumVectors() const;
@@ -366,10 +385,13 @@ class BlockedVector
                           const Export& /* exporter */,
                           CombineMode /* CM */);
 
+
     //@}
+
 
     //! @name Xpetra specific
     //@{
+
 
     //! Set seed for Random function.
     virtual void setSeed(unsigned int seed);
@@ -400,28 +422,28 @@ class BlockedVector
         typename TargetDeviceType::memory_space>::value,
         typename dual_view_type::t_dev_um,
         typename dual_view_type::t_host_um>::type
-    getLocalView () const 
+    getLocalView () const
     {
-      if(Kokkos::Impl::is_same<typename host_execution_space::memory_space, typename TargetDeviceType::memory_space>::value) 
+      if(Kokkos::Impl::is_same<typename host_execution_space::memory_space, typename TargetDeviceType::memory_space>::value)
       {
         return getHostLocalView();
-      } 
-      else 
+      }
+      else
       {
         return getDeviceLocalView();
       }
     }
-    virtual typename dual_view_type::t_host_um getHostLocalView ()  const 
+    virtual typename dual_view_type::t_host_um getHostLocalView ()  const
     {
       typename dual_view_type::t_host_um test;
       return test;
     }
-    virtual typename dual_view_type::t_dev_um  getDeviceLocalView() const 
+    virtual typename dual_view_type::t_dev_um  getDeviceLocalView() const
     {
       typename dual_view_type::t_dev_um test;
       return test;
     }
-    
+
 #if 0
     typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
     typedef Kokkos::
@@ -436,18 +458,18 @@ class BlockedVector
     /// \warning Be aware that the view on the Vector data is non-persisting, i.e.
     ///          only valid as long as the Vector does not run of scope!
     template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename dev_execution_space::memory_space, 
+    typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename dev_execution_space::memory_space,
                                                       typename TargetDeviceType::memory_space>::value,
                                 typename dual_view_type::t_dev_um,
                                 typename dual_view_type::t_host_um>::type
     getLocalView() const;
 
-    virtual typename dual_view_type::t_host_um getHostLocalView ()  const 
+    virtual typename dual_view_type::t_host_um getHostLocalView ()  const
     {
         typename dual_view_type::t_host_um test;
         return test;
     }
-    virtual typename dual_view_type::t_dev_um  getDeviceLocalView() const 
+    virtual typename dual_view_type::t_dev_um  getDeviceLocalView() const
     {
         typename dual_view_type::t_dev_um test;
         return test;
@@ -455,27 +477,29 @@ class BlockedVector
 #endif
 #endif      // HAVE_XPETRA_KOKKOS_REFACTOR
 
+
     //@}
+
 
     //! Access function for the underlying Map this DistObject was constructed with.
     Teuchos::RCP<const Map> getMap() const;
 
     /// return partial Vector associated with block row r
-    Teuchos::RCP< Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+    Teuchos::RCP< Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     getMultiVector(size_t r) const;
 
     /// return partial Vector associated with block row r
-    Teuchos::RCP< Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+    Teuchos::RCP< Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     getMultiVector(size_t r, bool bThyraMode) const;
 
     /// set partial Vector associated with block row r
-    void 
-    setMultiVector(size_t r, 
-                   Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v, 
+    void
+    setMultiVector(size_t r,
+                   Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v,
                    bool bThyraMode);
 
     /// merge BlockedVector blocks to a single Vector
-    Teuchos::RCP< Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+    Teuchos::RCP< Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     Merge() const;
 
 
@@ -493,7 +517,8 @@ class BlockedVector
   //private:
     // Teuchos::RCP<const BlockedMap>     map_;    ///< blocked map containing the sub block maps (either thyra or xpetra mode)
     // std::vector<Teuchos::RCP<Vector> > vv_;     ///< array containing RCPs of the partial vectors
-     
+
+
 };   // BlockedVector class
 
 
