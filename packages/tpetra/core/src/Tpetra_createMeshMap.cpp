@@ -1,4 +1,3 @@
-/*
 // @HEADER
 // ***********************************************************************
 //
@@ -39,21 +38,22 @@
 //
 // ************************************************************************
 // @HEADER
-*/
 
-#include "Tpetra_Experimental_BlockVector_decl.hpp"
+#include "TpetraCore_config.h"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#include "Tpetra_Experimental_BlockVector_def.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers_decl.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers_def.hpp"
+
 #include "TpetraCore_ETIHelperMacros.h"
 
 namespace Tpetra {
-
+  
   TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(TPETRA_EXPERIMENTAL_BLOCKVECTOR_INSTANT)
-
+  
+  TPETRA_INSTANTIATE_LGN( TPETRA_CREATEMESHMAP_INSTANT )
+  
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_TPETRA_INSTANTIATION

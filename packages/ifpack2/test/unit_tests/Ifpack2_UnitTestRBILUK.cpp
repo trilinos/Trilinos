@@ -58,9 +58,9 @@
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Core.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
-#include "Tpetra_Experimental_BlockMultiVector.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockMultiVector.hpp"
+#include "Tpetra_BlockView.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_RowMatrix.hpp"
 
@@ -105,7 +105,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, LowerTriangularBlockCrsMatrix, Scalar,
   using std::endl;
   typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LO,GO,Node> crs_graph_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
   typedef Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec_type;
   int lclSuccess = 1;
@@ -219,7 +219,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, UpperTriangularBlockCrsMatrix, Scalar,
 {
   typedef Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec_type;
 
@@ -273,7 +273,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, FullLocalBlockCrsMatrix, Scalar, Local
 {
   typedef Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec_type;
 
@@ -329,7 +329,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BandedBlockCrsMatrixWithDropping, Scal
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
   //typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type; // unused
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   //typedef Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec_type; // unused
   typedef Ifpack2::RILUK<row_matrix_type> prec_crs_type;
@@ -475,7 +475,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, 
   little_block_type C (cMatrix.getRawPtr (), blockSize, blockSize); // row major
   little_block_type I (identityMatrix.getRawPtr (), blockSize, blockSize); // row major
 
-  Tpetra::Experimental::GEMM ("N", "N", STS::one (), A, I, STS::zero (), C);
+  Tpetra::GEMM ("N", "N", STS::one (), A, I, STS::zero (), C);
   //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize);
 
   for (int k = 0; k < blockMatSize; ++k)
@@ -483,13 +483,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, 
     TEST_FLOATING_EQUALITY(aMatrix[k], cMatrix[k], 1e-14);
   }
 
-  Tpetra::Experimental::GEMM ("N", "N", -STS::one (), A, A, STS::one (), C);
+  Tpetra::GEMM ("N", "N", -STS::one (), A, A, STS::one (), C);
   //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), aMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, -1.0, 1.0);
 
-  Tpetra::Experimental::GEMM ("N", "N", STS::one (), I, I, STS::one (), C);
+  Tpetra::GEMM ("N", "N", STS::one (), I, I, STS::one (), C);
   //blockOps.square_matrix_matrix_multiply(identityMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, 1.0, 1.0);
 
-  Tpetra::Experimental::GEMM ("N", "N", STS::one (), A, B, STS::one (), C);
+  Tpetra::GEMM ("N", "N", STS::one (), A, B, STS::one (), C);
   //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), bMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, 1.0, 1.0);
 
   exactMatrix[0] = -8.00000000000000;
@@ -539,12 +539,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, 
     ipiv[k] = 0;
   }
 
-  Tpetra::Experimental::GETF2 (dMat, ipiv, lapackInfo);
+  Tpetra::GETF2 (dMat, ipiv, lapackInfo);
   TEUCHOS_TEST_FOR_EXCEPTION(
     lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
     "lapackInfo = " << lapackInfo << " which indicates an error in the factorization GETF2.");
 
-  Tpetra::Experimental::GETRI (dMat, ipiv, work, lapackInfo);
+  Tpetra::GETRI (dMat, ipiv, work, lapackInfo);
   TEUCHOS_TEST_FOR_EXCEPTION(
     lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
     "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
@@ -563,7 +563,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, 
   little_vec_type xval(computeSolution.getRawPtr(),blockSize);
 
   //xval.matvecUpdate(1.0,dMat,bval);
-  Tpetra::Experimental::GEMV (1.0, dMat, bval, xval);
+  Tpetra::GEMV (1.0, dMat, bval, xval);
 
   for (int i = 0; i < blockSize; ++i)
     TEST_FLOATING_EQUALITY(exactSolution[i], computeSolution[i], 1e-13);
@@ -579,7 +579,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, DiagonalBlockCrsMatrix, Scalar, LocalO
   using std::endl;
   typedef Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   //typedef Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec_type; // unused
   std::ostringstream errStrm; // for error collection
@@ -802,7 +802,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, AdditiveSchwarzSubdomainSolver, Scalar
     out << "Calling AdditiveSchwarz's compute()" << endl;
     prec.compute();
 
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+    typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
 
     BMV xBlock (*crsgraph->getRowMap (), blockSize, 1);
