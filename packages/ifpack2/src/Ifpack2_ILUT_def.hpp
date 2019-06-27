@@ -151,11 +151,12 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   // strong exception guarantee (i.e., is transactional).
 
   // Fill level in ILUT is a double, not a magnitude_type, because it
-  // depends on LO and GO, not on Scalar.
+  // depends on LO and GO, not on Scalar.  Also, you can't cast
+  // arbitrary magnitude_type (e.g., Sacado::MP::Vector) to double.
   double fillLevel = LevelOfFill_;
   {
     const std::string paramName ("fact: ilut level-of-fill");
-    getParamTryingTypes<double, double, magnitude_type>
+    getParamTryingTypes<double, double, float>
       (fillLevel, params, paramName, prefix);
     TEUCHOS_TEST_FOR_EXCEPTION
       (fillLevel < 1.0, std::runtime_error,

@@ -269,7 +269,6 @@ RILUK<MatrixType>::
 setParameters (const Teuchos::ParameterList& params)
 {
   using Details::getParamTryingTypes;
-  using GO = global_ordinal_type;
   const char prefix[] = "Ifpack2::RILUK: ";
 
   // Default values of the various parameters.
@@ -280,12 +279,14 @@ setParameters (const Teuchos::ParameterList& params)
 
   // "fact: iluk level-of-fill" parsing is more complicated, because
   // we want to allow as many types as make sense.  int is the native
-  // type, but we also want to accept magnitude_type (for
-  // compatibility with ILUT) and double (for backwards compatibilty
-  // with ILUT).
+  // type, but we also want to accept double (for backwards
+  // compatibilty with ILUT).
   {
     const std::string paramName ("fact: iluk level-of-fill");
-    getParamTryingTypes<int, magnitude_type, double, int, GO>
+    // You can't cast arbitrary magnitude_type (e.g.,
+    // Sacado::MP::Vector) to int, so we use float instead, to get
+    // coverage of the most common magnitude_type cases.
+    getParamTryingTypes<int, int, double, float>
       (fillLevel, params, paramName, prefix);
   }
   // For the other parameters, we prefer magnitude_type, but allow
