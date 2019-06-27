@@ -182,17 +182,11 @@ allReduceView (const OutputViewType& output,
     return;
   }
 
-  // We've had some experience that some MPI implementations do not
-  // perform well with UVM allocations.
-  const bool assumeMpiCanAccessBuffers =
-    ! view_is_cuda_uvm<OutputViewType>::value &&
-    ! view_is_cuda_uvm<InputViewType>::value &&
-    ::Tpetra::Details::Behavior::assumeMpiIsCudaAware ();
-
   const bool needContiguousTemporaryBuffers =
-    ! assumeMpiCanAccessBuffers ||
     ::Tpetra::Details::isInterComm (comm) ||
-    output.span_is_contiguous () || input.span_is_contiguous ();
+    (! output.span_is_contiguous () )     ||
+    (! input.span_is_contiguous () );
+
   if (needContiguousTemporaryBuffers) {
     auto output_tmp = makeContiguousBuffer (output);
     auto input_tmp = makeContiguousBuffer (input);
