@@ -110,13 +110,13 @@ public:
   // Debugging output
   void print(std::ostream & oss);
 
-  inline bool nodeIsOwned(global_ordinal_t idx) const{
+  KOKKOS_INLINE_FUNCTION bool nodeIsOwned(global_ordinal_t idx) const{
     global_ordinal_t i,j;
     ij_from_idx(globalNodes_[0],idx,i,j);
     return nodeIsOwned(i,j);
   }
 
-  inline bool elementIsOwned(global_ordinal_t idx) const{
+  KOKKOS_INLINE_FUNCTION bool elementIsOwned(global_ordinal_t idx) const{
     global_ordinal_t i,j;
     ij_from_idx(globalElements_[0], idx, i, j);
     return elementIsOwned(i,j);
@@ -125,19 +125,19 @@ public:
 
 private:
 
-  inline bool nodeIsOwned(global_ordinal_t i, global_ordinal_t j) const{
+  KOKKOS_INLINE_FUNCTION bool nodeIsOwned(global_ordinal_t i, global_ordinal_t j) const{
     return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[1];
   }
 
-  inline bool elementIsOwned(global_ordinal_t i, global_ordinal_t j) const{
+  KOKKOS_INLINE_FUNCTION  bool elementIsOwned(global_ordinal_t i, global_ordinal_t j) const{
     return myElementStart_[0] <= i && i < myElementStop_[0] && myElementStart_[1] <= j && myElementStop_[1];
   }
 
-  inline global_ordinal_t idx_from_ij(global_ordinal_t num_x, global_ordinal_t i, global_ordinal_t j) const {
+  KOKKOS_INLINE_FUNCTION global_ordinal_t idx_from_ij(global_ordinal_t num_x, global_ordinal_t i, global_ordinal_t j) const {
     return j*num_x+i;
   }
 
-  inline void ij_from_idx(global_ordinal_t num_x, global_ordinal_t idx, global_ordinal_t &i, global_ordinal_t&j) const {
+  KOKKOS_INLINE_FUNCTION void ij_from_idx(global_ordinal_t num_x, global_ordinal_t idx, global_ordinal_t &i, global_ordinal_t&j) const {
     i = idx%num_x;
     j = (global_ordinal_t)((idx-i)/num_x);
   }
