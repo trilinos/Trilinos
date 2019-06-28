@@ -1623,7 +1623,7 @@ namespace Tpetra {
       // lgMapHost_ may be a UVM View, so insert a fence to ensure
       // coherent host access.  We only need to do this once, because
       // lgMapHost_ is immutable after initialization.
-      execution_space::fence ();
+      execution_space().fence ();
     }
 
     return lgMap_;

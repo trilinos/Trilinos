@@ -250,7 +250,7 @@ bool kk_is_identical_view(view_type1 view1, view_type2 view2, eps_type eps){
   size_t issame = 0;
   Kokkos::parallel_reduce( "KokkosKernels::Common::IsIdenticalView", my_exec_space(0,num_elements),
       IsIdenticalFunctor<view_type1, view_type2, eps_type>(view1, view2, eps), issame);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   if (issame > 0){
     return false;
   }

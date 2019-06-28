@@ -286,7 +286,6 @@ namespace Intrepid2 {
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
     }
 #endif
-    typedef typename decltype(input)::non_const_value_type input_value_type;
 
     if (basis->requireOrientation()) {
       auto ordinalToTag = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofTags());

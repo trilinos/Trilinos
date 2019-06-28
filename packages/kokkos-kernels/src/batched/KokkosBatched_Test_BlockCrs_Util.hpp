@@ -16,7 +16,6 @@
   }
 
 namespace KokkosBatched {
-  using namespace Experimental;
 
   namespace Test {
 
@@ -908,13 +907,6 @@ namespace KokkosBatched {
            << " sc " << stencil_shape << "\n";
       }
     };
-
-
-
-
-
-
-
 
   }
 }

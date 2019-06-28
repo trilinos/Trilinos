@@ -183,7 +183,7 @@ namespace Intrepid2 {
             
             flush.run();
 
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             timer.reset();
 
             cts::setJacobian(jacobian, refPoints, worksetCells, cellTopo);
@@ -197,7 +197,7 @@ namespace Intrepid2 {
             fts::HGRADtransformGRAD(phyBasisGrads, jacobianInv, refBasisGrads);
             fts::multiplyMeasure(weightedBasisGrads, cellMeasure, phyBasisGrads);
 
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             t_horizontal += (iwork >= 0)*timer.seconds();
           }
         }
@@ -226,12 +226,12 @@ namespace Intrepid2 {
           for (ordinal_type iwork=ibegin;iwork<nworkset;++iwork) {
             flush.run();
 
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             timer.reset();
             
             Kokkos::parallel_for(policy, functor);
 
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             t_vertical += (iwork >= 0)*timer.seconds();
           }
 

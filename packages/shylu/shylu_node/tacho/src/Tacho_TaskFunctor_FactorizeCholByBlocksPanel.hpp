@@ -18,22 +18,21 @@
 
 namespace Tacho {
 
-    template<typename MatValueType, typename ExecSpace>
+    template<typename MatValueType, typename SchedulerType>
     struct TaskFunctor_FactorizeCholByBlocksPanel {
     public:
-      typedef ExecSpace exec_space;
-
-      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::execution_space exec_space;
       typedef typename scheduler_type::member_type member_type;
 
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
 
       typedef int value_type; // functor return type
-      typedef Kokkos::Future<int,exec_space> future_type;
+      typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
 
       typedef MatValueType mat_value_type; // matrix value type
 
-      typedef SupernodeInfo<mat_value_type,exec_space> supernode_info_type;
+      typedef SupernodeInfo<mat_value_type,scheduler_type> supernode_info_type;
       typedef typename supernode_info_type::supernode_type supernode_type;
 
       typedef typename supernode_info_type::value_type_matrix mat_value_type_matrix;
@@ -41,7 +40,6 @@ namespace Tacho {
       typedef typename supernode_info_type::dense_matrix_of_blocks_type dense_matrix_of_blocks_type;
 
     private:
-      scheduler_type _sched;
       memory_pool_type _bufpool;
 
       supernode_info_type _info;
@@ -58,16 +56,14 @@ namespace Tacho {
       TaskFunctor_FactorizeCholByBlocksPanel() = delete;
 
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_FactorizeCholByBlocksPanel(const scheduler_type &sched,
-                                             const memory_pool_type &bufpool,
+      TaskFunctor_FactorizeCholByBlocksPanel(const memory_pool_type &bufpool,
                                              const supernode_info_type &info,
                                              const ordinal_type sid,
                                              const ordinal_type mb,
                                              const ordinal_type nb,
                                              const ordinal_type state = 0,
                                              const ordinal_type offn = 0)
-      : _sched(sched),
-        _bufpool(bufpool),
+      : _bufpool(bufpool),
         _info(info),
         _sid(sid),
       //_s(info.supernodes(sid)),
@@ -78,6 +74,7 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
+        auto &sched = member.scheduler();
         const auto &_s = _info.supernodes(_sid);
         constexpr ordinal_type done = 5;
         TACHO_TEST_FOR_ABORT(_state == done, "dead lock");
@@ -102,12 +99,12 @@ namespace Tacho {
           Kokkos::single(Kokkos::PerTeam(member), [&](mat_value_type *&val) {
               val = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;  
               if (val == NULL && bufsize) 
-                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
+                Kokkos::respawn(this, sched, Kokkos::TaskPriority::Low);
             }, buf);
           
           if (buf != NULL && bufsize > 0) {
             CholSupernodes<Algo::Workflow::SerialPanel>
-              ::update(_sched, member, 
+              ::update(member, 
                        _info, _offn, nb, _sid, bufsize, (void*)buf);
             Kokkos::single(Kokkos::PerTeam(member), [&]() {
                 _bufpool.deallocate(buf, bufsize); 
@@ -126,7 +123,7 @@ namespace Tacho {
 
           future_type *dep = NULL;
           Kokkos::single(Kokkos::PerTeam(member), [&](future_type *&val) {                  
-              val = (future_type*)_sched.memory()->allocate(depsize);  
+              val = (future_type*)sched.queue().get_memory_pool().allocate(depsize);  
             }, dep);
           TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails"); 
           clear(member, (char*)dep, depsize);  
@@ -134,17 +131,17 @@ namespace Tacho {
           Kokkos::single(Kokkos::PerTeam(member), [&]() {
               const ordinal_type state = 3;
               for (ordinal_type i=0;i<bn;++i) {
-                auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
+                auto f = Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::Regular),
                                             TaskFunctor_FactorizeCholByBlocksPanel
-                                            (_sched, _bufpool, _info, _sid, _mb, nb, state, i*nb));
+                                            (_bufpool, _info, _sid, _mb, nb, state, i*nb));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                 dep[i] = f;
               }
           
               _state = 4;
-              Kokkos::respawn(this, Kokkos::when_all(dep, bn), Kokkos::TaskPriority::Regular);
+              Kokkos::respawn(this, sched.when_all(dep, bn), Kokkos::TaskPriority::Regular);
               for (ordinal_type k=0;k<bn;++k) (dep+k)->~future_type();
-              if (depsize) _sched.memory()->deallocate(dep, depsize);
+              if (depsize) sched.queue().get_memory_pool().deallocate(dep, depsize);
             });
           break;
         }
@@ -175,7 +172,7 @@ namespace Tacho {
           Kokkos::single(Kokkos::PerTeam(member), [&](char *&val) {          
               val = (char*)_bufpool.allocate(bufsize);
               if (val == NULL && bufsize) 
-                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);                  
+                Kokkos::respawn(this, sched, Kokkos::TaskPriority::Low);                  
             }, buf);
 
           if (buf != NULL && bufsize) {
@@ -193,7 +190,7 @@ namespace Tacho {
               attachBaseBuffer(member, htl, ptr, 1, m); ptr += m*m;
               member.team_barrier();
               // chol
-              Chol<Uplo::Upper,Algo::ByBlocks>::invoke(_sched, member, htl);
+              Chol<Uplo::Upper,Algo::ByBlocks>::invoke(member, htl);
 
               if (n > 0) {
                 htr = dense_matrix_of_blocks_type(buf_ptr, bm, bn);
@@ -204,7 +201,7 @@ namespace Tacho {
                   
                 // trsm
                 Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks>
-                  ::invoke(_sched, member, Diag::NonUnit(), 1.0, htl, htr);                  
+                  ::invoke(member, Diag::NonUnit(), 1.0, htl, htr);                  
                 member.team_barrier();
               }
               clearFutureOfBlocks(member, htl);
@@ -214,7 +211,7 @@ namespace Tacho {
               const size_t bmn = bm*bn, depsize = bm*bn*sizeof(future_type);
               future_type *dep = NULL;
               Kokkos::single(Kokkos::PerTeam(member), [&](future_type *&val) {                  
-                  val = (future_type*)_sched.memory()->allocate(depsize);  
+                  val = (future_type*)sched.queue().get_memory_pool().allocate(depsize);  
                 }, dep);
               TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails"); 
               clear(member, (char*)dep, depsize);  
@@ -236,10 +233,10 @@ namespace Tacho {
               member.team_barrier();
               Kokkos::single(Kokkos::PerTeam(member), [&]() {              
                   _state = 2;
-                  Kokkos::respawn(this, Kokkos::when_all(dep, bmn), Kokkos::TaskPriority::Regular); 
+                  Kokkos::respawn(this, sched.when_all(dep, bmn), Kokkos::TaskPriority::Regular); 
 
                   for (ordinal_type k=0;k<static_cast<ordinal_type>(bmn);++k) (dep+k)->~future_type();
-                  _sched.memory()->deallocate(dep, depsize);   
+                  sched.queue().get_memory_pool().deallocate(dep, depsize);   
                 });
             } else {
               Kokkos::single(Kokkos::PerTeam(member), [&]() {                            
@@ -262,28 +259,28 @@ namespace Tacho {
               future_type *dep = NULL, depbuf[MaxDependenceSize];
               size_t depbuf_size = _s.nchildren > MaxDependenceSize ? _s.nchildren*sizeof(future_type) : 0;
               if (depbuf_size) {
-                dep = (future_type*)_sched.memory()->allocate(depbuf_size);
+                dep = (future_type*)sched.queue().get_memory_pool().allocate(depbuf_size);
                 clear((char*)dep, depbuf_size);
               } else {
                 dep = &depbuf[0];
               }
               
               if (dep == NULL) {
-                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);
+                Kokkos::respawn(this, sched, Kokkos::TaskPriority::Regular);
               } else {
                 if (use_byblocks) {
                   for (ordinal_type i=0;i<_s.nchildren;++i) {
-                    auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
+                    auto f = Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::Regular),
                                                 TaskFunctor_FactorizeCholByBlocksPanel
-                                                (_sched, _bufpool, _info, _s.children[i], _mb, _nb));
+                                                (_bufpool, _info, _s.children[i], _mb, _nb));
                     TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                     dep[i] = f;
                   }
                 } else {
                   for (ordinal_type i=0;i<_s.nchildren;++i) {
-                    auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
-                                                TaskFunctor_FactorizeCholPanel<mat_value_type,exec_space>
-                                                (_sched, _bufpool, _info, _s.children[i], _nb));
+                    auto f = Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::Regular),
+                                                TaskFunctor_FactorizeCholPanel<mat_value_type,scheduler_type>
+                                                (_bufpool, _info, _s.children[i], _nb));
                     TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                     dep[i] = f;
                   }
@@ -291,11 +288,11 @@ namespace Tacho {
                 
                 // respawn with updating state
                 _state = 1;
-                Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
+                Kokkos::respawn(this, sched.when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
 
                 if (depbuf_size) {
                   for (ordinal_type i=0;i<_s.nchildren;++i) (dep+i)->~future_type();
-                  _sched.memory()->deallocate(dep, depbuf_size);
+                  sched.queue().get_memory_pool().deallocate(dep, depbuf_size);
                 }
               }
             });

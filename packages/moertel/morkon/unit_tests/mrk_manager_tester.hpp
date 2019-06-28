@@ -99,7 +99,7 @@ public:
   template <typename ViewType>
   void CopyToHostMirror(typename ViewType::HostMirror &dest, ViewType &src)
   {
-    DeviceType::fence();
+    DeviceType().fence();
     if (dest.shape() != src.shape())
       dest = Kokkos::create_mirror_view(src);
 

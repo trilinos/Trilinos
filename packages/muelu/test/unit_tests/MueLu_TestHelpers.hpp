@@ -106,7 +106,7 @@ namespace Galeri {
 #include "Xpetra_TpetraBlockCrsMatrix.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Map.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockCrsMatrix.hpp"
 #endif
 
 #include <MueLu_TestHelpers_Common.hpp>
@@ -772,7 +772,7 @@ namespace MueLuTests {
         RCP<const Xpetra::TpetraCrsGraph<LO,GO,NO> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LO,GO,NO> >(Graph);
         RCP<const Tpetra::CrsGraph<LO,GO,NO> > TTGraph = TGraph->getTpetra_CrsGraph();
 
-        RCP<Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> > bcrsmatrix = rcp(new Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> (*TTGraph, blocksize));
+        RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > bcrsmatrix = rcp(new Tpetra::BlockCrsMatrix<SC,LO,GO,NO> (*TTGraph, blocksize));
 
         const Tpetra::Map<LO,GO,NO>& meshRowMap = *bcrsmatrix->getRowMap();
         const Scalar zero   = Teuchos::ScalarTraits<SC>::zero();
@@ -873,7 +873,7 @@ namespace MueLuTests {
          RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >(Graph);
          RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > TTGraph = TGraph->getTpetra_CrsGraph();
 
-         RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > bcrsmatrix = rcp(new Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (*TTGraph, blocksize));
+         RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > bcrsmatrix = rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (*TTGraph, blocksize));
 
          const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& meshRowMap = *bcrsmatrix->getRowMap();
          const Scalar zero   = Teuchos::ScalarTraits<Scalar>::zero();

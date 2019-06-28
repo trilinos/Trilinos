@@ -51,16 +51,14 @@ namespace Tacho {
         return 0;
       }
       
-      template<typename PolicyType,
-               typename MemberType,
+      template<typename MemberType,
                typename DiagType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeB>
       inline
       static int
-      invoke(PolicyType &policy,
-             MemberType &member,
+      invoke(MemberType &member,
              const DiagType diagA,
              const ScalarType alpha,
              const ViewTypeA &A,

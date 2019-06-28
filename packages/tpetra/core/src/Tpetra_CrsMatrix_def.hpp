@@ -2389,7 +2389,6 @@ namespace Tpetra {
     // reference count.  getCrsGraphRef() is thread safe.
     const map_type& rowMap = * (this->getCrsGraphRef ().rowMap_);
     const LO lclRow = rowMap.getLocalElement (gblRow);
-
     if (lclRow == OTLO::invalid ()) {
       // Input row is _not_ owned by the calling process.
       //
@@ -2420,8 +2419,50 @@ namespace Tpetra {
       const size_t numInputEnt = indices.size ();
       RowInfo rowInfo = graph.getRowInfo (lclRow);
 
-      if (! graph.colMap_.is_null ()) { // We have a column Map.
-
+      if (!graph.colMap_.is_null() &&
+           graph.isLocallyIndexed() &&
+           this->getProfileType() == StaticProfile) {
+        // This branch is similar in function to the following branch, but for
+        // the special case that the target graph is locally indexed (and the
+        // profile type is StaticProfile). In this case, we cannot simply filter
+        // out global indices that don't exist on the receiving process and
+        // insert the remaining (global) indices, but we must convert them (the
+        // remaining global indices) to local and call `insertLocalValues`.
+        const map_type& colMap = * (graph.colMap_);
+        size_t curOffset = 0;
+        while (curOffset < numInputEnt) {
+          // Find a sequence of input indices that are in the column Map on the
+          // calling process. Doing a sequence at a time, instead of one at a
+          // time, amortizes some overhead.
+          Teuchos::Array<LO> lclIndices;
+          size_t endOffset = curOffset;
+          for ( ; endOffset < numInputEnt; ++endOffset) {
+            auto lclIndex = colMap.getLocalElement(inputGblColInds[endOffset]);
+            if (lclIndex != OTLO::invalid())
+              lclIndices.push_back(lclIndex);
+            else
+              break;
+          }
+          // curOffset, endOffset: half-exclusive range of indices in the column
+          // Map on the calling process. If endOffset == curOffset, the range is
+          // empty.
+          const LO numIndInSeq = (endOffset - curOffset);
+          if (numIndInSeq != 0) {
+            this->insertLocalValues(lclRow, lclIndices(), values(curOffset, numIndInSeq));
+          }
+          // Invariant before the increment line: Either endOffset ==
+          // numInputEnt, or inputGblColInds[endOffset] is not in the column Map
+          // on the calling process.
+#ifdef HAVE_TPETRA_DEBUG
+          const bool invariant = endOffset == numInputEnt ||
+            colMap.getLocalElement (inputGblColInds[endOffset]) == OTLO::invalid ();
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (! invariant, std::logic_error, std::endl << "Invariant failed!");
+#endif // HAVE_TPETRA_DEBUG
+          curOffset = endOffset + 1;
+        }
+      }
+      else if (! graph.colMap_.is_null ()) { // We have a column Map.
         const map_type& colMap = * (graph.colMap_);
         size_t curOffset = 0;
         while (curOffset < numInputEnt) {
@@ -4297,7 +4338,7 @@ namespace Tpetra {
       ::Tpetra::Details::leftScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
     }
     else {
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
 
       ArrayRCP<const Scalar> vectorVals = xp->getData (0);
       ArrayView<impl_scalar_type> rowValues = Teuchos::null;
@@ -4309,7 +4350,7 @@ namespace Tpetra {
           rowValues[j] *= scaleValue;
         }
       }
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
     }
   }
 
@@ -4373,7 +4414,7 @@ namespace Tpetra {
       ::Tpetra::Details::rightScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
     }
     else {
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
 
       ArrayRCP<const Scalar> vectorVals = xp->getData (0);
       ArrayView<impl_scalar_type> rowValues = null;
@@ -4386,7 +4427,7 @@ namespace Tpetra {
           rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
         }
       }
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
     }
   }
 

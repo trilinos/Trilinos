@@ -74,7 +74,7 @@ namespace { // (anonymous)
        KOKKOS_LAMBDA (const LO lclRow) {
         x_lcl_d(lclRow) = toScalar<IST> (lclRow+1);
       });
-    execution_space::fence ();
+    execution_space().fence ();
     x.sync_host ();
   }
 

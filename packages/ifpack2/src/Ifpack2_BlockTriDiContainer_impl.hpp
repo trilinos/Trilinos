@@ -127,8 +127,8 @@ namespace KB = KokkosBatched::Experimental;
     using do_not_initialize_tag = Kokkos::ViewAllocateWithoutInitializing;
 
     template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>
-    using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::Unmanaged |
-                                              MemoryTraitsType::RandomAccess |
+    using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::is_unmanaged |
+                                              MemoryTraitsType::is_random_access |
                                               flag>;
     
     template <typename ViewType>

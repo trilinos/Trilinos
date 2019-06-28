@@ -787,9 +787,9 @@ IF (Stokhos_ENABLE_Sacado)
         CrsGraph
         FECrsMatrix
         FEMultiVector
-        Experimental::BlockVector
-        Experimental::BlockMultiVector
-        Experimental::BlockCrsMatrix
+        BlockVector
+        BlockMultiVector
+        BlockCrsMatrix
         Details::getDiagCopyWithoutOffsets
         Details::packCrsMatrix
         Details::unpackCrsMatrixAndCombine

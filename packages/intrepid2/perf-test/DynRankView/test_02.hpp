@@ -180,26 +180,26 @@ namespace Intrepid2 {
           Kokkos::deep_copy(in, 1.0);                          
           {
             *verboseStream << " -> with subview \n";
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             timer.reset();
             
             typedef F_clone<ViewType,ViewType,-1> FunctorType;
             for (ordinal_type i=0;i<nworkset;++i) {
               Kokkos::parallel_for( policy, FunctorType(out, in) );
             }
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             t_with_subview[itest] = timer.seconds();
           }
           {
             *verboseStream << " -> without subview \n";
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             timer.reset();
             
             typedef F_clone<ViewType,ViewType,0> FunctorType;
             for (ordinal_type i=0;i<nworkset;++i) {
               Kokkos::parallel_for( policy, FunctorType(out, in) );
             }
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             t_without_subview[itest] = timer.seconds();
           }
         }
@@ -210,26 +210,26 @@ namespace Intrepid2 {
           Kokkos::deep_copy(in, 1.0);                          
           {
             *verboseStream << " -> with subview \n";
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             timer.reset();
             
             typedef F_clone<ViewType,ViewType,-1> FunctorType;
             for (ordinal_type i=0;i<nworkset;++i) {
               Kokkos::parallel_for( policy, FunctorType(out, in) );
             }
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             t_with_subview[itest] = timer.seconds();
           }
           {
             *verboseStream << " -> without subview \n";
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             timer.reset();
             
             typedef F_clone<ViewType,ViewType,1> FunctorType;
             for (ordinal_type i=0;i<nworkset;++i) {
               Kokkos::parallel_for( policy, FunctorType(out, in) );
             }
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             t_without_subview[itest] = timer.seconds();
           }
         }
@@ -241,26 +241,26 @@ namespace Intrepid2 {
           Kokkos::deep_copy(in, 1.0);                          
           {
             *verboseStream << " -> with subview \n";
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             timer.reset();
             
             typedef F_clone<ViewType,ViewType,-1> FunctorType;
             for (ordinal_type i=0;i<nworkset;++i) {
               Kokkos::parallel_for( policy, FunctorType(out, in) );
             }
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             t_with_subview[itest] = timer.seconds();
           }
           {
             *verboseStream << " -> without subview \n";
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             timer.reset();
             
             typedef F_clone<ViewType,ViewType,2> FunctorType;
             for (ordinal_type i=0;i<nworkset;++i) {
               Kokkos::parallel_for( policy, FunctorType(out, in) );
             }
-            DeviceSpaceType::fence();
+            DeviceSpaceType().fence();
             t_without_subview[itest] = timer.seconds();
           }
         }

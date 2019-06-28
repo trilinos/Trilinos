@@ -179,7 +179,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, ImportToStaticMatrix, SC, LO, GO, N
   // compare matrix values.  Thus, we need to do a fence before
   // comparing matrix values, in order to ensure that changes made on
   // device are visible on host.
-  execution_space::fence();
+  execution_space().fence();
 
   { // test output
     std::ostringstream errStrm;

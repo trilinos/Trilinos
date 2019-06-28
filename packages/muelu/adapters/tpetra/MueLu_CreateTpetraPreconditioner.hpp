@@ -8,7 +8,7 @@
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_RowMatrix.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix.hpp>
+#include <Tpetra_BlockCrsMatrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -58,7 +58,7 @@ namespace MueLu {
     typedef Xpetra::Matrix<SC,LO,GO,NO>                 Matrix;
     typedef Hierarchy<SC,LO,GO,NO>                      Hierarchy;
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
-    typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
+    typedef Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
 
 #if defined(HAVE_MUELU_AMGX)
     std::string externalMG = "use external multigrid package";
@@ -77,7 +77,7 @@ namespace MueLu {
       A = TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(crsA);
     else if (bcrsA != Teuchos::null) {
       RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsA));
-      TEUCHOS_TEST_FOR_EXCEPTION(temp==Teuchos::null, Exceptions::RuntimeError, "CreateTpetraPreconditioner: cast from Tpetra::Experimental::BlockCrsMatrix to Xpetra::TpetraBlockCrsMatrix failed.");
+      TEUCHOS_TEST_FOR_EXCEPTION(temp==Teuchos::null, Exceptions::RuntimeError, "CreateTpetraPreconditioner: cast from Tpetra::BlockCrsMatrix to Xpetra::TpetraBlockCrsMatrix failed.");
       A = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
     }
     else {
