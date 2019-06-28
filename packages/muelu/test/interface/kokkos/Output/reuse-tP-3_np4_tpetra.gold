@@ -23,8 +23,7 @@ Level 1
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -38,6 +37,8 @@ filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1
 
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
@@ -65,6 +66,12 @@ Build (MueLu::CoarseMapFactory_kokkos)
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -151,8 +158,7 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -166,6 +172,8 @@ filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1
 
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
@@ -193,6 +201,12 @@ Build (MueLu::CoarseMapFactory_kokkos)
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -262,18 +276,18 @@ repartition: use subcommunicators = 1   [default]
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = 1.44
+Operator complexity = 1.45
 Smoother complexity = 1.78
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
   0  9999  29995  3.00                  4  
-  1  3335  10003  3.00     3.00         4  
-  2  1112  3334   3.00     3.00         1  
+  1  3335  10015  3.00     3.00         4  
+  2  1112  3340   3.00     3.00         1  
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10003}
+Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 
 Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
@@ -301,6 +315,26 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
+Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Build (MueLu::CoalesceDropFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
+[empty list]
+
+algorithm = "classical": threshold = 0, blocksize = 1
+aggregation: drop tol = 0   [default]
+aggregation: Dirichlet threshold = 0   [default]
+aggregation: drop scheme = classical   [default]
+filtered matrix: use lumping = 1   [default]
+filtered matrix: reuse graph = 1   [default]
+filtered matrix: reuse eigenvalue = 1   [default]
+lightweight wrap = 1
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
 Using original prolongator
 repartition: rebalance P and R = 0
 repartition: rebalance Nullspace = 1   [default]
@@ -347,7 +381,7 @@ matrixmatrix: kernel params ->
 
 repartition: use subcommunicators = 1   [default]
 
-Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10003})
+Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015})
 keep smoother data = 1
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -370,8 +404,7 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
 Computing Ac (MueLu::RAPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -385,6 +418,8 @@ filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1
 
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
@@ -412,6 +447,12 @@ Build (MueLu::CoarseMapFactory_kokkos)
 
 tentative: calculate qr = 1   [default]
 tentative: build coarse coordinates = 1   [default]
+matrixmatrix: kernel params -> 
+ [empty list]
+
+sa: damping factor = 1.33   [default]
+sa: calculate eigenvalue estimate = 0   [default]
+sa: eigenvalue estimate num iterations = 10   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -481,18 +522,18 @@ repartition: use subcommunicators = 1   [default]
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = 1.44
+Operator complexity = 1.45
 Smoother complexity = 1.78
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
   0  9999  29995  3.00                  4  
-  1  3335  10003  3.00     3.00         4  
-  2  1112  3334   3.00     3.00         1  
+  1  3335  10015  3.00     3.00         4  
+  2  1112  3340   3.00     3.00         1  
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10003}
+Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 
 Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother

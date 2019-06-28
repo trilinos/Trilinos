@@ -557,7 +557,7 @@ namespace Tpetra {
     TPETRA_DEPRECATED
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
-               const ProfileType pftype = DynamicProfile,
+               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -623,7 +623,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
-               const ProfileType pftype = DynamicProfile,
+               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -867,7 +867,7 @@ namespace Tpetra {
 
         bool staticProfileClone = true;
         staticProfileClone = params->get ("Static profile clone", staticProfileClone);
-        pftype = staticProfileClone ? StaticProfile : DynamicProfile;
+        pftype = staticProfileClone ? StaticProfile : ProfileType(StaticProfile+1) /*DynamicProfile*/;
       }
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(

@@ -160,7 +160,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     //----------------------------------------------------------------------
     // put in diagonal, locally
     //----------------------------------------------------------------------
-    Tpetra::ProfileType pftype = Tpetra::TPETRA_DEFAULT_PROFILE_TYPE;
+    Tpetra::ProfileType pftype = Tpetra::StaticProfile;
     Tpetra::CrsMatrix<Scalar,LO,GO,Node> matrix(rmap,cmap,3,pftype);
     for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
       matrix.insertGlobalValues(r,tuple(r),tuple(ST::one()));

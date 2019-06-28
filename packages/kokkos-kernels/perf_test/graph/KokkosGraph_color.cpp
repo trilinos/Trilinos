@@ -56,10 +56,49 @@
 
 
 
-void print_options(){
-
+void print_options(std::ostream &os, const char *app_name, unsigned int indent = 0)
+{
+    std::string spaces(indent, ' ');
+    os << "Usage:" << std::endl
+       << spaces << "  " << app_name << " [parameters]" << std::endl
+       << std::endl
+       << spaces << "Parameters:" << std::endl
+       << spaces << "  Parallelism (select one of the following):" << std::endl
+       << spaces << "      --serial <N>        Execute serially." << std::endl
+       << spaces << "      --threads <N>       Use N posix threads." << std::endl
+       << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
+       << spaces << "      --cuda              Use CUDA" << std::endl
+       << std::endl
+       << spaces << "  Required Parameters:" << std::endl
+       << spaces << "      --amtx <filename>   Input file in Matrix Market format (.mtx)." << std::endl
+       << std::endl
+       << spaces << "      --algorithm <algorithm_name>   Set the algorithm to use.  Allowable values are:" << std::endl
+       << spaces << "                 COLORING_DEFAULT  - Use the default coloring method, architecture dependent." << std::endl
+       << spaces << "                 COLORING_SERIAL   - Use the serial algorithm." << std::endl
+       << spaces << "                 COLORING_VB       - Use the parallel vertex-based method." << std::endl
+       << spaces << "                 COLORING_VBBIT    - Use the parallel vertex-based with bit vectors method." << std::endl
+       << spaces << "                 COLORING_EB       - Use edge based method." << std::endl
+       << spaces << "                 COLORING_VBD      - Use the vertex-based deterministic method." << std::endl
+       << spaces << "                 COLORING_VBDBIT   - Use the vertex-based deterministic with bit vectors method." << std::endl
+       << std::endl
+       << spaces << "  Optional Parameters:" << std::endl
+       << spaces << "      --repeat <N>        Set number of test repetitions (Default: 1) " << std::endl
+       << spaces << "      --verbose           Enable verbose mode (record and print timing + extra information)" << std::endl
+       << spaces << "      --chunksize <N>     Set the chunk size." << std::endl
+       << spaces << "      --dynamic           Use dynamic scheduling." << std::endl
+       << spaces << "      --teamsize  <N>     Set the team size." << std::endl
+       << spaces << "      --vectorsize <N>    Set the vector size." << std::endl
+       << spaces << "      --help              Print out command line help." << std::endl
+       << spaces << " " << std::endl;
 }
-int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv){
+
+
+
+int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv)
+{
+  bool got_required_param_amtx      = false;
+  bool got_required_param_algorithm = false;
+
   for ( int i = 1 ; i < argc ; ++i ) {
     if ( 0 == strcasecmp( argv[i] , "--threads" ) ) {
       params.use_threads = atoi( argv[++i] );
@@ -76,7 +115,6 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "--repeat" ) ) {
       params.repeat = atoi( argv[++i] );
     }
-
     else if ( 0 == strcasecmp( argv[i] , "--chunksize" ) ) {
       params.chunk_size = atoi( argv[++i] ) ;
     }
@@ -87,6 +125,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       params.vector_size  = atoi( argv[++i] ) ;
     }
     else if ( 0 == strcasecmp( argv[i] , "--amtx" ) ) {
+      got_required_param_amtx = true;
       params.a_mtx_bin_file = argv[++i];
     }
     else if ( 0 == strcasecmp( argv[i] , "--dynamic" ) ) {
@@ -96,6 +135,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       params.verbose = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "--algorithm" ) ) {
+      got_required_param_algorithm = true;
       ++i;
       if ( 0 == strcasecmp( argv[i] , "COLORING_DEFAULT" ) ) {
         params.algorithm = 1;
@@ -121,18 +161,41 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "COLORING_VBDBIT" ) ) {
         params.algorithm = 8;
       }
+      else if ( 0 == strcasecmp( argv[i], "--help") || 0 == strcasecmp(argv[i], "-h") )
+      {
+        print_options(std::cout, argv[0]);
+        return 1;
+      }
       else {
         std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-        print_options();
+        print_options(std::cout, argv[0]);
         return 1;
       }
     }
     else {
       std::cerr << "3-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      print_options();
+      print_options(std::cout, argv[0]);
       return 1;
     }
   }
+  if(!got_required_param_amtx)
+  {
+    std::cout << "Missing required parameter amtx" << std::endl << std::endl;
+    print_options(std::cout, argv[0]);
+    return 1;
+  }
+  if(!got_required_param_algorithm)
+  {
+    std::cout << "Missing required parameter algorithm" << std::endl << std::endl;
+    print_options(std::cout, argv[0]);
+  return 1;
+  }
+  if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda)
+  {
+    print_options(std::cout, argv[0]);
+    return 1;
+  }
+
   return 0;
 }
 

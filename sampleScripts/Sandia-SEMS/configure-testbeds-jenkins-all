@@ -170,8 +170,8 @@ cmake \
   -D KokkosKernels_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_ML=ON \
   -D ML_ENABLE_TESTS:BOOL=${TESTS} \
--D Trilinos_ENABLE_Moertel=ON \
-  -D Moertel_ENABLE_EXAMPLES=ON \
+-D Trilinos_ENABLE_Moertel=OFF \
+  -D Moertel_ENABLE_EXAMPLES=OFF \
 -D Trilinos_ENABLE_MueLu=ON \
   -D MueLu_INST_DOUBLE_INT_LONGINT:BOOL=ON \
   -D MueLu_ENABLE_TESTS:BOOL=${TESTS} \

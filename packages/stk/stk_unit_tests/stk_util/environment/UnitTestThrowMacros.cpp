@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -272,7 +273,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:250\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:251\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
@@ -302,7 +303,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:287\n";
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:288\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
 #endif
@@ -333,7 +334,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:318\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:319\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
@@ -388,7 +389,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:373\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:374\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
@@ -418,7 +419,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:403\n";
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:404\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
 #endif
@@ -445,7 +446,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
     testNGPThrowErrorMsg();
   }
   catch (std::exception & ex) {
-    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:431\n"
+    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:432\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }

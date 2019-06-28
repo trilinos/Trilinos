@@ -436,11 +436,11 @@ namespace Experimental {
       SortedCountEntries<size_type, ordinal_type, alno_row_view_t_, blno_row_view_t_, alno_nnz_view_t_, blno_nnz_view_t_, clno_row_view_t_>
         countEntries(a_rowmap, a_entries, b_rowmap, b_entries, c_rowcounts);
       Kokkos::parallel_for("KokkosSparse::SpAdd::Symbolic::InputSorted::CountEntries", range_type(0, nrows), countEntries);
-      execution_space::fence();
+      execution_space().fence();
       //get c_rowmap as cumulative sum
       parallel_prefix_sum<size_type, clno_row_view_t_> prefix(c_rowcounts, c_rowmap);
       Kokkos::parallel_scan("KokkosSparse::SpAdd:Symbolic::InputSorted::PrefixSum", range_type(0, nrows + 1), prefix);
-      execution_space::fence();
+      execution_space().fence();
     }
     else
     {
@@ -453,17 +453,17 @@ namespace Experimental {
         UnsortedEntriesUpperBound<size_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_>
           countEntries(a_rowmap, b_rowmap, c_rowcounts_upperbound);
         Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::CountEntires", range_type(0, nrows), countEntries);
-        execution_space::fence();
+        execution_space().fence();
         //get (temporary) c_rowmap as cumulative sum
         parallel_prefix_sum<size_type, clno_row_view_t_> prefix(c_rowcounts_upperbound, c_rowmap_upperbound);
         Kokkos::parallel_scan("KokkosSparse::SpAdd:Symbolic::InputNotSorted::PrefixSum", range_type(0, nrows + 1), prefix);
         //compute uncompressed entries of C (just indices, no scalars)
-        execution_space::fence();
+        execution_space().fence();
 
         auto d_c_nnz_size = Kokkos::subview(c_rowmap_upperbound, nrows);
         auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
         Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
-        execution_space::fence();
+        execution_space().fence();
         c_nnz_upperbound = h_c_nnz_size();
       }
       clno_nnz_view_t_ c_entries_uncompressed("C entries uncompressed", c_nnz_upperbound);
@@ -473,12 +473,12 @@ namespace Experimental {
                          alno_nnz_view_t_, blno_nnz_view_t_, clno_nnz_view_t_> unmergedSum(
                          a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
       Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::UnmergedSum", range_type(0, nrows), unmergedSum);
-      execution_space::fence();
+      execution_space().fence();
       //sort the unmerged sum
       SortEntriesFunctor<size_type, clno_row_view_t_, clno_nnz_view_t_>
         sortEntries(c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
       Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::SortEntries", range_type(0, nrows), sortEntries);
-      execution_space::fence();
+      execution_space().fence();
       clno_nnz_view_t_ a_pos("A entry positions", a_entries.extent(0));
       clno_nnz_view_t_ b_pos("B entry positions", b_entries.extent(0));
       //merge the entries and compute Apos/Bpos, as well as Crowcounts
@@ -487,11 +487,11 @@ namespace Experimental {
         MergeEntriesFunctor<size_type, ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_, clno_nnz_view_t_>
           mergeEntries(a_rowmap, b_rowmap, c_rowmap_upperbound, c_rowcounts, c_entries_uncompressed, ab_perm, a_pos, b_pos);
         Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::MergeEntries", range_type(0, nrows), mergeEntries);
-        execution_space::fence();
+        execution_space().fence();
         //compute actual c_rowmap
         parallel_prefix_sum<size_type, clno_row_view_t_> prefix(c_rowcounts, c_rowmap);
         Kokkos::parallel_scan("KokkosSparse::SpAdd:Symbolic::InputNotSorted::PrefixSumSecond", range_type(0, nrows + 1), prefix);
-        execution_space::fence();
+        execution_space().fence();
       }
       addHandle->set_a_b_pos(a_pos, b_pos);
     }
@@ -501,7 +501,7 @@ namespace Experimental {
     auto d_c_nnz_size = Kokkos::subview(c_rowmap, nrows);
     auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
     Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
-    execution_space::fence();
+    execution_space().fence();
     size_type cmax = h_c_nnz_size();
     addHandle->set_max_result_nnz(cmax);
 
@@ -723,7 +723,7 @@ namespace Experimental {
                                            ascalar_t_, bscalar_t_>
         sortedNumeric(a_rowmap, b_rowmap, c_rowmap, a_entries, b_entries, c_entries, a_values, b_values, c_values, alpha, beta);
       Kokkos::parallel_for("KokkosSparse::SpAdd:Numeric::InputSorted", range_type(0, nrows), sortedNumeric);
-      execution_space::fence();
+      execution_space().fence();
     }
     else
     {
@@ -734,7 +734,7 @@ namespace Experimental {
                                            ascalar_t_, bscalar_t_>
         unsortedNumeric(a_rowmap, b_rowmap, c_rowmap, a_entries, b_entries, c_entries, a_values, b_values, c_values, alpha, beta, addHandle->get_a_pos(), addHandle->get_b_pos());
       Kokkos::parallel_for("KokkosSparse::SpAdd:Numeric::InputNotSorted", range_type(0, nrows), unsortedNumeric);
-      execution_space::fence();
+      execution_space().fence();
     }
     addHandle->set_call_numeric();
   }

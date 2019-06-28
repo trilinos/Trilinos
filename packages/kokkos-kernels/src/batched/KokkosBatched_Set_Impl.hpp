@@ -7,9 +7,8 @@
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Set_Internal.hpp"
 
-
 namespace KokkosBatched {
-  namespace Experimental {
+
     ///
     /// Serial Impl
     /// ===========
@@ -46,8 +45,6 @@ namespace KokkosBatched {
                alpha, 
                A.data(), A.stride_0(), A.stride_1());
     }
- 
-  } // end namespace Experimental
 } //end namespace KokkosBatched
 
 

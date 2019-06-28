@@ -74,6 +74,14 @@
     </parameter>
 
     <parameter>
+      <name>fuse prolongation and update</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>problem: symmetric</name>
       <type>bool</type>
       <default>true</default>
@@ -1333,7 +1341,7 @@ optimized neighbor discovery for Importer construction.</description>
       <name>refmaxwell: mode</name>
       <type>string</type>
       <default>"additive"</default>
-      <description>Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212"</description>
+      <description>Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"</description>
       <name-ML>refmaxwell: mode</name-ML>
       <type-ML>int</type-ML>
       <default-ML>"additive"</default-ML>

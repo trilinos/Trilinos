@@ -496,13 +496,13 @@ inline void kk_transpose_graph(
   else {
     Kokkos::parallel_for(  "KokkosKernels::Common::TransposeGraph::StaticSchedule::S0", count_tp_t(num_rows  / team_work_chunk_size + 1 , suggested_team_size, vector_size), tm);
   }
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   kk_exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
   Kokkos::deep_copy(tmp_row_view, t_xadj);
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
 
   if (use_dynamic_scheduling){
@@ -511,7 +511,7 @@ inline void kk_transpose_graph(
   else {
     Kokkos::parallel_for(  "KokkosKernels::Common::TransposeGraph::StaticSchedule::S1", d_fill_tp_t(num_rows  / team_work_chunk_size + 1 , suggested_team_size, vector_size), tm);
   }
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 }
 
 template <typename forward_map_type, typename reverse_map_type>
@@ -684,21 +684,21 @@ void kk_create_reverse_map(
             multiply_shift_for_scale, division_shift_for_bucket);
 
     Kokkos::parallel_for ("KokkosKernels::Common::CreateReverseMap::NonAtomic::S0", my_cnt_exec_space (0, num_forward_elements) , frm);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
 
     //kk_inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(tmp_reverse_size + 1, tmp_color_xadj);
     kk_exclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>
       (tmp_reverse_size + 1, tmp_color_xadj);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     Kokkos::parallel_for ("KokkosKernels::Common::CreateReverseMap::NonAtomic::S1",
         my_exec_space (0, num_reverse_elements + 1) ,
         StridedCopy1<reverse_array_type, reverse_array_type>
           (tmp_color_xadj, reverse_map_xadj, scale_size));
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     Kokkos::parallel_for ("KokkosKernels::Common::CreateReverseMap::NonAtomic::S2",my_fill_exec_space (0, num_forward_elements) , frm);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
   else
   //atomic implementation.
@@ -714,18 +714,18 @@ void kk_create_reverse_map(
     rmp_functor_type frm (forward_map, tmp_color_xadj, reverse_map_adj);
 
     Kokkos::parallel_for ("KokkosKernels::Common::CreateReverseMap::Atomic::S0", my_cnt_exec_space (0, num_forward_elements) , frm);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     //kk_inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(num_reverse_elements + 1, reverse_map_xadj);
     kk_exclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>
       (num_reverse_elements + 1, tmp_color_xadj);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     Kokkos::deep_copy (reverse_map_xadj, tmp_color_xadj);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     Kokkos::parallel_for ("KokkosKernels::Common::CreateReverseMap::Atomic::S1", my_fill_exec_space (0, num_forward_elements) , frm);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
 }
 
@@ -826,7 +826,7 @@ inline size_t kk_is_d1_coloring_valid(
   Kokkos::parallel_reduce( "KokkosKernels::Common::IsD1ColoringValie", dynamic_team_policy(num_rows / team_work_chunk_size + 1 ,
       suggested_team_size, vector_size), cc, num_conf);
 
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   return num_conf;
 }
 
@@ -854,7 +854,7 @@ void kk_sort_graph(
     Kokkos::deep_copy (he, in_adj);
     typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
     Kokkos::deep_copy (hv, in_vals);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     typename lno_nnz_view_t::HostMirror heo = Kokkos::create_mirror_view (out_adj);
     typename scalar_view_t::HostMirror hvo = Kokkos::create_mirror_view (out_vals);
@@ -885,7 +885,7 @@ void kk_sort_graph(
 
     Kokkos::deep_copy (out_adj, heo);
     Kokkos::deep_copy (out_vals, hvo);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
   else {
 
@@ -1058,7 +1058,7 @@ inline void kk_create_incidence_matrix(
   else {
     Kokkos::parallel_for(  d_fill_tp_t(num_rows  / team_work_chunk_size + 1 , suggested_team_size, vector_size), tm);
   }
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 
 }
 */
@@ -1293,7 +1293,7 @@ void kk_get_lower_triangle_count_parallel(
   else {
     Kokkos::parallel_for( "KokkosKernels::Common::GetLowerTriangleCount::StaticSchedule", count_tp_t(nv  / team_work_chunk_size + 1 , suggested_team_size, vector_size), ltm);
   }
-  ExecutionSpace::fence();
+  ExecutionSpace().fence();
 }
 
 
@@ -1480,7 +1480,7 @@ void kk_get_lower_triangle_fill_parallel(
   else {
     Kokkos::parallel_for( "KokkosKernels::Common::GetLowerTriangleFill::StaticSchedule", fill_p_t(nv  / team_work_chunk_size + 1 , suggested_team_size, vector_size), ltm);
   }
-  ExecutionSpace::fence();
+  ExecutionSpace().fence();
 }
 template <typename size_type, typename lno_t, typename scalar_t>
 void kk_get_lower_triangle_fill_sequential(
@@ -1618,7 +1618,7 @@ crstmat_t kk_get_lower_triangle(crstmat_t in_crs_matrix,
 
   kk_exclusive_parallel_prefix_sum
   <row_map_view_t, exec_space>(nr + 1, new_row_map);
-  exec_space::fence();
+  exec_space().fence();
 
   auto ll_size = Kokkos::subview(new_row_map, nr);
   auto h_ll_size = Kokkos::create_mirror_view (ll_size);
@@ -1675,7 +1675,7 @@ crstmat_t kk_get_lower_crs_matrix(crstmat_t in_crs_matrix,
 
   kk_exclusive_parallel_prefix_sum
   <row_map_view_t, exec_space>(nr + 1, new_row_map);
-  exec_space::fence();
+  exec_space().fence();
 
   auto ll_size = Kokkos::subview(new_row_map, nr);
   auto h_ll_size = Kokkos::create_mirror_view (ll_size);
@@ -1729,7 +1729,7 @@ graph_t kk_get_lower_crs_graph(graph_t in_crs_matrix,
 
   kk_exclusive_parallel_prefix_sum
   <row_map_view_t, exec_space>(nr + 1, new_row_map);
-  exec_space::fence();
+  exec_space().fence();
 
   auto ll_size = Kokkos::subview(new_row_map, nr);
   auto h_ll_size = Kokkos::create_mirror_view (ll_size);
@@ -1797,7 +1797,7 @@ void kk_get_lower_triangle(
 
   kk_exclusive_parallel_prefix_sum
   <out_row_map_view_t, exec_space>(nr + 1, out_rowmap);
-  exec_space::fence();
+  exec_space().fence();
 
   auto ll_size = Kokkos::subview(out_rowmap, nr);
   auto h_ll_size = Kokkos::create_mirror_view (ll_size);
@@ -1914,10 +1914,10 @@ void kk_create_incidence_matrix_from_lower_triangle(
     Kokkos::atomic_fetch_add(&(out_rowmap[in_lower_entries[i]]), atomic_incr_type(1));
   });
 
-  exec_space::fence();
+  exec_space().fence();
   kk_exclusive_parallel_prefix_sum<out_row_map_view_t, exec_space>(nr+1, out_rowmap);
 
-  exec_space::fence();
+  exec_space().fence();
   Kokkos::parallel_for("KokkosKernels::Common::CreateIncidenceTransposeMatrixFromLowerTriangle::S0", my_exec_space(0, nr + 1),
       KOKKOS_LAMBDA(const lno_t& i) {
     out_rowmap[i] += in_lower_rowmap[i];
@@ -1944,7 +1944,7 @@ void kk_create_incidence_matrix_from_lower_triangle(
       out_entries[out_begin + i] = edge_ind;
     }
   });
-  exec_space::fence();
+  exec_space().fence();
   Kokkos::parallel_for("KokkosKernels::Common::CreateIncidenceTransposeMatrixFromLowerTriangle::S2", my_exec_space(0, ne),
       KOKKOS_LAMBDA(const size_type& edge_ind) {
     lno_t col = in_lower_entries[edge_ind];
@@ -2010,7 +2010,7 @@ void kk_create_incidence_matrix_from_original_matrix(
       permutation.data(),
       use_dynamic_scheduling,
       chunksize, sort_decreasing_order);
-  exec_space::fence();
+  exec_space().fence();
   kk_exclusive_parallel_prefix_sum<out_row_map_view_t, exec_space>(nr+1, out_rowmap);
 
   //kk_print_1Dview(out_rowmap, false, 20);

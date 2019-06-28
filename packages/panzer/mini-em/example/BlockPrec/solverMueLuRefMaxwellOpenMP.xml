@@ -7,7 +7,7 @@
 
           <ParameterList name="S_E Preconditioner">
             <ParameterList name="Preconditioner Types">
-              <ParameterList name="MueLuRefMaxwell-Tpetra">
+              <ParameterList name="MueLuRefMaxwell">
                 <Parameter name="use kokkos refactor" type="bool" value="true"/>
 
                 <!-- <Parameter name="rap: triple product" type="bool" value="true"/> -->

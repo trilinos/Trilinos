@@ -46,7 +46,7 @@ kokkoskernels-install: kokkoskernels-build-lib
 	mkdir -p $(KOKKOSKERNELS_INSTALL_PATH)/lib
 	echo "# KokkosKernels Settings" > $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "KOKKOSKERNELS_PATH = ${KOKKOSKERNELS_INSTALL_PATH}" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
-	echo "KOKKOSKERNELS_CPPFLAGS = -I$(KOKKOSKERNELS_INSTALL_PATH)/include" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
+	echo "KOKKOSKERNELS_CPPFLAGS = -I$(KOKKOSKERNELS_INSTALL_PATH)/include $(KOKKOSKERNELS_CPPFLAGS)" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "KOKKOSKERNELS_LDFLAGS = -L$(KOKKOSKERNELS_INSTALL_PATH)/lib $(KOKKOSKERNELS_LDFLAGS)" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "KOKKOSKERNELS_LIBS = $(KOKKOSKERNELS_LIBS)" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "KOKKOSKERNELS_LINK_DEPENDS = $(KOKKOSKERNELS_INSTALL_PATH)/lib/$(KOKKOSKERNELS_LINK_DEPENDS)" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
@@ -74,20 +74,20 @@ kokkoskernels-install: kokkoskernels-build-lib
 	echo "KOKKOS_INTERNAL_USE_ROCM = ${KOKKOS_INTERNAL_USE_ROCM}" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "# Fake target" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "libkokkos_kernels.a:" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
-	cp $(COPY_FLAG) KokkosKernels_config.h $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/impl/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/blas/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/blas/impl/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/batched/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/sparse/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/sparse/impl/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/graph/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/graph/impl/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/common/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) -r ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/impl/tpls/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
-	cp $(COPY_FLAG) $(KOKKOSKERNELS_INTERNAL_LIBRARY) $(KOKKOSKERNELS_INSTALL_PATH)/lib
+	$(CP) $(COPY_FLAG) KokkosKernels_config.h $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/impl/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/blas/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/blas/impl/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/batched/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/sparse/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/sparse/impl/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/graph/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/graph/impl/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/common/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) -r ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) ${KOKKOSKERNELS_PATH}/src/impl/tpls/*.hpp $(KOKKOSKERNELS_INSTALL_PATH)/include
+	$(CP) $(COPY_FLAG) $(KOKKOSKERNELS_INTERNAL_LIBRARY) $(KOKKOSKERNELS_INSTALL_PATH)/lib
 
 build: kokkoskernels-build-lib
 

@@ -151,7 +151,7 @@ void block_pcgsolve(
     gauss_seidel_numeric
       (&kh, count_total, count_total, point_crsMat.graph.row_map, point_crsMat.graph.entries, point_crsMat.values);
 
-    Space::fence();
+    Space().fence();
     timer.reset();
 */
 
@@ -162,7 +162,7 @@ void block_pcgsolve(
     precond_init_time += timer.seconds();
 
     z = y_vector_t( "pcg::z" , count_total );
-    Space::fence();
+    Space().fence();
     timer.reset();
     symmetric_block_gauss_seidel_apply
             (&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(),block_size,  _block_crsMat.graph.row_map, _block_crsMat.graph.entries, _block_crsMat.values,
@@ -171,7 +171,7 @@ void block_pcgsolve(
     symmetric_gauss_seidel_apply
         (&kh, count_total, count_total, point_crsMat.graph.row_map, point_crsMat.graph.entries, point_crsMat.values, z, r, true, true, apply_count);
 */
-    Space::fence();
+    Space().fence();
     precond_time += timer.seconds();
     precond_old_rdot = KokkosBlas::dot( r , z );
     Kokkos::deep_copy( p , z );
@@ -191,7 +191,7 @@ void block_pcgsolve(
     /* Ap = A * p   */  KokkosSparse::spmv("N", 1, point_crsMat, pAll, 0, Ap);
 
 
-    Space::fence();
+    Space().fence();
     matvec_time += timer.seconds();
 
     //const double pAp_dot = Kokkos::Example::all_reduce( dot( count_owned , p , Ap ) , import.comm );
@@ -218,7 +218,7 @@ void block_pcgsolve(
     double precond_r_dot = 1;
     double precond_beta = 1;
     if (use_sgs){
-      Space::fence();
+      Space().fence();
       timer.reset();
       symmetric_block_gauss_seidel_apply
                   (&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(),block_size, _block_crsMat.graph.row_map, _block_crsMat.graph.entries, _block_crsMat.values,
@@ -234,7 +234,7 @@ void block_pcgsolve(
           apply_count);
           */
 
-      Space::fence();
+      Space().fence();
       precond_time += timer.seconds();
       precond_r_dot = KokkosBlas::dot(r , z );
       precond_beta  = precond_r_dot / precond_old_rdot ;
@@ -267,7 +267,7 @@ void block_pcgsolve(
     ++iteration ;
   }
 
-  Space::fence();
+  Space().fence();
   iter_time = wall_clock.seconds();
 
   if ( 0 != result ) {
@@ -358,17 +358,17 @@ void pcgsolve(
     gauss_seidel_numeric
       (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values);
 
-    Space::fence();
+    Space().fence();
 
     precond_init_time += timer.seconds();
     z = y_vector_t( "pcg::z" , count_total );
-    Space::fence();
+    Space().fence();
     timer.reset();
 
     symmetric_gauss_seidel_apply
         (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, z, r, true, true, apply_count);
 
-    Space::fence();
+    Space().fence();
     precond_time += timer.seconds();
     precond_old_rdot = KokkosBlas::dot( r , z );
     Kokkos::deep_copy( p , z );
@@ -388,7 +388,7 @@ void pcgsolve(
     /* Ap = A * p   */  KokkosSparse::spmv("N", 1, crsMat, pAll, 0, Ap);
 
 
-    Space::fence();
+    Space().fence();
     matvec_time += timer.seconds();
 
     //const double pAp_dot = Kokkos::Example::all_reduce( dot( count_owned , p , Ap ) , import.comm );
@@ -415,7 +415,7 @@ void pcgsolve(
     double precond_r_dot = 1;
     double precond_beta = 1;
     if (use_sgs){
-      Space::fence();
+      Space().fence();
       timer.reset();
       symmetric_gauss_seidel_apply(
           &kh,
@@ -425,7 +425,7 @@ void pcgsolve(
           crsMat.values, z, r, true,
           apply_count);
 
-      Space::fence();
+      Space().fence();
       precond_time += timer.seconds();
       precond_r_dot = KokkosBlas::dot(r , z );
       precond_beta  = precond_r_dot / precond_old_rdot ;
@@ -458,7 +458,7 @@ void pcgsolve(
     ++iteration ;
   }
 
-  Space::fence();
+  Space().fence();
   iter_time = wall_clock.seconds();
 
   if ( 0 != result ) {

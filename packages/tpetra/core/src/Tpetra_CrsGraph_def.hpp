@@ -1031,7 +1031,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const
   {
-    return rowMap_.is_null () ? Teuchos::null : rowMap_->getNode ();
+    return Teuchos::null;
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -2353,23 +2353,22 @@ namespace Tpetra {
                    const Teuchos::ArrayView<const LocalOrdinal>& indices,
                    std::function<void(const size_t, const size_t, const size_t)> fun) const
   {
+#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "findLocalIndices: ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        this->getProfileType() != StaticProfile,
-        std::runtime_error,
-        "findLocalIndices requires the graph have StaticProfile");
-
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->getProfileType() != StaticProfile, std::runtime_error,
+       "findLocalIndices requires that the graph have StaticProfile.");
+#endif // HAVE_TPETRA_DEBUG
     using LO = LocalOrdinal;
-    using Kokkos::View;
-    using Kokkos::MemoryUnmanaged;
-    using inp_view_type = View<const LO*, execution_space, MemoryUnmanaged>;
+    using inp_view_type = Kokkos::View<const LO*, Kokkos::HostSpace,
+      Kokkos::MemoryUnmanaged>;
     inp_view_type inputInds(indices.getRawPtr(), indices.size());
 
     size_t numFound = 0;
     LO lclRow = rowInfo.localRow;
     if (this->isLocallyIndexed())
     {
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_lclInds1D_, inputInds, fun);
     }
     else if (this->isGloballyIndexed())
@@ -2378,7 +2377,7 @@ namespace Tpetra {
         return Teuchos::OrdinalTraits<size_t>::invalid();
       const auto& colMap = *(this->colMap_);
       auto map = [&](LO const lclInd){return colMap.getGlobalElement(lclInd);};
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_gblInds1D_, inputInds, map, fun);
     }
     return numFound;
@@ -2414,12 +2413,12 @@ namespace Tpetra {
         return invalidCount;
       const auto& colMap = *(this->colMap_);
       auto map = [&](GO const gblInd){return colMap.getLocalElement(gblInd);};
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_lclInds1D_, inputInds, map, fun);
     }
     else if (this->isGloballyIndexed())
     {
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
+      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
         this->k_gblInds1D_, inputInds, fun);
     }
     return numFound;
@@ -4911,7 +4910,7 @@ namespace Tpetra {
         // Make sure that the GPU can see any updates made on host.
         // This code only reads the local graph, so we don't need a
         // fence afterwards.
-        execution_space::fence ();
+        execution_space().fence ();
 
         // mfh 01 May 2018: See GitHub Issue #2658.
         constexpr bool ignoreMapsForTriStruct = true;
@@ -4933,7 +4932,7 @@ namespace Tpetra {
       // Make sure that the GPU can see any updates made on host.
       // This code only reads the local graph, so we don't need a
       // fence afterwards.
-      execution_space::fence ();
+      execution_space().fence ();
 
       auto ptr = this->lclGraph_.row_map;
       const LO lclNumRows = ptr.extent(0) == 0 ?
@@ -6148,7 +6147,7 @@ namespace Tpetra {
 
     // We may be accessing UVM data on host below, so ensure that the
     // device is done accessing it.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     const map_type& rowMap = * (this->getRowMap ());
     const map_type* const colMapPtr = this->colMap_.getRawPtr ();
@@ -6311,7 +6310,7 @@ namespace Tpetra {
 
     // We may have accessed UVM data on host above, so ensure that the
     // device sees these changes.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (errCount != 0, std::logic_error, "Packing encountered "
@@ -6372,7 +6371,7 @@ namespace Tpetra {
 
     // We may be accessing UVM data on host below, so ensure that the
     // device is done accessing it.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     const map_type& rowMap = * (this->getRowMap ());
     const map_type* const colMapPtr = this->colMap_.getRawPtr ();
@@ -6471,7 +6470,7 @@ namespace Tpetra {
     // The graph may store its data in UVM memory, so make sure that
     // any device kernels are done modifying the graph's data before
     // reading the data.
-    device_execution_space::fence ();
+    device_execution_space().fence ();
 
     errCount = 0;
     Kokkos::parallel_scan

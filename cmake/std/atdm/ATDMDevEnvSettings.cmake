@@ -7,7 +7,8 @@
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/utils/ATDMDevEnvUtils.cmake")
 
 #
-# A) Assert the right env vars are set and set local defaults
+# A) Assert the right env vars are set, read in env vars, and set local
+# defaults
 #
 
 IF (NOT "$ENV{ATDM_CONFIG_COMPLETED_ENV_SETUP}" STREQUAL "TRUE")
@@ -56,12 +57,19 @@ ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(CUDA_RDC OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(FPIC OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(COMPLEX OFF)
 
+# ToDo: Remove this option and hard-code to ON once issues are resolved.  See
+# #4915.
+ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(NO_GLOBAL_INT OFF)
+
+IF (ATDM_USE_PTHREADS)
+  MESSAGE(FATAL_ERROR "Error, the Kokkos Pthreads backend is no longer supported!"
+    "  Please unset env var ATDM_CONFIG_USE_PTHREADS!")
+ENDIF()
+
 SET(ATDM_INST_SERIAL OFF)
 SET(ATDM_KOKKOS_SERIAL OFF)
 IF (ATDM_USE_OPENMP)
   SET(ATDM_NODE_TYPE OPENMP)
-ELSEIF (ATDM_USE_PTHREADS)
-  SET(ATDM_NODE_TYPE THREAD)
 ELSEIF (ATDM_USE_CUDA)
   SET(ATDM_NODE_TYPE CUDA)
   SET(ATDM_INST_SERIAL ON)
@@ -277,6 +285,12 @@ ATDM_SET_CACHE(Phalanx_KOKKOS_DEVICE_TYPE "${ATDM_NODE_TYPE}" CACHE STRING)
 ATDM_SET_CACHE(Phalanx_SHOW_DEPRECATED_WARNINGS OFF CACHE BOOL)
 ATDM_SET_CACHE(Tpetra_INST_CUDA "${ATDM_USE_CUDA}" CACHE BOOL)
 ATDM_SET_CACHE(Tpetra_INST_SERIAL "${ATDM_INST_SERIAL}" CACHE BOOL)
+IF (ATDM_NO_GLOBAL_INT)
+  ATDM_SET_CACHE(Tpetra_INST_INT_INT OFF CACHE BOOL)
+  ATDM_SET_CACHE(Xpetra_ENABLE_Epetra OFF CACHE BOOL)
+  ATDM_SET_CACHE(MueLu_ENABLE_Epetra OFF CACHE BOOL)
+  ATDM_SET_CACHE(Piro_ENABLE_MueLu OFF CACHE BOOL)
+ENDIF()
 IF (ATDM_USE_CUDA)
   ATDM_SET_CACHE(Sacado_ENABLE_HIERARCHICAL_DFAD ON CACHE BOOL)
 ENDIF()
@@ -418,6 +432,16 @@ ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
 IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
   ATDM_SET_ENABLE(Trilinos_ENABLE_MueLu OFF)
 ENDIF()
+
+# Disable Zoltan2_XpetraEpertraMatrix exec that does not build with no global
+# int instatiation (see #5411)
+ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_EXE_DISABLE ON)
+ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_MPI_4_DISABLE ON)
+
+# Disable Piro_ThyraSolver exec that does not build with no global int
+# instantiation (see #5412)
+ATDM_SET_ENABLE(Piro_ThyraSolver_EXE_DISABLE ON)
+ATDM_SET_ENABLE(Piro_ThyraSolver_MPI_4_DISABLE ON)
 
 #
 # H) ATDM env config install hooks

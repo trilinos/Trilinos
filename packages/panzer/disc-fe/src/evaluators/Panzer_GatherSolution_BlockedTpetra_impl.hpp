@@ -169,7 +169,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     for(std::size_t i=0; i < offsets.size(); ++i)
       hostFieldOffsets(i) = offsets[i];
     Kokkos::deep_copy(fieldOffsets_[fd],hostFieldOffsets);
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
   }
@@ -476,7 +476,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
       hostOffsets(i) = offsets[i];
     Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
     maxElementBlockGIDCount = std::max(subGlobalIndexer->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
-    PHX::Device::fence();
+    typename PHX::Device().fence();
   }
 
   // We will use one workset lid view for all fields, but has to be
@@ -500,7 +500,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
 
   indexerNames_.clear();  // Don't need this anymore
-  PHX::Device::fence();
+  typename PHX::Device().fence();
 }
 
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>

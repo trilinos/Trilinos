@@ -807,7 +807,7 @@ namespace Tpetra {
   Teuchos::RCP<Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const {
-    return getCrsGraphRef ().getNode ();
+    return Teuchos::null;
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -2389,7 +2389,6 @@ namespace Tpetra {
     // reference count.  getCrsGraphRef() is thread safe.
     const map_type& rowMap = * (this->getCrsGraphRef ().rowMap_);
     const LO lclRow = rowMap.getLocalElement (gblRow);
-
     if (lclRow == OTLO::invalid ()) {
       // Input row is _not_ owned by the calling process.
       //
@@ -2420,8 +2419,50 @@ namespace Tpetra {
       const size_t numInputEnt = indices.size ();
       RowInfo rowInfo = graph.getRowInfo (lclRow);
 
-      if (! graph.colMap_.is_null ()) { // We have a column Map.
-
+      if (!graph.colMap_.is_null() &&
+           graph.isLocallyIndexed() &&
+           this->getProfileType() == StaticProfile) {
+        // This branch is similar in function to the following branch, but for
+        // the special case that the target graph is locally indexed (and the
+        // profile type is StaticProfile). In this case, we cannot simply filter
+        // out global indices that don't exist on the receiving process and
+        // insert the remaining (global) indices, but we must convert them (the
+        // remaining global indices) to local and call `insertLocalValues`.
+        const map_type& colMap = * (graph.colMap_);
+        size_t curOffset = 0;
+        while (curOffset < numInputEnt) {
+          // Find a sequence of input indices that are in the column Map on the
+          // calling process. Doing a sequence at a time, instead of one at a
+          // time, amortizes some overhead.
+          Teuchos::Array<LO> lclIndices;
+          size_t endOffset = curOffset;
+          for ( ; endOffset < numInputEnt; ++endOffset) {
+            auto lclIndex = colMap.getLocalElement(inputGblColInds[endOffset]);
+            if (lclIndex != OTLO::invalid())
+              lclIndices.push_back(lclIndex);
+            else
+              break;
+          }
+          // curOffset, endOffset: half-exclusive range of indices in the column
+          // Map on the calling process. If endOffset == curOffset, the range is
+          // empty.
+          const LO numIndInSeq = (endOffset - curOffset);
+          if (numIndInSeq != 0) {
+            this->insertLocalValues(lclRow, lclIndices(), values(curOffset, numIndInSeq));
+          }
+          // Invariant before the increment line: Either endOffset ==
+          // numInputEnt, or inputGblColInds[endOffset] is not in the column Map
+          // on the calling process.
+#ifdef HAVE_TPETRA_DEBUG
+          const bool invariant = endOffset == numInputEnt ||
+            colMap.getLocalElement (inputGblColInds[endOffset]) == OTLO::invalid ();
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (! invariant, std::logic_error, std::endl << "Invariant failed!");
+#endif // HAVE_TPETRA_DEBUG
+          curOffset = endOffset + 1;
+        }
+      }
+      else if (! graph.colMap_.is_null ()) { // We have a column Map.
         const map_type& colMap = * (graph.colMap_);
         size_t curOffset = 0;
         while (curOffset < numInputEnt) {
@@ -2473,19 +2514,6 @@ namespace Tpetra {
                           const impl_scalar_type newVals[],
                           const LocalOrdinal numElts) const
   {
-    if (graph.getProfileType() == StaticProfile)
-    {
-      Teuchos::ArrayView<const LocalOrdinal> indsT(inds, numElts);
-      auto fun =
-        [&](size_t const k, size_t const /*start*/, size_t const offset) {
-          rowVals[offset] = newVals[k];
-        };
-      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-      return graph.findLocalIndices(rowInfo, indsT, cb);
-    }
-
-    // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
-    // yanked once DynamicProfile is removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const bool sorted = graph.isSorted ();
@@ -2746,22 +2774,6 @@ namespace Tpetra {
                            const LocalOrdinal numElts,
                            const bool atomic) const
   {
-    if (graph.getProfileType() == StaticProfile)
-    {
-      Teuchos::ArrayView<const GlobalOrdinal> indsT(inds, numElts);
-      auto fun =
-        [&](size_t const k, size_t const /*start*/, size_t const offset) {
-          if (atomic)
-            Kokkos::atomic_add(&rowVals[offset], newVals[k]);
-          else
-            rowVals[offset] += newVals[k];
-        };
-      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-      return graph.findGlobalIndices(rowInfo, indsT, cb);
-    }
-
-    // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
-    // yanked once DynamicProfile is removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
@@ -2990,30 +3002,6 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
-    if (graph.getProfileType() == StaticProfile)
-    {
-      auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset)
-      {
-        if (atomic) {
-          // NOTE (mfh 30 Nov 2015) The commented-out code is
-          // wrong because another thread may have changed
-          // rowVals[offset] between those two lines of code.
-          volatile ST* const dest = &rowVals[offset];
-          (void) atomic_binary_function_update (dest, newVals[k], f);
-        }
-        else {
-          // use binary function f
-          rowVals[offset] = f(rowVals[offset], newVals[k]);
-        }
-      };
-      Teuchos::ArrayView<const LO> indsT(inds, numElts);
-      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-      return graph.findLocalIndices(rowInfo, indsT, cb);
-    }
-
-    // NOTE (DYNAMICPROFILE REMOVAL) (tjf Mar 2019)
-    // from this point down can be yanked once DynamicProfile is removed.
-
     //if (newVals.extent (0) != inds.extent (0)) {
     // The sizes of the input arrays must match.
     //return Tpetra::Details::OrdinalTraits<LO>::invalid ();
@@ -3123,27 +3111,6 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
-    if (graph.getProfileType() == StaticProfile)
-    {
-      auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset)
-      {
-        if (atomic) {
-          volatile ST* const dest = &rowVals[offset];
-          (void) atomic_binary_function_update(dest, newVals[k], f);
-        }
-        else {
-          // use binary function f
-          rowVals[offset] = f (rowVals[offset], newVals[k]);
-        }
-      };
-      Teuchos::ArrayView<const GO> indsT(inds, numElts);
-      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-      return graph.findGlobalIndices(rowInfo, indsT, cb);
-    }
-
-    // NOTE (DYNAMICPROFILE REMOVAL) (tjf Mar 2019)
-    // from this point down can be yanked once DynamicProfile is removed.
-
     //if (newVals.extent (0) != inds.extent (0)) {
     // The sizes of the input arrays must match.
     //return Tpetra::Details::OrdinalTraits<LO>::invalid ();
@@ -3247,23 +3214,6 @@ namespace Tpetra {
                           const LocalOrdinal numElts,
                           const bool atomic) const
   {
-    if (graph.getProfileType() == StaticProfile)
-    {
-      Teuchos::ArrayView<const LocalOrdinal> indsT(inds, numElts);
-      auto fun =
-        [&](size_t const k, size_t const /*start*/, size_t const offset) {
-          if (atomic)
-            Kokkos::atomic_add(&rowVals[offset], newVals[k]);
-          else
-            rowVals[offset] += newVals[k];
-        };
-      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-      return graph.findLocalIndices(rowInfo, indsT, cb);
-    }
-
-    // NOTE (DYNAMICPROFILE REMOVAL) (tjf Mar 2019)
-    // from this point down can be yanked once DynamicProfile is removed.
-
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
@@ -4388,7 +4338,7 @@ namespace Tpetra {
       ::Tpetra::Details::leftScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
     }
     else {
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
 
       ArrayRCP<const Scalar> vectorVals = xp->getData (0);
       ArrayView<impl_scalar_type> rowValues = Teuchos::null;
@@ -4400,7 +4350,7 @@ namespace Tpetra {
           rowValues[j] *= scaleValue;
         }
       }
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
     }
   }
 
@@ -4464,7 +4414,7 @@ namespace Tpetra {
       ::Tpetra::Details::rightScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
     }
     else {
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
 
       ArrayRCP<const Scalar> vectorVals = xp->getData (0);
       ArrayView<impl_scalar_type> rowValues = null;
@@ -4477,7 +4427,7 @@ namespace Tpetra {
           rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
         }
       }
-      execution_space::fence (); // for UVM's sake
+      execution_space().fence (); // for UVM's sake
     }
   }
 
@@ -8419,11 +8369,19 @@ namespace Tpetra {
       // Construct the result matrix C.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
       if (constructorSublist.is_null ()) {
-        C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile));
+        C = rcp (new crs_matrix_type (C_rowMap, 0, ProfileType(StaticProfile+1) /*DynamicProfile*/));
       } else {
-        C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile,
+        C = rcp (new crs_matrix_type (C_rowMap, 0, ProfileType(StaticProfile+1) /*DynamicProfile*/,
                                       constructorSublist));
       }
+#else
+      // true: !A_rowMap->isSameAs (*B_rowMap)
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
+                                 std::invalid_argument,
+                                 "Tpetra::CrsMatrix::add: The row maps must be the same for statically "
+                                 "allocated matrices in order to be sure that there is sufficient space "
+                                 "to do the addition");
+
 #endif
     }
 

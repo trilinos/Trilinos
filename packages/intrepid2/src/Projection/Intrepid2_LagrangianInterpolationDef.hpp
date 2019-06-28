@@ -56,6 +56,217 @@
 namespace Intrepid2 {
 namespace Experimental {
 
+
+
+template<typename scalarViewType,
+typename ortViewType,
+typename t2oViewType,
+typename subcellParamViewType,
+typename intViewType>
+struct computeDofCoordsAndCoeffs {
+  typedef typename scalarViewType::value_type value_type;
+
+  scalarViewType dofCoords_, dofCoeffs_;
+  const ortViewType orts_;
+  const t2oViewType tagToOrdinal_;
+  const subcellParamViewType edgeParam_, faceParam_;
+  const intViewType edgeInternalDofOrdinals_, facesInternalDofOrdinals_;
+  const scalarViewType edgeInternalDofCoords_, edgeDofCoeffs_, ortJacobianEdge_, refEdgesTan_, refEdgesNormal_;
+  const scalarViewType facesInternalDofCoords_, faceDofCoeffs_, ortJacobianFace_, refFaceTangents_, refFacesNormal_;
+  scalarViewType edgeWorkView_, faceWorkView_;
+  const ordinal_type cellDim_, numEdges_, numFaces_;
+  const ordinal_type edgeTopoKey_, numEdgeInternalDofs_;
+  const intViewType faceTopoKey_, numFacesInternalDofs_;
+  const value_type edgeScale_, faceScale_;
+  const bool isBasisHCURL_, isBasisHDIV_;
+
+  computeDofCoordsAndCoeffs( scalarViewType dofCoords,
+      scalarViewType dofCoeffs,
+      const ortViewType orts,
+      const t2oViewType tagToOrdinal,
+      const subcellParamViewType edgeParam,
+      const subcellParamViewType faceParam,
+      const intViewType edgeInternalDofOrdinals,
+      const intViewType facesInternalDofOrdinals,
+      const scalarViewType edgeInternalDofCoords,
+      const scalarViewType edgeDofCoeffs,
+      const scalarViewType refEdgesTan,
+      const scalarViewType refEdgesNormal,
+      const scalarViewType facesInternalDofCoords,
+      const scalarViewType faceDofCoeffs,
+      const scalarViewType refFaceTangents,
+      const scalarViewType refFacesNormal,
+      const ordinal_type cellDim,
+      const ordinal_type numEdges,
+      const ordinal_type numFaces,
+      const ordinal_type edgeTopoKey,
+      const ordinal_type numEdgeInternalDofs,
+      const intViewType faceTopoKey,
+      const intViewType numFacesInternalDofs,
+      const value_type edgeScale,
+      const value_type faceScale,
+      const bool isBasisHCURL,
+      const bool isBasisHDIV
+  )
+  : dofCoords_(dofCoords),
+    dofCoeffs_(dofCoeffs),
+    orts_(orts),
+    tagToOrdinal_(tagToOrdinal),
+    edgeParam_(edgeParam),
+    faceParam_(faceParam),
+    edgeInternalDofOrdinals_(edgeInternalDofOrdinals),
+    facesInternalDofOrdinals_(facesInternalDofOrdinals),
+    edgeInternalDofCoords_(edgeInternalDofCoords),
+    edgeDofCoeffs_(edgeDofCoeffs),
+    refEdgesTan_(refEdgesTan),
+    refEdgesNormal_(refEdgesNormal),
+    facesInternalDofCoords_(facesInternalDofCoords),
+    faceDofCoeffs_(faceDofCoeffs),
+    refFaceTangents_(refFaceTangents),
+    refFacesNormal_(refFacesNormal),
+    cellDim_(cellDim),
+    numEdges_(numEdges),
+    numFaces_(numFaces),
+    edgeTopoKey_(edgeTopoKey),
+    numEdgeInternalDofs_(numEdgeInternalDofs),
+    faceTopoKey_(faceTopoKey),
+    numFacesInternalDofs_(numFacesInternalDofs),
+    edgeScale_(edgeScale),
+    faceScale_(faceScale),
+    isBasisHCURL_(isBasisHCURL),
+    isBasisHDIV_(isBasisHDIV)
+  {
+    if(numEdges > 0)
+      edgeWorkView_ = scalarViewType("edgeWorkView", dofCoords.extent(0), numEdgeInternalDofs, 1);
+    if(numFaces > 0)
+      faceWorkView_ = scalarViewType("faceWorkView", dofCoords.extent(0), facesInternalDofCoords.extent(1), 2);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const ordinal_type cell) const {
+    typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+
+
+    if(numEdges_ > 0) {
+      //compute coordinates associated to edge DoFs
+      ordinal_type eOrt[12];
+      value_type ortJac;
+      scalarViewType ortJacobianEdge(&ortJac, 1, 1);
+      orts_(cell).getEdgeOrientation(eOrt, numEdges_);
+      auto edgeInternalDofCoordsOriented = Kokkos::subview(edgeWorkView_,cell, Kokkos::ALL(), Kokkos::ALL());
+      //map edge DoFs coords into parent element coords
+      for (ordinal_type iedge=0; iedge < numEdges_; ++iedge) {
+        Impl::OrientationTools::mapToModifiedReference(edgeInternalDofCoordsOriented,edgeInternalDofCoords_,edgeTopoKey_, eOrt[iedge]);
+
+        for (ordinal_type j=0;j<numEdgeInternalDofs_;++j) {
+          const auto u = edgeInternalDofCoordsOriented(j, 0);
+          auto idof = tagToOrdinal_(1, iedge, j);
+          for (ordinal_type d=0;d<cellDim_;++d)
+            dofCoords_(cell,idof,d) = edgeParam_(iedge, d, 0) + edgeParam_(iedge, d, 1)*u ;
+        }
+      }
+
+      //compute coefficients associated to edge DoFs
+      if(isBasisHCURL_) {
+        for (ordinal_type iedge=0; iedge < numEdges_; ++iedge) {
+          Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobianEdge, edgeTopoKey_, eOrt[iedge]);
+          for(ordinal_type j=0; j<numEdgeInternalDofs_; ++j) {
+            auto idof = tagToOrdinal_(1, iedge, j);
+            auto jdof = edgeInternalDofOrdinals_(j);
+            for(ordinal_type d=0; d <cellDim_; ++d) {
+              dofCoeffs_(cell,idof,d) = 0;
+              for(ordinal_type k=0; k <1; ++k)
+                for(ordinal_type l=0; l <1; ++l)
+                  dofCoeffs_(cell,idof,d) += refEdgesTan_(iedge,d)*ortJacobianEdge(0,0)*edgeDofCoeffs_(jdof)*edgeScale_;
+            }
+          }
+        }
+      } else if(isBasisHDIV_) {
+        for (ordinal_type iedge=0; iedge < numEdges_; ++iedge) {
+          Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobianEdge, edgeTopoKey_, eOrt[iedge]);
+          auto ortJacobianDet = ortJacobianEdge(0,0);
+          for(ordinal_type j=0; j<numEdgeInternalDofs_; ++j) {
+            auto idof = tagToOrdinal_(1, iedge, j);
+            auto jdof = edgeInternalDofOrdinals_(j);
+            for(ordinal_type d=0; d <cellDim_; ++d)
+              dofCoeffs_(cell,idof,d) = refEdgesNormal_(iedge, d)*ortJacobianDet*edgeDofCoeffs_(jdof)*edgeScale_;
+          }
+        }
+      } else {
+        for (ordinal_type iedge=0; iedge < numEdges_; ++iedge) {
+          for(ordinal_type j=0; j<numEdgeInternalDofs_; ++j) {
+            auto idof = tagToOrdinal_(1, iedge, j);
+            auto jdof = edgeInternalDofOrdinals_(j);
+            dofCoeffs_(cell,idof,0) = edgeDofCoeffs_(jdof);
+          }
+        }
+
+      }
+    }
+
+    if(numFaces_ > 0) {
+      //compute coordinates associated to face DoFs
+      ordinal_type fOrt[12];
+      value_type ortJac[4];
+      scalarViewType ortJacobianFace(ortJac, 2, 2);
+      orts_(cell).getFaceOrientation(fOrt, numFaces_);
+      //map face dofs coords into parent element coords
+      for (ordinal_type iface=0; iface < numFaces_; ++iface) {
+        ordinal_type ort = fOrt[iface];
+        ordinal_type numInternalDofs = numFacesInternalDofs_(iface);
+        auto dofRange = range_type(0, numInternalDofs);
+        auto faceInternalDofCoords = Kokkos::subview(facesInternalDofCoords_, iface, dofRange, Kokkos::ALL());
+        auto faceInternalDofCoordsOriented = Kokkos::subview(faceWorkView_,cell, dofRange, Kokkos::ALL());
+        Impl::OrientationTools::mapToModifiedReference(faceInternalDofCoordsOriented,faceInternalDofCoords,faceTopoKey_(iface),ort);
+
+        for (ordinal_type j=0;j<numInternalDofs;++j) {
+          const auto u = faceInternalDofCoordsOriented(j, 0);
+          const auto v = faceInternalDofCoordsOriented(j, 1);
+          auto idof = tagToOrdinal_(2, iface, j);
+          for (ordinal_type d=0;d<cellDim_;++d)
+            dofCoords_(cell,idof,d) = faceParam_(iface, d, 0) + faceParam_(iface, d, 1)*u +  faceParam_(iface, d, 2)*v;
+        }
+      }
+      //compute coefficients associated to face DoFs
+      if(isBasisHCURL_) {
+        for (ordinal_type iface=0; iface < numFaces_; ++iface) {
+          Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobianFace, faceTopoKey_(iface), fOrt[iface]);
+          for(ordinal_type j=0; j<numFacesInternalDofs_(iface); ++j) {
+            auto idof = tagToOrdinal_(2, iface, j);
+            auto jdof = facesInternalDofOrdinals_(iface, j);
+            for(ordinal_type d=0; d <cellDim_; ++d) {
+              dofCoeffs_(cell,idof,d) = 0;
+              for(ordinal_type k=0; k <2; ++k)
+                for(ordinal_type l=0; l <2; ++l)
+                  dofCoeffs_(cell,idof,d) += refFaceTangents_(iface, d,l)*ortJacobianFace(l,k)*faceDofCoeffs_(iface,jdof,k);
+            }
+          }
+        }
+      } else if(isBasisHDIV_) {
+        for (ordinal_type iface=0; iface < numFaces_; ++iface) {
+          Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobianFace, faceTopoKey_(iface), fOrt[iface]);
+          auto ortJacobianDet = ortJacobianFace(0,0)*ortJacobianFace(1,1)-ortJacobianFace(1,0)*ortJacobianFace(0,1);
+          for(ordinal_type j=0; j<numFacesInternalDofs_(iface); ++j) {
+            auto idof = tagToOrdinal_(2, iface, j);
+            auto jdof = facesInternalDofOrdinals_(iface, j);
+            for(ordinal_type d=0; d <cellDim_; ++d)
+              dofCoeffs_(cell,idof,d) = refFacesNormal_(iface,d)*ortJacobianDet*faceDofCoeffs_(iface,jdof)*faceScale_;
+          }
+        }
+      } else {
+
+        for (ordinal_type iface=0; iface < numFaces_; ++iface) {
+          for(ordinal_type j=0; j<numFacesInternalDofs_(iface); ++j) {
+            auto idof = tagToOrdinal_(2, iface, j);
+            auto jdof = facesInternalDofOrdinals_(iface, j);
+            dofCoeffs_(cell,idof,0) = faceDofCoeffs_(iface,jdof);
+          }
+        }
+      }
+    }
+  }
+};
+
 template<typename SpT>
 template<typename BasisType,
 class ...coordsProperties, class ...coeffsProperties,
@@ -71,6 +282,7 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   typedef typename BasisType::scalarType scalarType;
   typedef  Kokkos::DynRankView<scalarType, SpT> scalarViewType;
   typedef  Kokkos::DynRankView<ordinal_type, SpT> intViewType;
+  typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
   const auto topo = basis->getBaseCellTopology();
   const std::string name(basis->getName());
@@ -133,22 +345,12 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
         "method not implemented for this basis function");
   }
 
+  auto tagToOrdinal = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofOrdinal());
+  Kokkos::deep_copy(tagToOrdinal, basis->getAllDofOrdinal());
 
-  auto ordinalToTag = basis->getAllDofTags();
-  auto tagToOrdinal = basis->getAllDofOrdinal();
-
-  const ordinal_type dim = basis->getBaseCellTopology().getDimension();
+  const ordinal_type dim = topo.getDimension();
 
   const ordinal_type numCells = dofCoeffs.extent(0);
-
-  intViewType eOrt("eOrt", numEdges);
-  intViewType fOrt("fOrt", numFaces);
-  scalarViewType refEdgeTan("refEdgeTan",  dim);
-  scalarViewType refFaceTangents("refFaceTangents", dim, 2);
-  auto refFaceTanU = Kokkos::subview(refFaceTangents, Kokkos::ALL, 0);
-  auto refFaceTanV = Kokkos::subview(refFaceTangents, Kokkos::ALL, 1);
-  scalarViewType refNormal("refNormal",  dim);
-
 
   scalarViewType refDofCoords("refDofCoords", dofCoords.extent(1), dofCoords.extent(2)), refDofCoeffs;
   basis->getDofCoords(refDofCoords);
@@ -161,169 +363,140 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   basis->getDofCoeffs(refDofCoeffs);
   RealSpaceTools<SpT>::clone(dofCoeffs,refDofCoeffs);
 
+  //*** Pre-compute needed quantities related to edge DoFs that do not depend on the cell ***
+
+  ordinal_type edgeTopoKey = Teuchos::nonnull(edgeBasis) ? edgeBasis->getBaseCellTopology().getBaseKey() : 0;
+  intViewType eOrt("eOrt", numEdges);
+  scalarViewType refEdgesTan("refEdgesTan",  numEdges, dim);
+  scalarViewType refEdgesNormal("refEdgesNormal",  numEdges, dim);
+  scalarViewType edgeParam;
+  ordinal_type edgeBasisCardinality = Teuchos::nonnull(edgeBasis) ? edgeBasis->getCardinality() : ordinal_type(0);
+  ordinal_type numEdgeInternalDofs = Teuchos::nonnull(edgeBasis) ? edgeBasis->getDofCount(1,0) : ordinal_type(0);
+  scalarViewType edgeDofCoords("edgeDofCoords", edgeBasisCardinality, 1);
+  scalarViewType edgeDofCoeffs("edgeDofCoeffs", edgeBasisCardinality);
+  scalarViewType edgeInternalDofCoords("edgeInternalDofCoords", numEdgeInternalDofs, 1);
+  intViewType edgeInternalDofOrdinals("edgeInternalDofOrdinals", numEdgeInternalDofs);
+  //depending on how the reference basis is defined, the edges are scaled differently
+  auto edgeScale = (isBasisTriOrTet||isBasisI1) ? 2.0 :1.0;
+
+  if(Teuchos::nonnull(edgeBasis)) {
+    edgeBasis->getDofCoords(edgeDofCoords);
+    edgeBasis->getDofCoeffs(edgeDofCoeffs);
+  }
+
+  for (ordinal_type iedge=0; iedge < numEdges; ++iedge) {
+    if(isBasisHCURL) {
+      auto edgeTan = Kokkos::subview(refEdgesTan, iedge, Kokkos::ALL);
+      auto edgeTanHost = Kokkos::create_mirror_view(edgeTan);
+      CellTools<SpT>::getReferenceEdgeTangent(edgeTanHost, iedge, topo);
+      Kokkos::deep_copy(edgeTan,edgeTanHost);
+    }
+    else if(isBasisHDIV) {
+      auto edgeNormal = Kokkos::subview(refEdgesNormal, iedge, Kokkos::ALL);
+      auto edgeNormalHost = Kokkos::create_mirror_view(edgeNormal);
+      CellTools<SpT>::getReferenceSideNormal(edgeNormalHost, iedge, topo);
+      Kokkos::deep_copy(edgeNormal,edgeNormalHost);
+    }
+  }
 
   //compute DofCoords Oriented
-  for (ordinal_type iedge=0; iedge < numEdges; ++iedge) {
-    scalarViewType ortJacobian("ortJacobian", 1, 1);
-    ordinal_type edgeBasisCardinality = edgeBasis->getCardinality();
-    ordinal_type numInternalDofs = edgeBasis->getDofCount(1,0);
-    scalarViewType edgeDofCoords("edgeDofCoords", edgeBasisCardinality, 1);
-    scalarViewType edgeInternalDofCoords("edgeInternalDofCoords", numInternalDofs, 1);
-    edgeBasis->getDofCoords(edgeDofCoords);
-    for(ordinal_type i=0; i<numInternalDofs; ++i)
-      edgeInternalDofCoords(i,0) = edgeDofCoords(edgeBasis->getDofOrdinal(1, 0, i),0);
-
-    scalarViewType  edgeInternalDofCoordsOriented("edgeInternalDofCoordsOriented",  numInternalDofs, 1);
-    scalarViewType edgeDofCoordsOriented3d("edgeDofCoordsOriented3d",  numInternalDofs, dim);
-    // auto numEdgeDOFs = basis->getDofCount(1,iedge);
-    for(ordinal_type i=0; i<numCells; ++i) {
-      orts(i).getEdgeOrientation(eOrt.data(), numEdges);
-      Impl::OrientationTools::mapToModifiedReference(edgeInternalDofCoordsOriented,edgeInternalDofCoords,edgeBasis->getBaseCellTopology(),eOrt(iedge));
-      CellTools<SpT>::mapToReferenceSubcell(edgeDofCoordsOriented3d, edgeInternalDofCoordsOriented, 1, iedge, topo);
-
-      for(ordinal_type j=0; j<numInternalDofs; ++j) {
-        auto idof = basis->getDofOrdinal(1, iedge, j);
-        for(ordinal_type d=0; d <dim; ++d)
-          dofCoords(i,idof,d) = edgeDofCoordsOriented3d(j,d);
-      }
-    }
-
-    //depending on how the reference basis is defined, the edges are scaled differently
-    auto edgeScale = (isBasisTriOrTet||isBasisI1) ? 2.0 :1.0;
-    if(isBasisHCURL) {
-
-      scalarViewType edgeDofCoeffs("edgeDofCoeffs", edgeBasisCardinality);
-      edgeBasis->getDofCoeffs(edgeDofCoeffs);
-      CellTools<SpT>::getReferenceEdgeTangent(refEdgeTan, iedge, topo);
-      for(ordinal_type i=0; i<numCells; ++i) {
-        orts(i).getEdgeOrientation(eOrt.data(), numEdges);
-        Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, edgeBasis->getBaseCellTopology(), eOrt(iedge));
-        for(ordinal_type j=0; j<numInternalDofs; ++j) {
-          auto idof = basis->getDofOrdinal(1, iedge, j);
-          auto jdof = edgeBasis->getDofOrdinal(1, 0, j);
-          for(ordinal_type d=0; d <dim; ++d) {
-            dofCoeffs(i,idof,d) = 0;
-            for(ordinal_type k=0; k <1; ++k)
-              for(ordinal_type l=0; l <1; ++l)
-                dofCoeffs(i,idof,d) += refEdgeTan(d)*ortJacobian(0,0)*edgeDofCoeffs(jdof)*edgeScale;
-          }
-        }
-      }
-    } else if(isBasisHDIV) {
-      CellTools<SpT>::getReferenceSideNormal(refNormal, iedge, topo);
-      scalarViewType edgeDofCoeffs("edgeDofCoeffs", edgeBasisCardinality);
-      edgeBasis->getDofCoeffs(edgeDofCoeffs);
-      for(ordinal_type i=0; i<numCells; ++i) {
-        orts(i).getEdgeOrientation(eOrt.data(), numEdges);
-        Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, edgeBasis->getBaseCellTopology(), eOrt(iedge));
-        auto ortJacobianDet = ortJacobian(0,0);
-        for(ordinal_type j=0; j<numInternalDofs; ++j) {
-          auto idof = basis->getDofOrdinal(1, iedge, j);
-          auto jdof = edgeBasis->getDofOrdinal(1, 0, j);
-          for(ordinal_type d=0; d <dim; ++d)
-            dofCoeffs(i,idof,d) = refNormal(d)*ortJacobianDet*edgeDofCoeffs(jdof)*edgeScale;
-        }
-      }
-    } else {
-      scalarViewType edgeDofCoeffs("edgeDofCoeffs", edgeBasisCardinality);
-      edgeBasis->getDofCoeffs(edgeDofCoeffs);
-      for(ordinal_type i=0; i<numCells; ++i) {
-        for(ordinal_type j=0; j<numInternalDofs; ++j) {
-          auto idof = basis->getDofOrdinal(1, iedge, j);
-          auto jdof = edgeBasis->getDofOrdinal(1, 0, j);
-          dofCoeffs(i,idof,0) = edgeDofCoeffs(jdof);
-        }
-      }
-    }
+  for(ordinal_type i=0; i<numEdgeInternalDofs; ++i) {
+    edgeInternalDofOrdinals(i) = edgeBasis->getDofOrdinal(1, 0, i);
+    edgeInternalDofCoords(i,0) = edgeDofCoords(edgeInternalDofOrdinals(i), 0);
+    CellTools<SpT>::getSubcellParametrization(edgeParam, 1, topo);
   }
+
+
+  //*** Pre-compute needed quantities related to face DoFs that do not depend on the cell ***
+
+  intViewType faceTopoKey("faceTopoKey",numFaces);
+  intViewType fOrt("fOrt", numFaces);
+  scalarViewType refFaceTangents("refFaceTangents", numFaces, dim, 2);
+  scalarViewType refFacesNormal("refFacesNormal",  numFaces, dim);
+  scalarViewType faceParam;
+  intViewType numFacesInternalDofs("numFacesInternalDofs", numFaces);
+  scalarViewType  facesInternalDofCoords;
+  intViewType  facesInternalDofOrdinals;
+  scalarViewType  faceDofCoeffs;
+  //depending on how the reference basis is defined, the faces are scaled differently
+  auto faceScale = (isBasisHEXI1) ? 4.0 :
+      (isBasisTETI1) ? 0.5 : 1.0;
+
+
+  ordinal_type maxNumFacesInternalDofs=0;
+  ordinal_type faceBasisMaxCardinality=0;
 
   for (ordinal_type iface=0; iface < numFaces; ++iface) {
-    scalarViewType ortJacobian("ortJacobian", 2, 2);
+    ordinal_type numInternalDofs = faceBases[iface]->getDofCount(2,0);
+    numFacesInternalDofs(iface) = numInternalDofs;
+    maxNumFacesInternalDofs = std::max(maxNumFacesInternalDofs,numInternalDofs);
+    ordinal_type faceBasisCardinality = faceBases[iface]->getCardinality();
+    faceBasisMaxCardinality = std::max(faceBasisMaxCardinality, faceBasisCardinality);
+  }
+
+  facesInternalDofCoords = scalarViewType("faceInternalDofCoords", numFaces, maxNumFacesInternalDofs, 2);
+  facesInternalDofOrdinals = intViewType("faceInternalDofCoords", numFaces, maxNumFacesInternalDofs);
+
+  if(isBasisHCURL)
+    faceDofCoeffs = scalarViewType("faceDofCoeffs", numFaces, faceBasisMaxCardinality,2);
+  else
+    faceDofCoeffs = scalarViewType("faceDofCoeffs", numFaces, faceBasisMaxCardinality);
+
+  for (ordinal_type iface=0; iface < numFaces; ++iface) {
     auto faceBasis = faceBases[iface];
+    faceTopoKey(iface) = faceBasis->getBaseCellTopology().getBaseKey();
     ordinal_type faceBasisCardinality = faceBasis->getCardinality();
-    ordinal_type numInternalDofs = faceBasis->getDofCount(2,0);
     scalarViewType  faceDofCoords("faceDofCoords", faceBasisCardinality, 2);
-    scalarViewType  faceInternalDofCoords("faceInternalDofCoords", numInternalDofs, 2);
     faceBasis->getDofCoords(faceDofCoords);
-    for(ordinal_type i=0; i<numInternalDofs; ++i)
+    for(ordinal_type i=0; i<numFacesInternalDofs(iface); ++i) {
+      facesInternalDofOrdinals(iface, i) = faceBasis->getDofOrdinal(2, 0, i);
       for(ordinal_type d=0; d <2; ++d)
-        faceInternalDofCoords(i,d) = faceDofCoords(faceBasis->getDofOrdinal(2, 0, i),d);
-
-    scalarViewType  faceInternalDofCoordsOriented("faceInternalDofCoordsOriented",  numInternalDofs, 2);
-    scalarViewType  faceDofCoordsOriented3d("faceDofCoordsOriented3d", numInternalDofs, dim);
-    for(ordinal_type i=0; i<numCells; ++i) {
-      orts(i).getFaceOrientation(fOrt.data(), numFaces);
-      ordinal_type ort = fOrt(iface);
-      Impl::OrientationTools::mapToModifiedReference(faceInternalDofCoordsOriented,faceInternalDofCoords,faceBasis->getBaseCellTopology(),ort);
-      CellTools<SpT>::mapToReferenceSubcell(faceDofCoordsOriented3d, faceInternalDofCoordsOriented, 2, iface, topo);
-
-      for(ordinal_type j=0; j<numInternalDofs; ++j) {
-        auto idof = basis->getDofOrdinal(2, iface, j);
-        for(ordinal_type d=0; d <dim; ++d)
-          dofCoords(i,idof,d) = faceDofCoordsOriented3d(j,d);
-      }
+        facesInternalDofCoords(iface, i,d) = faceDofCoords(facesInternalDofOrdinals(iface, i),d);
     }
+
+    auto dofRange = range_type(0, faceBasis->getCardinality());
+    faceBasis->getDofCoeffs(Kokkos::subview(faceDofCoeffs, iface, dofRange, Kokkos::ALL()));
 
     if(isBasisHCURL) {
-      scalarViewType faceDofCoeffs("faceDofCoeffs", faceBasisCardinality, 2);
-      faceBasis->getDofCoeffs(faceDofCoeffs);
-      CellTools<SpT>::getReferenceFaceTangents(refFaceTanU, refFaceTanV, iface, topo);
-      for(ordinal_type i=0; i<numCells; ++i) {
-        orts(i).getFaceOrientation(fOrt.data(), numFaces);
-        Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, faceBasis->getBaseCellTopology(), fOrt(iface));
-        for(ordinal_type j=0; j<numInternalDofs; ++j) {
-          auto idof = basis->getDofOrdinal(2, iface, j);
-          auto jdof = faceBasis->getDofOrdinal(2, 0, j);
-          for(ordinal_type d=0; d <dim; ++d) {
-            dofCoeffs(i,idof,d) = 0;
-            for(ordinal_type k=0; k <2; ++k)
-              for(ordinal_type l=0; l <2; ++l)
-                dofCoeffs(i,idof,d) += refFaceTangents(d,l)*ortJacobian(l,k)*faceDofCoeffs(jdof,k);
-          }
-        }
-      }
+      auto refFaceTanU = Kokkos::subview(refFaceTangents, iface, Kokkos::ALL, 0);
+      auto refFaceTanV = Kokkos::subview(refFaceTangents, iface, Kokkos::ALL,1);
+      auto refFaceTanUHost = Kokkos::create_mirror_view(refFaceTanU);
+      auto refFaceTanVHost = Kokkos::create_mirror_view(refFaceTanV);
+      CellTools<SpT>::getReferenceFaceTangents(refFaceTanUHost, refFaceTanVHost, iface, topo);
+      Kokkos::deep_copy(refFaceTanU, refFaceTanUHost);
+      Kokkos::deep_copy(refFaceTanV, refFaceTanVHost);
     } else if(isBasisHDIV) {
-      //depending on how the reference basis is defined, the faces are scaled differently
-      auto faceScale = (isBasisHEXI1) ? 4.0 :
-                       (isBasisTETI1) ? 0.5 : 1.0;
-      CellTools<SpT>::getReferenceFaceNormal(refNormal, iface, topo);
-      scalarViewType faceDofCoeffs("faceDofCoeffs", faceBasisCardinality);
-      faceBasis->getDofCoeffs(faceDofCoeffs);
-      for(ordinal_type i=0; i<numCells; ++i) {
-        orts(i).getFaceOrientation(fOrt.data(), numFaces);
-        Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, faceBasis->getBaseCellTopology(), fOrt(iface));
-        auto ortJacobianDet = ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
-        for(ordinal_type j=0; j<numInternalDofs; ++j) {
-          auto idof = basis->getDofOrdinal(2, iface, j);
-          auto jdof = faceBasis->getDofOrdinal(2, 0, j);
-          for(ordinal_type d=0; d <dim; ++d)
-            dofCoeffs(i,idof,d) = refNormal(d)*ortJacobianDet*faceDofCoeffs(jdof)*faceScale;
-        }
-      }
-    } else {
-      scalarViewType faceDofCoeffs("faceDofCoeffs", faceBasisCardinality);
-      faceBasis->getDofCoeffs(faceDofCoeffs);
-      for(ordinal_type i=0; i<numCells; ++i) {
-        for(ordinal_type j=0; j<numInternalDofs; ++j) {
-          auto idof = basis->getDofOrdinal(2, iface, j);
-          auto jdof = faceBasis->getDofOrdinal(2, 0, j);
-          dofCoeffs(i,idof,0) = faceDofCoeffs(jdof);
-        }
-      }
+      auto faceNormal = Kokkos::subview(refFacesNormal,iface,Kokkos::ALL());
+      auto faceNormalHost = Kokkos::create_mirror_view(faceNormal);
+      CellTools<SpT>::getReferenceFaceNormal(faceNormalHost, iface, topo);
+      Kokkos::deep_copy(faceNormal, faceNormalHost);
     }
   }
 
-  auto numElemDOFs = basis->getDofCount(dim,0);
-  for(ordinal_type j=0; j<numElemDOFs; ++j) {
-    auto idof = basis->getDofOrdinal(dim, 0, j);
-    for(ordinal_type d=0; d <dim; ++d)
-      for(ordinal_type i=1; i <numCells; ++i)
-        dofCoords(i,idof,d) = refDofCoords(idof,d);
-    for(ordinal_type d=0; d <(ordinal_type)dofCoeffs.extent(2); ++d)
-      for(ordinal_type i=1; i <numCells; ++i)
-        dofCoeffs(i,idof,d) = refDofCoeffs(idof,d);
-  }
+  if(dim > 2)
+    CellTools<SpT>::getSubcellParametrization(faceParam, 2, topo);
 
+
+  //*** Loop over cells ***
+
+  const Kokkos::RangePolicy<SpT> policy(0, numCells);
+  typedef computeDofCoordsAndCoeffs
+      <scalarViewType,
+      decltype(orts),
+      decltype(tagToOrdinal),
+      decltype(edgeParam),
+      intViewType> FunctorType;
+  Kokkos::parallel_for(policy,
+      FunctorType(dofCoords, dofCoeffs,
+          orts, tagToOrdinal, edgeParam, faceParam,
+          edgeInternalDofOrdinals, facesInternalDofOrdinals,
+          edgeInternalDofCoords, edgeDofCoeffs, refEdgesTan, refEdgesNormal,
+          facesInternalDofCoords, faceDofCoeffs, refFaceTangents, refFacesNormal,
+          dim, numEdges, numFaces,
+          edgeTopoKey, numEdgeInternalDofs,
+          faceTopoKey, numFacesInternalDofs,
+          edgeScale, faceScale,
+          isBasisHCURL, isBasisHDIV));
 }
 
 

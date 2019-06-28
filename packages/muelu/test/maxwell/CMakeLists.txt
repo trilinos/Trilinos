@@ -29,13 +29,15 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    TRIBITS_ADD_TEST(
-      Maxwell3D
-      NAME "Maxwell3D-Tpetra-ML-list"
-      ARGS "--linAlgebra=Tpetra --xml=Maxwell_ML_MueLu.xml"
-      COMM mpi
-      NUM_MPI_PROCS 4
-      )
+    IF (${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_ENABLE_EPETRA)
+      TRIBITS_ADD_TEST(
+        Maxwell3D
+        NAME "Maxwell3D-Tpetra-ML-list"
+        ARGS "--linAlgebra=Tpetra --xml=Maxwell_ML_MueLu.xml"
+        COMM mpi
+        NUM_MPI_PROCS 4
+        )
+    ENDIF()
 
     IF (${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
       TRIBITS_ADD_TEST(

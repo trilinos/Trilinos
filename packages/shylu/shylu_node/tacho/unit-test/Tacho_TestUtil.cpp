@@ -11,6 +11,28 @@ typedef Kokkos::DefaultExecutionSpace     DeviceSpaceType;
 #define TEST_BEGIN 
 #define TEST_END   
 
+#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskScheduler<T>;
+static const char * scheduler_name = "DeprecatedTaskScheduler";
+#endif
+#if defined(TACHO_USE_DEPRECATED_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::DeprecatedTaskSchedulerMultiple<T>;
+static const char * scheduler_name = "DeprecatedTaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
+static const char * scheduler_name = "TaskScheduler";
+#endif
+#if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
+template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
+static const char * scheduler_name = "TaskSchedulerMultiple";
+#endif
+#if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
+template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
+static const char * scheduler_name = "ChaseLevTaskScheduler";
+#endif
+
+
 TEST( Util, is_complex_type ) {
   TEST_BEGIN;
   EXPECT_FALSE(int(ArithTraits<double>::is_complex));
@@ -75,20 +97,22 @@ TEST( util, tag ) {
 
 TEST( util, task_scheduler ) {
   TEST_BEGIN;
-  size_t span = 100;
-  unsigned int min_block_size  = 10;
-  unsigned int max_block_size  = 10;
-  unsigned int superblock_size = 10;
 
-  typedef Kokkos::TaskScheduler<HostSpaceType> host_sched_type;
-  host_sched_type host_sched(typename host_sched_type::memory_space(),
+  // DeprecatedTaskSchedulerMultiple instanciated memory pool intenally which is not consistent to 
+  // one given by a user. Just make it work now.
+  size_t span = 1024*8; // 100
+  unsigned int min_block_size  = 8; // 10
+  unsigned int max_block_size  = 1024; // 10
+  unsigned int superblock_size = 1024; // 10
+
+  typedef TaskSchedulerType<HostSpaceType> host_scheduler_type;
+  host_scheduler_type host_sched(typename host_scheduler_type::memory_space(),
                              span,
                              min_block_size,
                              max_block_size,
                              superblock_size);
-  
-  typedef Kokkos::TaskScheduler<DeviceSpaceType> device_sched_type;
-  device_sched_type device_sched(typename device_sched_type::memory_space(),
+  typedef TaskSchedulerType<DeviceSpaceType> device_scheduler_type;
+  device_scheduler_type device_sched(typename device_scheduler_type::memory_space(),
                                  span,
                                  min_block_size,
                                  max_block_size,
@@ -104,6 +128,8 @@ int main (int argc, char *argv[]) {
   printExecSpaceConfiguration<DeviceSpaceType>("DeviceSpace", detail);
   printExecSpaceConfiguration<HostSpaceType>  ("HostSpace",   detail);
   
+  printf("Scheduler Type = %s\n", scheduler_name); 
+
   ::testing::InitGoogleTest(&argc, argv);
 
   int result = RUN_ALL_TESTS();

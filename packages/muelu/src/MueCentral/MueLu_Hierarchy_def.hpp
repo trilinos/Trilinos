@@ -81,6 +81,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy()
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
+      fuseProlongationAndUpdate_(GetDefaultFuseProlongationAndUpdate()),
       doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()),
       scalingFactor_(Teuchos::ScalarTraits<double>::one()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1),
       sizeOfAllocatedLevelMultiVectors_(0)
@@ -99,6 +100,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix>& A)
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
+      fuseProlongationAndUpdate_(GetDefaultFuseProlongationAndUpdate()),
       doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()),
       scalingFactor_(Teuchos::ScalarTraits<double>::one()), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1),
       sizeOfAllocatedLevelMultiVectors_(0)
@@ -873,7 +875,8 @@ namespace MueLu {
     AllocateLevelMultiVectors(X.getNumVectors());
 
     // Print residual information before iterating
-    MagnitudeType prevNorm = STS::magnitude(STS::one()), curNorm = STS::magnitude(STS::one());
+    typedef Teuchos::ScalarTraits<typename STS::magnitudeType> STM;
+    MagnitudeType prevNorm = STM::one(), curNorm = STM::one();
     rate_ = 1.0;
     if (startLevel == 0 && !isPreconditioner_ &&
         (IsPrint(Statistics1) || tol > 0)) {
@@ -967,7 +970,7 @@ namespace MueLu {
         {
           RCP<TimeMonitor> ATime;
           if (!useStackedTimer)
-          ATime                       = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)"      , Timings0));
+            ATime                     = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)"      , Timings0));
           RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
           Utilities::Residual(*A, X, B,*residual_[startLevel]);
           residual = residual_[startLevel];
@@ -1049,20 +1052,24 @@ namespace MueLu {
           coarseX.swap(coarseTmp);
         }
 
-        // Update X += P * coarseX
-        // Note that due to what may be round-off error accumulation, use of the fused kernel
-        //    P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
-        // can in some cases result in slightly higher iteration counts.
-        RCP<MultiVector> correction = correction_[startLevel];
         {
           // ============== PROLONGATION ==============
           RCP<TimeMonitor> PTime;
           if (!useStackedTimer)
             PTime                     = rcp(new TimeMonitor(*this, prefix + "Solve : prolongation (total)"      , Timings0));
           RCP<TimeMonitor> PLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : prolongation" + levelSuffix, Timings0));
-          P->apply(*coarseX, *correction, Teuchos::NO_TRANS, one, zero);
+          // Update X += P * coarseX
+          // Note that due to what may be round-off error accumulation, use of the fused kernel
+          //    P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
+          // can in some cases result in slightly higher iteration counts.
+          if (fuseProlongationAndUpdate_) {
+            P->apply(*coarseX, X, Teuchos::NO_TRANS, scalingFactor_, one);
+          } else {
+            RCP<MultiVector> correction = correction_[startLevel];
+            P->apply(*coarseX, *correction, Teuchos::NO_TRANS, one, zero);
+            X.update(scalingFactor_, *correction, one);
+          }
         }
-        X.update(scalingFactor_, *correction, one);
 
         {
           // ============== POSTSMOOTHING ==============

@@ -285,7 +285,7 @@ namespace Intrepid2 {
         // apply field signs (after the fact, as a post-processing step)
         fst::applyLeftFieldSigns(mass_matrices, field_signs);
         fst::applyRightFieldSigns(mass_matrices, field_signs);
-        DeviceSpaceType::fence();
+        DeviceSpaceType().fence();
 
         /*******************  STOP COMPUTATION ***********************/
 

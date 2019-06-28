@@ -78,6 +78,7 @@ IF (Piro_ENABLE_NOX)
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADDED_EXE_TARGET_NAME_OUT ThyraSolver_NAME
   )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -144,6 +145,12 @@ IF (Piro_ENABLE_NOX)
     STANDARD_PASS_OUTPUT
   )
 
+  IF (ThyraSolver_NAME)
+   SET(ThyraSolver_EXENAME ThyraSolver)
+  ELSE()
+   SET(ThyraSolver_EXENAME)
+  ENDIF()
+
   IF (AnalysisDriverTpetra_NAME)
    SET(AnalysisDriverTpetra_EXENAME AnalysisDriverTpetra)
   ELSE()
@@ -176,7 +183,7 @@ IF (Piro_ENABLE_NOX)
 	  input_SGAnalysis.xml dakota_sg.in dakota_sg_target.txt
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
-    EXEDEPS ThyraSolver AnalysisDriver ${AnalysisDriverTpetra_EXENAME} UnitTests NOXSolver_UnitTests
+    EXEDEPS ${ThyraSolver_EXENAME} AnalysisDriver ${AnalysisDriverTpetra_EXENAME} UnitTests NOXSolver_UnitTests
   )
 
 ENDIF()

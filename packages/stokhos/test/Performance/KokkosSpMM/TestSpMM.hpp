@@ -160,14 +160,14 @@ test_spmm(const OrdinalType ensemble_length,
       }
     }
 
-    execution_space::fence();
+    execution_space().fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type e=0; e<ensemble_length; ++e) {
         KokkosSparse::spmv( "N", value_type(1.0), matrix, x[e] , value_type(0.0) , y[e]);
       }
     }
-    execution_space::fence();
+    execution_space().fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;
@@ -189,12 +189,12 @@ test_spmm(const OrdinalType ensemble_length,
       KokkosSparse::spmv( "N", value_type(1.0), matrix, xl , value_type(0.0) , yl);
     }
 
-    execution_space::fence();
+    execution_space().fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv( "N", value_type(1.0), matrix, xl , value_type(0.0) , yl);
     }
-    execution_space::fence();
+    execution_space().fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;
@@ -217,12 +217,12 @@ test_spmm(const OrdinalType ensemble_length,
       KokkosSparse::spmv( "N", value_type(1.0), matrix, xr , value_type(0.0) , yr);
     }
 
-    execution_space::fence();
+    execution_space().fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv( "N", value_type(1.0), matrix, xr , value_type(0.0) , yr);
     }
-    execution_space::fence();
+    execution_space().fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;

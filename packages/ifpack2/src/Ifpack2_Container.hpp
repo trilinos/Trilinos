@@ -51,7 +51,7 @@
 #include "Teuchos_Describable.hpp"
 #include <Ifpack2_Partitioner.hpp>
 #include <Tpetra_Map.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix_decl.hpp>
+#include <Tpetra_BlockCrsMatrix.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Time.hpp>
 #include <iostream>
@@ -125,7 +125,7 @@ protected:
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
   typedef Partitioner<Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> > partitioner_type;
-  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> block_crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> block_crs_matrix_type;
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value,

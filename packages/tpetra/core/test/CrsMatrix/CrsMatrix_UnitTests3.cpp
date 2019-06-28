@@ -422,9 +422,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // call fillComplete()
     out << "Call fillComplete on the matrix" << endl;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TEST_EQUALITY_CONST( A.getProfileType() == Tpetra::DynamicProfile, true );
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
     A.fillComplete (lclmap, rowmap);
     A.describe (out, VERB_LOW);
 
