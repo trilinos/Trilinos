@@ -136,7 +136,7 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
     for (zlno_t j=0; j<indices.size(); j++) {
       if ((indices[j]!=i) && (C.getData()[i]==C.getData()[indices[j]])){
         nconflicts++;
-        //std::cout << "Debug: found conflict (" << i << ", " << indices[j] << ")" << std::endl;
+        std::cout << "Debug: found conflict (" << i << ", " << indices[j] << ")" << std::endl;
       }
     }
   }
@@ -240,6 +240,12 @@ int main(int narg, char** arg)
   //int balanceColors = 0;
   cmdp.setOption("color_choice", &colorMethod,
        "Color choice method: FirstFit, LeastUsed, Random, RandomFast");
+  int batchSize = -1;
+  cmdp.setOption("batchSize", &batchSize,
+               "Batch Size for distributed coloring. Negative signifies all.");
+  std::string kokkosOnlyInterior("false");
+  cmdp.setOption("kokkosOnlyInterior", &kokkosOnlyInterior,
+               "Sets whether Kokkos colors only interior vertices (true, false)");
   // cmdp.setOption("balance_colors", &balanceColors,
   //                "Balance the size of color classes: 0/1 for false/true");
 
@@ -249,7 +255,7 @@ int main(int narg, char** arg)
   RCP<UserInputForTests> uinput;
   RCP<SparseMatrix> Matrix;
   if(inputFile.find("bin") != string::npos){//we're dealing with a binary file
-    Matrix = readMatrixFromFile<SparseMatrix>(inputFile,comm,true,false);
+    Matrix = readBinaryFile<SparseMatrix>(inputFile,comm,true,false);
   } else { 
     if (inputFile != ""){ // Input file specified; read a matrix
       uinput = rcp(new UserInputForTests(testDataFilePath, inputFile, comm, true));
@@ -269,6 +275,8 @@ int main(int narg, char** arg)
   Teuchos::ParameterList params;
   params.set("color_choice", colorMethod);
   params.set("color_method", colorAlg);
+  params.set("Hybrid_batch_size",batchSize);
+  params.set("Kokkos_only_interior",kokkosOnlyInterior);
   //params.set("balance_colors", balanceColors); // TODO
 
   ////// Create an input adapter for the Tpetra matrix.
@@ -278,7 +286,7 @@ int main(int narg, char** arg)
   try
   {
   Zoltan2::ColoringProblem<SparseMatrixAdapter> problem(&adapter, &params);
-  std::cout << "Going to color" << std::endl;
+  if(comm->getRank()==0) std::cout << "Going to color" << std::endl;
   problem.solve();
 
   ////// Basic metric checking of the coloring solution
@@ -286,7 +294,7 @@ int main(int narg, char** arg)
   int *checkColoring;
   Zoltan2::ColoringSolution<SparseMatrixAdapter> *soln = problem.getSolution();
 
-  std::cout << "Going to get results" << std::endl;
+  if(comm->getRank()==0) std::cout << "Going to get results" << std::endl;
   // Check that the solution is really a coloring
   checkLength = soln->getColorsSize();
   if(checkLength >0) checkColoring = soln->getColors();
@@ -307,7 +315,7 @@ int main(int narg, char** arg)
   }
   
   // Print # of colors on each proc.
-  if(checkLength>0) std::cout << "No. of colors on proc " << me << " : " << soln->getNumColors() << std::endl;
+  //if(checkLength>0) std::cout << "No. of colors on proc " << me << " : " << soln->getNumColors() << std::endl;
   if(checkLength>0){
     localColors = soln->getNumColors();
   }
@@ -315,7 +323,7 @@ int main(int narg, char** arg)
   //colors are guaranteed to overlap, max will discard duplicates
   Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX,1,&localColors,&totalColors);
   
-  std::cout << "Going to validate the soln" << std::endl;
+  //std::cout << "Going to validate the soln" << std::endl;
   // Verify that checkColoring is a coloring
   if(colorAlg == "Hybrid" && comm->getSize() > 1){
     //need to check a distributed coloring

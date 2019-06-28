@@ -172,7 +172,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                                  lno_t& nInterior) {
       std::unordered_map<gno_t, lno_t> globalToLocal; 
       
-      printf("--Rank %d: setting up map\n", comm->getRank()); 
+      //printf("--Rank %d: setting up map\n", comm->getRank()); 
       //map globally owned ids to local ids. O(n)
       for( uint64_t i = 0; i < ownedGIDs.size(); i++){
         globalToLocal[ownedGIDs[i]] = i;
@@ -188,12 +188,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
           ghostCount++;
           //also put it in the correct spot in the final vector.
           finalLocalToGlobal.push_back(globalAdjs[i]);
-          printf("--Rank %d: put %u at index %u in reorderGIDs\n",
-                 comm->getRank(), globalAdjs[i], finalLocalToGlobal.size());
+          //printf("--Rank %d: put %u at index %u in reorderGIDs\n",
+          //      comm->getRank(), globalAdjs[i], finalLocalToGlobal.size());
         }
       }
       
-      printf("--Rank %d: deterimining interior and boundary\n",comm->getRank());
+      //printf("--Rank %d: deterimining interior and boundary\n",comm->getRank());
       //determine interior vs. boundary vertices. O(m)
       bool* interiorFlags = new bool[ownedGIDs.size()];
       nInterior = 0;
@@ -209,7 +209,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
         nInterior += (interiorFlags[i] = interior);
       }
 
-      printf("--Rank %d: changing to reordered LIDs\n", comm->getRank());
+      //printf("--Rank %d: changing to reordered LIDs\n", comm->getRank());
       //change the map to use reordered LIDs, and set up other necessary
       //structures for reorderOffsets. O(n)
       lno_t interiorCount = 0;
@@ -221,29 +221,29 @@ class AlgHybridGMB : public Algorithm<Adapter>
           finalLocalToGlobal[interiorCount] = ownedGIDs[i];
           globalToLocal[ownedGIDs[i]] = interiorCount;
           reorderDegrees[interiorCount++] = offsets[i+1] - offsets[i]; 
-          printf("--Rank %d: put %u at index %d of reorderGIDs\n",
-                 comm->getRank(), ownedGIDs[i], interiorCount-1);
+          //printf("--Rank %d: put %u at index %d of reorderGIDs\n",
+          //       comm->getRank(), ownedGIDs[i], interiorCount-1);
         } else {
           //boundaryCount is the reordered LID
           finalLocalToGlobal[boundaryCount] = ownedGIDs[i];
           globalToLocal[ownedGIDs[i]] = boundaryCount;
           reorderDegrees[boundaryCount++] = offsets[i+1] - offsets[i];
-          printf("--Rank %d: put %u at index %d of reorderGIDs\n",
-                 comm->getRank(), ownedGIDs[i], boundaryCount-1);
+          //printf("--Rank %d: put %u at index %d of reorderGIDs\n",
+          //       comm->getRank(), ownedGIDs[i], boundaryCount-1);
         }
       }
       
-      printf("--Rank %d: computing reordered offsets\n",comm->getRank());
+      //printf("--Rank %d: computing reordered offsets\n",comm->getRank());
       //compute reorderOffsets. O(n)
       reorderOffsets[0] = 0;
       for(uint64_t i = 0; i < ownedGIDs.size(); i++){
         reorderOffsets[i+1] = reorderOffsets[i] + reorderDegrees[i];
       }
  
-      printf("--Rank %d: computing reordered adjacencies\n",comm->getRank());
+      //printf("--Rank %d: computing reordered adjacencies\n",comm->getRank());
       if(reorderAdjs.size() != globalAdjs.size()){
-        printf("--Rank %d: size mismatch between original and reordered adjs\n"
-              , comm->getRank());
+        //printf("--Rank %d: size mismatch between original and reordered adjs\n"
+        //      , comm->getRank());
       }
       //compute reorderAdjs. O(m)
       for(uint64_t i = 0; i < ownedGIDs.size(); i++){
@@ -259,7 +259,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
         reorderToLocal[globalToLocal[ownedGIDs[i]]] = i;
       }
       
-      printf("--Rank %d: done reordering graph\n", comm->getRank());
+      //printf("--Rank %d: done reordering graph\n", comm->getRank());
       return finalLocalToGlobal;
     } 
     
@@ -341,16 +341,16 @@ class AlgHybridGMB : public Algorithm<Adapter>
       KokkosGraph::Experimental::graph_color_symbolic(&kh, nVtx, nVtx, 
                                                       offset_view, adjs_view);
       Kokkos::fence();
-      std::cout << std::endl << 
-          "Time: " << 
-          kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-          "Num colors: " << 
-          kh.get_graph_coloring_handle()->get_num_colors() << " "
-          "Num Phases: " << 
-          kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-      std::cout << "\t"; 
-      KokkosKernels::Impl::print_1Dview(
-                           kh.get_graph_coloring_handle()->get_vertex_colors());
+      //std::cout << std::endl << 
+      //    "Time: " << 
+      //    kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
+      //    "Num colors: " << 
+      //    kh.get_graph_coloring_handle()->get_num_colors() << " "
+      //    "Num Phases: " << 
+      //    kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
+      //std::cout << "\t"; 
+      //KokkosKernels::Impl::print_1Dview(
+      //                     kh.get_graph_coloring_handle()->get_vertex_colors());
       
       numColors = kh.get_graph_coloring_handle()->get_num_colors();
     }
@@ -381,8 +381,13 @@ class AlgHybridGMB : public Algorithm<Adapter>
     //Main entry point for graph coloring
     void color( const RCP<ColoringSolution<Adapter> > &solution ) {
       
+      Teuchos::RCP<Teuchos::Time>
+             timeReorder(Teuchos::TimeMonitor::getNewTimer("00 REORDER")),
+             timeInterior(Teuchos::TimeMonitor::getNewTimer("01 INTERIOR")),
+             timeBoundary(Teuchos::TimeMonitor::getNewTimer("02 BOUNDARY"));
       //this will color the global graph in a manner similar to Zoltan
       
+      timeReorder->start();
       //get vertex GIDs in a locally indexed array (stolen from Ice-Sheet 
       //interface)
       ArrayView<const gno_t> vtxIDs;
@@ -437,7 +442,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                                                             mapWithCopies));
       Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned, 
                                                     importer, 1, true));
-
+      timeReorder->stop();
       //Get color array to fill
       ArrayRCP<int> colors = solution->getColorsRCP();
       for(size_t i=0; i<nVtx; i++){
@@ -455,7 +460,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       }
 
       // call coloring function
-      hybridGMB(nVtx, nInterior, reorderAdjs, reorderOffsets,colors,femv,reorderGIDs,rand);
+      hybridGMB(nVtx, nInterior, reorderAdjs, reorderOffsets,colors,femv,reorderGIDs,rand,timeInterior,timeBoundary);
       
       //copy colors to the output array.
       for(int i = 0; i < colors.size(); i++){
@@ -469,7 +474,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
       if(comm->getRank() == 1){
         colors[reorderToLocal[11]] = 3;
       }*/
-       
+      Teuchos::TimeMonitor::summarize();
+      Teuchos::TimeMonitor::zeroOutTimers();
       comm->barrier();
     }
     
@@ -477,8 +483,11 @@ class AlgHybridGMB : public Algorithm<Adapter>
                    Teuchos::ArrayView<const offset_t> offsets, 
                    Teuchos::ArrayRCP<int> colors, Teuchos::RCP<femv_t> femv,
                    std::vector<gno_t> reorderGIDs,
-                   std::vector<int> rand){
+                   std::vector<int> rand,
+                   Teuchos::RCP<Teuchos::Time> timeInterior,
+                   Teuchos::RCP<Teuchos::Time> timeBoundary){
       
+      timeInterior->start();
       //make views out of arrayViews 
       Kokkos::View<offset_t*, Tpetra::Map<>::device_type> host_offsets("Host Offset view", offsets.size());
       for(int i = 0; i < offsets.size(); i++){
@@ -488,15 +497,22 @@ class AlgHybridGMB : public Algorithm<Adapter>
       for(int i = 0; i < adjs.size(); i++){
         host_adjs(i) = adjs[i];
       }
-      
+
+      string kokkos_only_interior = pl->get<string>("Kokkos_only_interior","false");
+      size_t kokkosVerts = nVtx;
+      if(kokkos_only_interior == "true") kokkosVerts = nInterior;
       //call the KokkosKernels coloring function with the Tpetra default spaces.
       this->colorInterior<Tpetra::Map<>::execution_space,
                           Tpetra::Map<>::memory_space,
                           Tpetra::Map<>::memory_space>
-                 (nInterior, host_adjs, host_offsets, colors, femv);
+                 (kokkosVerts, host_adjs, host_offsets, colors, femv);
       
+      timeInterior->stop();
       //set the batch size to a reasonable default
+      timeBoundary->start();
       int batch_size = pl->get<int>("Hybrid_batch_size",100);
+      
+      if(batch_size < 0) batch_size = nVtx;
       //color boundary vertices using FEMultiVector
       //create a queue of vertices to color
       std::queue<lno_t> recoloringQueue;
@@ -504,7 +520,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       Teuchos::ArrayRCP<bool> forbiddenColors;
       forbiddenColors.resize(numColors);
       for(int i = 0; i < numColors; i++) forbiddenColors[i] = false;
-      printf("--Rank %d: batch size: %d\n",comm->getRank(),batch_size);
+      //printf("--Rank %d: batch size: %d\n",comm->getRank(),batch_size);
 
       bool done = false; //We're only done when all processors are done
       int distributedRounds = 0; //this is the same across all processors
@@ -514,14 +530,18 @@ class AlgHybridGMB : public Algorithm<Adapter>
         //  add next batch to the queue
             for(size_t j = i; j < i+batch_size; j++){
               if(j < nVtx) {
-                printf("--Rank %d: pushing %d on the queue\n",comm->getRank(),j);
-                recoloringQueue.push(j);
+                //printf("--Rank %d: pushing %d on the queue\n",comm->getRank(),j);
+                if(kokkos_only_interior == "false") {
+                  conflictQueue.push(j);
+                } else if(kokkos_only_interior == "true"){
+                  recoloringQueue.push(j);
+                }
               }
             }
             if(i < nVtx) i+= batch_size;
       //    color everything in the recoloring queue, put everything on conflict queue
             while(recoloringQueue.size() > 0) {
-               printf("--Rank %d: coloring vertex %u\n",comm->getRank(),recoloringQueue.front());
+               //printf("--Rank %d: coloring vertex %u\n",comm->getRank(),recoloringQueue.front());
                lno_t currVtx = recoloringQueue.front();
                recoloringQueue.pop();
                conflictQueue.push(currVtx);
@@ -553,7 +573,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                  numColors++;
                  forbiddenColors.resize(numColors);
                }
-               printf("--Rank %d: colored vtx %u color %d\n",comm->getRank(),currVtx, femv->getData(0)[currVtx]);
+               //printf("--Rank %d: colored vtx %u color %d\n",comm->getRank(),currVtx, femv->getData(0)[currVtx]);
             }
             
       //    communicate
@@ -569,14 +589,18 @@ class AlgHybridGMB : public Algorithm<Adapter>
               int currColor = femv->getData(0)[currVtx];
               for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
                 int nborColor = femv->getData(0)[adjs[nborIdx]];
+                /*if(reorderGIDs[currVtx] == 117961 && reorderGIDs[adjs[nborIdx]] == 150790){
+                  printf("--Rank %d: checking 117961 (color %d) against 150790 (color %d)\n",comm->getRank(),
+                          femv->getData(0)[currVtx], femv->getData(0)[adjs[nborIdx]]);
+                }*/
                 if(nborColor == currColor && rand[currVtx] > rand[adjs[nborIdx]]) {
-                  printf("--Rank %d: vtx %u conflicts with vtx %u\n",comm->getRank(),currVtx,adjs[nborIdx]);
+                  //printf("--Rank %d: vtx %u conflicts with vtx %u\n",comm->getRank(),currVtx,adjs[nborIdx]);
                   conflict = true;
                 }
               }
               if(conflict) {
                 recoloringQueue.push(currVtx);
-                printf("--Rank %d: putting vertex %u on the recoloring queue\n",comm->getRank(),currVtx);
+                //printf("--Rank %d: putting vertex %u on the recoloring queue\n",comm->getRank(),currVtx);
               }
             }
             //do a reduction to determine if we're done
@@ -590,7 +614,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
           }
         
        
-      
+      timeBoundary->stop();
       //color interior vertices if not colored yet. 
       //(must alter Kokkos-Kernels to allow partial colorings)
       //As long as the initial coloring is untouched, we can pass the whole 
@@ -602,7 +626,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //}
       
       //print how many rounds of speculating/correcting happened (this should be the same for all ranks):
-      printf("--Rank %d: did %d rounds of distributed coloring\n",comm->getRank(), distributedRounds);
+      if(comm->getRank()==0) printf("did %d rounds of distributed coloring\n", distributedRounds);
     }
 };
 

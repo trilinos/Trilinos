@@ -138,6 +138,14 @@ public:
         Teuchos::tuple<std::string>( "SerialGreedy","Hybrid" )));
     pl.set("color_method", "SerialGreedy", "coloring algorithm",
      color_method_Validator);
+    pl.set("Hybrid_batch_size",-1,"Batch size for distributed coloring, default is all verts",
+     Environment::getAnyIntValidator());
+    RCP<Teuchos::StringValidator> kokkos_interior_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "true", "false")));
+    pl.set("Kokkos_only_interior","false",
+     "Controls whether the entire local graph is colored with Kokkos, or only interior verts",
+     kokkos_interior_Validator);
   }
 
   //!  \brief Direct the problem to create a solution.
