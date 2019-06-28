@@ -258,11 +258,7 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   RCP<multivector_t> rhs = rcp(new multivector_t(crs_graph->getRowMap(), 1));
 
   scalar_2d_array_t element_matrix;
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  Kokkos::resize(element_matrix, 4, 4);
-#else
   Kokkos::resize(element_matrix, 4);
-#endif
   Teuchos::Array<Scalar> element_rhs(4);
 
   Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
