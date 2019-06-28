@@ -73,6 +73,8 @@ struct CmdLineOpts
   bool execTotalElementLoop;
   // repetitions - how many times to execute the kernel for testing
   size_t repetitions;
+  // Use Kokkos assembly for matrix
+  bool useKokkosAssembly;
 };
 
 
@@ -97,6 +99,7 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
   opts.execLocalElementLoop      = false;
   opts.execTotalElementLoop      = false;
   opts.repetitions  = 1;
+  opts.useKokkosAssembly = false;
 
   clp.setOption("num-elements-x", &(opts.numElementsX), "Number of elements to generate in the X-directon of the 2D grid.");
   clp.setOption("num-elements-y", &(opts.numElementsY), "Number of elements to generate in the Y-direction of the 2D grid.");
@@ -116,6 +119,7 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
   clp.setOption("with-total-element-loop",    "without-total-element-loop",    &(opts.execTotalElementLoop),
                 "Execute the Total Element Loop FEM Assembly kernel.");
   clp.setOption("repetitions", &(opts.repetitions), "Number of times to repeat the kernel.");
+  clp.setOption("kokkos", "no-kokkos", &(opts.useKokkosAssembly), "Use Kokkos assembly.");
 }
 
 

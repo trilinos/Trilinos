@@ -61,8 +61,6 @@ typedef Tpetra::Map<>::node_type           node_t;
 
 typedef Kokkos::DefaultExecutionSpace execution_space_t;
 
-typedef Kokkos::View<global_ordinal_t*, execution_space_t> global_ordinal_view_t;
-
 typedef Tpetra::Map<>             map_t;
 typedef Tpetra::CrsGraph<>        graph_t;
 typedef Tpetra::FECrsGraph<local_ordinal_t,global_ordinal_t,node_t>      fe_graph_t;
@@ -74,10 +72,16 @@ typedef Tpetra::Export<>          export_t;
 typedef Tpetra::MultiVector<Scalar> multivector_t;
 typedef Tpetra::FEMultiVector<Scalar> fe_multivector_t;
 
+typedef Kokkos::View<global_ordinal_t*, execution_space_t> global_ordinal_view_t;
+typedef Kokkos::View<local_ordinal_t*, execution_space_t>  local_ordinal_view_t;
+typedef Kokkos::View<Scalar*, execution_space_t>           scalar_1d_array_t;
+typedef Kokkos::View<bool*, execution_space_t>             bool_1d_array_t;
+
 // NOTE: Arrays are hardwired for QUAD4
 typedef Kokkos::View<local_ordinal_t*[4], execution_space_t>  local_ordinal_2d_array_t;
 typedef Kokkos::View<global_ordinal_t*[4], execution_space_t> global_ordinal_2d_array_t;
 typedef Kokkos::View<Scalar*[4], execution_space_t>           scalar_2d_array_t;
+
 
 }
 
