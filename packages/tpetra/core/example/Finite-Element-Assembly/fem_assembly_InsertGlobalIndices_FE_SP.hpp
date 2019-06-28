@@ -240,21 +240,11 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     rcp (new fe_multivector_t(domain_map, fe_graph->getImporter(), 1));
 
   scalar_2d_array_t element_matrix;
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  Kokkos::resize(element_matrix, 4, 4);
-#else
   Kokkos::resize(element_matrix, 4);
-#endif
   Teuchos::Array<Scalar> element_rhs(4);
 
   Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
   Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
-
-
-
-
-
-
 
   // Loop over elements
   Tpetra::beginFill(*fe_matrix,*rhs);
@@ -288,16 +278,6 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     }
   }
 
-
-
-
-
-
-
-
-
-
-
   timerElementLoopMatrix = Teuchos::null;
 
   // After the contributions are added, 'finalize' the matrix using fillComplete()
@@ -321,9 +301,10 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   // Save crs_matrix as a MatrixMarket file.
   if(opts.saveMM)
   {
-    std::ofstream ofs("crsMatrix_InsertGlobalIndices_SP.out", std::ofstream::out);
+    std::ofstream ofs("crsMatrix_InsertGlobalIndices_FESP.out", std::ofstream::out);
     Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, fe_matrix);
-    ofs.close();
+    std::ofstream ofs2("rhs_InsertGlobalIndices_FESP.out", std::ofstream::out);
+    Tpetra::MatrixMarket::Writer<multivector_t>::writeDense(ofs2, rhs);
   }
 
   return 0;
@@ -461,7 +442,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // - sumIntoGlobalValues( 3,  [  2  3  7  6  ],  [  -1  2  -1  0  ])
   // - sumIntoGlobalValues( 7,  [  2  3  7  6  ],  [  0  -1  2  -1  ])
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
-  RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
+  RCP<TimeMonitor> timerElementLoopMemory = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.1) ElementLoop  (Memory)")));
 
   RCP<fe_matrix_t> fe_matrix = rcp(new fe_matrix_t(fe_graph));
   RCP<fe_multivector_t> rhs =
@@ -475,12 +456,14 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // Because we're processing elements in parallel, we need storage for all of them
   int numOwnedElements = mesh.getNumOwnedElements();
   int nperel = owned_element_to_node_ids.extent(1); 
+  pair_type alln = pair_type(0,nperel);
   scalar_2d_array_t all_element_matrix("all_element_matrix",nperel*numOwnedElements);
   scalar_1d_array_t all_element_rhs("all_element_rhs",nperel*numOwnedElements);
   local_ordinal_view_t  all_lcids("all_lids",nperel*numOwnedElements);
-  
 
-  pair_type alln = pair_type(0,nperel);
+  timerElementLoopMemory=Teuchos::null;
+  RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.2) ElementLoop  (Matrix)")));
+
   // Loop over elements
   Tpetra::beginFill(*fe_matrix,*rhs);
   Kokkos::parallel_for(Kokkos::RangePolicy<execution_space_t>(0, numOwnedElements),KOKKOS_LAMBDA(const size_t& element_gidx) {
@@ -489,7 +472,6 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       auto element_rhs    = Kokkos::subview(all_element_rhs,location_pair);
       auto element_matrix = Kokkos::subview(all_element_matrix,location_pair,alln);
       auto element_lcids  = Kokkos::subview(all_lcids,location_pair);
-      // FIXME: As per Ellingwood
 
       // Get the contributions for the current element
       ReferenceQuad4(element_matrix);
@@ -509,12 +491,9 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
           local_ordinal_t local_col_id = localColMap.getLocalElement(owned_element_to_node_ids(element_gidx, element_node_idx));
           auto row_values = Kokkos::subview(element_matrix,element_node_idx,alln);
           // Force atomics on sums
-          // FIXME: I'm pretty sure rowvalues ain't right -- this is layout dependent
-          localMatrix.sumIntoValues(local_row_id,&(element_lcids(0)),nperel,&(row_values(element_node_idx,0)),false,true);
-
-          Kokkos::atomic_add(&(element_rhs(element_node_idx)),element_rhs[element_node_idx]);
-          //          fe_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-          //          rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
+	  for(int col_idx=0; col_idx<nperel; col_idx++)
+	    localMatrix.sumIntoValues(local_row_id,&element_lcids(col_idx),1,&(element_matrix(element_node_idx,col_idx)),true,true);
+	  Kokkos::atomic_add(&(localRHS(local_row_id,0)),element_rhs[element_node_idx]);
         }
     });
    
@@ -541,9 +520,10 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // Save crs_matrix as a MatrixMarket file.
   if(opts.saveMM)
   {
-    std::ofstream ofs("crsMatrix_InsertGlobalIndices_SP.out", std::ofstream::out);
+    std::ofstream ofs("crsMatrix_InsertGlobalIndices_FESPKokkos.out", std::ofstream::out);
     Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, fe_matrix);
-    ofs.close();
+    std::ofstream ofs2("rhs_InsertGlobalIndices_FESPKokkos.out", std::ofstream::out);
+    Tpetra::MatrixMarket::Writer<multivector_t>::writeDense(ofs2, rhs);
   }
 
   return 0;
