@@ -29,6 +29,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES test_hybrid_gmres_hb.cpp
   ARGS "--verbose --max-degree=10 --poly-type=Arnoldi"
        "--verbose --max-degree=10 --poly-type=Gmres"
+       "--verbose --max-degree=10 --poly-type=Roots"
   COMM serial mpi
   )
 
