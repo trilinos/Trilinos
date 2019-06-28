@@ -564,7 +564,7 @@ int executeLocalElementLoopDPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
 
       // Get the contributions for the current element
       ReferenceQuad4(element_matrix);
-      ReferenceQuad4RHS_Kokkos(element_rhs);
+      ReferenceQuad4RHS(element_rhs);
 
       // Get the local column ids array for this element
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++) {

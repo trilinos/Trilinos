@@ -94,17 +94,17 @@ KOKKOS_INLINE_FUNCTION void ReferenceQuad4(ViewType & elementMatrix) {
 // RHS vector for the reference quad.
 // This can be thought of as a unit source being equally distributed to the
 // 4 nodes of the quad.
-void ReferenceQuad4RHS(Teuchos::Array<Scalar>& rhs) {
-  rhs.resize(4);
-  std::fill(rhs.begin(), rhs.end(), static_cast<Scalar>(.25));
-}
-
 template<class ViewType>
-KOKKOS_INLINE_FUNCTION void ReferenceQuad4RHS_Kokkos(ViewType& rhs) {
+KOKKOS_INLINE_FUNCTION void ReferenceQuad4RHS(ViewType& rhs) {
   for(size_t i=0; i<rhs.extent(0); i++)
     rhs[i] = static_cast<Scalar>(.25);
 }
 
+template<>
+void ReferenceQuad4RHS(Teuchos::Array<Scalar>& rhs) {
+  for(int i=0; (int)i<rhs.size(); i++)
+    rhs[i] = static_cast<Scalar>(.25);
+}
 
 //
 // This function prints out the quad4 array in a nice way.
