@@ -488,7 +488,6 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++)
         {
           local_ordinal_t local_row_id = localMap.getLocalElement(owned_element_to_node_ids(element_gidx, element_node_idx));
-          local_ordinal_t local_col_id = localColMap.getLocalElement(owned_element_to_node_ids(element_gidx, element_node_idx));
           auto row_values = Kokkos::subview(element_matrix,element_node_idx,alln);
           // Force atomics on sums
 	  for(int col_idx=0; col_idx<nperel; col_idx++)
