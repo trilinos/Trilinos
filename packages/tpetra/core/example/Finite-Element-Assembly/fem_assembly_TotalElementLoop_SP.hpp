@@ -363,6 +363,7 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
   using Teuchos::TimeMonitor;
 
   const global_ordinal_t GO_INVALID = Teuchos::OrdinalTraits<global_ordinal_t>::invalid();
+  const local_ordinal_t LO_INVALID = Teuchos::OrdinalTraits<local_ordinal_t>::invalid();
   using pair_type = Kokkos::pair<int,int>;
   
   // The output stream 'out' will ignore any output not from Process 0.
@@ -513,7 +514,7 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
   // Similarly to the Graph construction above, we loop over both local and global
   // elements and insert rows for only the locally owned rows.
   //
-  RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
+  RCP<TimeMonitor> timerElementLoopMemory = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2.5) ElementLoop  (Memory)")));
 
   RCP<matrix_t> crs_matrix = rcp(new matrix_t(crs_graph));
   RCP<multivector_t> rhs = rcp(new multivector_t(crs_graph->getRowMap(), 1));
@@ -523,7 +524,6 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
   auto localRowMap  = crs_matrix->getRowMap()->getLocalMap();
   auto localColMap  = crs_matrix->getColMap()->getLocalMap();
 
-
   // Because we're processing elements in parallel, we need storage for all of them
   int numOwnedElements = mesh.getNumOwnedElements();
   int numGhostElements = mesh.getNumGhostElements();
@@ -531,13 +531,16 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
   scalar_2d_array_t all_element_matrix("all_element_matrix",nperel*std::max(numOwnedElements,numGhostElements));
   scalar_1d_array_t all_element_rhs("all_element_rhs",nperel*std::max(numOwnedElements,numGhostElements));
   local_ordinal_view_t  all_lcids("all_lids",nperel*std::max(numOwnedElements,numGhostElements)); 
+
   pair_type alln = pair_type(0,nperel);
- 
+
+  timerElementLoopMemory = Teuchos::null;
+  RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
+
   // Loop over owned elements:
   Kokkos::parallel_for(Kokkos::RangePolicy<execution_space_t>(0, numOwnedElements),KOKKOS_LAMBDA(const size_t& element_gidx) {
       // Get subviews      
       pair_type location_pair = pair_type(nperel*element_gidx,nperel*(element_gidx+1));
-      //      printf("[%d] pair_type = [%d,%d)\n",(int)element_gidx,(int)location_pair.first,(int)location_pair.second);
       auto element_rhs    = Kokkos::subview(all_element_rhs,location_pair);
       auto element_matrix = Kokkos::subview(all_element_matrix,location_pair,alln);
       auto element_lcids  = Kokkos::subview(all_lcids,location_pair);
@@ -558,8 +561,8 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++)
         {
           global_ordinal_t global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
-          if(mesh.nodeIsOwned(global_row_id)) {//FIXME            
-            local_ordinal_t local_row_id = localRowMap.getLocalElement(global_row_id);
+	  local_ordinal_t local_row_id = localRowMap.getLocalElement(global_row_id);
+          if(local_row_id != LO_INVALID) {
             // Force atomics on sums
             for(int col_idx=0; col_idx<nperel; col_idx++)
               localMatrix.sumIntoValues(local_row_id,&element_lcids(col_idx),1,&(element_matrix(element_node_idx,col_idx)),true,true);
@@ -567,7 +570,8 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
           }
         }
     });
-
+  execution_space_t::fence();
+      
   // Loop over ghost elements:
   // - This loop is the same as the element loop for owned elements, but this one
   //   is for ghost elements.
@@ -577,7 +581,6 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
       auto element_rhs    = Kokkos::subview(all_element_rhs,location_pair);
       auto element_matrix = Kokkos::subview(all_element_matrix,location_pair,alln);
       auto element_lcids  = Kokkos::subview(all_lcids,location_pair);
-      // FIXME: As per Ellingwood
       
       // Get the contributions for the current element
       ReferenceQuad4(element_matrix);
@@ -591,16 +594,16 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
       for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
         {
           global_ordinal_t global_row_id = ghost_element_to_node_ids(element_gidx, element_node_idx);
-          if(mesh.nodeIsOwned(global_row_id))
-            {
-              local_ordinal_t local_row_id = localRowMap.getLocalElement(global_row_id);
-              // Force atomics on sums
-              for(int col_idx=0; col_idx<nperel; col_idx++)
-                localMatrix.sumIntoValues(local_row_id,&element_lcids(col_idx),1,&(element_matrix(element_node_idx,col_idx)),true,true);
-              Kokkos::atomic_add(&(localRHS(local_row_id,0)),element_rhs[element_node_idx]);
-            }
+	  local_ordinal_t local_row_id = localRowMap.getLocalElement(global_row_id);
+          if(local_row_id != LO_INVALID) {
+	    // Force atomics on sums
+	    for(int col_idx=0; col_idx<nperel; col_idx++)
+	      localMatrix.sumIntoValues(local_row_id,&element_lcids(col_idx),1,&(element_matrix(element_node_idx,col_idx)),true,true);
+	    Kokkos::atomic_add(&(localRHS(local_row_id,0)),element_rhs[element_node_idx]);
+	  }
         }
     });
+  execution_space_t::fence();
     
   timerElementLoopMatrix = Teuchos::null;
 
