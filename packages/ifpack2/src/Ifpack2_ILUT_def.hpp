@@ -52,6 +52,7 @@
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Parameters.hpp"
+#include "Ifpack2_Details_getParamTryingTypes.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -88,7 +89,6 @@ namespace Ifpack2 {
     template<class ScalarType>
     inline typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     ilutDefaultDropTolerance () {
-      using Teuchos::as;
       typedef Teuchos::ScalarTraits<ScalarType> STS;
       typedef typename STS::magnitudeType magnitude_type;
       typedef Teuchos::ScalarTraits<magnitude_type> STM;
@@ -99,7 +99,7 @@ namespace Ifpack2 {
       // The min ensures that in case magnitude_type has very low
       // precision, we'll at least get some value strictly less than
       // one.
-      return std::min (as<magnitude_type> (1000) * STS::magnitude (STS::eps ()), oneHalf);
+      return std::min (static_cast<magnitude_type> (1000) * STS::magnitude (STS::eps ()), oneHalf);
     }
 
     // Full specialization for ScalarType = double.
@@ -133,10 +133,6 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   allocateSolvers();
 }
 
-template <class MatrixType>
-ILUT<MatrixType>::~ILUT()
-{}
-
 template<class MatrixType>
 void ILUT<MatrixType>::allocateSolvers ()
 {
@@ -144,57 +140,26 @@ void ILUT<MatrixType>::allocateSolvers ()
   U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
 }
 
-namespace { // (anonymous)
-
-  template<class MagnitudeType>
-  std::pair<MagnitudeType, bool>
-  getMagnitudeOrDoubleParameterAsMagnitude (const Teuchos::ParameterList& params,
-					    const char parameterName[],
-					    const MagnitudeType& currentValue)
-  {
-    const std::string pname (parameterName);
-
-    if (params.isType<MagnitudeType> (pname)) {
-      const MagnitudeType value = params.get<MagnitudeType> (pname);
-      return {value, true};
-    }
-    else if (! std::is_same<MagnitudeType, double>::value &&
-	     params.isType<double> (pname)) {
-      const MagnitudeType value = params.get<double> (pname);
-      return {value, true};
-    }
-    else {
-      return {currentValue, false};
-    }
-  }
-
-} // namespace (anonymous)
-
-
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 {
+  using Details::getParamTryingTypes;
+  const char prefix[] = "Ifpack2::ILUT: ";
+
   // Don't actually change the instance variables until we've checked
   // all parameters.  This ensures that setParameters satisfies the
   // strong exception guarantee (i.e., is transactional).
 
   // Fill level in ILUT is a double, not a magnitude_type, because it
-  // depends on LO and GO, not on Scalar.
+  // depends on LO and GO, not on Scalar.  Also, you can't cast
+  // arbitrary magnitude_type (e.g., Sacado::MP::Vector) to double.
   double fillLevel = LevelOfFill_;
-  bool gotFillLevel = false;
   {
-    const std::string fillLevelParamName ("fact: ilut level-of-fill");
-    if (params.isType<double> (fillLevelParamName)) {
-      fillLevel = params.get<double> (fillLevelParamName);
-      gotFillLevel = true;
-    }
-    else if (! std::is_same<magnitude_type, double>::value &&
-	     params.isType<double> (fillLevelParamName)) {
-      fillLevel = params.get<double> (fillLevelParamName);
-      gotFillLevel = true;
-    }
+    const std::string paramName ("fact: ilut level-of-fill");
+    getParamTryingTypes<double, double, float>
+      (fillLevel, params, paramName, prefix);
     TEUCHOS_TEST_FOR_EXCEPTION
-      (gotFillLevel && fillLevel < 1.0, std::runtime_error,
+      (fillLevel < 1.0, std::runtime_error,
        "Ifpack2::ILUT: The \"fact: ilut level-of-fill\" parameter must be >= "
        "1.0, but you set it to " << fillLevel << ".  For ILUT, the fill level "
        "means something different than it does for ILU(k).  ILU(0) produces "
@@ -204,34 +169,43 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
        "fill-in.");
   }
 
-  const auto absThreshResult =
-    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: absolute threshold", Athresh_);
-  const auto relThreshResult =
-    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: relative threshold", Rthresh_);
-  const auto relaxResult =
-    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: relax value", RelaxValue_);
-  const auto dropResult =
-    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: drop tolerance", DropTolerance_);
+  magnitude_type absThresh = Athresh_;
+  {
+    const std::string paramName ("fact: absolute threshold");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (absThresh, params, paramName, prefix);
+  }
+
+  magnitude_type relThresh = Rthresh_;
+  {
+    const std::string paramName ("fact: relative threshold");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (relThresh, params, paramName, prefix);
+  }
+
+  magnitude_type relaxValue = RelaxValue_;
+  {
+    const std::string paramName ("fact: relax value");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (relaxValue, params, paramName, prefix);
+  }
+
+  magnitude_type dropTol = DropTolerance_;
+  {
+    const std::string paramName ("fact: drop tolerance");
+    getParamTryingTypes<magnitude_type, magnitude_type, double>
+      (dropTol, params, paramName, prefix);
+  }
 
   // Forward to trisolvers.
   L_solver_->setParameters(params);
   U_solver_->setParameters(params);
 
-  if (gotFillLevel) {
-    LevelOfFill_ = fillLevel;
-  }
-  if (absThreshResult.second) {
-    Athresh_ = absThreshResult.first;
-  }
-  if (relThreshResult.second) {
-    Rthresh_ = relThreshResult.first;
-  }
-  if (relaxResult.second) {
-    RelaxValue_ = relaxResult.first;
-  }
-  if (dropResult.second) {
-    DropTolerance_ = dropResult.first;
-  }
+  LevelOfFill_ = fillLevel;
+  Athresh_ = absThresh;
+  Rthresh_ = relThresh;
+  RelaxValue_ = relaxValue;
+  DropTolerance_ = dropTol;
 }
 
 

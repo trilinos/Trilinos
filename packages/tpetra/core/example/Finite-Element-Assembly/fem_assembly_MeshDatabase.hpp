@@ -69,6 +69,8 @@ struct LLA
 
 
 
+
+
 class MeshDatabase
 {
 public:
@@ -108,13 +110,13 @@ public:
   // Debugging output
   void print(std::ostream & oss);
 
-  inline bool nodeIsOwned(global_ordinal_t idx) {
+  inline bool nodeIsOwned(global_ordinal_t idx) const{
     global_ordinal_t i,j;
     ij_from_idx(globalNodes_[0],idx,i,j);
     return nodeIsOwned(i,j);
   }
 
-  inline bool elementIsOwned(global_ordinal_t idx) {
+  inline bool elementIsOwned(global_ordinal_t idx) const{
     global_ordinal_t i,j;
     ij_from_idx(globalElements_[0], idx, i, j);
     return elementIsOwned(i,j);
@@ -123,11 +125,11 @@ public:
 
 private:
 
-  inline bool nodeIsOwned(global_ordinal_t i, global_ordinal_t j) {
+  inline bool nodeIsOwned(global_ordinal_t i, global_ordinal_t j) const{
     return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[1];
   }
 
-  inline bool elementIsOwned(global_ordinal_t i, global_ordinal_t j) {
+  inline  bool elementIsOwned(global_ordinal_t i, global_ordinal_t j) const{
     return myElementStart_[0] <= i && i < myElementStop_[0] && myElementStart_[1] <= j && myElementStop_[1];
   }
 
