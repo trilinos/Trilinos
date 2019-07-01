@@ -64,21 +64,11 @@ using Scalar = Tpetra::CrsMatrix<>::scalar_type;
 using crs_matrix_type = Tpetra::CrsMatrix<Scalar>;
 using fe_matrix_type = Tpetra::FECrsMatrix<Scalar>;
 
+using import_type = Tpetra::Import<>;
 using export_type = Tpetra::Export<>;
 using multivector_type = Tpetra::MultiVector<Scalar>;
 using fe_multivector_type = Tpetra::FEMultiVector<Scalar>;
 
-typedef Tpetra::Map<>             map_t;
-typedef Tpetra::CrsGraph<>        graph_t;
-typedef Tpetra::FECrsGraph<local_ordinal_t,global_ordinal_t,node_t>      fe_graph_t;
-typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
-typedef Tpetra::CrsMatrix<Scalar>   matrix_t;
-typedef Tpetra::FECrsMatrix<Scalar> fe_matrix_t;
-
-typedef Tpetra::Export<>          export_t;
-typedef Tpetra::Import<>          import_t;
-typedef Tpetra::MultiVector<Scalar> multivector_t;
-typedef Tpetra::FEMultiVector<Scalar> fe_multivector_t;
 
 using global_ordinal_view_type =
   Kokkos::View<global_ordinal_type*, execution_space>;
