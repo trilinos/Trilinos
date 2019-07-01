@@ -227,12 +227,7 @@ int executeInsertGlobalIndicesDP_(const Teuchos::RCP<const Teuchos::Comm<int> >&
   RCP<fe_multivector_type> rhs =
     rcp (new fe_multivector_type(domain_map, crs_graph->getImporter(), 1));
 
-  scalar_2d_array_type element_matrix;
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  Kokkos::resize(element_matrix, 4, 4);
-#else
-  Kokkos::resize(element_matrix, 4);
-#endif
+  Kokkos::View<Scalar[4][4], execution_space> element_matrix ("element_matrix");
   Teuchos::Array<Scalar> element_rhs(4);
 
   Teuchos::Array<global_ordinal_type> column_global_ids(4);     // global column ids list

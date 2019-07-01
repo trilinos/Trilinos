@@ -268,8 +268,7 @@ int executeLocalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   RCP<multivector_type> rhs_owned         = rcp(new multivector_type(crs_graph_owned->getRowMap(), 1));
   RCP<multivector_type> rhs_overlapping   = rcp(new multivector_type(crs_graph_overlapping->getRowMap(), 1));
 
-  scalar_2d_array_type element_matrix;
-  Kokkos::resize(element_matrix, 4);
+  Kokkos::View<Scalar[4][4], execution_space> element_matrix ("element_matrix");
   Teuchos::Array<Scalar> element_rhs(4);
 
   Teuchos::Array<global_ordinal_type> column_global_ids(4);     // global column ids list

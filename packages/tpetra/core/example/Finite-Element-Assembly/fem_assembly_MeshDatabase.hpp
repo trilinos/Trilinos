@@ -225,11 +225,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
 
   // Generate the element-to-node map
   // NOTE: Hardwired to QUAD4's.  Nodes are ordered exodus-style (counter-clockwise) within an element
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  Kokkos::resize(ownedElementToNode_,num_my_elements,4);
-#else
   Kokkos::resize(ownedElementToNode_,num_my_elements);
-#endif
   int cct=0;
   for(global_ordinal_type j=myElementStart_[1]; j<myElementStop_[1]; j++) {
     for(global_ordinal_type i=myElementStart_[0]; i<myElementStop_[0]; i++) {
@@ -264,11 +260,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
 
   // NOTE: This are not recorded in Aztec/Ifpack/ML ordering.  Because most apps don't do that.
   Kokkos::resize(ghostElementGlobalIDs_,my_ghost_elements.size());
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  Kokkos::resize(ghostElementToNode_,my_ghost_elements.size(),4);
-#else
   Kokkos::resize(ghostElementToNode_,my_ghost_elements.size());
-#endif
   for(size_t k=0; k<my_ghost_elements.size(); k++) {
     global_ordinal_type i,j, eidx= my_ghost_elements[k];
     ghostElementGlobalIDs_(k) = eidx;
