@@ -51,9 +51,7 @@
 #include "fem_assembly_typedefs.hpp"
 
 
-namespace TpetraExamples
-{
-
+namespace TpetraExamples {
 
 struct LLA
 {
@@ -67,12 +65,7 @@ struct LLA
   global_ordinal_type data[2];
 };
 
-
-
-
-
-class MeshDatabase
-{
+class MeshDatabase {
 public:
   MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
                global_ordinal_type global_elements_x,

@@ -41,22 +41,20 @@
 #ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 #define TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 
-#include <Kokkos_View.hpp>
-#include <Tpetra_Export.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_CrsGraph.hpp>
-#include <Tpetra_FECrsGraph.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_FECrsMatrix.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_FEMultiVector.hpp>
+#include "Kokkos_View.hpp"
+#include "Tpetra_Export.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_FECrsGraph.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_FECrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_FEMultiVector.hpp"
 
 namespace TpetraExamples {
 
-// Get LocalOrdinal & GlobalOrdinal from Map defaults.
 using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
-
 using execution_space = Tpetra::Map<>::device_type::execution_space;
 
 using map_type = Tpetra::Map<>;
@@ -74,13 +72,15 @@ using global_ordinal_view_type =
   Kokkos::View<global_ordinal_type*, execution_space>;
 using local_ordinal_view_type =
   Kokkos::View<local_ordinal_type*, execution_space>;
-typedef Kokkos::View<Scalar*, execution_space>           scalar_1d_array_type;
-typedef Kokkos::View<bool*, execution_space>             bool_1d_array_type;
+using scalar_1d_array_type = Kokkos::View<Scalar*, execution_space>;
+using bool_1d_array_type = Kokkos::View<bool*, execution_space>;
 
 // NOTE: Arrays are hardwired for QUAD4
-typedef Kokkos::View<local_ordinal_type*[4], execution_space>  local_ordinal_2d_array_type;
-typedef Kokkos::View<global_ordinal_type*[4], execution_space> global_ordinal_2d_array_type;
-typedef Kokkos::View<Scalar*[4], execution_space>           scalar_2d_array_type;
+using local_ordinal_2d_array_type =
+  Kokkos::View<local_ordinal_type*[4], execution_space>;
+using global_ordinal_2d_array_type =
+  Kokkos::View<global_ordinal_type*[4], execution_space>;
+using scalar_2d_array_type = Kokkos::View<Scalar*[4], execution_space>;
 
 
 }

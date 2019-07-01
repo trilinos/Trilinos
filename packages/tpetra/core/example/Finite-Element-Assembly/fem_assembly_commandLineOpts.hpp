@@ -41,12 +41,9 @@
 #ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_COMMANDLINEOPTS_HPP
 #define TPETRAEXAMPLES_FEM_ASSEMBLY_COMMANDLINEOPTS_HPP
 
-#include <Teuchos_CommandLineProcessor.hpp>
+#include "Teuchos_CommandLineProcessor.hpp"
 
-
-namespace TpetraExamples
-{
-
+namespace TpetraExamples {
 
 // Options to read in from the command line
 struct CmdLineOpts
@@ -77,15 +74,15 @@ struct CmdLineOpts
   bool useKokkosAssembly;
 };
 
-
-
 // Use a utility from the Teuchos package of Trilinos to set up
 // command-line options for reading, and set default values of
 // command-line options.  clp is an output argument containing the
 // set-up options.  It retains pointers to fields in 'opts'.
 // Reading the command-line options will update those fields in
 // place.
-void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp)
+void
+setCmdLineOpts (struct CmdLineOpts& opts,
+                Teuchos::CommandLineProcessor& clp)
 {
   // Set default values of command-line options.
   opts.numElementsX = 3;
@@ -151,8 +148,6 @@ int parseCmdLineOpts(Teuchos::CommandLineProcessor& clp, int argc, char* argv[])
   }
 }
 
-
-
 // Check the command-line options that were read in by
 // parseCmdLineOpts.  Return 0 if all correct, else return nonzero,
 // using the LAPACK error reporting convention of the negative of
@@ -189,8 +184,6 @@ int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
   return err;
 }
 
-
-
 int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char* argv[])
 {
   using std::endl;
@@ -216,31 +209,27 @@ int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char*
     }
   }
 
-  if(opts.verbose)
-  {
+  if (opts.verbose) {
     out << "Command-line options:" << endl;
-    {
-      Teuchos::OSTab tab1(out); // push one tab in this scope
-      out << "numElementsX : " << opts.numElementsX     << endl
-          << "numElementsY : " << opts.numElementsY     << endl
-          << "verbose      : " << opts.verbose          << endl
-          << "timing       : " << opts.timing           << endl
-          << "saveMM       : " << opts.saveMM           << endl
-          << "staticProfile: " << opts.useStaticProfile << endl
-          << "repetitions  : " << opts.repetitions      << endl
-          << endl
-          << "execInsertGlobalIndicesFE : " << opts.execInsertGlobalIndicesFE << endl
-          << "execInsertGlobalIndices   : " << opts.execInsertGlobalIndices << endl
-          << "execLocalElementLoop      : " << opts.execLocalElementLoop    << endl
-          << "execTotalElementLoop      : " << opts.execTotalElementLoop    << endl
-          << endl;
-    }
+
+    Teuchos::OSTab tab1(out); // push one tab in this scope
+    out << "numElementsX : " << opts.numElementsX     << endl
+        << "numElementsY : " << opts.numElementsY     << endl
+        << "verbose      : " << opts.verbose          << endl
+        << "timing       : " << opts.timing           << endl
+        << "saveMM       : " << opts.saveMM           << endl
+        << "staticProfile: " << opts.useStaticProfile << endl
+        << "repetitions  : " << opts.repetitions      << endl
+        << endl
+        << "execInsertGlobalIndicesFE : " << opts.execInsertGlobalIndicesFE << endl
+        << "execInsertGlobalIndices   : " << opts.execInsertGlobalIndices << endl
+        << "execLocalElementLoop      : " << opts.execLocalElementLoop    << endl
+        << "execTotalElementLoop      : " << opts.execTotalElementLoop    << endl
+        << endl;
   }
 
   return EXIT_SUCCESS;
 }
-
-
 
 } // namespace TpetraExamples
 

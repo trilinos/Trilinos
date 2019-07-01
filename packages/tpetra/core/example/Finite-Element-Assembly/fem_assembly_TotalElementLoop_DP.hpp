@@ -46,11 +46,10 @@
 #include <iomanip>
 #include <sstream>
 
-#include <Tpetra_Core.hpp>
-#include <Tpetra_Version.hpp>
-#include <MatrixMarket_Tpetra.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_FancyOStream.hpp>
+#include "Tpetra_Core.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 #include "fem_assembly_typedefs.hpp"
 #include "fem_assembly_MeshDatabase.hpp"
