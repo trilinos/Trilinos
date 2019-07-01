@@ -99,7 +99,8 @@ namespace Xpetra {
     ///   Xpetra::TpetraMultiVector and an Xpetra::EpetraMultiVector,
     ///   or vice versa, for example.
     MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& rhs) {
+    operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& rhs)
+    {
       assign (rhs); // dispatch to protected virtual method
       return *this;
     }

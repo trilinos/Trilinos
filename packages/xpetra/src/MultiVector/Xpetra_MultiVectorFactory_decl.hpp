@@ -43,9 +43,54 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_MAPEXTRACTOR_HPP_
-#define XPETRA_MAPEXTRACTOR_HPP_
+#ifndef XPETRA_MULTIVECTORFACTORY_DECL_HPP
+#define XPETRA_MULTIVECTORFACTORY_DECL_HPP
 
-#include <Xpetra_MapExtractor_decl.hpp>
+#include "Xpetra_ConfigDefs.hpp"
 
-#endif /* XPETRA_MAPEXTRACTOR_HPP_ */
+#include "Xpetra_MultiVector.hpp"
+
+#ifdef HAVE_XPETRA_TPETRA
+#include "Xpetra_TpetraMultiVector.hpp"
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#include "Xpetra_EpetraMultiVector.hpp"
+#include "Xpetra_EpetraIntMultiVector.hpp"
+#endif
+
+#include "Xpetra_BlockedMap.hpp"
+//#include "Xpetra_BlockedMultiVector.hpp"
+
+#include "Xpetra_Exceptions.hpp"
+
+namespace Xpetra {
+
+
+template<class Scalar        = MultiVector<>::scalar_type,
+         class LocalOrdinal  = typename MultiVector<Scalar>::local_ordinal_type,
+         class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
+         class Node          = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+class MultiVectorFactory
+{
+  private:
+    //! Private constructor. This is a static class.
+    MultiVectorFactory() {}
+
+  public:
+    //! Constructor specifying the number of non-zeros for all rows.
+    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map, size_t NumVectors, bool zeroOut = true);
+
+    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
+          const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar>>& ArrayOfPtrs,
+          size_t                                                            NumVectors);
+};
+
+
+}      // namespace Xpetra
+
+#define XPETRA_MULTIVECTORFACTORY_SHORT
+#endif
