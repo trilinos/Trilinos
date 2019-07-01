@@ -5646,7 +5646,7 @@ namespace Tpetra {
           for (int p = 1; p < numProcs; ++p) {
             ArrayRCP<int_type> numGidsToSend (1);
 
-            typename std::map<int, Array<GO> >::const_iterator it = pid2gids.find (p);
+            auto it = pid2gids.find (p);
             if (it == pid2gids.end ()) {
               numGidsToSend[0] = 0;
             } else {
@@ -6014,18 +6014,6 @@ namespace Tpetra {
                    const std::string& matrixDescription,
                    const bool debug=false)
       {
-        writeSparse (out, Teuchos::rcpFromRef (matrix), matrixName,
-                     matrixDescription, debug);
-      }
-
-      //! Only for backwards compatibility; prefer the overload above.
-      static void
-      writeSparse (std::ostream& out,
-                   const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
-                   const std::string& matrixName,
-                   const std::string& matrixDescription,
-                   const bool debug=false)
-      {
         using Teuchos::ArrayView;
         using Teuchos::Comm;
         using Teuchos::FancyOStream;
@@ -6035,17 +6023,10 @@ namespace Tpetra {
         using Teuchos::rcpFromRef;
         using std::cerr;
         using std::endl;
-        typedef scalar_type ST;
-        typedef local_ordinal_type LO;
-        typedef global_ordinal_type GO;
-        typedef typename Teuchos::ScalarTraits<ST> STS;
-        typedef typename ArrayView<const LO>::const_iterator lo_iter;
-        typedef typename ArrayView<const GO>::const_iterator go_iter;
-        typedef typename ArrayView<const ST>::const_iterator st_iter;
-
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          pMatrix.is_null (), std::invalid_argument,
-          "The input matrix is null.");
+        using ST = scalar_type;
+        using LO = local_ordinal_type;
+        using GO = global_ordinal_type;
+        using STS = typename Teuchos::ScalarTraits<ST>;
 
         // Make the output stream write floating-point numbers in
         // scientific notation.  It will politely put the output
@@ -6054,7 +6035,7 @@ namespace Tpetra {
         Teuchos::SetScientific<ST> sci (out);
 
         // Get the matrix's communicator.
-        RCP<const Comm<int> > comm = pMatrix->getComm ();
+        RCP<const Comm<int> > comm = matrix.getComm ();
         TEUCHOS_TEST_FOR_EXCEPTION(
           comm.is_null (), std::invalid_argument,
           "The input matrix's communicator (Teuchos::Comm object) is null.");
@@ -6075,10 +6056,10 @@ namespace Tpetra {
         // Whether to print debugging output to stderr.
         const bool debugPrint = debug && myRank == 0;
 
-        RCP<const map_type> rowMap = pMatrix->getRowMap ();
-        RCP<const map_type> colMap = pMatrix->getColMap ();
-        RCP<const map_type> domainMap = pMatrix->getDomainMap ();
-        RCP<const map_type> rangeMap = pMatrix->getRangeMap ();
+        RCP<const map_type> rowMap = matrix.getRowMap ();
+        RCP<const map_type> colMap = matrix.getColMap ();
+        RCP<const map_type> domainMap = matrix.getDomainMap ();
+        RCP<const map_type> rangeMap = matrix.getRangeMap ();
 
         const global_size_t numRows = rangeMap->getGlobalNumElements ();
         const global_size_t numCols = domainMap->getGlobalNumElements ();
@@ -6088,7 +6069,7 @@ namespace Tpetra {
           os << "-- Input sparse matrix is:"
              << "---- " << numRows << " x " << numCols << endl
              << "---- "
-             << (pMatrix->isGloballyIndexed() ? "Globally" : "Locally")
+             << (matrix.isGloballyIndexed() ? "Globally" : "Locally")
              << " indexed." << endl
              << "---- Its row map has " << rowMap->getGlobalNumElements ()
              << " elements." << endl
@@ -6128,7 +6109,7 @@ namespace Tpetra {
           rcp (new sparse_matrix_type (gatherRowMap, gatherColMap,
                                        static_cast<size_t> (0)));
         // Import the sparse matrix onto Proc 0.
-        newMatrix->doImport (*pMatrix, importer, INSERT);
+        newMatrix->doImport (matrix, importer, INSERT);
 
         // fillComplete() needs the domain and range maps for the case
         // that the matrix is not square.
@@ -6223,8 +6204,8 @@ namespace Tpetra {
               ArrayView<const GO> ind;
               ArrayView<const ST> val;
               newMatrix->getGlobalRowView (globalRowIndex, ind, val);
-              go_iter indIter = ind.begin ();
-              st_iter valIter = val.begin ();
+              auto indIter = ind.begin ();
+              auto valIter = val.begin ();
               for (; indIter != ind.end() && valIter != val.end();
                    ++indIter, ++valIter) {
                 const GO globalColIndex = *indIter;
@@ -6240,8 +6221,9 @@ namespace Tpetra {
                 out << endl;
               } // For each entry in the current row
             } // For each row of the "gather" matrix
-          } else { // newMatrix is locally indexed
-            typedef Teuchos::OrdinalTraits<GO> OTG;
+          }
+          else { // newMatrix is locally indexed
+            using OTG = Teuchos::OrdinalTraits<GO>;
             for (LO localRowIndex = gatherRowMap->getMinLocalIndex();
                  localRowIndex <= gatherRowMap->getMaxLocalIndex();
                  ++localRowIndex) {
@@ -6256,8 +6238,8 @@ namespace Tpetra {
               ArrayView<const LO> ind;
               ArrayView<const ST> val;
               newMatrix->getLocalRowView (localRowIndex, ind, val);
-              lo_iter indIter = ind.begin ();
-              st_iter valIter = val.begin ();
+              auto indIter = ind.begin ();
+              auto valIter = val.begin ();
               for (; indIter != ind.end() && valIter != val.end();
                    ++indIter, ++valIter) {
                 // Convert the column index from local to global.
@@ -6285,6 +6267,19 @@ namespace Tpetra {
         } // If my process' rank is 0
       }
 
+      //! Only for backwards compatibility; prefer the overload above.
+      static void
+      writeSparse (std::ostream& out,
+                   const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+                   const std::string& matrixName,
+                   const std::string& matrixDescription,
+                   const bool debug=false)
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (pMatrix.is_null (), std::invalid_argument,
+           "The input matrix is null.");
+        writeSparse (out, *pMatrix, matrixName, matrixDescription, debug);
+      }
 
       /// \brief Print the sparse graph in Matrix Market format to the
       ///   given output stream.
