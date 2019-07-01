@@ -44,7 +44,7 @@
 #include <iomanip>
 #include "Kokkos_View.hpp"
 
-namespace TpetraExamples 
+namespace TpetraExamples
 {
 
 //
@@ -53,11 +53,11 @@ namespace TpetraExamples
 //
 // Layout:
 //
-//    Node connectivity in the quad is 0 - 1 - 2 - 3 - 0 
-//    0 ------ 1 
+//    Node connectivity in the quad is 0 - 1 - 2 - 3 - 0
+//    0 ------ 1
 //    |        |
 //    |        |
-//    3 ------ 2 
+//    3 ------ 2
 //
 //  - Each 'node' has a self edge and is assigned 2.
 //  - Neighbors on cardinal directions are assigned -1.
@@ -69,7 +69,7 @@ namespace TpetraExamples
 //    1 |-1   2  -1
 //    2 |    -1   2  -1
 //    3 |-1      -1   2
-// 
+//
 template <class ViewType>
 KOKKOS_INLINE_FUNCTION void ReferenceQuad4(ViewType & elementMatrix) {
   size_t lr[4] = {1,0,3,2};
@@ -110,12 +110,12 @@ void ReferenceQuad4RHS(Teuchos::Array<Scalar>& rhs) {
 // This function prints out the quad4 array in a nice way.
 //  rows x cols?
 //
-void PrettyPrintQuad4(scalar_2d_array_t & elementMatrix)
+void PrettyPrintQuad4(scalar_2d_array_type & elementMatrix)
 {
   size_t nr = elementMatrix.extent(0);
   size_t nc = elementMatrix.extent(1);
   for(size_t row_idx=0; row_idx<nr; row_idx++)
-  { 
+  {
     std::cout << "[ ";
     for(size_t col_idx=0; col_idx<nc; col_idx++) {
       std::cout << std::setw(2) << elementMatrix(row_idx, col_idx) << " ";
