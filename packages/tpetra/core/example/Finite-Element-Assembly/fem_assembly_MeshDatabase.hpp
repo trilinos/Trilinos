@@ -406,10 +406,10 @@ void MeshDatabase::print(std::ostream & oss)
   
 class GhostState {
 public:
-  GhostState(Teuchos::RCP<const import_t> & importer, int amountOfStatePerElement): elementImporter_(importer) {
+  GhostState(Teuchos::RCP<const import_type> & importer, int amountOfStatePerElement): elementImporter_(importer) {
     if(elementImporter_.is_null()) return;
-    ownedState_ = Teuchos::rcp(new multivector_t(importer->getSourceMap(),amountOfStatePerElement));
-    ghostState_ = Teuchos::rcp(new multivector_t(importer->getTargetMap(),amountOfStatePerElement));
+    ownedState_ = Teuchos::rcp(new multivector_type(importer->getSourceMap(),amountOfStatePerElement));
+    ghostState_ = Teuchos::rcp(new multivector_type(importer->getTargetMap(),amountOfStatePerElement));
     
   }
 
@@ -421,9 +421,9 @@ public:
 
 
 private:
-  Teuchos::RCP<const import_t> elementImporter_;
-  Teuchos::RCP<multivector_t> ownedState_;
-  Teuchos::RCP<multivector_t> ghostState_;
+  Teuchos::RCP<const import_type> elementImporter_;
+  Teuchos::RCP<multivector_type> ownedState_;
+  Teuchos::RCP<multivector_type> ghostState_;
 };
   
                   
