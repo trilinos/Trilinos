@@ -74,13 +74,13 @@ using global_ordinal_view_type =
   Kokkos::View<global_ordinal_type*, execution_space>;
 using local_ordinal_view_type =
   Kokkos::View<local_ordinal_type*, execution_space>;
-typedef Kokkos::View<Scalar*, execution_space>           scalar_1d_array_t;
-typedef Kokkos::View<bool*, execution_space>             bool_1d_array_t;
+typedef Kokkos::View<Scalar*, execution_space>           scalar_1d_array_type;
+typedef Kokkos::View<bool*, execution_space>             bool_1d_array_type;
 
 // NOTE: Arrays are hardwired for QUAD4
-typedef Kokkos::View<local_ordinal_type*[4], execution_space>  local_ordinal_2d_array_t;
-typedef Kokkos::View<global_ordinal_type*[4], execution_space> global_ordinal_2d_array_t;
-typedef Kokkos::View<Scalar*[4], execution_space>           scalar_2d_array_t;
+typedef Kokkos::View<local_ordinal_type*[4], execution_space>  local_ordinal_2d_array_type;
+typedef Kokkos::View<global_ordinal_type*[4], execution_space> global_ordinal_2d_array_type;
+typedef Kokkos::View<Scalar*[4], execution_space>           scalar_2d_array_type;
 
 
 }

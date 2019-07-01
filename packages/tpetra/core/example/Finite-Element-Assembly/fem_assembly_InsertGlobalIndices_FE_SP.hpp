@@ -482,8 +482,8 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   int numOwnedElements = mesh.getNumOwnedElements();
   int nperel = owned_element_to_node_ids.extent(1);
   pair_type alln = pair_type(0,nperel);
-  scalar_2d_array_t all_element_matrix("all_element_matrix",nperel*numOwnedElements);
-  scalar_1d_array_t all_element_rhs("all_element_rhs",nperel*numOwnedElements);
+  scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*numOwnedElements);
+  scalar_1d_array_type all_element_rhs("all_element_rhs",nperel*numOwnedElements);
   local_ordinal_view_type  all_lcids("all_lids",nperel*numOwnedElements);
 
   timerElementLoopMemory=Teuchos::null;

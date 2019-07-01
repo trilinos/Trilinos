@@ -269,7 +269,7 @@ int executeLocalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   RCP<multivector_type> rhs_owned         = rcp(new multivector_type(crs_graph_owned->getRowMap(), 1));
   RCP<multivector_type> rhs_overlapping   = rcp(new multivector_type(crs_graph_overlapping->getRowMap(), 1));
 
-  scalar_2d_array_t element_matrix;
+  scalar_2d_array_type element_matrix;
   Kokkos::resize(element_matrix, 4);
   Teuchos::Array<Scalar> element_rhs(4);
 
@@ -550,8 +550,8 @@ int executeLocalElementLoopDPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
   int numGhostElements = mesh.getNumGhostElements();
   int nperel = owned_element_to_node_ids.extent(1);
   pair_type alln = pair_type(0,nperel);
-  scalar_2d_array_t all_element_matrix("all_element_matrix",nperel*std::max(numOwnedElements,numGhostElements));
-  scalar_1d_array_t all_element_rhs("all_element_rhs",nperel*std::max(numOwnedElements,numGhostElements));
+  scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*std::max(numOwnedElements,numGhostElements));
+  scalar_1d_array_type all_element_rhs("all_element_rhs",nperel*std::max(numOwnedElements,numGhostElements));
   local_ordinal_view_type  all_lcids("all_lids",nperel*std::max(numOwnedElements,numGhostElements));
 
 
