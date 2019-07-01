@@ -69,6 +69,7 @@ typedef Tpetra::CrsMatrix<Scalar>   matrix_t;
 typedef Tpetra::FECrsMatrix<Scalar> fe_matrix_t;
 
 typedef Tpetra::Export<>          export_t;
+typedef Tpetra::Import<>          import_t;
 typedef Tpetra::MultiVector<Scalar> multivector_t;
 typedef Tpetra::FEMultiVector<Scalar> fe_multivector_t;
 

@@ -407,6 +407,34 @@ void MeshDatabase::print(std::ostream & oss)
 }
 
 
+// A toy class designed to simulate the cost of ghosting element state information.
+// This fclass does no actual computation, but moves an amount of data similar to what would
+// happen from ghosting element state information
+  
+class GhostState {
+public:
+  GhostState(Teuchos::RCP<const import_t> & importer, int amountOfStatePerElement): elementImporter_(importer) {
+    if(elementImporter_.is_null()) return;
+    ownedState_ = Teuchos::rcp(new multivector_t(importer->getSourceMap(),amountOfStatePerElement));
+    ghostState_ = Teuchos::rcp(new multivector_t(importer->getTargetMap(),amountOfStatePerElement));
+    
+  }
+
+  void doGhost() {
+    if(!elementImporter_.is_null()) {      
+      ghostState_->doImport(*ownedState_,*elementImporter_,Tpetra::REPLACE);
+    }
+  }
+
+
+private:
+  Teuchos::RCP<const import_t> elementImporter_;
+  Teuchos::RCP<multivector_t> ownedState_;
+  Teuchos::RCP<multivector_t> ghostState_;
+};
+  
+                  
+
 } // end of namespace TpetraExamples
 
 #endif // TPETRAEXAMPLES_FEM_ASSEMBLY_MESH_DATABASE
