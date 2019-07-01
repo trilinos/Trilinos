@@ -125,10 +125,10 @@ int executeTotalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   // Build Tpetra Maps
   // -----------------
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
-  RCP<const map_t> row_map = rcp(new map_t(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
-  RCP<const map_t> owned_element_map = rcp(new map_t(GO_INVALID, mesh.getOwnedElementGlobalIDs(), 0, comm));
-  RCP<const map_t> ghost_element_map = rcp(new map_t(GO_INVALID, mesh.getGhostElementGlobalIDs(), 0, comm));
-  RCP<const import_t> elementImporter = rcp(new import_t(owned_element_map,ghost_element_map));
+  RCP<const map_type> row_map = rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
+  RCP<const map_type> owned_element_map = rcp(new map_type(GO_INVALID, mesh.getOwnedElementGlobalIDs(), 0, comm));
+  RCP<const map_type> ghost_element_map = rcp(new map_type(GO_INVALID, mesh.getGhostElementGlobalIDs(), 0, comm));
+  RCP<const import_type> elementImporter = rcp(new import_type(owned_element_map,ghost_element_map));
 
   if(opts.verbose) row_map->describe(out);
 
