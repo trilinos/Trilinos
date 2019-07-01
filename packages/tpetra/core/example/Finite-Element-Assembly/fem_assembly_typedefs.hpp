@@ -64,9 +64,11 @@ using Scalar = Tpetra::CrsMatrix<>::scalar_type;
 using crs_matrix_type = Tpetra::CrsMatrix<Scalar>;
 using fe_matrix_type = Tpetra::FECrsMatrix<Scalar>;
 
+using import_type = Tpetra::Import<>;
 using export_type = Tpetra::Export<>;
 using multivector_type = Tpetra::MultiVector<Scalar>;
 using fe_multivector_type = Tpetra::FEMultiVector<Scalar>;
+
 
 using global_ordinal_view_type =
   Kokkos::View<global_ordinal_type*, execution_space>;
