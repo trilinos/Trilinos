@@ -1541,36 +1541,36 @@ namespace Tpetra {
         }
 
         // Create the graph where the root owns EVERYTHING
-	std::map<global_ordinal_type, size_t> numEntriesPerRow_map;
-	if (myRank == rootRank) {
-	  const auto& entries = pAdder()->getAdder()->getEntries();
-	  // This will count duplicates, but it's better than dense.
-	  // An even better approach would use a classic algorithm, 
-	  // likely in Saad's old textbook, for converting COO (entries)
-	  // to CSR (the local part of the sparse matrix data structure).
-	  for (const auto& entry : entries) {
-	    const global_ordinal_type gblRow = entry.rowIndex () + indexBase;
-	    ++numEntriesPerRow_map[gblRow];
-	  } 
-	}
+        std::map<global_ordinal_type, size_t> numEntriesPerRow_map;
+        if (myRank == rootRank) {
+          const auto& entries = pAdder()->getAdder()->getEntries();
+          // This will count duplicates, but it's better than dense.
+          // An even better approach would use a classic algorithm,
+          // likely in Saad's old textbook, for converting COO (entries)
+          // to CSR (the local part of the sparse matrix data structure).
+          for (const auto& entry : entries) {
+            const global_ordinal_type gblRow = entry.rowIndex () + indexBase;
+            ++numEntriesPerRow_map[gblRow];
+          }
+        }
 
-	Teuchos::Array<size_t> numEntriesPerRow (proc0Map->getNodeNumElements ());
-	for (const auto& ent : numEntriesPerRow_map) {
-	  const local_ordinal_type lclRow = proc0Map->getLocalElement (ent.first);
-	  numEntriesPerRow[lclRow] = ent.second;
-	}
-	// Free anything we don't need before allocating the graph.
-	// Swapping with an empty data structure is the standard idiom
-	// for freeing memory used by Standard Library containers.
-	// (Just resizing to 0 doesn't promise to free memory.)
-	{
-	  std::map<global_ordinal_type, size_t> empty_map;
-	  std::swap (numEntriesPerRow_map, empty_map);
-	}
-	    
+        Teuchos::Array<size_t> numEntriesPerRow (proc0Map->getNodeNumElements ());
+        for (const auto& ent : numEntriesPerRow_map) {
+          const local_ordinal_type lclRow = proc0Map->getLocalElement (ent.first);
+          numEntriesPerRow[lclRow] = ent.second;
+        }
+        // Free anything we don't need before allocating the graph.
+        // Swapping with an empty data structure is the standard idiom
+        // for freeing memory used by Standard Library containers.
+        // (Just resizing to 0 doesn't promise to free memory.)
+        {
+          std::map<global_ordinal_type, size_t> empty_map;
+          std::swap (numEntriesPerRow_map, empty_map);
+        }
+
         RCP<sparse_graph_type> proc0Graph =
-	  rcp(new sparse_graph_type(proc0Map,numEntriesPerRow (),
-				    StaticProfile,constructorParams));
+          rcp(new sparse_graph_type(proc0Map,numEntriesPerRow (),
+                                    StaticProfile,constructorParams));
         if(myRank == rootRank) {
           typedef Teuchos::MatrixMarket::Raw::GraphElement<global_ordinal_type> element_type;
 
@@ -1673,7 +1673,7 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION
           (opened == 0, std::runtime_error, "readSparseGraphFile: "
            "Failed to open file \"" << filename << "\" on Process 0.");
-        return readSparseGraph (in, comm, 
+        return readSparseGraph (in, comm,
                                 callFillComplete,
                                 tolerant, debug);
         // We can rely on the destructor of the input stream to close
@@ -1697,7 +1697,7 @@ namespace Tpetra {
                            const bool debug=false)
       {
         // Call the overload below.
-        return readSparseGraphFile (filename, comm, 
+        return readSparseGraphFile (filename, comm,
                                     callFillComplete, tolerant, debug);
       }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
@@ -1763,7 +1763,7 @@ namespace Tpetra {
         if (pComm->getRank () == 0) { // only open the input file on Process 0
           in.open (filename.c_str ());
         }
-        return readSparseGraph (in, pComm, 
+        return readSparseGraph (in, pComm,
                                 constructorParams,
                                 fillCompleteParams, tolerant, debug);
         // We can rely on the destructor of the input stream to close
@@ -1916,7 +1916,7 @@ namespace Tpetra {
         Teuchos::RCP<Teuchos::ParameterList> fakeCtorParams;
 
         Teuchos::RCP<sparse_graph_type> graph =
-          readSparseGraphHelper (in, pComm, 
+          readSparseGraphHelper (in, pComm,
                                  fakeRowMap, fakeColMap,
                                  fakeCtorParams, tolerant, debug);
         if (callFillComplete) {
@@ -1981,7 +1981,7 @@ namespace Tpetra {
         Teuchos::RCP<const map_type> fakeRowMap;
         Teuchos::RCP<const map_type> fakeColMap;
         Teuchos::RCP<sparse_graph_type> graph =
-          readSparseGraphHelper (in, pComm, 
+          readSparseGraphHelper (in, pComm,
                                  fakeRowMap, fakeColMap,
                                  constructorParams, tolerant, debug);
         graph->fillComplete (fillCompleteParams);
@@ -2056,7 +2056,7 @@ namespace Tpetra {
                        const bool debug=false)
       {
         Teuchos::RCP<sparse_graph_type> graph =
-          readSparseGraphHelper (in, rowMap->getComm (), 
+          readSparseGraphHelper (in, rowMap->getComm (),
                                  rowMap, colMap, Teuchos::null, tolerant,
                                  debug);
         if (callFillComplete) {
@@ -5885,7 +5885,7 @@ namespace Tpetra {
       ///   given sparse matrix.  The matrix is distributed, but only
       ///   Proc 0 opens the file and writes to it.
       ///
-      /// \param pMatrix [in] The sparse matrix to write to the file.
+      /// \param matrix [in] The sparse matrix to write to the file.
       ///
       /// \param matrixName [in] Name of the matrix, to print in the
       ///   comments section of the output file.  If empty, we don't
@@ -5904,30 +5904,41 @@ namespace Tpetra {
       ///   fixed in the future.
       static void
       writeSparseFile (const std::string& filename,
-                       const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+                       const sparse_matrix_type& matrix,
                        const std::string& matrixName,
                        const std::string& matrixDescription,
                        const bool debug=false)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          pMatrix.is_null (), std::invalid_argument,
-          "The input matrix is null.");
-        Teuchos::RCP<const Teuchos::Comm<int> > comm = pMatrix->getComm ();
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          comm.is_null (), std::invalid_argument,
+        Teuchos::RCP<const Teuchos::Comm<int> > comm = matrix.getComm ();
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (comm.is_null (), std::invalid_argument,
           "The input matrix's communicator (Teuchos::Comm object) is null.");
         const int myRank = comm->getRank ();
         std::ofstream out;
-
 
         // Only open the file on Rank 0.
         if (myRank == 0) {
           out.open (filename.c_str ());
         }
-        writeSparse (out, pMatrix, matrixName, matrixDescription, debug);
+        writeSparse (out, matrix, matrixName, matrixDescription, debug);
         // We can rely on the destructor of the output stream to close
         // the file on scope exit, even if writeSparse() throws an
         // exception.
+      }
+
+      //! Only for backwards compatibility; prefer the overload above.
+      static void
+      writeSparseFile (const std::string& filename,
+                       const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+                       const std::string& matrixName,
+                       const std::string& matrixDescription,
+                       const bool debug=false)
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (pMatrix.is_null (), std::invalid_argument,
+           "The input matrix is null.");
+        writeSparseFile (filename, *pMatrix, matrixName,
+                         matrixDescription, debug);
       }
 
       /// \brief Print the sparse matrix in Matrix Market format.
@@ -5940,7 +5951,7 @@ namespace Tpetra {
       ///   given sparse matrix.  The matrix is distributed, but only
       ///   Proc 0 opens the file and writes to it.
       ///
-      /// \param pMatrix [in] The sparse matrix to write to the file.
+      /// \param matrix [in] The sparse matrix to write to the file.
       ///
       /// \param debug [in] Whether to print possibly copious
       ///   debugging output to stderr on Proc 0.
@@ -5949,13 +5960,21 @@ namespace Tpetra {
       ///   onto MPI Proc 0.  This will cause out-of-memory errors if
       ///   the matrix is too big to fit on one process.  This will be
       ///   fixed in the future.
-      ///
+      static void
+      writeSparseFile (const std::string& filename,
+                       const sparse_matrix_type& matrix,
+                       const bool debug=false)
+      {
+        writeSparseFile (filename, matrix, "", "", debug);
+      }
+
+      //! Only for backwards compatibility; prefer the overload above.
       static void
       writeSparseFile (const std::string& filename,
                        const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
                        const bool debug=false)
       {
-        writeSparseFile (filename, pMatrix, "", "", debug);
+        writeSparseFile (filename, *pMatrix, "", "", debug);
       }
 
       /// \brief Print the sparse matrix in Matrix Market format, with
@@ -5970,7 +5989,7 @@ namespace Tpetra {
       ///   the given sparse matrix.  The matrix is distributed, but
       ///   only Proc 0 writes to the output stream.
       ///
-      /// \param pMatrix [in] The sparse matrix to write to the given
+      /// \param matrix [in] The sparse matrix to write to the given
       ///   output stream.
       ///
       /// \param matrixName [in] Name of the matrix, to print in the
@@ -5988,6 +6007,18 @@ namespace Tpetra {
       ///   onto MPI Process 0.  This will cause out-of-memory errors
       ///   if the matrix is too big to fit on one process.  This will
       ///   be fixed in the future.
+      static void
+      writeSparse (std::ostream& out,
+                   const sparse_matrix_type& matrix,
+                   const std::string& matrixName,
+                   const std::string& matrixDescription,
+                   const bool debug=false)
+      {
+        writeSparse (out, Teuchos::rcpFromRef (matrix), matrixName,
+                     matrixDescription, debug);
+      }
+
+      //! Only for backwards compatibility; prefer the overload above.
       static void
       writeSparse (std::ostream& out,
                    const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
@@ -6657,7 +6688,7 @@ namespace Tpetra {
       ///   the given sparse matrix.  The matrix is distributed, but
       ///   only Proc 0 writes to the output stream.
       ///
-      /// \param pMatrix [in] The sparse matrix to write to the given
+      /// \param matrix [in] The sparse matrix to write to the given
       ///   output stream.
       ///
       /// \param debug [in] Whether to print possibly copious
@@ -6670,10 +6701,19 @@ namespace Tpetra {
       ///
       static void
       writeSparse (std::ostream& out,
+                   const sparse_matrix_type& matrix,
+                   const bool debug=false)
+      {
+        writeSparse (out, matrix, "", "", debug);
+      }
+
+      //! Only for backwards compatibility; prefer the overload above.
+      static void
+      writeSparse (std::ostream& out,
                    const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
                    const bool debug=false)
       {
-        writeSparse (out, pMatrix, "", "", debug);
+        writeSparse (out, *pMatrix, "", "", debug);
       }
 
       /// \brief Print the multivector in Matrix Market format, with
