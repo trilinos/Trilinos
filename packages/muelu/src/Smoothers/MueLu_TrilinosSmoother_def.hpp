@@ -84,7 +84,8 @@ namespace MueLu {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
     try {
       sTpetra_ = rcp(new Ifpack2Smoother(type_, paramList, overlap_));
-      TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack2 smoother");
+      if (sTpetra_.is_null())
+        errorTpetra_ = "Unable to construct Ifpack2 smoother";
     } catch (Exceptions::RuntimeError& e) {
       errorTpetra_ = e.what();
     } catch (Exceptions::BadCast& e) {
@@ -96,7 +97,8 @@ namespace MueLu {
     try {
       // GetIfpackSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
       sEpetra_ = GetIfpackSmoother<SC,LO,GO,NO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList), overlap_);
-      TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack smoother");
+      if (sEpetra_.is_null())
+        errorEpetra_ = "Unable to construct Ifpack smoother";
     } catch (Exceptions::RuntimeError& e) {
       // IfpackSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
       errorEpetra_ = e.what();

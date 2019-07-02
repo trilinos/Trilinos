@@ -43,7 +43,7 @@
 #define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DEF_HPP
 
 /// \file Tpetra_Experimental_BlockCrsMatrix_def.hpp
-/// \brief Definition of Tpetra::Experimental::BlockCrsMatrix
+/// \brief DEPRECATED header file; use Tpetra_BlockCrsMatrix_def.hpp instead
 
 #if !defined(TRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS)
 #if defined(__GNU__)
@@ -51,6 +51,6 @@
 #endif
 #endif
 
-#include <Tpetra_BlockCrsMatrix_def.hpp> 
+#include "Tpetra_BlockCrsMatrix_def.hpp"
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DEF_HPP
