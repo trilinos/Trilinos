@@ -1442,7 +1442,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, Node>> gl_StiffGraph = gl_StiffMatrix->getCrsGraph();
   Teuchos::RCP<Tpetra::MultiVector<ST, LO, GO, Node>> coordsOwnedPlusShared;
   if (!(gl_StiffGraph->getImporter().is_null())) {
-    std::cout << "Importing" << std::endl;
     coordsOwnedPlusShared = rcp(new multivector_type(gl_StiffGraph->getColMap(), 3, true));
     coordsOwnedPlusShared->doImport(*coords, *gl_StiffGraph->getImporter(), Tpetra::CombineMode::ADD, false);
   }
@@ -1475,9 +1474,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     for(size_t j=0; j<indices.size(); j++) {
       size_t col = indices[j];
       if (row==col) continue;
-      if (std::isinf(laplDiagOwnedPlusShared->getData()[row])) {
-        std::cout << "Yikes" << std::endl;
-      }
       double laplVal = 1.0 / myDistance2(*coordsOwnedPlusShared, row, col);
       double aiiajj = std::abs(laplDiagOwnedPlusShared->getData()[row]*laplDiagOwnedPlusShared->getData()[col]);
       double aij = laplVal * laplVal;
