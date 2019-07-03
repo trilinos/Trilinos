@@ -1313,7 +1313,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
       using Teuchos::TimeMonitor;
-      Teuchos::TimeMonitor MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
+      Teuchos::TimeMonitor MM = *new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose")));
 #endif
 
       // We don't need a kernel-level PTAP, we just transpose here
@@ -1352,7 +1352,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
       using Teuchos::TimeMonitor;
-      Teuchos::TimeMonitor MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
+      Teuchos::TimeMonitor MM = *new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose")));
 #endif
 
       // We don't need a kernel-level PTAP, we just transpose here
