@@ -68,10 +68,12 @@ private:
   bool print_;
   Real gtolmin_;
   Real ctolmin_;
+  Real ltolmin_;
   Real tolupdate_;
   // Subproblem solver tolerances
   Real gtol_;
   Real ctol_;
+  Real ltol_;
   // Penalty parameter information
   Real penaltyParam_;
   Real maxPen_;
@@ -101,14 +103,18 @@ public:
     print_     = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Print Subproblem Solve History",false);
     gtolmin_   = parlist.sublist("Status Test").get("Gradient Tolerance", 1e-8);
     ctolmin_   = parlist.sublist("Status Test").get("Constraint Tolerance", 1e-8);
-    gtolmin_   = (gtolmin_ <= static_cast<Real>(0) ? std::sqrt(ROL_EPSILON<Real>()) : gtolmin_);
-    ctolmin_   = (ctolmin_ <= static_cast<Real>(0) ? std::sqrt(ROL_EPSILON<Real>()) : ctolmin_);
+    ltolmin_   = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Dual Tolerance",1e-6);
+    gtolmin_   = (gtolmin_ <= static_cast<Real>(0) ?     std::sqrt(ROL_EPSILON<Real>()) : gtolmin_);
+    ctolmin_   = (ctolmin_ <= static_cast<Real>(0) ?     std::sqrt(ROL_EPSILON<Real>()) : ctolmin_);
+    ltolmin_   = (ltolmin_ <= static_cast<Real>(0) ? 1e2*std::sqrt(ROL_EPSILON<Real>()) : ltolmin_);
     // Get solver tolerances
     gtol_      = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Gradient Tolerance", 1e-4);
     ctol_      = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Constraint Tolerance", 1e-4);
+    ltol_      = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Dual Tolerance", 1e-2);
     tolupdate_ = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Solver Tolerance Update Scale", 1e-1);
     gtol_      = std::max(gtol_, gtolmin_);
     ctol_      = std::max(ctol_, ctolmin_);
+    ltol_      = std::max(ltol_, ltolmin_);
     // Get penalty parameter
     penaltyParam_ = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Penalty Parameter", 10.0);
     maxPen_       = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Maximum Penalty Parameter", -1.0);
@@ -221,12 +227,15 @@ public:
       // Update penalty parameter and solver tolerances
       rvf_->updateDual(*sampler_);
       if (converged_) {
-        if (lnorm_ > 1e2*std::min(gtol_, ctol_) || (freq_ > 0 && iter_%freq_ == 0)) {
+        if (lnorm_ > ltol_ || (freq_ > 0 && iter_%freq_ == 0)) {
           penaltyParam_  = std::min(update_*penaltyParam_, maxPen_);
           rvf_->updatePenalty(penaltyParam_);
         }
-        gtol_  = std::max(tolupdate_*gtol_, gtolmin_);
-        ctol_  = std::max(tolupdate_*ctol_, ctolmin_);
+        if (lnorm_ <= ltol_) {
+          ltol_ = std::max(tolupdate_*ltol_, ltolmin_);
+        }
+        gtol_ = std::max(tolupdate_*gtol_, gtolmin_);
+        ctol_ = std::max(tolupdate_*ctol_, ctolmin_);
       }
     }
     input_->getSolutionVector()->set(
@@ -252,12 +261,13 @@ private:
     }
     outStream << std::setw(15) << std::left << "gnorm"
               << std::setw(15) << std::left << "lnorm"
-              << std::setw(15) << std::left << "penalty"
-              << std::setw(15) << std::left << "gtol";
+              << std::setw(15) << std::left << "penalty";
     if (pd_constraint_ != nullPtr) {
       outStream << std::setw(15) << std::left << "ctol";
     }
-    outStream << std::setw(10) << std::left << "nfval"
+    outStream << std::setw(15) << std::left << "gtol"
+              << std::setw(15) << std::left << "ltol"
+              << std::setw(10) << std::left << "nfval"
               << std::setw(10) << std::left << "ngrad";
     if (pd_constraint_ != nullPtr) {
       outStream << std::setw(10) << std::left << "ncval";
@@ -279,12 +289,13 @@ private:
     }
     outStream << std::setw(15) << std::left << state.gnorm
               << std::setw(15) << std::left << lnorm_
-              << std::setw(15) << std::left << penaltyParam_
-              << std::setw(15) << std::left << gtol_;
+              << std::setw(15) << std::left << penaltyParam_;
     if (pd_constraint_ != nullPtr) {
       outStream << std::setw(15) << std::left << ctol_;
     }
-    outStream << std::setw(10) << std::left << nfval_
+    outStream << std::setw(15) << std::left << gtol_
+              << std::setw(15) << std::left << ltol_
+              << std::setw(10) << std::left << nfval_
               << std::setw(10) << std::left << ngrad_;
     if (pd_constraint_ != nullPtr) {
       outStream << std::setw(10) << std::left << ncval_;
@@ -296,7 +307,6 @@ private:
   }
 
   bool checkStatus(const AlgorithmState<Real> &state, std::ostream &outStream) const {
-    const Real tol = 1e2*std::min(gtolmin_,ctolmin_);
     bool flag = false;
 //    if (converged_ && state.iter==0 && lnorm_ < tol) {
 //      outStream << "Subproblem solve converged in zero iterations"
@@ -305,18 +315,18 @@ private:
 //      flag = true;
 //    }
     if (pd_constraint_ == nullPtr) {
-      if (state.gnorm < gtolmin_ && lnorm_ < tol) {
+      if (state.gnorm < gtolmin_ && lnorm_ < ltolmin_) {
         outStream << "Solver tolerance met"
                   << " and the difference in the multipliers was less than "
-                  << tol << std::endl;
+                  << ltolmin_ << std::endl;
         flag = true;
       }
     }
     else {
-      if (state.gnorm < gtolmin_ && state.cnorm < ctolmin_ && lnorm_ < tol) {
+      if (state.gnorm < gtolmin_ && state.cnorm < ctolmin_ && lnorm_ < ltolmin_) {
         outStream << "Solver tolerance met"
                   << " and the difference in the multipliers was less than "
-                  << tol << std::endl;
+                  << ltolmin_ << std::endl;
         flag = true;
       }
     }
