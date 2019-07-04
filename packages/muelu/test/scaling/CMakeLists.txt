@@ -38,8 +38,14 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     COMM serial mpi
     )
 
+  TRIBITS_ADD_EXECUTABLE(
+    SimpleDriver
+    SOURCES SimpleDriver.cpp
+    COMM serial mpi
+    )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml
+    SOURCE_FILES scaling.xml simple-scaling.xml scaling.yaml simple-scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml
    )
 
  TRIBITS_ADD_EXECUTABLE(
@@ -131,7 +137,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       ARGS "--linAlgebra=Epetra --xml=scaling-with-rerun.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
-      )    
+      )
 
     TRIBITS_ADD_TEST(
       Driver
@@ -280,6 +286,22 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         )
+
+      TRIBITS_ADD_TEST(
+        SimpleDriver
+        NAME "SimpleDriverTpetra"
+        ARGS "--linAlgebra=Tpetra --xml=simple-scaling.xml"
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+        )
+
+      TRIBITS_ADD_TEST(
+        SimpleDriver
+        NAME "SimpleDriverTpetraYaml"
+        ARGS "--linAlgebra=Tpetra --yaml=simple-scaling.yaml"
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+        )
     ENDIF()
 
     TRIBITS_ADD_TEST(
@@ -383,7 +405,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES MMKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       MMKernelDriver
@@ -398,7 +420,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES JacobiKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       JacobiKernelDriver
@@ -413,7 +435,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES TwoMatrixMMKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       TwoMatrixMMKernelDriver
