@@ -121,6 +121,9 @@ public:
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperObserver_; }
+
     virtual void setTableau(std::string stepperType);
 
     virtual void setTableau(

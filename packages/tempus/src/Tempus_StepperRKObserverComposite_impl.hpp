@@ -53,7 +53,7 @@ void StepperRKObserverComposite<Scalar>::observeBeforeSolve(
     Stepper<Scalar> & stepper)
 {
   for(auto& o : observers_)
-    o->observeBeforeExplicit(sh,stepper);
+    o->observeBeforeSolve(sh,stepper);
 }
 
 template<class Scalar>

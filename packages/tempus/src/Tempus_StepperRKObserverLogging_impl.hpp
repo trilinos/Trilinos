@@ -38,99 +38,56 @@ void StepperRKObserverLogging<Scalar>::
 observeBeginTakeStep(
         Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
         Stepper<Scalar> & /* stepper */)
-{ 
-  
-  //asm("int $3");
-  //std::cout << "SIDAFA: got here!!" << std::endl;
-
-  logCall(nameObserveBeginTakeStep_); 
-}
+{ logCall(nameObserveBeginTakeStep_); }
 
 template<class Scalar>
 void StepperRKObserverLogging<Scalar>::
 observeBeginStage(
         Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
         Stepper<Scalar> & /* stepper */)
-{ 
-  //asm("int $3");
-  //std::cout << "SIDAFA: got here!!" << std::endl;
-
-  
-  logCall(nameObserveBeginStage_); }
+{ logCall(nameObserveBeginStage_); }
 
 template<class Scalar>
 void StepperRKObserverLogging<Scalar>::
 observeBeforeImplicitExplicitly(
     Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
     Stepper<Scalar> & /* stepper */)
-{ 
-  //asm("int $3");
-  //std::cout << "SIDAFA: got here!!" << std::endl;
-
-  
-  logCall(nameObserveBeforeImplicitExplicitly_); }
-
+{ logCall(nameObserveBeforeImplicitExplicitly_); }
 
 template<class Scalar>
 void StepperRKObserverLogging<Scalar>::
 observeBeforeSolve(
         Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
         Stepper<Scalar> & /* stepper */)
-{ 
-  //asm("int $3");
-  //std::cout << "SIDAFA: got here!!" << std::endl;
-
-  
-  logCall(nameObserveBeforeSolve_); }
+{ logCall(nameObserveBeforeSolve_); }
 
 template<class Scalar>
 void StepperRKObserverLogging<Scalar>::
 observeAfterSolve(
         Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
         Stepper<Scalar> & /* stepper */)
-{
-  //asm("int $3");
-  //std::cout << "SIDAFA: got here!!" << std::endl;
-
-  logCall(nameObserveAfterSolve_); }
+{ logCall(nameObserveAfterSolve_); }
 
 template<class Scalar>
 void StepperRKObserverLogging<Scalar>::
 observeBeforeExplicit(
         Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
         Stepper<Scalar> & /* stepper */)
-{ 
- //asm("int $3");
- //std::cout << "SIDAFA: got here!!" << std::endl;
-
-  
-  logCall(nameObserveBeforeExplicit_); }
+{ logCall(nameObserveBeforeExplicit_); }
 
 template<class Scalar>
 void StepperRKObserverLogging<Scalar>::
 observeEndStage(
         Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
         Stepper<Scalar> & /* stepper */)
-{
-  
-  //asm("int $3");
-  //std::cout << "SIDAFA: got here!!" << std::endl;
-
-  
-  logCall(nameObserveEndStage_); }
+{ logCall(nameObserveEndStage_); }
 
 template<class Scalar>
 void StepperRKObserverLogging<Scalar>::
 observeEndTakeStep(
         Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
         Stepper<Scalar> & /* stepper */)
-{ 
-  
-  //asm("int $3");
-  //std::cout << "SIDAFA: got here!!" << std::endl;
-
-  
-  logCall(nameObserveEndTakeStep_); }
+{ logCall(nameObserveEndTakeStep_); }
 
 template<class Scalar>
 void StepperRKObserverLogging<Scalar>::resetLogCounters()

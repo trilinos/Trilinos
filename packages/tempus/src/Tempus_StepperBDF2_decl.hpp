@@ -71,6 +71,9 @@ public:
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
+    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+    { return this->stepperObserver_; }
+
     /// Set the stepper to use in first step
     void setStartUpStepper(std::string startupStepperName);
     void setStartUpStepper(Teuchos::RCP<Teuchos::ParameterList>startUpStepperPL=Teuchos::null);

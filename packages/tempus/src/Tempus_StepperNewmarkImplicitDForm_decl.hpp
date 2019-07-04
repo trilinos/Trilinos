@@ -62,6 +62,9 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   virtual void setObserver(
     Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
+  virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
+  { return Teuchos::null; }
+
   /// Initialize during construction and after changing input parameters.
   virtual void
   initialize();
