@@ -138,7 +138,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // MPI initialization using Teuchos
   // =========================================================================
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  const int myRank = comm->getRank();
+  const int numRanks = comm->getSize();
+  const int myRank   = comm->getRank();
 
   // =========================================================================
   // Convenient definitions
@@ -162,7 +163,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   double      smootherDamp      = 0.67;              clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
   double      tol               = 1e-12;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
-  bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+  bool        useUnstructured   = false;             clp.setOption("use-unstructured","no-use-unstructured", &useUnstructured, "Treat the last rank as unstructured");
 #ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
@@ -1171,7 +1172,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   regionNodesPerDim[0] = rNodesPerDim;
 
   // Set aggregation type for each region
-  aggregationRegionType[0] = "structured";
+  if(useUnstructured && (myRank == numRanks - 1)) {
+    aggregationRegionType[0] = "uncoupled";
+  } else {
+    aggregationRegionType[0] = "structured";
+  }
 
   // create nullspace vector
   nullspace[0] = MultiVectorFactory::Build(revisedRowMapPerGrp[0], 1);

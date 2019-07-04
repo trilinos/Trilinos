@@ -12,7 +12,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(StructuredRegion_cp
-    SOURCE_FILES structured_1dof.xml structured_linear_1dof.xml
+    SOURCE_FILES structured_1dof.xml structured_1dof-complex.xml structured_linear_1dof.xml structured_unstructured_1dof.xml
     )
 
   TRIBITS_ADD_TEST(
