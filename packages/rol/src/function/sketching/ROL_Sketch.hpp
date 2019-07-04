@@ -66,16 +66,18 @@ private:
   std::vector<Ptr<Vector<Real>>> Upsilon_, Phi_, Y_;
   LA::Matrix<Real> Omega_, Psi_, X_, Z_, C_;
 
-  int ncol_, rank_, k_, s_;
+  int maxRank_, ncol_, rank_, k_, s_;
 
   const Real orthTol_;
   const int  orthIt_;
 
   const bool truncate_;
 
-  ROL::LAPACK<int,Real> lapack_;
+  LAPACK<int,Real> lapack_;
 
   bool flagP_, flagQ_, flagC_;
+
+  Ptr<std::ostream> out_;
 
   Ptr<Elementwise::NormalRandom<Real>> nrand_;
   Ptr<std::mt19937_64> gen_;
@@ -149,6 +151,7 @@ private:
   }
 
   int LSsolver(LA::Matrix<Real> &A, LA::Matrix<Real> &B, const bool trans = false) const {
+    int flag(0);
     char TRANS = (trans ? 'T' : 'N');
     int M      = A.numRows();
     int N      = A.numCols();
@@ -159,10 +162,12 @@ private:
     int LWORK  = -1;
     int INFO;
     lapack_.GELS(TRANS,M,N,NRHS,A.values(),LDA,B.values(),LDB,&WORK[0],LWORK,&INFO);
+    flag += INFO;
     LWORK = static_cast<int>(WORK[0]);
     WORK.resize(LWORK);
     lapack_.GELS(TRANS,M,N,NRHS,A.values(),LDA,B.values(),LDB,&WORK[0],LWORK,&INFO);
-    return INFO;
+    flag += INFO;
+    return flag;
   }
 
   int lowRankApprox(LA::Matrix<Real> &A, const int r) const {
@@ -285,8 +290,9 @@ public:
          const Real orthTol = 1e-8, const int orthIt = 2,
          const bool truncate = false,
          const unsigned dom_seed = 0, const unsigned rng_seed = 0)
-    : ncol_(ncol), rank_(rank), orthTol_(orthTol), orthIt_(orthIt),
-      truncate_(truncate), flagP_(false), flagQ_(false), flagC_(false) {
+    : ncol_(ncol), orthTol_(orthTol), orthIt_(orthIt),
+      truncate_(truncate), flagP_(false), flagQ_(false), flagC_(false),
+      out_(nullPtr) {
     Real mu(0), sig(1);
     nrand_ = makePtr<Elementwise::NormalRandom<Real>>(mu,sig,dom_seed);
     unsigned seed = rng_seed;
@@ -296,8 +302,10 @@ public:
     gen_  = makePtr<std::mt19937_64>(seed);
     dist_ = makePtr<std::normal_distribution<Real>>(mu,sig);
     // Compute reduced dimensions
-    k_ = std::min(2*rank_+1, ncol_);
-    s_ = std::min(2*k_   +1, ncol_);
+    maxRank_ = std::min(ncol_, x.dimension());
+    rank_ = std::min(rank, maxRank_);
+    k_    = std::min(2*rank_+1, maxRank_);
+    s_    = std::min(2*k_   +1, maxRank_);
     // Initialize matrix storage
     Upsilon_.clear(); Phi_.clear(); Y_.clear();
     Omega_.reshape(ncol_,k_); Psi_.reshape(ncol_,s_);
@@ -313,12 +321,16 @@ public:
     reset();
   }
 
+  void setStream(Ptr<std::ostream> &out) {
+    out_ = out;
+  }
+
   void setRank(const int rank) {
-    rank_ = rank;
+    rank_ = std::min(rank, maxRank_);
     // Compute reduced dimensions
-    Real sold = s_, kold = k_;
-    k_ = std::min(2*rank_+1, ncol_);
-    s_ = std::min(2*k_   +1, ncol_);
+    int sold = s_, kold = k_;
+    k_ = std::min(2*rank_+1, maxRank_);
+    s_ = std::min(2*k_   +1, maxRank_);
     Omega_.reshape(ncol_,k_); Psi_.reshape(ncol_,s_);
     X_.reshape(ncol_,k_); Z_.reshape(s_,s_); C_.reshape(k_,k_);
     if (s_ > sold) {
@@ -333,6 +345,14 @@ public:
       }
     }
     update();
+    if ( out_ != nullPtr ) {
+      *out_ << std::string(80,'=')            << std::endl;
+      *out_ << "  ROL::Sketch::setRank"       << std::endl;
+      *out_ << "    **** Rank    = " << rank_ << std::endl;
+      *out_ << "    **** k       = " << k_    << std::endl;
+      *out_ << "    **** s       = " << s_    << std::endl;
+      *out_ << std::string(80,'=')            << std::endl;
+    }
   }
 
   void update(void) {
@@ -345,8 +365,8 @@ public:
 
   int advance(const Real nu, Vector<Real> &h, const int col, const Real eta = 1.0) {
     // Check to see if col is less than ncol_
-    if ( col >= ncol_ ) {
-      // Input column index exceeds total number of columns!
+    if ( col >= ncol_ || col < 0 ) {
+      // Input column index  out of range!
       return 1;
     }
     if (!flagP_ && !flagQ_ && !flagC_) {
@@ -369,6 +389,13 @@ public:
           Z_(i,j) += nu*Psi_(col,j)*hphi;
         }
       }
+      if ( out_ != nullPtr ) {
+        *out_ << std::string(80,'=')               << std::endl;
+        *out_ << "  ROL::Sketch::advance"          << std::endl;
+        *out_ << "    **** col     = " << col      << std::endl;
+        *out_ << "    **** norm(h) = " << h.norm() << std::endl;
+        *out_ << std::string(80,'=')               << std::endl;
+      }
     }
     else {
       // Reconstruct has already been called!
@@ -379,8 +406,8 @@ public:
 
   int reconstruct(Vector<Real> &a, const int col) {
     // Check to see if col is less than ncol_
-    if ( col >= ncol_ ) {
-      // Input column index exceeds total number of columns!
+    if ( col >= ncol_ || col < 0 ) {
+      // Input column index out of range!
       return 2;
     }
     const Real zero(0);
@@ -409,6 +436,13 @@ public:
         coeff += C_(i,j) * X_(col,j);
       }
       a.axpy(coeff,*Y_[i]);
+    }
+    if ( out_ != nullPtr ) {
+      *out_ << std::string(80,'=')               << std::endl;
+      *out_ << "  ROL::Sketch::reconstruct"      << std::endl;
+      *out_ << "    **** col     = " << col      << std::endl;
+      *out_ << "    **** norm(a) = " << a.norm() << std::endl;
+      *out_ << std::string(80,'=')               << std::endl;
     }
     return 0;
   }

@@ -120,6 +120,8 @@ private:
   bool                               useSymHess_;         // Whether to use symmetric Hessian approximation.
   // Output information
   Ptr<std::ostream>                  stream_;
+  const bool                         print_;
+  const int                          freq_;
 
   PartitionedVector<Real>& partition ( Vector<Real>& x ) const {
     return static_cast<PartitionedVector<Real>&>(x);
@@ -183,7 +185,9 @@ public:
       isAdjointComputed_ ( false ),                                         // Flag indicating whether adjoint has been computed.
       useHessian_        ( pl.get("Use Hessian", true) ),                   // Flag indicating whether to use the Hessian.
       useSymHess_        ( pl.get("Use Only Sketched Sensitivity", true) ), // Flag indicating whether to use symmetric sketched Hessian.
-      stream_            (stream) {                                         // Output stream to print sketch information.
+      stream_            ( stream ),                                        // Output stream to print sketch information.
+      print_             ( pl.get("Print Optimization Vector", false) ),    // Print control vector to file
+      freq_              ( pl.get("Output Frequency", 5) ) {                // Print frequency for control vector
     uhist_.clear(); lhist_.clear(); whist_.clear(); phist_.clear();
     if (useSketch_) { // Only maintain a sketch of the state time history
       Real orthTol   = pl.get("Orthogonality Tolerance", 1e2*ROL_EPSILON<Real>());
@@ -253,6 +257,14 @@ public:
     isStateComputed_ = false;
     if (flag == true) {
       isAdjointComputed_ = false;
+    }
+    if (iter >= 0 && iter%freq_==0 && print_) {
+      std::stringstream name;
+      name << "optvector." << iter << ".txt";
+      std::ofstream file;
+      file.open(name.str());
+      x.print(file);
+      file.close();
     }
   }
 
@@ -615,7 +627,7 @@ private:
         con_->update(*uhist_[0], *uhist_[1], *xp.get(k), timeStamp_[k]);
         con_->value(*cprimal_, *uhist_[0], *uhist_[1], *xp.get(k), timeStamp_[k]);
         /**** Linf norm for residual error ****/
-        cnorm   = cprimal_->norm();
+        cnorm = cprimal_->norm();
         err   = (cnorm > err ? cnorm : err);
         if (err > tol) {
         /**** L2 norm for residual error ****/
@@ -629,11 +641,14 @@ private:
       }
       //err = std::sqrt(err);
       if (stream_ != nullPtr) {
-        *stream_ << "    *** State Rank:                      " << rankState_ << std::endl;
-        *stream_ << "    *** Required Tolerance:              " << tol << std::endl;
-        *stream_ << "    *** Residual Norm:                   " << err << std::endl;
+        *stream_ << "      *** State Rank:                    " << rankState_ << std::endl;
+        *stream_ << "      *** Required Tolerance:            " << tol << std::endl;
+        *stream_ << "      *** Residual Norm:                 " << err << std::endl;
       }
       if (err > tol) {
+        //Real a(0.1838), b(3.1451); // Navier-Stokes
+        //Real a(2.6125), b(2.4841); // Semilinear
+        //rankState_  = std::max(rankState_+2,static_cast<size_t>(std::ceil((b-std::log(tol))/a)));
         rankState_ *= updateFactor_; // Perhaps there is a better update strategy
         rankState_  = (maxRank_ < rankState_ ? maxRank_ : rankState_);
         stateSketch_->setRank(rankState_);
@@ -647,7 +662,7 @@ private:
         isAdjointComputed_ = false;
         serr = solveState(x);
         if (stream_ != nullPtr) {
-          *stream_ << "    *** Maximum Solver Error:            " << serr << std::endl;
+          *stream_ << "      *** Maximum Solver Error:          " << serr << std::endl;
         }
       }
       else {
