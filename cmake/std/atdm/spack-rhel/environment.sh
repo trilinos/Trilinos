@@ -8,31 +8,33 @@
 ################################################################################
 
 #
-# Deal with compiler versions
+# Functions
 #
 
-if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
-  export ATDM_CONFIG_COMPILER=GNU-7.2.0
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
-  if [[ "$ATDM_CONFIG_COMPILER" == "GNU" ]] ; then
-    export ATDM_CONFIG_COMPILER=GNU-7.2.0
-  elif [[ "$ATDM_CONFIG_COMPILER" != "GNU-7.2.0" ]] ; then
-    echo
-    echo "***"
-    echo "*** ERROR: GNU COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
-    echo "*** Only GNU compilers supported on this system are:"
-    echo "***   gnu (defaults to gnu-7.2.0)"
-    echo "***   gnu-7.2.0"
-    echo "***"
-    return
-  fi
-else
-  echo
-  echo "***"
-  echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
-  echo "***"
-  return
-fi
+function load_spack_tpl_modules() {
+  compiler_dash_version=$1
+  mpi_dash_version=$2
+
+  module load spack-netlib-lapack/3.8.0-${compiler_dash_version}
+  export BLAS_ROOT=$NETLIB_LAPACK_ROOT
+  export LAPACK_ROOT=$NETLIB_LAPACK_ROOT
+
+  module load spack-binutils/2.31.1-${compiler_dash_version}
+  module load spack-gettext/0.19.8.1-${compiler_dash_version} # for binutils
+  module load spack-libiconv/1.15-${compiler_dash_version} # for gettext 
+  module load spack-boost/1.59.0-${compiler_dash_version}
+  module load spack-superlu/4.3-${compiler_dash_version}
+  module load spack-zlib/1.2.11-${compiler_dash_version}
+  module load spack-metis/5.1.0-${compiler_dash_version}
+  module load spack-hdf5/1.8.21-${compiler_dash_version}-${mpi_dash_version}
+  module load spack-netcdf/4.4.1-${compiler_dash_version}-${mpi_dash_version}
+  module load spack-parallel-netcdf/1.11.0-${compiler_dash_version}-${mpi_dash_version}
+  module load spack-parmetis/4.0.3-${compiler_dash_version}-${mpi_dash_version}
+  module load spack-cgns/snl-atdm-${compiler_dash_version}-${mpi_dash_version}
+  module load spack-superlu-dist/6.1.0-${compiler_dash_version}-${mpi_dash_version}
+
+}
+
 
 #
 # Allow KOKKOS_ARCH to be set but unset it if DEFAULT
@@ -70,7 +72,7 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 # NOTE: Use as many build processes and there are cores by default.
 
 module purge
-module load spack-cmake/3.13.4-gcc-7.2.0
+module load spack-cmake/3.13.4-gcc-7.2.0  # ToDo: Remove compiler from name of these!
 module load spack-git/2.20.1-gcc-7.2.0
 module load spack-ninja-fortran/1.7.2.gaad58-gcc-7.2.0
 
@@ -97,7 +99,7 @@ else
   # instead run with half that many to be safe and avoid time-outs.
 fi
 
-if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]; then
+if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]; then
 
   module load spack-gcc/7.2.0
   export OMPI_CXX=`which g++`
@@ -106,23 +108,18 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]; then
 
   module load spack-openmpi/1.10.1-gcc-7.2.0
 
-  module load spack-netlib-lapack/3.8.0-gcc-7.2.0
-  export BLAS_ROOT=$NETLIB_LAPACK_ROOT
-  export LAPACK_ROOT=$NETLIB_LAPACK_ROOT
+  load_spack_tpl_modules gcc-7.2.0 openmpi-1.10.1
 
-  module load spack-binutils/2.31.1-gcc-7.2.0
-  module load spack-gettext/0.19.8.1-gcc-7.2.0 # for binutils
-  module load spack-libiconv/1.15-gcc-7.2.0 # for gettext 
-  module load spack-boost/1.59.0-gcc-7.2.0
-  module load spack-netcdf/4.4.1-gcc-7.2.0-openmpi-1.10.1
-  module load spack-parallel-netcdf/1.11.0-gcc-7.2.0-openmpi-1.10.1
-  module load spack-superlu/4.3-gcc-7.2.0
-  module load spack-hdf5/1.8.21-gcc-7.2.0-openmpi-1.10.1
-  module load spack-zlib/1.2.11-gcc-7.2.0
-  module load spack-metis/5.1.0-gcc-7.2.0
-  module load spack-parmetis/4.0.3-gcc-7.2.0-openmpi-1.10.1
-  module load spack-cgns/snl-atdm-gcc-7.2.0-openmpi-1.10.1
-  module load spack-superlu-dist/6.1.0-gcc-7.2.0-openmpi-1.10.1
+elif [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-2.1.2" ]; then
+
+  module load spack-gcc/7.2.0
+  export OMPI_CXX=`which g++`
+  export OMPI_CC=`which gcc`
+  export OMPI_FC=`which gfortran`
+
+  module load spack-openmpi/2.1.2-gcc-7.2.0
+
+  load_spack_tpl_modules gcc-7.2.0 openmpi-2.1.2
 
 else
   echo
