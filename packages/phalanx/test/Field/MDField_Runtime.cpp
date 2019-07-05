@@ -90,6 +90,12 @@ struct Point : public PHX::DimTag {
   static const Point& tag();
 };
 
+template<> struct PHX::is_extent<Dim> : std::true_type {};
+template<> struct PHX::is_extent<Quadrature> : std::true_type {};
+template<> struct PHX::is_extent<Node> : std::true_type {};
+template<> struct PHX::is_extent<Cell> : std::true_type {};
+template<> struct PHX::is_extent<Point> : std::true_type {};
+
 const char * Dim::name() const 
 { static const char n[] = "Dim" ; return n ; }
 const Dim & Dim::tag() 
