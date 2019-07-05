@@ -70,9 +70,9 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 # NOTE: Use as many build processes and there are cores by default.
 
 module purge
-module load gcc-7.2.0/spack-cmake/3.13.4
-module load gcc-7.2.0/spack-git/2.20.1
-module load gcc-7.2.0/spack-ninja-fortran/1.7.2.gaad58
+module load spack-cmake/3.13.4-gcc-7.2.0
+module load spack-git/2.20.1-gcc-7.2.0
+module load spack-ninja-fortran/1.7.2.gaad58-gcc-7.2.0
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
@@ -99,30 +99,30 @@ fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]; then
 
-  SPACK_GCC_COMPILER_TO_LOAD=`module avail 2>&1 | grep spack-gcc/7.2.0`
-  module load ${SPACK_GCC_COMPILER_TO_LOAD}
+  module load spack-gcc/7.2.0
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
 
-  module load gcc-7.2.0/spack-netlib-lapack/3.8.0
+  module load spack-openmpi/1.10.1-gcc-7.2.0
+
+  module load spack-netlib-lapack/3.8.0-gcc-7.2.0
   export BLAS_ROOT=$NETLIB_LAPACK_ROOT
   export LAPACK_ROOT=$NETLIB_LAPACK_ROOT
 
-  module load gcc-7.2.0/spack-binutils/2.31.1
-  module load gcc-7.2.0/spack-gettext/0.19.8.1 # for binutils
-  module load gcc-7.2.0/spack-libiconv/1.15 # for gettext 
-  module load gcc-7.2.0/spack-openmpi/1.10.1
-  module load gcc-7.2.0/spack-boost/1.59.0
-  module load gcc-7.2.0/spack-netcdf/4.4.1
-  module load gcc-7.2.0/spack-parallel-netcdf/1.11.0
-  module load gcc-7.2.0/spack-superlu/4.3
-  module load gcc-7.2.0/spack-hdf5/1.8.21
-  module load gcc-7.2.0/spack-zlib/1.2.11
-  module load gcc-7.2.0/spack-metis/5.1.0
-  module load gcc-7.2.0/spack-parmetis/4.0.3
-  module load gcc-7.2.0/spack-cgns/snl-atdm
-  module load gcc-7.2.0/spack-superlu-dist/6.1.0
+  module load spack-binutils/2.31.1-gcc-7.2.0
+  module load spack-gettext/0.19.8.1-gcc-7.2.0 # for binutils
+  module load spack-libiconv/1.15-gcc-7.2.0 # for gettext 
+  module load spack-boost/1.59.0-gcc-7.2.0
+  module load spack-netcdf/4.4.1-gcc-7.2.0-openmpi-1.10.1
+  module load spack-parallel-netcdf/1.11.0-gcc-7.2.0-openmpi-1.10.1
+  module load spack-superlu/4.3-gcc-7.2.0
+  module load spack-hdf5/1.8.21-gcc-7.2.0-openmpi-1.10.1
+  module load spack-zlib/1.2.11-gcc-7.2.0
+  module load spack-metis/5.1.0-gcc-7.2.0
+  module load spack-parmetis/4.0.3-gcc-7.2.0-openmpi-1.10.1
+  module load spack-cgns/snl-atdm-gcc-7.2.0-openmpi-1.10.1
+  module load spack-superlu-dist/6.1.0-gcc-7.2.0-openmpi-1.10.1
 
 else
   echo
