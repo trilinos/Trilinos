@@ -112,6 +112,7 @@ namespace MueLu {
     if(pL.get<bool>("hybrid aggregation") == true) {
       Input(fineLevel,"aggregationRegionTypeCoarse");
       Input(fineLevel, "lCoarseNodesPerDim");
+      Input(fineLevel, "numDimensions");
     }
   }
 
@@ -133,12 +134,13 @@ namespace MueLu {
 
     if(pL.get<bool>("hybrid aggregation") == true) {
       std::string regionType = Get<std::string>(fineLevel,"aggregationRegionTypeCoarse");
+      numDimensions          = Get<int>(fineLevel, "numDimensions");
       lCoarseNodesPerDir     = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
       Set<std::string>(coarseLevel, "aggregationRegionType", regionType);
+      Set<int>(coarseLevel, "numDimensions", numDimensions);
       Set< Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDir);
-    }
 
-    if(pL.get<bool>("structured aggregation") == true) {
+    } else if(pL.get<bool>("structured aggregation") == true) {
       if(pL.get<bool>("aggregation coupled") == true) {
         gCoarseNodesPerDir = Get<Array<GO> >(fineLevel, "gCoarseNodesPerDim");
         Set<Array<GO> >(coarseLevel, "gNodesPerDim", gCoarseNodesPerDir);
@@ -147,6 +149,7 @@ namespace MueLu {
       Set<Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDir);
       numDimensions = Get<int>(fineLevel, "numDimensions");
       Set<int>(coarseLevel, "numDimensions", numDimensions);
+
     } else if(pL.get<bool>("Geometric") == true) {
       coarseCoords       = Get<RCP<xdMV> >(coarseLevel, "coarseCoordinates");
       gCoarseNodesPerDir = Get<Array<GO> >(coarseLevel, "gCoarseNodesPerDim");
