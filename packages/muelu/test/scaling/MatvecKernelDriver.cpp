@@ -688,7 +688,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     mkl_int_type AcolindMKL("Acolind", Acolind.extent(0));
     copy_view(Arowptr,ArowptrMKL);
     copy_view(Acolind,AcolindMKL);
-    double * mkl_xdouble = nullptr
+    double * mkl_xdouble = nullptr;
     double * mkl_ydouble = nullptr;
     mkl_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 
