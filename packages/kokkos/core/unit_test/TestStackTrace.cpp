@@ -75,6 +75,17 @@ int f3 (std::ostream& out, const int level) {
   }
 }
 
+void f4 () {
+  Kokkos::Impl::save_stacktrace ();
+}
+
+void
+my_fancy_handler ()
+{
+  std::cerr << "Oh noes!" << std::endl;
+  std::abort ();
+}
+
 } // namespace (anonymous)
 
 int main( int argc, char *argv[] ) {
@@ -87,20 +98,31 @@ int main( int argc, char *argv[] ) {
   f1 (cout);
   // TODO test by making sure that f1 and f2, but no other functions,
   // appear in the stack trace.
+
+  cout << endl << "Mangled stacktrace:" << endl << endl;
   Kokkos::Impl::print_saved_stacktrace (cout);
-  cout << endl << "Demangled version:" << endl << endl;
+  cout << endl << "Demangled stacktrace:" << endl << endl;
   Kokkos::Impl::print_demangled_saved_stacktrace (cout);
 
   f3 (cout, 4);
   // TODO test by making sure that f3 and f1, but no other functions,
-  // appear in the stack trace.
+  // appear in the stack trace, and that f3 appears 5 times.
+  cout << endl << "Mangled stacktrace:" << endl << endl;
   Kokkos::Impl::print_saved_stacktrace (cout);
-  cout << endl << "Demangled version:" << endl << endl;
+  cout << endl << "Demangled stacktrace:" << endl << endl;
   Kokkos::Impl::print_demangled_saved_stacktrace (cout);
-
 
   cout << endl << "Demangled version of \"main\": "
        << Kokkos::Impl::demangle ("main") << endl;
+
+  //std::terminate ();
+
+  f4 ();
+  Kokkos::Impl::set_kokkos_terminate_handler (); // just test syntax
+  Kokkos::Impl::set_kokkos_terminate_handler (my_fancy_handler);
+
+  // TODO test that this prints "Oh noes!" and the correct stacktrace.
+  std::terminate ();
 
   if (success) {
     cout << "SUCCESS" << endl;

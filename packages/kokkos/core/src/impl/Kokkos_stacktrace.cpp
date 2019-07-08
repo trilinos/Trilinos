@@ -9,6 +9,8 @@
 #  include <cxxabi.h>
 #endif // KOKKOS_ENABLE_CXXABI
 
+#include <exception>
+#include <iostream>
 #include <tuple>
 #include <vector>
 
@@ -224,6 +226,39 @@ void
 print_demangled_saved_stacktrace (std::ostream& out)
 {
   demangle_and_print_traceback (out, Stacktrace::lines ());
+}
+
+std::function<void()> user_terminate_handler_post_;
+
+void kokkos_terminate_handler ()
+{
+  using std::cerr;
+  using std::endl;
+
+  cerr << "Kokkos observes that std::terminate has been called.  "
+    "Here is the last saved stack trace.  Note that this does not "
+    "necessarily show what called std::terminate." << endl << endl;
+  print_demangled_saved_stacktrace (std::cerr);
+
+  if (user_terminate_handler_post_) {
+    user_terminate_handler_post_ ();
+  }
+  else {
+    std::abort ();
+  }
+}
+
+void
+set_kokkos_terminate_handler ()
+{
+  user_terminate_handler_post_ = std::abort;
+}
+
+void
+set_kokkos_terminate_handler (std::function<void()> user_post)
+{
+  user_terminate_handler_post_ = user_post;
+  std::set_terminate (kokkos_terminate_handler);
 }
 
 } // namespace Impl
