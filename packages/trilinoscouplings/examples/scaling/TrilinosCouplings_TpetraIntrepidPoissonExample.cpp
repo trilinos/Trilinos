@@ -1453,9 +1453,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   Teuchos::ArrayView<const LO> indices;
   Teuchos::ArrayView<const ST> values;
   size_t numOwnedRows = rowMap->getNodeNumElements();
-  for (size_t row=0; row < numOwnedRows; row++) {
+  for (size_t row=0; row<numOwnedRows; row++) {
     gl_StiffMatrix->getLocalRowView(row, indices, values);
-    for (size_t j=0; j<indices.size(); j++) {
+    size_t numIndices = indices.size();
+    for (size_t j=0; j<numIndices; j++) {
       size_t col = indices[j];
       if (row == col) continue;
       laplDiagOwned.sumIntoLocalValue(row, 1/myDistance2(*coordsOwnedPlusShared, row, col));
@@ -1471,7 +1472,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   }
   for (size_t row=0; row<numOwnedRows; row++) {
     gl_StiffMatrix->getLocalRowView(row, indices, values);
-    for(size_t j=0; j<indices.size(); j++) {
+    size_t numIndices = indices.size();
+    for(size_t j=0; j<numIndices; j++) {
       size_t col = indices[j];
       if (row==col) continue;
       double laplVal = 1.0 / myDistance2(*coordsOwnedPlusShared, row, col);
