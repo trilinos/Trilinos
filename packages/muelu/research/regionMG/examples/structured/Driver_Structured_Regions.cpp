@@ -138,7 +138,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // MPI initialization using Teuchos
   // =========================================================================
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  const int myRank = comm->getRank();
+  const int numRanks = comm->getSize();
+  const int myRank   = comm->getRank();
 
   // =========================================================================
   // Convenient definitions
@@ -162,7 +163,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   double      smootherDamp      = 0.67;              clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
   double      tol               = 1e-12;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
-  bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+  bool        useUnstructured   = false;             clp.setOption("use-unstructured","no-use-unstructured", &useUnstructured, "Treat the last rank as unstructured");
 #ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
@@ -225,6 +226,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   RCP<Matrix>      A;
   RCP<Xpetra::Map<LO,GO,NO> > nodeMap, dofMap;
+  RCP<MultiVector>           nullspace;
   RCP<RealValuedMultiVector> coordinates;
   RCP<Vector> X, B;
 
@@ -241,7 +243,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // If you don't want Galeri to do this, specify mx or my on the galeriList.
   std::string matrixType = galeriParameters.GetMatrixType();
   int numDimensions  = 0;
-  int numDofsPerNode = 1;
+  int numDofsPerNode = 0;
   Teuchos::Array<GO> procsPerDim(3);
   Teuchos::Array<GO> gNodesPerDim(3);
   Teuchos::Array<LO> lNodesPerDim(3);
@@ -268,12 +270,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Expand map to do multiple DOF per node for block problems
   if (matrixType == "Elasticity2D") {
-    dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, 2);
+    numDofsPerNode = 2;
   } else if (matrixType == "Elasticity3D") {
-    dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, 3);
+    numDofsPerNode = 3;
   } else {
-    dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, 1);
+    numDofsPerNode = 1;
   }
+  dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
 
   galeriStream << "Processor subdomains in x direction: " << galeriList.get<GO>("mx") << std::endl
                << "Processor subdomains in y direction: " << galeriList.get<GO>("my") << std::endl
@@ -293,13 +296,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
   A = Pr->BuildMatrix();
 
-  if(matrixType == "Elasticity2D") {
-    numDofsPerNode = 2;
-  } else if(matrixType == "Elasticity3D") {
-    numDofsPerNode = 3;
-  }
-
   A->SetFixedBlockSize(numDofsPerNode);
+
+  nullspace = Pr->BuildNullspace();
 
   X = VectorFactory::Build(dofMap);
   B = VectorFactory::Build(dofMap);
@@ -367,7 +366,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   Teuchos::Array<GO> startIndices(3);
   Teuchos::Array<GO> endIndices(3);
-  const GO startGID = dofMap->getMinGlobalIndex();
+  const GO startGID = dofMap->getMinGlobalIndex() / numDofsPerNode;
   startIndices[2] = startGID / (gNodesPerDim[1]*gNodesPerDim[0]);
   const GO rem    = startGID % (gNodesPerDim[1]*gNodesPerDim[0]);
   startIndices[1] = rem / gNodesPerDim[0];
@@ -1012,7 +1011,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // std::cout << "p=" << myRank << " | numLocalRegionNodes=" << numLocalRegionNodes
   //           << ", rNodesPerDim: " << rNodesPerDim << std::endl;
 
-  Array<LO> compositeToRegionLIDs(nodeMap->getNodeNumElements());
+  Array<LO> compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
 
   // Using receiveGIDs, rNodesPerDim and numLocalRegionNodes, build quasi-region row map
   // This will potentially be done by the application or in a MueLu interface but for now
@@ -1043,8 +1042,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       for(int dof = 0; dof < numDofsPerNode; ++dof) {
         quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof]
           = dofMap->getGlobalElement(compositeIdx*numDofsPerNode + dof);
+        compositeToRegionLIDs[compositeIdx*numDofsPerNode + dof] = nodeRegionIdx*numDofsPerNode + dof;
       }
-      compositeToRegionLIDs[compositeIdx] = nodeRegionIdx;
     }
   }
 
@@ -1109,7 +1108,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   colMapPerGrp[0] = rowMapPerGrp[0];
   revisedRowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
                                                                  Teuchos::OrdinalTraits<GO>::invalid(),
-                                                                 numLocalRegionNodes,
+                                                                 numLocalRegionNodes*numDofsPerNode,
                                                                  dofMap->getIndexBase(),
                                                                  dofMap->getComm());
   revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
@@ -1164,18 +1163,23 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // These need to stay in the driver as they would be provide by an app
   Array<Array<int> > regionNodesPerDim(maxRegPerProc);
   Array<std::string> aggregationRegionType(maxRegPerProc);
-  Array<RCP<MultiVector> > nullspace(maxRegPerProc);
+  Array<RCP<MultiVector> > regionNullspace(maxRegPerProc);
   Array<RCP<RealValuedMultiVector> > regionCoordinates(maxRegPerProc);
 
   // Set mesh structure data
   regionNodesPerDim[0] = rNodesPerDim;
 
   // Set aggregation type for each region
-  aggregationRegionType[0] = "structured";
+  if(useUnstructured && (myRank == numRanks - 1)) {
+    aggregationRegionType[0] = "uncoupled";
+  } else {
+    aggregationRegionType[0] = "structured";
+  }
 
   // create nullspace vector
-  nullspace[0] = MultiVectorFactory::Build(revisedRowMapPerGrp[0], 1);
-  nullspace[0]->putScalar(one);
+  regionNullspace[0] = MultiVectorFactory::Build(rowMapPerGrp[0], nullspace->getNumVectors());
+  regionNullspace[0]->doImport(*nullspace, *rowImportPerGrp[0], Xpetra::INSERT);
+  regionNullspace[0]->replaceMap(revisedRowMapPerGrp[0]);
 
   // create region coordinates vector
   regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(rowMapPerGrp[0],
@@ -1215,7 +1219,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         regionNodesPerDim,
                         aggregationRegionType,
                         xmlFileName,
-                        nullspace,
+                        regionNullspace,
                         regionCoordinates,
                         regionGrpMats,
                         dofMap,

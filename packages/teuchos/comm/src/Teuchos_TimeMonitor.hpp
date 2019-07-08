@@ -34,8 +34,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ***********************************************************************
 // @HEADER
 
@@ -45,7 +43,8 @@
 
 /*! \file Teuchos_TimeMonitor.hpp
  *
- * \brief Scope protection wrapper for Teuchos::Time, with timer reporting functionality.
+ * \brief Scope guard for Teuchos::Time, with MPI collective timer
+ *   reporting.
  *
  * An instance of the Teuchos::TimeMonitor class wraps a nonconst
  * reference to a Teuchos::Time timer object.  TimeMonitor's
@@ -144,7 +143,8 @@ class StackedTimer;
 typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map_type;
 
 /// \class TimeMonitor
-/// \brief A scope-safe timer wrapper class, that can compute global timer statistics.
+/// \brief Scope guard for Time, that can compute MPI collective timer
+///   statistics.
 ///
 /// An instance of the TimeMonitor class wraps a nonconst reference to
 /// a Time timer object.  TimeMonitor's constructor starts the timer,
@@ -192,8 +192,11 @@ public:
   ///   Default behavior is not to reset the timer.
   TimeMonitor (Time& timer, bool reset=false);
 
+  //! Default constructor is deleted, since it would be unsafe.
+  TimeMonitor () = delete;
+
   //! Destructor: stops the timer.
-  ~TimeMonitor();
+  ~TimeMonitor() override;
   //@}
 
   /// \brief Return a new timer with the given name (class method).
@@ -243,7 +246,8 @@ public:
   /// \pre None of the timers must currently be running.
   static void zeroOutTimers();
 
-  /// \brief Compute global timer statistics for all timers on the given communicator.
+  /// \brief Compute global timer statistics for all timers on the
+  ///   given communicator.
   ///
   /// The typical use case for Time and TimeMonitor is that all
   /// processes in a communicator create the same set of timers, and
@@ -303,8 +307,9 @@ public:
   ///
   /// We report with both versions of the mean timing the mean call
   /// count over processes.  This may be fractional, which is one
-  /// reason why we report call counts as \c double rather than \c
-  /// int.  It has no particular connection to the mean timing.
+  /// reason why we report call counts as <tt>double</tt> rather than
+  /// <tt>int</tt>.  It has no particular connection to the mean
+  /// timing.
   ///
   /// \section Teuchos_TimeMonitor_computeGlobalTimerStatistics_perf Performance
   ///
@@ -363,26 +368,33 @@ public:
                                 const ECounterSetOp setOp=Intersection,
                                 const std::string& filter="");
 
-  /// \brief Compute global timer statistics for all timers on all (MPI) processes.
+  /// \brief Compute global timer statistics for all timers on all
+  ///   (MPI) processes (in MPI_COMM_WORLD).
   ///
   /// This is an overload of the above computeGlobalTimerStatistics()
   /// method for when the caller does not want to provide a
   /// communicator explicitly.  This method "does the right thing" in
   /// that case.  Specifically:
-  /// - If Trilinos was not built with MPI support, this method
-  ///   assumes a serial "communicator" containing one process.
-  /// - If Trilinos was built with MPI support and MPI has been
-  ///   initialized (via MPI_Init() or one of the wrappers in
-  ///   Epetra or Teuchos), this method uses MPI_COMM_WORLD as the
-  ///   communicator.  This is the most common case.
-  /// - If Trilinos was built with MPI support and MPI has <i>not</i>
-  ///   been initialized, this method will use a "serial" communicator
-  ///   (that does not actually use MPI).  This may produce output on
-  ///   all the MPI processes if you are running with Trilinos as an
-  ///   MPI job with more than one process.  Thus, if you intend to
-  ///   use this method in parallel, you should first initialize MPI.
-  ///   (We cannot initialize MPI for you, because we have no way to
-  ///   know whether you intend to run an MPI-enabled build serially.)
+  ///
+  /// <ul>
+  /// <li> If Trilinos was not built with MPI support, this method
+  ///      assumes a serial "communicator" containing one
+  ///      process. </li>
+  /// <li> If Trilinos was built with MPI support and MPI has been
+  ///      initialized (via MPI_Init() or one of the wrappers in
+  ///      Epetra or Teuchos), this method uses MPI_COMM_WORLD as the
+  ///      communicator.  This is the most common case. </li>
+  /// <li> If Trilinos was built with MPI support and MPI has
+  ///      <i>not</i> been initialized, this method will use a
+  ///      "serial" communicator (that does not actually use MPI).
+  ///      This may produce output on all the MPI processes if you are
+  ///      running with Trilinos as an MPI job with more than one
+  ///      process.  Thus, if you intend to use this method in
+  ///      parallel, you should first initialize MPI.  (We cannot
+  ///      initialize MPI for you, because we have no way to know
+  ///      whether you intend to run an MPI-enabled build serially.)
+  ///      </li>
+  /// </ul>
   ///
   /// \warning If you call this method when MPI is running, you
   ///   <i>must</i> call it on all processes in \c MPI_COMM_WORLD.
@@ -397,7 +409,8 @@ public:
                                 const ECounterSetOp setOp=Intersection,
                                 const std::string& filter="");
 
-  /// \brief Print summary statistics for all timers on the given communicator.
+  /// \brief Print summary statistics for all timers on the given
+  ///   communicator.
   ///
   /// If writeGlobalStatus=true, this method computes the same
   /// statistics as computeGlobalTimerStatistics(), using the same
@@ -473,7 +486,8 @@ public:
              const std::string& filter="",
              const bool ignoreZeroTimers=false);
 
-  /// \brief Print summary statistics for all timers on all (MPI) processes.
+  /// \brief Print summary statistics for all timers on all (MPI)
+  ///   processes (in MPI_COMM_WORLD).
   ///
   /// This is an overload of the above summarize() method for when the
   /// caller does not want to provide a communicator explicitly.  This
@@ -535,12 +549,15 @@ public:
   /// \section Teuchos_TimeMonitor_report_SupportedParams Supported parameters
   ///
   /// Here is the current set of supported parameters:
-  /// - "Report format": "Table" (default), "YAML"
-  /// - "YAML style": "spacious" (default), "compact"
-  /// - "How to merge timer sets": "Intersection" (default), "Union"
-  /// - "alwaysWriteLocal": true, false (default)
-  /// - "writeGlobalStats": true (default), false
-  /// - "writeZeroTimers": true (default), false
+  ///
+  /// <ul>
+  /// <li> "Report format": "Table" (default), "YAML" </li>
+  /// <li> "YAML style": "spacious" (default), "compact" </li>
+  /// <li> "How to merge timer sets": "Intersection" (default), "Union" </li>
+  /// <li> "alwaysWriteLocal": true, false (default) </li>
+  /// <li> "writeGlobalStats": true (default), false </li>
+  /// <li> "writeZeroTimers": true (default), false </li>
+  /// </ul>
   ///
   /// This method currently supports two different output formats.
   /// "Table" format is the same tabular format which summarize()
@@ -611,13 +628,14 @@ public:
   //! Default parameters (with validators) for report().
   static RCP<const ParameterList> getValidReportParameters ();
 
-  /// \brief Sets the StackedTimer that the TimeMonitor will use to insert timings into.
+  /// \brief Sets the StackedTimer into which the TimeMonitor will
+  ///   insert timings.
   ///
-  /// \param t [in] StackedTimer object the TimeMonitor should insert timings into.
+  /// \param t [in/out] StackedTimer object.
   static void setStackedTimer(const Teuchos::RCP<Teuchos::StackedTimer>& t);
 
-  /// Returns the StackedTimer used by the TimeMonitor.
-  static const Teuchos::RCP<Teuchos::StackedTimer>& getStackedTimer();
+  //! The StackedTimer used by the TimeMonitor.
+  static Teuchos::RCP<Teuchos::StackedTimer> getStackedTimer();
 
  private:
   /// \brief Valid output formats for report().
@@ -704,21 +722,29 @@ public:
   //! Parameters for the report() class method.
   //@{
 
-  //! Current output format for report().  Set via setReportParameters().
+  /// \brief Current output format for report().
+  ///
+  /// Set via setReportParameters().
   static ETimeMonitorReportFormat reportFormat_;
 
-  /// Current output style for report(), when using YAML output.
+  /// \brief Current output style for report(), when using YAML output.
+  ///
   /// Set via setReportParameters().
   static ETimeMonitorYamlFormat yamlStyle_;
 
-  //! Whether report() should use the intersection or union of timers over processes.
+  /// \brief Whether report() should use the intersection or union of
+  ///   timers over (MPI) processes.
   static ECounterSetOp setOp_;
 
-  //! Whether report() should always report Proc 0's local timer results.
+  /// \brief Whether report() should always report (MPI) Process 0's
+  ///   local timer results.
   static bool alwaysWriteLocal_;
 
-  /// Whether report() should always compute global timer statistics.
-  /// This requires communication equivalent to O(1) all-reduces.
+  /// \brief Whether report() should always compute global timer
+  ///   statistics.
+  ///
+  /// If true and if using MPI, report() will require MPI
+  /// communication equivalent to O(1) all-reduces.
   static bool writeGlobalStats_;
 
   //! Whether report() should report timers with zero call counts.
@@ -731,7 +757,8 @@ public:
   ///   ParameterList around.
   static bool setParams_;
 
-  //! Stacked timer for optional injetion of timing from TimeMontior enabled objects.
+  /// \brief Stacked timer for optional injection of timing from
+  ///   TimeMonitor-enabled objects.
   static Teuchos::RCP<Teuchos::StackedTimer> stackedTimer_; 
 };
 
