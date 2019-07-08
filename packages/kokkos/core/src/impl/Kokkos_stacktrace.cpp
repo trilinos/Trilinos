@@ -53,10 +53,11 @@ public:
   Stacktrace& operator= (Stacktrace&&) = delete;
   ~Stacktrace () = delete;
 
-  static void save ()
-  {
-    length = backtrace (buffer, capacity);
-  }
+  // These are public only to avoid wasting an extra stacktrace line.
+  // See save_stacktrace below.
+  static constexpr int capacity = 100;
+  static void* buffer[capacity];
+  static int length;
 
   static std::vector<std::string> lines ()
   {
@@ -75,11 +76,6 @@ public:
       return trace;
     }
   }
-
-private:
-  static constexpr int capacity = 100;
-  static void* buffer[capacity];
-  static int length;
 };
 
 int Stacktrace::length = 0;
@@ -87,7 +83,8 @@ void* Stacktrace::buffer[Stacktrace::capacity];
 
 void save_stacktrace ()
 {
-  Stacktrace::save ();
+  Stacktrace::length = backtrace (Stacktrace::buffer,
+                                  Stacktrace::capacity);
 }
 
 size_t
@@ -123,12 +120,11 @@ void for_each_token (const std::string& s, Callback c) {
 // While we're doing that, figure out the longest column,
 // so we can compute spacing correctly.
 
-std::tuple<bool, size_t, size_t>
+std::tuple<bool, size_t, std::vector<size_t>>
 find_main_column (const std::vector<std::string>& traceback)
 {
   bool found_main = false;
   size_t main_col = 0;
-  size_t longest_col_len = 0;
   for (auto&& entry : traceback) {
     size_t col_count = 0;
     for_each_token (entry, [&] (const std::string& s, bool) {
@@ -138,15 +134,35 @@ find_main_column (const std::vector<std::string>& traceback)
                                main_col = col_count;
                              }
                              ++col_count;
-                             const size_t cur_col_len = s.size ();
-                             longest_col_len = (cur_col_len > longest_col_len) ?
-                               cur_col_len : longest_col_len;
                            });
     if (found_main) {
       break;
     }
   }
-  return {found_main, main_col, longest_col_len};
+
+  // Make another pass to get the column lengths.
+  // Only demangle the column of functions.
+  std::vector<size_t> max_col_lens;
+  for (auto&& entry : traceback) {
+    size_t col_count = 0;
+    for_each_token (entry, [&] (const std::string& s, bool) {
+                             const size_t cur_col_len =
+                               (found_main && col_count == main_col) ?
+                               demangle (s).size () :
+                               s.size ();
+                             ++col_count;
+                             if (max_col_lens.size () < col_count) {
+                               max_col_lens.push_back (cur_col_len);
+                             }
+                             else {
+                               const size_t old_max_len = max_col_lens[col_count-1];
+                               if (old_max_len < cur_col_len) {
+                                 max_col_lens[col_count-1] = cur_col_len;
+                               }
+                             }
+                           });
+  }
+  return {found_main, main_col, max_col_lens};
 }
 
 void
@@ -154,22 +170,31 @@ demangle_and_print_traceback_entry (std::ostream& out,
                                     const std::string& traceback_entry,
                                     const bool found_main,
                                     const size_t main_col,
-                                    const size_t /* longest_col_len */)
+                                    const std::vector<size_t>& max_col_lens)
 {
   std::vector<std::string> tokens;
   size_t cur_col = 0;
   for_each_token (traceback_entry,
                   [&] (const std::string& s, bool last) {
-                    if (found_main && cur_col == main_col) {
-                      out << demangle (s);
+                    const size_t old_width (out.width ());
+                    out.width (max_col_lens[cur_col]);
+                    try {
+                      if (found_main && cur_col == main_col) {
+                        out << demangle (s);
+                      }
+                      else {
+                        out << s;
+                      }
+                      if (! last) {
+                        out << " ";
+                      }
+                      ++cur_col;
                     }
-                    else {
-                      out << s;
+                    catch (...) {
+                      out.width (old_width);
+                      throw;
                     }
-                    if (! last) {
-                      out << "\t";
-                    }
-                    ++cur_col;
+                    out.width (old_width);
                   });
 }
 
@@ -194,7 +219,7 @@ print_saved_stacktrace (std::ostream& out)
     out << entry << std::endl;
   }
 }
-  
+
 void
 print_demangled_saved_stacktrace (std::ostream& out)
 {
