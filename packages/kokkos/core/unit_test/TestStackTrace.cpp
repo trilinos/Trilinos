@@ -51,12 +51,12 @@ void f0 (std::ostream& out)
 {
   out << "Top of f0" << std::endl;
 }
-  
+
 int f1 (std::ostream& out) {
   out << "Top of f1" << std::endl;
   f0 (out);
   Kokkos::Impl::save_stacktrace ();
-  f0 (out);  
+  f0 (out);
   return 42;
 }
 
@@ -65,7 +65,16 @@ void f2 (std::ostream& out) {
   const int result = f1 (out);
   out << "f2: f1 returned " << result << std::endl;
 }
-  
+
+int f3 (std::ostream& out, const int level) {
+  if (level <= 0) {
+    return f1 (out);
+  }
+  else {
+    return f3 (out, level-1);
+  }
+}
+
 } // namespace (anonymous)
 
 int main( int argc, char *argv[] ) {
@@ -76,15 +85,23 @@ int main( int argc, char *argv[] ) {
   bool success = true;
 
   f1 (cout);
-  // TODO test by making sure that f1 and f2, but not f0, appear in
-  // the stack trace.
+  // TODO test by making sure that f1 and f2, but no other functions,
+  // appear in the stack trace.
   Kokkos::Impl::print_saved_stacktrace (cout);
   cout << endl << "Demangled version:" << endl << endl;
   Kokkos::Impl::print_demangled_saved_stacktrace (cout);
 
+  f3 (cout, 4);
+  // TODO test by making sure that f3 and f1, but no other functions,
+  // appear in the stack trace.
+  Kokkos::Impl::print_saved_stacktrace (cout);
+  cout << endl << "Demangled version:" << endl << endl;
+  Kokkos::Impl::print_demangled_saved_stacktrace (cout);
+
+
   cout << endl << "Demangled version of \"main\": "
        << Kokkos::Impl::demangle ("main") << endl;
-  
+
   if (success) {
     cout << "SUCCESS" << endl;
   }
