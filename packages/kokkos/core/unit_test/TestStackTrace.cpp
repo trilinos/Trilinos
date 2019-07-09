@@ -82,13 +82,15 @@ void f4 () {
 void
 my_fancy_handler ()
 {
-  std::cerr << "Oh noes!" << std::endl;
+  std::cerr << "I am the custom std::terminate handler." << std::endl;
   std::abort ();
 }
 
 } // namespace (anonymous)
 
-int main( int argc, char *argv[] ) {
+int
+main (int argc, char *argv[])
+{
   using std::cout;
   using std::endl;
 
@@ -115,20 +117,24 @@ int main( int argc, char *argv[] ) {
   cout << endl << "Demangled version of \"main\": "
        << Kokkos::Impl::demangle ("main") << endl;
 
-  //std::terminate ();
+  if (argc > 1) {
+    cout << "Test setting std::terminate handler that prints "
+      "the last saved stack trace" << endl;
 
-  f4 ();
-  Kokkos::Impl::set_kokkos_terminate_handler (); // just test syntax
-  Kokkos::Impl::set_kokkos_terminate_handler (my_fancy_handler);
+    f4 ();
+    Kokkos::Impl::set_kokkos_terminate_handler (); // just test syntax
+    Kokkos::Impl::set_kokkos_terminate_handler (my_fancy_handler);
 
-  // TODO test that this prints "Oh noes!" and the correct stacktrace.
-  std::terminate ();
-
-  if (success) {
-    cout << "SUCCESS" << endl;
+    // TODO test that this prints "Oh noes!" and the correct stacktrace.
+    std::terminate ();
   }
   else {
-    cout << "FAILED" << endl;
+    if (success) {
+      cout << "SUCCESS" << endl;
+    }
+    else {
+      cout << "FAILED" << endl;
+    }
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
   }
-  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
