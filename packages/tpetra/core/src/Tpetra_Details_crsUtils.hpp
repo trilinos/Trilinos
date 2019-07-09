@@ -71,8 +71,8 @@ uninitialized_view(const std::string& name, const size_t& size)
 template<class RowPtr, class Indices, class Values, class Padding>
 void
 pad_crs_arrays(
-    RowPtr& row_ptr_beg,
-    RowPtr& row_ptr_end,
+               const RowPtr& row_ptr_beg,
+               const RowPtr& row_ptr_end,
     Indices& indices,
     Values& values,
     const Padding& padding)
@@ -301,8 +301,8 @@ find_crs_indices(
 template<class RowPtr, class Indices, class Padding>
 void
 padCrsArrays(
-    RowPtr& rowPtrBeg,
-    RowPtr& rowPtrEnd,
+             const RowPtr& rowPtrBeg,
+             const RowPtr& rowPtrEnd,
     Indices& indices,
     const Padding& padding)
 {
@@ -315,8 +315,8 @@ padCrsArrays(
 template<class RowPtr, class Indices, class Values, class Padding>
 void
 padCrsArrays(
-    RowPtr& rowPtrBeg,
-    RowPtr& rowPtrEnd,
+             const RowPtr& rowPtrBeg,
+             const RowPtr& rowPtrEnd,
     Indices& indices,
     Values& values,
     const Padding& padding)

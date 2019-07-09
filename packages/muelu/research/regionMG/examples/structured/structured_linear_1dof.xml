@@ -98,7 +98,7 @@
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
     <ParameterList name="All">
-      <Parameter name="PreSmoother"                         type="string"   value="myILU"/>
+      <Parameter name="PreSmoother"                         type="string"   value="NoSmoother"/>
       <Parameter name="PostSmoother"                        type="string"   value="NoSmoother"/>
       <Parameter name="Nullspace"                           type="string"   value="myNullspaceFact"/>
       <Parameter name="Aggregates"                          type="string"   value="myAggregationFact"/>

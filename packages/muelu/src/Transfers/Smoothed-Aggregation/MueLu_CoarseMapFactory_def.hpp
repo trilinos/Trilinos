@@ -177,13 +177,13 @@ namespace MueLu {
     GlobalOrdinal indexBase   = aggregates->GetMap()->getIndexBase();
 
     RCP<const Map> coarseMap = StridedMapFactory::Build(aggregates->GetMap()->lib(),
-        Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-        nCoarseDofs,
-        indexBase,
-        stridingInfo_,
-        comm,
-        stridedBlockId,
-        domainGidOffset);
+                                                        Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                        nCoarseDofs,
+                                                        indexBase,
+                                                        stridingInfo_,
+                                                        comm,
+                                                        stridedBlockId,
+                                                        domainGidOffset);
 
     Set(currentLevel, "CoarseMap", coarseMap);
   } // Build

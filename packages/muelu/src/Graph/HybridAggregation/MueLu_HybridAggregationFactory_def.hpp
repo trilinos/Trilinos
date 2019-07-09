@@ -108,19 +108,16 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 3");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
-    SET_VALID_ENTRY("aggregation: use interface aggregation");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
 
     // From StructuredAggregationFactory
-    SET_VALID_ENTRY("aggregation: mesh layout");
-    SET_VALID_ENTRY("aggregation: mode");
-    SET_VALID_ENTRY("aggregation: output type");
     SET_VALID_ENTRY("aggregation: coarsening rate");
-    SET_VALID_ENTRY("aggregation: number of spatial dimensions");
     SET_VALID_ENTRY("aggregation: coarsening order");
+    SET_VALID_ENTRY("aggregation: number of spatial dimensions");
 
-    // From StructuredAggregationFactory
+    // From HybridAggregationFactory
+    SET_VALID_ENTRY("aggregation: use interface aggregation");
 #undef  SET_VALID_ENTRY
 
     /* From UncoupledAggregation */
@@ -143,11 +140,6 @@ namespace MueLu {
 
     /* From StructuredAggregation */
     // general variables needed in AggregationFactory
-    validParamList->set<RCP<const FactoryBase> >("aggregation: mesh data",  Teuchos::null,
-                                                 "Mesh ordering associated data");
-
-    validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",            Teuchos::null,
-                                                 "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",            Teuchos::null,
                                                  "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
 
@@ -166,8 +158,12 @@ namespace MueLu {
 
     ParameterList pL = GetParameterList();
 
-    /* Hybrid Aggregation */
-    if(currentLevel.GetLevelID() == 0){
+
+
+    /* StructuredAggregation */
+
+    // Request the local number of nodes per dimensions
+    if(currentLevel.GetLevelID() == 0) {
       if(currentLevel.IsAvailable("aggregationRegionType", NoFactory::get())) {
         currentLevel.DeclareInput("aggregationRegionType", NoFactory::get(), this);
       } else {
@@ -175,9 +171,26 @@ namespace MueLu {
                                    Exceptions::RuntimeError,
                                    "Aggregation region type was not provided by the user!");
       }
+      if(currentLevel.IsAvailable("numDimensions", NoFactory::get())) {
+        currentLevel.DeclareInput("numDimensions", NoFactory::get(), this);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("numDimensions", NoFactory::get()),
+                                   Exceptions::RuntimeError,
+                                   "numDimensions was not provided by the user on level0!");
+      }
+      if(currentLevel.IsAvailable("lNodesPerDim", NoFactory::get())) {
+        currentLevel.DeclareInput("lNodesPerDim", NoFactory::get(), this);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("lNodesPerDim", NoFactory::get()),
+                                   Exceptions::RuntimeError,
+                                   "lNodesPerDim was not provided by the user on level0!");
+      }
     } else {
       Input(currentLevel, "aggregationRegionType");
+      Input(currentLevel, "numDimensions");
+      Input(currentLevel, "lNodesPerDim");
     }
+
 
 
     /* UncoupledAggregation */
@@ -209,42 +222,7 @@ namespace MueLu {
         currentLevel.DeclareInput(mapOnePtName, mapOnePtFact.get());
       }
     }
-
-
-
-    /* StructuredAggregation */
-    std::string coupling = pL.get<std::string>("aggregation: mode");
-    const bool coupled = (coupling == "coupled" ? true : false);
-    if(coupled) {
-      // Request the global number of nodes per dimensions
-      if(currentLevel.GetLevelID() == 0) {
-        if(currentLevel.IsAvailable("gNodesPerDim", NoFactory::get())) {
-          currentLevel.DeclareInput("gNodesPerDim", NoFactory::get(), this);
-        } else {
-          TEUCHOS_TEST_FOR_EXCEPTION(!currentLevel.IsAvailable("gNodesPerDim", NoFactory::get()),
-                                     Exceptions::RuntimeError,
-                                     "gNodesPerDim was not provided by the user on level0!");
-        }
-      } else {
-        Input(currentLevel, "gNodesPerDim");
-      }
-    }
-
-    // Request the local number of nodes per dimensions
-    if(currentLevel.GetLevelID() == 0) {
-      if(currentLevel.IsAvailable("lNodesPerDim", NoFactory::get())) {
-        currentLevel.DeclareInput("lNodesPerDim", NoFactory::get(), this);
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(!currentLevel.IsAvailable("lNodesPerDim", NoFactory::get()),
-                                   Exceptions::RuntimeError,
-                                   "lNodesPerDim was not provided by the user on level0!");
-      }
-    } else {
-      Input(currentLevel, "lNodesPerDim");
-    }
-
-
-  }
+  } // DeclareInput()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void HybridAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::
@@ -254,10 +232,10 @@ namespace MueLu {
     RCP<Teuchos::FancyOStream> out;
     if(const char* dbg = std::getenv("MUELU_HYBRIDAGGREGATION_DEBUG")) {
       out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setShowAllFrontMatter(false).setShowProcRank(true);
     } else {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
-    out->setShowAllFrontMatter(false).setShowProcRank(true);
 
     *out << "Entering hybrid aggregation" << std::endl;
 
@@ -276,6 +254,9 @@ namespace MueLu {
     const int myRank            = fineMap->getComm()->getRank();
     const int numRanks          = fineMap->getComm()->getSize();
 
+    out->setProcRankAndSize(graph->GetImportMap()->getComm()->getRank(),
+                            graph->GetImportMap()->getComm()->getSize());
+
     // Build aggregates
     RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
     aggregates->setObjectLabel("HB");
@@ -288,12 +269,13 @@ namespace MueLu {
     std::string regionType;
     if(currentLevel.GetLevelID() == 0) {
       // On level 0, data is provided by applications and has no associated factory.
-      regionType = currentLevel.Get< std::string >("aggregationRegionType", NoFactory::get());
+      regionType = currentLevel.Get<std::string>("aggregationRegionType", NoFactory::get());
     } else {
       // On level > 0, data is provided directly by generating factories.
       regionType = Get< std::string >(currentLevel, "aggregationRegionType");
     }
-    *out<<"p="<< myRank << " | "<<regionType<<" | regionType determined" << std::endl;
+    *out << regionType <<" | regionType determined" << std::endl;
+    int numDimensions = 0;
 
     algos_.clear();
     if (regionType == "structured") {
@@ -302,24 +284,15 @@ namespace MueLu {
 
       // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
       // obtain a nodeMap.
-      const int numDimensions      = pL.get<int>("aggregation: number of spatial dimensions");
       const int interpolationOrder = pL.get<int>("aggregation: coarsening order");
-      std::string meshLayout       = pL.get<std::string>("aggregation: mesh layout");
-      std::string coupling         = pL.get<std::string>("aggregation: mode");
-      const bool coupled = false; //Only support uncoupled
-      Array<GO> gFineNodesPerDir(3);
       Array<LO> lFineNodesPerDir(3);
       if(currentLevel.GetLevelID() == 0) {
         // On level 0, data is provided by applications and has no associated factory.
-        if(coupled) {
-          gFineNodesPerDir = currentLevel.Get<Array<GO> >("gNodesPerDim", NoFactory::get());
-        }
+        numDimensions = currentLevel.Get<int>("numDimensions", NoFactory::get());
         lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
       } else {
         // On level > 0, data is provided directly by generating factories.
-        if(coupled) {
-          gFineNodesPerDir = Get<Array<GO> >(currentLevel, "gNodesPerDim");
-        }
+        numDimensions = Get<int>(currentLevel, "numDimensions");
         lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
       }
 
@@ -345,20 +318,15 @@ namespace MueLu {
 
       // Now that we have extracted info from the level, create the IndexManager
       RCP<MueLu::IndexManager<LO,GO,NO> > geoData;
-      if(!coupled) {
-        geoData = rcp(new MueLu::UncoupledIndexManager<LO,GO,NO>(fineMap->getComm(),
-                                                                 coupled,
-                                                                 numDimensions,
-                                                                 interpolationOrder,
-                                                                 myRank,
-                                                                 numRanks,
-                                                                 gFineNodesPerDir,
-                                                                 lFineNodesPerDir,
-                                                                 coarseRate));
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(coupled, Exceptions::RuntimeError,
-                "Coupled aggregation is not yet implemented in hybrid aggregation");
-      }
+      geoData = rcp(new MueLu::UncoupledIndexManager<LO,GO,NO>(fineMap->getComm(),
+                                                               false,
+                                                               numDimensions,
+                                                               interpolationOrder,
+                                                               myRank,
+                                                               numRanks,
+                                                               Array<GO>(3, -1),
+                                                               lFineNodesPerDir,
+                                                               coarseRate));
 
       *out << "The index manager has now been built" << std::endl;
       TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
@@ -366,24 +334,13 @@ namespace MueLu {
                                  Exceptions::RuntimeError,
                                  "The local number of elements in the graph's map is not equal to "
                                  "the number of nodes given by: lNodesPerDim!");
-      if(coupled) {
-        TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getGlobalNumElements()
-                                   != static_cast<size_t>(geoData->getNumGlobalFineNodes()),
-                                   Exceptions::RuntimeError,
-                                   "The global number of elements in the graph's map is not equal to "
-                                   "the number of nodes given by: gNodesPerDim!");
-      }
-
-      *out << "Compute coarse mesh data" << std::endl;
-      std::vector<std::vector<GO> > coarseMeshData = geoData->getCoarseMeshData();
 
       aggregates->SetIndexManager(geoData);
       aggregates->SetNumAggregates(geoData->getNumLocalCoarseNodes());
 
-      Set(currentLevel, "gCoarseNodesPerDim", geoData->getGlobalCoarseNodesPerDir());
       Set(currentLevel, "lCoarseNodesPerDim", geoData->getLocalCoarseNodesPerDir());
 
-    }// end structured aggregation setup
+    } // end structured aggregation setup
 
     if (regionType == "uncoupled"){
       // Add unstructred aggregation phases
@@ -395,7 +352,7 @@ namespace MueLu {
       if (pL.get<bool>("aggregation: enable phase 2b")                 == true)   algos_.push_back(rcp(new AggregationPhase2bAlgorithm           (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 3" )                 == true)   algos_.push_back(rcp(new AggregationPhase3Algorithm            (graphFact)));
 
-
+      *out << " Look for interface map" << std::endl;
       // Set map for interface aggregates
       std::string mapInterfaceName = pL.get<std::string>("Interface aggregate map name");
       RCP<Map> InterfaceMap = Teuchos::null;
@@ -407,7 +364,7 @@ namespace MueLu {
             aggStat[i] = INTERFACE;
         }
       }
-
+      *out << "Treat Dirichlet BC" << std::endl;
       // Dirichlet boundary
       ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
       if (dirichletBoundaryMap != Teuchos::null)
@@ -427,7 +384,10 @@ namespace MueLu {
           OnePtMap = currentLevel.Get<RCP<Map> >(mapOnePtName, mapOnePtFact.get());
         }
       }
+
+      *out << "OnePtMap thingy" << std::endl;
       LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
+      *out << "DofsPerNode= " << nDofsPerNode << std::endl;
       GO indexBase = graph->GetDomainMap()->getIndexBase();
       if (OnePtMap != Teuchos::null) {
         for (LO i = 0; i < numRows; i++) {
@@ -439,32 +399,36 @@ namespace MueLu {
         }
       }
 
+      *out << "Set lCoarseNodesPerDim" << std::endl;
       // Create a fake lCoarseNodesPerDir for CoordinatesTranferFactory
       Array<LO> lCoarseNodesPerDir(3,-1);
       Set(currentLevel, "lCoarseNodesPerDim", lCoarseNodesPerDir);
-    }// end uncoupled aggregation setup
+    } // end uncoupled aggregation setup
 
     aggregates->AggregatesCrossProcessors(false); // No coupled aggregation
 
+    *out << "Run all the algorithms on the local rank" << std::endl;
     LO numNonAggregatedNodes = numRows;
     for (size_t a = 0; a < algos_.size(); a++) {
       std::string phase = algos_[a]->description();
       SubFactoryMonitor sfm(*this, "Algo \"" + phase + "\"", currentLevel);
-      *out << "p=" << myRank << " | "<<regionType<<" | Executing phase " << a << std::endl;
+      *out << regionType <<" | Executing phase " << a << std::endl;
 
       int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
       algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
       algos_[a]->SetProcRankVerbose(oldRank);
-      *out << "p=" << myRank << " | "<<regionType<<" | Done Executing phase " << a << std::endl;
+      *out << regionType <<" | Done Executing phase " << a << std::endl;
     }
 
+    *out << "Compute statistics on aggregates" << std::endl;
     aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
 
-    Set(currentLevel, "Aggregates",         aggregates);
-
+    Set(currentLevel, "Aggregates",                  aggregates);
+    Set(currentLevel, "numDimensions",               numDimensions);
     Set(currentLevel, "aggregationRegionTypeCoarse", regionType);
 
     GetOStream(Statistics1) << aggregates->description() << std::endl;
+    *out << "HybridAggregation done!" << std::endl;
   }
 
 } //namespace MueLu

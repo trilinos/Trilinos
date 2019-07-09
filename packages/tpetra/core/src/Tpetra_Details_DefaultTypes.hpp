@@ -61,48 +61,47 @@ namespace Details {
 namespace DefaultTypes {
   //! Default value of Scalar template parameter.
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-  typedef double scalar_type;
+  using scalar_type = double;
 #elif defined(HAVE_TPETRA_INST_FLOAT)
-  typedef float scalar_type;
+  using scalar_type = float;
 #else
 #  error "Tpetra: No scalar types in the set {float, double} have been enabled."
 #endif
 
   //! Default value of LocalOrdinal template parameter.
-  typedef int local_ordinal_type;
+  using local_ordinal_type = int;
 
   /// \typedef global_ordinal_type
   /// \brief Default value of GlobalOrdinal template parameter.
 #if defined(TPETRA_ENABLE_DEPRECATED_CODE)
     #if defined(HAVE_TPETRA_INST_INT_INT)
-        typedef int global_ordinal_type;
+      using global_ordinal_type = int;
     #elif defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-      typedef long long global_ordinal_type;
+      using global_ordinal_type = long long;
     #elif defined(HAVE_TPETRA_INST_INT_LONG)
-      typedef long global_ordinal_type;
+      using global_ordinal_type = long;
     #elif defined(HAVE_TPETRA_INST_INT_UNSIGNED_LONG)
-      typedef unsigned long global_ordinal_type;
+      using global_ordinal_type = unsigned long;
     #elif defined(HAVE_TPETRA_INST_INT_UNSIGNED)
-      typedef unsigned global_ordinal_type;
+      using global_ordinal_type = unsigned;
     #else
         #error "Tpetra: No global ordinal types in the set {int, long long, long, unsigned long, unsigned} have been enabled."
     #endif
 #else  // TPETRA_ENABLE_DEPRECATED_CODE IS NOT DEFINED
     #if defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-        typedef long long global_ordinal_type;
+        using global_ordinal_type = long long;
     #elif defined(HAVE_TPETRA_INST_INT_INT)
-        typedef int global_ordinal_type;
+        using global_ordinal_type = int;
     #elif defined(HAVE_TPETRA_INST_INT_LONG)
-        typedef long global_ordinal_type;
+        using global_ordinal_type = long;
     #elif defined(HAVE_TPETRA_INST_INT_UNSIGNED_LONG)
-        typedef unsigned long global_ordinal_type;
+        using global_ordinal_type = unsigned long;
     #elif defined(HAVE_TPETRA_INST_INT_UNSIGNED)
-        typedef unsigned global_ordinal_type;
+        using global_ordinal_type = unsigned;
     #else
         #error "Tpetra: No global ordinal types in the set {int, long long, long, unsigned long, unsigned} have been enabled."
     #endif
 #endif
-
 
   /// \typedef execution_space
   /// \brief Default Tpetra execution space.
@@ -120,6 +119,21 @@ namespace DefaultTypes {
 
   //! Default value of Node template parameter.
   using node_type = ::Kokkos::Compat::KokkosDeviceWrapperNode<execution_space>;
+
+  /// \brief Memory space used for MPI communication buffers.
+  ///
+  /// See #1088 for why this is not just ExecutionSpace::memory_space.
+  template<class ExecutionSpace>
+  using comm_buffer_memory_space =
+#ifdef KOKKOS_ENABLE_CUDA
+    typename std::conditional<
+      std::is_same<typename ExecutionSpace::execution_space, Kokkos::Cuda>::value,
+      Kokkos::CudaSpace,
+      typename ExecutionSpace::memory_space>::type;
+#else
+    typename ExecutionSpace::memory_space;
+#endif // KOKKOS_ENABLE_CUDA
+
 } // namespace DefaultTypes
 
 } // namespace Details
