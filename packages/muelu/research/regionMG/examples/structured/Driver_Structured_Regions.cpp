@@ -158,7 +158,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   std::string xmlFileName        = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
   std::string yamlFileName       = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
+  std::string convergenceLog    = "residual_norm.txt"; clp.setOption("convergence-log",     &convergenceLog,    "file in which the convergence history of the linear solver is stored");
   int         maxIts             = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
+  std::string smootherType      = "Jacobi";          clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
   int         smootherIts        =  20;               clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
   double      smootherDamp       = 0.67;              clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
   double      tol                = 1e-12;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
@@ -204,6 +206,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   }
 
+  Array<RCP<Teuchos::ParameterList> > smootherParams(1);
+  smootherParams[0] = rcp(new Teuchos::ParameterList());
+  smootherParams[0]->set("smoother: type",    smootherType);
+  smootherParams[0]->set("smoother: sweeps",  smootherIts);
+  smootherParams[0]->set("smoother: damping", smootherDamp);
 
   // Retrieve matrix parameters (they may have been changed on the command line)
   // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
@@ -1245,7 +1252,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         coarseCompOp,
                         maxRegPerGID,
                         compositeToRegionLIDs(),
-                        *coarseSolverData);
+                        coarseSolverData,
+                        smootherParams);
 
 
   comm->barrier();
@@ -1305,15 +1313,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     RCP<std::ofstream> log;
     if (myRank == 0)
       {
-        std::string s = "residual_norm.txt";
-        log = rcp(new std::ofstream(s.c_str()));
+        log = rcp(new std::ofstream(convergenceLog.c_str()));
         (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
                << "# iteration | res-norm\n"
                << "#\n";
+        *log << std::setprecision(16) << std::scientific;
       }
 
     // Richardson iterations
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType normResIni;
+    const int old_precision = std::cout.precision();
+    std::cout << std::setprecision(8) << std::scientific;
     for (int cycle = 0; cycle < maxIts; ++cycle) {
       // check for convergence
       {
@@ -1330,17 +1340,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         compRes = VectorFactory::Build(dofMap, true);
         regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
                             rowImportPerGrp, Xpetra::ADD);
+
         typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
         if(cycle == 0) { normResIni = normRes; }
 
         // Output current residual norm to screen (on proc 0 only)
         if (myRank == 0)
           {
-#ifdef MATLAB_COMPARE
-printf("%d: %24.17e\n",cycle,normRes);
-#else
             std::cout << cycle << "\t" << normRes << std::endl;
-#endif
             (*log) << cycle << "\t" << normRes << "\n";
           }
 
@@ -1353,11 +1360,13 @@ printf("%d: %24.17e\n",cycle,normRes);
       /////////////////////////////////////////////////////////////////////////
 
       //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
-      vCycle(0, numLevels, smootherIts, maxCoarseIter, smootherDamp, maxRegPerProc,
+      vCycle(0, numLevels, maxCoarseIter, maxRegPerProc,
              regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, coarseCompOp, coarseSolverData);
+             regInterfaceScalings, smootherParams, coarseCompOp, coarseSolverData);
     }
+    std::cout << std::setprecision(old_precision);
+    std::cout.unsetf(std::ios::fixed | std::ios::scientific);
   }
 
   comm->barrier();
