@@ -638,8 +638,6 @@ unpackAndCombineIntoCrsArrays2(
   using Kokkos::parallel_reduce;
   using Kokkos::atomic_fetch_add;
 
-  using packet_type = Packet;
-  using buffer_device_type = BufferDevice;
   using device_type = typename LocalMap::device_type;
   using LO = typename LocalMap::local_ordinal_type;
   using GO = typename LocalMap::global_ordinal_type;
@@ -890,7 +888,6 @@ unpackCrsGraphAndCombine(
   using UnpackAndCombineCrsGraphImpl::unpackAndCombine;
   using graph_type = CrsGraph<LO,GO,Node>;
   using device_type = typename Node::device_type;
-  using packet_type = typename graph_type::packet_type;
   using buffer_device_type = typename graph_type::buffer_device_type;
   using execution_space = typename device_type::execution_space;
   using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
