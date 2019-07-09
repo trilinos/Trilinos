@@ -50,6 +50,7 @@
 #include "ROL_DynamicObjective.hpp"
 #include "ROL_DynamicConstraint.hpp"
 
+#include <fstream>
 
 /** @ingroup func_group
     \class ROL::ReducedDynamicObjective

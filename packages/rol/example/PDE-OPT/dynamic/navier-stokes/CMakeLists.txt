@@ -21,11 +21,13 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE(
-    AugmentedSystem
-    SOURCES AugmentedSystem.cpp ROL_PinTVectorCommunication_StdTpetraComposite.hpp
-    ADD_DIR_TO_NAME
-  )
+  IF(TPL_ENABLE_MPI)
+    TRIBITS_ADD_EXECUTABLE(
+      AugmentedSystem
+      SOURCES AugmentedSystem.cpp ROL_PinTVectorCommunication_StdTpetraComposite.hpp
+      ADD_DIR_TO_NAME
+    )
+  ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     DynamicNavierStokesDataCopy

@@ -27,11 +27,12 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
 
-  TRIBITS_ADD_EXECUTABLE(
-    AugmentedSystem 
-    SOURCES AugmentedSystem.cpp
-    ADD_DIR_TO_NAME
-  )
-
+  IF(TPL_ENABLE_MPI)
+    TRIBITS_ADD_EXECUTABLE(
+      AugmentedSystem
+      SOURCES AugmentedSystem.cpp
+      ADD_DIR_TO_NAME
+    )
+  ENDIF()
 
 ENDIF()
