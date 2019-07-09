@@ -767,7 +767,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         case Experiments::MKL:
         {
             TimeMonitor t(*TimeMonitor::getNewTimer("MV MKL: Total"));            
-            MV_MKL(AMKL,xdouble,ydouble);
+            MV_MKL(mkl_A,mkl_xdouble,mkl_ydouble);
         }
           break;
         #endif
@@ -869,7 +869,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
 #if defined(HAVE_MUELU_MKL) 
-    mkl_sparse_destroy(AMKL);
+    mkl_sparse_destroy(mkl_A);
 #endif
 
     success = true;
