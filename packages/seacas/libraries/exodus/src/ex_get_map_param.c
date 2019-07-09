@@ -50,8 +50,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_EM, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
 
 /*
  * reads the number of node and element maps

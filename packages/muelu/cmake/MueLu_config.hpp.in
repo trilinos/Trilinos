@@ -92,7 +92,15 @@
 
 #cmakedefine HAVE_MUELU_MKL
 
+/* Special logic for avatar */
+#cmakedefine HAVE_MUELU_AVATART
 #cmakedefine HAVE_MUELU_AVATAR
+#if defined(HAVE_MUELU_AVATART)
+ #define HAVE_MUELU_AVATAR
+#endif
+
+
+#cmakedefine HAVE_MUELU_MLPACK
 
 #cmakedefine HAVE_MUELU_CUSPARSE
 

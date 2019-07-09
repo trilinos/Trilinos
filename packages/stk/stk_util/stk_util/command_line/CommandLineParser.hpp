@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -87,8 +88,14 @@ public:
     template <typename ValueType>
     void add_optional(const CommandLineOption &option, const ValueType &defaultValue)
     {
+        add_optional(get_option_spec(option), option.description, defaultValue);
+    }
+
+    template <typename ValueType>
+    void add_optional(const std::string &option, const std::string &description, const ValueType &defaultValue)
+    {
         optionsDesc.add_options()
-          (get_option_spec(option).c_str(), boost::program_options::value<ValueType>()->default_value(defaultValue), option.description.c_str());
+          (option.c_str(), boost::program_options::value<ValueType>()->default_value(defaultValue), description.c_str());
     }
 
     std::string get_usage() const
@@ -103,7 +110,8 @@ public:
         ParseState state = ParseError;
         try
         {
-            boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(optionsDesc).positional(positionalDesc).run(), varMap);
+            char** nonconst_argv = const_cast<char**>(argv);
+            boost::program_options::store(boost::program_options::command_line_parser(argc, nonconst_argv).options(optionsDesc).positional(positionalDesc).run(), varMap);
             if(is_option_provided("help"))
                 return ParseHelpOnly;
             if(is_option_provided("version"))

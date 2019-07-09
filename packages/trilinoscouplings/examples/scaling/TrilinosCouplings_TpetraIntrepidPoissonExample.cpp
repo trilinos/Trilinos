@@ -70,7 +70,7 @@
 
 
 // Disable the full set of problem statistics
-const bool use_new_problem_stats = false;
+const bool use_new_problem_stats = true;
 
 
 /*********************************************************/
@@ -206,6 +206,15 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   B = rcp_implicit_cast<multivector_type> (b);
   X_exact = rcp_implicit_cast<multivector_type> (x_exact);
   X = rcp_implicit_cast<multivector_type> (x);
+}
+
+double myDistance2(const Tpetra::MultiVector<ST, LO, GO, Node> &v, int i0, int i1) {
+ const size_t numVectors = v.getNumVectors();
+ double distance = 0.0;
+ for (size_t j=0; j<numVectors; j++) {
+   distance += (v.getData(j)[i0]-v.getData(j)[i1])*(v.getData(j)[i0]-v.getData(j)[i1]);
+ }
+ return distance;
 }
 
 void
@@ -407,6 +416,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     nodeCoord(i,1)=nodeCoordy[i];
     nodeCoord(i,2)=nodeCoordz[i];
   }
+  delete [] nodeCoordx; delete[] nodeCoordy; delete [] nodeCoordz;
 
   // Get the "time" value for the RTC
   double time = 0.0;
@@ -674,6 +684,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   delete [] elements;
   elements = NULL;
 
+  for(int i=0;i< (int)edge_vector.size(); i++) delete edge_vector[i];
+  edge_vector.resize(0);
+  for(int i=0;i< (int)face_vector.size(); i++) delete face_vector[i];
+  face_vector.resize(0);
+
 
 /**********************************************************************************/
 /****************************** STATISTICS (Part I) *******************************/
@@ -682,7 +697,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   // Definitions of mesh statistics:
   // TODO: 07/10/18
   // Put the current statistics into their own functions so this looks less awful
-  int NUM_STATISTICS = 7;
+  int NUM_STATISTICS = 8;
   std::vector<double> local_stat_max(NUM_STATISTICS);
   std::vector<double> local_stat_min(NUM_STATISTICS);
   std::vector<double> local_stat_sum(NUM_STATISTICS);
@@ -1421,6 +1436,58 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     } // *** stop timer ***
   }// *** workset loop ***
 
+/**********************************************************************************/
+/***************************** STATISTICS (Part IIb) ******************************/
+/**********************************************************************************/
+  Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, Node>> gl_StiffGraph = gl_StiffMatrix->getCrsGraph();
+  Teuchos::RCP<Tpetra::MultiVector<ST, LO, GO, Node>> coordsOwnedPlusShared;
+  if (!(gl_StiffGraph->getImporter().is_null())) {
+    coordsOwnedPlusShared = rcp(new multivector_type(gl_StiffGraph->getColMap(), 3, true));
+    coordsOwnedPlusShared->doImport(*coords, *gl_StiffGraph->getImporter(), Tpetra::CombineMode::ADD, false);
+  }
+  else {
+    coordsOwnedPlusShared = coords;
+  }
+  Teuchos::RCP<const Tpetra::Map<LO, GO, Node>> rowMap = gl_StiffMatrix->getRowMap();
+  Tpetra::Vector<ST, LO, GO, Node> laplDiagOwned(rowMap, true);
+  Teuchos::ArrayView<const LO> indices;
+  Teuchos::ArrayView<const ST> values;
+  size_t numOwnedRows = rowMap->getNodeNumElements();
+  for (size_t row=0; row<numOwnedRows; row++) {
+    gl_StiffMatrix->getLocalRowView(row, indices, values);
+    size_t numIndices = indices.size();
+    for (size_t j=0; j<numIndices; j++) {
+      size_t col = indices[j];
+      if (row == col) continue;
+      laplDiagOwned.sumIntoLocalValue(row, 1/myDistance2(*coordsOwnedPlusShared, row, col));
+    }
+  }
+  Teuchos::RCP<Tpetra::Vector<ST, LO, GO, Node>> laplDiagOwnedPlusShared;
+  if (!gl_StiffGraph->getImporter().is_null()) {
+    laplDiagOwnedPlusShared = rcp(new Tpetra::Vector<ST, LO, GO, Node>(gl_StiffGraph->getColMap(), true));
+    laplDiagOwnedPlusShared->doImport(laplDiagOwned, *gl_StiffGraph->getImporter(), Tpetra::CombineMode::ADD, false);
+  }
+  else {
+    laplDiagOwnedPlusShared = rcp(&laplDiagOwned, false);
+  }
+  for (size_t row=0; row<numOwnedRows; row++) {
+    gl_StiffMatrix->getLocalRowView(row, indices, values);
+    size_t numIndices = indices.size();
+    for(size_t j=0; j<numIndices; j++) {
+      size_t col = indices[j];
+      if (row==col) continue;
+      double laplVal = 1.0 / myDistance2(*coordsOwnedPlusShared, row, col);
+      double aiiajj = std::abs(laplDiagOwnedPlusShared->getData()[row]*laplDiagOwnedPlusShared->getData()[col]);
+      double aij = laplVal * laplVal;
+      double ratio = sqrt(aij / aiiajj);
+      local_stat_max[7] = std::max(local_stat_max[7], ratio);
+      local_stat_min[7] = std::min(local_stat_min[7], ratio);
+      local_stat_sum[7] += ratio;
+    }
+  }
+
+
+
 
 /**********************************************************************************/
 /***************************** STATISTICS (Part III) ******************************/
@@ -1465,6 +1532,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     problemStatistics.set("Skew max", global_stat_max[6]);
     problemStatistics.set("Skew min", global_stat_min[6]);
     problemStatistics.set("Skew mean", global_stat_sum[6] / numElemsGlobal);
+
+    // 7 - Lapl Diag
+    problemStatistics.set("Lapl Diag max", global_stat_max[7]);
+    problemStatistics.set("Lapl Diag min", global_stat_min[7]);
+    problemStatistics.set("Lapl Diag mean", global_stat_sum[7] / StiffMatrix->getGlobalNumEntries());
   }
   //////////////////////////////////////////////////////////////////////////////
   // Export sparse matrix and right-hand side from overlapping row Map

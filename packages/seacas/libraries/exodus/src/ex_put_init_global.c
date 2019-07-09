@@ -60,8 +60,6 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for ex_leavedef, EX_FATAL, etc
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
 
 int ex_put_init_global(int exoid, int64_t num_nodes_g, int64_t num_elems_g, int64_t num_elem_blks_g,
                        int64_t num_node_sets_g, int64_t num_side_sets_g)

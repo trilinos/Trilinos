@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,13 +35,14 @@
 #define STK_NGP_NGPFIELD_H_
 
 #include <stk_util/stk_config.h>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
-#include <stk_ngp/NgpMesh.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/Types.hpp>
 #include <stk_ngp/NgpForEachEntity.hpp>
+#include <stk_ngp/NgpMesh.hpp>
+#include <stk_ngp/NgpProfilingBlock.hpp>
 
 namespace ngp {
 
@@ -114,6 +116,8 @@ public:
 
     void modify_on_device() { }
 
+    void clear_sync_state() { }
+
     stk::mesh::EntityRank get_rank() const { return field->entity_rank(); }
 
     unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
@@ -134,8 +138,6 @@ private:
     bool need_sync_to_host() const { return false; }
 
     bool need_sync_to_device() const { return false; }
-
-    void clear_sync_state() { }
 
     const stk::mesh::FieldBase * field;
 
@@ -295,6 +297,7 @@ public:
     void sync_to_host()
     {
         if (need_sync_to_host()) {
+            ProfilingBlock prof("copy_to_host for " + hostField->name());
             copy_device_to_host();
         }
     }
@@ -302,28 +305,24 @@ public:
     void sync_to_device()
     {
         if (need_sync_to_device()) {
+            ProfilingBlock prof("copy_to_device for " + hostField->name());
             copy_host_to_device();
         }
     }
 
     void modify_on_host()
     {
-#ifdef STK_BUILT_IN_SIERRA
-        ThrowRequire(fieldData.modified_host() >= fieldData.modified_device());  // Old Kokkos API
-        fieldData.modified_host()++;                                             // Old Kokkos API
-#else
         fieldData.modify_host();  // New Kokkos API
-#endif
     }
 
     void modify_on_device()
     {
-#ifdef STK_BUILT_IN_SIERRA
-        ThrowRequire(fieldData.modified_device() >= fieldData.modified_host());  // Old Kokkos API
-        fieldData.modified_device()++;                                           // Old Kokkos API
-#else
         fieldData.modify_device();  // New Kokkos API
-#endif
+    }
+
+    void clear_sync_state()
+    {
+        fieldData.clear_sync_state();  // New Kokkos API
     }
 
     STK_FUNCTION StaticField(const StaticField &) = default;
@@ -385,12 +384,7 @@ private:
 #endif
     void copy_device_to_host()
     {
-#ifdef STK_BUILT_IN_SIERRA
-        Kokkos::deep_copy(hostData, deviceData);  // Old Kokkos API
-        clear_sync_state();                       // Old Kokkos API
-#else
         fieldData.sync_host();  // New Kokkos API
-#endif
 
         if (hostField) {
           stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
@@ -407,12 +401,7 @@ private:
           copy_data(buckets, [](T &hostFieldData, T &stkFieldData){hostFieldData = stkFieldData;});
         }
 
-#ifdef STK_BUILT_IN_SIERRA
-        Kokkos::deep_copy(deviceData, hostData);  // Old Kokkos API
-        clear_sync_state();                       // Old Kokkos API
-#else
         fieldData.sync_device();  // New Kokkos API
-#endif
     }
 
 #ifndef STK_HIDE_DEPRECATED_CODE
@@ -423,30 +412,12 @@ private:
 #endif
     bool need_sync_to_host() const
     {
-#ifdef STK_BUILT_IN_SIERRA
-        return fieldData.modified_device() > fieldData.modified_host();  // Old Kokkos API
-#else
         return fieldData.need_sync_host();  // New Kokkos API
-#endif
     }
 
     bool need_sync_to_device() const
     {
-#ifdef STK_BUILT_IN_SIERRA
-        return fieldData.modified_host() > fieldData.modified_device();  // Old Kokkos API
-#else
         return fieldData.need_sync_device();  // New Kokkos API
-#endif
-    }
-
-    void clear_sync_state()
-    {
-#ifdef STK_BUILT_IN_SIERRA
-        fieldData.modified_host() = 0;    // Old Kokkos API
-        fieldData.modified_device() = 0;  // Old Kokkos API
-#else
-        fieldData.clear_sync_state();  // New Kokkos API
-#endif
     }
 
     template <typename ViewType>

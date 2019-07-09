@@ -117,8 +117,14 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17.0.1"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL-17.0.1
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-17.0.1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.2
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.5"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-18.0.5
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-18.0.5
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-3.9.0"* ]]; then
@@ -228,8 +234,13 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"serial"* ]]; then
   export ATDM_CONFIG_NODE_TYPE=SERIAL
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"pthread"* ]]; then
-  export ATDM_CONFIG_USE_PTHREADS=ON
-  export ATDM_CONFIG_NODE_TYPE=THREAD
+  echo
+  echo "***"
+  echo "*** ERROR: The Kokkos Pthreads backend is no longer supported (see TRIL-272)!"
+  echo "*** Please use a different backend like 'serial', 'openmp', or 'cuda'."
+  echo "***"
+  echo
+  return
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"openmp"* ]]; then
   export ATDM_CONFIG_USE_OPENMP=ON
   export ATDM_CONFIG_NODE_TYPE=OPENMP
@@ -279,3 +290,10 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"-pt" ]] || \
   [[ $ATDM_CONFIG_BUILD_NAME == *"_pt" ]] ; then
   export ATDM_CONFIG_PT_PACKAGES=ON
 fi
+
+# Temporary keyword for turning off global int (#4915, #5384)
+if [[ $ATDM_CONFIG_BUILD_NAME == *"no-global-int"* ]]; then
+  export ATDM_CONFIG_NO_GLOBAL_INT=ON
+fi
+
+export ATDM_CONFIG_FINISHED_SET_BUILD_OPTIONS=1

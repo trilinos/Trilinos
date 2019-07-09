@@ -274,7 +274,7 @@ namespace Intrepid2 {
 
     template<typename outPointViewType,
              typename refPointViewType>
-    inline
+    KOKKOS_INLINE_FUNCTION
     void
     OrientationTools::
     mapToModifiedReference(outPointViewType outPoints,
@@ -343,7 +343,7 @@ namespace Intrepid2 {
     }
 
     template<typename outPointViewType>
-    inline
+    KOKKOS_INLINE_FUNCTION
     void
     OrientationTools::
     getJacobianOfOrientationMap(outPointViewType jacobian,

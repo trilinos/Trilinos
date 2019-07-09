@@ -49,7 +49,7 @@
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_Traits.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 
 #include "Panzer_STK_Interface.hpp"
@@ -65,7 +65,7 @@ namespace panzer_stk {
 
     virtual Teuchos::RCP<NOX::Abstract::PrePostOperator>
     buildNOXObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-		     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase>& dof_manager,
+		     const Teuchos::RCP<const panzer::GlobalIndexer>& dof_manager,
 		     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const = 0;
   };
 

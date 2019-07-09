@@ -33,34 +33,27 @@
  *
  */
 #include "copy_string_cpp.h"
-#include "el_check_monot.h"    // for check_monot
-#include "el_elm.h"            // for HEXSHELL, NN_SIDE, etc
-#include "exodusII.h"          // for ex_inquire_int, etc
+#include "el_check_monot.h" // for check_monot
+#include "el_elm.h"         // for HEXSHELL, NN_SIDE, etc
+#include "exodusII.h"       // for ex_inquire_int, etc
+#include "fmt/ostream.h"
 #include "nem_spread.h"        // for NemSpread, second, etc
 #include "netcdf.h"            // for nc_set_fill, NC_NOFILL
 #include "pe_common.h"         // for MAX_CHUNK_SIZE
 #include "pe_str_util_const.h" // for string_to_lower
 #include "ps_pario_const.h"    // for PIO_Time_Array, etc
 #include "rf_allo.h"           // for safe_free, array_alloc
-#include "rf_format.h"         // for ST_ZU
 #include "rf_io_const.h"       // for Debug_Flag, etc
 #include "rf_util.h"           // for print_line, my_sort
 #include "sort_utils.h"        // for gds_qsort
 #include <cassert>             // for assert
 #include <climits>             // for INT_MAX
 #include <cstddef>             // for size_t
-#include <cstdio>              // for printf, fprintf, stderr
+#include <cstdio>              // for stderr
 #include <cstdlib>             // for exit, free
-#include <cstring>             // for strrchr, strlen
-#include <iostream>            // for operator<<, cerr, ostream, etc
 #include <string>              // for string
 #include <vector>              // for vector
 template <typename T, typename INT> class Globals;
-
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -119,17 +112,17 @@ namespace {
     int mode = 0;
     if (ids64bit) {
       mode |= EX_IDS_INT64_DB;
-      printf("-- ID output requires 64-bit integers.\n");
+      fmt::print("-- ID output requires 64-bit integers.\n");
     }
 
     if (global_counts_64bit) {
       mode |= EX_MAPS_INT64_DB;
-      printf("-- Global Id map output requires 64-bit integers.\n");
+      fmt::print("-- Global Id map output requires 64-bit integers.\n");
     }
 
     if (local_counts_64bit) {
       mode |= EX_BULK_INT64_DB;
-      printf("-- Bulk data output requires 64-bit integers.\n");
+      fmt::print("-- Bulk data output requires 64-bit integers.\n");
     }
 
     return mode;
@@ -145,7 +138,7 @@ namespace {
       *num_units_per_message = MAX_CHUNK_SIZE / (2 * iunit_size);
     }
     else {
-      fprintf(stderr, "ERROR:  find_message_info called with unit_size = 0.\n");
+      fmt::print(stderr, "ERROR:  find_message_info called with unit_size = 0.\n");
       exit(1);
     }
 
@@ -202,16 +195,13 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   /* Local variables */
 
-  INT *       num_nodes_in_node_set = nullptr;
-  int         mesh_exoid            = 0;
-  INT *       num_elem_in_ssets = nullptr, *num_df_in_ssets = nullptr, *num_df_in_nsets = nullptr;
-  int         cpu_ws;
-  const char *yo = "load_mesh: ";
-  float       version;
-  double      start_time      = 0.0;
-  int         max_name_length = 0;
-
-  char cTemp[512];
+  INT *  num_nodes_in_node_set = nullptr;
+  int    mesh_exoid            = 0;
+  INT *  num_elem_in_ssets = nullptr, *num_df_in_ssets = nullptr, *num_df_in_nsets = nullptr;
+  int    cpu_ws;
+  float  version;
+  double start_time      = 0.0;
+  int    max_name_length = 0;
 
   /* Allocate some memory for each processor read by this processor */
   globals.Proc_Num_Elem_Blk  = (int *)array_alloc(__FILE__, __LINE__, 1, Proc_Info[2], sizeof(int));
@@ -283,17 +273,17 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   /* Check for a problem which has too many processors for a given mesh */
 
   if (globals.Num_Node / Proc_Info[0] < 1) {
-    fprintf(stderr,
-            "%sERROR: Problem divided among too many "
-            "processors.\n",
-            yo);
+    fmt::print(stderr,
+               "[{}]: ERROR: Problem divided among too many "
+               "processors.\n",
+               __func__);
     exit(1);
   }
   else if (globals.Num_Elem / Proc_Info[0] < 1) {
-    fprintf(stderr,
-            "%sERROR: Problem divided among too many "
-            "processors.\n",
-            yo);
+    fmt::print(stderr,
+               "[{}]: ERROR: Problem divided among too many "
+               "processors.\n",
+               __func__);
     exit(1);
   }
 
@@ -308,9 +298,10 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   {
     cpu_ws     = io_ws;
     int mode   = EX_READ | int64api;
-    mesh_exoid = ex_open(ExoFile, mode, &cpu_ws, &io_ws, &version);
+    mesh_exoid = ex_open(ExoFile.c_str(), mode, &cpu_ws, &io_ws, &version);
     if (mesh_exoid < 0) {
-      fprintf(stderr, "%sExodus returned error opening mesh file, %s\n", yo, ExoFile);
+      fmt::print(stderr, "{}Exodus returned error opening mesh file, {}\n", __func__,
+                 ExoFile.c_str());
       exit(1);
     }
   }
@@ -334,7 +325,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   }
 
   if (ex_get_qa(mesh_exoid, (char *(*)[4])globals.QA_Record) < 0) {
-    fprintf(stderr, "%sERROR, could not get QA record(s)\n", yo);
+    fmt::print(stderr, "[{}]: ERROR, could not get QA record(s)\n", __func__);
     exit(1);
   }
 
@@ -346,12 +337,12 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     globals.Info_Record = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Info_Recs,
                                                MAX_LINE_LENGTH + 1, sizeof(char));
     if (!globals.Info_Record) {
-      fprintf(stderr, "[%s]: ERROR, insufficient memory!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, insufficient memory!\n", __func__);
       exit(1);
     }
 
     if (ex_get_info(mesh_exoid, globals.Info_Record) < 0) {
-      fprintf(stderr, "%sERROR, could not get Info record(s)\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, could not get Info record(s)\n", __func__);
       exit(1);
     }
   }
@@ -365,21 +356,21 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     globals.Coordinate_Frame_Ids =
         (INT *)array_alloc(__FILE__, __LINE__, 1, globals.Num_Coordinate_Frames, sizeof(INT));
     if (!globals.Coordinate_Frame_Ids) {
-      fprintf(stderr, "[%s]: ERROR, insufficient memory!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, insufficient memory!\n", __func__);
       exit(1);
     }
 
     globals.Coordinate_Frame_Coordinates =
         (T *)array_alloc(__FILE__, __LINE__, 1, 9 * globals.Num_Coordinate_Frames, sizeof(T));
     if (!globals.Coordinate_Frame_Coordinates) {
-      fprintf(stderr, "[%s]: ERROR, insufficient memory!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, insufficient memory!\n", __func__);
       exit(1);
     }
 
     globals.Coordinate_Frame_Tags =
         (char *)array_alloc(__FILE__, __LINE__, 1, globals.Num_Coordinate_Frames, sizeof(char));
     if (!globals.Coordinate_Frame_Tags) {
-      fprintf(stderr, "[%s]: ERROR, insufficient memory!\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, insufficient memory!\n", __func__);
       exit(1);
     }
 
@@ -387,11 +378,11 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     if (ex_get_coordinate_frames(mesh_exoid, &num_frames, globals.Coordinate_Frame_Ids,
                                  globals.Coordinate_Frame_Coordinates,
                                  globals.Coordinate_Frame_Tags) < 0) {
-      fprintf(stderr, "%sERROR, could not get Coordinate Frame record(s)\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, could not get Coordinate Frame record(s)\n", __func__);
       exit(1);
     }
     if (num_frames != globals.Num_Coordinate_Frames) {
-      fprintf(stderr, "%sERROR, frame count inconsistency\n", yo);
+      fmt::print(stderr, "[{}]: ERROR, frame count inconsistency\n", __func__);
       exit(1);
     }
   }
@@ -416,7 +407,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
         (char ***)array_alloc(__FILE__, __LINE__, 1, globals.Num_Elem_Blk, sizeof(char **));
   }
   else {
-    std::cerr << "ERROR, globals.Num_Elem_Blk = " << globals.Num_Elem_Blk << "\n";
+    fmt::print(stderr, "ERROR, globals.Num_Elem_Blk = {}\n", globals.Num_Elem_Blk);
     exit(1);
   }
 
@@ -455,7 +446,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   read_elem_blk_ids(mesh_exoid, max_name_length);
 
-  printf("\tTime to read element block IDs: %.4f\n", second() - start_time);
+  fmt::print("\tTime to read element block IDs:            {:.4f}\n", second() - start_time);
 
   /*
    * Process the Node Set IDs and associated information related to node sets
@@ -466,7 +457,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     start_time = second();
     read_node_set_ids(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets, max_name_length);
 
-    printf("\tTime to read node set IDs: %.4f\n", second() - start_time);
+    fmt::print("\tTime to read node set IDs:                 {:.4f}\n", second() - start_time);
   }
 
   /*
@@ -476,7 +467,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   if (globals.Num_Side_Set > 0) {
     start_time = second();
     read_side_set_ids(mesh_exoid, num_elem_in_ssets, num_df_in_ssets, max_name_length);
-    printf("\tTime to read side set IDs: %.4f\n", second() - start_time);
+    fmt::print("\tTime to read side set IDs:                 {:.4f}\n", second() - start_time);
   }
 
   /*
@@ -489,7 +480,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   extract_elem_blk();
 
-  printf("\tTime to extract element block information: %.4f\n", second() - start_time);
+  fmt::print("\tTime to extract element block information: {:.4f}\n", second() - start_time);
 
   /*
    * Read the mesh information from the exodus file and broadcast it to the
@@ -518,7 +509,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   read_coord(mesh_exoid, max_name_length);
 
-  printf("\tTime to read nodal coordinates: %.4f\n", second() - start_time);
+  fmt::print("\tTime to read nodal coordinates:            {:.4f}\n", second() - start_time);
 
   /*
    * Read the element connectivity and attributes information.  Broadcast it
@@ -526,25 +517,25 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
    */
   start_time = second();
   read_elem_blk(mesh_exoid);
-  printf("\tTime to read element blocks: %.4f\n", second() - start_time);
+  fmt::print("\tTime to read element blocks:               {:.4f}\n", second() - start_time);
 
   /* Read the node sets and sort */
   if (globals.Num_Node_Set > 0) {
     start_time = second();
     read_node_sets(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets);
-    printf("\tTime to read node sets: %.4f\n", second() - start_time);
+    fmt::print("\tTime to read node sets:                    {:.4f}\n", second() - start_time);
   }
 
   /* Assign the element types. */
   if (globals.Num_Side_Set > 0) {
     start_time = second();
     create_elem_types(); /* globals.Elem_Type only used in sideset read */
-    printf("\tTime to categorize element types: %.4f\n", second() - start_time);
+    fmt::print("\tTime to categorize element types:          {:.4f}\n", second() - start_time);
 
     /* Read the side sets and sort */
     start_time = second();
     read_side_sets(mesh_exoid, num_elem_in_ssets, num_df_in_ssets);
-    printf("\tTime to read side sets: %.4f\n", second() - start_time);
+    fmt::print("\tTime to read side sets:                    {:.4f}\n", second() - start_time);
   }
 
   /* Close the EXODUS  mesh file */
@@ -559,30 +550,31 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   /* Generate the parallel exodus file name */
   /* See if any '/' in the name.  IF present, isolate the basename of the file */
-  if (strrchr(Output_File_Base_Name, '/') != nullptr) {
+  std::string cTemp;
 
+  size_t found = Output_File_Base_Name.find_last_of('/');
+  if (found != std::string::npos) {
     /* There is a path separator.  Get the portion after the
      * separator
      */
-    copy_string(cTemp, strrchr(Output_File_Base_Name, '/') + 1);
+    cTemp = Output_File_Base_Name.substr(found + 1);
   }
   else {
-
     /* No separator; this is already just the basename... */
-    copy_string(cTemp, Output_File_Base_Name);
+    cTemp = Output_File_Base_Name;
   }
 
-  if (strlen(PIO_Info.Exo_Extension) == 0) {
-    add_fname_ext(cTemp, ".par");
+  if (PIO_Info.Exo_Extension.empty()) {
+    cTemp += ".par";
   }
   else {
-    add_fname_ext(cTemp, PIO_Info.Exo_Extension);
+    cTemp += PIO_Info.Exo_Extension;
   }
 
   /* Check sizes to see if need to store using 64-bit on the database */
   int db_mode = check_sizes(Proc_Info[2], Elem_Blk_Ids, Node_Set_Ids, Side_Set_Ids, globals);
   if (force64db) {
-    printf("-- Command-line option forcing output to use all 64-bit integers.\n");
+    fmt::print("-- Command-line option forcing output to use all 64-bit integers.\n");
     db_mode |= EX_ALL_INT64_DB;
   }
 
@@ -591,14 +583,14 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
     /* Create the parallel Exodus file for writing */
     if (Debug_Flag >= 7) {
-      printf("%sParallel mesh file name is %s\n", yo, Parallel_File_Name.c_str());
+      fmt::print("{}Parallel mesh file name is {}\n", __func__, Parallel_File_Name.c_str());
     }
     else {
       if (iproc % 10 == 0 || iproc == Proc_Info[2] - 1) {
-        printf("%d", iproc);
+        fmt::print("{}", iproc);
       }
       else {
-        printf(".");
+        fmt::print(".");
       }
     }
 
@@ -607,8 +599,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     mode |= db_mode;
     if ((mesh_exoid = ex_create(Parallel_File_Name.c_str(), mode, &cpu_ws, &io_ws)) == -1) {
 
-      fprintf(stderr, "[%s] Could not create parallel Exodus file:\n\t%s\n", yo,
-              Parallel_File_Name.c_str());
+      fmt::print(stderr, "[{}] Could not create parallel Exodus file:\n\t{}\n", __func__,
+                 Parallel_File_Name.c_str());
       exit(1);
     }
 
@@ -621,7 +613,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     }
 
     if (Debug_Flag >= 7) {
-      printf("%sParallel mesh file id is %d\n", yo, mesh_exoid);
+      fmt::print("{}Parallel mesh file id is {}\n", __func__, mesh_exoid);
     }
 
     /* Write out a parallel mesh file local to each processor */
@@ -630,22 +622,22 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
     /* Close the parallel exodus file */
     if (ex_close(mesh_exoid) == -1) {
-      fprintf(stderr, "%sCould not close the parallel Exodus file\n", yo);
+      fmt::print(stderr, "{}Could not close the parallel Exodus file\n", __func__);
       exit(1);
     }
   } /* End "for(iproc=0; iproc <Proc_Info[2]; iproc++)" */
 
   if (Debug_Flag >= 4) {
-    printf("\n\n\t\tTIMING TABLE FOR PROCESSORS\n");
-    printf("===========================================================\n");
-    printf("[0]: %6.2f\n", PIO_Time_Array[0]);
+    fmt::print("\n\n\t\tTIMING TABLE FOR PROCESSORS\n");
+    fmt::print("===========================================================\n");
+    fmt::print("[0]: {:6.2f}\n", PIO_Time_Array[0]);
     for (int i1 = 1; i1 < 25; i1++) {
-      printf("\t\t[%d]: %6.2f\n", i1, PIO_Time_Array[i1]);
+      fmt::print("\t\t[{}]: {:6.2f}\n", i1, PIO_Time_Array[i1]);
     }
-    printf("\nOutput rate: %6.2f kB/s\n", PIO_Time_Array[25]);
+    fmt::print("\nOutput rate: {:6.2f} kB/s\n", PIO_Time_Array[25]);
   }
   else if (Debug_Flag >= 1) {
-    printf("\n\nOutput rate: %6.2f kB/s\n", PIO_Time_Array[25]);
+    fmt::print("\n\nOutput rate: {:6.2f} kB/s\n", PIO_Time_Array[25]);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -721,7 +713,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   }
   free(globals.N_Comm_Map);
   free(globals.E_Comm_Map);
-  printf("\n");
+  fmt::print("\n");
 
 } /* END of routine load_mesh () *********************************************/
 
@@ -815,23 +807,24 @@ void NemSpread<T, INT>::read_node_set_ids(int mesh_exoid, INT num_nodes_in_node_
 
   /* Output debug info */
   if ((Debug_Flag > 1)) {
-    printf("\n\n");
+    fmt::print("\n\n");
     print_line("=", 79);
-    printf("\tTABLE OF NODE SET ID\'s\n\n");
-    printf("Node_Set_Num   ID  globals.Num_Nodes\n");
+    fmt::print("\tTABLE OF NODE SET ID\'s\n\n");
+    fmt::print("Node_Set_Num   ID  globals.Num_Nodes\n");
     print_line("-", 79);
 
     if (globals.Num_Node_Set > 0) {
       for (int i = 0; i < globals.Num_Node_Set; i++) {
-        printf("%6d%11lu%12lu\n", i, (size_t)Node_Set_Ids[i], (size_t)num_nodes_in_node_set[i]);
+        fmt::print("{:6d}{:11d}{:12d}\n", i, (size_t)Node_Set_Ids[i],
+                   (size_t)num_nodes_in_node_set[i]);
       }
     }
 
     else {
-      printf("\tNO NODE SETS ARE DEFINED IN THE MESH FILE\n");
+      fmt::print("\tNO NODE SETS ARE DEFINED IN THE MESH FILE\n");
     }
     print_line("=", 79);
-    printf("\n");
+    fmt::print("\n");
   }
 }
 
@@ -869,23 +862,24 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[
 
   /* Output debug information */
   if (Debug_Flag > 1) {
-    printf("\n\n");
+    fmt::print("\n\n");
     print_line("=", 79);
-    printf("\tTABLE OF SIDE SET ID\'s\n\n");
-    printf("Side_Set_Num   ID   Number Elements\n");
+    fmt::print("\tTABLE OF SIDE SET ID\'s\n\n");
+    fmt::print("Side_Set_Num   ID   Number Elements\n");
     print_line("-", 79);
 
     if (globals.Num_Side_Set > 0) {
       for (int i = 0; i < globals.Num_Side_Set; i++) {
-        printf("%6d%11lu  %12lu\n", i, (size_t)Side_Set_Ids[i], (size_t)num_elem_in_ssets[i]);
+        fmt::print("{:6d}{:11d}  {:12n}\n", i, (size_t)Side_Set_Ids[i],
+                   (size_t)num_elem_in_ssets[i]);
       }
     }
 
     else {
-      printf("\tNO SIDE SETS ARE DEFINED IN THE MESH FILE\n");
+      fmt::print("\tNO SIDE SETS ARE DEFINED IN THE MESH FILE\n");
     }
     print_line("=", 79);
-    printf("\n");
+    fmt::print("\n");
   }
   return;
 }
@@ -949,7 +943,7 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
 
   /* Get the coordinate names */
   if (ex_get_coord_names(exoid, Coord_Name) < 0) {
-    fprintf(stderr, "ERROR:Unable to obtain coordinate names\n");
+    fmt::print(stderr, "ERROR:Unable to obtain coordinate names\n");
     exit(1);
   }
 
@@ -975,11 +969,12 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
     // If not, output a warning and disable the map.
     for (size_t i = 0; i < globals.Num_Node; i++) {
       if (global_node_ids[i] <= 0) {
-        std::cerr << "---------------------------------------------------------------------\n"
-                  << "ERROR: Local node " << i + 1 << " has a global id of " << global_node_ids[i]
-                  << " which is invalid.\n"
-                  << "       All global ids must be greater than 0. The map will be ignored.\n"
-                  << "---------------------------------------------------------------------\n";
+        fmt::print(stderr,
+                   "---------------------------------------------------------------------\n"
+                   "ERROR: Local node {:n} has a global id of {:n} which is invalid.\n"
+                   "       All global ids must be greater than 0. The map will be ignored.\n"
+                   "---------------------------------------------------------------------\n",
+                   i + 1, global_node_ids[i]);
         sequential = 1; // Map is invalid, ignore it.
         break;
       }
@@ -1101,7 +1096,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
       }
     }
     else {
-      std::cerr << "ERROR globals.Num_Elem_Blk = " << globals.Num_Elem_Blk << "\n";
+      fmt::print(stderr, "ERROR globals.Num_Elem_Blk = {}\n", globals.Num_Elem_Blk);
       exit(1);
     }
 
@@ -1158,20 +1153,18 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
 
       /* Printout the Element Block Information defined on each Processor */
       print_line("=", 79);
-      printf("\t\tLocal Element Block information for Proc = %d\n", Proc_Ids[iproc]);
-      printf("\t\tNumber of Elem blocks on processor = %d\n", globals.Proc_Num_Elem_Blk[iproc]);
-      printf("%s%s\n", "Local_Block_Num  Global_Block_Num  Block_ID Nodes_Per_Elem ",
-             "Num_Attributes  Elem_Blk_Type  globals.Proc_Num_Elem_In_Blk "
-             "Glb_Elm_In_Blk");
+      fmt::print("\t\tLocal Element Block information for Proc = {}\n", Proc_Ids[iproc]);
+      fmt::print("\t\tNumber of Elem blocks on processor = {}\n", globals.Proc_Num_Elem_Blk[iproc]);
+      fmt::print("{}{}\n", "Local_Block_Num  Global_Block_Num  Block_ID Nodes_Per_Elem ",
+                 "Num_Attributes  Elem_Blk_Type  globals.Proc_Num_Elem_In_Blk "
+                 "Glb_Elm_In_Blk");
       print_line("-", 79);
       for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++) {
-        printf("%4d\t\t%5lu\t%8lu\t%8lu\t%8lu\t%8lu\t%8lu\t%8lu\n", i,
-               (size_t)globals.GElem_Blks[iproc][i], (size_t)globals.Proc_Elem_Blk_Ids[iproc][i],
-               (size_t)globals.Proc_Nodes_Per_Elem[iproc][i],
-               (size_t)globals.Proc_Num_Attr[iproc][i],
-               (size_t)globals.Proc_Elem_Blk_Types[iproc][i],
-               (size_t)globals.Proc_Num_Elem_In_Blk[iproc][i],
-               (size_t)Num_Elem_In_Blk[globals.GElem_Blks[iproc][i]]);
+        fmt::print("{:4d}\t\t{:5n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\n", i,
+                   globals.GElem_Blks[iproc][i], globals.Proc_Elem_Blk_Ids[iproc][i],
+                   globals.Proc_Nodes_Per_Elem[iproc][i], globals.Proc_Num_Attr[iproc][i],
+                   globals.Proc_Elem_Blk_Types[iproc][i], globals.Proc_Num_Elem_In_Blk[iproc][i],
+                   Num_Elem_In_Blk[globals.GElem_Blks[iproc][i]]);
       }
       print_line("=", 79);
     }
@@ -1303,20 +1296,19 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
       }
 
       if (Debug_Flag > 1) {
-        printf("\n\nMessage summary for Element Block number %d, ", ielem_blk);
-        printf("having a block id of " ST_ZU ":\n", (size_t)Elem_Blk_Ids[ielem_blk]);
-        printf("\tNumber of messages needed for the element connectivity "
-               "vector = " ST_ZU "\n",
-               num_elem_messages);
-        printf("\tNumber of elements per message = " ST_ZU "\n", num_elem_per_message);
-        printf("\tNumber of nodes per element = " ST_ZU "\n",
-               (size_t)Num_Nodes_Per_Elem[ielem_blk]);
-        printf("\tLength of each message = " ST_ZU " bytes\n",
-               (size_t)(Num_Nodes_Per_Elem[ielem_blk] * num_elem_per_message * sizeof(INT)));
+        fmt::print("\n\nMessage summary for Element Block number {}, ", ielem_blk);
+        fmt::print("having a block id of {}:\n", (size_t)Elem_Blk_Ids[ielem_blk]);
+        fmt::print("\tNumber of messages needed for the element connectivity "
+                   "vector = {}\n",
+                   num_elem_messages);
+        fmt::print("\tNumber of elements per message = {}\n", num_elem_per_message);
+        fmt::print("\tNumber of nodes per element = {}\n", (size_t)Num_Nodes_Per_Elem[ielem_blk]);
+        fmt::print("\tLength of each message = {} bytes\n",
+                   (size_t)(Num_Nodes_Per_Elem[ielem_blk] * num_elem_per_message * sizeof(INT)));
         if (num_attr_messages > 0) {
-          printf("\tNumber of attribute messages: " ST_ZU "\n\tNumber "
-                 "of attributes per message: " ST_ZU "\n\n",
-                 num_attr_messages, num_attr_per_message);
+          fmt::print("\tNumber of attribute messages: {}\n\tNumber "
+                     "of attributes per message: {}\n\n",
+                     num_attr_messages, num_attr_per_message);
         }
       }
 
@@ -1341,7 +1333,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
       for (size_t i = 0; i < num_elem_messages; i++) {
 
         if (Debug_Flag >= 2) {
-          printf("\telem block message: " ST_ZU " of " ST_ZU "\n", i + 1, num_elem_messages);
+          fmt::print("\telem block message: {} of {}\n", i + 1, num_elem_messages);
         }
 
         /* Initialize the element connectivity list to a value of -1.0 */
@@ -1366,7 +1358,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
                                                nullptr),
                            "ex_get_partial_conn");
         if (Debug_Flag >= 2) {
-          printf("\t\tread connectivity\n");
+          fmt::print("\t\tread connectivity\n");
         }
 
         el_type =
@@ -1376,26 +1368,26 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
         }
 
         if (Debug_Flag >= 2) {
-          printf("\t\tgot element types\n");
+          fmt::print("\t\tgot element types\n");
         }
 
         /* PRINT OUT THE ELEMENT CONNECTIVITY TABLE IF IN DEBUGGING MODE */
         if (Debug_Flag >= 6) {
-          printf("\n\n\n");
+          fmt::print("\n\n\n");
           print_line("=", 79);
-          printf("Printout of Element connectivity list obtained from "
-                 "Exodus file:\n");
-          printf("\tGlobal element block number = %d\n", ielem_blk);
-          printf("\tElement ID number     = " ST_ZU "\n", (size_t)Elem_Blk_Ids[ielem_blk]);
-          printf("\tMessage number        = " ST_ZU "\n", i);
+          fmt::print("Printout of Element connectivity list obtained from "
+                     "Exodus file:\n");
+          fmt::print("\tGlobal element block number = {}\n", ielem_blk);
+          fmt::print("\tElement ID number     = {}\n", (size_t)Elem_Blk_Ids[ielem_blk]);
+          fmt::print("\tMessage number        = {}\n", i);
           print_line("-", 79);
           ipos = 0;
           for (size_t j = 0; j < num_to_get; j++) {
-            printf("\t elem: " ST_ZU ", nodes:", j);
+            fmt::print("\t elem: {}, nodes:", j);
             for (int k = 0; k < Num_Nodes_Per_Elem[ielem_blk]; k++) {
-              printf(" " ST_ZU "", (size_t)elem_blk[ipos++]);
+              fmt::print(" {}", (size_t)elem_blk[ipos++]);
             }
-            printf("\n");
+            fmt::print("\n");
           }
           print_line("=", 79);
         }
@@ -1409,7 +1401,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
                                iproc);
         }
         if (Debug_Flag >= 2) {
-          printf("\t\textract connectivity\n");
+          fmt::print("\t\textract connectivity\n");
         }
 
       } /* End "for(i=0; i < num_elem_messages; i++)" */
@@ -1418,7 +1410,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
       for (size_t i = 0; i < num_attr_messages; i++) {
 
         if (Debug_Flag >= 2) {
-          printf("\tattribute message: " ST_ZU " of " ST_ZU "\n", i + 1, num_attr_messages);
+          fmt::print("\tattribute message: {} of {}\n", i + 1, num_attr_messages);
         }
 
         /* Initialize */
@@ -1450,7 +1442,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
         for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
           if (Debug_Flag > 6) {
-            printf("\t\tExtract attributes for processor %d\n", Proc_Ids[iproc]);
+            fmt::print("\t\tExtract attributes for processor {}\n", Proc_Ids[iproc]);
           }
           /*
            * On each processor, extract the element attributes that the
@@ -1809,7 +1801,7 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
   /* Boolean vector of length globals.Num_Elem_Blk If the i'th
      element block exists on the current processor, the i'th entry
      is set to TRUE  */
-  std::vector<int> elem_in_blk(globals.Num_Elem_Blk);
+  std::vector<bool> elem_in_blk(globals.Num_Elem_Blk);
 
   /* Vector of integer offsets into the vector globals.GElems.
      It has a length of globals.Num_Elem_Blk+1.  The i'th entry
@@ -1842,7 +1834,7 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
       while (i < tmp_cnt && globals.GElems[iproc][i] < elem_blk_point[j + 1]) {
         assert(globals.GElems[iproc][i] >= elem_blk_point[j]);
         proc_elem_blk[i++] = j;
-        elem_in_blk[j]     = TRUE;
+        elem_in_blk[j]     = true;
       }
       j++;
     }
@@ -1854,16 +1846,16 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
         if (globals.GElems[iproc][i] < elem_blk_point[j + 1] &&
             globals.GElems[iproc][i] >= elem_blk_point[j]) {
           proc_elem_blk[i] = j;
-          elem_in_blk[j]   = TRUE;
+          elem_in_blk[j]   = true;
           found            = true;
         }
       }
       if (!found) {
-        fprintf(stderr, "find_elem_block: Error!:\n");
-        fprintf(stderr,
-                "\tElement " ST_ZU " not found in any element "
-                "block.\n",
-                (size_t)i);
+        fmt::print(stderr, "find_elem_block: Error!:\n");
+        fmt::print(stderr,
+                   "\tElement {} not found in any element "
+                   "block.\n",
+                   (size_t)i);
         exit(1);
       }
     }
@@ -1879,7 +1871,7 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
       while (i < tmp_cnt && globals.GElems[iproc][i] < elem_blk_point[j + 1]) {
         assert(globals.GElems[iproc][i] >= elem_blk_point[j]);
         proc_elem_blk[i++] = j;
-        elem_in_blk[j]     = TRUE;
+        elem_in_blk[j]     = true;
       }
       j++;
     }
@@ -1892,16 +1884,16 @@ void NemSpread<T, INT>::find_elem_block(INT *proc_elem_blk, int iproc, int /*pro
         if (globals.GElems[iproc][i] < elem_blk_point[j + 1] &&
             globals.GElems[iproc][i] >= elem_blk_point[j]) {
           proc_elem_blk[i] = j;
-          elem_in_blk[j]   = TRUE;
+          elem_in_blk[j]   = true;
           found            = true;
         }
       }
       if (!found) {
-        fprintf(stderr, "find_elem_block: Error!:\n");
-        fprintf(stderr,
-                "\tElement " ST_ZU " not found in any element "
-                "block.\n",
-                (size_t)i);
+        fmt::print(stderr, "find_elem_block: Error!:\n");
+        fmt::print(stderr,
+                   "\tElement {} not found in any element "
+                   "block.\n",
+                   (size_t)i);
         exit(1);
       }
     }
@@ -1989,10 +1981,10 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
   size_t num_messages, num_left_over, num_node_per_message;
 
   /* Allocate arrays */
-  std::vector<INT> list_length(Proc_Info[2]);
-  std::vector<INT> proc_num_ns(Proc_Info[2]);
-  std::vector<INT> ns_cntr(Proc_Info[2]);
-  std::vector<INT> ns_on_proc(Proc_Info[2]);
+  std::vector<INT>  list_length(Proc_Info[2]);
+  std::vector<INT>  proc_num_ns(Proc_Info[2]);
+  std::vector<INT>  ns_cntr(Proc_Info[2]);
+  std::vector<bool> ns_on_proc(Proc_Info[2]);
 
   /* pointers into the concatenated node set list which locate the start of the node sets     */
   std::vector<std::vector<INT>> proc_list_pointer(Proc_Info[2]);
@@ -2081,7 +2073,7 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
         proc_num_ns[iproc] = 0;
         ns_cntr[iproc]     = 0;
-        ns_on_proc[iproc]  = FALSE;
+        ns_on_proc[iproc]  = false;
       }
 
       size_t iss_size = sizeof(INT);
@@ -2093,12 +2085,12 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
                         &num_left_over);
 
       if (Debug_Flag > 1) {
-        printf("\nMessage summary for Node Set number " ST_ZU ", with an ID of " ST_ZU ":\n",
-               static_cast<size_t>(i), (size_t)Node_Set_Ids[i]);
-        printf("\tNumber of messages need for node set = " ST_ZU "\n", num_messages);
-        printf("\tNumber of node IDs and dist. factors per message = " ST_ZU "\n",
-               num_node_per_message);
-        printf("\tLength of each message = " ST_ZU "\n", num_node_per_message * iss_size);
+        fmt::print("\nMessage summary for Node Set number {}, with an ID of {}:\n",
+                   static_cast<size_t>(i), (size_t)Node_Set_Ids[i]);
+        fmt::print("\tNumber of messages need for node set = {}\n", num_messages);
+        fmt::print("\tNumber of node IDs and dist. factors per message = {}\n",
+                   num_node_per_message);
+        fmt::print("\tLength of each message = {}\n", num_node_per_message * iss_size);
       }
 
       /* pointers into 'node_set' for the nodes that are common to
@@ -2171,7 +2163,7 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
            * node sets intersect, then add this intersection to the list
            */
           if (proc_ns_node_count[iproc] > 0) {
-            ns_on_proc[iproc] = TRUE;
+            ns_on_proc[iproc] = true;
             proc_num_ns[iproc] += proc_ns_node_count[iproc];
 
             /* Allocate and store node information in a temporary vector */
@@ -2371,10 +2363,10 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
 
   std::vector<std::vector<std::vector<T>>> proc_ss_df(Proc_Info[2]);
 
-  std::vector<INT> ss_elem_cntr(Proc_Info[2]);
-  std::vector<INT> ss_on_proc(Proc_Info[2]);       /* Flag to indicate that the ss is on the proc */
-  std::vector<INT> elem_list_length(Proc_Info[2]); /* length of the element side-set list for the
-                                                      current processor                           */
+  std::vector<INT>  ss_elem_cntr(Proc_Info[2]);
+  std::vector<bool> ss_on_proc(Proc_Info[2]); /* Flag to indicate that the ss is on the proc */
+  std::vector<INT>  elem_list_length(Proc_Info[2]); /* length of the element side-set list for the
+                                                       current processor                           */
   std::vector<INT> proc_num_sides_ss(Proc_Info[2]); /* Number of sides in the current side set that
                                                        exist for the current processor */
   std::vector<INT> ntotal(Proc_Info[2]);
@@ -2432,7 +2424,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
       int    ilast_side = 0;
 
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
-        ss_on_proc[iproc]        = FALSE;
+        ss_on_proc[iproc]        = false;
         proc_num_sides_ss[iproc] = 0;
         ss_elem_cntr[iproc]      = 0;
       }
@@ -2445,11 +2437,11 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
                         &num_left_over);
 
       if (Debug_Flag >= 2) {
-        printf("Message summary for Side Set number %d, with an ID of " ST_ZU ":\n", i,
-               (size_t)Side_Set_Ids[i]);
-        printf("\tNumber of messages needed for element and side list = " ST_ZU "\n", num_messages);
-        printf("\tNumber of element and side IDs per message = " ST_ZU "\n", num_elem_per_message);
-        printf("\tLength of each message = " ST_ZU "\n", iss_size * num_elem_per_message);
+        fmt::print("Message summary for Side Set number {}, with an ID of {}:\n", i,
+                   (size_t)Side_Set_Ids[i]);
+        fmt::print("\tNumber of messages needed for element and side list = {}\n", num_messages);
+        fmt::print("\tNumber of element and side IDs per message = {}\n", num_elem_per_message);
+        fmt::print("\tLength of each message = {}\n", iss_size * num_elem_per_message);
       }
 
       /* Allocate temporary storage for the current message for the
@@ -2465,7 +2457,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
       for (size_t imess = 0; imess < num_messages; imess++) {
 
         if (Debug_Flag >= 2) {
-          printf("\tside set message: " ST_ZU " of " ST_ZU "\n", imess + 1, num_messages);
+          fmt::print("\tside set message: {} of {}\n", imess + 1, num_messages);
         }
 
         size_t istart_ss = imess * num_elem_per_message;
@@ -2541,7 +2533,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
 
         for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
           if (!proc_elem_list[iproc][globals.Proc_Num_Side_Sets[iproc]].empty()) {
-            ss_on_proc[iproc] = TRUE;
+            ss_on_proc[iproc] = true;
             proc_num_sides_ss[iproc] =
                 proc_elem_list[iproc][globals.Proc_Num_Side_Sets[iproc]].size();
           }
@@ -2569,7 +2561,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
 
           if (!proc_es_pointer[iproc].empty()) {
             proc_num_sides_ss[iproc] += proc_es_pointer[iproc].size();
-            ss_on_proc[iproc] = TRUE;
+            ss_on_proc[iproc] = true;
 
             /*
              * Store the information for the current side set in temporary arrays.
@@ -2628,14 +2620,13 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
                           &num_left_over);
 
         if (Debug_Flag >= 4) {
-          printf("Message summary for Side Set number %d, with ID of " ST_ZU ":\n", i,
-                 (size_t)Side_Set_Ids[i]);
-          printf("\tNumber of messages needed for distribution "
-                 "factors = " ST_ZU "\n",
-                 num_messages);
-          printf("\tNumber of dist. factors in each message = " ST_ZU "\n", num_elem_per_message);
-          printf("\tLength of each message = " ST_ZU "\n",
-                 (size_t)(num_elem_per_message * sizeof(T)));
+          fmt::print("Message summary for Side Set number {}, with ID of {}:\n", i,
+                     (size_t)Side_Set_Ids[i]);
+          fmt::print("\tNumber of messages needed for distribution "
+                     "factors = {}\n",
+                     num_messages);
+          fmt::print("\tNumber of dist. factors in each message = {}\n", num_elem_per_message);
+          fmt::print("\tLength of each message = {}\n", (size_t)(num_elem_per_message * sizeof(T)));
         }
 
         std::vector<T> ss_dist_fact(num_elem_per_message); /* side-set distribution factors */

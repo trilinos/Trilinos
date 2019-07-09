@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -222,6 +223,29 @@ int check_no_shared_elements_or_higher(const BulkData& mesh)
   return 0;
 }
 
+void delete_upward_relations(stk::mesh::BulkData& bulkData,
+                             const stk::mesh::Entity& entity)
+{
+  stk::mesh::EntityRank entity_rank = bulkData.entity_rank(entity);
+  const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(bulkData.mesh_meta_data().entity_rank_count() - 1);
+  const stk::mesh::EntityRank begin_rank = static_cast<stk::mesh::EntityRank>(entity_rank);
+
+  for(stk::mesh::EntityRank irank = end_rank; irank != begin_rank; --irank)
+  {
+    int num_conn = bulkData.num_connectivity(entity, irank);
+    for(int j = num_conn - 1; j >= 0; --j)
+    {
+      const stk::mesh::Entity* rel_entities = bulkData.begin(entity, irank);
+      const stk::mesh::ConnectivityOrdinal* rel_ordinals = bulkData.begin_ordinals(entity, irank);
+      if(bulkData.is_valid(rel_entities[j]) && bulkData.state(rel_entities[j]) != Deleted)
+      {
+        bool relationDestoryed = bulkData.destroy_relation(rel_entities[j], entity, rel_ordinals[j]);
+        ThrowRequireWithSierraHelpMsg(relationDestoryed);
+      }
+    }
+  }
+}
+
 void delete_entities_and_upward_relations(stk::mesh::BulkData &bulkData, const stk::mesh::EntityVector &entities)
 {
     for (size_t i = 0; i < entities.size(); ++i)
@@ -232,25 +256,8 @@ void delete_entities_and_upward_relations(stk::mesh::BulkData &bulkData, const s
           continue;
         }
 
-        stk::mesh::EntityRank entity_rank = bulkData.entity_rank(entity);
-        const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(bulkData.mesh_meta_data().entity_rank_count() - 1);
-        const stk::mesh::EntityRank begin_rank = static_cast<stk::mesh::EntityRank>(entity_rank);
+        delete_upward_relations(bulkData, entity);
 
-        for(stk::mesh::EntityRank irank = end_rank; irank != begin_rank; --irank)
-        {
-            int num_conn = bulkData.num_connectivity(entity, irank);
-            const stk::mesh::Entity* rel_entities = bulkData.begin(entity, irank);
-            const stk::mesh::ConnectivityOrdinal* rel_ordinals = bulkData.begin_ordinals(entity, irank);
-
-            for(int j = num_conn - 1; j >= 0; --j)
-            {
-                if(bulkData.is_valid(rel_entities[j]) && bulkData.state(rel_entities[j]) != Deleted)
-                {
-                    bool relationDestoryed = bulkData.destroy_relation(rel_entities[j], entity, rel_ordinals[j]);
-                    ThrowRequireWithSierraHelpMsg(relationDestoryed);
-                }
-            }
-        }
         bool successfully_destroyed = bulkData.destroy_entity(entity);
         ThrowRequireWithSierraHelpMsg(successfully_destroyed);
     }

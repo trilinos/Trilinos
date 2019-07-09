@@ -5,7 +5,6 @@
 #include "elb_err.h"
 #include "fix_column_partitions.h"
 #include <cmath>
-#include <cstdio> // for sprintf
 #include <iostream>
 #include <map>
 #include <vector>
@@ -350,8 +349,8 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
       INT elem2 = *it;
       if (lb->vertex2proc[elem2] != max_procid) {
 #ifdef DEBUG
-        std::cout << " Reassigning element " << elem2 << " from proc " << lb->vertex2proc[elem2]
-                  << " to " << max_procid << "\n";
+        fmt::print(" Reassigning element {} from proc {} to {}\n", elem2, lb->vertex2proc[elem2],
+                   max_procid);
 #endif
         lb->vertex2proc[elem2] = max_procid;
         ++nmoved;

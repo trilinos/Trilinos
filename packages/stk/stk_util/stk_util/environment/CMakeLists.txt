@@ -1,6 +1,7 @@
-# Copyright (c) 2013, Sandia Corporation.
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
+# Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+# Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+# DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+# in this software.
 # 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -14,10 +15,10 @@
 #       disclaimer in the documentation and/or other materials provided
 #       with the distribution.
 # 
-#     * Neither the name of Sandia Corporation nor the names of its
-#       contributors may be used to endorse or promote products derived
-#       from this software without specific prior written permission.
-# 
+#     * Neither the name of NTESS nor the names of its contributors
+#       may be used to endorse or promote products derived from this
+#       software without specific prior written permission.
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -57,10 +58,14 @@ FILE(GLOB HEADERS *.hpp *.h)
 FILE(GLOB SOURCES *.cpp)
 
 IF(NOT TPL_ENABLE_BoostLib)
-IF(NOT ${PACKAGE_NAME}_ENABLE_BoostLib)
+  LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/EnvData.hpp")
+  LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/FileUtils.hpp")
   LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/ProgramOptions.hpp")
+  LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/Scheduler.hpp")
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/EnvData.cpp")
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/FileUtils.cpp")
   LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ProgramOptions.cpp")
-ENDIF()
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Scheduler.cpp")
 ENDIF()
 
 #

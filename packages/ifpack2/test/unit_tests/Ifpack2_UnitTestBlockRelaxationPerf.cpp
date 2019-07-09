@@ -25,8 +25,8 @@
 #include <Tpetra_MultiVector_def.hpp>
 #include <Tpetra_Vector_def.hpp>
 #include <Tpetra_RowMatrix_def.hpp>
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix.hpp>
+#include <Tpetra_BlockMultiVector.hpp>
+#include <Tpetra_BlockCrsMatrix.hpp>
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_BlockRelaxation.hpp>

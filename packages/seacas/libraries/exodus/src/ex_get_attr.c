@@ -52,8 +52,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
-#include <inttypes.h>     // for PRId64
-#include <stdio.h>
 
 /*!
  * \undoc reads the attributes for an edge, face, or element block

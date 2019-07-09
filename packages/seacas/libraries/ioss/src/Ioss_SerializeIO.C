@@ -34,8 +34,9 @@
 #include <Ioss_ParallelUtils.h> // for ParallelUtils
 #include <Ioss_SerializeIO.h>
 #include <Ioss_Utils.h> // for IOSS_ERROR, IOSS_WARNING
-#include <ostream>      // for operator<<, etc
-#include <string>       // for char_traits
+#include <fmt/ostream.h>
+#include <ostream> // for operator<<, etc
+#include <string>  // for char_traits
 
 namespace Ioss {
 
@@ -55,7 +56,7 @@ namespace Ioss {
   std::mutex SerializeIO::m_;
 #endif
 
-  SerializeIO::SerializeIO(const DatabaseIO *database_io, int manual_owner_processor)
+  SerializeIO::SerializeIO(const DatabaseIO *database_io)
       : m_databaseIO(database_io), m_activeFallThru(true), m_manualOwner(-1)
 
   {
@@ -75,15 +76,11 @@ namespace Ioss {
       }
     }
 
-    m_manualOwner = (manual_owner_processor == -1 || s_groupFactor == 0)
-                        ? -1
-                        : manual_owner_processor / s_groupFactor;
-
     if (m_activeFallThru) {
       if (m_manualOwner != -1 && m_manualOwner != s_owner) {
         std::ostringstream errmsg;
-        errmsg << "Attempting to replace manual ownership from " << s_owner << " to "
-               << m_manualOwner;
+        fmt::print(errmsg, "Attempting to replace manual ownership from {} to {}", s_owner,
+                   m_manualOwner);
         IOSS_ERROR(errmsg);
       }
     }
@@ -100,8 +97,8 @@ namespace Ioss {
       else {
         if (s_owner != -1 && m_manualOwner != s_owner) {
           std::ostringstream errmsg;
-          errmsg << "Attempting to replace manual ownership from " << s_owner << " to "
-                 << m_manualOwner;
+          fmt::print(errmsg, "Attempting to replace manual ownership from {} to {}", s_owner,
+                     m_manualOwner);
           IOSS_ERROR(errmsg);
         }
         s_owner = m_manualOwner;
@@ -154,8 +151,8 @@ namespace Ioss {
   {
     IOSS_FUNC_ENTER(m_);
     if (s_rank != -1) {
-      IOSS_WARNING << "Mesh I/O serialization group factor cannot be changed "
-                      "once serialized I/O has begun";
+      fmt::print(IOSS_WARNING, "Mesh I/O serialization group factor cannot be changed "
+                               "once serialized I/O has begun");
     }
     else {
       s_groupFactor = factor;

@@ -110,7 +110,7 @@ private:
   int    debugLevel_{0};
   int    screenWidth_{0};
   int    stepMin_{1};
-  int    stepMax_{INT_MAX};
+  int    stepMax_{1 << 30};
   int    stepInterval_{1};
   bool   omitNodesets_{false};
   bool   omitSidesets_{false};

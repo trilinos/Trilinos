@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr const char *name = "hex8";
+    static const char *name;
 
     static void factory();
     ~Hex8() override;

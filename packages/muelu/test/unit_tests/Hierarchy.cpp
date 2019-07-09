@@ -231,10 +231,11 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    typedef typename Teuchos::ScalarTraits<Scalar> TST;
-
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    using TST                   = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
@@ -257,7 +258,7 @@ namespace MueLuTests {
 
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
     nullSpace->putScalar( (Scalar) 1.0);
-    Teuchos::Array<typename TST::magnitudeType> norms(1);
+    Teuchos::Array<magnitude_type> norms(1);
     nullSpace->norm1(norms);
 
     MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> H;
@@ -319,7 +320,7 @@ namespace MueLuTests {
 
     RHS->putScalar( (Scalar) 0.0);
 
-    int iterations=10;
+    int iterations=15;
     H.Iterate(*RHS, *X, iterations);
 
     X->norm2(norms);
@@ -328,9 +329,118 @@ namespace MueLuTests {
 
     norms = Utilities::ResidualNorm(*Op, *X, *RHS);
     out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
-    TEST_EQUALITY(norms[0]<1e-10, true);
+    TEST_EQUALITY(norms[0] < 100*TMT::eps(), true);
 
   } //Iterate
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, IterateWithFusedProlongationUpdate, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    using TST                   = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    //matrix
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    GO nx = 6561*comm->getSize();  //=8*3^6
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+    RCP<const Map > map = Op->getRowMap();
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
+
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
+    nullSpace->putScalar( (Scalar) 1.0);
+    Teuchos::Array<magnitude_type> norms(1);
+    nullSpace->norm1(norms);
+
+    MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> H;
+    H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
+    RCP<MueLu::Level> Finest = H.GetLevel();
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
+    Finest->Set("Coordinates", coordinates);
+    Finest->Set("Nullspace", nullSpace);
+    Finest->Set("A", Op);
+
+    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+    CoupledAggFact->SetMinNodesPerAggregate(3);
+    CoupledAggFact->SetMaxNeighAlreadySelected(0);
+    CoupledAggFact->SetOrdering("natural");
+    CoupledAggFact->SetPhase3AggCreation(0.5);
+
+    RCP<CoalesceDropFactory> cdFact;
+    RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
+
+    RCP<SaPFactory>    Pfact  = rcp( new SaPFactory() );
+    RCP<TransPFactory> Rfact  = rcp( new TransPFactory());
+    RCP<RAPFactory>    Acfact = rcp( new RAPFactory() );
+
+    RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSmootherPrototype("Gauss-Seidel", 2);
+    RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
+    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+    RCP<SmootherPrototype> coarseProto = rcp(new DirectSolver("Klu"));
+    RCP<SmootherFactory> coarseSolveFact = rcp( new SmootherFactory(coarseProto, Teuchos::null));
+
+    int maxLevels = 5;
+
+    FactoryManager M;
+    M.SetKokkosRefactor(false);
+    M.SetFactory("P", Pfact);
+    M.SetFactory("R", Rfact);
+    M.SetFactory("A", Acfact);
+    M.SetFactory("Ptent", TentPFact);
+    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Smoother", SmooFact);
+    M.SetFactory("CoarseSolver", coarseSolveFact);
+    M.SetFactory("Coordinates", TentPFact);
+
+    H.Setup(M, 0, maxLevels);
+
+    H.SetFuseProlongationAndUpdate(true);
+
+    RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
+    RCP<MultiVector> RHS = MultiVectorFactory::Build(map, 1);
+
+    X->setSeed(846930886);
+    X->randomize();
+    //Op->apply(*X, *RHS, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
+
+    X->norm2(norms);
+    X->scale(1/norms[0]);
+    X->norm2(norms);
+    out << "||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+
+    RHS->putScalar( (Scalar) 0.0);
+
+    int iterations=15;
+    H.Iterate(*RHS, *X, iterations);
+
+    X->norm2(norms);
+    out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(std::ios::fixed) <<
+      std::setprecision(10) << norms[0] << std::endl;
+
+    norms = Utilities::ResidualNorm(*Op, *X, *RHS);
+    out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
+    TEST_EQUALITY(norms[0] < 100*TMT::eps(), true);
+
+  } //IterateWithFusedProlongationUpdate
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, IterateWithImplicitRestriction, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -344,11 +454,11 @@ namespace MueLuTests {
 #   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
-
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    using TST                   = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     //matrix
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -429,7 +539,7 @@ namespace MueLuTests {
 
     RHS->putScalar( (Scalar) 0.0);
 
-    int iterations=10;
+    int iterations=15;
     H.Iterate(*RHS, *X, iterations);
 
     X->norm2(norms);
@@ -438,7 +548,7 @@ namespace MueLuTests {
 
     norms = Utilities::ResidualNorm(*Op, *X, *RHS);
     out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
-    TEST_EQUALITY(norms[0]<1e-10, true);
+    TEST_EQUALITY(norms[0] < 100*TMT::eps(), true);
 
   } //Iterate
 
@@ -896,14 +1006,15 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    using TST                   = Teuchos::ScalarTraits<Scalar>;
+    using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO nx = 30;
     RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
-    typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", nx);
@@ -964,7 +1075,7 @@ namespace MueLuTests {
     Teuchos::Array<typename TST::magnitudeType> norms(1);
     diff->norm2(norms);
     out << "||diff|| = " << norms[0] << std::endl;
-    TEST_EQUALITY(norms[0]<1e-15, true);
+    TEST_EQUALITY(norms[0] < 100*TMT::eps(), true);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)

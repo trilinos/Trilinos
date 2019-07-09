@@ -122,6 +122,7 @@ namespace MueLu {
     if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "coarse grid correction scaling factor") { ss << "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "fuse prolongation and update") { ss << "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "hierarchy label") { ss << "<Parameter name=\"hierarchy label\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
@@ -142,6 +143,12 @@ namespace MueLu {
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: mode") { ss << "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: disable addon") { ss << "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: use as preconditioner") { ss << "<Parameter name=\"refmaxwell: use as preconditioner\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: dump matrices") { ss << "<Parameter name=\"refmaxwell: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: subsolves on subcommunicators") { ss << "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: ratio AH / A22 subcommunicators") { ss << "<Parameter name=\"refmaxwell: ratio AH / A22 subcommunicators\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     return "";
   }
 
@@ -156,6 +163,7 @@ namespace MueLu {
   "<Parameter name=\"max levels\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
   "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=\"1.0\"/>"
+  "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
@@ -281,6 +289,14 @@ namespace MueLu {
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
   "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
+  "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=\"additive\"/>"
+  "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=\"true\"/>"
+  "<ParameterList name=\"refmaxwell: 11list\"/>"
+  "<ParameterList name=\"refmaxwell: 22list\"/>"
+  "<Parameter name=\"refmaxwell: use as preconditioner\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"refmaxwell: dump matrices\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"refmaxwell: ratio AH / A22 subcommunicators\" type=\"double\" value=\"1.0\"/>"
 "</ParameterList>"
 ;
   std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>
@@ -474,6 +490,8 @@ namespace MueLu {
          ("prec type","cycle type")
       
          ("coarse grid correction scaling factor","coarse grid correction scaling factor")
+      
+         ("fuse prolongation and update","fuse prolongation and update")
       
          ("problem: symmetric","problem: symmetric")
       
@@ -724,6 +742,22 @@ namespace MueLu {
          ("amgx:params","amgx:params")
       
          ("debug: graph level","debug: graph level")
+      
+         ("refmaxwell: mode","refmaxwell: mode")
+      
+         ("refmaxwell: disable addon","refmaxwell: disable addon")
+      
+         ("refmaxwell: 11list","refmaxwell: 11list")
+      
+         ("refmaxwell: 22list","refmaxwell: 22list")
+      
+         ("zero starting solution","refmaxwell: use as preconditioner")
+      
+         ("refmaxwell: dump matrices","refmaxwell: dump matrices")
+      
+         ("refmaxwell: subsolves on subcommunicators","refmaxwell: subsolves on subcommunicators")
+      
+         ("refmaxwell: ratio AH / A22 subcommunicators","refmaxwell: ratio AH / A22 subcommunicators")
       ;
 
 }

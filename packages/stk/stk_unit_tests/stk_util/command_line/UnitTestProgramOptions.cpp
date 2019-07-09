@@ -65,6 +65,16 @@ TEST_F(EmptyCommandLine, parseOneOptionDefaultValue_getDefault)
     EXPECT_EQ("default", parser.get_option_value<std::string>("oneOpt"));
 }
 
+TEST_F(EmptyCommandLine, parseOneOptionWithoutAbbreviation)
+{
+    stk::CommandLineParser parser;
+    parser.add_optional<std::string>("oneOpt", "one option", "default");
+    EXPECT_EQ(stk::CommandLineParser::ParseComplete, parser.parse(argc, argv));
+
+    EXPECT_TRUE(!parser.is_empty());
+    EXPECT_EQ("default", parser.get_option_value<std::string>("oneOpt"));
+}
+
 TEST_F(EmptyCommandLine, queryIfFlagProvided_notProvided)
 {
     stk::CommandLineParser parser;

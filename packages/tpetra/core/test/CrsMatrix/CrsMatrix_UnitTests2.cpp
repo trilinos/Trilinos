@@ -147,10 +147,6 @@ namespace {
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createVector;
-  using Tpetra::createCrsMatrix;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -261,14 +257,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const map_type> lclmap = createLocalMapWithNode<LO,GO,Node> (P, comm);
 
     // create the matrix
-    MAT A(rowmap,P,DynamicProfile);
+    MAT A(rowmap,P,TPETRA_DEFAULT_PROFILE_TYPE);
     for (GO i=0; i<static_cast<GO>(M); ++i) {
       for (GO j=0; j<static_cast<GO>(P); ++j) {
         A.insertGlobalValues( M*myImageID+i, tuple<GO>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
     // call fillComplete()
-    TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
+    TEST_EQUALITY_CONST( A.getProfileType() == TPETRA_DEFAULT_PROFILE_TYPE, true );
     A.fillComplete(lclmap,rowmap);
     // build the input multivector X
     MV X(lclmap,numVecs);
@@ -631,5 +627,3 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }
-
-

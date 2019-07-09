@@ -48,6 +48,8 @@
 #define TPETRA_MAP_DEF_HPP
 
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
+#include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_checkPointer.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_printOnce.hpp"
@@ -59,8 +61,74 @@
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include "Tpetra_Details_initializeKokkos.hpp"
+#include <sstream>
 #include <stdexcept>
 #include <typeinfo>
+
+namespace { // (anonymous)
+
+  template<class ExecutionSpace>
+  void
+  checkMapInputArray (const char ctorName[],
+                      const void* indexList,
+                      const size_t indexListSize,
+                      const ExecutionSpace& execSpace,
+                      const Teuchos::Comm<int>* const comm)
+  {
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      using ::Tpetra::Details::pointerAccessibleFromExecutionSpace;
+      using Teuchos::outArg;
+      using Teuchos::REDUCE_MIN;
+      using Teuchos::reduceAll;
+      using std::endl;
+
+      const int myRank = comm == nullptr ? 0 : comm->getRank ();
+      const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+      std::ostringstream lclErrStrm;
+      int lclSuccess = 1;
+
+      if (indexListSize != 0 && indexList == nullptr) {
+        lclSuccess = 0;
+        if (verbose) {
+          lclErrStrm << "Proc " << myRank << ": indexList is null, "
+            "but indexListSize=" << indexListSize << " != 0." << endl;
+        }
+      }
+      else {
+        if (indexListSize != 0 && indexList != nullptr &&
+            ! pointerAccessibleFromExecutionSpace (indexList, execSpace)) {
+          lclSuccess = 0;
+          if (verbose) {
+            using ::Tpetra::Details::memorySpaceName;
+            const std::string memSpaceName = memorySpaceName (indexList);
+            const std::string execSpaceName =
+              Teuchos::TypeNameTraits<ExecutionSpace>::name ();
+            lclErrStrm << "Proc " << myRank << ": Input array is not "
+              "accessible from the required execution space " <<
+              execSpaceName << ".  As far as I can tell, array lives "
+              "in memory space " << memSpaceName << "." << endl;
+          }
+        }
+      }
+      int gblSuccess = 0; // output argument
+      reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      if (gblSuccess != 1) {
+        std::ostringstream gblErrStrm;
+        gblErrStrm << "Tpetra::Map constructor " << ctorName <<
+          " detected a problem with the input array "
+          "(raw array, Teuchos::ArrayView, or Kokkos::View) "
+          "of global indices." << endl;
+        if (verbose) {
+          using ::Tpetra::Details::gathervPrint;
+          gathervPrint (gblErrStrm, lclErrStrm.str (), *comm);
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::invalid_argument, gblErrStrm.str ());
+      }
+    }
+  }
+} // namespace (anonymous)
 
 namespace Tpetra {
 
@@ -742,7 +810,10 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     Tpetra::Details::initializeKokkos ();
-
+    checkMapInputArray ("(GST, const GO[], LO, GO, comm)",
+                        indexList, static_cast<size_t> (indexListSize),
+                        Kokkos::DefaultHostExecutionSpace (),
+                        comm.getRawPtr ());
     // Not quite sure if I trust all code to behave correctly if the
     // pointer is nonnull but the array length is nonzero, so I'll
     // make sure the raw pointer is null if the length is zero.
@@ -778,9 +849,11 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     Tpetra::Details::initializeKokkos ();
-
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
-
+    checkMapInputArray ("(GST, ArrayView, GO, comm)",
+                        entryList.getRawPtr (), numLclInds,
+                        Kokkos::DefaultHostExecutionSpace (),
+                        comm.getRawPtr ());
     // Not quite sure if I trust both ArrayView and View to behave
     // correctly if the pointer is nonnull but the array length is
     // nonzero, so I'll make sure it's null if the length is zero.
@@ -823,6 +896,10 @@ namespace Tpetra {
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     Tpetra::Details::initializeKokkos ();
+    checkMapInputArray ("(GST, Kokkos::View, GO, comm)",
+                        entryList.data (),
+                        static_cast<size_t> (entryList.extent (0)),
+                        execution_space (), comm.getRawPtr ());
 
     // The user has specified the distribution of indices over the
     // processes, via the input array of global indices on each
@@ -1546,7 +1623,7 @@ namespace Tpetra {
       // lgMapHost_ may be a UVM View, so insert a fence to ensure
       // coherent host access.  We only need to do this once, because
       // lgMapHost_ is immutable after initialization.
-      execution_space::fence ();
+      execution_space().fence ();
     }
 
     return lgMap_;
@@ -2114,7 +2191,7 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 TPETRA_DEPRECATED
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createLocalMapWithNode (const size_t numElements,
-                                const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+                                const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                 const Teuchos::RCP<Node>& /* node */
 )
 {

@@ -258,18 +258,18 @@ Perf fenl_assembly(
 
     //--------------------------------
 
-    Device::fence();
+    Device().fence();
     wall_clock.reset();
 
     comm_nodal_import( nodal_solution );
 
-    Device::fence();
+    Device().fence();
     perf.import_time = wall_clock.seconds();
 
     //--------------------------------
     // Element contributions to residual and jacobian
 
-    Device::fence();
+    Device().fence();
     wall_clock.reset();
 
     Kokkos::deep_copy( nodal_residual , Scalar(0) );
@@ -282,7 +282,7 @@ Perf fenl_assembly(
 
     dirichlet.apply();
 
-    Device::fence();
+    Device().fence();
     perf.fill_time = wall_clock.seconds();
 
     //--------------------------------

@@ -250,7 +250,7 @@ namespace Intrepid2 {
                        transformed_value_of_basis_at_cub_points,
                        weighted_transformed_value_of_basis_at_cub_points);
 
-        DeviceSpaceType::fence();
+        DeviceSpaceType().fence();
 
         /*******************  STOP COMPUTATION ***********************/
 

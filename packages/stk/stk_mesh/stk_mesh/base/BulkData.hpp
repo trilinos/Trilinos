@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -167,18 +168,6 @@ public:
    *  - The maximum number of entities per bucket may be supplied.
    *  - The bulk data is in the synchronized or "locked" state.
    */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 5 2019
-  STK_DEPRECATED BulkData(   MetaData & mesh_meta_data
-            , ParallelMachine parallel
-            , enum AutomaticAuraOption auto_aura_option
-#ifdef SIERRA_MIGRATION
-            , bool add_fmwk_data
-#endif
-            , ConnectivityMap const* arg_connectivity_map_no_longer_used_and_soon_to_be_deprecated
-            , FieldDataManager *field_dataManager
-            , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
-            );
-#endif
   BulkData(   MetaData & mesh_meta_data
             , ParallelMachine parallel
             , enum AutomaticAuraOption auto_aura_option = AUTO_AURA
@@ -204,10 +193,6 @@ public:
 
   /** \brief  Rank of the parallel machine's local processor */
   int parallel_rank()   const { return m_parallel.parallel_rank() ; }
-
-#ifndef STK_HIDE_DEPRECATED_CODE //Delete after April 5 2019
-  STK_DEPRECATED const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
-#endif
 
   //------------------------------------
   /** \brief  Bulk data has two states:
@@ -519,15 +504,6 @@ public:
       const RelationIdentifier local_id,
       Permutation permutation = stk::mesh::Permutation::INVALID_PERMUTATION);
 
-#ifndef STK_HIDE_DEPRECATED_CODE // delete after March 14, 2019
-  STK_DEPRECATED void declare_relation( Entity e_from ,
-      Entity e_to ,
-      const RelationIdentifier local_id,
-      Permutation permutation,
-      OrdinalVector& ordinal_scratch,
-      PartVector& part_scratch);
-#endif
-
   //it's ugly to have 3 scratch-space vectors in the API, but for now
   //it is a big performance improvement. TODO: improve the internals to remove
   //the need for these vectors.
@@ -812,6 +788,8 @@ public:
    */
   void allocate_field_data();
 
+  void reallocate_field_data(stk::mesh::FieldBase & field);
+
   const std::string & get_last_modification_description() const { return m_lastModificationDescription; }
 
   void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer) const;
@@ -819,7 +797,7 @@ public:
   template<typename ObserverType>
   bool has_observer_type() const { return notifier.has_observer_type<ObserverType>(); }
   template<typename ObserverType>
-  std::vector<ObserverType*> get_observer_type() const { return notifier.get_observer_type<ObserverType>(); }
+  std::vector<std::shared_ptr<ObserverType>> get_observer_type() const { return notifier.get_observer_type<ObserverType>(); }
 
   void initialize_face_adjacent_element_graph();
   void delete_face_adjacent_element_graph();
@@ -844,6 +822,7 @@ public:
   void clear_sidesets();
   void clear_sideset(const stk::mesh::Part &part);
   std::vector<SideSet *> get_sidesets();
+  void synchronize_sideset_sync_count();
 
   void clone_solo_side_id_generator(const stk::mesh::BulkData &oldBulk);
   void create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts);
@@ -995,9 +974,9 @@ protected: //functions
   void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank,
                                       const stk::mesh::Selector *only_consider_second_element_from_this_selector); // Mod Mark
 
-  void internal_resolve_shared_modify_delete() // Mod Mark
+  void internal_resolve_shared_modify_delete(stk::mesh::EntityVector & entitiesNoLongerShared) // Mod Mark
   {
-      m_meshModification.internal_resolve_shared_modify_delete();
+      m_meshModification.internal_resolve_shared_modify_delete(entitiesNoLongerShared);
   }
 
   void update_comm_list_based_on_changes_in_comm_map();
@@ -1008,7 +987,7 @@ protected: //functions
   void remove_unneeded_induced_parts(stk::mesh::Entity entity, const EntityCommInfoVector& entity_comm_info,
           PartStorage& part_storage, stk::CommSparse& comm);
 
-  void internal_resolve_shared_membership(); // Mod Mark
+  void internal_resolve_shared_membership(const stk::mesh::EntityVector & entitiesNoLongerShared); // Mod Mark
   virtual void internal_resolve_parallel_create();
 
   virtual void internal_resolve_parallel_create(const std::vector<stk::mesh::EntityRank>& ranks); // Mod Mark
@@ -1137,7 +1116,7 @@ protected: //functions
   void check_mesh_consistency();
   bool comm_mesh_verify_parallel_consistency(std::ostream & error_log);
   void delete_shared_entities_which_are_no_longer_in_owned_closure(EntityProcVec& entitiesToRemoveFromSharing); // Mod Mark
-  virtual void remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing);
+  virtual void remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing, stk::mesh::EntityVector & entitiesNoLongerShared);
   virtual void check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, const shared_entity_type &sentity);
   void update_owner_global_key_and_sharing_proc(stk::mesh::EntityKey global_key_other_proc,  shared_entity_type& shared_entity_this_proc, int proc_id) const;
   void update_shared_entity_this_proc(EntityKey global_key_other_proc, shared_entity_type& shared_entity_this_proc, int proc_id);

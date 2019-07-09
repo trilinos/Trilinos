@@ -344,7 +344,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Equilibration
-  SOURCES 
+  SOURCES
     Equilibration.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -352,6 +352,25 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_StaticImportExport
+  SOURCES
+    CrsMatrix_StaticImportExport
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  sumIntoStaticProfileExtraSpace
+  SOURCES sumIntoStaticProfileExtraSpace
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
 
 SET(TIMING_INSTALLS "")
 

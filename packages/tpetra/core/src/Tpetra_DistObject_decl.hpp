@@ -722,22 +722,15 @@ namespace Tpetra {
 
     /// \typedef buffer_memory_space
     /// \brief Kokkos memory space for communication buffers.
-    ///
-    /// See #1088 for why this is not just <tt>device_type::memory_space</tt>.
-#ifdef KOKKOS_ENABLE_CUDA
-    using buffer_memory_space = typename std::conditional<
-      std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
-      Kokkos::CudaSpace,
-      typename device_type::memory_space>::type;
-#else
-    using buffer_memory_space = typename device_type::memory_space;
-#endif // KOKKOS_ENABLE_CUDA
+    using buffer_memory_space =
+      ::Tpetra::Details::DefaultTypes::comm_buffer_memory_space<
+        typename device_type::execution_space>;
 
   public:
     /// \typedef buffer_device_type
     /// \brief Kokkos::Device specialization for communication buffers.
     ///
-    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+    /// See #1088 for why this is not just \c device_type.
     ///
     /// This needs to be public so that I can declare functions like
     /// packAndPrepareWithOwningPIDs.

@@ -73,8 +73,7 @@
 
 namespace panzer
 {
-  template <typename LocalOrdinalT, typename GlobalOrdinalT>
-  class UniqueGlobalIndexer;
+  class GlobalIndexer;
 }
 
 namespace panzer
@@ -109,11 +108,11 @@ namespace panzer
        *
        *  Simply saves the input `indexers` as this object's `indexers_`.
        *
-       *  \param[in] indexers The `vector` of `UniqueGlobalIndexer`s that
+       *  \param[in] indexers The `vector` of `GlobalIndexer`s that
        *                      handle the global unknown numbering.
        */
       GatherTangent_BlockedEpetra(
-        const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+        const std::vector<Teuchos::RCP<const GlobalIndexer>>&
           indexers)
         :
         indexers_(indexers)
@@ -127,12 +126,12 @@ namespace panzer
        *  fields, sets up dependent tangent fields (if requested), and
        *  determines the first active name.
        *
-       *  \param[in] indexers The `vector` of `UniqueGlobalIndexer`s that
+       *  \param[in] indexers The `vector` of `GlobalIndexer`s that
        *                      handle the global unknown numbering.
        *  \param[in] p        The input parameters.
        */
       GatherTangent_BlockedEpetra(
-        const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+        const std::vector<Teuchos::RCP<const GlobalIndexer>>&
           indexers,
         const Teuchos::ParameterList& p);
 
@@ -205,7 +204,7 @@ namespace panzer
        *  \brief These map the local (field, element, basis) triplet to a
        *         global ID for scattering.
        */
-      std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>> indexers_;
+      std::vector<Teuchos::RCP<const GlobalIndexer>> indexers_;
 
       /**
        *  \brief The block index into `indexers_`.

@@ -16,6 +16,12 @@ APPEND_GLOB(HEADERS ${DIR}/generated_specializations_hpp/*.hpp)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/impl/tpls)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
+#Blas Cuda wrapper
+IF (KOKKOSKERNELS_ENABLE_TPL_CUBLAS OR KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+  APPEND_GLOB(HEADERS ${DIR}/impl/tpls/KokkosBlas_Cuda_tpl.hpp)
+  APPEND_GLOB(SOURCES ${DIR}/impl/tpls/KokkosBlas_Cuda_tpl.cpp)
+ENDIF()
+
 #Include BLAS
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/blas)

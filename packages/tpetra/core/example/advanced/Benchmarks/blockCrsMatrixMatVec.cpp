@@ -39,7 +39,7 @@
 // ************************************************************************
 // @HEADER
 
-// This benchmark exercises Tpetra::Experimental::BlockCrsMatrix's
+// This benchmark exercises Tpetra::BlockCrsMatrix's
 // sparse matrix-vector multiply (the apply() method).  Tpetra
 // implements sparse matrix and dense vector data structures and
 // computational kernels for users and other Trilinos data structures.
@@ -47,9 +47,9 @@
 // parallelism, and Kokkos for shared-memory parallelism within an MPI
 // process.
 
-#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers.hpp"
+#include "Tpetra_BlockView.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
@@ -65,17 +65,17 @@ namespace { // (anonymous)
 
 template<class Scalar, class LO, class GO, class Node>
 void
-localApplyBlockNoTrans (Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
-                        Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node>& X,
-                        Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node>& Y,
+localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
+                        Tpetra::BlockMultiVector<Scalar, LO, GO, Node>& X,
+                        Tpetra::BlockMultiVector<Scalar, LO, GO, Node>& Y,
                         const Scalar& alpha,
                         const Scalar& beta)
 {
-  using Tpetra::Experimental::COPY;
-  using Tpetra::Experimental::FILL;
-  using Tpetra::Experimental::GEMV;
-  using Tpetra::Experimental::SCAL;
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node>
+  using Tpetra::COPY;
+  using Tpetra::FILL;
+  using Tpetra::GEMV;
+  using Tpetra::SCAL;
+  typedef Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>
     block_crs_matrix_type;
   typedef typename block_crs_matrix_type::impl_scalar_type IST;
   typedef Kokkos::Details::ArithTraits<IST> KAT;
@@ -158,7 +158,7 @@ localApplyBlockNoTrans (Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Nod
 template<class Scalar, class LO, class GO, class Node>
 bool
 compareLocalMatVec (Teuchos::FancyOStream& out,
-                    Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
+                    Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
                     Tpetra::MultiVector<Scalar, LO, GO, Node>& X_mv,
                     Tpetra::MultiVector<Scalar, LO, GO, Node>& Y_mv,
                     const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one (),
@@ -166,7 +166,7 @@ compareLocalMatVec (Teuchos::FancyOStream& out,
 {
   using std::endl;
   typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+  typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
   typedef typename MV::mag_type mag_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef Teuchos::ScalarTraits<mag_type> STM;
@@ -488,11 +488,11 @@ getTpetraGraph (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   return G;
 }
 
-// Get a Tpetra::Experimental::BlockCrsMatrix for use in benchmarks.
+// Get a Tpetra::BlockCrsMatrix for use in benchmarks.
 // This method takes the result of getTpetraGraph() (above) and
 // parameters that come from the command-line options read in by
 // parseCmdLineOpts.
-Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<> >
+Teuchos::RCP<Tpetra::BlockCrsMatrix<> >
 getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
                          const Teuchos::RCP<const Tpetra::CrsGraph<> >& graph,
                          const CmdLineOpts& opts)
@@ -500,7 +500,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   using Teuchos::RCP;
   using Teuchos::rcp;
   using std::endl;
-  typedef Tpetra::Experimental::BlockCrsMatrix<> matrix_type;
+  typedef Tpetra::BlockCrsMatrix<> matrix_type;
   typedef matrix_type::device_type device_type;
   typedef matrix_type::impl_scalar_type SC;
   typedef Kokkos::Details::ArithTraits<SC> KAT;

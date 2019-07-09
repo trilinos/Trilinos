@@ -54,11 +54,6 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, EX_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for malloc
-#include <string.h>    // for strcpy, strlen
-#include <sys/types.h> // for int64_t
 
 /* Global variables */
 char *ne_ret_string;
@@ -169,10 +164,10 @@ int ex_get_file_type(int exoid, char *ftype)
 
   /* Set the appropriate character */
   if (lftype == 0) {
-    strcpy(ftype, "p");
+    ex_copy_string(ftype, "p", 2);
   }
   else if (lftype == 1) {
-    strcpy(ftype, "s");
+    ex_copy_string(ftype, "s", 2);
   }
 
   EX_FUNC_LEAVE(EX_NOERR);

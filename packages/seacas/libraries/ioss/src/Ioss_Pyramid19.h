@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr const char *name = "pyramid19";
+    static const char *name;
 
     static void factory();
     ~Pyramid19() override;

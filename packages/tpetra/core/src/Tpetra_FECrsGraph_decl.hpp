@@ -50,10 +50,10 @@
 /// want the declaration of Tpetra::FECrsGraph, include this file
 /// (Tpetra_FECrsGraph_decl.hpp).
 
+#include "Tpetra_FECrsGraph_fwd.hpp"
 #include "Tpetra_CrsGraph_decl.hpp"
+
 namespace Tpetra {
-
-
   /// \class FECrsGraph
   /// \brief A distributed graph accessed by rows (adjacency lists)
   ///   and stored sparsely.

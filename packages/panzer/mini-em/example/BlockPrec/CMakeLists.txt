@@ -13,6 +13,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   SOURCE_FILES
   maxwell.xml maxwell2D.xml
   maxwell-blob-R0.xml maxwell-blob-R1.xml maxwell-blob-R2.xml maxwell-blob-R3.xml maxwell-blob-R4.xml
+  maxwell-bdot-small.xml maxwell-bdot-medium.xml maxwell-bdot-large.xml
+  maxwell-exterior-small.xml maxwell-exterior-medium.xml maxwell-exterior-large.xml
   solverAugmentation.xml solverAugmentationEpetra.xml
   solverCG.xml
   solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
@@ -61,23 +63,24 @@ TRIBITS_ADD_TEST(
    NUM_MPI_PROCS 4
    )
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra)
+IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
+ # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
 
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "MiniEM-BlockPrec_Augmentation_Epetra"
-    ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Epetra"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    )
+ TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_Augmentation_Epetra"
+   ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Epetra"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
 
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "MiniEM-BlockPrec_Augmentation_Epetra"
-    ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Epetra"
-    COMM mpi
-    NUM_MPI_PROCS 4
-    )
+ TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_Augmentation_Epetra"
+   ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Epetra"
+   COMM mpi
+   NUM_MPI_PROCS 4
+   )
 
 ENDIF()
 
@@ -113,23 +116,24 @@ IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP)
 
 ENDIF()
 
-IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra)
+IF(NOT Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_OpenMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
+ # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
 
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
-    ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    )
+ TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
+   ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
 
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
-    ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
-    COMM mpi
-    NUM_MPI_PROCS 4
-    )
+ TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Epetra"
+   ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Epetra"
+   COMM mpi
+   NUM_MPI_PROCS 4
+   )
 
 ENDIF()
 

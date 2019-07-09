@@ -1,7 +1,8 @@
- // Copyright (c) 2013, Sandia Corporation.
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- // the U.S. Government retains certain rights in this software.
- // 
+ // Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
@@ -14,10 +15,10 @@
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
  // 
- //     * Neither the name of Sandia Corporation nor the names of its
- //       contributors may be used to endorse or promote products derived
- //       from this software without specific prior written permission.
- // 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -50,7 +51,6 @@ namespace balance
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData);
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors);
 bool colorStkMesh(const BalanceSettings& colorSettings, stk::mesh::BulkData& stkMeshBulkData);
-bool colorStkMesh(const BalanceSettings& colorSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors);
 void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, stk::balance::AppTypeDefaults appType, MPI_Comm comm);
 void run_stk_balance_with_settings(const std::string& outputDirectory, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions);
 void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
@@ -58,7 +58,8 @@ void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
                                 const std::string& exodusFilename,
                                 const std::string& outputFilename);
 void fill_coloring_parts(const stk::mesh::MetaData& meta, stk::mesh::PartVector& coloringParts);
-std::string construct_coloring_part_name(int color);
+void fill_coloring_parts_with_topology(const stk::mesh::MetaData& meta, const stk::topology topo, stk::mesh::PartVector& coloringParts);
+std::string construct_coloring_part_name(const int color, const stk::mesh::Part& part);
 }
 }
 #endif

@@ -688,7 +688,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     mkl_int_type AcolindMKL("Acolind", Acolind.extent(0));
     copy_view(Arowptr,ArowptrMKL);
     copy_view(Acolind,AcolindMKL);
-    double * mkl_xdouble = nullptr
+    double * mkl_xdouble = nullptr;
     double * mkl_ydouble = nullptr;
     mkl_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 
@@ -767,7 +767,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         case Experiments::MKL:
         {
             TimeMonitor t(*TimeMonitor::getNewTimer("MV MKL: Total"));            
-            MV_MKL(AMKL,xdouble,ydouble);
+            MV_MKL(mkl_A,mkl_xdouble,mkl_ydouble);
         }
           break;
         #endif
@@ -869,7 +869,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
 #if defined(HAVE_MUELU_MKL) 
-    mkl_sparse_destroy(AMKL);
+    mkl_sparse_destroy(mkl_A);
 #endif
 
     success = true;

@@ -1,7 +1,8 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -14,10 +15,10 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 // 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -56,6 +57,7 @@ extern "C" {
   typedef double (*CExtern2)(double, double);
   typedef double (*CExtern3)(double, double, double);
   typedef double (*CExtern4)(double, double, double, double);
+  typedef double (*CExtern8)(double, double, double, double, double, double, double, double);
 }
 
 static int sRandomRangeHighValue = 3191613;
@@ -193,12 +195,38 @@ private:
   Signature m_function;
 };
 
+template <>
+class CFunction<CExtern8> : public CFunctionBase
+{
+public:
+  typedef CExtern8 Signature;
+
+  explicit CFunction<Signature>(Signature function)
+    : CFunctionBase(8),
+      m_function(function)
+  {}
+
+  virtual ~CFunction()
+  {}
+
+  virtual double operator()(int argc, const double *argv)
+  {
+#ifndef NDEBUG
+    if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 8 arguments"); }
+#endif
+    return (*m_function)(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7]);
+  }
+
+private:
+  Signature m_function;
+};
+
 typedef CFunction<CExtern0> CFunction0;
 typedef CFunction<CExtern1> CFunction1;
 typedef CFunction<CExtern2> CFunction2;
 typedef CFunction<CExtern3> CFunction3;
 typedef CFunction<CExtern4> CFunction4;
-
+typedef CFunction<CExtern8> CFunction8;
 
 extern "C" {
   double cycloidal_ramp(double t, double t1, double t2)
@@ -259,7 +287,7 @@ extern "C" {
   /// Sets x as the "seed" for the pseudo-random number generator.
   void random_seed(double x) 
   {
-    int y = static_cast<int>(x);
+    int y = std::hash<double>{}(x);
     sRandomRangeHighValue =  y;
     sRandomRangeLowValue  = ~y;
   }
@@ -279,6 +307,32 @@ extern "C" {
   {
     random_seed(seed);
     return random0();
+  }
+
+  /// Non-platform specific (pseudo) random number generator that
+  /// is deterministic for a given point in time and space
+  double time_space_random(double t, double x, double y, double z)
+  {
+    double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
+    random_seed(ts);
+    return random0();
+  }
+
+  double time_space_normal(double t, double x, double y, double z, double mu, double sigma, double minR, double maxR)
+  {
+    double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
+    random_seed(ts);
+
+    static const double epsilon = std::numeric_limits<double>::min();
+
+    // Box-Muller transformation from two uniform random numbers
+    // to a gaussian distribution
+    double u1 = std::max(epsilon, random0());
+    double u2 = std::max(epsilon, random0());
+
+    double z0 = std::sqrt(-2.0 * std::log(u1)) * std::cos(two_pi() * u2);
+
+    return std::max(minR, std::min(maxR, z0*sigma + mu));
   }
 
   /// Returns the angle (input in radians) in degrees.
@@ -455,6 +509,8 @@ CFunctionMap::CFunctionMap()
   (*this).emplace("random",          new CFunction0(random0));
   (*this).emplace("random",          new CFunction1(random1));
   (*this).emplace("time",            new CFunction0(current_time));
+  (*this).emplace("ts_random",       new CFunction4(time_space_random));
+  (*this).emplace("ts_normal",       new CFunction8(time_space_normal));
 
   (*this).emplace("exp",             new CFunction1(std::exp));
   (*this).emplace("ln",              new CFunction1(std::log));

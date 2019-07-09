@@ -98,7 +98,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManagerFactory, basic_test)
    // int numProcs = stk::parallel_machine_size(Comm);
    // int myRank = stk::parallel_machine_rank(Comm);
 
-   typedef panzer::BlockedDOFManagerFactory<int,int> BDFii;
+   typedef panzer::BlockedDOFManagerFactory BDFii;
 
    bool result = false;
    result = BDFii::requiresBlocking("");                     TEST_ASSERT(!result);

@@ -46,7 +46,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
@@ -64,7 +64,7 @@
 template <typename EvalT,typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_BlockedTpetra<EvalT, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
-  const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  const Teuchos::RCP<const BlockedDOFManager> & indexer,
   const Teuchos::ParameterList& p)
 {
   const std::vector<std::string>& names =
@@ -88,7 +88,7 @@ GatherSolution_BlockedTpetra(
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
-  const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  const Teuchos::RCP<const BlockedDOFManager> & indexer,
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
   , has_tangent_fields_(false)
@@ -169,7 +169,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     for(std::size_t i=0; i < offsets.size(); ++i)
       hostFieldOffsets(i) = offsets[i];
     Kokkos::deep_copy(fieldOffsets_[fd],hostFieldOffsets);
-    PHX::Device::fence();
+    typename PHX::Device().fence();
 
     maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
   }
@@ -245,7 +245,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
-  const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  const Teuchos::RCP<const BlockedDOFManager> & indexer,
   const Teuchos::ParameterList& p)
   : gidIndexer_(indexer)
   , has_tangent_fields_(false)
@@ -359,7 +359,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       LO cellLocalId = localCellIds[worksetCellIndex];
 
-      gidIndexer_->getElementGIDs(cellLocalId,GIDs,blockId);
+      gidIndexer_->getElementGIDsPair(cellLocalId,GIDs,blockId);
 
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
@@ -407,7 +407,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
-  const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+  const Teuchos::RCP<const BlockedDOFManager> & indexer,
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
 {
@@ -476,7 +476,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
       hostOffsets(i) = offsets[i];
     Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
     maxElementBlockGIDCount = std::max(subGlobalIndexer->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
-    PHX::Device::fence();
+    typename PHX::Device().fence();
   }
 
   // We will use one workset lid view for all fields, but has to be
@@ -500,7 +500,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
 
   indexerNames_.clear();  // Don't need this anymore
-  PHX::Device::fence();
+  typename PHX::Device().fence();
 }
 
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>

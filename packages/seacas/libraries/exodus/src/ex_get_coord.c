@@ -35,8 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
 
 /*!
 The function ex_get_coord() reads the nodal coordinates of the

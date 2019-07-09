@@ -44,7 +44,6 @@
  */
 
 #include <cstdint>
-#include <iostream>
 #include <unistd.h>
 
 #include "EJ_index_sort.h"

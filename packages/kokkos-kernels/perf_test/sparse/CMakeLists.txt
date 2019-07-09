@@ -18,6 +18,10 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES KokkosSparse_spmv.cpp 
   )
   
+TRIBITS_ADD_EXECUTABLE(
+  sparse_sptrsv
+  SOURCES KokkosSparse_sptrsv.cpp 
+  )
   
 
   

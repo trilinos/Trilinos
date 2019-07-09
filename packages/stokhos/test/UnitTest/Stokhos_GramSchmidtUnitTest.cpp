@@ -235,7 +235,7 @@ namespace GramSchmidtTest {
     if (!success) {
       out << "\n Error, mat.normInf() < tol = " << mat.normInf() 
 	  << " < " << tol << ": failed!\n";
-      out << "mat = " << mat << std::endl;
+      out << "mat = " << printMat(mat) << std::endl;
     }
   }
 

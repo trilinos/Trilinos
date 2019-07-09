@@ -49,15 +49,13 @@ namespace Tacho {
         return 0;
       }
 
-      template<typename SchedulerType,
-               typename MemberType,
+      template<typename MemberType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeC>
       inline
       static int
-      invoke(SchedulerType &sched,
-             MemberType &member,
+      invoke(MemberType &member,
              const ScalarType alpha,
              const ViewTypeA &A,
              const ScalarType beta,

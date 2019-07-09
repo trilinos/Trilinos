@@ -59,7 +59,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalIndexer.hpp"
 
 // Phalanx
 #include "Phalanx_DataLayout.hpp"
@@ -80,7 +80,7 @@
 template<typename TRAITS, typename LO, typename GO>
 panzer::GatherSolution_BlockedEpetra<panzer::Traits::Hessian, TRAITS, LO, GO>::
 GatherSolution_BlockedEpetra(
-  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
+  const std::vector<Teuchos::RCP<const GlobalIndexer<LO, int>>>&
     indexers,
   const Teuchos::ParameterList& p)
   :

@@ -47,7 +47,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR
-#include <stdio.h>
 
 /*!
  * updates an opened EXODUS file (or EXODUS history file)

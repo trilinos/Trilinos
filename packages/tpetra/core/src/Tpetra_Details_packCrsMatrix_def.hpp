@@ -834,9 +834,9 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     // FIXME (26 Apr 2016) Fences around (UVM) allocations only
     // temporarily needed for #227 debugging.  Should be able to
     // remove them after that's fixed.
-    execution_space::fence ();
+    execution_space().fence ();
     exports = exports_view_type ("exports", 0);
-    execution_space::fence ();
+    execution_space().fence ();
     return;
   }
 
@@ -857,14 +857,14 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     // FIXME (26 Apr 2016) Fences around (UVM) allocations only
     // temporarily needed for #227 debugging.  Should be able to
     // remove them after that's fixed.
-    execution_space::fence ();
+    execution_space().fence ();
     exports = exports_view_type ("exports", count);
     if (debug) {
       std::ostringstream os;
       os << "*** exports resized to " << count << std::endl;
       std::cerr << os.str ();
     }
-    execution_space::fence ();
+    execution_space().fence ();
   }
   if (debug) {
     std::ostringstream os;
@@ -918,9 +918,8 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
   // This is an output array, so we don't have to copy to device here.
   // However, we'll have to remember to copy back to host when done.
-  typename local_matrix_type::device_type outputDevice;
-  auto num_packets_per_lid_d =
-    create_mirror_view_from_raw_host_array (outputDevice,
+  Kokkos::View<size_t*, buffer_device_type> num_packets_per_lid_d =
+    create_mirror_view_from_raw_host_array (buffer_device_type (),
                                             numPacketsPerLID.getRawPtr (),
                                             numPacketsPerLID.size (), false,
                                             "num_packets_per_lid");
@@ -930,19 +929,14 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   //
   // This is an input array, so we have to copy to device here.
   // However, we never need to copy it back to host.
-  auto export_lids_d =
+  Kokkos::View<const LO*, buffer_device_type> export_lids_d =
     create_mirror_view_from_raw_host_array (buffer_device_type (),
                                             exportLIDs.getRawPtr (),
                                             exportLIDs.size (), true,
                                             "export_lids");
-  static_assert (std::is_same<typename decltype (export_lids_d)::device_type,
-                   buffer_device_type>::value,
-                 "export_lids_d has the wrong device_type.");
 
-  // Create an empty array of PIDs
-  Kokkos::View<int*, device_type> export_pids_d ("export_pids", 0);
-
-  Kokkos::DualView<char*, buffer_device_type> exports_dv ("exports", 0);
+  Kokkos::View<int*, device_type> export_pids_d; // output arg
+  Kokkos::DualView<char*, buffer_device_type> exports_dv; // output arg
   constexpr bool pack_pids = false;
   PackCrsMatrixImpl::packCrsMatrix<ST, LO, GO, NT, buffer_device_type> (
       sourceMatrix, exports_dv, num_packets_per_lid_d, export_lids_d,

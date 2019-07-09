@@ -41,6 +41,8 @@
 #include <Ioss_SubSystem.h>
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
@@ -88,9 +90,6 @@ int main(int argc, char *argv[])
   Kokkos::ScopeGuard kokkos(argc, argv);
 #endif
 
-  std::cout.imbue(std::locale(std::locale(), new my_numpunct));
-  std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
-
   IOShell::Interface interface;
   bool               success = interface.parse_options(argc, argv);
   if (!success) {
@@ -108,17 +107,18 @@ int main(int argc, char *argv[])
   std::string out_file = interface.outputFile;
 
   if (rank == 0 && !interface.quiet) {
-    std::cerr << "Input:    '" << in_file << "', Type: " << interface.inFiletype << '\n';
-    std::cerr << "Output:   '" << out_file << "', Type: " << interface.outFiletype << '\n';
-    std::cerr << '\n';
+    fmt::print(stderr,
+               "Input:    '{}', Type: {}\n"
+               "Output:   '{}', Type: {}\n\n",
+               in_file, interface.inFiletype, out_file, interface.outFiletype);
   }
 
 #ifdef SEACAS_HAVE_KOKKOS
   if (rank == 0)
-    std::cerr << "Kokkos default execution space configuration:\n";
+    fmt::print(stderr, "Kokkos default execution space configuration:\n");
   Kokkos::DefaultExecutionSpace::print_configuration(std::cerr, false);
   if (rank == 0)
-    std::cerr << '\n';
+    fmt::print(stderr, "\n");
 #endif
 
   double begin = Ioss::Utils::timer();
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
   }
   catch (std::exception &e) {
     if (rank == 0) {
-      std::cerr << "\n" << e.what() << "\n\nio_shell terminated due to exception\n";
+      fmt::print(stderr, "\n{}\n\nio_shell terminated due to exception\n", e.what());
     }
     exit(EXIT_FAILURE);
   }
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
   double end = Ioss::Utils::timer();
 
   if (rank == 0 && !interface.quiet) {
-    std::cerr << "\n\n\tTotal Execution time = " << end - begin << " seconds.\n";
+    fmt::print(stderr, "\n\n\tTotal Execution time = {} seconds\n", end - begin);
   }
   if (mem_stats) {
     int64_t MiB = 1024 * 1024;
@@ -146,25 +146,29 @@ int main(int argc, char *argv[])
     int64_t             min, max, avg;
     Ioss::ParallelUtils parallel(MPI_COMM_WORLD);
     parallel.memory_stats(min, max, avg);
-    if (rank == 0)
-      std::cerr << "\n\tCurrent Memory: " << min / MiB << "M  " << max / MiB << "M  " << avg / MiB
-                << "M\n";
+    if (rank == 0) {
+      fmt::print(stderr, "\n\tCurrent Memory: {:n}M  {:n}M  {:n}M\n", min / MiB, max / MiB,
+                 avg / MiB);
+    }
 
     parallel.hwm_memory_stats(min, max, avg);
-    if (rank == 0)
-      std::cerr << "\n\tHigh Water Memory: " << min / MiB << "M  " << max / MiB << "M  "
-                << avg / MiB << "M\n";
+    if (rank == 0) {
+      fmt::print(stderr, "\n\tHigh Water Memory: {:n}M  {:n}M  {:n}M\n", min / MiB, max / MiB,
+                 avg / MiB);
+    }
 #else
     int64_t mem = Ioss::Utils::get_memory_info();
     int64_t hwm = Ioss::Utils::get_hwm_memory_info();
     if (rank == 0) {
-      std::cerr << "\n\tCurrent Memory:    " << mem / MiB << "M\n"
-                << "\n\tHigh Water Memory: " << hwm / MiB << "M\n";
+      fmt::print(stderr,
+                 "\n\tCurrent Memory:    {:n}M\n"
+                 "\n\tHigh Water Memory: {:n}M\n",
+                 mem / MiB, hwm / MiB);
     }
 #endif
   }
   if (rank == 0) {
-    std::cerr << "\n" << codename << " execution successful.\n";
+    fmt::print(stderr, "\n{} execution successful.\n", codename);
   }
   return EXIT_SUCCESS;
 }
@@ -213,8 +217,8 @@ namespace {
         bool success = dbi->open_group(interface.groupName);
         if (!success) {
           if (rank == 0) {
-            std::cerr << "ERROR: Unable to open group '" << interface.groupName << "' in file '"
-                      << inpfile << "\n";
+            fmt::print(stderr, "ERROR: Unable to open group '{}' in file '{}'\n",
+                       interface.groupName, inpfile);
           }
           return;
         }
@@ -224,9 +228,10 @@ namespace {
       Ioss::Region region(dbi, "region_1");
 
       if (region.mesh_type() == Ioss::MeshType::HYBRID) {
-        std::cerr
-            << "\nERROR: io_shell does not support '" << region.mesh_type_string()
-            << "' meshes.  Only 'Unstructured' or 'Structured' mesh is supported at this time.\n";
+        fmt::print(stderr,
+                   "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
+                   "'Structured' mesh is supported at this time.\n",
+                   region.mesh_type_string());
         return;
       }
 
@@ -280,6 +285,7 @@ namespace {
       options.maximum_time      = interface.maximum_time;
       options.data_storage_type = interface.data_storage_type;
       options.delay             = interface.timestep_delay;
+      options.reverse           = interface.reverse;
 
       size_t ts_count = 0;
       if (region.property_exists("state_count") &&
@@ -371,12 +377,11 @@ namespace {
 
           if (rank == 0 && !interface.quiet) {
             if (step_min == step_max) {
-              std::cerr << "\tWriting step " << std::setw(width) << step_min + 1 << " to "
-                        << filename << "\n";
+              fmt::print(stderr, "\tWriting step {:n} to {}\n", step_min + 1, filename);
             }
             else {
-              std::cerr << "\tWriting steps " << std::setw(width) << step_min + 1 << ".."
-                        << std::setw(width) << step_max + 1 << " to " << filename << "\n";
+              fmt::print("\tWriting steps {:n}..{:n} to {}\n", step_min + 1, step_max + 1,
+                         filename);
             }
           }
 

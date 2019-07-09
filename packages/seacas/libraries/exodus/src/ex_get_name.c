@@ -52,7 +52,6 @@
 
 #include "exodusII.h"     // for ex_inquire_int, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include <stdio.h>
 
 /*
  * reads the specified entity name from the database

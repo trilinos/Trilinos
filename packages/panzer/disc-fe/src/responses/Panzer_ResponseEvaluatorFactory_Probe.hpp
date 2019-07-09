@@ -70,7 +70,7 @@ public:
     int cubatureDegree=1,
     const std::string & fieldName="",
     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linearObjFactory=Teuchos::null,
-    const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer=Teuchos::null,
+    const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer=Teuchos::null,
     bool applyDirichletToDerivative=false)
     : comm_(comm), point_(point), fieldComponent_(fieldComponent), cubatureDegree_(cubatureDegree)
     , fieldName_(fieldName), linearObjFactory_(linearObjFactory), globalIndexer_(globalIndexer)
@@ -133,7 +133,7 @@ private:
   int cubatureDegree_;
   std::string fieldName_;
   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory_;
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer_;
   bool applyDirichletToDerivative_; // do we need this???
 };
 
@@ -152,7 +152,7 @@ struct ProbeResponse_Builder : public ResponseMESupportBuilderBase {
   virtual ~ProbeResponse_Builder() {}
 
   void setDerivativeInformation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
-                                const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & in_globalIndexer)
+                                const Teuchos::RCP<const panzer::GlobalIndexer> & in_globalIndexer)
   {
     linearObjFactory = in_linearObjFactory;
     globalIndexer = in_globalIndexer;
@@ -166,7 +166,7 @@ struct ProbeResponse_Builder : public ResponseMESupportBuilderBase {
     using Teuchos::rcp_dynamic_cast;
 
     setDerivativeInformation(in_linearObjFactory,
-                             rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<LO,GO> >(in_linearObjFactory->getDomainGlobalIndexer(),true));
+                             rcp_dynamic_cast<const panzer::GlobalIndexer>(in_linearObjFactory->getDomainGlobalIndexer(),true));
   }
 
   template <typename T>
@@ -186,7 +186,7 @@ struct ProbeResponse_Builder : public ResponseMESupportBuilderBase {
 
 private:
   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer;
+  Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer;
 };
 
 

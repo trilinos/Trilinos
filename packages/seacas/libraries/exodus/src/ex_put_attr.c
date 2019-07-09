@@ -52,8 +52,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
-#include <inttypes.h>     // for PRId64
-#include <stdio.h>
 
 /*!
  * writes the attributes for an edge/face/element block

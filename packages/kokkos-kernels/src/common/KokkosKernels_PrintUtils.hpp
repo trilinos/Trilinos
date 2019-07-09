@@ -86,7 +86,7 @@ inline void kk_get_histogram(
     out_lno_view_t histogram /*must be initialized with 0s*/){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_for( "KokkosKernels::Common::GetHistogram", my_exec_space(0, in_elements), Histogram<in_lno_view_t, out_lno_view_t>(in_view, histogram));
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 }
 
 /**

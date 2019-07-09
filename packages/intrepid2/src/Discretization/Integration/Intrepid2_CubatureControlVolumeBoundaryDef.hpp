@@ -276,7 +276,6 @@ namespace Intrepid2{
       auto cubWeightsNode = Kokkos::subdynrankview(cubWeights, Kokkos::ALL(), sideRange);
       switch (spaceDim) {
       case 2: {
-        std::cout << "subcv jacobian rank = " << subcvJacobian.rank() << std::endl;
         FunctionSpaceTools<SpT>::computeEdgeMeasure(cubWeightsNode, // rank 2
                                                     subcvJacobian,  // rank 4
                                                     weights,        // rank 2

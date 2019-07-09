@@ -916,7 +916,7 @@ void NOX::Thyra::Group::updateLOWS() const
   {
     NOX_FUNC_TIME_MONITOR("NOX Total Preconditioner Construction");
 
-    if (nonnull(prec_) and (not updatePreconditioner_)) {
+    if (nonnull(prec_) && (!updatePreconditioner_)) {
       // Use the preconditioner. If the matrix values need to be
       // updated, it must be handled by user manually
       ::Thyra::initializePreconditionedOp<double>(*lows_factory_,

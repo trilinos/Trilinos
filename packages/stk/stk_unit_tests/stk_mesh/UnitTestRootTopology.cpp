@@ -1,6 +1,7 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,9 +15,9 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -36,7 +37,6 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
 #include <string>                       // for allocator, operator+, etc
 #include <vector>                       // for vector
-#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -91,12 +91,6 @@ TEST(UnitTestRootTopology, TestRootTopologyPartGetters)
   for (unsigned i = 0; i < num_test_topologies; ++i)
   {
     stk::mesh::Part &root_part1 = meta.get_topology_root_part(test_topologies[i]);
-
-    stk::mesh::CellTopology cell_topo = stk::mesh::get_cell_topology(test_topologies[i]);
-    stk::mesh::Part &root_part2 = meta.get_cell_topology_root_part(cell_topo);
-
-    EXPECT_TRUE(root_part1 == root_part2);
-
     stk::topology root_topo = root_part1.topology();
 
     // The root_topology_part has the same topology information as the original topology.
@@ -109,11 +103,11 @@ TEST(UnitTestRootTopology, TestRootTopologyPartGetters)
     EXPECT_EQ(1u, supersets.size());
     EXPECT_EQ(&meta.universal_part(), supersets[0]);
 
-    stk::mesh::Part &root_part3 = meta.get_part(root_part1.mesh_meta_data_ordinal());
-    EXPECT_TRUE(root_part1 == root_part3);
+    stk::mesh::Part &root_part2 = meta.get_part(root_part1.mesh_meta_data_ordinal());
+    EXPECT_TRUE(root_part1 == root_part2);
 
-    stk::mesh::Part *root_part4 = meta.get_part(root_part1.name());
-    EXPECT_TRUE(root_part1 == *root_part4);
+    stk::mesh::Part *root_part3 = meta.get_part(root_part1.name());
+    EXPECT_TRUE(root_part1 == *root_part3);
 
     const stk::mesh::PartVector &all_parts = meta.get_parts();
     const stk::mesh::PartVector non_internal_parts = meta.get_mesh_parts();

@@ -33,15 +33,9 @@
  *
  */
 
-#include <ctype.h>    // for toupper
-#include <inttypes.h> // for PRId64
-#include <stddef.h>   // for size_t
-#include <stdio.h>
-#include <string.h>    // for strncmp, strlen
-#include <sys/types.h> // for int64_t
-
 #include "exodusII.h"     // for ex_err, ex_block, etc
 #include "exodusII_int.h" // for elem_blk_parm, EX_FATAL, etc
+#include <ctype.h>
 
 /* Generic error message for element type/node count mapping...*/
 static int el_node_count_error(int exoid, struct elem_blk_parm elem_blk_parms)

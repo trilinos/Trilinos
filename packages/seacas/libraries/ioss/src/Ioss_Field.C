@@ -36,6 +36,7 @@
 #include <Ioss_VariableType.h>
 #include <cstddef>
 #include <cstdint>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -63,9 +64,10 @@ namespace {
   void error_message(const Ioss::Field &field, Ioss::Field::BasicType requested_type)
   {
     std::ostringstream errmsg;
-    errmsg << "ERROR: For field named '" << field.get_name() << "', code requested value of type '"
-           << type_string(requested_type) << "', but field type is '"
-           << type_string(field.get_type()) << "'. Types must match\n";
+    fmt::print(errmsg,
+               "ERROR: For field named '{}', code requested value of type '{}', but field type is "
+               "'{}'. Types must match\n",
+               field.get_name(), type_string(requested_type), type_string(field.get_type()));
     IOSS_ERROR(errmsg);
   }
 } // namespace
@@ -161,8 +163,9 @@ size_t Ioss::Field::verify(size_t data_size) const
     size_t required = get_size();
     if (required > data_size) {
       std::ostringstream errmsg;
-      errmsg << "Field " << name_ << " requires " << required << " bytes to store its data. Only "
-             << data_size << " bytes were provided." << '\n';
+      fmt::print(errmsg,
+                 "Field {} requires {} bytes to store its data. Only {} bytes were provided.\n",
+                 name_, required, data_size);
       IOSS_ERROR(errmsg);
     }
   }

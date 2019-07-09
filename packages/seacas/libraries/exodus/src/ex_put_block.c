@@ -56,8 +56,6 @@
 
 #include "exodusII.h" // for ex_block, MAX_STR_LENGTH, etc
 #include "exodusII_int.h"
-#include <stdint.h> // for int64_t
-#include <string.h> // for ex_copy_string
 
 /*!
  * writes the parameters used to describe an element/face/edge block

@@ -187,17 +187,17 @@ namespace MueLu {
     if(currentLevel.GetLevelID() == 0) {
       // On level 0, data is provided by applications and has no associated factory.
       numDimensions = currentLevel.Get<int>("numDimensions", NoFactory::get());
+      lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
       if(coupled) {
         gFineNodesPerDir = currentLevel.Get<Array<GO> >("gNodesPerDim", NoFactory::get());
       }
-      lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
     } else {
       // On level > 0, data is provided directly by generating factories.
       numDimensions = Get<int>(currentLevel, "numDimensions");
+      lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
       if(coupled) {
         gFineNodesPerDir = Get<Array<GO> >(currentLevel, "gNodesPerDim");
       }
-      lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
     }
 
 
@@ -305,6 +305,7 @@ namespace MueLu {
       myStructuredAlgorithm = rcp(new AggregationStructuredAlgorithm(graphFact));
 
     if(interpolationOrder == 0 && outputAggregates){
+      // Create aggregates for prolongation
       RCP<Aggregates> aggregates = rcp(new Aggregates(graph->GetDomainMap()));
       aggregates->setObjectLabel("ST");
       aggregates->SetIndexManager(geoData);
@@ -323,7 +324,7 @@ namespace MueLu {
       Set(currentLevel, "Aggregates", aggregates);
 
     } else {
-      // Create Coarse Data
+      // Create the graph of the prolongator
       RCP<CrsGraph> myGraph;
       myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph,
                                         coarseCoordinatesFineMap, coarseCoordinatesMap);

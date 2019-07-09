@@ -579,10 +579,10 @@ makeColMapAndConvertGids(GlobalOrdinal ncols,
   ConvertGlobalToLocal<LView, GView> cgtl(gtol, gids, lids);
   Kokkos::parallel_for("Tpetra_MatrixMatrix_convertGlobalToLocal", range_type(0, gids.extent(0)), cgtl);
   //build local set of GIDs for constructing column map - the last entry in gtol is the total number of local cols
-  execution_space::fence();
+  execution_space().fence();
   GView colmap("column map", gtol(ncols));
   size_t localIter = 0;
-  execution_space::fence();
+  execution_space().fence();
   for(size_t i = 0; i < entryUnion.extent(0); i++)
   {
     if(entryUnion(i) != 0)
@@ -590,7 +590,7 @@ makeColMapAndConvertGids(GlobalOrdinal ncols,
       colmap(localIter++) = i;
     }
   }
-  execution_space::fence();
+  execution_space().fence();
   //finally, construct Tpetra map
   return rcp(new map_type(Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), colmap, 0, comm));
 }

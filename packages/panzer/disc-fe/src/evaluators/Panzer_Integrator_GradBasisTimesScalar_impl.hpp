@@ -119,17 +119,19 @@ namespace panzer
 
     // Create the fields that we're either contributing to or evaluating
     // (storing).
-    fields_.clear();
-    for (const auto& name : resNames)
+    fields_ = Kokkos::View<PHX::MDField<ScalarT, Cell, BASIS>*>("Integrator_GradBasisTimesScalar",resNames.size());
     {
-      MDField<ScalarT, Cell, BASIS> res(name, basis.functional);
-      fields_.push_back(res);
-    } // end loop over resNames
-    for (const auto& field : fields_)
+      int i=0;
+      for (const auto& name : resNames)
+        fields_(i++) = MDField<ScalarT, Cell, BASIS>(name, basis.functional);
+    }
+    for (std::size_t i=0; i<fields_.extent(0); ++i) {
+      const auto& field = fields_(i);
       if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
         this->addContributedField(field);
       else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
         this->addEvaluatedField(field);
+    }
 
     // Add the dependent field multipliers, if there are any.
     int i = 0;
@@ -150,9 +152,9 @@ namespace panzer
     else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
       n += "EVALUATES";
     n += "):  {";
-    for (size_t j=0; j < fields_.size() - 1; ++j)
+    for (size_t j=0; j < fields_.extent(0) - 1; ++j)
       n += fields_[j].fieldTag().name() + ", ";
-    n += fields_.back().fieldTag().name() + "}";
+    n += fields_(fields_.extent(0)-1).fieldTag().name() + "}";
     this->setName(n);
   } // end of Constructor
 
@@ -205,7 +207,7 @@ namespace panzer
     // Get the Kokkos::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
-    Device::fence();
+    Device().fence();
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);

@@ -330,12 +330,6 @@ CDEBUG            write (99, *) 'slide node =', i
   270       continue
             write (*, '(1x,a,i5)') 'slide nodes =', nslide
          end if
-         if ((cdebug .eq. 'HIDDEN') .and. (idebug .ge. 1)) then
-            call excpus (cpusec)
-            write (*, 10000) cpusec - oldsec,
-     &         'hide nodes by faces'
-         end if
-10000 format(/, 1x, 5a)
 
          if ((cdebug .eq. 'HIDDEN') .and. (idebug .ge. 1))
      &      write (*, '(1x,a,i5,10x,a,i5)')

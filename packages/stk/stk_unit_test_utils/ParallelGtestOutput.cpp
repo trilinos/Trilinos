@@ -7,6 +7,9 @@
 #include <stdio.h>                  // for printf, vprintf, fflush, NULL, etc
 #include <string>                   // for string
 #include "gtest/gtest-test-part.h"  // for TestPartResult
+
+#ifdef STK_HAS_MPI
+
 #include "mpi.h"                    // for MPI_Comm, ompi_communicator_t, etc
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -214,3 +217,6 @@ void create_parallel_output(int procId)
 
 }
 }
+
+#endif
+

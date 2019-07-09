@@ -39,7 +39,7 @@
 #include "Ioss_SmartAssert.h"
 #include <algorithm> // for sort, unique
 #include <cstddef>   // for size_t
-#include <iostream>  // for operator<<, basic_ostream, etc
+#include <fmt/ostream.h>
 #include <numeric>
 #include <utility> // for make_pair, pair
 
@@ -56,7 +56,7 @@ namespace {
 
 template <typename INT>
 void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_node_map,
-                             std::vector<INT> &local_node_map)
+                             std::vector<INT> &local_node_map, bool fill_global)
 {
   size_t offset     = 0;
   size_t j          = 0;
@@ -74,7 +74,9 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
       for (size_t i = 0; i < node_status.size(); i++) {
         if (node_status[i] != 1) {
           local_node_map[offset + i] = j;
-          global_node_map.push_back(j + 1);
+          if (fill_global) {
+            global_node_map.push_back(j + 1);
+          }
           j++;
         }
         else {
@@ -85,7 +87,9 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
     else {
       for (size_t i = 0; i < loc_size; i++) {
         local_node_map[offset + i] = j;
-        global_node_map.push_back(j + 1);
+        if (fill_global) {
+          global_node_map.push_back(j + 1);
+        }
         j++;
       }
     }
@@ -94,10 +98,10 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
 }
 
 template void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<int> &global_node_map,
-                                      std::vector<int> &local_node_map);
+                                      std::vector<int> &local_node_map, bool fill_global);
 template void eliminate_omitted_nodes(RegionVector &        part_mesh,
                                       std::vector<int64_t> &global_node_map,
-                                      std::vector<int64_t> &local_node_map);
+                                      std::vector<int64_t> &local_node_map, bool fill_global);
 
 template <typename INT>
 void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
@@ -168,7 +172,7 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
   size_t max_id = global_node_map[output_node_count - 1];
 
   bool is_contiguous = max_id == output_node_count;
-  std::cout << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+  fmt::print("Node map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
 
   // Create the map that maps from a local part node to the
   // global map. This combines the mapping local part node to
@@ -187,7 +191,7 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
           auto iter = std::lower_bound(global_node_map.begin(), global_node_map.end(), global_node);
           if (iter == global_node_map.end()) {
             INT n = global_node;
-            std::cerr << n << "\n";
+            fmt::print("{:n}\n", n);
             SMART_ASSERT(iter != global_node_map.end());
           }
           cur_pos = iter;
@@ -218,8 +222,8 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
       }
     }
     if (repeat_found) {
-      std::cout << "Duplicate node ids were found. Their ids have been renumbered to remove "
-                   "duplicates.\n";
+      fmt::print("Duplicate node ids were found. Their ids have been renumbered to remove "
+                 "duplicates.\n");
     }
   }
 }

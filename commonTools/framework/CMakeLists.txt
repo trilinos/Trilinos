@@ -10,6 +10,36 @@ TRIBITS_ADD_ADVANCED_TEST( ProjectCiFileChangeLogic_UnitTests
   )
 
 
+TRIBITS_ADD_ADVANCED_TEST( clean_all_jobs_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
+  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/clean_workspace/unittests/test_clean_all_jobs.py -v
+    PASS_REGULAR_EXPRESSION "OK"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( clean_sentinel_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
+  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}//clean_workspace/unittests/test_clean_sentinel.py -v
+    PASS_REGULAR_EXPRESSION "OK"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( clean_workspace_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
+  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}//clean_workspace/unittests/test_clean_workspace.py -v
+    PASS_REGULAR_EXPRESSION "OK"
+  )
+
+
 FUNCTION(create_get_changed_trilinos_packages_test  TEST_POSTFIX
   FILES_CHANGED
   CHANGED_PACKAGES_FULL_LIST

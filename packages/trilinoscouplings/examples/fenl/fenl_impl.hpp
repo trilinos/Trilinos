@@ -419,13 +419,13 @@ public:
 
         //--------------------------------
 
-        Device::fence();
+        Device().fence();
         wall_clock.reset();
         g_nodal_solution.doImport (g_nodal_solution_no_overlap, import, Tpetra::REPLACE);
 
         // Take minimum import time across newton steps -- resolves strange
         // timings on titan where time after first solve is much larger
-        Device::fence();
+        Device().fence();
         if (perf.newton_iter_count == 0)
           perf.import_time = wall_clock.seconds();
         else
@@ -437,7 +437,7 @@ public:
         //--------------------------------
         // Element contributions to residual and jacobian
 
-        Device::fence();
+        Device().fence();
         wall_clock.reset();
 
         Kokkos::deep_copy( nodal_residual , 0.0 );
@@ -445,7 +445,7 @@ public:
 
         elemcomp.apply();
 
-        Device::fence();
+        Device().fence();
         if (perf.newton_iter_count == 0)
           perf.fill_time = wall_clock.seconds();
         else
@@ -454,12 +454,12 @@ public:
         //--------------------------------
         // Apply boundary conditions
 
-        Device::fence();
+        Device().fence();
         wall_clock.reset();
 
         dirichlet.apply();
 
-        Device::fence();
+        Device().fence();
         if (perf.newton_iter_count == 0)
           perf.bc_time = wall_clock.seconds();
         else
@@ -643,7 +643,7 @@ public:
         g_nodal_solution.doImport (g_nodal_solution_no_overlap, import, Tpetra::REPLACE);
         g_nodal_solution_dp.doImport (g_nodal_solution_no_overlap_dp, import, Tpetra::REPLACE);
 
-        Device::fence();
+        Device().fence();
         wall_clock.reset();
 
         Kokkos::deep_copy( nodal_residual , 0.0 );
@@ -652,7 +652,7 @@ public:
         elemcomp_dp.apply();
         dirichlet_dp.apply();
 
-        Device::fence();
+        Device().fence();
         perf.tangent_fill_time = wall_clock.seconds();
 
         result_struct cgsolve;
@@ -712,7 +712,7 @@ public:
 #endif
       }
 
-      Device::fence();
+      Device().fence();
       perf.newton_total_time = newton_clock.seconds();
     }
 };

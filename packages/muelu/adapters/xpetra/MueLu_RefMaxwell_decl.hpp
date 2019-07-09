@@ -55,6 +55,7 @@
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
+#include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
@@ -103,7 +104,7 @@ namespace MueLu {
 
     Parameter list options:
     - <tt>refmaxwell: mode</tt> - a <tt>string</tt> specifying the order of solve of the block system.
-                                  Allowed values are: "additive" (default), "121", "212"
+                                  Allowed values are: "additive" (default), "121", "212", "1", "2"
     - <tt>refmaxwell: disable addon</tt> - <tt>bool</tt> specifing whether the addon should be built for stabilization.
                                            Default: "true"
     - <tt>refmaxwell: use as preconditioner</tt> - <tt>bool</tt> specifing whether RefMaxwell is used as a preconditioner or as a solver.
@@ -135,8 +136,8 @@ namespace MueLu {
     RefMaxwell() :
       HierarchyH_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
-      disable_addon_(true),
-      mode_("additive")
+      disable_addon_(MasterList::getDefault<bool>("refmaxwell: disable addon")),
+      mode_(MasterList::getDefault<std::string>("refmaxwell: mode"))
     {
     }
 
@@ -144,9 +145,35 @@ namespace MueLu {
     RefMaxwell(Teuchos::RCP<Hierarchy> HH, Teuchos::RCP<Hierarchy> H22) :
       HierarchyH_(HH),
       Hierarchy22_(H22),
-      disable_addon_(false),
-      mode_("additive")
+      disable_addon_(MasterList::getDefault<bool>("refmaxwell: disable addon")),
+      mode_(MasterList::getDefault<std::string>("refmaxwell: mode"))
     {
+    }
+
+    /** Constructor with Jacobian (with add on)
+     *
+     * \param[in] SM_Matrix Jacobian
+     * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] Ms_Matrix Edge mass matrix for the nodal aggregates
+     * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
+     * \param[in] M1_Matrix Edge mass matrix for the add on
+     * \param[in] Nullspace Null space (needed for periodic)
+     * \param[in] Coords Nodal coordinates
+     * \param[in] List Parameter list
+     * \param[in] ComputePrec If true, compute the preconditioner immediately
+     */
+    RefMaxwell(const Teuchos::RCP<Matrix> & SM_Matrix,
+               const Teuchos::RCP<Matrix> & D0_Matrix,
+               const Teuchos::RCP<Matrix> & Ms_Matrix,
+               const Teuchos::RCP<Matrix> & M0inv_Matrix,
+               const Teuchos::RCP<Matrix> & M1_Matrix,
+               const Teuchos::RCP<MultiVector> & Nullspace,
+               const Teuchos::RCP<RealValuedMultiVector> & Coords,
+               Teuchos::ParameterList& List,
+               bool ComputePrec = true)
+    {
+      initialize(D0_Matrix,Ms_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+      resetMatrix(SM_Matrix,ComputePrec);
     }
 
     /** Constructor with Jacobian (with add on)
@@ -169,13 +196,8 @@ namespace MueLu {
                Teuchos::ParameterList& List,
                bool ComputePrec = true)
     {
-      initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
-
-      resetMatrix(SM_Matrix);
-
-      // compute preconditioner (optionally)
-      if(ComputePrec)
-        compute();
+      initialize(D0_Matrix,M1_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+      resetMatrix(SM_Matrix,ComputePrec);
     }
 
     /** Constructor without Jacobian (with add on)
@@ -194,7 +216,7 @@ namespace MueLu {
                const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List) : SM_Matrix_(Teuchos::null)
     {
-      initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+      initialize(D0_Matrix,M1_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
     }
 
     /** Constructor with Jacobian (no add on)
@@ -215,13 +237,8 @@ namespace MueLu {
                Teuchos::ParameterList& List,
                bool ComputePrec)
     {
-      initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
-
-      resetMatrix(SM_Matrix);
-
-      // compute preconditioner (optionally)
-      if(ComputePrec)
-        compute();
+      initialize(D0_Matrix,M1_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
+      resetMatrix(SM_Matrix,ComputePrec);
     }
 
     /** Constructor without Jacobian (no add on)
@@ -238,7 +255,7 @@ namespace MueLu {
                const Teuchos::RCP<RealValuedMultiVector>  & Coords,
                Teuchos::ParameterList& List) : SM_Matrix_(Teuchos::null)
     {
-      initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
+      initialize(D0_Matrix,M1_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
     }
 
     /** Constructor with parameter list
@@ -255,17 +272,18 @@ namespace MueLu {
       RCP<MultiVector> Nullspace = List.get<RCP<MultiVector> >("Nullspace", Teuchos::null);
       RCP<RealValuedMultiVector> Coords = List.get<RCP<RealValuedMultiVector> >("Coordinates", Teuchos::null);
       RCP<Matrix> D0_Matrix = List.get<RCP<Matrix> >("D0");
+      RCP<Matrix> Ms_Matrix;
+      if (List.isType<Matrix>("Ms"))
+        Ms_Matrix = List.get<RCP<Matrix> >("Ms");
+      else
+        Ms_Matrix = List.get<RCP<Matrix> >("M1");
       RCP<Matrix> M1_Matrix = List.get<RCP<Matrix> >("M1");
       RCP<Matrix> M0inv_Matrix = List.get<RCP<Matrix> >("M0inv", Teuchos::null);
 
-      initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+      initialize(D0_Matrix,Ms_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
 
       if (SM_Matrix != Teuchos::null)
-        resetMatrix(SM_Matrix);
-
-      // compute preconditioner (optionally)
-      if(ComputePrec)
-        compute();
+        resetMatrix(SM_Matrix,ComputePrec);
     }
 
     //! Destructor.
@@ -286,7 +304,7 @@ namespace MueLu {
     void setParameters(Teuchos::ParameterList& list);
 
     //! Setup the preconditioner
-    void compute();
+    void compute(bool reuse=false);
 
     //! Setup the prolongator for the (1,1)-block
     void buildProlongator();
@@ -295,7 +313,7 @@ namespace MueLu {
     void formCoarseMatrix();
 
     //! Reset system matrix
-    void resetMatrix(Teuchos::RCP<Matrix> SM_Matrix_new);
+    void resetMatrix(Teuchos::RCP<Matrix> SM_Matrix_new, bool ComputePrec=true);
 
     //! Returns in Y the result of a Xpetra::Operator applied to a Xpetra::MultiVector X.
     //! \param[in]  X - MultiVector of dimension NumVectors to multiply with matrix.
@@ -326,24 +344,20 @@ namespace MueLu {
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
      *
      * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] Ms_Matrix Edge mass matrix for nodal aggregates
      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
-     * \param[in] M1_Matrix Edge mass matrix
+     * \param[in] M1_Matrix Edge mass matrix for add on
      * \param[in] Nullspace Null space (needed for periodic)
      * \param[in] Coords Nodal coordinates
      * \param[in] List Parameter list
      */
     void initialize(const Teuchos::RCP<Matrix> & D0_Matrix,
+                    const Teuchos::RCP<Matrix> & Ms_Matrix,
                     const Teuchos::RCP<Matrix> & M0inv_Matrix,
                     const Teuchos::RCP<Matrix> & M1_Matrix,
                     const Teuchos::RCP<MultiVector> & Nullspace,
                     const Teuchos::RCP<RealValuedMultiVector> & Coords,
                     Teuchos::ParameterList& List);
-
-    //! solve coarse (1,1) block
-    void solveH() const;
-
-    //! solve (2,2) block
-    void solve22() const;
 
     //! apply additive algorithm for 2x2 solve
     void applyInverseAdditive(const MultiVector& RHS, MultiVector& X) const;
@@ -355,7 +369,10 @@ namespace MueLu {
     void applyInverse212(const MultiVector& RHS, MultiVector& X) const;
 
     //! apply solve to 1-1 block only
-    void applyInverse11only(const MultiVector& RHS, MultiVector& X) const;
+    void solveH(const MultiVector& RHS, MultiVector& X) const;
+
+    //! apply solve to 2-2 block only
+    void solve22(const MultiVector& RHS, MultiVector& X) const;
 
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
@@ -366,7 +383,7 @@ namespace MueLu {
     bool useHiptmairSmoothing_;
     //! Various matrices
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, D0_T_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
-    Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_;
+    Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_, Addon_Matrix_;
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
     Kokkos::View<const bool*, typename Node::device_type> BCrowsKokkos_;
@@ -382,8 +399,10 @@ namespace MueLu {
     Teuchos::RCP<const Import> ImporterH_, Importer22_;
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
+    Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
+    Teuchos::RCP<Teuchos::ParameterList> A22_AP_reuse_data_, A22_RAP_reuse_data_;
     //! Some options
-    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_;
+    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_,implicitTranspose_;
     std::string mode_;
     //! Temporary memory
     mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_;

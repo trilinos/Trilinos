@@ -141,7 +141,7 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildSystem(const Teuchos::RCP<const T
 {
    RCP<Tpetra::Map<LO,GO,NT> > map = rcp(new Tpetra::Map<LO,GO,NT>(size,0,comm));
 
-   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(map,0);
+   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(map,3);
 
    ST values[] = { -1.0, 2.0, -1.0};
    GO iTemp[] = {-1,0,1}, indices[3];
@@ -229,7 +229,7 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildStridedSystem(const Teuchos::RCP<
 {
   RCP<Tpetra::Map<LO,GO,NT> >map = rcp(new Tpetra::Map<LO,GO,NT>(2*size,0,comm));
 
-  RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(map,0);
+  RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(map,4);
 
   int numUnks = 2;
   ST valuesA[] = { -1.0, 2.0, 7.0, -1.0 };

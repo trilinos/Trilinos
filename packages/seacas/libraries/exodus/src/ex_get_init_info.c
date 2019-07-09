@@ -52,8 +52,6 @@
 
 #include <exodusII.h>     // for ex_err, EX_MSG, etc
 #include <exodusII_int.h> // for EX_FATAL, DIM_NUM_PROCS, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
 
 int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
 {

@@ -42,7 +42,7 @@
 /// int
 /// main()
 /// {
-///   stk::Boostrap::bootstrap();
+///   stk::Bootstrap::bootstrap();
 ///
 /// }
 ///
