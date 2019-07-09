@@ -401,39 +401,83 @@ class AlgHybridGMB : public Algorithm<Adapter>
       ArrayView<StridedData<lno_t, scalar_t> > ewgts;
       size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);
       //again, weights are not used
-
-      //reorder the graph so that boundary vertices are in the
-      //end of the offset array.
-      lno_t nInterior;
-      std::vector<lno_t> reorderAdjs_vec(adjs.size());
-      std::vector<offset_t> reorderOffsets_vec(offsets.size());
-      std::vector<lno_t> reorderToLocal;
-      std::vector<gno_t> reorderGIDs = reorderGraph(vtxIDs,
-                                                      adjs,
-                                                      offsets,
-                                                      reorderAdjs_vec,
-                                                      reorderOffsets_vec,
-                                                      reorderToLocal,
-                                                      nInterior); 
-      ArrayView<const lno_t> reorderAdjs = Teuchos::arrayViewFromVector(
-                                                         reorderAdjs_vec);
-      ArrayView<const offset_t> reorderOffsets = Teuchos::arrayViewFromVector(
-                                                         reorderOffsets_vec);
-      //set up necessary data structures to build the FEMultiVector
-      std::vector<gno_t> ownedReorderGIDs;
-      for(int i = 0; i < nVtx; i++){
-        ownedReorderGIDs.push_back(reorderGIDs[i]);
-      }
-       
-      Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
-                                             <Tpetra::global_size_t>::invalid();
-      RCP<const map_t> mapOwned = rcp(new map_t(dummy, 
-                                      Teuchos::arrayViewFromVector(ownedReorderGIDs),
-                                           0, comm));
-      RCP<const map_t> mapWithCopies = rcp(new map_t(dummy, 
-                                      Teuchos::arrayViewFromVector(reorderGIDs),
-                                           0, comm));
       
+      RCP<const map_t> mapOwned;
+      RCP<const map_t> mapWithCopies;
+      
+      std::vector<gno_t> finalGIDs;
+      std::vector<offset_t> finalOffset_vec;
+      std::vector<lno_t> finalAdjs_vec;      
+
+      lno_t nInterior = 0;
+      std::vector<lno_t> reorderToLocal;
+      for(int i = 0;  i< nVtx; i++) reorderToLocal.push_back(i);
+
+      //printf("Starting to create local graph\n");
+      string kokkos_only_interior = pl->get<string>("Kokkos_only_interior","false");
+      if(comm->getSize() == 1 || kokkos_only_interior=="false") {
+        //Set up a typical local mapping here. Need to use the first step of reordering, I think
+        std::unordered_map<gno_t,lno_t> globalToLocal;
+        std::vector<gno_t> ownedPlusGhosts;
+        for (int i = 0; i < vtxIDs.size(); i++){
+          globalToLocal[vtxIDs[i]] = i;
+          ownedPlusGhosts.push_back(vtxIDs[i]);
+        }
+        int nghosts = 0;
+        for (int i = 0; i < adjs.size(); i++){
+          if(globalToLocal.count(adjs[i]) == 0){
+            //new unique ghost found
+            ownedPlusGhosts.push_back(adjs[i]);
+            globalToLocal[adjs[i]] = vtxIDs.size() + nghosts;
+            nghosts++;
+            
+          }
+        }
+        
+        finalAdjs_vec.resize(adjs.size()); 
+        for(int i = 0; i < finalAdjs_vec.size();i++){
+          //printf("finalAdjs index %d is local vtx %d\n",i,globalToLocal[adjs[i]]);
+          finalAdjs_vec[i] = globalToLocal[adjs[i]];
+        }
+        //finalAdjs = Teuchos::arrayViewFromVector(finalAdjs_vec);
+        for(int i = 0; i < offsets.size(); i++) finalOffset_vec.push_back(offsets[i]);
+        //finalOffsets = offsets;
+        finalGIDs = ownedPlusGhosts;
+        Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
+                                             <Tpetra::global_size_t>::invalid();
+        mapOwned = rcp(new map_t(dummy, vtxIDs, 0, comm));
+        mapWithCopies = rcp(new map_t(dummy, 
+                                  Teuchos::arrayViewFromVector(ownedPlusGhosts),
+                                  0, comm)); 
+                                      
+      } else {
+        //printf("Doing the reordering\n");
+        //reorder the graph so that boundary vertices are in the
+        //end of the offset array.
+        finalAdjs_vec.resize(adjs.size());
+        finalOffset_vec.resize(offsets.size());
+        std::vector<gno_t> reorderGIDs = reorderGraph(vtxIDs,
+                                                        adjs,
+                                                        offsets,
+                                                        finalAdjs_vec,
+                                                        finalOffset_vec,
+                                                        reorderToLocal,
+                                                        nInterior); 
+        finalGIDs = reorderGIDs;
+        //set up necessary data structures to build the FEMultiVector
+        std::vector<gno_t> ownedReorderGIDs;
+        for(int i = 0; i < nVtx; i++){
+          ownedReorderGIDs.push_back(reorderGIDs[i]);
+        }
+         
+        Tpetra::global_size_t dummy = Teuchos::OrdinalTraits
+                                               <Tpetra::global_size_t>::invalid();
+        mapOwned = rcp(new map_t(dummy, Teuchos::arrayViewFromVector(ownedReorderGIDs),
+                                             0, comm));
+        mapWithCopies = rcp(new map_t(dummy, 
+                                        Teuchos::arrayViewFromVector(reorderGIDs),
+                                        0, comm));
+      }
       //create the FEMultiVector for the distributed communication.
       //We also use the views from this datastructure as arguments to
       //KokkosKernels coloring functions.
@@ -442,6 +486,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
                                                             mapWithCopies));
       Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned, 
                                                     importer, 1, true));
+      //printf("Done creating local graph\n");
       timeReorder->stop();
       //Get color array to fill
       ArrayRCP<int> colors = solution->getColorsRCP();
@@ -453,14 +498,18 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //need to communicate for consistency. These numbers determine
       //which vertex gets recolored in the event of a conflict.
       //taken directly from the Zoltan coloring implementation 
-      std::vector<int> rand(reorderGIDs.size());
-      for(int i = 0; i < reorderGIDs.size(); i++){
-        Zoltan_Srand((unsigned int) reorderGIDs[i], NULL);
+      std::vector<int> rand(finalGIDs.size());
+      for(int i = 0; i < finalGIDs.size(); i++){
+        Zoltan_Srand((unsigned int) finalGIDs[i], NULL);
         rand[i] = (int) (((double) Zoltan_Rand(NULL)/(double) ZOLTAN_RAND_MAX)*100000000);
       }
 
+      
+      ArrayView<const offset_t> finalOffsets = Teuchos::arrayViewFromVector(finalOffset_vec);
+      ArrayView<const lno_t> finalAdjs = Teuchos::arrayViewFromVector(finalAdjs_vec);
+
       // call coloring function
-      hybridGMB(nVtx, nInterior, reorderAdjs, reorderOffsets,colors,femv,reorderGIDs,rand,timeInterior,timeBoundary);
+      hybridGMB(nVtx, nInterior, finalAdjs, finalOffsets,colors,femv,finalGIDs,rand,timeInterior,timeBoundary);
       
       //copy colors to the output array.
       for(int i = 0; i < colors.size(); i++){
@@ -478,7 +527,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       Teuchos::TimeMonitor::zeroOutTimers();
       comm->barrier();
     }
-    
+     
     void hybridGMB(const size_t nVtx,lno_t nInterior, Teuchos::ArrayView<const lno_t> adjs, 
                    Teuchos::ArrayView<const offset_t> offsets, 
                    Teuchos::ArrayRCP<int> colors, Teuchos::RCP<femv_t> femv,
@@ -486,6 +535,9 @@ class AlgHybridGMB : public Algorithm<Adapter>
                    std::vector<int> rand,
                    Teuchos::RCP<Teuchos::Time> timeInterior,
                    Teuchos::RCP<Teuchos::Time> timeBoundary){
+     Teuchos::RCP<Teuchos::Time> 
+             timeBoundaryComm(Teuchos::TimeMonitor::getNewTimer("03 BOUNDARY-COMM")),
+             timeBoundaryComp(Teuchos::TimeMonitor::getNewTimer("04 BOUNDARY-COMP"));
       
       timeInterior->start();
       //make views out of arrayViews 
@@ -500,7 +552,9 @@ class AlgHybridGMB : public Algorithm<Adapter>
 
       string kokkos_only_interior = pl->get<string>("Kokkos_only_interior","false");
       size_t kokkosVerts = nVtx;
-      if(kokkos_only_interior == "true") kokkosVerts = nInterior;
+      if(kokkos_only_interior == "true") {
+        kokkosVerts = nInterior;
+      }
       //call the KokkosKernels coloring function with the Tpetra default spaces.
       this->colorInterior<Tpetra::Map<>::execution_space,
                           Tpetra::Map<>::memory_space,
@@ -510,6 +564,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       timeInterior->stop();
       //set the batch size to a reasonable default
       timeBoundary->start();
+      timeBoundaryComp->start();
       int batch_size = pl->get<int>("Hybrid_batch_size",100);
       
       if(batch_size < 0) batch_size = nVtx;
@@ -517,24 +572,51 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //create a queue of vertices to color
       std::queue<lno_t> recoloringQueue;
       std::queue<lno_t> conflictQueue;
+
+     
+      //bootstrap distributed coloring, add conflicting vertices to the recoloring queue.
+      if(kokkos_only_interior == "false"){
+        timeBoundaryComp->stop();
+        timeBoundaryComm->start();
+        femv->switchActiveMultiVector();
+        femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
+        femv->switchActiveMultiVector();
+        timeBoundaryComm->stop();
+        timeBoundaryComp->start();
+        //printf("Adding conflicts to the recoloring queue\n");
+        for(int i = 0; i < nVtx; i++){
+          for(int j = offsets[i]; j < offsets[i+1];j++){
+            //printf("getting color for vertex %d\n",i);
+            int currColor = femv->getData(0)[i];
+            //printf("getting color for vertex %d, at index %d\n",adjs[j],j);
+            int nborColor = femv->getData(0)[adjs[j]];
+            if(currColor == nborColor && rand[i] > rand[adjs[j]]){
+              recoloringQueue.push(i);
+              break;
+            } 
+          }
+        }
+        //printf("Finished adding conflicts to the recoloring queue\n");
+      }
+
       Teuchos::ArrayRCP<bool> forbiddenColors;
       forbiddenColors.resize(numColors);
       for(int i = 0; i < numColors; i++) forbiddenColors[i] = false;
       //printf("--Rank %d: batch size: %d\n",comm->getRank(),batch_size);
-
+      int vertsPerRound[100];
       bool done = false; //We're only done when all processors are done
       int distributedRounds = 0; //this is the same across all processors
       int i = nInterior; //we only need to worry about boundary vertices here.
       //  while the queue is not empty
           while(recoloringQueue.size() > 0 || !done){
+            //printf("-- Rank %d: Recoloring %d verts\n",comm->getRank(),recoloringQueue.size());
+            if(distributedRounds < 100) vertsPerRound[distributedRounds] = recoloringQueue.size();
         //  add next batch to the queue
-            for(size_t j = i; j < i+batch_size; j++){
-              if(j < nVtx) {
-                //printf("--Rank %d: pushing %d on the queue\n",comm->getRank(),j);
-                if(kokkos_only_interior == "false") {
-                  conflictQueue.push(j);
-                } else if(kokkos_only_interior == "true"){
-                  recoloringQueue.push(j);
+            if (kokkos_only_interior == "true"){
+              for(size_t j = i; j < i+batch_size; j++){
+                if(j < nVtx) {
+                  //printf("--Rank %d: pushing %d on the queue\n",comm->getRank(),j);
+                  recoloringQueue.push(j); 
                 }
               }
             }
@@ -576,10 +658,15 @@ class AlgHybridGMB : public Algorithm<Adapter>
                //printf("--Rank %d: colored vtx %u color %d\n",comm->getRank(),currVtx, femv->getData(0)[currVtx]);
             }
             
+            timeBoundaryComp->stop();
+            timeBoundaryComm->start();
       //    communicate
             femv->switchActiveMultiVector();
             femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
             femv->switchActiveMultiVector();
+            
+            timeBoundaryComm->stop();
+            timeBoundaryComp->start();
       //    check for conflicts with the vertices that were just colored
             while(conflictQueue.size() > 0){
       //      if conflicts were detected put them on the recoloring queue
@@ -609,11 +696,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
             Teuchos::reduceAll<int, int>(*comm,Teuchos::REDUCE_MAX,1, &localDone, &globalDone);
             //We're only allowed to stop once everyone has no work to do.
             //collectives will hang if one process exits. 
+            //printf("globalDone = %d\n",globalDone);
             distributedRounds++;
             done = !globalDone;
           }
         
-       
+      timeBoundaryComp->stop();
       timeBoundary->stop();
       //color interior vertices if not colored yet. 
       //(must alter Kokkos-Kernels to allow partial colorings)
@@ -627,6 +715,11 @@ class AlgHybridGMB : public Algorithm<Adapter>
       
       //print how many rounds of speculating/correcting happened (this should be the same for all ranks):
       if(comm->getRank()==0) printf("did %d rounds of distributed coloring\n", distributedRounds);
+      int totalVertsPerRound[100];
+      Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM,100,vertsPerRound,totalVertsPerRound);
+      for(int i = 0; i < std::min(distributedRounds,100); i++){
+        if(comm->getRank()==0) printf("recolored %d vertices in round %d\n",totalVertsPerRound[i],i);
+      }
     }
 };
 
