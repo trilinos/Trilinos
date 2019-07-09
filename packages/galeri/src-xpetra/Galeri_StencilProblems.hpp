@@ -69,7 +69,9 @@ namespace Galeri {
 
     template <typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<MultiVector> ScalarProblem<Map,Matrix,MultiVector>::BuildNullspace() {
-      return this->Nullspace_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, 1);
+      this->Nullspace_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, 1);
+      this->Nullspace_->putScalar(Teuchos::ScalarTraits<typename MultiVector::scalar_type>::one());
+      return this->Nullspace_;
     }
 
     // =============================================  Laplace1D  =============================================
