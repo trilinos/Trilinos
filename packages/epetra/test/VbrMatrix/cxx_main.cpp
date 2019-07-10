@@ -1740,7 +1740,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   int localProc = comm.MyPID();
 
   int myFirstRow = localProc*3;
-  int myLastRow = myFirstRow+2;
+  unsigned int myLastRow = myFirstRow+2;
   int numMyRows = myLastRow - myFirstRow + 1;
   int numGlobalRows = numProcs*numMyRows;
   int ierr;
@@ -1752,7 +1752,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   int numCols = 2*numMyRows;
   int* myCols = new int[numCols];
 
-  int col = myFirstRow;
+  unsigned int col = myFirstRow;
   for(int i=0; i<numCols; ++i) {
     myCols[i] = col++;
     if (col > myLastRow) col = myFirstRow;
@@ -1781,7 +1781,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   //FillComplete, which internally calls MergeRedundantEntries, the
   //matrix should contain 1.0 in each entry.
 
-  for(int i=myFirstRow; i<=myLastRow; ++i) {
+  for(unsigned int i=myFirstRow; i<=myLastRow; ++i) {
     EPETRA_TEST_ERR( A.BeginInsertGlobalValues(i, numCols, myCols), ierr);
 
     for(int j=0; j<numCols; ++j) {
@@ -1813,7 +1813,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   Epetra_SerialDenseMatrix** Values;
   Epetra_VbrMatrix Aview(View, map, numMyRows);
 
-  for(int i=myFirstRow; i<=myLastRow; ++i) {
+  for(unsigned int i=myFirstRow; i<=myLastRow; ++i) {
     BlockIndices[i-myFirstRow] = new int[numCols];
     EPETRA_TEST_ERR( A.ExtractGlobalBlockRowPointers(i, numCols,
                                                      RowDim, numBlockEntries,
@@ -1846,7 +1846,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   //So the test appears to have passed for the original matrix A. Now check the
   //values of our second "view" of the matrix, 'Aview'.
 
-  for(int i=myFirstRow; i<=myLastRow; ++i) {
+  for(unsigned int i=myFirstRow; i<=myLastRow; ++i) {
     EPETRA_TEST_ERR( Aview.ExtractGlobalBlockRowPointers(i, numMyRows,
                                                          RowDim, numBlockEntries,
                                                          BlockIndices[i-myFirstRow],
@@ -1883,7 +1883,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
   int localProc = comm.MyPID();
 
   int myFirstRow = localProc*3;
-  int myLastRow = myFirstRow+2;
+  unsigned int myLastRow = myFirstRow+2;
   int numMyRows = myLastRow - myFirstRow + 1;
   int numGlobalRows = numProcs*numMyRows;
   int ierr;
@@ -1891,7 +1891,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
   int numCols = numMyRows;
   int* myCols = new int[numCols];
 
-  int col = myFirstRow;
+  unsigned int col = myFirstRow;
   for(int i=0; i<numCols; ++i) {
     myCols[i] = col++;
     if (col > myLastRow) col = myFirstRow;
@@ -1907,7 +1907,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
 
   double* coef = new double[elemSize*elemSize];
 
-  for(int i=myFirstRow; i<=myLastRow; ++i) {
+  for(unsigned int i=myFirstRow; i<=myLastRow; ++i) {
     int myPointRow = i*elemSize;
 
     //The coefficients need to be laid out in column-major order. i.e., the
@@ -1940,7 +1940,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
   int* indices = new int[len];
   int RowDim, numBlockEntries;
 
-  for(int i=myFirstRow; i<=myLastRow; ++i) {
+  for(unsigned int i=myFirstRow; i<=myLastRow; ++i) {
     EPETRA_TEST_ERR( A.ExtractGlobalBlockRowPointers(i, numMyRows,
 						     RowDim, numBlockEntries,
 						     indices,
