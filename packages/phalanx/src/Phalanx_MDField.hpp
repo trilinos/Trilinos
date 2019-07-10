@@ -55,6 +55,7 @@
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_MDField_TypeTraits.hpp"
+#include "Phalanx_MDField_ExtentTraits.hpp"
 #include "Sacado.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 
@@ -73,7 +74,9 @@ namespace PHX {
   // ****************************
   // Extents
   // ****************************
-  template<typename I> struct is_extent : std::false_type {};
+  // Now declared in Phalanx_MDField_ExtentTraits.hpp.
+  // Saving here for convenient user reference.
+  //template<typename I> struct is_extent : std::false_type {};
 
   // ****************************
   // Devices
@@ -131,6 +134,26 @@ namespace PHX {
   };
 
   // ****************************
+  // AnyType - used to avoid memory use in static rank MDFields
+  // ****************************
+  template<int Rank> struct AnyType;
+
+  // Static rank default
+  template<int Rank> struct AnyType
+  {
+    void set(const PHX::any& ){}
+    PHX::any get() const {return PHX::any(nullptr);}
+  };
+
+  // Dynamic rank specialization
+  template<> struct AnyType<0>
+  {
+    PHX::any m_any;
+    void set(const PHX::any& a){m_any = a;}
+    PHX::any get() const {return m_any;}
+  };
+
+  // ****************************
   // FieldTraits
   // ****************************
   template<typename Scalar, typename... Props> struct FieldTraits;
@@ -161,6 +184,15 @@ namespace PHX {
   {
     using layout = void;
     using device = Device;
+  };
+
+  template<typename TemplateArg, typename... Props>
+  struct FieldTraits< typename std::enable_if<!is_extent<TemplateArg>::value &&
+                                              !is_layout<TemplateArg>::value &&
+                                              !is_device<TemplateArg>::value >::type, TemplateArg, Props...>
+  {
+    static_assert(is_extent<TemplateArg>::value || is_layout<TemplateArg>::value || is_device<TemplateArg>::value,
+                  "\n\nERROR: Invalid template argument on MDField!\nERROR: Please specialize all MDField template arguments to be an extent, a layout or a device!\n");
   };
 
   template<typename Scalar, typename... Props>
@@ -299,7 +331,7 @@ namespace PHX {
     typename PHX::MDFieldTypeTraits<array_type>::return_type
     operator[](iType0 index0) const
     {return m_view[index0];}
-    
+
     template< typename iType >
     KOKKOS_INLINE_FUNCTION constexpr
     typename std::enable_if< std::is_integral<iType>::value , size_t >::type
@@ -358,7 +390,7 @@ namespace PHX {
 
     void setFieldData(const PHX::any& a)
     {setFieldData(ViewSpecialization<traits::rank>(),a);}
-    
+
     void print(std::ostream& os, bool printValues = false) const
     {print(ViewSpecialization<traits::rank>(),os,printValues);}
 
@@ -375,16 +407,16 @@ namespace PHX {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
-#endif 
+#endif
       dims.resize(this->rank());
-      for (size_type i=0; i <  this->rank(); ++i) 
+      for (size_type i=0; i <  this->rank(); ++i)
         dims[i] = static_cast<iType>(m_view.extent(i));  // dangerous
     }
 
     KOKKOS_FORCEINLINE_FUNCTION
     Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> get_view()
     {return m_view;}
-    
+
     KOKKOS_FORCEINLINE_FUNCTION
     const Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> get_view() const
     {return m_view;}
@@ -402,84 +434,89 @@ namespace PHX {
     template<typename SrcScalar,typename...SrcProps>
     void deep_copy(const PHX::MDField<SrcScalar,SrcProps...>& source)
     {Kokkos::deep_copy(m_view, source.get_static_view());}
-    
+
     void deep_copy(const Scalar source)
     {Kokkos::deep_copy(m_view, source);}
+
+    PHX::any get_static_view_as_any()
+    {return get_static_view_as_any(ViewSpecialization<traits::rank>());}
 
   private:
     template<int R> constexpr size_type rank(ViewSpecialization<R>) const {return traits::rank;}
     constexpr size_type rank(ViewSpecialization<0>) const {return m_view.rank();}
 
     template<int R> void setFieldData(ViewSpecialization<R>,const PHX::any& a)
-    { 
+    {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       m_data_set = true;
 #endif
-      
+
       // PHX::any object is always the non-const data type.  To correctly
       // cast the any object to the Kokkos::View, need to pull the const
       // off the scalar type if this MDField has a const scalar type.
-      typedef PHX::View<typename array_type::non_const_data_type> non_const_view;
+      using non_const_view = PHX::View<typename array_type::non_const_data_type>;
       try {
         non_const_view tmp = PHX::any_cast<non_const_view>(a);
         m_view = tmp;
       }
       catch (std::exception& ) {
-        std::cout << "\n\nError in compiletime PHX::MDField::setFieldData() in PHX::any_cast. Tried to cast the field \"" 
-                  << this->fieldTag().name()  << "\" with the identifier \"" << this->fieldTag().identifier() 
-                  << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name()) 
-                  << "\" from a PHX::any object containing a type of \"" 
+        std::cout << "\n\nError in compiletime PHX::MDField::setFieldData() in PHX::any_cast. Tried to cast the field \""
+                  << this->fieldTag().name()  << "\" with the identifier \"" << this->fieldTag().identifier()
+                  << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
+                  << "\" from a PHX::any object containing a type of \""
                   << Teuchos::demangleName(a.type().name()) << "\"." << std::endl;
         throw;
       }
     }
 
     void setFieldData(ViewSpecialization<0>,const PHX::any& a)
-    { 
+    {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       m_data_set = true;
 #endif
-      //m_any = a;
+
+      m_any_holder.set(a);
+
       using NonConstDataT = typename std::remove_const<Scalar>::type;
       try {
         if (m_tag->dataLayout().rank() == 1)
-          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT*,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT*,layout_type,device_type>>(a);
         else if (m_tag->dataLayout().rank() == 2)
-          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT**,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT**,layout_type,device_type>>(a);
         else if (m_tag->dataLayout().rank() == 3)
-          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT***,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT***,layout_type,device_type>>(a);
         else if (m_tag->dataLayout().rank() == 4)
-          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT****,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT****,layout_type,device_type>>(a);
         else if (m_tag->dataLayout().rank() == 5)
-          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT*****,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT*****,layout_type,device_type>>(a);
         else if (m_tag->dataLayout().rank() == 6)
-          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT******,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT******,layout_type,device_type>>(a);
         else if (m_tag->dataLayout().rank() == 7)
-          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT*******,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
+          m_view =  PHX::any_cast<Kokkos::View<NonConstDataT*******,layout_type,device_type>>(a);
         else {
           throw std::runtime_error("ERROR - PHX::MDField::setFieldData (DynRank) - Invalid rank!");
         }
       }
-      catch (std::exception& ) { 
+      catch (std::exception& ) {
         //std::string type_cast_name = Teuchos::demangleName(typeid(non_const_view).name());
         std::string type_cast_name = "???";
-        std::cout << "\n\nError in runtime PHX::MDField::setFieldData() in PHX::any_cast. Tried to cast the field \"" 
-                  << this->fieldTag().name()  << "\" with the identifier \"" << this->fieldTag().identifier() 
+        std::cout << "\n\nError in runtime PHX::MDField::setFieldData() in PHX::any_cast. Tried to cast the field \""
+                  << this->fieldTag().name()  << "\" with the identifier \"" << this->fieldTag().identifier()
                   << "\" to a type of \"" << type_cast_name
-                  << "\" from a PHX::any object containing a type of \"" 
+                  << "\" from a PHX::any object containing a type of \""
                   << Teuchos::demangleName(a.type().name()) << "\"." << std::endl;
         throw;
-      } 
+      }
     }
-    
+
     template<int R> void print(ViewSpecialization<R>, std::ostream& os, bool printValues) const
     {
       std::vector<const char*> dim_names;
 
       // ROGER TODO: fix printing for static dims!!!!
-      
+
       // PHX::PrintDimension<Tag0,array_type> pd0;
       // pd0.addName(dim_names);
       // PHX::PrintDimension<Tag1,array_type> pd1;
@@ -498,7 +535,7 @@ namespace PHX {
       // pd7.addName(dim_names);
 
       os << "MDField<";
-      
+
       for (std::size_t i=0; i < dim_names.size(); ++i) {
         if (i > 0)
           os << ",";
@@ -511,14 +548,14 @@ namespace PHX {
         os << m_view.extent(i);
       }
       os << "): ";
-      
+
       if (nonnull(m_tag))
         os << *m_tag;
-      
+
       if (printValues)
-        os << "Error - MDField no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please disconstinue the use of this call!" << std::endl;  
+        os << "Error - MDField no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please discontinue the use of this call!" << std::endl;
     }
-    
+
     void print(ViewSpecialization<0>, std::ostream& os, bool printValues) const
     {
       os << "MDField(";
@@ -528,13 +565,19 @@ namespace PHX {
         os << m_tag->dataLayout().dimension(i);
       }
       os << "): ";
-      
+
       if (nonnull(m_tag))
         os << *m_tag;
-      
+
       if (printValues)
-        os << "Error - MDField no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please disconstinue the use of this call!" << std::endl;  
+        os << "Error - MDField no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please discontinue the use of this call!" << std::endl;
     }
+
+    template<int R> PHX::any get_static_view_as_any(ViewSpecialization<R>)
+    {return PHX::any(m_view);}
+
+    PHX::any get_static_view_as_any(ViewSpecialization<0>)
+    {return m_any_holder.get();}
 
 #ifdef PHX_DEBUG
     std::string fieldTagErrorMsg() const
@@ -543,10 +586,11 @@ namespace PHX {
     std::string fieldDataErrorMsg() const
     {return "Error - PHX::MDField - No data has been set!  Please bind memory (call getFieldData()) to MDField!";}
 #endif
-    
+
   private:
     Teuchos::RCP<const PHX::FieldTag> m_tag;
     array_type m_view;
+    PHX::AnyType<traits::rank> m_any_holder; // only used for dynamic rank (empty otherwise)
 #ifdef PHX_DEBUG
     bool m_data_set;
 #endif

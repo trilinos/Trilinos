@@ -142,16 +142,13 @@ addEvaluatedField(const PHX::FieldTag& ft)
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT,
-	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-		  Tag4,Tag5,Tag6,Tag7>& f)
+addEvaluatedField(const PHX::MDField<DataT,Props...>& f)
 { 
   this->addEvaluatedField(f.fieldTag());
 
-  using NCF = PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  using NCF = PHX::MDField<DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
@@ -200,16 +197,13 @@ addContributedField(const PHX::FieldTag& ft)
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT,
-	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addContributedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-                    Tag4,Tag5,Tag6,Tag7>& f)
+addContributedField(const PHX::MDField<DataT,Props...>& f)
 { 
   this->addContributedField(f.fieldTag());
 
-  using NCF = PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  using NCF = PHX::MDField<DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
@@ -259,32 +253,26 @@ addDependentField(const PHX::FieldTag& ft)
 //**********************************************************************
 // DEPRECATED!!!!
 template<typename Traits>
-template<typename DataT,
-	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-		  Tag4,Tag5,Tag6,Tag7>& f)
+addDependentField(const PHX::MDField<DataT,Props...>& f)
 {
   this->addDependentField(f.fieldTag());
 
-  using NCF = PHX::MDField<typename std::remove_const<DataT>::type,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  using NCF = PHX::MDField<typename std::remove_const<DataT>::type,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT,
-	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,
-		  Tag4,Tag5,Tag6,Tag7>& f)
+addDependentField(const PHX::MDField<const DataT,Props...>& f)
 {
   this->addDependentField(f.fieldTag());
 
-  using NCF = PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  using NCF = PHX::MDField<const DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
                                PHX::MemoryBinder<NCF>(const_cast<NCF*>(&f)));
 }

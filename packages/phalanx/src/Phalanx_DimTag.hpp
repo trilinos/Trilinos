@@ -52,6 +52,7 @@
 //----------------------------------------------------------------------
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_MDField_ExtentTraits.hpp"
 #include <vector>
 #include <string>
 
@@ -138,6 +139,14 @@ private:
   ADT::~ADT() {} \
   const char * ADT::name() const { static const char n[] = # ADT; return n; } \
   const ADT & ADT::tag() { static const ADT self ; return self ; }
+
+/** \brief  Macro for implementing the body of a simple ArrayDimTag
+ *  \param ADT  name of the tag.
+ */
+#define PHX_EXTENT_SPECIALIZATION( ADT ) \
+  namespace PHX { \
+    template<> struct is_extent<ADT> : std::true_type {}; \
+  }
 
 } // end namespace PHX
 
