@@ -325,12 +325,12 @@ int main(int narg, char** arg)
   
   //std::cout << "Going to validate the soln" << std::endl;
   // Verify that checkColoring is a coloring
-  if(colorAlg == "Hybrid" && comm->getSize() > 1){
+  //if(colorAlg == "Hybrid" && comm->getSize() > 1){
     //need to check a distributed coloring
     testReturn = validateDistributedColoring(Matrix, checkColoring);
-  } else if (checkLength > 0){
-    testReturn = validateColoring(Matrix, checkColoring);
-  }
+  //} else if (checkLength > 0){
+  //  testReturn = validateColoring(Matrix, checkColoring);
+  //}
     // Check balance (not part of pass/fail for now)
   if(checkLength > 0) checkBalance((zlno_t)checkLength, checkColoring);
   

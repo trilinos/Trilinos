@@ -414,7 +414,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       for(int i = 0;  i< nVtx; i++) reorderToLocal.push_back(i);
 
       //printf("Starting to create local graph\n");
-      string kokkos_only_interior = pl->get<string>("Kokkos_only_interior","false");
+      std::string kokkos_only_interior = pl->get<std::string>("Kokkos_only_interior","false");
       if(comm->getSize() == 1 || kokkos_only_interior=="false") {
         //Set up a typical local mapping here. Need to use the first step of reordering, I think
         std::unordered_map<gno_t,lno_t> globalToLocal;
@@ -550,9 +550,9 @@ class AlgHybridGMB : public Algorithm<Adapter>
         host_adjs(i) = adjs[i];
       }
 
-      string kokkos_only_interior = pl->get<string>("Kokkos_only_interior","false");
+      std::string kokkos_only_interior = pl->get<std::string>("Kokkos_only_interior","false");
       size_t kokkosVerts = nVtx;
-      if(kokkos_only_interior == "true") {
+      if(kokkos_only_interior == "true" && comm->getSize() != 1) {
         kokkosVerts = nInterior;
       }
       //call the KokkosKernels coloring function with the Tpetra default spaces.
@@ -575,7 +575,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
 
      
       //bootstrap distributed coloring, add conflicting vertices to the recoloring queue.
-      if(kokkos_only_interior == "false"){
+      if(kokkos_only_interior == "false"&&comm->getSize() > 1){
         timeBoundaryComp->stop();
         timeBoundaryComm->start();
         femv->switchActiveMultiVector();
@@ -605,12 +605,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //printf("--Rank %d: batch size: %d\n",comm->getRank(),batch_size);
       int vertsPerRound[100];
       bool done = false; //We're only done when all processors are done
+      if(comm->getSize() == 1) done = true;
       int distributedRounds = 0; //this is the same across all processors
       int i = nInterior; //we only need to worry about boundary vertices here.
       //  while the queue is not empty
           while(recoloringQueue.size() > 0 || !done){
             //printf("-- Rank %d: Recoloring %d verts\n",comm->getRank(),recoloringQueue.size());
-            if(distributedRounds < 100) vertsPerRound[distributedRounds] = recoloringQueue.size();
         //  add next batch to the queue
             if (kokkos_only_interior == "true"){
               for(size_t j = i; j < i+batch_size; j++){
@@ -619,9 +619,10 @@ class AlgHybridGMB : public Algorithm<Adapter>
                   recoloringQueue.push(j); 
                 }
               }
-            }
-            if(i < nVtx) i+= batch_size;
+              if(i < nVtx) i+= batch_size;
+            }else i = nVtx;
       //    color everything in the recoloring queue, put everything on conflict queue
+            if(distributedRounds < 100) vertsPerRound[distributedRounds] = recoloringQueue.size();
             while(recoloringQueue.size() > 0) {
                //printf("--Rank %d: coloring vertex %u\n",comm->getRank(),recoloringQueue.front());
                lno_t currVtx = recoloringQueue.front();
@@ -692,7 +693,9 @@ class AlgHybridGMB : public Algorithm<Adapter>
             }
             //do a reduction to determine if we're done
             int globalDone = 0;
-            int localDone = recoloringQueue.size() + (nVtx > i);
+            int localDone = 0;
+            if(kokkos_only_interior=="true") localDone= recoloringQueue.size() + (nVtx > i);
+            else localDone = recoloringQueue.size();
             Teuchos::reduceAll<int, int>(*comm,Teuchos::REDUCE_MAX,1, &localDone, &globalDone);
             //We're only allowed to stop once everyone has no work to do.
             //collectives will hang if one process exits. 
@@ -716,6 +719,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //print how many rounds of speculating/correcting happened (this should be the same for all ranks):
       if(comm->getRank()==0) printf("did %d rounds of distributed coloring\n", distributedRounds);
       int totalVertsPerRound[100];
+      for(int i = 0; i < 100; i++) totalVertsPerRound[i]=0;
       Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM,100,vertsPerRound,totalVertsPerRound);
       for(int i = 0; i < std::min(distributedRounds,100); i++){
         if(comm->getRank()==0) printf("recolored %d vertices in round %d\n",totalVertsPerRound[i],i);
