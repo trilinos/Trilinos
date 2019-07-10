@@ -448,6 +448,11 @@ ATDM_SET_ENABLE(Piro_ThyraSolver_MPI_4_DISABLE ON)
 ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_EXE_DISABLE ON)
 ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_MPI_4_DISABLE ON)
 
+# Disable ROL test exec that will not buld with no global int instantiation
+# (see #5447)
+ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_EXE_DISABLE ON)
+ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_MPI_4_DISABLE ON)
+
 #
 # H) ATDM env config install hooks
 #
