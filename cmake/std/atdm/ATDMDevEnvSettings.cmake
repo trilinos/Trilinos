@@ -443,6 +443,11 @@ ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_MPI_4_DISABLE ON)
 ATDM_SET_ENABLE(Piro_ThyraSolver_EXE_DISABLE ON)
 ATDM_SET_ENABLE(Piro_ThyraSolver_MPI_4_DISABLE ON)
 
+# Disable Piro_AnalysisDriverTpetra exec that will not build with no global
+# int instantiation (see #5446)
+ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_EXE_DISABLE ON)
+ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_MPI_4_DISABLE ON)
+
 #
 # H) ATDM env config install hooks
 #
