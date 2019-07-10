@@ -39,10 +39,11 @@ export ATDM_CONFIG_MPI_EXEC="/opt/slurm/bin/srun"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="--ntasks"
 export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node;36"
 
-export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
-# NOTE: Using -j8 instead of -j16 for ctest is to try to avoid 'srun' "Job
-# <jobid> step creation temporarily disabled" failures on 'mutrino' (see
-# TRIL-214).
+export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=1
+# Using --hint=nomultithread seems to only allow one srun command to run at at
+# time while the others wait.  Threfore, you might as well just run with one
+# ctest process.  This should avoid the false timeouts and failures to start
+# srun we have been seeing for months on mutrino.
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW"  ]; then
     module use /projects/EMPIRE/mutrino/tpls/hsw/modulefiles
