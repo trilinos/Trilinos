@@ -1205,7 +1205,6 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& compOp, const std::string& xmlFileName)
 {
 #include "MueLu_UseShortNames.hpp"
-#include "Xpetra_UseShortNames.hpp"
 
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
@@ -1216,6 +1215,10 @@ MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
   // Get parameter list for AMG hierarchy
   RCP<ParameterList> mueluParams = Teuchos::getParametersFromXmlFile(xmlFileName);
 
+  // Get the user data sublist
+  const std::string userName = "user data";
+  Teuchos::ParameterList& userParamList = mueluParams->sublist(userName);
+
   // Add nullspace information
   {
     // Compute nullspace
@@ -1223,9 +1226,12 @@ MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
     nullspace->putScalar(one);
 
     // Insert into parameter list
-    const std::string userName = "user data";
-    Teuchos::ParameterList& userParamList = mueluParams->sublist(userName);
     userParamList.set("Nullspace", nullspace);
+  }
+
+  // Add coordinate information for rebalancing
+  {
+    //ToDo Add coordinate information
   }
 
   // Create an AMG hierarchy based on the composite coarse level operator from the region MG scheme
