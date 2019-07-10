@@ -1195,6 +1195,48 @@ MakeCompositeDirectSolver(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
   return coarseSolver;
 } // MakeCorseCompositeDirectSolver
 
+/* Create an AMG hierarchy for a composite operator
+ *
+ * Create the hierarchy object and perform the multigrid setup.
+ * Finally, the hierarhcy object will be ready to be applied during the region MG V-cycle call.
+ */
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+MakeCompositeAMGHierarchy(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& compOp, const std::string& xmlFileName)
+{
+#include "MueLu_UseShortNames.hpp"
+#include "Xpetra_UseShortNames.hpp"
+
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  fos->setOutputToRootOnly(0);
+  *fos << "Attempting to setup AMG hierarchy for the composite coarse grid problem" << std::endl;
+
+  // Get parameter list for AMG hierarchy
+  RCP<ParameterList> mueluParams = Teuchos::getParametersFromXmlFile(xmlFileName);
+
+  // Add nullspace information
+  {
+    // Compute nullspace
+    RCP<MultiVector> nullspace = MultiVectorFactory::Build(compOp->getRowMap(), 1);
+    nullspace->putScalar(one);
+
+    // Insert into parameter list
+    const std::string userName = "user data";
+    Teuchos::ParameterList& userParamList = mueluParams->sublist(userName);
+    userParamList.set("Nullspace", nullspace);
+  }
+
+  // Create an AMG hierarchy based on the composite coarse level operator from the region MG scheme
+  RCP<Hierarchy> compOpHiearchy = MueLu::CreateXpetraPreconditioner(compOp, *mueluParams);
+
+  // We will use the hiearchy as a solver
+  compOpHiearchy->IsPreconditioner(false);
+  compOpHiearchy->SetVerbLevel(MueLu::VERB_NONE);
+
+  return compOpHiearchy;
+} // MakeCompositeAMGHierarchy
 
   // Make interface scaling factors recursively
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1417,6 +1459,12 @@ void createRegionHierarchy(const int maxRegPerProc,
   {
     RCP<DirectCoarseSolver> coarseDirectSolver = MakeCompositeDirectSolver(coarseCompOp);
     coarseSolverData.set<RCP<DirectCoarseSolver>>("direct solver object", coarseDirectSolver);
+  }
+  else
+  {
+    std::string amgXmlFileName = coarseSolverData.get<std::string>("amg xml file");
+    RCP<Hierarchy> coarseAMGHierarchy = MakeCompositeAMGHierarchy(coarseCompOp, amgXmlFileName);
+    coarseSolverData.set<RCP<Hierarchy>>("amg hierarchy object", coarseAMGHierarchy);
   }
 
   std::cout << mapComp->getComm()->getRank() << " | MakeInterfaceScalingFactors ..." << std::endl;
@@ -1722,6 +1770,21 @@ void vCycle(const int l, ///< ID of current level
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     fos->setOutputToRootOnly(0);
 
+    // First get the Xpetra vectors from region to composite format
+    // (the coarseCompMat should already exist)
+    RCP<Vector> compX = VectorFactory::Build(coarseCompMat->getRowMap(), true);
+    RCP<Vector> compRhs = VectorFactory::Build(coarseCompMat->getRowMap(), true);
+    {
+      for (int j = 0; j < maxRegPerProc; j++) {
+        RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(regInterfaceScalings[l][j]->getMap());
+        inverseInterfaceScaling->reciprocal(*regInterfaceScalings[l][j]);
+        fineRegB[j]->elementWiseMultiply(SC_ONE, *fineRegB[j], *inverseInterfaceScaling, SC_ZERO);
+      }
+
+      regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
+                          regRowImporters[l], Xpetra::ADD);
+    }
+
     const bool useDirectSolver = coarseSolverData->get<bool>("use direct solver");
     if (useDirectSolver)
     {
@@ -1735,21 +1798,6 @@ void vCycle(const int l, ///< ID of current level
       TEUCHOS_ASSERT(!coarseSolver.is_null());
 
       using Utilities = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-      // First get the Xpetra vectors from region to composite format
-      // (the coarseCompMat should already exist)
-      RCP<Vector> compX = VectorFactory::Build(coarseCompMat->getRowMap(), true);
-      RCP<Vector> compRhs = VectorFactory::Build(coarseCompMat->getRowMap(), true);
-      {
-        for (int j = 0; j < maxRegPerProc; j++) {
-          RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(regInterfaceScalings[l][j]->getMap());
-          inverseInterfaceScaling->reciprocal(*regInterfaceScalings[l][j]);
-          fineRegB[j]->elementWiseMultiply(SC_ONE, *fineRegB[j], *inverseInterfaceScaling, SC_ZERO);
-        }
-
-        regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
-                            regRowImporters[l], Xpetra::ADD);
-      }
 
       // From here on we switch to Tpetra for simplicity
       // we could also implement a similar Epetra branch
@@ -1775,17 +1823,9 @@ void vCycle(const int l, ///< ID of current level
         *fos << "Numeric factorization should have been done during hierarchy setup, "
             "but actually is missing. Anyway ... just do it right now." << std::endl;
       coarseSolver->solve(tX.ptr(), tB.ptr());
-
-      // Transform back to region format
-      std::vector<RCP<Vector> > quasiRegX(maxRegPerProc);
-      compositeToRegional(compX, quasiRegX, fineRegX,
-                          maxRegPerProc,
-                          quasiRegRowMaps[l],
-                          regRowMaps[l],
-                          regRowImporters[l]);
 #else
       *fos << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++\n"
-           << "+ Coarse level solver requires Tpetra and Amesos2.          +\n"
+           << "+ Coarse level direct solver requires Tpetra and Amesos2.   +\n"
            << "+ Skipping the coarse level solve.                          +\n"
            << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++"
            << std::endl;
@@ -1793,11 +1833,22 @@ void vCycle(const int l, ///< ID of current level
     }
     else // use AMG as coarse level solver
     {
-      *fos << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++\n"
-           << "+ AMG as coarse level solver is not implemented, yet.       +\n"
-           << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++"
-           << std::endl;
+#include "MueLu_UseShortNames.hpp"
+
+      // Extract the hierarchy from the coarseSolverData
+      RCP<Hierarchy> amgHierarchy = coarseSolverData->get<RCP<Hierarchy>>("amg hierarchy object");
+
+      // Run a single V-cycle
+      amgHierarchy->Iterate(*compRhs, *compX, 1);
     }
+
+    // Transform back to region format
+    std::vector<RCP<Vector> > quasiRegX(maxRegPerProc);
+    compositeToRegional(compX, quasiRegX, fineRegX,
+                        maxRegPerProc,
+                        quasiRegRowMaps[l],
+                        regRowMaps[l],
+                        regRowImporters[l]);
   }
 
   return;
