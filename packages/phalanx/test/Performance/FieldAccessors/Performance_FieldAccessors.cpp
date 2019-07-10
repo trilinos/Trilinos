@@ -47,6 +47,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Phalanx_DimTag.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -97,10 +98,16 @@ struct SPoint : public shards::ArrayDimTag {
   const char * name() const ;
   static const SPoint& tag();
 };
+
 const char * SPoint::name() const 
 { static const char n[] = "SPoint" ; return n ; }
 const SPoint & SPoint::tag() 
 { static const SPoint myself ; return myself ; }
+
+namespace PHX {
+  template<> struct is_extent<Point> : std::true_type {};
+  template<> struct is_extent<SPoint> : std::true_type {};
+}
 
 typedef PHX::index_size_type size_type;
 

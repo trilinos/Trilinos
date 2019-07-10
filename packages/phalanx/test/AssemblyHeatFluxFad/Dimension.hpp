@@ -77,4 +77,12 @@ struct Cell : public PHX::DimTag {
   static const Cell& tag();
 };
 
+namespace PHX {
+  template<> struct is_extent<Dim> : std::true_type {};
+  template<> struct is_extent<QuadPoint> : std::true_type {};
+  template<> struct is_extent<Node> : std::true_type {};
+  template<> struct is_extent<Point> : std::true_type {};
+  template<> struct is_extent<Cell> : std::true_type {};
+}
+
 #endif
