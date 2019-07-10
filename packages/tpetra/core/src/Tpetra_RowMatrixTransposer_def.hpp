@@ -137,7 +137,7 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   TimeMonitor MM (*TimeMonitor::getNewTimer (prefix + "Transpose Local"));
 #endif
 
-  constexpr bool sortColIndsDefault = false; // see #4607 discussion
+  // constexpr bool sortColIndsDefault = false; // see #4607 discussion
   // NOTE (mfh 10 Jul 2019) Don't actually implement this yet, since
   // we need to test it first.
   // const bool sortColInds = params.get () == nullptr ?
