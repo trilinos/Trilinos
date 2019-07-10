@@ -156,14 +156,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName       = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
-  std::string yamlFileName      = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
-  int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
-  int         smootherIts       =  20;               clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
-  double      smootherDamp      = 0.67;              clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
-  double      tol               = 1e-12;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
-  bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
-  bool        useUnstructured   = false;             clp.setOption("use-unstructured","no-use-unstructured", &useUnstructured, "Treat the last rank as unstructured");
+  std::string xmlFileName        = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
+  std::string yamlFileName       = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
+  int         maxIts             = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
+  int         smootherIts        =  20;               clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
+  double      smootherDamp       = 0.67;              clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
+  double      tol                = 1e-12;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
+  bool        scaleResidualHist  = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
+  bool        useUnstructured    = false;             clp.setOption("use-unstructured","no-use-unstructured", &useUnstructured, "Treat the last rank as unstructured");
+  bool        directCoarseSolver = true;              clp.setOption("direct-coarse-solver", "amg-coarse-solver", &directCoarseSolver, "Type of solver for composite coarse level operator");
+  std::string coarseAmgXmlFile   = "";                clp.setOption("coarseAmgXml", &coarseAmgXmlFile, "Read parameters for AMG as coarse level solve from this xml file.");
 #ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
@@ -1210,7 +1212,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<std::vector<RCP<Import> > > regRowImporters; // regional row importers on each level
   Array<std::vector<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
   Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
-  RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > coarseCompositeDirectSolver = Teuchos::null;
+  RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
+  coarseSolverData->set<bool>("use direct solver", directCoarseSolver);
+  coarseSolverData->set<std::string>("amg xml file", coarseAmgXmlFile);
 
 
   // Create multigrid hierarchy
@@ -1241,7 +1245,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         coarseCompOp,
                         maxRegPerGID,
                         compositeToRegionLIDs(),
-                        coarseCompositeDirectSolver);
+                        *coarseSolverData);
 
 
   comm->barrier();
@@ -1352,7 +1356,7 @@ printf("%d: %24.17e\n",cycle,normRes);
       vCycle(0, numLevels, smootherIts, maxCoarseIter, smootherDamp, maxRegPerProc,
              regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, coarseCompOp, coarseCompositeDirectSolver);
+             regInterfaceScalings, coarseCompOp, coarseSolverData);
     }
   }
 
