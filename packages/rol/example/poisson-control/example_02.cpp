@@ -3,6 +3,8 @@
 #include "example_02.hpp"
 // ROL includes
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_LineSearchStep.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
@@ -151,7 +153,9 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     /***************** INITIALIZE ROL ALGORITHM ********************************/
     /***************************************************************************/
-    ROL::Ptr<ROL::Algorithm<double> > algo; 
+    ROL::Ptr<ROL::Algorithm<double>>  algo; 
+    ROL::Ptr<ROL::Step<double>>       step;
+    ROL::Ptr<ROL::StatusTest<double>> status;
     if ( useSA ) {
       ROL_parlist->sublist("General").set("Recompute Objective Function",false);
       ROL_parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",0.1/alpha);
@@ -159,10 +163,14 @@ int main( int argc, char *argv[] ) {
       ROL_parlist->sublist("Step").sublist("Line Search").sublist("Line-Search Method").set("Type","Iteration Scaling");
       ROL_parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type","Steepest Descent");
       ROL_parlist->sublist("Step").sublist("Line Search").sublist("Curvature Condition").set("Type","Null Curvature Condition");
-      algo = ROL::makePtr<ROL::Algorithm<double>>("Line Search",*ROL_parlist,false);
+      status = ROL::makePtr<ROL::StatusTest<double>>(*ROL_parlist);
+      step   = ROL::makePtr<ROL::LineSearchStep<double>>(*ROL_parlist);
+      algo   = ROL::makePtr<ROL::Algorithm<double>>(step,status,false);
     } 
     else {
-      algo = ROL::makePtr<ROL::Algorithm<double>>("Trust Region",*ROL_parlist,false);
+      status = ROL::makePtr<ROL::StatusTest<double>>(*ROL_parlist);
+      step   = ROL::makePtr<ROL::TrustRegionStep<double>>(*ROL_parlist);
+      algo   = ROL::makePtr<ROL::Algorithm<double>>(step,status,false);
     }
   
     /***************************************************************************/
@@ -204,7 +212,7 @@ int main( int argc, char *argv[] ) {
       file.close();
     }
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

@@ -54,9 +54,10 @@
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_TrustRegionStep.hpp"
-#include "ROL_CompositeStep.hpp"
+#include "ROL_MoreauYosidaPenaltyStep.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
@@ -175,7 +176,9 @@ int main(int argc, char *argv[]) {
 
     /*** Solve optimization problem. ***/
 
-    ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>         step_tr = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>> status_tr = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo_tr(step_tr,status_tr,false);
     zp->zero(); // set zero initial guess
     algo_tr.run(*zp, *objReduced, *bcon_control, true, *outStream);
     RealT tol = 1e-8;
@@ -184,8 +187,10 @@ int main(int argc, char *argv[]) {
     data->outputTpetraVector(u_ptr, "state.txt");
     data->outputTpetraVector(z_ptr, "control.txt");
 
+    ROL::Ptr<ROL::Step<RealT>>         step_my = ROL::makePtr<ROL::MoreauYosidaPenaltyStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>> status_my = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo_my(step_my,status_my,false);
     ROL::MoreauYosidaPenalty<RealT> obj_my(obj, bcon_simopt, x, *parlist);
-    ROL::Algorithm<RealT> algo_my("Moreau-Yosida Penalty", *parlist, false);
     x.zero(); // set zero initial guess
     std::vector<std::string> algo_output;
     algo_output = algo_my.run(x, *cp, obj_my, *con, *bcon_simopt, true, *outStream);
@@ -204,7 +209,7 @@ int main(int argc, char *argv[]) {
                << data->computeStateError(u_ptr) << std::endl;
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
       *outStream << std::setw(20) << (*xopt_ptr)[i] << std::setw(20) << (*x_exact_ptr)[i] << std::endl;
     }
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

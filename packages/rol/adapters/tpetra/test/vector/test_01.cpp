@@ -47,6 +47,8 @@
 
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Zakharov.hpp"
@@ -246,7 +248,11 @@ int main(int argc, char *argv[]) {
         parlist.sublist("Status Test").set("Iteration Limit",    100);
 
         // Define Algorithm
-        ROL::Algorithm<RealT> algo("Trust Region", parlist);
+        ROL::Ptr<ROL::Step<RealT>>
+          step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(parlist);
+        ROL::Ptr<ROL::StatusTest<RealT>>
+          status = ROL::makePtr<ROL::StatusTest<RealT>>(parlist);
+        ROL::Algorithm<RealT> algo(step,status,false);
 
         // Run Algorithm
         algo.run(x, obj, true, outStream);
@@ -261,7 +267,7 @@ int main(int argc, char *argv[]) {
 
     }
 
-    catch (std::logic_error err) {
+    catch (std::logic_error& err) {
         outStream << err.what() << "\n";
         errorFlag = -1000;
     }; // end try

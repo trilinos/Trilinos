@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
     *outStream << "||J_sym*sol_nonsym-rhs_sym|| = " << mismatch << std::endl;
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }

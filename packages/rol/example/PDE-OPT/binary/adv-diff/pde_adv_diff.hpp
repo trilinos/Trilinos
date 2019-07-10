@@ -446,7 +446,7 @@ private:
 
   Real evaluateRHS(const std::vector<Real> &x) const {
     const int ns = 5;             
-    const Real half(0.5), one(1), two(2);
+    const Real half(0.5), two(2);
     Real source(0), arg1(0), arg2(0), mag(0), x0(0), y0(0), sx(0), sy(0);
     // Upper and lower bounds on source magintudes
     const std::vector<Real> ml = {1.5, 1.2, 1.5, 1.2, 1.1};

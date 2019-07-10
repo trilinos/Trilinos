@@ -141,7 +141,7 @@ namespace ZOO {
       Ptr<std::vector<Real>> scale = makePtr<std::vector<Real>>(n,static_cast<Real>( 1.0));
       Ptr<std::vector<Real>> xp    = makePtr<std::vector<Real>>(n,static_cast<Real>(-1.0));
       if (type_ == 1) {
-        const Real one(1), two(2), three(3), six(6);
+        const Real one(1), /*two(2),*/ three(3), six(6);
         Real x = -one/std::pow(three,one/six);
         Real y = -std::pow(x,3);
         (*xp)[0] = x;

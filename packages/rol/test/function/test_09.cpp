@@ -52,6 +52,8 @@
 #include "ROL_Constraint_Partitioned.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_CompositeStep.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -153,7 +155,11 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-18);
     parlist.sublist("Status Test").set("Iteration Limit",100);
-    ROL::Algorithm<RealT> algo(stepname, parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::CompositeStep<RealT>>(parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     algo.run(*x,x->dual(),*l,*c,*obj,*con,true,*outStream);
 
@@ -164,7 +170,7 @@ int main(int argc, char *argv[]) {
     }
 
     }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

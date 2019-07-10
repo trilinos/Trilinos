@@ -50,7 +50,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Ptr.hpp"
-#include "ROL_Krylov.hpp"
+#include "ROL_KrylovFactory.hpp"
 #include "ROL_PartitionedVector.hpp"
 #include <iostream>
 
@@ -64,6 +64,7 @@ protected:
   const Ptr<Constraint<Real> > con_;
 
   Real penaltyParameter_;
+  Real quadPenaltyParameter_;
 
   // Evaluation counters
   int nfval_;
@@ -80,6 +81,8 @@ protected:
   Ptr<Vector<Real> > c_;        // constraint value
   Ptr<Vector<Real> > scaledc_;  // penaltyParameter_ * c_
   Ptr<Vector<Real> > gL_;       // gradient of Lagrangian (g - A*y)
+
+  Real cnorm_;                  // norm of constraint violation
 
   bool isValueComputed_;
   bool isGradientComputed_;
@@ -105,6 +108,9 @@ protected:
   Ptr<Vector<Real> > b1_;
   Ptr<Vector<Real> > b2_;
   Ptr<PartitionedVector<Real> > bb_;
+  Ptr<Vector<Real> > w1_;
+  Ptr<Vector<Real> > w2_;
+  Ptr<PartitionedVector<Real> > ww_;
 
   void objValue(const Vector<Real>& x, Real &tol) {
     if( !isObjValueComputed_ ) {
@@ -159,8 +165,10 @@ public:
 
   const Ptr<Vector<Real>> getMultiplierVec(const Vector<Real>& x) {
     // TODO: Figure out reasonable tolerance
-    Real tol = static_cast<Real>(1e-12);
-    computeMultipliers(x, tol);
+    if( !isMultiplierComputed_ ) {
+      Real tol = static_cast<Real>(1e-12);
+      computeMultipliers(x, tol);
+    }
     return y_;
   }
 

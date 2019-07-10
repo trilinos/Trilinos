@@ -64,6 +64,29 @@ struct DynamicObjectiveCheck {
                      const Vector<Real>& z,
                      const std::vector<std::string>& methods ) {
 
+    auto obj_check = make_check( obj );
+    check( obj_check, validator, uo, un, z, methods );
+  }
+
+  static void check( DynamicObjective<Real>& obj,
+                     ValidateFunction<Real>& validator,
+                     const Vector<Real>& uo,
+                     const Vector<Real>& un,
+                     const Vector<Real>& z,
+                     TimeStamp<Real>& timeStamp,
+                     const std::vector<std::string>& methods ) {
+
+    auto obj_check = make_check( obj, timeStamp );
+    check( obj_check, validator, uo, un, z, methods );
+  }
+
+  static void check( DynamicObjective_CheckInterface<Real>& obj_check, 
+                     ValidateFunction<Real>& validator,
+                     const Vector<Real>& uo,
+                     const Vector<Real>& un,
+                     const Vector<Real>& z,
+                     const std::vector<std::string>& methods ) {
+
     auto gu = uo.dual().clone();
     auto gz = z.dual().clone();
     auto vu = uo.clone();
@@ -72,7 +95,6 @@ struct DynamicObjectiveCheck {
     vu->randomize();
     vz->randomize();
 
-    auto obj_check = make_check( obj );
 
     //-------------------------------------------------------------------------
     // Check gradient components

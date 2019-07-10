@@ -208,7 +208,11 @@ int main(int argc, char *argv[]) {
       
     if (!use_sqp){    
       // Trust Region
-      ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist);
+      ROL::Ptr<ROL::Step<RealT>>
+        step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+      ROL::Ptr<ROL::StatusTest<RealT>>
+        status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+      ROL::Algorithm<RealT> algo_tr(step,status,false);
       std::clock_t timer_tr = std::clock();
       algo_tr.run(z,robj,bcon,true,*outStream);
       *outStream << "\n Solution " << (*z_ptr)[0] << " " << (*z_ptr)[1] << "\n" << std::endl;
@@ -230,7 +234,11 @@ int main(int argc, char *argv[]) {
       ROL::StdVector<RealT> c(c_ptr);
       ROL::StdVector<RealT> l(l_ptr);
       
-      ROL::Algorithm<RealT> algo_cs("Composite Step",*parlist);
+      ROL::Ptr<ROL::Step<RealT>>
+        step = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+      ROL::Ptr<ROL::StatusTest<RealT>>
+        status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+      ROL::Algorithm<RealT> algo_cs(step,status,false);
       //x.zero();
       std::clock_t timer_cs = std::clock();
       algo_cs.run(x,g,l,c,obj,con,true,*outStream);
@@ -244,7 +252,7 @@ int main(int argc, char *argv[]) {
       errorFlag = 1;
     }
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
     data->outputTpetraVector(Eu_ptr, "expected_value_state.txt");
     data->outputTpetraVector(Vu_ptr, "variance_state.txt");
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

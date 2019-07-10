@@ -60,6 +60,7 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <algorithm>
 
@@ -529,8 +530,13 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist.sublist("Status Test").set("Iteration Limit",100);
 
+    ROL::Ptr<ROL::Step<RealT>>       step;
+    ROL::Ptr<ROL::StatusTest<RealT>> status;
+
     // Define algorithm.
-    ROL::Algorithm<RealT> algo("Primal Dual Active Set",parlist,false);
+    step = ROL::makePtr<ROL::PrimalDualActiveSetStep<RealT>>(parlist);
+    status = ROL::makePtr<ROL::StatusTest<RealT>>(parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     x.zero();
     obj.deactivateInertia();
@@ -550,7 +556,9 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver", "Truncated CG");
     parlist.sublist("Step").sublist("Trust Region").set("Initial Radius", 1e3);
     parlist.sublist("Step").sublist("Trust Region").set("Maximum Radius", 1e8);
-    ROL::Algorithm<RealT> algo_tr("Trust Region",parlist);
+    step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(parlist);
+    status = ROL::makePtr<ROL::StatusTest<RealT>>(parlist);
+    ROL::Algorithm<RealT> algo_tr(step,status,false);
     // Run Algorithm
     y.zero();
     obj.deactivateInertia();
@@ -580,7 +588,7 @@ int main(int argc, char *argv[]) {
     errorFlag = ((error > 1.e2*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
