@@ -57,6 +57,9 @@
 #include "Phalanx_MDField_TypeTraits.hpp"
 #include "Phalanx_MDField_ExtentTraits.hpp"
 #include "Sacado.hpp"
+#include "Sacado_mpl_vector.hpp"
+#include "Sacado_mpl_for_each.hpp"
+#include "Sacado_mpl_push_back.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 
 namespace PHX {
@@ -89,17 +92,29 @@ namespace PHX {
   // ****************************
   template<typename...Props> struct RankCount;
 
-  template<typename...Props> struct RankCount : std::integral_constant<int,RankCount<void,Props...>::value> {};
+  template<typename...Props> struct RankCount : std::integral_constant<int,RankCount<void,Props...>::value>
+  {
+    using vector_type = typename RankCount<void,Props...>::vector_type;
+  };
 
-  template<> struct RankCount<void> : std::integral_constant<int,0>{};
+  template<> struct RankCount<void> : std::integral_constant<int,0>
+  {
+    using vector_type = Sacado::mpl::vector<>;
+  };
 
   template<typename Extent, typename...Props>
   struct RankCount<typename std::enable_if<is_extent<Extent>::value>::type,Extent,Props...>
-    : std::integral_constant<int,1+RankCount<void,Props...>::value> {};
+    : std::integral_constant<int,1+RankCount<void,Props...>::value>
+  {
+    using vector_type = typename Sacado::mpl::push_back<typename RankCount<Props...>::vector_type,Extent>::type;
+  };
 
   template<typename NonExtent, typename...Props>
   struct RankCount<typename std::enable_if<!is_extent<NonExtent>::value>::type,NonExtent,Props...>
-    : std::integral_constant<int,RankCount<void,Props...>::value> {};
+    : std::integral_constant<int,RankCount<void,Props...>::value>
+  {
+    using vector_type = typename RankCount<void,Props...>::vector_type;
+  };
 
   // ****************************
   // Add pointer (used to construct the static data type)
@@ -199,6 +214,7 @@ namespace PHX {
   struct FieldTraits {
     using prop = FieldTraits<void,Props...>;
     static constexpr int rank = RankCount<Props...>::value;
+    // using extent_vector = typename RankCount<Props...>::vector_type;
     // This sets defaults if not specified
     using layout = typename std::conditional< !std::is_same<typename prop::layout, void>::value,typename prop::layout, typename PHX::DevLayout<Scalar>::type>::type;
     using device = typename std::conditional< !std::is_same<typename prop::device, void>::value,typename prop::device, PHX::Device>::type;
@@ -511,28 +527,19 @@ namespace PHX {
       }
     }
 
+    // Functor for mpl::for_each for printing dimensions
+    struct AddString {
+      std::vector<std::string>& names;
+      AddString(std::vector<std::string>& extent_names) : names(extent_names) {}
+      template<typename Extent> void operator()(Extent ) const
+      {names.push_back(PHX::print<Extent>());}
+    };
+
     template<int R> void print(ViewSpecialization<R>, std::ostream& os, bool printValues) const
     {
-      std::vector<const char*> dim_names;
-
-      // ROGER TODO: fix printing for static dims!!!!
-
-      // PHX::PrintDimension<Tag0,array_type> pd0;
-      // pd0.addName(dim_names);
-      // PHX::PrintDimension<Tag1,array_type> pd1;
-      // pd1.addName(dim_names);
-      // PHX::PrintDimension<Tag2,array_type> pd2;
-      // pd2.addName(dim_names);
-      // PHX::PrintDimension<Tag3,array_type> pd3;
-      // pd3.addName(dim_names);
-      // PHX::PrintDimension<Tag4,array_type> pd4;
-      // pd4.addName(dim_names);
-      // PHX::PrintDimension<Tag5,array_type> pd5;
-      // pd5.addName(dim_names);
-      // PHX::PrintDimension<Tag6,array_type> pd6;
-      // pd6.addName(dim_names);
-      // PHX::PrintDimension<Tag7,array_type> pd7;
-      // pd7.addName(dim_names);
+      std::vector<std::string> dim_names;
+      using extent_vector = typename RankCount<Props...>::vector_type;
+      Sacado::mpl::for_each_no_kokkos<extent_vector>(AddString(dim_names));
 
       os << "MDField<";
 
