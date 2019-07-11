@@ -260,22 +260,27 @@ void IlukGraph<GraphType>::initialize()
 
   constructOverlapGraph();
 
-  L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
-                                      OverlapGraph_->getRowMap (), 0));
-  U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
-                                      OverlapGraph_->getRowMap (), 0));
-
   // Get Maximum Row length
   const int MaxNumIndices = OverlapGraph_->getNodeMaxNumRowEntries ();
+
+  // FIXME (mfh 23 Dec 2013) Use size_t or whatever
+  // getNodeNumElements() returns, instead of ptrdiff_t.
+  const int NumMyRows = OverlapGraph_->getRowMap ()->getNodeNumElements ();
+
+  // Heuristic to get the maximum number of entries per row.
+  const int MaxNumEntriesPerRow = (LevelFill_ == 0)
+                                ? MaxNumIndices
+                                : MaxNumIndices + 5*LevelFill_;
+  L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
+                                      OverlapGraph_->getRowMap (), MaxNumEntriesPerRow));
+  U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
+                                      OverlapGraph_->getRowMap (), MaxNumEntriesPerRow));
 
   Array<local_ordinal_type> L (MaxNumIndices);
   Array<local_ordinal_type> U (MaxNumIndices);
 
   // First we copy the user's graph into L and U, regardless of fill level
 
-  // FIXME (mfh 23 Dec 2013) Use size_t or whatever
-  // getNodeNumElements() returns, instead of ptrdiff_t.
-  const int NumMyRows = OverlapGraph_->getRowMap ()->getNodeNumElements ();
   NumMyDiagonals_ = 0;
 
   for (int i = 0; i< NumMyRows; ++i) {
