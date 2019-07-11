@@ -104,10 +104,10 @@ public:
   static_assert (std::is_integral<SizeType>::value,
                  "SizeType must be a built-in integer type.");
 
-  typedef OffsetsViewType offsets_view_type;
-  typedef typename CountsViewType::const_type counts_view_type;
-  typedef SizeType size_type;
-  typedef typename OffsetsViewType::non_const_value_type value_type;
+  using offsets_view_type = OffsetsViewType;
+  using counts_view_type = typename CountsViewType::const_type;
+  using size_type = SizeType;
+  using value_type = typename OffsetsViewType::non_const_value_type;
 
   /// \brief Constructor
   ///
@@ -144,13 +144,6 @@ public:
       offsets_[i] = update;
     }
     update += (i < size_) ? curVal : value_type ();
-
-    // if (final) {
-    //   offsets_[i] = update;
-    // }
-    // if (i < size_) {
-    //   update += counts_[i];
-    // }
   }
 
 private:
@@ -198,10 +191,10 @@ public:
   static_assert (std::is_integral<SizeType>::value,
                  "SizeType must be a built-in integer type.");
 
-  typedef OffsetsViewType offsets_view_type;
-  typedef CountType count_type;
-  typedef SizeType size_type;
-  typedef typename offsets_view_type::non_const_value_type value_type;
+  using offsets_view_type = OffsetsViewType;
+  using count_type = CountType;
+  using size_type = SizeType;
+  using value_type = typename offsets_view_type::non_const_value_type;
 
   /// \brief Constructor
   ///
@@ -213,8 +206,8 @@ public:
     offsets_ (offsets),
     count_ (count),
     size_ (offsets_.extent (0) == 0 ?
-           static_cast<size_type> (0) :
-           static_cast<size_type> (offsets_.extent (0) - 1))
+           size_type (0) :
+           size_type (offsets_.extent (0) - 1))
   {}
 
   //! Set the initial value of the reduction result.
@@ -233,7 +226,7 @@ public:
 
   //! Reduction operator.
   KOKKOS_INLINE_FUNCTION void
-  operator () (const size_type& i, value_type& update, const bool final) const
+  operator () (const size_type i, value_type& update, const bool final) const
   {
     if (final) {
       offsets_[i] = update;
@@ -302,22 +295,26 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
   static_assert (std::is_integral<SizeType>::value,
                  "SizeType must be a built-in integer type.");
 
-  typedef typename CountsViewType::non_const_value_type count_type;
-  typedef typename OffsetsViewType::non_const_value_type offset_type;
-  typedef typename OffsetsViewType::device_type device_type;
-  typedef typename device_type::execution_space execution_space;
-  typedef typename device_type::memory_space memory_space;
+  using CVT = typename CountsViewType::const_type;
+  using OVT = OffsetsViewType;
+  using count_type = typename CVT::non_const_value_type;
+  using offset_type = typename OVT::non_const_value_type;
+  using device_type = typename OVT::device_type;
+  const char funcName[] = "Tpetra::Details::computeOffsetsFromCounts";
 
   const auto numOffsets = ptr.size ();
   const auto numCounts = counts.size ();
+  offset_type total (0);
+
   if (numOffsets != 0) {
     TEUCHOS_TEST_FOR_EXCEPTION
-      (numCounts >= numOffsets, std::invalid_argument,
-       "Tpetra::Details::computeOffsetsFromCounts: "
-       "counts.extent(0) = " << numCounts
-       << " >= ptr.extent(0) = " << numOffsets << ".");
+      (numCounts >= numOffsets, std::invalid_argument, funcName <<
+       ": counts.size() = " << numCounts << " >= ptr.size() = " <<
+       numOffsets << ".");
 
-    Kokkos::RangePolicy<execution_space, SizeType> range (0, numCounts+1);
+    using execution_space = typename device_type::execution_space;
+    using range_type = Kokkos::RangePolicy<execution_space, SizeType>;
+    range_type range (0, numCounts+1);
     try {
       // We always want to run in the offsets' execution space, since
       // that is the output argument.  (This gives us first touch, if
@@ -326,64 +323,52 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
       // execution space.  If we can't, we need to make a temporary
       // "device" copy of counts in offsets' memory space.
 
+      using memory_space = typename device_type::memory_space;
       // The first template parameter needs to be a memory space.
-      constexpr bool countsAccessibleFromOffsets =
+      constexpr bool countsAccessibleFromOffsetsExecSpace =
         Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<memory_space,
-        typename CountsViewType::memory_space>::value;
-      if (countsAccessibleFromOffsets) {
+        typename CVT::memory_space>::value;
+      if (countsAccessibleFromOffsetsExecSpace) {
 #ifdef KOKKOS_ENABLE_CUDA
         // If 'counts' is a UVM allocation, then conservatively fence
         // first, in case it was last accessed on host.  We're about
         // to access it on device.
-        using counts_memory_space = typename CountsViewType::memory_space;
-        if (std::is_same<counts_memory_space, Kokkos::CudaUVMSpace>::value) {
-          using counts_exec_space = typename counts_memory_space::execution_space;
-          counts_exec_space().fence (); // for UVM's sake.
+        using CMS = typename CVT::memory_space;
+        if (std::is_same<CMS, Kokkos::CudaUVMSpace>::value) {
+          using counts_exec_space = typename CMS::execution_space;
+          counts_exec_space ().fence (); // for UVM's sake.
         }
 #endif // KOKKOS_ENABLE_CUDA
-        typedef ComputeOffsetsFromCounts<OffsetsViewType, CountsViewType,
-          SizeType> functor_type;
-        // offsets' execution space can access counts
+        using functor_type = ComputeOffsetsFromCounts<OVT, CVT, SizeType>;
         functor_type functor (ptr, counts);
-        Kokkos::parallel_scan (range, functor);
+        Kokkos::parallel_scan (range, functor, total, funcName);
       }
-      else {
-        // Make a temporary copy of counts in offsets' execution
-        // space.  Use the same array layout as the original, so we
-        // can deep copy.
-        typedef Kokkos::View<count_type*, typename CountsViewType::array_layout,
-          device_type> dev_counts_type;
+      else { // make tmp copy of counts accessible from offsets' space
+        using dev_counts_type = Kokkos::View<count_type*,
+          typename CVT::array_layout, device_type>;
         dev_counts_type counts_d ("counts_d", numCounts);
         Kokkos::deep_copy (counts_d, counts);
 
-        typedef ComputeOffsetsFromCounts<OffsetsViewType, dev_counts_type,
-          SizeType> functor_type;
+        using functor_type =
+          ComputeOffsetsFromCounts<OVT, dev_counts_type, SizeType>;
         functor_type functor (ptr, counts_d);
-        Kokkos::parallel_scan (range, functor);
+        Kokkos::parallel_scan (range, functor, total, funcName);
       }
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::runtime_error,
-         "Tpetra::Details::computeOffsetsFromCounts: "
-         "Kokkos::parallel_scan (with device_type Kokkos::Device<"
-         << typeid (execution_space).name () << ", "
-         << typeid (memory_space).name () << ">) threw an std::exception: "
-         << e.what ());
+        (true, std::runtime_error, funcName << ": Kokkos::parallel_scan "
+         "with device_type " << typeid (device_type).name () <<
+         " threw an exception: " << e.what ());
     }
     catch (...) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::runtime_error,
-         "Tpetra::Details::computeOffsetsFromCounts: "
-         "Kokkos::parallel_scan threw an exception "
-         "not a subclass of std::exception");
+        (true, std::runtime_error, funcName << ": Kokkos::parallel_scan "
+         "threw an exception not a subclass of std::exception");
     }
-    // Get the sum of all entries of counts from the last entry of ptr.
-    return ::Tpetra::Details::getEntryOnHost (ptr, numCounts);
   }
-  else {
-    return static_cast<offset_type> (0);
-  }
+
+  return total;
 }
 
 /// \brief Compute offsets from a constant count
@@ -413,7 +398,7 @@ template<class OffsetsViewType,
          class SizeType = typename OffsetsViewType::size_type>
 typename OffsetsViewType::non_const_value_type
 computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
-                                 const CountType& count)
+                                 const CountType count)
 {
   static_assert (Kokkos::Impl::is_view<OffsetsViewType>::value,
                  "OffsetsViewType (the type of ptr) must be a Kokkos::View.");
@@ -429,39 +414,40 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
   static_assert (std::is_integral<SizeType>::value,
                  "SizeType must be a built-in integer type.");
 
-  typedef typename std::decay<CountType>::type count_type;
-  typedef typename OffsetsViewType::non_const_value_type offset_type;
-  typedef typename OffsetsViewType::device_type device_type;
-  typedef typename device_type::execution_space execution_space;
-  typedef typename device_type::memory_space memory_space;
+  using offset_type = typename OffsetsViewType::non_const_value_type;
+  using device_type = typename OffsetsViewType::device_type;
+  const char funcName[] = "Tpetra::Details::computeOffsetsFromConstantCount";
 
   const auto numOffsets = ptr.size ();
+  offset_type total (0);
+
   if (numOffsets != 0) {
-    ComputeOffsetsFromConstantCount<OffsetsViewType, count_type,
-      SizeType> functor (ptr, count);
-    Kokkos::RangePolicy<execution_space, SizeType> range (0, numOffsets);
+    using CT = typename std::decay<CountType>::type;
+    using OVT = OffsetsViewType;
+    using functor_type =
+      ComputeOffsetsFromConstantCount<OVT, CT, SizeType>;
+    functor_type functor (ptr, count);
+
+    using execution_space = typename device_type::execution_space;
+    using range_type = Kokkos::RangePolicy<execution_space, SizeType>;
+    range_type range (0, numOffsets);
     try {
-      Kokkos::parallel_scan (range, functor);
+      Kokkos::parallel_scan (range, functor, total, funcName);
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::runtime_error, "computeOffsetsFromConstantCount: "
-         "parallel_scan (with device_type Kokkos::Device<" <<
-         typeid (execution_space).name () << ", " <<
-         typeid (memory_space).name () << ">) threw an std::exception: "
-         << e.what ());
+        (true, std::runtime_error, funcName << ": Kokkos::parallel_scan "
+         "(with device_type " << typeid (device_type).name () <<
+         ">) threw an exception: " << e.what ());
     }
     catch (...) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::runtime_error, "Kokkos::parallel_scan threw an "
-         "exception not a subclass of std::exception");
+        (true, std::runtime_error, funcName << ": Kokkos::parallel_scan "
+         "(with device_type " << typeid (device_type).name () <<
+         ">) threw an exception not a subclass of std::exception");
     }
-    // Get the sum from the last entry of ptr.
-    return ::Tpetra::Details::getEntryOnHost (ptr, numOffsets - 1);
   }
-  else {
-    return static_cast<offset_type> (0);
-  }
+  return total;
 }
 
 } // namespace Details
