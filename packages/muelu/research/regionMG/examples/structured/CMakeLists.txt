@@ -23,7 +23,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_1.log"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -31,7 +31,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_4.log"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
@@ -47,7 +47,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Star2D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_linear_1.log"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -55,7 +55,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Star2D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_linear_4.log"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
@@ -63,7 +63,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Brick3D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Brick3D_1.log"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -71,7 +71,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Brick3D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Brick3D_4.log"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
@@ -79,7 +79,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Brick3D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_1.log"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -87,7 +87,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Brick3D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Brick2D_linear_4.log"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
