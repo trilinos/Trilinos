@@ -10,7 +10,9 @@
 
 int main(int argCount, char **argValue)
 {
+#ifndef NDEBUG
   int ierr;
+#endif
   MPI_Init(&argCount,&argValue);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
   const int rank = Comm.MyPID();
@@ -40,7 +42,10 @@ int main(int argCount, char **argValue)
   std::cerr << "About to insert row " << globalRowIdx << "\n";
       }
 
-      ierr = b.ReplaceGlobalValues(1, (const int *)&indices[0],
+#ifndef NDEBUG
+      ierr =
+#endif
+      b.ReplaceGlobalValues(1, (const int *)&indices[0],
            (const double *)&values[0]);
       assert(ierr==0);
     }
@@ -53,7 +58,10 @@ int main(int argCount, char **argValue)
   }
 
   // Finish up
-  ierr = b.GlobalAssemble();
+#ifndef NDEBUG
+  ierr =
+#endif
+  b.GlobalAssemble();
   assert(ierr==0);
 
   if (rank == 0) {
