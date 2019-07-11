@@ -204,37 +204,49 @@ testTranspose (bool& success,
   int gblSuccess = 0;
 
   RCP<crs_matrix_type> A = createTestMatrix (comm, lclNumRows);
-  Tpetra::RowMatrixTransposer<> transposer (A);
-  RCP<crs_matrix_type> AT_unsorted = transposer.createTranspose ();
-  TEST_ASSERT( ! AT_unsorted.is_null () );
-  standardTransposeTests (success, out, *A, *AT_unsorted, *comm);
+  {
+    out << "Test with default \"sort and merge\"" << std::endl;
+    Teuchos::OSTab tab1 (out);
 
-  lclSuccess = success ? 1 : 0;
-  gblSuccess = 0;
-  reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  TEST_ASSERT( gblSuccess == 1 );
-  if (! success) {
-    return;
+    RCP<crs_matrix_type> AT_unsorted = [&] () {
+      Tpetra::RowMatrixTransposer<> transposer (A);
+      return transposer.createTranspose ();
+    } ();
+
+    TEST_ASSERT( ! AT_unsorted.is_null () );
+    standardTransposeTests (success, out, *A, *AT_unsorted, *comm);
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (! success) {
+      return;
+    }
   }
 
-#if 0
-  RCP<crs_matrix_type> AT_sorted = [&] () {
-    auto params = Teuchos::parameterList ("Tpetra::RowMatrixTransposer");
-    params->set ("sort and merge", true);
-    return transposer.createTranspose (params);
-  } ();
+  {
+    out << "Test with \"sort and merge\" = true" << std::endl;
+    Teuchos::OSTab tab1 (out);
 
-  TEST_ASSERT( ! AT_sorted.is_null () );
-  standardTransposeTests (success, out, *A, *AT_sorted, *comm);
+    RCP<crs_matrix_type> AT_sorted = [&] () {
+      auto params = Teuchos::parameterList ("Tpetra::RowMatrixTransposer");
+      params->set ("sort and merge", true);
+      Tpetra::RowMatrixTransposer<> transposer (A);
+      return transposer.createTranspose (params);
+    } ();
 
-  lclSuccess = success ? 1 : 0;
-  gblSuccess = 0;
-  reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  TEST_ASSERT( gblSuccess == 1 );
-  if (! success) {
-    return;
+    TEST_ASSERT( ! AT_sorted.is_null () );
+    standardTransposeTests (success, out, *A, *AT_sorted, *comm);
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (! success) {
+      return;
+    }
   }
-#endif // 0
 }
 
 TEUCHOS_UNIT_TEST( CrsMatrixTranspose, SortRows )
