@@ -156,26 +156,27 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName        = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
-  std::string yamlFileName       = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
-  std::string convergenceLog    = "residual_norm.txt"; clp.setOption("convergence-log",     &convergenceLog,    "file in which the convergence history of the linear solver is stored");
-  int         maxIts             = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
-  std::string smootherType      = "Jacobi";          clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
-  int         smootherIts        =  20;               clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
-  double      smootherDamp       = 0.67;              clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
-  double      tol                = 1e-12;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
-  bool        scaleResidualHist  = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
-  bool        useUnstructured    = false;             clp.setOption("use-unstructured","no-use-unstructured", &useUnstructured, "Treat the last rank as unstructured");
-  bool        directCoarseSolver = true;              clp.setOption("direct-coarse-solver", "amg-coarse-solver", &directCoarseSolver, "Type of solver for composite coarse level operator");
-  std::string coarseAmgXmlFile   = "";                clp.setOption("coarseAmgXml", &coarseAmgXmlFile, "Read parameters for AMG as coarse level solve from this xml file.");
+  std::string xmlFileName        = "";                  clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
+  std::string yamlFileName       = "";                  clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
+  std::string convergenceLog     = "residual_norm.txt"; clp.setOption("convergence-log",     &convergenceLog,    "file in which the convergence history of the linear solver is stored");
+  int         maxIts             = 200;                 clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
+  std::string smootherType       = "Jacobi";            clp.setOption("smootherType",          &smootherType,      "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
+  int         smootherIts        =  20;                 clp.setOption("smootherIts",           &smootherIts,       "number of smoother iterations");
+  double      smootherDamp       = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,      "damping parameter for the level smoother");
+  double      tol                = 1e-12;               clp.setOption("tol",                   &tol,               "solver convergence tolerance");
+  bool        scaleResidualHist  = true;                clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
+  bool        serialRandom       = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
+  bool        useUnstructured    = false;               clp.setOption("use-unstructured","no-use-unstructured", &useUnstructured, "Treat the last rank as unstructured");
+  bool        directCoarseSolver = true;                clp.setOption("direct-coarse-solver", "amg-coarse-solver", &directCoarseSolver, "Type of solver for composite coarse level operator");
+  std::string coarseAmgXmlFile   = "";                  clp.setOption("coarseAmgXml", &coarseAmgXmlFile, "Read parameters for AMG as coarse level solve from this xml file.");
 #ifdef HAVE_MUELU_TPETRA
-  std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
+  std::string equilibrate = "no" ;                      clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
 #ifdef HAVE_MUELU_CUDA
-  bool profileSetup = false;                         clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
-  bool profileSolve = false;                         clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
+  bool profileSetup = false;                            clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
+  bool profileSolve = false;                            clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
-  int  cacheSize = 0;                                clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
+  int  cacheSize = 0;                                   clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -312,9 +313,27 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   X = VectorFactory::Build(dofMap);
   B = VectorFactory::Build(dofMap);
 
-  // we set seed for reproducibility
-  Utilities::SetRandomSeed(*comm);
-  X->randomize();
+  if(serialRandom) {
+    //Build the seed on rank zero and broadcast it.
+    size_t localNumElements = 0;
+    if(comm->getRank() == 0) {
+      localNumElements = static_cast<size_t>(dofMap->getGlobalNumElements());
+    }
+    RCP<Map> serialMap = MapFactory::Build(dofMap->lib(),
+                                           dofMap->getGlobalNumElements(),
+                                           localNumElements,
+                                           0,
+                                           comm);
+    RCP<Vector> Xserial = VectorFactory::Build(serialMap);
+    Xserial->setSeed(251743369);
+    Xserial->randomize();
+    RCP<Import> randomnessImporter = ImportFactory::Build(serialMap, dofMap);
+    X->doImport(*Xserial, *randomnessImporter, Xpetra::INSERT);
+  } else {
+    // we set seed for reproducibility
+    Utilities::SetRandomSeed(*comm);
+    X->randomize();
+  }
   A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
   Teuchos::Array<typename STS::magnitudeType> norms(1);
