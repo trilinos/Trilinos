@@ -140,9 +140,9 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // constexpr bool sortColIndsDefault = false; // see #4607 discussion
   // NOTE (mfh 10 Jul 2019) Don't actually implement this yet, since
   // we need to test it first.
+  // const char sortParamName[] = "sort and merge";
   // const bool sortColInds = params.get () == nullptr ?
-  //   sortColIndsDefault :
-  //   params->get ("sort column indices", sortColIndsDefault);
+  //   sortColIndsDefault : params->get (sortParamName, sortColIndsDefault);
   const bool sortColInds = false;
 
   // Prebuild the importers and exporters the no-communication way,
