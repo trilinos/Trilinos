@@ -118,6 +118,13 @@ int main(int argc, char *argv[]) {
     parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History", solveOutput);
     RealT Re         = parlist->sublist("Problem").get("Reynolds Number",200.0);
 
+    parlist->sublist("Reduced Dynamic Objective").set("State Domain Seed",12321*myRank);
+    parlist->sublist("Reduced Dynamic Objective").set("State Range Seed", 32123*myRank);
+    parlist->sublist("Reduced Dynamic Objective").set("Adjoint Domain Seed",23432*myRank);
+    parlist->sublist("Reduced Dynamic Objective").set("Adjoint Range Seed", 43234*myRank);
+    parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Domain Seed",34543*myRank);
+    parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Range Seed", 54345*myRank);
+
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
     /*************************************************************************/
@@ -236,7 +243,7 @@ int main(int argc, char *argv[]) {
     // Construct reduce dynamic objective function
     ROL::ParameterList &rpl = parlist->sublist("Reduced Dynamic Objective");
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
-      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl);
+      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl, outStream);
 
     /*************************************************************************/
     /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
@@ -372,7 +379,7 @@ int main(int argc, char *argv[]) {
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

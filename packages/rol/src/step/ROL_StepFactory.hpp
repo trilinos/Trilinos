@@ -67,8 +67,8 @@ namespace ROL {
     public:
     ~StepFactory(void){}
 
-    ROL::Ptr<Step<Real> > getStep(const std::string &type,
-                                      ROL::ParameterList &parlist) const {
+    ROL::Ptr<Step<Real>> getStep(const std::string &type,
+                                 ROL::ParameterList &parlist) const {
       EStep els = StringToEStep(type);
       switch(els) {
         case STEP_AUGMENTEDLAGRANGIAN: return ROL::makePtr<AugmentedLagrangianStep<Real>>(parlist);

@@ -55,6 +55,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_LAPACK.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <algorithm>
 
@@ -1194,7 +1195,7 @@ int main(int argc, char *argv[]) {
       pen  *= 10.0;
     }
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

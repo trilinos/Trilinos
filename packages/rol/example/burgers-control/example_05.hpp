@@ -51,15 +51,13 @@
 #include "ROL_ParameterList.hpp"
 // ROL_Types contains predefined constants and objects
 #include "ROL_Types.hpp"
-// ROL algorithmic information
-#include "ROL_Algorithm.hpp"
 // ROL vectors
 #include "ROL_StdVector.hpp"
 // ROL objective functions and constraints
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
 // ROL sample generators
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"

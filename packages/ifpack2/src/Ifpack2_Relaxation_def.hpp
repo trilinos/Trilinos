@@ -561,13 +561,9 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       RCP<const MV> Xcopy;
       // FIXME (mfh 12 Sep 2014) This test for aliasing is incomplete.
       {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-        auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
-        auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-#else
         auto X_lcl_host = X.getLocalViewHost ();
         auto Y_lcl_host = Y.getLocalViewHost ();
-#endif
+
         if (X_lcl_host.data () == Y_lcl_host.data ()) {
           Xcopy = rcp (new MV (X, Teuchos::Copy));
         } else {

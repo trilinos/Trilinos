@@ -1059,15 +1059,9 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   // Set up the right-hand side b.
   vec_type b (ranMap);
   {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    b.template sync<Kokkos::HostSpace> ();
-    b.template modify<Kokkos::HostSpace> ();
-    auto b_lcl_2d = b.template getLocalView<Kokkos::HostSpace> ();
-#else
     b.sync_host ();
     b.modify_host ();
     auto b_lcl_2d = b.getLocalViewHost ();
-#endif
     auto b_lcl_1d = Kokkos::subview (b_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i < lclNumRows; ++i) {
@@ -1137,13 +1131,8 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    c.template sync<Kokkos::HostSpace> ();
-    auto c_lcl_2d = c.template getLocalView<Kokkos::HostSpace> ();
-#else
     c.sync_host ();
     auto c_lcl_2d = c.getLocalViewHost ();
-#endif
     auto c_lcl_1d = Kokkos::subview (c_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1187,13 +1176,8 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    x.template sync<Kokkos::HostSpace> ();
-    auto x_lcl_2d = x.template getLocalView<Kokkos::HostSpace> ();
-#else
     x.sync_host ();
     auto x_lcl_2d = x.getLocalViewHost ();
-#endif
     auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1220,13 +1204,8 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    c.template sync<Kokkos::HostSpace> ();
-    auto c_lcl_2d = c.template getLocalView<Kokkos::HostSpace> ();
-#else
     c.sync_host ();
     auto c_lcl_2d = c.getLocalViewHost ();
-#endif
     auto c_lcl_1d = Kokkos::subview (c_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1245,13 +1224,8 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    x.template sync<Kokkos::HostSpace> ();
-    auto x_lcl_2d = x.template getLocalView<Kokkos::HostSpace> ();
-#else
     x.sync_host ();
     auto x_lcl_2d = x.getLocalViewHost ();
-#endif
     auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {

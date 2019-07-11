@@ -171,6 +171,7 @@ INCLUDE_DIRECTORIES(${DIR}/function
 #                    ${DIR}/function/riskmeasure/fdivergence
 #                    ${DIR}/function/errormeasure
                     ${DIR}/algorithm
+                    ${DIR}/algorithm/PrimalDual
                     ${DIR}/vector
                     ${DIR}/sampler
                     ${DIR}/sampler/SROM

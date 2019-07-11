@@ -49,9 +49,8 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_Algorithm.hpp"
 
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
@@ -62,7 +61,7 @@ template<class Real>
 class ParametrizedObjectiveEx8 : public ROL::Objective<Real> {
 public:
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
-    ROL::Ptr<const std::vector<Real> > ex = 
+    ROL::Ptr<const std::vector<Real>> ex = 
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     Real quad = 0.0, lin = 0.0;
     std::vector<Real> p = this->getParameter();
@@ -75,9 +74,9 @@ public:
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real &tol ) {
-    ROL::Ptr<const std::vector<Real> > ex = 
+    ROL::Ptr<const std::vector<Real>> ex = 
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::Ptr<std::vector<Real> > eg =
+    ROL::Ptr<std::vector<Real>> eg =
       dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
     std::vector<Real> p = this->getParameter();
     unsigned size = ex->size();
@@ -87,11 +86,11 @@ public:
   }
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real &tol ) {
-    ROL::Ptr<const std::vector<Real> > ex = 
+    ROL::Ptr<const std::vector<Real>> ex = 
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::Ptr<const std::vector<Real> > ev = 
+    ROL::Ptr<const std::vector<Real>> ev = 
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::Ptr<std::vector<Real> > ehv =
+    ROL::Ptr<std::vector<Real>> ehv =
       dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
     std::vector<Real> p = this->getParameter();
     unsigned size = ex->size();
@@ -101,20 +100,21 @@ public:
   }
 };
 
-RealT setUpAndSolve(ROL::ParameterList &list,
-                    ROL::Ptr<ROL::Objective<RealT> > &pObj,
-                    ROL::Ptr<ROL::SampleGenerator<RealT> > &sampler,
-                    ROL::Ptr<ROL::Vector<RealT> > &x,
-                    ROL::Ptr<ROL::BoundConstraint<RealT> > &bnd,
-                    std::ostream & outStream) {
+RealT setUpAndSolve(ROL::ParameterList                    & list,
+                    ROL::Ptr<ROL::Objective<RealT>>       & pObj,
+                    ROL::Ptr<ROL::SampleGenerator<RealT>> & sampler,
+                    ROL::Ptr<ROL::Vector<RealT>>          & x,
+                    ROL::Ptr<ROL::BoundConstraint<RealT>> & bnd,
+                    std::ostream                          & outStream) {
   ROL::OptimizationProblem<RealT> opt(pObj,x,bnd);
   opt.setStochasticObjective(list,sampler);
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
   opt.check(outStream);
   // Run ROL algorithm
-  ROL::Algorithm<RealT> algo("Trust Region",list,false);
-  algo.run(opt,true,outStream);
-  ROL::Ptr<ROL::Objective<RealT> > robj = opt.getObjective();
+  list.sublist("Step").set("Type","Trust Region");
+  ROL::OptimizationSolver<RealT> solver(opt,list);
+  solver.solve(outStream);
+  ROL::Ptr<ROL::Objective<RealT>> robj = opt.getObjective();
   RealT tol(1.e-8);
   return robj->value(*(opt.getSolutionVector()),tol);
 }
@@ -165,31 +165,31 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build vectors
     unsigned dim = 4;
-    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
-    ROL::Ptr<ROL::Vector<RealT> > x = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
-    ROL::Ptr<std::vector<RealT> > xp_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
-    ROL::Ptr<ROL::Vector<RealT> > xp = ROL::makePtr<ROL::StdVector<RealT>>(xp_ptr);
-    ROL::Ptr<std::vector<RealT> > diff_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
-    ROL::Ptr<ROL::Vector<RealT> > diff = ROL::makePtr<ROL::StdVector<RealT>>(diff_ptr);
-    ROL::Ptr<std::vector<RealT> > d_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
-    ROL::Ptr<ROL::Vector<RealT> > d = ROL::makePtr<ROL::StdVector<RealT>>(d_ptr);
+    ROL::Ptr<std::vector<RealT>> x_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT>> x = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
+    ROL::Ptr<std::vector<RealT>> xp_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT>> xp = ROL::makePtr<ROL::StdVector<RealT>>(xp_ptr);
+    ROL::Ptr<std::vector<RealT>> diff_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT>> diff = ROL::makePtr<ROL::StdVector<RealT>>(diff_ptr);
+    ROL::Ptr<std::vector<RealT>> d_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT>> d = ROL::makePtr<ROL::StdVector<RealT>>(d_ptr);
     setRandomVector(*d_ptr);
     // Build samplers
     int nSamp = 1000;
     unsigned sdim = dim + 2;
     std::vector<RealT> tmp(2,0.); tmp[0] = -1.; tmp[1] = 1.;
-    std::vector<std::vector<RealT> > bounds(sdim,tmp);
-    ROL::Ptr<ROL::BatchManager<RealT> > bman =
+    std::vector<std::vector<RealT>> bounds(sdim,tmp);
+    ROL::Ptr<ROL::BatchManager<RealT>> bman =
       ROL::makePtr<ROL::BatchManager<RealT>>();
-    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler =
+    ROL::Ptr<ROL::SampleGenerator<RealT>> sampler =
       ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman,false,false,100);
     // Build risk-averse objective function
-    ROL::Ptr<ROL::Objective<RealT> > pObj =
+    ROL::Ptr<ROL::Objective<RealT>> pObj =
       ROL::makePtr<ParametrizedObjectiveEx8<RealT>>();
     // Build bound constraints
     std::vector<RealT> l(dim,0.0);
     std::vector<RealT> u(dim,1.0);
-    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd = 
+    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd = 
       ROL::makePtr<ROL::StdBoundConstraint<RealT>>(l,u);
     bnd->deactivate();
     // Test parametrized objective functions
@@ -237,7 +237,7 @@ int main(int argc, char* argv[]) {
     }
     errorFlag += ((objErr[19] > static_cast<RealT>(1.e-3)) ? 1 : 0);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

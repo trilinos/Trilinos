@@ -239,6 +239,12 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     ROL::OptimizationSolver<RealT> solver(opt,*parlist);
     zp->set(*rzp);
+
+    bool initSolve = parlist->sublist("Problem").get("Solve state for full space",true);
+    if( initSolve ) {
+      pdeWithDoping->solve(*rp,*up,*zp,tol);
+    }
+
     std::clock_t timer = std::clock();
     solver.solve(*outStream);
     *outStream << "Optimization time: "
@@ -257,7 +263,7 @@ int main(int argc, char *argv[]) {
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

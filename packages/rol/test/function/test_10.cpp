@@ -449,7 +449,7 @@ int main(int argc, char *argv[]) {
     con.checkApplyAdjointHessian_22(*u,*z,*c,*dz,*z,true,*outStream);
     con.checkApplyAdjointHessian(w,*c,dw,w,true,*outStream);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
