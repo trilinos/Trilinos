@@ -147,7 +147,7 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
 #endif
 
   const bool sort = [&] () {
-    constexpr bool sortDefault = false; // see #4607 discussion
+    constexpr bool sortDefault = true; // see #4607 discussion
     const char sortParamName[] = "sort";
     return params.get () == nullptr ? sortDefault :
       params->get (sortParamName, sortDefault);
