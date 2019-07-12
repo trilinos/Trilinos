@@ -78,8 +78,8 @@ class Product
 
   private:
 
-    using ScalarT = typename EvalT::ScalarT;
-  
+  using ScalarT = typename EvalT::ScalarT;
+
   double scaling;
   PHX::MDField<ScalarT> product;
   std::vector< PHX::MDField<const ScalarT> > values;

@@ -79,6 +79,66 @@ Product(
   this->setName(n);
 }
 
+
+template<int RANK, typename Scalar>
+struct V_MultiplyFunctor {
+
+  const PHX::MDField<Scalar> base_;
+  const PHX::MDField<const Scalar> source_;
+
+  V_MultiplyFunctor(PHX::MDField<Scalar>& base, const PHX::MDField<const Scalar>& source)
+    : base_(base),source_(source) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const PHX::index_t & ind1) const
+  {
+    using idx_t = PHX::index_t;
+
+    if (RANK == 1){
+      base_(ind1) = base_(ind1)*source_(ind1);
+    }
+    else if (RANK == 2){
+      for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.extent(1)); ind2++)
+        base_(ind1,ind2) = base_(ind1,ind2)*source_(ind1,ind2);
+    }
+    else if (RANK == 3){
+      for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.extent(1)); ind2++)
+        for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.extent(2)); ind3++)
+          base_(ind1,ind2,ind3) = base_(ind1,ind2,ind3)*source_(ind1,ind2,ind3);
+    }
+    else if (RANK == 4){
+      for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.extent(1)); ind2++)
+        for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.extent(2)); ind3++)
+          for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.extent(3)); ind4++)
+            base_(ind1,ind2,ind3,ind4) = base_(ind1,ind2,ind3,ind4)*source_(ind1,ind2,ind3,ind4);
+    }
+    else if (RANK == 5){
+      for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.extent(1)); ind2++)
+        for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.extent(2)); ind3++)
+          for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.extent(3)); ind4++)
+            for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.extent(4)); ind5++)
+              base_(ind1,ind2,ind3,ind4,ind5) = base_(ind1,ind2,ind3,ind4,ind5)*source_(ind1,ind2,ind3,ind4,ind5);
+    }
+    else if (RANK == 6){
+      for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.extent(1)); ind2++)
+        for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.extent(2)); ind3++)
+          for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.extent(3)); ind4++)
+            for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.extent(4)); ind5++)
+              for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.extent(5)); ind6++)
+                base_(ind1,ind2,ind3,ind4,ind5,ind6) = base_(ind1,ind2,ind3,ind4,ind5,ind6)*source_(ind1,ind2,ind3,ind4,ind5,ind6);
+    }
+    else if (RANK == 7){
+      for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.extent(1)); ind2++)
+        for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.extent(2)); ind3++)
+          for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.extent(3)); ind4++)
+            for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.extent(4)); ind5++)
+              for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.extent(5)); ind6++)
+                for (idx_t ind7=0; ind7 < static_cast<idx_t>(base_.extent(6)); ind7++)
+                  base_(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = base_(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source_(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
+    }
+  }
+};
+
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void
@@ -86,10 +146,32 @@ Product<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  /* workset */)
 { 
-    product.deep_copy(ScalarT(scaling));
-    for (std::size_t j = 0; j < values.size(); ++j)
-      product.V_Multiply(values[j]);   
+  product.deep_copy(ScalarT(scaling));
 
+  for (std::size_t i = 0; i < values.size(); ++i) {
+    const auto length = product.extent(0);
+    if (product.rank() == 1){
+      Kokkos::parallel_for( length, V_MultiplyFunctor<1,ScalarT>(product,values[i]) );
+    }
+    else if (product.rank() == 2){
+      Kokkos::parallel_for( length, V_MultiplyFunctor<2,ScalarT>(product,values[i]) );
+    }
+    else if (product.rank() == 3){
+      Kokkos::parallel_for( length, V_MultiplyFunctor<3,ScalarT>(product,values[i]) );
+    }
+    else if (product.rank() == 4){
+      Kokkos::parallel_for( length, V_MultiplyFunctor<4,ScalarT>(product,values[i]) );
+    }
+    else if (product.rank() == 5){
+      Kokkos::parallel_for( length, V_MultiplyFunctor<5,ScalarT>(product,values[i]) );
+    }
+    else if (product.rank() == 6){
+      Kokkos::parallel_for( length, V_MultiplyFunctor<6,ScalarT>(product,values[i]) );
+    }
+    else if (product.rank() == 7){
+      Kokkos::parallel_for( length, V_MultiplyFunctor<7,ScalarT>(product,values[i]) );
+    }
+  }
 }
 
 //**********************************************************************
