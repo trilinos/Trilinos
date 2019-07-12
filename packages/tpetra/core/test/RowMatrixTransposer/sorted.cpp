@@ -44,6 +44,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
+#include <algorithm>
 #include <array>
 
 namespace { // (anonymous)
@@ -168,9 +169,11 @@ standardTransposeTests (bool& success,
     return;
   }
 
-  // It's normal for column and row Maps to differ, since
-  // createTranspose prefers to redistribute the result to have a
-  // nonshared row Map.
+  // createTranspose redistributes the result to have a nonshared row
+  // Map (row Map == range Map), so the column Map of the transpose
+  // may not be the same as the row Map of the original, and the row
+  // Map of the transpose may not be the same as the column Map of the
+  // original.
 
   TEST_ASSERT( domMap_at->isSameAs (*ranMap) );
   TEST_ASSERT( ranMap_at->isSameAs (*domMap) );
@@ -223,6 +226,55 @@ testTranspose (bool& success,
     if (! success) {
       return;
     }
+
+    // By this point, we know that the row Maps are the same.
+    auto rowMap_at = AT_unsorted->getRowMap ();
+    const LO lclNumRows_at (rowMap_at->getNodeNumElements ());
+    if (lclNumRows_at != 0) {
+      std::vector<LO> lclColIndsBuf;
+      std::vector<ST> valsBuf;
+      for (LO lclRow = 0; lclRow < lclNumRows_at; ++lclRow) {
+        Teuchos::ArrayView<const LO> lclColInds;
+        Teuchos::ArrayView<const ST> vals;
+        AT_unsorted->getLocalRowView (lclRow, lclColInds, vals);
+
+        const GO gblNumRows = GO (lclNumRows) * GO (comm->getSize ());
+        TEST_ASSERT( LO (lclColInds.size ()) == LO (gblNumRows) );
+        TEST_ASSERT( LO (vals.size ()) == LO (gblNumRows) );
+
+        if (success) {
+          // Result's rows may not be sorted.
+          lclColIndsBuf.resize (lclColInds.size ());
+          valsBuf.resize (vals.size ());
+          std::copy (lclColInds.begin (), lclColInds.end (),
+                     lclColIndsBuf.begin ());
+          std::copy (vals.begin (), vals.end (), valsBuf.begin ());
+          Tpetra::sort2 (lclColIndsBuf.begin (), lclColIndsBuf.end (),
+                         valsBuf.begin ());
+
+          bool good = true;
+          for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+            if (lclColIndsBuf[lclRow] != lclRow) {
+              good = false;
+              break;
+            }
+            else if (valsBuf[lclRow] != 1.0) {
+              good = false;
+              break;
+            }
+          }
+          TEST_ASSERT( good );
+        }
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (! success) {
+      return;
+    }
   }
 
   {
@@ -238,6 +290,44 @@ testTranspose (bool& success,
 
     TEST_ASSERT( ! AT_sorted.is_null () );
     standardTransposeTests (success, out, *A, *AT_sorted, *comm);
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (! success) {
+      return;
+    }
+
+    // By this point, we know that the row Maps are the same.
+    auto rowMap_at = AT_sorted->getRowMap ();
+    const LO lclNumRows_at (rowMap_at->getNodeNumElements ());
+    if (lclNumRows_at != 0) {
+      for (LO lclRow = 0; lclRow < lclNumRows_at; ++lclRow) {
+        Teuchos::ArrayView<const LO> lclColInds;
+        Teuchos::ArrayView<const ST> vals;
+        AT_sorted->getLocalRowView (lclRow, lclColInds, vals);
+
+        const GO gblNumRows = GO (lclNumRows) * GO (comm->getSize ());
+        TEST_ASSERT( LO (lclColInds.size ()) == LO (gblNumRows) );
+        TEST_ASSERT( LO (vals.size ()) == LO (gblNumRows) );
+
+        if (success) {
+          bool good = true;
+          for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+            if (lclColInds[lclRow] != lclRow) {
+              good = false;
+              break;
+            }
+            else if (vals[lclRow] != 1.0) {
+              good = false;
+              break;
+            }
+          }
+          TEST_ASSERT( good );
+        }
+      }
+    }
 
     lclSuccess = success ? 1 : 0;
     gblSuccess = 0;
@@ -268,7 +358,3 @@ main (int argc, char* argv[])
   }
   return errCode;
 }
-
-
-
-
