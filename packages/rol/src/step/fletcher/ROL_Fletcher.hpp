@@ -65,22 +65,25 @@ private:
   using FletcherBase<Real>::con_;
 
   using FletcherBase<Real>::penaltyParameter_;
+  using FletcherBase<Real>::quadPenaltyParameter_;
 
   // Evaluation counters
   using FletcherBase<Real>::nfval_;
   using FletcherBase<Real>::ngval_;
   using FletcherBase<Real>::ncval_;
 
-  using FletcherBase<Real>::fPhi_;                   // value of penalty function
+  using FletcherBase<Real>::fPhi_;     // value of penalty function
   using FletcherBase<Real>::gPhi_;     // gradient of penalty function
 
   using FletcherBase<Real>::y_;        // multiplier estimate
 
-  using FletcherBase<Real>::fval_;                   // value of objective function
+  using FletcherBase<Real>::fval_;     // value of objective function
   using FletcherBase<Real>::g_;        // gradient of objective value
   using FletcherBase<Real>::c_;        // constraint value
   using FletcherBase<Real>::scaledc_;  // penaltyParameter_ * c_
   using FletcherBase<Real>::gL_;       // gradient of Lagrangian (g - A*y)
+
+  using FletcherBase<Real>::cnorm_;    // norm of constraint violation
 
   using FletcherBase<Real>::isValueComputed_;
   using FletcherBase<Real>::isGradientComputed_;
@@ -89,7 +92,7 @@ private:
   using FletcherBase<Real>::isObjGradComputed_;
   using FletcherBase<Real>::isConValueComputed_;
 
-  using FletcherBase<Real>::delta_;                  // regularization parameter
+  using FletcherBase<Real>::delta_;    // regularization parameter
 
   int HessianApprox_;
 
@@ -97,6 +100,8 @@ private:
   Ptr<Vector<Real> > Tv_;       // Temporary for matvecs
   Ptr<Vector<Real> > w_;        // first component of augmented system solve solution
   Ptr<Vector<Real> > v_;        // second component of augmented system solve solution
+  Ptr<Vector<Real> > wg_;       // first component of augmented system solve solution for gradient
+  Ptr<Vector<Real> > vg_;       // second component of augmented system solve solution for gradient
 
   Ptr<Vector<Real> > xzeros_;   // zero vector
   Ptr<Vector<Real> > czeros_;   // zero vector
@@ -113,6 +118,9 @@ private:
   using FletcherBase<Real>::v1_;
   using FletcherBase<Real>::v2_;
   using FletcherBase<Real>::vv_;
+  using FletcherBase<Real>::w1_;
+  using FletcherBase<Real>::w2_;
+  using FletcherBase<Real>::ww_;
   using FletcherBase<Real>::b1_;
   using FletcherBase<Real>::b2_;
   using FletcherBase<Real>::bb_;
@@ -179,6 +187,8 @@ public:
       Tv_ = optVec.dual().clone();
       w_ = optVec.dual().clone();
       v_ = conVec.dual().clone();
+      wg_ = optVec.dual().clone();
+      vg_ = conVec.dual().clone();
 
       xzeros_ = optVec.dual().clone();
       xzeros_->zero();
@@ -189,6 +199,10 @@ public:
       v2_ = conVec.dual().clone();
       vv_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>> >({v1_, v2_}));
 
+      w1_ = optVec.dual().clone();
+      w2_ = conVec.dual().clone();
+      ww_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>> >({w1_, w2_}));
+
       b1_ = optVec.dual().clone();
       b2_ = conVec.clone();
       bb_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>> >({b1_, b2_}));
@@ -196,6 +210,7 @@ public:
       ROL::ParameterList& sublist = parlist.sublist("Step").sublist("Fletcher");
       HessianApprox_ = sublist.get("Level of Hessian Approximation",  0);
       penaltyParameter_ = sublist.get("Penalty Parameter", 1.0);
+      quadPenaltyParameter_ = sublist.get("Quadratic Penalty Parameter", 0.0);
 
       delta_ = sublist.get("Regularization Parameter", 0.0);
 
@@ -223,19 +238,28 @@ public:
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    if( isValueComputed_ )
+    if( isValueComputed_ && multSolverError_*cnorm_ <= tol) {
+      tol = multSolverError_*cnorm_;
       return fPhi_;
+    }
+
+    Real zero(0);
 
     // Reset tolerances
     Real origTol = tol;
     Real tol2 = origTol;
 
     FletcherBase<Real>::objValue(x, tol2); tol2 = origTol;
-    multSolverError_ = origTol / static_cast<Real>(2);
+    multSolverError_ = origTol / (static_cast<Real>(2) * std::max(static_cast<Real>(1), cnorm_));
     computeMultipliers(x, multSolverError_);
-    tol = multSolverError_;
+    tol =  multSolverError_*cnorm_;
 
     fPhi_ = fval_ - c_->dot(y_->dual());
+
+    if( quadPenaltyParameter_ > zero ) {
+      fPhi_ = fPhi_ + Real(0.5)*quadPenaltyParameter_*(c_->dot(c_->dual()));
+    }
+
     isValueComputed_ = true;
 
     return fPhi_;
@@ -248,6 +272,8 @@ public:
       return;
     }
 
+    Real zero(0);
+
     // Reset tolerances
     Real origTol = tol;
     Real tol2 = origTol;
@@ -255,33 +281,48 @@ public:
     gradSolveError_ = origTol / static_cast<Real>(2);
     computeMultipliers(x, gradSolveError_);
 
+    bool refine = isGradientComputed_;
+
     // gPhi = sum y_i H_i w + sigma w + sum v_i H_i gL - H w + gL
-    solveAugmentedSystem( *w_, *v_, *xzeros_, *c_, x, gradSolveError_ );
+    solveAugmentedSystem( *wg_, *vg_, *xzeros_, *c_, x, gradSolveError_, refine );
     gradSolveError_ += multSolverError_;
     tol = gradSolveError_;
 
-    con_->applyAdjointHessian( *gPhi_, *y_, *w_, x, tol2 ); tol2 = origTol;
-    gPhi_->axpy( penaltyParameter_, *w_ );
+    con_->applyAdjointHessian( *gPhi_, *y_, *wg_, x, tol2 ); tol2 = origTol;
+    gPhi_->axpy( penaltyParameter_, *wg_ );
 
-    obj_->hessVec( *Tv_, *w_, x, tol2 ); tol2 = origTol;
+    obj_->hessVec( *Tv_, *wg_, x, tol2 ); tol2 = origTol;
     gPhi_->axpy( static_cast<Real>(-1), *Tv_ );
 
-    con_->applyAdjointHessian( *Tv_, *v_, *gL_, x, tol2 ); tol2 = origTol;
+    con_->applyAdjointHessian( *Tv_, *vg_, *gL_, x, tol2 ); tol2 = origTol;
     gPhi_->plus( *Tv_ );
 
     gPhi_->plus( *gL_ );
 
-    g.set(*gPhi_);
+    if( quadPenaltyParameter_ > zero ) {
+      con_->applyAdjointJacobian( *Tv_, *c_, x, tol2 ); tol2 = origTol;
+      gPhi_->axpy( quadPenaltyParameter_, *Tv_ );
+    }
 
+    g.set(*gPhi_);
     isGradientComputed_ = true;
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    Real zero(0);
+
     // Reset tolerances
     Real origTol = tol;
     Real tol2 = origTol;
 
-    computeMultipliers(x, tol);
+    if( !isMultiplierComputed_ || !useInexact_) {
+      // hessVec tol is always set to ~1e-8. So if inexact linear system solves are used, then
+      // the multipliers will always get re-evaluated to high precision, which defeats the purpose
+      // of computing the objective/gradient approximately.
+      // Thus if inexact linear system solves are used, we will not update the multiplier estimates
+      // to high precision.
+      computeMultipliers(x, tol);
+    }
 
     obj_->hessVec( hv, v, x, tol2 ); tol2 = origTol;
     con_->applyAdjointHessian( *Tv_, *y_, v, x, tol2 ); tol2 = origTol;
@@ -302,7 +343,16 @@ public:
     con_->applyAdjointHessian( *Tv_, *y_, *w_, x, tol2 ); tol2 = origTol;
     hv.axpy( static_cast<Real>(-1), *Tv_ );
 
-    hv.axpy(static_cast<Real>(2)*penaltyParameter_, v);
+    hv.axpy( static_cast<Real>(2)*penaltyParameter_, v );
+
+    if( quadPenaltyParameter_ > zero ) {
+      con_->applyJacobian( *b2_, v, x, tol2 ); tol2 = origTol;
+      con_->applyAdjointJacobian( *Tv_, *b2_, x, tol2 ); tol2 = origTol;
+      hv.axpy( quadPenaltyParameter_, *Tv_ );
+      con_->applyAdjointHessian( *Tv_, *c_, v, x, tol2); tol2 = origTol;
+      hv.axpy( -quadPenaltyParameter_, *Tv_ );
+    }
+
   }
 
   void solveAugmentedSystem(Vector<Real> &v1,
@@ -310,18 +360,30 @@ public:
                             const Vector<Real> &b1,
                             const Vector<Real> &b2,
                             const Vector<Real> &x,
-                            Real &tol) {
+                            Real &tol,
+                            bool refine = false) {
     // Ignore tol for now
     ROL::Ptr<LinearOperator<Real> > K
       = ROL::makePtr<AugSystem>(con_, makePtrFromRef(x), delta_);
     ROL::Ptr<LinearOperator<Real> > P
       = ROL::makePtr<AugSystemPrecond>(con_, makePtrFromRef(x));
 
-    v1_->set(v1);
-    v2_->set(v2);
-
     b1_->set(b1);
     b2_->set(b2);
+
+    if( refine ) {
+      // TODO: Make sure this tol is actually ok...
+      Real origTol = tol;
+      w1_->set(v1);
+      w2_->set(v2);
+      K->apply(*vv_, *ww_, tol); tol = origTol;
+
+      b1_->axpy( static_cast<Real>(-1), *v1_ );
+      b2_->axpy( static_cast<Real>(-1), *v2_ );
+    }
+
+    v1_->zero();
+    v2_->zero();
 
     // If inexact, change tolerance
     if( useInexact_ ) {
@@ -330,20 +392,32 @@ public:
 
     flagKrylov_ = 0;
     tol = krylov_->run(*vv_,*K,*bb_,*P,iterKrylov_,flagKrylov_);
-    v1.set(*v1_);
-    v2.set(*v2_);
+
+    if( refine ) {
+      v1.plus(*v1_);
+      v2.plus(*v2_);
+    } else {
+      v1.set(*v1_);
+      v2.set(*v2_);
+    }
   }
 
   void computeMultipliers(const Vector<Real>& x, const Real tol) {
     if( isMultiplierComputed_ && multSolverError_ <= tol) {
       return;
     }
-    Real tol2 = tol;
-    FletcherBase<Real>::objGrad(x, tol2); tol2 = tol;
-    FletcherBase<Real>::conValue(x, tol2);
+
+    if( !isMultiplierComputed_ ) {
+      Real tol2 = tol;
+      FletcherBase<Real>::objGrad(x, tol2); tol2 = tol;
+      FletcherBase<Real>::conValue(x, tol2);
+      cnorm_ = c_->norm();
+    }
+
+    bool refine = isMultiplierComputed_;
 
     multSolverError_ = tol;
-    solveAugmentedSystem(*gL_, *y_, *g_, *scaledc_, x, multSolverError_);
+    solveAugmentedSystem(*gL_, *y_, *g_, *scaledc_, x, multSolverError_, refine);
 
     isMultiplierComputed_ = true;
   }

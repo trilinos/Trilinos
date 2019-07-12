@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
       errorFlag += ((err < tol) ? 0 : 1);
     }
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try

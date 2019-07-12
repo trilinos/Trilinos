@@ -53,21 +53,30 @@ namespace ROL {
 template<class Real>
 class RiskNeutralObjective : public Objective<Real> {
 private:
-  ROL::Ptr<Objective<Real> >       ParametrizedObjective_;
-  ROL::Ptr<SampleGenerator<Real> > ValueSampler_;
-  ROL::Ptr<SampleGenerator<Real> > GradientSampler_;
-  ROL::Ptr<SampleGenerator<Real> > HessianSampler_;
+  Ptr<Objective<Real>>       ParametrizedObjective_;
+  Ptr<SampleGenerator<Real>> ValueSampler_;
+  Ptr<SampleGenerator<Real>> GradientSampler_;
+  Ptr<SampleGenerator<Real>> HessianSampler_;
 
   Real value_;
-  ROL::Ptr<Vector<Real> > gradient_;
-  ROL::Ptr<Vector<Real> > pointDual_;
-  ROL::Ptr<Vector<Real> > sumDual_;
+  Ptr<Vector<Real>> gradient_;
+  Ptr<Vector<Real>> pointDual_;
+  Ptr<Vector<Real>> sumDual_;
 
   bool firstUpdate_;
   bool storage_;
 
   std::map<std::vector<Real>,Real> value_storage_;
-  std::map<std::vector<Real>,ROL::Ptr<Vector<Real> > > gradient_storage_;
+  std::map<std::vector<Real>,Ptr<Vector<Real>>> gradient_storage_;
+
+  void initialize(const Vector<Real> &x) {
+    if ( firstUpdate_ ) {
+      gradient_  = (x.dual()).clone();
+      pointDual_ = (x.dual()).clone();
+      sumDual_   = (x.dual()).clone();
+      firstUpdate_ = false;
+    }
+  }
 
   void getValue(Real &val, const Vector<Real> &x,
           const std::vector<Real> &param, Real &tol) {
@@ -92,8 +101,8 @@ private:
       ParametrizedObjective_->setParameter(param);
       ParametrizedObjective_->gradient(g,x,tol);
       if ( storage_ ) {
-        ROL::Ptr<Vector<Real> > tmp = g.clone();
-        gradient_storage_.insert(std::pair<std::vector<Real>,ROL::Ptr<Vector<Real> > >(param,tmp));
+        Ptr<Vector<Real>> tmp = g.clone();
+        gradient_storage_.insert(std::pair<std::vector<Real>,Ptr<Vector<Real>>>(param,tmp));
         gradient_storage_[param]->set(g);
       }
     }
@@ -107,12 +116,10 @@ private:
 
 
 public:
-  virtual ~RiskNeutralObjective() {}
-
-  RiskNeutralObjective( const ROL::Ptr<Objective<Real> >       &pObj,
-                        const ROL::Ptr<SampleGenerator<Real> > &vsampler, 
-                        const ROL::Ptr<SampleGenerator<Real> > &gsampler,
-                        const ROL::Ptr<SampleGenerator<Real> > &hsampler,
+  RiskNeutralObjective( const Ptr<Objective<Real>>       &pObj,
+                        const Ptr<SampleGenerator<Real>> &vsampler, 
+                        const Ptr<SampleGenerator<Real>> &gsampler,
+                        const Ptr<SampleGenerator<Real>> &hsampler,
                         const bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
@@ -121,9 +128,9 @@ public:
     gradient_storage_.clear();
   }
 
-  RiskNeutralObjective( const ROL::Ptr<Objective<Real> >       &pObj,
-                        const ROL::Ptr<SampleGenerator<Real> > &vsampler, 
-                        const ROL::Ptr<SampleGenerator<Real> > &gsampler,
+  RiskNeutralObjective( const Ptr<Objective<Real>>       &pObj,
+                        const Ptr<SampleGenerator<Real>> &vsampler, 
+                        const Ptr<SampleGenerator<Real>> &gsampler,
                         const bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
@@ -132,8 +139,8 @@ public:
     gradient_storage_.clear();
   }
 
-  RiskNeutralObjective( const ROL::Ptr<Objective<Real> >       &pObj,
-                        const ROL::Ptr<SampleGenerator<Real> > &sampler,
+  RiskNeutralObjective( const Ptr<Objective<Real>>       &pObj,
+                        const Ptr<SampleGenerator<Real>> &sampler,
                         const bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
@@ -142,20 +149,16 @@ public:
     gradient_storage_.clear();
   }
 
-  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    if ( firstUpdate_ ) {
-      gradient_  = (x.dual()).clone();
-      pointDual_ = (x.dual()).clone();
-      sumDual_   = (x.dual()).clone();
-      firstUpdate_ = false;
-    }
-    ParametrizedObjective_->update(x,(flag && iter>=0),iter);
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    initialize(x);
+//    ParametrizedObjective_->update(x,(flag && iter>=0),iter);
+    ParametrizedObjective_->update(x,flag,iter);
     ValueSampler_->update(x);
     value_ = static_cast<Real>(0);
     if ( storage_ ) {
       value_storage_.clear();
     }
-    if ( flag && iter>=0 ) {
+    if ( flag ) { //&& iter>=0 ) {
       GradientSampler_->update(x);
       HessianSampler_->update(x);
       gradient_->zero();
@@ -165,7 +168,8 @@ public:
     }
   }
 
-  virtual Real value( const Vector<Real> &x, Real &tol ) {
+  Real value( const Vector<Real> &x, Real &tol ) {
+    initialize(x);
     Real myval(0), ptval(0), val(0), one(1), two(2), error(two*tol + one);
     std::vector<Real> ptvals;
     while ( error > tol ) {
@@ -185,9 +189,10 @@ public:
     return value_;
   }
 
-  virtual void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+    initialize(x);
     g.zero(); pointDual_->zero(); sumDual_->zero();
-    std::vector<ROL::Ptr<Vector<Real> > > ptgs;
+    std::vector<Ptr<Vector<Real>>> ptgs;
     Real one(1), two(2), error(two*tol + one);
     while ( error > tol ) {
       GradientSampler_->refine();
@@ -210,8 +215,9 @@ public:
     tol = error;
   }
 
-  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v,
-                        const Vector<Real> &x, Real &tol ) {
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v,
+          const Vector<Real> &x, Real &tol ) {
+    initialize(x);
     hv.zero(); pointDual_->zero(); sumDual_->zero();
     for ( int i = 0; i < HessianSampler_->numMySamples(); ++i ) {
       getHessVec(*pointDual_,v,x,HessianSampler_->getMyPoint(i),tol);
@@ -220,7 +226,7 @@ public:
     HessianSampler_->sumAll(*sumDual_,hv);
   }
 
-  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v,
+  void precond( Vector<Real> &Pv, const Vector<Real> &v,
                         const Vector<Real> &x, Real &tol ) {
     Pv.set(v.dual());
   }

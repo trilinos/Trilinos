@@ -99,7 +99,10 @@ public:
   virtual void setSamples(bool inConstructor = false) {}
 
   virtual int numGlobalSamples(void) const {
-    return weights_.size();
+    Real nms  = static_cast<Real>(numMySamples());
+    Real gnms = static_cast<Real>(0);
+    sumAll(&nms,&gnms,1);
+    return static_cast<int>(gnms);
   }
 
   virtual int numMySamples(void) const {
@@ -138,7 +141,7 @@ public:
     bman_->barrier();
   }
 
-  const ROL::Ptr<BatchManager<Real> > getBatchManager(void) const {
+  const ROL::Ptr<BatchManager<Real>> getBatchManager(void) const {
     return bman_;
   }
 

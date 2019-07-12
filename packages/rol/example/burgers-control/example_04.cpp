@@ -47,6 +47,7 @@
 */
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_MoreauYosidaPenaltyStep.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Vector_SimOpt.hpp"
 #include "ROL_ParameterList.hpp"
@@ -219,7 +220,11 @@ int main(int argc, char *argv[]) {
     /************* RUN OPTIMIZATION ******************************************/
     /*************************************************************************/
     // SOLVE USING MOREAU-YOSIDA PENALTY
-    ROL::Algorithm<RealT> algoMY("Moreau-Yosida Penalty",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>
+      stepMY = ROL::makePtr<ROL::MoreauYosidaPenaltyStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      statusMY = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algoMY(stepMY,statusMY,false);
     zp->set(*zrandp);
     RealT zerotol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     con.solve(c,*up,*zp,zerotol);
@@ -231,7 +236,11 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT> > xMY = x.clone();
     xMY->set(x);
     // SOLVE USING AUGMENTED LAGRANGIAN
-    ROL::Algorithm<RealT> algoAL("Augmented Lagrangian",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>
+      stepAL = ROL::makePtr<ROL::AugmentedLagrangianStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      statusAL = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algoAL(stepAL,statusAL,false);
     zp->set(*zrandp);
     con.solve(c,*up,*zp,zerotol);
     obj.gradient_1(*gup,*up,*zp,zerotol);
@@ -244,7 +253,7 @@ int main(int argc, char *argv[]) {
     err->set(x); err->axpy(-1.,*xMY);
     errorFlag += ((err->norm() > 1.e-7*x.norm()) ? 1 : 0);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

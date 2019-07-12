@@ -85,41 +85,41 @@ int main(int argc, char *argv[]) {
     try {
       step.compute(*x0,*x[0],*obj,*bnd,algo_state);
     }
-    catch (ROL::Exception::NotImplemented exc) {
+    catch (ROL::Exception::NotImplemented& exc) {
       *outStream << exc.what() << std::endl;
       thrown++;
     };
     try {
       step.update(*x0,*x[0],*obj,*bnd,algo_state);
     }
-    catch (ROL::Exception::NotImplemented exc) {
+    catch (ROL::Exception::NotImplemented& exc) {
       *outStream << exc.what() << std::endl;
       thrown++;
     };
     try {
       step.printName();
     }
-    catch (ROL::Exception::NotImplemented exc) {
+    catch (ROL::Exception::NotImplemented& exc) {
       *outStream << exc.what() << std::endl;
       thrown++;
     };
     try {
       step.printHeader();
     }
-    catch (ROL::Exception::NotImplemented exc) {
+    catch (ROL::Exception::NotImplemented& exc) {
       *outStream << exc.what() << std::endl;
       thrown++;
     };
     try {
       step.print(algo_state,true);
     }
-    catch (ROL::Exception::NotImplemented exc) {
+    catch (ROL::Exception::NotImplemented& exc) {
       *outStream << exc.what() << std::endl;
       thrown++;
     };
     errorFlag = (thrown==5) ? 0 : 1;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try

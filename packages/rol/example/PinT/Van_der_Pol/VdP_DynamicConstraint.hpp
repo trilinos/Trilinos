@@ -233,7 +233,7 @@ public:
                                         const V& un, const V& z, 
                                         const TS& ts ) const override {
     auto ajvp = getVector(ajv);   auto vp   = getVector(v);
-    update_Jo(uo,un,z,ts);
+    update_Jn(uo,un,z,ts);
 
     ajvp->at(0) = Jn[0][0]*vp->at(0) + Jn[1][0]*vp->at(1);
     ajvp->at(1) = Jn[0][1]*vp->at(0) + Jn[1][1]*vp->at(1);  

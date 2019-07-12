@@ -47,9 +47,19 @@
 #include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_ParameterList.hpp"
+
+// Step (bound constrained or unconstrained) includes
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
-#include "ROL_ParameterList.hpp"
+#include "ROL_PrimalDualActiveSetStep.hpp"
+#include "ROL_MoreauYosidaPenaltyStep.hpp"
+#include "ROL_BundleStep.hpp"
+#include "ROL_InteriorPointStep.hpp"
+
+// StatusTest includes
+#include "ROL_StatusTest.hpp"
+#include "ROL_BundleStatusTest.hpp"
 
 /** @ingroup step_group
     \class ROL::AugmentedLagrangianStep
@@ -140,12 +150,20 @@
 
 namespace ROL {
 
+template<class Real>
+class MoreauYosidaPenaltyStep;
+
+template<class Real>
+class InteriorPointStep;
+
 template <class Real>
 class AugmentedLagrangianStep : public Step<Real> {
 private:
-  ROL::Ptr<Algorithm<Real> > algo_;
-  ROL::Ptr<Vector<Real> > x_; 
-  ROL::Ptr<BoundConstraint<Real> > bnd_;
+  ROL::Ptr<StatusTest<Real>>      status_;
+  ROL::Ptr<Step<Real>>            step_;
+  ROL::Ptr<Algorithm<Real>>       algo_;
+  ROL::Ptr<Vector<Real>>          x_; 
+  ROL::Ptr<BoundConstraint<Real>> bnd_;
 
   ROL::ParameterList parlist_;
   // Lagrange multiplier update
@@ -351,17 +369,56 @@ public:
                 Objective<Real> &obj, Constraint<Real> &con, 
                 BoundConstraint<Real> &bnd, AlgorithmState<Real> &algo_state ) {
     Real one(1);
-    AugmentedLagrangian<Real> &augLag
-      = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
+    //AugmentedLagrangian<Real> &augLag
+    //  = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
     parlist_.sublist("Status Test").set("Gradient Tolerance",optTolerance_);
     parlist_.sublist("Status Test").set("Step Tolerance",1.e-6*optTolerance_);
-    algo_ = ROL::makePtr<Algorithm<Real>>(subStep_,parlist_,false);
-    x_->set(x);
-    if ( bnd.isActivated() ) {
-      algo_->run(*x_,augLag,bnd,print_);
+    Ptr<Objective<Real>> penObj;
+    if (subStep_ == "Bundle") {
+      step_   = makePtr<BundleStep<Real>>(parlist_);
+      status_ = makePtr<BundleStatusTest<Real>>(parlist_);
+      penObj  = makePtrFromRef(obj);
+    }
+    else if (subStep_ == "Line Search") {
+      step_   = makePtr<LineSearchStep<Real>>(parlist_);
+      status_ = makePtr<StatusTest<Real>>(parlist_);
+      penObj  = makePtrFromRef(obj);
+    }
+    else if (subStep_ == "Moreau-Yosida Penalty") {
+      step_   = makePtr<MoreauYosidaPenaltyStep<Real>>(parlist_);
+      status_ = makePtr<StatusTest<Real>>(parlist_);
+      Ptr<Objective<Real>> raw_obj = makePtrFromRef(obj);
+      penObj = ROL::makePtr<MoreauYosidaPenalty<Real>>(raw_obj,bnd_,x,parlist_);
+    }
+    else if (subStep_ == "Primal Dual Active Set") {
+      step_   = makePtr<PrimalDualActiveSetStep<Real>>(parlist_);
+      status_ = makePtr<StatusTest<Real>>(parlist_);
+      penObj  = makePtrFromRef(obj);
+    }
+    else if (subStep_ == "Trust Region") {
+      step_   = makePtr<TrustRegionStep<Real>>(parlist_);
+      status_ = makePtr<StatusTest<Real>>(parlist_);
+      penObj  = makePtrFromRef(obj);
+    }
+    else if (subStep_ == "Interior Point") {
+      step_   = makePtr<InteriorPointStep<Real>>(parlist_);
+      status_ = makePtr<StatusTest<Real>>(parlist_);
+      Ptr<Objective<Real>> raw_obj = makePtrFromRef(obj);
+      penObj = ROL::makePtr<InteriorPoint::PenalizedObjective<Real>>(raw_obj,bnd_,x,parlist_);
     }
     else {
-      algo_->run(*x_,augLag,print_);
+      throw Exception::NotImplemented(">>> ROL::AugmentedLagrangianStep: Incompatible substep type!"); 
+    }
+    algo_ = makePtr<Algorithm<Real>>(step_,status_,false);
+    //algo_ = ROL::makePtr<Algorithm<Real>>(subStep_,parlist_,false);
+    x_->set(x);
+    if ( bnd.isActivated() ) {
+      //algo_->run(*x_,augLag,bnd,print_);
+      algo_->run(*x_,*penObj,bnd,print_);
+    }
+    else {
+      //algo_->run(*x_,augLag,print_);
+      algo_->run(*x_,*penObj,print_);
     }
     s.set(*x_); s.axpy(-one,x);
     subproblemIter_ = (algo_->getState())->iter;
@@ -411,8 +468,10 @@ public:
     minPenaltyReciprocal_ = std::min(one/state->searchSize,minPenaltyLowerBound_);
     if ( cscale_*algo_state.cnorm < feasTolerance_ ) {
       l.axpy(state->searchSize*cscale_,(state->constraintVec)->dual());
-      optTolerance_  = std::max(oem2*outerOptTolerance_,
-                       optTolerance_*std::pow(minPenaltyReciprocal_,optIncreaseExponent_));
+      if ( algo_->getState()->statusFlag == EXITSTATUS_CONVERGED ) {
+        optTolerance_  = std::max(oem2*outerOptTolerance_,
+                         optTolerance_*std::pow(minPenaltyReciprocal_,optIncreaseExponent_));
+      }
       feasTolerance_ = std::max(oem2*outerFeasTolerance_,
                        feasTolerance_*std::pow(minPenaltyReciprocal_,feasIncreaseExponent_));
       // Update Algorithm State

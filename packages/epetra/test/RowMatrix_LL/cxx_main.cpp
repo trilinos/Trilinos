@@ -392,26 +392,26 @@ int power_method(bool TransA, Epetra_RowMatrix& A, Epetra_Vector& q, Epetra_Vect
 int check(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose)  {
 
   int ierr = 0;
-  EPETRA_TEST_ERR(!A.Comm().NumProc()==B.Comm().NumProc(),ierr);
-  EPETRA_TEST_ERR(!A.Comm().MyPID()==B.Comm().MyPID(),ierr);
+  EPETRA_TEST_ERR((!A.Comm().NumProc())==B.Comm().NumProc(),ierr);
+  EPETRA_TEST_ERR((!A.Comm().MyPID())==B.Comm().MyPID(),ierr);
   EPETRA_TEST_ERR(!A.Filled()==B.Filled(),ierr);
   EPETRA_TEST_ERR(!A.HasNormInf()==B.HasNormInf(),ierr);
   EPETRA_TEST_ERR(!A.LowerTriangular()==B.LowerTriangular(),ierr);
   EPETRA_TEST_ERR(!A.Map().SameAs(B.Map()),ierr);
-  EPETRA_TEST_ERR(!A.MaxNumEntries()==B.MaxNumEntries(),ierr);
-  EPETRA_TEST_ERR(!A.NumGlobalCols64()==B.NumGlobalCols64(),ierr);
-  EPETRA_TEST_ERR(!A.NumGlobalDiagonals64()==B.NumGlobalDiagonals64(),ierr);
-  EPETRA_TEST_ERR(!A.NumGlobalNonzeros64()==B.NumGlobalNonzeros64(),ierr);
-  EPETRA_TEST_ERR(!A.NumGlobalRows64()==B.NumGlobalRows64(),ierr);
-  EPETRA_TEST_ERR(!A.NumMyCols()==B.NumMyCols(),ierr);
-  EPETRA_TEST_ERR(!A.NumMyDiagonals()==B.NumMyDiagonals(),ierr);
-  EPETRA_TEST_ERR(!A.NumMyNonzeros()==B.NumMyNonzeros(),ierr);
+  EPETRA_TEST_ERR((!A.MaxNumEntries())==B.MaxNumEntries(),ierr);
+  EPETRA_TEST_ERR((!A.NumGlobalCols64())==B.NumGlobalCols64(),ierr);
+  EPETRA_TEST_ERR((!A.NumGlobalDiagonals64())==B.NumGlobalDiagonals64(),ierr);
+  EPETRA_TEST_ERR((!A.NumGlobalNonzeros64())==B.NumGlobalNonzeros64(),ierr);
+  EPETRA_TEST_ERR((!A.NumGlobalRows64())==B.NumGlobalRows64(),ierr);
+  EPETRA_TEST_ERR((!A.NumMyCols())==B.NumMyCols(),ierr);
+  EPETRA_TEST_ERR((!A.NumMyDiagonals())==B.NumMyDiagonals(),ierr);
+  EPETRA_TEST_ERR((!A.NumMyNonzeros())==B.NumMyNonzeros(),ierr);
   for (int i=0; i<A.NumMyRows(); i++) {
     int nA, nB;
     A.NumMyRowEntries(i,nA); B.NumMyRowEntries(i,nB);
-    EPETRA_TEST_ERR(!nA==nB,ierr);
+    EPETRA_TEST_ERR((!nA)==nB,ierr);
   }
-  EPETRA_TEST_ERR(!A.NumMyRows()==B.NumMyRows(),ierr);
+  EPETRA_TEST_ERR((!A.NumMyRows())==B.NumMyRows(),ierr);
   EPETRA_TEST_ERR(!A.OperatorDomainMap().SameAs(B.OperatorDomainMap()),ierr);
   EPETRA_TEST_ERR(!A.OperatorRangeMap().SameAs(B.OperatorRangeMap()),ierr);
   EPETRA_TEST_ERR(!A.RowMatrixColMap().SameAs(B.RowMatrixColMap()),ierr);
@@ -502,7 +502,7 @@ int check(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose)  {
     int nA, nB;
     EPETRA_TEST_ERR(A.ExtractMyRowCopy(i, A.MaxNumEntries(), nA, &valuesA[0], &indicesA[0]),ierr);
     EPETRA_TEST_ERR(B.ExtractMyRowCopy(i, B.MaxNumEntries(), nB, &valuesB[0], &indicesB[0]),ierr);
-    EPETRA_TEST_ERR(!nA==nB,ierr);
+    EPETRA_TEST_ERR((!nA)==nB,ierr);
     for (int j=0; j<nA; j++) {
       double curVal = valuesA[j];
       int curIndex = indicesA[j];

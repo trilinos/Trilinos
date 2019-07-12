@@ -45,6 +45,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_PinTVector.hpp"
+#include "ROL_PinTVectorCommunication_StdVector.hpp"
 
 typedef double RealT;
 
@@ -86,6 +87,8 @@ int main(int argc, char* argv[])
     // }
     
     *outStream << "Testing checkVector" << std::endl; 
+
+    ROL::Ptr<const ROL::PinTVectorCommunication<RealT>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_StdVector<RealT>>();
     
     {
       // allocate state vector
@@ -99,9 +102,9 @@ int main(int argc, char* argv[])
   
       std::vector<int> stencil = {-1,0};
   
-      ROL::Ptr<ROL::PinTVector<RealT>> x_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,x_vec,3*numRanks,stencil);
-      ROL::Ptr<ROL::PinTVector<RealT>> y_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,y_vec,3*numRanks,stencil);
-      ROL::Ptr<ROL::PinTVector<RealT>> z_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,z_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> x_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,x_vec,3*numRanks,-1,1,2);
+      ROL::Ptr<ROL::PinTVector<RealT>> y_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,y_vec,3*numRanks,-1,1,2);
+      ROL::Ptr<ROL::PinTVector<RealT>> z_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,z_vec,3*numRanks,-1,1,2);
   
       /*
       *outStream << "X = " << std::endl;
@@ -112,9 +115,9 @@ int main(int argc, char* argv[])
       z_pint->print(*outStream);
       */
 
-      if(x_pint->numOwnedVectors()!=4) {
+      if(x_pint->numOwnedVectors()!=6) {
         std::stringstream ss;
-        ss << procStr << "Number owned vectors is " << x_pint->numOwnedVectors() << " is not 4!";
+        ss << procStr << "Number owned vectors is " << x_pint->numOwnedVectors() << " is not 6!";
         throw std::logic_error("Rank " + ss.str());
       }
   
@@ -134,6 +137,74 @@ int main(int argc, char* argv[])
       }
     }
 
+    // test boundary exchange (left to right)
+    /////////////////////////////////////////////////////////////////////////////////////////////
+
+    *outStream << "Testing boundary exchange" << std::endl;
+
+    {
+      int replicate = 2;
+      std::vector<int> stencil = {-1,0};
+
+      std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
+      PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,-1,1,replicate);
+
+      TEUCHOS_ASSERT(  ROL::is_nullPtr(p_pint->getVectorPtr(-1)) );
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 1)) );
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 2)) );
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 3)) );
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 4)) );
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 5)) );
+      TEUCHOS_ASSERT(  ROL::is_nullPtr(p_pint->getVectorPtr( 6)) );
+
+      p_pint->getVectorPtr( 0)->scale((myRank+1)*100+0);
+      p_pint->getVectorPtr( 1)->scale((myRank+1)*100+1);
+      p_pint->getVectorPtr( 2)->scale((myRank+1)*100+2);
+      p_pint->getVectorPtr( 3)->scale((myRank+1)*100+3);
+      p_pint->getVectorPtr( 4)->scale((myRank+1)*100+4);
+      p_pint->getVectorPtr( 5)->scale((myRank+1)*100+5);
+
+      p_pint->boundaryExchangeLeftToRight();
+
+      if(myRank!=0) { // no left boundary exchange to check
+        for(int i=0;i<2;i++) {
+          const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getRemoteBufferPtr(i)).getVector();
+
+          for(auto v : p_std) {
+            bool correct = (v== (myRank)*100+4+i); 
+            if(not correct) { 
+              std::stringstream ss;
+              ss << procStr << "Checking of left boundary exchange failed: expected " << myRank*100+5 << " found " << v << std::endl;
+              throw std::logic_error("Rank " + ss.str());
+            }
+          }
+        }
+      } // end if myRank
+
+      p_pint->boundaryExchangeRightToLeft();
+
+      if(myRank!=2) { // no right boundary exchange to check
+        for(int i=0;i<2;i++) {
+          const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getRemoteBufferPtr(i)).getVector();
+
+          for(auto v : p_std) {
+            bool correct = (v== (myRank+2)*100+i); 
+            if(not correct) { 
+              std::stringstream ss;
+              ss << procStr << "Checking of right to left boundary exchange failed: expected " << (myRank+2)*100+0 << " found " << v << std::endl;
+              throw std::logic_error("Rank " + ss.str());
+            }
+          }
+        }
+      } // end if myRank
+
+    } // end check left
+
+    *outStream << "Passed boundary exchange" << std::endl;
+
+#if 0
     // test boundary exchange (insert into buffer from vector)
     /////////////////////////////////////////////////////////////////////////////////////////////
     
@@ -144,7 +215,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(-1)) );  // backwards time is owned for this stencil
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
@@ -182,7 +253,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(0)) );
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(1)) );
@@ -219,7 +290,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(0)) );
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(1)) );
@@ -273,7 +344,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(-1)) );  // backwards time is owned for this stencil
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
@@ -315,7 +386,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT(  ROL::is_nullPtr(p_pint->getVectorPtr(-1)) );
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
@@ -358,7 +429,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil);
 
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(-1)) ); // this comes from the stencil
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
@@ -408,8 +479,9 @@ int main(int argc, char* argv[])
     } // end check left/rigth
 
     *outStream << "Passed left/right sum boundary exchange" << std::endl;
+#endif
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

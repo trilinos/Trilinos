@@ -317,7 +317,7 @@ int main(int argc, char* argv[]) {
 
     errorFlag = (error < std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 0 : 1;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
