@@ -190,6 +190,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
   export LAPACK_ROOT=/usr/lib64/atlas
   export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
+  # some Trilinos tests require this to run correctly
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 else
