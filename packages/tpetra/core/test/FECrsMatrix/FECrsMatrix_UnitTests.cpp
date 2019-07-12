@@ -142,7 +142,7 @@ public:
   std::vector<std::vector<GO> > element2node;
 
   // NOTE: This is hardwired for 1D bar elements
-  typedef Kokkos::View<LO*[2], Kokkos::LayoutLeft, typename Node::device_type > k_element2node_type;
+  typedef Kokkos::View<GO*[2], Kokkos::LayoutLeft, typename Node::device_type > k_element2node_type;
   k_element2node_type k_element2node;
 
   void print(int rank, std::ostream & out) {
@@ -346,22 +346,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
 
   auto k_e2n = pack.k_element2node;
   auto localMat = mat1.getLocalMatrix();
+  auto localMap = pack.overlapMap->getLocalMap();
+  //get local map too
 
   Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::execution_space>(0,k_e2n.extent(0)), 
 		       KOKKOS_LAMBDA(const size_t& i) {
-    for(size_t j=0; j<k_e2n.extent(i); j++) {
-      LO lid_j = k_e2n(i, j);
-      for(size_t k=0; k<k_e2n.extent(i); k++) {
-        LO lid_k = k_e2n(i, k);
-	//printf("(i, j, k): (%d, %d, %d)\nlid: (%d, %d)\n", i, j, k, lid_j, lid_k);
-	//printf("Summing into local values (%d, %d)\n", lid_j, lid_k);
+    size_t extent = k_e2n.extent(1);
+    for(size_t j=0; j < extent; j++) {
+      LO lid_j = localMap.getLocalElement(k_e2n(i, j));
+      for(size_t k=0; k < extent; k++) {
+        LO lid_k = localMap.getLocalElement(k_e2n(i, k));
 	localMat.sumIntoValues(lid_j, &lid_k, 1, &kokkosValues(j, k), true, true);
       }
     }
   });
+
   mat1.endFill();
   
-
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
@@ -484,13 +485,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   mat1.beginFill();
   auto k_e2n = pack.k_element2node;
   auto localMat = mat1.getLocalMatrix();
+  auto localMap = pack.overlapMap->getLocalMap();
 
   Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::execution_space>(0, k_e2n.extent(0)),
 		       KOKKOS_LAMBDA(const size_t& i) {
     for(size_t j=0; j<k_e2n.extent(1); j++) {
-      LO lid_j = k_e2n(i, j);
+      LO lid_j = localMap.getLocalElement(k_e2n(i, j));
       for(size_t k=0; k<k_e2n.extent(1); k++) {
-        LO lid_k = k_e2n(i, k);
+        LO lid_k = localMap.getLocalElement(k_e2n(i, k));
 	localMat.sumIntoValues(lid_j, &lid_k, 1, &kokkosValues(j, k));
       }
     }
@@ -519,10 +521,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
 
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_Kokkos, LO, GO, SCALAR, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D, LO, GO, SCALAR, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_Kokkos, LO, GO, SCALAR, NODE ) 
-  //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO, GO, SCALAR, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
