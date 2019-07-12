@@ -335,7 +335,8 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     // views as acceptable
     // FIXME: Find alternative to hard coding malloc size (input deck?)
     int num_classes = 3;
-    int* predictions = (int*)malloc(num_combos * sizeof(int));
+    // int* predictions = (int*)malloc(num_combos * sizeof(int));
+    std::vector<int> predictions(num_combos, 0);
     float* probabilities = (float*)malloc(num_classes * num_combos * sizeof(float));
 
       std::string testString;
@@ -354,7 +355,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       // FIXME: Only send in first tree's string
       //int* avatar_test(Avatar_handle* a, char* test_data_file, int test_data_is_a_string);
       const int test_data_is_a_string = 1;
-      avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string,predictions,probabilities);
+      avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string,predictions.data(),probabilities);
 
     // Look at the list of acceptable combinations of options 
     std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
@@ -411,7 +412,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     }
 
     // Cleanup 
-    free(predictions);
+    // free(predictions);
     free(probabilities); 
   } 
 
