@@ -94,8 +94,7 @@ private:
   Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refFaceNormal; // reference face normals
 
   PointValues2<double> pointValues;
-  PHX::MDField<const double, Cell, IP, Dim, Dim, void, void, void, void>
-    constJac_;
+  PHX::MDField<const double,Cell,IP,Dim,Dim> constJac_;
 
   Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 };
