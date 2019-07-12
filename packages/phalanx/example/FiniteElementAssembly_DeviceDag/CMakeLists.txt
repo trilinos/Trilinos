@@ -20,7 +20,6 @@ SET(example_fem_SOURCES
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Mesh.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Mesh.cpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Dimension.hpp
-    ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Dimension.cpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/LinearObjectFactory.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/CommandLineParser.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/PrintValues.hpp

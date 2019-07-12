@@ -58,35 +58,11 @@
 #include "Traits.hpp"
 
 // Dimension tags for this problem
-struct Dim : public PHX::DimTag {
-  Dim(){};
-  const char * name() const ;
-  static const Dim& tag();
-};
-
-struct Quadrature : public PHX::DimTag {
-  Quadrature(){};
-  const char * name() const ;
-  static const Quadrature& tag();
-};
-
-struct Node : public PHX::DimTag {
-  Node(){};
-  const char * name() const ;
-  static const Node& tag();
-};
-
-struct Cell : public PHX::DimTag {
-  Cell(){};
-  const char * name() const ;
-  static const Cell& tag();
-};
-
-struct Point : public PHX::DimTag {
-  Point(){};
-  const char * name() const ;
-  static const Point& tag();
-};
+struct Dim {};
+struct Quadrature{};
+struct Node{};
+struct Cell{};
+struct Point{};
 
 namespace PHX {
   template<> struct is_extent<Dim> : std::true_type {};
@@ -96,30 +72,14 @@ namespace PHX {
   template<> struct is_extent<Point> : std::true_type {};
 }
 
-const char * Dim::name() const 
-{ static const char n[] = "Dim" ; return n ; }
-const Dim & Dim::tag() 
-{ static const Dim myself ; return myself ; }
-
-const char * Quadrature::name() const 
-{ static const char n[] = "Quadrature" ; return n ; }
-const Quadrature & Quadrature::tag() 
-{ static const Quadrature myself ; return myself ; }
-
-const char * Node::name() const 
-{ static const char n[] = "Node" ; return n ; }
-const Node & Node::tag() 
-{ static const Node myself ; return myself ; }
-
-const char * Cell::name() const 
-{ static const char n[] = "Cell" ; return n ; }
-const Cell & Cell::tag() 
-{ static const Cell myself ; return myself ; }
-
-const char * Point::name() const 
-{ static const char n[] = "Point" ; return n ; }
-const Point & Point::tag() 
-{ static const Point myself ; return myself ; }
+// Demonstrate ability to override print string
+namespace PHX {
+  template<> std::string print<Dim>(){return "D";}
+  template<> std::string print<Quadrature>(){return "Q";}
+  template<> std::string print<Node>(){return "N";}
+  template<> std::string print<Cell>(){return "C";}
+  template<> std::string print<Point>(){return "P";}
+}
 
 TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
 {
@@ -475,7 +435,7 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     // ostream
     ostringstream output;
     output << a;
-    TEST_EQUALITY(output.str(), "MDField<Cell,Node>(100,4): Tag: density, double, DataLayout: <Cell,Node>(100,4)"); 
+    TEST_EQUALITY(output.str(), "MDField<C,N>(100,4): Tag: density, double, DataLayout: <C,N>(100,4)"); 
   }
 
   TimeMonitor::summarize();

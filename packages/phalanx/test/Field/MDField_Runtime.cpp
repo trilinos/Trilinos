@@ -60,66 +60,20 @@
 #include "Traits.hpp"
 
 // Dimension tags for this problem
-struct Dim : public PHX::DimTag {
-  Dim(){};
-  const char * name() const ;
-  static const Dim& tag();
-};
+// Dimension tags for this problem
+struct Dim {};
+struct Quadrature{};
+struct Node{};
+struct Cell{};
+struct Point{};
 
-struct Quadrature : public PHX::DimTag {
-  Quadrature(){};
-  const char * name() const ;
-  static const Quadrature& tag();
-};
-
-struct Node : public PHX::DimTag {
-  Node(){};
-  const char * name() const ;
-  static const Node& tag();
-};
-
-struct Cell : public PHX::DimTag {
-  Cell(){};
-  const char * name() const ;
-  static const Cell& tag();
-};
-
-struct Point : public PHX::DimTag {
-  Point(){};
-  const char * name() const ;
-  static const Point& tag();
-};
-
-template<> struct PHX::is_extent<Dim> : std::true_type {};
-template<> struct PHX::is_extent<Quadrature> : std::true_type {};
-template<> struct PHX::is_extent<Node> : std::true_type {};
-template<> struct PHX::is_extent<Cell> : std::true_type {};
-template<> struct PHX::is_extent<Point> : std::true_type {};
-
-const char * Dim::name() const 
-{ static const char n[] = "Dim" ; return n ; }
-const Dim & Dim::tag() 
-{ static const Dim myself ; return myself ; }
-
-const char * Quadrature::name() const 
-{ static const char n[] = "Quadrature" ; return n ; }
-const Quadrature & Quadrature::tag() 
-{ static const Quadrature myself ; return myself ; }
-
-const char * Node::name() const 
-{ static const char n[] = "Node" ; return n ; }
-const Node & Node::tag() 
-{ static const Node myself ; return myself ; }
-
-const char * Cell::name() const 
-{ static const char n[] = "Cell" ; return n ; }
-const Cell & Cell::tag() 
-{ static const Cell myself ; return myself ; }
-
-const char * Point::name() const 
-{ static const char n[] = "Point" ; return n ; }
-const Point & Point::tag() 
-{ static const Point myself ; return myself ; }
+namespace PHX {
+  template<> struct is_extent<Dim> : std::true_type {};
+  template<> struct is_extent<Quadrature> : std::true_type {};
+  template<> struct is_extent<Node> : std::true_type {};
+  template<> struct is_extent<Cell> : std::true_type {};
+  template<> struct is_extent<Point> : std::true_type {};
+}
 
 TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
 {

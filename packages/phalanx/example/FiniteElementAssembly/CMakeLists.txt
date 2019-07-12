@@ -8,7 +8,6 @@ SET(example_fem_SOURCES
     MyTraits.hpp
     ExplicitTemplateInstantiation.hpp
     Dimension.hpp
-    Dimension.cpp
     Workset.hpp
     WorksetBuilder.hpp
     Mesh.hpp

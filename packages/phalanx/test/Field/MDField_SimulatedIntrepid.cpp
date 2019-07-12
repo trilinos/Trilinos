@@ -55,20 +55,11 @@
 
 // ********************************************************
 // Dimension tags for this problem
-PHX_DIM_TAG_DECLARATION(Dim)
-PHX_DIM_TAG_IMPLEMENTATION(Dim)
-
-PHX_DIM_TAG_DECLARATION(Quadrature)
-PHX_DIM_TAG_IMPLEMENTATION(Quadrature)
-
-PHX_DIM_TAG_DECLARATION(Node)
-PHX_DIM_TAG_IMPLEMENTATION(Node)
-
-PHX_DIM_TAG_DECLARATION(Point)
-PHX_DIM_TAG_IMPLEMENTATION(Point)
-
-PHX_DIM_TAG_DECLARATION(Cell)
-PHX_DIM_TAG_IMPLEMENTATION(Cell)
+PHX_EXTENT(Dim)
+PHX_EXTENT(Quadrature)
+PHX_EXTENT(Node)
+PHX_EXTENT(Point)
+PHX_EXTENT(Cell)
 
 namespace phalanx_test {
 
