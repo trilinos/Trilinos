@@ -58,6 +58,8 @@
 #include <algorithm>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/linearpdeconstraint.hpp"
@@ -271,7 +273,11 @@ int main(int argc, char *argv[]) {
     con->solve(*rp,*up,*zp,tol);
     pdecon->outputTpetraVector(u_ptr,"state_uncontrolled.txt");
 
-//    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+//    ROL::Ptr<ROL::Step<RealT>>
+//      step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+//    ROL::Ptr<ROL::StatusTest<RealT>>
+//      status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+//    ROL::Algorithm<RealT> algo(step,status,false);
 //    Teuchos::Time algoTimer("Algorithm Time", true);
 //    algo.run(*zp,*robj,true,*outStream);
 //    algoTimer.stop();
@@ -287,7 +293,7 @@ int main(int argc, char *argv[]) {
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

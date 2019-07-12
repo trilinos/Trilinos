@@ -54,6 +54,8 @@
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_AugmentedLagrangianStep.hpp"
+//#include "ROL_MoreauYosidaPenaltyStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_CompositeStep.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
@@ -231,11 +233,19 @@ int main(int argc, char *argv[]) {
     volcon->checkApplyAdjointHessian(*zp,*vcp,*dzp,*zp,true,*outStream);
 
     /*** Run optimization ***/
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::AugmentedLagrangianStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
     ROL::AugmentedLagrangian<RealT> augLag(objReduced,volcon,*vc_lamp,1.0,*zp,*vcp,*parlist);
-    ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
     algo.run(*zp,*vc_lamp,augLag,*volcon,*bnd,true,*outStream);
+    //ROL::Ptr<ROL::Step<RealT>>
+    //  step = ROL::makePtr<ROL::MoreauYosidaPenaltyStep<RealT>>(*parlist);
+    //ROL::Ptr<ROL::StatusTest<RealT>>
+    //  status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
     //ROL::MoreauYosidaPenalty<RealT> MYpen(objReduced,bnd,*zp,*parlist);
-    //ROL::Algorithm<RealT> algo("Moreau-Yosida Penalty",*parlist,false);
+    //ROL::Algorithm<RealT> algo(step,status,false);
     //algo.run(*zp,*vc_lamp,MYpen,*volcon,*bnd,true,*outStream);
 
     // new filter, for testing
@@ -259,7 +269,7 @@ int main(int argc, char *argv[]) {
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

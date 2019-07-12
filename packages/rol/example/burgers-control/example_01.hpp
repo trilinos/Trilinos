@@ -47,6 +47,8 @@
 */
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_PrimalDualActiveSetStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -54,6 +56,7 @@
 #include "Teuchos_LAPACK.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 
 #include "ROL_StdVector.hpp"

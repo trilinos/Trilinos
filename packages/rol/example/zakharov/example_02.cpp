@@ -95,7 +95,9 @@ int main(int argc, char *argv[]) {
       (*k_ptr)[i] = i+1.0;
     }
     
-    ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ROL::ZOO::Objective_Zakharov<RealT>>(k);
+    ROL::Ptr<ROL::Objective<RealT>> obj = ROL::makePtr<ROL::ZOO::Objective_Zakharov<RealT>>(k);
+    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd = ROL::makePtr<ROL::BoundConstraint<RealT>>();
+    bnd->deactivate();
     
     ROL::OptimizationProblem<RealT> opt(obj,x);
     ROL::AlgorithmState<RealT> state;
@@ -108,12 +110,24 @@ int main(int argc, char *argv[]) {
     ROL::LineSearchStep<RealT>  ls(*parlist);
     ROL::TrustRegionStep<RealT> tr(*parlist);
 
-    ls.initialize( opt, state );
-    tr.initialize( opt, state );
+    ls.initialize( *opt.getSolutionVector(),
+                    opt.getSolutionVector()->dual(),
+                   *opt.getObjective(),
+                   *bnd, state );
+    tr.initialize( *opt.getSolutionVector(),
+                    opt.getSolutionVector()->dual(),
+                   *opt.getObjective(),
+                   *bnd, state );
 
     for( int iter = 0; iter<10; ++iter ) {
-      ls.compute( *s, opt, state );
-      ls.update( opt, *s, state );
+      ls.compute( *s,
+                  *opt.getSolutionVector(), 
+                  *opt.getObjective(),
+                  *bnd, state ); 
+      ls.update( *opt.getSolutionVector(),
+                 *s,
+                 *opt.getObjective(),
+                 *bnd, state );
 
       state.minIterVec->set(*x);
       state.minIter = state.iter;
@@ -121,8 +135,14 @@ int main(int argc, char *argv[]) {
 
       *outStream << "LS fval = " << state.minValue << std::endl; 
 
-      tr.compute( *s, opt, state );
-      tr.update( opt, *s, state );
+      tr.compute( *s,
+                  *opt.getSolutionVector(), 
+                  *opt.getObjective(),
+                  *bnd, state ); 
+      tr.update( *opt.getSolutionVector(),
+                 *s,
+                 *opt.getObjective(),
+                 *bnd, state );
 
       state.minIterVec->set(*x);
       state.minIter = state.iter;
@@ -135,7 +155,7 @@ int main(int argc, char *argv[]) {
 
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

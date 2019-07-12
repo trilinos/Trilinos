@@ -45,7 +45,13 @@
 #define ROL_INTERIORPOINTSTEP_H
 
 #include "ROL_CompositeStep.hpp"
+#include "ROL_AugmentedLagrangianStep.hpp"
+#include "ROL_FletcherStep.hpp"
+#include "ROL_BundleStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_LineSearchStep.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_BundleStatusTest.hpp"
 #include "ROL_InteriorPoint.hpp"
 #include "ROL_ObjectiveFromBoundConstraint.hpp"
 #include "ROL_Types.hpp"
@@ -53,6 +59,9 @@
 
 
 namespace ROL {
+
+template<class Real>
+class AugmentedLagrangianStep;
 
 template <class Real>
 class InteriorPointStep : public Step<Real> {
@@ -256,20 +265,23 @@ public:
       Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
       Ptr<StepState<Real>>  state   = Step<Real>::getState();
       penObj = makePtr<AugmentedLagrangian<Real>>(raw_obj,raw_con,l,one,x,*(state->constraintVec),parlist_);
+      step_  = makePtr<AugmentedLagrangianStep<Real>>(parlist_);
     }
     else if (stepType_ == STEP_FLETCHER) {
       Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
       Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
       Ptr<StepState<Real>>  state   = Step<Real>::getState();
       penObj = makePtr<Fletcher<Real>>(raw_obj,raw_con,x,*(state->constraintVec),parlist_);
+      step_  = makePtr<FletcherStep<Real>>(parlist_);
     }
     else {
       penObj = makePtrFromRef(obj);
       stepname_ = "Composite Step";
       stepType_ = STEP_COMPOSITESTEP;
+      step_     = makePtr<CompositeStep<Real>>(parlist_);
     }
-    algo_ = ROL::makePtr<Algorithm<Real>>(stepname_,parlist_,false);
-    //algo_ = ROL::makePtr<Algorithm<Real>>("Composite Step",parlist_,false);
+    status_ = makePtr<ConstraintStatusTest<Real>>(parlist_);
+    algo_ = ROL::makePtr<Algorithm<Real>>(step_,status_,false);
 
     //  Run the algorithm
     x_->set(x); l_->set(l);
@@ -300,12 +312,24 @@ public:
     auto& ipobj = dynamic_cast<IPOBJ&>(obj);
 
     // Create the algorithm 
-    algo_ = ROL::makePtr<Algorithm<Real>>("Trust Region",parlist_,false);
+    if (stepType_ == STEP_BUNDLE) {
+      status_ = makePtr<BundleStatusTest<Real>>(parlist_);
+      step_   = makePtr<BundleStep<Real>>(parlist_);
+    }
+    else if (stepType_ == STEP_LINESEARCH) {
+      status_ = makePtr<StatusTest<Real>>(parlist_);
+      step_   = makePtr<LineSearchStep<Real>>(parlist_);
+    }
+    else {
+      status_ = makePtr<StatusTest<Real>>(parlist_);
+      step_   = makePtr<TrustRegionStep<Real>>(parlist_);
+    }
+    algo_ = ROL::makePtr<Algorithm<Real>>(step_,status_,false);
 
     //  Run the algorithm
     x_->set(x);
     algo_->run(*x_,*g_,ipobj,*bnd_,print_);
-    s.set(*x_); s.axpy(-1.0,x);
+    s.set(*x_); s.axpy(static_cast<Real>(-1),x);
 
     // Get number of iterations from the subproblem solve
     subproblemIter_ = (algo_->getState())->iter;

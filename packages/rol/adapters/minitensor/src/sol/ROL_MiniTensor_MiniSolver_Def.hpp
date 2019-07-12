@@ -41,6 +41,8 @@
 #include <type_traits>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_StepFactory.hpp"
+#include "ROL_StatusTestFactory.hpp"
 #include "ROL_MiniTensor_BoundConstraint.hpp"
 #include "ROL_MiniTensor_EqualityConstraint.hpp"
 #include "ROL_MiniTensor_Function.hpp"
@@ -96,8 +98,16 @@ solve(
   ROL::MiniTensor_Objective<FN, T, N>
   obj(fn);
 
+  ROL::StepFactory<T>
+  stepFactory;
+  ROL::Ptr<ROL::Step<T>>
+  step = stepFactory.getStep(algoname, params);
+  ROL::StatusTestFactory<T>
+  statusFactory;
+  ROL::Ptr<ROL::StatusTest<T>>
+  status = statusFactory.getStatusTest(algoname, params);
   ROL::Algorithm<T>
-  algo(algoname, params);
+  algo(step,status,false);
 
   // Set Initial Guess
   ROL::MiniTensorVector<T, N>
@@ -118,10 +128,7 @@ solve(
   ROL::AlgorithmState<T> &
   state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
 
-  ROL::StatusTest<T>
-  status(params);
-
-  converged = status.check(state) == false;
+  converged = status->check(state) == false;
   recordFinals(fn, soln);
 
   return;
@@ -168,8 +175,16 @@ solve(
   ROL::MiniTensor_BoundConstraint<T, N>
   bound_constr(lo, hi);
 
+  ROL::StepFactory<T>
+  stepFactory;
+  ROL::Ptr<ROL::Step<T>>
+  step = stepFactory.getStep(algoname, params);
+  ROL::StatusTestFactory<T>
+  statusFactory;
+  ROL::Ptr<ROL::StatusTest<T>>
+  status = statusFactory.getStatusTest(algoname, params);
   ROL::Algorithm<T>
-  algo(algoname, params);
+  algo(step,status,false);
 
   // Set initial guess
   ROL::MiniTensorVector<T, N>
@@ -190,10 +205,7 @@ solve(
   ROL::AlgorithmState<T> &
   state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
 
-  ROL::StatusTest<T>
-  status(params);
-
-  converged = status.check(state) == false;
+  converged = status->check(state) == false;
   recordFinals(fn, soln);
 
   return;
@@ -239,8 +251,16 @@ solve(
   MTCONSTR
   constr(eic);
 
+  ROL::StepFactory<T>
+  stepFactory;
+  ROL::Ptr<ROL::Step<T>>
+  step = stepFactory.getStep(algoname, params);
+  ROL::StatusTestFactory<T>
+  statusFactory;
+  ROL::Ptr<ROL::StatusTest<T>>
+  status = statusFactory.getStatusTest(algoname, params);
   ROL::Algorithm<T>
-  algo(algoname, params);
+  algo(step,status,false);
 
   // Set Initial Guess
   ROL::MiniTensorVector<T, N>
@@ -265,10 +285,7 @@ solve(
   ROL::AlgorithmState<T> &
   state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
 
-  ROL::StatusTest<T>
-  status(params);
-
-  converged = status.check(state) == false;
+  converged = status->check(state) == false;
 
   recordFinals(fn, soln);
 
@@ -326,8 +343,16 @@ solve(
   MTCONSTR
   eqineq_constr(eic);
 
+  ROL::StepFactory<T>
+  stepFactory;
+  ROL::Ptr<ROL::Step<T>>
+  step = stepFactory.getStep(algoname, params);
+  ROL::StatusTestFactory<T>
+  statusFactory;
+  ROL::Ptr<ROL::StatusTest<T>>
+  status = statusFactory.getStatusTest(algoname, params);
   ROL::Algorithm<T>
-  algo(algoname, params);
+  algo(step,status,false);
 
   // Set Initial Guess
   ROL::MiniTensorVector<T, N>
@@ -352,10 +377,7 @@ solve(
   ROL::AlgorithmState<T> &
   state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
 
-  ROL::StatusTest<T>
-  status(params);
-
-  converged = status.check(state) == false;
+  converged = status->check(state) == false;
 
   recordFinals(fn, soln);
 

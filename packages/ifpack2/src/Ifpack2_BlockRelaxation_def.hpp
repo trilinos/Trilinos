@@ -475,13 +475,9 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   // we need to create an auxiliary vector, Xcopy
   Teuchos::RCP<const MV> X_copy;
   {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
-    auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-#else
     auto X_lcl_host = X.getLocalViewHost ();
     auto Y_lcl_host = Y.getLocalViewHost ();
-#endif
+
     if (X_lcl_host.data () == Y_lcl_host.data ()) {
       X_copy = rcp (new MV (X, Teuchos::Copy));
     } else {
@@ -717,30 +713,19 @@ BlockRelaxation<MatrixType,ContainerType>::
 ApplyInverseJacobi (const MV& X, MV& Y) const
 {
   const size_t NumVectors = X.getNumVectors ();
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  typename ContainerType::HostView XView = X.template getLocalView<Kokkos::HostSpace> ();
-  typename ContainerType::HostView YView = Y.template getLocalView<Kokkos::HostSpace> ();
-#else
   auto XView = X.getLocalViewHost ();
   auto YView = Y.getLocalViewHost ();
-#endif
+
   MV AY (Y.getMap (), NumVectors);
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  typename ContainerType::HostView AYView = AY.template getLocalView<Kokkos::HostSpace> ();
-#else
   auto AYView = AY.getLocalViewHost ();
-#endif
+
   // Initial matvec not needed
   int starting_iteration = 0;
   if (OverlapLevel_ > 0)
   {
     //Overlapping jacobi, with view of W_
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    typename ContainerType::HostView WView = W_->template getLocalView<Kokkos::HostSpace> ();
-#else
     auto WView = W_->getLocalViewHost ();
-#endif
     if(ZeroStartingSolution_) {
       Container_->DoOverlappingJacobi(XView, YView, WView, X.getStride());
       starting_iteration = 1;
@@ -780,13 +765,8 @@ ApplyInverseGS (const MV& X, MV& Y) const
   using Teuchos::ptr;
   size_t numVecs = X.getNumVectors();
   //Get view of X (is never modified in this function)
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  typename ContainerType::HostView XView = X.template getLocalView<Kokkos::HostSpace> ();
-  typename ContainerType::HostView YView = Y.template getLocalView<Kokkos::HostSpace> ();
-#else
   auto XView = X.getLocalViewHost ();
   auto YView = Y.getLocalViewHost ();
-#endif
   //Pre-import Y, if parallel
   Ptr<MV> Y2;
   bool deleteY2 = false;
@@ -803,21 +783,13 @@ ApplyInverseGS (const MV& X, MV& Y) const
     {
       //do import once per sweep
       Y2->doImport(Y, *Importer_, Tpetra::INSERT);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      typename ContainerType::HostView Y2View = Y2->template getLocalView<Kokkos::HostSpace> ();
-#else
       auto Y2View = Y2->getLocalViewHost ();
-#endif
       Container_->DoGaussSeidel(XView, YView, Y2View, X.getStride());
     }
   }
   else
   {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    typename ContainerType::HostView Y2View = Y2->template getLocalView<Kokkos::HostSpace> ();
-#else
     auto Y2View = Y2->getLocalViewHost ();
-#endif
     for(int j = 0; j < NumSweeps_; ++j)
     {
       Container_->DoGaussSeidel(XView, YView, Y2View, X.getStride());
@@ -835,13 +807,8 @@ ApplyInverseSGS (const MV& X, MV& Y) const
   using Teuchos::Ptr;
   using Teuchos::ptr;
   //Get view of X (is never modified in this function)
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  typename ContainerType::HostView XView = X.template getLocalView<Kokkos::HostSpace> ();
-  typename ContainerType::HostView YView = Y.template getLocalView<Kokkos::HostSpace> ();
-#else
   auto XView = X.getLocalViewHost ();
   auto YView = Y.getLocalViewHost ();
-#endif
   //Pre-import Y, if parallel
   Ptr<MV> Y2;
   bool deleteY2 = false;
@@ -858,21 +825,13 @@ ApplyInverseSGS (const MV& X, MV& Y) const
     {
       //do import once per sweep
       Y2->doImport(Y, *Importer_, Tpetra::INSERT);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      typename ContainerType::HostView Y2View = Y2->template getLocalView<Kokkos::HostSpace> ();
-#else
       auto Y2View = Y2->getLocalViewHost ();
-#endif
       Container_->DoSGS(XView, YView, Y2View, X.getStride());
     }
   }
   else
   {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    typename ContainerType::HostView Y2View = Y2->template getLocalView<Kokkos::HostSpace> ();
-#else
     auto Y2View = Y2->getLocalViewHost ();
-#endif
     for(int j = 0; j < NumSweeps_; ++j)
     {
       Container_->DoSGS(XView, YView, Y2View, X.getStride());
@@ -947,7 +906,7 @@ description () const
     out << "Matrix: null, ";
   }
   else {
-    //    out << "Matrix: not null"    
+    //    out << "Matrix: not null"
     // << ", Global matrix dimensions: ["
     out << "Global matrix dimensions: ["
         << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "], ";
@@ -975,7 +934,7 @@ description () const
   out << "block container: " << ((containerType == "Generic") ? containerType_ : containerType);
   if(List_.isParameter("partitioner: PDE equations"))
     out << ", dofs/node: "<<List_.get<int>("partitioner: PDE equations");
-     
+
 
   out << "}";
   return out.str();

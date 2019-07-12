@@ -349,13 +349,8 @@ private:
     mv_type R (B.getMap (), numVecs);
 
     computeResiduals (norms, R, *A_, X, B);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    norms.template sync<Kokkos::HostSpace> ();
-    auto norms_h = norms.template view<Kokkos::HostSpace> ();
-#else
     norms.sync_host ();
     auto norms_h = norms.view_host ();
-#endif
 
     SolverInput<SC, LO, GO, NT> input;
     input.tol = tol_;

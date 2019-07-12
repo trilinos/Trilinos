@@ -306,8 +306,9 @@ public:
     const int f = fe_vol_->N()->dimension(1);
     // INITIALIZE RIESZ
     riesz = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
-    *riesz = *fe_vol_->stiffMat();
-    Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+    //*riesz = *fe_vol_->stiffMat();
+    //Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+    *riesz = *fe_vol_->massMat();
   }
 
   void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) {
@@ -316,8 +317,9 @@ public:
     const int f = fe_vol_->N()->dimension(1);
     // INITIALIZE RIESZ
     riesz = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
-    *riesz = *fe_vol_->stiffMat();
-    Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+    //*riesz = *fe_vol_->stiffMat();
+    //Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+    *riesz = *fe_vol_->massMat();
   }
 
   std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields() {

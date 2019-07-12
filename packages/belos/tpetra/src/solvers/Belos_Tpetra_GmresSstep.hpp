@@ -83,15 +83,10 @@ public:
     // triangle of R.
 
     // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    A.template sync<Kokkos::HostSpace> ();
-    A.template modify<Kokkos::HostSpace> ();
-    auto A_lcl = A.template getLocalView<Kokkos::HostSpace> ();
-#else
     A.sync_host ();
     A.modify_host ();
     auto A_lcl = A.getLocalViewHost ();
-#endif
+
     SC* const A_lcl_raw = reinterpret_cast<SC*> (A_lcl.data ());
     const LO LDA = LO (A.getStride ());
 

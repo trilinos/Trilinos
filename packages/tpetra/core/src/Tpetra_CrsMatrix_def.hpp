@@ -6040,17 +6040,8 @@ namespace Tpetra {
       X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
 #ifdef HAVE_TPETRA_DEBUG
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      auto X_colMap_host_view =
-        X_colMap->template getLocalView<Kokkos::HostSpace> ();
-      auto X_domainMap_host_view =
-        X_domainMap->template getLocalView<Kokkos::HostSpace> ();
-#else
-      auto X_colMap_host_view =
-        X_colMap->getLocalViewHost ();
-      auto X_domainMap_host_view =
-        X_domainMap->getLocalViewHost ();
-#endif
+      auto X_colMap_host_view = X_colMap->getLocalViewHost ();
+      auto X_domainMap_host_view = X_domainMap->getLocalViewHost ();
 
       if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
         TEUCHOS_TEST_FOR_EXCEPTION

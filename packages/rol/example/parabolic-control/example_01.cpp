@@ -57,6 +57,7 @@
 #include "Teuchos_LAPACK.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 
 #include "ROL_StdVector.hpp"
@@ -410,7 +411,9 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    ROL::Ptr<ROL::Algorithm<RealT> > algo = ROL::makePtr<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>       step   = ROL::makePtr<ROL::PrimalDualActiveSetStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>> status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Ptr<ROL::Algorithm<RealT>>  algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
     // Run algorithm.
     x.zero();
     algo->run(x, obj, icon, true, *outStream);
@@ -426,7 +429,9 @@ int main(int argc, char *argv[]) {
     // re-load parameters
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Set algorithm.
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+    step   = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
 
     // Run Algorithm
     y.zero();
@@ -446,7 +451,7 @@ int main(int argc, char *argv[]) {
     *outStream << "\nError between PDAS solution and TR solution is " << error << "\n";
     errorFlag = ((error > 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

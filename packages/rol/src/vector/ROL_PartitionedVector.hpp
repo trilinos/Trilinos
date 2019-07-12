@@ -232,6 +232,13 @@ public:
   }
 
   // Methods that do not exist in the base class
+  const Vector<Real>& operator[]( size_type i ) const {
+    return *(vecs_[i]);
+  }
+
+  Vector<Real>& operator[]( size_type i ) {
+    return *(vecs_[i]);
+  }
 
   ROL::Ptr<const Vector<Real> > get(size_type i) const {
     return vecs_[i];
@@ -271,6 +278,29 @@ public:
 };
 
 // Helper methods
+
+template<typename Real> 
+inline PartitionedVector<Real>& partition( Vector<Real>& x ) {
+  return static_cast<PartitionedVector<Real>&>(x);
+}
+
+template<typename Real> 
+inline const PartitionedVector<Real>& partition( const Vector<Real>& x ) {
+  return static_cast<const PartitionedVector<Real>&>(x);
+}
+
+template<typename Real> 
+inline Ptr<PartitionedVector<Real>> partition( const Ptr<Vector<Real>>& x ) {
+  return staticPtrCast<PartitionedVector<Real>>(x);
+}
+
+template<typename Real> 
+inline Ptr<const PartitionedVector<Real>> partition( const Ptr<const Vector<Real>>& x ) {
+  return staticPtrCast<const PartitionedVector<Real>>(x);
+}
+
+
+
 template<class Real>
 ROL::Ptr<Vector<Real>> 
 CreatePartitionedVector( const ROL::Ptr<Vector<Real>> &a ) {  

@@ -288,14 +288,6 @@ int main(int argc, char *argv[]) {
     parlist->sublist("SOL").set("Initial Statistic",one);
     opt.setStochasticObjective(*parlist,sampler);
 
-    //ROL::AugmentedLagrangian<RealT> augLag(opt.getObjective(),
-    //                                       opt.getConstraint(),
-    //                                       *c2p,
-    //                                       1,
-    //                                       *opt.getSolutionVector(),
-    //                                       *c1p,
-    //                                       *parlist);
-
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
     if ( checkDeriv ) {
@@ -387,20 +379,12 @@ int main(int argc, char *argv[]) {
       vcon->checkAdjointConsistencyJacobian(*c1p,*dzp,*zp,true,*outStream);
       *outStream << "\n\nCheck Full Hessian of Volume Constraint\n";
       vcon->checkApplyAdjointHessian(*zp,*c2p,*dzp,*zp,true,*outStream);
-
-      //*outStream << "\n\nCheck Gradient of Augmented Lagrangian Function\n";
-      //augLag.checkGradient(*zp,*dzp,true,*outStream);
-      //*outStream << "\n\nCheck Hessian of Augmented Lagrangian Function\n";
-      //augLag.checkHessVec(*zp,*dzp,true,*outStream);
-      //*outStream << "\n";
     }
 
     parlist->sublist("Step").set("Type","Augmented Lagrangian");
     ROL::OptimizationSolver<RealT> optSolver(opt, *parlist);
     Teuchos::Time algoTimer("Algorithm Time", true);
     optSolver.solve(*outStream);
-    //ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
-    //algo.run(*(opt.getSolutionVector()),*c2p,augLag,*(opt.getConstraint()),*(opt.getBoundConstraint()),true,*outStream);
     algoTimer.stop();
     *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
 
@@ -419,7 +403,7 @@ int main(int argc, char *argv[]) {
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

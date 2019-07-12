@@ -331,9 +331,9 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     // Evaluate special stopping condition.
     tol = tol;
 
-    std::cout << "  " << i+1 << ": " << res[i+1]/res[0] << std::endl;
+//    std::cout << "  " << i+1 << ": " << res[i+1]/res[0] << std::endl;
     if (res[i+1] <= tol) {
-      std::cout << "  solved in " << i+1 << " iterations to " << res[i+1] << " (" << res[i+1]/res[0] << ")" << std::endl;
+//      std::cout << "  solved in " << i+1 << " iterations to " << res[i+1] << " (" << res[i+1]/res[0] << ")" << std::endl;
       // Update solution vector.
       v1.plus(*z1);
       v2.plus(*z2);

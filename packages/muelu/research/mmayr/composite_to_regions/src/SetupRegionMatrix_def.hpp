@@ -110,6 +110,21 @@ Teuchos::Array<int> findCommonRegions(const GlobalOrdinal nodeA, ///< GID of fir
   return finalCommonRegions;
 }
 
+//! Create an empty vector in the regional layout
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void createRegionalVector(std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVecs, ///< regional vector to be filled
+                          const int maxRegPerProc, ///< max number of regions per process
+                          const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp ///< regional map
+                          )
+{
+#include "Xpetra_UseShortNames.hpp"
+  regVecs.resize(maxRegPerProc);
+  for (int j = 0; j < maxRegPerProc; j++)
+    regVecs[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
+
+  return;
+} // createRegionalVector
+
 /*! \brief Transform composite vector to regional layout
  *
  *  Starting from a vector in composite layout, we
@@ -144,7 +159,7 @@ void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,
   }
 
   return;
-}
+} // compositeToRegional
 
 /*! \brief Transform regional vector to composite layout
  *
@@ -197,22 +212,37 @@ void regionalToComposite(const std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdin
   }
 
   return;
-}
+} // regionalToComposite
 
-//! Create an empty vector in the regional layout
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void createRegionalVector(std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVecs, ///< regional vector to be filled
-                          const int maxRegPerProc, ///< max number of regions per process
-                          const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp ///< regional map
-                          )
+/*! \brief Sum region interface values
+ *
+ *  Sum values of interface GIDs using the underlying Export() routines. Technically, we perform the
+ *  exchange/summation of interface data by exporting a regional vector to the composite layout and
+ *  then immediately importing it back to the regional layout. The Export() involved when going to the
+ *  composite layout takes care of the summation of interface values.
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void sumInterfaceValues(std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec,
+                        const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > compMap,
+                        const int maxRegPerProc, ///< max number of regions per proc [in]
+                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,///< row maps in region layout [in]
+                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,///< revised row maps in region layout [in]
+                        const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp ///< row importer in region layout [in])
+                        )
 {
 #include "Xpetra_UseShortNames.hpp"
-  regVecs.resize(maxRegPerProc);
-  for (int j = 0; j < maxRegPerProc; j++)
-    regVecs[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
+  Teuchos::RCP<Vector> compVec = VectorFactory::Build(compMap, true);
+  TEUCHOS_ASSERT(!compVec.is_null());
+
+  std::vector<Teuchos::RCP<Vector> > quasiRegVec(maxRegPerProc);
+  regionalToComposite(regVec, compVec, maxRegPerProc, rowMapPerGrp,
+                      rowImportPerGrp, Xpetra::ADD);
+
+  compositeToRegional(compVec, quasiRegVec, regVec, maxRegPerProc,
+                      rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
   return;
-}
+} // sumInterfaceValues
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class widget>
 void MakeGroupRegionRowMaps(const int myRank,

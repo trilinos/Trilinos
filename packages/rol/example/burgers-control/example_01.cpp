@@ -104,7 +104,9 @@ int main(int argc, char *argv[]) {
     ROL::Bounds<RealT> icon(lo,up);
 
     // ROL components.
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
+    ROL::Ptr<ROL::Algorithm<RealT>>  algo;
+    ROL::Ptr<ROL::Step<RealT>>       step;
+    ROL::Ptr<ROL::StatusTest<RealT>> status;
 
     // Primal dual active set.
     std::string filename = "input.xml";
@@ -124,7 +126,9 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
+    step   = ROL::makePtr<ROL::PrimalDualActiveSetStep<RealT>>(*parlist);
+    status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
     // Run algorithm.
     x.zero();
     algo->run(x, obj, icon, true, *outStream);
@@ -141,7 +145,9 @@ int main(int argc, char *argv[]) {
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-2);
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
     // Define algorithm.
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+    step   = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
     // Run Algorithm
     y.zero();
     algo->run(y,obj,icon,true,*outStream);
@@ -170,7 +176,7 @@ int main(int argc, char *argv[]) {
     *outStream << "\nError between PDAS solution and TR solution is " << error << "\n";
     errorFlag = ((error > 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
