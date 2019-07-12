@@ -55,7 +55,7 @@
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_MDField_TypeTraits.hpp"
-#include "Phalanx_MDField_ExtentTraits.hpp"
+#include "Phalanx_ExtentTraits.hpp"
 #include "Sacado.hpp"
 #include "Sacado_mpl_vector.hpp"
 #include "Sacado_mpl_for_each.hpp"
@@ -543,10 +543,11 @@ namespace PHX {
 
       os << "MDField<";
 
-      for (std::size_t i=0; i < dim_names.size(); ++i) {
-        if (i > 0)
+      int count = 0;
+      for (auto i=dim_names.rbegin(); i < dim_names.rend(); ++i,++count) {
+        if (count > 0)
           os << ",";
-        os << std::string(dim_names[i]);
+        os << std::string(*i);
       }
       os << ">(";
       for (std::size_t i=0; i < dim_names.size(); ++i) {

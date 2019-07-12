@@ -82,16 +82,7 @@
 
 */
 
-struct Point : public PHX::DimTag {
-  Point(){};
-  const char * name() const ;
-  static const Point& tag();
-};
-
-const char * Point::name() const 
-{ static const char n[] = "Point" ; return n ; }
-const Point & Point::tag() 
-{ static const Point myself ; return myself ; }
+PHX_EXTENT(P)
 
 struct SPoint : public shards::ArrayDimTag {
   SPoint(){};
@@ -103,11 +94,6 @@ const char * SPoint::name() const
 { static const char n[] = "SPoint" ; return n ; }
 const SPoint & SPoint::tag() 
 { static const SPoint myself ; return myself ; }
-
-namespace PHX {
-  template<> struct is_extent<Point> : std::true_type {};
-  template<> struct is_extent<SPoint> : std::true_type {};
-}
 
 typedef PHX::index_size_type size_type;
 
@@ -209,12 +195,12 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     double* raw_ptr_b = new double[size];
     double* raw_ptr_c = new double[size];
  
-    RCP<DataLayout> dl = rcp(new MDALayout<Point,Point,Point>(num_cells,
-							      num_ip,
-							      num_dim));
+    RCP<DataLayout> dl = rcp(new MDALayout<P,P,P>(num_cells,
+                                                  num_ip,
+                                                  num_dim));
 
     // Compiletime PHX:MDField
-    typedef MDField<double,Point,Point,Point> phx_ct_field;
+    typedef MDField<double,P,P,P> phx_ct_field;
     phx_ct_field phx_ct_a("phx_ct_a", dl);
     phx_ct_field phx_ct_b("phx_ct_a", dl);
     phx_ct_field phx_ct_c("phx_ct_a", dl);

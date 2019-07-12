@@ -46,35 +46,11 @@
 #define PHX_DIMENSION_HPP
 #include "Phalanx_DimTag.hpp"
 
-struct DIM : public PHX::DimTag {
-  DIM(){};
-  const char * name() const ;
-  static const DIM& tag();
-};
-
-struct POINT : public PHX::DimTag {
-  POINT(){};
-  const char * name() const ;
-  static const POINT& tag();
-};
-
-struct QP : public PHX::DimTag {
-  QP(){};
-  const char * name() const ;
-  static const QP& tag();
-};
-
-struct BASIS : public PHX::DimTag {
-  BASIS(){};
-  const char * name() const ;
-  static const BASIS& tag();
-};
-
-struct CELL : public PHX::DimTag {
-  CELL(){};
-  const char * name() const ;
-  static const CELL& tag();
-};
+struct DIM {};
+struct POINT {};
+struct QP {};
+struct BASIS {};
+struct CELL {};
 
 namespace PHX {
   template<> struct is_extent<DIM> : std::true_type {};

@@ -60,11 +60,10 @@
 // From test/Utilities directory
 #include "Traits.hpp"
 
-struct Dim : public PHX::DimTag {
-  Dim () {}
-  const char* name () const { static const char name[] = "Dim"; return name; }
-  static const Dim& tag() { static const Dim tag; return tag; }
-};
+struct Dim {};
+namespace PHX {
+  template<> struct is_extent<Dim> : std::true_type {};
+}
 
 namespace {
 PHX::DataLayout* makeLayout (const int rank, const int* d) {

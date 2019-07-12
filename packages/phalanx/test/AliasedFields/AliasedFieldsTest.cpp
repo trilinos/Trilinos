@@ -61,16 +61,8 @@
 
 #include "MyTraits.hpp"
 
-PHX_DIM_TAG_DECLARATION(CELL)
-PHX_DIM_TAG_IMPLEMENTATION(CELL)
-
-PHX_DIM_TAG_DECLARATION(BASIS)
-PHX_DIM_TAG_IMPLEMENTATION(BASIS)
-
-namespace PHX {
-  template<> struct is_extent<CELL> : std::true_type {};
-  template<> struct is_extent<BASIS> : std::true_type {};
-}
+PHX_EXTENT(CELL)
+PHX_EXTENT(BASIS)
 
 #include "AliasedFields_TestEvaluators.hpp"
 

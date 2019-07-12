@@ -185,7 +185,7 @@ namespace PHX {
 
   private:
 
-    std::vector<const char*> m_dim_name;
+    std::vector<std::string> m_dim_name;
 
     PHX::Device::size_type m_dim_size[Rank];
 
