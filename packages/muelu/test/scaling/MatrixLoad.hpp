@@ -151,10 +151,10 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
       Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
     A = Pr->BuildMatrix();
+    nullspace = Pr->BuildNullspace();
 
     if (matrixType == "Elasticity2D" ||
         matrixType == "Elasticity3D") {
-      nullspace = Pr->BuildNullspace();
       A->SetFixedBlockSize((galeriParameters.GetMatrixType() == "Elasticity2D") ? 2 : 3);
     }
 

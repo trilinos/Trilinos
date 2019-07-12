@@ -57,6 +57,8 @@
 #include <algorithm>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_CompositeStep.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
@@ -64,6 +66,8 @@
 #include "../TOOLS/pdevector.hpp"
 #include "pde_poisson_boltzmann.hpp"
 #include "obj_poisson_boltzmann.hpp"
+
+#include "ROL_OptimizationSolver.hpp"
 
 typedef double RealT;
 
@@ -150,12 +154,17 @@ int main(int argc, char *argv[]) {
     con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
     con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
 
-    ROL::Algorithm<RealT> algo("Composite Step",*parlist,false);
+    RealT tol(1.e-8);
+    con->solve(*rp,*up,*zp,tol);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
     algo.run(x,*rp,*obj,*con,true,*outStream);
 
     // Output.
     con->getAssembler()->printMeshData(*outStream);
-    RealT tol(1.e-8);
     con->solve(*rp,*up,*zp,tol);
     con->outputTpetraVector(u_ptr,"state.txt");
     con->outputTpetraVector(z_ptr,"control.txt");
@@ -166,7 +175,7 @@ int main(int argc, char *argv[]) {
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

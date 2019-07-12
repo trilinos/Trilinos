@@ -100,7 +100,11 @@ int main(int argc, char **argv)
         auto parlist = ROL::getParametersFromXmlFile(paramfile);
 
         // Define algorithm.
-        Algorithm<RealT> algo("Line Search",*parlist);
+        ROL::Ptr<ROL::Step<RealT>>
+          step = ROL::makePtr<ROL::LineSearchStep<RealT>>(*parlist);
+        ROL::Ptr<ROL::StatusTest<RealT>>
+          status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+        ROL::Algorithm<RealT> algo(step,status,false);
 
         // Iteration vector.
         ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
@@ -126,7 +130,7 @@ int main(int argc, char **argv)
             errorFlag += 1;
         }
     }
-    catch (std::logic_error err) {
+    catch (std::logic_error& err) {
         *outStream << err.what() << "\n";
         errorFlag = -1000;
     }; // end try

@@ -79,6 +79,12 @@ public:
     }
   }
 
+  virtual void gatherAll(const Real *send, const int ssize, Real *receive, int const rsize) const {
+    for (int i = 0; i < rsize; ++i) {
+      receive[i] = send[i];
+    }
+  }
+
   virtual void broadcast(Real *input, int cnt, int root) {}
 
   virtual void barrier(void) {}

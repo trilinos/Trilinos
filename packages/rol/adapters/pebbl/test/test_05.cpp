@@ -74,12 +74,15 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* SOLVE **************************************************************/
     /**********************************************************************************************/
+//    ROL::Ptr<ROL::OptimizationSolver<RealT>>
+//      solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*(factory->build()),*parlist);
+//    solver->solve(*outStream);
     ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper
       = ROL::makePtr<ROL::StdBranchHelper_PEBBL<RealT>>();
     ROL::ROL_PEBBL_Driver<RealT> pebbl(factory,parlist,bHelper,3,outStream);
     pebbl.solve(argc,argv,*outStream);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

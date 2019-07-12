@@ -45,6 +45,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  example_parabolic_modeleval_forward-adjoint
+  SOURCES example_parabolic_modeleval_forward-adjoint.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+)
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   ForwardEulerSinCosDataCopy
   SOURCE_FILES

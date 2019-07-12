@@ -57,8 +57,8 @@
 #include <algorithm>
 
 #include "ROL_TpetraMultiVector.hpp"
-#include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
+#include "ROL_OptimizationSolver.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
@@ -66,8 +66,6 @@
 #include "../TOOLS/pdevector.hpp"
 #include "pde_navier-stokes.hpp"
 #include "obj_navier-stokes.hpp"
-
-#include "ROL_OptimizationSolver.hpp"
 
 typedef double RealT;
 
@@ -184,19 +182,13 @@ int main(int argc, char *argv[]) {
       robj->checkHessVec(*zp,*dzp,true,*outStream);
     }
 
+    up->zero(); zp->zero();
     bool useFullSpace = parlist->sublist("Problem").get("Full space",false);
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
-    up->zero();
-    zp->zero();
     if ( useFullSpace ) {
       std::string step = parlist->sublist("Step").get("Type", "Composite Step");
       ROL::EStep els = ROL::StringToEStep(step);
       switch( els ) {
-        case ROL::STEP_COMPOSITESTEP: {
-          algo = ROL::makePtr<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
-          algo->run(x,*rp,*obj,*con,true,*outStream);
-          break; 
-        }
+        case ROL::STEP_COMPOSITESTEP:
         case ROL::STEP_FLETCHER: {
           RealT tol(1.e-8);
           bool initSolve = parlist->sublist("Problem").get("Solve state for full space",true);
@@ -216,8 +208,9 @@ int main(int argc, char *argv[]) {
       }
     }
     else {
-      algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
-      algo->run(*zp,*robj,true,*outStream);
+      parlist->sublist("Step").set("Type","Trust Region");
+      ROL::OptimizationProblem<RealT> optProb(robj, zp);
+      ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);
     }
 
     // Output.
@@ -233,7 +226,7 @@ int main(int argc, char *argv[]) {
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
     //pdecon->outputTpetraData();
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

@@ -57,8 +57,9 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_Vector_SimOpt.hpp"
-#include "ROL_PinTConstraint.hpp"
 #include "ROL_GMRES.hpp"
+#include "ROL_PinTConstraint.hpp"
+#include "ROL_PinTVectorCommunication_StdVector.hpp"
 
 #include "dynamicConstraint.hpp"
 #include "dynamicObjective.hpp"
@@ -66,8 +67,6 @@
 using RealT = double;
 using size_type = std::vector<RealT>::size_type;
 
-void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
-void run_test_simple(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 
 int main( int argc, char* argv[] ) 
@@ -85,12 +84,10 @@ int main( int argc, char* argv[] )
 
   try {
 
-    // run_test(MPI_COMM_WORLD, outStream);
-    // run_test_simple(MPI_COMM_WORLD, outStream);
     run_test_kkt(MPI_COMM_WORLD, outStream);
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error &err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
@@ -141,8 +138,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   using ROL::makePtrFromRef;
 
   using RealT             = double;
-  using size_type         = std::vector<RealT>::size_type;
-  using Bounds            = ROL::Bounds<RealT>;
+  // using size_type         = std::vector<RealT>::size_type;  // Unused
+  // using Bounds            = ROL::Bounds<RealT>;
   using PartitionedVector = ROL::PartitionedVector<RealT>;
 
   auto timer = Teuchos::TimeMonitor::getStackedTimer();
@@ -156,10 +153,12 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
 
   ROL::Ptr<const ROL::PinTCommunicators> communicators = ROL::makePtr<ROL::PinTCommunicators>(comm,1);
+  ROL::Ptr<const ROL::PinTVectorCommunication<RealT>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_StdVector<RealT>>();
 
   // Parse input parameter list
   ROL::Ptr<ROL::ParameterList> pl = ROL::getParametersFromXmlFile("input_ex01.xml");
-  bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
+  // Unusued
+  // bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
   uint nx         = pl->get("Spatial Discretization",     64); // Set spatial discretization.
   uint nt         = pl->get("Temporal Discretization",   100); // Set temporal discretization.
   RealT T         = pl->get("End Time",                  1.0); // Set end time.
@@ -180,11 +179,11 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::Ptr< ROL::PinTVector<RealT>> state;
   ROL::Ptr< ROL::PinTVector<RealT>> control;
 
-  state        = ROL::buildStatePinTVector<RealT>(   communicators, nt,     u0); // for Euler, Crank-Nicolson, stencil = [-1,0]
-  control      = ROL::buildControlPinTVector<RealT>( communicators, nt,     zk); // time discontinous, stencil = [0]
+  state        = ROL::buildStatePinTVector<RealT>(   communicators, vectorComm, nt,     u0); // for Euler, Crank-Nicolson, stencil = [-1,0]
+  control      = ROL::buildControlPinTVector<RealT>( communicators, vectorComm, nt,     zk); // time discontinous, stencil = [0]
 
   // Construct reduced dynamic objective
-  auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(state->numOwnedSteps());
+  auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(control->numOwnedSteps());
   for( uint k=0; k<timeStamp->size(); ++k ) {
     timeStamp->at(k).t.resize(2);
     timeStamp->at(k).t.at(0) = k*dt;
@@ -205,13 +204,15 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   // build the parallel in time constraint from the user constraint
   Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
-  // pint_con->setGlobalScale(1.0);
-  pint_con->applyMultigrid(numLevels);
-  // pint_con->applyMultigrid(2);
+  pint_con->setGlobalScale(1.0);
+  pint_con->applyMultigrid(numLevels,communicators,vectorComm);
   pint_con->setSweeps(sweeps);
   pint_con->setRelaxation(omega);
 
   double tol = 1e-12;
+
+  ROL::RandomizeVector(*control);
+  ROL::RandomizeVector(*state);
 
   // make sure we are globally consistent
   state->boundaryExchange();
@@ -231,40 +232,48 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     auto kkt_x_out = kkt_vector->clone();
     kkt_x_out->zero();
 
-    pint_con->applyAugmentedInverseKKT(*kkt_x_out,*kkt_b,*state,*control,tol); // apply Wathen style preconditioner serially
+    pint_con->applyWathenInverse(*kkt_x_out,*kkt_b,*state,*control,tol); // apply Wathen style preconditioner serially
 
     kkt_x_out->axpy(-1.0,*kkt_x_in);
 
     RealT norm = kkt_x_out->norm();
-    if(myRank==0)
+    if(myRank==0) {
       (*outStream) << "NORM EXACT= " << norm << std::endl;
+    }
   }
 
   if(myRank==0)
     (*outStream) << std::endl;
 
   // check jacobi is reducing the norm 
-  {
+  if(false) {
     auto kkt_x_out = kkt_vector->clone();
     auto kkt_diff = kkt_vector->clone();
     auto kkt_err = kkt_vector->clone();
     auto kkt_res = kkt_vector->clone();
     kkt_x_out->zero();
 
-    for(int i=0;i<sweeps;i++) {
+    RealT res_0 = -1;
+    for(int i=0;i<10;i++) {
       pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
       kkt_res->scale(-1.0);
       kkt_res->axpy(1.0,*kkt_b);                                                       // r = b - A*x_i
+
+      RealT norm_res = kkt_res->norm();
+      if(res_0<0.0)
+        res_0 = norm_res;
+      if(myRank==0)
+        (*outStream) << "NORM RES = " << norm_res << "  " << norm_res/res_0<< std::endl;
     
-      pint_con->applyAugmentedInverseKKT(*kkt_diff,*kkt_res,*state,*control,tol,true); // dx_i = M^{-1} r
+      pint_con->applyWathenInverse(*kkt_diff,*kkt_res,*state,*control,tol,true); // dx_i = M^{-1} r
 
       kkt_x_out->axpy(omega,*kkt_diff);                                                // x_{i+1} = x_i + omega*dx_i
 
       kkt_err->set(*kkt_x_out);
       kkt_err->axpy(-1.0,*kkt_x_in);                                                   // err = x_{i+1} - x
-      RealT norm = kkt_err->norm() / kkt_b->norm();
-      if(myRank==0)
-        (*outStream) << "NORM JACOBI= " << norm << std::endl;
+      // RealT norm = kkt_err->norm() / kkt_b->norm(); // Unused
+      // if(myRank==0)
+      //   (*outStream) << "NORM JACOBI= " << norm << std::endl;
     }
   }
 
@@ -302,8 +311,6 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     MPI_Barrier(MPI_COMM_WORLD);
     double t0 = MPI_Wtime();
 
-    pint_con->clearTimePerLevel();
-
     timer->start("krylov");
     RealT finalTol = krylov.run(*kkt_x_out,kktOperator,*kkt_b,mgOperator,iter,flag);
     timer->stop("krylov");
@@ -316,12 +323,6 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
     if(myRank==0) {
       (*outStream) << "Krylov Iteration = " << iter << " " << (finalTol / res0) << " " << tf-t0 << std::endl;
-
-      const std::vector<RealT> & timePerLevel = pint_con->getTimePerLevel();
-      (*outStream) << "Time per level = ";
-      for(RealT time : timePerLevel) 
-        (*outStream) << time << " ";
-      (*outStream) << std::endl;
 
       (*outStream) << std::endl;
       (*outStream) << ss.str();

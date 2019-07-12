@@ -49,7 +49,7 @@
 #include "Thyra_TpetraVector.hpp"
 #include "Thyra_TpetraMultiVector.hpp"
 #include "Thyra_TpetraEuclideanScalarProd.hpp"
-
+#include "Tpetra_Details_StaticView.hpp"
 
 namespace Thyra {
 
@@ -111,6 +111,139 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createMembers(int num
     );
   // ToDo: Create wrapper function to create locally replicated vector space
   // and use it.
+}
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class CopyTpetraMultiVectorViewBack {
+public:
+  CopyTpetraMultiVectorViewBack( RCP<MultiVectorBase<Scalar> > mv, const RTOpPack::SubMultiVectorView<Scalar>  &raw_mv )
+    :mv_(mv), raw_mv_(raw_mv)
+    {
+      RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmv = Teuchos::rcp_dynamic_cast<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(mv_,true)->getTpetraMultiVector();
+      bool inUse = Teuchos::get_extra_data<bool>(tmv,"inUse");
+      TEUCHOS_TEST_FOR_EXCEPTION(inUse,
+                                 std::runtime_error,
+                                 "Cannot use the cached vector simultaneously more than once.");
+      inUse = true;
+      Teuchos::set_extra_data(inUse,"inUse",Teuchos::outArg(tmv), Teuchos::POST_DESTROY, false);
+    }
+  ~CopyTpetraMultiVectorViewBack()
+    {
+      RTOpPack::ConstSubMultiVectorView<Scalar> smv;
+      mv_->acquireDetachedView(Range1D(),Range1D(),&smv);
+      RTOpPack::assign_entries<Scalar>( Teuchos::outArg(raw_mv_), smv );
+      mv_->releaseDetachedView(&smv);
+      bool inUse = false;
+      RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmv = Teuchos::rcp_dynamic_cast<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(mv_,true)->getTpetraMultiVector();
+      Teuchos::set_extra_data(inUse,"inUse",Teuchos::outArg(tmv), Teuchos::POST_DESTROY, false);
+    }
+private:
+  RCP<MultiVectorBase<Scalar> >               mv_;
+  const RTOpPack::SubMultiVectorView<Scalar>  raw_mv_;
+};
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP< MultiVectorBase<Scalar> >
+TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createMembersView(
+  const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
+#endif
+
+  // Create a multi-vector
+  RCP< MultiVectorBase<Scalar> > mv;
+  if (!tpetraMap_->isDistributed()) {
+
+    if (tpetraMV_.is_null() || (tpetraMV_->getNumVectors() != size_t (raw_mv.numSubCols()))) {
+      if (!tpetraMV_.is_null())
+        // The MV is already allocated. If we are still using it, then very bad things can happen.
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::get_extra_data<bool>(tpetraMV_,"inUse"),
+                                 std::runtime_error,
+                                 "Cannot use the cached vector simultaneously more than once.");
+      using IST = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type;
+      using DT = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::device_type;
+      auto dv = ::Tpetra::Details::getStatic2dDualView<IST, DT> (tpetraMap_->getGlobalNumElements(), raw_mv.numSubCols());
+      tpetraMV_ = Teuchos::rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tpetraMap_, dv));
+      bool inUse = false;
+      Teuchos::set_extra_data(inUse,"inUse",Teuchos::outArg(tpetraMV_));
+    }
+
+    if (tpetraDomainSpace_.is_null() || raw_mv.numSubCols() != tpetraDomainSpace_->localSubDim())
+      tpetraDomainSpace_ = tpetraVectorSpace<Scalar>(Tpetra::createLocalMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(raw_mv.numSubCols(), tpetraMap_->getComm()));
+
+    mv = tpetraMultiVector<Scalar>(weakSelfPtr_.create_strong().getConst(), tpetraDomainSpace_, tpetraMV_);
+  } else {
+    mv = this->createMembers(raw_mv.numSubCols());
+    bool inUse = false;
+    RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmv = Teuchos::rcp_dynamic_cast<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(mv,true)->getTpetraMultiVector();
+    Teuchos::set_extra_data(inUse,"inUse",Teuchos::outArg(tmv));
+  }
+  // Copy initial values in raw_mv into multi-vector
+  RTOpPack::SubMultiVectorView<Scalar> smv;
+  mv->acquireDetachedView(Range1D(),Range1D(),&smv);
+  RTOpPack::assign_entries<Scalar>(
+    Ptr<const RTOpPack::SubMultiVectorView<Scalar> >(Teuchos::outArg(smv)),
+    raw_mv
+    );
+  mv->commitDetachedView(&smv);
+  // Setup smart pointer to multi-vector to copy view back out just before multi-vector is destroyed
+  Teuchos::set_extra_data(
+    // We create a duplicate of the RCP, otherwise the ref count does not go to zero.
+    Teuchos::rcp(new CopyTpetraMultiVectorViewBack<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Teuchos::rcpFromRef(*mv),raw_mv)),
+    "CopyTpetraMultiVectorViewBack",
+    Teuchos::outArg(mv),
+    Teuchos::PRE_DESTROY
+    );
+  return mv;
+}
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const MultiVectorBase<Scalar> >
+TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createMembersView(
+  const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
+#endif
+  // Create a multi-vector
+  RCP< MultiVectorBase<Scalar> > mv;
+  if (!tpetraMap_->isDistributed()) {
+    if (tpetraMV_.is_null() || (tpetraMV_->getNumVectors() != size_t (raw_mv.numSubCols()))) {
+      if (!tpetraMV_.is_null())
+        // The MV is already allocated. If we are still using it, then very bad things can happen.
+        TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::get_extra_data<bool>(tpetraMV_,"inUse"),
+                                   std::runtime_error,
+                                   "Cannot use the cached vector simultaneously more than once.");
+      using IST = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type;
+      using DT = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::device_type;
+      auto dv = ::Tpetra::Details::getStatic2dDualView<IST, DT> (tpetraMap_->getGlobalNumElements(), raw_mv.numSubCols());
+      tpetraMV_ = Teuchos::rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tpetraMap_, dv));
+      bool inUse = false;
+      Teuchos::set_extra_data(inUse,"inUse",Teuchos::outArg(tpetraMV_));
+    }
+
+    if (tpetraDomainSpace_.is_null() || raw_mv.numSubCols() != tpetraDomainSpace_->localSubDim())
+      tpetraDomainSpace_ = tpetraVectorSpace<Scalar>(Tpetra::createLocalMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(raw_mv.numSubCols(), tpetraMap_->getComm()));
+
+    mv = tpetraMultiVector<Scalar>(weakSelfPtr_.create_strong().getConst(), tpetraDomainSpace_, tpetraMV_);
+  } else {
+    mv = this->createMembers(raw_mv.numSubCols());
+    bool inUse = false;
+    RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmv = Teuchos::rcp_dynamic_cast<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(mv,true)->getTpetraMultiVector();
+    Teuchos::set_extra_data(inUse,"inUse",Teuchos::outArg(tmv));
+  }
+  // Copy values in raw_mv into multi-vector
+  RTOpPack::SubMultiVectorView<Scalar> smv;
+  mv->acquireDetachedView(Range1D(),Range1D(),&smv);
+  RTOpPack::assign_entries<Scalar>(
+    Ptr<const RTOpPack::SubMultiVectorView<Scalar> >(Teuchos::outArg(smv)),
+    raw_mv );
+  mv->commitDetachedView(&smv);
+  return mv;
 }
 
 

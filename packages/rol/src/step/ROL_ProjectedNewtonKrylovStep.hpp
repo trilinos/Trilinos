@@ -48,7 +48,7 @@
 #include "ROL_Step.hpp"
 
 #include "ROL_Secant.hpp"
-#include "ROL_Krylov.hpp"
+#include "ROL_KrylovFactory.hpp"
 #include "ROL_LinearOperator.hpp"
 
 #include <sstream>

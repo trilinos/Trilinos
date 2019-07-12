@@ -101,11 +101,11 @@ namespace UnpackAndCombineCrsGraphImpl {
 /// \tparam BufferDevice The "buffer device type."
 template<class Packet, class GO, class Device, class BufferDevice>
 KOKKOS_FUNCTION int
-unpackRow(typename Kokkos::View<GO*,Device,Kokkos::MemoryUnmanaged>& gids_out,
-          typename Kokkos::View<int*,Device,Kokkos::MemoryUnmanaged>& pids_out,
-          const Kokkos::View<const Packet*,BufferDevice>& imports,
-          const size_t offset,
-          const size_t num_ent)
+unpackRow (const Kokkos::View<GO*,Device,Kokkos::MemoryUnmanaged>& gids_out,
+           const Kokkos::View<int*,Device,Kokkos::MemoryUnmanaged>& pids_out,
+           const Kokkos::View<const Packet*,BufferDevice>& imports,
+           const size_t offset,
+           const size_t num_ent)
 {
   using size_type = typename Kokkos::View<GO*,Device>::size_type;
 
@@ -120,8 +120,9 @@ unpackRow(typename Kokkos::View<GO*,Device,Kokkos::MemoryUnmanaged>& gids_out,
 
   // Unpack PIDs
   if (pids_out.size() > 0) {
-    for (size_type k=0; k<num_ent; k++)
+    for (size_type k=0; k<num_ent; k++) {
       pids_out(k) = static_cast<int>(imports(offset+num_ent+k));
+    }
   }
 
   return 0;
@@ -137,8 +138,11 @@ unpackRow(typename Kokkos::View<GO*,Device,Kokkos::MemoryUnmanaged>& gids_out,
 /// Data (bytes) describing the row of the CRS graph are "unpacked"
 /// from a single (concatenated) (view of) Packet* directly into the
 /// row of the graph.
-template<class LocalOrdinal, class Packet, class RowView,
-         class IndicesView, class Device, class BufferDevice>
+template<class LocalOrdinal,
+         class Packet,
+         class RowView,
+         class IndicesView,
+         class BufferDevice>
 class UnpackAndCombineFunctor {
 
   using LO = LocalOrdinal;
@@ -148,13 +152,13 @@ class UnpackAndCombineFunctor {
   using indices_type = IndicesView;
   using buffer_device_type = BufferDevice;
 
-  using device_type = Device;
+  using device_type = typename IndicesView::device_type;
   using execution_space = typename device_type::execution_space;
 
   using num_packets_per_lid_type = Kokkos::View<const size_t*, buffer_device_type>;
   using offsets_type = Kokkos::View<const size_t*, device_type>;
   using input_buffer_type = Kokkos::View<const packet_type*, buffer_device_type>;
-  using import_lids_type = Kokkos::View<const LO*, device_type>;
+  using import_lids_type = Kokkos::View<const LO*, buffer_device_type>;
 
   using gids_scratch_type = Kokkos::View<GO*, device_type>;
   using pids_scratch_type = Kokkos::View<int*,device_type>;
@@ -178,8 +182,8 @@ class UnpackAndCombineFunctor {
 
   UnpackAndCombineFunctor(
       const row_ptrs_type& row_ptrs_beg_in,
-      row_ptrs_type& row_ptrs_end_in,
-      indices_type& indices_in,
+      const row_ptrs_type& row_ptrs_end_in,
+      const indices_type& indices_in,
       const input_buffer_type& imports_in,
       const num_packets_per_lid_type& num_packets_per_lid_in,
       const import_lids_type& import_lids_in,
@@ -271,9 +275,7 @@ class UnpackAndCombineFunctor {
     gids_out_type gids_out = subview(gids_scratch, slice(a, b));
     pids_out_type pids_out = subview(pids_scratch, slice(a, (unpack_pids ? b : a)));
 
-    // Unpack this row!
-    int err = unpackRow<packet_type,GO,device_type,buffer_device_type>(
-        gids_out, pids_out, imports, offset, num_ent);
+    const int err = unpackRow (gids_out, pids_out, imports, offset, num_ent);
 
     if (err != 0) {
       dst = Kokkos::make_pair(3, i);
@@ -326,25 +328,28 @@ computeCrsPadding(const NumPackets& num_packets_per_lid,
 ///
 /// This is a higher level interface to the UnpackAndCombineFunctor
 template<class LocalOrdinal, class Packet, class RowView,
-         class IndicesView, class Device, class BufferDevice>
+         class IndicesView, class BufferDevice>
 void
-unpackAndCombine(
-    RowView& row_ptrs_beg,
-    RowView& row_ptrs_end,
-    IndicesView& indices,
-    const Kokkos::View<const Packet*, BufferDevice, Kokkos::MemoryUnmanaged>& imports,
-    const Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>& num_packets_per_lid,
-    const Kokkos::View<const LocalOrdinal*, Device, Kokkos::MemoryUnmanaged>& import_lids,
-    const bool unpack_pids)
+unpackAndCombine
+(const RowView& row_ptrs_beg,
+ const RowView& row_ptrs_end,
+ IndicesView& indices,
+ const Kokkos::View<const Packet*, BufferDevice, Kokkos::MemoryUnmanaged>& imports,
+ const Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>& num_packets_per_lid,
+ const Kokkos::View<const LocalOrdinal*, BufferDevice, Kokkos::MemoryUnmanaged>& import_lids,
+ const bool unpack_pids)
 {
 
-  using ImportLidsView = Kokkos::View<const LocalOrdinal*, Device, Kokkos::MemoryUnmanaged>;
-  using NumPacketsView = Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>;
+  using ImportLidsView =
+    Kokkos::View<const LocalOrdinal*, BufferDevice, Kokkos::MemoryUnmanaged>;
+  using NumPacketsView =
+    Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>;
   using LO = LocalOrdinal;
-  using device_type = Device;
-  using execution_space = typename device_type::execution_space;
-  using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
-  using unpack_functor_type = UnpackAndCombineFunctor<LO,Packet,RowView,IndicesView,Device,BufferDevice>;
+  using execution_space = typename BufferDevice::execution_space;
+  using range_policy =
+    Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
+  using unpack_functor_type =
+    UnpackAndCombineFunctor<LO, Packet, RowView, IndicesView, BufferDevice>;
 
   const char prefix[] =
     "Tpetra::Details::UnpackAndCombineCrsGraphImpl::unpackAndCombine: ";
@@ -355,10 +360,13 @@ unpackAndCombine(
     return;
   }
 
+  using device_type = typename IndicesView::device_type;
+
   // Resize row pointers and indices to accommodate incoming data
-  auto padding = computeCrsPadding<NumPacketsView,ImportLidsView,Device>(
-    num_packets_per_lid, import_lids, unpack_pids);
-  padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
+  auto padding =
+    computeCrsPadding<NumPacketsView, ImportLidsView, device_type>
+      (num_packets_per_lid, import_lids, unpack_pids);
+  padCrsArrays<RowView, IndicesView, decltype (padding) > (row_ptrs_beg, row_ptrs_end, indices, padding);
 
   // Get the offsets
   Kokkos::View<size_t*, device_type> offsets("offsets", num_import_lids+1);
@@ -368,19 +376,22 @@ unpackAndCombine(
   // maximum number of entries is needed to allocate unpack buffers on the
   // device.
   size_t max_num_ent;
-  Kokkos::parallel_reduce("MaxReduce",
-    range_policy(0, static_cast<LO>(num_packets_per_lid.size())),
-    KOKKOS_LAMBDA(const LO& i, size_t& running_max_num_ent) {
-      size_t num_packets_this_lid = num_packets_per_lid(i);
-      size_t num_ent = (unpack_pids) ? num_packets_this_lid/2
-                                     : num_packets_this_lid;
-      if (num_ent > running_max_num_ent) running_max_num_ent = num_ent;
-    }, Kokkos::Max<size_t>(max_num_ent));
+  Kokkos::parallel_reduce
+    ("MaxReduce",
+     range_policy (0, LO (num_packets_per_lid.size ())),
+     KOKKOS_LAMBDA (const LO i, size_t& running_max_num_ent) {
+       const size_t num_packets_this_lid = num_packets_per_lid(i);
+       const size_t num_ent = (unpack_pids) ? num_packets_this_lid/2 :
+         num_packets_this_lid;
+       if (num_ent > running_max_num_ent) {
+         running_max_num_ent = num_ent;
+       }
+     }, Kokkos::Max<size_t> (max_num_ent));
 
   // Now do the actual unpack!
-  unpack_functor_type f(row_ptrs_beg, row_ptrs_end, indices,
-      imports, num_packets_per_lid, import_lids, offsets,
-      max_num_ent, unpack_pids);
+  unpack_functor_type f (row_ptrs_beg, row_ptrs_end, indices, imports,
+                         num_packets_per_lid, import_lids, offsets,
+                         max_num_ent, unpack_pids);
 
   typename unpack_functor_type::value_type x;
   Kokkos::parallel_reduce(range_policy(0, static_cast<LO>(num_import_lids)), f, x);
@@ -388,8 +399,6 @@ unpackAndCombine(
   TEUCHOS_TEST_FOR_EXCEPTION(x_h.first != 0, std::runtime_error,
       prefix << "UnpackAndCombineFunctor reported error code "
              << x_h.first << " for the first bad row " << x_h.second);
-
-  return;
 }
 
 template<class Packet, class LocalGraph, class BufferDevice>
@@ -459,7 +468,7 @@ template<class Packet, class LO, class Device, class BufferDevice>
 void
 setupRowPointersForRemotes(
   const Kokkos::View<size_t*, Device>& tgt_rowptr,
-  const Kokkos::View<const LO*, Device>& import_lids,
+  const Kokkos::View<const LO*, BufferDevice>& import_lids,
   const Kokkos::View<const Packet*, BufferDevice>& /* imports */,
   const Kokkos::View<const size_t*, BufferDevice>& num_packets_per_lid)
 {
@@ -551,7 +560,7 @@ copyDataFromSameIDs(
   );
 }
 
-template<class LocalGraph, class LocalMap>
+template<class LocalGraph, class LocalMap, class BufferDevice>
 void
 copyDataFromPermuteIDs(
     const Kokkos::View<typename LocalMap::global_ordinal_type*,
@@ -565,9 +574,9 @@ copyDataFromPermuteIDs(
     const Kokkos::View<const int*,
                        typename LocalMap::device_type>& src_pids,
     const Kokkos::View<const typename LocalMap::local_ordinal_type*,
-                       typename LocalMap::device_type>& permute_to_lids,
+      BufferDevice, Kokkos::MemoryUnmanaged>& permute_to_lids,
     const Kokkos::View<const typename LocalMap::local_ordinal_type*,
-                       typename LocalMap::device_type>& permute_from_lids,
+      BufferDevice, Kokkos::MemoryUnmanaged>& permute_from_lids,
     const LocalGraph& local_graph,
     const LocalMap& local_col_map,
     const int my_pid)
@@ -613,7 +622,10 @@ unpackAndCombineIntoCrsArrays2(
     const Kokkos::View<int*, typename LocalMap::device_type>& tgt_pids,
     const Kokkos::View<size_t*,typename LocalMap::device_type>& new_start_row,
     const Kokkos::View<const size_t*, typename LocalMap::device_type>& offsets,
-    const Kokkos::View<const typename LocalMap::local_ordinal_type*, typename LocalMap::device_type>& import_lids,
+    const Kokkos::View<
+      const typename LocalMap::local_ordinal_type*,
+      BufferDevice,
+      Kokkos::MemoryUnmanaged>& import_lids,
     const Kokkos::View<const Packet*, BufferDevice>& imports,
     const Kokkos::View<const size_t*, BufferDevice>& num_packets_per_lid,
     const LocalGraph& /* local_graph */,
@@ -626,8 +638,6 @@ unpackAndCombineIntoCrsArrays2(
   using Kokkos::parallel_reduce;
   using Kokkos::atomic_fetch_add;
 
-  using packet_type = Packet;
-  using buffer_device_type = BufferDevice;
   using device_type = typename LocalMap::device_type;
   using LO = typename LocalMap::local_ordinal_type;
   using GO = typename LocalMap::global_ordinal_type;
@@ -658,8 +668,7 @@ unpackAndCombineIntoCrsArrays2(
       gids_out_type gids_out = subview(tgt_colind, slice(start_row, end_row));
       pids_out_type pids_out = subview(tgt_pids, slice(start_row, end_row));
 
-      err += unpackRow<packet_type,GO,device_type,buffer_device_type>(
-          gids_out, pids_out, imports, offset, num_ent);
+      err += unpackRow (gids_out, pids_out, imports, offset, num_ent);
 
       // Correct target PIDs.
       for (size_t j = 0; j < static_cast<size_t>(num_ent); ++j) {
@@ -682,15 +691,15 @@ unpackAndCombineIntoCrsArrays(
     const LocalGraph & local_graph,
     const LocalMap & local_col_map,
     const Kokkos::View<const typename LocalMap::local_ordinal_type*,
-                       typename LocalMap::device_type,
+                       BufferDevice,
                        Kokkos::MemoryUnmanaged>& import_lids,
     const Kokkos::View<const Packet*, BufferDevice>& imports,
     const Kokkos::View<const size_t*, BufferDevice>& num_packets_per_lid,
     const Kokkos::View<const typename LocalMap::local_ordinal_type*,
-                       typename LocalMap::device_type,
+                       BufferDevice,
                        Kokkos::MemoryUnmanaged>& permute_to_lids,
     const Kokkos::View<const typename LocalMap::local_ordinal_type*,
-                       typename LocalMap::device_type,
+                       BufferDevice,
                        Kokkos::MemoryUnmanaged>& permute_from_lids,
     const Kokkos::View<size_t*,
                        typename LocalMap::device_type,
@@ -731,6 +740,11 @@ unpackAndCombineIntoCrsArrays(
   // In the case of reduced communicators, the sourceGraph won't have
   // the right "my_pid", so thus we have to supply it.
   const int my_pid = my_tgt_pid;
+
+  // FIXME (mfh 24 Jun 2019)
+  //
+  // 1. Only zero the entries of tgt_rowptr that actually need it.
+  // 2. Consider merging these three kernels into one.
 
   // Zero the rowptr
   parallel_for(
@@ -874,18 +888,15 @@ unpackCrsGraphAndCombine(
   using UnpackAndCombineCrsGraphImpl::unpackAndCombine;
   using graph_type = CrsGraph<LO,GO,Node>;
   using device_type = typename Node::device_type;
-  using packet_type = typename graph_type::packet_type;
   using buffer_device_type = typename graph_type::buffer_device_type;
   using execution_space = typename device_type::execution_space;
-  typename execution_space::device_type outputDevice;
-  using buffer_execution_space = typename buffer_device_type::execution_space;
-  typename buffer_execution_space::device_type bufferOutputDevice;
   using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
-
   using row_ptrs_type = typename graph_type::local_graph_type::row_map_type::non_const_type;
   using indices_type = typename graph_type::t_GlobalOrdinal_1D;
 
   // Convert all Teuchos::Array to Kokkos::View.
+
+  buffer_device_type bufferOutputDevice;
 
   // numPacketsPerLID, importLIDs, and imports are input, so we have to copy
   // them to device.  Since unpacking is done directly in to the local graph
@@ -901,7 +912,7 @@ unpackCrsGraphAndCombine(
         true, "num_packets_per_lid");
 
   auto import_lids_d =
-    create_mirror_view_from_raw_host_array(outputDevice,
+    create_mirror_view_from_raw_host_array(bufferOutputDevice,
         importLIDs.getRawPtr(), importLIDs.size(),
         true, "import_lids");
 
@@ -938,9 +949,9 @@ unpackCrsGraphAndCombine(
   }
 
   // Now do the actual unpack!
-  unpackAndCombine<LO,packet_type,row_ptrs_type,indices_type,device_type,buffer_device_type>(
-        row_ptrs_beg, row_ptrs_end, indices, imports_d,
-        num_packets_per_lid_d, import_lids_d, false);
+  unpackAndCombine<LO, GO, row_ptrs_type, indices_type, buffer_device_type>
+    (row_ptrs_beg, row_ptrs_end, indices, imports_d,
+     num_packets_per_lid_d, import_lids_d, false);
 
   // mfh Later, permit graph to be locally indexed, and check whether
   // incoming column indices are in the column Map.  If not, error.
@@ -1161,18 +1172,17 @@ unpackAndCombineIntoCrsArrays(
 {
   using Kokkos::View;
   using Kokkos::deep_copy;
-  using Teuchos::ArrayView;
   using Teuchos::outArg;
   using Teuchos::REDUCE_MAX;
   using Teuchos::reduceAll;
   using LO = LocalOrdinal;
-  using packet_type = typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::packet_type;
-  using local_graph_type = typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::local_graph_type;
-  using buffer_device_type = typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::buffer_device_type;
+  using GO = GlobalOrdinal;
+  using crs_graph_type = CrsGraph<LO, GO, Node>;
+  using packet_type = typename crs_graph_type::packet_type;
+  using local_graph_type = typename crs_graph_type::local_graph_type;
+  using buffer_device_type = typename crs_graph_type::buffer_device_type;
   using device_type = typename Node::device_type;
-  using execution_space = typename device_type::execution_space;
-  using buffer_execution_space = typename buffer_device_type::execution_space;
-  using size_type = typename ArrayView<const LO>::size_type;
+  using size_type = typename Teuchos::ArrayView<const LO>::size_type;
 
   const char prefix[] = "Tpetra::Details::unpackAndCombineIntoCrsArrays: ";
 
@@ -1203,42 +1213,51 @@ unpackAndCombineIntoCrsArrays(
   auto local_col_map = sourceGraph.getColMap()->getLocalMap();
 
   // Convert input arrays to Kokkos::View
-  typename execution_space::device_type outputDevice;
-  typename buffer_execution_space::device_type bufferOutputDevice;
+  device_type outputDevice;
+  buffer_device_type bufferOutputDevice;
 
-  auto import_lids_d = create_mirror_view_from_raw_host_array(outputDevice,
-        importLIDs.getRawPtr(), importLIDs.size(),
-        true, "import_lids");
+  Kokkos::View<const LO*, buffer_device_type> import_lids_d =
+    create_mirror_view_from_raw_host_array
+      (bufferOutputDevice, importLIDs.getRawPtr(),
+       importLIDs.size(), true, "import_lids");
 
-  auto imports_d = create_mirror_view_from_raw_host_array(bufferOutputDevice,
-        imports.getRawPtr(), imports.size(),
-        true, "imports");
+  Kokkos::View<const packet_type*, buffer_device_type> imports_d =
+    create_mirror_view_from_raw_host_array
+      (bufferOutputDevice, imports.getRawPtr(),
+       imports.size(), true, "imports");
 
-  auto num_packets_per_lid_d = create_mirror_view_from_raw_host_array(bufferOutputDevice,
+  Kokkos::View<const size_t*, buffer_device_type> num_packets_per_lid_d =
+    create_mirror_view_from_raw_host_array(bufferOutputDevice,
       numPacketsPerLID.getRawPtr(), numPacketsPerLID.size(),
       true, "num_packets_per_lid");
 
-  auto permute_from_lids_d = create_mirror_view_from_raw_host_array(outputDevice,
-      permuteFromLIDs.getRawPtr(), permuteFromLIDs.size(),
-      true, "permute_from_lids");
-
-  auto permute_to_lids_d = create_mirror_view_from_raw_host_array(outputDevice,
+  Kokkos::View<const LO*, buffer_device_type> permute_to_lids_d =
+    create_mirror_view_from_raw_host_array(bufferOutputDevice,
       permuteToLIDs.getRawPtr(), permuteToLIDs.size(),
       true, "permute_to_lids");
 
-  auto crs_rowptr_d = create_mirror_view_from_raw_host_array(outputDevice,
+  Kokkos::View<const LO*, buffer_device_type> permute_from_lids_d =
+    create_mirror_view_from_raw_host_array(bufferOutputDevice,
+      permuteFromLIDs.getRawPtr(), permuteFromLIDs.size(),
+      true, "permute_from_lids");
+
+  Kokkos::View<size_t*, device_type> crs_rowptr_d =
+    create_mirror_view_from_raw_host_array(outputDevice,
       CRS_rowptr.getRawPtr(), CRS_rowptr.size(),
       true, "crs_rowptr");
 
-  auto crs_colind_d = create_mirror_view_from_raw_host_array(outputDevice,
+  Kokkos::View<GO*, device_type> crs_colind_d =
+    create_mirror_view_from_raw_host_array(outputDevice,
       CRS_colind.getRawPtr(), CRS_colind.size(),
       true, "crs_colidx");
 
-  auto src_pids_d = create_mirror_view_from_raw_host_array(outputDevice,
+  Kokkos::View<const int*, device_type> src_pids_d =
+    create_mirror_view_from_raw_host_array(outputDevice,
       SourcePids.getRawPtr(), SourcePids.size(),
       true, "src_pids");
 
-  auto tgt_pids_d = create_mirror_view_from_raw_host_array(outputDevice,
+  Kokkos::View<int*, device_type> tgt_pids_d =
+    create_mirror_view_from_raw_host_array(outputDevice,
       TargetPids.getRawPtr(), TargetPids.size(),
       true, "tgt_pids");
 
@@ -1248,6 +1267,8 @@ unpackAndCombineIntoCrsArrays(
       local_graph, local_col_map, import_lids_d, imports_d, num_packets_per_lid_d,
       permute_to_lids_d, permute_from_lids_d, crs_rowptr_d, crs_colind_d, src_pids_d,
       tgt_pids_d, numSameIDs, TargetNumRows, TargetNumNonzeros, MyTargetPID);
+
+  // FIXME (mfh 25 Jun 2019) HostMirror of CudaUVMSpace is CudaUVMSpace!!!
 
   // Copy outputs back to host
   typename decltype(crs_rowptr_d)::HostMirror crs_rowptr_h(

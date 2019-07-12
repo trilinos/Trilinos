@@ -46,7 +46,6 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -56,12 +55,12 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_Algorithm.hpp"
+#include "ROL_Stream.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_UnaryFunctions.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_OptimizationProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 #include "ROL_CompositeConstraint_SimOpt.hpp"
 
@@ -333,10 +332,11 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+    parlist->sublist("Step").set("Type","Trust Region");
+    ROL::OptimizationSolver<RealT> solver(opt,*parlist);
     zp->set(*rzp);
     std::clock_t timer = std::clock();
-    algo.run(opt,true,*outStream);
+    solver.solve(*outStream);
     *outStream << "Optimization time: "
                << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
@@ -402,7 +402,7 @@ int main(int argc, char *argv[]) {
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

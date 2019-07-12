@@ -86,6 +86,16 @@
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="myJacobi">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"  type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                 type="string"    value="Jacobi"/>
+        <Parameter name="relaxation: sweeps"               type="int"       value="1"/>
+        <Parameter name="relaxation: damping"              type="double"    value="0.666"/>
+      </ParameterList>
+    </ParameterList>
+
   </ParameterList>
 
 
@@ -98,7 +108,7 @@
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
     <ParameterList name="All">
-      <Parameter name="PreSmoother"                         type="string"   value="myILU"/>
+      <Parameter name="PreSmoother"                         type="string"   value="NoSmoother"/>
       <Parameter name="PostSmoother"                        type="string"   value="NoSmoother"/>
       <Parameter name="Nullspace"                           type="string"   value="myNullspaceFact"/>
       <Parameter name="Aggregates"                          type="string"   value="myAggregationFact"/>

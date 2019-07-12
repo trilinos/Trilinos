@@ -56,6 +56,7 @@
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_CompositeStep.hpp"
@@ -233,7 +234,9 @@ int main(int argc, char *argv[]) {
     /***
          Solve source inversion optimization problem with prescribed sensor locations.
     ***/
-    ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>> step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>> status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo_tr(step,status,false);
     zp->zero(); // set zero initial guess
     algo_tr.run(*zp, *objReduced, true, *outStream);
     con->solve(*cp, *up, *zp, tol);
@@ -275,7 +278,9 @@ int main(int argc, char *argv[]) {
     *outStream << std::endl << "Checking OED objective gradient:" << std::endl;
     dwp->scale(1e-2);
     objOED.checkGradient(*wp,*dwp,true,*outStream);
-    ROL::Algorithm<RealT> algo_tr_oed("Trust Region",*parlistOED,false);
+    ROL::Ptr<ROL::Step<RealT>> step_oed = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlistOED);
+    ROL::Ptr<ROL::StatusTest<RealT>> status_oed = ROL::makePtr<ROL::StatusTest<RealT>>(*parlistOED);
+    ROL::Algorithm<RealT> algo_tr_oed(step_oed,status_oed,false);
     wp->zero(); // set zero initial guess
     algo_tr_oed.run(*wp, objOED, bconOED, true, *outStream);
     data->outputTpetraVector(w_ptr, "weightsOED.txt");
@@ -287,7 +292,9 @@ int main(int argc, char *argv[]) {
     RealT numLocOED = wp->reduce(ROL::Elementwise::ReductionSum<RealT>());
     *outStream << std::endl << "Number of nonzero OED locations: " << numLocOED << std::endl;
     zp->zero(); // set zero initial guess
-    ROL::Algorithm<RealT> algo_tr_optimal("Trust Region",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>> step_optimal = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>> status_optimal = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo_tr_optimal(step_optimal,status_optimal,false);
     algo_tr_optimal.run(*zp, *objReduced, true, *outStream);
     con->solve(*cp, *up, *zp, tol);
     data->outputTpetraVector(u_ptr, "stateOED.txt");
@@ -302,7 +309,9 @@ int main(int argc, char *argv[]) {
     wp->applyUnary(IsGreaterThan<RealT>((1-2*numLocOED/numLocTotal), 1.0, 0.0));
     *outStream << std::endl << "Number of nonzero random locations: " << wp->reduce(ROL::Elementwise::ReductionSum<RealT>()) << std::endl;
     zp->zero(); // set zero initial guess
-    ROL::Algorithm<RealT> algo_tr_random("Trust Region",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>> step_random = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlistOED);
+    ROL::Ptr<ROL::StatusTest<RealT>> status_random = ROL::makePtr<ROL::StatusTest<RealT>>(*parlistOED);
+    ROL::Algorithm<RealT> algo_tr_random(step_random,status_random,false);
     algo_tr_random.run(*zp, *objReduced, true, *outStream);
     con->solve(*cp, *up, *zp, tol);
     data->outputTpetraVector(u_ptr, "stateRandom.txt");
@@ -310,7 +319,7 @@ int main(int argc, char *argv[]) {
     data->outputTpetraVector(w_ptr, "weightsRandom.txt");
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

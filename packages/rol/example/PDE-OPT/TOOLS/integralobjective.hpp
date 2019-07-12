@@ -375,13 +375,18 @@ private: // Vector accessor functions
       xp = dynamic_cast<const ROL::TpetraMultiVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      ROL::Ptr<const ROL::TpetraMultiVector<Real> > xvec
-        = dynamic_cast<const PDE_OptVector<Real>&>(x).getField();
-      if (xvec == ROL::nullPtr) {
-        xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<const ROL::TpetraMultiVector<Real> > xvec
+          = dynamic_cast<const PDE_OptVector<Real>&>(x).getField();
+        if (xvec == ROL::nullPtr) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
       }
-      else {
-        xp = xvec->getVector();
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
       }
     }
     return xp;
@@ -393,13 +398,18 @@ private: // Vector accessor functions
       xp = dynamic_cast<ROL::TpetraMultiVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      ROL::Ptr<ROL::TpetraMultiVector<Real> > xvec
-        = dynamic_cast<PDE_OptVector<Real>&>(x).getField();
-      if ( xvec == ROL::nullPtr ) {
-        xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<ROL::TpetraMultiVector<Real> > xvec
+          = dynamic_cast<PDE_OptVector<Real>&>(x).getField();
+        if ( xvec == ROL::nullPtr ) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
       }
-      else {
-        xp = xvec->getVector();
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
       }
     }
     return xp;
@@ -408,17 +418,22 @@ private: // Vector accessor functions
   ROL::Ptr<const std::vector<Real> > getConstParameter(const ROL::Vector<Real> &x) const {
     ROL::Ptr<const std::vector<Real> > xp;
     try {
-      ROL::Ptr<const ROL::StdVector<Real> > xvec
-        = dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
-      if ( xvec == ROL::nullPtr ) {
-        xp = ROL::nullPtr;
-      }
-      else {
-        xp = xvec->getVector();
-      }
+      xp = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<const ROL::StdVector<Real> > xvec
+          = dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
+        if ( xvec == ROL::nullPtr ) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
+      }
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
+      }
     }
     return xp;
   }
@@ -426,22 +441,158 @@ private: // Vector accessor functions
   ROL::Ptr<std::vector<Real> > getParameter(ROL::Vector<Real> &x) const {
     ROL::Ptr<std::vector<Real> > xp;
     try {
-      ROL::Ptr<ROL::StdVector<Real> > xvec
-        = dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
-      if ( xvec == ROL::nullPtr ) {
-        xp = ROL::nullPtr;
-      }
-      else {
-        xp = xvec->getVector();
-      }
+      xp = dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<ROL::StdVector<Real> > xvec
+          = dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
+        if ( xvec == ROL::nullPtr ) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
+      }
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
+      }
     }
     return xp;
   }
 };
 
+
+template<class Real>
+class IntegralSimObjective : public ROL::Objective<Real> {
+private:
+  const ROL::Ptr<QoI<Real>> qoi_;
+  const ROL::Ptr<Assembler<Real>> assembler_;
+
+  ROL::Ptr<Tpetra::MultiVector<>> vecG1_;
+  ROL::Ptr<Tpetra::MultiVector<>> vecH11_;
+
+public:
+  IntegralSimObjective(const ROL::Ptr<QoI<Real>> &qoi,
+                       const ROL::Ptr<Assembler<Real>> &assembler)
+    : qoi_(qoi), assembler_(assembler) {}
+
+  void setParameter(const std::vector<Real> &param) {
+    ROL::Objective<Real>::setParameter(param);
+    qoi_->setParameter(param);
+  }
+
+  Real value(const ROL::Vector<Real> &u, Real &tol) {
+    ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
+    return assembler_->assembleQoIValue(qoi_,uf,ROL::nullPtr,ROL::nullPtr);
+  }
+
+  void gradient(ROL::Vector<Real> &g,
+                const ROL::Vector<Real> &u, Real &tol ) {
+    int NotImplemented(0), IsZero(0);
+    g.zero();
+    // Compute control field gradient
+    try {
+      // Get state and control vectors
+      ROL::Ptr<const Tpetra::MultiVector<>> uf = getConstField(u);
+      ROL::Ptr<Tpetra::MultiVector<>>       gf = getField(g);
+      assembler_->assembleQoIGradient1(vecG1_,qoi_,uf,ROL::nullPtr,ROL::nullPtr);
+      gf->scale(static_cast<Real>(1),*vecG1_);
+    }
+    catch ( Exception::Zero & ez ) {
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      NotImplemented++;
+    }
+    // Zero gradient
+    if ( IsZero == 1 ) {
+      g.zero();
+    }
+    // Not Implemented
+    if ( NotImplemented == 1 ) {
+      ROL::Objective<Real>::gradient(g,u,tol);
+    }
+  }
+
+  void hessVec(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+               const ROL::Vector<Real> &u, Real &tol ) {
+    int NotImplemented(0), IsZero(0);
+    hv.zero();
+    // Compute control field/field hessvec
+    try {
+      ROL::Ptr<Tpetra::MultiVector<> >      hvf = getField(hv);
+      ROL::Ptr<const Tpetra::MultiVector<> > vf = getConstField(v);
+      ROL::Ptr<const Tpetra::MultiVector<> > uf = getConstField(u);
+      assembler_->assembleQoIHessVec11(vecH11_,qoi_,vf,uf,ROL::nullPtr,ROL::nullPtr);
+      hvf->scale(static_cast<Real>(1),*vecH11_);
+    }
+    catch (Exception::Zero &ez) {
+      hv.zero();
+      IsZero++;
+    }
+    catch (Exception::NotImplemented &eni) {
+      hv.zero();
+      NotImplemented++;
+    }
+    // Zero hessvec
+    if ( IsZero == 1 ) {
+      hv.zero();
+    }
+    // Not Implemented
+    if ( NotImplemented == 1 ) {
+      ROL::Objective<Real>::hessVec(hv,v,u,tol);
+    }
+  }
+
+private: // Vector accessor functions
+
+  ROL::Ptr<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
+    ROL::Ptr<const Tpetra::MultiVector<> > xp;
+    try {
+      xp = dynamic_cast<const ROL::TpetraMultiVector<Real>&>(x).getVector();
+    }
+    catch (std::exception &e) {
+      try {
+        ROL::Ptr<const ROL::TpetraMultiVector<Real> > xvec
+          = dynamic_cast<const PDE_OptVector<Real>&>(x).getField();
+        if (xvec == ROL::nullPtr) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
+      }
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
+      }
+    }
+    return xp;
+  }
+
+  ROL::Ptr<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
+    ROL::Ptr<Tpetra::MultiVector<> > xp;
+    try {
+      xp = dynamic_cast<ROL::TpetraMultiVector<Real>&>(x).getVector();
+    }
+    catch (std::exception &e) {
+      try {
+        ROL::Ptr<ROL::TpetraMultiVector<Real> > xvec
+          = dynamic_cast<PDE_OptVector<Real>&>(x).getField();
+        if ( xvec == ROL::nullPtr ) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
+      }
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
+      }
+    }
+    return xp;
+  }
+};
 
 template<class Real>
 class IntegralOptObjective : public ROL::Objective<Real> {
@@ -615,13 +766,18 @@ private: // Vector accessor functions
       xp = dynamic_cast<const ROL::TpetraMultiVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      ROL::Ptr<const ROL::TpetraMultiVector<Real> > xvec
-        = dynamic_cast<const PDE_OptVector<Real>&>(x).getField();
-      if (xvec == ROL::nullPtr) {
-        xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<const ROL::TpetraMultiVector<Real> > xvec
+          = dynamic_cast<const PDE_OptVector<Real>&>(x).getField();
+        if (xvec == ROL::nullPtr) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
       }
-      else {
-        xp = xvec->getVector();
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
       }
     }
     return xp;
@@ -633,13 +789,18 @@ private: // Vector accessor functions
       xp = dynamic_cast<ROL::TpetraMultiVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      ROL::Ptr<ROL::TpetraMultiVector<Real> > xvec
-        = dynamic_cast<PDE_OptVector<Real>&>(x).getField();
-      if ( xvec == ROL::nullPtr ) {
-        xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<ROL::TpetraMultiVector<Real> > xvec
+          = dynamic_cast<PDE_OptVector<Real>&>(x).getField();
+        if ( xvec == ROL::nullPtr ) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
       }
-      else {
-        xp = xvec->getVector();
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
       }
     }
     return xp;
@@ -648,17 +809,22 @@ private: // Vector accessor functions
   ROL::Ptr<const std::vector<Real> > getConstParameter(const ROL::Vector<Real> &x) const {
     ROL::Ptr<const std::vector<Real> > xp;
     try {
-      ROL::Ptr<const ROL::StdVector<Real> > xvec
-        = dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
-      if ( xvec == ROL::nullPtr ) {
-        xp = ROL::nullPtr;
-      }
-      else {
-        xp = xvec->getVector();
-      }
+      xp = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<const ROL::StdVector<Real> > xvec
+          = dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
+        if ( xvec == ROL::nullPtr ) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
+      }
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
+      }
     }
     return xp;
   }
@@ -666,17 +832,22 @@ private: // Vector accessor functions
   ROL::Ptr<std::vector<Real> > getParameter(ROL::Vector<Real> &x) const {
     ROL::Ptr<std::vector<Real> > xp;
     try {
-      ROL::Ptr<ROL::StdVector<Real> > xvec
-        = dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
-      if ( xvec == ROL::nullPtr ) {
-        xp = ROL::nullPtr;
-      }
-      else {
-        xp = xvec->getVector();
-      }
+      xp = dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<ROL::StdVector<Real> > xvec
+          = dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
+        if ( xvec == ROL::nullPtr ) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
+      }
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
+      }
     }
     return xp;
   }
@@ -783,13 +954,18 @@ private: // Vector accessor functions
       xp = dynamic_cast<const ROL::TpetraMultiVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      ROL::Ptr<const ROL::TpetraMultiVector<Real> > xvec
-        = dynamic_cast<const PDE_OptVector<Real>&>(x).getField();
-      if (xvec == ROL::nullPtr) {
-        xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<const ROL::TpetraMultiVector<Real> > xvec
+          = dynamic_cast<const PDE_OptVector<Real>&>(x).getField();
+        if (xvec == ROL::nullPtr) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
       }
-      else {
-        xp = xvec->getVector();
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
       }
     }
     return xp;
@@ -801,13 +977,18 @@ private: // Vector accessor functions
       xp = dynamic_cast<ROL::TpetraMultiVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      ROL::Ptr<ROL::TpetraMultiVector<Real> > xvec
-        = dynamic_cast<PDE_OptVector<Real>&>(x).getField();
-      if ( xvec == ROL::nullPtr ) {
-        xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<ROL::TpetraMultiVector<Real> > xvec
+          = dynamic_cast<PDE_OptVector<Real>&>(x).getField();
+        if ( xvec == ROL::nullPtr ) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
       }
-      else {
-        xp = xvec->getVector();
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
       }
     }
     return xp;
@@ -816,17 +997,22 @@ private: // Vector accessor functions
   ROL::Ptr<const std::vector<Real> > getConstParameter(const ROL::Vector<Real> &x) const {
     ROL::Ptr<const std::vector<Real> > xp;
     try {
-      ROL::Ptr<const ROL::StdVector<Real> > xvec
-        = dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
-      if ( xvec == ROL::nullPtr ) {
-        xp = ROL::nullPtr;
-      }
-      else {
-        xp = xvec->getVector();
-      }
+      xp = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<const ROL::StdVector<Real> > xvec
+          = dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
+        if ( xvec == ROL::nullPtr ) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
+      }
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
+      }
     }
     return xp;
   }
@@ -834,17 +1020,22 @@ private: // Vector accessor functions
   ROL::Ptr<std::vector<Real> > getParameter(ROL::Vector<Real> &x) const {
     ROL::Ptr<std::vector<Real> > xp;
     try {
-      ROL::Ptr<ROL::StdVector<Real> > xvec
-        = dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
-      if ( xvec == ROL::nullPtr ) {
-        xp = ROL::nullPtr;
-      }
-      else {
-        xp = xvec->getVector();
-      }
+      xp = dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      xp = ROL::nullPtr;
+      try {
+        ROL::Ptr<ROL::StdVector<Real> > xvec
+          = dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
+        if ( xvec == ROL::nullPtr ) {
+          xp = ROL::nullPtr;
+        }
+        else {
+          xp = xvec->getVector();
+        }
+      }
+      catch (std::exception &ee) {
+        xp = ROL::nullPtr;
+      }
     }
     return xp;
   }

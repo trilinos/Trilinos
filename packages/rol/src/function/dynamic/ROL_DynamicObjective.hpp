@@ -70,12 +70,16 @@
 namespace ROL {
 
 template<typename Real> 
-class DynamicObjective {
+class DynamicObjective : public DynamicFunction<Real> {
 public:
 
   using V  = Vector<Real>;
   using TS = TimeStamp<Real>;
 
+
+  DynamicObjective( std::initializer_list<std::string> zero_deriv_terms={} ) :
+    DynamicFunction<Real>( zero_deriv_terms ) {}
+  
   virtual ~DynamicObjective() {}
 
   virtual void update( const V& uo, const V& un, const V& z, const TS& timeStamp ) {

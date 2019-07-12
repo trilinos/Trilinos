@@ -53,117 +53,19 @@
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_StdVector.hpp"
 
+#include "ROL_PinTCommunicators.hpp"
+#include "ROL_PinTVectorCommunication.hpp"
+
+#include "Teuchos_Time.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
+
 /** @ingroup la_group
     \class ROL::PinTVector
     \brief Defines a parallel in time vector.
 */
 
 namespace ROL {
-
-/** 
- * This class handles PinT communication. Its
- * based on the approach taken in X-Braid.
- */
-class PinTCommunicators {
-public:
-  PinTCommunicators(MPI_Comm parent,int spatialProcs)
-  { 
-    parentComm_ = parent; 
-
-    int myGlobalRank = -1;
-    int globalProcs = -1;
-    MPI_Comm_size(parentComm_, &globalProcs);
-    MPI_Comm_rank(parentComm_, &myGlobalRank);
-
-    // make sure they divide evenly (for sanity!)
-    assert(globalProcs % spatialProcs == 0);
-
-    int space = myGlobalRank / spatialProcs;
-    int time  = myGlobalRank % spatialProcs;
-
-    // this decomposition comes from X-Braid 
-    MPI_Comm_split(parentComm_,space,myGlobalRank,&spaceComm_); 
-    MPI_Comm_split(parentComm_, time,myGlobalRank, &timeComm_); 
-
-    MPI_Comm_size(timeComm_, &timeSize_);
-    MPI_Comm_rank(timeComm_, &timeRank_);
-
-    MPI_Comm_size(spaceComm_, &spaceSize_);
-    MPI_Comm_rank(spaceComm_, &spaceRank_);
-  }
-
-  // cleanup
-  ~PinTCommunicators()
-  { MPI_Comm_free(&spaceComm_);  
-    MPI_Comm_free(&timeComm_); }
-
-   MPI_Comm getParentCommunicator() const { return parentComm_; }
-   MPI_Comm getSpaceCommunicator() const { return spaceComm_; }
-   MPI_Comm getTimeCommunicator() const { return timeComm_; }
-
-   int getTimeRank() const { return timeRank_; }
-   int getTimeSize() const { return timeSize_; }
-
-   int getSpaceRank() const { return spaceRank_; }
-   int getSpaceSize() const { return spaceSize_; }
-
-private:
-
-  MPI_Comm parentComm_;
-
-  MPI_Comm spaceComm_;
-  MPI_Comm timeComm_;
-  int timeSize_;
-  int timeRank_;
-  int spaceSize_;
-  int spaceRank_;
-};
-
-template <class Real> 
-class PinTVectorCommunication {
-public:
-  void send(MPI_Comm comm,int rank,Vector<Real> & source) const
-  {
-    const std::vector<Real> & std_source = *dynamic_cast<const StdVector<Real>&>(source).getVector();
-
-    // int myRank = -1;
-    // MPI_Comm_rank(comm, &myRank);
-
-    MPI_Send(const_cast<Real*>(&std_source[0]),int(std_source.size()),MPI_DOUBLE,rank,0,comm);
-  }
-
-  void recv(MPI_Comm comm,int rank,Vector<Real> & dest,bool sumInto) const
-  {
-    if(sumInto)
-      recvSumInto(comm,rank,dest);
-    else
-      recv(comm,rank,dest);
-  }
-
-  void recv(MPI_Comm comm,int rank,Vector<Real> & dest) const
-  {
-    std::vector<Real> & std_dest = *dynamic_cast<StdVector<Real>&>(dest).getVector();
-
-    // int myRank = -1;
-    // MPI_Comm_rank(comm, &myRank);
-
-    MPI_Recv(&std_dest[0],int(std_dest.size()),MPI_DOUBLE,rank,0,comm,MPI_STATUS_IGNORE);
-  }
-
-  void recvSumInto(MPI_Comm comm,int rank,Vector<Real> & dest) const
-  {
-    std::vector<Real> & std_dest = *dynamic_cast<StdVector<Real>&>(dest).getVector();
-    std::vector<Real> buffer(std_dest.size(),0.0);
-
-    int myRank = -1;
-    MPI_Comm_rank(comm, &myRank);
-
-    MPI_Recv(&buffer[0],int(buffer.size()),MPI_DOUBLE,rank,0,comm,MPI_STATUS_IGNORE);
-
-    for(size_t i=0;i<std_dest.size();i++)
-      std_dest[i] += buffer[i];
-  }
-};
 
 template <class Real>
 class PinTVector
@@ -178,33 +80,42 @@ protected:
   Ptr<const PinTCommunicators> communicators_;
 
   Ptr<Vector<Real>> localVector_;
-  int steps_;
+  int globalSteps_;
+  int localSteps_;
   std::vector<int> stencil_;
 
   // parallel distribution information
   int stepStart_;
   int stepEnd_;
+  int replicate_;
+  int bufferSize_; // boundary exchange buffer size
 
   mutable Ptr<PinTVector<Real>> dual_;
 
   Ptr<PartitionedVector<Real>> stepVectors_;
+  std::vector<Ptr<Vector<Real>>> bufferVectors_;
+
   std::vector<Ptr<Vector<Real>>> leftVectors_;
   std::vector<Ptr<Vector<Real>>> rightVectors_;
 
-  Ptr<PinTVectorCommunication<Real>> vectorComm_;
+  Ptr<const PinTVectorCommunication<Real>> vectorComm_;
+
 
   // Using parallel communication and a linear decomposition
   // determine where this processor lives in the global
   // scheme of things
-  void computeStepStartEnd(int steps)
+  void computeStepStartEnd()
   {
     int numRanks = communicators_->getTimeSize();
     int myRank   = communicators_->getTimeRank();
 
-    // determine which steps are owned by this processor
-    {
-      int stepsPerRank = steps / numRanks;
-      int remainder    = steps % numRanks; 
+    bool stepOff = false;
+
+    if(localSteps_<0 and globalSteps_>=0) {
+
+      // determine which steps are owned by this processor
+      int stepsPerRank = globalSteps_ / numRanks;
+      int remainder    = globalSteps_ % numRanks; 
 
       stepStart_ = 0;
 
@@ -220,36 +131,52 @@ protected:
         stepStart_ = myRank*stepsPerRank + remainder;
         stepEnd_   = (myRank+1)*stepsPerRank + remainder;
       }
+
+      localSteps_ = stepEnd_-stepStart_;
     }
 
-    assert(stepStart_>=0);
-    assert(stepEnd_>stepStart_);
+   //  else if(localSteps_>=0) 
+    {
+      stepOff = true;
+
+      int foundTotalSteps = 0;
+      MPI_Allreduce(&localSteps_,&foundTotalSteps,1,MPI_INT,MPI_SUM,communicators_->getTimeCommunicator());
+
+      if(globalSteps_>=0) 
+        assert(foundTotalSteps==globalSteps_);
+      else 
+        globalSteps_ = foundTotalSteps;
+
+      stepStart_ = 0;
+      MPI_Exscan(&localSteps_,&stepStart_,1,MPI_INT,MPI_SUM,communicators_->getTimeCommunicator());
+      if(myRank==0) stepStart_ = 0;
+
+      stepEnd_ = stepStart_+localSteps_;
+    }
+
+    // else {
+    //   std::stringstream ss;
+    //   ss << "ROL::PinTVector::must assign positive number to one of local or global steps: found local = " 
+    //      << localSteps_ << ", global = " << globalSteps_;
+    //   throw std::logic_error(ss.str());
+    // }
+ 
+    int input = stepEnd_>globalSteps_;
+    int test = 0;
+    MPI_Allreduce(&input,&test,1,MPI_INT,MPI_SUM,communicators_->getTimeCommunicator());
+
+    if(test) {
+      std::cout << "P" << myRank << ". step range = " << stepStart_ << " " << stepEnd_ << " of " << globalSteps_ << " " << stepOff << std::endl;
+    }
   }
 
-  void allocateBoundaryExchangeVectors()
+  void allocateBoundaryExchangeVectors(int sz)
   {
-    int numLeft = 0;
-    int numRight = 0;
- 
-    for(int i=0;i<(int)stencil_.size();i++) {
-      if(stencil_[i]<0) 
-        numLeft = std::max(numLeft,std::abs(stencil_[i]));
-      else if(stencil_[i]>0) 
-        numRight = std::max(numRight,stencil_[i]);
-    }
+    bufferVectors_.resize(sz);
 
-    // there is a slight over allocation here if the stencil is sparse
-    leftVectors_.resize(numLeft);
-    for(int i=0;i<numLeft;i++) {
-      leftVectors_[i]  = localVector_->clone();
-      leftVectors_[i]->set(*localVector_);      // make sure each subvector is initialized
-    }
-
-    // there is a slight over allocation here if the stencil is sparse
-    rightVectors_.resize(numRight);
-    for(int i=0;i<numRight;i++) {
-      rightVectors_[i]  = localVector_->clone();
-      rightVectors_[i]->set(*localVector_);      // make sure each subvector is initialized
+    for(int i=0;i<sz;i++) {
+      bufferVectors_[i]  = localVector_->clone();
+      bufferVectors_[i]->set(*localVector_);      // make sure each subvector is initialized
     }
   }
 
@@ -259,51 +186,100 @@ public:
 
   PinTVector()
     : isInitialized_(false)
+    , globalSteps_(-1)
+    , localSteps_(-1)
+    , stepStart_(-1)
+    , stepEnd_(-1)
+    , replicate_(-1)
+    , bufferSize_(-1)
   {}
 
   PinTVector(const PinTVector & v)
+    : isInitialized_(false)
+    , globalSteps_(-1)
+    , localSteps_(-1)
+    , stepStart_(-1)
+    , stepEnd_(-1)
+    , replicate_(-1)
+    , bufferSize_(-1)
   {
-    initialize(v.communicators_,v.localVector_,v.steps_,v.stencil_);
-
-    // make sure you copy boundary exchange "end points" - handles initial conditions
-    for(std::size_t i=0;i<leftVectors_.size();i++)
-      leftVectors_[i]->set(*v.leftVectors_[i]);     
-
-    // make sure you copy boundary exchange "end points" - handles initial conditions
-    for(std::size_t i=0;i<rightVectors_.size();i++)
-      rightVectors_[i]->set(*v.rightVectors_[i]);  
+    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.globalSteps_,v.localSteps_,v.bufferSize_/v.replicate_,v.replicate_,v.stepStart_,v.stepEnd_);
   }
 
   PinTVector(const Ptr<const PinTCommunicators> & comm,
+             const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
              const Ptr<Vector<Real>> & localVector,
              int steps,
-             const std::vector<int> & stencil)
+             const std::vector<int> & stencil,
+             int replicate=1)
     : isInitialized_(false)
+    , globalSteps_(-1)
+    , localSteps_(-1)
+    , stepStart_(-1)
+    , stepEnd_(-1)
+    , replicate_(-1)
+    , bufferSize_(-1)
   {
-    initialize(comm,localVector,steps,stencil);
+    initialize(comm,vectorComm,localVector,steps,-1,1,replicate,-1,-1);
+    TEUCHOS_ASSERT(false);
+  }
+
+  PinTVector(const Ptr<const PinTCommunicators> & comm,
+             const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
+             const Ptr<Vector<Real>> & localVector,
+             int globalSteps,
+             int localSteps,
+             int bufferSize,
+             int replicate=1)
+    : isInitialized_(false)
+    , globalSteps_(-1)
+    , localSteps_(-1)
+    , stepStart_(-1)
+    , stepEnd_(-1)
+    , replicate_(-1)
+    , bufferSize_(-1)
+  {
+    initialize(comm,vectorComm,localVector,globalSteps,localSteps,bufferSize,replicate,-1,-1);
   }
 
   virtual ~PinTVector() {}
 
   void initialize(const Ptr<const PinTCommunicators> & comm,
+                  const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
                   const Ptr<Vector<Real>> & localVector,
-                  int steps,
-                  const std::vector<int> & stencil)
+                  int globalSteps,
+                  int localSteps,
+                  int bufferSize,
+                  int replicate,
+                  int stepStart,
+                  int stepEnd)
   {
+    replicate_     = replicate;
+    bufferSize_    = bufferSize*replicate;
     communicators_ = comm;
     localVector_   = localVector;
-    steps_         = steps;
-    stencil_       = stencil;
-    vectorComm_    = makePtr<PinTVectorCommunication<Real>>();
+    globalSteps_   = globalSteps;
+    localSteps_    = localSteps;
+    vectorComm_    = vectorComm; // makePtr<PinTVectorCommunication_StdVector<Real>>();
 
-    computeStepStartEnd(steps_);
-    allocateBoundaryExchangeVectors();
+    if(stepStart<0)
+      computeStepStartEnd();
+    else {
+      stepStart_ = stepStart;
+      stepEnd_ = stepEnd;
+    }
+
+    assert(stepStart_>=0);
+    assert(stepEnd_>stepStart_);
+    assert(stepEnd_<=globalSteps_);
+
+    allocateBoundaryExchangeVectors(bufferSize_);
 
     std::vector<Ptr<Vector<Real>>> stepVectors;
-    stepVectors.resize(stepEnd_-stepStart_ + rightVectors_.size() + leftVectors_.size());
-    
+    stepVectors.resize(replicate*(stepEnd_ - stepStart_));
+
     // build up local vectors
-    for(int i=0;i<(int)stepVectors.size();i++) {
+    for(int i=0;i<(int) stepVectors.size();i++) {
       stepVectors[i]  = localVector_->clone();
       stepVectors[i]->set(*localVector_);      // make sure each subvector is initialized
     }
@@ -333,8 +309,11 @@ public:
     */
   int numOwnedSteps() const 
   { 
-    return stepVectors_->numVectors()-leftVectors_.size()-rightVectors_.size(); 
+    return numOwnedVectors()/replicate_;
   }
+
+  std::pair<int,int> ownedStepRange() const
+  { return std::make_pair(stepStart_,stepEnd_); }
 
   /** What is the stencil used to build this vector?
  
@@ -352,65 +331,166 @@ public:
     */
   Ptr<const PinTCommunicators> communicatorsPtr() const { return communicators_; }
 
-  /** \brief Determine if an index is valid including the stencil.
+  /** What is the communicators object used to build this vector?
+    */
+  Ptr<const PinTVectorCommunication<Real>> vectorCommunicationPtr() const { return vectorComm_; }
 
-      An index is valid if is in [min(stencil),max(stencil)+numOwnedSteps()-1]
-      Note that this treats owned vectors that live in the "shared" region as
-      negative numbers, or numbers greater than numOwnedSteps()-1
+  /** \brief Determine if an index is valid.
    */
   bool isValidIndex(int i) const
   {
-    int leftCount = leftVectors_.size();
-    int rightCount = rightVectors_.size();
+    if(i<0 or i>=numOwnedVectors()) 
+      return false;
 
-    if(0<=i && i <numOwnedSteps()) {
-      return true;
-    }
-
-    // these are "neighbor" unowned vectors (left) 
-    if(-leftCount <= i && i < 0) {
-      return true;
-    }
-
-    // these are "neighbor" unowned vectors (right)
-    if((int)numOwnedSteps() <= i && i<numOwnedSteps()+rightCount) {
-      return true;
-    }
-
-    return false;
+    return true;
   }
 
-  /** Get a vector pointer. This range is valid from i in [min(stencil),max(stencil)+numOwnedSteps()-1]
+  /** Get a vector pointer. 
    */
   Ptr<Vector<Real>> getVectorPtr(int i) const
   {
     if(not isValidIndex(i))
       return nullPtr;
 
-    return stepVectors_->get(i+leftVectors_.size());
+    return stepVectors_->get(i);
   }
 
-  /** Get a vector pointer to the local buffer. This uses the same numbering scheme as
-    * <code>getVectorPtr</code>. The valid range is valid from i in [min(stencil),-1],
-    * [max(stencil),max(stencil)+numOwnedSteps()-1]
+  /** Get a vector pointer to the local buffer. 
    */
   Ptr<Vector<Real>> getRemoteBufferPtr(int i) const
   {
-    assert(isValidIndex(i));
-    assert(i<0 or i>=numOwnedSteps());
+    assert(0<=i or i<bufferVectors_.size());
 
-    int leftCount = leftVectors_.size();
-    int rightCount = rightVectors_.size();
+    return bufferVectors_[i];
+  }
 
-      // these are "neighbor" unowned vectors (left)
-    if(-leftCount <= i && i < 0) 
-      return leftVectors_[leftVectors_.size()+i];
+  /** \brief Exchange unknowns with neighboring processors.
+      
+      Send the last vector on the sending processor to the remote buffer on the receiving
+      processor. In this case the time rank of the sending process is less than the recieving.
 
-    // these are "neighbor" unowned vectors (right)
-    if(numOwnedSteps() <= i && i<numOwnedSteps()+rightCount)
-      return rightVectors_[i-numOwnedSteps()];
+      \note This method is const because it doesn't change the behavior
+            of the vector. It does ensure the components are correct on processor.
+  */
+  void boundaryExchangeLeftToRight(ESendRecv   send_recv=SEND_AND_RECV) const
+  {
+    // build the send buffer 
+    std::vector<Ptr<Vector<Real>>> sendBuffer;
+    for(int i=0;i<bufferSize_;i++) {
+        sendBuffer.push_back(getVectorPtr(numOwnedVectors()-bufferSize_+i));
+    }
 
-    return nullPtr;
+    boundaryExchangeLeftToRight(sendBuffer,send_recv);
+  }
+
+  /** \brief Exchange unknowns with neighboring processors.
+      
+      Send the last vector on the sending processor to the remote buffer on the receiving
+      processor. In this case the time rank of the sending process is less than the recieving.
+
+      \note This method is const because it doesn't change the behavior
+            of the vector. It does ensure the components are correct on processor.
+  */
+  void boundaryExchangeLeftToRight(const std::vector<Ptr<Vector<Real>>> & sendBuffer,
+                                   ESendRecv   send_recv=SEND_AND_RECV) const
+  {
+    auto timer = Teuchos::TimeMonitor::getStackedTimer();
+    timer->start("PinTVector::boundaryExchangeLeftToRight");
+
+    assert(sendBuffer.size() <= bufferSize_);
+
+    MPI_Comm timeComm = communicators_->getTimeCommunicator();
+    int      myRank   = communicators_->getTimeRank();
+
+    bool sendToRight   = stepEnd_ < globalSteps_;
+    bool recvFromLeft = stepStart_ > 0;
+
+    // this allows finer granularity of control of send recieve
+    // and will permit some blocking communication
+    if(send_recv==SEND_ONLY) {
+     recvFromLeft = false;
+    }
+    if(send_recv==RECV_ONLY) {
+     sendToRight = false;
+    }
+    // do nothing if(send_recv==SEND_AND_RECV) 
+    
+    // send from left to right
+    int bufferSize = int(sendBuffer.size());
+    for(int i=0;i<bufferSize;i++) {
+
+      if(sendToRight) {
+        vectorComm_->send(timeComm,myRank+1,*sendBuffer[i],i); // this is "owned"
+      }
+      
+      if(recvFromLeft) {
+        vectorComm_->recv(timeComm,myRank-1,*getRemoteBufferPtr(i),false,i);                  
+      }
+    }
+
+    timer->stop("PinTVector::boundaryExchangeLeftToRight");
+  }
+
+  /** \brief Exchange unknowns with neighboring processors.
+      
+      Send the first vector on the sending processor to the remote buffer on the receiving
+      processor. In this case the time rank of the sending process is greater than the recieving.
+
+      \note This method is const because it doesn't change the behavior
+            of the vector. It does ensure the components are correct on processor.
+  */
+  void boundaryExchangeRightToLeft(ESendRecv   send_recv=SEND_AND_RECV) const
+  {
+    // build the send buffer 
+    std::vector<Ptr<Vector<Real>>> sendBuffer;
+    for(int i=0;i<bufferSize_;i++) {
+        sendBuffer.push_back(getVectorPtr(i));
+    }
+
+    boundaryExchangeRightToLeft(sendBuffer,send_recv);
+  }
+
+  /** \brief Exchange unknowns with neighboring processors.
+      
+      Send the first vector on the sending processor to the remote buffer on the receiving
+      processor. In this case the time rank of the sending process is greater than the recieving.
+
+      \note This method is const because it doesn't change the behavior
+            of the vector. It does ensure the components are correct on processor.
+  */
+  void boundaryExchangeRightToLeft(const std::vector<Ptr<Vector<Real>>> & sendBuffer,
+                                   ESendRecv   send_recv=SEND_AND_RECV) const
+  {
+    auto timer = Teuchos::TimeMonitor::getStackedTimer();
+    timer->start("PinTVector::boundaryExchangeRightToLeft");
+
+    MPI_Comm timeComm = communicators_->getTimeCommunicator();
+    int      myRank   = communicators_->getTimeRank();
+
+    bool recvFromRight = stepEnd_ < globalSteps_;
+    bool sendToLeft   = stepStart_ > 0;
+
+    // this allows finer granularity of control of send recieve
+    // and will permit some blocking communication
+    if(send_recv==SEND_ONLY) {
+      recvFromRight = false;
+    }
+    if(send_recv==RECV_ONLY) {
+      sendToLeft = false;
+    }
+    // do nothing if(send_recv==SEND_AND_RECV) 
+
+    // send from right to left
+    int bufferSize = int(sendBuffer.size());
+    for(int i=0;i<bufferSize;i++) {
+      if(sendToLeft)
+        vectorComm_->send(timeComm,myRank-1,*sendBuffer[i],i); // this is "owned"
+
+      if(recvFromRight)
+        vectorComm_->recv(timeComm,myRank+1,*getRemoteBufferPtr(i),false,i);
+    }
+
+    timer->stop("PinTVector::boundaryExchangeRightToLeft");
   }
 
   /** \brief Exchange unknowns with neighboring processors.
@@ -426,8 +506,8 @@ public:
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
 
-    bool sendToRight   = stepEnd_ < steps_;
-    bool recvFromRight = stepEnd_ < steps_;
+    bool sendToRight   = stepEnd_ < globalSteps_;
+    bool recvFromRight = stepEnd_ < globalSteps_;
 
     bool sendToLeft   = stepStart_ > 0;
     bool recvFromLeft = stepStart_ > 0;
@@ -451,7 +531,7 @@ public:
         continue;
 
       if(sendToRight)
-        vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedSteps()+offset)); // this is "owned"
+        vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedVectors()+offset)); // this is "owned"
       
       if(recvFromLeft)
         vectorComm_->recv(timeComm,myRank-1,*getRemoteBufferPtr(offset),false);                  
@@ -484,8 +564,8 @@ public:
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
 
-    bool sendToRight   = stepEnd_ < steps_;
-    bool recvFromRight = stepEnd_ < steps_;
+    bool sendToRight   = stepEnd_ < globalSteps_;
+    bool recvFromRight = stepEnd_ < globalSteps_;
 
     bool sendToLeft   = stepStart_ > 0;
     bool recvFromLeft = stepStart_ > 0;
@@ -612,6 +692,22 @@ public:
   */
   virtual ROL::Ptr<Vector<Real>> clone() const override
   {
+    auto timer = Teuchos::TimeMonitor::getStackedTimer();
+    timer->start("PinTVector::clone");
+
+    auto v = clonePinT();
+    
+    timer->stop("PinTVector::clone");
+
+    return v;
+  }
+
+  /** \brief Clone that provides direct access to a PinT vector.
+
+             @return         A reference-counted pointer to the cloned vector.
+  */
+  ROL::Ptr<PinTVector<Real>> clonePinT() const
+  {
     return makePtr<PinTVector<Real>>(*this);
   }
 
@@ -665,13 +761,8 @@ public:
   {
     stepVectors_->zero();
 
-    // make sure you copy boundary exchange "end points" - handles initial conditions
-    for(std::size_t i=0;i<leftVectors_.size();i++)
-      leftVectors_[i]->zero();
-
-    // make sure you copy boundary exchange "end points" - handles initial conditions
-    for(std::size_t i=0;i<rightVectors_.size();i++)
-      rightVectors_[i]->zero();
+    for(std::size_t i=0;i<bufferVectors_.size();i++)
+      bufferVectors_[i]->zero();
   }
 
 #if 0

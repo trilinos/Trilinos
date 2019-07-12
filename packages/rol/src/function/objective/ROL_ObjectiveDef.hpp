@@ -159,7 +159,6 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
   // Compute gradient at x.
   ROL::Ptr<Vector<Real> > gtmp = g.clone();
-  this->update(x);
   this->gradient(*gtmp, x, tol);
   Real dtg = d.dot(gtmp->dual());
 

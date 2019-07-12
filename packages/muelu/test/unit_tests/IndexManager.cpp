@@ -579,7 +579,6 @@ namespace MueLuTests {
     if(myIndexManager->getNumGlobalFineNodes()      != -1)                          {chk = -1;}
     for(int dim = 0; dim < 3; ++dim) {
       if(myIndexManager->getCoarseningRate(dim)         != coarseRate[dim])         {chk = -1;}
-      if(myIndexManager->getGlobalFineNodesInDir(dim)   != gNodesPerDir[dim])       {chk = -1;}
     }
     if(comm->getSize() == 1) {
       if(myIndexManager->getNumLocalFineNodes()         != 125)                     {chk = -1;}
