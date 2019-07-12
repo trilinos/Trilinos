@@ -334,8 +334,9 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     // For each input parameter to avatar we iterate over its allowable values and then compute the list of options which Avatar
     // views as acceptable
     // FIXME: Find alternative to hard coding malloc size (input deck?)
-    int* predictions = (int*)malloc(8 * sizeof(int));
-    float* probabilities = (float*)malloc(3 * 8 * sizeof(float));
+    int num_classes = 3;
+    int* predictions = (int*)malloc(num_combos * sizeof(int));
+    float* probabilities = (float*)malloc(num_classes * num_combos * sizeof(float));
 
       std::string testString;
       for(int i=0; i<num_combos; i++) {
