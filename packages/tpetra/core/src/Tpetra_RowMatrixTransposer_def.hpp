@@ -147,11 +147,11 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   TimeMonitor MM (*TimeMonitor::getNewTimer (prefix + "Transpose Local"));
 #endif
 
-  const bool sortMerge = [&] () {
-    constexpr bool sortMergeDefault = false; // see #4607 discussion
-    const char sortParamName[] = "sort and merge";
-    return params.get () == nullptr ? sortMergeDefault :
-      params->get (sortParamName, sortMergeDefault);
+  const bool sort = [&] () {
+    constexpr bool sortDefault = false; // see #4607 discussion
+    const char sortParamName[] = "sort";
+    return params.get () == nullptr ? sortDefault :
+      params->get (sortParamName, sortDefault);
   } ();
 
   // Prebuild the importers and exporters the no-communication way,
@@ -240,67 +240,22 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
     // Invariant: At this point, all entries of t_counts are zero.
     // This means we can use it to store new post-merge counts.
 
-    if (sortMerge) {
+    if (sort) {
+      // NOTE (mfh 11 Jul 2019) Merging is unnecessary: above
+      // parallel_for visits each row of the original matrix once, so
+      // there can be no duplicate column indices in the transpose.
       using Details::shellSortKeysAndValues;
-      offset_type new_nnz = 0;
-      Kokkos::parallel_reduce
-        ("Sort & merge rows of local transpose",
+      Kokkos::parallel_for
+        ("Sort rows of local transpose",
          range_type (0, numLocalCols),
-         KOKKOS_LAMBDA (const LO lclCol, offset_type& nnz) {
+         KOKKOS_LAMBDA (const LO lclCol) {
           const offset_type beg = t_offsets[lclCol];
           const LO len (t_offsets[lclCol+1] - t_offsets[lclCol]);
 
           LO* cols_beg = t_cols.data () + beg;
-          LO* cols_end = cols_beg + len;
           IST* vals_beg = t_vals.data () + beg;
-          IST* vals_end = vals_beg + len;
           shellSortKeysAndValues (cols_beg, vals_beg, len);
-          merge2 (cols_end, vals_end, cols_beg, cols_end, vals_beg, vals_end);
-          const offset_type new_len = (cols_end - cols_beg);
-          t_counts[lclCol] = new_len;
-          nnz += new_len;
-        }, new_nnz);
-
-      TEUCHOS_ASSERT( new_nnz <= numLocalNnz );
-      if (new_nnz != numLocalNnz) {
-
-        // FIXME (mfh 11 Jul 2019) We don't have tests for this case
-        // in Tpetra.
-        TEUCHOS_ASSERT( false );
-
-        index_type t_cols_packed
-          (view_no_init ("transpose lcl ind packed"), new_nnz);
-        values_type t_vals_packed
-          (view_no_init ("transpose val packed"), new_nnz);
-        row_map_type t_offsets_packed
-          (view_no_init ("transpose ptr packed"), numLocalCols + 1);
-        Kokkos::parallel_scan
-          ("Recompute offsets & pack rows of local transpose",
-           range_type (0, numLocalCols+1),
-           KOKKOS_LAMBDA (const LO lclCol,
-                          offset_type& running_count,
-                          const bool final) {
-            const offset_type new_count = lclCol < numLocalCols ?
-              t_counts[lclCol] : offset_type (0);
-            if (final) {
-              t_offsets_packed[lclCol] = running_count;
-
-              if (lclCol < numLocalCols) {
-                const offset_type unpacked_beg = t_offsets[lclCol];
-                const offset_type packed_beg = running_count;
-                for (offset_type k = 0; k < new_count; ++k) {
-                  t_cols_packed[packed_beg + k] = t_cols[unpacked_beg + k];
-                  t_vals_packed[packed_beg + k] = t_vals[unpacked_beg + k];
-                }
-              }
-            }
-            running_count += new_count;
-          });
-
-        t_vals = t_vals_packed;
-        t_cols = t_cols_packed;
-        t_offsets = t_offsets_packed;
-      }
+        });
     }
 
     local_matrix_type lclTransposeMatrix ("transpose", numLocalCols,
@@ -364,7 +319,7 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
       }
     } //for (size_t i=0; i<numLocalRows; ++i)
 
-    if (sortMerge) {
+    if (sort) {
       // FIXME (mfh 11 Jul 2019) Just convert the input RowMatrix to
       // local_matrix_type and use the above routine.
       TEUCHOS_ASSERT( false ); // not implemented

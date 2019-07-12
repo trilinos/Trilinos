@@ -205,7 +205,7 @@ testTranspose (bool& success,
 
   RCP<crs_matrix_type> A = createTestMatrix (comm, lclNumRows);
   {
-    out << "Test with default \"sort and merge\"" << std::endl;
+    out << "Test with default \"sort\"" << std::endl;
     Teuchos::OSTab tab1 (out);
 
     RCP<crs_matrix_type> AT_unsorted = [&] () {
@@ -226,12 +226,12 @@ testTranspose (bool& success,
   }
 
   {
-    out << "Test with \"sort and merge\" = true" << std::endl;
+    out << "Test with \"sort\" = true" << std::endl;
     Teuchos::OSTab tab1 (out);
 
     RCP<crs_matrix_type> AT_sorted = [&] () {
       auto params = Teuchos::parameterList ("Tpetra::RowMatrixTransposer");
-      params->set ("sort and merge", true);
+      params->set ("sort", true);
       Tpetra::RowMatrixTransposer<> transposer (A);
       return transposer.createTranspose (params);
     } ();
