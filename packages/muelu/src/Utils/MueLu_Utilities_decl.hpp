@@ -760,7 +760,7 @@ namespace MueLu {
                 RCP<ParameterList> transposeParams = params.is_null () ?
                   rcp (new ParameterList) :
                   rcp (new ParameterList (*params));
-                transposeParams.set ("sort", false);
+                transposeParams->set ("sort", false);
                 A = transposer.createTranspose(transposeParams);
               }
 
