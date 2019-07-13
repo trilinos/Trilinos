@@ -46,13 +46,10 @@
 
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
-#include "ROL_StepFactory.hpp"
 #include "ROL_StatusTest.hpp"
-#include "ROL_StatusTestFactory.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Constraint.hpp"
-#include "ROL_OptimizationProblem.hpp"
 #include "ROL_ValidParameters.hpp"
 
 /** \class ROL::Algorithm
@@ -61,12 +58,6 @@
 
 
 namespace ROL {
-
-template<class Real>
-class StepFactory;
-
-template<class Real>
-class StatusTestFactory;
 
 template <class Real>
 class Algorithm {
@@ -102,30 +93,6 @@ public:
     step_ = step;
     status_ = status;
     state_ = state;
-    printHeader_ = printHeader;
-  }
-
-  /** \brief Constructor, given a string, for the step, and a
-             parameter list of various options.  The status
-             test is determined based on the step string.
-  */
-  Algorithm( const std::string &stepname,
-             ROL::ParameterList &parlist,
-             bool printHeader = false) {
-
-// Uncomment to test for parameter inconsistencies
-//    ROL::Ptr<const ROL::ParameterList> validParlist = getValidROLParameters();
-//    parlist.validateParametersAndSetDefaults(*validParlist);
-
-    EStep els = StringToEStep(stepname);
-    ROL_TEST_FOR_EXCEPTION( !(isValidStep(els)),
-                                std::invalid_argument,
-                                "Invalid step name in algorithm constructor!");
-    StepFactory<Real> stepFactory;
-    StatusTestFactory<Real> statusTestFactory;
-    step_   = stepFactory.getStep(stepname,parlist);
-    status_ = statusTestFactory.getStatusTest(stepname,parlist);
-    state_  = ROL::makePtr<AlgorithmState<Real>>();
     printHeader_ = printHeader;
   }
 
@@ -426,37 +393,6 @@ public:
       outStream << hist.str();
     }
     return output;
-  }
-
-  /** \brief Run algorithm using a ROL::OptimizationProblem.
-  */
-  virtual std::vector<std::string> run( OptimizationProblem<Real> &opt,
-                                        bool                       print = false,
-                                        std::ostream              &outStream = std::cout ) {
-    // Get components of optimization problem
-    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
-    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
-    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
-    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
-
-    // Call appropriate run function
-    if ( con == ROL::nullPtr ) {
-      if ( bnd == ROL::nullPtr ) {
-        return run(*x,*obj,print,outStream);
-      }
-      else {
-        return run(*x,*obj,*bnd,print,outStream);
-      }
-    }
-    else {
-      if ( bnd == ROL::nullPtr ) {
-        return run(*x,*l,*obj,*con,print,outStream);
-      }
-      else {
-        return run(*x,*l,*obj,*con,*bnd,print,outStream);
-      }
-    }
   }
 
   std::string getIterHeader(void) {

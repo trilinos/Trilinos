@@ -48,7 +48,6 @@
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Constraint.hpp"
-#include "ROL_OptimizationProblem.hpp"
 #include "ROL_Types.hpp"
 
 #include "ROL_ParameterList.hpp"
@@ -188,87 +187,6 @@ public:
                        AlgorithmState<Real> &algo_state ) {
     throw Exception::NotImplemented(">>> ROL::Step::update(x,s,l,obj,bnd,con,algo_state) is not implemented!");
   }
-
-
-
-  // Methods using an Optimization problem
-
-  void initialize( OptimizationProblem<Real> &opt, AlgorithmState<Real> &algo_state ) {
-
-    
-
-    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
-    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
-    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
-    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
-
-    if( con == ROL::nullPtr ) { // has no equality constraint
-      if( bnd == ROL::nullPtr ) { // has no bound constraint or inactive
-        bnd = ROL::makePtr<BoundConstraint<Real>>();
-        bnd->deactivate();
-      }
-      initialize(*x, x->dual(), *obj, *bnd, algo_state);
-    }
-    else { // has equality constraint 
-
-      if( bnd == ROL::nullPtr ) {
-        initialize(*x,x->dual(),*l,l->dual(),*obj,*con,algo_state );
-      }
-      initialize(*x,x->dual(),*l,l->dual(),*obj,*con,*bnd,algo_state);
-    }
-  }
-
-  void compute( Vector<Real> &s, OptimizationProblem<Real> &opt, AlgorithmState<Real> &algo_state ) {
-    
-
-    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
-    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
-    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
-    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
-
-    if( con == ROL::nullPtr ) { // has no equality constraint
-      if( bnd == ROL::nullPtr ) { // has no bound constraint
-        bnd = ROL::makePtr<BoundConstraint<Real>>();
-        bnd->deactivate();
-      }
-      compute(s,*x, *obj, *bnd, algo_state);
-    }
-    else { // has equality constraint 
-      if( bnd == ROL::nullPtr ) {
-        compute(s,*x,*l,*obj,*con,algo_state);
-      }
-      compute(s,*x,*l,*obj,*con,*bnd,algo_state);
-    }
- 
-  }
-
-  void update( OptimizationProblem<Real> &opt, const Vector<Real> &s, AlgorithmState<Real> &algo_state ) {
-    
-
-    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
-    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
-    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
-    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
-
-    if( con == ROL::nullPtr ) { // has no equality constraint
-      if( bnd == ROL::nullPtr ) { // has no bound constraint
-        bnd = ROL::makePtr<BoundConstraint<Real>>();
-        bnd->deactivate();
-      }
-      update(*x, s, *obj, *bnd, algo_state);
-    }
-    else { // has equality constraint
-      if( bnd == ROL::nullPtr ) {
-        update(*x,*l,s,*obj,*con,algo_state);
-      }
-      update(*x,*l,s,*obj,*con,*bnd,algo_state);
-    }
- 
-  }
-
 
   /** \brief Print iterate header.
   */

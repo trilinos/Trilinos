@@ -1,5 +1,9 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/function)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/vector)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/mpi)
+
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
    ${PROJECT_NAME}_ENABLE_Ifpack2  AND
    ${PROJECT_NAME}_ENABLE_MueLu    AND
@@ -23,5 +27,12 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
 
+  IF(TPL_ENABLE_MPI)
+    TRIBITS_ADD_EXECUTABLE(
+      AugmentedSystem
+      SOURCES AugmentedSystem.cpp
+      ADD_DIR_TO_NAME
+    )
+  ENDIF()
 
 ENDIF()

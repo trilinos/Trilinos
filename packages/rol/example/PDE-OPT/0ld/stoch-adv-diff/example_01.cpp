@@ -54,11 +54,10 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
-#include "ROL_Algorithm.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_StdVector.hpp"
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
@@ -227,17 +226,17 @@ int main(int argc, char *argv[]) {
     }
 
     /*** Solve optimization problem. ***/
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
     bool useBundle = parlist->sublist("Problem").get("Is problem nonsmooth?",false);
     if ( useBundle ) {
-      algo = ROL::makePtr<ROL::Algorithm<RealT>>("Bundle",*parlist,false);
+      parlist->sublist("Step").set("Type","Bundle");
     }
     else {
-      algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+      parlist->sublist("Step").set("Type","Trust Region");
     }
+    ROL::OptimizationSolver<RealT> solver(opt,*parlist);
     zp->zero(); // set zero initial guess
     std::clock_t timer = std::clock();
-    algo->run(opt,true,*outStream);
+    solver.solve(*outStream);
     *outStream << "Optimization time: "
                << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl;
@@ -302,7 +301,7 @@ int main(int argc, char *argv[]) {
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

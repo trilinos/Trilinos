@@ -2509,9 +2509,9 @@ void Assembler<Real>::assembleParamVector(ROL::Ptr<std::vector<Real>> &v,
                                           std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> &val) {
   int size = v->size();
   v->assign(size,0);
-  for (int i = 0; i < size; ++i) {
-    dofMgr_->transformToFieldPattern(val[i]);
-  }
+//  for (int i = 0; i < size; ++i) {
+//    dofMgr_->transformToFieldPattern(val[i]);
+//  }
   // Assembly
   std::vector<Real> myVal(size,0);
   for (int j = 0; j < size; ++j) {

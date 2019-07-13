@@ -61,6 +61,7 @@
 #include "ROL_DynamicConstraintCheck.hpp"
 #include "ROL_DynamicObjectiveCheck.hpp"
 
+#include "../../TOOLS/lindynconstraint.hpp"
 #include "../../TOOLS/dynconstraint.hpp"
 #include "../../TOOLS/pdeobjective.hpp"
 #include "../../TOOLS/ltiobjective.hpp"
@@ -106,11 +107,19 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD CONSTRAINT **************************************/
     /*************************************************************************/
-    ROL::Ptr<DynConstraint<RealT> > dyn_con
-      = ROL::makePtr<DynConstraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
-    const ROL::Ptr<Assembler<RealT>> assembler = dyn_con->getAssembler();
+    ROL::Ptr<ROL::DynamicConstraint<RealT>> dyn_con;
+    ROL::Ptr<Assembler<RealT>> assembler;
+    int nltype = parlist->sublist("Semilinear").get("Nonlinearity Type",0);
+    if (nltype == 0) {
+      dyn_con = ROL::makePtr<LinDynConstraint<RealT>>(pde,meshMgr,comm,*parlist,true,*outStream);
+      assembler = ROL::staticPtrCast<LinDynConstraint<RealT>>(dyn_con)->getAssembler();
+    }
+    else {
+      dyn_con = ROL::makePtr<DynConstraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
+      assembler = ROL::staticPtrCast<DynConstraint<RealT>>(dyn_con)->getAssembler();
+    }
     dyn_con->setSolveParameters(*parlist);
-    dyn_con->getAssembler()->printMeshData(*outStream);
+    assembler->printMeshData(*outStream);
 
     /*************************************************************************/
     /***************** BUILD VECTORS *****************************************/
@@ -154,7 +163,7 @@ int main(int argc, char *argv[]) {
     }
     ROL::ParameterList &rpl = parlist->sublist("Reduced Dynamic Objective");
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
-      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl);
+      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl,outStream);
  
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
@@ -210,11 +219,11 @@ int main(int argc, char *argv[]) {
       // Print previous state to file
       std::stringstream ufile;
       ufile << "state." << k-1 << ".txt";
-      dyn_con->outputTpetraVector(uo_ptr, ufile.str());
+      assembler->outputTpetraVector(uo_ptr, ufile.str());
       // Print current control
       std::stringstream zfile;
       zfile << "control." << k-1 << ".txt";
-      dyn_con->outputTpetraVector(ROL::dynamicPtrCast<PDE_PrimalOptVector<RealT>>(z->get(k-1))->getVector(),zfile.str());
+      assembler->outputTpetraVector(ROL::staticPtrCast<PDE_PrimalOptVector<RealT>>(z->get(k-1))->getVector(),zfile.str());
       // Advance time stepper
       dyn_con->solve(*ck, *uo, *un, *z->get(k), timeStamp[k]);
       uo->set(*un);
@@ -222,16 +231,16 @@ int main(int argc, char *argv[]) {
     // Print previous state to file
     std::stringstream ufile;
     ufile << "state." << nt-1 << ".txt";
-    dyn_con->outputTpetraVector(uo_ptr, ufile.str());
+    assembler->outputTpetraVector(uo_ptr, ufile.str());
     // Print current control
     std::stringstream zfile;
     zfile << "control." << nt-1 << ".txt";
-    dyn_con->outputTpetraVector(ROL::dynamicPtrCast<PDE_PrimalOptVector<RealT>>(z->get(nt-1))->getVector(),zfile.str());
+    assembler->outputTpetraVector(ROL::staticPtrCast<PDE_PrimalOptVector<RealT>>(z->get(nt-1))->getVector(),zfile.str());
     *outStream << "Output time: "
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

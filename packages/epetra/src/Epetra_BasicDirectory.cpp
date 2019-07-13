@@ -108,17 +108,24 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
 
   // General case.  Need to build a directory via calls to communication functions
   else {
-
+#ifndef NDEBUG
         int flag = -1;
+#endif
         if(Map.GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-      flag = Generate<int>(Map);
+#ifndef NDEBUG
+      flag =
+#endif
+      Generate<int>(Map);
 #else
       throw "Epetra_BasicDirectory::Epetra_BasicDirectory: ERROR, GlobalIndicesInt but no API for it.";
 #endif
         else if(Map.GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-      flag = Generate<long long>(Map);
+#ifndef NDEBUG
+      flag =
+#endif
+      Generate<long long>(Map);
 #else
       throw "Epetra_BasicDirectory::Epetra_BasicDirectory: ERROR, GlobalIndicesLongLong but no API for it.";
 #endif

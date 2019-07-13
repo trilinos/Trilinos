@@ -217,17 +217,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test2, Scalar, LO, GO)
   MV x = *xrcp;
 
   TEST_INEQUALITY(&x, &y);                                               // vector x and y are different
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  x.template sync<Kokkos::HostSpace> ();
-  y.template sync<Kokkos::HostSpace> ();
-  auto x_lcl_host = x.template getLocalView<Kokkos::HostSpace> ();
-  auto y_lcl_host = x.template getLocalView<Kokkos::HostSpace> ();
-#else
+
   x.sync_host ();
   y.sync_host ();
   auto x_lcl_host = x.getLocalViewHost ();
   auto y_lcl_host = x.getLocalViewHost ();
-#endif
+
   TEST_EQUALITY( x_lcl_host.data (), y_lcl_host.data () ); // vector x and y are pointing to the same memory location (such test only works if num of local elements != 0)
 
   prec.apply(x, y);

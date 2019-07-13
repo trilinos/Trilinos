@@ -63,8 +63,8 @@ template <class Real>
 class ProbabilityVector : public BatchStdVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 public:
-  ProbabilityVector(const ROL::Ptr<std::vector<Real> > &vec,
-                    const ROL::Ptr<BatchManager<Real> > &bman)
+  ProbabilityVector(const ROL::Ptr<std::vector<Real>> &vec,
+                    const ROL::Ptr<BatchManager<Real>> &bman)
    : BatchStdVector<Real>(vec,bman) {}
 
   const Real getProbability(const int i) const {
@@ -86,6 +86,13 @@ public:
   int getNumMyAtoms(void) const {
     int numMySamples = static_cast<int>(StdVector<Real>::getVector()->size());
     return numMySamples;
+  }
+
+  ROL::Ptr<Vector<Real> > clone(void) const {
+    const std::vector<Real> &yval = *(StdVector<Real>::getVector());
+    uint numMySamples = yval.size();
+    return ROL::makePtr<ProbabilityVector>(
+           ROL::makePtr<std::vector<Real>>(numMySamples),BatchStdVector<Real>::getBatchManager());
   }
 };
 

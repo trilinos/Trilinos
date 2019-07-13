@@ -123,10 +123,9 @@ int main(int argc, char *argv[]) {
   for (i=0; i<maxcolor; i++) colorCount[i] = 0;
   for (i=0; i<maxcolor; i++) colorLIDs[i] = 0;
 
-  int defaultColor = C0.DefaultColor();
   for (i=0; i<Map.NumMyElements(); i++) {
-    assert(C0[i]==defaultColor);
-    assert(C0(Map.GID64(i))==defaultColor);
+    assert(C0[i]==C0.DefaultColor());
+    assert(C0(Map.GID64(i))==C0.DefaultColor());
     if (i%2==0) C0[i] = i%6+5+i%14; // cycle through 5...23 on even elements
     else C0(Map.GID64(i)) = i%5+1; // cycle through 1...5 on odd elements
     elementColors[i] = C0[i]; // Record color of ith element for use below
@@ -171,12 +170,11 @@ int main(int argc, char *argv[]) {
   for (i=0; i<maxcolor; i++) {
     int curNumElementsWithColor = C2.NumElementsWithColor(i);
     assert(colorCount[i]==curNumElementsWithColor);
-    int * curColorLIDList = C2.ColorLIDList(i);
     if (curNumElementsWithColor==0) {
-      assert(curColorLIDList==0);
+      assert(C2.ColorLIDList(i)==0);
     }
     else
-      for (int j=0; j<curNumElementsWithColor; j++) assert(curColorLIDList[j]==colorLIDs[i][j]);
+      for (int j=0; j<curNumElementsWithColor; j++) assert(C2.ColorLIDList(i)[j]==colorLIDs[i][j]);
   }
   int curColor = 1;
   Epetra_Map * Map1 = C2.GenerateMap(curColor);

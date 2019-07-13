@@ -113,7 +113,7 @@ private:
         }
         (*kappa)(i,j) = std::pow(evaluateRefractiveIndex(x), 2);
       }
-    } 
+    }
   }
 
   void computeForce(const ROL::Ptr<Intrepid::FieldContainer<Real> > &F, const int component) const {
