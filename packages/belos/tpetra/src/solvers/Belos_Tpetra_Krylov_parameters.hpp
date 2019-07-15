@@ -57,6 +57,7 @@ public:
   std::string precoType {"none"};
   std::string precoSide {"none"};
   bool computeRitzValues = false;
+  bool computeRitzValuesOnFly = true;
 };
 
 // The default constructor creates output corresponding to "solving

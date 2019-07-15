@@ -129,7 +129,8 @@ public:
     stepSize_ (1),
     tsqr_ (Teuchos::null)
   {
-    this->input_.computeRitzValues = true;
+    this->input_.computeRitzValues = false;
+    this->input_.computeRitzValuesOnFly = true;
   }
 
   GmresSstep (const Teuchos::RCP<const OP>& A) :
@@ -137,7 +138,8 @@ public:
     stepSize_ (1),
     tsqr_ (Teuchos::null)
   {
-    this->input_.computeRitzValues = true;
+    this->input_.computeRitzValues = false;
+    this->input_.computeRitzValuesOnFly = true;
   }
 
   virtual ~GmresSstep () = default;
@@ -163,6 +165,11 @@ public:
       stepSize = params.get<int> ("Step Size");
     }
 
+    bool computeRitzValuesOnFly = this->input_.computeRitzValuesOnFly;
+    if (params.isParameter ("Compute Ritz Values on Fly")) {
+      computeRitzValuesOnFly = params.get<bool> ("Compute Ritz Values on Fly");
+    }
+
     bool useCholQR = useCholQR_default;
     if (params.isParameter ("CholeskyQR")) {
       useCholQR = params.get<bool> ("CholeskyQR");
@@ -171,7 +178,9 @@ public:
     if (useCholQR && tsqr_.is_null ()) {
       tsqr_ = Teuchos::rcp (new CholQR<SC, MV, OP> ());
     }
+
     stepSize_ = stepSize;
+    this->input_.computeRitzValuesOnFly = computeRitzValuesOnFly;
   }
 
 private:
@@ -184,12 +193,11 @@ private:
                const SolverInput<SC>& input)
   {
     using std::endl;
-    const int stepSize = stepSize_;
+    int stepSize = stepSize_;
     int restart = input.resCycle;
     int step = stepSize;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
-    const bool computeRitzValues = input.computeRitzValues;
 
     // initialize output parameters
     SolverOutput<SC> output {};
@@ -210,6 +218,7 @@ private:
     dense_matrix_type  H (restart+1, restart, true); // Hessenburg matrix
     dense_matrix_type  T (restart+1, restart, true); // H reduced to upper-triangular matrix
     dense_matrix_type  G (restart+1, step+1, true);  // Upper-triangular matrix from ortho process
+    dense_matrix_type  G2(restart+1, restart, true); // a copy of Hessenburg matrix for computing Ritz values
     dense_vector_type  y (restart+1, true);
     dense_matrix_type  h (restart+1, 1, true); // used for reorthogonalization
     std::vector<mag_type> cs (restart);
@@ -249,7 +258,7 @@ private:
       // Return residual norm as B
       Tpetra::deep_copy (B, P);
       return output;
-    } else if (computeRitzValues) {
+    } else if (input.computeRitzValues && !input.computeRitzValuesOnFly) {
       // Invoke standard Gmres for the first restart cycle, to compute
       // Ritz values for use as Newton shifts
       if (outPtr != nullptr) {
@@ -307,6 +316,11 @@ private:
         }
 
         // Compute matrix powers
+        if (input.computeRitzValuesOnFly && iter < stepSize_) {
+          stepSize = 1;
+        } else {
+          stepSize = stepSize_;
+        }
         for (step=0; step < stepSize && iter+step < restart; step++) {
           //if (outPtr != nullptr) {
           //  *outPtr << "step=" << step
@@ -370,6 +384,25 @@ private:
         }
         else {
           metric = STM::zero ();
+        }
+
+        // Optionally, compute Ritz values for generating Newton basis
+        if (input.computeRitzValuesOnFly && int (output.ritzValues.size()) == 0
+            && output.numIters >= stepSize_) {
+          //printf( " ComputeRitzValues(%d, %d, %d)\n",output.numIters, iter+step, stepSize_ );
+          for (int i = 0; i < stepSize_; i++) {
+            for (int iiter = 0; iiter < stepSize_; iiter++) {
+              G2(i, iiter) = H(i, iiter);
+            }
+          }
+          computeRitzValues (stepSize_, G2, output.ritzValues);
+          sortRitzValues <LO, SC> (stepSize_, output.ritzValues);
+          if (outPtr != nullptr) {
+            *outPtr << " > ComputeRitzValues: " << endl;
+            for (int i = 0; i < stepSize_; i++) {
+              *outPtr << " > ritzValues[ " << i << " ] = " << output.ritzValues[i] << endl;
+            }
+          }
         }
       } // End of restart cycle
 

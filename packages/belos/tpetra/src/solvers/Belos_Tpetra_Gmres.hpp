@@ -606,6 +606,12 @@ protected:
         if (input.computeRitzValues && output.numRests == 0) {
           computeRitzValues (iter, G, output.ritzValues);
           sortRitzValues <LO, SC> (iter, output.ritzValues);
+          if (outPtr != nullptr) {
+            *outPtr << " > ComputeRitzValues: " << endl;
+            for (int i = 0; i < iter; i++) {
+              *outPtr << " > ritzValues[ " << i << " ] = " << output.ritzValues[i] << endl;
+            }
+          }
         }
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
