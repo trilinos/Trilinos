@@ -41,7 +41,6 @@
 // ************************************************************************
 // @HEADER
 
-#include "Phalanx_DimTag.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"

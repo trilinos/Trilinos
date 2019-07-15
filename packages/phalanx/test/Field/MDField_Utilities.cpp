@@ -45,7 +45,6 @@
 #include <vector>
 #include <limits>
 #include "Phalanx_MDField_Utilities.hpp"
-#include "Phalanx_DimTag.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
