@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -41,30 +41,26 @@
 // ************************************************************************
 // @HEADER
 
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_FieldTag.hpp"
+#include "Phalanx_MemoryPool.hpp"
 
-#include "Dimension.hpp"
+#include "Sacado.hpp"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_View_Fad.hpp"
+#include "Kokkos_DynRankView.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
 
-const char * Dim::name() const 
-{ static const char n[] = "Dim" ; return n ; }
-const Dim & Dim::tag() 
-{ static const Dim myself ; return myself ; }
+namespace phalanx_test {
 
-const char * QuadPoint::name() const 
-{ static const char n[] = "QuadPoint" ; return n ; }
-const QuadPoint & QuadPoint::tag() 
-{ static const QuadPoint myself ; return myself ; }
+  TEUCHOS_UNIT_TEST(Kokkos_AllocationTracker, MemoryPool)
+  {
+    PHX::MemoryPool pool1;
 
-const char * Node::name() const 
-{ static const char n[] = "Node" ; return n ; }
-const Node & Node::tag() 
-{ static const Node myself ; return myself ; }
+    auto pool2 = pool1.clone();
+  }
 
-const char * Point::name() const 
-{ static const char n[] = "Point" ; return n ; }
-const Point & Point::tag() 
-{ static const Point myself ; return myself ; }
-
-const char * Cell::name() const 
-{ static const char n[] = "Cell" ; return n ; }
-const Cell & Cell::tag() 
-{ static const Cell myself ; return myself ; }
+}

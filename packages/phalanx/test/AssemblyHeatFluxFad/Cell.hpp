@@ -47,7 +47,6 @@
 
 #include "Phalanx_config.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Dimension.hpp"
 #include "Kokkos_View.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 

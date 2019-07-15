@@ -54,7 +54,8 @@ class IntegrateDiffusionTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
                                public PHX::EvaluatorDerived<EvalT, Traits>  {
 
   using ScalarT = typename EvalT::ScalarT;
-  PHX::Field<const ScalarT,3> flux;
+  // Non-optimal layout to test user maually picking layout (see README.txt for this example)
+  PHX::Field<const ScalarT,3,Kokkos::LayoutLeft> flux;
   PHX::Field<ScalarT,2> residual;
 #ifdef PHX_ENABLE_KOKKOS_AMT
   // Make residual atomic so that AMT mode can sum diffusion and source terms at same time

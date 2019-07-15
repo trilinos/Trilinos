@@ -47,34 +47,10 @@
 
 #include "Phalanx_DimTag.hpp"
 
-struct Dim : public PHX::DimTag {
-  Dim(){};
-  const char * name() const ;
-  static const Dim& tag();
-};
-
-struct QuadPoint : public PHX::DimTag {
-  QuadPoint(){};
-  const char * name() const ;
-  static const QuadPoint& tag();
-};
-
-struct Node : public PHX::DimTag {
-  Node(){};
-  const char * name() const ;
-  static const Node& tag();
-};
-
-struct Point : public PHX::DimTag {
-  Point(){};
-  const char * name() const ;
-  static const Point& tag();
-};
-
-struct Cell : public PHX::DimTag {
-  Cell(){};
-  const char * name() const ;
-  static const Cell& tag();
-};
+PHX_EXTENT(Dim)
+PHX_EXTENT(QuadPoint)
+PHX_EXTENT(Node)
+PHX_EXTENT(Point)
+PHX_EXTENT(Cell)
 
 #endif
