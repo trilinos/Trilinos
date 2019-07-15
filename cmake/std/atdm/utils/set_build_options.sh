@@ -291,9 +291,4 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"-pt" ]] || \
   export ATDM_CONFIG_PT_PACKAGES=ON
 fi
 
-# Temporary keyword for turning off global int (#4915, #5384)
-if [[ $ATDM_CONFIG_BUILD_NAME == *"no-global-int"* ]]; then
-  export ATDM_CONFIG_NO_GLOBAL_INT=ON
-fi
-
 export ATDM_CONFIG_FINISHED_SET_BUILD_OPTIONS=1
