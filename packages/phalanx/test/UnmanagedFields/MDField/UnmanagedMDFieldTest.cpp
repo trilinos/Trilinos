@@ -49,7 +49,6 @@
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_TypeStrings.hpp"
-#include "Phalanx_DimTag.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"

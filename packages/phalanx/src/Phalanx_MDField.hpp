@@ -54,7 +54,6 @@
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_MDField_TypeTraits.hpp"
 #include "Phalanx_ExtentTraits.hpp"
 #include "Sacado.hpp"
 #include "Sacado_mpl_vector.hpp"
@@ -166,6 +165,14 @@ namespace PHX {
     PHX::any m_any;
     void set(const PHX::any& a){m_any = a;}
     PHX::any get() const {return m_any;}
+  };
+
+  // ****************************
+  // ReturnType
+  // ****************************
+  template<typename ViewType>
+  struct MDFieldReturnType {
+    using return_type = typename ViewType::reference_type;
   };
 
   // ****************************
@@ -333,7 +340,7 @@ namespace PHX {
 
     template<typename... index_pack>
     KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
+    typename PHX::MDFieldReturnType<array_type>::return_type
     operator()(const index_pack&... indices) const
     {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
@@ -344,7 +351,7 @@ namespace PHX {
 
     template<typename iType0>
     KOKKOS_FORCEINLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
+    typename PHX::MDFieldReturnType<array_type>::return_type
     operator[](iType0 index0) const
     {return m_view[index0];}
 

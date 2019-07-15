@@ -112,7 +112,7 @@ PHX::Field<DataT,Rank,Layout>::Field(const PHX::Field<CopyDataT,Rank,Layout>& so
 #endif
 {
   static_assert(std::is_same<typename std::decay<DataT>::type, typename std::decay<CopyDataT>::type>::value,
-                "ERROR: Compiletime MDField copy ctor requires scalar types to be the same!");
+                "ERROR: PXH::Field copy ctor requires scalar types to be the same!");
 }
 
 // **********************************************************************
@@ -154,7 +154,7 @@ PHX::Field<DataT,Rank,Layout>::operator=(const Field<CopyDataT,Rank,Layout>& sou
   m_data_set = source.m_data_set;
 #endif
   static_assert(std::is_same<typename std::decay<DataT>::type, typename std::decay<CopyDataT>::type>::value,
-                "ERROR: Compiletime MDField assignment operator requires scalar types to be the same!");
+                "ERROR: PHX::Field assignment operator requires scalar types to be the same!");
   return *this;
 }
 
@@ -162,11 +162,11 @@ PHX::Field<DataT,Rank,Layout>::operator=(const Field<CopyDataT,Rank,Layout>& sou
 template<typename DataT,int Rank,typename Layout>
 template<typename... index_pack>
 KOKKOS_INLINE_FUNCTION
-typename PHX::MDFieldTypeTraits<typename PHX::Field<DataT,Rank,Layout>::array_type>::return_type
+typename PHX::FieldReturnType<typename PHX::Field<DataT,Rank,Layout>::array_type>::return_type
 PHX::Field<DataT,Rank,Layout>::operator()(const index_pack&... indices) const
 {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  static_assert(Rank == sizeof...(indices), "PHX::MDField::operator(const index_pack&... indices) : must have number of indices equal to rank!");
+  static_assert(Rank == sizeof...(indices), "PHX::Field::operator(const index_pack&... indices) : must have number of indices equal to rank!");
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
 
@@ -249,7 +249,7 @@ void PHX::Field<DataT,Rank,Layout>::print(std::ostream& os, bool printValues) co
     os << *m_tag;
 
   if (printValues)
-    os << "Error - Field no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please disconstinue the use of this call!" << std::endl;
+    os << "Error - Field no longer supports the \"printValues\" member of the Field::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please disconstinue the use of this call!" << std::endl;
 }
 
 // *********************************************************************

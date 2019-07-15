@@ -54,7 +54,6 @@
 #include "Kokkos_View.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_MDField_TypeTraits.hpp"
 #include "Sacado.hpp"
 
 namespace PHX {
@@ -75,6 +74,14 @@ namespace PHX {
   template<typename DataT>
   struct KokkosDimType<DataT,0> {
     using type = DataT;
+  };
+
+  // ****************************
+  // ReturnType
+  // ****************************
+  template<typename ViewType>
+  struct FieldReturnType {
+    using return_type = typename ViewType::reference_type;
   };
 
   // *************************************
@@ -123,7 +130,7 @@ namespace PHX {
 
     template<typename... index_pack>
     KOKKOS_INLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
+    typename PHX::FieldReturnType<array_type>::return_type
     operator()(const index_pack&...) const;
 
     KOKKOS_INLINE_FUNCTION

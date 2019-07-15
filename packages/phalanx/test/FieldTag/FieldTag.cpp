@@ -48,7 +48,7 @@
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Phalanx_DimTag.hpp"
+#include "Phalanx_ExtentTraits.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
