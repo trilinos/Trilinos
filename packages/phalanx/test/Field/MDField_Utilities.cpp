@@ -60,11 +60,10 @@
 // From test/Utilities directory
 #include "Traits.hpp"
 
-struct Dim : public PHX::DimTag {
-  Dim () {}
-  const char* name () const { static const char name[] = "Dim"; return name; }
-  static const Dim& tag() { static const Dim tag; return tag; }
-};
+struct Dim {};
+namespace PHX {
+  template<> struct is_extent<Dim> : std::true_type {};
+}
 
 namespace {
 PHX::DataLayout* makeLayout (const int rank, const int* d) {
@@ -98,10 +97,10 @@ void testRank (const int rank, Teuchos::FancyOStream& out, bool& success) {
   PHX::MDField<double> d("test", layout);
   const std::vector<PHX::index_size_type> ddims(1, 8);
   d.setFieldData(
-    PHX::KokkosViewFactory<double, PHX::Device>::buildView(
+      PHX::KokkosViewFactory<double, typename PHX::DevLayout<double>::type, PHX::Device>::buildView(
       d.fieldTag(), ddims));
   f.setFieldData(
-    PHX::KokkosViewFactory<PHX::MyTraits::FadType, PHX::Device>::buildView(
+      PHX::KokkosViewFactory<PHX::MyTraits::FadType, typename PHX::DevLayout<PHX::MyTraits::FadType>::type,PHX::Device>::buildView(
       f.fieldTag(), ddims));
   
   const PHX::MyTraits::FadType

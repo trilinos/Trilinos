@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -51,6 +51,7 @@
 #include "Phalanx_Evaluator_AliasField.hpp"
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_KokkosViewFactoryFunctor.hpp"
+#include "Phalanx_MemoryPool.hpp"
 #include <sstream>
 #include <stdexcept>
 
@@ -58,13 +59,15 @@
 template <typename EvalT, typename Traits>
 PHX::EvaluationContainer<EvalT, Traits>::EvaluationContainer() :
   post_registration_setup_called_(false),
-  build_device_dag_(false)
+  build_device_dag_(false),
+  minimize_dag_memory_use_(false),
+  memory_pool_(nullptr)
 {
   this->dag_manager_.setEvaluationTypeName( PHX::typeAsString<EvalT>() );
 }
 
 // *************************************************************************
-template <typename EvalT, typename Traits> 
+template <typename EvalT, typename Traits>
 PHX::EvaluationContainer<EvalT, Traits>::~EvaluationContainer()
 {
 
@@ -110,26 +113,47 @@ aliasField(const PHX::FieldTag& aliasedField,
   Teuchos::RCP<PHX::Evaluator<Traits>> e =
     Teuchos::rcp(new PHX::AliasField<EvalT,Traits>(aliasedField,targetField));
   this->registerEvaluator(e);
-  
+
   // Store off to assign memory during allocation phase
   aliased_fields_[aliasedField.identifier()] = targetField.identifier();
 }
 
 // *************************************************************************
-template <typename EvalT, typename Traits> 
+template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm,
-                      const bool& buildDeviceDAG)
+                      const bool& buildDeviceDAG,
+                      const bool& minimizeDAGMemoryUse,
+                      const PHX::MemoryPool* const memoryPool)
 {
+  // Save input
+  build_device_dag_ = buildDeviceDAG;
+  minimize_dag_memory_use_ = minimizeDAGMemoryUse;
+  if (memoryPool != nullptr) {
+    // Clone memory pool to share memory allocated from other FieldManager/DAGs
+    memory_pool_ = memoryPool->clone();
+  }
+  else
+    memory_pool_ = std::make_shared<PHX::MemoryPool>();
+
   // Figure out all evaluator dependencies
   if ( !(this->dag_manager_.sortingCalled()) )
     this->dag_manager_.sortAndOrderEvaluators();
 
-
   // Allocate memory for all fields that are needed
-  const std::vector< Teuchos::RCP<PHX::FieldTag> >& var_list = 
+  const std::vector< Teuchos::RCP<PHX::FieldTag> >& var_list =
     this->dag_manager_.getFieldTags();
+
+  // Find shared fields: shared fields are fields that don't overlap
+  // in the topological sort of the dag and, therefore, can share the
+  // same memory allocation tracker. shared_fields->first is the field
+  // that will not be allocated since it will use another field's
+  // memory. shared_field->second is the field that whose memory the
+  // first field will point to.
+  // std::vector<std::string> shared_fields;
+  // if (minimize_dag_memory_use_)
+  //   this->FindSharedFields(shared_fields,);
 
   std::vector< Teuchos::RCP<PHX::FieldTag> >::const_iterator  var;
 
@@ -139,7 +163,7 @@ postRegistrationSetup(typename Traits::SetupData d,
          unmanaged_fields_.find((*var)->identifier()) == unmanaged_fields_.end() ) {
       typedef typename PHX::eval_scalar_types<EvalT>::type EvalDataTypes;
       Sacado::mpl::for_each_no_kokkos<EvalDataTypes>(PHX::KokkosViewFactoryFunctor<EvalT>(fields_,*(*var),kokkos_extended_data_type_dimensions_));
-      
+
       TEUCHOS_TEST_FOR_EXCEPTION(fields_.find((*var)->identifier()) == fields_.end(),std::runtime_error,
                                  "Error: PHX::EvaluationContainer::postRegistrationSetup(): could not build a Kokkos::View for field named \""
                                  << (*var)->name() << "\" of type \"" << (*var)->dataTypeInfo().name()
@@ -154,7 +178,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   // Assign aliased fields to the target field memory
   for (const auto& field : aliased_fields_)
     fields_[field.first] = fields_[field.second];
-  
+
   // Bind memory to all fields in all required evaluators
   for (const auto& field : var_list)
     this->bindField(*field,fields_[field->identifier()]);
@@ -165,13 +189,12 @@ postRegistrationSetup(typename Traits::SetupData d,
   // is called (e.g query for kokkos extended data type dimensions).
   post_registration_setup_called_ = true;
 
-  build_device_dag_ = buildDeviceDAG;  
   // Make sure that device support has been enabled.
 #ifndef PHX_ENABLE_DEVICE_DAG
   TEUCHOS_TEST_FOR_EXCEPTION(buildDeviceDAG, std::runtime_error,
                              "ERROR: useDeviceDAG was set to true in call to postRegistrationSetup(), but this feature was not been enabled during configure. Please rebuild with Phalanx_ENABLE_DEVICE_DAG=ON to use this feature.");
 #endif
-  
+
   // Allow users to perform special setup. This used to include
   // manually binding memory for all fields in the evaluators via
   // setFieldData(). NOTE: users should not have to bind memory
@@ -219,6 +242,8 @@ evaluateFieldsTaskParallel(const int& work_size,
 #ifdef PHX_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
 		      "You must call post registration setup for each evaluation type before calling the evaluateFields() method for that type!");
+  TEUCHOS_TEST_FOR_EXCEPTION( minimize_dag_memory_use_, std::logic_error,
+                      "minimize_dag_memory_use is not allowed in task parallel runs! Please disable this option for task parallel!");
 #endif
 
   this->dag_manager_.evaluateFieldsTaskParallel(work_size,d);
@@ -262,7 +287,7 @@ setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dim
 // *************************************************************************
 template <typename EvalT, typename Traits>
 const std::vector<PHX::index_size_type> & PHX::EvaluationContainer<EvalT, Traits>::
-getKokkosExtendedDataTypeDimensions() const 
+getKokkosExtendedDataTypeDimensions() const
 {
 #ifdef PHX_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
@@ -317,11 +342,11 @@ bindField(const PHX::FieldTag& f, const PHX::any& a)
 
   if (s == fields_.end()) {
     std::stringstream st;
-    st << "\n ERROR in PHX::EvaluationContainer<EvalT, Traits>::bindField():\n" 
-       << " Failed to bind field: \"" <<  f.identifier() << "\"\n" 
+    st << "\n ERROR in PHX::EvaluationContainer<EvalT, Traits>::bindField():\n"
+       << " Failed to bind field: \"" <<  f.identifier() << "\"\n"
        << " for evaluation type \"" << PHX::typeAsString<EvalT>() << "\".\n"
        << " This field is not used in the Evaluation DAG.\n";
-    
+
     throw std::runtime_error(st.str());
   }
 
@@ -360,7 +385,7 @@ void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
   os << "Evaluation Type = " << type << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << this->dag_manager_ << std::endl;
-  for (std::unordered_map<std::string,PHX::any>::const_iterator i = 
+  for (std::unordered_map<std::string,PHX::any>::const_iterator i =
 	 fields_.begin(); i != fields_.end(); ++i)
     os << i->first << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
@@ -405,4 +430,4 @@ printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
 
 // *************************************************************************
 
-#endif 
+#endif

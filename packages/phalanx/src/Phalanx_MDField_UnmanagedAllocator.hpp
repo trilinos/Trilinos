@@ -15,7 +15,7 @@ namespace PHX {
                            const std::vector<PHX::index_size_type>& extra_dims = std::vector<PHX::index_size_type>(0))
   {
     PHX::MDField<ScalarT,DimensionPack...> field(name,layout);
-    PHX::any memory = PHX::KokkosViewFactory<ScalarT,PHX::Device>::buildView(field.fieldTag(),extra_dims);
+    PHX::any memory = PHX::KokkosViewFactory<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>::buildView(field.fieldTag(),extra_dims);
     field.setFieldData(memory);
     return field;
   }
