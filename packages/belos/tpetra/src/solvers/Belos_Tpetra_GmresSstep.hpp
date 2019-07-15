@@ -126,7 +126,7 @@ private:
 public:
   GmresSstep () :
     base_type::Gmres (),
-    stepSize_ (1),
+    stepSize_ (5),
     tsqr_ (Teuchos::null)
   {
     this->input_.computeRitzValues = false;
@@ -135,7 +135,7 @@ public:
 
   GmresSstep (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A),
-    stepSize_ (1),
+    stepSize_ (5),
     tsqr_ (Teuchos::null)
   {
     this->input_.computeRitzValues = false;

@@ -50,7 +50,7 @@ public:
   mag_type tol = STM::squareroot (STS::eps ());
   int maxNumIters = 1000;
   int resCycle = 30;
-  int stepSize = 1;
+  int stepSize = 5;
   bool needToScale = true;
   bool needToReortho = false;
   std::string orthoType {"ICGS"};
