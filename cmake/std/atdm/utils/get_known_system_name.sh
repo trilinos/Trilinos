@@ -65,6 +65,12 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "mutrino"* ]] ; then
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
   ATDM_HOSTNAME=waterman
   ATDM_SYSTEM_NAME=waterman
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "rzansel"* ]] ; then
+  ATDM_HOSTNAME=ats2
+  ATDM_SYSTEM_NAME=ats2
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "lassen"* ]] ; then
+  ATDM_HOSTNAME=ats2
+  ATDM_SYSTEM_NAME=ats2
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"spack-rhel"* ]] ; then
   ATDM_HOSTNAME=spack-rhel
   ATDM_SYSTEM_NAME=spack-rhel
