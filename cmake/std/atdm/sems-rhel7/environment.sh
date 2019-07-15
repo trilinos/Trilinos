@@ -187,7 +187,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
   export OMPI_FC=`which gfortran`
   export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
   export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
-  # Needed for some Tpetra UVM stuff
+  # some Trilinos tests require this to run correctly
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 else
