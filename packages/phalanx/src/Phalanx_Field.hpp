@@ -54,7 +54,6 @@
 #include "Kokkos_View.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_MDField_TypeTraits.hpp"
 #include "Sacado.hpp"
 
 namespace PHX {
@@ -62,47 +61,34 @@ namespace PHX {
   class DataLayout;
   class FieldTag;
 
-  template<typename DataT, int Rank>
-  struct KokkosDimType;
-
-  template<typename DataT>
-  struct KokkosDimType<DataT,1> {
-    typedef DataT* type;
-  };
-  template<typename DataT>
-  struct KokkosDimType<DataT,2> {
-    typedef DataT** type;
-  };
-  template<typename DataT>
-  struct KokkosDimType<DataT,3> {
-    typedef DataT*** type;
-  };
-  template<typename DataT>
-  struct KokkosDimType<DataT,4> {
-    typedef DataT**** type;
-  };
-  template<typename DataT>
-  struct KokkosDimType<DataT,5> {
-    typedef DataT***** type;
-  };
-  template<typename DataT>
-  struct KokkosDimType<DataT,6> {
-    typedef DataT****** type;
-  };
-  template<typename DataT>
-  struct KokkosDimType<DataT,7> {
-    typedef DataT******* type;
-  };
-  template<typename DataT>
-  struct KokkosDimType<DataT,8> {
-    typedef DataT******** type;
-  };
-
   // *************************************
-  // Compile time checked MDField
+  // PHX::KokkosDimType
   // *************************************
+  template<typename DataT, int Rank> struct KokkosDimType;
 
   template<typename DataT,int Rank>
+  struct KokkosDimType {
+    using type = typename KokkosDimType<DataT*,Rank-1>::type;
+  };
+  
+  template<typename DataT>
+  struct KokkosDimType<DataT,0> {
+    using type = DataT;
+  };
+
+  // ****************************
+  // ReturnType
+  // ****************************
+  template<typename ViewType>
+  struct FieldReturnType {
+    using return_type = typename ViewType::reference_type;
+  };
+
+  // *************************************
+  // PHX::Field
+  // *************************************
+
+  template<typename DataT,int Rank,typename Layout = typename PHX::DevLayout<DataT>::type>
   class Field {
 
   public:
@@ -111,7 +97,7 @@ namespace PHX {
     typedef DataT& reference_type;
 
     typedef typename KokkosDimType<DataT,Rank>::type kokkos_data_type;
-    typedef typename PHX::View<kokkos_data_type> array_type;
+    typedef typename Kokkos::View<kokkos_data_type,Layout,PHX::Device> array_type;
     typedef typename array_type::array_layout layout_type;
     typedef typename array_type::device_type device_type;
     typedef typename PHX::Device::size_type size_type;
@@ -127,7 +113,7 @@ namespace PHX {
 
     //! For const/non-const compatibility
     template<typename CopyDataT>
-    Field(const Field<CopyDataT,Rank>& source);
+    Field(const Field<CopyDataT,Rank,Layout>& source);
 
     ~Field();
 
@@ -139,12 +125,12 @@ namespace PHX {
 
     //! For const/non-const compatibility
     template<typename CopyDataT>
-    PHX::Field<DataT,Rank>&
-    operator=(const Field<CopyDataT,Rank>& source);
+    PHX::Field<DataT,Rank,Layout>&
+    operator=(const Field<CopyDataT,Rank,Layout>& source);
 
     template<typename... index_pack>
     KOKKOS_INLINE_FUNCTION
-    typename PHX::MDFieldTypeTraits<array_type>::return_type
+    typename PHX::FieldReturnType<array_type>::return_type
     operator()(const index_pack&...) const;
 
     KOKKOS_INLINE_FUNCTION
@@ -174,10 +160,10 @@ namespace PHX {
     void print(std::ostream& os, bool printValues = false) const;
 
     KOKKOS_INLINE_FUNCTION
-    Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device> get_view();
+    Kokkos::DynRankView<DataT,Layout,PHX::Device> get_view();
 
     KOKKOS_INLINE_FUNCTION
-    const Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device> get_view() const;
+    const Kokkos::DynRankView<DataT,Layout,PHX::Device> get_view() const;
 
     //! Returns a static view of the underlying kokkos static view.
     KOKKOS_INLINE_FUNCTION
@@ -188,7 +174,7 @@ namespace PHX {
     const array_type get_static_view() const;
 
     template<typename SrcDataT>
-    void deep_copy(const PHX::Field<SrcDataT,Rank>& source);
+    void deep_copy(const PHX::Field<SrcDataT,Rank,Layout>& source);
 
     void deep_copy(const DataT source);
 
@@ -205,12 +191,11 @@ namespace PHX {
 #endif
 
     //! For copy/assignment between const/non-const
-    template<typename ScalarT,int FriendRank> friend class PHX::Field;
+    template<typename ScalarT,int FriendRank,typename FriendLayout> friend class PHX::Field;
   };
 
-  template<typename DataT,int Rank>
-  std::ostream& operator<<(std::ostream& os,
-			   const PHX::Field<DataT,Rank>& h);
+  template<typename DataT,int Rank,typename Layout = typename PHX::DevLayout<DataT>::type>
+  std::ostream& operator<<(std::ostream& os, const PHX::Field<DataT,Rank,Layout>& h);
 }
 
 #include "Phalanx_Field_Def.hpp"

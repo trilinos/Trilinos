@@ -40,29 +40,73 @@
 //
 // ************************************************************************
 // @HEADER
+#ifndef PHX_MEMORY_POOL_HPP
+#define PHX_MEMORY_POOL_HPP
 
-
-#ifndef PHX_PRINT_UTILITIES_HPP
-#define PHX_PRINT_UTILITIES_HPP
-
-#include <vector>
+#include "Phalanx_config.hpp"
+#include <forward_list>
+#include <memory>
 
 namespace PHX {
 
-  template<typename Dimension, typename Array>
-  struct PrintDimension {
-    void addName(std::vector<const char*>& names)
-    { 
-      names.push_back(Dimension::tag().name());
+  class MemoryPool {
+
+    struct Tracker {
+      bool is_used_;
+      Kokkos::Impl::SharedAllocationTracker tracker_;
+    };
+
+    std::forward_list<PHX::MemoryPool::Tracker> trackers_;
+
+    /// Tracks cloned memory pools so that all clones can get access to newly allocated fields from any individual memory pool.
+    std::shared_ptr<std::forward_list<PHX::MemoryPool*>> shared_memory_pools_;
+
+    void findMemoryAllocation() {}
+
+  public:
+    MemoryPool()
+    {
+      shared_memory_pools_ = std::make_shared<std::forward_list<PHX::MemoryPool*>>();
+      shared_memory_pools_->push_front(this);
     }
+
+    ~MemoryPool()
+    {
+      // remove self from list of memory pools
+      shared_memory_pools_->remove(this);
+    }
+
+    /// Allocate a new memory pool re-using trackers from shared memory pools.
+    MemoryPool(const MemoryPool& mp)
+    {
+      shared_memory_pools_ = mp.shared_memory_pools_;
+      trackers_ = mp.trackers_;
+      shared_memory_pools_->push_front(this);
+    }
+
+    /** \brief Clones MemoryPool to reuse tracker allocations with a separate FieldManager. */
+    std::shared_ptr<PHX::MemoryPool> clone() const
+    {return std::make_shared<PHX::MemoryPool>(*this);}
+
+    /// Assigns memory to a view, allocates new memory if needed.
+    template<class View>
+    void bindViewMemory(const PHX::FieldTag& tag, View& view) {
+      const size_t bytes = view.span();
+
+      // Find an unused memory allocation.
+
+
+      // loop over other pools and register as free memory
+
+    }
+
+    /// Inserts tracker
+    void insertTracker(Kokkos::Impl::SharedAllocationTracker& t) {
+
+    }
+
   };
 
-  // Specialization for "void" types - the default value for Array parameters
-  template<typename Array>
-  struct PrintDimension<void,Array> {
-    void addName(std::vector<const char*>& /* names */) { }
-  };
+}
 
-} 
-
-#endif 
+#endif

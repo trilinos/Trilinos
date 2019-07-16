@@ -49,6 +49,7 @@
 #include <sstream>
 #include <typeinfo>
 #include "Teuchos_Assert.hpp"
+#include "Phalanx_ExtentTraits.hpp"
 
 //**********************************************************************
 namespace PHX{
@@ -129,14 +130,14 @@ MDALayout(size_type size1, size_type size2, size_type size3,
   m_dim_size[6] = size7;
   m_dim_size[7] = size8;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
-  m_dim_name.push_back(Tag3::tag().name());
-  m_dim_name.push_back(Tag4::tag().name());
-  m_dim_name.push_back(Tag5::tag().name());
-  m_dim_name.push_back(Tag6::tag().name());
-  m_dim_name.push_back(Tag7::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
+  m_dim_name.push_back(PHX::print<Tag3>());
+  m_dim_name.push_back(PHX::print<Tag4>());
+  m_dim_name.push_back(PHX::print<Tag5>());
+  m_dim_name.push_back(PHX::print<Tag6>());
+  m_dim_name.push_back(PHX::print<Tag7>());
 
   m_size = size1 * size2 * size3 * size4 * size5 * size6 * size7 * size8;
 
@@ -161,13 +162,13 @@ MDALayout(size_type size1, size_type size2, size_type size3,
   m_dim_size[5] = size6;
   m_dim_size[6] = size7;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
-  m_dim_name.push_back(Tag3::tag().name());
-  m_dim_name.push_back(Tag4::tag().name());
-  m_dim_name.push_back(Tag5::tag().name());
-  m_dim_name.push_back(Tag6::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
+  m_dim_name.push_back(PHX::print<Tag3>());
+  m_dim_name.push_back(PHX::print<Tag4>());
+  m_dim_name.push_back(PHX::print<Tag5>());
+  m_dim_name.push_back(PHX::print<Tag6>());
 
   m_size = size1 * size2 * size3 * size4 * size5 * size6 * size7;
 
@@ -190,12 +191,12 @@ MDALayout(size_type size1, size_type size2, size_type size3,
   m_dim_size[4] = size5;
   m_dim_size[5] = size6;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
-  m_dim_name.push_back(Tag3::tag().name());
-  m_dim_name.push_back(Tag4::tag().name());
-  m_dim_name.push_back(Tag5::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
+  m_dim_name.push_back(PHX::print<Tag3>());
+  m_dim_name.push_back(PHX::print<Tag4>());
+  m_dim_name.push_back(PHX::print<Tag5>());
 
   m_size = size1 * size2 * size3 * size4 * size5 * size6;
 
@@ -217,11 +218,11 @@ MDALayout(size_type size1, size_type size2, size_type size3,
   m_dim_size[3] = size4;
   m_dim_size[4] = size5;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
-  m_dim_name.push_back(Tag3::tag().name());
-  m_dim_name.push_back(Tag4::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
+  m_dim_name.push_back(PHX::print<Tag3>());
+  m_dim_name.push_back(PHX::print<Tag4>());
 
   m_size = size1 * size2 * size3 * size4 * size5;
 
@@ -242,10 +243,10 @@ MDALayout(size_type size1, size_type size2, size_type size3,
   m_dim_size[2] = size3;
   m_dim_size[3] = size4;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
-  m_dim_name.push_back(Tag3::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
+  m_dim_name.push_back(PHX::print<Tag3>());
 
   m_size = size1 * size2 * size3 * size4;
 
@@ -264,9 +265,9 @@ MDALayout(size_type size1, size_type size2, size_type size3)
   m_dim_size[1] = size2;
   m_dim_size[2] = size3;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
 
   m_size = size1 * size2 * size3;
 
@@ -284,8 +285,8 @@ MDALayout(size_type size1, size_type size2)
   m_dim_size[0] = size1;
   m_dim_size[1] = size2;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
 
   m_size = size1 * size2;
 
@@ -302,7 +303,7 @@ MDALayout(size_type size1)
 
   m_dim_size[0] = size1;
 
-  m_dim_name.push_back(Tag0::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
 
   m_size = size1;
 
@@ -329,14 +330,14 @@ MDALayout(const std::string& prefix,
   m_dim_size[6] = size7;
   m_dim_size[7] = size8;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
-  m_dim_name.push_back(Tag3::tag().name());
-  m_dim_name.push_back(Tag4::tag().name());
-  m_dim_name.push_back(Tag5::tag().name());
-  m_dim_name.push_back(Tag6::tag().name());
-  m_dim_name.push_back(Tag7::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
+  m_dim_name.push_back(PHX::print<Tag3>());
+  m_dim_name.push_back(PHX::print<Tag4>());
+  m_dim_name.push_back(PHX::print<Tag5>());
+  m_dim_name.push_back(PHX::print<Tag6>());
+  m_dim_name.push_back(PHX::print<Tag7>());
 
   m_size = size1 * size2 * size3 * size4 * size5 * size6 * size7 * size8;
 
@@ -362,13 +363,13 @@ MDALayout(const std::string& prefix,
   m_dim_size[5] = size6;
   m_dim_size[6] = size7;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
-  m_dim_name.push_back(Tag3::tag().name());
-  m_dim_name.push_back(Tag4::tag().name());
-  m_dim_name.push_back(Tag5::tag().name());
-  m_dim_name.push_back(Tag6::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
+  m_dim_name.push_back(PHX::print<Tag3>());
+  m_dim_name.push_back(PHX::print<Tag4>());
+  m_dim_name.push_back(PHX::print<Tag5>());
+  m_dim_name.push_back(PHX::print<Tag6>());
 
   m_size = size1 * size2 * size3 * size4 * size5 * size6 * size7;
 
@@ -392,12 +393,12 @@ MDALayout(const std::string& prefix,
   m_dim_size[4] = size5;
   m_dim_size[5] = size6;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
-  m_dim_name.push_back(Tag3::tag().name());
-  m_dim_name.push_back(Tag4::tag().name());
-  m_dim_name.push_back(Tag5::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
+  m_dim_name.push_back(PHX::print<Tag3>());
+  m_dim_name.push_back(PHX::print<Tag4>());
+  m_dim_name.push_back(PHX::print<Tag5>());
 
   m_size = size1 * size2 * size3 * size4 * size5 * size6;
 
@@ -420,11 +421,11 @@ MDALayout(const std::string& prefix,
   m_dim_size[3] = size4;
   m_dim_size[4] = size5;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
-  m_dim_name.push_back(Tag3::tag().name());
-  m_dim_name.push_back(Tag4::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
+  m_dim_name.push_back(PHX::print<Tag3>());
+  m_dim_name.push_back(PHX::print<Tag4>());
 
   m_size = size1 * size2 * size3 * size4 * size5;
 
@@ -446,10 +447,10 @@ MDALayout(const std::string& prefix,
   m_dim_size[2] = size3;
   m_dim_size[3] = size4;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
-  m_dim_name.push_back(Tag3::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
+  m_dim_name.push_back(PHX::print<Tag3>());
 
   m_size = size1 * size2 * size3 * size4;
 
@@ -469,9 +470,9 @@ MDALayout(const std::string& prefix,
   m_dim_size[1] = size2;
   m_dim_size[2] = size3;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
-  m_dim_name.push_back(Tag2::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
+  m_dim_name.push_back(PHX::print<Tag2>());
 
   m_size = size1 * size2 * size3;
 
@@ -490,8 +491,8 @@ MDALayout(const std::string& prefix,
   m_dim_size[0] = size1;
   m_dim_size[1] = size2;
 
-  m_dim_name.push_back(Tag0::tag().name());
-  m_dim_name.push_back(Tag1::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
+  m_dim_name.push_back(PHX::print<Tag1>());
 
   m_size = size1 * size2;
 
@@ -509,7 +510,7 @@ MDALayout(const std::string& prefix,
 
   m_dim_size[0] = size1;
 
-  m_dim_name.push_back(Tag0::tag().name());
+  m_dim_name.push_back(PHX::print<Tag0>());
 
   m_size = size1;
 
@@ -570,6 +571,16 @@ template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 PHX::Device::size_type PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 size() const
 { return m_size; }
+
+//**********************************************************************
+template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+PHX::DataLayout::KokkosLayoutType
+PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+kokkosLayout() const
+{
+  return PHX::DataLayout::KokkosLayoutType::Default;
+}
 
 //**********************************************************************
 template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
