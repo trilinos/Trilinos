@@ -47,7 +47,6 @@
 #define ROL_DYNAMICCONSTRAINT_HPP
 
 #include "ROL_DynamicFunction.hpp"
-#include "ROL_TimeStamp.hpp"
 
 #include "ROL_NonlinearLeastSquaresObjective_Dynamic.hpp"
 #include "ROL_Constraint_DynamicState.hpp"
@@ -150,9 +149,9 @@ public:
     update_z( z, ts );
   }
 
-  virtual void update_uo( const V& uo, const TS& ts ) { }
-  virtual void update_un( const V& un, const TS& ts ) { }
-  virtual void update_z( const V& z, const TS& ts ) { }
+  using DynamicFunction<Real>::update_uo;
+  using DynamicFunction<Real>::update_un;
+  using DynamicFunction<Real>::update_z;
 
   virtual void value( V& c, const V& uo, const V& un, 
                       const V& z, const TS& ts ) const = 0;

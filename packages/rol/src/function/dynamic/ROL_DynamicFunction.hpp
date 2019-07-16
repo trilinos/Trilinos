@@ -48,6 +48,8 @@
 
 #include <initializer_list>
 
+#include "ROL_TimeStamp.hpp"
+
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_VectorWorkspace.hpp"
 
@@ -68,6 +70,7 @@ public:
 
   using V  = Vector<Real>;
   using PV = PartitionedVector<Real>;
+  using TS = TimeStamp<Real>;
 
   DynamicFunction( std::initializer_list<std::string> zero_deriv_terms={} ) :
     zero_deriv_terms_(zero_deriv_terms) {
@@ -87,13 +90,13 @@ public:
   virtual ~DynamicFunction() {}
 
   // Update old state
-  virtual void update_uo( const V& x ) {}
+  virtual void update_uo( const V& x, const TS& ts ) {}
 
   // Update new state
-  virtual void update_un( const V& x ) {}
+  virtual void update_un( const V& x, const TS& ts ) {}
 
   // Update control
-  virtual void update_z( const V& x ) {}
+  virtual void update_z( const V& x, const TS& ts ) {}
 
   bool is_zero_derivative( const std::string& key ) {
     return std::find( std::begin(zero_deriv_terms_),
