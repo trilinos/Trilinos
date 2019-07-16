@@ -47,11 +47,6 @@
 #include <string>
 #include <vector>
 
-#include "Phalanx_MDField_Utilities.hpp"
-
-//#define PANZER_USE_FAST_SUM 1
-#define PANZER_USE_FAST_SUM 0
-
 namespace panzer {
 
 //**********************************************************************
@@ -188,19 +183,6 @@ evaluateFields(
 
   sum.deep_copy(ScalarT(0.0));
 
-#if PANZER_USE_FAST_SUM 
-  sum.deep_copy(ScalarT(0.0));
-  for (std::size_t j = 0; j < values.size(); ++j) {
-    
-    PHX::MDFieldIterator<ScalarT> sum_it(sum);
-    PHX::MDFieldIterator<const ScalarT> values_it(values[j]);
-    // for (PHX::MDFieldIterator<ScalarT> sum_it(sum), values_it(values[j]);
-    for ( ;
-         ! (sum_it.done() || values_it.done());
-         ++sum_it, ++values_it)
-      *sum_it += scalars[j]*(*values_it);
-  }
-#else
   size_t rank = sum.rank();
   const size_t length = sum.extent(0);
   if (rank == 1 )
@@ -231,8 +213,6 @@ evaluateFields(
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR: rank of sum is higher than supported");
   }
-
-#endif
 }
 
 

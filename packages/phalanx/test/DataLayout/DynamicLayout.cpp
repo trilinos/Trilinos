@@ -594,4 +594,11 @@ TEUCHOS_UNIT_TEST(DynamicLayout, basic)
     cout << "...passed:\n" << output.str() << endl;
   }
 
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // Arbitrary layout
+  TEST_ASSERT(e7.kokkosLayout() == PHX::DataLayout::KokkosLayoutType::Default);
+  e7.setKokkosLayout(PHX::DataLayout::KokkosLayoutType::Right);
+  TEST_ASSERT(e7.kokkosLayout() == PHX::DataLayout::KokkosLayoutType::Right);
+  e7.setKokkosLayout(PHX::DataLayout::KokkosLayoutType::Left);
+  TEST_ASSERT(e7.kokkosLayout() == PHX::DataLayout::KokkosLayoutType::Left);
 }

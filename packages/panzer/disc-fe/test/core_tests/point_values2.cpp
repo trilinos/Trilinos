@@ -123,7 +123,7 @@ namespace panzer {
   {
     typedef panzer::Traits::FadType ScalarType;
     typedef PHX::MDField<ScalarType> ArrayType;
-    typedef PHX::KokkosViewFactory<ScalarType,PHX::Device> ViewFactory;
+    typedef PHX::KokkosViewFactory<ScalarType,typename PHX::DevLayout<ScalarType>::type,PHX::Device> ViewFactory;
     typedef PHX::MDField<double>::size_type size_type;
 
 
