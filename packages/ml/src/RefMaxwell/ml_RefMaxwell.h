@@ -248,6 +248,9 @@ namespace ML_Epetra
 
     //! (1,1) Block Preconditioner
     ML_Preconditioner * EdgePC;
+    Teuchos::RCP<MultiLevelPreconditioner> EdgePC_sa;
+    Teuchos::ArrayRCP<double> edge_nullspace;
+
     //! (2,2) Block Preconditioner
     //    ML_Preconditioner * NodePC;
     MultiLevelPreconditioner * NodePC; // This is a HAQ
