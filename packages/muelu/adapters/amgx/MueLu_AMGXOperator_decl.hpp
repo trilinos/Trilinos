@@ -441,7 +441,7 @@ namespace MueLu {
       domainMap_ = inA->getDomainMap();
       rangeMap_  = inA->getRangeMap();
 
-      RCP<Teuchos::Time> realSetupTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: real setup");
+      RCP<Teuchos::Time> realSetupTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: setup (total)");
       realSetupTimer->start();
       AMGX_solver_setup(Solver_, A_);
       realSetupTimer->stop();
@@ -449,19 +449,19 @@ namespace MueLu {
 
       vectorTimer1_ = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer vectors CPU->GPU");
       vectorTimer2_ = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer vector  GPU->CPU");
+      solverTimer_  = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: Solve (total)"); 
     }
 
     //! Destructor.
     virtual ~AMGXOperator()
     {
-      AMGX_solver_destroy(Solver_);
-      AMGX_vector_destroy(X_);
-      AMGX_vector_destroy(Y_);
-      AMGX_matrix_destroy(A_);
-      AMGX_resources_destroy(Resources_);
+      // Comment this out if you need rebuild to work. This causes AMGX_solver_destroy memory issues.
+      AMGX_SAFE_CALL(AMGX_solver_destroy(Solver_));
+      AMGX_SAFE_CALL(AMGX_vector_destroy(X_));
+      AMGX_SAFE_CALL(AMGX_vector_destroy(Y_));
+      AMGX_SAFE_CALL(AMGX_matrix_destroy(A_));
+      AMGX_SAFE_CALL(AMGX_resources_destroy(Resources_));
       AMGX_SAFE_CALL(AMGX_config_destroy(Config_));
-      //AMGX_SAFE_CALL(AMGX_finalize_plugins());
-      //AMGX_SAFE_CALL(AMGX_finalize()); 
     }
 
    
@@ -525,6 +525,7 @@ namespace MueLu {
 
     RCP<Teuchos::Time>      vectorTimer1_;
     RCP<Teuchos::Time>      vectorTimer2_;
+    RCP<Teuchos::Time>      solverTimer_;
   };
 
 } // namespace
