@@ -135,7 +135,7 @@ public:
   {
     RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(
-        Teuchos::tuple<std::string>( "SerialGreedy","Hybrid" )));
+        Teuchos::tuple<std::string>( "SerialGreedy","Hybrid","2GL" )));
     pl.set("color_method", "SerialGreedy", "coloring algorithm",
      color_method_Validator);
     pl.set("Hybrid_batch_size",-1,"Batch size for distributed coloring, default is all verts",
@@ -218,6 +218,13 @@ void ColoringProblem<Adapter>::solve(bool newData)
       AlgHybridGMB<Adapter> alg(this->inputAdapter_, this->params_,
                                 this->env_, this->comm_);
       alg.color(this->solution_);
+  } 
+  else if (method.compare("2GL") == 0)
+  {
+      printf("Do the two layer ghost method\n");
+      AlgDistance1TwoGhostLayer<Adapter> alg(this->inputAdapter_, this->params_,
+                                             this->env_, this->comm_);
+      alg.color(this->solution_);  
   }
 #if 0 // TODO later
   else if (method.compare("speculative") == 0) // Gebremedhin-Manne
