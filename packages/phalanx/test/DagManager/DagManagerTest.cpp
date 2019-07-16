@@ -47,7 +47,6 @@
 #include "Phalanx_DAG_Manager.hpp"
 #include "Phalanx_Evaluator_AliasField.hpp"
 #include "Phalanx_TypeStrings.hpp"
-#include "Phalanx_DimTag.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -60,11 +59,8 @@
 // From test/Utilities directory
 #include "Traits.hpp"
 
-PHX_DIM_TAG_DECLARATION(CELL)
-PHX_DIM_TAG_IMPLEMENTATION(CELL)
-
-PHX_DIM_TAG_DECLARATION(BASIS)
-PHX_DIM_TAG_IMPLEMENTATION(BASIS)
+PHX_EXTENT(CELL)
+PHX_EXTENT(BASIS)
 
 #include "Evaluator_MockDAG.hpp"
 

@@ -629,7 +629,7 @@ namespace Tpetra {
   ///         val.begin (), val.end ());
   /// \endcode
   template<class IT1, class IT2>
-  void
+  KOKKOS_INLINE_FUNCTION void
   merge2 (IT1& indResultOut, IT2& valResultOut,
           IT1 indBeg, IT1 indEnd,
           IT2 valBeg, IT2 /* valEnd */)

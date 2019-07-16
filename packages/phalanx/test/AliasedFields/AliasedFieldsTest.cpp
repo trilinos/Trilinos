@@ -49,7 +49,6 @@
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_TypeStrings.hpp"
-#include "Phalanx_DimTag.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -61,11 +60,8 @@
 
 #include "MyTraits.hpp"
 
-PHX_DIM_TAG_DECLARATION(CELL)
-PHX_DIM_TAG_IMPLEMENTATION(CELL)
-
-PHX_DIM_TAG_DECLARATION(BASIS)
-PHX_DIM_TAG_IMPLEMENTATION(BASIS)
+PHX_EXTENT(CELL)
+PHX_EXTENT(BASIS)
 
 #include "AliasedFields_TestEvaluators.hpp"
 

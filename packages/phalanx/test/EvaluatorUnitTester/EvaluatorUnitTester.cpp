@@ -46,7 +46,6 @@
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_TypeStrings.hpp"
-#include "Phalanx_DimTag.hpp"
 #include "Phalanx_Evaluator_UnmanagedFieldDummy.hpp"
 #include "Phalanx_Evaluator_UnitTester.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
@@ -63,17 +62,10 @@
 
 #include "MyTraits.hpp"
 
-PHX_DIM_TAG_DECLARATION(CELL)
-PHX_DIM_TAG_IMPLEMENTATION(CELL)
-
-PHX_DIM_TAG_DECLARATION(QP)
-PHX_DIM_TAG_IMPLEMENTATION(QP)
-
-PHX_DIM_TAG_DECLARATION(DIM)
-PHX_DIM_TAG_IMPLEMENTATION(DIM)
-
-PHX_DIM_TAG_DECLARATION(R)
-PHX_DIM_TAG_IMPLEMENTATION(R)
+PHX_EXTENT(CELL)
+PHX_EXTENT(QP)
+PHX_EXTENT(DIM)
+PHX_EXTENT(R)
 
 // requires the dim tags defined above
 #include "SimpleEvaluator.hpp"

@@ -48,7 +48,7 @@
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Phalanx_DimTag.hpp"
+#include "Phalanx_ExtentTraits.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -57,17 +57,10 @@
 // From test/Utilities directory
 #include "Traits.hpp"
 
-PHX_DIM_TAG_DECLARATION(Cell)
-PHX_DIM_TAG_IMPLEMENTATION(Cell)
-
-PHX_DIM_TAG_DECLARATION(Node)
-PHX_DIM_TAG_IMPLEMENTATION(Node)
-
-PHX_DIM_TAG_DECLARATION(QP)
-PHX_DIM_TAG_IMPLEMENTATION(QP)
-
-PHX_DIM_TAG_DECLARATION(DIM)
-PHX_DIM_TAG_IMPLEMENTATION(DIM)
+PHX_EXTENT(Cell)
+PHX_EXTENT(Node)
+PHX_EXTENT(QP)
+PHX_EXTENT(DIM)
 
 TEUCHOS_UNIT_TEST(FieldTag,FieldTag)
 {
