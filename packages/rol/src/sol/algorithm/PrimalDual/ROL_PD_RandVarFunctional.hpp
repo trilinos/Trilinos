@@ -119,7 +119,8 @@ public:
       values_->get(val, sampler.getMyPoint(i));
       multipliers_->get(lold, sampler.getMyPoint(i));
       if (update_ == 0) {
-        lnew = ppf(val, lold, pen_, 1);
+        //lnew = ppf(val, lold, pen_, 1);
+        lnew = std::min(one, std::max(zero, pen_*val+lold));
       }
       else {
         lnew = (val < zero ? zero : one);
