@@ -406,6 +406,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
       solveType = dsolveType;
       tol       = dtol;
 
+
       if (isDriver) {
         if (runList.isParameter("filename")) {
           // Redirect all output into a filename We have to redirect all output,
@@ -427,9 +428,6 @@ MueLu::MueLu_AMGX_initialize_plugins();
       RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       Teuchos::FancyOStream& out2 = *fancy2;
       out2.setOutputToRootOnly(0);
-
-
-
       out2 << galeriStream.str();
 
       // =========================================================================
@@ -543,8 +541,8 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
 #ifdef HAVE_MUELU_AMGX
 // Finalize AMGX
-//MueLu::MueLu_AMGX_finalize();
-//MueLu::MueLu_AMGX_finalize_plugins();
+MueLu::MueLu_AMGX_finalize_plugins();
+MueLu::MueLu_AMGX_finalize();
 #endif
 
   return EXIT_SUCCESS;

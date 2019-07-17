@@ -161,6 +161,7 @@ void rpc_test_additive_newconstructor(Epetra_ActiveComm &Comm,
   NewList.set("D0",rcp(&D0,false));
   NewList.set("Ms",rcp((const Epetra_CrsMatrix*)Ms,false));
 
+  std::cout<<NewList<<std::endl;
   RefMaxwellPreconditioner PrecRF(SM,NewList);
   Epetra_Vector x0_(x0);
 
@@ -341,7 +342,9 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   if(dim >= 1) List_LineSGS.set("x-coordinates",&e_coords[0][0]);
   if(dim >= 2) List_LineSGS.set("y-coordinates",&e_coords[1][0]);
   if(dim == 3) List_LineSGS.set("z-coordinates",&e_coords[2][0]);
-
+ 
+  Teuchos::ParameterList List_SA    = Build_Teuchos_List(N,coord_ptr,"smoother: type","symmetric Gauss-Seidel",0,1);
+  List_SA.set("refmaxwell: 11solver","sa");
 
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
@@ -392,6 +395,11 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   lhs.PutScalar(0.0);
   if(!Comm.MyPID()) printf("*** Test 13 ***\n");
   rpc_test_additive_newconstructor(Comm,List_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  /* Test w/ edge SA */
+  lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 14 ***\n");
+  rpc_test_additive_newconstructor(Comm,List_SA,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
 
   delete M0; delete M1e;
   delete D0e;delete Se;
