@@ -32,6 +32,7 @@ ATDM_SYSTEM_NAME=
 
 ATDM_IS_CEE_RHEL6_MACHINE=
 
+# Specifically named systems
 if [[ $ATDM_CONFIG_REAL_HOSTNAME == "hansen"* ]] ; then
   ATDM_HOSTNAME=hansen
   ATDM_SYSTEM_NAME=shiller
@@ -44,9 +45,17 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "white"* ]] ; then
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "ride"* ]] ; then
   ATDM_HOSTNAME=ride
   ATDM_SYSTEM_NAME=ride
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "chama"* ]] ; then
-  ATDM_HOSTNAME=chama
-  ATDM_SYSTEM_NAME=chama
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "mutrino"* ]] ; then
+  ATDM_HOSTNAME=mutrino
+  ATDM_SYSTEM_NAME=mutrino
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
+  ATDM_HOSTNAME=waterman
+  ATDM_SYSTEM_NAME=waterman
+
+# classes of systems tlcc2, cts1 ...
+elif [[ $SNLSYSTEM == "tlcc2"* ]] ; then
+  ATDM_HOSTNAME=$ATDM_CONFIG_REAL_HOSTNAME
+  ATDM_SYSTEM_NAME=tlcc2
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] \
   || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ ser[0-9]+ ]] ; then
   ATDM_HOSTNAME=serrano
@@ -59,12 +68,8 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "ghost"* ]] \
   || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ gho[0-9]+ ]] ; then
   ATDM_HOSTNAME=ghost
   ATDM_SYSTEM_NAME=serrano
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "mutrino"* ]] ; then
-  ATDM_HOSTNAME=mutrino
-  ATDM_SYSTEM_NAME=mutrino
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
-  ATDM_HOSTNAME=waterman
-  ATDM_SYSTEM_NAME=waterman
+
+# environments available on rhel systems
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"spack-rhel"* ]] ; then
   ATDM_HOSTNAME=spack-rhel
   ATDM_SYSTEM_NAME=spack-rhel
@@ -117,6 +122,16 @@ elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
     return
   fi
 fi
+
+# Set a standard host name for systems that are posting builds to cdash
+if [[ $ATDM_SYSTEM_NAME == "tlcc2" ]] ; then
+    if [[ $ATDM_HOSTNAME == "chama"* ]] ; then
+	ATDM_HOSTNAME=chama
+    elif [[ $ATDM_HOSTNAME == "skybridge"* ]] ; then
+	ATDM_HOSTNAME=skybridge
+    fi
+fi
+
 
 if [[ $ATDM_SYSTEM_NAME == "" ]] ; then
   echo
