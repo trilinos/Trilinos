@@ -52,10 +52,7 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
   ATDM_HOSTNAME=waterman
   ATDM_SYSTEM_NAME=waterman
 
-# classes of systems tlcc2, cts1 ...
-elif [[ $SNLSYSTEM == "tlcc2"* ]] ; then
-  ATDM_HOSTNAME=$ATDM_CONFIG_REAL_HOSTNAME
-  ATDM_SYSTEM_NAME=tlcc2
+# cts1 systems
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] \
   || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ ser[0-9]+ ]] ; then
   ATDM_HOSTNAME=serrano
@@ -68,6 +65,17 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "ghost"* ]] \
   || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ gho[0-9]+ ]] ; then
   ATDM_HOSTNAME=ghost
   ATDM_SYSTEM_NAME=serrano
+
+# tlcc2 systems
+elif [[ $SNLSYSTEM == "tlcc2"* ]] ; then
+  ATDM_SYSTEM_NAME=tlcc2
+  if [[ $ATDM_HOSTNAME == "chama"* ]] ; then
+    ATDM_HOSTNAME=chama
+  elif [[ $ATDM_HOSTNAME == "skybridge"* ]] ; then
+    ATDM_HOSTNAME=skybridge
+  else
+    ATDM_HOSTNAME=$ATDM_CONFIG_REAL_HOSTNAME
+  fi
 
 # environments available on rhel systems
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"spack-rhel"* ]] ; then
@@ -122,16 +130,6 @@ elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
     return
   fi
 fi
-
-# Set a standard host name for systems that are posting builds to cdash
-if [[ $ATDM_SYSTEM_NAME == "tlcc2" ]] ; then
-    if [[ $ATDM_HOSTNAME == "chama"* ]] ; then
-	ATDM_HOSTNAME=chama
-    elif [[ $ATDM_HOSTNAME == "skybridge"* ]] ; then
-	ATDM_HOSTNAME=skybridge
-    fi
-fi
-
 
 if [[ $ATDM_SYSTEM_NAME == "" ]] ; then
   echo
