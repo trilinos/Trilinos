@@ -7,18 +7,19 @@
 template<class Real,
          class LO=Tpetra::Map<>::local_ordinal_type,
          class GO=Tpetra::Map<>::global_ordinal_type,
-         class Node=Tpetra::Map<>::node_type> 
-class PDE_OptVector_BatchManager : public ROL::TeuchosBatchManager<Real,GO> {
+         class Node=Tpetra::Map<>::node_type,
+         class SO=int> 
+class PDE_OptVector_BatchManager : public ROL::TeuchosBatchManager<Real,SO> {
 private:
   typedef Tpetra::MultiVector<Real,LO,GO,Node> FieldVector;
   typedef std::vector<Real>                    ParamVector;
   typedef PDE_OptVector<Real,LO,GO,Node>       OptVector;
 
 public:
-  PDE_OptVector_BatchManager(const ROL::Ptr<const Teuchos::Comm<GO> > &comm)
-    : ROL::TeuchosBatchManager<Real,GO>(comm) {}
+  PDE_OptVector_BatchManager(const ROL::Ptr<const Teuchos::Comm<SO> > &comm)
+    : ROL::TeuchosBatchManager<Real,SO>(comm) {}
 
-  using ROL::TeuchosBatchManager<Real,GO>::sumAll;
+  using ROL::TeuchosBatchManager<Real,SO>::sumAll;
   void sumAll(ROL::Vector<Real> &input, ROL::Vector<Real> &output) {
     // Sum all field components across processors
     ROL::Ptr<ROL::TpetraMultiVector<Real,LO,GO,Node> > input_field_ptr
@@ -40,7 +41,7 @@ public:
         ">>> (PDE_OptVector_BatchManager::sumAll): Field dimension mismatch!");
 
       for (size_t i = 0; i < input_nvec; ++i) {
-        ROL::TeuchosBatchManager<Real,GO>::sumAll((input_field->getDataNonConst(i)).getRawPtr(),
+        ROL::TeuchosBatchManager<Real,SO>::sumAll((input_field->getDataNonConst(i)).getRawPtr(),
                                                   (output_field->getDataNonConst(i)).getRawPtr(),
                                                   input_length);
       }
@@ -59,7 +60,7 @@ public:
       TEUCHOS_TEST_FOR_EXCEPTION(input_size != output_size, std::invalid_argument,
         ">>> (PDE_OptVector_BatchManager::SumAll): Parameter dimension mismatch!");
 
-      ROL::TeuchosBatchManager<Real,GO>::sumAll(&input_param->front(),
+      ROL::TeuchosBatchManager<Real,SO>::sumAll(&input_param->front(),
                                                 &output_param->front(),
                                                 input_size);
     }
