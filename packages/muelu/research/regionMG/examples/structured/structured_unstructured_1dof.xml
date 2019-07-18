@@ -83,6 +83,7 @@
     <Parameter name="cycle type"                            type="string"   value="V"/>
     <Parameter name="coarse: max size"                      type="int"      value="20"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
+    <Parameter name="use kokkos refactor"                   type="bool"     value="false"/>
 
     <ParameterList name="All">
       <Parameter name="PreSmoother"                         type="string"   value="NoSmoother"/>
