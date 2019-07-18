@@ -75,5 +75,5 @@ per MPI node, which results 1.3M unknowns when a blocksize is 5.
 
 ### Blake
 
-
+![Blake-SingleNode](https://github.com/kyungjoo-kim/Trilinos/tree/tpetra-develop/packages/tpetra/core/example/BlockCrs/blake-blockcrs-64x64x64x5-sha-302420bc.pdf)
 
