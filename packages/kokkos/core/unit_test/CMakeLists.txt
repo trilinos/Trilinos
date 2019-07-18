@@ -856,6 +856,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  UnitTest_CTestDevice
+  SOURCES UnitTestMain.cpp TestCTestDevice.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  FAIL_REGULAR_EXPRESSION "  FAILED  "
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
+)
+
 #
 # Compile-only tests
 #

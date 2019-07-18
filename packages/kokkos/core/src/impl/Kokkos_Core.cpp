@@ -50,6 +50,7 @@
 #include <cstdlib>
 #include <stack>
 #include <cerrno>
+#include <string>
 #include <unistd.h>
 
 //----------------------------------------------------------------------------
@@ -98,17 +99,24 @@ setenv("MEMKIND_HBW_NODES", "1", 0);
   const int ndevices = args.ndevices;
   const int skip_device = args.skip_device;
   // if the exact device is not set, but ndevices was given, assign round-robin using on-node MPI rank
-  if (use_gpu < 0 && ndevices >= 0) {
-    auto local_rank_str = std::getenv("OMPI_COMM_WORLD_LOCAL_RANK"); //OpenMPI
+  if (use_gpu < 0) {
+    auto const* local_rank_str = std::getenv("OMPI_COMM_WORLD_LOCAL_RANK"); //OpenMPI
     if (!local_rank_str) local_rank_str = std::getenv("MV2_COMM_WORLD_LOCAL_RANK"); //MVAPICH2
     if (!local_rank_str) local_rank_str = std::getenv("SLURM_LOCALID"); //SLURM
-    if (local_rank_str) {
-      auto local_rank = std::atoi(local_rank_str);
-      use_gpu = local_rank % ndevices;
-    } else {
-      // user only gave us ndevices, but the MPI environment variable wasn't set.
-      // start with GPU 0 at this point
-      use_gpu = 0;
+
+    auto const* ctest_kokkos_device_type = std::getenv("CTEST_KOKKOS_DEVICE_TYPE"); //CTest
+    auto const* ctest_process_count_str = std::getenv("CTEST_PROCESS_COUNT"); //CTest
+    if (ctest_kokkos_device_type && ctest_process_count_str && local_rank_str) {
+      use_gpu = get_ctest_gpu(local_rank_str);
+    } else if (ndevices >= 0) {
+      if (local_rank_str) {
+        auto local_rank = std::atoi(local_rank_str);
+        use_gpu = local_rank % ndevices;
+      } else {
+        // user only gave us ndevices, but the MPI environment variable wasn't set.
+        // start with GPU 0 at this point
+        use_gpu = 0;
+      }
     }
     // shift assignments over by one so no one is assigned to "skip_device"
     if (use_gpu >= skip_device) ++use_gpu;
@@ -1035,6 +1043,74 @@ void print_configuration( std::ostream & out , const bool detail )
 #endif
 
   out << msg.str() << std::endl;
+}
+
+int get_ctest_gpu(const char* local_rank_str)
+{
+  auto const* ctest_kokkos_device_type = std::getenv("CTEST_KOKKOS_DEVICE_TYPE");
+  if (!ctest_kokkos_device_type) {
+    return 0;
+  }
+
+  auto const* ctest_process_count_str = std::getenv("CTEST_PROCESS_COUNT");
+  if (!ctest_process_count_str) {
+    return 0;
+  }
+
+  // Make sure rank is within bounds of processes specified by CTest
+  auto process_count = std::atoi(ctest_process_count_str);
+  auto local_rank = std::atoi(local_rank_str);
+  if (local_rank >= process_count) {
+    return 0;
+  }
+
+  // Get the resource types allocated to this process
+  std::ostringstream ctest_process;
+  ctest_process << "CTEST_PROCESS_" << local_rank;
+  auto const* ctest_process_str = std::getenv(ctest_process.str().c_str());
+  if (!ctest_process_str) {
+    return 0;
+  }
+
+  // Look for the device type specified in CTEST_KOKKOS_DEVICE_TYPE
+  bool found_device = false;
+  std::string ctest_process_cxx_str = ctest_process_str;
+  std::istringstream instream(ctest_process_cxx_str);
+  while (true) {
+    std::string devName;
+    std::getline(instream, devName, ',');
+    if (devName == ctest_kokkos_device_type) {
+      found_device = true;
+      break;
+    }
+    if (instream.eof() || devName.length() == 0) {
+      break;
+    }
+  }
+
+  if (!found_device) {
+    return 0;
+  }
+
+  // Get the device ID
+  std::string ctest_device_type_upper = ctest_kokkos_device_type;
+  for (auto& c : ctest_device_type_upper) {
+    c = std::toupper(c);
+  }
+  ctest_process << "_" << ctest_device_type_upper;
+
+  auto resource_str = std::getenv(ctest_process.str().c_str());
+  if (!resource_str) {
+    return 0;
+  }
+
+  auto const* comma = std::strchr(resource_str, ',');
+  if (!comma || strncmp(resource_str, "id:", 3)) {
+    return 0;
+  }
+
+  std::string id(resource_str + 3, comma - resource_str - 3);
+  return std::atoi(id.c_str());
 }
 
 bool is_initialized() noexcept { return g_is_initialized; }

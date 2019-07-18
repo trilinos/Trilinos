@@ -166,6 +166,9 @@ void fence();
 /** \brief Print "Bill of Materials" */
 void print_configuration( std::ostream & , const bool detail = false );
 
+/** \brief Get GPU assigned by CTest */
+int get_ctest_gpu(const char* local_rank_str);
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
