@@ -20,8 +20,6 @@ function load_spack_tpl_modules() {
   export LAPACK_ROOT=$NETLIB_LAPACK_ROOT
 
   module load spack-binutils/2.31.1-${compiler_dash_version}
-  module load spack-gettext/0.19.8.1-${compiler_dash_version} # for binutils
-  module load spack-libiconv/1.15-${compiler_dash_version} # for gettext 
   module load spack-boost/1.59.0-${compiler_dash_version}
   module load spack-superlu/4.3-${compiler_dash_version}
   module load spack-zlib/1.2.11-${compiler_dash_version}
