@@ -142,8 +142,7 @@ public:
   std::vector<std::vector<GO> > element2node;
 
   // NOTE: This is hardwired for 1D bar elements
-  typedef Kokkos::View<GO*[2], Kokkos::LayoutLeft, typename Node::device_type > k_element2node_type;
-  k_element2node_type k_element2node;
+  Kokkos::View<GO*[2], Kokkos::LayoutLeft, typename Node::device_type > k_element2node;
 
   void print(int rank, std::ostream & out) {
     using std::endl;
