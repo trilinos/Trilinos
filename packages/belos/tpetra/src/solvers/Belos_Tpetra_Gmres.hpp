@@ -288,33 +288,28 @@ public:
   {
     Krylov<SC, MV, OP>::setParameters (params);
 
-    bool computeRitzValues = this->input_.computeRitzValues;
-    if (params.isParameter ("Compute Ritz Values")) {
-      computeRitzValues = params.get<bool> ("Compute Ritz Values");
-    }
+    bool computeRitzValues 
+      = params.get<bool> ("Compute Ritz Values", this->input_.computeRitzValues);
 
-    bool needToReortho = this->input_.needToReortho;
-    if (params.isParameter ("Reorthogonalize Blocks")) {
-      needToReortho = params.get<bool> ("Reorthogonalize Blocks");
-    }
+    bool needToReortho
+      = params.get<bool> ("Reorthogonalize Blocks", this->input_.needToReortho);
 
-    int resCycle = this->input_.resCycle;
-    if (params.isParameter ("Num Blocks")) {
-      resCycle = params.get<int> ("Num Blocks");
-      TEUCHOS_TEST_FOR_EXCEPTION
+    int resCycle = params.get<int> ("Num Blocks", this->input_.resCycle);
+    TEUCHOS_TEST_FOR_EXCEPTION
         (resCycle < 0, std::invalid_argument,
          "\"Num Blocks\" (restart length) = " << resCycle << " < 0.");
-    }
 
-    std::string orthoType (this->input_.orthoType);
-    if (params.isParameter ("Orthogonalization")) {
-      orthoType = params.get<std::string> ("Orthogonalization");
-    }
+    std::string orthoType
+      = params.get<std::string> ("Orthogonalization", this->input_.orthoType);
+
+    int maxOrthoSteps
+      = params.get<int> ("Max Orthogonalization Passes", this->input_.maxOrthoSteps);
 
     this->input_.computeRitzValues = computeRitzValues;
     this->input_.needToReortho = needToReortho;
     this->input_.resCycle = resCycle;
     this->input_.orthoType = orthoType;
+    this->input_.maxOrthoSteps = maxOrthoSteps;
   }
 
 private:
@@ -331,8 +326,15 @@ private:
       // Belos::OrthoManagerFactory here.
       Belos::OrthoManagerFactory<SC, MV, OP> factory;
       Teuchos::RCP<Belos::OutputManager<SC>> outMan; // can be null
-      Teuchos::RCP<Teuchos::ParameterList> params; // can be null
-      ortho_ = factory.makeMatOrthoManager (ortho, Teuchos::null, outMan, "Belos", params);
+      if (this->input_.maxOrthoSteps > 0) {
+        Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp (new Teuchos::ParameterList());
+        params->set ("maxNumOrthogPasses", this->input_.maxOrthoSteps);
+        ortho_ = factory.makeMatOrthoManager (ortho, Teuchos::null, outMan, "Belos", params);
+      }
+      else {
+        Teuchos::RCP<Teuchos::ParameterList> params; // can be null
+        ortho_ = factory.makeMatOrthoManager (ortho, Teuchos::null, outMan, "Belos", params);
+      }
       TEUCHOS_TEST_FOR_EXCEPTION
         (ortho_.get () == nullptr, std::runtime_error, "Gmres: Failed to "
          "create (Mat)OrthoManager of type \"" << ortho << "\".");

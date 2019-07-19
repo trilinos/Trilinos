@@ -53,6 +53,7 @@ public:
   int stepSize = 5;
   bool needToScale = true;
   bool needToReortho = false;
+  int maxOrthoSteps = 0;
   std::string orthoType {"ICGS"};
   std::string precoType {"none"};
   std::string precoSide {"none"};

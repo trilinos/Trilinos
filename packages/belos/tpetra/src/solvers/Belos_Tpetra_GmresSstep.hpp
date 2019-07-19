@@ -150,37 +150,28 @@ public:
   {
     base_type::getParameters (params, defaultValues);
 
-    const int stepSize = defaultValues ? 100 : stepSize_;
-
+    const int stepSize = defaultValues ? 5 : stepSize_;
     params.set ("Step Size", stepSize );
   }
 
   virtual void
   setParameters (Teuchos::ParameterList& params) {
     base_type::setParameters (params);
+    int stepSize = params.get<int> ("Step Size", stepSize_);
+    stepSize_ = stepSize;
+
+    bool computeRitzValuesOnFly 
+      = params.get<bool> ("Compute Ritz Values on Fly", this->input_.computeRitzValuesOnFly);
+    this->input_.computeRitzValuesOnFly = computeRitzValuesOnFly;
+
     constexpr bool useCholQR_default = true;
+    bool useCholQR = params.get<bool> ("CholeskyQR", useCholQR_default);
 
-    int stepSize = stepSize_;
-    if (params.isParameter ("Step Size")) {
-      stepSize = params.get<int> ("Step Size");
-    }
-
-    bool computeRitzValuesOnFly = this->input_.computeRitzValuesOnFly;
-    if (params.isParameter ("Compute Ritz Values on Fly")) {
-      computeRitzValuesOnFly = params.get<bool> ("Compute Ritz Values on Fly");
-    }
-
-    bool useCholQR = useCholQR_default;
-    if (params.isParameter ("CholeskyQR")) {
-      useCholQR = params.get<bool> ("CholeskyQR");
-    }
-
-    if (useCholQR && tsqr_.is_null ()) {
+    if (!useCholQR && !tsqr_.is_null ()) {
+      tsqr_ = Teuchos::null;
+    } else if (useCholQR && tsqr_.is_null ()) {
       tsqr_ = Teuchos::rcp (new CholQR<SC, MV, OP> ());
     }
-
-    stepSize_ = stepSize;
-    this->input_.computeRitzValuesOnFly = computeRitzValuesOnFly;
   }
 
 private:
@@ -316,19 +307,12 @@ private:
         }
 
         // Compute matrix powers
-        if (input.computeRitzValuesOnFly && iter < stepSize_) {
+        if (input.computeRitzValuesOnFly && output.numIters < stepSize_) {
           stepSize = 1;
         } else {
           stepSize = stepSize_;
         }
         for (step=0; step < stepSize && iter+step < restart; step++) {
-          //if (outPtr != nullptr) {
-          //  *outPtr << "step=" << step
-          //          << ", stepSize=" << stepSize
-          //          << ", iter+step=" << (iter+step)
-          //          << ", restart=" << restart << endl;
-          //}
-
           // AP = A*P
           vec_type P  = * (Q.getVectorNonConst (iter+step));
           vec_type AP = * (Q.getVectorNonConst (iter+step+1));
@@ -355,9 +339,6 @@ private:
         // Orthogonalization
         this->projectBelosOrthoManager (iter, step, Q, G);
         const int rank = normalizeCholQR (iter, step, Q, G);
-        //if (outPtr != nullptr) {
-        //  *outPtr << "Rank of s-step basis: " << rank << endl;
-        //}
         updateHessenburg (iter, step, output.ritzValues, H, G);
 
         // Check negative norm
@@ -389,7 +370,6 @@ private:
         // Optionally, compute Ritz values for generating Newton basis
         if (input.computeRitzValuesOnFly && int (output.ritzValues.size()) == 0
             && output.numIters >= stepSize_) {
-          //printf( " ComputeRitzValues(%d, %d, %d)\n",output.numIters, iter+step, stepSize_ );
           for (int i = 0; i < stepSize_; i++) {
             for (int iiter = 0; iiter < stepSize_; iiter++) {
               G2(i, iiter) = H(i, iiter);

@@ -44,10 +44,7 @@ public:
   setParameters (Teuchos::ParameterList& params) {
     Gmres<SC, MV, OP>::setParameters (params);
 
-    int stepSize = stepSize_;
-    if (params.isParameter ("Step Size")) {
-      stepSize = params.get<int> ("Step Size");
-    }
+    int stepSize = params.get<int> ("Step Size", stepSize_);
     stepSize_ = stepSize;
   }
 
