@@ -92,5 +92,13 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     NUM_MPI_PROCS 4
     )
 
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Unstructured_Laplace3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_unstructured_1dof.xml --matrixType=Laplace3D --nx=9 --ny=9 --nz=5 --smootherIts=2 --unstructured={3}"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
 ENDIF()
 
