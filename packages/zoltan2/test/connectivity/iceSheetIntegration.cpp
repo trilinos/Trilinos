@@ -41,7 +41,7 @@ int main(int argc, char** argv)
   
   //need to read in problem specific files here, start out with zeroed out arrays
   int nlocal = (int) inputGraphAdapter->getLocalNumVertices();
-  int* basalFriction = new int[nlocal];
+  bool* basalFriction = new bool[nlocal];
   int numBoundaryEdges = nlocal;
   const int* vtxIDs = new int[nlocal];
   inputGraphAdapter->getVertexIDsView(vtxIDs);
@@ -94,7 +94,7 @@ int main(int argc, char** argv)
   }
 
   for(int i = 0; i < nlocal; i++){
-    basalFriction[i] = 0;
+    basalFriction[i] = false;
   }
   std::cout<<me<<": is done initializing local arrays\n";
   int edgecounter = 0;

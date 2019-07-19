@@ -32,7 +32,7 @@ namespace Zoltan2{
       //           num_boundary_edges is the number of boundary edges there are
       IceProp(const RCP<const Comm<int> > &problemComm__,
 	      const RCP<const GraphAdapter<user_t,userCoord_t> > &adapter__, 
-	      int* basalFriction, gno_t* boundary_edges__, int num_boundary_edges__):
+	      bool* basalFriction, gno_t* boundary_edges__, int num_boundary_edges__):
          adapter(adapter__), grounding_flags(basalFriction), boundary_edges(boundary_edges__),
          num_boundary_edges(num_boundary_edges__), problemComm(problemComm__)
       {
@@ -57,7 +57,7 @@ namespace Zoltan2{
       const RCP<const base_adapter_t> adapter;
       void buildModel(modelFlag_t &flags);
 
-      int* grounding_flags;
+      bool* grounding_flags;
       gno_t*  boundary_edges;
       int   num_boundary_edges;
       const RCP<const Comm<int> > problemComm;
@@ -140,10 +140,10 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   }
   
   //build nVtx + nGhosts size array of grounding flags
-  int* grounding = new int[nVtx+nGhosts];
+  bool* grounding = new bool[nVtx+nGhosts];
   for(int i = 0; i < nVtx+nGhosts; i++){
     if(i < nVtx) grounding[i] = grounding_flags[i];
-    else grounding[i] = 0;
+    else grounding[i] = false;
   }
 
   //std::cout<<me<<": number of ghosts = "<<nGhosts<<"\n";

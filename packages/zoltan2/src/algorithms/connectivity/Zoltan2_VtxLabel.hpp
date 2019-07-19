@@ -244,7 +244,7 @@ public:
  	
   //Constructor assigns vertices to processors and builds maps with and
   //without copies ICE SHEET VERSION
-  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, graph* g_,int* boundary_flags, int* grounding_flags,int localOwned,int localCopy):
+  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, graph* g_,int* boundary_flags, bool* grounding_flags,int localOwned,int localCopy):
     me(comm_->getRank()), np(comm_->getSize()),
     nLocalOwned(localOwned), nLocalCopy(localCopy),
     nVec(1), comm(comm_),g(g_),mapOwned(mapOwned_),
