@@ -305,6 +305,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D, LO, GO, Scalar, Node
 ////
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scalar, Node )
 {
+  using exec_space = typename Node::execution_space;
+  using range_type = Kokkos::RangePolicy<exec_space, LO>;
+
   typedef Tpetra::FECrsMatrix<Scalar,LO,GO,Node> FEMAT;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> CMAT;
   typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
@@ -349,7 +352,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
   auto localMap = pack.overlapMap->getLocalMap();
   //get local map too
 
-  Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::execution_space>(0,k_e2n.extent(0)), 
+  Kokkos::parallel_for("assemble_1d",
+		       range_type (0,k_e2n.extent(0)), 
 		       KOKKOS_LAMBDA(const size_t& i) {
     size_t extent = k_e2n.extent(1);
     for(size_t j=0; j < extent; j++) {
@@ -443,6 +447,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, S
 ////
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO, GO, Scalar, Node )
 {
+  using exec_space = typename Node::execution_space;
+  using range_type = Kokkos::RangePolicy<exec_space, LO>;
+
   typedef Tpetra::FECrsMatrix<Scalar,LO,GO,Node> FEMAT;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> CMAT;
   typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
@@ -487,7 +494,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   auto localMat = mat1.getLocalMatrix();
   auto localMap = pack.overlapMap->getLocalMap();
 
-  Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::execution_space>(0, k_e2n.extent(0)),
+  Kokkos::parallel_for("assemble_1d_local_index", 
+		       range_type (0, k_e2n.extent(0)),
 		       KOKKOS_LAMBDA(const size_t& i) {
     for(size_t j=0; j<k_e2n.extent(1); j++) {
       LO lid_j = localMap.getLocalElement(k_e2n(i, j));
