@@ -502,7 +502,7 @@ namespace { // (anonymous)
       using functor_type =
         CopyOffsetsFunctor<OutputViewType, output_space_copy_type>;
       using execution_space = typename OutputViewType::execution_space;
-      using size_type = typedef typename OutputViewType::size_type;
+      using size_type = typename OutputViewType::size_type;
       using range_type = Kokkos::RangePolicy<execution_space, size_type>;
 
       const bool debug = Details::Behavior::debug ();
