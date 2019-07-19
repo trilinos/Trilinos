@@ -247,9 +247,9 @@ Kokkos::View<Scalar*[2], Kokkos::LayoutLeft, typename Node::device_type > genera
 ////
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D, LO, GO, Scalar, Node )
 {
-  typedef Tpetra::FECrsMatrix<Scalar,LO,GO,Node> FEMAT;
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> CMAT;
-  typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
+  using FEMAT = typename Tpetra::FECrsMatrix<Scalar,LO,GO,Node>;
+  using CMAT = typename Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
+  using FEG = typename Tpetra::FECrsGraph<LO,GO,Node>;
 
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
@@ -307,10 +307,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
 {
   using exec_space = typename Node::execution_space;
   using range_type = Kokkos::RangePolicy<exec_space, LO>;
-
-  typedef Tpetra::FECrsMatrix<Scalar,LO,GO,Node> FEMAT;
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> CMAT;
-  typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
+  using FEMAT = typename Tpetra::FECrsMatrix<Scalar,LO,GO,Node>;
+  using CMAT = typename Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
+  using FEG = typename Tpetra::FECrsGraph<LO,GO,Node>;
 
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
@@ -385,9 +384,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
 ////
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, Scalar, Node )
 {
-  typedef Tpetra::FECrsMatrix<Scalar,LO,GO,Node> FEMAT;
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> CMAT;
-  typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
+  using FEMAT = typename Tpetra::FECrsMatrix<Scalar,LO,GO,Node>;
+  using CMAT = typename Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
+  using FEG = typename Tpetra::FECrsGraph<LO,GO,Node>;
 
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
@@ -449,10 +448,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
 {
   using exec_space = typename Node::execution_space;
   using range_type = Kokkos::RangePolicy<exec_space, LO>;
-
-  typedef Tpetra::FECrsMatrix<Scalar,LO,GO,Node> FEMAT;
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> CMAT;
-  typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
+  using FEMAT = typename Tpetra::FECrsMatrix<Scalar,LO,GO,Node>;
+  using CMAT = typename Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
+  using FEG = typename Tpetra::FECrsGraph<LO,GO,Node>;
 
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
