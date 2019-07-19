@@ -83,7 +83,11 @@ namespace MueLu {
     //@{
 
     //! BuildAggregates routine.
-    virtual void BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
+    virtual void BuildAggregates(const Teuchos::ParameterList& params,
+                                 const GraphBase& graph,
+                                 Aggregates& aggregates,
+                                 std::vector<unsigned>& aggStat,
+                                 LO& numNonAggregatedNodes) const = 0;
     //@}
 
   };
