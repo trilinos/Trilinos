@@ -49,6 +49,7 @@
 #include <sstream>
 #include <unistd.h>
 
+// Teuchos
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -124,6 +125,8 @@
 
 // Region MG headers
 #include "SetupRegionHierarchy_def.hpp"
+
+#include "Driver_Structured_Interface.hpp"
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1196,19 +1199,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
   }
 
-  interfaceParams->set<int>       ("interfaces: number",               numInterfaces);
-  interfaceParams->set<Array<LO> >("interfaces: nodes per dimensions", nodesPerDimensions);
-  interfaceParams->set<Array<LO> >("interfaces: interface nodes",      interfaceLIDs);
-  // if(useUnstructured) {
-  //   std::ostringstream myOSStream;
-  //   myOSStream  << "p=" << myRank << " | number of interfaces: " << interfaceParams->get<int>("interfaces: number") << std::endl;
-  //   for(int interfaceIdx = 0; interfaceIdx < interfaceParams->get<int>("interfaces: number"); ++interfaceIdx) {
-  //     myOSStream  << "p=" << myRank << " | interface: " << interfaceIdx << ", "
-  //                 << (interfaceParams->get<Array<LO> >("interfaces: nodes per dimensions"))(interfaceIdx*3, 3) << std::endl;
-  //   }
-  //   std::cout << myOSStream.str() << std::endl;
-  // }
-
   // std::cout << "p=" << myRank << " | numReceive=" << numReceive
   //           << ", numSend=" << numSend << std::endl;
   // std::cout << "p=" << myRank << " | receiveGIDs: " << receiveGIDs << std::endl;
@@ -1232,8 +1222,23 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   if(frontBC  == 0) {rNodesPerDim[1] += 1;}
   if(bottomBC == 0) {rNodesPerDim[2] += 1;}
 
+  Array<int> boundaryConditions({leftBC, rightBC, frontBC, backBC, bottomBC, topBC});
+  Array<LO>  interfacesDimensions, interfacesLIDs;
+  if(useUnstructured) {
+    findInterface(numDimensions, rNodesPerDim, boundaryConditions,
+                  interfacesDimensions, interfacesLIDs);
+  }
+
+  interfaceParams->set<int>       ("interfaces: number",               numInterfaces);
+  interfaceParams->set<Array<LO> >("interfaces: nodes per dimensions", interfacesDimensions); // nodesPerDimensions);
+  interfaceParams->set<Array<LO> >("interfaces: interface nodes",      interfacesLIDs); // interfaceLIDs);
+
   // std::cout << "p=" << myRank << " | numLocalRegionNodes=" << numLocalRegionNodes
   //           << ", rNodesPerDim: " << rNodesPerDim << std::endl;
+  // std::cout << "p=" << myRank << " | boundaryConditions: " << boundaryConditions << std::endl
+  //           << "p=" << myRank << " | rNodesPerDim: " << rNodesPerDim << std::endl
+  //           << "p=" << myRank << " | interfacesDimensions: " << interfacesDimensions << std::endl
+  //           << "p=" << myRank << " | interfacesLIDs: " << interfacesLIDs << std::endl;
 
   Array<LO> compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
 
