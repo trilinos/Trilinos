@@ -51,17 +51,6 @@
 
 namespace Tpetra {
 
-namespace { // (anonymous)
-
-auto
-view_no_init (const std::string& label) ->
-  decltype (Kokkos::view_alloc (label, Kokkos::WithoutInitializing))
-{
-  return Kokkos::view_alloc (label, Kokkos::WithoutInitializing);
-}
-
-} // namespace (anonymous)
-
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -216,15 +205,19 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
       }
     });
 
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
   row_map_type t_offsets
-    (view_no_init ("transpose ptr"), lclNumCols + 1);
+    (view_alloc ("transpose ptr", WithoutInitializing), lclNumCols + 1);
 
   // TODO (mfh 10 Jul 2019): This returns the sum of all counts,
   // which could be useful for checking nnz.
   (void) Details::computeOffsetsFromCounts (t_offsets, t_counts);
 
-  index_type t_cols (view_no_init ("transpose lcl ind"), nnz);
-  values_type t_vals (view_no_init ("transpose val"), nnz);
+  index_type t_cols
+    (view_alloc ("transpose lcl ind", WithoutInitializing), nnz);
+  values_type t_vals
+    (view_alloc ("transpose val", WithoutInitializing), nnz);
   Kokkos::parallel_for
     ("Compute local transpose",
      range_type (0, lclNumRows),
