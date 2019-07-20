@@ -285,7 +285,7 @@ private:
         Tpetra::deep_copy (Y, X);
         blas.COPY (1+iter, y.values(), 1, h.values(), 1);
       }
-      r_norm_imp = STS::magnitude (y (iter)); // save implicit residual norm
+      r_norm_imp = STS::magnitude (y (iter - ell)); // save implicit residual norm
       if (iter > 0) {
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
