@@ -129,8 +129,8 @@ public:
     stepSize_ (5),
     tsqr_ (Teuchos::null)
   {
-    this->input_.computeRitzValues = false;
-    this->input_.computeRitzValuesOnFly = true;
+    this->input_.computeRitzValues = true;
+    this->input_.computeRitzValuesOnFly = false;
   }
 
   GmresSstep (const Teuchos::RCP<const OP>& A) :
@@ -138,8 +138,8 @@ public:
     stepSize_ (5),
     tsqr_ (Teuchos::null)
   {
-    this->input_.computeRitzValues = false;
-    this->input_.computeRitzValuesOnFly = true;
+    this->input_.computeRitzValues = true;
+    this->input_.computeRitzValuesOnFly = false;
   }
 
   virtual ~GmresSstep () = default;
