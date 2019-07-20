@@ -326,15 +326,12 @@ private:
       // Belos::OrthoManagerFactory here.
       Belos::OrthoManagerFactory<SC, MV, OP> factory;
       Teuchos::RCP<Belos::OutputManager<SC>> outMan; // can be null
+      Teuchos::RCP<Teuchos::ParameterList> params;   // can be null
       if (this->input_.maxOrthoSteps > 0) {
-        Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp (new Teuchos::ParameterList());
+        params = Teuchos::rcp (new Teuchos::ParameterList());
         params->set ("maxNumOrthogPasses", this->input_.maxOrthoSteps);
-        ortho_ = factory.makeMatOrthoManager (ortho, Teuchos::null, outMan, "Belos", params);
       }
-      else {
-        Teuchos::RCP<Teuchos::ParameterList> params; // can be null
-        ortho_ = factory.makeMatOrthoManager (ortho, Teuchos::null, outMan, "Belos", params);
-      }
+      ortho_ = factory.makeMatOrthoManager (ortho, Teuchos::null, outMan, "Belos", params);
       TEUCHOS_TEST_FOR_EXCEPTION
         (ortho_.get () == nullptr, std::runtime_error, "Gmres: Failed to "
          "create (Mat)OrthoManager of type \"" << ortho << "\".");
@@ -488,7 +485,8 @@ protected:
 
     mag_type b_norm;  // initial residual norm
     mag_type b0_norm; // initial residual norm, not left preconditioned
-    mag_type r_norm, r_norm_imp;
+    mag_type r_norm;
+    mag_type r_norm_imp;
     vec_type R (B.getMap ());
     vec_type Y (B.getMap ());
     vec_type MP (B.getMap ());

@@ -152,7 +152,8 @@ private:
 
     mag_type b_norm;  // initial residual norm
     mag_type b0_norm; // initial residual norm, not left-preconditioned
-    mag_type r_norm, r_norm_imp;
+    mag_type r_norm;
+    mag_type r_norm_imp;
     MV Q (B.getMap (), restart+1);
     vec_type P = * (Q.getVectorNonConst (0));
     vec_type R (B.getMap ());
@@ -345,7 +346,9 @@ private:
         }
         else {
           // reset to the old solution
-          if (outPtr != nullptr) *outPtr << " > not-restart with iter=" << iter << endl;
+          if (outPtr != nullptr) {
+            *outPtr << " > not-restart with iter=" << iter << endl;
+          }
           Tpetra::deep_copy (X, Y);
           blas.COPY (1+iter, h.values(), 1, y.values(), 1);
         }

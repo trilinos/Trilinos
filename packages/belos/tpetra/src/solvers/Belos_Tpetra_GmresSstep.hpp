@@ -217,7 +217,8 @@ private:
 
     mag_type b_norm;  // initial residual norm
     mag_type b0_norm; // initial residual norm, not left preconditioned
-    mag_type r_norm, r_norm_imp;
+    mag_type r_norm;
+    mag_type r_norm_imp;
     mag_type metric;
     vec_type R (B.getMap ());
     vec_type Y (B.getMap ());
@@ -357,8 +358,8 @@ private:
             }
             this->reduceHessenburgToTriangular(iter+iiter, T, cs, sn, y);
             if (outPtr != nullptr) {
-              *outPtr << " > implicit residual norm=(" << iter+iiter+1 << ")=" << STS::magnitude (y(iter+iiter+1))
-                      << endl;
+              *outPtr << " > implicit residual norm=(" << iter+iiter+1 << ")="
+                      << STS::magnitude (y(iter+iiter+1)) << endl;
             }
           }
           metric = this->getConvergenceMetric (STS::magnitude (y(iter+step)), b_norm, input);

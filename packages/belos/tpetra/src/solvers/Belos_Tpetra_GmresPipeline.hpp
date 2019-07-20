@@ -70,7 +70,8 @@ private:
 
     mag_type b_norm; // initial residual norm
     mag_type b0_norm; // initial residual norm, not left-preconditioned
-    mag_type r_norm, r_norm_imp;
+    mag_type r_norm;
+    mag_type r_norm_imp;
     dense_matrix_type  G (restart+1, restart+1, true);
     dense_matrix_type  H (restart+1, restart, true);
     dense_vector_type  y (restart+1, true);
