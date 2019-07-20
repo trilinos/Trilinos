@@ -70,9 +70,9 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 # NOTE: Use as many build processes and there are cores by default.
 
 module purge
-module load spack-cmake/3.13.4-gcc-7.2.0  # ToDo: Remove compiler from name of these!
-module load spack-git/2.20.1-gcc-7.2.0
-module load spack-ninja-fortran/1.7.2.gaad58-gcc-7.2.0
+module load spack-git/2.20.1
+module load spack-cmake/3.13.4
+module load spack-ninja-fortran/1.7.2.gaad58
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
