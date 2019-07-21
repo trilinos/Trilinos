@@ -71,7 +71,7 @@ private:
     mag_type b_norm; // initial residual norm
     mag_type b0_norm; // initial residual norm, not left-preconditioned
     mag_type r_norm;
-    mag_type r_norm_imp;
+    mag_type r_norm_imp = -one;
     dense_matrix_type  G (restart+1, restart+1, true);
     dense_matrix_type  H (restart+1, restart, true);
     dense_vector_type  y (restart+1, true);
@@ -286,8 +286,9 @@ private:
         Tpetra::deep_copy (Y, X);
         blas.COPY (1+iter, y.values(), 1, h.values(), 1);
       }
-      r_norm_imp = STS::magnitude (y (iter - ell)); // save implicit residual norm
-      if (iter > 0) {
+      if (iter >= ell) {
+        r_norm_imp = STS::magnitude (y (iter - ell)); // save implicit residual norm
+
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
                    Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
@@ -298,8 +299,6 @@ private:
         y.resize (iter);
         if (input.precoSide == "right") {
           dense_vector_type y_iter (Teuchos::View, y.values (), iter-ell);
-
-          //MVT::MvTimesMatAddMv (one, *Qj, y, zero, R);
           MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);
           M.apply (R, MZ);
           X.update (one, MZ, one);
