@@ -119,8 +119,8 @@ namespace { // (anonymous)
     // 2. Larger to smaller could overflow.
     // 3. Same size but unsigned to signed could overflow.
     static constexpr bool could_overflow =
-      ! output_signed && input_signed ||
-      sizeof (OutputType) < sizeof (InputType) ||
+      (! output_signed && input_signed) ||
+      (sizeof (OutputType) < sizeof (InputType)) ||
       (sizeof (OutputType) == sizeof (InputType) &&
        output_signed && ! input_signed);
 
