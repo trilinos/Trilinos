@@ -19,6 +19,9 @@ namespace Tempus {
  *
  *  which takes other StepperRKObservers and sequentially calls each
  *  individual observer function.
+ *
+ *  NOTE: certain RK observers (ERK,DIRK) methods execute 'back-to-back'
+ *  without any intermediate code.
  */
 template<class Scalar>
 class StepperRKObserverComposite

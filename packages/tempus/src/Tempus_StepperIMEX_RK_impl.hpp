@@ -370,7 +370,6 @@ void StepperIMEX_RK<Scalar>::setObserver(
   this->stepperObserver_->addObserver(
        Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
 
-
 }
 
 

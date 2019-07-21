@@ -134,10 +134,10 @@ public:
 
 private:
 
-  Teuchos::RCP<Stepper<Scalar> >             startUpStepper_;
-  Teuchos::RCP<StepperObserverComposite<Scalar> >        stepperObserver_;
-  Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
-  Scalar                                     order_;
+  Teuchos::RCP<Stepper<Scalar> >                     startUpStepper_;
+  Teuchos::RCP<StepperObserverComposite<Scalar> >    stepperObserver_;
+  Teuchos::RCP<StepperBDF2Observer<Scalar> >         stepperBDF2Observer_;
+  Scalar                                             order_;
 };
 
 /** \brief Time-derivative interface for BDF2.

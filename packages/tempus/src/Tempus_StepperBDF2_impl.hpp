@@ -136,7 +136,7 @@ void StepperBDF2<Scalar>::setObserver(
     this->stepperObserver_  =
       Teuchos::rcp(new StepperObserverComposite<Scalar>());
 
-  if (obs == Teuchos::null)
+  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
     obs = Teuchos::rcp(new StepperBDF2Observer<Scalar>());
 
   this->stepperObserver_->addObserver(
