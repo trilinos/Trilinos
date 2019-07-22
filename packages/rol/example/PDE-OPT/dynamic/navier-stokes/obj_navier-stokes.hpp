@@ -1670,7 +1670,6 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
-    const int size = z_param->size();
     std::vector<Real> g; g.assign(z_param->begin(),z_param->end());
     return g;
   }
@@ -1744,7 +1743,6 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
-    const int size = v_param->size();
     std::vector<Real> h; h.assign(v_param->begin(),v_param->end());
     return h;
   }

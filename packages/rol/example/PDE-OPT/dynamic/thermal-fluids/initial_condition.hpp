@@ -79,7 +79,7 @@ public:
   }
 
   Real evalVelocity(const std::vector<Real> &x, const int dir) const {
-    const Real zero(0), one(1), two(2);
+    const Real one(1);
     Real px  = x[0] - cx_;
     Real py  = x[1] - cy_;
     Real rad = std::sqrt(std::pow(px,2) + std::pow(py,2));

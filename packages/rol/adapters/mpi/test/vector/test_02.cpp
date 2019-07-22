@@ -66,7 +66,6 @@ int main(int argc, char* argv[])
     outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
-  RealT errtol = ROL::ROL_THRESHOLD<RealT>();
 
   int numRanks = -1;
   int myRank = -1;
