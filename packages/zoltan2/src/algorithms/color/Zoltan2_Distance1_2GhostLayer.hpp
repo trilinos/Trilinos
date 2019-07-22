@@ -391,11 +391,19 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       std::vector< offset_t> first_layer_ghost_offsets;
       constructSecondGhostLayer(ownedPlusGhosts,owners, adjs, offsets, mapOwned,
                                 first_layer_ghost_adjs, first_layer_ghost_offsets);
+      //we potentially reordered the local IDs of the ghost vertices, so we need
+      //to re-insert the GIDs into the global to local ID mapping.
+      globalToLocal.clear();
       printf("--Rank %d: ownedPlusGhosts before adding second layer:\n\t",comm->getRank());
       for(int i = 0; i < ownedPlusGhosts.size(); i++){
         printf("%d ",ownedPlusGhosts[i]);
+        globalToLocal[ownedPlusGhosts[i]] = i;
       }
       printf("\n");      
+      
+      for(int i = 0 ; i < adjs.size(); i++){
+        local_adjs[i] = globalToLocal[adjs[i]];
+      }
       //at this point, we have ownedPlusGhosts with 1layer ghosts' GIDs.
       //need to add 2layer ghost GIDs, and add them to the map.
       int n2Ghosts = 0;
@@ -423,10 +431,6 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       Teuchos::RCP<femv_t> femv = rcp(new femv_t(mapOwned,
                                                     importer, 1, true));
       
-      ArrayRCP<int> colors = solution->getColorsRCP();
-      for(size_t i=0; i<nVtx; i++){
-         colors[i] = 0;
-      }
       
       //Create random numbers seeded on global IDs, as in AlgHybridGMB.
       //This may or may not have an effect on this algorithm, but we
@@ -441,7 +445,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       for(int i = 0 ; i < nVtx; i ++){
         printf("--Rank %d: global vertex %d is adjacent to\n\t",comm->getRank(),ownedPlusGhosts[i]);
         for(int j = offsets[i]; j < offsets[i+1]; j++){
-          printf("%d ",ownedPlusGhosts[globalToLocal[adjs[j]]]);
+          printf("%d ",ownedPlusGhosts[local_adjs[j]]);
         }
         printf("\n");
       }
@@ -471,18 +475,19 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       Teuchos::ArrayView<const lno_t> ghost_adjacencies = Teuchos::arrayViewFromVector(local_ghost_adjs);
       //call actual coloring algorithm
       twoGhostLayer(nVtx, nVtx+nGhosts, local_adjs_view, offsets, ghost_adjacencies, ghost_offsets,
-                    femv, ownedPlusGhosts, rand);
+                    femv, ownedPlusGhosts, globalToLocal, rand);
       printf("--Rank %d coloring: \n\t",comm->getRank());
-      printf("vertex: ");
-      for(int i = 0; i < nVtx; i++){
-        printf("%d ",ownedPlusGhosts[i]);
+      printf("\n\t(vertex, color) : ");
+      for(int i = 0; i < femv->getData(0).size(); i++){
+        printf("(%d, %d) ",ownedPlusGhosts[i],femv->getData(0)[i]);
       }
-      printf("\n\tcolor : ");
-      for(int i = 0; i < nVtx; i++){
-        printf("%d ",femv->getData(0)[i]);
-      }
+      printf("\n");
       //copy colors to the output array
-
+      ArrayRCP<int> colors = solution->getColorsRCP();
+      for(size_t i=0; i<nVtx; i++){
+         colors[i] = femv->getData(0)[i];
+      }
+      
     }
 
     void twoGhostLayer(const size_t n_local, const size_t n_total,
@@ -492,6 +497,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
                        const Teuchos::ArrayView<const offset_t>& ghost_offsets,
                        const Teuchos::RCP<femv_t>& femv,
                        const std::vector<gno_t>& gids, 
+                       const std::unordered_map<gno_t,lno_t>& globalToLocal,
                        const std::vector<int>& rand){
       
       Kokkos::View<offset_t*, device_type> host_offsets("Host Offset View", offsets.size());
@@ -506,28 +512,36 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
       femv->switchActiveMultiVector();
 
+      printf("--Rank %d coloring (BEFORE RESOLUTION): \n\t",comm->getRank());
+      printf("\n\t(vertex, color) : ");
+      for(int i = 0; i < femv->getData(0).size(); i++){
+        printf("(%d, %d) ",gids[i],femv->getData(0)[i]);
+      }
+      printf("\n");
       //resolve conflicts on the ghosts first, then the boundary vertices
       //(can keep a queue of the boundary vertices when we see them from the ghosts)
       
       //we can find all the conflicts with one loop through the ghost vertices.
-      std::queue<lno_t> resolve_ghosts;
-      std::queue<lno_t> resolve_local;
+      std::priority_queue<gno_t> resolve;
+      //std::queue<lno_t> resolve_ghosts;
+      //std::queue<lno_t> resolve_local;
       for(int i = n_local; i < n_total; i++){
         offset_t ghost_idx = i - n_local;
         for(offset_t j = ghost_offsets[ghost_idx]; j < ghost_offsets[ghost_idx+1]; j++){
           int currColor = femv->getData(0)[i];
           int nborColor = femv->getData(0)[ghost_adjs[j]];
           if(currColor == nborColor){
-            if(gids[i] > gids[ghost_adjs[j]]){
-              resolve_ghosts.push(ghost_idx);
-            } else {
-              if(ghost_adjs[j] < n_local){
-                resolve_local.push(ghost_adjs[j]);
-              } else if(ghost_adjs[j] < n_total) {
-                resolve_ghosts.push(ghost_adjs[j] - n_local);
+            printf("--Rank %d: Detected conflict between global %d and %d\n",comm->getRank(),gids[i],gids[ghost_adjs[j]]);
+            if(gids[i] < gids[ghost_adjs[j]]){
+              resolve.push(gids[i]);
+              //resolve_ghosts.push(ghost_idx);
+            } else { //We're resolving the neighbor, need to figure out what the neighbor is.
+              if(ghost_adjs[j] < n_total){ //if the neighbor is a local or ghost vertex
+                //resolve_local.push(ghost_adjs[j]);
+                resolve.push(gids[ghost_adjs[j]]);     
               } else {
-                //the conflict is between a double-ghost and a ghost. Resolve the ghost?
-                resolve_ghosts.push(ghost_idx);
+                //the conflict is between a double-ghost and a ghost. Just assume the double ghost will change.
+                //resolve_ghosts.push(ghost_idx);
               }
             }
           }
@@ -536,8 +550,56 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       Teuchos::ArrayRCP<bool> forbiddenColors;
       forbiddenColors.resize(numColors);
       for(int i = 0; i < numColors; i++) forbiddenColors[i] = false;
+      
+      while(resolve.size()){
+        gno_t globalVtx = resolve.top();
+        printf("--Rank %d: recoloring vertex %d\n",comm->getRank(), globalVtx);
+        lno_t currVtx = globalToLocal.at(globalVtx);
+        resolve.pop(); 
+        if(currVtx >= n_local){ // this is a ghost
+          for(offset_t nborIdx = ghost_offsets[currVtx-n_local]; nborIdx < ghost_offsets[currVtx+1-n_local]; nborIdx++){
+            lno_t nbor = ghost_adjs[nborIdx];
+            int nborColor = femv->getData(0)[nbor];
 
-      while(resolve_ghosts.size()){
+            if(nborColor > 0){
+              if(nborColor > numColors){
+                forbiddenColors.resize(nborColor);
+                numColors = nborColor;
+              }
+              forbiddenColors[nborColor-1] = true;
+            }
+          }
+        } else {
+          for(offset_t nborIdx = offsets[currVtx]; nborIdx < offsets[currVtx+1]; nborIdx++){
+            lno_t nbor = adjs[nborIdx];
+            int nborColor = femv->getData(0)[nbor];
+            if(nborColor > 0){
+              if(nborColor > numColors){
+                forbiddenColors.resize(nborColor);
+                numColors=nborColor;
+              }
+              forbiddenColors[nborColor-1] = true;
+            }
+          }
+        }
+        bool colored = false;
+        for(int i = 0; i< numColors; i++){
+          if(!forbiddenColors[i]){
+            femv->replaceLocalValue(currVtx,0,i+1);
+            colored=true;
+            break;
+          }
+        }
+        if(!colored){
+          femv->replaceLocalValue(currVtx,0,numColors+1);
+          numColors++;
+          forbiddenColors.resize(numColors);
+        }
+        for(int i = 0; i < numColors; i++){
+          forbiddenColors[i] = false;
+        }
+      }
+      /*while(resolve_ghosts.size()){
         lno_t currVtx = resolve_ghosts.front();
         resolve_ghosts.pop();
         for(offset_t nborIdx = ghost_offsets[currVtx]; nborIdx < ghost_offsets[currVtx+1]; nborIdx++){
@@ -595,14 +657,14 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
           }
         }
         if(!colored){
-          femv->replaceLocalValue(currVtx+n_local,0,numColors+1);
+          femv->replaceLocalValue(currVtx,0,numColors+1);
           numColors++;
           forbiddenColors.resize(numColors);
         }
         for(int i = 0; i < numColors; i++){
           forbiddenColors[i] = false;
         }
-      }
+      }*/
       
     }
 }; //end class

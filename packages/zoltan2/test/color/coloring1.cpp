@@ -111,7 +111,7 @@ int validateColoring(RCP<SparseMatrix> A, int *color)
   return nconflicts;
 }
 
-int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
+int validateDistributedColoring(RCP<SparseMatrix> A, int *color, int rank){
   int nconflicts = 0;
   
   RCP<const SparseMatrix::map_type> rowMap = A->getRowMap();
@@ -136,7 +136,8 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
     for (zlno_t j=0; j<indices.size(); j++) {
       if ((indices[j]!=i) && (C.getData()[i]==C.getData()[indices[j]])){
         nconflicts++;
-        std::cout << "Debug: found conflict (" << i << ", " << indices[j] << ")" << std::endl;
+        std::cout << "Debug: Rank "<<rank<<" found conflict (" << rowMap->getGlobalElement(i) << ", " 
+                  << colMap->getGlobalElement(indices[j]) << ")" << std::endl;
       }
     }
   }
@@ -327,7 +328,7 @@ int main(int narg, char** arg)
   // Verify that checkColoring is a coloring
   //if(colorAlg == "Hybrid" && comm->getSize() > 1){
     //need to check a distributed coloring
-    testReturn = validateDistributedColoring(Matrix, checkColoring);
+    testReturn = validateDistributedColoring(Matrix, checkColoring, me);
   //} else if (checkLength > 0){
   //  testReturn = validateColoring(Matrix, checkColoring);
   //}
