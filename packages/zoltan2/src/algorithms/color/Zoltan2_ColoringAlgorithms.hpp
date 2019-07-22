@@ -48,5 +48,6 @@
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_AlgSerialGreedy.hpp>
 #include <Zoltan2_AlgHybridGMB.hpp>
+#include <Zoltan2_Distance1_2GhostLayer.hpp>
 
 #endif
