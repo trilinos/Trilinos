@@ -118,7 +118,7 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color, int rank){
   RCP<const SparseMatrix::map_type> colMap = A->getColMap();
   Vector R = Vector(rowMap);
   //put the colors in the scalar entries of R.
-  for(zlno_t i = 0; i < A->getNodeNumRows(); i++){
+  for(size_t i = 0; i < A->getNodeNumRows(); i++){
     R.replaceLocalValue(i,color[i]);
   }
   Vector C = Vector(colMap);
@@ -130,11 +130,12 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color, int rank){
 
   // Count conflicts in the graph.
   // Loop over local rows, treat local column indices as edges.
-  zlno_t n = A->getNodeNumRows();
-  for (zlno_t i=0; i<n; i++) {
+  size_t n = A->getNodeNumRows();
+  auto colorData = C.getData();
+  for (size_t i=0; i<n; i++) {
     A->getLocalRowView(i, indices, values);
-    for (zlno_t j=0; j<indices.size(); j++) {
-      if ((indices[j]!=i) && (C.getData()[i]==C.getData()[indices[j]])){
+    for (size_t j = 0; j < indices.size(); j++) {
+      if ((indices[j] != i) && (colorData[i] == colorData[indices[j]])){
         nconflicts++;
         std::cout << "Debug: Rank "<< rank <<" found conflict ("
                   << rowMap->getGlobalElement(i) << ", " 
