@@ -71,10 +71,12 @@ template<class Scalar        = MultiVector<>::scalar_type,
 class MultiVectorFactory
 {
   private:
+
     //! Private constructor. This is a static class.
     MultiVectorFactory() {}
 
   public:
+
     //! Constructor specifying the number of non-zeros for all rows.
     static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
     Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map, size_t NumVectors, bool zeroOut = true);
@@ -85,6 +87,161 @@ class MultiVectorFactory
           const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar>>& ArrayOfPtrs,
           size_t                                                            NumVectors);
 };
+
+
+
+
+
+
+#if 1 // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI - Linker errors if we include the specializations but testing fails
+
+// we need the Epetra specialization only if Epetra is enabled
+#if defined(HAVE_XPETRA_EPETRA)
+
+
+#if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
+
+
+// Specialization for Scalar=double, LO=GO=int and Serial node
+// Used both for Epetra and Tpetra
+// For any other node definition the general default implementation is used which allows Tpetra only
+template<>
+class MultiVectorFactory<double, int, int, EpetraNode>
+{
+
+    typedef double     Scalar;
+    typedef int        LocalOrdinal;
+    typedef int        GlobalOrdinal;
+    typedef EpetraNode Node;
+
+  private:
+
+    //! Private constructor. This is a static class.
+    MultiVectorFactory();
+
+  public:
+
+    static RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map, size_t NumVectors, bool zeroOut = true);
+
+    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
+          const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar>>& ArrayOfPtrs,
+          size_t                                                            NumVectors);
+};
+
+
+
+template<>
+class MultiVectorFactory<int, int, int, EpetraNode>
+{
+
+    typedef int        Scalar;
+    typedef int        LocalOrdinal;
+    typedef int        GlobalOrdinal;
+    typedef EpetraNode Node;
+
+  private:
+
+    //! Private constructor. This is a static class.
+    MultiVectorFactory();
+
+  public:
+
+    static RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map, size_t NumVectors, bool zeroOut = true);
+
+    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
+          const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar>>& ArrayOfPtrs,
+          size_t                                                            NumVectors);
+};
+
+
+
+
+// we need the Epetra specialization only if Epetra is enabled
+#if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+
+
+
+template <>
+class MultiVectorFactory<double, int, long long, EpetraNode>
+{
+  typedef double Scalar;
+  typedef int LocalOrdinal;
+  typedef long long GlobalOrdinal;
+  typedef EpetraNode Node;
+
+private:
+
+  //! Private constructor. This is a static class.
+  MultiVectorFactory();
+
+public:
+
+  static RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
+        size_t NumVectors,
+        bool zeroOut = true);
+
+  //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+  static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map,
+        const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs,
+        size_t NumVectors);
+
+};
+
+
+
+template <>
+class MultiVectorFactory<int, int, long long, EpetraNode>
+{
+
+  typedef int Scalar;
+  typedef int LocalOrdinal;
+  typedef long long GlobalOrdinal;
+  typedef EpetraNode Node;
+
+private:
+
+  //! Private constructor. This is a static class.
+  MultiVectorFactory();
+
+public:
+
+  static RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
+        size_t NumVectors,
+        bool zeroOut = true);
+
+  //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+  static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map,
+        const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs,
+        size_t NumVectors);
+
+};
+
+
+
+#endif      // END !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+
+
+#endif      // END !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
+
+
+#endif      // END HAVE_XPETRA_EPETRA
+
+
+#endif      // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI - removing linker errors...
+
+
+
+
 
 
 }      // namespace Xpetra
