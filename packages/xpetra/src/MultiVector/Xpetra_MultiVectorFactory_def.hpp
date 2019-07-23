@@ -112,6 +112,7 @@ Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
 
 #if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 
+
 MultiVectorFactory<double, int, int, EpetraNode>::
 MultiVectorFactory()
 {}
