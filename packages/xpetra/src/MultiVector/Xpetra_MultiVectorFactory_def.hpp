@@ -47,11 +47,23 @@
 #define XPETRA_MULTIVECTORFACTORY_DEF_HPP
 
 #include "Xpetra_MultiVectorFactory_decl.hpp"
-
 #include "Xpetra_BlockedMultiVector.hpp"
 
 
 namespace Xpetra {
+
+/*
+#if(defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+template<> class MultiVectorFactory<double, int, int, EpetraNode>;
+template<> class MultiVectorFactory<int, int, int, EpetraNode>;
+
+#if(defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+template<> class MultiVectorFactory<double, int, long long, EpetraNode>;
+template<> class MultiVectorFactory<int, int, long long, EpetraNode>;
+#endif // HAVE_XPETRA_EPETRA && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+
+#endif // HAVE_XPETRA_EPETRA && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
+*/
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -99,10 +111,15 @@ Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
 }
 
 
+#if 1 // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI - Linker errors if we include the specializations but testing fails
 
-#if 0 // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI -- removing the specializations removed the no symbols linker error /shrug.
+
 // we need the Epetra specialization only if Epetra is enabled
-#if(defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+#if defined(HAVE_XPETRA_EPETRA)
+
+
+#if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
+
 
 // Specialization for Scalar=double, LO=GO=int and Serial node
 // Used both for Epetra and Tpetra
@@ -242,9 +259,9 @@ class MultiVectorFactory<int, int, int, EpetraNode>
 };
 
 
-
 // we need the Epetra specialization only if Epetra is enabled
-#if(defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+#if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+
 
 template<>
 class MultiVectorFactory<double, int, long long, EpetraNode>
@@ -312,6 +329,7 @@ class MultiVectorFactory<double, int, long long, EpetraNode>
     }
 };
 
+
 template<>
 class MultiVectorFactory<int, int, long long, EpetraNode>
 {
@@ -377,13 +395,18 @@ class MultiVectorFactory<int, int, long long, EpetraNode>
         XPETRA_FACTORY_END;
     }
 };
-#endif      // Epetra64
 
-#endif      // HAVE_XPETRA_EPETRA && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
+
+#endif      // END !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+
+
+#endif      // END !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
+
+
+#endif      // END HAVE_XPETRA_EPETRA
 
 
 #endif      // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI - removing linker errors...
-
 
 
 }      // namespace Xpetra

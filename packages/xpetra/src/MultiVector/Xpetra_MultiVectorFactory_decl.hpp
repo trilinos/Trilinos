@@ -47,7 +47,6 @@
 #define XPETRA_MULTIVECTORFACTORY_DECL_HPP
 
 #include "Xpetra_ConfigDefs.hpp"
-
 #include "Xpetra_MultiVector.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -60,8 +59,6 @@
 #endif
 
 #include "Xpetra_BlockedMap.hpp"
-//#include "Xpetra_BlockedMultiVector.hpp"
-
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
