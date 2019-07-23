@@ -55,7 +55,7 @@
 
 #include "TpetraCore_config.h"
 
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined (HAVE_TPETRA_INST_@NT_MACRO_NAME@) && defined (HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@) @SC_MACRO_EXPR@
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_@NT_MACRO_NAME@) @GO_MACRO_EXPR@ @SC_MACRO_EXPR@
 
 // We protect the contents of this file with macros, to assist
 // applications that circumvent Trilinos' build system.  (We do NOT
@@ -73,7 +73,7 @@ namespace Tpetra {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_@CLASS_MACRO_NAME@_INSTANT( @SC_MANGLED_NAME@, @LO_MANGLED_NAME@, @GO_MANGLED_NAME@, @NT_MANGLED_NAME@ )
+  TPETRA_@CLASS_MACRO_NAME@_INSTANT( @SC_MANGLED_NAME@, @NT_MANGLED_NAME@ )
 
 } // namespace Tpetra
 
