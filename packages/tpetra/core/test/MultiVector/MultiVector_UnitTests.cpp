@@ -4862,23 +4862,9 @@ namespace {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  // mfh 04 June 2013: To avoid explicit instantiation - related link
-  // errors for LO = int and GO = unsigned (long) int, I've forced
-  // this test to use LO = int and GO = int.  LO and GO should not
-  // matter for this test.
-  //
-  // mfh 06 June 2013: To avoid link errors on GPUs, I've forced this
-  // test to build only for non-GPU Node types.
-  TPETRA_INSTANTIATE_N_NOGPU( TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST )
+  TPETRA_INSTANTIATE_N( TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST )
 
-  // mfh 04 June 2013: To avoid explicit instantiation - related link
-  // errors for LO = int and GO = unsigned (long) int, I've forced
-  // this test to use LO = int and GO = int.  LO and GO should not
-  // matter for this test.
-  //
-  // mfh 06 June 2013: To avoid link errors on GPUs, I've forced this
-  // test to build only for non-GPU Node types.
-  TPETRA_INSTANTIATE_N_NOGPU( TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST )
+  TPETRA_INSTANTIATE_N( TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST )
 
   TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 

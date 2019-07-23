@@ -58,24 +58,8 @@ well as the usual set of GO types.  (S == GO is useful for certain
 communication patterns.)  Tpetra's sparse matrix clasess (RowMatrix,
 CrsMatrix, BlockCrsMatrix) do NOT get instantiated for S = GO.
 
-The *_TESTMV and *_TESTMV_NOGPU macros, just like the
-*_NO_ORDINAL_SCALAR macros, exclude global ordinal types from their
-list of Scalar types.
-
-The *_NOGPU macros are a relic of the old ("classic") version of
-Tpetra.  Tpetra's old GPU support (KokkosClassic::ThrustGPUNode) did
-not work for certain combinations of types (in particular, certain
-Scalar types).  The *_NOGPU macros exclude those type combinations.
-We still have the option to use this idea later if users require ETI
-for types that CUDA (or other future programming models that Tpetra
-might support) just can't build.  This scenario is unlikely, however,
-given that Tpetra depends on Kokkos, and that Kokkos now has support
-for atomic updates of arbitrary-length types.  Furthermore, Trilinos
-developers have the option to use a partial specialization + run-time
-errors approach if a particular Node type does not support certain
-Scalar (or LocalOrdinal, or GlobalOrdinal) types.  This simplifies
-CMake configuration, and gives users better feedback than a build
-error.
+The *_TESTMV macros, just like the *_NO_ORDINAL_SCALAR macros, exclude
+global ordinal types from their list of Scalar types.
 
 The *_CONVERT_* macros only instantiate Tpetra::CrsMatrix::convert.
 This is a templated instance method on CrsMatrix<SIN, ...> which
