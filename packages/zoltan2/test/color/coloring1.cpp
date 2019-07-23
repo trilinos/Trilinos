@@ -191,8 +191,13 @@ int main(int narg, char** arg)
   std::string outputFile = "";           // Output file to write
   std::string colorAlg = "SerialGreedy"; // Default algorithm is the serial greedy one.
   bool verbose = false;                  // Verbosity of output
-  bool prepartition = false;             // Call Zoltan2 partitioning to better distribute the 
+  std::string prepartition = "";         // Call Zoltan2 partitioning to better 
+                                         // distribute the 
                                          // graph before coloring
+  bool prepartition_rows = false;        // When prepartition=rows, 
+                                         // balance wrt rows;
+  bool prepartition_nonzeros = false;    // When prepartition=nonzeros,
+                                         // balance wrt matrix nonzeros.
   int testReturn = 0;
   int totalColors = 0;
   int localColors = 0;
@@ -214,8 +219,9 @@ int main(int narg, char** arg)
                  "Name of file to write the coloring");
   cmdp.setOption("verbose", "quiet", &verbose,
                  "Print messages and results.");
-  cmdp.setOption("prepartition", "false", &prepartition,
-                 "Partition the input graph for better initial distribution");
+  cmdp.setOption("prepartition", &prepartition,
+                 "Partition the input graph for better initial distribution;"
+                 "valid values are rows and nonzeros");
 
   //////////////////////////////////
   // Even with cmdp option "true", I get errors for having these
@@ -258,6 +264,17 @@ int main(int narg, char** arg)
 
   //////////////////////////////////
   cmdp.parse(narg, arg);
+  if (prepartition != "") {
+    if (prepartition == "rows") prepartition_rows = true;
+    else if (prepartition == "nonzeros") prepartition_nonzeros = true;
+    else {
+      std::cout << "Invalid value of prepartition option " << prepartition
+                << std::endl;
+      std::cout << "No prepartitioning will be done" << std::endl;
+      std::cout << "FAIL" << std::endl;
+      return -1;
+    }
+  }
 
   RCP<UserInputForTests> uinput;
   RCP<SparseMatrix> Matrix;
@@ -280,27 +297,34 @@ int main(int narg, char** arg)
          << "NumNonzeros = " << Matrix->getGlobalNumEntries() << std::endl
          << "NumProcs = " << comm->getSize() << std::endl;
 
-  if (prepartition) {
+  if (prepartition != "") {
 
     // Compute new partition of matrix
-    SparseMatrixAdapter zadapter(Matrix);
+    SparseMatrixAdapter *zadapter;
+    if (prepartition_nonzeros) {
+      zadapter = new SparseMatrixAdapter(Matrix, 1);
+      zadapter->setRowWeightIsNumberOfNonZeros(0);
+    }
+    else {
+      zadapter = new SparseMatrixAdapter(Matrix);
+    }
     Teuchos::ParameterList zparams;
     zparams.set("algorithm", "parmetis");
     zparams.set("imbalance_tolerance", 1.05);
     zparams.set("partitioning_approach", "partition");
     Zoltan2::PartitioningProblem<SparseMatrixAdapter> 
-             zproblem(&zadapter, &zparams);
+             zproblem(zadapter, &zparams);
     zproblem.solve();
 
     // Print partition characteristics before and after
     typedef Zoltan2::EvaluatePartition<SparseMatrixAdapter> quality_t;
-    quality_t evalbef(&zadapter, &zparams, comm, NULL);
+    quality_t evalbef(zadapter, &zparams, comm, NULL);
     if (me == 0) {
       std::cout << "BEFORE PREPARTITION:  Partition statistics:" << std::endl;
       evalbef.printMetrics(std::cout);
     }
 
-    quality_t evalaft(&zadapter, &zparams, comm, &zproblem.getSolution());
+    quality_t evalaft(zadapter, &zparams, comm, &zproblem.getSolution());
     if (me == 0) {
       std::cout << "AFTER PREPARTITION:  Partition statistics:" << std::endl;
       evalaft.printMetrics(std::cout);
@@ -308,9 +332,10 @@ int main(int narg, char** arg)
 
     // Migrate matrix to the new partition
     RCP<SparseMatrix> newMatrix;
-    zadapter.applyPartitioningSolution(*Matrix, newMatrix,
+    zadapter->applyPartitioningSolution(*Matrix, newMatrix,
                                        zproblem.getSolution());
     Matrix = newMatrix;
+    delete zadapter;
   }
 
   ////// Specify problem parameters
@@ -385,8 +410,11 @@ int main(int narg, char** arg)
   int numGlobalConflicts = 0;
   Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_MAX,1,&testReturn,&numGlobalConflicts);
   if (me == 0) {
-    if (numGlobalConflicts > 0)
+    if (numGlobalConflicts > 0) {
+      std::cout << "Number of conflicts found = " << numGlobalConflicts
+                << std::endl;
       std::cout << "Solution is not a valid coloring; FAIL" << std::endl;
+    }
     else{
       std::cout << "Used " <<totalColors<< " colors\n"; 
       std::cout << "PASS" << std::endl;
