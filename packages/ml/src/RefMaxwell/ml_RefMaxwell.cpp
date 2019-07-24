@@ -259,7 +259,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
     if((*BCnodes22)[i]) numBCnodes22++;
   }
   
-  if (print_hierarchy) {
+  if (print_hierarchy == -1) {
     std::ofstream outBCnodes11("BCnodes11.dat");
     for(int i=0;i<BCnodes11->MyLength();i++) {
       if ((*BCnodes11)[i])
