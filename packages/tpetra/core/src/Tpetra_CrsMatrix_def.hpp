@@ -77,8 +77,6 @@
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
 
-#include "KokkosSparse.hpp" // KokkosSparse::spmv
-
 #include <memory>
 #include <sstream>
 #include <typeinfo>
@@ -5652,15 +5650,8 @@ namespace Tpetra {
   {
     using Tpetra::Details::ProfilingRegion;
     using Teuchos::NO_TRANS;
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "localApply: ";
-#endif // HAVE_TPETRA_DEBUG
     ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localApply");
 
-    const impl_scalar_type theAlpha (alpha);
-    const impl_scalar_type theBeta (beta);
-    const bool conjugate = (mode == Teuchos::CONJ_TRANS);
-    const bool transpose = (mode != Teuchos::NO_TRANS);
     auto X_lcl = X.getLocalViewDevice ();
     auto Y_lcl = Y.getLocalViewDevice ();
     // TODO (24 Jul 2019) uncomment later; this line of code wasn't
@@ -5668,68 +5659,61 @@ namespace Tpetra {
     //
     // Y.modify_device ();
 
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
-       "X.getNumVectors() = " << X.getNumVectors () << " != "
-       "Y.getNumVectors() = " << Y.getNumVectors () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! transpose && X.getLocalLength () !=
-       getColMap ()->getNodeNumElements (), std::runtime_error,
-       "NO_TRANS case: X has the wrong number of local rows.  "
-       "X.getLocalLength() = " << X.getLocalLength () << " != "
-       "getColMap()->getNodeNumElements() = " <<
-       getColMap ()->getNodeNumElements () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! transpose && Y.getLocalLength () !=
-       getRowMap ()->getNodeNumElements (), std::runtime_error,
-       "NO_TRANS case: Y has the wrong number of local rows.  "
-       "Y.getLocalLength() = " << Y.getLocalLength () << " != "
-       "getRowMap()->getNodeNumElements() = " <<
-       getRowMap ()->getNodeNumElements () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (transpose && X.getLocalLength () !=
-       getRowMap ()->getNodeNumElements (), std::runtime_error,
-       "TRANS or CONJ_TRANS case: X has the wrong number of local "
-       "rows.  X.getLocalLength() = " << X.getLocalLength ()
-       << " != getRowMap()->getNodeNumElements() = "
-       << getRowMap ()->getNodeNumElements () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (transpose && Y.getLocalLength () !=
-       getColMap ()->getNodeNumElements (), std::runtime_error,
-       "TRANS or CONJ_TRANS case: X has the wrong number of local "
-       "rows.  Y.getLocalLength() = " << Y.getLocalLength ()
-       << " != getColMap()->getNodeNumElements() = "
-       << getColMap ()->getNodeNumElements () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! isFillComplete (), std::runtime_error, "The matrix is not "
-       "fill complete.  You must call fillComplete() (possibly with "
-       "domain and range Map arguments) without an intervening "
-       "resumeFill() call before you may call this method.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! X.isConstantStride () || ! Y.isConstantStride (),
-       std::runtime_error, "X and Y must be constant stride.");
-    // If the two pointers are NULL, then they don't alias one
-    // another, even though they are equal.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (X_lcl.data () == Y_lcl.data () && X_lcl.data () != nullptr,
-       std::runtime_error, "X and Y may not alias one another.");
-#endif // HAVE_TPETRA_DEBUG
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      const char tfecfFuncName[] = "localApply: ";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (lclMatrix_.get () == nullptr, std::logic_error,
+         "lclMatrix_ not created yet.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
+         "X.getNumVectors() = " << X.getNumVectors () << " != "
+         "Y.getNumVectors() = " << Y.getNumVectors () << ".");
+      const bool transpose = (mode != Teuchos::NO_TRANS);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! transpose && X.getLocalLength () !=
+         getColMap ()->getNodeNumElements (), std::runtime_error,
+         "NO_TRANS case: X has the wrong number of local rows.  "
+         "X.getLocalLength() = " << X.getLocalLength () << " != "
+         "getColMap()->getNodeNumElements() = " <<
+         getColMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! transpose && Y.getLocalLength () !=
+         getRowMap ()->getNodeNumElements (), std::runtime_error,
+         "NO_TRANS case: Y has the wrong number of local rows.  "
+         "Y.getLocalLength() = " << Y.getLocalLength () << " != "
+         "getRowMap()->getNodeNumElements() = " <<
+         getRowMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (transpose && X.getLocalLength () !=
+         getRowMap ()->getNodeNumElements (), std::runtime_error,
+         "TRANS or CONJ_TRANS case: X has the wrong number of local "
+         "rows.  X.getLocalLength() = " << X.getLocalLength ()
+         << " != getRowMap()->getNodeNumElements() = "
+         << getRowMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (transpose && Y.getLocalLength () !=
+         getColMap ()->getNodeNumElements (), std::runtime_error,
+         "TRANS or CONJ_TRANS case: X has the wrong number of local "
+         "rows.  Y.getLocalLength() = " << Y.getLocalLength ()
+         << " != getColMap()->getNodeNumElements() = "
+         << getColMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! isFillComplete (), std::runtime_error, "The matrix is not "
+         "fill complete.  You must call fillComplete() (possibly with "
+         "domain and range Map arguments) without an intervening "
+         "resumeFill() call before you may call this method.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! X.isConstantStride () || ! Y.isConstantStride (),
+         std::runtime_error, "X and Y must be constant stride.");
+      // If the two pointers are NULL, then they don't alias one
+      // another, even though they are equal.
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (X_lcl.data () == Y_lcl.data () && X_lcl.data () != nullptr,
+         std::runtime_error, "X and Y may not alias one another.");
+    }
 
-      // Y = alpha*op(M) + beta*Y
-      if (transpose) {
-        const auto op = conjugate ?
-          KokkosSparse::ConjugateTranspose : KokkosSparse::Transpose;
-        KokkosSparse::spmv (op, theAlpha,
-                            lclMatrix_->getLocalMatrix (),
-                            X_lcl, theBeta, Y_lcl);
-      }
-      else {
-        const auto op = KokkosSparse::NoTranspose;
-        KokkosSparse::spmv (op, theAlpha,
-                            lclMatrix_->getLocalMatrix (),
-                            X_lcl, theBeta, Y_lcl);
-      }
+    lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
