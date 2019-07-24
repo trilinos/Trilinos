@@ -751,6 +751,14 @@ public:
     rangePointMap_ = BMV::makePointMap (* (graph.getRangeMap ()), blockSize);
 
     {
+      // These are rcp
+      const auto domainPointMap = getDomainMap();
+      const auto colPointMap = Teuchos::rcp 
+        (new typename BMV::map_type (BMV::makePointMap (*graph_.getColMap(), blockSize_)));
+      *pointImporter_ = Teuchos::rcp 
+        (new typename crs_graph_type::import_type (domainPointMap, colPointMap));
+    }
+    {
       typedef typename crs_graph_type::local_graph_type::row_map_type row_map_type;
       typedef typename row_map_type::HostMirror::non_const_type nc_host_row_map_type;
 
@@ -808,7 +816,14 @@ public:
       blockSizeIsNonpositive, std::invalid_argument, "Tpetra::"
       "BlockCrsMatrix constructor: The input blockSize = " << blockSize <<
       " <= 0.  The block size must be positive.");
-
+    {
+      // These are rcp
+      const auto domainPointMap = getDomainMap();
+      const auto colPointMap = Teuchos::rcp 
+        (new typename BMV::map_type (BMV::makePointMap (*graph_.getColMap(), blockSize_)));
+      *pointImporter_ = Teuchos::rcp 
+        (new typename crs_graph_type::import_type (domainPointMap, colPointMap));
+    }
     {
       typedef typename crs_graph_type::local_graph_type::row_map_type row_map_type;
       typedef typename row_map_type::HostMirror::non_const_type nc_host_row_map_type;
@@ -1824,23 +1839,9 @@ public:
           *X_colMap_ = rcp (new BMV (* (graph_.getColMap ()), getBlockSize (),
                                      static_cast<LO> (X.getNumVectors ())));
         }
-#ifdef HAVE_TPETRA_BCRS_DO_POINT_IMPORT
-        if (pointImporter_->is_null ()) {
-          // The Import ctor needs RCPs. Map's copy ctor does a shallow copy, so
-          // these are small operations.
-          const auto domainPointMap = rcp (new typename BMV::map_type (domainPointMap_));
-          const auto colPointMap = rcp (new typename BMV::map_type (
-                                          BMV::makePointMap (*graph_.getColMap(),
-                                                             blockSize_)));
-          *pointImporter_ = rcp (new typename crs_graph_type::import_type (
-                                   domainPointMap, colPointMap));
-        }
         (*X_colMap_)->getMultiVectorView().doImport (X.getMultiVectorView (),
                                                      **pointImporter_,
                                                      ::Tpetra::REPLACE);
-#else
-        (**X_colMap_).doImport (X, *import, ::Tpetra::REPLACE);
-#endif
         try {
           X_colMap = &(**X_colMap_);
         }

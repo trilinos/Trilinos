@@ -234,7 +234,10 @@ int main (int argc, char *argv[])
     ////////////////////////////////////////////////////////////////
     const bool myProcessPrintsDuringTheTest = commTest->getRank () == 0;
 
-    if (myProcessPrintsDuringTheTest) {
+    // When multiple GPUs are used, we would like to see a different mpi 
+    // uses a different device. An easy check is device configuration for
+    // 4 mpi nodes as the typical number of GPUs per node is 4.
+    if (commTest->getRank () < 4) {
       exec_space::print_configuration (std::cout, false);
     }
 
