@@ -2559,7 +2559,7 @@ namespace Tpetra {
     ///   least once.  This method will do no error checking, so you
     ///   are responsible for knowing when it is safe to call this
     ///   method.
-    local_matrix_type getLocalMatrix () const {return lclMatrix_; }
+    local_matrix_type getLocalMatrix () const;
 
     /// \brief Number of global elements in the row map of this matrix.
     ///
