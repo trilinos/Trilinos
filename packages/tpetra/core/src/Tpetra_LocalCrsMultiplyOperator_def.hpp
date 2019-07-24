@@ -48,9 +48,14 @@ namespace Tpetra {
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>
 LocalCrsMultiplyOperator<MultiVectorScalar, MatrixScalar, Device>::
-LocalCrsMultiplyOperator (const local_matrix_type& A)
+LocalCrsMultiplyOperator (const std::shared_ptr<local_matrix_type>& A)
   : A_ (A)
-{}
+{
+  const char tfecfFuncName[] = "LocalCrsMultiplyOperator: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (A_.get () == nullptr, std::invalid_argument,
+     "Input matrix A is null.");
+}
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>
 bool
@@ -91,7 +96,7 @@ apply (Kokkos::View<const mv_scalar_type**, array_layout,
   const auto op = transpose ?
     (conjugate ? KokkosSparse::ConjugateTranspose :
      KokkosSparse::Transpose) : KokkosSparse::NoTranspose;
-  KokkosSparse::spmv (op, alpha, A_, X, beta, Y);
+  KokkosSparse::spmv (op, alpha, *A_, X, beta, Y);
 }
 
 } // namespace Tpetra

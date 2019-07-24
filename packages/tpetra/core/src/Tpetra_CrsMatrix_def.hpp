@@ -1115,6 +1115,14 @@ namespace Tpetra {
     return lclMatrix_.get () == nullptr ? local_matrix_type () : *lclMatrix_;
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::shared_ptr<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalMatrixPtr () const
+  {
+    return lclMatrix_;
+  }
+
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool TPETRA_DEPRECATED

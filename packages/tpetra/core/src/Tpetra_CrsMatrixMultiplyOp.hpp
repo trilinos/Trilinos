@@ -111,7 +111,7 @@ namespace Tpetra {
     ///   <tt>Operator<Scalar, ...></tt>.
     CrsMatrixMultiplyOp (const Teuchos::RCP<const crs_matrix_type>& A) :
       matrix_ (A),
-      localMultiply_ (A->getLocalMatrix ())
+      localMultiply_ (A->getLocalMatrixPtr ())
     {}
 
     //! Destructor (virtual for memory safety of derived classes).

@@ -43,6 +43,7 @@
 #include "Tpetra_LocalCrsMultiplyOperator_fwd.hpp"
 #include "Tpetra_LocalOperator.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include <memory> // std::shared_ptr
 
 namespace Tpetra {
 
@@ -84,7 +85,7 @@ namespace Tpetra {
                               void,
                               typename local_graph_type::size_type>;
 
-    LocalCrsMultiplyOperator (const local_matrix_type& A);
+    LocalCrsMultiplyOperator (const std::shared_ptr<local_matrix_type>& A);
     ~LocalCrsMultiplyOperator () override = default;
 
     void
@@ -99,7 +100,7 @@ namespace Tpetra {
     bool hasTransposeApply () const override;
 
   private:
-    local_matrix_type A_;
+    std::shared_ptr<local_matrix_type> A_;
   };
 
 } // namespace Tpetra

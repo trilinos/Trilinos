@@ -2563,6 +2563,9 @@ namespace Tpetra {
     ///   method.
     local_matrix_type getLocalMatrix () const;
 
+    //! This is an implementation detail of Tpetra; do not call it.
+    std::shared_ptr<local_matrix_type> getLocalMatrixPtr () const;
+
     /// \brief Number of global elements in the row map of this matrix.
     ///
     /// This is <it>not</it> the number of rows in the matrix as a
