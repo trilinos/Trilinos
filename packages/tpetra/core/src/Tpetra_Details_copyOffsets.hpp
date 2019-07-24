@@ -50,6 +50,7 @@
 ///   FixedHashTable, CrsGraph, and CrsMatrix).
 
 #include "TpetraCore_config.h"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_Core.hpp"
 #include <limits>
 #include <type_traits>
@@ -63,23 +64,142 @@ namespace Details {
 //
 namespace { // (anonymous)
 
-  // Implementation detail of copyOffsets (see below).
-  //
-  // Overflow is impossible (the output can fit the input) if the
-  // output type is bigger than the input type, or if the types have
-  // the same size and (the output type is unsigned, or both types are
-  // signed).
+  // Implementation detail of copyOffsets (see below).  Determines
+  // whether integer overflow is impossible on assignment from an
+  // InputType to an OutputType.
   //
   // Implicit here is the assumption that both input and output types
   // are integers.
-  template<class T1, class T2,
-           const bool T1_is_signed = std::is_signed<T1>::value,
-           const bool T2_is_signed = std::is_signed<T2>::value>
+  template<class OutputType, class InputType>
   struct OutputCanFitInput {
-    static const bool value = sizeof (T1) > sizeof (T2) ||
-      (sizeof (T1) == sizeof (T2) &&
-       (std::is_unsigned<T1>::value || (std::is_signed<T1>::value && std::is_signed<T2>::value)));
+  private:
+    static constexpr bool output_signed = std::is_signed<OutputType>::value;
+    static constexpr bool input_signed = std::is_signed<InputType>::value;
+
+  public:
+    static const bool value = sizeof (OutputType) > sizeof (InputType) ||
+      (sizeof (OutputType) == sizeof (InputType) &&
+       ! output_signed && input_signed);
   };
+
+  // Avoid warnings for "unsigned integer < 0" comparisons.
+  template<class InputType,
+           bool input_signed = std::is_signed<InputType>::value>
+  struct Negative {};
+
+  template<class InputType>
+  struct Negative<InputType, true> {
+    static KOKKOS_INLINE_FUNCTION bool
+    negative (const InputType src) {
+      return src < InputType (0);
+    }
+  };
+
+  template<class InputType>
+  struct Negative<InputType, false> {
+    static KOKKOS_INLINE_FUNCTION bool
+    negative (const InputType /* src */) {
+      return false;
+    }
+  };
+
+  template<class InputType>
+  KOKKOS_INLINE_FUNCTION bool negative (const InputType src) {
+    return Negative<InputType>::negative (src);
+  }
+
+  template<class OutputType, class InputType>
+  struct OverflowChecker {
+  private:
+    static constexpr bool output_signed = std::is_signed<OutputType>::value;
+    static constexpr bool input_signed = std::is_signed<InputType>::value;
+
+  public:
+    // 1. Signed to unsigned could overflow due to negative numbers.
+    // 2. Larger to smaller could overflow.
+    // 3. Same size but unsigned to signed could overflow.
+    static constexpr bool could_overflow =
+      (! output_signed && input_signed) ||
+      (sizeof (OutputType) < sizeof (InputType)) ||
+      (sizeof (OutputType) == sizeof (InputType) &&
+       output_signed && ! input_signed);
+
+    KOKKOS_INLINE_FUNCTION bool
+    overflows (const InputType src) const
+    {
+      if (! could_overflow) {
+        return false;
+      }
+      else {
+        // Signed to unsigned could overflow due to negative numbers.
+        if (! output_signed && input_signed) {
+          return negative (src);
+        }
+        // We're only comparing InputType with InputType here, so this
+        // should not emit warnings.
+        return src < minDstVal_ || src > maxDstVal_;
+      }
+    }
+
+  private:
+    // If InputType is unsigned and OutputType is signed, casting max
+    // OutputType to InputType could overflow.  See #5548.
+    InputType minDstVal_ = input_signed ?
+      std::numeric_limits<OutputType>::min () : OutputType (0);
+    InputType maxDstVal_ = std::numeric_limits<OutputType>::max ();
+  };
+
+
+  template<class OutputViewType, class InputViewType>
+  void
+  errorIfOverflow (const OutputViewType& dst,
+                   const InputViewType& src,
+                   const size_t overflowCount)
+  {
+    if (overflowCount == 0) {
+      return;
+    }
+
+    std::ostringstream os;
+    const bool plural = overflowCount != size_t (1);
+    os << "copyOffsets: " << overflowCount << " value" <<
+      (plural ? "s" : "") << " in src were too big (in the "
+      "sense of integer overflow) to fit in dst.";
+
+    const bool verbose = Details::Behavior::verbose ();
+    if (verbose) {
+      constexpr size_t maxNumToPrint = 100;
+      const size_t srcLen (src.extent (0));
+      if (srcLen <= maxNumToPrint) {
+        auto dst_h = Kokkos::create_mirror_view (dst);
+        auto src_h = Kokkos::create_mirror_view (src);
+        Kokkos::deep_copy (src_h, src);
+        Kokkos::deep_copy (dst_h, dst);
+
+        os << "  src: [";
+        for (size_t k = 0; k < srcLen; ++k) {
+          os << src_h[k];
+          if (k + size_t (1) < srcLen) {
+            os << ", ";
+          }
+        }
+        os << "], ";
+
+        os << " dst: [";
+        for (size_t k = 0; k < srcLen; ++k) {
+          os << dst_h[k];
+          if (k + size_t (1) < srcLen) {
+            os << ", ";
+          }
+        }
+        os << "].";
+      }
+      else {
+        os << "  src and dst are too long to print.";
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, os.str ());
+  }
 
   // Implementation detail of copyOffsets (see below).
   //
@@ -101,24 +221,15 @@ namespace { // (anonymous)
   template<class OutputViewType, class InputViewType>
   class CopyOffsetsFunctor<OutputViewType, InputViewType, false> {
   public:
-    typedef typename OutputViewType::execution_space execution_space;
-    typedef typename OutputViewType::size_type size_type;
-    typedef int value_type;
+    using execution_space = typename OutputViewType::execution_space;
+    using size_type = typename OutputViewType::size_type;
+    using value_type = size_t;
 
-    typedef typename InputViewType::non_const_value_type input_value_type;
-    typedef typename OutputViewType::non_const_value_type output_value_type;
+    using input_value_type = typename InputViewType::non_const_value_type;
+    using output_value_type = typename OutputViewType::non_const_value_type;
 
     CopyOffsetsFunctor (const OutputViewType& dst, const InputViewType& src) :
-      dst_ (dst),
-      src_ (src),
-      // We know that output_value_type cannot fit all values of
-      // input_value_type, so an input_value_type can fit all values
-      // of output_value_type.  This means we can convert from
-      // output_value_type to input_value_type.  This is how we test
-      // whether a given input_value_type value can fit in an
-      // output_value_type.
-      minDstVal_ (static_cast<input_value_type> (std::numeric_limits<output_value_type>::min ())),
-      maxDstVal_ (static_cast<input_value_type> (std::numeric_limits<output_value_type>::max ()))
+      dst_ (dst), src_ (src)
     {
       // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
       // a memory space, rather than an execution space, as the first
@@ -132,38 +243,43 @@ namespace { // (anonymous)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    operator () (const size_type& i, value_type& noOverflow) const {
+    operator () (const size_type i, value_type& overflowCount) const {
       const input_value_type src_i = src_(i);
-      if (src_i < minDstVal_ || src_i > maxDstVal_) {
-        noOverflow = 0;
+      if (checker_.overflows (src_i)) {
+        ++overflowCount;
       }
       dst_(i) = static_cast<output_value_type> (src_i);
     }
 
-    KOKKOS_INLINE_FUNCTION void init (value_type& noOverflow) const {
-      noOverflow = 1; // success (no overflow)
+    KOKKOS_INLINE_FUNCTION void
+    operator () (const size_type i) const {
+      const input_value_type src_i = src_(i);
+      dst_(i) = static_cast<output_value_type> (src_i);
+    }
+
+    KOKKOS_INLINE_FUNCTION void init (value_type& overflowCount) const {
+      overflowCount = 0;
     }
 
     KOKKOS_INLINE_FUNCTION void
     join (volatile value_type& result,
           const volatile value_type& current) const {
-      result = (result>0 && current>0)?1:0; // was there any overflow?
+      result += current;
     }
 
   private:
     OutputViewType dst_;
     InputViewType src_;
-    input_value_type minDstVal_;
-    input_value_type maxDstVal_;
+    OverflowChecker<output_value_type, input_value_type> checker_;
   };
 
   // Specialization for when overflow is impossible.
   template<class OutputViewType, class InputViewType>
   class CopyOffsetsFunctor<OutputViewType, InputViewType, true> {
   public:
-    typedef typename OutputViewType::execution_space execution_space;
-    typedef typename OutputViewType::size_type size_type;
-    typedef int value_type;
+    using execution_space = typename OutputViewType::execution_space;
+    using size_type = typename OutputViewType::size_type;
+    using value_type = size_t;
 
     CopyOffsetsFunctor (const OutputViewType& dst, const InputViewType& src) :
       dst_ (dst),
@@ -181,20 +297,24 @@ namespace { // (anonymous)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    operator () (const size_type& i, value_type& /* noOverflow */) const {
+    operator () (const size_type i, value_type& /* overflowCount */) const {
       // Overflow is impossible in this case, so there's no need to check.
       dst_(i) = src_(i);
     }
 
-    KOKKOS_INLINE_FUNCTION void init (value_type& noOverflow) const {
-      noOverflow = 1; // success (no overflow)
+    KOKKOS_INLINE_FUNCTION void
+    operator () (const size_type i) const {
+      dst_(i) = src_(i);
+    }
+
+    KOKKOS_INLINE_FUNCTION void init (value_type& overflowCount) const {
+      overflowCount = 0;
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& result,
-          const volatile value_type& current) const {
-      result = (result>0 && current>0)?1:0; // was there any overflow?
-    }
+    join (volatile value_type& /* result */,
+          const volatile value_type& /* current */) const
+    {}
 
   private:
     OutputViewType dst_;
@@ -308,18 +428,25 @@ namespace { // (anonymous)
                      "CopyOffsetsImpl (implements copyOffsets): In order to "
                      "call this specialization, the output View's space must "
                      "be able to access the input View's memory space.");
-      typedef CopyOffsetsFunctor<OutputViewType, InputViewType> functor_type;
-      typedef typename OutputViewType::execution_space execution_space;
-      typedef typename OutputViewType::size_type size_type;
-      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+      using functor_type = CopyOffsetsFunctor<OutputViewType, InputViewType>;
+      using execution_space = typename OutputViewType::execution_space;
+      using size_type = typename OutputViewType::size_type;
+      using range_type = Kokkos::RangePolicy<execution_space, size_type>;
 
-      int noOverflow = 0; // output argument of the reduction
-      Kokkos::parallel_reduce (range_type (0, dst.extent (0)),
-                               functor_type (dst, src),
-                               noOverflow);
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (noOverflow==0, std::runtime_error, "copyOffsets: One or more values in "
-         "src were too big (in the sense of integer overflow) to fit in dst.");
+      const bool debug = Details::Behavior::debug ();
+      if (debug) {
+        size_t overflowCount = 0; // output argument of the reduction
+        Kokkos::parallel_reduce ("Tpetra::Details::copyOffsets",
+                                 range_type (0, dst.extent (0)),
+                                 functor_type (dst, src),
+                                 overflowCount);
+        errorIfOverflow (dst, src, overflowCount);
+      }
+      else {
+        Kokkos::parallel_for ("Tpetra::Details::copyOffsets",
+                              range_type (0, dst.extent (0)),
+                              functor_type (dst, src));
+      }
     }
   };
 
@@ -360,33 +487,38 @@ namespace { // (anonymous)
                      "must be false.  That is, either the input and output "
                      "must have different array layouts, or their value types "
                      "must differ.");
-
-      typedef Kokkos::View<typename InputViewType::non_const_value_type*,
-                           Kokkos::LayoutLeft,
-                           typename OutputViewType::device_type>
-        output_space_copy_type;
-      using Kokkos::ViewAllocateWithoutInitializing;
+      using output_space_copy_type =
+        Kokkos::View<typename InputViewType::non_const_value_type*,
+          Kokkos::LayoutLeft, typename OutputViewType::device_type>;
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
       output_space_copy_type
-        outputSpaceCopy (ViewAllocateWithoutInitializing ("outputSpace"),
+        outputSpaceCopy (view_alloc ("outputSpace", WithoutInitializing),
                          src.extent (0));
       Kokkos::deep_copy (outputSpaceCopy, src);
 
       // The output View's execution space can access
       // outputSpaceCopy's data, so we can run the functor now.
-      typedef CopyOffsetsFunctor<OutputViewType,
-                                 output_space_copy_type> functor_type;
-      typedef typename OutputViewType::execution_space execution_space;
-      typedef typename OutputViewType::size_type size_type;
-      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
+      using functor_type =
+        CopyOffsetsFunctor<OutputViewType, output_space_copy_type>;
+      using execution_space = typename OutputViewType::execution_space;
+      using size_type = typename OutputViewType::size_type;
+      using range_type = Kokkos::RangePolicy<execution_space, size_type>;
 
-      int noOverflow = 0;
-      Kokkos::parallel_reduce (range_type (0, dst.extent (0)),
-                               functor_type (dst, outputSpaceCopy),
-                               noOverflow);
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (noOverflow==0, std::runtime_error, "copyOffsets: One or more values "
-         "in src were too big (in the sense of integer overflow) to fit in "
-         "dst.");
+      const bool debug = Details::Behavior::debug ();
+      if (debug) {
+        size_t overflowCount = 0;
+        Kokkos::parallel_reduce ("Tpetra::Details::copyOffsets",
+                                 range_type (0, dst.extent (0)),
+                                 functor_type (dst, outputSpaceCopy),
+                                 overflowCount);
+        errorIfOverflow (dst, src, overflowCount);
+      }
+      else {
+        Kokkos::parallel_for ("Tpetra::Details::copyOffsets",
+                              range_type (0, dst.extent (0)),
+                              functor_type (dst, outputSpaceCopy));
+      }
     }
   };
 } // namespace (anonymous)
