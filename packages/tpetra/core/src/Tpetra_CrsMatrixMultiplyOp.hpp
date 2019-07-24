@@ -51,7 +51,7 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_Profiling.hpp"
-#include "Tpetra_LocalCrsMultiplyOperator.hpp"
+#include "Tpetra_LocalCrsMatrixOperator.hpp"
 
 namespace Tpetra {
 
@@ -652,8 +652,8 @@ namespace Tpetra {
     const Teuchos::RCP<const crs_matrix_type> matrix_;
 
     //! Implementation of local sparse matrix-vector multiply.
-    LocalCrsMultiplyOperator<Scalar, MatScalar, typename
-                             crs_matrix_type::device_type> localMultiply_;
+    LocalCrsMatrixOperator<Scalar, MatScalar, typename
+                           crs_matrix_type::device_type> localMultiply_;
 
     /// \brief Column Map MultiVector used in apply().
     ///

@@ -37,17 +37,17 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_LOCALCRSMULTIPLYOPERATOR_DECL_HPP
-#define TPETRA_LOCALCRSMULTIPLYOPERATOR_DECL_HPP
+#ifndef TPETRA_LOCALCRSMATRIXOPERATOR_DECL_HPP
+#define TPETRA_LOCALCRSMATRIXOPERATOR_DECL_HPP
 
-#include "Tpetra_LocalCrsMultiplyOperator_fwd.hpp"
+#include "Tpetra_LocalCrsMatrixOperator_fwd.hpp"
 #include "Tpetra_LocalOperator.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <memory> // std::shared_ptr
 
 namespace Tpetra {
 
-  /// \class LocalCrsMultiplyOperator
+  /// \class LocalCrsMatrixOperator
   /// \brief Abstract interface for local operators (e.g., matrices
   ///   and preconditioners).
   ///
@@ -57,7 +57,7 @@ namespace Tpetra {
   /// \tparam Device The Kokkos Device type; must be a specialization
   ///   of Kokkos::Device.
   template<class MultiVectorScalar, class MatrixScalar, class Device>
-  class LocalCrsMultiplyOperator :
+  class LocalCrsMatrixOperator :
     public LocalOperator<MultiVectorScalar, Device> {
   private:
     using mv_scalar_type =
@@ -85,8 +85,8 @@ namespace Tpetra {
                               void,
                               typename local_graph_type::size_type>;
 
-    LocalCrsMultiplyOperator (const std::shared_ptr<local_matrix_type>& A);
-    ~LocalCrsMultiplyOperator () override = default;
+    LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_type>& A);
+    ~LocalCrsMatrixOperator () override = default;
 
     void
     apply (Kokkos::View<const mv_scalar_type**, array_layout,
@@ -107,4 +107,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // TPETRA_LOCALCRSMULTIPLYOPERATOR_DECL_HPP
+#endif // TPETRA_LOCALCRSMATRIXOPERATOR_DECL_HPP

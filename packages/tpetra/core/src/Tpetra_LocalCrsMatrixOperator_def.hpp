@@ -37,8 +37,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_LOCALCRSMULTIPLYOPERATOR_DEF_HPP
-#define TPETRA_LOCALCRSMULTIPLYOPERATOR_DEF_HPP
+#ifndef TPETRA_LOCALCRSMATRIXOPERATOR_DEF_HPP
+#define TPETRA_LOCALCRSMATRIXOPERATOR_DEF_HPP
 
 #include "Tpetra_LocalOperator.hpp"
 #include "KokkosSparse.hpp"
@@ -47,11 +47,11 @@
 namespace Tpetra {
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>
-LocalCrsMultiplyOperator<MultiVectorScalar, MatrixScalar, Device>::
-LocalCrsMultiplyOperator (const std::shared_ptr<local_matrix_type>& A)
+LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
+LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_type>& A)
   : A_ (A)
 {
-  const char tfecfFuncName[] = "LocalCrsMultiplyOperator: ";
+  const char tfecfFuncName[] = "LocalCrsMatrixOperator: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
     (A_.get () == nullptr, std::invalid_argument,
      "Input matrix A is null.");
@@ -59,7 +59,7 @@ LocalCrsMultiplyOperator (const std::shared_ptr<local_matrix_type>& A)
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>
 bool
-LocalCrsMultiplyOperator<MultiVectorScalar, MatrixScalar, Device>::
+LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
 hasTransposeApply () const
 {
   return true;
@@ -67,7 +67,7 @@ hasTransposeApply () const
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>
 void
-LocalCrsMultiplyOperator<MultiVectorScalar, MatrixScalar, Device>::
+LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
 apply (Kokkos::View<const mv_scalar_type**, array_layout,
          device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
        Kokkos::View<mv_scalar_type**, array_layout,
@@ -100,8 +100,8 @@ apply (Kokkos::View<const mv_scalar_type**, array_layout,
 }
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>
-const typename LocalCrsMultiplyOperator<MultiVectorScalar, MatrixScalar, Device>::local_matrix_type&
-LocalCrsMultiplyOperator<MultiVectorScalar, MatrixScalar, Device>::
+const typename LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::local_matrix_type&
+LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
 getLocalMatrix () const
 {
   return *A_;
@@ -118,7 +118,7 @@ getLocalMatrix () const
 // We only explicitly instantiate for MultiVectorScalar ==
 // MatrixScalar, which is what CrsMatrix needs.
 
-#define TPETRA_LOCALCRSMULTIPLYOPERATOR_INSTANT(SC,NT) \
-  template class LocalCrsMultiplyOperator< SC, SC, NT::device_type >;
+#define TPETRA_LOCALCRSMATRIXOPERATOR_INSTANT(SC,NT) \
+  template class LocalCrsMatrixOperator< SC, SC, NT::device_type >;
 
-#endif // TPETRA_LOCALCRSMULTIPLYOPERATOR_DEF_HPP
+#endif // TPETRA_LOCALCRSMATRIXOPERATOR_DEF_HPP

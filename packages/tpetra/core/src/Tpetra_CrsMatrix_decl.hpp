@@ -49,7 +49,7 @@
 /// include this file (Tpetra_CrsMatrix_decl.hpp).
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
-#include "Tpetra_LocalCrsMultiplyOperator_fwd.hpp"
+#include "Tpetra_LocalCrsMatrixOperator_fwd.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
@@ -3214,7 +3214,7 @@ namespace Tpetra {
     /// do local sparse matrix-vector multiplies with MultiVectors
     /// that have different Scalar type than the CrsMatrix (i.e., if
     /// you're wondering where the templated localMultiply method
-    /// went), use LocalCrsMultiplyOperator.
+    /// went), use LocalCrsMatrixOperator.
     ///
     /// The Map of X and \c mode must satisfy the following:
     /// \code
@@ -4822,9 +4822,9 @@ namespace Tpetra {
     //@}
 
     using local_multiply_op_type =
-      LocalCrsMultiplyOperator<scalar_type,
-                               scalar_type,
-                               device_type>;
+      LocalCrsMatrixOperator<scalar_type,
+                             scalar_type,
+                             device_type>;
     //! The local sparse matrix, wrapped in a multiply operator.
     std::shared_ptr<local_multiply_op_type> lclMatrix_;
 
