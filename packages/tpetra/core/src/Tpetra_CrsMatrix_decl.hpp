@@ -63,6 +63,8 @@
 // the interfaces to the corresponding local computational kernels.
 #include "KokkosSparse_sor_sequential_impl.hpp"
 
+#include <memory> // std::shared_ptr
+
 namespace Tpetra {
 
   // Forward declaration for CrsMatrix::swap() test
@@ -4818,8 +4820,15 @@ namespace Tpetra {
     Teuchos::RCP<      Graph>     myGraph_;
     //@}
 
-    //! The local sparse matrix.
-    local_matrix_type lclMatrix_;
+    /// \brief The local sparse matrix.
+    ///
+    /// We use a pointer here for two reasons:
+    ///
+    /// 1. To permit future implementation hiding.
+    /// 2. So that we can share data with a future
+    ///    LocalCrsMultiplyOperator, without copying the entire struct
+    ///    and thus making a CrsMatrix take up a lot more space.
+    std::shared_ptr<local_matrix_type> lclMatrix_;
 
     /// \name Sparse matrix values.
     ///
