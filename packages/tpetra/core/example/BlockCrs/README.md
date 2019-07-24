@@ -72,8 +72,55 @@ export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 BlockCrs performance test uses a simple 3D cube domain with a given
 blocksize e.g., 3,5,9,10. In general, we use a 64x64x64 domain size
 per MPI node, which results 1.3M unknowns when a blocksize is 5.
+Many thanks to James Elliot enlightening the best MPI configurations.
 
 ### Blake
 
+A single node test with a varying the number of threads upto 48.
+```
+## Intel Skylake 2x24 
+## Processor map to a socket (2)
+for i in 6 12 24; do
+  export OMP_NUM_THREADS=$i
+  export ppr=$((24/${OMP_NUM_THREADS})) 
+  export pi=$ppr
+  export pj=2
+  mpirun --map-by ppr:${ppr}:socket:pe=${OMP_NUM_THREADS} --bind-to core --report-bindings \
+    ./TpetraCore_BlockCrsPerfTest.exe \
+      --num-elements-i=64 --num-elements-j=64 --num-elements-k=64 \
+      --num-procs-i=$pi --num-procs-j=$pj --num-procs-k=1 \
+      --blocksize=5 
+done
+## Processor map to a node
+export OMP_NUM_THREADS=48
+mpirun --map-by ppr:1:node:pe=${OMP_NUM_THREADS} --bind-to core --report-bindings \
+  ./TpetraCore_BlockCrsPerf.exe \
+    --num-elements-i=64 --num-elements-j=64 --num-elements-k=64 \
+    --num-procs-i=1 --num-procs-j=1 --num-procs-k=1 \
+    --blocksize=5 
+```
+
+![Blake-SingleNode](blake-blockcrs-64x64x64x5-sha-302420bc.png)
+
+### White
+
+A single node test with a varying P100 devices 1, 2, and 4.
+```
+## NVIDIA 4 P100 per node 
+## Processor map to a node
+export n=1 # 1, 2 and 4
+export ni=64*$n
+export pi=$n
+
+# for n=2, we use --map-by ppr:1:socket
+# for n=4, we use --map-by ppr:2:socket
+mpirun --map-by ppr:1:node --bind-to core --report-bindings \
+  ./TpetraCore_BlockCrsPerf.exe \
+    --num-elements-i=$ni --num-elements-j=64 --num-elements-k=64 \
+    --num-procs-i=$pi --num-procs-j=1 --num-procs-k=1 \
+    --blocksize=5 --repeat=10 --kokkos-ndevices=$n 
+```
+
+![White-SingleNode](white-blockcrs-64x64x64x5-sha-302420bc.png)
 
 
