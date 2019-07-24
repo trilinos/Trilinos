@@ -97,8 +97,10 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
 
 
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
-  galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
+  galeriStream << "========================================================\n" << xpetraParameters;
   if (matrixFile.empty()) {
+
+    galeriStream << galeriParameters;
 
     // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
     //                                 d1  d2  d3
