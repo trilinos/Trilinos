@@ -544,6 +544,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   PL->set("refmaxwell: enable local nodal solver",false);
   PL->set("refmaxwell: global to local nodal transfer matrix",(Epetra_CrsMatrix*)0);
   PL->set("refmaxwell: drop nodal correction",false);//HAQ
+  PL->set("refmaxwell: rowsum threshold",-1.0);
   return PL;
 }
 
