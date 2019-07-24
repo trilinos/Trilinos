@@ -354,14 +354,11 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   Epetra_Vector lhs(EdgeMap,true);
   int status1, status2 = 0;
 
-#if 0
   if(!Comm.MyPID()) printf("*** Test 1 ***\n");
   rpc_test_additive(Comm,List_2level,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
-#endif
   lhs.PutScalar(0.0);
   if(!Comm.MyPID()) printf("*** Test 2 ***\n");
   rpc_test_additive(Comm,List_SGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
-#if 0
   lhs.PutScalar(0.0);
   if(!Comm.MyPID()) printf("*** Test 3 ***\n");
   rpc_test_additive(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
@@ -408,7 +405,6 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   lhs.PutScalar(0.0);
   if(!Comm.MyPID()) printf("*** Test 14 ***\n");
   rpc_test_additive_newconstructor(Comm,List_SA,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
-#endif
 
   /* Test w/ rowsum */
   lhs.PutScalar(0.0);
