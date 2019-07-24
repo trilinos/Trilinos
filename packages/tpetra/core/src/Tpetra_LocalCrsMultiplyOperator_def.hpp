@@ -99,6 +99,14 @@ apply (Kokkos::View<const mv_scalar_type**, array_layout,
   KokkosSparse::spmv (op, alpha, *A_, X, beta, Y);
 }
 
+template<class MultiVectorScalar, class MatrixScalar, class Device>
+const typename LocalCrsMultiplyOperator<MultiVectorScalar, MatrixScalar, Device>::local_matrix_type&
+LocalCrsMultiplyOperator<MultiVectorScalar, MatrixScalar, Device>::
+getLocalMatrix () const
+{
+  return *A_;
+}
+
 } // namespace Tpetra
 
 //

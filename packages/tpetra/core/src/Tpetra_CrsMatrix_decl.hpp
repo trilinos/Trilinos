@@ -49,6 +49,7 @@
 /// include this file (Tpetra_CrsMatrix_decl.hpp).
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
+#include "Tpetra_LocalCrsMultiplyOperator_fwd.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
@@ -2563,9 +2564,6 @@ namespace Tpetra {
     ///   method.
     local_matrix_type getLocalMatrix () const;
 
-    //! This is an implementation detail of Tpetra; do not call it.
-    std::shared_ptr<local_matrix_type> getLocalMatrixPtr () const;
-
     /// \brief Number of global elements in the row map of this matrix.
     ///
     /// This is <it>not</it> the number of rows in the matrix as a
@@ -4823,15 +4821,12 @@ namespace Tpetra {
     Teuchos::RCP<      Graph>     myGraph_;
     //@}
 
-    /// \brief The local sparse matrix.
-    ///
-    /// We use a pointer here for two reasons:
-    ///
-    /// 1. To permit future implementation hiding.
-    /// 2. So that we can share data with a future
-    ///    LocalCrsMultiplyOperator, without copying the entire struct
-    ///    and thus making a CrsMatrix take up a lot more space.
-    std::shared_ptr<local_matrix_type> lclMatrix_;
+    using local_multiply_op_type =
+      LocalCrsMultiplyOperator<scalar_type,
+                               scalar_type,
+                               device_type>;
+    //! The local sparse matrix, wrapped in a multiply operator.
+    std::shared_ptr<local_multiply_op_type> lclMatrix_;
 
     /// \name Sparse matrix values.
     ///

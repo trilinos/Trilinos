@@ -102,6 +102,11 @@ namespace Tpetra {
     //! The specialization of Map which this class uses.
     using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
 
+  private:
+    using local_matrix_type =
+      typename crs_matrix_type::local_matrix_type;
+
+  public:
     //! @name Constructor and destructor
     //@{
 
@@ -111,7 +116,7 @@ namespace Tpetra {
     ///   <tt>Operator<Scalar, ...></tt>.
     CrsMatrixMultiplyOp (const Teuchos::RCP<const crs_matrix_type>& A) :
       matrix_ (A),
-      localMultiply_ (A->getLocalMatrixPtr ())
+      localMultiply_ (std::make_shared<local_matrix_type> (A->getLocalMatrix ()))
     {}
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -647,8 +652,8 @@ namespace Tpetra {
     const Teuchos::RCP<const crs_matrix_type> matrix_;
 
     //! Implementation of local sparse matrix-vector multiply.
-    LocalCrsMultiplyOperator<Scalar, MatScalar,
-      typename crs_matrix_type::device_type> localMultiply_;
+    LocalCrsMultiplyOperator<Scalar, MatScalar, typename
+                             crs_matrix_type::device_type> localMultiply_;
 
     /// \brief Column Map MultiVector used in apply().
     ///

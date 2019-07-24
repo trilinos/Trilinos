@@ -99,6 +99,8 @@ namespace Tpetra {
 
     bool hasTransposeApply () const override;
 
+    const local_matrix_type& getLocalMatrix () const;
+
   private:
     std::shared_ptr<local_matrix_type> A_;
   };
