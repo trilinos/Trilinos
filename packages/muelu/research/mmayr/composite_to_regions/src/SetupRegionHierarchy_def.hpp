@@ -1289,6 +1289,7 @@ void createRegionHierarchy(const int maxRegPerProc,
                            const int numDimensions,
                            const Array<Array<int> > lNodesPerDim,
                            const Array<std::string> aggregationRegionType,
+                           RCP<Teuchos::ParameterList>& interfaceParams,
                            const std::string xmlFileName,
                            Array<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& nullspace,
                            Array<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >& coordinates,
@@ -1344,9 +1345,11 @@ void createRegionHierarchy(const int maxRegPerProc,
     // Insert region-specific data into parameter list
     const std::string userName = "user data";
     Teuchos::ParameterList& userParamList = mueluParams->sublist(userName);
-    userParamList.set<int>("int numDimensions", numDimensions);
-    userParamList.set<Array<int> >("Array<LO> lNodesPerDim", lNodesPerDim[j]);
+    userParamList.set<int>        ("int numDimensions", numDimensions);
+    userParamList.set<Array<LO> > ("Array<LO> lNodesPerDim", lNodesPerDim[j]);
     userParamList.set<std::string>("string aggregationRegionType", aggregationRegionType[j]);
+    userParamList.set<Array<LO> > ("Array<LO> nodeOnInterface", interfaceParams->get<Array<LO> >("interfaces: interface nodes"));
+    userParamList.set<Array<LO> > ("Array<LO> interfacesDimensions", interfaceParams->get<Array<LO> >("interfaces: nodes per dimensions"));
     if(Teuchos::nonnull(coordinates[j])) {
       userParamList.set("Coordinates", coordinates[j]);
     }
@@ -1532,10 +1535,11 @@ void createRegionHierarchy(const int maxRegPerProc,
   ArrayView<LocalOrdinal> compositeToRegionLIDs = {};
   RCP<ParameterList> coarseSolverParams = rcp(new ParameterList("Coarse solver parameters"));
   coarseSolverParams->set<bool>("use coarse solver", true);
+  RCP<ParameterList> dummy = Teuchos::parameterList();
 
   // Call the actual routine
   createRegionHierarchy(maxRegPerProc, numDimensions, lNodesPerDim,
-                        aggregationRegionType, xmlFileName, nullspace, coordinates,
+                        aggregationRegionType, dummy, xmlFileName, nullspace, coordinates,
                         regionGrpMats, mapComp, rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp,
                         revisedColMapPerGrp, rowImportPerGrp, compRowMaps, compColMaps, regRowMaps,
                         regColMaps, quasiRegRowMaps, quasiRegColMaps, regMatrices, regProlong,

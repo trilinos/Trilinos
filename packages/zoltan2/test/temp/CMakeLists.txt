@@ -57,7 +57,8 @@ TRIBITS_ADD_TEST(
 #  )
 #ENDIF()
 
-IF (${PROJECT_NAME}_ENABLE_Epetra)
+ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
+IF (Xpetra_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     XpetraEpetraMatrix
     SOURCES XpetraEpetraMatrix.cpp
