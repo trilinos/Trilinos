@@ -51,6 +51,7 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_LocalCrsMultiplyOperator.hpp"
 
 namespace Tpetra {
 
@@ -140,14 +141,12 @@ namespace Tpetra {
     /// \param A [in] The CrsMatrix to wrap as an
     ///   <tt>Operator<Scalar, ...></tt>.
     CrsMatrixMultiplyOp (const Teuchos::RCP<const crs_matrix_type>& A) :
-      matrix_ (A)
-    {
-      // we don't require that A is fill complete; we will query for the
-      // importer/exporter at apply()-time
-    }
+      matrix_ (A),
+      localMultiply_ (A->getLocalMatrix ())
+    {}
 
     //! Destructor (virtual for memory safety of derived classes).
-    virtual ~CrsMatrixMultiplyOp () {}
+    ~CrsMatrixMultiplyOp () override = default;
 
     //@}
     //! @name Methods implementing Operator
@@ -155,9 +154,6 @@ namespace Tpetra {
 
     /// \brief Compute <tt>Y = beta*Y + alpha*Op(A)*X</tt>, where
     ///   <tt>Op(A)</tt> is either A, \f$A^T\f$, or \f$A^H\f$.
-    ///
-    /// This method calls the underlying CrsMatrix object's
-    /// localMultiply<Scalar,Scalar>() method.
     void
     apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
            MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
@@ -681,6 +677,9 @@ namespace Tpetra {
     //! The underlying CrsMatrix object.
     const Teuchos::RCP<const crs_matrix_type> matrix_;
 
+    LocalCrsMultiplyOperator<Scalar, MatScalar,
+      typename crs_matrix_type::device_type> localMultiply_;
+
     /// \brief Column Map MultiVector used in apply().
     ///
     /// This is a column Map MultiVector.  It is used as the target of
@@ -718,84 +717,99 @@ namespace Tpetra {
                     Scalar alpha,
                     Scalar beta) const
     {
-      typedef Teuchos::ScalarTraits<Scalar> ST;
       using Teuchos::null;
-
-      const int myImageID = Teuchos::rank(*matrix_->getComm());
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using export_type = Export<LocalOrdinal, GlobalOrdinal, Node>;
+      using import_type = Import<LocalOrdinal, GlobalOrdinal, Node>;
+      using STS = Teuchos::ScalarTraits<Scalar>;
 
       const size_t numVectors = X_in.getNumVectors();
       // because of Views, it is difficult to determine if X and Y point to the same data.
       // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)
       // we ony need to do this if we have trivial importers; otherwise, we don't actually apply the operator from X into Y
-      Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer = matrix_->getGraph()->getImporter();
-      Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = matrix_->getGraph()->getExporter();
-      // access X indirectly, in case we need to create temporary storage
-      Teuchos::RCP<const MV> X;
+      RCP<const import_type> importer = matrix_->getGraph()->getImporter();
+      RCP<const export_type> exporter = matrix_->getGraph()->getExporter();
 
       // some parameters for below
-      const bool Y_is_replicated = !Y_in.isDistributed(),
-        Y_is_overwritten = (beta == ST::zero());
-      if (Y_is_replicated && myImageID > 0) {
-        beta = ST::zero();
+      const bool Y_is_replicated = ! Y_in.isDistributed ();
+      const bool Y_is_overwritten = (beta == STS::zero ());
+      const int myRank = matrix_->getComm ()->getRank ();
+      if (Y_is_replicated && myRank != 0) {
+        beta = STS::zero ();
       }
 
+      // access X indirectly, in case we need to create temporary storage
+      RCP<const MV> X;
       // currently, cannot multiply from multivector of non-constant stride
-      if (X_in.isConstantStride() == false && importer==null) {
+      if (! X_in.isConstantStride () && importer == null) {
         // generate a strided copy of X_in
-        X = Teuchos::rcp(new MV(X_in));
+        X = Teuchos::rcp (new MV (X_in, Teuchos::Copy));
       }
       else {
         // just temporary, so this non-owning RCP is okay
-        X = Teuchos::rcp(&X_in, false);
+        X = Teuchos::rcpFromRef (X_in);
       }
 
       // set up import/export temporary multivectors
       if (importer != null) {
-        if (importMV_ != null && importMV_->getNumVectors() != numVectors) importMV_ = null;
+        if (importMV_ != null && importMV_->getNumVectors () != numVectors) {
+          importMV_ = null;
+        }
         if (importMV_ == null) {
-          importMV_ = Teuchos::rcp( new MV(matrix_->getColMap(),numVectors) );
+          importMV_ = rcp (new MV (matrix_->getColMap (), numVectors));
         }
       }
       if (exporter != null) {
-        if (exportMV_ != null && exportMV_->getNumVectors() != numVectors) exportMV_ = null;
+        if (exportMV_ != null && exportMV_->getNumVectors () != numVectors) {
+          exportMV_ = null;
+        }
         if (exportMV_ == null) {
-          exportMV_ = Teuchos::rcp( new MV(matrix_->getRowMap(),numVectors) );
+          exportMV_ = rcp (new MV (matrix_->getRowMap (), numVectors));
         }
       }
 
       // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
       if (exporter != null) {
-        {
-          exportMV_->doImport(X_in,*exporter,INSERT);
-        }
-        // multiply out of exportMV_
-        X = exportMV_;
+        exportMV_->doImport(X_in,*exporter,INSERT);
+        X = exportMV_; // multiply out of exportMV_
       }
 
+      auto X_lcl = X->getLocalViewDevice ();
 
       // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
       // We will compute solution into the to-be-exported MV; get a view
       if (importer != null) {
-        // Do actual computation
-        matrix_->template localMultiply<Scalar, Scalar>(*X, *importMV_, mode, alpha, ST::zero());
-        if (Y_is_overwritten) Y_in.putScalar(ST::zero());
-        else                  Y_in.scale(beta);
-        //
-        {
-          Y_in.doExport(*importMV_,*importer,ADD);
+        auto Y_lcl = importMV_->getLocalViewDevice ();
+        importMV_->modify_device ();
+
+        localMultiply_.apply (X_lcl, Y_lcl, mode, alpha, STS::zero ());
+        if (Y_is_overwritten) {
+          Y_in.putScalar (STS::zero ());
         }
+        else {
+          Y_in.scale (beta);
+        }
+        Y_in.doExport (*importMV_, *importer, ADD);
       }
       // otherwise, multiply into Y
       else {
+        auto X_lcl = X->getLocalViewDevice ();
         // can't multiply in-situ; can't multiply into non-strided multivector
-        if (Y_in.isConstantStride() == false || X.getRawPtr() == &Y_in) {
+        if (! Y_in.isConstantStride () || X.getRawPtr () == &Y_in) {
           // generate a strided copy of Y
-          MV Y(Y_in);
-          matrix_->template localMultiply<Scalar, Scalar>(*X, Y, mode, alpha, beta);
-          deep_copy (Y_in, Y);
+          MV Y (Y_in, Teuchos::Copy);
+          auto Y_lcl = Y.getLocalViewDevice ();
+          Y.modify_device ();
+
+          localMultiply_.apply (X_lcl, Y_lcl, mode, alpha, beta);
+          Tpetra::deep_copy (Y_in, Y);
         }
         else {
-          matrix_->template localMultiply<Scalar, Scalar>(*X, Y_in, mode, alpha, beta);
+          auto Y_lcl = Y_in.getLocalViewDevice ();
+          Y_in.modify_device ();
+
+          localMultiply_.apply (X_lcl, Y_lcl, mode, alpha, beta);
         }
       }
       // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
@@ -812,6 +826,7 @@ namespace Tpetra {
                        Scalar beta) const
     {
       using Tpetra::Details::ProfilingRegion;
+      using Teuchos::NO_TRANS;
       using Teuchos::RCP;
       using Teuchos::rcp;
       using Teuchos::rcp_const_cast;
@@ -904,15 +919,18 @@ namespace Tpetra {
       // Export is trivial (null).
       RCP<MV> Y_rowMap = getRowMapMultiVector (Y_in);
 
+      auto X_lcl = X_colMap->getLocalViewDevice ();
+
       // If we have a nontrivial Export object, we must perform an
       // Export.  In that case, the local multiply result will go into
       // the row Map multivector.  We don't have to make a
       // constant-stride version of Y_in in this case, because we had to
       // make a constant stride Y_rowMap MV and do an Export anyway.
       if (! exporter.is_null ()) {
-        matrix_->template localMultiply<Scalar, Scalar> (*X_colMap, *Y_rowMap,
-                                                         Teuchos::NO_TRANS,
-                                                         alpha, STS::zero());
+        auto Y_lcl = Y_rowMap->getLocalViewDevice ();
+        Y_rowMap->modify_device ();
+        localMultiply_.apply (X_lcl, Y_lcl, NO_TRANS,
+                              alpha, STS::zero ());
         {
           ProfilingRegion regionExport ("Tpetra::CrsMatrixMultiplyOp::apply: Export");
 
@@ -954,16 +972,16 @@ namespace Tpetra {
           if (beta != STS::zero ()) {
             Tpetra::deep_copy (*Y_rowMap, Y_in);
           }
-          matrix_->template localMultiply<Scalar, Scalar> (*X_colMap,
-                                                           *Y_rowMap,
-                                                           Teuchos::NO_TRANS,
-                                                           alpha, beta);
+
+          auto Y_lcl = Y_rowMap->getLocalViewDevice ();
+          Y_rowMap->modify_device ();
+          localMultiply_.apply (X_lcl, Y_lcl, NO_TRANS, alpha, beta);
           Tpetra::deep_copy (Y_in, *Y_rowMap);
         }
         else {
-          matrix_->template localMultiply<Scalar, Scalar> (*X_colMap, Y_in,
-                                                           Teuchos::NO_TRANS,
-                                                           alpha, beta);
+          auto Y_lcl = Y_in.getLocalViewDevice ();
+          Y_in.modify_device ();
+          localMultiply_.apply (X_lcl, Y_lcl, NO_TRANS, alpha, beta);
         }
       }
 
