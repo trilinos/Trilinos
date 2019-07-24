@@ -59,6 +59,7 @@
 #include "exodusII_int.h"
 
 /*!
+\ingroup Utilities
 
 The function ex_get_init() reads the initializationinitialization
 parameters from an opened exodus file.

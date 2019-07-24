@@ -37,6 +37,7 @@
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_QA, etc
 
 /*!
+\ingroup Utilities
 
 The function ex_put_qa() writes the QA records to the database. Each
 QA record contains four MAX_STR_LENGTH-byte character

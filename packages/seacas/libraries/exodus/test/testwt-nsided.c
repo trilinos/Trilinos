@@ -299,7 +299,7 @@ int main(int argc, char **argv)
 
 #if 0
    error = ex_put_nsided_block (exoid, EX_ELEM_BLOCK, ebids[0], num_elem_in_block[0],
-				num_total_nodes_per_blk[0], 0);
+                                num_total_nodes_per_blk[0], 0);
 #else
   error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[0], "nsided", num_elem_in_block[0],
                        num_total_nodes_per_blk[0], 0, 0, 0);

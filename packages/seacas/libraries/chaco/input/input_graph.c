@@ -41,13 +41,13 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
                 float **eweights)
 
 /*
- *  FILE     *fin;	 input file
- *  char     *inname;	 name of input file
- *  int     **start;	 start of edge list for each vertex
+ *  FILE     *fin;       input file
+ *  char     *inname;    name of input file
+ *  int     **start;     start of edge list for each vertex
  *  int     **adjacency; edge list data
- *  int      *nvtxs;	 number of vertices in graph
- *  int     **vweights;	 vertex weight list data
- *  float   **eweights;	 edge weight list data
+ *  int      *nvtxs;     number of vertices in graph
+ *  int     **vweights;  vertex weight list data
+ *  float   **eweights;  edge weight list data
  */
 {
   extern FILE *Output_File; /* output file or null */

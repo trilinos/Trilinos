@@ -105,14 +105,14 @@ void SystemInterface::enroll_options()
 
 #if 0
   options_.enroll("match_elem_ids", GetLongOption::NoValue,
-		  "Combine elements if their global ids match and they are compatible.\n"
-		  "\t\tCompatible = same element type, nodes of the two elements match",
-		  nullptr);
+                  "Combine elements if their global ids match and they are compatible.\n"
+                  "\t\tCompatible = same element type, nodes of the two elements match",
+                  nullptr);
 
   options_.enroll("match_element_coordinates", GetLongOption::NoValue,
-		  "Combine elements if their centroids are within tolerance distance\n"
-		  "\t\tand they are compatible (same element type, nodes match).",
-		  nullptr);
+                  "Combine elements if their centroids are within tolerance distance\n"
+                  "\t\tand they are compatible (same element type, nodes match).",
+                  nullptr);
 #endif
 
   options_.enroll("tolerance", GetLongOption::MandatoryValue,
@@ -662,8 +662,8 @@ namespace {
   void parse_omissions(const char *tokens, Omissions *omissions, const std::string &basename,
                        bool require_ids)
   {
-    //	to Omit block id 1,3,4 from part 1; block 2 3 4 from part 2;
-    //	and block 8 from part5, specify
+    //  to Omit block id 1,3,4 from part 1; block 2 3 4 from part 2;
+    //  and block 8 from part5, specify
     // '-omit_blocks p1:1:3:4,p2:2:3:4,p5:8'
 
     // Break into tokens separated by "," Each token will then be a

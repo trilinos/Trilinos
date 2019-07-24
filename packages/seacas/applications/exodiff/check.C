@@ -319,7 +319,7 @@ namespace {
 #if 0
     if (block1->Num_Attributes() != block2->Num_Attributes()) {
       Error(fmt::format(".. Block {}: number of attributes doesn't agree ({} != {}).\n"
-			block1->Id(), block1->Num_Attributes(), block2->Num_Attributes());
+                        block1->Id(), block1->Num_Attributes(), block2->Num_Attributes());
       is_same = false;
     }
 #endif

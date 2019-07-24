@@ -93,16 +93,16 @@ namespace {
         Iocgns::Utils::assign_zones_to_procs(zones, work_vector, verbose);
 
 #if 0
-	fmt::print(stderr, "\nDecomposition for {} processors; Total work = {:n}, Average = {:n}\n",
-		   proc_count, (size_t)total_work, (size_t)avg_work);
+        fmt::print(stderr, "\nDecomposition for {} processors; Total work = {:n}, Average = {:n}\n",
+                   proc_count, (size_t)total_work, (size_t)avg_work);
 
-	  for (const auto zone : zones) {
-	    if (zone->is_active()) {
-	      fmt::print(stderr, "Zone {}\tProc: {}\tOrdinal: {}x{}x{}\tWork: {:n}\n",
-			 zone->m_name, zone->m_proc, zone->m_ordinal[0], zone->m_ordinal[1],
-			 zone->m_ordinal[2], zone->work());
-	    }
-	  }
+          for (const auto zone : zones) {
+            if (zone->is_active()) {
+              fmt::print(stderr, "Zone {}\tProc: {}\tOrdinal: {}x{}x{}\tWork: {:n}\n",
+                         zone->m_name, zone->m_proc, zone->m_ordinal[0], zone->m_ordinal[1],
+                         zone->m_ordinal[2], zone->work());
+            }
+          }
 #endif
         // Each active zone must be on a processor
         for (const auto zone : zones) {
@@ -483,7 +483,7 @@ TEST_CASE("grv", "[grv]")
     SECTION(name)
     {
       double load_balance_tolerance = 1.3;
-      check_split_assign(zones, load_balance_tolerance, proc_count, .7);
+      check_split_assign(zones, load_balance_tolerance, proc_count, .7, 1.1);
     }
   }
   cleanup(zones);

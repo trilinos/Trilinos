@@ -188,10 +188,6 @@ namespace Iohb {
 
       DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
 
-      if (properties.exists("FIELD_SEPARATOR")) {
-        new_this->separator_ = properties.get("FIELD_SEPARATOR").get_string();
-      }
-
       if (properties.exists("FILE_FORMAT")) {
         std::string format = properties.get("FILE_FORMAT").get_string();
         if (Ioss::Utils::case_strcmp(format, "spyhis") == 0) {
@@ -199,15 +195,12 @@ namespace Iohb {
         }
         else if (Ioss::Utils::case_strcmp(format, "csv") == 0) {
           new_this->fileFormat = CSV;
-          new_this->separator_ = ", ";
         }
         else if (Ioss::Utils::case_strcmp(format, "ts_csv") == 0) {
           new_this->fileFormat = TS_CSV;
-          new_this->separator_ = ", ";
         }
         else if (Ioss::Utils::case_strcmp(format, "text") == 0) {
           new_this->fileFormat = TEXT;
-          new_this->separator_ = "\t";
         }
         else if (Ioss::Utils::case_strcmp(format, "ts_text") == 0) {
           new_this->fileFormat = TS_TEXT;
@@ -228,7 +221,39 @@ namespace Iohb {
         }
       }
 
+      // "Predefined" formats... (put first so can modify settings if wanted)
+      if (fileFormat == CSV) {
+        new_this->addTimeField = true;
+        new_this->showLegend   = true;
+        new_this->showLabels   = false;
+        new_this->separator_   = ", ";
+      }
+      else if (fileFormat == TS_CSV) {
+        new_this->addTimeField = true;
+        new_this->showLegend   = true;
+        new_this->showLabels   = false;
+        new_this->separator_   = ", ";
+        new_this->tsFormat     = defaultTsFormat;
+      }
+      else if (fileFormat == TEXT) {
+        new_this->addTimeField = true;
+        new_this->showLegend   = true;
+        new_this->showLabels   = false;
+        new_this->separator_   = "\t";
+      }
+      else if (fileFormat == TS_TEXT) {
+        new_this->addTimeField = true;
+        new_this->showLegend   = true;
+        new_this->showLabels   = false;
+        new_this->separator_   = "\t";
+        new_this->tsFormat     = defaultTsFormat;
+      }
+
       // Pull variables from the regions property data...
+      if (properties.exists("FIELD_SEPARATOR")) {
+        new_this->separator_ = properties.get("FIELD_SEPARATOR").get_string();
+      }
+
       if (properties.exists("FLUSH_INTERVAL")) {
         new_this->flushInterval_ = properties.get("FLUSH_INTERVAL").get_int();
       }
@@ -239,7 +264,12 @@ namespace Iohb {
 
       if (properties.exists("SHOW_TIME_STAMP")) {
         bool show_time_stamp = properties.get("SHOW_TIME_STAMP").get_int() == 1;
-        if (!show_time_stamp) {
+        if (show_time_stamp) {
+          if (tsFormat.empty()) {
+            new_this->tsFormat = defaultTsFormat;
+          }
+        }
+        else {
           new_this->tsFormat = "";
         }
       }
@@ -269,38 +299,12 @@ namespace Iohb {
         new_this->addTimeField = (properties.get("SHOW_TIME_FIELD").get_int() == 1);
       }
 
-      // "Predefined" formats...
+      // SpyHis format is specific format, so don't override these settings:
       if (fileFormat == SPYHIS) {
         new_this->addTimeField = true;
         new_this->showLegend   = true;
         new_this->showLabels   = false;
         new_this->tsFormat     = "";
-      }
-      else if (fileFormat == CSV) {
-        new_this->addTimeField = true;
-        new_this->showLegend   = true;
-        new_this->showLabels   = false;
-        new_this->separator_   = ", ";
-        new_this->tsFormat     = "";
-      }
-      else if (fileFormat == TS_CSV) {
-        new_this->addTimeField = true;
-        new_this->showLegend   = true;
-        new_this->showLabels   = false;
-        new_this->separator_   = ", ";
-      }
-      else if (fileFormat == TEXT) {
-        new_this->addTimeField = true;
-        new_this->showLegend   = true;
-        new_this->showLabels   = false;
-        new_this->separator_   = "\t";
-        new_this->tsFormat     = "";
-      }
-      else if (fileFormat == TS_TEXT) {
-        new_this->addTimeField = true;
-        new_this->showLegend   = true;
-        new_this->showLabels   = false;
-        new_this->separator_   = "\t";
       }
 
       if (showLegend) {
@@ -320,6 +324,7 @@ namespace Iohb {
           }
         }
       }
+
       new_this->initialized_ = true;
     }
   }

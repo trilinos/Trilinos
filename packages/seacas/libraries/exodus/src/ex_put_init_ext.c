@@ -225,6 +225,8 @@ static void invalidate_id_status(int exoid, const char *var_stat, const char *va
 }
 
 /*!
+\ingroup Utilities
+
  * writes the initialization parameters to the EXODUS file
  * \param     exoid     exodus file id
  * \param     model     finite element model parameters

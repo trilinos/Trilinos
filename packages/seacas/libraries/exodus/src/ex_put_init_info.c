@@ -35,16 +35,16 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /* Function(s) contained in this file:
- * 	ex_put_init_info()
+ *      ex_put_init_info()
  *****************************************************************************
  * This function writes information about the processors for which the
  * decomposition was performed.
  *****************************************************************************
  * Variable Index:
- *	exoid		  - The NetCDF ID of an already open NemesisI file.
- *	num_proc	  - The number of processors in the decomposition.
- *	num_proc_in_f	  - The number of processors the file contains
- *			    information for.
+ *      exoid             - The NetCDF ID of an already open NemesisI file.
+ *      num_proc          - The number of processors in the decomposition.
+ *      num_proc_in_f     - The number of processors the file contains
+ *                          information for.
  *      ftype             - The type of Nemesis file.
  */
 /*****************************************************************************/
@@ -54,6 +54,10 @@
 #include <exodusII.h>
 #include <exodusII_int.h>
 
+/*!
+ * \ingroup ModelDescription
+ * \undoc
+ */
 int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
 {
   int  dimid, varid;

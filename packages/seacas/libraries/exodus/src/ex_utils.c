@@ -196,6 +196,10 @@ int ex_check_file_type(const char *path, int *type)
   EX_FUNC_LEAVE(EX_NOERR);
 }
 
+/*!
+  \ingroup Utilities
+  \undoc
+*/
 int ex_set_max_name_length(int exoid, int length)
 {
   char errmsg[MAX_ERR_LENGTH];
@@ -263,7 +267,14 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
   /* inquire previously defined dimensions  */
   name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH) + 1;
 
-  int_names = calloc(num_entity * name_length, 1);
+  if (!(int_names = calloc(num_entity * name_length, 1))) {
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to allocate memory for internal int_names "
+             "array in file id %d",
+             exoid);
+    ex_err_fn(exoid, __func__, errmsg, EX_MEMFAIL);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   for (i = 0; i < num_entity; i++) {
     if (names != NULL && *names != NULL && *names[i] != '\0') {
@@ -1208,6 +1219,8 @@ static void ex_swap64(int64_t v[], int64_t i, int64_t j)
 }
 
 /*!
+ * \ingroup Utilities
+ * \internal
  * The following 'indexed qsort' routine is modified from Sedgewicks
  * algorithm It selects the pivot based on the median of the left,
  * right, and center values to try to avoid degenerate cases ocurring
@@ -1621,7 +1634,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
     }
     else {
       /* Checks that only a single bit is set */
-      set_modes = set_modes && !(set_modes & (set_modes - 1));
+      set_modes = !(set_modes & (set_modes - 1));
       if (!set_modes) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "EXODUS: ERROR: More than 1 file format "
