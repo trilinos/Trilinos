@@ -35,19 +35,16 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
 // ************************************************************************
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Kokkos_ArithTraits.hpp>
-#include <Teuchos_DefaultSerialComm.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Kokkos_ArithTraits.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 #include <iterator>
 
 // FINISH: add test for MultiVector with a node containing zero local entries
@@ -98,7 +95,6 @@ namespace {
 
   using std::endl;
   using std::copy;
-  using std::ostream_iterator;
   using std::string;
 
   using Teuchos::Array;
@@ -4862,23 +4858,9 @@ namespace {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  // mfh 04 June 2013: To avoid explicit instantiation - related link
-  // errors for LO = int and GO = unsigned (long) int, I've forced
-  // this test to use LO = int and GO = int.  LO and GO should not
-  // matter for this test.
-  //
-  // mfh 06 June 2013: To avoid link errors on GPUs, I've forced this
-  // test to build only for non-GPU Node types.
-  TPETRA_INSTANTIATE_N_NOGPU( TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST )
+  TPETRA_INSTANTIATE_N( TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST )
 
-  // mfh 04 June 2013: To avoid explicit instantiation - related link
-  // errors for LO = int and GO = unsigned (long) int, I've forced
-  // this test to use LO = int and GO = int.  LO and GO should not
-  // matter for this test.
-  //
-  // mfh 06 June 2013: To avoid link errors on GPUs, I've forced this
-  // test to build only for non-GPU Node types.
-  TPETRA_INSTANTIATE_N_NOGPU( TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST )
+  TPETRA_INSTANTIATE_N( TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST )
 
   TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 
