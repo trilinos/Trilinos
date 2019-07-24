@@ -138,6 +138,11 @@ namespace Tpetra {
 /// It doesn't make sense for BlockMultiVector to implement
 /// MultiVector, because the desired fill interfaces of the two
 /// classes are different.
+///
+/// BlockMultiVector does not have comm layer e.g., packAndPrepare, 
+/// copyAndPermute and it should rely on point multivector 
+/// (getMultiVectorView) when BlockMultiVector is used with other 
+/// Trilinos packages. 
 template<class Scalar,
          class LO,
          class GO,
@@ -148,7 +153,6 @@ class BlockMultiVector :
 private:
   using dist_object_type = Tpetra::DistObject<Scalar, LO, GO, Node>;
   using STS = Teuchos::ScalarTraits<Scalar>;
-  using packet_type = typename dist_object_type::packet_type;
 
 public:
   //! \name Typedefs to facilitate template metaprogramming.
@@ -620,53 +624,6 @@ protected:
 
   virtual bool checkSizes (const Tpetra::SrcDistObject& source);
 
-  virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  copyAndPermuteNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
-  copyAndPermute
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
-  (const SrcDistObject& source,
-   const size_t numSameIDs,
-   const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& permuteToLIDs,
-   const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& permuteFromLIDs);
-
-  virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  packAndPrepareNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
-  packAndPrepare
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
-  (const SrcDistObject& source,
-   const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& exportLIDs,
-   Kokkos::DualView<packet_type*,
-     buffer_device_type>& exports,
-   Kokkos::DualView<size_t*,
-     buffer_device_type> numPacketsPerLID,
-   size_t& constantNumPackets,
-   Distributor& distor);
-
-  virtual void
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  unpackAndCombineNew
-#else // TPETRA_ENABLE_DEPRECATED_CODE
-  unpackAndCombine
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
-  (const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& importLIDs,
-   Kokkos::DualView<packet_type*,
-     buffer_device_type> imports,
-   Kokkos::DualView<size_t*,
-     buffer_device_type> numPacketsPerLID,
-   const size_t constantNumPackets,
-   Distributor& distor,
-   const CombineMode combineMode);
-
-  //@}
-
 protected:
   //! Raw pointer to the MultiVector's data.
   impl_scalar_type* getRawPtr () const {
@@ -733,69 +690,6 @@ private:
   static Teuchos::RCP<const BlockMultiVector<Scalar, LO, GO, Node> >
   getBlockMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src);
 
-  /// \brief Implementation of copyAndPermute.
-  ///
-  /// \tparam LO The type of local indices.
-  /// \tparam GO The type of global indices.
-  /// \tparam NT The Node type.
-  ///
-  /// \param tgt [in] "Target" object of an Export or Import operation
-  ///   on a BlockMultiVector.
-  /// \param src [in] "Source" object of an Export or Import operation
-  ///   on a BlockMultiVector.
-  /// \param numSameIDs [in] See DistObject::copyAndPermute.
-  /// \param permuteToLIDs [in] See DistObject::copyAndPermute.
-  /// \param permuteFromLIDs [in] See DistObject::copyAndPermute.
-  ///
-  /// \return (Error code, pointer to error message).  If no error,
-  ///   then error code is zero and error message pointer is null.
-  std::pair<int, std::unique_ptr<std::string>>
-  copyAndPermuteImpl
-    (const BlockMultiVector<Scalar, LO, GO, Node>& src,
-     const size_t numSameIDs,
-     const Kokkos::DualView<
-       const local_ordinal_type*,
-       buffer_device_type
-     >& permuteToLIDs,
-     const Kokkos::DualView<
-       const local_ordinal_type*,
-       buffer_device_type
-     >& permuteFromLIDs);
-
-  std::pair<int, std::unique_ptr<std::string>>
-  packAndPrepareImpl
-    (const Kokkos::DualView<
-       const local_ordinal_type*,
-       buffer_device_type
-     >& exportLIDs,
-     Kokkos::DualView<
-       impl_scalar_type*,
-       buffer_device_type
-     >& exports,
-     Kokkos::DualView<
-       size_t*,
-       buffer_device_type
-     > /* numPacketsPerLID */,
-     size_t& constantNumPackets,
-     Distributor& /* distor */ ) const;
-
-  std::pair<int, std::unique_ptr<std::string>>
-  unpackAndCombineImpl
-    (const Kokkos::DualView<
-       const local_ordinal_type*,
-       buffer_device_type
-     >& importLIDs,
-     Kokkos::DualView<
-       impl_scalar_type*,
-       buffer_device_type
-     > imports,
-     Kokkos::DualView<
-       size_t*,
-       buffer_device_type
-     > numPacketsPerLID,
-     const size_t constantNumPackets,
-     Distributor& distor,
-     const CombineMode combineMode);
 };
 
 } // namespace Tpetra
