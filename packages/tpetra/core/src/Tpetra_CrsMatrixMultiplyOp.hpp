@@ -67,43 +67,11 @@ namespace Tpetra {
   /// This class makes a <tt>CrsMatrix<MatScalar, ...></tt> "look
   /// like" an <tt>Operator<Scalar, ...></tt>, where
   /// <tt>MatScalar</tt> and <tt>Scalar</tt> may be different types.
-  /// It does so by working around a limitation of C++, namely that
-  /// template methods of a class can't be virtual.
-  ///
-  /// Here is a detailed description of how the language issue relates
-  /// to CrsMatrix.  If you call the <tt>apply</tt> method of
-  /// CrsMatrix, you will always get the version that takes a
-  /// <tt>MultiVector<Scalar, ...></tt> input and produces a
-  /// <tt>MultiVector<Scalar, ...></tt> output.  CrsMatrix actually
-  /// implements a a templated sparse matrix-vector multiply operation
-  /// (its <tt>localMultiply</tt> method).  It is templated on the
-  /// scalar types of its input and output multivectors
-  /// (<tt>DomainScalar</tt> resp. <tt>RangeScalar</tt>).  However,
-  /// Operator can't access this templated mat-vec method.  This is
-  /// because Operator::apply is virtual, and therefore cannot have a
-  /// template parameter for the <tt>Scalar</tt> type of the
-  /// MultiVector input and output.
-  ///
-  /// Users who want to access the templated sparse mat-vec in
-  /// CrsMatrix through the Operator interface may wrap the CrsMatrix
-  /// in an instance of this class.  This class implements an Operator
-  /// that takes <tt>MultiVector<Scalar, ...></tt> input and output,
-  /// but the CrsMatrix may contain any desired type
-  /// <tt>MatScalar</tt>.  The type <tt>MatScalar</tt> may differ from
-  /// the <tt>Scalar</tt> type of the MultiVector input and output.
-  /// That works around the "no virtual template methods" issue for
-  /// input and output multivectors of the same type.
-  ///
-  /// Interestingly enough, CrsMatrix implements its <tt>apply</tt>
-  /// method using an instance of this class with <tt>Scalar ==
-  /// MatScalar</tt>.  CrsMatrix does not actually contain an
-  /// implementation of "nonlocal" (distributed over multiple MPI
-  /// processes) mat-vec; its <tt>apply</tt> defers the nonlocal part
-  /// to this class' apply() method.  The same is true for the
-  /// gaussSeidel() method.
+  /// The resulting output (Multi)Vector will be computed at its own
+  /// precision.
   ///
   /// \tparam Scalar The type of the entries of the input and output
-  ///   MultiVector of the apply() method.  Same as the first template
+  ///   MultiVector (see apply()).  Same as the first template
   ///   parameter of Operator.
   ///
   /// \tparam MatScalar The type of the entries of the CrsMatrix; the
@@ -129,9 +97,10 @@ namespace Tpetra {
   {
   public:
     //! The specialization of CrsMatrix which this class wraps.
-    typedef CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+    using crs_matrix_type =
+      CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal, Node>;
     //! The specialization of Map which this class uses.
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
 
     //! @name Constructor and destructor
     //@{
@@ -677,6 +646,7 @@ namespace Tpetra {
     //! The underlying CrsMatrix object.
     const Teuchos::RCP<const crs_matrix_type> matrix_;
 
+    //! Implementation of local sparse matrix-vector multiply.
     LocalCrsMultiplyOperator<Scalar, MatScalar,
       typename crs_matrix_type::device_type> localMultiply_;
 
@@ -879,7 +849,7 @@ namespace Tpetra {
 
       // Temporary MV for Import operation.  After the block of code
       // below, this will be an (Imported if necessary) column Map MV
-      // ready to give to localMultiply().
+      // ready to give to localMultiply_.apply(...).
       RCP<const MV> X_colMap;
       if (importer.is_null ()) {
         if (! X_in.isConstantStride ()) {

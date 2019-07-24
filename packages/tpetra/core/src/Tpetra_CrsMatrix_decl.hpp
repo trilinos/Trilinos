@@ -55,11 +55,8 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
-// localMultiply is templated on DomainScalar and RangeScalar, so we
-// have to include this header file here, rather than in the _def
-// header file, so that we can get KokkosSparse::spmv.
-#include "KokkosSparse.hpp"
 // localGaussSeidel and reorderedLocalGaussSeidel are templated on
 // DomainScalar and RangeScalar, so we have to include this header
 // file here, rather than in the _def header file, so that we can get
@@ -525,7 +522,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const size_t maxNumEntriesPerRow,
-	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
@@ -547,7 +544,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
-	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -584,7 +581,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const size_t maxNumEntPerRow,
-	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -612,7 +609,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
-	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -3184,19 +3181,23 @@ namespace Tpetra {
     rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) override;
 
     //@}
-    //! @name Advanced templated methods
+    //! @name Local apply and Gauss-Seidel
     //@{
 
-    /// \brief Compute a sparse matrix-MultiVector product local to each process.
+    /// \brief Compute the local part of a sparse matrix-(Multi)Vector
+    ///   multiply.
     ///
-    /// This method computes the <i>local</i> part of <tt>Y := beta*Y
-    /// + alpha*Op(A)*X</tt>, where <tt>Op(A)</tt> is either \f$A\f$,
-    /// \f$A^T\f$ (the transpose), or \f$A^H\f$ (the conjugate
-    /// transpose).  "The local part" means that this method does no
-    /// communication between processes, even if this is necessary for
-    /// correctness of the matrix-vector multiply.  Use the apply()
-    /// method if you want to compute the mathematical sparse
-    /// matrix-vector multiply.
+    /// Most Tpetra users want the apply() method (which see), not
+    /// this method.
+    ///
+    /// This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
+    /// where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the
+    /// transpose), or \f$A^H\f$ (the conjugate transpose).
+    ///
+    /// "The local part" means that this method does no communication
+    /// between processes, even if this is necessary for correctness
+    /// of the matrix-vector multiply.  Use the apply() method if you
+    /// want to compute mathematical sparse matrix-vector multiply.
     ///
     /// This method is mainly of use to Tpetra developers, though some
     /// users may find it helpful if they plan to reuse the result of
@@ -3204,131 +3205,13 @@ namespace Tpetra {
     /// matrix-vector multiplies with matrices that have the same
     /// column Map.
     ///
-    /// When <tt>Op(A)</tt> is \f$A\f$ (<tt>trans ==
-    /// Teuchos::NO_TRANS</tt>), then X's Map must be the same as the
-    /// column Map of this matrix, and Y's Map must be the same as the
-    /// row Map of this matrix.  We say in this case that X is
-    /// "post-Imported," and Y is "pre-Exported."  When <tt>Op(A)</tt>
-    /// is \f$A^T\f$ or \f$A^H\f$ (\c trans is <tt>Teuchos::TRANS</tt>
-    /// or <tt>Teuchos::CONJ_TRANS</tt>, then X's Map must be the same
-    /// as the row Map of this matrix, and Y's Map must be the same as
-    /// the column Map of this matrix.
-    ///
-    /// Both X and Y must have constant stride, and they may not alias
-    /// one another (that is, occupy overlapping space in memory).  We
-    /// may not necessarily check for aliasing, and if we do, we will
-    /// only do this in a debug build.  Aliasing X and Y may cause
-    /// nondeterministically incorrect results.
-    ///
-    /// This method is templated on the type of entries in both the
-    /// input MultiVector (\c DomainScalar) and the output MultiVector
-    /// (\c RangeScalar).  Thus, this method works for MultiVector
-    /// objects of arbitrary type.  However, this method only performs
-    /// computation local to each MPI process.  Use
-    /// CrsMatrixMultiplyOp to handle global communication (the Import
-    /// and Export operations for the input resp. output MultiVector),
-    /// if you have a matrix with entries of a different type than the
-    /// input and output MultiVector objects.
-    ///
-    /// If <tt>beta == 0</tt>, this operation will enjoy overwrite
-    /// semantics: Y will be overwritten with the result of the
-    /// multiplication, even if it contains <tt>NaN</tt>
-    /// (not-a-number) floating-point entries.  Otherwise, the
-    /// multiply result will be accumulated into \c Y.
-    template <class DomainScalar, class RangeScalar>
-    void
-    localMultiply (const MultiVector<DomainScalar, LocalOrdinal, GlobalOrdinal, Node>& X,
-                   MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
-                   Teuchos::ETransp mode,
-                   RangeScalar alpha,
-                   RangeScalar beta) const
-    {
-      using Teuchos::NO_TRANS;
-      // Just like Scalar and impl_scalar_type may differ in CrsMatrix,
-      // RangeScalar and its corresponding impl_scalar_type may differ in
-      // MultiVector.
-      typedef typename MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal,
-        Node>::impl_scalar_type range_impl_scalar_type;
-#ifdef HAVE_TPETRA_DEBUG
-      const char tfecfFuncName[] = "localMultiply: ";
-#endif // HAVE_TPETRA_DEBUG
-
-      const range_impl_scalar_type theAlpha = static_cast<range_impl_scalar_type> (alpha);
-      const range_impl_scalar_type theBeta = static_cast<range_impl_scalar_type> (beta);
-      const bool conjugate = (mode == Teuchos::CONJ_TRANS);
-      const bool transpose = (mode != Teuchos::NO_TRANS);
-      auto X_lcl = X.template getLocalView<device_type> ();
-      auto Y_lcl = Y.template getLocalView<device_type> ();
-
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
-         "X.getNumVectors() = " << X.getNumVectors () << " != Y.getNumVectors() = "
-         << Y.getNumVectors () << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! transpose && X.getLocalLength () != getColMap ()->getNodeNumElements (),
-         std::runtime_error, "NO_TRANS case: X has the wrong number of local rows.  "
-         "X.getLocalLength() = " << X.getLocalLength () << " != getColMap()->"
-         "getNodeNumElements() = " << getColMap ()->getNodeNumElements () << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! transpose && Y.getLocalLength () != getRowMap ()->getNodeNumElements (),
-         std::runtime_error, "NO_TRANS case: Y has the wrong number of local rows.  "
-         "Y.getLocalLength() = " << Y.getLocalLength () << " != getRowMap()->"
-         "getNodeNumElements() = " << getRowMap ()->getNodeNumElements () << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (transpose && X.getLocalLength () != getRowMap ()->getNodeNumElements (),
-         std::runtime_error, "TRANS or CONJ_TRANS case: X has the wrong number of "
-         "local rows.  X.getLocalLength() = " << X.getLocalLength () << " != "
-         "getRowMap()->getNodeNumElements() = "
-         << getRowMap ()->getNodeNumElements () << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (transpose && Y.getLocalLength () != getColMap ()->getNodeNumElements (),
-         std::runtime_error, "TRANS or CONJ_TRANS case: X has the wrong number of "
-         "local rows.  Y.getLocalLength() = " << Y.getLocalLength () << " != "
-         "getColMap()->getNodeNumElements() = "
-         << getColMap ()->getNodeNumElements () << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! isFillComplete (), std::runtime_error, "The matrix is not fill "
-         "complete.  You must call fillComplete() (possibly with domain and range "
-         "Map arguments) without an intervening resumeFill() call before you may "
-         "call this method.");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! X.isConstantStride () || ! Y.isConstantStride (), std::runtime_error,
-         "X and Y must be constant stride.");
-      // If the two pointers are NULL, then they don't alias one
-      // another, even though they are equal.
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X_lcl.data () == Y_lcl.data () &&
-        X_lcl.data () != NULL,
-        std::runtime_error, "X and Y may not alias one another.");
-#endif // HAVE_TPETRA_DEBUG
-
-      // Y = alpha*op(M) + beta*Y
-      if (transpose) {
-        KokkosSparse::spmv (conjugate ? KokkosSparse::ConjugateTranspose : KokkosSparse::Transpose,
-                            theAlpha,
-                            lclMatrix_,
-                            X.template getLocalView<device_type> (),
-                            theBeta,
-                            Y.template getLocalView<device_type> ());
-      }
-      else {
-        KokkosSparse::spmv (KokkosSparse::NoTranspose,
-                            theAlpha,
-                            lclMatrix_,
-                            X.template getLocalView<device_type> (),
-                            theBeta,
-                            Y.template getLocalView<device_type> ());
-      }
-    }
-
-  public:
-    /// \brief Compute the local part of a sparse matrix-(Multi)Vector
-    ///   multiply.
-    ///
-    /// This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
-    /// where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the
-    /// transpose), or \f$A^H\f$ (the conjugate transpose).
+    /// If you want to do global (not just local) sparse matrix-vector
+    /// multiplies with MultiVectors that have different Scalar type
+    /// than the CrsMatrix, use CrsMatrixMultiplyOp.  If you want to
+    /// do local sparse matrix-vector multiplies with MultiVectors
+    /// that have different Scalar type than the CrsMatrix (i.e., if
+    /// you're wondering where the templated localMultiply method
+    /// went), use LocalCrsMultiplyOperator.
     ///
     /// The Map of X and \c mode must satisfy the following:
     /// \code
@@ -3345,6 +3228,15 @@ namespace Tpetra {
     /// mode != Teuchos::NO_TRANS &&
     ///   Y.getMap ()->isSameAs(* (this->getColMap ()));
     /// \endcode
+    ///
+    /// We say that X is "post-Imported," and that Y is
+    /// "pre-Exported."
+    ///
+    /// Both X and Y must have constant stride, and they may not alias
+    /// one another (that is, occupy overlapping space in memory).  We
+    /// may not necessarily check for aliasing, and if we do, we will
+    /// only do this in a debug build.  Aliasing X and Y may cause
+    /// nondeterministically incorrect results.
     ///
     /// If <tt>beta == 0</tt>, this operation will enjoy overwrite
     /// semantics: Y's entries will be ignored, and Y will be

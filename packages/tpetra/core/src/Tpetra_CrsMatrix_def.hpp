@@ -50,9 +50,10 @@
 /// for you).  If you only want the declaration of Tpetra::CrsMatrix,
 /// include "Tpetra_CrsMatrix_decl.hpp".
 
-#include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_LocalCrsMultiplyOperator.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
+#include "Tpetra_RowMatrix.hpp"
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
@@ -75,6 +76,9 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
+
+#include "KokkosSparse.hpp" // KokkosSparse::spmv
+
 #include <memory>
 #include <sstream>
 #include <typeinfo>
@@ -5355,7 +5359,7 @@ namespace Tpetra {
 
     // Temporary MV for Import operation.  After the block of code
     // below, this will be an (Imported if necessary) column Map MV
-    // ready to give to localMultiply().
+    // ready to give to localApply(...).
     RCP<const MV> X_colMap;
     if (importer.is_null ()) {
       if (! X_in.isConstantStride ()) {
@@ -5555,8 +5559,8 @@ namespace Tpetra {
       // FIXME (mfh 18 Apr 2015) Temporary fix suggested by Clark
       // Dohrmann on Fri 17 Apr 2015.  At some point, we need to go
       // back and figure out why this helps.  importMV_ SHOULD be
-      // completely overwritten in the localMultiply() call below,
-      // because beta == ZERO there.
+      // completely overwritten in the localApply(...) call
+      // below, because beta == ZERO there.
       importMV_->putScalar (ZERO);
       // Do the local computation.
       this->localApply (*X, *importMV_, mode, alpha, ZERO);
@@ -5598,14 +5602,89 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   localApply (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
-              MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&Y,
+              MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
               const Teuchos::ETransp mode,
               const Scalar& alpha,
               const Scalar& beta) const
   {
     using Tpetra::Details::ProfilingRegion;
+    using Teuchos::NO_TRANS;
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "localApply: ";
+#endif // HAVE_TPETRA_DEBUG
     ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localApply");
-    this->template localMultiply<Scalar, Scalar> (X, Y, mode, alpha, beta);
+
+    const impl_scalar_type theAlpha (alpha);
+    const impl_scalar_type theBeta (beta);
+    const bool conjugate = (mode == Teuchos::CONJ_TRANS);
+    const bool transpose = (mode != Teuchos::NO_TRANS);
+    auto X_lcl = X.getLocalViewDevice ();
+    auto Y_lcl = Y.getLocalViewDevice ();
+    // TODO (24 Jul 2019) uncomment later; this line of code wasn't
+    // here before, so we need to test it separately before pushing.
+    //
+    // Y.modify_device ();
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
+       "X.getNumVectors() = " << X.getNumVectors () << " != "
+       "Y.getNumVectors() = " << Y.getNumVectors () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! transpose && X.getLocalLength () !=
+       getColMap ()->getNodeNumElements (), std::runtime_error,
+       "NO_TRANS case: X has the wrong number of local rows.  "
+       "X.getLocalLength() = " << X.getLocalLength () << " != "
+       "getColMap()->getNodeNumElements() = " <<
+       getColMap ()->getNodeNumElements () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! transpose && Y.getLocalLength () !=
+       getRowMap ()->getNodeNumElements (), std::runtime_error,
+       "NO_TRANS case: Y has the wrong number of local rows.  "
+       "Y.getLocalLength() = " << Y.getLocalLength () << " != "
+       "getRowMap()->getNodeNumElements() = " <<
+       getRowMap ()->getNodeNumElements () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (transpose && X.getLocalLength () !=
+       getRowMap ()->getNodeNumElements (), std::runtime_error,
+       "TRANS or CONJ_TRANS case: X has the wrong number of local "
+       "rows.  X.getLocalLength() = " << X.getLocalLength ()
+       << " != getRowMap()->getNodeNumElements() = "
+       << getRowMap ()->getNodeNumElements () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (transpose && Y.getLocalLength () !=
+       getColMap ()->getNodeNumElements (), std::runtime_error,
+       "TRANS or CONJ_TRANS case: X has the wrong number of local "
+       "rows.  Y.getLocalLength() = " << Y.getLocalLength ()
+       << " != getColMap()->getNodeNumElements() = "
+       << getColMap ()->getNodeNumElements () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! isFillComplete (), std::runtime_error, "The matrix is not "
+       "fill complete.  You must call fillComplete() (possibly with "
+       "domain and range Map arguments) without an intervening "
+       "resumeFill() call before you may call this method.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! X.isConstantStride () || ! Y.isConstantStride (),
+       std::runtime_error, "X and Y must be constant stride.");
+    // If the two pointers are NULL, then they don't alias one
+    // another, even though they are equal.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (X_lcl.data () == Y_lcl.data () && X_lcl.data () != nullptr,
+       std::runtime_error, "X and Y may not alias one another.");
+#endif // HAVE_TPETRA_DEBUG
+
+      // Y = alpha*op(M) + beta*Y
+      if (transpose) {
+        const auto op = conjugate ?
+          KokkosSparse::ConjugateTranspose : KokkosSparse::Transpose;
+        KokkosSparse::spmv (op, theAlpha, lclMatrix_, X_lcl,
+                            theBeta, Y_lcl);
+      }
+      else {
+        const auto op = KokkosSparse::NoTranspose;
+        KokkosSparse::spmv (op, theAlpha, lclMatrix_, X_lcl,
+                            theBeta, Y_lcl);
+      }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
