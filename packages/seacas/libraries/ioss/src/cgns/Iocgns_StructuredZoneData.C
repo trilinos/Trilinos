@@ -313,7 +313,7 @@ namespace Iocgns {
 
     m_child1->m_name             = m_name + "_c1";
     m_child1->m_ordinal          = m_ordinal;
-    m_child1->m_ordinal[ordinal] = m_ordinal[ordinal] * ratio;
+    m_child1->m_ordinal[ordinal] = m_ordinal[ordinal] * ratio + 0.5;
     if (m_child1->m_ordinal[ordinal] == 0) {
       m_child1->m_ordinal[ordinal] = 1;
     }

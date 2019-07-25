@@ -124,11 +124,11 @@ namespace Iocgns {
 
       case Ioss::ElementShape::WEDGE:
 #if 0
-	  static int wed_map[] = {0, 1, 2, 3, 4, 5}; // Same
-	  // Not needed -- maps 1 to 1
-	  for (size_t i=0; i < num_to_get; i++) {
-	    idata[2*i+1] = wed_map[idata[2*i+1]];
-	  }
+          static int wed_map[] = {0, 1, 2, 3, 4, 5}; // Same
+          // Not needed -- maps 1 to 1
+          for (size_t i=0; i < num_to_get; i++) {
+            idata[2*i+1] = wed_map[idata[2*i+1]];
+          }
 #endif
         break;
       default:;
@@ -166,11 +166,11 @@ namespace Iocgns {
 
       case Ioss::ElementShape::WEDGE:
 #if 0
-	  static int wed_map[] = {0, 1, 2, 3, 4, 5}; // Same
-	  // Not needed -- maps 1 to 1
-	  for (size_t i=0; i < num_to_get; i++) {
-	    data[num_to_get * 2 + i] = wed_map[data[num_to_get * 2 + i]];
-	  }
+          static int wed_map[] = {0, 1, 2, 3, 4, 5}; // Same
+          // Not needed -- maps 1 to 1
+          for (size_t i=0; i < num_to_get; i++) {
+            data[num_to_get * 2 + i] = wed_map[data[num_to_get * 2 + i]];
+          }
 #endif
         break;
       default:;

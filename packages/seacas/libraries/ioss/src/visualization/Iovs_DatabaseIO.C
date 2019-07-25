@@ -116,11 +116,7 @@ namespace Iovs {
   {
 
     std::ostringstream errmsg;
-    if ((db_usage == Ioss::WRITE_RESTART) || (db_usage == Ioss::READ_RESTART)) {
-      errmsg << "ParaView catalyst database type cannot be used in a RESTART block.\n";
-      IOSS_ERROR(errmsg);
-    }
-    else if (db_usage == Ioss::WRITE_HEARTBEAT) {
+    if (db_usage == Ioss::WRITE_HEARTBEAT) {
       errmsg << "ParaView catalyst database type cannot be used in a HEARTBEAT block.\n";
       IOSS_ERROR(errmsg);
     }
@@ -128,7 +124,7 @@ namespace Iovs {
       errmsg << "ParaView catalyst database type cannot be used in a HISTORY block.\n";
       IOSS_ERROR(errmsg);
     }
-    else if (db_usage == Ioss::READ_MODEL) {
+    else if (db_usage == Ioss::READ_MODEL || db_usage == Ioss::READ_RESTART) {
       errmsg << "ParaView catalyst database type cannot be used to read a model.\n";
       IOSS_ERROR(errmsg);
     }
@@ -1301,7 +1297,7 @@ namespace {
     else {
       std::ostringstream errmsg;
       errmsg << "Environment variable SIERRA_INSTALL_DIR not set.\n"
-             << " Unable to find ParaView catalyst dynamic library.\n";
+             << "\tUnable to find ParaView catalyst dynamic library.";
       IOSS_ERROR(errmsg);
       return;
     }
@@ -1313,7 +1309,7 @@ namespace {
     else {
       std::ostringstream errmsg;
       errmsg << "Environment variable SIERRA_SYSTEM not set.\n"
-             << " Unable to find ParaView catalyst dynamic library.\n";
+             << "\tUnable to find ParaView catalyst dynamic library.";
       IOSS_ERROR(errmsg);
       return;
     }
@@ -1325,7 +1321,7 @@ namespace {
     else {
       std::ostringstream errmsg;
       errmsg << "Environment variable SIERRA_VERSION not set.\n"
-             << " Unable to find ParaView catalyst dynamic library.\n";
+             << "\tUnable to find ParaView catalyst dynamic library.";
       IOSS_ERROR(errmsg);
       return;
     }

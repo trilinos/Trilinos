@@ -36,6 +36,7 @@
 #include "smalloc.h" // for sfree, smalloc
 #include "structs.h" // for vtx_data
 #include <stdio.h>   // for fprintf, printf, FILE, NULL
+#include <stdlib.h>
 
 /* Print metrics of partition quality. */
 
@@ -88,7 +89,6 @@ void countup_mesh(struct vtx_data **graph,        /* graph data structure */
   int     x1, y1, z1;         /* mesh location of vertex */
   int     x2, y2, z2;         /* mesh location of neighboring vertex */
   int     i, j;               /* loop counters */
-  int     abs();
 
   print2file = (outfile != NULL);
   ewgt       = 1;

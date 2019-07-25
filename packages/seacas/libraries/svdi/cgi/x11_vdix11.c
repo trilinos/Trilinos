@@ -1002,9 +1002,7 @@ void x_dynamics(int init)
   vector[6] = (ndc_units(font_width));
 }
 
-void vifram(type) int *type;
-{
-}
+void vifram(int *type) {}
 
 void viterm()
 {
@@ -1015,8 +1013,7 @@ void viterm()
   XCloseDisplay(display); /* frees all associated resources */
 }
 
-void   vdiqdc(index, value) int *index;
-float *value;
+void vdiqdc(int *index, float *value)
 {
   if (*index < 1 || *index > MAX_DEV_CAP) {
     fprintf(stderr, " SVDI Error Number %d, Severity Code %d\n", 726, 5);
@@ -1073,9 +1070,7 @@ void vdbufl()
   XSync(display, False);
 }
 
-void  vdstco(num, index_array, color_array, color_mod) int *num, *color_mod;
-int   index_array[];
-float color_array[][3];
+void vdstco(int *num, int index_array[], float color_array[][3], int *color_mod)
 {
   int    i;
   XColor tcolor;
@@ -1145,9 +1140,7 @@ float color_array[][3];
   /* end for loop */
 }
 
-void  vdiqco(num, index_array, color_array, color_mod) int *num, *color_mod;
-int   index_array[];
-float color_array[][3];
+void vdiqco(int *num, int index_array[], float color_array[][3], int *color_mod)
 {
   int i;
 
@@ -1193,8 +1186,7 @@ float color_array[][3];
   /* end for loop */
 }
 
-void  vdescp(escape_code, n, args) int *escape_code, *n;
-float args[];
+void vdescp(int *escape_code, int *n, float args[])
 {
   x11_vflush();
 
@@ -1216,7 +1208,7 @@ float args[];
   }
 }
 
-void vdiqes(escape_code, support) int *escape_code, *support;
+void vdiqes(int *escape_code, int *support)
 {
   switch (*escape_code) {
   case 3500: *support = 1; break;
@@ -1227,13 +1219,13 @@ void vdiqes(escape_code, support) int *escape_code, *support;
   }
 }
 
-void vdiqnd(x_ndc, y_ndc) float *x_ndc, *y_ndc;
+void vdiqnd(float *x_ndc, float *y_ndc)
 {
   *x_ndc = ndc_xmax;
   *y_ndc = ndc_ymax;
 }
 
-void vimova(x, y) float *x, *y;
+void vimova(float *x, float *y)
 {
   x11_vflush(); /* flush polyline buffer */
 
@@ -1242,7 +1234,7 @@ void vimova(x, y) float *x, *y;
   ycp = *y;
 }
 
-void vilina(x, y) float *x, *y;
+void vilina(float *x, float *y)
 {
   /* if polyline buffer full, flush it */
   if (x11_nvert >= VBUF_SIZE) {
@@ -1271,7 +1263,7 @@ void vilina(x, y) float *x, *y;
   ycp = *y;
 }
 
-void vipnta(x, y) float *x, *y;
+void vipnta(float *x, float *y)
 {
   int xx, yy;
 
@@ -1289,7 +1281,7 @@ void vipnta(x, y) float *x, *y;
   ycp = *y;
 }
 
-void vitext(length, char_array) int *length, char_array[];
+void vitext(int *length, int char_array[])
 {
   int  len, lenout, i;
   char strout[137];
@@ -1348,8 +1340,7 @@ void vitext(length, char_array) int *length, char_array[];
   vimova(&xcp, &ycp);
 }
 
-void vipoly(x_array, y_array, npts) float x_array[], y_array[];
-int *npts;
+void vipoly(float x_array[], float y_array[], int *npts)
 {
   int np, i;
   np = *npts;
@@ -1376,13 +1367,13 @@ int *npts;
   ycp = y_array[0];
 }
 
-void vdiqcp(x, y) float *x, *y;
+void vdiqcp(float *x, float *y)
 {
   *x = xcp;
   *y = ycp;
 }
 
-void vdiqos(attr_array) float attr_array[];
+void vdiqos(float attr_array[])
 {
   int i;
   for (i = 0; i < MAX_VECTOR; i++) {
@@ -1412,7 +1403,7 @@ void vdstfc(int *color_index)
   vector[0] = loc_index;
 }
 
-void vdstbc(color_index) int *color_index;
+void vdstbc(int *color_index)
 {
   int loc_index;
   loc_index = *color_index;
@@ -1431,14 +1422,14 @@ void vdstbc(color_index) int *color_index;
   vector[1] = loc_index;
 }
 
-void vdstin(intensity) float *intensity;
+void vdstin(float *intensity)
 {
   if (*intensity < 0. || *intensity > 1.) {
     fprintf(stderr, " SVDI Error Number %d, Severity Code %d\n", 401, 2);
   }
 }
 
-void vdstls(line_style) int *line_style;
+void vdstls(int *line_style)
 {
   char dlist[4]; /* dash pattern list */
   int  nd = 0;
@@ -1478,7 +1469,7 @@ void vdstls(line_style) int *line_style;
   vector[3] = *line_style; /* update state list */
 }
 
-void vdstlw(line_wid) float *line_wid;
+void vdstlw(float *line_wid)
 {
   float slw;
 
@@ -1497,19 +1488,19 @@ void vdstlw(line_wid) float *line_wid;
   vector[4] = *line_wid;
 }
 
-void vdstcs(y_size) float *y_size;
+void vdstcs(float *y_size)
 {
   /* doesn't do anything */
   /* character size is fixed for each font */
 }
 
-void vdaabu(button) int *button;
+void vdaabu(int *button)
 {
   vdbufl();
   /* not implemented */
 }
 
-void vdaloc(x, y) float *x, *y;
+void vdaloc(float *x, float *y)
 {
   union {
     XEvent       x_event;
@@ -1524,15 +1515,13 @@ void vdaloc(x, y) float *x, *y;
   *y = ndc_map_y(event.x_butp.y);
 }
 
-void   vdabgl(button, x, y) int *button;
-float *x, *y;
+void vdabgl(int *button, float *x, float *y)
 {
   vdbufl();
   /* not implemented */
 }
 
-void   vdakgl(charac, x, y) int *charac;
-float *x, *y;
+void vdakgl(int *charac, float *x, float *y)
 {
   union {
     XEvent       x_event;
@@ -1566,12 +1555,12 @@ float *x, *y;
        just need to repackage as integer */
 }
 
-void vdstla(x, y) float *x, *y;
+void vdstla(float *x, float *y)
 {
   XWarpPointer(display, None, window_id, 0, 0, 0, 0, map_x(*x), map_y(*y));
 }
 
-void vdstos(attr_array) float attr_array[];
+void vdstos(float attr_array[])
 {
   /* attr_array[0] is equivalent to *attr_array,
      attr_array[1] is equivalent to *(attr_array+1),
@@ -1619,59 +1608,22 @@ void x_clear_pixmap(void)
   XSetForeground(display, gc, f_color);
 }
 
-void vdpnta(x, y) float *x, *y;
-{
-  vipnta(x, y);
-}
-void vdnwpg() { vinwpg(); }
-void vdmova(x, y) float *x, *y;
-{
-  vimova(x, y);
-}
-void vdmoni(state) int *state;
-{
-}
-void vdloge(errnum, errsev) int *errnum, *errsev;
-{
-}
-void vberrh(errnum, errsev) int *errnum, *errsev;
-{
-}
-void vdlina(x, y) float *x, *y;
-{
-  vilina(x, y);
-}
-void vdpoly(xarray, yarray, npts) float xarray[], yarray[];
-int *npts;
-{
-  vipoly(xarray, yarray, npts);
-}
+void vdpnta(float *x, float *y) { vipnta(x, y); }
+void vdnwpg(void) { vinwpg(); }
+void vdmova(float *x, float *y) { vimova(x, y); }
+void vdmoni(int *state) {}
+void vdloge(int *errnum, int *errsev) {}
+void vberrh(int *errnum, int *errsev) {}
+void vdlina(float *x, float *y) { vilina(x, y); }
+void vdpoly(float xarray[], float yarray[], int *npts) { vipoly(xarray, yarray, npts); }
 void vdterm() { viterm(); }
-void vdinit(aspect, justif) float *aspect;
-int *justif;
-{
-  viinit(aspect, justif);
-}
-void vdtext(length, char_array) int *length, char_array[];
-{
-  vitext(length, char_array);
-}
-void vdfram(type) int *type;
-{
-  vifram(type);
-}
-void vbpkg(pkg) char pkg[];
-{
-}
-void vbdev(dev) char dev[];
-{
-}
-void vbiqpk(pkg) char pkg[];
-{
-}
-void vbiqdv(dev) char dev[];
-{
-}
+void vdinit(float *aspect, int *justif) { viinit(aspect, justif); }
+void vdtext(int *length, int char_array[]) { vitext(length, char_array); }
+void vdfram(int *type) { vifram(type); }
+void vbpkg(char pkg[]) {}
+void vbdev(char dev[]) {}
+void vbiqpk(char pkg[]) {}
+void vbiqdv(char dev[]) {}
 
 /* null entry points for raster */
 

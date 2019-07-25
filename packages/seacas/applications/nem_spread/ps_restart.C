@@ -35,7 +35,6 @@
 #include "exodusII.h" // for ex_close, etc
 #include "fmt/ostream.h"
 #include "nem_spread.h"     // for NemSpread, etc
-#include "pe_common.h"      // for MAX_CHUNK_SIZE
 #include "ps_pario_const.h" // for PIO_Info, etc
 #include "rf_allo.h"        // for array_alloc, safe_free
 #include "rf_io_const.h"    // for Exo_Res_File, ExoFile, etc

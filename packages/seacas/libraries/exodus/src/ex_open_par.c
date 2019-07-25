@@ -59,6 +59,7 @@
 #include "exodusII_int.h"
 #include <mpi.h>
 /*!
+\ingroup Utilities
 
 \note The ex_open_par_int() is an internal function called by
 ex_open_par(). The user should call ex_open_par() and not ex_open_par_int().
@@ -217,12 +218,13 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
 
     if (type == 5) {
 #if NC_HAS_HDF5
-      fprintf(stderr,
-              "EXODUS: ERROR: Attempting to open the netcdf-4 "
-              "file:\n\t'%s'\n\t failed. The netcdf library supports "
-              "netcdf-4 so there must be a filesystem or some other "
-              "issue \n",
-              path);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "EXODUS: ERROR: Attempting to open the netcdf-4 "
+               "file:\n\t'%s'\n\tfailed. The netcdf library supports "
+               "netcdf-4 so there must be a filesystem or some other "
+               "issue \n",
+               path);
+      ex_err(__func__, errmsg, status);
 #else
       /* This is an hdf5 (netcdf4) file. If NC_HAS_HDF5 is not defined,
          then we either don't have hdf5 support in this netcdf version,
@@ -232,22 +234,24 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
          assume that the netcdf doesn't have netcdf4 capabilities
          enabled.  Tell the user...
       */
-      fprintf(stderr,
-              "EXODUS: ERROR: Attempting to open the netcdf-4 "
-              "file:\n\t'%s'\n\tEither the netcdf library does not "
-              "support netcdf-4 or there is a filesystem or some "
-              "other issue \n",
-              path);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "EXODUS: ERROR: Attempting to open the netcdf-4 "
+               "file:\n\t'%s'\n\tEither the netcdf library does not "
+               "support netcdf-4 or there is a filesystem or some "
+               "other issue \n",
+               path);
+      ex_err(__func__, errmsg, status);
 #endif
     }
     else if (type == 4) {
 #if NC_HAS_CDF5
-      fprintf(stderr,
-              "EXODUS: ERROR: Attempting to open the CDF5 "
-              "file:\n\t'%s'\n\t failed. The netcdf library supports "
-              "CDF5-type files so there must be a filesystem or some other "
-              "issue \n",
-              path);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "EXODUS: ERROR: Attempting to open the CDF5 "
+               "file:\n\t'%s'\n\tfailed. The netcdf library supports "
+               "CDF5-type files so there must be a filesystem or some other "
+               "issue \n",
+               path);
+      ex_err(__func__, errmsg, status);
 #else
       /* This is an cdf5 (64BIT_DATA) file. If NC_64BIT_DATA is not defined,
          then we either don't have cdf5 support in this netcdf version,
@@ -257,34 +261,35 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
          assume that the netcdf doesn't have cdf5 capabilities
          enabled.  Tell the user...
       */
-      fprintf(stderr,
-              "EXODUS: ERROR: Attempting to open the CDF5 "
-              "file:\n\t'%s'\n\tEither the netcdf library does not "
-              "support CDF5 or there is a filesystem or some "
-              "other issue \n",
-              path);
-
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "EXODUS: ERROR: Attempting to open the CDF5 "
+               "file:\n\t'%s'\n\tEither the netcdf library does not "
+               "support CDF5 or there is a filesystem or some "
+               "other issue \n",
+               path);
+      ex_err(__func__, errmsg, status);
 #endif
     }
     else if (type == 1 || type == 2) {
 #if NC_HAS_PNETCDF
-      fprintf(stderr,
-              "EXODUS: ERROR: Attempting to open the classic NetCDF "
-              "file:\n\t'%s'\n\t failed. The netcdf library supports "
-              "PNetCDF files as required for parallel readinf of this "
-              "file type, so there must be a filesystem or some other "
-              "issue \n",
-              path);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "EXODUS: ERROR: Attempting to open the classic NetCDF "
+               "file:\n\t'%s'\n\tfailed. The netcdf library supports "
+               "PNetCDF files as required for parallel readinf of this "
+               "file type, so there must be a filesystem or some other "
+               "issue \n",
+               path);
+      ex_err(__func__, errmsg, status);
 #else
       /* This is an normal NetCDF format file, for parallel reading, the PNetCDF
          library is required but that is not compiled into this version.
       */
-      fprintf(stderr,
-              "EXODUS: ERROR: Attempting to open the NetCDF "
-              "file:\n\t'%s'\n\tThe NetCDF library was not "
-              "built with PNetCDF support as required for parallel access to this file.\n",
-              path);
-
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "EXODUS: ERROR: Attempting to open the NetCDF "
+               "file:\n\t'%s'\n\tThe NetCDF library was not "
+               "built with PNetCDF support as required for parallel access to this file.\n",
+               path);
+      ex_err(__func__, errmsg, status);
 #endif
     }
 

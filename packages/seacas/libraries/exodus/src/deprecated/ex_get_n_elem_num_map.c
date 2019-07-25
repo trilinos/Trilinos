@@ -40,12 +40,12 @@
  *
  * entry conditions -
  *   input parameters:
- *	int	exoid			exodus file id
- *	int	start_ent		starting location for read
- *	int	num_ents		number of elemental points
+ *      int     exoid                   exodus file id
+ *      int     start_ent               starting location for read
+ *      int     num_ents                number of elemental points
  *
  * exit conditions -
- *	int*	elem_map		element number map array
+ *      int*    elem_map                element number map array
  *
  * revision history -
  *

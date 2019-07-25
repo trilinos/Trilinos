@@ -42,7 +42,7 @@ namespace {
   union Float_t {
     explicit Float_t(float num = 0.0f) : f(num) {}
     // Portable extraction of components.
-    bool Negative() const { return (i >> 31) != 0; }
+    bool Negative() const { return ((uint32_t)i >> 31) != 0; }
 
     int32_t i;
     float   f;
@@ -51,7 +51,7 @@ namespace {
   union Double_t {
     explicit Double_t(double num = 0.0) : f(num) {}
     // Portable extraction of components.
-    bool Negative() const { return (i >> 63) != 0; }
+    bool Negative() const { return ((uint64_t)i >> 63) != 0; }
 
     int64_t i;
     double  f;

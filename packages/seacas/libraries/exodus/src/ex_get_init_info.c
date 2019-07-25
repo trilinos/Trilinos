@@ -53,6 +53,10 @@
 #include <exodusII.h>     // for ex_err, EX_MSG, etc
 #include <exodusII_int.h> // for EX_FATAL, DIM_NUM_PROCS, etc
 
+/*!
+ * \ingroup ModelDescription
+ * \undoc
+ */
 int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
 {
   int    dimid, status;

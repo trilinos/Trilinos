@@ -37,13 +37,11 @@
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
 #include <cstdlib> // for nullptr, exit, etc
-#include <cstring> // for memcpy
 #include <fmt/ostream.h>
 #include <generated/Iogn_GeneratedMesh.h>
 #include <iostream>
 #include <numeric>
 #include <string>
-#include <string>      // for string, operator==, etc
 #include <sys/types.h> // for ssize_t
 #include <tokenize.h>  // for tokenize
 #include <vector>      // for vector

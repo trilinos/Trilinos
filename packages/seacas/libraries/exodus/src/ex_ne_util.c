@@ -248,6 +248,7 @@ int ne_check_file_version(int exoid)
   }
   EX_FUNC_LEAVE(EX_NOERR);
 #else
+  EX_UNUSED(exoid);
   return EX_NOERR;
 #endif
 }

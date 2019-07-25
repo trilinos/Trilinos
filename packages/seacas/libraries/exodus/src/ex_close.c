@@ -51,6 +51,7 @@
 #include "exodusII_int.h" // for ex_get_counter_list, etc
 
 /*!
+\ingroup Utilities
 
 The function ex_close() updates and then closes an open exodus file.
 
