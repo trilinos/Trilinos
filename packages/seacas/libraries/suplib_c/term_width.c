@@ -1,3 +1,4 @@
+#define _POSIX_SOURCE
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
