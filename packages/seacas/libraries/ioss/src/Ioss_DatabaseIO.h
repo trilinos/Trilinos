@@ -127,9 +127,9 @@ namespace Ioss {
     }
 
     /** If there is a single block of nodes in the model, then it is
-     *	considered a node_major() database.  If instead the nodes are
+     *  considered a node_major() database.  If instead the nodes are
      * local to each element block or structured block, then it is
-     *	 not a node_major database.  Exodus is node major, CGNS is not.
+     *   not a node_major database.  Exodus is node major, CGNS is not.
      */
     virtual bool node_major() const { return true; }
 

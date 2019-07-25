@@ -3,10 +3,10 @@ from ctypes import *
 import os
 
 """
+exodus.py v 1.11 (seacas-beta) is a python wrapper of some of the exodus library
+(Python 2 Version) 
 
-exodus.py v 1.10 (beta) is a python wrapper of some of the exodus library
-
-Copyright(C) 2018 National Technology & Engineering Solutions of
+Copyright(C) 2019 National Technology & Engineering Solutions of
 Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -37,15 +37,14 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.10 (beta-cmake)"
+EXODUS_PY_VERSION = "1.11 (seacas-beta)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.10 (beta-cmake), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.11 (seacas-beta), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -64,6 +63,9 @@ Authors:
 sys.dont_write_bytecode = True
 
 ONELINE = "Gather from or export to Exodus files using the Exodus library"
+
+if sys.version_info[0] >= 3:
+    raise Exception("Cannot use Python 3 yet.  Must use Python 2.X")
 
 
 def basename(file_name):
@@ -89,9 +91,6 @@ def getExodusVersion():
                 fields[1] == 'EX_API_VERS_NODOT'):
             return int(fields[2])
     return 0
-
-if sys.version_info[0] >= 3:
-    raise Exception("Cannot use Python 3 yet.  Must use Python 2.X")
 
 ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
 if os.uname()[0] == 'Darwin':
@@ -263,9 +262,8 @@ def ex_entity_type(varType):
     # none found, must be invalid
     return -1  # EX_INVALID
 
+
 # init params struct
-
-
 class ex_init_params(Structure):
     """
     Parameters defining the model dimension, note that many are optional.
@@ -411,7 +409,8 @@ class exodus:
           -> put initialization information into exodus file
         """
         if len(p.title)>MAX_LINE_LENGTH: 
-            print('WARNING: Exodus title "%s" exceeds the maximum line length (%i). It will be truncated.' % (p.title,MAX_LINE_LENGTH))
+            print('WARNING: Exodus title "%s" exceeds maximum line length (%i). It will be truncated.' %
+                  (p.title,MAX_LINE_LENGTH))
             p.title = p.title[-1*MAX_LINE_LENGTH:]
 
         self.Title = create_string_buffer(p.title, MAX_LINE_LENGTH + 1)
@@ -652,8 +651,7 @@ class exodus:
                 print >> fd, fileLine
             fd.close()
             return []
-        else:
-            return sierra_inp
+        return sierra_inp
 
     #
     # time steps
@@ -3597,13 +3595,13 @@ class exodus:
             self.numNodeSets = c_int(0)
             self.numSideSets = c_int(0)
         EXODUS_LIB.ex_get_init(
-            self.fileId, self.Title, byref(
-                self.numDim), byref(
-                    self.numNodes), byref(
-                        self.numElem), byref(
-                            self.numElemBlk), byref(
-                                self.numNodeSets), byref(
-                                    self.numSideSets))
+            self.fileId, self.Title, 
+            byref(self.numDim),
+            byref(self.numNodes),
+            byref(self.numElem),
+            byref(self.numElemBlk),
+            byref(self.numNodeSets),
+            byref(self.numSideSets))
 
     # --------------------------------------------------------------------
 
@@ -3881,8 +3879,7 @@ class exodus:
             EXODUS_LIB.ex_get_ids(
                 self.fileId,
                 ex_entity_type('EX_ELEM_BLOCK'),
-                byref(
-                    self.elemBlkIds))
+                byref(self.elemBlkIds))
 
     # --------------------------------------------------------------------
 
@@ -3895,8 +3892,7 @@ class exodus:
             EXODUS_LIB.ex_get_ids(
                 self.fileId,
                 ex_entity_type('EX_SIDE_SET'),
-                byref(
-                    self.sideSetIds))
+                byref(self.sideSetIds))
 
     # --------------------------------------------------------------------
 
@@ -3909,8 +3905,7 @@ class exodus:
             EXODUS_LIB.ex_get_ids(
                 self.fileId,
                 ex_entity_type('EX_NODE_SET'),
-                byref(
-                    self.nodeSetIds))
+                byref(self.nodeSetIds))
 
     # --------------------------------------------------------------------
 
@@ -4070,10 +4065,10 @@ class exodus:
         self.coordsY = (c_double * self.numNodes.value)()
         self.coordsZ = (c_double * self.numNodes.value)()
         EXODUS_LIB.ex_get_coord(
-            self.fileId, byref(
-                self.coordsX), byref(
-                self.coordsY), byref(
-                self.coordsZ))
+            self.fileId,
+            byref(self.coordsX),
+            byref(self.coordsY),
+            byref(self.coordsZ))
 
     # --------------------------------------------------------------------
 
@@ -4086,10 +4081,10 @@ class exodus:
             self.coordsY[i] = float(yCoords[i])
             self.coordsZ[i] = float(zCoords[i])
         EXODUS_LIB.ex_put_coord(
-            self.fileId, byref(
-                self.coordsX), byref(
-                self.coordsY), byref(
-                self.coordsZ))
+            self.fileId,
+            byref(self.coordsX),
+            byref(self.coordsY),
+            byref(self.coordsZ))
 
     # --------------------------------------------------------------------
 
@@ -5458,6 +5453,9 @@ def ctype_to_numpy(exo, c_array):
     # ctypes currently produce invalid PEP 3118 type codes, which causes numpy
     # to issue a warning.  This is a bug and can be ignored.
     # http://stackoverflow.com/questions/4964101/pep-3118-warning-when-using-ctypes-array-as-numpy-array
+    if len(c_array) == 0:
+        return exo.np.array([])
+
     with exo.warnings.catch_warnings():
         exo.warnings.simplefilter('ignore')
         np_array = exo.np.ctypeslib.as_array(c_array)

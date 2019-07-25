@@ -36,6 +36,7 @@
 #include "defs.h"
 #include "smalloc.h"
 #include "structs.h"
+#include <math.h>
 #include <stdio.h>
 
 /* Refine a vertex separator by finding a maximum bipartite matching. */
@@ -65,7 +66,6 @@ void bpm_improve(struct vtx_data **graph,      /* list of graph info for each ve
   int        change;       /* does separator get improved? */
   int        i;            /* loop counter */
   double     old_cost;
-  double     fabs();
 
   sep_size = 0;
   while ((*bndy_list)[sep_size] != 0) {
@@ -168,7 +168,6 @@ static int bpm_improve1(struct vtx_data **graph,       /* list of graph info for
   int        nleft, nright;  /* # vtxs in two sides on bp graph */
   int        i, j;           /* loop counter */
   void       make_bpgraph(), bpcover(), wbpcover();
-  double     fabs();
 
   make_bpgraph(graph, sets, *pbndy_list, *sep_size, set_match, &pointers, &indices, &vweight,
                &loc2glob, &nleft, &nright, using_vwgts);

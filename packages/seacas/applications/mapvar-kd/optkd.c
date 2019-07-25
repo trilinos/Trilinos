@@ -491,8 +491,8 @@ void KDRECTQUERY(real *Points, int *N, int *Dimension, real *xmin, real *xmax, i
   static real B[6];
 
   switch (*Dimension) {
-  case 3: B[5] = FLT_MAX; B[4] = -FLT_MAX;
-  case 2: B[3] = FLT_MAX; B[2] = -FLT_MAX;
+  case 3: B[5] = FLT_MAX; B[4] = -FLT_MAX; /* fall through */
+  case 2: B[3] = FLT_MAX; B[2] = -FLT_MAX; /* fall through */
   case 1: B[1] = FLT_MAX; B[0] = -FLT_MAX;
   }
 

@@ -62,7 +62,7 @@ namespace Ioss {
     /**
      * Creates a new <code>SerializeIO</code> instance.
      *
-     * @param database_io	a <code>DatabaseIO</code> variable ...
+     * @param database_io       a <code>DatabaseIO</code> variable ...
      */
     explicit SerializeIO(const DatabaseIO *database_io);
     SerializeIO(const SerializeIO &from) = delete;
@@ -93,7 +93,6 @@ namespace Ioss {
     static std::mutex m_;
 #endif
     bool m_activeFallThru; ///< No barries since my group is running
-    int  m_manualOwner;    ///< Manually specified owner
 
     static int s_groupFactor; ///< Grouping factor
     static int s_size;        ///< Number of processors

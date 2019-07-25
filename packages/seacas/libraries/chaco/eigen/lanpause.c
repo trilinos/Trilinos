@@ -33,7 +33,8 @@
  *
  */
 
-#include "defs.h"  // for FALSE, TRUE
+#include "defs.h" // for FALSE, TRUE
+#include <math.h>
 #include <stdio.h> // for printf
 
 /* Determine whether to pause in Lanczos */
@@ -52,7 +53,6 @@ int lanpause(int      j,         /* current step */
   double        paige_dot;      /* q[j]^T q[1] */
   double        paigetol;       /* pause if paigedot > paigetol */
   double        dot();          /* standard dot product */
-  double        fabs();         /* intrinsic abs. value */
   void          checkorth();
 
   /* Check orthogonality of last Lanczos vector against previous ones */
@@ -113,7 +113,6 @@ int lanpause_float(int     j,         /* current step */
   double        paige_dot;      /* q[j]^T q[1] */
   double        paigetol;       /* pause if paigedot > paigetol */
   double        dot_float();    /* standard dot product */
-  double        fabs();         /* intrinsic abs. value */
   void          checkorth_float();
 
   /* Check orthogonality of last Lanczos vector against previous ones */

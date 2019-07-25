@@ -56,6 +56,11 @@
 #include <cgnsconfig.h>
 #include <pcgnslib.h>
 
+#if !defined(CGNS_SANDIA_PARALLEL_MODS)
+#error                                                                                             \
+    "At this time, CGNS must be patched using CGNS-sandia.patch; contact gdsjaar@sandia.gov for info"
+#endif
+
 #if !defined(CGNSLIB_H)
 #error "Could not include cgnslib.h"
 #endif
@@ -196,7 +201,6 @@ namespace Iocgns {
     }
     try {
       closeDatabase__();
-      closeSerialDatabase__();
     }
     catch (...) {
     }
@@ -208,14 +212,6 @@ namespace Iocgns {
       openDatabase__();
     }
     return m_cgnsFilePtr;
-  }
-
-  int ParallelDatabaseIO::get_serial_file_pointer() const
-  {
-    if (m_cgnsSerFilePtr < 0) {
-      openSerialDatabase__();
-    }
-    return m_cgnsSerFilePtr;
   }
 
   void ParallelDatabaseIO::openDatabase__() const
@@ -302,20 +298,6 @@ namespace Iocgns {
     assert(m_cgnsFilePtr >= 0);
   }
 
-  void ParallelDatabaseIO::openSerialDatabase__() const
-  {
-    if (m_cgnsSerFilePtr < 0) {
-      if (myProcessor == 0 && (is_input() || open_create_behavior() == Ioss::DB_APPEND)) {
-        auto init           = pcg_mpi_initialized;
-        pcg_mpi_initialized = 0;
-        // Even if appending, the serial file is only read, not written, so CG_MODE_READ is ok.
-        cg_open(get_filename().c_str(), CG_MODE_READ, &m_cgnsSerFilePtr);
-        pcg_mpi_initialized = init;
-        assert(m_cgnsSerFilePtr >= 0);
-      }
-    }
-  }
-
   void ParallelDatabaseIO::closeDatabase__() const
   {
     if (m_cgnsFilePtr != -1) {
@@ -335,17 +317,6 @@ namespace Iocgns {
       closeDW();
     }
     m_cgnsFilePtr = -1;
-  }
-
-  void ParallelDatabaseIO::closeSerialDatabase__() const
-  {
-    if (myProcessor == 0 && m_cgnsSerFilePtr >= 0) {
-      auto init           = pcg_mpi_initialized;
-      pcg_mpi_initialized = 0;
-      cg_close(m_cgnsSerFilePtr);
-      pcg_mpi_initialized = init;
-      m_cgnsSerFilePtr    = -1;
-    }
   }
 
   void ParallelDatabaseIO::finalize_database()
@@ -417,7 +388,7 @@ namespace Iocgns {
           new DecompositionData<int>(properties, util().communicator()));
     }
     assert(decomp != nullptr);
-    decomp->decompose_model(get_serial_file_pointer(), get_file_pointer(), m_meshType);
+    decomp->decompose_model(get_file_pointer(), m_meshType);
 
     if (m_meshType == Ioss::MeshType::STRUCTURED) {
       handle_structured_blocks();
@@ -631,7 +602,7 @@ namespace Iocgns {
     const auto &sbs = get_region()->get_structured_blocks();
     for (const auto &block : sbs) {
       // Handle boundary conditions...
-      Utils::add_structured_boundary_conditions(get_serial_file_pointer(), block, true);
+      Utils::add_structured_boundary_conditions(get_file_pointer(), block, true);
     }
 
     size_t node_count = finalize_structured_blocks();

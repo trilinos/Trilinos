@@ -44,10 +44,10 @@
 
 /*************** R O U T I N E S   I N   T H I S   F I L E ********************
  *
- *  NAME				TYPE		CALL_BY
- * ---------------		-------		------------------------
- *  elem_info ()			int		"rf_fill.c" matrix_fill
- *  get_type  ()			int
+ *  NAME                                TYPE            CALL_BY
+ * ---------------              -------         ------------------------
+ *  elem_info ()                        int             "rf_fill.c" matrix_fill
+ *  get_type  ()                        int
  *  calc_elem_vol()              double          multiple routines
  *
  ******************************************************************************/
@@ -67,8 +67,8 @@ int elem_info(int info, int ielem_type, int supp)
  * The routine currently handles the following requests for information
  * about element type, ielem_type:
  *
- *	NNODES     = Number of nodes in the element
- *	NDIM	   = Dimension of the element
+ *      NNODES     = Number of nodes in the element
+ *      NDIM       = Dimension of the element
  *      NN_SIDE    = Number of nodes on a side/face of the element.
  */
 
@@ -787,5 +787,5 @@ int get_type(char string[], int nodes, int num_dim)
 } /* get_type */
 
 /*****************************************************************************/
-/*			END of el_elm_info.c				     */
+/*                      END of el_elm_info.c                                 */
 /*****************************************************************************/

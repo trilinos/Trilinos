@@ -41,7 +41,7 @@
  * Written By: Gary L. Hennigan (SNL, 1421)
  *****************************************************************************
  * Functions contained in this file:
- *	main() - Entry point and main calling program.
+ *      main() - Entry point and main calling program.
  */
 /*****************************************************************************/
 /*****************************************************************************/

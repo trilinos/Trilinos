@@ -96,7 +96,6 @@ namespace Iocgns {
     void release_memory__() override;
 
     int get_file_pointer() const override;
-    int get_serial_file_pointer() const;
 
     bool node_major() const override { return false; }
 
@@ -114,8 +113,6 @@ namespace Iocgns {
   private:
     void openDatabase__() const override;
     void closeDatabase__() const override;
-    void openSerialDatabase__() const;
-    void closeSerialDatabase__() const;
 
     bool begin__(Ioss::State state) override;
     bool end__(Ioss::State state) override;
@@ -201,7 +198,6 @@ namespace Iocgns {
     std::vector<int64_t> get_processor_zone_node_offset() const;
 
     mutable int    m_cgnsFilePtr{-1};
-    mutable int    m_cgnsSerFilePtr{-1};
     Ioss::MeshType m_meshType{Ioss::MeshType::UNKNOWN};
 
     mutable std::unique_ptr<DecompositionDataBase> decomp;
