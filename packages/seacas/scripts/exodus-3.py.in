@@ -111,8 +111,8 @@ Authors:
   Greg Sjaardema   (gdsjaar@sandia.gov)
 """
 
-### Documentation is generated on a Mac laptop using:
-### pdoc --force --html ../lib/exodus.py
+## Documentation is generated on a Mac laptop using:
+## pdoc --force --html ../lib/exodus.py
 
 sys.dont_write_bytecode = True
 
@@ -322,7 +322,8 @@ def ex_obj_to_inq(objType):
 
     if objType in entity_dictionary:
         return entity_dictionary[objType]
-    return -1 # Invalid request
+    return -1  # Invalid request
+
 
 def ex_entity_type(varType):
     """
@@ -620,11 +621,11 @@ class exodus:
         EXODUS_LIB.ex_put_init_ext(self.fileId, byref(p))
         return True
 
+
     #
     # copy to a new database
     #
     # --------------------------------------------------------------------
-
     def copy(self, fileName, include_transient=False):
         """
         copies exodus database to file_name and returns this copy as a
@@ -1030,7 +1031,7 @@ class exodus:
             self.coordsX = ctype_to_numpy(self, self.coordsX)
             self.coordsY = ctype_to_numpy(self, self.coordsY)
             self.coordsZ = ctype_to_numpy(self, self.coordsZ)
-        return (self.coordsX, self.coordsY, self.coordsZ)
+        return self.coordsX, self.coordsY, self.coordsZ
 
     # --------------------------------------------------------------------
 
@@ -1065,7 +1066,7 @@ class exodus:
 
         """
         listX, listY, listZ = self.__ex_get_partial_coord(i, 1)
-        return (listX[0], listY[0], listZ[0])
+        return listX[0], listY[0], listZ[0]
 
     # --------------------------------------------------------------------
 
@@ -1895,10 +1896,7 @@ class exodus:
         if self.use_numpy:
             elem_block_connectivity = ctype_to_numpy(
                 self, elem_block_connectivity)
-        return (
-            elem_block_connectivity,
-            num_elem_this_blk.value,
-            num_nodes_per_elem.value)
+        return elem_block_connectivity, num_elem_this_blk.value, num_nodes_per_elem.value
 
     # --------------------------------------------------------------------
 
@@ -1926,7 +1924,7 @@ class exodus:
         assert len(connectivity) == (numBlkElems * numNodesPerElem)
         self.__ex_put_elem_conn(object_id, connectivity)
 
-   # --------------------------------------------------------------------
+    # --------------------------------------------------------------------
 
     def get_elem_attr(self, elem_blk_id):
         """
@@ -2338,7 +2336,6 @@ class exodus:
         -------
             <list<string>>  eprop_names
         """
-        names = []
         names = self.__ex_get_prop_names('EX_ELEM_BLOCK', 'EX_INQ_EB_PROP')
         return list(names)
 
@@ -2832,7 +2829,7 @@ class exodus:
             (numSetNodes, numSetDistFacts) = self.__ex_get_set_param('EX_NODE_SET', nodeSetId)
             totNumSetNodes += numSetNodes
             totNumSetDistFacts += numSetDistFacts
-        return (totNumSetNodes, totNumSetDistFacts)
+        return totNumSetNodes, totNumSetDistFacts
 
     # --------------------------------------------------------------------
 
@@ -2855,7 +2852,7 @@ class exodus:
         num_set_dist_facts : int
         """
         (numSetEntities, numSetDistFacts) = self.__ex_get_set_param(object_type, object_id)
-        return (numSetEntities, numSetDistFacts)
+        return numSetEntities, numSetDistFacts
 
     # --------------------------------------------------------------------
 
@@ -2887,7 +2884,7 @@ class exodus:
         """ See `exodus.put_set_params` """
 
         (numSetNodes, numSetDistFacts) = self.__ex_get_set_param('EX_NODE_SET', object_id)
-        return (numSetNodes, numSetDistFacts)
+        return numSetNodes, numSetDistFacts
 
     # --------------------------------------------------------------------
 
@@ -2911,7 +2908,6 @@ class exodus:
         -------
             <list<string>>  nsprop_names
         """
-        names = []
         names = self.__ex_get_prop_names('EX_NODE_SET', 'EX_INQ_NS_PROP')
         return list(names)
 
@@ -3119,7 +3115,7 @@ class exodus:
             totNumSetSides += numSetSides
             totNumSetDistFacts += numSetDistFacts
         totNumSetNodes = totNumSetDistFacts
-        return (totNumSetSides, totNumSetNodes, totNumSetDistFacts)
+        return totNumSetSides, totNumSetNodes, totNumSetDistFacts
 
     # --------------------------------------------------------------------
 
@@ -3146,7 +3142,7 @@ class exodus:
         than once, i.e. once for each face it belongs to in the side set.
         """
         (numSetSides, numSetDistFacts) = self.__ex_get_set_param('EX_SIDE_SET', object_id)
-        return (numSetSides, numSetDistFacts)
+        return numSetSides, numSetDistFacts
 
     # --------------------------------------------------------------------
 
@@ -3200,7 +3196,7 @@ class exodus:
         if self.use_numpy:
             side_set_elem_list = ctype_to_numpy(self, side_set_elem_list)
             side_set_side_list = ctype_to_numpy(self, side_set_side_list)
-        return (side_set_elem_list, side_set_side_list)
+        return side_set_elem_list, side_set_side_list
 
     # --------------------------------------------------------------------
 
@@ -3314,7 +3310,7 @@ class exodus:
             side_set_node_cnt_list = ctype_to_numpy(
                 self, side_set_node_cnt_list)
             side_set_node_list = ctype_to_numpy(self, side_set_node_list)
-        return (side_set_node_cnt_list, side_set_node_list)
+        return side_set_node_cnt_list, side_set_node_list
 
     # --------------------------------------------------------------------
 
@@ -3548,7 +3544,6 @@ class exodus:
         -------
             <list<string>>  ssprop_names
         """
-        names = []
         names = self.__ex_get_prop_names('EX_SIDE_SET', 'EX_INQ_SS_PROP')
         return list(names)
 
@@ -4278,7 +4273,6 @@ class exodus:
     # --------------------------------------------------------------------
 
     def __ex_inquire_float(self, inq_id):
-        val = c_int(0)
         dummy_char = create_string_buffer(MAX_LINE_LENGTH + 1)
         ret_float = c_float(0.0)
         if EXODUS_LIB.ex_int64_status(self.fileId) & EX_INQ_INT64_API:
@@ -4302,7 +4296,6 @@ class exodus:
     # --------------------------------------------------------------------
 
     def __ex_inquire_int(self, inq_id):
-        val = c_longlong(0)
         val = EXODUS_LIB.ex_inquire_int(self.fileId, inq_id)
         if val < 0:
             raise Exception(
@@ -4587,7 +4580,6 @@ class exodus:
         inq_type = c_int(ex_inquiry(inqType))
         num_objs = c_int(self.__ex_inquire_int(inq_type))
         numObjs = num_objs.value
-        id_map = []
         if EXODUS_LIB.ex_int64_status(self.fileId) & EX_IDS_INT64_API:
             id_map = (c_longlong * numObjs)()
         else:
@@ -4609,7 +4601,6 @@ class exodus:
         num_objs = c_int(self.__ex_inquire_int(inq_type))
         numObjs = num_objs.value
         assert numObjs == len(idMap)
-        id_map = []
         if EXODUS_LIB.ex_int64_status(self.fileId) & EX_IDS_INT64_API:
             id_map = (c_longlong * numObjs)()
             for i in range(numObjs):
@@ -4719,7 +4710,7 @@ class exodus:
             self.fileId,
             elem_block_id,
             byref(elem_block_connectivity))
-        return (elem_block_connectivity, num_elem_this_blk, num_nodes_per_elem)
+        return elem_block_connectivity, num_elem_this_blk, num_nodes_per_elem
 
     # --------------------------------------------------------------------
 
@@ -4904,7 +4895,7 @@ class exodus:
             side_set_id,
             byref(num_side_in_set),
             byref(num_dist_fact_in_set))
-        return (int(num_side_in_set.value), int(num_dist_fact_in_set.value))
+        return int(num_side_in_set.value), int(num_dist_fact_in_set.value)
 
     # --------------------------------------------------------------------
 
@@ -4927,7 +4918,7 @@ class exodus:
         side_set_id = c_longlong(sideSetId)
         (num_side_in_set, _num_dist_fact_in_set) = self.__ex_get_set_param('EX_SIDE_SET', sideSetId)
         if num_side_in_set == 0:
-            return ([], [])
+            return [], []
         if EXODUS_LIB.ex_int64_status(self.fileId) & EX_BULK_INT64_API:
             side_set_elem_list = (c_longlong * num_side_in_set)()
             side_set_side_list = (c_longlong * num_side_in_set)()
@@ -4937,7 +4928,7 @@ class exodus:
         EXODUS_LIB.ex_get_side_set(self.fileId, side_set_id,
                                    byref(side_set_elem_list),
                                    byref(side_set_side_list))
-        return (side_set_elem_list, side_set_side_list)
+        return side_set_elem_list, side_set_side_list
 
     # --------------------------------------------------------------------
 
@@ -4998,7 +4989,7 @@ class exodus:
         EXODUS_LIB.ex_get_side_set_node_list(self.fileId, side_set_id,
                                              byref(side_set_node_cnt_list),
                                              byref(side_set_node_list))
-        return (side_set_node_cnt_list, side_set_node_list)
+        return side_set_node_cnt_list, side_set_node_list
 
     # --------------------------------------------------------------------
 
@@ -5832,7 +5823,7 @@ def copyTransfer(
         handle both array types correctly.)
     additionalGlobalVariables : list
         list of global variable names to add.
-    additionalNodalVaraibles: list
+    additionalNodalVariables: list
         list of nodal variable names to add.
     additionalElementVariables: list
         should be a list of element variable
@@ -5857,8 +5848,8 @@ def copyTransfer(
     >>> ## Add elem_attr_dummy1 on blkIds 1,2,3 and elem_attr_dummy2 on all blocks
     >>> addElementAttributes = [ ("elem_attr_dummy1",[1,2,3]), "elem_attr_dummy2" ]
 
-    >>> toFileHandle = copyTranfer(fromFileName,toFileName,addGlobalVariables,addNodeVariables,
-    ...                            addElementVariables,addElementAttributes)
+    >>> toFileHandle = copyTransfer(fromFileName,toFileName,addGlobalVariables,addNodeVariables,
+    ...                             addElementVariables,addElementAttributes)
 
     >>> ## Fill in new variables
 
