@@ -138,8 +138,7 @@ function atdm_run_script_on_compute_node {
   fi
 
   if [ "${account_input}" == "" ] ; then
-#    account=fy150090
-    account=fy150106
+    account=fy150090
   else
     account=${account_input}
   fi
