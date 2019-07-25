@@ -83,15 +83,10 @@ public:
     // triangle of R.
 
     // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    A.template sync<Kokkos::HostSpace> ();
-    A.template modify<Kokkos::HostSpace> ();
-    auto A_lcl = A.template getLocalView<Kokkos::HostSpace> ();
-#else
     A.sync_host ();
     A.modify_host ();
     auto A_lcl = A.getLocalViewHost ();
-#endif
+
     SC* const A_lcl_raw = reinterpret_cast<SC*> (A_lcl.data ());
     const LO LDA = LO (A.getStride ());
 
@@ -126,18 +121,20 @@ private:
 public:
   GmresSstep () :
     base_type::Gmres (),
-    stepSize_ (1),
+    stepSize_ (5),
     tsqr_ (Teuchos::null)
   {
     this->input_.computeRitzValues = true;
+    this->input_.computeRitzValuesOnFly = false;
   }
 
   GmresSstep (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A),
-    stepSize_ (1),
+    stepSize_ (5),
     tsqr_ (Teuchos::null)
   {
     this->input_.computeRitzValues = true;
+    this->input_.computeRitzValuesOnFly = false;
   }
 
   virtual ~GmresSstep () = default;
@@ -148,30 +145,28 @@ public:
   {
     base_type::getParameters (params, defaultValues);
 
-    const int stepSize = defaultValues ? 100 : stepSize_;
-
+    const int stepSize = defaultValues ? 5 : stepSize_;
     params.set ("Step Size", stepSize );
   }
 
   virtual void
   setParameters (Teuchos::ParameterList& params) {
     base_type::setParameters (params);
+    int stepSize = params.get<int> ("Step Size", stepSize_);
+    stepSize_ = stepSize;
+
+    bool computeRitzValuesOnFly 
+      = params.get<bool> ("Compute Ritz Values on Fly", this->input_.computeRitzValuesOnFly);
+    this->input_.computeRitzValuesOnFly = computeRitzValuesOnFly;
+
     constexpr bool useCholQR_default = true;
+    bool useCholQR = params.get<bool> ("CholeskyQR", useCholQR_default);
 
-    int stepSize = stepSize_;
-    if (params.isParameter ("Step Size")) {
-      stepSize = params.get<int> ("Step Size");
-    }
-
-    bool useCholQR = useCholQR_default;
-    if (params.isParameter ("CholeskyQR")) {
-      useCholQR = params.get<bool> ("CholeskyQR");
-    }
-
-    if (useCholQR && tsqr_.is_null ()) {
+    if (!useCholQR && !tsqr_.is_null ()) {
+      tsqr_ = Teuchos::null;
+    } else if (useCholQR && tsqr_.is_null ()) {
       tsqr_ = Teuchos::rcp (new CholQR<SC, MV, OP> ());
     }
-    stepSize_ = stepSize;
   }
 
 private:
@@ -184,12 +179,11 @@ private:
                const SolverInput<SC>& input)
   {
     using std::endl;
-    const int stepSize = stepSize_;
+    int stepSize = stepSize_;
     int restart = input.resCycle;
     int step = stepSize;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
-    const bool computeRitzValues = input.computeRitzValues;
 
     // initialize output parameters
     SolverOutput<SC> output {};
@@ -199,9 +193,7 @@ private:
 
     if (outPtr != nullptr) {
       *outPtr << "GmresSstep" << endl;
-    }
-    Indent indent1 (outPtr);
-    if (outPtr != nullptr) {
+      Indent indent1 (outPtr);
       *outPtr << "Solver input:" << endl;
       Indent indentInner (outPtr);
       *outPtr << input;
@@ -212,6 +204,7 @@ private:
     dense_matrix_type  H (restart+1, restart, true); // Hessenburg matrix
     dense_matrix_type  T (restart+1, restart, true); // H reduced to upper-triangular matrix
     dense_matrix_type  G (restart+1, step+1, true);  // Upper-triangular matrix from ortho process
+    dense_matrix_type  G2(restart+1, restart, true); // a copy of Hessenburg matrix for computing Ritz values
     dense_vector_type  y (restart+1, true);
     dense_matrix_type  h (restart+1, 1, true); // used for reorthogonalization
     std::vector<mag_type> cs (restart);
@@ -220,8 +213,10 @@ private:
     mag_type b_norm;  // initial residual norm
     mag_type b0_norm; // initial residual norm, not left preconditioned
     mag_type r_norm;
+    mag_type r_norm_imp;
     mag_type metric;
     vec_type R (B.getMap ());
+    vec_type Y (B.getMap ());
     vec_type MP (B.getMap ());
     MV  Q (B.getMap (), restart+1);
     vec_type P = * (Q.getVectorNonConst (0));
@@ -250,7 +245,7 @@ private:
       // Return residual norm as B
       Tpetra::deep_copy (B, P);
       return output;
-    } else if (computeRitzValues) {
+    } else if (input.computeRitzValues && !input.computeRitzValuesOnFly) {
       // Invoke standard Gmres for the first restart cycle, to compute
       // Ritz values for use as Newton shifts
       if (outPtr != nullptr) {
@@ -285,39 +280,35 @@ private:
     y[0] = r_norm;
 
     // Main loop
+    int iter = 0;
     while (output.numIters < input.maxNumIters && ! output.converged) {
       if (outPtr != nullptr) {
         *outPtr << "Restart cycle " << output.numRests << ":" << endl;
-      }
-      Indent indent2 (outPtr);
-      if (outPtr != nullptr) {
+        Indent indent2 (outPtr);
         *outPtr << output;
       }
 
-      int iter = 0;
       if (input.maxNumIters < output.numIters+restart) {
         restart = input.maxNumIters-output.numIters;
       }
 
       // Restart cycle
-      for (iter = 0; iter < restart && metric > input.tol; iter+=step) {
+      for (; iter < restart && metric > input.tol; iter+=step) {
         if (outPtr != nullptr) {
           *outPtr << "Current iteration: iter=" << iter
                   << ", restart=" << restart
                   << ", step=" << step
                   << ", metric=" << metric << endl;
+          Indent indent3 (outPtr);
         }
-        Indent indent3 (outPtr);
 
         // Compute matrix powers
+        if (input.computeRitzValuesOnFly && output.numIters < stepSize_) {
+          stepSize = 1;
+        } else {
+          stepSize = stepSize_;
+        }
         for (step=0; step < stepSize && iter+step < restart; step++) {
-          if (outPtr != nullptr) {
-            *outPtr << "step=" << step
-                    << ", stepSize=" << stepSize
-                    << ", iter+step=" << (iter+step)
-                    << ", restart=" << restart << endl;
-          }
-
           // AP = A*P
           vec_type P  = * (Q.getVectorNonConst (iter+step));
           vec_type AP = * (Q.getVectorNonConst (iter+step+1));
@@ -344,9 +335,6 @@ private:
         // Orthogonalization
         this->projectBelosOrthoManager (iter, step, Q, G);
         const int rank = normalizeCholQR (iter, step, Q, G);
-        if (outPtr != nullptr) {
-          *outPtr << "Rank of s-step basis: " << rank << endl;
-        }
         updateHessenburg (iter, step, output.ritzValues, H, G);
 
         // Check negative norm
@@ -364,15 +352,43 @@ private:
               T(i, iter+iiter) = H(i, iter+iiter);
             }
             this->reduceHessenburgToTriangular(iter+iiter, T, cs, sn, y);
+            if (outPtr != nullptr) {
+              *outPtr << " > implicit residual norm=(" << iter+iiter+1 << ")="
+                      << STS::magnitude (y(iter+iiter+1)) << endl;
+            }
           }
           metric = this->getConvergenceMetric (STS::magnitude (y(iter+step)), b_norm, input);
         }
         else {
           metric = STM::zero ();
         }
+
+        // Optionally, compute Ritz values for generating Newton basis
+        if (input.computeRitzValuesOnFly && int (output.ritzValues.size()) == 0
+            && output.numIters >= stepSize_) {
+          for (int i = 0; i < stepSize_; i++) {
+            for (int iiter = 0; iiter < stepSize_; iiter++) {
+              G2(i, iiter) = H(i, iiter);
+            }
+          }
+          computeRitzValues (stepSize_, G2, output.ritzValues);
+          sortRitzValues <LO, SC> (stepSize_, output.ritzValues);
+          if (outPtr != nullptr) {
+            *outPtr << " > ComputeRitzValues: " << endl;
+            for (int i = 0; i < stepSize_; i++) {
+              *outPtr << " > ritzValues[ " << i << " ] = " << output.ritzValues[i] << endl;
+            }
+          }
+        }
       } // End of restart cycle
 
       // Update solution
+      if (iter < restart) {
+        // save the old solution, just in case explicit residual norm failed the convergence test
+        Tpetra::deep_copy (Y, X);
+        blas.COPY (1+iter, y.values(), 1, h.values(), 1);
+      }
+      r_norm_imp = STS::magnitude (y (iter)); // save implicit residual norm
       blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
                  Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
                  iter, 1, one,
@@ -392,35 +408,52 @@ private:
         MVT::MvTimesMatAddMv (one, *Qj, y_iter, one, X);
       }
       // Compute real residual (not-preconditioned)
-      P = * (Q.getVectorNonConst (0));
-      A.apply (X, P);
-      P.update (one, B, -one);
-      r_norm = P.norm2 (); // residual norm
+      A.apply (X, R);
+      R.update (one, B, -one);
+      r_norm = R.norm2 (); // residual norm
       output.absResid = r_norm;
       output.relResid = r_norm / b0_norm;
+      if (outPtr != nullptr) {
+        *outPtr << "Implicit and explicit residual norms at restart: " << r_norm_imp << ", " << r_norm << endl;
+      }
 
       metric = this->getConvergenceMetric (r_norm, b0_norm, input);
       if (metric <= input.tol) {
+        // update solution
         output.converged = true;
       }
       else if (output.numIters < input.maxNumIters) {
-        // Initialize starting vector for restart
-        if (input.precoSide == "left") { // left-precond'd residual norm
-          Tpetra::deep_copy (R, P);
-          M.apply (R, P);
-          r_norm = P.norm2 ();
+        // Restart, only if max inner-iteration was reached.
+        // Otherwise continue the inner-iteration.
+        if (iter >= restart) {
+          // Restart: Initialize starting vector for restart
+          iter = 0;
+          P = * (Q.getVectorNonConst (0));
+          if (input.precoSide == "left") { // left-precond'd residual norm
+            M.apply (R, P);
+            r_norm = P.norm2 ();
+          }
+          else {
+            // set the starting vector
+            Tpetra::deep_copy (P, R);
+          }
+          P.scale (one / r_norm);
+          y[0] = SC {r_norm};
+          for (int i=1; i < restart+1; ++i) {
+            y[i] = STS::zero ();
+          }
+          output.numRests++;
         }
-        P.scale (one / r_norm);
-        y[0] = SC {r_norm};
-        for (int i=1; i < restart+1; ++i) {
-          y[i] = STS::zero ();
+        else {
+          // reset to the old solution
+          Tpetra::deep_copy (X, Y);
+          blas.COPY (1+iter, h.values(), 1, y.values(), 1);
         }
-        output.numRests++;
       }
     }
 
     // Return residual norm as B
-    Tpetra::deep_copy (B, P);
+    Tpetra::deep_copy (B, R);
 
     if (outPtr != nullptr) {
       *outPtr << "At end of solve:" << endl;

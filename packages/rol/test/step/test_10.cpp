@@ -50,8 +50,9 @@
 #include "ROL_GetTestProblems.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_InteriorPointStep.hpp"
 
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
 
@@ -111,7 +112,11 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     // Solve optimization problem with interior points
-    ROL::Algorithm<RealT> algo("Interior Point",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::InteriorPointStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
     algo.run(optProb, true, *outStream);
 
     // Compute Error
@@ -129,7 +134,7 @@ int main(int argc, char *argv[]) {
     }
     *outStream << std::endl << "Norm of Error: " << err << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try

@@ -165,13 +165,18 @@ namespace MueLu {
     /*! @brief Build aggregates. */
     void Build(Level &currentLevel) const;
 
+    /*! @brief Specifically build aggregates along interfaces */
+    void BuildInterfaceAggregates(Level& currentLevel, RCP<Aggregates> aggregates,
+                                  std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
+                                  Array<LO> coarseRate) const;
+
     //@}
 
   private:
 
     //! aggregation algorithms
     // will be filled in Build routine
-    mutable std::vector<RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> > > algos_;
+    mutable std::vector<RCP<MueLu::AggregationAlgorithmBase<LO, GO, Node> > > algos_;
 
     //! boolean flag: definition phase
     //! if true, the aggregation algorithms still can be set and changed.

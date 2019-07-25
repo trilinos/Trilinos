@@ -250,7 +250,7 @@ int main(int argc, char* argv[]) {
     obj->checkGradient(*x,*d,true,*outStream);
     obj->checkHessVec(*x,*d,true,*outStream);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

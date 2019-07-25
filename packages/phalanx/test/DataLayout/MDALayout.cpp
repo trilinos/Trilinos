@@ -49,141 +49,22 @@
 
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Phalanx_DimTag.hpp"
+#include "Phalanx_ExtentTraits.hpp"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-struct Spatial : public PHX::DimTag {
-  Spatial(){};
-  const char * name() const ;
-  static const Spatial & tag();
-};
-
-struct Quadrature : public PHX::DimTag {
-  Quadrature(){};
-  const char * name() const ;
-  static const Quadrature & tag();
-};
-
-struct Node : public PHX::DimTag {
-  Node(){};
-  const char * name() const ;
-  static const Node & tag();
-};
-
-struct Cell : public PHX::DimTag {
-  Cell(){};
-  const char * name() const ;
-  static const Cell & tag();
-};
-
-struct Ordinal1 : public PHX::DimTag {
-  Ordinal1(){};
-  const char * name() const ;
-  static const Ordinal1 & tag();
-};
-
-struct Ordinal2 : public PHX::DimTag {
-  Ordinal2(){};
-  const char * name() const ;
-  static const Ordinal2 & tag();
-};
-
-struct Ordinal3 : public PHX::DimTag {
-  Ordinal3(){};
-  const char * name() const ;
-  static const Ordinal3 & tag();
-};
-
-struct Ordinal4 : public PHX::DimTag {
-  Ordinal4(){};
-  const char * name() const ;
-  static const Ordinal4 & tag();
-};
-
-struct Ordinal5 : public PHX::DimTag {
-  Ordinal5(){};
-  const char * name() const ;
-  static const Ordinal5 & tag();
-};
-
-struct Ordinal6 : public PHX::DimTag {
-  Ordinal6(){};
-  const char * name() const ;
-  static const Ordinal6 & tag();
-};
-
-struct Ordinal7 : public PHX::DimTag {
-  Ordinal7(){};
-  const char * name() const ;
-  static const Ordinal7 & tag();
-};
-
-struct Ordinal8 : public PHX::DimTag {
-  Ordinal8(){};
-  const char * name() const ;
-  static const Ordinal8 & tag();
-};
-
-const char * Spatial::name() const
-{ static const char n[] = "Spatial" ; return n ; }
-const Spatial & Spatial::tag()
-{ static const Spatial myself ; return myself ; }
-
-const char * Quadrature::name() const
-{ static const char n[] = "Quadrature" ; return n ; }
-const Quadrature & Quadrature::tag()
-{ static const Quadrature myself ; return myself ; }
-
-const char * Node::name() const
-{ static const char n[] = "Node" ; return n ; }
-const Node & Node::tag()
-{ static const Node myself ; return myself ; }
-
-const char * Cell::name() const
-{ static const char n[] = "Cell" ; return n ; }
-const Cell & Cell::tag()
-{ static const Cell myself ; return myself ; }
-
-const char * Ordinal1::name() const
-{ static const char n[] = "Ordinal1" ; return n ; }
-const Ordinal1 & Ordinal1::tag()
-{ static const Ordinal1 myself ; return myself ; }
-
-const char * Ordinal2::name() const
-{ static const char n[] = "Ordinal2" ; return n ; }
-const Ordinal2 & Ordinal2::tag()
-{ static const Ordinal2 myself ; return myself ; }
-
-const char * Ordinal3::name() const
-{ static const char n[] = "Ordinal3" ; return n ; }
-const Ordinal3 & Ordinal3::tag()
-{ static const Ordinal3 myself ; return myself ; }
-
-const char * Ordinal4::name() const
-{ static const char n[] = "Ordinal4" ; return n ; }
-const Ordinal4 & Ordinal4::tag()
-{ static const Ordinal4 myself ; return myself ; }
-
-const char * Ordinal5::name() const
-{ static const char n[] = "Ordinal5" ; return n ; }
-const Ordinal5 & Ordinal5::tag()
-{ static const Ordinal5 myself ; return myself ; }
-
-const char * Ordinal6::name() const
-{ static const char n[] = "Ordinal6" ; return n ; }
-const Ordinal6 & Ordinal6::tag()
-{ static const Ordinal6 myself ; return myself ; }
-
-const char * Ordinal7::name() const
-{ static const char n[] = "Ordinal7" ; return n ; }
-const Ordinal7 & Ordinal7::tag()
-{ static const Ordinal7 myself ; return myself ; }
-
-const char * Ordinal8::name() const
-{ static const char n[] = "Ordinal8" ; return n ; }
-const Ordinal8 & Ordinal8::tag()
-{ static const Ordinal8 myself ; return myself ; }
+PHX_EXTENT(Spatial)
+PHX_EXTENT(Quadrature)
+PHX_EXTENT(Node)
+PHX_EXTENT(Cell)
+PHX_EXTENT(Ordinal1)
+PHX_EXTENT(Ordinal2)
+PHX_EXTENT(Ordinal3)
+PHX_EXTENT(Ordinal4)
+PHX_EXTENT(Ordinal5)
+PHX_EXTENT(Ordinal6)
+PHX_EXTENT(Ordinal7)
+PHX_EXTENT(Ordinal8)
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -766,4 +647,5 @@ TEUCHOS_UNIT_TEST(DataLayout, basic)
     cout << "...passed:\n" << output.str() << endl;
   }
 
+  TEST_ASSERT(prank7.kokkosLayout() == PHX::DataLayout::KokkosLayoutType::Default);
 }

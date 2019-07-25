@@ -151,23 +151,27 @@ namespace Tpetra {
       // whether the matrix is empty.
       const bool newFlag = !Ac.getGraph()->isLocallyIndexed() && !Ac.getGraph()->isGloballyIndexed();
 
+      using Teuchos::ParameterList;
+      RCP<ParameterList> transposeParams (new ParameterList);
+      transposeParams->set ("sort", false);
+
       if (transposeR && &R != &P) {
         transposer_type transposer(rcpFromRef (R));
-        Rprime = transposer.createTranspose();
+        Rprime = transposer.createTranspose (transposeParams);
       } else {
         Rprime = rcpFromRef(R);
       }
 
       if (transposeA) {
         transposer_type transposer(rcpFromRef (A));
-        Aprime = transposer.createTranspose();
+        Aprime = transposer.createTranspose (transposeParams);
       } else {
         Aprime = rcpFromRef(A);
       }
 
       if (transposeP) {
         transposer_type transposer(rcpFromRef (P));
-        Pprime = transposer.createTranspose();
+        Pprime = transposer.createTranspose (transposeParams);
       } else {
         Pprime = rcpFromRef(P);
       }
@@ -398,7 +402,7 @@ namespace Tpetra {
       local_map_type Irowmap_local;  if(!Pview.importMatrix.is_null()) Irowmap_local = Pview.importMatrix->getRowMap()->getLocalMap();
       local_map_type Pcolmap_local = Pview.origMatrix->getColMap()->getLocalMap();
       local_map_type Icolmap_local;  if(!Pview.importMatrix.is_null()) Icolmap_local = Pview.importMatrix->getColMap()->getLocalMap();
-      
+
 
       // mfh 27 Sep 2016: Pcol2Ccol is a table that maps from local column
       // indices of B, to local column indices of Ac.  (B and Ac have the
@@ -426,7 +430,7 @@ namespace Tpetra {
         // column Maps of (the local part of) P, and the "remote" part of
         // P.  Ditto for the Import.  We have optimized this "setUnion"
         // operation on Import objects and Maps.
-        
+
         // Choose the right variant of setUnion
         if (!Pimport.is_null() && !Iimport.is_null()) {
           Cimport = Pimport->setUnion(*Iimport);
@@ -447,7 +451,7 @@ namespace Tpetra {
         // communication costs of sparse matrix-matrix multiply.
         TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Pview.origMatrix->getDomainMap()),
                                    std::runtime_error, "Tpetra::RAP: Import setUnion messed with the DomainMap in an unfortunate way");
-        
+
         // NOTE: This is not efficient and should be folded into setUnion
         //
         // mfh 27 Sep 2016: What the above comment means, is that the
@@ -461,9 +465,9 @@ namespace Tpetra {
         Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Pview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
             Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
           });
-        
+
       }
-      
+
       // Replace the column map
       //
       // mfh 27 Sep 2016: We do this because C was originally created
@@ -484,7 +488,7 @@ namespace Tpetra {
       // B_remote), then targetMapToImportRow[Aik] is the local index of
       // that row of B.  Otherwise, targetMapToOrigRow[Aik] is "invalid"
       // (a flag value).
-      
+
       // Run through all the hash table lookups once and for all
       lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
       lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
@@ -501,7 +505,7 @@ namespace Tpetra {
             targetMapToImportRow(i) = I_LID;
           }
         });
-            
+
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
       KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::
@@ -565,7 +569,7 @@ namespace Tpetra {
       local_map_type Pcolmap_local = Pview.origMatrix->getColMap()->getLocalMap();
       local_map_type Icolmap_local;  if(!Pview.importMatrix.is_null()) Icolmap_local = Pview.importMatrix->getColMap()->getLocalMap();
       local_map_type Ccolmap_local = Ccolmap->getLocalMap();
-      
+
       // Build the final importer / column map, hash table lookups for C
       lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Pview.colMap->getNodeNumElements()), Icol2Ccol;
       {
@@ -574,7 +578,7 @@ namespace Tpetra {
         Kokkos::parallel_for(range_type(0,Pview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
             Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Pcolmap_local.getGlobalElement(i));
           });
-        
+
         if (!Pview.importMatrix.is_null()) {
           TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Pview.origMatrix->getDomainMap()),
                                      std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
@@ -585,7 +589,7 @@ namespace Tpetra {
             });
         }
       }
-      
+
       // Run through all the hash table lookups once and for all
       lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
       lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
@@ -599,10 +603,10 @@ namespace Tpetra {
             LO I_LID = Irowmap_local.getLocalElement(aidx);
             targetMapToOrigRow(i)   = LO_INVALID;
             targetMapToImportRow(i) = I_LID;
-            
+
           }
-        });   
-      
+        });
+
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
       KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::
@@ -664,7 +668,7 @@ namespace Tpetra {
       local_map_type Irowmap_local;  if(!Pview.importMatrix.is_null()) Irowmap_local = Pview.importMatrix->getRowMap()->getLocalMap();
       local_map_type Pcolmap_local = Pview.origMatrix->getColMap()->getLocalMap();
       local_map_type Icolmap_local;  if(!Pview.importMatrix.is_null()) Icolmap_local = Pview.importMatrix->getColMap()->getLocalMap();
-      
+
 
       // mfh 27 Sep 2016: Pcol2Ccol is a table that maps from local column
       // indices of B, to local column indices of Ac.  (B and Ac have the
@@ -692,7 +696,7 @@ namespace Tpetra {
         // column Maps of (the local part of) P, and the "remote" part of
         // P.  Ditto for the Import.  We have optimized this "setUnion"
         // operation on Import objects and Maps.
-        
+
         // Choose the right variant of setUnion
         if (!Pimport.is_null() && !Iimport.is_null()) {
           Cimport = Pimport->setUnion(*Iimport);
@@ -713,7 +717,7 @@ namespace Tpetra {
         // communication costs of sparse matrix-matrix multiply.
         TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Pview.origMatrix->getDomainMap()),
                                    std::runtime_error, "Tpetra::RAP: Import setUnion messed with the DomainMap in an unfortunate way");
-        
+
         // NOTE: This is not efficient and should be folded into setUnion
         //
         // mfh 27 Sep 2016: What the above comment means, is that the
@@ -727,9 +731,9 @@ namespace Tpetra {
         Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Pview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
             Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
           });
-        
+
       }
-      
+
       // Replace the column map
       //
       // mfh 27 Sep 2016: We do this because C was originally created
@@ -750,7 +754,7 @@ namespace Tpetra {
       // B_remote), then targetMapToImportRow[Aik] is the local index of
       // that row of B.  Otherwise, targetMapToOrigRow[Aik] is "invalid"
       // (a flag value).
-      
+
       // Run through all the hash table lookups once and for all
       lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
       lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
@@ -767,7 +771,7 @@ namespace Tpetra {
             targetMapToImportRow(i) = I_LID;
           }
         });
-            
+
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
       KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::
@@ -829,7 +833,7 @@ namespace Tpetra {
       local_map_type Pcolmap_local = Pview.origMatrix->getColMap()->getLocalMap();
       local_map_type Icolmap_local;  if(!Pview.importMatrix.is_null()) Icolmap_local = Pview.importMatrix->getColMap()->getLocalMap();
       local_map_type Ccolmap_local = Ccolmap->getLocalMap();
-      
+
       // Build the final importer / column map, hash table lookups for C
       lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Pview.colMap->getNodeNumElements()), Icol2Ccol;
       {
@@ -838,7 +842,7 @@ namespace Tpetra {
         Kokkos::parallel_for(range_type(0,Pview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
             Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Pcolmap_local.getGlobalElement(i));
           });
-        
+
         if (!Pview.importMatrix.is_null()) {
           TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Pview.origMatrix->getDomainMap()),
                                      std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
@@ -849,7 +853,7 @@ namespace Tpetra {
             });
         }
       }
-      
+
       // Run through all the hash table lookups once and for all
       lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
       lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
@@ -863,10 +867,10 @@ namespace Tpetra {
             LO I_LID = Irowmap_local.getLocalElement(aidx);
             targetMapToOrigRow(i)   = LO_INVALID;
             targetMapToImportRow(i) = I_LID;
-            
+
           }
-        });   
-      
+        });
+
       // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
       // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
       KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::
@@ -934,11 +938,11 @@ namespace Tpetra {
       const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
       const KCRS & Pmat = Pview.origMatrix->getLocalMatrix();
       const KCRS & Rmat = Rview.origMatrix->getLocalMatrix();
-      
+
       c_lno_view_t Arowptr = Amat.graph.row_map, Prowptr = Pmat.graph.row_map,  Rrowptr = Rmat.graph.row_map;
       const lno_nnz_view_t Acolind = Amat.graph.entries, Pcolind = Pmat.graph.entries , Rcolind = Rmat.graph.entries;
       const scalar_view_t Avals = Amat.values, Pvals = Pmat.values, Rvals = Rmat.values;
-      
+
       c_lno_view_t  Irowptr;
       lno_nnz_view_t  Icolind;
       scalar_view_t  Ivals;
@@ -948,7 +952,7 @@ namespace Tpetra {
         Ivals   = Pview.importMatrix->getLocalMatrix().values;
         p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getNodeMaxNumRowEntries());
       }
-      
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       RCP<TimeMonitor> MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix SerialCore - Compare"))));
 #endif
@@ -1173,7 +1177,7 @@ namespace Tpetra {
       const KCRS & Pmat = Pview.origMatrix->getLocalMatrix();
       const KCRS & Rmat = Rview.origMatrix->getLocalMatrix();
       const KCRS & Cmat = Ac.getLocalMatrix();
-      
+
       c_lno_view_t Arowptr = Amat.graph.row_map, Prowptr = Pmat.graph.row_map,  Rrowptr = Rmat.graph.row_map, Crowptr =  Cmat.graph.row_map;
       const lno_nnz_view_t Acolind = Amat.graph.entries, Pcolind = Pmat.graph.entries , Rcolind = Rmat.graph.entries, Ccolind = Cmat.graph.entries;
       const scalar_view_t Avals = Amat.values, Pvals = Pmat.values, Rvals = Rmat.values;
@@ -1188,7 +1192,7 @@ namespace Tpetra {
         Ivals   = Pview.importMatrix->getLocalMatrix().values;
         p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getNodeMaxNumRowEntries());
       }
-      
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       RCP<TimeMonitor> MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse SerialCore - Compare"))));
 #endif
@@ -1219,11 +1223,11 @@ namespace Tpetra {
         CSR_ip = Crowptr[i+1];
         for (size_t k = OLD_ip; k < CSR_ip; k++) {
           ac_status[Ccolind[k]] = k;
-          
+
           // Reset values in the row of C
           Cvals[k] = SC_ZERO;
         }
-        
+
         // mfh 27 Sep 2016: For each entry of R in the current row of R
         for (size_t kk = Rrowptr[i]; kk < Rrowptr[i+1]; kk++) {
           LO k  = Rcolind[kk]; // local column index of current entry of R
@@ -1256,7 +1260,7 @@ namespace Tpetra {
                 TEUCHOS_TEST_FOR_EXCEPTION(ac_status[Cij] < OLD_ip || ac_status[Cij] >= CSR_ip,
                                            std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
                                            "(c_status = " << ac_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-                
+
                 Cvals[ac_status[Cij]] += Rik*Akl*Plj;
               }
             } else {
@@ -1275,7 +1279,7 @@ namespace Tpetra {
                 TEUCHOS_TEST_FOR_EXCEPTION(ac_status[Cij] < OLD_ip || ac_status[Cij] >= CSR_ip,
                                            std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
                                            "(c_status = " << ac_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-                
+
                 Cvals[ac_status[Cij]] += Rik*Akl*Plj;
               }
             }
@@ -1286,7 +1290,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   auto MM3 = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse ESFC"))));
 #endif
-  
+
   Ac.fillComplete(Ac.getDomainMap(), Ac.getRangeMap());
 
 }
@@ -1313,21 +1317,28 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
       using Teuchos::TimeMonitor;
-      Teuchos::TimeMonitor MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
+      Teuchos::TimeMonitor MM(*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose")));
 #endif
 
       // We don't need a kernel-level PTAP, we just transpose here
       typedef RowMatrixTransposer<Scalar,LocalOrdinal,GlobalOrdinal, Node>  transposer_type;
       transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
-      Teuchos::RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
-      if (!params.is_null())
-        transposeParams->set("compute global constants",
-                             params->get("compute global constants: temporaries",
+
+      using Teuchos::ParameterList;
+      using Teuchos::RCP;
+      RCP<ParameterList> transposeParams (new ParameterList);
+      transposeParams->set ("sort", false);
+
+      if (! params.is_null ()) {
+        transposeParams->set ("compute global constants",
+                              params->get ("compute global constants: temporaries",
                                            false));
-      Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans = transposer.createTransposeLocal(transposeParams);
+      }
+      RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans =
+        transposer.createTransposeLocal (transposeParams);
       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node> Rview;
-      Rview.origMatrix = Ptrans;       
-      
+      Rview.origMatrix = Ptrans;
+
       mult_R_A_P_newmatrix_kernel_wrapper(Rview,Aview,Pview,Acol2Prow,Acol2PIrow,Pcol2Accol,PIcol2Accol,Ac,Acimport,label,params);
     }
 
@@ -1352,21 +1363,28 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
       using Teuchos::TimeMonitor;
-      Teuchos::TimeMonitor MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
+      Teuchos::TimeMonitor MM(*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose")));
 #endif
 
       // We don't need a kernel-level PTAP, we just transpose here
       typedef RowMatrixTransposer<Scalar,LocalOrdinal,GlobalOrdinal, Node>  transposer_type;
       transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
-      Teuchos::RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
-      if (!params.is_null())
-        transposeParams->set("compute global constants",
-                             params->get("compute global constants: temporaries",
+
+      using Teuchos::ParameterList;
+      using Teuchos::RCP;
+      RCP<ParameterList> transposeParams (new ParameterList);
+      transposeParams->set ("sort", false);
+
+      if (! params.is_null ()) {
+        transposeParams->set ("compute global constants",
+                              params->get ("compute global constants: temporaries",
                                            false));
-      Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans = transposer.createTransposeLocal(transposeParams);
+      }
+      RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans =
+        transposer.createTransposeLocal (transposeParams);
       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node> Rview;
-      Rview.origMatrix = Ptrans;       
-      
+      Rview.origMatrix = Ptrans;
+
       mult_R_A_P_reuse_kernel_wrapper(Rview,Aview,Pview,Acol2Prow,Acol2PIrow,Pcol2Accol,PIcol2Accol,Ac,Acimport,label,params);
     }
 
@@ -1476,12 +1494,17 @@ namespace Tpetra {
       ArrayView<const SC>     Rvals;
 
       transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
-      RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
-      if (!params.is_null())
-        transposeParams->set("compute global constants",
-                             params->get("compute global constants: temporaries",
-                                         false));
-      RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans = transposer.createTransposeLocal(transposeParams);
+
+      using Teuchos::ParameterList;
+      RCP<ParameterList> transposeParams (new ParameterList);
+      transposeParams->set ("sort", false);  
+      if (! params.is_null ()) {
+        transposeParams->set ("compute global constants",
+                              params->get ("compute global constants: temporaries",
+                                           false));
+      }
+      RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans =
+        transposer.createTransposeLocal (transposeParams);
 
       Ptrans->getAllValues(Rrowptr_RCP, Rcolind_RCP, Rvals_RCP);
       Rrowptr = Rrowptr_RCP();

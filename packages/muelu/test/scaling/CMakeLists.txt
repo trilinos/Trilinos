@@ -131,7 +131,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       ARGS "--linAlgebra=Epetra --xml=scaling-with-rerun.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
-      )    
+      )
 
     TRIBITS_ADD_TEST(
       Driver
@@ -280,6 +280,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         )
+
     ENDIF()
 
     TRIBITS_ADD_TEST(
@@ -383,7 +384,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES MMKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       MMKernelDriver
@@ -398,7 +399,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES JacobiKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       JacobiKernelDriver
@@ -413,7 +414,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES TwoMatrixMMKernelDriver.cpp
       COMM serial mpi
       )
-  
+
 
     TRIBITS_ADD_TEST(
       TwoMatrixMMKernelDriver

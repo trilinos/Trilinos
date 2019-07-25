@@ -59,6 +59,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_RowMatrix.hpp"
+#include <memory>
 #include <type_traits>
 
 namespace Trilinos {
@@ -94,8 +95,8 @@ preconditioner to a multivector.
 \section Ifpack2_AdditiveSchwarz_Alg Algorithm
 
 One-level overlapping domain decomposition preconditioners use local
-solvers of Dirichlet type. This means that the solver effectively 
-applies the inverse of the local matrix (possibly with overlap) 
+solvers of Dirichlet type. This means that the solver effectively
+applies the inverse of the local matrix (possibly with overlap)
 to the residual to be preconditioned.
 
 The preconditioner can be written as:
@@ -309,26 +310,25 @@ public:
   //@{
 
   //! The type of the entries of the input MatrixType.
-  typedef typename MatrixType::scalar_type scalar_type;
+  using scalar_type = typename MatrixType::scalar_type;
 
   //! The type of local indices in the input MatrixType.
-  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  using local_ordinal_type = typename MatrixType::local_ordinal_type;
 
   //! The type of global indices in the input MatrixType.
-  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  using global_ordinal_type = typename MatrixType::global_ordinal_type;
 
   //! The Node type used by the input MatrixType.
-  typedef typename MatrixType::node_type node_type;
+  using node_type = typename MatrixType::node_type;
 
   //! The type of the magnitude (absolute value) of a matrix entry.
-  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+  using magnitude_type =
+    typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
 
   //! The Tpetra::RowMatrix specialization matching MatrixType.
-  typedef Tpetra::RowMatrix<scalar_type,
-                            local_ordinal_type,
-                            global_ordinal_type,
-                            node_type> row_matrix_type;
-
+  using row_matrix_type =
+    Tpetra::RowMatrix<scalar_type, local_ordinal_type,
+                      global_ordinal_type, node_type>;
   //@}
   // \name Constructors and destructor
   //@{
@@ -351,7 +351,7 @@ public:
                    const int overlapLevel);
 
   //! Destructor
-  virtual ~AdditiveSchwarz();
+  virtual ~AdditiveSchwarz () = default;
 
   //@}
   //! \name Implementation of Tpetra::Operator
@@ -779,13 +779,13 @@ private:
   Teuchos::RCP<row_matrix_type> innerMatrix_;
 
   //! If true, the preconditioner has been successfully initialized.
-  bool IsInitialized_;
+  bool IsInitialized_ = false;
   //! If true, the preconditioner has been successfully computed.
-  bool IsComputed_;
+  bool IsComputed_ = false;
   //! If true, overlapping is used
-  bool IsOverlapping_;
+  bool IsOverlapping_ = false;
   //! Level of overlap among the processors.
-  int OverlapLevel_;
+  int OverlapLevel_ = 0;
 
   /// \brief A (deep) copy of the list given to setParameters().
   ///
@@ -798,44 +798,52 @@ private:
   mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
   //! Combine mode for off-process elements (only if overlap is used)
-  Tpetra::CombineMode CombineMode_;
+  Tpetra::CombineMode CombineMode_ = Tpetra::ZERO;
   //! If \c true, reorder the local matrix.
-  bool UseReordering_;
+  bool UseReordering_ = false;
   //! Record reordering for output purposes.
-  std::string ReorderingAlgorithm_;
+  std::string ReorderingAlgorithm_ = "none";
   //! Whether to filter singleton rows.
-  bool FilterSingletons_;
+  bool FilterSingletons_ = false;
   //! Matrix from which singleton rows have been filtered.
   Teuchos::RCP<row_matrix_type> SingletonMatrix_;
   //! The number of iterations to be done.
-  int NumIterations_;
+  int NumIterations_ = 1;
   //! True if and only if the initial guess is zero.
-  bool ZeroStartingSolution_;
+  bool ZeroStartingSolution_ = true;
   //! Damping for inner update, if used
-  scalar_type UpdateDamping_;
+  scalar_type UpdateDamping_ = Teuchos::ScalarTraits<scalar_type>::one ();
 
   //! The total number of successful calls to initialize().
-  int NumInitialize_;
+  int NumInitialize_ = 0;
   //! The total number of successful calls to compute().
-  int NumCompute_;
+  int NumCompute_ = 0;
   //! The total number of successful calls to apply().
-  mutable int NumApply_;
+  mutable int NumApply_ = 0;
   //! The total time in seconds of all successful calls to initialize().
-  double InitializeTime_;
+  double InitializeTime_ = 0.0;
   //! The total time in seconds of all successful calls to compute().
-  double ComputeTime_;
+  double ComputeTime_ = 0.0;
   //! The total time in seconds of all successful calls to apply().
-  mutable double ApplyTime_;
+  mutable double ApplyTime_ = 0.0;
   //! The total number of floating-point operations over all initialize() calls.
-  double InitializeFlops_;
+  double InitializeFlops_ = 0.0;
   //! The total number of floating-point operations over all compute() calls.
-  double ComputeFlops_;
+  double ComputeFlops_ = 0.0;
   //! The total number of floating-point operations over all apply() calls.
-  mutable double ApplyFlops_;
+  mutable double ApplyFlops_ = 0.0;
   //! The inner (that is, per subdomain local) solver.
   Teuchos::RCP<inner_solver_type> Inverse_;
   //! Local distributed map for filtering multivector with no overlap.
   Teuchos::RCP<const map_type> localMap_;
+  //! Cached local (possibly) overlapping input (multi)vector.
+  mutable std::unique_ptr<MV> overlapping_B_;
+  //! Cached local (possibly) overlapping output (multi)vector.
+  mutable std::unique_ptr<MV> overlapping_Y_;
+  //! Cached residual (multi)vector.
+  mutable std::unique_ptr<MV> R_;
+  //! Cached intermediate result (multi)vector.
+  mutable std::unique_ptr<MV> C_;
 
   /// \brief Import object used in apply().
   ///

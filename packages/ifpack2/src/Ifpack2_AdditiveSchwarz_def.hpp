@@ -60,6 +60,7 @@
 // to wrap the user-provided Ifpack2::Preconditioner in
 // Ifpack2::AdditiveSchwarz::setInnerPreconditioner.
 #include "Ifpack2_Details_LinearSolver.hpp"
+#include "Ifpack2_Details_getParamTryingTypes.hpp"
 
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
 #include "Zoltan2_TpetraRowGraphAdapter.hpp"
@@ -91,9 +92,35 @@ namespace Details {
 } // namespace Details
 } // namespace Ifpack2
 
+#ifdef HAVE_IFPACK2_DEBUG
+
+namespace { // (anonymous)
+
+  template<class MV>
+  bool
+  anyBad (const MV& X)
+  {
+    using STS = Teuchos::ScalarTraits<typename MV::scalar_type>;
+    using magnitude_type = typename STS::magnitudeType;
+    using STM = Teuchos::ScalarTraits<magnitude_type>;
+
+    Teuchos::Array<magnitude_type> norms (X.getNumVectors ());
+    X.norm2 (norms ());
+    bool good = true;
+    for (size_t j = 0; j < X.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    return ! good;
+  }
+
+} // namespace (anonymous)
+
+#endif // HAVE_IFPACK2_DEBUG
 
 namespace Ifpack2 {
-
 
 template<class MatrixType, class LocalInverseType>
 bool
@@ -149,15 +176,11 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::innerPrecName () const
 
   // As soon as one parameter option matches, ignore all others.
   for (int k = 0; k < numOptions && ! match; ++k) {
-    if (List_.isParameter (options[k])) {
-      // try-catch block protects against incorrect type errors.
-      //
-      // FIXME (mfh 04 Jan 2013) We should instead catch and report
-      // type errors.
-      try {
-        newName = List_.get<std::string> (options[k]);
-        match = true;
-      } catch (...) {}
+    const Teuchos::ParameterEntry* paramEnt =
+      List_.getEntryPtr (options[k]);
+    if (paramEnt != nullptr && paramEnt->isType<std::string> ()) {
+      newName = Teuchos::getValue<std::string> (*paramEnt);
+      match = true;
     }
   }
   return match ? newName : defaultInnerPrecName ();
@@ -208,7 +231,6 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::innerPrecParams () const
   return std::make_pair (params, match);
 }
 
-
 template<class MatrixType, class LocalInverseType>
 std::string
 AdditiveSchwarz<MatrixType, LocalInverseType>::defaultInnerPrecName ()
@@ -218,68 +240,24 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::defaultInnerPrecName ()
   return "ILUT";
 }
 
-
 template<class MatrixType, class LocalInverseType>
 AdditiveSchwarz<MatrixType, LocalInverseType>::
 AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
-  Matrix_ (A),
-  IsInitialized_ (false),
-  IsComputed_ (false),
-  IsOverlapping_ (false),
-  OverlapLevel_ (0),
-  CombineMode_ (Tpetra::ZERO),
-  UseReordering_ (false),
-  ReorderingAlgorithm_ ("none"),
-  FilterSingletons_ (false),
-  NumIterations_(1),
-  ZeroStartingSolution_(true),
-  UpdateDamping_(Teuchos::ScalarTraits<scalar_type>::one()),
-  NumInitialize_ (0),
-  NumCompute_ (0),
-  NumApply_ (0),
-  InitializeTime_ (0.0),
-  ComputeTime_ (0.0),
-  ApplyTime_ (0.0)
-{
-  Teuchos::ParameterList plist;
-  setParameters (plist); // Set parameters to default values
-}
+  Matrix_ (A)
+{}
 
 template<class MatrixType, class LocalInverseType>
 AdditiveSchwarz<MatrixType, LocalInverseType>::
 AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
                  const int overlapLevel) :
   Matrix_ (A),
-  IsInitialized_ (false),
-  IsComputed_ (false),
-  IsOverlapping_ (false),
-  OverlapLevel_ (overlapLevel),
-  CombineMode_ (Tpetra::ZERO),
-  UseReordering_ (false),
-  ReorderingAlgorithm_ ("none"),
-  FilterSingletons_ (false),
-  NumIterations_(1),
-  ZeroStartingSolution_(true),
-  UpdateDamping_(Teuchos::ScalarTraits<scalar_type>::one()),
-  NumInitialize_ (0),
-  NumCompute_ (0),
-  NumApply_ (0),
-  InitializeTime_ (0.0),
-  ComputeTime_ (0.0),
-  ApplyTime_ (0.0)
-{
-  Teuchos::ParameterList plist;
-  setParameters (plist); // Set parameters to default values
-}
-
-
-template<class MatrixType,class LocalInverseType>
-AdditiveSchwarz<MatrixType,LocalInverseType>::~AdditiveSchwarz () {}
-
+  OverlapLevel_ (overlapLevel)
+{}
 
 template<class MatrixType,class LocalInverseType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type > >
-AdditiveSchwarz<MatrixType,LocalInverseType>::getDomainMap() const
+AdditiveSchwarz<MatrixType,LocalInverseType>::
+getDomainMap () const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::"
@@ -367,38 +345,18 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 #ifdef HAVE_IFPACK2_DEBUG
   {
-    typedef typename STS::magnitudeType magnitude_type;
-    typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    Teuchos::Array<magnitude_type> norms (B.getNumVectors ());
-    B.norm2 (norms ());
-    bool good = true;
-    for (size_t j = 0; j < B.getNumVectors (); ++j) {
-      if (STM::isnaninf (norms[j])) {
-        good = false;
-        break;
-      }
-    }
+    const bool bad = anyBad (B);
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+      (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
        "The 2-norm of the input B is NaN or Inf.");
   }
 #endif // HAVE_IFPACK2_DEBUG
 
 #ifdef HAVE_IFPACK2_DEBUG
   if (! ZeroStartingSolution_) {
-    typedef typename STS::magnitudeType magnitude_type;
-    typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
-    Y.norm2 (norms ());
-    bool good = true;
-    for (size_t j = 0; j < Y.getNumVectors (); ++j) {
-      if (STM::isnaninf (norms[j])) {
-        good = false;
-        break;
-      }
-    }
+    const bool bad = anyBad (Y);
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+      (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
        "On input, the initial guess Y has 2-norm NaN or Inf "
        "(ZeroStartingSolution_ is false).");
   }
@@ -414,7 +372,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     TimeMonitor timeMon (*timer);
 
     const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero ();
-    //const scalar_type ONE = Teuchos::ScalarTraits<scalar_type>::one (); // unused
     const size_t numVectors = B.getNumVectors ();
 
     // mfh 25 Apr 2015: Fix for currently failing
@@ -424,23 +381,29 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     }
 
     // set up for overlap communication
-    RCP<MV> OverlappingB,OverlappingY;
-    RCP<MV> globalOverlappingB;
-    if (IsOverlapping_) {
-      // MV's constructor fills with zeros.
-      OverlappingB = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
-      OverlappingY = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
+    MV* OverlappingB = nullptr;
+    MV* OverlappingY = nullptr;
+    {
+      RCP<const map_type> B_and_Y_map = IsOverlapping_ ?
+        OverlappingMatrix_->getRowMap () : localMap_;
+      if (overlapping_B_.get () == nullptr ||
+          overlapping_B_->getNumVectors () != numVectors) {
+        overlapping_B_.reset (new MV (B_and_Y_map, numVectors, false));
+      }
+      if (overlapping_Y_.get () == nullptr ||
+          overlapping_Y_->getNumVectors () != numVectors) {
+        overlapping_Y_.reset (new MV (B_and_Y_map, numVectors, false));
+      }
+      OverlappingB = overlapping_B_.get ();
+      OverlappingY = overlapping_Y_.get ();
+      // FIXME (mfh 25 Jun 2019) It's not clear whether we really need
+      // to fill with zeros here, but that's what was happening before.
+      OverlappingB->putScalar (ZERO);
+      OverlappingY->putScalar (ZERO);
     }
-    else {
-      // MV's constructor fills with zeros.
-      //
-      // localMap_ has the same number of indices on each process that
-      // Matrix_->getRowMap() does on that process.  Thus, we can do
-      // the Import step without creating a new MV, just by viewing
-      // OverlappingB using Matrix_->getRowMap ().
-      OverlappingB = rcp (new MV (localMap_, numVectors));
-      OverlappingY = rcp (new MV (localMap_, numVectors));
 
+    RCP<MV> globalOverlappingB;
+    if (! IsOverlapping_) {
       globalOverlappingB =
         OverlappingB->offsetViewNonConst (Matrix_->getRowMap (), 0);
 
@@ -455,27 +418,26 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       }
     }
 
-    RCP<MV> R = rcp(new MV(B.getMap(),numVectors));
-    RCP<MV> C = rcp(new MV(Y.getMap(),numVectors)); //TODO no need to initialize to zero?
+    if (R_.get () == nullptr || R_->getNumVectors () != numVectors) {
+      R_.reset (new MV (B.getMap (), numVectors, false));
+    }
+    if (C_.get () == nullptr || C_->getNumVectors () != numVectors) {
+      C_.reset (new MV (Y.getMap (), numVectors, false));
+    }
+    MV* R = R_.get ();
+    MV* C = C_.get ();
+
+    // FIXME (mfh 25 Jun 2019) It was never clear whether C had to be
+    // initialized to zero.  R definitely should not need this.
+    C->putScalar (ZERO);
 
     for (int ni=0; ni<NumIterations_; ++ni)
     {
 #ifdef HAVE_IFPACK2_DEBUG
       {
-        typedef typename STS::magnitudeType magnitude_type;
-        typedef Teuchos::ScalarTraits<magnitude_type> STM;
-        Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
-        Y.norm2 (norms ());
-        bool good = true;
-        for (size_t j = 0;
-             j < Y.getNumVectors (); ++j) {
-          if (STM::isnaninf (norms[j])) {
-            good = false;
-            break;
-          }
-        }
+        const bool bad = anyBad (Y);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+          (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
            "At top of iteration " << ni << ", the 2-norm of Y is NaN or Inf.");
       }
 #endif // HAVE_IFPACK2_DEBUG
@@ -491,19 +453,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 #ifdef HAVE_IFPACK2_DEBUG
         {
-          typedef typename STS::magnitudeType magnitude_type;
-          typedef Teuchos::ScalarTraits<magnitude_type> STM;
-          Teuchos::Array<magnitude_type> norms (R->getNumVectors ());
-          R->norm2 (norms ());
-          bool good = true;
-          for (size_t j = 0; j < R->getNumVectors (); ++j) {
-            if (STM::isnaninf (norms[j])) {
-              good = false;
-              break;
-            }
-          }
+          const bool bad = anyBad (*R);
           TEUCHOS_TEST_FOR_EXCEPTION
-            (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+            (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
              "At iteration " << ni << ", the 2-norm of R (result of computing "
              "residual with Y) is NaN or Inf.");
         }
@@ -546,20 +498,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 #ifdef HAVE_IFPACK2_DEBUG
         {
-          typedef typename STS::magnitudeType magnitude_type;
-          typedef Teuchos::ScalarTraits<magnitude_type> STM;
-          Teuchos::Array<magnitude_type> norms (OverlappingB->getNumVectors ());
-          OverlappingB->norm2 (norms ());
-          bool good = true;
-          for (size_t j = 0;
-               j < OverlappingB->getNumVectors (); ++j) {
-            if (STM::isnaninf (norms[j])) {
-              good = false;
-              break;
-            }
-          }
+          const bool bad = anyBad (*OverlappingB);
           TEUCHOS_TEST_FOR_EXCEPTION
-            (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+            (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
              "At iteration " << ni << ", result of importMultiVector from R "
              "to OverlappingB, has 2-norm NaN or Inf.");
         }
@@ -569,20 +510,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 #ifdef HAVE_IFPACK2_DEBUG
         {
-          typedef typename STS::magnitudeType magnitude_type;
-          typedef Teuchos::ScalarTraits<magnitude_type> STM;
-          Teuchos::Array<magnitude_type> norms (globalOverlappingB->getNumVectors ());
-          globalOverlappingB->norm2 (norms ());
-          bool good = true;
-          for (size_t j = 0;
-               j < globalOverlappingB->getNumVectors (); ++j) {
-            if (STM::isnaninf (norms[j])) {
-              good = false;
-              break;
-            }
-          }
+          const bool bad = anyBad (*globalOverlappingB);
           TEUCHOS_TEST_FOR_EXCEPTION
-            (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+            (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
              "At iteration " << ni << ", result of doImport from R, has 2-norm "
              "NaN or Inf.");
         }
@@ -591,20 +521,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 #ifdef HAVE_IFPACK2_DEBUG
       {
-        typedef typename STS::magnitudeType magnitude_type;
-        typedef Teuchos::ScalarTraits<magnitude_type> STM;
-        Teuchos::Array<magnitude_type> norms (OverlappingB->getNumVectors ());
-        OverlappingB->norm2 (norms ());
-        bool good = true;
-        for (size_t j = 0;
-             j < OverlappingB->getNumVectors (); ++j) {
-          if (STM::isnaninf (norms[j])) {
-            good = false;
-            break;
-          }
-        }
+        const bool bad = anyBad (*OverlappingB);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+          (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
            "At iteration " << ni << ", right before localApply, the 2-norm of "
            "OverlappingB is NaN or Inf.");
       }
@@ -615,20 +534,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 #ifdef HAVE_IFPACK2_DEBUG
       {
-        typedef typename STS::magnitudeType magnitude_type;
-        typedef Teuchos::ScalarTraits<magnitude_type> STM;
-        Teuchos::Array<magnitude_type> norms (OverlappingY->getNumVectors ());
-        OverlappingY->norm2 (norms ());
-        bool good = true;
-        for (size_t j = 0;
-             j < OverlappingY->getNumVectors (); ++j) {
-          if (STM::isnaninf (norms[j])) {
-            good = false;
-            break;
-          }
-        }
+        const bool bad = anyBad (*OverlappingY);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+          (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
            "At iteration " << ni << ", after localApply and before export / "
            "copy, the 2-norm of OverlappingY is NaN or Inf.");
       }
@@ -636,20 +544,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 #ifdef HAVE_IFPACK2_DEBUG
       {
-        typedef typename STS::magnitudeType magnitude_type;
-        typedef Teuchos::ScalarTraits<magnitude_type> STM;
-        Teuchos::Array<magnitude_type> norms (C->getNumVectors ());
-        C->norm2 (norms ());
-        bool good = true;
-        for (size_t j = 0;
-             j < C->getNumVectors (); ++j) {
-          if (STM::isnaninf (norms[j])) {
-            good = false;
-            break;
-          }
-        }
+        const bool bad = anyBad (*C);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+          (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
            "At iteration " << ni << ", before export / copy, the 2-norm of C "
            "is NaN or Inf.");
       }
@@ -676,20 +573,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 #ifdef HAVE_IFPACK2_DEBUG
       {
-        typedef typename STS::magnitudeType magnitude_type;
-        typedef Teuchos::ScalarTraits<magnitude_type> STM;
-        Teuchos::Array<magnitude_type> norms (C->getNumVectors ());
-        C->norm2 (norms ());
-        bool good = true;
-        for (size_t j = 0;
-             j < C->getNumVectors (); ++j) {
-          if (STM::isnaninf (norms[j])) {
-            good = false;
-            break;
-          }
-        }
+        const bool bad = anyBad (*C);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+          (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
            "At iteration " << ni << ", before Y := C + Y, the 2-norm of C "
            "is NaN or Inf.");
       }
@@ -697,20 +583,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 #ifdef HAVE_IFPACK2_DEBUG
       {
-        typedef typename STS::magnitudeType magnitude_type;
-        typedef Teuchos::ScalarTraits<magnitude_type> STM;
-        Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
-        Y.norm2 (norms ());
-        bool good = true;
-        for (size_t j = 0;
-             j < Y.getNumVectors (); ++j) {
-          if (STM::isnaninf (norms[j])) {
-            good = false;
-            break;
-          }
-        }
+        const bool bad = anyBad (Y);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+          (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
            "Before Y := C + Y, at iteration " << ni << ", the 2-norm of Y "
            "is NaN or Inf.");
       }
@@ -720,43 +595,23 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 #ifdef HAVE_IFPACK2_DEBUG
       {
-        typedef typename STS::magnitudeType magnitude_type;
-        typedef Teuchos::ScalarTraits<magnitude_type> STM;
-        Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
-        Y.norm2 (norms ());
-        bool good = true;
-        for (size_t j = 0; j < Y.getNumVectors (); ++j) {
-          if (STM::isnaninf (norms[j])) {
-            good = false;
-            break;
-          }
-        }
+        const bool bad = anyBad (Y);
         TEUCHOS_TEST_FOR_EXCEPTION
-          ( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
-            "At iteration " << ni << ", after Y := C + Y, the 2-norm of Y "
-            "is NaN or Inf.");
+          (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+           "At iteration " << ni << ", after Y := C + Y, the 2-norm of Y "
+           "is NaN or Inf.");
       }
 #endif // HAVE_IFPACK2_DEBUG
-    }
+    } // for each iteration
 
-  } // Stop timing here.
+  } // Stop timing here
 
 #ifdef HAVE_IFPACK2_DEBUG
   {
-    typedef typename STS::magnitudeType magnitude_type;
-    typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
-    Y.norm2 (norms ());
-    bool good = true;
-    for (size_t j = 0; j < Y.getNumVectors (); ++j) {
-      if (STM::isnaninf (norms[j])) {
-        good = false;
-        break;
-      }
-    }
+    const bool bad = anyBad (Y);
     TEUCHOS_TEST_FOR_EXCEPTION
-      ( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
-        "The 2-norm of the output Y is NaN or Inf.");
+      (bad, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+       "The 2-norm of the output Y is NaN or Inf.");
   }
 #endif // HAVE_IFPACK2_DEBUG
 
@@ -770,7 +625,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 template<class MatrixType,class LocalInverseType>
 void
 AdditiveSchwarz<MatrixType,LocalInverseType>::
-localApply(MV &OverlappingB, MV &OverlappingY) const
+localApply (MV& OverlappingB, MV& OverlappingY) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -815,7 +670,6 @@ localApply(MV &OverlappingB, MV &OverlappingY) const
     singletonFilter->UpdateLHS (ReducedY, OverlappingY);
   }
   else {
-
     // process reordering
     if (! UseReordering_) {
       Inverse_->solve (OverlappingY, OverlappingB);
@@ -857,7 +711,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::
 setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   using Tpetra::CombineMode;
-  using Teuchos::getIntegralValue;
   using Teuchos::ParameterEntry;
   using Teuchos::ParameterEntryValidator;
   using Teuchos::ParameterList;
@@ -865,6 +718,8 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::StringToIntegralParameterEntryValidator;
+  using Details::getParamTryingTypes;
+  const char prefix[] = "Ifpack2::AdditiveSchwarz: ";
 
   if (plist.is_null ()) {
     // Assume that the user meant to set default parameters by passing
@@ -900,46 +755,31 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   // values, which could be different than their values in the
   // original list.
 
-  bool gotCombineMode = false;
-  try {
-    CombineMode_ = getIntegralValue<Tpetra::CombineMode> (List_, "schwarz: combine mode");
-    gotCombineMode = true;
-  }
-  catch (Teuchos::Exceptions::InvalidParameterName&) {
-    // The caller didn't provide that parameter.  Just keep the
-    // existing value of CombineMode_.
-    gotCombineMode = true;
-  }
-  catch (Teuchos::Exceptions::InvalidParameterType&) {
-    // The user perhaps supplied it as an Tpetra::CombineMode enum
-    // value.  Let's try again (below).  If it doesn't succeed, we
-    // know that the type is wrong, so we can let it throw whatever
-    // exception it would throw.
-  }
-  // Try to get the combine mode as an integer.
-  if (! gotCombineMode) {
-    try {
-      CombineMode_ = plist->get ("schwarz: combine mode", CombineMode_);
-      gotCombineMode = true;
+  const std::string cmParamName ("schwarz: combine mode");
+  const ParameterEntry* cmEnt = plist->getEntryPtr (cmParamName);
+  if (cmEnt != nullptr) {
+    if (cmEnt->isType<CombineMode> ()) {
+      CombineMode_ = Teuchos::getValue<CombineMode> (*cmEnt);
     }
-    catch (Teuchos::Exceptions::InvalidParameterType&) {}
-  }
-  // Try to get the combine mode as a string.  If this works, use the
-  // validator to convert to int.  This is painful, but necessary in
-  // order to do validation, since the input list doesn't come with a
-  // validator.
-  if (! gotCombineMode) {
-    const ParameterEntry& validEntry =
-      getValidParameters ()->getEntry ("schwarz: combine mode");
-    RCP<const ParameterEntryValidator> v = validEntry.validator ();
-    typedef StringToIntegralParameterEntryValidator<CombineMode> vs2e_type;
-    RCP<const vs2e_type> vs2e = rcp_dynamic_cast<const vs2e_type> (v, true);
+    else if (cmEnt->isType<int> ()) {
+      const int cm = Teuchos::getValue<int> (*cmEnt);
+      CombineMode_ = static_cast<CombineMode> (cm);
+    }
+    else if (cmEnt->isType<std::string> ()) {
+      // Try to get the combine mode as a string.  If this works, use
+      // the validator to convert to int.  This is painful, but
+      // necessary in order to do validation, since the input list may
+      // not necessarily come with a validator.
+      const ParameterEntry& validEntry =
+        getValidParameters ()->getEntry (cmParamName);
+      RCP<const ParameterEntryValidator> v = validEntry.validator ();
+      using vs2e_type = StringToIntegralParameterEntryValidator<CombineMode>;
+      RCP<const vs2e_type> vs2e = rcp_dynamic_cast<const vs2e_type> (v, true);
 
-    const ParameterEntry& inputEntry = plist->getEntry ("schwarz: combine mode");
-    CombineMode_ = vs2e->getIntegralValue (inputEntry, "schwarz: combine mode");
-    gotCombineMode = true;
+      const ParameterEntry& inputEntry = plist->getEntry (cmParamName);
+      CombineMode_ = vs2e->getIntegralValue (inputEntry, cmParamName);
+    }
   }
-  (void) gotCombineMode; // forestall "set but not used" compiler warning
 
   OverlapLevel_ = plist->get ("schwarz: overlap level", OverlapLevel_);
 
@@ -969,7 +809,8 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   FilterSingletons_ = plist->get ("schwarz: filter singletons", FilterSingletons_);
 
   // Allow for damped Schwarz updates
-  UpdateDamping_ = Teuchos::as<scalar_type>(plist->get("schwarz: update damping",UpdateDamping_));
+  getParamTryingTypes<scalar_type, scalar_type, double>
+    (UpdateDamping_, *plist, "schwarz: update damping", prefix);
 
   // If the inner solver doesn't exist yet, don't create it.
   // initialize() creates it.
@@ -1015,7 +856,7 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     else {
       // Extract and apply the sublist of parameters to give to the
       // inner solver, if there is such a sublist of parameters.
-      std::pair<Teuchos::ParameterList, bool> result = innerPrecParams ();
+      std::pair<ParameterList, bool> result = innerPrecParams ();
       if (result.second) {
         // FIXME (mfh 26 Aug 2015) Rewrite innerPrecParams() so this
         // isn't another deep copy.
@@ -1024,8 +865,9 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     }
   }
 
-  NumIterations_ = plist->get<int>("schwarz: num iterations", NumIterations_);
-  ZeroStartingSolution_ = plist->get<bool>("schwarz: zero starting solution", ZeroStartingSolution_);
+  NumIterations_ = plist->get ("schwarz: num iterations", NumIterations_);
+  ZeroStartingSolution_ =
+    plist->get ("schwarz: zero starting solution", ZeroStartingSolution_);
 }
 
 
@@ -1046,7 +888,7 @@ getValidParameters () const
     const bool filterSingletons     = false;
     const int  numIterations        = 1;
     const bool zeroStartingSolution = true;
-    const double updateDamping      = 1;
+    const scalar_type updateDamping = Teuchos::ScalarTraits<scalar_type>::one ();
     ParameterList reorderingSublist;
     reorderingSublist.set ("order_method", std::string ("rcm"));
 
@@ -1105,6 +947,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
     IsInitialized_ = false;
     IsComputed_ = false;
+    overlapping_B_.reset (nullptr);
+    overlapping_Y_.reset (nullptr);
+    R_.reset (nullptr);
+    C_.reset (nullptr);
 
     RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
     RCP<const map_type> rowMap = Matrix_->getRowMap ();
@@ -1505,48 +1351,48 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     else {
       // Zoltan2 reordering
       typedef Tpetra::RowGraph
-	<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
+        <local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
       typedef Zoltan2::TpetraRowGraphAdapter<row_graph_type> z2_adapter_type;
       RCP<const row_graph_type> constActiveGraph =
-	Teuchos::rcp_const_cast<const row_graph_type>(ActiveMatrix->getGraph());
+        Teuchos::rcp_const_cast<const row_graph_type>(ActiveMatrix->getGraph());
       z2_adapter_type Zoltan2Graph (constActiveGraph);
-      
+
       typedef Zoltan2::OrderingProblem<z2_adapter_type> ordering_problem_type;
 #ifdef HAVE_MPI
       // Grab the MPI Communicator and build the ordering problem with that
       MPI_Comm myRawComm;
-      
+
       RCP<const MpiComm<int> > mpicomm =
-	rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
+        rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
       if (mpicomm == Teuchos::null) {
-	myRawComm = MPI_COMM_SELF;
+        myRawComm = MPI_COMM_SELF;
       } else {
-	myRawComm = * (mpicomm->getRawMpiComm ());
+        myRawComm = * (mpicomm->getRawMpiComm ());
       }
       ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist, myRawComm);
 #else
       ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist);
 #endif
       MyOrderingProblem.solve ();
-      
+
       {
-	typedef Zoltan2::LocalOrderingSolution<local_ordinal_type>
-	  ordering_solution_type;
-	
-	ordering_solution_type sol (*MyOrderingProblem.getLocalOrderingSolution());
-	
-	// perm[i] gives the where OLD index i shows up in the NEW
-	// ordering.  revperm[i] gives the where NEW index i shows
-	// up in the OLD ordering.  Note that perm is actually the
-	// "inverse permutation," in Zoltan2 terms.
-	perm = sol.getPermutationRCPConst (true);
-	revperm = sol.getPermutationRCPConst ();
+        typedef Zoltan2::LocalOrderingSolution<local_ordinal_type>
+          ordering_solution_type;
+
+        ordering_solution_type sol (*MyOrderingProblem.getLocalOrderingSolution());
+
+        // perm[i] gives the where OLD index i shows up in the NEW
+        // ordering.  revperm[i] gives the where NEW index i shows
+        // up in the OLD ordering.  Note that perm is actually the
+        // "inverse permutation," in Zoltan2 terms.
+        perm = sol.getPermutationRCPConst (true);
+        revperm = sol.getPermutationRCPConst ();
       }
     }
     // All reorderings here...
     ReorderedLocalizedMatrix_ = rcp (new reorder_filter_type (ActiveMatrix, perm, revperm));
-	  
-	
+
+
     ActiveMatrix = ReorderedLocalizedMatrix_;
 #else
     // This is a logic_error, not a runtime_error, because
@@ -1711,6 +1557,10 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     innerMatrix_ = Teuchos::null;
     SingletonMatrix_ = Teuchos::null;
     localMap_ = Teuchos::null;
+    overlapping_B_.reset (nullptr);
+    overlapping_Y_.reset (nullptr);
+    R_.reset (nullptr);
+    C_.reset (nullptr);
     DistributedImporter_ = Teuchos::null;
 
     Matrix_ = A;
@@ -1726,3 +1576,4 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   template class Ifpack2::AdditiveSchwarz< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_ADDITIVESCHWARZ_DECL_HPP
+

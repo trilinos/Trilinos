@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     conic.checkGradient( *x, *d, true, *outStream );
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try

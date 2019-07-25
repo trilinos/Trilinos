@@ -58,7 +58,6 @@
 //#include <fenv.h>
 
 #include "ROL_TpetraMultiVector.hpp"
-#include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -213,16 +212,11 @@ int main(int argc, char *argv[]) {
     pdecon->outputTpetraVector(u_ptr,"state_uncontrolled.txt");
 
     bool useFullSpace = parlist->sublist("Problem").get("Full space",false);
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
     if ( useFullSpace ) {
       std::string step = parlist->sublist("Step").get("Type", "Composite Step");
       ROL::EStep els = ROL::StringToEStep(step);
       switch( els ) {
-        case ROL::STEP_COMPOSITESTEP: {
-          algo = ROL::makePtr<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
-          algo->run(x,*rp,*obj,*con,true,*outStream);
-          break; 
-        }
+        case ROL::STEP_COMPOSITESTEP:
         case ROL::STEP_FLETCHER: {
           ROL::OptimizationProblem<RealT> optProb(obj, makePtrFromRef(x), con, rp);
           ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);
@@ -236,8 +230,10 @@ int main(int argc, char *argv[]) {
       }
     }
     else {
-      algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
-      algo->run(*zp,*robj,true,*outStream);
+      parlist->sublist("Step").set("Type", "Trust Region");
+      ROL::OptimizationProblem<RealT> optProb(robj, zp);
+      ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);
+      optSolver.solve(*outStream);
       std::vector<RealT> param;
       stateStore->get(*up,param);
     }
@@ -259,7 +255,7 @@ int main(int argc, char *argv[]) {
     RealT val = obj0->value(*up,*zp,tol);
     *outStream << "Vorticity Value: " << val << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

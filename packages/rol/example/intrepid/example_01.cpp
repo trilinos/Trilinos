@@ -195,13 +195,17 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist.sublist("Status Test").set("Iteration Limit",100);
-    Algorithm<RealT> algo(stepname, parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::CompositeStep<RealT>>(parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     // Run algorithm.
     algo.run(uz,g,l,c,*obj,*con,true,*outStream);
 
   } 
-  catch ( std::logic_error err ) {
+  catch ( std::logic_error& err ) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

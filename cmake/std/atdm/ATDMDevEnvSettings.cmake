@@ -57,10 +57,6 @@ ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(CUDA_RDC OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(FPIC OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(COMPLEX OFF)
 
-# ToDo: Remove this option and hard-code to ON once issues are resolved.  See
-# #4915.
-ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(NO_GLOBAL_INT OFF)
-
 IF (ATDM_USE_PTHREADS)
   MESSAGE(FATAL_ERROR "Error, the Kokkos Pthreads backend is no longer supported!"
     "  Please unset env var ATDM_CONFIG_USE_PTHREADS!")
@@ -285,12 +281,10 @@ ATDM_SET_CACHE(Phalanx_KOKKOS_DEVICE_TYPE "${ATDM_NODE_TYPE}" CACHE STRING)
 ATDM_SET_CACHE(Phalanx_SHOW_DEPRECATED_WARNINGS OFF CACHE BOOL)
 ATDM_SET_CACHE(Tpetra_INST_CUDA "${ATDM_USE_CUDA}" CACHE BOOL)
 ATDM_SET_CACHE(Tpetra_INST_SERIAL "${ATDM_INST_SERIAL}" CACHE BOOL)
-IF (ATDM_NO_GLOBAL_INT)
-  ATDM_SET_CACHE(Tpetra_INST_INT_INT OFF CACHE BOOL)
-  ATDM_SET_CACHE(Xpetra_ENABLE_Epetra OFF CACHE BOOL)
-  ATDM_SET_CACHE(MueLu_ENABLE_Epetra OFF CACHE BOOL)
-  ATDM_SET_CACHE(Piro_ENABLE_MueLu OFF CACHE BOOL)
-ENDIF()
+ATDM_SET_CACHE(Tpetra_INST_INT_INT OFF CACHE BOOL)
+ATDM_SET_CACHE(Xpetra_ENABLE_Epetra OFF CACHE BOOL)
+ATDM_SET_CACHE(MueLu_ENABLE_Epetra OFF CACHE BOOL)
+ATDM_SET_CACHE(Piro_ENABLE_MueLu OFF CACHE BOOL)
 IF (ATDM_USE_CUDA)
   ATDM_SET_CACHE(Sacado_ENABLE_HIERARCHICAL_DFAD ON CACHE BOOL)
 ENDIF()
@@ -442,6 +436,16 @@ ATDM_SET_ENABLE(Zoltan2_XpetraEpetraMatrix_MPI_4_DISABLE ON)
 # instantiation (see #5412)
 ATDM_SET_ENABLE(Piro_ThyraSolver_EXE_DISABLE ON)
 ATDM_SET_ENABLE(Piro_ThyraSolver_MPI_4_DISABLE ON)
+
+# Disable Piro_AnalysisDriverTpetra exec that will not build with no global
+# int instantiation (see #5446)
+ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_EXE_DISABLE ON)
+ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_MPI_4_DISABLE ON)
+
+# Disable ROL test exec that will not buld with no global int instantiation
+# (see #5447)
+ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_EXE_DISABLE ON)
+ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_MPI_4_DISABLE ON)
 
 #
 # H) ATDM env config install hooks

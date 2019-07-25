@@ -93,6 +93,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 1
 rap: triple product = 0   [default]
@@ -226,6 +227,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 1
 rap: triple product = 0   [default]
@@ -341,6 +343,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 1
 rap: triple product = 0   [default]
@@ -397,6 +400,7 @@ Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
 hybrid aggregation = 0   [default]
+interface aggregation = 0   [default]
 
 transpose: use implicit = 1
 rap: triple product = 0   [default]

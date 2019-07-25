@@ -61,15 +61,13 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Constraint_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_CompositeConstraint_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../../TOOLS/pdeconstraint.hpp"
@@ -89,9 +87,10 @@ template<class Real>
 void setUpAndSolve(ROL::OptimizationProblem<Real> &opt,
                    Teuchos::ParameterList &parlist,
                    std::ostream &outStream) {
-  ROL::Algorithm<RealT> algo("Trust Region",parlist,false);
+  parlist.sublist("Step").set("Type","Trust Region");
+  ROL::OptimizationSolver<RealT> solver(opt,parlist);
   Teuchos::Time timer("Optimization Time", true);
-  algo.run(opt,true,outStream);
+  solver.solve(*outStream);
   timer.stop();
   outStream << "Total optimization time = " << timer.totalElapsedTime() << " seconds." << std::endl;
 }
@@ -428,7 +427,7 @@ int main(int argc, char *argv[]) {
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

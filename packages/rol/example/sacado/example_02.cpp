@@ -166,7 +166,11 @@ int main(int argc, char **argv)
     // Define algorithm.
     std::string paramfile = "parameters.xml";
     auto parlist = ROL::getParametersFromXmlFile(paramfile);
-    ROL::Algorithm<RealT> algo("Composite Step", *parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     // Run algorithm.
     vl.zero();
@@ -194,7 +198,7 @@ int main(int argc, char **argv)
       errorFlag += 1;
     }
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

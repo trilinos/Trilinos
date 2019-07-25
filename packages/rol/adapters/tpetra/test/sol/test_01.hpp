@@ -56,6 +56,9 @@
 #include "ROL_Types.hpp"
 // ROL algorithmic information
 #include "ROL_Algorithm.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
 // ROL vectors
 #include "ROL_StdVector.hpp"
 // ROL objective functions and constraints
