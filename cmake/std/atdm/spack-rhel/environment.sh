@@ -156,7 +156,7 @@ export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NET
 # NOTE: SEMS does not provide the correct *.so files for NetCDF so we can't
 # use them in a shared lib build :-(
 
-export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.so;${BINUTILS_ROOT}/lib64/libiberty.a;${GETTEXT_ROOT}/lib/libintl.a;${LIBICONV_ROOT}/lib/libiconv.so"
+export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.so;${BINUTILS_ROOT}/lib64/libiberty.a;${GETTEXT_ROOT}/lib/libintl.so;${LIBICONV_ROOT}/lib/libiconv.so"
 # NOTE: Above, we have to explicitly set the libs to use libbdf.so instead of
 # libbdf.a because the former works and the latter does not and TriBITS is set
 # up to only find static libs by default!
