@@ -9,6 +9,8 @@
 #ifndef percept_YamlUtils_hpp
 #define percept_YamlUtils_hpp
 
+#if HAVE_YAML
+
 #include <sstream>
 #include <fstream>
 #include <map>
@@ -99,4 +101,7 @@
 
   }
 
+#endif // HAVE_YAML
+
 #endif
+

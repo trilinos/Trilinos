@@ -13,7 +13,9 @@
 #include <vector>
 
 #include <percept/PerceptMesh.hpp>
+#if HAVE_YAML
 #include <percept/YamlUtils.hpp>
+#endif
 
 /** Computes Gregory patch control points for G1 continuity for a set of
  * surface sets - each surface set consists of surfaces to be considered
@@ -116,8 +118,10 @@ protected:
 
   bool in_surface_sets(const std::string& partToTest);
 
+#if HAVE_YAML
   void parse(const YAML::Node& node);
   void emit(const YAML::Node& node);
+#endif
 
   void
   fitCubics(stk::mesh::PartVector& parts);
@@ -259,7 +263,9 @@ private:
   AngleMap m_angleMap;
   double m_globalAngleCriterion;
   bool m_debug;
+#if HAVE_YAML
   YAML::Node m_node, m_node1;
+#endif
 
 public:
   FGP_QA m_QA;

@@ -7383,6 +7383,7 @@
     }
 #endif
 
+#if HAVE_YAML
     bool PerceptMesh::parse_property_map_string(const YAML::Node& node)
     {
       YAML::NodeType::value type = node.Type();
@@ -7406,9 +7407,11 @@
         }
       return true;
     }
+#endif
 
     void PerceptMesh::parse_property_map_string(std::string str)
     {
+#if HAVE_YAML
       Util::replace(str, ":", ": ");
       std::stringstream ss(str);
       YAML::Node node, node1;
@@ -7438,6 +7441,7 @@
         std::cout << "PerceptMesh::parse_property_map_string, YAML parsing error= " << e.what()
                   << " input= " << str << "\n Check your --property_map option.";
       }
+#endif
     }
 
     void PerceptMesh::nodal_field_axpby(double alpha, typename StructuredGrid::MTField* field_x, double beta, typename StructuredGrid::MTField* field_y)

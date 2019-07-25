@@ -16,7 +16,9 @@
 #include <map>
 #include <set>
 
+#if HAVE_YAML
 #include <percept/YamlUtils.hpp>
+#endif
 
   namespace percept {
 
@@ -139,7 +141,8 @@
       }
 
       void create(Histograms<T>& histograms)
-      {
+      { 
+#if HAVE_YAML
         std::stringstream ss(m_root_string);
 
         //YAML::Parser parser(ss);
@@ -171,10 +174,12 @@
         catch(YAML::ParserException& e) {
           std::cout << e.what() << " input= " << m_root_string << "\n";
         }
+#endif
       }
 
     private:
 
+#if HAVE_YAML
       void parse(const YAML::Node& node, Histograms<T>& histograms)
       {
         set_if_present(node, "time", histograms.m_database_time, double(-1.0));
@@ -216,7 +221,7 @@
             }
         }
       }
-
+#endif
 
     };
 

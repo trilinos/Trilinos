@@ -12,7 +12,5 @@ cmake \
 -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
 -DTrilinos_ENABLE_Intrepid=ON \
 -DTrilinos_ENABLE_Percept=ON \
--DTPL_ENABLE_yaml-cpp=ON \
--D yaml-cpp_INCLUDE_DIRS:FILEPATH="$SEMS_YAML_CPP_INCLUDE_PATH" \
--D yaml-cpp_LIBRARY_DIRS:FILEPATH="$SEMS_YAML_CPP_LIBRARY_PATH" \
+-DTPL_ENABLE_yaml-cpp=OFF \
 $TRILINOS_DIR

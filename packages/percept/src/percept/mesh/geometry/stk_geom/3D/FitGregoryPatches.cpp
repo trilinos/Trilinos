@@ -1853,6 +1853,7 @@ namespace percept {
         throw std::runtime_error("couldn't open file: "+file_name);
       }
 
+#if HAVE_YAML
     try {
       m_node = YAML::Load(file);
       parse(m_node);
@@ -1862,8 +1863,10 @@ namespace percept {
     catch(YAML::ParserException& e) {
       std::cout << e.what() << " input= " << file_name << "\n";
     }
+#endif
   }
 
+#if HAVE_YAML
   void FitGregoryPatches::emit(const YAML::Node& node)
     {
       if (m_eMesh.get_rank() != 0) return;
@@ -1943,6 +1946,7 @@ namespace percept {
 #undef SIP
 #undef SIP2
     }
+#endif
 
   static double angle_deg(double *n0, double *n1)
   {

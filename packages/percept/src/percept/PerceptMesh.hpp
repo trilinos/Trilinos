@@ -90,7 +90,9 @@
 
 #include <percept/FieldTypes.hpp>
 
+#if HAVE_YAML
 #include <percept/YamlUtils.hpp>
+#endif
 
 // if this is set, use stk_mesh relations to hold parent/child information, else use special data structures for this
 #define PERCEPT_USE_FAMILY_TREE 1
@@ -1064,7 +1066,9 @@ private:
 
       void set_read_properties();
 
+#if HAVE_YAML
       bool parse_property_map_string(const YAML::Node& node);
+#endif
 
       void setup_geometry_parts(const std::string& geometry_file_name);
 

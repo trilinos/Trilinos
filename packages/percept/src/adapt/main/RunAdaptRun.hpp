@@ -18,7 +18,9 @@
 #include <map>
 #include <set>
 
+#if HAVE_YAML
 #include <percept/YamlUtils.hpp>
+#endif
 #include <percept/PerceptUtils.hpp>
 #include <adapt/markers/MarkerUsingErrIndFraction.hpp>
 #include <adapt/markers/MarkerPhysicallyBased.hpp>
@@ -163,7 +165,9 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
     std::string m_extra_output;
     std::string m_debug_error_indicator_string_function;
 
+#if HAVE_YAML
     YAML::Node m_node, m_node1, m_node_ptr;
+#endif
 
     MarkerInfo *m_marker_info;
     Marker *m_marker;
@@ -215,6 +219,7 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
 
     void create()
     {
+#if HAVE_YAML
       std::stringstream ss(m_root_string);
 
       //YAML::Parser parser(ss);
@@ -254,10 +259,12 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
       catch(YAML::ParserException& e) {
         std::cout << e.what() << " input= " << m_root_string << "\n";
       }
+#endif
     }
 
     void create_marker(stk::mesh::Selector *wedge_selector=0)
     {
+#if HAVE_YAML
       const YAML::Node y_marker = m_node_ptr["marker"];
 
       if (y_marker)
@@ -265,8 +272,10 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
           set_if_present(y_marker, "type", m_marker_type, std::string("fraction"));
           create_marker(m_marker_type, y_marker, wedge_selector);
         }
+#endif
     }
 
+#if HAVE_YAML
     void emit(const YAML::Node& node)
     {
       if (m_emit_file.length())
@@ -277,10 +286,11 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
               YamlUtils::emit(fout, node);
             }
         }
-
     }
+#endif
   private:
 
+#if HAVE_YAML
     void create_marker(std::string type, const YAML::Node& node, stk::mesh::Selector *wedge_selector)
     {
       m_marker_info = new MarkerInfo();
@@ -367,11 +377,12 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
       }
       if (m_debug && m_eMesh.get_rank()==0) std::cout << "RunAdaptRunInfo::create_marker type= " << type << " m_marker= " << m_marker << std::endl;
     }
-
+#endif
     //--RAR_info="{error_indicator_field: myError, marker: {type: fraction, refine_fraction: 0.2, unrefine_fraction: 0.2}, max_number_elements_fraction: 0.2, max_refinement_level: 3, extra_output: yes }"
     //--- special wedge refinement: { wedge_boundary_layer_special_refinement: {activate: yes, enable_special_patterns: false, allow_unrefine: true, blocks: [block_2, block_54] } }
     //--- rebalance: { do_rebalance: true }
     //--- bounding_box: { type: cylinder, radius: 1.0, start: [0.,0.,0.], end: [1.,0.,0.]}
+#if HAVE_YAML
     void parse(const YAML::Node& node)
     {
 #define SIP(a, Default) do { set_if_present(node, #a, m_ ## a, Default); \
@@ -443,6 +454,7 @@ static void copy_error_indicator(PerceptMesh& eMesh_no_ft,PerceptMesh& eMesh,
       // histograms.m_file_root = file_root;
 #undef SIP
     }
+#endif
 
   public:
 
