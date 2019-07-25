@@ -139,7 +139,7 @@ export HWLOC_LIBS=-lhwloc
 export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib64;-llapack"
 export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib64;-lblas"
 
-export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a;-ldl"
+export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.so;-ldl"
 #echo ATDM_CONFIG_HDF5_LIBS=$ATDM_CONFIG_HDF5_LIBS
 
 export PNETCDF_ROOT=${PARALLEL_NETCDF_ROOT}
