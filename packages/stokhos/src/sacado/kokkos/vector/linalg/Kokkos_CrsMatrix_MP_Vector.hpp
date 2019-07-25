@@ -88,7 +88,7 @@ class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                                            MatrixDevice,
                                            MatrixMemory,
                                            MatrixSize>,
-                  Kokkos::View< Sacado::MP::Vector<InputStorage>*,
+                  Kokkos::View< const Sacado::MP::Vector<InputStorage>*,
                                 InputP... >,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
                                 OutputP... >,
@@ -115,7 +115,7 @@ public:
                                    MatrixDevice,
                                    MatrixMemory,
                                    MatrixSize > matrix_type;
-  typedef Kokkos::View< InputVectorValue*,
+  typedef Kokkos::View< const InputVectorValue*,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         OutputP... > output_vector_type;
@@ -182,7 +182,7 @@ class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                                            MatrixDevice,
                                            MatrixMemory,
                                            MatrixSize >,
-                  Kokkos::View< Sacado::MP::Vector<InputStorage>**,
+                  Kokkos::View< const Sacado::MP::Vector<InputStorage>**,
                                 InputP... >,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>**,
                                 OutputP... >,
@@ -208,7 +208,7 @@ public:
                                    MatrixMemory,
                                    MatrixSize > matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
-  typedef Kokkos::View< InputVectorValue**,
+  typedef Kokkos::View< const InputVectorValue**,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue**,
                         OutputP... > output_vector_type;
@@ -283,7 +283,7 @@ class Multiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                                          MatrixDevice,
                                          MatrixMemory,
                                          MatrixSize >,
-                Kokkos::View< Sacado::MP::Vector<InputStorage>*,
+                Kokkos::View< const Sacado::MP::Vector<InputStorage>*,
                               InputP... >,
                 Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
                               OutputP... >
@@ -303,7 +303,7 @@ public:
                                    MatrixMemory,
                                    MatrixSize > matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
-  typedef Kokkos::View< InputVectorValue*,
+  typedef Kokkos::View< const InputVectorValue*,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         OutputP... > output_vector_type;
@@ -340,7 +340,7 @@ class Multiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                                          MatrixDevice,
                                          MatrixMemory,
                                          MatrixSize >,
-                Kokkos::View< Sacado::MP::Vector<InputStorage>**,
+                Kokkos::View< const Sacado::MP::Vector<InputStorage>**,
                               InputP... >,
                 Kokkos::View< Sacado::MP::Vector<OutputStorage>**,
                               OutputP... >
@@ -360,7 +360,7 @@ public:
                                    MatrixMemory,
                                    MatrixSize > matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
-  typedef Kokkos::View< InputVectorValue**,
+  typedef Kokkos::View< const InputVectorValue**,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue**,
                         OutputP... > output_vector_type;
@@ -421,14 +421,16 @@ spmv(
       // y = A*x
       typedef Stokhos::details::MultiplyAssign UpdateType;
       typedef Stokhos::details::MPMultiply<MatrixType,
-        InputVectorType,OutputVectorType,UpdateType> multiply_type;
+        typename InputVectorType::const_type, OutputVectorType,
+        UpdateType> multiply_type;
       multiply_type::apply( A, x, y, UpdateType() );
     }
     else {
       // y = a*A*x
       typedef Stokhos::details::MultiplyScaledAssign<value_type> UpdateType;
       typedef Stokhos::details::MPMultiply<MatrixType,
-        InputVectorType,OutputVectorType,UpdateType> multiply_type;
+        typename InputVectorType::const_type, OutputVectorType,
+        UpdateType> multiply_type;
       multiply_type::apply( A, x, y, UpdateType(aa) );
     }
   }
@@ -437,14 +439,16 @@ spmv(
       // y += A*x
       typedef Stokhos::details::MultiplyUpdate UpdateType;
       typedef Stokhos::details::MPMultiply<MatrixType,
-        InputVectorType,OutputVectorType,UpdateType> multiply_type;
+        typename InputVectorType::const_type, OutputVectorType,
+        UpdateType> multiply_type;
       multiply_type::apply( A, x, y, UpdateType() );
     }
     else {
       // y += a*A*x
       typedef Stokhos::details::MultiplyScaledUpdate<value_type> UpdateType;
       typedef Stokhos::details::MPMultiply<MatrixType,
-        InputVectorType,OutputVectorType,UpdateType> multiply_type;
+        typename InputVectorType::const_type, OutputVectorType,
+        UpdateType> multiply_type;
       multiply_type::apply( A, x, y, UpdateType(aa) );
     }
   }
@@ -452,7 +456,8 @@ spmv(
     // y = a*A*x + b*y
     typedef Stokhos::details::MultiplyScaledUpdate2<value_type> UpdateType;
     typedef Stokhos::details::MPMultiply<MatrixType,
-        InputVectorType,OutputVectorType,UpdateType> multiply_type;
+      typename InputVectorType::const_type, OutputVectorType,
+      UpdateType> multiply_type;
     multiply_type::apply( A, x, y, UpdateType(aa,bb) );
   }
 }
@@ -503,14 +508,16 @@ spmv(
         // y = A*x
         typedef Stokhos::details::MultiplyAssign UpdateType;
         typedef Stokhos::details::MPMultiply<MatrixType,
-          InputVectorType,OutputVectorType,UpdateType> multiply_type;
+          typename InputVectorType::const_type, OutputVectorType,
+          UpdateType> multiply_type;
         multiply_type::apply( A, x, y, UpdateType() );
       }
       else {
         // y = a*A*x
         typedef Stokhos::details::MultiplyScaledAssign<value_type> UpdateType;
         typedef Stokhos::details::MPMultiply<MatrixType,
-          InputVectorType,OutputVectorType,UpdateType> multiply_type;
+          typename InputVectorType::const_type, OutputVectorType,
+          UpdateType> multiply_type;
         multiply_type::apply( A, x, y, UpdateType(aa) );
       }
     }
@@ -519,14 +526,16 @@ spmv(
         // y += A*x
         typedef Stokhos::details::MultiplyUpdate UpdateType;
         typedef Stokhos::details::MPMultiply<MatrixType,
-          InputVectorType,OutputVectorType,UpdateType> multiply_type;
+          typename InputVectorType::const_type, OutputVectorType,
+          UpdateType> multiply_type;
         multiply_type::apply( A, x, y, UpdateType() );
       }
       else {
         // y += a*A*x
         typedef Stokhos::details::MultiplyScaledUpdate<value_type> UpdateType;
         typedef Stokhos::details::MPMultiply<MatrixType,
-          InputVectorType,OutputVectorType,UpdateType> multiply_type;
+          typename InputVectorType::const_type, OutputVectorType,
+          UpdateType> multiply_type;
         multiply_type::apply( A, x, y, UpdateType(aa) );
       }
     }
@@ -534,7 +543,8 @@ spmv(
       // y = a*A*x + b*y
       typedef Stokhos::details::MultiplyScaledUpdate2<value_type> UpdateType;
       typedef Stokhos::details::MPMultiply<MatrixType,
-        InputVectorType,OutputVectorType,UpdateType> multiply_type;
+        typename InputVectorType::const_type, OutputVectorType,
+        UpdateType> multiply_type;
       multiply_type::apply( A, x, y, UpdateType(aa,bb) );
     }
   }
