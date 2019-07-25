@@ -4,6 +4,8 @@ This includes Tpetra::BlockCrs performance tests including
  * Trilinos configurations for different types of architectures e.g., Intel and NVIDIA
  * MPI/OpenMP/Cuda setup
  * Weak scale results on Sandia testbed machines upto 16 nodes.
+For a comparison purpose, two plots are included to explain the difference
+between major changes.
 
 ## Building Performance Test
 
@@ -101,6 +103,7 @@ mpirun --map-by ppr:1:node:pe=${OMP_NUM_THREADS} --bind-to core --report-binding
 ```
 
 ![Blake-SingleNode](blake-blockcrs-64x64x64x5-sha-302420bc.png)
+![Blake-SingleNode](blake-blockcrs-64x64x64x5-sha-44e225.png)
 
 ### White
 
@@ -122,5 +125,6 @@ mpirun --map-by ppr:1:node --bind-to core --report-bindings \
 ```
 
 ![White-SingleNode](white-blockcrs-64x64x64x5-sha-302420bc.png)
+![White-SingleNode](white-blockcrs-64x64x64x5-sha-44e225.png)
 
 
