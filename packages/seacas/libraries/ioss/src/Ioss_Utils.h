@@ -201,6 +201,9 @@ namespace Ioss {
      */
     inline static int number_width(const size_t number, bool use_commas = false)
     {
+      if (number == 0) {
+        return 1;
+      }
       int width = std::floor(std::log10(number)) + 1;
       if (use_commas) {
         width += (width / 3);

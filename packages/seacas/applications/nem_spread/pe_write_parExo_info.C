@@ -52,7 +52,7 @@
 template <typename INT> struct ELEM_COMM_MAP;
 template <typename INT> struct NODE_COMM_MAP;
 
-#if defined(__GNUC__) && __GNUC__ >= 7
+#if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
 #define FALL_THROUGH [[gnu::fallthrough]]
 #else
 #define FALL_THROUGH ((void)0)
