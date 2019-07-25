@@ -90,14 +90,8 @@ class MultiVectorFactory
 
 
 
-
-
-
-#if 1 // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI - Linker errors if we include the specializations but testing fails
-
 // we need the Epetra specialization only if Epetra is enabled
 #if defined(HAVE_XPETRA_EPETRA)
-
 
 #if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 
@@ -160,11 +154,8 @@ class MultiVectorFactory<int, int, int, EpetraNode>
 };
 
 
-
-
 // we need the Epetra specialization only if Epetra is enabled
 #if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
-
 
 
 template <>
@@ -194,7 +185,6 @@ public:
         size_t NumVectors);
 
 };
-
 
 
 template <>
@@ -227,21 +217,11 @@ public:
 };
 
 
-
 #endif      // END !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
-
 
 #endif      // END !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 
-
 #endif      // END HAVE_XPETRA_EPETRA
-
-
-#endif      // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI - removing linker errors...
-
-
-
-
 
 
 }      // namespace Xpetra

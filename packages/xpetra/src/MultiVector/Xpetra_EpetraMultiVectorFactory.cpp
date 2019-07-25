@@ -50,19 +50,17 @@
 namespace Xpetra {
 
 
-#if 1 // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI - Linker errors if we include the specializations but testing fails
-
 
 // we need the Epetra specialization only if Epetra is enabled
 #if defined(HAVE_XPETRA_EPETRA)
-
 
 #if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 
 
 MultiVectorFactory<double, int, int, EpetraNode>::
 MultiVectorFactory()
-{}
+{
+}
 
 
 RCP<MultiVector<double, int, int, EpetraNode>>
@@ -71,22 +69,21 @@ Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>& map, size_t NumVector
 {
     using BlockedMultiVector = Xpetra::BlockedMultiVector<double, int, int, EpetraNode>
 
-    XPETRA_MONITOR("MultiVectorFactory::Build");
+      XPETRA_MONITOR("MultiVectorFactory::Build");
 
-    RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap =
-        Teuchos::rcp_dynamic_cast<const BlockedMap<int, int, EpetraNode>>(map);
+    RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<int, int, EpetraNode>>(map);
 
     if(!bmap.is_null())
     {
         return rcp(new BlockedMultiVector(bmap, NumVectors, zeroOut));
     }
 
-    #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraMultiVector<double, int, int, EpetraNode>(map, NumVectors, zeroOut));
     }
-    #endif
+#endif
 
     if(map->lib() == UseEpetra)
     {
@@ -99,18 +96,18 @@ Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>& map, size_t NumVector
 
 Teuchos::RCP<MultiVector<double, int, int, EpetraNode>>
 MultiVectorFactory<double, int, int, EpetraNode>::
-Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>& map,
+Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>&              map,
       const Teuchos::ArrayView<const Teuchos::ArrayView<const double>>& ArrayOfPtrs,
       size_t                                                            NumVectors)
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-    #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraMultiVector<double, int, int, EpetraNode>(map, ArrayOfPtrs, NumVectors));
     }
-    #endif
+#endif
 
     if(map->lib() == UseEpetra)
     {
@@ -123,7 +120,8 @@ Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>& map,
 
 MultiVectorFactory<int, int, int, EpetraNode>::
 MultiVectorFactory()
-{}
+{
+}
 
 
 RCP<MultiVector<int, int, int, EpetraNode>>
@@ -132,20 +130,19 @@ Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>& map, size_t NumVector
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-    RCP<const BlockedMap<int, int, EpetraNode>> bmap =
-        Teuchos::rcp_dynamic_cast<const BlockedMap<int, int, EpetraNode>>(map);
+    RCP<const BlockedMap<int, int, EpetraNode>> bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<int, int, EpetraNode>>(map);
 
     if(!bmap.is_null())
     {
         return rcp(new BlockedMultiVector<int, int, int, EpetraNode>(bmap, NumVectors, zeroOut));
     }
 
-    #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraMultiVector<int, int, int, EpetraNode>(map, NumVectors, zeroOut));
     }
-    #endif
+#endif
 
     if(map->lib() == UseEpetra)
     {
@@ -158,18 +155,18 @@ Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>& map, size_t NumVector
 
 Teuchos::RCP<MultiVector<int, int, int, EpetraNode>>
 MultiVectorFactory<int, int, int, EpetraNode>::
-Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>& map,
+Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>&           map,
       const Teuchos::ArrayView<const Teuchos::ArrayView<const int>>& ArrayOfPtrs,
       size_t                                                         NumVectors)
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-    #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraMultiVector<int, int, int, EpetraNode>(map, ArrayOfPtrs, NumVectors));
     }
-    #endif
+#endif
 
     if(map->lib() == UseEpetra)
     {
@@ -186,31 +183,30 @@ Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>& map,
 
 
 
-MultiVectorFactory<double, int, long long, EpetraNode>::
-MultiVectorFactory()
-{}
+MultiVectorFactory<double, int, long long, EpetraNode>::MultiVectorFactory() {}
 
 
 RCP<MultiVector<double, int, long long, EpetraNode>>
 MultiVectorFactory<double, int, long long, EpetraNode>::
-Build(const Teuchos::RCP<const Map<int, long long, EpetraNode>>& map, size_t NumVectors, bool zeroOut)
+Build(const Teuchos::RCP<const Map<int, long long, EpetraNode>>& map,
+      size_t                                                     NumVectors,
+      bool                                                       zeroOut)
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-    RCP<const BlockedMap<int, long long, EpetraNode>> bmap =
-        Teuchos::rcp_dynamic_cast<const BlockedMap<int, long long, EpetraNode>>(map);
+    RCP<const BlockedMap<int, long long, EpetraNode>> bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<int, long long, EpetraNode>>(map);
 
     if(!bmap.is_null())
     {
         return rcp(new BlockedMultiVector<double, int, long long, EpetraNode>(bmap, NumVectors, zeroOut));
     }
 
-    #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraMultiVector<double, int, long long, EpetraNode>(map, NumVectors, zeroOut));
     }
-    #endif
+#endif
 
     if(map->lib() == UseEpetra)
     {
@@ -223,18 +219,18 @@ Build(const Teuchos::RCP<const Map<int, long long, EpetraNode>>& map, size_t Num
 
 Teuchos::RCP<MultiVector<double, int, long long, EpetraNode>>
 MultiVectorFactory<double, int, long long, EpetraNode>::
-Build(const Teuchos::RCP<const Map<int, long long, EpetraNode>>& map,
-        const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar>>& ArrayOfPtrs,
-        size_t                                                            NumVectors)
+Build(const Teuchos::RCP<const Map<int, long long, EpetraNode>>&        map,
+      const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar>>& ArrayOfPtrs,
+      size_t                                                            NumVectors)
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-    #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraMultiVector<double, int, long long, EpetraNode>(map, ArrayOfPtrs, NumVectors));
     }
-    #endif
+#endif
 
     if(map->lib() == UseEpetra)
     {
@@ -246,29 +242,32 @@ Build(const Teuchos::RCP<const Map<int, long long, EpetraNode>>& map,
 
 
 MultiVectorFactory<int, int, long long, EpetraNode>::
-MultiVectorFactory() {}
+MultiVectorFactory()
+{
+}
 
 
 RCP<MultiVector<int, int, long long, EpetraNode>>
 MultiVectorFactory<int, int, long long, EpetraNode>::
-Build(const Teuchos::RCP<const Map<int, long long, EpetraNode>>& map, size_t NumVectors, bool zeroOut)
+Build(const Teuchos::RCP<const Map<int, long long, EpetraNode>>& map,
+      size_t                                                     NumVectors,
+      bool                                                       zeroOut)
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-    RCP<const BlockedMap<int, long long, EpetraNode>> bmap =
-        Teuchos::rcp_dynamic_cast<const BlockedMap<int, long long, EpetraNode>>(map);
+    RCP<const BlockedMap<int, long long, EpetraNode>> bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<int, long long, EpetraNode>>(map);
 
     if(!bmap.is_null())
     {
         return rcp(new BlockedMultiVector<int, int, long long, EpetraNode>(bmap, NumVectors, zeroOut));
     }
 
-    #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraMultiVector<int, int, long long, EpetraNode>(map, NumVectors, zeroOut));
     }
-    #endif
+#endif
 
     if(map->lib() == UseEpetra)
     {
@@ -281,18 +280,18 @@ Build(const Teuchos::RCP<const Map<int, long long, EpetraNode>>& map, size_t Num
 
 Teuchos::RCP<MultiVector<int, int, long long, EpetraNode>>
 MultiVectorFactory<int, int, long long, EpetraNode>::
-Build(const Teuchos::RCP<const Map<int, long long, Node>>& map,
-        const Teuchos::ArrayView<const Teuchos::ArrayView<const int>>& ArrayOfPtrs,
-        size_t                                                         NumVectors)
+Build(const Teuchos::RCP<const Map<int, long long, Node>>&           map,
+      const Teuchos::ArrayView<const Teuchos::ArrayView<const int>>& ArrayOfPtrs,
+      size_t                                                         NumVectors)
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-    #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == UseTpetra)
     {
         return rcp(new TpetraMultiVector<int, int, long long, EpetraNode>(map, ArrayOfPtrs, NumVectors));
     }
-    #endif
+#endif
 
     if(map->lib() == UseEpetra)
     {
@@ -303,18 +302,11 @@ Build(const Teuchos::RCP<const Map<int, long long, Node>>& map,
 }
 
 
-
 #endif      // END !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
 
-
 #endif      // END !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
-
 
 #endif      // END HAVE_XPETRA_EPETRA
 
 
-#endif      // WCMCLEN - SCAFFOLDING - EXPERIMENTAL - ETI - removing linker errors...
-
-
 }      // namespace Xpetra
-

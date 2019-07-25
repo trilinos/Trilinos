@@ -59,32 +59,12 @@ BlockedVector(const Teuchos::RCP<const BlockedMap>& map, bool zeroOut)
 { }
 
 
-#if 0  // WCMCLEN: C++ flags these c'tors as ambiguous -- probably because it can't distinguish RCP<const ...> vs. RCP<not-const ...>
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-BlockedVector( Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap,
-               Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v)
-    : Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, v)
-{ }
-#endif
-
-
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 BlockedVector( Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap,
                Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v)
     : Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, v)
 { }
-
-
-#if 0  // WCMCLEN: C++ flags these c'tors as ambiguous -- probably because it can't distinguish RCP<const ...> vs. RCP<not-const ...>
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-BlockedVector( Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > mapExtractor,
-               Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v)
-    : Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mapExtractor, v)
-{ }
-#endif
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

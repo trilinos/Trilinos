@@ -55,9 +55,9 @@
 
 #include "Xpetra_BlockedMap.hpp"
 
-#include "Xpetra_MultiVectorFactory.hpp"    // WCMCLEN - EXPERIMENTAL
-#include "Xpetra_MapExtractor.hpp"          // WCMCLEN - EXPERIMENTAL
-#include "Xpetra_BlockedVector.hpp"         // WCMCLEN - EXPERIMENTAL
+#include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_MapExtractor.hpp"
+#include "Xpetra_BlockedVector.hpp"
 
 namespace Xpetra {
 
@@ -84,10 +84,12 @@ namespace Xpetra {
     typedef Node node_type;
 
   private:
+
 #undef XPETRA_BLOCKEDMULTIVECTOR_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
   public:
+
     //! @name Constructor/Destructor Methods
     //@{
 
@@ -105,7 +107,6 @@ namespace Xpetra {
     BlockedMultiVector(const Teuchos::RCP<const BlockedMap>& map, size_t NumVectors, bool zeroOut = true);
 
 
-#if 1   // WCMCLEN (EXPERIMENTAL): C++ flags these c'tors as ambiguous -- probably because it can't distinguish RCP<const ...> vs. RCP<not-const ...>
     /*!
      * Const version of constructor which accepts a const version
      * of the multi-vector
@@ -121,26 +122,6 @@ namespace Xpetra {
                        Teuchos::RCP<const MultiVector> v);
 
 
-#else
-
-
-    /*!
-     * NonConst version of constructor which accepts a const version
-     * of the multi-vector
-     *
-     * \note If you change the information in input vector v the data in the
-     *       blocked multi-vector are not affected (and vice versa). Consider
-     *       the blocked multivector to be a copy of the input multivector (not a view)
-     *
-     * \param bmap BlockedMap object containing information about the block splitting
-     * \param v MultiVector that is to be splitted into a blocked multi vector
-     */
-    BlockedMultiVector(Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node>> bmap,
-                       Teuchos::RCP<MultiVector> v);
-#endif
-
-
-#if 1  // WCMCLEN (SCAFFOLDING) C++ flags these c'tors as ambiguous -- probably because it can't distinguish RCP<const ...> vs. RCP<not-const ...>
     /*!
      * Const version of constructor which accepts a const version
      * of the multi-vector
@@ -154,25 +135,6 @@ namespace Xpetra {
      */
     BlockedMultiVector(Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>> mapExtractor,
                        Teuchos::RCP<const MultiVector> v);
-
-
-#else
-
-
-    /*!
-     * Non-const version of constructor which accepts a non-const version
-     * of the multi-vector
-     *
-     * \note If you change the information in input vector v the data in the
-     *       blocked multi-vector are not affected (and vice versa). Consider
-     *       the blocked multivector to be a copy of the input multivector (not a view)
-     *
-     * \param mapExtractor MapExtractor object containing information about the block splitting
-     * \param v MultiVector that is to be splitted into a blocked multi vector
-     */
-    BlockedMultiVector(Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>> mapExtractor,
-                       Teuchos::RCP<MultiVector> v);
-#endif
 
 
     /*!
@@ -221,8 +183,6 @@ namespace Xpetra {
 
 
     //@}
-
-
     //! @name Data Copy and View get methods
     //@{
 
@@ -244,7 +204,6 @@ namespace Xpetra {
 
 
     //@}
-
     //! @name Mathematical methods
     //@{
 
@@ -302,7 +261,6 @@ namespace Xpetra {
 
 
     //@}
-
     //! @name Attribute access functions
     //@{
 
@@ -324,7 +282,6 @@ namespace Xpetra {
 
 
     //@}
-
     //! @name Overridden from Teuchos::Describable
     //@{
 
@@ -357,9 +314,7 @@ namespace Xpetra {
 
 
     //@}
-
     //! @name Xpetra specific
-
     //@{
 
 

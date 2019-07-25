@@ -110,23 +110,6 @@ class BlockedVector
     BlockedVector(const Teuchos::RCP<const BlockedMap>& map, bool zeroOut = true);
 
 
-#if 0  // WCMCLEN: C++ flags these c'tors as ambiguous -- probably because it can't distinguish RCP<const ...> vs. RCP<not-const ...>
-    /*!
-     * Const version of constructor which accepts a const version
-     * of the vector
-     *
-     * \note If you change the information in input vector v the data in the
-     *       blocked vector are not affected (and vice versa). Consider
-     *       the blocked vector to be a copy of the input vector (not a view)
-     *
-     * \param bmap BlockedMap object containing information about the block splitting
-     * \param v Vector that is to be splitted into a blocked vector
-     */
-    BlockedVector(Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap,
-                  Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> v);
-#endif
-
-
     /*!
      * NonConst version of constructor which accepts a const version
      * of the vector
@@ -140,23 +123,6 @@ class BlockedVector
      */
     BlockedVector(Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap,
                   Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> v);
-
-
-#if 0  // WCMCLEN: C++ flags these c'tors as ambiguous -- probably because it can't distinguish RCP<const ...> vs. RCP<not-const ...>
-    /*!
-     * Const version of constructor which accepts a const version
-     * of the vector
-     *
-     * \note If you change the information in input vector v the data in the
-     *       blocked vector are not affected (and vice versa). Consider
-     *       the blocked vector to be a copy of the input vector (not a view)
-     *
-     * \param mapExtractor MapExtractor object containing information about the block splitting
-     * \param v Vector that is to be splitted into a blocked vector
-     */
-    BlockedVector(Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>> mapExtractor,
-                  Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> v);
-#endif
 
 
     /*!

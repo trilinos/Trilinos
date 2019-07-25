@@ -524,8 +524,13 @@ namespace Xpetra {
             XPETRA_TEST_FOR_EXCEPTION(
               map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "InsertVector: map_->getmap(" << block << ",false) is null");
 
-            //full->setMultiVector(block, partial, bThyraMode); // WCMCLEN - Should this be bfull instead? (ETI)
+            #if 0
+            // WCMCLEN - ETI: MultiVector::setMultiVector() doesn't exist.
+            // WCMCLEN - ETI: but BlockedMultiVector::setMultiVector() does... should this be using bfull.
+            full->setMultiVector(block, partial, bThyraMode);
+            #else
             throw std::runtime_error("Xpetra::MultiVector::setMultiVector() doesn't exist.");
+            #endif
         }
     }
 
