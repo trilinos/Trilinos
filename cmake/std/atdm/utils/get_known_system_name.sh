@@ -52,7 +52,6 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
   ATDM_HOSTNAME=waterman
   ATDM_SYSTEM_NAME=waterman
 
-
 # cts1 systems
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] \
   || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ ser[0-9]+ ]] ; then
