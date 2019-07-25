@@ -72,6 +72,10 @@
 #include "KokkosSparse_spmv.hpp"
 #endif
 
+#if defined(HAVE_MUELU_CUSPARSE)
+#include "cusparse.h"
+#endif
+
 // =========================================================================
 // Support Routines
 // =========================================================================
