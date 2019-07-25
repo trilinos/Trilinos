@@ -190,6 +190,7 @@ private:
   NOX::RowSumScaling::ENOX_WhenToUpdateScaling when_to_update_;
   Teuchos::RCP< ::Thyra::VectorBase<double> > scaling_vector_;
   Teuchos::RCP< ::Thyra::VectorBase<double> > right_scaling_vector_;
+  Teuchos::RCP< ::Thyra::VectorBase<double> > inv_right_scaling_vector_;
   bool rightScalingFirst_;
 
   bool rebuild_solver_;
