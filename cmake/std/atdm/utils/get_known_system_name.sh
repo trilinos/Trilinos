@@ -52,6 +52,7 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
   ATDM_HOSTNAME=waterman
   ATDM_SYSTEM_NAME=waterman
 
+
 # cts1 systems
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] \
   || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ ser[0-9]+ ]] ; then
@@ -69,12 +70,10 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "ghost"* ]] \
 # tlcc2 systems
 elif [[ $SNLSYSTEM == "tlcc2"* ]] ; then
   ATDM_SYSTEM_NAME=tlcc2
-  if [[ $ATDM_HOSTNAME == "chama"* ]] ; then
-    ATDM_HOSTNAME=chama
-  elif [[ $ATDM_HOSTNAME == "skybridge"* ]] ; then
-    ATDM_HOSTNAME=skybridge
-  else
+  if [[ $SNLCLUSTER == "" ]] ; then
     ATDM_HOSTNAME=$ATDM_CONFIG_REAL_HOSTNAME
+  else
+    ATDM_HOSTNAME=$SNLCLUSTER
   fi
 
 # environments available on rhel systems
