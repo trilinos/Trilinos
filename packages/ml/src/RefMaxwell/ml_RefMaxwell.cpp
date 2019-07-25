@@ -36,7 +36,14 @@ void FindLocalDiricheltLikeRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix,
   int numBCRows11 = 0, numBCRows22 = 0;  
   Teuchos::ArrayView<int> dirichletRows11 = dirichletRows11_rcp();
   Teuchos::ArrayView<int> dirichletRows22 = dirichletRows22_rcp();
-  for (int i=0; i<Matrix.NumMyRows(); i++) {
+
+  enum {IS_NORMAL=0,IS_DIRICHLET,IS_ROWSUM,IS_WEAK_ROWSUM};
+
+  // NOTE: Ignores connections across ranks
+  int Nrows = Matrix.NumMyRows();
+  Teuchos::Array<int> flaggedRows(Nrows,IS_NORMAL);
+
+  for (int i=0; i<Nrows; i++) {
     int numEntries, *cols;
     double *vals;
     double rowsum = 0.0;
@@ -53,21 +60,71 @@ void FindLocalDiricheltLikeRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix,
       if (nz == 1) {
         dirichletRows11[numBCRows11++] = i;
         dirichletRows22[numBCRows22++] = i;
+        flaggedRows[i] = IS_DIRICHLET;
+        continue;
       }
 
       // EXPERIMENTAL: Treat Special Inflow Boundaries as Dirichlet Boundaries
-      if(nz==2) {
+      if (nz==2) {
         dirichletRows11[numBCRows11++] = i;
         dirichletRows22[numBCRows22++] = i;
+        flaggedRows[i] = IS_DIRICHLET;
+        continue;
       }
       
       // EXPERIMENTAL: Flag all rows meeting the rowsum critera as Dirichlet for (1,1) block only
-      if(rowsum_threshold > 0.0 && fabs(rowsum) > fabs(diag_value)*rowsum_threshold) {
+      if (rowsum_threshold > 0.0 && fabs(rowsum) > fabs(diag_value)*rowsum_threshold) {
         dirichletRows11[numBCRows11++] = i;
+        flaggedRows[i] = IS_ROWSUM;
       }
 
     }/*end if*/
   }/*end for*/
+
+#if 0
+  printf("CMS: DirichletRows22     = ");
+  for(int i=0; i<numBCRows22; i++)
+    printf("%d ",dirichletRows22[i]);
+  printf("\nCMS: DirichletRows11     = ");
+  for(int i=0; i<numBCRows11; i++)
+    printf("%d ",dirichletRows11[i]);
+  printf("\n");
+
+
+  // If a "rowsum" criterion row has normal neighbors then it probably shouldn't be a rowsum any more
+  int numBCRows11_new = 0;
+  for(int i=0; i<numBCRows11; i++) {
+    int row = dirichletRows11[i];
+    int numEntries, *cols;
+    double *vals;
+    int ierr = Matrix.ExtractMyRowView(row,numEntries,vals,cols);
+    if(ierr == 0) {
+      bool is_still_a_rowsum = true;
+      for (int j=0; j<numEntries; j++) {
+        if (cols[j] < Nrows && flaggedRows[Matrix.LRID(Matrix.GCID(cols[j]))] == IS_NORMAL) {
+          is_still_a_rowsum = false;
+          printf("Row %d borders Col %d which is is normal... dropping\n",row,cols[j]);
+          break;
+        }
+      }
+      if(!is_still_a_rowsum) flaggedRows[row] = IS_WEAK_ROWSUM;
+      else numBCRows11_new++;
+    }
+  }
+
+  // Update the dirichletRows11
+  for(int i=0, j=0; i<numBCRows11; i++) {
+    int row = dirichletRows11[i];
+    if(flaggedRows[row] != IS_WEAK_ROWSUM)
+      dirichletRows11[j++] = row;
+  }
+  numBCRows11 = numBCRows11_new;
+
+  printf("\nCMS: DirichletRows11 new = ");
+  for(int i=0; i<numBCRows11; i++)
+    printf("%d ",dirichletRows11[i]);
+  printf("\n");
+#endif
   dirichletRows11_rcp.resize(numBCRows11);
   dirichletRows22_rcp.resize(numBCRows22);
 }/*end FindLocalDiricheltLikeRowsFromOnesAndZeros*/
