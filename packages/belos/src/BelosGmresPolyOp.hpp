@@ -208,18 +208,7 @@ namespace Belos {
       : problem_(problem_in), 
         params_(params_in),
         LP_(problem_in->getLeftPrec()), 
-        RP_(problem_in->getRightPrec()),
-        outputStream_ (Teuchos::rcp(outputStream_default_,false)),
-        polyTol_ (DefaultSolverParameters::polyTol),
-        maxDegree_ (maxDegree_default_),
-        verbosity_ (verbosity_default_),
-        randomRHS_ (randomRHS_default_),
-        label_ (label_default_),
-        polyType_ (polyType_default_),
-        orthoType_ (orthoType_default_),
-        dim_(0),
-        damp_ (damp_default_),
-        addRoots_ (addRoots_default_)
+        RP_(problem_in->getRightPrec())
     {
       setParameters( params_ );
 
@@ -233,11 +222,11 @@ namespace Belos {
       else if (polyType_ == "Gmres")
         generateGmresPoly();
       else
-        TEUCHOS_TEST_FOR_EXCEPTION(polyType_!="Arnoldi"&&polyType_!="Gmres"&&polyType_!="Roots",std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(polyType_!="Arnoldi"&&polyType_!="Gmres"&&polyType_!="Roots",std::invalid_argument,
           "Belos::GmresPolyOp: \"Polynomial Type\" must be either \"Arnoldi\", \"Gmres\", or \"Roots\".");
     }
 
-    //! Create a simple polynomial of dimension 1.
+    //! Given no ParameterList, constructor creates no polynomial and only applies the given operator.
     GmresPolyOp( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem_in )
       : problem_(problem_in)
     {
@@ -248,7 +237,7 @@ namespace Belos {
     //! Destructor.
     virtual ~GmresPolyOp() {};
     //@}
-  
+
     //! @name Parameter processing method
     //@{
     
@@ -303,9 +292,6 @@ namespace Belos {
 #endif // BELOS_TEUCHOS_TIME_MONITOR
     std::string polyUpdateLabel_;
 
-    //! Default constructor
-    GmresPolyOp() {}
-   
     typedef int OT; //Ordinal type 
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT ;
@@ -330,23 +316,23 @@ namespace Belos {
 
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
-    Teuchos::RCP<std::ostream> outputStream_;
+    Teuchos::RCP<std::ostream> outputStream_ = Teuchos::rcp(outputStream_default_,false);
  
     // Orthogonalization manager.
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
 
     // Current polynomial parameters
-    MagnitudeType polyTol_;
-    int maxDegree_;
-    int verbosity_;
-    bool randomRHS_;
-    std::string label_;
-    std::string polyType_;
-    std::string orthoType_;
-    int dim_;
-    bool damp_;
-    bool addRoots_;
-
+    MagnitudeType polyTol_ = DefaultSolverParameters::polyTol;
+    int maxDegree_ = maxDegree_default_;
+    int verbosity_ = verbosity_default_;
+    bool randomRHS_ = randomRHS_default_;
+    std::string label_ = label_default_;
+    std::string polyType_ = polyType_default_;
+    std::string orthoType_ = orthoType_default_;
+    int dim_ = 0;
+    bool damp_ = damp_default_;
+    bool addRoots_ = addRoots_default_;
+    
     // Variables for Arnoldi polynomial
     mutable Teuchos::RCP<MV> V_, wL_, wR_;
     Teuchos::SerialDenseMatrix<OT,ScalarType> H_, y_;
@@ -359,8 +345,12 @@ namespace Belos {
     // Variables for Roots polynomial:
     Teuchos::SerialDenseMatrix< OT, MagnitudeType > theta_; 
     
-    //Sorting function:
+    // Modified Leja sorting function. Takes a serial dense matrix of M harmonic Ritz values and an index
+    // of values from 0 to M. Returns the sorted values and sorted index, similar to Matlab.
     void SortModLeja(Teuchos::SerialDenseMatrix< OT, MagnitudeType > &thetaN, std::vector<int> &index) const ;
+
+    //Function determines whether added roots are needed and adds them if option is turned on.
+    void ComputeAddedRoots();
   };
   
   template <class ScalarType, class MV, class OP>
@@ -576,7 +566,7 @@ namespace Belos {
         ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( polyLabel ) );
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::invalid_argument,
           "Belos::GmresPolyOp(): Invalid orthogonalization type.");
       }
     }
@@ -615,14 +605,14 @@ namespace Belos {
     r0_.resize(1);
 
     // Orthonormalize the new V_0
-    int rank = ortho_->normalize( *V_0, Teuchos::rcp( &r0_, false ) );
+    int rank = ortho_->normalize( *V_0, Teuchos::rcpFromRef(r0_) );
     TEUCHOS_TEST_FOR_EXCEPTION(rank != 1,GmresPolyOpOrthoFailure,
       "Belos::GmresPolyOp::generateArnoldiPoly(): Failed to compute initial block of orthonormal vectors for polynomial generation.");
   
     // Set the new state and initialize the solver.
     GmresIterationState<ScalarType,MV> newstate;
     newstate.V = V_0;
-    newstate.z = Teuchos::rcp( &r0_,false );
+    newstate.z = Teuchos::rcpFromRef( r0_);
     newstate.curDim = 0;
     gmres_iter->initializeGmres(newstate);
 
@@ -668,8 +658,8 @@ namespace Belos {
           y_.values(), y_.stride() );
     }
     else{ //Generate Roots Poly
-
-    //---------Section to find Harmonic Ritz values (These are polynomial roots.)--------------
+    //Find Harmonic Ritz Values to use as polynomial roots:
+    
     //Copy of square H used to find poly roots:
     H_ = Teuchos::SerialDenseMatrix<OT,ScalarType>(Teuchos::Copy, *gmresState.H, dim_, dim_);
     //Zero out below subdiagonal of H:
@@ -691,9 +681,9 @@ namespace Belos {
     E(dim_-1,0) = SCT::one();
       
     Teuchos::SerialDenseSolver< OT, ScalarType > HSolver;
-    HSolver.setMatrix( Teuchos::rcp( &Htemp, false ) );
+    HSolver.setMatrix( Teuchos::rcpFromRef(Htemp));
     HSolver.solveWithTransposeFlag( Teuchos::CONJ_TRANS );
-    HSolver.setVectors( Teuchos::rcp( &F, false ), Teuchos::rcp( &E, false ) );
+    HSolver.setVectors( Teuchos::rcpFromRef(F), Teuchos::rcpFromRef(E));
     HSolver.factorWithEquilibration( true );
 
     //Factor matrix and solve for F = H^{-*}e_m:
@@ -740,10 +730,17 @@ namespace Belos {
       index[i] = i; 
     }
     SortModLeja(theta_,index);
-    //----End compute Harmonic Ritz Values (polynomial roots)------------
 
-    //-----------Section to add roots if needed for stability----------- 
-    
+    //Add roots if neded.
+    ComputeAddedRoots();
+
+   }
+  }
+  
+  //Function determines whether added roots are needed and adds them if option is turned on.
+  template <class ScalarType, class MV, class OP>
+  void GmresPolyOp<ScalarType, MV, OP>::ComputeAddedRoots()
+  {
     // Store theta (with cols for real and imag parts of Harmonic Ritz Vals) 
     // as one vector of complex numbers to perform arithmetic:
     std::vector<std::complex<MagnitudeType>> cmplxHRitz (dim_);
@@ -803,7 +800,7 @@ namespace Belos {
         index2[i] = i; 
       }
       SortModLeja(thetaPert,index2);
-      //Apply sorting to non-perterbed roots:
+      //Apply sorting to non-perturbed roots:
       for(int i=0; i<dim_; ++i)
       { 
         thetaPert(i,0) = theta_(index2[i],0);
@@ -811,11 +808,11 @@ namespace Belos {
       }
       theta_ = thetaPert;
 
-    } //----End root adding section------
-
-   }//End section for creating Roots poly 
+    } 
   }
 
+  // Modified Leja sorting function. Takes a serial dense matrix of M harmonic Ritz values and an index
+  // of values from 0 to M. Returns the sorted values and sorted index, similar to Matlab.
   template <class ScalarType, class MV, class OP>
   void GmresPolyOp<ScalarType, MV, OP>::SortModLeja(Teuchos::SerialDenseMatrix< OT, MagnitudeType > &thetaN, std::vector<int> &index) const 
   {
@@ -825,15 +822,15 @@ namespace Belos {
     int dimN = index.size();
     std::vector<int> newIndex(dimN);
     Teuchos::SerialDenseMatrix< OT, MagnitudeType > sorted (thetaN.numRows(), thetaN.numCols());
-    Teuchos::SerialDenseMatrix< OT, MagnitudeType > absVal (thetaN.numRows(), 1);
-    Teuchos::SerialDenseMatrix< OT, MagnitudeType > prod (thetaN.numRows(), 1);
+    Teuchos::SerialDenseVector< OT, MagnitudeType > absVal (thetaN.numRows());
+    Teuchos::SerialDenseVector< OT, MagnitudeType > prod (thetaN.numRows());
 
     //Compute all absolute values and find maximum:
     for(int i = 0; i < dimN; i++){
-      absVal(i,0) = sqrt(thetaN(i,0)*thetaN(i,0) + thetaN(i,1)*thetaN(i,1));
+      absVal(i) = hypot(thetaN(i,0), thetaN(i,1)); 
     }
     MagnitudeType * maxPointer = std::max_element(absVal.values(), (absVal.values()+dimN));
-    int maxIndex = (maxPointer- absVal.values());
+    int maxIndex = int (maxPointer- absVal.values());
 
     //Put largest abs value first in the list:
     sorted(0,0) = thetaN(maxIndex,0);
@@ -861,18 +858,18 @@ namespace Belos {
       //For each value, compute (a log of) a product of differences:
       for(int i = 0; i < dimN; i++) 
       {
-        prod(i,0) = MCT::one();
+        prod(i) = MCT::one();
         for(int k = 0; k < j; k++)
         {
           a = thetaN(i,0) - sorted(k,0);
           b = thetaN(i,1) - sorted(k,1);
-          prod(i,0) = prod(i,0) + log10(sqrt(a*a + b*b));
+          prod(i) = prod(i) + log10(sqrt(a*a + b*b));
         }
       }
       
       //Value with largest product goes in the next slot:
       MagnitudeType * maxPointer = std::max_element(prod.values(), (prod.values()+dimN));
-      int maxIndex = (maxPointer- prod.values());
+      int maxIndex = int (maxPointer- prod.values());
       sorted(j,0) = thetaN(maxIndex,0);
       sorted(j,1) = thetaN(maxIndex,1);
       newIndex[j] = index[maxIndex];
