@@ -77,29 +77,23 @@ namespace PHX {
 
     virtual void addEvaluatedField(const PHX::FieldTag& ft);
 
-    template<typename DataT,
-	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-			   Tag4,Tag5,Tag6,Tag7>& f);
+    template<typename DataT,typename...Props>
+    void addEvaluatedField(const PHX::MDField<DataT,Props...>& f);
 
-    template<typename DataT,int Rank>
-    void addEvaluatedField(const PHX::Field<DataT,Rank>& f);
+    template<typename DataT,int Rank,typename Layout>
+    void addEvaluatedField(const PHX::Field<DataT,Rank,Layout>& f);
 
-    template<typename DataT,typename... Properties>
+    template<typename DataT,typename... Props>
     void addEvaluatedField(const PHX::FieldTag& ft,
-                           const Kokkos::View<DataT,Properties...>& f);
-    
+                           const Kokkos::View<DataT,Props...>& f);
+
     virtual void addContributedField(const PHX::FieldTag& ft);
 
-    template<typename DataT,
-	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void addContributedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-                             Tag4,Tag5,Tag6,Tag7>& f);
+    template<typename DataT,typename...Props>
+    void addContributedField(const PHX::MDField<DataT,Props...>& f);
 
-    template<typename DataT,int Rank>
-    void addContributedField(const PHX::Field<DataT,Rank>& f);
+    template<typename DataT,int Rank,typename Layout>
+    void addContributedField(const PHX::Field<DataT,Rank,Layout>& f);
 
     template<typename DataT,typename... Properties>
     void addContributedField(const PHX::FieldTag& ft,
@@ -108,21 +102,15 @@ namespace PHX {
     virtual void addDependentField(const PHX::FieldTag& ft);
 
     // DEPRECATED: use new const version below
-    template<typename DataT,
-	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+    template<typename DataT,typename...Props>
     PHALANX_DEPRECATED
-    void addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
-			   Tag4,Tag5,Tag6,Tag7>& f);
+    void addDependentField(const PHX::MDField<DataT,Props...>& f);
 
-    template<typename DataT,
-	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void addDependentField(const PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,
-			   Tag4,Tag5,Tag6,Tag7>& f);
+    template<typename DataT,typename...Props>
+    void addDependentField(const PHX::MDField<const DataT,Props...>& f);
 
-    template<typename DataT,int Rank>
-    void addDependentField(const PHX::Field<const DataT,Rank>& f);
+    template<typename DataT,int Rank,typename Layout>
+    void addDependentField(const PHX::Field<const DataT,Rank,Layout>& f);
 
     /** Add dependent field using raw Kokkos::View, DataT must be const. 
 

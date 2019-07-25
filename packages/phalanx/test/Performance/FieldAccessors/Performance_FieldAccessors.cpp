@@ -47,6 +47,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Phalanx_DimTag.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -81,22 +82,14 @@
 
 */
 
-struct Point : public PHX::DimTag {
-  Point(){};
-  const char * name() const ;
-  static const Point& tag();
-};
-
-const char * Point::name() const 
-{ static const char n[] = "Point" ; return n ; }
-const Point & Point::tag() 
-{ static const Point myself ; return myself ; }
+PHX_EXTENT(P)
 
 struct SPoint : public shards::ArrayDimTag {
   SPoint(){};
   const char * name() const ;
   static const SPoint& tag();
 };
+
 const char * SPoint::name() const 
 { static const char n[] = "SPoint" ; return n ; }
 const SPoint & SPoint::tag() 
@@ -202,27 +195,27 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     double* raw_ptr_b = new double[size];
     double* raw_ptr_c = new double[size];
  
-    RCP<DataLayout> dl = rcp(new MDALayout<Point,Point,Point>(num_cells,
-							      num_ip,
-							      num_dim));
+    RCP<DataLayout> dl = rcp(new MDALayout<P,P,P>(num_cells,
+                                                  num_ip,
+                                                  num_dim));
 
     // Compiletime PHX:MDField
-    typedef MDField<double,Point,Point,Point> phx_ct_field;
+    typedef MDField<double,P,P,P> phx_ct_field;
     phx_ct_field phx_ct_a("phx_ct_a", dl);
     phx_ct_field phx_ct_b("phx_ct_a", dl);
     phx_ct_field phx_ct_c("phx_ct_a", dl);
-    phx_ct_a.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_ct_a.fieldTag()));
-    phx_ct_b.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_ct_b.fieldTag()));
-    phx_ct_c.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_ct_c.fieldTag()));
+    phx_ct_a.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_ct_a.fieldTag()));
+    phx_ct_b.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_ct_b.fieldTag()));
+    phx_ct_c.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_ct_c.fieldTag()));
 
     // Runtime PHX::MDField
     typedef MDField<double> phx_rt_field;
     phx_rt_field phx_rt_a("phx_rt_a", dl);
     phx_rt_field phx_rt_b("phx_rt_b", dl);
     phx_rt_field phx_rt_c("phx_rt_c", dl);
-    phx_rt_a.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_rt_a.fieldTag()));
-    phx_rt_b.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_rt_b.fieldTag()));
-    phx_rt_c.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(phx_rt_c.fieldTag()));
+    phx_rt_a.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_rt_a.fieldTag()));
+    phx_rt_b.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_rt_b.fieldTag()));
+    phx_rt_c.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(phx_rt_c.fieldTag()));
     
     // Kokkos View
     typedef Kokkos::View<double***,PHX::Device> kokkos_field;
