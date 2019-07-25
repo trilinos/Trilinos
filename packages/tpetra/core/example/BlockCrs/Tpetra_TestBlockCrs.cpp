@@ -412,7 +412,7 @@ int main (int argc, char *argv[])
         // since that would build the lambda for both host AND device.
         Kokkos::parallel_for
           (Kokkos::RangePolicy<host_space, LO> (0, num_owned_elements),
-           [=] (const LO row) {
+           [&] (const LO row) {
             const auto beg = rowptr_host(row);
             const auto end = rowptr_host(row+1);
             typedef typename std::remove_const<decltype (beg) >::type offset_type;
