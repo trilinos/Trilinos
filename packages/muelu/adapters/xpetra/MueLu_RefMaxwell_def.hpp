@@ -267,6 +267,30 @@ namespace MueLu {
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_) {
         BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
+
+        double rowsumTol = parameterList_.get("refmaxwell: row sum drop tol",-1.0);
+        if (rowsumTol > 0.) {
+          typedef Teuchos::ScalarTraits<Scalar> STS;
+          RCP<const Map> rowmap = SM_Matrix_->getRowMap();
+          for (LO row = 0; row < Teuchos::as<LO>(SM_Matrix_->getRowMap()->getNodeNumElements()); ++row) {
+            size_t nnz = SM_Matrix_->getNumEntriesInLocalRow(row);
+            ArrayView<const LO> indices;
+            ArrayView<const SC> vals;
+            SM_Matrix_->getLocalRowView(row, indices, vals);
+
+            SC rowsum = STS::zero();
+            SC diagval = STS::zero();
+            for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+              LO col = indices[colID];
+              if (row == col)
+                diagval = vals[colID];
+              rowsum += vals[colID];
+            }
+            if (STS::real(rowsum) > STS::magnitude(diagval) * rowsumTol)
+              BCrowsKokkos_(row) = true;
+          }
+        }
+
         BCcolsKokkos_ = Utilities_kokkos::DetectDirichletCols(*D0_Matrix_,BCrowsKokkos_);
 
         int BCrowcountLocal = 0;
@@ -293,7 +317,31 @@ namespace MueLu {
       } else
 #endif
         {
-          BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
+          BCrows_ = Teuchos::arcp_const_cast<bool>(Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true));
+
+          double rowsumTol = parameterList_.get("refmaxwell: row sum drop tol",-1.0);
+          if (rowsumTol > 0.) {
+            typedef Teuchos::ScalarTraits<Scalar> STS;
+            RCP<const Map> rowmap = SM_Matrix_->getRowMap();
+            for (LO row = 0; row < Teuchos::as<LO>(SM_Matrix_->getRowMap()->getNodeNumElements()); ++row) {
+              size_t nnz = SM_Matrix_->getNumEntriesInLocalRow(row);
+              ArrayView<const LO> indices;
+              ArrayView<const SC> vals;
+              SM_Matrix_->getLocalRowView(row, indices, vals);
+
+              SC rowsum = STS::zero();
+              SC diagval = STS::zero();
+              for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+                LO col = indices[colID];
+                if (row == col)
+                  diagval = vals[colID];
+                rowsum += vals[colID];
+              }
+              if (STS::real(rowsum) > STS::magnitude(diagval) * rowsumTol)
+                BCrows_[row] = true;
+            }
+          }
+
           BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
           int BCrowcountLocal = 0;
           for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)

@@ -399,11 +399,11 @@ namespace MueLu {
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_, Addon_Matrix_;
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-    Kokkos::View<const bool*, typename Node::device_type> BCrowsKokkos_;
+    Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_;
     Kokkos::View<const bool*, typename Node::device_type> BCcolsKokkos_;
 #endif
     int BCrowcount_, BCcolcount_;
-    Teuchos::ArrayRCP<const bool> BCrows_;
+    Teuchos::ArrayRCP<bool> BCrows_;
     Teuchos::ArrayRCP<const bool> BCcols_;
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
