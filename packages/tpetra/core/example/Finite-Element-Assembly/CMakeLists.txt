@@ -22,6 +22,7 @@ TRIBITS_ADD_EXECUTABLE(
   FEMAssembly
   SOURCES fem_assembly_main.cpp
   COMM serial mpi
+  CATEGORIES BASIC PERFORMANCE
 )
 
 TRIBITS_ADD_TEST(
