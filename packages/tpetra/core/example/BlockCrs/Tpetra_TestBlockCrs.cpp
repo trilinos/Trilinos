@@ -410,6 +410,7 @@ int main (int argc, char *argv[])
         // This MUST run on host, since it invokes a host-only method,
         // getLocalBlock.  This means we must NOT use KOKKOS_LAMBDA,
         // since that would build the lambda for both host AND device.
+
         Kokkos::parallel_for
           (Kokkos::RangePolicy<host_space, LO> (0, num_owned_elements),
            [&] (const LO row) {

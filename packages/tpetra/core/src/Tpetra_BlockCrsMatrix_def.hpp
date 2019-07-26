@@ -143,7 +143,8 @@ namespace Impl {
            class MatrixValuesType,
            class InVecType,
            class BetaCoeffType,
-           class OutVecType>
+           class OutVecType,
+           bool  IsBuiltInType>
   class BcrsApplyNoTransFunctor {
   private:
     static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
@@ -174,9 +175,7 @@ namespace Impl {
     //! Type of the (mesh) column indices in the sparse graph / matrix.
     typedef typename std::remove_const<typename GraphType::data_type>::type
     local_ordinal_type;
-    //! Use this for the Kokkos::parallel_for policy argument.
-    typedef Kokkos::TeamPolicy<typename device_type::execution_space,
-                               local_ordinal_type> policy_type;
+
     /// \brief Set the current vector / current column of the input
     ///   (multi)vector X to use.
     ///
@@ -214,9 +213,169 @@ namespace Impl {
       Y_ (Y)
     {}
 
-    template<typename MemberType>
+    // Dummy team version
     KOKKOS_INLINE_FUNCTION void
-    operator () (const MemberType& member) const
+    operator () (const typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type & member) const
+    {
+      Kokkos::abort("Tpetra::BcrsApplyNoTransFunctor:: this should not be called");
+    }
+
+    // Range Policy for non built-in types
+    KOKKOS_INLINE_FUNCTION void
+    operator () (const local_ordinal_type& lclRow) const 
+    {
+      using ::Tpetra::COPY;
+      using ::Tpetra::FILL;
+      using ::Tpetra::SCAL;
+      using ::Tpetra::GEMV;
+      using Kokkos::Details::ArithTraits;
+      // I'm not writing 'using Kokkos::make_pair;' here, because that
+      // may break builds for users who make the mistake of putting
+      // 'using namespace std;' in the global namespace.  Please don't
+      // ever do that!  But just in case you do, I'll take this
+      // precaution.
+      using Kokkos::parallel_for;
+      using Kokkos::subview;
+      typedef typename decltype (ptr_)::non_const_value_type offset_type;
+      typedef Kokkos::View<typename MatrixValuesType::const_value_type**,
+                           Kokkos::LayoutRight,
+                           device_type,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+        little_block_type;
+
+      const offset_type Y_ptBeg = lclRow * blockSize_;
+      const offset_type Y_ptEnd = Y_ptBeg + blockSize_;
+      auto Y_cur = subview (Y_, ::Kokkos::make_pair (Y_ptBeg, Y_ptEnd));
+
+      // This version of the code does not use temporary storage.
+      // Each thread writes to its own block of the target vector.
+      if (beta_ == ArithTraits<beta_coeff_type>::zero ()) {
+        FILL (Y_cur, ArithTraits<beta_coeff_type>::zero ());
+      }
+      else if (beta_ != ArithTraits<beta_coeff_type>::one ()) { // beta != 0 && beta != 1
+        SCAL (beta_, Y_cur);
+      }
+
+      if (alpha_ != ArithTraits<alpha_coeff_type>::zero ()) {
+        const offset_type blkBeg = ptr_[lclRow];
+        const offset_type blkEnd = ptr_[lclRow+1];
+        // Precompute to save integer math in the inner loop.
+        const offset_type bs2 = blockSize_ * blockSize_;
+        for (offset_type absBlkOff = blkBeg; absBlkOff < blkEnd;
+             ++absBlkOff) {
+          little_block_type A_cur (val_.data () + absBlkOff * bs2,
+                                   blockSize_, blockSize_);
+          const offset_type X_blkCol = ind_[absBlkOff];
+          const offset_type X_ptBeg = X_blkCol * blockSize_;
+          const offset_type X_ptEnd = X_ptBeg + blockSize_;
+          auto X_cur = subview (X_, ::Kokkos::make_pair (X_ptBeg, X_ptEnd));
+
+          GEMV (alpha_, A_cur, X_cur, Y_cur); // Y_cur += alpha*A_cur*X_cur
+        } // for each entry in current local block row of matrix
+      }
+    }
+
+  private:
+    alpha_coeff_type alpha_;
+    typename GraphType::row_map_type::const_type ptr_;
+    typename GraphType::entries_type::const_type ind_;
+    MatrixValuesType val_;
+    local_ordinal_type blockSize_;
+    InVecType X_;
+    beta_coeff_type beta_;
+    OutVecType Y_;
+  };
+
+  template<class AlphaCoeffType,
+           class GraphType,
+           class MatrixValuesType,
+           class InVecType,
+           class BetaCoeffType,
+           class OutVecType>
+  class BcrsApplyNoTransFunctor<AlphaCoeffType,
+                                GraphType,
+                                MatrixValuesType,
+                                InVecType,
+                                BetaCoeffType,
+                                OutVecType,
+                                true> {
+  private:
+    static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
+                   "MatrixValuesType must be a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<OutVecType>::value,
+                   "OutVecType must be a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<InVecType>::value,
+                   "InVecType must be a Kokkos::View.");
+    static_assert (std::is_same<MatrixValuesType,
+                   typename MatrixValuesType::const_type>::value,
+                   "MatrixValuesType must be a const Kokkos::View.");
+    static_assert (std::is_same<OutVecType,
+                   typename OutVecType::non_const_type>::value,
+                   "OutVecType must be a nonconst Kokkos::View.");
+    static_assert (std::is_same<InVecType, typename InVecType::const_type>::value,
+                   "InVecType must be a const Kokkos::View.");
+    static_assert (static_cast<int> (MatrixValuesType::rank) == 1,
+                   "MatrixValuesType must be a rank-1 Kokkos::View.");
+    static_assert (static_cast<int> (InVecType::rank) == 1,
+                   "InVecType must be a rank-1 Kokkos::View.");
+    static_assert (static_cast<int> (OutVecType::rank) == 1,
+                   "OutVecType must be a rank-1 Kokkos::View.");
+    typedef typename MatrixValuesType::non_const_value_type scalar_type;
+
+  public:
+    typedef typename GraphType::device_type device_type;
+
+    //! Type of the (mesh) column indices in the sparse graph / matrix.
+    typedef typename std::remove_const<typename GraphType::data_type>::type
+    local_ordinal_type;
+
+    /// \brief Set the current vector / current column of the input
+    ///   (multi)vector X to use.
+    ///
+    /// This lets us handle multiple columns by iterating over them one
+    /// column at a time, without needing to recreate the functor each
+    /// time.
+    void setX (const InVecType& X) { X_ = X; }
+
+    /// \brief Set the current vector / current column of the output
+    ///   (multi)vector Y to use.
+    ///
+    /// This lets us handle multiple columns by iterating over them one
+    /// column at a time, without needing to recreate the functor each
+    /// time.
+    void setY (const OutVecType& Y) { Y_ = Y; }
+
+    typedef typename Kokkos::ArithTraits<typename std::decay<AlphaCoeffType>::type>::val_type alpha_coeff_type;
+    typedef typename Kokkos::ArithTraits<typename std::decay<BetaCoeffType>::type>::val_type beta_coeff_type;
+
+    //! Constructor.
+    BcrsApplyNoTransFunctor (const alpha_coeff_type& alpha,
+                             const GraphType& graph,
+                             const MatrixValuesType& val,
+                             const local_ordinal_type blockSize,
+                             const InVecType& X,
+                             const beta_coeff_type& beta,
+                             const OutVecType& Y) :
+      alpha_ (alpha),
+      ptr_ (graph.row_map),
+      ind_ (graph.entries),
+      val_ (val),
+      blockSize_ (blockSize),
+      X_ (X),
+      beta_ (beta),
+      Y_ (Y)
+    {}
+
+    // dummy Range version
+    KOKKOS_INLINE_FUNCTION void
+    operator () (const local_ordinal_type& lclRow) const 
+    {
+      Kokkos::abort("Tpetra::BcrsApplyNoTransFunctor:: this should not be called");
+    }
+
+    // Team policy for built-in types
+    KOKKOS_INLINE_FUNCTION void
+    operator () (const typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type & member) const
     {
       const local_ordinal_type lclRow = member.league_rank();
 
@@ -281,6 +440,9 @@ namespace Impl {
                 Y_cur(k0) += alpha_*val;
 #else
                 // cuda space team size can be larger than 1
+                // atomic is not allowed for sacado type;
+                // thus this needs to be specialized or 
+                // sacado atomic should be supported.
                 Kokkos::atomic_add(&Y_cur(k0), alpha_*val);
 #endif
               });
@@ -298,6 +460,7 @@ namespace Impl {
     beta_coeff_type beta_;
     OutVecType Y_;
   };
+
 
   template<class AlphaCoeffType,
            class GraphType,
@@ -328,12 +491,15 @@ namespace Impl {
     static_assert (static_cast<int> (InMultiVecType::rank) == 2,
                    "InMultiVecType must be a rank-2 Kokkos::View.");
 
+    typedef typename GraphType::device_type::execution_space execution_space;
     typedef typename MatrixValuesType::const_type matrix_values_type;
     typedef typename OutMultiVecType::non_const_type out_multivec_type;
     typedef typename InMultiVecType::const_type in_multivec_type;
     typedef typename Kokkos::ArithTraits<typename std::decay<AlphaCoeffType>::type>::val_type alpha_type;
     typedef typename Kokkos::ArithTraits<typename std::decay<BetaCoeffType>::type>::val_type beta_type;
     typedef typename std::remove_const<typename GraphType::data_type>::type LO;
+    
+    constexpr bool is_builtin_type_enabled = std::is_arithmetic<typename InMultiVecType::non_const_value_type>::value;
 
     const LO numLocalMeshRows = graph.row_map.extent (0) == 0 ?
       static_cast<LO> (0) :
@@ -355,44 +521,57 @@ namespace Impl {
     typedef decltype (Kokkos::subview (X_in, Kokkos::ALL (), 0)) in_vec_type;
     typedef decltype (Kokkos::subview (Y_out, Kokkos::ALL (), 0)) out_vec_type;
     typedef BcrsApplyNoTransFunctor<alpha_type, GraphType,
-                                    matrix_values_type, in_vec_type, beta_type, out_vec_type> functor_type;
-    typedef typename functor_type::policy_type policy_type;
+                                    matrix_values_type, in_vec_type, beta_type, out_vec_type,
+                                    is_builtin_type_enabled> functor_type;
 
     auto X_0 = Kokkos::subview (X_in, Kokkos::ALL (), 0);
     auto Y_0 = Kokkos::subview (Y_out, Kokkos::ALL (), 0);
-    functor_type functor (alpha, graph, val, blockSize, X_0, beta, Y_0);
-    policy_type policy(1,1);
-    // is_cuda is defined inside of the main bcrs class
-#if defined(KOKKOS_ENABLE_CUDA)
-    constexpr bool is_cuda = std::is_same<typename policy_type::execution_space, Kokkos::Cuda>::value;
-#else
-    constexpr bool is_cuda = false;
-#endif // defined(KOKKOS_ENABLE_CUDA)
-    if (is_cuda) {
-      LO team_size = 8, vector_size = 1;
-      if      (blockSize <= 5)  vector_size =  4; 
-      else if (blockSize <= 9)  vector_size =  8;
-      else if (blockSize <= 12) vector_size = 12;
-      else if (blockSize <= 20) vector_size = 20;
-      else                      vector_size = 20;
-      policy = policy_type(numLocalMeshRows, team_size, vector_size);
-    } else {
-      policy = policy_type(numLocalMeshRows, 1, 1);
-    }
 
     // Compute the first column of Y.
-    Kokkos::parallel_for (policy, functor);
-
-    // Compute the remaining columns of Y.
-    for (LO j = 1; j < numVecs; ++j) {
-      auto X_j = Kokkos::subview (X_in, Kokkos::ALL (), j);
-      auto Y_j = Kokkos::subview (Y_out, Kokkos::ALL (), j);
-      functor.setX (X_j);
-      functor.setY (Y_j);
+    if (is_builtin_type_enabled) {
+      functor_type functor (alpha, graph, val, blockSize, X_0, beta, Y_0);
+      // Built-in version uses atomic add which might not be supported from sacado or any user-defined types.
+      typedef Kokkos::TeamPolicy<execution_space> policy_type;
+      policy_type policy(1,1);
+#if defined(KOKKOS_ENABLE_CUDA)
+      constexpr bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
+#else
+      constexpr bool is_cuda = false;
+#endif // defined(KOKKOS_ENABLE_CUDA)
+      if (is_cuda) {
+        LO team_size = 8, vector_size = 1;
+        if      (blockSize <= 5)  vector_size =  4; 
+        else if (blockSize <= 9)  vector_size =  8;
+        else if (blockSize <= 12) vector_size = 12;
+        else if (blockSize <= 20) vector_size = 20;
+        else                      vector_size = 20;
+        policy = policy_type(numLocalMeshRows, team_size, vector_size);
+      } else {
+        policy = policy_type(numLocalMeshRows, 1, 1);
+      }
       Kokkos::parallel_for (policy, functor);
+      
+      // Compute the remaining columns of Y.
+      for (LO j = 1; j < numVecs; ++j) {
+        auto X_j = Kokkos::subview (X_in, Kokkos::ALL (), j);
+        auto Y_j = Kokkos::subview (Y_out, Kokkos::ALL (), j);
+        functor.setX (X_j);
+        functor.setY (Y_j);
+        Kokkos::parallel_for (policy, functor);
+      }
+    } else {
+      functor_type functor (alpha, graph, val, blockSize, X_0, beta, Y_0);
+      Kokkos::RangePolicy<execution_space,LO> policy(0, numLocalMeshRows);
+      Kokkos::parallel_for (policy, functor);
+      for (LO j = 1; j < numVecs; ++j) {
+        auto X_j = Kokkos::subview (X_in, Kokkos::ALL (), j);
+        auto Y_j = Kokkos::subview (Y_out, Kokkos::ALL (), j);
+        functor.setX (X_j);
+        functor.setY (Y_j);
+        Kokkos::parallel_for (policy, functor);
+      }
     }
   }
-
 } // namespace Impl
 
 namespace { // (anonymous)

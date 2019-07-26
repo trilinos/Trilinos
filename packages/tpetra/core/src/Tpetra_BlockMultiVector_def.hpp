@@ -481,6 +481,72 @@ checkSizes (const Tpetra::SrcDistObject& src)
 }
 
 template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+(const SrcDistObject& src,
+ const size_t numSameIDs,
+ const Kokkos::DualView<const local_ordinal_type*,
+ buffer_device_type>& permuteToLIDs,
+ const Kokkos::DualView<const local_ordinal_type*,
+ buffer_device_type>& permuteFromLIDs)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error,
+     "Tpetra::BlockMultiVector::copyAndPermute: Do NOT use this "
+     "instead, create a point importer using makePointMap function.");
+}
+
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+(const SrcDistObject& src,
+ const Kokkos::DualView<const local_ordinal_type*,
+ buffer_device_type>& exportLIDs,
+ Kokkos::DualView<packet_type*,
+ buffer_device_type>& exports,
+ Kokkos::DualView<size_t*,
+ buffer_device_type> numPacketsPerLID,
+ size_t& constantNumPackets,
+ Distributor& distor)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error,
+     "Tpetra::BlockMultiVector::copyAndPermute: Do NOT use this; "
+     "instead, create a point importer using makePointMap function.");
+}
+
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+(const Kokkos::DualView<const local_ordinal_type*,
+ buffer_device_type>& importLIDs,
+ Kokkos::DualView<packet_type*,
+ buffer_device_type> imports,
+ Kokkos::DualView<size_t*,
+ buffer_device_type> numPacketsPerLID,
+ const size_t constantNumPackets,
+ Distributor& distor,
+ const CombineMode combineMode)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error,
+     "Tpetra::BlockMultiVector::copyAndPermute: Do NOT use this; "
+     "instead, create a point importer using makePointMap function.");
+}
+
+template<class Scalar, class LO, class GO, class Node>
 bool BlockMultiVector<Scalar, LO, GO, Node>::
 isValidLocalMeshIndex (const LO meshLocalIndex) const
 {
