@@ -56,8 +56,9 @@
 #  include "Xpetra_EpetraVector.hpp"
 #  include "Xpetra_EpetraIntVector.hpp"
 #endif
+
 #include "Xpetra_BlockedMap.hpp"
-#include "Xpetra_BlockedVector.hpp"
+#include <Xpetra_BlockedVector.hpp>
 
 #include "Xpetra_Exceptions.hpp"
 
@@ -67,7 +68,8 @@ namespace Xpetra {
             class LocalOrdinal/* = typename Vector<Scalar>::local_ordinal_type*/,
             class GlobalOrdinal/* = typename Vector<Scalar, LocalOrdinal>::local_ordinal_type*/,
             class Node/* = typename Vector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type*/>
-  class VectorFactory {
+  class VectorFactory
+  {
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -82,7 +84,8 @@ namespace Xpetra {
       XPETRA_MONITOR("VectorFactory::Build");
 
       RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
-      if(!bmap.is_null()) {
+      if(!bmap.is_null())
+      {
         return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, zeroOut));
       }
 
