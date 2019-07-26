@@ -144,8 +144,8 @@ checkConstantVectorView(const ViewType& v,
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
-      scalar_type val = h_v(i).fastAccessCoeff(j);
-      scalar_type val_expected = v_expected.fastAccessCoeff(j);
+      scalar_type val = h_v(i).coeff(j);
+      scalar_type val_expected = v_expected.coeff(j);
       TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
     }
   }
@@ -566,6 +566,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
   success = checkConstantVectorView(v, val, out);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, AssignData, Storage, Layout )
+{
+  typedef typename Storage::execution_space Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;
+  ViewType v1("view1", num_rows, num_cols);
+  ViewType v2("view2", num_rows, num_cols);
+  Scalar val1 = 1.234;
+  Scalar val2 = 5.678;
+  Kokkos::deep_copy(v1, val1);
+  Kokkos::deep_copy(v2, val2);
+
+  auto s1 = Kokkos::subview(v1, std::make_pair(0, 1));
+  auto s2 = Kokkos::subview(v2, std::make_pair(0, 1));
+
+  s1.assign_data(s2.data());
+
+  success = checkConstantVectorView(s1, val2, out);
+}
+
 
 #define VIEW_MP_VECTOR_TESTS_STORAGE_LAYOUT( STORAGE, LAYOUT )          \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
@@ -581,7 +606,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_MP, Unmanaged, STORAGE, LAYOUT )                        \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
-    Kokkos_View_MP, Flatten, STORAGE, LAYOUT )
+    Kokkos_View_MP, Flatten, STORAGE, LAYOUT )                          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_MP, AssignData, STORAGE, LAYOUT )
 
 // Some tests the fail, or fail to compile
 

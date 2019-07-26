@@ -163,7 +163,6 @@ int main(int argc, char *argv[]) {
     = Tpetra::getDefaultComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  const int numProcs = (comm->getSize() > 1) ? comm->getSize() : 0;
   const int myRank = comm->getRank();
   ROL::Ptr<std::ostream> outStream = ROL::makeStreamPtr( std::cout, (argc > 1) && (myRank==0) );
 
@@ -187,7 +186,6 @@ int main(int argc, char *argv[]) {
     solveOutput      = parlist->sublist("SimOpt").sublist("Solve").get("Output Iteration History", false);
     solveOutput      = (myRank==0 ? solveOutput : false);
     parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History", solveOutput);
-    RealT Re         = parlist->sublist("Problem").get("Reynolds Number",200.0);
 
     /*** Add MGRIT parameter list options. ***/
     int sweeps         = parlist->get("MGRIT Sweeps", 1);

@@ -206,23 +206,23 @@ namespace SEAMS {
     std::string version() const;
 
     /** Invoke the scanner and parser for a stream.
-     * @param in	input stream
-     * @param in_name	stream name for error messages
-     * @return		true if successfully parsed
+     * @param in        input stream
+     * @param in_name   stream name for error messages
+     * @return          true if successfully parsed
      */
     bool parse_stream(std::istream &in, const std::string &in_name = "stream input");
 
     /** Invoke the scanner and parser on an input string.
-     * @param input	input string
-     * @param sname	stream name for error messages
-     * @return		true if successfully parsed
+     * @param input     input string
+     * @param sname     stream name for error messages
+     * @return          true if successfully parsed
      */
     bool parse_string(const std::string &input, const std::string &sname = "string stream");
 
     /** Invoke the scanner and parser on a vector of strings.
-     * @param input	vector of input strings
-     * @param sname	stream name for error messages
-     * @return		true if successfully parsed
+     * @param input     vector of input strings
+     * @param sname     stream name for error messages
+     * @return          true if successfully parsed
      */
     bool parse_strings(const std::vector<std::string> &input, const std::string &sname);
 
@@ -240,8 +240,8 @@ namespace SEAMS {
 
     /** Invoke the scanner and parser on a file. Use parse_stream with a
      * std::ifstream if detection of file reading errors is required.
-     * @param filename	input file name
-     * @return		true if successfully parsed
+     * @param filename  input file name
+     * @return          true if successfully parsed
      */
     bool parse_file(const std::string &filename);
 

@@ -194,7 +194,7 @@ TEUCHOS_UNIT_TEST(Tpetra_OpTests, VecNoTrans)
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
     lowsf = builder.createLinearSolveStrategy("");
   Teuchos::RCP<NOX::Thyra::Group> group =
-    Teuchos::rcp(new NOX::Thyra::Group(*z_nox, model, op, lowsf, Teuchos::null, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(*z_nox, model, op, lowsf, Teuchos::null, Teuchos::null, Teuchos::null));
   group->computeJacobian();
   group->applyJacobian(*z_nox, *y_nox);
 
@@ -255,7 +255,7 @@ TEUCHOS_UNIT_TEST(Tpetra_OpTests, MultiVecNoTrans)
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
     lowsf = builder.createLinearSolveStrategy("");
   Teuchos::RCP<NOX::Thyra::Group> group =
-    Teuchos::rcp(new NOX::Thyra::Group(dynamic_cast<NTV&>((*z_nox)[0]), model, op, lowsf, Teuchos::null, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(dynamic_cast<NTV&>((*z_nox)[0]), model, op, lowsf, Teuchos::null, Teuchos::null, Teuchos::null));
   group->computeJacobian();
   group->applyJacobianMultiVector(*z_nox, *y_nox);
 
@@ -309,7 +309,7 @@ TEUCHOS_UNIT_TEST(Tpetra_OpTests, VecTrans)
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
     lowsf = builder.createLinearSolveStrategy("");
   Teuchos::RCP<NOX::Thyra::Group> group =
-    Teuchos::rcp(new NOX::Thyra::Group(*z_nox, model, op, lowsf, Teuchos::null, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(*z_nox, model, op, lowsf, Teuchos::null, Teuchos::null, Teuchos::null));
   group->computeJacobian();
   // Need this to get the group to call updateLOWS, or else shared_jacobian is unitialized
   (void) group->getJacobian();
@@ -371,7 +371,7 @@ TEUCHOS_UNIT_TEST(Tpetra_OpTests, MultiVecTrans)
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
     lowsf = builder.createLinearSolveStrategy("");
   Teuchos::RCP<NOX::Thyra::Group> group =
-    Teuchos::rcp(new NOX::Thyra::Group(dynamic_cast<NTV&>((*z_nox)[0]), model, op, lowsf, Teuchos::null, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(dynamic_cast<NTV&>((*z_nox)[0]), model, op, lowsf, Teuchos::null, Teuchos::null, Teuchos::null));
   group->computeJacobian();
   // Need this to get the group to call updateLOWS, or else shared_jacobian is unitialized
   (void) group->getJacobian();

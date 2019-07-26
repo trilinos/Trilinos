@@ -68,8 +68,8 @@
 #endif
 
 /* EXODUS version number */
-#define EX_API_VERS 7.20f
-#define EX_API_VERS_NODOT 720
+#define EX_API_VERS 7.21f
+#define EX_API_VERS_NODOT 721
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT EX_API_VERS_NODOT
@@ -232,9 +232,9 @@ sufficient.
 enum ex_option_type {
   EX_OPT_MAX_NAME_LENGTH =
       1, /**< Maximum length of names that will be returned/passed via api call. */
-  EX_OPT_COMPRESSION_TYPE,    /**<  Not currently used; default is gzip	*/
+  EX_OPT_COMPRESSION_TYPE,    /**<  Not currently used; default is gzip */
   EX_OPT_COMPRESSION_LEVEL,   /**<  In the range [0..9]. A value of 0 indicates no compression */
-  EX_OPT_COMPRESSION_SHUFFLE, /**<  1 if enabled, 0 if disabled	*/
+  EX_OPT_COMPRESSION_SHUFFLE, /**<  1 if enabled, 0 if disabled */
   EX_OPT_INTEGER_SIZE_API, /**<  4 or 8 indicating byte size of integers used in api functions. */
   EX_OPT_INTEGER_SIZE_DB /**<  Query only, returns 4 or 8 indicating byte size of integers stored on
                             the database. */
@@ -997,11 +997,11 @@ EXODUS_EXPORT int ex_put_cmap_params_cc(int       exoid,               /* NetCDF
                                         void_int *node_cmap_ids,       /* Node map IDs */
                                         void_int *node_cmap_node_cnts, /* Nodes in nodal comm */
                                         void_int *node_proc_ptrs,      /* Pointer into array for */
-                                                                       /* node maps		  */
+                                                                       /* node maps               */
                                         void_int *elem_cmap_ids,       /* Elem map IDs */
                                         void_int *elem_cmap_elem_cnts, /* Elems in elemental comm */
                                         void_int *elem_proc_ptrs       /* Pointer into array for */
-                                                                       /* elem maps		  */
+                                                                       /* elem maps               */
 );
 
 EXODUS_EXPORT int ex_get_node_cmap(int          exoid,    /* NetCDF/Exodus file ID */

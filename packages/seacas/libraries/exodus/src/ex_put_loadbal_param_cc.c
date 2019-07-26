@@ -44,15 +44,15 @@
  *  Variable Index:
  *      exoid             - The NetCDF ID of an already open NemesisI file.
  *      num_int_nodes    - Vector of number of internal FEM nodes for
- *			   "num_proc_in_f" processors.
+ *                         "num_proc_in_f" processors.
  *      num_bor_nodes    - Vector of number of border FEM nodes for
- *			   "num_proc_in_f" processors.
+ *                         "num_proc_in_f" processors.
  *      num_ext_nodes    - Vector of number of external FEM nodes for
- *			   "num_proc_in_f" processors.
+ *                         "num_proc_in_f" processors.
  *      num_int_elems    - Vector of number of internal FEM elems for
- *			   "num_proc_in_f" processors.
+ *                         "num_proc_in_f" processors.
  *      num_bor_elems    - Vector of number of border FEM elems for
- *			   "num_proc_in_f" processors.
+ *                         "num_proc_in_f" processors.
  *      num_node_cmaps   - Vector of number of nodal communication maps
  *                         for "num_proc_in_f" processors.
  *      num_elem_cmaps   - Vector of number of elemental communication maps
@@ -69,6 +69,10 @@
 #define NC_INT64 NC_INT
 #endif
 
+/*!
+ * \ingroup ModelDescription
+ * \undoc
+ */
 int ex_put_loadbal_param_cc(int exoid, void_int *num_int_nodes, void_int *num_bor_nodes,
                             void_int *num_ext_nodes, void_int *num_int_elems,
                             void_int *num_bor_elems, void_int *num_node_cmaps,

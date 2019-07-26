@@ -101,7 +101,6 @@ public:
     // GET DIMENSIONS
     const int  c = feVel_->gradN()->dimension(0);
     const int fv = feVel_->gradN()->dimension(1);
-    const int fp = fePrs_->gradN()->dimension(1);
     const int fh = feThr_->gradN()->dimension(1);
     const int  p = feVel_->gradN()->dimension(2);
     const int  d = feVel_->gradN()->dimension(3);
@@ -483,12 +482,7 @@ public:
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & un_coeff,
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                    const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    const Real one(1);
     // GET DIMENSIONS
-    int  c = feVel_->gradN()->dimension(0);
-    int fv = feVel_->gradN()->dimension(0);
-    int fp = fePrs_->gradN()->dimension(0);
-    int fh = feThr_->gradN()->dimension(0);
     int  d = feVel_->gradN()->dimension(3);
     // INITILAIZE JACOBIAN
     pde_->Jacobian_3(jac,uo_coeff,z_coeff,z_param); // Resizes and zeros jac

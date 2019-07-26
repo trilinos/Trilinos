@@ -1047,6 +1047,11 @@ public:
                     m_impl_offset.span(), m_sacado_size.value );
     }
 
+  /**\brief  Assign data */
+  KOKKOS_INLINE_FUNCTION
+  void assign_data( pointer_type arg_ptr )
+  { m_impl_handle.set( arg_ptr, m_impl_offset.span(), m_sacado_size.value ); }
+
   //----------------------------------------
   /*  Allocate and construct mapped array.
    *  Allocate via shared allocation record and

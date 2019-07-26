@@ -37,6 +37,8 @@
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_INFO, etc
 
 /*!
+\ingroup Utilities
+
 The function ex_put_info() writes information records to the
 database. The records are MAX_LINE_LENGTH-character strings.
 

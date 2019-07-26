@@ -116,7 +116,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
     INT *elnodes  = mesh->connect[i];
     int  nelnodes = get_elem_info(NNODES, etype);
 
-    float elcoord[8][3];
+    float elcoord[27][3];
     for (int j = 0; j < nelnodes; j++)
       for (int d = 0; d < 3; d++)
         elcoord[j][d] = mesh->coords[elnodes[j] + d * nnod];
@@ -145,7 +145,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
       ss_to_node_list(etype, mesh->connect[i], j + 1, fnodes);
 
       // Translate global IDs of side nodes to local IDs in element
-      int fnodes_loc[4];
+      int fnodes_loc[9];
       for (int k = 0; k < nfn; k++) {
         bool found = false;
         for (int k2 = 0; k2 < nelnodes; k2++)

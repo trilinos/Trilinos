@@ -36,8 +36,8 @@
  *
  *
  *
- *	Include file for I/O global variables used in FEM
- *	problem specification
+ *      Include file for I/O global variables used in FEM
+ *      problem specification
  *
  */
 
@@ -54,10 +54,10 @@ std::string Exo_Res_File; /* Exodus II file containing the mesh results  */
 int Debug_Flag = 1; /* Flag to specify debug info is to be printed out.
                        The value of this flag determines the level of
                        diagnostic info which is printed to stdout
-                       Debug_Flag == 0 	No debug output
+                       Debug_Flag == 0  No debug output
                                      .
                                      .
-                                     9	maximum output               */
+                                     9  maximum output               */
 int Gen_Flag = 1;   /* Flag used by nem_join to determine if the user
                        wants to use an existing genesis file rather
                        than generating one from the parallel files */

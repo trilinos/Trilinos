@@ -115,7 +115,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_NoPrec)
   Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<Scalar>::one());
 
   Teuchos::RCP<NOX::Thyra::Group> nox_group =
-    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, model->create_W_op(), lowsFactory, Teuchos::null, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, model->create_W_op(), lowsFactory, Teuchos::null, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
 
@@ -215,7 +215,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_Ifpack2Prec)
   Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<Scalar>::one());
 
   Teuchos::RCP<NOX::Thyra::Group> nox_group =
-    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, model->create_W_op(), lowsFactory, Teuchos::null, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, model->create_W_op(), lowsFactory, Teuchos::null, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
 
@@ -325,7 +325,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_NoPrec)
 
   // Create the NOX::Thyra::Group
   Teuchos::RCP<NOX::Thyra::Group> nox_group =
-    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, Teuchos::null, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, Teuchos::null, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
 
@@ -446,7 +446,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_UserPrec)
 
   // Create the NOX::Thyra::Group
   Teuchos::RCP<NOX::Thyra::Group> nox_group =
-    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, precOp, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, precOp, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
 
