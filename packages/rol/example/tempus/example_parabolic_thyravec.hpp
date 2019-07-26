@@ -867,7 +867,7 @@ class Objective_ParabolicControl : public ROL::DynamicObjective<Real> {
 private:
   Real alpha_;
   Real theta_;
-  uint nx_;
+  Teuchos_Ordinal nx_;
   Real dx_;
   Real dt_;
   int  type_;
@@ -882,7 +882,7 @@ private:
     const Thyra::ConstDetachedVectorView<Real> y(y_vb);
     Real ip(0);
     Real c = ((x.subDim()==nx_) ? four : two);
-    for (uint i=0; i<x.subDim(); i++) {
+    for (Teuchos_Ordinal i=0; i<x.subDim(); i++) {
       if ( i == 0 ) {
         ip += dx_/six*(c*x[i] + x[i+1])*y[i];
       }
@@ -904,7 +904,7 @@ private:
     Real c = ((u.subDim()==nx_) ? four : two);
     { // scope for Mu eval
       Thyra::DetachedVectorView<Real> Mu(Mu_ptr);
-      for (uint i=0; i<u.subDim(); i++) {
+      for (Teuchos_Ordinal i=0; i<u.subDim(); i++) {
         if ( i == 0 ) {
           Mu[i] = dx_/six*(c*u[i] + u[i+1]);
         }
@@ -975,7 +975,7 @@ public:
     { // scope for uOld, uNew eval
       Thyra::DetachedVectorView<Real> uOld(uOld_ptr);
       Thyra::DetachedVectorView<Real> uNew(uNew_ptr);
-      for (uint n = 0; n < nx_; n++) {
+      for (Teuchos_Ordinal n = 0; n < nx_; n++) {
         target = evaluate_target(static_cast<Real>(n)*dx_);
         uOld[n] = uo[n] - target;
         uNew[n] = un[n] - target;
@@ -1001,7 +1001,7 @@ public:
     Real target(0);
     { // scope for uDiff
       Thyra::DetachedVectorView<Real> uDiff(uDiff_ptr);
-      for (uint n = 0; n < nx_; n++) {
+      for (Teuchos_Ordinal n = 0; n < nx_; n++) {
         target = evaluate_target(static_cast<Real>(n)*dx_);
         uDiff[n] = uo[n] - target;
       }
@@ -1024,7 +1024,7 @@ public:
     Real target(0);
     { // scope for uDiff eval
       Thyra::DetachedVectorView<Real> uDiff(uDiff_ptr);
-      for (uint n = 0; n < nx_; n++) {
+      for (Teuchos_Ordinal n = 0; n < nx_; n++) {
         target = evaluate_target(static_cast<Real>(n)*dx_);
         uDiff[n] = un[n] - target;
       }

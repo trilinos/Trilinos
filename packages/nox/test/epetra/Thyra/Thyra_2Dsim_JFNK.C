@@ -373,7 +373,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
 
   // Create the NOX::Thyra::Group
   Teuchos::RCP<NOX::Thyra::Group> nox_group =
-    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, loggedModel, jfnkOp, lowsFactory, Teuchos::null, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, loggedModel, jfnkOp, lowsFactory, Teuchos::null, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
 
@@ -490,7 +490,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_Jacobi_prec_using_ME)
 
   // Create the NOX::Thyra::Group
   Teuchos::RCP<NOX::Thyra::Group> nox_group =
-    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, precOp, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, precOp, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
 

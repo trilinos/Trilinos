@@ -109,12 +109,14 @@ namespace NOX {
           \param[in] model ModelEvaluator
           \param[in] weightVector Optional diagonal weighting vector for the model.
           \param[in] rightWeightVector Optional solution vector weighting
+          \param[in] inv_rightWeightVector Optional inverse solution vector weighting
           \param[in] rightScalingFirst Optional bool to select if right scaling should be applied before left scaling
       */
       Group(const NOX::Thyra::Vector& initialGuess,
             const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
             const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weightVector = Teuchos::null,
             const Teuchos::RCP<const ::Thyra::VectorBase<double> >& rightWeightVector = Teuchos::null,
+            const Teuchos::RCP<::Thyra::VectorBase<double> >& inv_rightWeightVector = Teuchos::null,
             const bool rightScalingFirst = false);
 
       /** \brief Power user constructor that takes explicit linear solver objects to handle different combinations.
@@ -133,6 +135,7 @@ namespace NOX {
           \param[in] precFactory (Optional) Factory for updating the precondiitoner.  If set to Teuchos::null and there is a non-null prec_op, then the preconditioner will be updated using the model evaluator as long as the ModelEvaluator::outArgs supports W_prec.
           \param[in] weightVector (Optional) diagonal weighting vector for the model.
           \param[in] rightWeightVector Optional solution vector weighting
+          \param[in] inv_rightWeightVector Optional inverse solution vector weighting
           \param[in] rightScalingFirst Optional bool to select if right scaling should be applied before left scaling
           \param[in] updatePreconditioner Optional bool to select if the Group should auotmatically update the preconditioner matrix values between Newton iterations
           \param[in] jacobianIsEvaluated Optional bool, if true this means that the input Jacobian operator (linearOp) has been evaluated externally and is consistent with the initialGuess. In this case, the isJacobian() flag is initialized to true.
@@ -145,6 +148,7 @@ namespace NOX {
             const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& precFactory,
             const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weightVector = Teuchos::null,
             const Teuchos::RCP<const ::Thyra::VectorBase<double> >& rightWeightVector = Teuchos::null,
+            const Teuchos::RCP<::Thyra::VectorBase<double> >& inv_rightWeightVector = Teuchos::null,
             const bool rightScalingFirst = false,
             const bool updatePreconditioner = true,
             const bool jacobianIsEvaluated = false);
@@ -410,12 +414,16 @@ namespace NOX {
            This is pulled out of the initial guess vector
       */
       Teuchos::RCP<const ::Thyra::VectorBase<double> > weight_vec_;
-      //! Optional wieghting vector for solution (right) scaling. NOX assumes that this vector will not change during an entire nonlinear solve.
+      //! Optional wieghting vector for solution (right) scaling. 
+      // NOX no longer assumes that this vector fixed. It is allowed to change during an entire nonlinear solve.
+      // The application is in charge of updating the vector in an observer.
       Teuchos::RCP<const ::Thyra::VectorBase<double> > right_weight_vec_;
 
       //! Inverse of weight vector used to unscale function (left) scaling. NOX assumes that this vector can be updated in between nonlinear iterations.
       mutable Teuchos::RCP< ::Thyra::VectorBase<double> > inv_weight_vec_;
-      //! Inverse of weight vector used to unscale solution (right) scaling. NOX assumes that this vector will not change during an entire nonlinear solve.
+      //! Inverse of weight vector used to unscale solution (right) scaling.
+      // NOX no longer assumes that this vector fixed. It is allowed to change during an entire nonlinear solve.
+      // The application is in charge of updating the vector in an observer.
       Teuchos::RCP< ::Thyra::VectorBase<double> > inv_right_weight_vec_;
 
       //! Scaled solution vector scaled by the 

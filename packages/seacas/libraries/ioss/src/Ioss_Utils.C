@@ -144,6 +144,8 @@ namespace {
   void transfer_fields(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
                        Ioss::Field::RoleType role, const std::string &prefix = "");
 
+  void add_proc_id(Ioss::Region &region, int rank);
+
   template <typename T>
   void transfer_field_data(const std::vector<T *> &entities, Ioss::Region &output_region,
                            DataPool &pool, Ioss::Field::RoleType role,
@@ -1706,6 +1708,12 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     dbi->progress("END STATE_MODEL... ");
     output_region.end_mode(Ioss::STATE_MODEL);
 
+    if (options.add_proc_id) {
+      Ioss::Utils::clear(data_pool.data);
+      add_proc_id(output_region, rank);
+      return;
+    }
+
     if (options.delete_timesteps) {
       Ioss::Utils::clear(data_pool.data);
       return;
@@ -2587,4 +2595,40 @@ namespace {
       }
     }
   }
+
+  void add_proc_id(Ioss::Region &region, int rank)
+  {
+    region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+    auto &sblocks = region.get_structured_blocks();
+    for (auto &sb : sblocks) {
+      sb->field_add(Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT,
+                                sb->entity_count()));
+    }
+
+    auto &eblocks = region.get_element_blocks();
+    for (auto &eb : eblocks) {
+      eb->field_add(Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT,
+                                eb->entity_count()));
+    }
+    region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+
+    region.begin_mode(Ioss::STATE_TRANSIENT);
+
+    auto step = region.add_state(0.0);
+    region.begin_state(step);
+
+    for (auto &sb : sblocks) {
+      std::vector<double> proc_id(sb->entity_count(), rank);
+      sb->put_field_data("processor_id", proc_id);
+    }
+
+    for (auto &eb : eblocks) {
+      std::vector<double> proc_id(eb->entity_count(), rank);
+      eb->put_field_data("processor_id", proc_id);
+    }
+
+    region.end_state(step);
+    region.end_mode(Ioss::STATE_TRANSIENT);
+  }
+
 } // namespace

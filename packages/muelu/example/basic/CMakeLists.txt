@@ -1,3 +1,4 @@
+INCLUDE(XpetraAddTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../test/unit_tests)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../test/scaling)
@@ -15,6 +16,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
+
   IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     TRIBITS_ADD_EXECUTABLE(
       Simple
@@ -40,6 +42,49 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Simple_cp
       SOURCE_FILES simple.xml simple.yaml
-     )
+      )
+
+  ENDIF()
+
+  #
+  # Stratimikos example
+  #
+  IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
+
+    # build executable
+    TRIBITS_ADD_EXECUTABLE(
+      Stratimikos
+      SOURCES Stratimikos.cpp
+      COMM serial mpi
+      )
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(advanced_stratimikos_cp
+      SOURCE_FILES stratimikos_ParameterList.xml stratimikos_ParameterList.yaml stratimikos_ParameterList2.xml
+      )
+
+    IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
+
+      TRIBITS_ADD_TEST(
+        Stratimikos
+        NAME Stratimikos
+        ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Epetra"
+        NUM_MPI_PROCS 4
+        COMM serial mpi
+        )
+
+    ENDIF()
+
+    IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
+
+      TRIBITS_ADD_TEST(
+        Stratimikos
+        NAME Stratimikos
+        ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Tpetra"
+        NUM_MPI_PROCS 4
+        COMM serial mpi
+        )
+
+    ENDIF()
+
   ENDIF()
 ENDIF()

@@ -269,9 +269,9 @@ public:
     , maxLevels_(-1)
     , numSweeps_(1)
     , omega_(2.0/3.0)
+    , numCGIter_(2)
     , globalScale_(0.99e0)
     , controlRegParam_(1.0)
-    , numCGIter_(2)
     , recordResidualReductions_(false)
   { 
     initialize(stepConstraint,initialCond,timeStamps);
@@ -1715,7 +1715,6 @@ public:
 
      const PinTVector<Real>       & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
      const PinTVector<Real>       & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
-     int timeRank = pint_u.communicators().getTimeRank();
 
      pint_u.boundaryExchangeLeftToRight();
      pint_z.boundaryExchangeLeftToRight();
@@ -1729,8 +1728,6 @@ public:
      }
 
      timer->start("applyMGAugmentedKKT"+levelStr);
-
-     double b_norm = b.norm();
 
      Ptr<Vector<Real>> dx;
      Ptr<Vector<Real>> residual;

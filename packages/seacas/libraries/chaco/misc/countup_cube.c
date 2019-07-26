@@ -36,6 +36,7 @@
 #include "smalloc.h" // for sfree, smalloc
 #include "structs.h" // for vtx_data
 #include <stdio.h>   // for fprintf, printf, FILE, NULL
+#include <stdlib.h>
 
 /* Print metrics of partition quality. */
 
@@ -91,7 +92,6 @@ void countup_cube(struct vtx_data **graph,      /* graph data structure */
   int     level;              /* recursion level of partition */
   int     print2file;         /* should I print to a file? */
   int     i, j, k, l, ll;     /* loop counters */
-  int     abs();
 
   print2file = (outfile != NULL);
   ewgt       = 1;

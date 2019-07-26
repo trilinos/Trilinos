@@ -538,7 +538,7 @@ namespace internal {
 
 #if FMT_CLANG_VERSION
 #define FMT_FALLTHROUGH [[clang::fallthrough]];
-#elif FMT_GCC_VERSION >= 700
+#elif FMT_GCC_VERSION >= 700 && !__INTEL_COMPILER
 #define FMT_FALLTHROUGH [[gnu::fallthrough]];
 #else
 #define FMT_FALLTHROUGH
