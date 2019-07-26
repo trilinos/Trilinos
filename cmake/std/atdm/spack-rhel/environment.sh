@@ -147,7 +147,7 @@ export PNETCDF_ROOT=${PARALLEL_NETCDF_ROOT}
 export ATDM_CONFIG_METIS_LIBS="${METIS_ROOT}/lib/libmetis.so"
 export ATDM_CONFIG_PARMETIS_LIBS="${METIS_ROOT}/lib/libmetis.so;${PARMETIS_ROOT}/lib/libparmetis.so"
 #export ATDM_CONFIG_PNETCDF_LIBS=
-export ATDM_CONFIG_CGNS_LIBS="${CGNS_ROOT}/lib/libcgns.a;-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+export ATDM_CONFIG_CGNS_LIBS="${CGNS_ROOT}/lib/libcgns.so;-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.so;${HDF5_ROOT}/lib/libhdf5.so;-lz;-ldl"
 
 #export METIS_LIBRARY_DIRS=${METIS_ROOT}/lib
 #export METIS_INCLUDE_DIRS=${METIS_ROOT}/include
