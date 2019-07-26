@@ -104,7 +104,6 @@ public:
     // GET DIMENSIONS
     int  c = feVel_->gradN()->dimension(0);
     int fv = feVel_->gradN()->dimension(1);
-    int fp = fePrs_->gradN()->dimension(1);
     int  p = feVel_->gradN()->dimension(2);
     int  d = feVel_->gradN()->dimension(3);
     // GET TIME STEP INFORMATION
@@ -206,7 +205,6 @@ public:
         }
         // Apply Dirichlet control on cylinder
         if (i==4) {
-          Real omega(0);
           if (!useParametricControl_) {
             fieldHelper_->splitFieldCoeff(Z, z_coeff);
           }
@@ -460,11 +458,7 @@ public:
     if (!useParametricControl_) {
       const Real one(1);
       // GET DIMENSIONS
-      int fv = feVel_->gradN()->dimension(1);
-      int fp = fePrs_->gradN()->dimension(1);
       int  d = feVel_->gradN()->dimension(3);
-      // GET TIME STEP INFORMATION
-      Real told = ts.t[0], tnew = ts.t[1], dt = tnew-told;
       // INITILAIZE JACOBIAN
       pde_->Jacobian_2(jac,uo_coeff,z_coeff,z_param); // Resizes and zeros jac
       std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J;
@@ -505,13 +499,8 @@ public:
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                    const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     if (useParametricControl_) {
-      const Real one(1);
       // GET DIMENSIONS
-      int fv = feVel_->gradN()->dimension(1);
-      int fp = fePrs_->gradN()->dimension(1);
       int  d = feVel_->gradN()->dimension(3);
-      // GET TIME STEP INFORMATION
-      Real told = ts.t[0], tnew = ts.t[1], dt = tnew-told;
       // INITILAIZE JACOBIAN
       pde_->Jacobian_3(jac,uo_coeff,z_coeff,z_param); // Resizes and zeros jac
       std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> J;
