@@ -138,11 +138,6 @@ namespace Tpetra {
 /// It doesn't make sense for BlockMultiVector to implement
 /// MultiVector, because the desired fill interfaces of the two
 /// classes are different.
-///
-/// BlockMultiVector does not have comm layer e.g., packAndPrepare, 
-/// copyAndPermute and it should rely on point multivector 
-/// (getMultiVectorView) when BlockMultiVector is used with other 
-/// Trilinos packages. 
 template<class Scalar,
          class LO,
          class GO,
@@ -153,10 +148,7 @@ class BlockMultiVector :
 private:
   using dist_object_type = Tpetra::DistObject<Scalar, LO, GO, Node>;
   using STS = Teuchos::ScalarTraits<Scalar>;
-                                                                                                
-protected:
-  //! Implementation detail; tells
-  typedef char packet_type;
+  using packet_type = typename dist_object_type::packet_type;
 
 public:
   //! \name Typedefs to facilitate template metaprogramming.
@@ -637,10 +629,10 @@ protected:
   (const SrcDistObject& source,
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*,
-   buffer_device_type>& permuteToLIDs,
+     buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*,
-   buffer_device_type>& permuteFromLIDs);
-  
+     buffer_device_type>& permuteFromLIDs);
+
   virtual void
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   packAndPrepareNew
@@ -649,14 +641,14 @@ protected:
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject& source,
    const Kokkos::DualView<const local_ordinal_type*,
-   buffer_device_type>& exportLIDs,
+     buffer_device_type>& exportLIDs,
    Kokkos::DualView<packet_type*,
-   buffer_device_type>& exports,
+     buffer_device_type>& exports,
    Kokkos::DualView<size_t*,
-   buffer_device_type> numPacketsPerLID,
+     buffer_device_type> numPacketsPerLID,
    size_t& constantNumPackets,
    Distributor& distor);
-  
+
   virtual void
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   unpackAndCombineNew
@@ -664,16 +656,17 @@ protected:
   unpackAndCombine
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const Kokkos::DualView<const local_ordinal_type*,
-   buffer_device_type>& importLIDs,
+     buffer_device_type>& importLIDs,
    Kokkos::DualView<packet_type*,
-   buffer_device_type> imports,
+     buffer_device_type> imports,
    Kokkos::DualView<size_t*,
-   buffer_device_type> numPacketsPerLID,
+     buffer_device_type> numPacketsPerLID,
    const size_t constantNumPackets,
    Distributor& distor,
-   const CombineMode combineMode);  
+   const CombineMode combineMode);
+
   //@}
-  
+
 protected:
   //! Raw pointer to the MultiVector's data.
   impl_scalar_type* getRawPtr () const {
@@ -739,7 +732,6 @@ private:
 
   static Teuchos::RCP<const BlockMultiVector<Scalar, LO, GO, Node> >
   getBlockMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src);
-
 };
 
 } // namespace Tpetra
