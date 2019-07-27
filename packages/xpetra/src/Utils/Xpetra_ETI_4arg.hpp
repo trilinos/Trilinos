@@ -33,7 +33,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
   XPETRA_ETI_GROUP(double,int,int,EpetraNode)
-# endif
+#endif
 
 #endif
 
