@@ -28,11 +28,14 @@ private:
    // Use refMaxwell for Schur complement solve
    bool use_refmaxwell;
 
+   bool use_discrete_gradient_;
+   bool dump;
+   bool doDebug;
+   bool useAsPreconditioner;
+   double dt;
+
    // type of preconditioner for Schur complement
    std::string S_E_prec_type_;
-
-   // Dump matrices? 
-   bool dump;
 
    // parameters
    Teuchos::ParameterList params;
