@@ -29,6 +29,7 @@ private:
    bool use_refmaxwell;
 
    bool use_discrete_gradient_;
+   bool use_discrete_curl_;
    bool dump;
    bool doDebug;
    bool useAsPreconditioner;

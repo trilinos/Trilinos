@@ -177,6 +177,13 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    // nodal mass matrix
    Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
 
+   // discrete curl and its transpose
+   Teko::LinearOp C, Ct;
+   if (use_discrete_curl_) {
+     C = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Curl"));
+     Ct = Teko::explicitTranspose(C);
+   }
+
    // Set up the Schur complement
    Teko::LinearOp S_E;
    {
@@ -200,14 +207,46 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      writeOut("Q_E.mm",*Q_E);
      writeOut("Q_rho.mm",*Q_rho);
      writeOut("S_E.mm",*S_E);
+
+     if (C != Teuchos::null) {
+       Teko::LinearOp K2 = Teko::explicitMultiply(Q_B,C);
+       Teko::LinearOp diffK;
+
+       if (useTpetra) {
+         typedef panzer::TpetraNodeType Node;
+         typedef int LocalOrdinal;
+         typedef panzer::GlobalOrdinal GlobalOrdinal;
+
+         RCP<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(K2,true);
+         RCP<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp2 = Teuchos::rcp_const_cast<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(tOp);
+         RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tOp2->getTpetraOperator(),true);
+         crsOp->resumeFill();
+         crsOp->scale(dt);
+         crsOp->fillComplete(crsOp->getDomainMap(),crsOp->getRangeMap());
+         diffK = Teko::explicitAdd(K, Teko::scale(-1.0,K2));
+
+         writeOut("DiscreteCurl.mm",*C);
+         writeOut("K2.mm",*K2);
+         writeOut("diff.mm",*diffK);
+
+       } else {
+         diffK = Teko::explicitAdd(K, Teko::scale(-dt,K2));
+
+         writeOut("DiscreteCurl.mm",*C);
+         writeOut("K2.mm",*K2);
+         writeOut("diff.mm",*diffK);
+       }
+
+       TEUCHOS_ASSERT(Teko::infNorm(diffK) < 1.0e-8 * Teko::infNorm(K));
+     }
    }
    describeMatrix("Q_B",*Q_B,debug);
    describeMatrix("K",*K,debug);
    describeMatrix("Kt",*Kt,debug);
    describeMatrix("Q_E",*Q_E,debug);
    describeMatrix("Q_rho",*Q_rho,debug);
+   describeMatrix("C",*C,debug);
    describeMatrix("S_E",*S_E,debug);
-
 
 
    /////////////////////////////////////////////////
@@ -377,7 +416,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    // Build block  inverse matrices               //
    /////////////////////////////////////////////////
 
-   {
+   if (!use_discrete_curl_) {
      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Block preconditioner"));
 
      // Inverse blocks
@@ -408,6 +447,45 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
        return Teko::multiply(invU, Teko::toLinearOp(invL));
      } else
        return invU;
+   } else {
+     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Block preconditioner"));
+
+     Teko::LinearOp id_B = Teko::identity(Teko::rangeSpace(Q_B));
+
+     // Inverse blocks
+     std::vector<Teko::LinearOp> diag(2);
+     diag[0] = Teko::scale(dt,id_B);
+     diag[1] = invS_E;
+
+     // Upper tri blocks
+     Teko::BlockedLinearOp U = Teko::createBlockedOp();
+     Teko::beginBlockFill(U,rows,rows);
+     Teko::setBlock(0,0,U,Teko::scale(1/dt,id_B));
+     Teko::setBlock(1,1,U,S_E);
+     Teko::setBlock(0,1,U,C);
+     Teko::endBlockFill(U);
+
+     Teko::LinearOp invU = Teko::createBlockUpperTriInverseOp(U,diag);
+
+     if (!useAsPreconditioner) {
+       Teko::BlockedLinearOp invL = Teko::createBlockedOp();
+       Teko::LinearOp id_E = Teko::identity(Teko::rangeSpace(Q_E));
+       Teko::beginBlockFill(invL,rows,rows);
+       Teko::setBlock(0,0,invL,id_B);
+       // Teko::setBlock(1,0,invL,Teko::multiply(Thyra::scale(-dt, Ct), Q_B));
+       Teko::setBlock(1,0,invL,Thyra::scale(dt, Kt));
+       Teko::setBlock(1,1,invL,id_E);
+       Teko::endBlockFill(invL);
+
+       Teko::BlockedLinearOp invDiag = Teko::createBlockedOp();
+       Teko::beginBlockFill(invDiag,rows,rows);
+       Teko::setBlock(0,0,invDiag,Teko::scale(1/dt,invQ_B));
+       Teko::setBlock(1,1,invDiag,id_E);
+       Teko::endBlockFill(invDiag);
+
+       return Teko::multiply(invU, Teko::multiply(Teko::toLinearOp(invL), Teko::toLinearOp(invDiag)));
+     } else
+       return invU;
    }
 }
 
@@ -422,6 +500,7 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
 
    use_refmaxwell         = params.get("Use refMaxwell",false);
    use_discrete_gradient_ = params.get("Use discrete gradient",false);
+   use_discrete_curl_     = params.get("Use discrete curl",false);
    dump                   = params.get("Dump",false);
    doDebug                = params.get("Debug",false);
    useAsPreconditioner    = params.get("Use as preconditioner",false);
@@ -505,8 +584,6 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
                             S_E_prec_pl.sublist("Prec Types"));
    }
 
-
-   use_discrete_curl_ = params.get("Use discrete curl",true);
 }
 
 } // namespace mini_em

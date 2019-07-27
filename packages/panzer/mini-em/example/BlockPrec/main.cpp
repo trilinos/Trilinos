@@ -56,6 +56,7 @@
 #include "MiniEM_OperatorRequestCallback.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory.hpp"
 #include "MiniEM_DiscreteGradient.hpp"
+#include "MiniEM_DiscreteCurl.hpp"
 
 #include <string>
 #include <iostream>
@@ -501,6 +502,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     {
       Teuchos::TimeMonitor tMdiscGrad(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient")));
       addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
+    }
+
+    // add discrete curl
+    {
+      Teuchos::TimeMonitor tMdiscCurl(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete curl")));
+      addDiscreteCurlToRequestHandler(linObjFactory,req_handler);
     }
 
     // build linear solver
