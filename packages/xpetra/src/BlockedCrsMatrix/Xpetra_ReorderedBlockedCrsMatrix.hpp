@@ -53,6 +53,7 @@
 
 #include "Xpetra_MapUtils.hpp"
 
+#include "Xpetra_BlockedMultiVector.hpp"
 #include "Xpetra_ReorderedBlockedMultiVector.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
@@ -206,7 +207,8 @@ namespace Xpetra {
       // Check whether "this" operator is the reordered variant of the underlying fullOp_.
       // Note, that nested ReorderedBlockedCrsMatrices always have the same full operator "fullOp_"
       // stored underneath for being able to "translate" the block ids.
-      if (refbX == Teuchos::null && fullOp_->getNodeNumRows() == this->getNodeNumRows()) {
+      if (refbX == Teuchos::null && fullOp_->getNodeNumRows() == this->getNodeNumRows())
+      {
         // create a new (non-nested) blocked multi vector (using the blocked range map of fullOp_)
         RCP<const BlockedMap> blkRgMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(fullOp_->getRangeMap());
         TEUCHOS_ASSERT(blkRgMap.is_null()==false);
