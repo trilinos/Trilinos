@@ -3,4 +3,4 @@
 if [ "${Trilinos_TRACK}" == "" ] ; then
   export Trilinos_TRACK=ATDM
 fi
-$WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/chama/local-driver.sh
+$WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/tlcc2/local-driver.sh
