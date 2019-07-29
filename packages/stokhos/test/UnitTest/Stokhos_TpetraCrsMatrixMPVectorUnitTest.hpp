@@ -1987,7 +1987,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device::execution_space> SFS; \
   using default_global_ordinal_type = ::Tpetra::Map<>::global_ordinal_type; \
   using default_local_ordinal_type = ::Tpetra::Map<>::local_ordinal_type; \
-  CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, default_global_ordinal_type, default_local_ordinal_type, N)
+  CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, default_local_ordinal_type, default_global_ordinal_type, N)
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N(N)                                  \
   CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)
