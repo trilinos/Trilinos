@@ -89,7 +89,12 @@ void multiply(const MatrixType& A,
               const InputVectorType& x,
               OutputVectorType& y,
               DefaultMultiply tag) {
-  typedef Multiply<MatrixType, InputVectorType, OutputVectorType> multiply_type;
+  using input_vector_type = typename std::conditional<
+    Kokkos::is_view<InputVectorType>::value,
+    typename InputVectorType::const_type,
+    InputVectorType>::type;
+  using multiply_type =
+    Multiply<MatrixType, input_vector_type, OutputVectorType>;
   multiply_type::apply( A, x, y );
 }
 
