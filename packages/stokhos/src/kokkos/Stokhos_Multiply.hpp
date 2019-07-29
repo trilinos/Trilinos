@@ -89,7 +89,7 @@ void multiply(const MatrixType& A,
               const InputVectorType& x,
               OutputVectorType& y,
               DefaultMultiply tag) {
-  typedef Multiply<MatrixType,InputVectorType,OutputVectorType> multiply_type;
+  typedef Multiply<MatrixType, InputVectorType, OutputVectorType> multiply_type;
   multiply_type::apply( A, x, y );
 }
 
