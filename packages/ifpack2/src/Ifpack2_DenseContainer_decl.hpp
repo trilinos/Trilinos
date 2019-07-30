@@ -113,29 +113,29 @@ private:
   /// Tpetra::CrsMatrix specialization.  It may have entirely
   /// different template parameters (e.g., \c scalar_type) than
   /// <tt>InverseType</tt>.
-  typedef MatrixType matrix_type;
+  using matrix_type = MatrixType;
   //! The second template parameter of this class.
-  typedef LocalScalarType local_scalar_type;
+  using local_scalar_type = LocalScalarType;
 
   //! The type of entries in the input (global) matrix.
-  typedef typename Container<MatrixType>::scalar_type scalar_type;
+  using typename Container<MatrixType>::scalar_type;
   //! The type of local indices in the input matrix.
-  typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
+  using typename Container<MatrixType>::local_ordinal_type;
   //! The type of global indices in the input matrix.
-  typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
+  using typename Container<MatrixType>::global_ordinal_type;
   //! The Node type of the input matrix.
-  typedef typename Container<MatrixType>::node_type node_type;
+  using typename Container<MatrixType>::node_type;
 
-  typedef typename Container<MatrixType>::mv_type mv_type;
-  typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
-  typedef typename Container<MatrixType>::map_type map_type;
-  typedef typename Container<MatrixType>::vector_type vector_type;
-  typedef typename Container<MatrixType>::import_type import_type;
+  using typename Container<MatrixType>::mv_type;
+  using local_mv_type = Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using typename Container<MatrixType>::map_type;
+  using typename Container<MatrixType>::vector_type;
+  using typename Container<MatrixType>::import_type;
 
-  typedef typename ContainerImpl<MatrixType, LocalScalarType>::local_impl_scalar_type local_impl_scalar_type;
-  typedef typename Container<MatrixType>::HostView HostView;
-  typedef typename local_mv_type::dual_view_type::t_host HostViewLocal;
-  typedef typename ContainerImpl<MatrixType, LocalScalarType>::HostSubview HostSubview;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::local_impl_scalar_type;
+  using typename Container<MatrixType>::HostView;
+  using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubview;
 
   static_assert(std::is_same<MatrixType, Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>::value,
                 "Ifpack2::DenseContainer: Please use MatrixType = Tpetra::RowMatrix.");
@@ -148,9 +148,9 @@ private:
   /// general as possible, so we always accept the matrix as a
   /// Tpetra::RowMatrix.  This typedef is the appropriate
   /// specialization of Tpetra::RowMatrix.
-  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
+  using typename Container<MatrixType>::row_matrix_type;
 
-  typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> block_crs_matrix_type;
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
   //@}
 
 public:
@@ -161,13 +161,13 @@ public:
   ///
   /// \brief matrix [in] The original input matrix.  This Container
   ///   will construct a local diagonal block from the rows given by
-  ///   <tt>localRows</tt>.
+  ///   <tt>blockRows</tt>.
   ///
-  /// \param localRows [in] The set of (local) rows assigned to this
-  ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
+  /// \param blockRows [in] The set of (local) rows assigned to this
+  ///   container.  <tt>blockRows[i] == j</tt>, where i (from 0 to
   ///   <tt>getNumRows() - 1</tt>) indicates the SparseContainer's
   ///   row, and j indicates the local row in the calling process.
-  ///   <tt>localRows.size()</tt> gives the number of rows in the
+  ///   <tt>blockRows.size()</tt> gives the number of rows in the
   ///   local matrix on each process.  This may be different on
   ///   different processes.
   DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
@@ -176,7 +176,7 @@ public:
                   bool pointIndexed);
 
   DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  const Teuchos::Array<local_ordinal_type>& localRows,
+                  Teuchos::ArrayView<const local_ordinal_type> blockRows,
                   bool pointIndexed);
 
   //! Destructor (declared virtual for memory safety of derived classes).

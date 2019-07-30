@@ -73,9 +73,9 @@ SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 template<class MatrixType, class InverseType>
 SparseContainer<MatrixType, InverseType>::
 SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 const Teuchos::Array<local_ordinal_type>& localRows,
+                 Teuchos::ArrayView<const local_ordinal_type> blockRows,
                  bool pointIndexed) :
-  ContainerImpl<MatrixType, InverseScalar> (matrix, localRows, pointIndexed),
+  ContainerImpl<MatrixType, InverseScalar> (matrix, blockRows, pointIndexed),
 #ifdef HAVE_MPI
   localComm_ (Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_SELF)))
 #else
@@ -256,11 +256,11 @@ apply (HostView& X,
     "X_local has length " << X_local.getLocalLength() << ", which does "
     "not match numRows = " << numRows * this->scalarsPerRow_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  const ArrayView<const local_ordinal_type> localRows = this->getBlockRows(blockIndex);
+  const ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(blockIndex);
   if(this->scalarsPerRow_ == 1)
-    mvgs.gatherMVtoView(X_local, X, localRows);
+    mvgs.gatherMVtoView(X_local, X, blockRows);
   else
-    mvgs.gatherMVtoViewBlock(X_local, X, localRows, this->scalarsPerRow_);
+    mvgs.gatherMVtoViewBlock(X_local, X, blockRows, this->scalarsPerRow_);
 
   // We must gather the output multivector Y even on input to
   // Inverse_->apply(), since the Inverse_ operator might use it as an
@@ -276,9 +276,9 @@ apply (HostView& X,
     "the Ifpack2 developers.");
 
   if(this->scalarsPerRow_ == 1)
-    mvgs.gatherMVtoView(Y_local, Y, localRows);
+    mvgs.gatherMVtoView(Y_local, Y, blockRows);
   else
-    mvgs.gatherMVtoViewBlock(Y_local, Y, localRows, this->scalarsPerRow_);
+    mvgs.gatherMVtoViewBlock(Y_local, Y, blockRows, this->scalarsPerRow_);
 
   // Apply the local operator:
   // Y_local := beta*Y_local + alpha*M^{-1}*X_local
@@ -289,9 +289,9 @@ apply (HostView& X,
   // Scatter the permuted subset output vector Y_local back into the
   // original output multivector Y.
   if(this->scalarsPerRow_ == 1)
-    mvgs.scatterMVtoView(Y, Y_local, localRows);
+    mvgs.scatterMVtoView(Y, Y_local, blockRows);
   else
-    mvgs.scatterMVtoViewBlock(Y, Y_local, localRows, this->scalarsPerRow_);
+    mvgs.scatterMVtoViewBlock(Y, Y_local, blockRows, this->scalarsPerRow_);
 }
 
 //==============================================================================
@@ -385,8 +385,8 @@ weightedApply (HostView& X,
       invY.emplace_back(Inverses_[i]->getDomainMap(), numVecs);
   }
   inverse_mv_type& X_local = invX[blockIndex];
-  const ArrayView<const local_ordinal_type> localRows = this->getBlockRows(blockIndex);
-  mvgs.gatherMVtoView(X_local, X, localRows);
+  const ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(blockIndex);
+  mvgs.gatherMVtoView(X_local, X, blockRows);
 
   // We must gather the output multivector Y even on input to
   // Inverse_->apply(), since the Inverse_ operator might use it as an
@@ -400,7 +400,7 @@ weightedApply (HostView& X,
     "Y_local has length " << X_local.getLocalLength() << ", which does "
     "not match numRows = " << numRows << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  mvgs.gatherMVtoView(Y_local, Y, localRows);
+  mvgs.gatherMVtoView(Y_local, Y, blockRows);
 
   // Apply the diagonal scaling D to the input X.  It's our choice
   // whether the result has the original input Map of X, or the
@@ -419,7 +419,7 @@ weightedApply (HostView& X,
     "D_local has length " << X_local.getLocalLength () << ", which does "
     "not match numRows = " << this->blockSizes_[blockIndex] << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  mvgs.gatherMVtoView(D_local, D, localRows);
+  mvgs.gatherMVtoView(D_local, D, blockRows);
   inverse_mv_type X_scaled(Inverses_[blockIndex]->getDomainMap(), numVecs);
   X_scaled.elementWiseMultiply(STS::one(), D_local, X_local, STS::zero());
 
@@ -446,7 +446,7 @@ weightedApply (HostView& X,
     delete Y_temp;
   // Copy the permuted subset output vector Y_local into the original
   // output multivector Y.
-  mvgs.scatterMVtoView(Y, Y_local, localRows);
+  mvgs.scatterMVtoView(Y, Y_local, blockRows);
 }
 
 //==============================================================================

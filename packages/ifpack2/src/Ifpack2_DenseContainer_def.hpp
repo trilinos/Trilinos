@@ -101,9 +101,9 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 template<class MatrixType, class LocalScalarType>
 DenseContainer<MatrixType, LocalScalarType>::
 DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                const Teuchos::Array<local_ordinal_type>& localRows,
+                Teuchos::ArrayView<const local_ordinal_type> blockRows,
                 bool pointIndexed) :
-  ContainerImpl<MatrixType, LocalScalarType>(matrix, localRows, pointIndexed)
+  ContainerImpl<MatrixType, LocalScalarType>(matrix, blockRows, pointIndexed)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!::Ifpack2::Details::LapackSupportsScalar<LocalScalarType>::value,
       std::logic_error,

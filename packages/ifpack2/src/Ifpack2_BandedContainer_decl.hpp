@@ -113,32 +113,32 @@ private:
   /// Tpetra::CrsMatrix specialization.  It may have entirely
   /// different template parameters (e.g., \c scalar_type) than
   /// <tt>InverseType</tt>.
-  typedef MatrixType matrix_type;
+  using matrix_type = MatrixType;
   //! The second template parameter of this class.
-  typedef LocalScalarType local_scalar_type;
+  using local_scalar_type = LocalScalarType;
   //! The internal representation of LocalScalarType in Kokkos::View
-  typedef typename Kokkos::Details::ArithTraits<local_scalar_type>::val_type local_impl_scalar_type;
+  using local_impl_scalar_type = typename Kokkos::Details::ArithTraits<local_scalar_type>::val_type;
 
   //! The type of entries in the input (global) matrix.
-  typedef typename Container<MatrixType>::scalar_type scalar_type;
+  using typename Container<MatrixType>::scalar_type;
   //! The type of local indices in the input (global) matrix.
-  typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
+  using typename Container<MatrixType>::local_ordinal_type;
   //! The type of global indices in the input (global) matrix.
-  typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
+  using typename Container<MatrixType>::global_ordinal_type;
   //! The Node type of the input (global) matrix.
-  typedef typename Container<MatrixType>::node_type node_type;
+  using typename Container<MatrixType>::node_type;
 
-  typedef typename Container<MatrixType>::STS STS;
+  using typename Container<MatrixType>::STS;
 
-  typedef typename Container<MatrixType>::mv_type mv_type;
-  typedef typename Container<MatrixType>::map_type map_type;
-  typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
-  typedef typename Container<MatrixType>::vector_type vector_type;
-  typedef typename Container<MatrixType>::import_type import_type;
+  using Container<MatrixType>::mv_type;
+  using Container<MatrixType>::map_type;
+  using local_mv_type = Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using typename Container<MatrixType>::vector_type;
+  using typename Container<MatrixType>::import_type;
 
-  typedef typename Container<MatrixType>::HostView HostView;
-  typedef typename ContainerImpl<MatrixType, LocalScalarType>::HostSubview HostSubview;
-  typedef typename local_mv_type::dual_view_type::t_host HostViewLocal;
+  using typename Container<MatrixType>::HostView;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubview;
+  using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,
                   Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >::value,
@@ -152,7 +152,7 @@ private:
   /// general as possible, so we always accept the matrix as a
   /// Tpetra::RowMatrix.  This typedef is the appropriate
   /// specialization of Tpetra::RowMatrix.
-  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
+  using typename Container<MatrixType>::row_matrix_type;
 
   //@}
 public:
@@ -163,13 +163,13 @@ public:
   ///
   /// \brief matrix [in] The original input matrix.  This Container
   ///   will construct a local diagonal block from the rows given by
-  ///   <tt>localRows</tt>.
+  ///   <tt>blockRows</tt>.
   ///
-  /// \param localRows [in] The set of (local) rows assigned to this
-  ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
+  /// \param blockRows [in] The set of (local) rows assigned to this
+  ///   container.  <tt>blockRows[i] == j</tt>, where i (from 0 to
   ///   <tt>getNumRows() - 1</tt>) indicates the SparseContainer's
   ///   row, and j indicates the local row in the calling process.
-  ///   <tt>localRows.size()</tt> gives the number of rows in the
+  ///   <tt>blockRows.size()</tt> gives the number of rows in the
   ///   local matrix on each process.  This may be different on
   ///   different processes.
   ///   <tt>number of subdiagonals
@@ -181,7 +181,7 @@ public:
                    bool pointIndexed);
 
   BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::Array<local_ordinal_type>& localRows,
+                   Teuchos::ArrayView<const local_ordinal_type> blockRows,
                    bool pointIndexed);
 
   //! Destructor (declared virtual for memory safety of derived classes).

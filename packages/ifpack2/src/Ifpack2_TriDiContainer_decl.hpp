@@ -114,29 +114,29 @@ private:
   /// This must be a Tpetra::RowMatrix specialization.  It may have
   /// entirely different template parameters (e.g., \c scalar_type)
   /// than \c InverseType.
-  typedef MatrixType matrix_type;
+  using matrix_type = MatrixType;
   //! The second template parameter of this class.
-  typedef LocalScalarType local_scalar_type;
+  using local_scalar_type = LocalScalarType;
 
   //! The type of entries in the input (global) matrix.
-  typedef typename Container<MatrixType>::scalar_type scalar_type;
+  using typename Container<MatrixType>::scalar_type;
   //! The type of local indices in the input (global) matrix.
-  typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
+  using typename Container<MatrixType>::local_ordinal_type;
   //! The type of global indices in the input (global) matrix.
-  typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
+  using typename Container<MatrixType>::global_ordinal_type;
   //! The Node type of the input (global) matrix.
-  typedef typename Container<MatrixType>::node_type node_type;
+  using typename Container<MatrixType>::node_type;
 
-  typedef typename Container<MatrixType>::mv_type mv_type;
-  typedef typename Container<MatrixType>::map_type map_type;
-  typedef typename Container<MatrixType>::vector_type vector_type;
-  typedef typename Container<MatrixType>::import_type import_type;
+  using typename Container<MatrixType>::mv_type;
+  using typename Container<MatrixType>::map_type;
+  using typename Container<MatrixType>::vector_type;
+  using typename Container<MatrixType>::import_type;
 
-  typedef typename ContainerImpl<MatrixType, LocalScalarType>::local_impl_scalar_type local_impl_scalar_type;
-  typedef typename Container<MatrixType>::HostView HostView;
-  typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
-  typedef typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace> HostViewLocal;
-  typedef typename ContainerImpl<MatrixType, LocalScalarType>::HostSubview HostSubview;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::local_impl_scalar_type;
+  using typename Container<MatrixType>::HostView;
+  using local_mv_type = Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using HostViewLocal = typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace>;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubview;
 
   static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>::value,
                  "Ifpack2::TriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
@@ -149,7 +149,7 @@ private:
   /// general as possible, so we always accept the matrix as a
   /// Tpetra::RowMatrix.  This typedef is the appropriate
   /// specialization of Tpetra::RowMatrix.
-  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
+  using typename Container<MatrixType>::row_matrix_type;
   //@}
 public:
   //! \name Constructor and destructor
@@ -158,23 +158,20 @@ public:
   /// \brief Constructor.
   ///
   /// \brief matrix [in] The original input matrix.  This Container
-  ///   will construct a local diagonal block from the rows given by
-  ///   <tt>localRows</tt>.
+  ///   will construct local diagonal blocks from the rows given by
+  ///   <tt>partitions</tt>.
   ///
-  /// \param localRows [in] The set of (local) rows assigned to this
-  ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
-  ///   <tt>getNumRows() - 1</tt>) indicates the SparseContainer's
-  ///   row, and j indicates the local row in the calling process.
-  ///   <tt>localRows.size()</tt> gives the number of rows in the
-  ///   local matrix on each process.  This may be different on
-  ///   different processes.
+  /// \param partitions [in] The set of (local) rows assigned to each
+  ///   block. <tt>blockRows.size()</tt> gives the number of blocks in
+  ///   the container (on this process), and <tt>blockRows[i].size()</tt>
+  ///   gives the number of rows in block i.
   TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                   const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                   const Teuchos::RCP<const import_type>& importer,
                   bool pointIndexed);
 
   TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  const Teuchos::Array<local_ordinal_type>& localRows,
+                  Teuchos::ArrayView<const local_ordinal_type> blockRows,
                   bool pointIndexed);
 
 

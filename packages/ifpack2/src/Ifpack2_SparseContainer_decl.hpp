@@ -133,7 +133,7 @@ namespace Ifpack2 {
 template<typename MatrixType, typename InverseType>
 class SparseContainer
 : public ContainerImpl<MatrixType, typename InverseType::scalar_type> {
-  //! @name Internal typedefs (private)
+  //! @name Internal type aliases (private)
   //@{
 private:
   /// \brief The first template parameter of this class.
@@ -142,35 +142,35 @@ private:
   /// Tpetra::CrsMatrix specialization.  It may have entirely
   /// different template parameters (e.g., \c scalar_type) than
   /// <tt>InverseType</tt>.
-  typedef MatrixType matrix_type;
+  using matrix_type = MatrixType;
   /// \brief The second template parameter of this class.
   ///
   /// This must be a specialization of Ifpack2::Preconditioner or one
   /// of its subclasses.  It may have entirely different template
   /// parameters (e.g., \c scalar_type) than \c MatrixType.
-  typedef InverseType inverse_type;
+  using inverse_type = InverseType;
 
-  typedef typename Container<MatrixType>::scalar_type scalar_type;
-  typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
-  typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
-  typedef typename Container<MatrixType>::node_type node_type;
+  using typename Container<MatrixType>::scalar_type;
+  using typename Container<MatrixType>::local_ordinal_type;
+  using typename Container<MatrixType>::global_ordinal_type;
+  using typename Container<MatrixType>::node_type;
 
-  typedef typename Container<MatrixType>::mv_type mv_type;
-  typedef typename Container<MatrixType>::map_type map_type;
-  typedef typename Container<MatrixType>::vector_type vector_type;
-  typedef typename Container<MatrixType>::import_type import_type;
+  using typename Container<MatrixType>::mv_type;
+  using typename Container<MatrixType>::map_type;
+  using typename Container<MatrixType>::vector_type;
+  using typename Container<MatrixType>::import_type;
 
-  typedef typename InverseType::scalar_type InverseScalar;
-  typedef typename InverseType::local_ordinal_type InverseLocalOrdinal;
-  typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
-  typedef typename InverseType::node_type InverseNode;
+  using InverseScalar = typename InverseType::scalar_type;
+  using InverseLocalOrdinal = typename InverseType::local_ordinal_type;
+  using InverseGlobalOrdinal = typename InverseType::global_ordinal_type;
+  using InverseNode = typename InverseType::node_type;
 
-  typedef typename Tpetra::MultiVector<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode> inverse_mv_type;
-  typedef typename Tpetra::CrsMatrix<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode> InverseCrs;
-  typedef typename Tpetra::Map<InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode> InverseMap;
+  using inverse_mv_type = Tpetra::MultiVector<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
+  using InverseCrs = Tpetra::CrsMatrix<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
+  using InverseMap = typename Tpetra::Map<InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
 
-  typedef typename Container<MatrixType>::HostView HostView;
-  typedef typename inverse_mv_type::dual_view_type::t_host HostViewInverse;
+  using typename Container<MatrixType>::HostView;
+  using HostViewInverse = typename inverse_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,
                   Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>::value, "Ifpack2::SparseContainer: Please use MatrixType = Tpetra::RowMatrix.");
@@ -181,9 +181,9 @@ private:
   /// Tpetra::RowMatrix specialization or a Tpetra::CrsMatrix
   /// specialization.  However, we want to make the constructor as
   /// general as possible, so we always accept the matrix as a
-  /// Tpetra::RowMatrix.  This typedef is the appropriate
+  /// Tpetra::RowMatrix.  This type is the appropriate
   /// specialization of Tpetra::RowMatrix.
-  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
+  using typename Container<MatrixType>::row_matrix_type;
   //@}
 
 public:
@@ -194,7 +194,7 @@ public:
   ///
   /// \brief matrix [in] The original input matrix.  This Container
   ///   will construct a local diagonal block from the rows given by
-  ///   <tt>localRows</tt>.
+  ///   <tt>blockRows</tt>.
   ///
   /// \brief partitioner [in] The BlockRelaxation partitioner.
   SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
@@ -203,7 +203,7 @@ public:
                    bool pointIndexed);
 
   SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::Array<local_ordinal_type>& localRows,
+                   Teuchos::ArrayView<const local_ordinal_type> blockRows,
                    bool pointIndexed);
 
   //! Destructor (declared virtual for memory safety of derived classes).

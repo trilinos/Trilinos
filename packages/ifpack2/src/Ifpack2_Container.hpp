@@ -115,28 +115,28 @@ template<class MatrixType>
 class Container : public Teuchos::Describable
 {
 public:
-  typedef typename MatrixType::scalar_type scalar_type;
-  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-  typedef typename MatrixType::node_type node_type;
-  typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> mv_type;
-  typedef Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> vector_type;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
-  typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> block_crs_matrix_type;
-  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
+  using scalar_type = typename MatrixType::scalar_type;
+  using local_ordinal_type = typename MatrixType::local_ordinal_type;
+  using global_ordinal_type = typename MatrixType::global_ordinal_type;
+  using node_type = typename MatrixType::node_type;
+  using import_type = Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>;
+  using mv_type = Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using vector_type = Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using map_type = Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
+  using STS = Teuchos::ScalarTraits<scalar_type>;
+  using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using row_matrix_type = Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value,
                 "Ifpack2::Container: Please use MatrixType = Tpetra::RowMatrix.");
 
   //! Internal representation of Scalar in Kokkos::View
-  typedef typename Kokkos::Details::ArithTraits<scalar_type>::val_type impl_scalar_type;
+  using impl_scalar_type = typename Kokkos::Details::ArithTraits<scalar_type>::val_type;
 
   //! HostView (the host-space internal representation for Tpetra::Multivector) is the
   //! type of the vector arguments of DoJacobi, DoGaussSeidel, and DoSGS.
-  typedef typename mv_type::dual_view_type::t_host HostView;
+  using HostView = typename mv_type::dual_view_type::t_host;
 
   /// \brief Constructor.
   ///
@@ -215,7 +215,7 @@ public:
   ///   j indicates the local row in the calling process.  Subclasses
   ///   must always pass along these indices to the base class.
   Container (const Teuchos::RCP<const row_matrix_type>& matrix,
-             const Teuchos::Array<local_ordinal_type>& blockRows,
+             Teuchos::ArrayView<const local_ordinal_type> blockRows,
              bool pointIndexed) :
     inputMatrix_ (matrix),
     inputCrsMatrix_ (Teuchos::rcp_dynamic_cast<const crs_matrix_type>(inputMatrix_)),
@@ -504,28 +504,28 @@ class ContainerImpl : public Container<MatrixType>
   //! @name Internal typedefs (protected)
   //@{
 protected:
-  typedef LocalScalarType local_scalar_type;
-  typedef typename Container<MatrixType>::scalar_type scalar_type;
-  typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
-  typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
-  typedef typename Container<MatrixType>::node_type node_type;
-  typedef typename Container<MatrixType>::import_type import_type;
-  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
-  typedef typename Container<MatrixType>::crs_matrix_type crs_matrix_type;
-  typedef typename Container<MatrixType>::block_crs_matrix_type block_crs_matrix_type;
-  typedef typename Container<MatrixType>::mv_type mv_type;
-  typedef typename Container<MatrixType>::vector_type vector_type;
-  typedef typename Container<MatrixType>::map_type map_type;
-  typedef typename Container<MatrixType>::STS STS;
-  typedef typename Container<MatrixType>::impl_scalar_type impl_scalar_type;
-  typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
+  using local_scalar_type = LocalScalarType;
+  using typename Container<MatrixType>::scalar_type;
+  using typename Container<MatrixType>::local_ordinal_type;
+  using typename Container<MatrixType>::global_ordinal_type;
+  using typename Container<MatrixType>::node_type;
+  using typename Container<MatrixType>::import_type;
+  using typename Container<MatrixType>::row_matrix_type;
+  using typename Container<MatrixType>::crs_matrix_type;
+  using typename Container<MatrixType>::block_crs_matrix_type;
+  using typename Container<MatrixType>::mv_type;
+  using typename Container<MatrixType>::vector_type;
+  using typename Container<MatrixType>::map_type;
+  using typename Container<MatrixType>::STS;
+  using typename Container<MatrixType>::impl_scalar_type;
+  using local_mv_type = Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
 
   //! The internal representation of LocalScalarType in Kokkos::View
-  typedef typename Kokkos::Details::ArithTraits<local_scalar_type>::val_type local_impl_scalar_type;
+  using local_impl_scalar_type = typename Kokkos::Details::ArithTraits<local_scalar_type>::val_type;
 
-  typedef typename mv_type::dual_view_type::t_host HostView;
-  typedef typename local_mv_type::dual_view_type::t_host HostViewLocal;
-  typedef typename Kokkos::View<local_impl_scalar_type**, Kokkos::LayoutStride, Kokkos::HostSpace> HostSubview;
+  using HostView = typename mv_type::dual_view_type::t_host;
+  using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
+  using HostSubview = Kokkos::View<local_impl_scalar_type**, Kokkos::LayoutStride, Kokkos::HostSpace>;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value,
                 "Ifpack2::Container: Please use MatrixType = Tpetra::RowMatrix.");
@@ -703,16 +703,16 @@ protected:
         //Get the interval where block i is defined in blockRows_
         local_ordinal_type blockStart = this->blockOffsets_[i];
         local_ordinal_type blockEnd = blockStart + this->blockSizes_[i];
-        ArrayView<const local_ordinal_type> localRows = this->getBlockRows(i);
+        ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
         //Set the lookup table entries for the columns appearing in block i.
         //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
         //this is OK. The values updated here are only needed to process block i's entries.
-        for(size_t j = 0; j < (size_t) localRows.size(); j++)
+        for(size_t j = 0; j < (size_t) blockRows.size(); j++)
         {
-          local_ordinal_type localCol = translateRowToCol(localRows[j]);
+          local_ordinal_type localCol = translateRowToCol(blockRows[j]);
           colToBlockOffset[localCol] = blockStart + j;
         }
-        for(local_ordinal_type blockRow = 0; blockRow < (local_ordinal_type) localRows.size(); blockRow++)
+        for(local_ordinal_type blockRow = 0; blockRow < (local_ordinal_type) blockRows.size(); blockRow++)
         {
           //get a raw view of the whole block row
           const local_ordinal_type* indices;
@@ -755,17 +755,17 @@ protected:
         //Get the interval where block i is defined in blockRows_
         local_ordinal_type blockStart = this->blockOffsets_[i];
         local_ordinal_type blockEnd = blockStart + this->blockSizes_[i];
-        ArrayView<const local_ordinal_type> localRows = this->getBlockRows(i);
+        ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
         //Set the lookup table entries for the columns appearing in block i.
         //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
         //this is OK. The values updated here are only needed to process block i's entries.
-        for(size_t j = 0; j < (size_t) localRows.size(); j++)
+        for(size_t j = 0; j < (size_t) blockRows.size(); j++)
         {
           //translateRowToCol will return the corresponding split column
-          local_ordinal_type localCol = translateRowToCol(localRows[j]);
+          local_ordinal_type localCol = translateRowToCol(blockRows[j]);
           colToBlockOffset[localCol] = blockStart + j;
         }
-        for(size_t blockRow = 0; blockRow < (size_t) localRows.size(); blockRow++)
+        for(size_t blockRow = 0; blockRow < (size_t) blockRows.size(); blockRow++)
         {
           //get a view of the split row
           local_ordinal_type inputPointRow = this->blockRows_[blockStart + blockRow];
@@ -795,7 +795,7 @@ public:
   {}
 
   ContainerImpl (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 const Teuchos::Array<local_ordinal_type>& blockRows,
+                 Teuchos::ArrayView<const local_ordinal_type> blockRows,
                  bool pointIndexed)
     : Container<MatrixType>(matrix, blockRows, pointIndexed)
   {}
@@ -1069,7 +1069,7 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     //Use the KokkosSparse internal matrix for low-overhead values/indices access
     //But, can only do this if the matrix is accessible directly from host, since it's not a DualView
     auto localA = this->inputCrsMatrix_->getLocalMatrix();
-    typedef typename decltype(localA)::size_type size_type;
+    using size_type = typename decltype(localA)::size_type;
     const auto& rowmap = localA.graph.row_map;
     const auto& entries = localA.graph.entries;
     const auto& values = localA.values;
@@ -1280,12 +1280,12 @@ apply (HostView& X,
     }
   }
 
-  const ArrayView<const local_ordinal_type> localRows = this->getBlockRows(blockIndex);
+  const ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(blockIndex);
 
   if(this->scalarsPerRow_ == 1)
-    mvgs.gatherViewToView (X_localBlocks_[blockIndex], X, localRows);
+    mvgs.gatherViewToView (X_localBlocks_[blockIndex], X, blockRows);
   else
-    mvgs.gatherViewToViewBlock (X_localBlocks_[blockIndex], X, localRows, this->scalarsPerRow_);
+    mvgs.gatherViewToViewBlock (X_localBlocks_[blockIndex], X, blockRows, this->scalarsPerRow_);
 
   // We must gather the contents of the output multivector Y even on
   // input to solveBlock(), since the inverse operator might use it as
@@ -1293,9 +1293,9 @@ apply (HostView& X,
   // whether it does or does not.
 
   if(this->scalarsPerRow_ == 1)
-    mvgs.gatherViewToView (Y_localBlocks_[blockIndex], Y, localRows);
+    mvgs.gatherViewToView (Y_localBlocks_[blockIndex], Y, blockRows);
   else
-    mvgs.gatherViewToViewBlock (Y_localBlocks_[blockIndex], Y, localRows, this->scalarsPerRow_);
+    mvgs.gatherViewToViewBlock (Y_localBlocks_[blockIndex], Y, blockRows, this->scalarsPerRow_);
 
   // Apply the local operator:
   // Y_local := beta*Y_local + alpha*M^{-1}*X_local
@@ -1305,9 +1305,9 @@ apply (HostView& X,
   // Scatter the permuted subset output vector Y_local back into the
   // original output multivector Y.
   if(this->scalarsPerRow_ == 1)
-    mvgs.scatterViewToView (Y, Y_localBlocks_[blockIndex], localRows);
+    mvgs.scatterViewToView (Y, Y_localBlocks_[blockIndex], blockRows);
   else
-    mvgs.scatterViewToViewBlock (Y, Y_localBlocks_[blockIndex], localRows, this->scalarsPerRow_);
+    mvgs.scatterViewToViewBlock (Y, Y_localBlocks_[blockIndex], blockRows, this->scalarsPerRow_);
 }
 
 template<class MatrixType, class LocalScalarType>
@@ -1329,7 +1329,7 @@ weightedApply(HostView& X,
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using std::endl;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  using STS = Teuchos::ScalarTraits<scalar_type>;
 
   // The local operator template parameter might have a different
   // Scalar type than MatrixType.  This means that we might have to
@@ -1413,18 +1413,18 @@ weightedApply(HostView& X,
     weightedApplyScratch_ = HostViewLocal("weightedApply scratch", 3 * this->maxBlockSize_, numVecs);
   }
 
-  ArrayView<const local_ordinal_type> localRows = this->getBlockRows(blockIndex);
+  ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(blockIndex);
 
   Details::MultiVectorLocalGatherScatter<mv_type, local_mv_type> mvgs;
 
   //note: BlockCrs w/ weighted Jacobi isn't allowed, so no need to use block gather/scatter
-  mvgs.gatherViewToView (X_localBlocks_[blockIndex], X, localRows);
+  mvgs.gatherViewToView (X_localBlocks_[blockIndex], X, blockRows);
   // We must gather the output multivector Y even on input to
   // solveBlock(), since the local operator might use it as an initial
   // guess for a linear solve.  We have no way of knowing whether it
   // does or does not.
 
-  mvgs.gatherViewToView (Y_localBlocks_[blockIndex], Y, localRows);
+  mvgs.gatherViewToView (Y_localBlocks_[blockIndex], Y, blockRows);
 
   // Apply the diagonal scaling D to the input X.  It's our choice
   // whether the result has the original input Map of X, or the
@@ -1439,7 +1439,7 @@ weightedApply(HostView& X,
   auto bs = this->blockSizes_[blockIndex] * this->scalarsPerRow_;
 
   HostSubview D_local(weightedApplyScratch_, std::make_pair(0, bs), std::make_pair(0, 1));
-  mvgs.gatherViewToView (D_local, D, localRows);
+  mvgs.gatherViewToView (D_local, D, blockRows);
   HostSubview X_scaled(weightedApplyScratch_, std::make_pair(maxBS, maxBS + bs), Kokkos::ALL());
   for(size_t j = 0; j < numVecs; j++)
     for(size_t i = 0; i < numRows; i++)
@@ -1461,7 +1461,7 @@ weightedApply(HostView& X,
 
   // Copy the permuted subset output vector Y_local into the original
   // output multivector Y.
-  mvgs.scatterViewToView (Y, Y_localBlocks_[blockIndex], localRows);
+  mvgs.scatterViewToView (Y, Y_localBlocks_[blockIndex], blockRows);
 }
 
 template<class MatrixType>

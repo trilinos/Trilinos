@@ -123,14 +123,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
   // ====================================== //
 
   // Set IDs to grab the whole matrix
-  Teuchos::Array<typename CRS::local_ordinal_type> localRows (num_rows_per_proc);
+  Teuchos::Array<typename CRS::local_ordinal_type> blockRows (num_rows_per_proc);
   for (size_t i = 0; i < num_rows_per_proc; ++i) {
-    localRows[i] = i;
+    blockRows[i] = i;
   }
 
   out << "SparseContainer constructor" << endl;
 
-  Ifpack2::SparseContainer<ROW, ILUTlo> MyContainer (crsmatrix, localRows, false);
+  Ifpack2::SparseContainer<ROW, ILUTlo> MyContainer (crsmatrix, blockRows(), false);
 
   out << "Setting SparseContainer parameters" << endl;
 
@@ -231,9 +231,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   vec_type d (rowMap);
 
   // Set indices to grab the whole matrix
-  Array<LocalOrdinal> localRows (numRowsPerProc);
+  Array<LocalOrdinal> blockRows (numRowsPerProc);
   for (size_t i = 0; i < numRowsPerProc; ++i) {
-    localRows[i] = i;
+    blockRows[i] = i;
   }
 
   // For all the DenseContainer operations, we take special care to
@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   out << "DenseContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    MyContainer = Teuchos::rcp (new container_type (A, localRows, false));
+    MyContainer = Teuchos::rcp (new container_type (A, blockRows(), false));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
@@ -379,9 +379,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   vec_type d (rowMap);
 
   // Set indices to grab the whole matrix
-  Array<LocalOrdinal> localRows (numRowsPerProc);
+  Array<LocalOrdinal> blockRows (numRowsPerProc);
   for (size_t i = 0; i < numRowsPerProc; ++i) {
-    localRows[i] = i;
+    blockRows[i] = i;
   }
 
   // For all the BandedContainer operations, we take special care to
@@ -396,7 +396,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   out << "BandedContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    MyContainer = Teuchos::rcp (new container_type (A, localRows, false));
+    MyContainer = Teuchos::rcp (new container_type (A, blockRows(), false));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
@@ -476,15 +476,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
                          localSuccess, outArg (globalSuccess));
   }
 
-  // FIXME: why is this not working?? It seems that the gather call from X to X_local is failing (maybe due to problems with localRows?)
-  // TODO second call to apply not working due to problems with local rows???
-  //out << "DenseContainer::weightedApply" << endl;
-  //d.putScalar (1.0);
-  //MyContainer->weightedApply (b, y, d);
-  //
-  //out << "Computing results of apply() and weightedApply() "
-  //    << "(they should be the same in this case)" << endl;
-  //TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), 1.0e2*STS::eps () );
+  out << "DenseContainer::weightedApply" << endl;
+  d.putScalar (1.0);
+  MyContainer->weightedApplyMV(b, y, d);
+
+  out << "Computing results of apply() and weightedApply() "
+      << "(they should be the same in this case)" << endl;
+  TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), 1.0e2*STS::eps () );
 }
 
 // Define the set of unit tests to instantiate in this file.

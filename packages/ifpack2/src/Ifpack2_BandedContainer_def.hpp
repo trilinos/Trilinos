@@ -83,9 +83,9 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 template<class MatrixType, class LocalScalarType>
 BandedContainer<MatrixType, LocalScalarType>::
 BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 const Teuchos::Array<local_ordinal_type>& localRows,
+                 Teuchos::ArrayView<const local_ordinal_type> blockRows,
                  bool pointIndexed) :
-  ContainerImpl<MatrixType, LocalScalarType>(matrix, localRows, pointIndexed),
+  ContainerImpl<MatrixType, LocalScalarType>(matrix, blockRows, pointIndexed),
   ipiv_(this->blockSizes_[0] * this->scalarsPerRow_),
   kl_(1, -1),
   ku_(1, -1),
@@ -143,16 +143,16 @@ computeBandwidth()
       //Get the interval where block i is defined in blockRows_
       local_ordinal_type blockStart = this->blockOffsets_[i];
       local_ordinal_type blockEnd = (i == this->numBlocks_ - 1) ? this->blockRows_.size() : this->blockOffsets_[i + 1];
-      ArrayView<const local_ordinal_type> localRows = this->getBlockRows(i);
+      ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
-      for(size_t j = 0; j < (size_t) localRows.size(); j++)
+      for(size_t j = 0; j < (size_t) blockRows.size(); j++)
       {
-        local_ordinal_type localCol = this->translateRowToCol(localRows[j]);
+        local_ordinal_type localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(local_ordinal_type blockRow = 0; blockRow < (local_ordinal_type) localRows.size(); blockRow++)
+      for(local_ordinal_type blockRow = 0; blockRow < (local_ordinal_type) blockRows.size(); blockRow++)
       {
         //get a raw view of the whole block row
         const local_ordinal_type* indices;
@@ -190,17 +190,17 @@ computeBandwidth()
       //Get the interval where block i is defined in blockRows_
       local_ordinal_type blockStart = this->blockOffsets_[i];
       local_ordinal_type blockEnd = (i == this->numBlocks_ - 1) ? this->blockRows_.size() : this->blockOffsets_[i + 1];
-      ArrayView<const local_ordinal_type> localRows = this->getBlockRows(i);
+      ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
-      for(size_t j = 0; j < (size_t) localRows.size(); j++)
+      for(size_t j = 0; j < (size_t) blockRows.size(); j++)
       {
         //translateRowToCol will return the corresponding split column
-        local_ordinal_type localCol = this->translateRowToCol(localRows[j]);
+        local_ordinal_type localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(local_ordinal_type blockRow = 0; blockRow < (local_ordinal_type) localRows.size(); blockRow++)
+      for(local_ordinal_type blockRow = 0; blockRow < (local_ordinal_type) blockRows.size(); blockRow++)
       {
         //get a view of the general row
         local_ordinal_type inputSplitRow = this->blockRows_[blockStart + blockRow];
