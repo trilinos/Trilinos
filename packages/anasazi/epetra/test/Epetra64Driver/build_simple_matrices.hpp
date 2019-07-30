@@ -61,6 +61,7 @@
 #endif
 
 #include "build_maps.hpp"
+#include "Teuchos_Assert.hpp"
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -142,7 +143,7 @@ void build_simple_matrix(
   for (int sum = 0, i=0; i < nMyRows; i++) {
     if (nnzPerRow[i]) {
       info = A->InsertGlobalValues(iv[sum],nnzPerRow[i],&vv[sum],&jv[sum]);
-      assert(info==0);
+      TEUCHOS_ASSERT( info==0);
       sum += nnzPerRow[i];
     }
   }
@@ -153,7 +154,7 @@ void build_simple_matrix(
   else
     info = A->FillComplete();
 
-  assert(info==0);
+  TEUCHOS_ASSERT( info==0);
 
 }
 

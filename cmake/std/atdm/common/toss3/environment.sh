@@ -36,7 +36,17 @@ else
 fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
-    module load sems-devpack-intel/18.0.0 
+    module load sems-intel/18.0.0
+    module load sems-openmpi/1.10.5
+    module load sems-netcdf/4.4.1/exo_parallel
+    module load sems-parmetis/4.0.3/64bit_parallel
+    module load sems-scotch/6.0.3/nopthread_64bit_parallel
+    module load sems-superlu/5.2.1/base
+    module load sems-yaml_cpp/0.5.3/base
+    module load sems-zlib/1.2.8/base
+    module unload sems-boost/1.63.0/base
+    module load sems-boost/1.66.0/base
+
     module swap mkl/18.0.0.128 mkl/18.0.5.274
     module load gcc/4.9.3
     module unload sems-python/2.7.9
