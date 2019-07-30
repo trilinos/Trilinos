@@ -1116,7 +1116,7 @@ private:
     }
   }
 public:
-  L2VectorBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
+  L2VectorBatchManager(const ROL::Ptr<const Teuchos::Comm<int> > &comm)
     : ROL::TeuchosBatchManager<Real,Ordinal>(comm) {}
   void sumAll(ROL::Vector<Real> &input, ROL::Vector<Real> &output) {
     ROL::Ptr<std::vector<Real> > input_ptr;

@@ -88,7 +88,7 @@ MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos:
 
     //set up jacobian graph
     crs_graph = rcp(new Tpetra_CrsGraph(x_map, vecLength));
-    std::vector<int> indices(vecLength);
+    std::vector<GO> indices(vecLength);
     for (int i=0; i<vecLength; i++) indices[i]=i;
     const int nodeNumElements = x_map->getNodeNumElements();
     for (int i=0; i<nodeNumElements; i++)
@@ -321,7 +321,7 @@ void MockModelEval_A_Tpetra::evalModelImpl(
 
   if (f_out != Teuchos::null) {
     for (int i=0; i<myVecLength; i++) {
-      int gid = x_in->getMap()->getGlobalElement(i);
+      GO gid = x_in->getMap()->getGlobalElement(i);
 
       if (gid==0) // f_0 = (x_0)^2 - p_0
        f_out->getDataNonConst()[i] = x[i] * x[i] -  p[0];
@@ -348,7 +348,7 @@ void MockModelEval_A_Tpetra::evalModelImpl(
   if (Teuchos::nonnull(dfdp_out)) {
     dfdp_out->putScalar(0.0);
     for (int i=0; i<myVecLength; i++) {
-      const int gid = x_in->getMap()->getGlobalElement(i);
+      const GO gid = x_in->getMap()->getGlobalElement(i);
       if  (gid==0) dfdp_out->getVectorNonConst(0)->getDataNonConst()[i] = -1.0;
       else         dfdp_out->getVectorNonConst(1)->getDataNonConst()[i] =  -2.0* (gid + p[1]);
     }

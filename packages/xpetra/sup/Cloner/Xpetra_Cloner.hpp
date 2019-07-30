@@ -72,7 +72,7 @@ namespace Xpetra {
   RCP<Map<LocalOrdinal,GlobalOrdinal,Node2> > clone(const Map<LocalOrdinal,GlobalOrdinal,Node1>& map, const RCP<Node2>& node2) {
     if (map.lib() == UseEpetra)
       throw std::invalid_argument("Map::clone() functionality is only available for Tpetra");
-#ifdef HAVE_XPETRA_TPETRA
+#if defined(HAVE_XPETRA_TPETRA) && defined(TPETRA_ENABLE_DEPRECATED_CODE)
     RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node1> > tMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node1> >(rcpFromRef(map));
 
     return tMap->clone(node2);

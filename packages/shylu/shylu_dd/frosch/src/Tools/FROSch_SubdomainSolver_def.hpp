@@ -70,7 +70,7 @@ namespace FROSch {
     IsComputed_ (false)
     {
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
+#if defined(HAVE_SHYLU_DDFROSCH_AMESOS) && defined(HAVE_SHYLU_DDFROSCH_EPETRA)
 
           FROSCH_ASSERT(K_->getRowMap()->lib()==Xpetra::UseEpetra,"UnderlyingLib!=Xpetra::UseEpetra");
             // AH 10/18/2017: Dies könnten wir nach initialize() verschieben, oder?

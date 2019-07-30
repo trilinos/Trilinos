@@ -13,7 +13,7 @@
 #cmakedefine HAVE_PANZER_EXPLICIT_INSTANTIATION
 #cmakedefine PANZER_EXPLICIT_INSTANTIATION
 
-#include "Tpetra_Details_DefaultTypes.hpp" // for ordinal types
+#include "Tpetra_Map.hpp" // for ordinal types
 
 namespace panzer {
 
@@ -22,13 +22,8 @@ namespace panzer {
   // long" over "int". This code will choose long long over int. When
   // tpetra removes deprecated code, we can just default directly to
   // tpetra.
-#if defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-  using GlobalOrdinal = long long int;
-#else
-  using GlobalOrdinal = Tpetra::Details::DefaultTypes::global_ordinal_type;
-#endif
-
-  using LocalOrdinal = int;
+  using GlobalOrdinal = Tpetra::Map<>::global_ordinal_type;
+  using LocalOrdinal = Tpetra::Map<>::local_ordinal_type;
   using index_t = int;
 }
 
