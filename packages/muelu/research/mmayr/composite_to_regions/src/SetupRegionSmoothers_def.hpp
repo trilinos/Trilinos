@@ -252,4 +252,98 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
 
 } // smootherApply
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+calcNorm2(std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVec,
+                        const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
+                        const int maxRegPerProc,
+                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
+                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
+                        const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp)
+{
+#include "Xpetra_UseShortNames.hpp"
+  RCP<Vector> compVec = VectorFactory::Build(mapComp, true);
+  regionalToComposite(regVec, compVec, maxRegPerProc, rowMapPerGrp,
+                      rowImportPerGrp, Xpetra::ADD);
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm = compVec->norm2();
+
+  return norm;
+} // calcNorm2
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Scalar
+dotProd(std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regX,
+                        std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regY,
+                        const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
+                        const int maxRegPerProc,
+                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
+                        const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
+                        const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp)
+{
+#include "Xpetra_UseShortNames.hpp"
+  RCP<Vector> compX = VectorFactory::Build(mapComp, true);
+  RCP<Vector> compY = VectorFactory::Build(mapComp, true);
+  regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::ADD);
+  regionalToComposite(regY, compY, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Xpetra::ADD);
+  SC dotVal = compX->dot(*compY);
+
+  return dotVal;
+} // dotProd
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Scalar
+powerMethod(RCP<Teuchos::ParameterList> params,
+                    const int maxRegPerProc,
+                    std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regX,
+                    const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
+                    const std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionInterfaceScaling,
+                    const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
+                    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
+                    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
+                    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp,
+                    const int numIters)
+{
+#include "Xpetra_UseShortNames.hpp"
+
+  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const SC SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
+  SC lambdaMax = SC_ZERO;
+  SC RQ_top, RQ_bottom, norm;
+
+  std::vector<RCP<Vector> > regY(maxRegPerProc);
+  createRegionalVector(regY, maxRegPerProc, revisedRowMapPerGrp);
+
+  for( int j = 0; j < maxRegPerProc; j++){
+    regX[j]->randomize();
+  }
+  norm = calcNorm2(regX, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+  for (int j = 0; j < maxRegPerProc; j++) {
+    regX[j]->scale( SC_ONE / norm );
+  }
+
+  for (int iter = 0; iter < numIters; ++iter) {
+
+    for (int j = 0; j < maxRegPerProc; j++) { // step 1
+      regionGrpMats[j]->apply(*regX[j], *regY[j]); // A.apply (x, y);
+    }
+    sumInterfaceValues( regY, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp); // step 2
+
+    RQ_top = dotProd( regY, regX, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+    RQ_bottom = dotProd( regX, regX, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+    lambdaMax = RQ_top / RQ_bottom;
+
+    norm = calcNorm2(regY, mapComp, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+    if (norm == SC_ZERO) { // Return something reasonable.
+      return SC_ZERO;
+    }
+    for (int j = 0; j < maxRegPerProc; j++) {
+      regX[j]->update( SC_ONE / norm, *regY[j], SC_ZERO);
+    }
+
+  }
+
+  return lambdaMax;
+} // powerMethod
+
 #endif // MUELU_SETUPREGIONSMOOTHERS_DEF_HPP
