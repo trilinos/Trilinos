@@ -336,8 +336,8 @@ namespace Ifpack2 {
     //! Compute <tt>Y := (1 - a) Y + a D^{-1} (X - R*Y)</tt>. Not supported. Call
     //! <tt>applyInverseJacobi</tt> instead.
     void
-    apply (host_view_type& X,
-           host_view_type& Y,
+    apply (host_view_type X,
+           host_view_type Y,
            int blockIndex,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
@@ -346,9 +346,9 @@ namespace Ifpack2 {
     //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>. Not
     //! supported.
     void
-    weightedApply (host_view_type& X,
-                   host_view_type& Y,
-                   host_view_type& W,
+    weightedApply (host_view_type X,
+                   host_view_type Y,
+                   host_view_type W,
                    int blockIndex,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
                    scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
@@ -443,17 +443,17 @@ namespace Ifpack2 {
                              int numSweeps = 1) const override {}
     
     void
-    apply (host_view_type& X,
-           host_view_type& Y,
+    apply (host_view_type X,
+           host_view_type Y,
            int blockIndex,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
            scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override {}
 
     void
-    weightedApply (host_view_type& X,
-                   host_view_type& Y,
-                   host_view_type& W,
+    weightedApply (host_view_type X,
+                   host_view_type Y,
+                   host_view_type W,
                    int blockIndex,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
                    scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),

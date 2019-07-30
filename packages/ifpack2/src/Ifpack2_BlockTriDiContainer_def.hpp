@@ -336,7 +336,7 @@ namespace Ifpack2 {
   template <typename MatrixType>
   void 
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::apply (HostView& /* X */, HostView& /* Y */, int /* blockIndex */, Teuchos::ETransp /* mode */,
+  ::apply (HostView /* X */, HostView /* Y */, int /* blockIndex */, Teuchos::ETransp /* mode */,
            scalar_type /* alpha */, scalar_type /* beta */) const
   {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "BlockTriDiContainer::apply is not implemented. You may have reached this message "
@@ -347,7 +347,7 @@ namespace Ifpack2 {
   template <typename MatrixType>
   void 
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::weightedApply (HostView& /* X */, HostView& /* Y */, HostView& /* D */, int /* blockIndex */,
+  ::weightedApply (HostView /* X */, HostView /* Y */, HostView /* D */, int /* blockIndex */,
                    Teuchos::ETransp /* mode */, scalar_type /* alpha */, scalar_type /* beta */) const
   {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "BlockTriDiContainer::weightedApply is not implemented.");

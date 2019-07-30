@@ -237,8 +237,8 @@ public:
 
   //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   virtual void
-  apply (HostView& X,
-         HostView& Y,
+  apply (HostView X,
+         HostView Y,
          int blockIndex,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
          scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
@@ -246,9 +246,9 @@ public:
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
-  weightedApply (HostView& X,
-                 HostView& Y,
-                 HostView& W,
+  weightedApply (HostView X,
+                 HostView Y,
+                 HostView W,
                  int blockIndex,
                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
                  scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),

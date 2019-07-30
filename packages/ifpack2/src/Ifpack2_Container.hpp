@@ -358,10 +358,10 @@ public:
   /// before calling compute().
   virtual void compute () = 0;
 
-  void DoJacobi(HostView& X, HostView& Y, scalar_type dampingFactor) const;
-  void DoOverlappingJacobi(HostView& X, HostView& Y, HostView& W, scalar_type dampingFactor) const;
-  void DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2, scalar_type dampingFactor) const;
-  void DoSGS(HostView& X, HostView& Y, HostView& Y2, scalar_type dampingFactor) const;
+  void DoJacobi(HostView X, HostView Y, scalar_type dampingFactor) const;
+  void DoOverlappingJacobi(HostView X, HostView Y, HostView W, scalar_type dampingFactor) const;
+  void DoGaussSeidel(HostView X, HostView Y, HostView Y2, scalar_type dampingFactor) const;
+  void DoSGS(HostView X, HostView Y, HostView Y2, scalar_type dampingFactor) const;
 
   //! Set parameters, if any.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;
@@ -379,8 +379,8 @@ public:
   /// Tpetra::Operator's method of the same name.  This might require
   /// subclasses to mark some of their instance data as \c mutable.
   virtual void
-  apply(HostView& X,
-        HostView& Y,
+  apply(HostView X,
+        HostView Y,
         int blockIndex,
         Teuchos::ETransp mode = Teuchos::NO_TRANS,
         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
@@ -388,9 +388,9 @@ public:
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
-  weightedApply(HostView& X,
-                HostView& Y,
-                HostView& D,
+  weightedApply(HostView X,
+                HostView Y,
+                HostView D,
                 int blockIndex,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
@@ -438,7 +438,7 @@ public:
 protected:
 
   //Do Gauss-Seidel on only block i (this is used by DoGaussSeidel and DoSGS)
-  virtual void DoGSBlock(HostView& X, HostView& Y, HostView& Y2, HostView& Resid,
+  virtual void DoGSBlock(HostView X, HostView Y, HostView Y2, HostView Resid,
       scalar_type dampingFactor, local_ordinal_type i) const
   {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
@@ -839,8 +839,8 @@ public:
   /// Tpetra::Operator's method of the same name.  This might require
   /// subclasses to mark some of their instance data as \c mutable.
   virtual void
-  apply(HostView& X,
-        HostView& Y,
+  apply(HostView X,
+        HostView Y,
         int blockIndex,
         Teuchos::ETransp mode = Teuchos::NO_TRANS,
         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
@@ -848,9 +848,9 @@ public:
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
-  weightedApply(HostView& X,
-                HostView& Y,
-                HostView& D,
+  weightedApply(HostView X,
+                HostView Y,
+                HostView D,
                 int blockIndex,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
@@ -903,7 +903,7 @@ public:
 
 protected:
   //Do Gauss-Seidel on only block i (this is used by DoGaussSeidel and DoSGS)
-  void DoGSBlock(HostView& X, HostView& Y, HostView& Y2, HostView& Resid,
+  void DoGSBlock(HostView X, HostView Y, HostView Y2, HostView Resid,
       scalar_type dampingFactor, local_ordinal_type i) const;
 
   //! Exactly solves the linear system By = x, where B is a diagonal block matrix
@@ -954,7 +954,7 @@ operator<< (std::ostream& os, const Ifpack2::Container<MatrixType>& obj)
 }
 
 template <class MatrixType>
-void Container<MatrixType>::DoJacobi(HostView& X, HostView& Y, scalar_type dampingFactor) const
+void Container<MatrixType>::DoJacobi(HostView X, HostView Y, scalar_type dampingFactor) const
 {
   const scalar_type one = STS::one();
   // Note: Flop counts copied naively from Ifpack.
@@ -986,7 +986,7 @@ void Container<MatrixType>::DoJacobi(HostView& X, HostView& Y, scalar_type dampi
 }
 
 template <class MatrixType>
-void Container<MatrixType>::DoOverlappingJacobi(HostView& X, HostView& Y, HostView& W, scalar_type dampingFactor) const
+void Container<MatrixType>::DoOverlappingJacobi(HostView X, HostView Y, HostView W, scalar_type dampingFactor) const
 {
   // Overlapping Jacobi
   for(local_ordinal_type i = 0; i < numBlocks_; i++)
@@ -1003,7 +1003,7 @@ void Container<MatrixType>::DoOverlappingJacobi(HostView& X, HostView& Y, HostVi
 //This is used 3 times: once in DoGaussSeidel and twice in DoSGS
 template<class MatrixType, typename LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
-    HostView& X, HostView& Y, HostView& Y2, HostView& Resid,
+    HostView X, HostView Y, HostView Y2, HostView Resid,
     scalar_type dampingFactor, local_ordinal_type i) const
 {
   using Teuchos::ArrayView;
@@ -1127,7 +1127,7 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
 
 template<class MatrixType>
 void Container<MatrixType>::
-DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2, scalar_type dampingFactor) const
+DoGaussSeidel(HostView X, HostView Y, HostView Y2, scalar_type dampingFactor) const
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -1161,7 +1161,7 @@ DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2, scalar_type dampingFactor)
 
 template<class MatrixType>
 void Container<MatrixType>::
-DoSGS(HostView& X, HostView& Y, HostView& Y2, scalar_type dampingFactor) const
+DoSGS(HostView X, HostView Y, HostView Y2, scalar_type dampingFactor) const
 {
   // X = RHS, Y = initial guess
   using Teuchos::Array;
@@ -1201,8 +1201,8 @@ DoSGS(HostView& X, HostView& Y, HostView& Y2, scalar_type dampingFactor) const
 
 template<class MatrixType, class LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::
-apply (HostView& X,
-       HostView& Y,
+apply (HostView X,
+       HostView Y,
        int blockIndex,
        Teuchos::ETransp mode,
        scalar_type alpha,
@@ -1312,9 +1312,9 @@ apply (HostView& X,
 
 template<class MatrixType, class LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::
-weightedApply(HostView& X,
-              HostView& Y,
-              HostView& D,
+weightedApply(HostView X,
+              HostView Y,
+              HostView D,
               int blockIndex,
               Teuchos::ETransp mode,
               scalar_type alpha,
