@@ -158,16 +158,17 @@ typedef Intrepid::CellTools<double>                             IntrepidCTools;
 //Tpetra typedefs
 typedef Tpetra::Map<>::node_type                                Node;
 typedef double                                                  ST;
-typedef int                                                     Ordinal;
-typedef Tpetra::Map<Ordinal,Ordinal,Node>                       Map;
-typedef Tpetra::Export<Ordinal,Ordinal,Node>                    export_type;
-typedef Tpetra::Import<Ordinal,Ordinal,Node>                    import_type;
-typedef Teuchos::ArrayView<Ordinal>::size_type                  size_type;
-typedef Tpetra::CrsMatrix<ST, Ordinal, Ordinal, Node>           sparse_matrix_type;
-typedef Tpetra::CrsGraph<Ordinal, Ordinal, Node>                sparse_graph_type;
-typedef Tpetra::MultiVector<ST, Ordinal, Ordinal, Node>         MV;
-typedef Tpetra::Vector<ST, Ordinal, Ordinal, Node>              vector_type;
-typedef Tpetra::Operator<ST, Ordinal, Ordinal, Node>            OP;
+typedef Tpetra::Map<>::local_ordinal_type                       LocalOrdinal;
+typedef Tpetra::Map<>::global_ordinal_type                      GlobalOrdinal;
+typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                       Map;
+typedef Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node>                    export_type;
+typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>                    import_type;
+typedef Teuchos::ArrayView<LocalOrdinal>::size_type                  size_type;
+typedef Tpetra::CrsMatrix<ST, LocalOrdinal, GlobalOrdinal, Node>           sparse_matrix_type;
+typedef Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>                sparse_graph_type;
+typedef Tpetra::MultiVector<ST, LocalOrdinal, GlobalOrdinal, Node>         MV;
+typedef Tpetra::Vector<ST, LocalOrdinal, GlobalOrdinal, Node>              vector_type;
+typedef Tpetra::Operator<ST, LocalOrdinal, GlobalOrdinal, Node>            OP;
 typedef Belos::MultiVecTraits<ST, MV>                           MVT;
 typedef Belos::OperatorTraits<ST, MV, OP>                       OPT;
 
@@ -691,7 +692,7 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
     //timer for building global maps
     RCP<Teuchos::Time> timerBuildGlobalMaps = TimeMonitor::getNewTimer("Build global maps: Total Time");
-    Teuchos::Array<int> ownedGIDs;
+    Teuchos::Array<GlobalOrdinal> ownedGIDs;
     RCP<const Map > globalMapGT;
     {
     TimeMonitor timerBuildGlobalMapsL(*timerBuildGlobalMaps);
@@ -708,7 +709,7 @@ int main(int argc, char *argv[]) {
     int oidx=0;
     for(int i=0;i<numNodes;i++)
       if(nodeIsOwned[i]){
-        ownedGIDs[oidx]=(int)globalNodeIds[i];
+        ownedGIDs[oidx]=(GlobalOrdinal)globalNodeIds[i];
         oidx++;
       }
     RCP<Teuchos::Time> timerBuildGlobalMaps1 = TimeMonitor::getNewTimer("Build global maps: globalMapGT");
@@ -724,7 +725,7 @@ int main(int argc, char *argv[]) {
 /********************* BUILD MAPS FOR OVERLAPPED SOLUTION *************************/
 /**********************************************************************************/
     RCP<Teuchos::Time> timerBuildOverlapMaps = TimeMonitor::getNewTimer("Build overlapped maps: Total Time");
-    Teuchos::Array<int> overlappedGIDs;
+    Teuchos::Array<GlobalOrdinal> overlappedGIDs;
     RCP<const Map > overlappedMapGT;
     RCP<const export_type> exporterT;
     {
@@ -735,7 +736,7 @@ int main(int argc, char *argv[]) {
     // Build a list of the OVERLAPPED global ids...
     overlappedGIDs.resize(overlappedNodes);
     for(int i=0;i<numNodes;i++)
-        overlappedGIDs[i]=(int)globalNodeIds[i];
+        overlappedGIDs[i]=(GlobalOrdinal)globalNodeIds[i];
 
     RCP<Teuchos::Time> timerBuildOverlapMaps1 = TimeMonitor::getNewTimer("Build overlapped maps: overlappedMapGT");
     {
@@ -815,10 +816,10 @@ int main(int argc, char *argv[]) {
             // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
             for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
 
-              int localCol  = elemToNode(cell, cellCol);
-              int globalCol = globalNodeIds[localCol];
+              LocalOrdinal localCol  = elemToNode(cell, cellCol);
+              GlobalOrdinal globalCol = globalNodeIds[localCol];
               //create ArrayView globalCol object for Tpetra
-              Teuchos::ArrayView<int> globalColAV = Teuchos::arrayView(&globalCol, 1);
+              Teuchos::ArrayView<GlobalOrdinal> globalColAV = Teuchos::arrayView(&globalCol, 1);
 
               //Update Tpetra overlap Graph
               overlappedGraphT->insertGlobalIndices(globalRowT, globalColAV);
@@ -869,7 +870,7 @@ int main(int argc, char *argv[]) {
    RCP<MV> nCoordT = rcp(new MV(globalMapGT, 3));
    RCP<MV> nBoundT = rcp(new MV(globalMapGT, 1));
 
-     int indOwned = 0;
+     LocalOrdinal indOwned = 0;
      for (int inode=0; inode<numNodes; inode++) {
        if (nodeIsOwned[inode]) {
           nCoordT->replaceLocalValue(indOwned, 0, nodeCoord(inode,0));
@@ -1128,8 +1129,8 @@ int main(int argc, char *argv[]) {
       // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
       for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
 
-        int localRow  = elemToNode(cell, cellRow);
-        int globalRow = globalNodeIds[localRow];
+        LocalOrdinal localRow  = elemToNode(cell, cellRow);
+        GlobalOrdinal globalRow = globalNodeIds[localRow];
         double sourceTermContribution =  worksetRHS(worksetCellOrdinal, cellRow);
         Teuchos::ArrayView<double> sourceTermContributionAV = Teuchos::arrayView(&sourceTermContribution, 1);
 
@@ -1138,9 +1139,9 @@ int main(int argc, char *argv[]) {
         // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
         for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
 
-          int localCol  = elemToNode(cell, cellCol);
-          int globalCol = globalNodeIds[localCol];
-          Teuchos::ArrayView<int> globalColAV = Teuchos::arrayView(&globalCol, 1);
+          LocalOrdinal localCol  = elemToNode(cell, cellCol);
+          GlobalOrdinal globalCol = globalNodeIds[localCol];
+          Teuchos::ArrayView<GlobalOrdinal> globalColAV = Teuchos::arrayView(&globalCol, 1);
           double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
           Teuchos::ArrayView<double> operatorMatrixContributionAV = Teuchos::arrayView(&operatorMatrixContribution, 1);
 
@@ -1227,14 +1228,14 @@ int main(int argc, char *argv[]) {
    // create the exporter from this proc's column map to global 1-1 column map
    RCP<const export_type > ExporterT = rcp(new export_type(ColMapT, globalMapT));
    // create a vector of global column indices that we will export to
-   RCP<Tpetra::Vector<int, Ordinal, Ordinal, Node> > globColsToZeroT = rcp(new Tpetra::Vector<int, Ordinal, Ordinal, Node>(globalMapT));
+   RCP<Tpetra::Vector<int, LocalOrdinal, GlobalOrdinal, Node> > globColsToZeroT = rcp(new Tpetra::Vector<int, LocalOrdinal, GlobalOrdinal, Node>(globalMapT));
    // create a vector of local column indices that we will export from
-   RCP<Tpetra::Vector<int, Ordinal, Ordinal, Node> > myColsToZeroT = rcp(new Tpetra::Vector<int, Ordinal, Ordinal, Node>(ColMapT));
+   RCP<Tpetra::Vector<int, LocalOrdinal, GlobalOrdinal, Node> > myColsToZeroT = rcp(new Tpetra::Vector<int, LocalOrdinal, GlobalOrdinal, Node>(ColMapT));
    myColsToZeroT->putScalar(0);
    // flag all local columns corresponding to the local rows specified
    for (int i=0; i < numBCNodes; i++){
-       int globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]);
-       int localCol = gl_StiffMatrixT->getColMap()->getLocalElement(globalRow);
+       GlobalOrdinal globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]);
+       LocalOrdinal localCol = gl_StiffMatrixT->getColMap()->getLocalElement(globalRow);
        myColsToZeroT->replaceLocalValue(localCol, 1);
    }
    // export to the global column map
@@ -1267,8 +1268,8 @@ int main(int argc, char *argv[]) {
       indices.resize(NumEntries);
       values.resize(NumEntries);
       gl_StiffMatrixT->getLocalRowCopy(BCNodes[i], indices(), values(), NumEntries);
-      int globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]);
-      int localCol = gl_StiffMatrixT->getColMap()->getLocalElement(globalRow);
+      GlobalOrdinal globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]);
+      LocalOrdinal localCol = gl_StiffMatrixT->getColMap()->getLocalElement(globalRow);
       for (size_t j = 0; j<NumEntries; j++){
          values[j] = 0.0;
          if (indices[j] == localCol)

@@ -159,8 +159,8 @@ using Teuchos::ParameterList;
 /*********************************************************/
 typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
-typedef int local_ordinal_type;
-typedef int global_ordinal_type;
+typedef Tpetra::Map<>::local_ordinal_type local_ordinal_type;
+typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
 typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
 typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;

@@ -472,9 +472,8 @@ public:
     // Vector F with Dirichlet conditions G:
     //  FD = [ F1 ]  where F = [ F1 ]
     //       [ G  ]            [ F2 ]
-    ROL::Ptr<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
-    matA_dirichlet_ = matA_->clone(node);
-    matM_dirichlet_ = matM_->clone(node);
+    matA_dirichlet_ = ROL::makePtr<Tpetra::CrsMatrix<>>(*matA_, Teuchos::DataAccess::Copy);
+    matM_dirichlet_ = ROL::makePtr<Tpetra::CrsMatrix<>>(*matA_, Teuchos::DataAccess::Copy);
     vecF_dirichlet_ = ROL::makePtr<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
     ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
@@ -731,8 +730,7 @@ public:
     }
     matA_->fillComplete();
 
-    ROL::Ptr<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
-    matA_dirichlet_ = matA_->clone(node);
+    matA_dirichlet_ = ROL::makePtr<Tpetra::CrsMatrix<>>(*matA_, Teuchos::DataAccess::Copy);
     matA_dirichlet_->resumeFill();
     for (int i=0; i<myDirichletDofs_.size(); ++i) {
       if (myUniqueMap_->isNodeGlobalElement(myDirichletDofs_[i])) {

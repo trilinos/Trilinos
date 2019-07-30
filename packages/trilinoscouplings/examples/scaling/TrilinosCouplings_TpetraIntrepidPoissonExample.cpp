@@ -928,7 +928,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Building Maps" << endl;
 
-  Array<int> ownedGIDs;
+  Array<GO> ownedGIDs;
   RCP<const map_type> globalMapG;
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Build global maps", build_maps);
@@ -947,7 +947,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     int oidx = 0;
     for (int i = 0; i < numNodes; ++i) {
       if (nodeIsOwned[i]) {
-        ownedGIDs[oidx] = as<int> (globalNodeIds[i]);
+        ownedGIDs[oidx] = as<GO> (globalNodeIds[i]);
         ++oidx;
       }
     }
@@ -1048,9 +1048,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           // relative to the cell DoF numbering
           for (int cellCol = 0; cellCol < numFieldsG; ++cellCol) {
             int localCol  = elemToNode (cell, cellCol);
-            int globalCol = as<int> (globalNodeIds[localCol]);
+            GO globalCol = as<GO> (globalNodeIds[localCol]);
             //create ArrayView globalCol object for Tpetra
-            ArrayView<int> globalColAV = arrayView (&globalCol, 1);
+            ArrayView<GO> globalColAV = arrayView (&globalCol, 1);
 
             //Update Tpetra overlap Graph
             overlappedGraph->insertGlobalIndices (globalRowT, globalColAV);

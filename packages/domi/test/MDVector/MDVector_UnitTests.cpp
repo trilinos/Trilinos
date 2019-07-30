@@ -214,10 +214,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< LO, GO >();
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< LO, GO >();
 #endif
 }
 
@@ -314,8 +316,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< LO, GO >();
 #endif
 }
 
@@ -407,10 +411,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< LO, GO >();
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< LO, GO >();
 #endif
 }
 
@@ -485,10 +491,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< LO, GO >();
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< LO, GO >();
 #endif
 }
 
@@ -578,10 +586,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< LO, GO >();
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< LO, GO >();
 #endif
 }
 
@@ -687,10 +697,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< LO, GO >();
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< LO, GO >();
 #endif
 }
 
@@ -797,10 +809,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
-    mdVector.template getTpetraVectorView< int, int >();
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
-    mdVector.template getTpetraVectorCopy< int, int >();
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< LO, GO >();
+  Teuchos::RCP< Tpetra::Vector< Sca, LO, GO > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< LO, GO >();
 #endif
 }
 
@@ -873,21 +887,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
   Teuchos::RCP< Tpetra::Vector< Sca >      > tv1  =
-    mdv1.template getTpetraVectorView< int >();
+    mdv1.template getTpetraVectorView< LO, GO >();
   Teuchos::RCP< Tpetra::MultiVector< Sca > > tmv2 =
-    mdv2.template getTpetraMultiVectorView< int >();
+    mdv2.template getTpetraMultiVectorView< LO, GO >();
   Teuchos::RCP< Tpetra::MultiVector< Sca > > tmv3 =
-    mdv3.template getTpetraMultiVectorView< int >();
+    mdv3.template getTpetraMultiVectorView< LO, GO >();
   TEST_EQUALITY_CONST(tmv2->getNumVectors(), 2);
   TEST_EQUALITY_CONST(tmv3->getNumVectors(), 5);
 
   Teuchos::RCP< Tpetra::Vector< Sca >      > tv1c  =
-    mdv1.template getTpetraVectorCopy< int >();
+    mdv1.template getTpetraVectorCopy< LO, GO >();
   Teuchos::RCP< Tpetra::MultiVector< Sca > > tmv2c =
-    mdv2.template getTpetraMultiVectorCopy< int >();
+    mdv2.template getTpetraMultiVectorCopy< LO, GO >();
   Teuchos::RCP< Tpetra::MultiVector< Sca > > tmv3c =
-    mdv3.template getTpetraMultiVectorCopy< int >();
+    mdv3.template getTpetraMultiVectorCopy< LO, GO >();
   TEST_EQUALITY_CONST(tmv2c->getNumVectors(), 2);
   TEST_EQUALITY_CONST(tmv3c->getNumVectors(), 5);
 #endif
