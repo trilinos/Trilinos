@@ -184,11 +184,13 @@ namespace Iocgns {
 #if !defined(CGNS_SANDIA_PARALLEL_MODS)
     fmt::print("WARNING: The CGNS library being used in this executable does *NOT* have the "
                "CGNS-sandia.patch applied.\n"
-               "         This can result in very slow execution at large processor counts and can "
-               "possibly create\n"
+               "         This can result in hangs in parallel exeuctions or, with older versions,\n"
+	       "         very slow execution at large processor counts and can possibly create\n"
                "         CGNS files which are not readable by applications linked with older HDF5 "
                "libraries.\n"
-               "         contact gdsjaar@sandia.gov for additional info.\n");
+	       "         Note that in some cases, an older version of the patch has been applied\n"
+	       "         which does not define the symbol currently being used to detect the patch.\n"
+               "         Contact gdsjaar@sandia.gov for additional info.\n");
 #endif
 
 #if IOSS_DEBUG_OUTPUT
