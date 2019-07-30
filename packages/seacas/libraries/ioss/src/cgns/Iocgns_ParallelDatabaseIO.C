@@ -56,9 +56,12 @@
 #include <cgnsconfig.h>
 #include <pcgnslib.h>
 
+#if 0
+// GDS: Temporarily disabled so SPARC can build inside Trilinos...
 #if !defined(CGNS_SANDIA_PARALLEL_MODS)
 #error                                                                                             \
     "At this time, CGNS must be patched using CGNS-sandia.patch; contact gdsjaar@sandia.gov for info"
+#endif
 #endif
 
 #if !defined(CGNSLIB_H)
@@ -177,6 +180,16 @@ namespace Iocgns {
   {
     usingParallelIO = true;
     dbState         = Ioss::STATE_UNKNOWN;
+
+#if !defined(CGNS_SANDIA_PARALLEL_MODS)
+    fmt::print("WARNING: The CGNS library being used in this executable does *NOT* have the "
+               "CGNS-sandia.patch applied.\n"
+               "         This can result in very slow execution at large processor counts and can "
+               "possibly create\n"
+               "         CGNS files which are not readable by applications linked with older HDF5 "
+               "libraries.\n"
+               "         contact gdsjaar@sandia.gov for additional info.\n");
+#endif
 
 #if IOSS_DEBUG_OUTPUT
     if (myProcessor == 0) {
