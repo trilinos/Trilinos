@@ -55,18 +55,13 @@
 
 #include "Xpetra_BlockedMap.hpp"
 
-#include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_MapExtractor.hpp"
-#include "Xpetra_BlockedVector.hpp"
 
 namespace Xpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     // forward declaration of Vector, needed to prevent circular inclusions
     template<class S, class LO, class GO, class N> class Vector;
-    //template<class S, class LO, class GO, class N> class BlockedVector;
-    //template<class S, class LO, class GO, class N> class MapExtractor;
-    //template<class S, class LO, class GO, class N> class MultiVectorFactory;
 #endif
 
 

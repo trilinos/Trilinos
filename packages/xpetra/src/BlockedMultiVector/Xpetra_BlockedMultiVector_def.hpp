@@ -49,6 +49,9 @@
 
 #include "Xpetra_BlockedMultiVector_decl.hpp"
 
+#include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_BlockedVector.hpp"
+
 namespace Xpetra {
 
 
