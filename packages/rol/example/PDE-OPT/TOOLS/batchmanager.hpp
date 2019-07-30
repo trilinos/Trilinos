@@ -15,7 +15,7 @@ private:
   typedef PDE_OptVector<Real,LO,GO,Node>       OptVector;
 
 public:
-  PDE_OptVector_BatchManager(const ROL::Ptr<const Teuchos::Comm<GO> > &comm)
+  PDE_OptVector_BatchManager(const ROL::Ptr<const Teuchos::Comm<int> > &comm)
     : ROL::TeuchosBatchManager<Real,GO>(comm) {}
 
   using ROL::TeuchosBatchManager<Real,GO>::sumAll;
