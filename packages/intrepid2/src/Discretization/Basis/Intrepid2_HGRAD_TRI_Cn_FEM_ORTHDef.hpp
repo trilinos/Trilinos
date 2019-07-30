@@ -397,6 +397,7 @@ Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order ) {
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
   this->basisType_         = BASIS_FEM_HIERARCHICAL;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
+  this->functionSpace_     = FUNCTION_SPACE_HGRAD;
 
   // initialize tags
   {

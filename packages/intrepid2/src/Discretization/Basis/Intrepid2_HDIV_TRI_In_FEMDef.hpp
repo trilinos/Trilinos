@@ -194,6 +194,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
   this->basisType_         = BASIS_FEM_FIAT;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
+  this->functionSpace_     = FUNCTION_SPACE_HDIV;
 
   const ordinal_type card = this->basisCardinality_;
 

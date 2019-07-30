@@ -293,6 +293,7 @@ namespace Intrepid2 {
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
     this->basisType_         = BASIS_FEM_FIAT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
+    this->functionSpace_     = FUNCTION_SPACE_HGRAD;
 
     // initialize tags
     {

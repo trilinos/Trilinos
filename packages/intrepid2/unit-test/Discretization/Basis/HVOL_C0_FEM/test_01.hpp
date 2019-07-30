@@ -249,6 +249,39 @@ namespace Intrepid2 {
         errorFlag = -1000;
       };
 
+      *outStream
+      << "\n"
+      << "===============================================================================\n"
+      << "| TEST 4: Function Space is Correct                                           |\n"
+      << "===============================================================================\n";
+      
+      try {
+        for (ordinal_type id=0;id<6;++id) {
+          Basis_HVOL_C0_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);
+          
+          const EFunctionSpace fs      = basis.getFunctionSpace();
+          
+          if (fs != FUNCTION_SPACE_HVOL)
+          {
+            *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
+            
+            // Output the multi-index of the value where the error is:
+            *outStream << " Expected a function space of FUNCTION_SPACE_HVOL (enum value " << FUNCTION_SPACE_HVOL << "),";
+            *outStream << " but got " << fs << "\n";
+            if (fs == FUNCTION_SPACE_MAX)
+            {
+              *outStream << "Note that this matches the default value defined by superclass, FUNCTION_SPACE_MAX.  Likely the subclass has failed to set the superclass functionSpace_ field.\n";
+            }
+            errorFlag++;
+          }
+        }
+      } catch (std::logic_error err){
+        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+        *outStream << err.what() << '\n';
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+        errorFlag = -1000;
+      }
+      
       if (errorFlag != 0)
         std::cout << "End Result: TEST FAILED\n";
       else

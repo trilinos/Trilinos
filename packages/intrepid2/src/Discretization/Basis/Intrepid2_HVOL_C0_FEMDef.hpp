@@ -139,6 +139,7 @@ namespace Intrepid2 {
     this->basisCellTopology_ = cellTopo;
     this->basisType_         = Intrepid2::BASIS_FEM_DEFAULT;
     this->basisCoordinates_  = Intrepid2::COORDINATES_CARTESIAN;
+    this->functionSpace_     = FUNCTION_SPACE_HVOL;
 
     // initialize tags
     {
