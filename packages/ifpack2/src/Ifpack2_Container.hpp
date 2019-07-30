@@ -140,12 +140,14 @@ public:
 
   /// \brief Constructor.
   ///
-  /// \brief matrix [in] The original input matrix.  This Container
-  ///   will construct local diagonal blocks from the rows given by
-  ///   <tt>partitioner</tt>.
-  ///
+  /// \param matrix [in] The original input matrix.  This Container
+  ///   will construct local diagonal blocks from its rows according to
+  ///   <tt>partitions</tt>.
   /// \param partitioner [in] The Partitioner object that assigns
   ///   local rows of the input matrix to blocks.
+  /// \param pointIndexed [in] If the input matrix is a \c Tpetra::BlockCrsMatrix,
+  ///    whether elements of \c partitions[k] identify rows within blocks (true) or
+  ///    whole blocks (false).
   Container (const Teuchos::RCP<const row_matrix_type>& matrix,
              const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
              bool pointIndexed) :
@@ -205,10 +207,9 @@ public:
 
   /// \brief Constructor for single block (used in unit tests)
   ///
-  /// \brief matrix [in] The original input matrix.  This Container
-  ///   will construct a local diagonal block from the rows given by
+  /// \param matrix [in] The original input matrix.  This Container
+  ///   will construct local diagonal blocks from it according to
   ///   <tt>blockRows</tt>.
-  ///
   /// \param blockRows [in] The set of (local) rows assigned to this
   ///   container.  <tt>blockRows[i] == j</tt>, where i (from 0 to
   ///   <tt>getNumRows() - 1</tt>) indicates the Container's row, and
@@ -678,11 +679,10 @@ protected:
     return colLID;
   }
 
-  //! Extract the submatrices identified by the local indices set by the constructor. BlockMatrix may be any type that
-  //! supports direct entry access: `Scalar& operator()(size_t row, size_t col)`.
-  //! \pre `diagBlocks.size() == this->numBlocks_`
-  //! \pre If diagBlocks elements do not manage their own
-  //!     memory, there must be space allocated for all entries
+  /// \brief Extract the submatrices identified by the local indices set by the constructor. BlockMatrix may be any type that
+  /// supports direct entry access: `Scalar& operator()(size_t row, size_t col)`.
+  /// \param diagBlocks [in/out] The diagonal block matrices. Its size must be `this->numBlocks_`.
+  ///   Each BlockMatrix must be ready for entries to be assigned.
   template<typename BlockMatrix>
   void extract(std::vector<BlockMatrix>& diagBlocks)
   {

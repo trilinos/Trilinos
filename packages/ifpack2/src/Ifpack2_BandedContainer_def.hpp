@@ -57,7 +57,6 @@
 
 namespace Ifpack2 {
 
-//Constructor that ContainerFactory and BlockRelaxation can use
 template<class MatrixType, class LocalScalarType>
 BandedContainer<MatrixType, LocalScalarType>::
 BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
@@ -79,7 +78,6 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
     "The constructor's input matrix must have a column Map.");
 }
 
-//Constructor for single block (used only for unit testing)
 template<class MatrixType, class LocalScalarType>
 BandedContainer<MatrixType, LocalScalarType>::
 BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,

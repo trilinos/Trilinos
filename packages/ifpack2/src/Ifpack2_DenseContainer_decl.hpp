@@ -159,22 +159,29 @@ public:
 
   /// \brief Constructor.
   ///
-  /// \brief matrix [in] The original input matrix.  This Container
-  ///   will construct a local diagonal block from the rows given by
-  ///   <tt>blockRows</tt>.
-  ///
-  /// \param blockRows [in] The set of (local) rows assigned to this
-  ///   container.  <tt>blockRows[i] == j</tt>, where i (from 0 to
-  ///   <tt>getNumRows() - 1</tt>) indicates the SparseContainer's
-  ///   row, and j indicates the local row in the calling process.
-  ///   <tt>blockRows.size()</tt> gives the number of rows in the
-  ///   local matrix on each process.  This may be different on
-  ///   different processes.
+  /// \param matrix [in] The original input matrix.  This Container
+  ///   will construct local diagonal blocks from its rows according to
+  ///   <tt>partitions</tt>.
+  /// \param partitioner [in] The Partitioner object that assigns
+  ///   local rows of the input matrix to blocks.
+  /// \param pointIndexed [in] If the input matrix is a \c Tpetra::BlockCrsMatrix,
+  ///    whether elements of \c partitions[k] identify rows within blocks (true) or
+  ///    whole blocks (false).
   DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                   const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                   const Teuchos::RCP<const import_type>& importer,
                   bool pointIndexed);
 
+  /// \brief Constructor for single block (used in unit tests)
+  ///
+  /// \param matrix [in] The original input matrix.  This Container
+  ///   will construct a local diagonal block from the rows given by
+  ///   <tt>blockRows</tt>.
+  /// \param blockRows [in] The set of (local) rows assigned to this
+  ///   container.  <tt>blockRows[i] == j</tt>, where i (from 0 to
+  ///   <tt>getNumRows() - 1</tt>) indicates the Container's row, and
+  ///   j indicates the local row in the calling process.  Subclasses
+  ///   must always pass along these indices to the base class.
   DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                   Teuchos::ArrayView<const local_ordinal_type> blockRows,
                   bool pointIndexed);
