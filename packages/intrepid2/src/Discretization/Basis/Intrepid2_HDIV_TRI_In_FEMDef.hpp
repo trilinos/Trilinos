@@ -456,7 +456,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
     const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
     const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
-    ordinal_type_array_1d_host tagView(&tags[0][0], card*tagSize);
+    OrdinalTypeArray1DHost tagView(&tags[0][0], card*tagSize);
 
     // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
     // tags are constructed on host

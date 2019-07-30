@@ -700,11 +700,11 @@ namespace Intrepid2 {
       };
 
       // host tags
-      ordinal_type_array_1d_host tagView(&tags[0], 72);
+      OrdinalTypeArray1DHost tagView(&tags[0], 72);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-      //ordinal_type_array_2d_host ordinalToTag;
-      //ordinal_type_array_3d_host tagToOrdinal;
+      //OrdinalTypeArray2DHost ordinalToTag;
+      //OrdinalTypeArray3DHost tagToOrdinal;
       this->setOrdinalTagData(this->tagToOrdinal_,
                               this->ordinalToTag_,
                               tagView,

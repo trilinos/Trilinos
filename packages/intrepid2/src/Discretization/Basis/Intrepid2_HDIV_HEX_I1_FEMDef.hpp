@@ -225,7 +225,7 @@ namespace Intrepid2 {
                                  2, 5, 0, 1 };
 
       // when exec space is device, this wrapping relies on uvm.
-      ordinal_type_array_1d_host tagView(&tags[0], 24);
+      OrdinalTypeArray1DHost tagView(&tags[0], 24);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,

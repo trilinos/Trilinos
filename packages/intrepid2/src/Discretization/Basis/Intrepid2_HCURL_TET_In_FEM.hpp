@@ -204,9 +204,9 @@ template<typename ExecSpaceType = void,
 class Basis_HCURL_TET_In_FEM
     : public Basis<ExecSpaceType,outputValueType,pointValueType> {
     public:
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
 
   /** \brief  Constructor.
    */

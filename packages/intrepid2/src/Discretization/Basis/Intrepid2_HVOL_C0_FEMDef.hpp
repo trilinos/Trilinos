@@ -152,7 +152,7 @@ namespace Intrepid2 {
       // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration
       ordinal_type tags[4] = { spaceDim, 0, 0, 1 };
 
-      ordinal_type_array_1d_host tagView(&tags[0], 4);
+      OrdinalTypeArray1DHost tagView(&tags[0], 4);
 
       this->setOrdinalTagData(this->tagToOrdinal_,
                               this->ordinalToTag_,

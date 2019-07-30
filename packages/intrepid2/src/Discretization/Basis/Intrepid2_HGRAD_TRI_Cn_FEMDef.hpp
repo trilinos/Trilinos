@@ -392,7 +392,7 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
       }
     }
 
-    ordinal_type_array_1d_host tagView(&tags[0][0], card*tagSize);
+    OrdinalTypeArray1DHost tagView(&tags[0][0], card*tagSize);
 
     // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
     // tags are constructed on host
