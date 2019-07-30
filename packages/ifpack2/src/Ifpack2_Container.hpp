@@ -51,6 +51,7 @@
 #include "Teuchos_Describable.hpp"
 #include <Ifpack2_Partitioner.hpp>
 #include <Ifpack2_Details_MultiVectorLocalGatherScatter.hpp>
+#include <Ifpack2_Details_LapackSupportsScalar.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_BlockCrsMatrix.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -502,6 +503,8 @@ protected:
 template<class MatrixType, class LocalScalarType>
 class ContainerImpl : public Container<MatrixType>
 {
+  static_assert(::Ifpack2::Details::LapackSupportsScalar<LocalScalarType>::value,
+      "LAPACK does not support the given LocalScalarType");
   //! @name Internal typedefs (protected)
   //@{
 protected:

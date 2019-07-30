@@ -66,10 +66,6 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   ipiv_(this->blockRows_.size() * this->scalarsPerRow_),
   scalarOffsets_ (this->numBlocks_)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!::Ifpack2::Details::LapackSupportsScalar<LocalScalarType>::value,
-      std::logic_error,
-      "LAPACK does not support the given LocalScalarType");
-
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::RCP;
@@ -116,10 +112,6 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   ContainerImpl<MatrixType, LocalScalarType> (matrix, blockRows, pointIndexed),
   ipiv_(blockRows.size() * this->scalarsPerRow_)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!::Ifpack2::Details::LapackSupportsScalar<LocalScalarType>::value,
-      std::logic_error,
-      "LAPACK does not support the given LocalScalarType");
-
   TEUCHOS_TEST_FOR_EXCEPTION(
     !matrix->hasColMap(), std::invalid_argument, "Ifpack2::TriDiContainer: "
     "The constructor's input matrix must have a column Map.");

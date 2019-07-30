@@ -69,10 +69,6 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   ku_(this->numBlocks_, -1),
   scalarOffsets_(this->numBlocks_)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!::Ifpack2::Details::LapackSupportsScalar<LocalScalarType>::value,
-      std::logic_error,
-      "LAPACK does not support the given LocalScalarType");
-
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! matrix->hasColMap (), std::invalid_argument, "Ifpack2::BandedContainer: "
     "The constructor's input matrix must have a column Map.");
@@ -89,10 +85,6 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   ku_(1, -1),
   scalarOffsets_(1, 0)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!::Ifpack2::Details::LapackSupportsScalar<LocalScalarType>::value,
-      std::logic_error,
-      "LAPACK does not support the given LocalScalarType");
-
   TEUCHOS_TEST_FOR_EXCEPTION(!matrix->hasColMap(), std::invalid_argument, "Ifpack2::BandedContainer: "
     "The constructor's input matrix must have a column Map.");
 }

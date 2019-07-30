@@ -65,10 +65,6 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   ContainerImpl<MatrixType, LocalScalarType> (matrix, partitions, pointIndexed),
   scalarOffsets_ (this->numBlocks_)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!::Ifpack2::Details::LapackSupportsScalar<LocalScalarType>::value,
-      std::logic_error,
-      "LAPACK does not support the given LocalScalarType");
-
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::RCP;
@@ -105,10 +101,6 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                 bool pointIndexed) :
   ContainerImpl<MatrixType, LocalScalarType>(matrix, blockRows, pointIndexed)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!::Ifpack2::Details::LapackSupportsScalar<LocalScalarType>::value,
-      std::logic_error,
-      "LAPACK does not support the given LocalScalarType");
-
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::RCP;

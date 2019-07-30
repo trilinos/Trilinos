@@ -47,7 +47,6 @@
 /// \brief Ifpack2::DenseContainer class declaration
 
 #include "Ifpack2_Container.hpp"
-#include "Ifpack2_Details_LapackSupportsScalar.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
