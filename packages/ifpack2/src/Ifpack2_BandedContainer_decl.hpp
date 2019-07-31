@@ -113,33 +113,33 @@ private:
   /// <tt>InverseType</tt>.
   using matrix_type = MatrixType;
   //! The second template parameter of this class.
-  using local_scalar_type = LocalScalarType;
+  using LSC = LocalScalarType;
   //! The internal representation of LocalScalarType in Kokkos::View
-  using local_impl_scalar_type = typename Kokkos::Details::ArithTraits<local_scalar_type>::val_type;
+  using LISC = typename Kokkos::Details::ArithTraits<LSC>::val_type;
 
   //! The type of entries in the input (global) matrix.
-  using typename Container<MatrixType>::scalar_type;
+  using typename Container<MatrixType>::SC;
   //! The type of local indices in the input (global) matrix.
-  using typename Container<MatrixType>::local_ordinal_type;
+  using typename Container<MatrixType>::LO;
   //! The type of global indices in the input (global) matrix.
-  using typename Container<MatrixType>::global_ordinal_type;
+  using typename Container<MatrixType>::GO;
   //! The Node type of the input (global) matrix.
-  using typename Container<MatrixType>::node_type;
+  using typename Container<MatrixType>::NO;
 
   using typename Container<MatrixType>::STS;
 
   using Container<MatrixType>::mv_type;
   using Container<MatrixType>::map_type;
-  using local_mv_type = Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;
   using typename Container<MatrixType>::vector_type;
   using typename Container<MatrixType>::import_type;
 
   using typename Container<MatrixType>::HostView;
-  using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubview;
+  using typename ContainerImpl<MatrixType, LSC>::HostSubview;
   using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,
-                  Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >::value,
+                  Tpetra::RowMatrix<SC, LO, GO, NO> >::value,
                 "Ifpack2::BandedContainer: Please use MatrixType = Tpetra::RowMatrix.");
 
   /// \brief The (base class) type of the input matrix.
@@ -168,7 +168,7 @@ public:
   ///    whether elements of \c partitions[k] identify rows within blocks (true) or
   ///    whole blocks (false).
   BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                   const Teuchos::Array<Teuchos::Array<LO> >& partitions,
                    const Teuchos::RCP<const import_type>&,
                    bool pointIndexed);
 
@@ -227,7 +227,7 @@ public:
 
 private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
-  BandedContainer (const BandedContainer<MatrixType, LocalScalarType>& rhs);
+  BandedContainer (const BandedContainer<MatrixType, LSC>& rhs);
 
   //! Populate the diagonal blocks
   void extract();
@@ -246,27 +246,27 @@ private:
   /// \param X [in] Subset permutation of the input X of apply().
   /// \param Y [in] Subset permutation of the input/output Y of apply().
   void
-  solveBlock(HostSubview& X,
-             HostSubview& Y,
+  solveBlock(HostSubview X,
+             HostSubview Y,
              int blockIndex,
              Teuchos::ETransp mode,
-             const local_scalar_type alpha,
-             const local_scalar_type beta) const override;
+             const LSC alpha,
+             const LSC beta) const override;
 
   //! The local diagonal block, which compute() extracts.
-  std::vector<Teuchos::SerialBandDenseMatrix<int, local_scalar_type> > diagBlocks_;
+  std::vector<Teuchos::SerialBandDenseMatrix<int, LSC> > diagBlocks_;
 
   //! Permutation array from LAPACK (GETRF).
   Teuchos::Array<int> ipiv_;
 
-  Teuchos::Array<local_ordinal_type> kl_; //< number of subdiagonals
-  Teuchos::Array<local_ordinal_type> ku_; //< number of superdiagonals
+  Teuchos::Array<LO> kl_; //< number of subdiagonals
+  Teuchos::Array<LO> ku_; //< number of superdiagonals
 
   //! Scalar data for all blocks
-  Teuchos::Array<local_scalar_type> scalars_;
+  Teuchos::Array<LSC> scalars_;
 
   //! Offsets in scalars_ array for all blocks
-  Teuchos::Array<local_ordinal_type> scalarOffsets_;
+  Teuchos::Array<LO> scalarOffsets_;
 };
 
 } // namespace Ifpack2

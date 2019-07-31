@@ -61,7 +61,7 @@ namespace Ifpack2 {
 template<class MatrixType, class LocalScalarType>
 BandedContainer<MatrixType, LocalScalarType>::
 BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                 const Teuchos::Array<Teuchos::Array<LO> >& partitions,
                  const Teuchos::RCP<const import_type>&,
                  bool pointIndexed) :
   ContainerImpl<MatrixType, LocalScalarType>(matrix, partitions, pointIndexed),
@@ -86,13 +86,13 @@ setParameters (const Teuchos::ParameterList& List)
   if(List.isParameter("relaxation: banded container superdiagonals"))
   {
     int ku = List.get<int>("relaxation: banded container superdiagonals");
-    for(local_ordinal_type b = 0; b < this->numBlocks_; b++)
+    for(LO b = 0; b < this->numBlocks_; b++)
       ku_[b] = ku;
   }
   if(List.isParameter("relaxation: banded container subdiagonals"))
   {
     int kl = List.get<int>("relaxation: banded container subdiagonals");
-    for(local_ordinal_type b = 0; b < this->numBlocks_; b++)
+    for(LO b = 0; b < this->numBlocks_; b++)
       kl_[b] = kl;
   }
 }
@@ -104,55 +104,55 @@ computeBandwidth()
   using Teuchos::Array;
   using Teuchos::ArrayView;
   //now, for any block where kl_ or ku_ has not already been set, compute the actual bandwidth
-  const auto INVALID = Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
+  const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   size_t colToOffsetSize = this->inputMatrix_->getNodeNumCols();
   if(this->pointIndexed_)
     colToOffsetSize *= this->bcrsBlockSize_;
-  Array<local_ordinal_type> colToBlockOffset(colToOffsetSize, INVALID);
+  Array<LO> colToBlockOffset(colToOffsetSize, INVALID);
   //Same logic as extract() to find entries in blocks efficiently
   //(but here, just to find bandwidth, no scalars used)
   for(int i = 0; i < this->numBlocks_; i++)
   {
     //maxSub, maxSuper are the maximum lower and upper bandwidth
-    local_ordinal_type maxSub = 0;
-    local_ordinal_type maxSuper = 0;
+    LO maxSub = 0;
+    LO maxSuper = 0;
     if(this->scalarsPerRow_ > 1)
     {
       //Get the interval where block i is defined in blockRows_
-      local_ordinal_type blockStart = this->blockOffsets_[i];
-      local_ordinal_type blockEnd = (i == this->numBlocks_ - 1) ? this->blockRows_.size() : this->blockOffsets_[i + 1];
-      ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
+      LO blockStart = this->blockOffsets_[i];
+      LO blockEnd = (i == this->numBlocks_ - 1) ? this->blockRows_.size() : this->blockOffsets_[i + 1];
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
       for(size_t j = 0; j < (size_t) blockRows.size(); j++)
       {
-        local_ordinal_type localCol = this->translateRowToCol(blockRows[j]);
+        LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(local_ordinal_type blockRow = 0; blockRow < (local_ordinal_type) blockRows.size(); blockRow++)
+      for(LO blockRow = 0; blockRow < (LO) blockRows.size(); blockRow++)
       {
         //get a raw view of the whole block row
-        const local_ordinal_type* indices;
-        scalar_type* values;
-        local_ordinal_type numEntries;
-        local_ordinal_type inputRow = this->blockRows_[blockStart + blockRow];
+        const LO* indices;
+        SC* values;
+        LO numEntries;
+        LO inputRow = this->blockRows_[blockStart + blockRow];
         this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
-        for(local_ordinal_type k = 0; k < numEntries; k++)
+        for(LO k = 0; k < numEntries; k++)
         {
-          local_ordinal_type colOffset = colToBlockOffset[indices[k]];
+          LO colOffset = colToBlockOffset[indices[k]];
           if(blockStart <= colOffset && colOffset < blockEnd)
           {
             //This entry does appear in the diagonal block.
             //(br, bc) identifies the scalar's position in the BlockCrs block.
             //Convert this to (r, c) which is its position in the container block.
-            local_ordinal_type blockCol = colOffset - blockStart;
-            for(local_ordinal_type bc = 0; bc < this->bcrsBlockSize_; bc++)
+            LO blockCol = colOffset - blockStart;
+            for(LO bc = 0; bc < this->bcrsBlockSize_; bc++)
             {
-              for(local_ordinal_type br = 0; br < this->bcrsBlockSize_; br++)
+              for(LO br = 0; br < this->bcrsBlockSize_; br++)
               {
-                local_ordinal_type r = this->bcrsBlockSize_ * blockRow + br;
-                local_ordinal_type c = this->bcrsBlockSize_ * blockCol + bc;
+                LO r = this->bcrsBlockSize_ * blockRow + br;
+                LO c = this->bcrsBlockSize_ * blockCol + bc;
                 if(r - c > maxSub)
                   maxSub = r - c;
                 if(c - r > maxSuper)
@@ -166,29 +166,29 @@ computeBandwidth()
     else
     {
       //Get the interval where block i is defined in blockRows_
-      local_ordinal_type blockStart = this->blockOffsets_[i];
-      local_ordinal_type blockEnd = (i == this->numBlocks_ - 1) ? this->blockRows_.size() : this->blockOffsets_[i + 1];
-      ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
+      LO blockStart = this->blockOffsets_[i];
+      LO blockEnd = (i == this->numBlocks_ - 1) ? this->blockRows_.size() : this->blockOffsets_[i + 1];
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
       for(size_t j = 0; j < (size_t) blockRows.size(); j++)
       {
         //translateRowToCol will return the corresponding split column
-        local_ordinal_type localCol = this->translateRowToCol(blockRows[j]);
+        LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(local_ordinal_type blockRow = 0; blockRow < (local_ordinal_type) blockRows.size(); blockRow++)
+      for(LO blockRow = 0; blockRow < (LO) blockRows.size(); blockRow++)
       {
         //get a view of the general row
-        local_ordinal_type inputSplitRow = this->blockRows_[blockStart + blockRow];
+        LO inputSplitRow = this->blockRows_[blockStart + blockRow];
         auto rowView = this->getInputRowView(inputSplitRow);
         for(size_t k = 0; k < rowView.size(); k++)
         {
-          local_ordinal_type colOffset = colToBlockOffset[rowView.ind(k)];
+          LO colOffset = colToBlockOffset[rowView.ind(k)];
           if(blockStart <= colOffset && colOffset < blockEnd)
           {
-            local_ordinal_type blockCol = colOffset - blockStart;
+            LO blockCol = colOffset - blockStart;
             maxSub = std::max(maxSub, blockRow - blockCol);
             maxSuper = std::max(maxSuper, blockCol - blockRow);
           }
@@ -211,10 +211,10 @@ initialize ()
   //If none were they must be computed individually.
   if(kl_[0] == -1)
     computeBandwidth();
-  global_ordinal_type totalScalars = 0;
-  for(local_ordinal_type b = 0; b < this->numBlocks_; b++)
+  GO totalScalars = 0;
+  for(LO b = 0; b < this->numBlocks_; b++)
   {
-    local_ordinal_type stride = 2 * kl_[b] + ku_[b] + 1;
+    LO stride = 2 * kl_[b] + ku_[b] + 1;
     scalarOffsets_[b] = totalScalars;
     totalScalars += stride * this->blockSizes_[b] * this->scalarsPerRow_;
   }
@@ -223,9 +223,9 @@ initialize ()
   {
     //NOTE: the stride and upper bandwidth used to construct the SerialBandDenseMatrix looks
     //too large, but the extra kl_ in upper band space is needed by the LAPACK factorization routine.
-    local_ordinal_type nrows = this->blockSizes_[b] * this->scalarsPerRow_;
+    LO nrows = this->blockSizes_[b] * this->scalarsPerRow_;
     diagBlocks_.emplace_back(Teuchos::View, scalars_.data() + scalarOffsets_[b], 2 * kl_[b] + ku_[b] + 1, nrows, nrows, kl_[b], kl_[b] + ku_[b]);
-    diagBlocks_[b].putScalar(Teuchos::ScalarTraits<local_scalar_type>::zero());
+    diagBlocks_[b].putScalar(Teuchos::ScalarTraits<LSC>::zero());
   }
   std::fill (ipiv_.begin (), ipiv_.end (), 0);
   // We assume that if you called this method, you intend to recompute
@@ -260,7 +260,7 @@ void BandedContainer<MatrixType, LocalScalarType>::extract()
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
-  const auto INVALID = Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
+  const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   //To extract diagonal blocks, need to translate local rows to local columns.
   //Strategy: make a lookup table that translates local cols in the matrix to offsets in blockRows_:
   //blockOffsets_[b] <= offset < blockOffsets_[b+1]: tests whether the column is in block b.
@@ -269,44 +269,44 @@ void BandedContainer<MatrixType, LocalScalarType>::extract()
   //This provides the block and col within a block in O(1).
   if(this->scalarsPerRow_ > 1)
   {
-    Array<local_ordinal_type> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
+    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
     for(int i = 0; i < this->numBlocks_; i++)
     {
       //Get the interval where block i is defined in blockRows_
-      local_ordinal_type blockStart = this->blockOffsets_[i];
-      local_ordinal_type blockEnd = blockStart + this->blockSizes_[i];
-      ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
+      LO blockStart = this->blockOffsets_[i];
+      LO blockEnd = blockStart + this->blockSizes_[i];
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
       for(size_t j = 0; j < (size_t) blockRows.size(); j++)
       {
-        local_ordinal_type localCol = this->translateRowToCol(blockRows[j]);
+        LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(local_ordinal_type blockRow = 0; blockRow < (local_ordinal_type) blockRows.size(); blockRow++)
+      for(LO blockRow = 0; blockRow < (LO) blockRows.size(); blockRow++)
       {
         //get a raw view of the whole block row
-        const local_ordinal_type* indices;
-        scalar_type* values;
-        local_ordinal_type numEntries;
-        local_ordinal_type inputRow = this->blockRows_[blockStart + blockRow];
+        const LO* indices;
+        SC* values;
+        LO numEntries;
+        LO inputRow = this->blockRows_[blockStart + blockRow];
         this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
-        for(local_ordinal_type k = 0; k < numEntries; k++)
+        for(LO k = 0; k < numEntries; k++)
         {
-          local_ordinal_type colOffset = colToBlockOffset[indices[k]];
+          LO colOffset = colToBlockOffset[indices[k]];
           if(blockStart <= colOffset && colOffset < blockEnd)
           {
             //This entry does appear in the diagonal block.
             //(br, bc) identifies the scalar's position in the BlockCrs block.
             //Convert this to (r, c) which is its position in the container block.
-            local_ordinal_type blockCol = colOffset - blockStart;
-            for(local_ordinal_type bc = 0; bc < this->bcrsBlockSize_; bc++)
+            LO blockCol = colOffset - blockStart;
+            for(LO bc = 0; bc < this->bcrsBlockSize_; bc++)
             {
-              for(local_ordinal_type br = 0; br < this->bcrsBlockSize_; br++)
+              for(LO br = 0; br < this->bcrsBlockSize_; br++)
               {
-                local_ordinal_type r = this->bcrsBlockSize_ * blockRow + br;
-                local_ordinal_type c = this->bcrsBlockSize_ * blockCol + bc;
+                LO r = this->bcrsBlockSize_ * blockRow + br;
+                LO c = this->bcrsBlockSize_ * blockCol + bc;
                 auto val = values[k * (this->bcrsBlockSize_ * this->bcrsBlockSize_) + (br + this->bcrsBlockSize_ * bc)];
                 if(val != 0)
                   diagBlocks_[i](r, c) = val;
@@ -321,33 +321,33 @@ void BandedContainer<MatrixType, LocalScalarType>::extract()
   {
     //get the mapping from point-indexed matrix columns to offsets in blockRows_
     //(this includes regular CrsMatrix columns, in which case bcrsBlockSize_ == 1)
-    Array<local_ordinal_type> colToBlockOffset(this->inputMatrix_->getNodeNumCols() * this->bcrsBlockSize_, INVALID);
+    Array<LO> colToBlockOffset(this->inputMatrix_->getNodeNumCols() * this->bcrsBlockSize_, INVALID);
     for(int i = 0; i < this->numBlocks_; i++)
     {
       //Get the interval where block i is defined in blockRows_
-      local_ordinal_type blockStart = this->blockOffsets_[i];
-      local_ordinal_type blockEnd = blockStart + this->blockSizes_[i];
-      ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
+      LO blockStart = this->blockOffsets_[i];
+      LO blockEnd = blockStart + this->blockSizes_[i];
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
       for(size_t j = 0; j < (size_t) blockRows.size(); j++)
       {
         //translateRowToCol will return the corresponding split column
-        local_ordinal_type localCol = this->translateRowToCol(blockRows[j]);
+        LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
       for(size_t blockRow = 0; blockRow < (size_t) blockRows.size(); blockRow++)
       {
         //get a view of the split row
-        local_ordinal_type inputPointRow = this->blockRows_[blockStart + blockRow];
+        LO inputPointRow = this->blockRows_[blockStart + blockRow];
         auto rowView = this->getInputRowView(inputPointRow);
         for(size_t k = 0; k < rowView.size(); k++)
         {
-          local_ordinal_type colOffset = colToBlockOffset[rowView.ind(k)];
+          LO colOffset = colToBlockOffset[rowView.ind(k)];
           if(blockStart <= colOffset && colOffset < blockEnd)
           {
-            local_ordinal_type blockCol = colOffset - blockStart;
+            LO blockCol = colOffset - blockStart;
             auto val = rowView.val(k);
             if(val != 0)
               diagBlocks_[i](blockRow, blockCol) = rowView.val(k);
@@ -373,7 +373,7 @@ void
 BandedContainer<MatrixType, LocalScalarType>::
 factor ()
 {
-  Teuchos::LAPACK<int, local_scalar_type> lapack;
+  Teuchos::LAPACK<int, LSC> lapack;
   int INFO = 0;
 
   for(int i = 0; i < this->numBlocks_; i++)
@@ -414,12 +414,12 @@ factor ()
 template<class MatrixType, class LocalScalarType>
 void
 BandedContainer<MatrixType, LocalScalarType>::
-solveBlock(HostSubview& X,
-           HostSubview& Y,
+solveBlock(HostSubview X,
+           HostSubview Y,
            int blockIndex,
            Teuchos::ETransp mode,
-           const local_scalar_type alpha,
-           const local_scalar_type beta) const
+           const LSC alpha,
+           const LSC beta) const
 {
   #ifdef HAVE_IFPACK2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -447,7 +447,7 @@ solveBlock(HostSubview& X,
   size_t numRows = (int) X.extent (0);
   size_t numVecs = (int) X.extent (1);
 
-  auto zero = Teuchos::ScalarTraits<scalar_type>::zero ();
+  auto zero = Teuchos::ScalarTraits<SC>::zero ();
   if (alpha == zero) { // don't need to solve the linear system
     if (beta == zero) {
       // Use BLAS AXPY semantics for beta == 0: overwrite, clobbering
@@ -464,11 +464,11 @@ solveBlock(HostSubview& X,
     }
   }
   else { // alpha != 0; must solve the linear system
-    Teuchos::LAPACK<int, local_scalar_type> lapack;
+    Teuchos::LAPACK<int, LSC> lapack;
     // If beta is nonzero or Y is not constant stride, we have to use
     // a temporary output multivector.  It gets a copy of X, since
     // GBTRS overwrites its (multi)vector input with its output.
-    std::vector<local_impl_scalar_type> yTemp(numVecs * numRows);
+    std::vector<LISC> yTemp(numVecs * numRows);
     for(size_t j = 0; j < numVecs; j++)
     {
       for(size_t i = 0; i < numRows; i++)

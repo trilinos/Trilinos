@@ -58,7 +58,7 @@ namespace Ifpack2 {
 template<class MatrixType, class InverseType>
 SparseContainer<MatrixType,InverseType>::
 SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                 const Teuchos::Array<Teuchos::Array<LO> >& partitions,
                  const Teuchos::RCP<const import_type>&,
                  bool pointIndexed) :
   ContainerImpl<MatrixType, InverseScalar> (matrix, partitions, pointIndexed),
@@ -169,8 +169,8 @@ apply (HostView X,
        HostView Y,
        int blockIndex,
        Teuchos::ETransp mode,
-       scalar_type alpha,
-       scalar_type beta) const
+       SC alpha,
+       SC beta) const
 {
   using Teuchos::ArrayView;
   using Teuchos::as;
@@ -203,7 +203,7 @@ apply (HostView X,
     return; // done! nothing to do
   }
 
-  const local_ordinal_type numRows = this->blockSizes_[blockIndex];
+  const LO numRows = this->blockSizes_[blockIndex];
 
   // The operator Inverse_ works on a permuted subset of the local
   // parts of X and Y.  The subset and permutation are defined by the
@@ -232,9 +232,9 @@ apply (HostView X,
 
   if(invX.size() == 0)
   {
-    for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
+    for(LO i = 0; i < this->numBlocks_; i++)
       invX.emplace_back(Inverses_[i]->getDomainMap(), numVecs);
-    for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
+    for(LO i = 0; i < this->numBlocks_; i++)
       invY.emplace_back(Inverses_[i]->getDomainMap(), numVecs);
   }
   inverse_mv_type& X_local = invX[blockIndex];
@@ -244,7 +244,7 @@ apply (HostView X,
     "X_local has length " << X_local.getLocalLength() << ", which does "
     "not match numRows = " << numRows * this->scalarsPerRow_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  const ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(blockIndex);
+  const ArrayView<const LO> blockRows = this->getBlockRows(blockIndex);
   if(this->scalarsPerRow_ == 1)
     mvgs.gatherMVtoView(X_local, X, blockRows);
   else
@@ -290,14 +290,14 @@ weightedApply (HostView X,
                HostView D,
                int blockIndex,
                Teuchos::ETransp mode,
-               scalar_type alpha,
-               scalar_type beta) const
+               SC alpha,
+               SC beta) const
 {
   using Teuchos::ArrayView;
   using Teuchos::Range1D;
   using std::cerr;
   using std::endl;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Teuchos::ScalarTraits<SC> STS;
 
   // The InverseType template parameter might have different template
   // parameters (Scalar, LO, GO, and/or Node) than MatrixType.  For
@@ -359,17 +359,17 @@ weightedApply (HostView X,
   //
   // FIXME (mfh 20 Aug 2013) This "local permutation" functionality
   // really belongs in Tpetra.
-  const local_ordinal_type numRows = this->blockSizes_[blockIndex];
+  const LO numRows = this->blockSizes_[blockIndex];
 
   if(invX.size() == 0)
   {
-    for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
+    for(LO i = 0; i < this->numBlocks_; i++)
       invX.emplace_back(Inverses_[i]->getDomainMap(), numVecs);
-    for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
+    for(LO i = 0; i < this->numBlocks_; i++)
       invY.emplace_back(Inverses_[i]->getDomainMap(), numVecs);
   }
   inverse_mv_type& X_local = invX[blockIndex];
-  const ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(blockIndex);
+  const ArrayView<const LO> blockRows = this->getBlockRows(blockIndex);
   mvgs.gatherMVtoView(X_local, X, blockRows);
 
   // We must gather the output multivector Y even on input to
@@ -496,7 +496,7 @@ extract ()
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::RCP;
-  const auto INVALID = Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
+  const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   //To extract diagonal blocks, need to translate local rows to local columns.
   //Strategy: make a lookup table that translates local cols in the matrix to offsets in blockRows_:
   //blockOffsets_[b] <= offset < blockOffsets_[b+1]: tests whether the column is in block b.
@@ -508,21 +508,21 @@ extract ()
 
   if(this->scalarsPerRow_ > 1)
   {
-    Array<local_ordinal_type> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
+    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
     for(int i = 0; i < this->numBlocks_; i++)
     {
       //Get the interval where block i is defined in blockRows_
-      local_ordinal_type blockStart = this->blockOffsets_[i];
-      local_ordinal_type blockSize = this->blockSizes_[i];
-      local_ordinal_type blockPointSize = this->blockSizes_[i] * this->scalarsPerRow_;
-      local_ordinal_type blockEnd = blockStart + blockSize;
-      ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
+      LO blockStart = this->blockOffsets_[i];
+      LO blockSize = this->blockSizes_[i];
+      LO blockPointSize = this->blockSizes_[i] * this->scalarsPerRow_;
+      LO blockEnd = blockStart + blockSize;
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
-      for(local_ordinal_type j = 0; j < blockSize; j++)
+      for(LO j = 0; j < blockSize; j++)
       {
-        local_ordinal_type localCol = this->translateRowToCol(blockRows[j]);
+        LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
       //First, count the number of entries in each row of block i
@@ -530,19 +530,19 @@ extract ()
       Array<size_t> rowEntryCounts(blockPointSize, 0);
       //blockRow counts the BlockCrs LIDs that are going into this block
       //Rows are inserted into the CrsMatrix in sequential order
-      for(local_ordinal_type blockRow = 0; blockRow < blockSize; blockRow++)
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
       {
         //get a raw view of the whole block row
-        const local_ordinal_type* indices;
-        scalar_type* values;
-        local_ordinal_type numEntries;
-        local_ordinal_type inputRow = this->blockRows_[blockStart + blockRow];
+        const LO* indices;
+        SC* values;
+        LO numEntries;
+        LO inputRow = this->blockRows_[blockStart + blockRow];
         this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
-        for(local_ordinal_type br = 0; br < this->bcrsBlockSize_; br++)
+        for(LO br = 0; br < this->bcrsBlockSize_; br++)
         {
-          for(local_ordinal_type k = 0; k < numEntries; k++)
+          for(LO k = 0; k < numEntries; k++)
           {
-            local_ordinal_type colOffset = colToBlockOffset[indices[k]];
+            LO colOffset = colToBlockOffset[indices[k]];
             if(blockStart <= colOffset && colOffset < blockEnd)
             {
               rowEntryCounts[blockRow * this->bcrsBlockSize_ + br] += this->bcrsBlockSize_;
@@ -557,26 +557,26 @@ extract ()
       //insert the actual entries, one row at a time
       Teuchos::Array<InverseGlobalOrdinal> indicesToInsert;
       Teuchos::Array<InverseScalar> valuesToInsert;
-      for(local_ordinal_type blockRow = 0; blockRow < blockSize; blockRow++)
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
       {
         //get a raw view of the whole block row
-        const local_ordinal_type* indices;
-        scalar_type* values;
-        local_ordinal_type numEntries;
-        local_ordinal_type inputRow = this->blockRows_[blockStart + blockRow];
+        const LO* indices;
+        SC* values;
+        LO numEntries;
+        LO inputRow = this->blockRows_[blockStart + blockRow];
         this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
-        for(local_ordinal_type br = 0; br < this->bcrsBlockSize_; br++)
+        for(LO br = 0; br < this->bcrsBlockSize_; br++)
         {
           indicesToInsert.clear();
           valuesToInsert.clear();
-          for(local_ordinal_type k = 0; k < numEntries; k++)
+          for(LO k = 0; k < numEntries; k++)
           {
-            local_ordinal_type colOffset = colToBlockOffset[indices[k]];
+            LO colOffset = colToBlockOffset[indices[k]];
             if(blockStart <= colOffset && colOffset < blockEnd)
             {
-              local_ordinal_type blockCol = colOffset - blockStart;
+              LO blockCol = colOffset - blockStart;
               //bc iterates over the columns in (block) entry k
-              for(local_ordinal_type bc = 0; bc < this->bcrsBlockSize_; bc++)
+              for(LO bc = 0; bc < this->bcrsBlockSize_; bc++)
               {
                 indicesToInsert.push_back(blockCol * this->bcrsBlockSize_ + bc);
                 valuesToInsert.push_back(values[k * this->bcrsBlockSize_ * this->bcrsBlockSize_ + bc * this->bcrsBlockSize_ + br]);
@@ -595,44 +595,44 @@ extract ()
   {
     //get the mapping from point-indexed matrix columns to offsets in blockRows_
     //(this includes regular CrsMatrix columns, in which case scalarsPerRow_ == 1)
-    Array<local_ordinal_type> colToBlockOffset(this->inputMatrix_->getNodeNumCols() * this->bcrsBlockSize_, INVALID);
+    Array<LO> colToBlockOffset(this->inputMatrix_->getNodeNumCols() * this->bcrsBlockSize_, INVALID);
     for(int i = 0; i < this->numBlocks_; i++)
     {
       //Get the interval where block i is defined in blockRows_
-      local_ordinal_type blockStart = this->blockOffsets_[i];
-      local_ordinal_type blockSize = this->blockSizes_[i];
-      local_ordinal_type blockEnd = blockStart + blockSize;
-      ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
+      LO blockStart = this->blockOffsets_[i];
+      LO blockSize = this->blockSizes_[i];
+      LO blockEnd = blockStart + blockSize;
+      ArrayView<const LO> blockRows = this->getBlockRows(i);
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
-      for(local_ordinal_type j = 0; j < blockSize; j++)
+      for(LO j = 0; j < blockSize; j++)
       {
         //translateRowToCol will return the corresponding split column
-        local_ordinal_type localCol = this->translateRowToCol(blockRows[j]);
+        LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
       Teuchos::Array<size_t> rowEntryCounts(blockSize, 0);
-      for(local_ordinal_type j = 0; j < blockSize; j++)
+      for(LO j = 0; j < blockSize; j++)
       {
         rowEntryCounts[j] = this->getInputRowView(this->blockRows_[blockStart + j]).size();
       }
       RCP<InverseMap> tempMap(new InverseMap(blockSize, 0, this->localComm_));
       diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts, Tpetra::StaticProfile));
       Inverses_[i] = rcp(new InverseType(diagBlocks_[i]));
-      for(local_ordinal_type blockRow = 0; blockRow < blockSize; blockRow++)
+      for(LO blockRow = 0; blockRow < blockSize; blockRow++)
       {
         valuesToInsert.clear();
         indicesToInsert.clear();
         //get a view of the split row
-        local_ordinal_type inputSplitRow = this->blockRows_[blockStart + blockRow];
+        LO inputSplitRow = this->blockRows_[blockStart + blockRow];
         auto rowView = this->getInputRowView(inputSplitRow);
         for(size_t k = 0; k < rowView.size(); k++)
         {
-          local_ordinal_type colOffset = colToBlockOffset[rowView.ind(k)];
+          LO colOffset = colToBlockOffset[rowView.ind(k)];
           if(blockStart <= colOffset && colOffset < blockEnd)
           {
-            local_ordinal_type blockCol = colOffset - blockStart;
+            LO blockCol = colOffset - blockStart;
             indicesToInsert.push_back(blockCol);
             valuesToInsert.push_back(rowView.val(k));
           }
@@ -648,9 +648,9 @@ extract ()
 template<typename MatrixType, typename InverseType>
 std::string SparseContainer<MatrixType, InverseType>::getName()
 {
-  typedef ILUT<Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> > ILUTInverse;
+  typedef ILUT<Tpetra::RowMatrix<SC, LO, GO, NO> > ILUTInverse;
 #ifdef HAVE_IFPACK2_AMESOS2
-  typedef Details::Amesos2Wrapper<Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>> AmesosInverse;
+  typedef Details::Amesos2Wrapper<Tpetra::RowMatrix<SC, LO, GO, NO>> AmesosInverse;
   if(std::is_same<InverseType, ILUTInverse>::value)
   {
     return "SparseILUT";

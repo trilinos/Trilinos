@@ -115,29 +115,29 @@ private:
   /// than \c InverseType.
   using matrix_type = MatrixType;
   //! The second template parameter of this class.
-  using local_scalar_type = LocalScalarType;
 
   //! The type of entries in the input (global) matrix.
-  using typename Container<MatrixType>::scalar_type;
+  using typename Container<MatrixType>::SC;
   //! The type of local indices in the input (global) matrix.
-  using typename Container<MatrixType>::local_ordinal_type;
+  using typename Container<MatrixType>::LO;
   //! The type of global indices in the input (global) matrix.
-  using typename Container<MatrixType>::global_ordinal_type;
+  using typename Container<MatrixType>::GO;
   //! The Node type of the input (global) matrix.
-  using typename Container<MatrixType>::node_type;
+  using typename Container<MatrixType>::NO;
+  using LSC = LocalScalarType;
 
   using typename Container<MatrixType>::mv_type;
   using typename Container<MatrixType>::map_type;
   using typename Container<MatrixType>::vector_type;
   using typename Container<MatrixType>::import_type;
 
-  using typename ContainerImpl<MatrixType, LocalScalarType>::local_impl_scalar_type;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::LISC;
   using typename Container<MatrixType>::HostView;
-  using local_mv_type = Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
-  using HostViewLocal = typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace>;
+  using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;
+  using HostViewLocal = typename Kokkos::View<LSC**, Kokkos::HostSpace>;
   using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubview;
 
-  static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>::value,
+  static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<SC, LO, GO, NO>>::value,
                  "Ifpack2::TriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
 
   /// \brief The (base class) type of the input matrix.
@@ -165,7 +165,7 @@ public:
   ///    whether elements of \c partitions[k] identify rows within blocks (true) or
   ///    whole blocks (false).
   TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                  const Teuchos::Array<Teuchos::Array<LO> >& partitions,
                   const Teuchos::RCP<const import_type>& importer,
                   bool pointIndexed);
 
@@ -188,12 +188,12 @@ public:
 
   void clearBlocks();
 
-  void solveBlock(HostSubview& X,
-                  HostSubview& Y,
+  void solveBlock(HostSubview X,
+                  HostSubview Y,
                   int blockIndex,
                   Teuchos::ETransp mode,
-                  local_scalar_type alpha,
-                  local_scalar_type beta) const;
+                  LSC alpha,
+                  LSC beta) const;
 
   //@}
   //! \name Miscellaneous methods
@@ -234,13 +234,13 @@ private:
   void factor ();
 
   //! The local diagonal blocks, which compute() extracts.
-  std::vector<Teuchos::SerialTriDiMatrix<int, local_scalar_type>> diagBlocks_;
+  std::vector<Teuchos::SerialTriDiMatrix<int, LSC>> diagBlocks_;
 
   //! Permutation array from LAPACK (GETRF).
   mutable Teuchos::Array<int> ipiv_;
 
   //! Scalar data for all blocks
-  Teuchos::Array<local_scalar_type> scalars_;
+  Teuchos::Array<LSC> scalars_;
 
   //! Offsets in scalars_ array for all blocks
   Teuchos::Array<int> scalarOffsets_;

@@ -115,20 +115,24 @@ public:
   using local_ordinal_type = typename MatrixType::local_ordinal_type;
   using global_ordinal_type = typename MatrixType::global_ordinal_type;
   using node_type = typename MatrixType::node_type;
-  using import_type = Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>;
-  using mv_type = Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
-  using vector_type = Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
-  using map_type = Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
-  using STS = Teuchos::ScalarTraits<scalar_type>;
-  using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
-  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
-  using row_matrix_type = Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using SC = scalar_type;
+  using LO = local_ordinal_type;
+  using GO = global_ordinal_type;
+  using NO = node_type;
+  using import_type = Tpetra::Import<LO, GO, NO>;
+  using mv_type = Tpetra::MultiVector<SC, LO, GO, NO>;
+  using vector_type = Tpetra::Vector<SC, LO, GO, NO>;
+  using map_type = Tpetra::Map<LO, GO, NO>;
+  using STS = Teuchos::ScalarTraits<SC>;
+  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NO>;
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<SC, LO, GO, NO>;
+  using row_matrix_type = Tpetra::RowMatrix<SC, LO, GO, NO>;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value,
                 "Ifpack2::Container: Please use MatrixType = Tpetra::RowMatrix.");
 
   //! Internal representation of Scalar in Kokkos::View
-  using impl_scalar_type = typename Kokkos::Details::ArithTraits<scalar_type>::val_type;
+  using ISC = typename Kokkos::Details::ArithTraits<SC>::val_type;
 
   //! HostView (the host-space internal representation for Tpetra::Multivector) is the
   //! type of the vector arguments of DoJacobi, DoGaussSeidel, and DoSGS.
@@ -145,7 +149,7 @@ public:
   ///    whether elements of \c partitions[k] identify rows within blocks (true) or
   ///    whole blocks (false).
   Container (const Teuchos::RCP<const row_matrix_type>& matrix,
-             const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+             const Teuchos::Array<Teuchos::Array<LO> >& partitions,
              bool pointIndexed);
 
   //! Destructor.
@@ -166,7 +170,7 @@ public:
   /// For an example of how to use these indices, see the
   /// implementation of BlockRelaxation::ExtractSubmatrices() in
   /// Ifpack2_BlockRelaxation_def.hpp.
-  Teuchos::ArrayView<const local_ordinal_type> getBlockRows(int blockIndex) const;
+  Teuchos::ArrayView<const LO> getBlockRows(int blockIndex) const;
 
   /// \brief Do all set-up operations that only require matrix structure.
   ///
@@ -179,7 +183,7 @@ public:
   virtual void initialize () = 0;
 
   //! Initialize arrays with information about block sizes.
-  void setBlockSizes(const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions);
+  void setBlockSizes(const Teuchos::Array<Teuchos::Array<LO> >& partitions);
 
   void getMatDiag() const;
 
@@ -199,10 +203,10 @@ public:
   /// before calling compute().
   virtual void compute () = 0;
 
-  void DoJacobi(HostView X, HostView Y, scalar_type dampingFactor) const;
-  void DoOverlappingJacobi(HostView X, HostView Y, HostView W, scalar_type dampingFactor) const;
-  void DoGaussSeidel(HostView X, HostView Y, HostView Y2, scalar_type dampingFactor) const;
-  void DoSGS(HostView X, HostView Y, HostView Y2, scalar_type dampingFactor) const;
+  void DoJacobi(HostView X, HostView Y, SC dampingFactor) const;
+  void DoOverlappingJacobi(HostView X, HostView Y, HostView W, SC dampingFactor) const;
+  void DoGaussSeidel(HostView X, HostView Y, HostView Y2, SC dampingFactor) const;
+  void DoSGS(HostView X, HostView Y, HostView Y2, SC dampingFactor) const;
 
   //! Set parameters, if any.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;
@@ -224,8 +228,8 @@ public:
         HostView Y,
         int blockIndex,
         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-        scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-        scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const = 0;
+        SC alpha = Teuchos::ScalarTraits<SC>::one(),
+        SC beta = Teuchos::ScalarTraits<SC>::zero()) const = 0;
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
@@ -234,8 +238,8 @@ public:
                 HostView D,
                 int blockIndex,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-                scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const = 0;
+                SC alpha = Teuchos::ScalarTraits<SC>::one(),
+                SC beta = Teuchos::ScalarTraits<SC>::zero()) const = 0;
 
   /// \brief Compute <tt>Y := (1 - a) Y + a D^{-1} (X - R*Y)</tt>.
   ///
@@ -246,7 +250,7 @@ public:
   // This is the first performance-portable implementation of a block
   // relaxation, and it is supported currently only by BlockTriDiContainer.
   virtual void applyInverseJacobi (const mv_type& /* X */, mv_type& /* Y */,
-                                   scalar_type dampingFactor,
+                                   SC dampingFactor,
                                    bool /* zeroStartingSolution = false */,
                                    int /* numSweeps = 1 */) const = 0;
 
@@ -271,7 +275,7 @@ protected:
 
   //! Do one step of Gauss-Seidel on block i (used by DoGaussSeidel and DoSGS)
   virtual void DoGSBlock(HostView X, HostView Y, HostView Y2, HostView Resid,
-      scalar_type dampingFactor, local_ordinal_type i) const;
+      SC dampingFactor, LO i) const;
 
   //! The input matrix to the constructor.
   Teuchos::RCP<const row_matrix_type> inputMatrix_;
@@ -285,21 +289,21 @@ protected:
   //! The number of blocks (partitions) in the container.
   int numBlocks_;
   //! Local indices of the rows of the input matrix that belong to this block.
-  Teuchos::Array<local_ordinal_type> blockRows_;      //size: total # of local rows (in all local blocks)
+  Teuchos::Array<LO> blockRows_;      //size: total # of local rows (in all local blocks)
   //! Number of rows in each block.
-  Teuchos::Array<local_ordinal_type> blockSizes_;     //size: # of blocks
+  Teuchos::Array<LO> blockSizes_;     //size: # of blocks
   //! Starting index in blockRows_ of local row indices for each block.
-  Teuchos::Array<local_ordinal_type> blockOffsets_;
+  Teuchos::Array<LO> blockOffsets_;
   //! Diagonal elements.
   mutable Teuchos::RCP<vector_type> Diag_;
   //! Whether the problem is distributed across multiple MPI processes.
   bool IsParallel_;
   //! Number of local rows in input matrix.
-  local_ordinal_type NumLocalRows_;
+  LO NumLocalRows_;
   //! Number of global rows in input matrix.
-  global_ordinal_type NumGlobalRows_;
+  GO NumGlobalRows_;
   //! Number of nonzeros in input matrix.
-  global_ordinal_type NumGlobalNonzeros_;
+  GO NumGlobalNonzeros_;
   //! Whether the input matrix is a BlockCRS matrix.
   bool hasBlockCrs_;
   //! If hasBlockCrs_, the number of DOFs per vertex. Otherwise 1.
@@ -308,14 +312,14 @@ protected:
   bool pointIndexed_;
   //! Number of scalars corresponding to one element of blockRows_
   //! If pointIndexed_, always 1. Otherwise if hasBlockCrs_, then bcrsBlockSize_. Otherwise 1.
-  local_ordinal_type scalarsPerRow_;
+  LO scalarsPerRow_;
 
   //! If \c true, the container has been successfully initialized.
   bool IsInitialized_;
   //! If \c true, the container has been successfully computed.
   bool IsComputed_;
 
-  local_ordinal_type maxBlockSize_;
+  LO maxBlockSize_;
 };
 
 namespace Details
@@ -340,15 +344,10 @@ class ContainerImpl : public Container<MatrixType>
   //@{
 protected:
   using local_scalar_type = LocalScalarType;
-  using typename Container<MatrixType>::scalar_type;
-  using typename Container<MatrixType>::local_ordinal_type;
-  using typename Container<MatrixType>::global_ordinal_type;
-  using typename Container<MatrixType>::node_type;
-  //Short names
-  using SC = scalar_type;
-  using LO = local_ordinal_type;
-  using GO = global_ordinal_type;
-  using NO = node_type;
+  using SC = typename Container<MatrixType>::scalar_type;
+  using LO = typename Container<MatrixType>::local_ordinal_type;
+  using GO = typename Container<MatrixType>::global_ordinal_type;
+  using NO = typename Container<MatrixType>::node_type;
   using StridedRowView = Details::StridedRowView<SC, LO, GO, NO>;
   using typename Container<MatrixType>::import_type;
   using typename Container<MatrixType>::row_matrix_type;
@@ -358,15 +357,16 @@ protected:
   using typename Container<MatrixType>::vector_type;
   using typename Container<MatrixType>::map_type;
   using typename Container<MatrixType>::STS;
-  using typename Container<MatrixType>::impl_scalar_type;
-  using local_mv_type = Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using typename Container<MatrixType>::ISC;
+  using local_mv_type = Tpetra::MultiVector<local_scalar_type, LO, GO, NO>;
 
   //! The internal representation of LocalScalarType in Kokkos::View
-  using local_impl_scalar_type = typename Kokkos::Details::ArithTraits<local_scalar_type>::val_type;
+  using LISC = typename Kokkos::Details::ArithTraits<local_scalar_type>::val_type;
+  using LSC = LocalScalarType;
 
   using HostView = typename mv_type::dual_view_type::t_host;
   using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
-  using HostSubview = Kokkos::View<local_impl_scalar_type**, Kokkos::LayoutStride, Kokkos::HostSpace>;
+  using HostSubview = Kokkos::View<LISC**, Kokkos::LayoutStride, Kokkos::HostSpace>;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value,
                 "Ifpack2::Container: Please use MatrixType = Tpetra::RowMatrix.");
@@ -378,8 +378,8 @@ protected:
   //! row and column is on the global diagonal. Translates to global ID first
   //! using the row map, and then back to a local column ID using the col map.
   //! If the corresponding column is off-process, then returns
-  //! OrdinalTraits<local_ordinal_type>::invalid() and does not throw an exception.
-  local_ordinal_type translateRowToCol(local_ordinal_type row);
+  //! OrdinalTraits<LO>::invalid() and does not throw an exception.
+  LO translateRowToCol(LO row);
 
   //! View a row of the input matrix.
   Details::StridedRowView<SC, LO, GO, NO> getInputRowView(LO row) const;
@@ -393,7 +393,7 @@ protected:
 public:
 
   ContainerImpl (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                 const Teuchos::Array<Teuchos::Array<LO> >& partitions,
                  bool pointIndexed);
 
   //! Destructor.
@@ -439,8 +439,8 @@ public:
         HostView Y,
         int blockIndex,
         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-        scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-        scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+        SC alpha = Teuchos::ScalarTraits<SC>::one(),
+        SC beta = Teuchos::ScalarTraits<SC>::zero()) const;
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
@@ -449,8 +449,8 @@ public:
                 HostView D,
                 int blockIndex,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-                scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+                SC alpha = Teuchos::ScalarTraits<SC>::one(),
+                SC beta = Teuchos::ScalarTraits<SC>::zero()) const;
 
   /// \brief Compute <tt>Y := (1 - a) Y + a D^{-1} (X - R*Y)</tt>.
   ///
@@ -461,7 +461,7 @@ public:
   // This is the first performance-portable implementation of a block
   // relaxation, and it is supported currently only by BlockTriDiContainer.
   virtual void applyInverseJacobi (const mv_type& /* X */, mv_type& /* Y */,
-                                   scalar_type dampingFactor,
+                                   SC dampingFactor,
                                    bool /* zeroStartingSolution = false */,
                                    int /* numSweeps = 1 */) const;
 
@@ -485,7 +485,7 @@ public:
 protected:
   //Do Gauss-Seidel on only block i (this is used by DoGaussSeidel and DoSGS)
   void DoGSBlock(HostView X, HostView Y, HostView Y2, HostView Resid,
-      scalar_type dampingFactor, local_ordinal_type i) const;
+      SC dampingFactor, LO i) const;
 
   //! Exactly solves the linear system By = x, where B is a diagonal block matrix
   //! (blockIndex), and X, Y are multivector subviews with the same length as B's dimensions.
@@ -493,12 +493,12 @@ protected:
   //! The Dense, Banded and TriDi containers all implement this and it is used in ContainerImpl::apply().
   //! The Sparse and BlockTriDi containers have their own implementation of apply() and do not use solveBlock.
   virtual void
-  solveBlock(HostSubview& X,
-             HostSubview& Y,
+  solveBlock(HostSubview X,
+             HostSubview Y,
              int blockIndex,
              Teuchos::ETransp mode,
-             const local_scalar_type alpha,
-             const local_scalar_type beta) const;
+             const LSC alpha,
+             const LSC beta) const;
 
   //! Scratch vectors used in apply().
   mutable HostViewLocal X_local_;  //length: blockRows_.size()

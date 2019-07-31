@@ -289,7 +289,7 @@ namespace Ifpack2 {
   ::createDefaultApplyParameters () const
   {
     ApplyParameters in;
-    in.dampingFactor = scalar_type(1.0);
+    in.dampingFactor = Teuchos::ScalarTraits<scalar_type>::one();
     return in;
   }
 

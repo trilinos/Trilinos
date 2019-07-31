@@ -114,29 +114,29 @@ private:
   /// <tt>InverseType</tt>.
   using matrix_type = MatrixType;
   //! The second template parameter of this class.
-  using local_scalar_type = LocalScalarType;
+  using LSC = LocalScalarType;
 
   //! The type of entries in the input (global) matrix.
-  using typename Container<MatrixType>::scalar_type;
+  using typename Container<MatrixType>::SC;
   //! The type of local indices in the input matrix.
-  using typename Container<MatrixType>::local_ordinal_type;
+  using typename Container<MatrixType>::LO;
   //! The type of global indices in the input matrix.
-  using typename Container<MatrixType>::global_ordinal_type;
+  using typename Container<MatrixType>::GO;
   //! The Node type of the input matrix.
-  using typename Container<MatrixType>::node_type;
+  using typename Container<MatrixType>::NO;
 
   using typename Container<MatrixType>::mv_type;
-  using local_mv_type = Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;
   using typename Container<MatrixType>::map_type;
   using typename Container<MatrixType>::vector_type;
   using typename Container<MatrixType>::import_type;
 
-  using typename ContainerImpl<MatrixType, LocalScalarType>::local_impl_scalar_type;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::LISC;
   using typename Container<MatrixType>::HostView;
   using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
   using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubview;
 
-  static_assert(std::is_same<MatrixType, Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>::value,
+  static_assert(std::is_same<MatrixType, Tpetra::RowMatrix<SC, LO, GO, NO>>::value,
                 "Ifpack2::DenseContainer: Please use MatrixType = Tpetra::RowMatrix.");
 
   /// \brief The (base class) type of the input matrix.
@@ -149,7 +149,7 @@ private:
   /// specialization of Tpetra::RowMatrix.
   using typename Container<MatrixType>::row_matrix_type;
 
-  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<SC, LO, GO, NO>;
   //@}
 
 public:
@@ -167,7 +167,7 @@ public:
   ///    whether elements of \c partitions[k] identify rows within blocks (true) or
   ///    whole blocks (false).
   DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                  const Teuchos::Array<Teuchos::Array<LO> >& partitions,
                   const Teuchos::RCP<const import_type>& importer,
                   bool pointIndexed);
 
@@ -239,15 +239,15 @@ private:
   /// \param X [in] Subset permutation of the input X of apply().
   /// \param Y [in] Subset permutation of the input/output Y of apply().
   void
-  solveBlock(HostSubview& X,
-             HostSubview& Y,
+  solveBlock(HostSubview X,
+             HostSubview Y,
              int blockIndex,
              Teuchos::ETransp mode,
-             const local_scalar_type alpha,
-             const local_scalar_type beta) const;
+             const LSC alpha,
+             const LSC beta) const;
 
   //! The local diagonal blocks, which compute() extracts.
-  std::vector<Teuchos::SerialDenseMatrix<int, local_scalar_type>> diagBlocks_;
+  std::vector<Teuchos::SerialDenseMatrix<int, LSC>> diagBlocks_;
 
   mutable HostViewLocal X_local;
   mutable HostViewLocal Y_local;
@@ -265,10 +265,10 @@ private:
   bool hasBlockCrsMatrix_;
 
   //! Scalar array for all of the <tt>diagBlocks_</tt>.
-  Teuchos::Array<local_scalar_type> scalars_;
+  Teuchos::Array<LSC> scalars_;
 
   //! The indices in \c scalars_ where each block matrix starts.
-  Teuchos::Array<global_ordinal_type> scalarOffsets_;
+  Teuchos::Array<GO> scalarOffsets_;
 };
 
 } // namespace Ifpack2

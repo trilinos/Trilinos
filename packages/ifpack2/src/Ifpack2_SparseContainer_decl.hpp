@@ -152,10 +152,10 @@ private:
   /// parameters (e.g., \c scalar_type) than \c MatrixType.
   using inverse_type = InverseType;
 
-  using typename Container<MatrixType>::scalar_type;
-  using typename Container<MatrixType>::local_ordinal_type;
-  using typename Container<MatrixType>::global_ordinal_type;
-  using typename Container<MatrixType>::node_type;
+  using typename Container<MatrixType>::SC;
+  using typename Container<MatrixType>::LO;
+  using typename Container<MatrixType>::GO;
+  using typename Container<MatrixType>::NO;
 
   using typename Container<MatrixType>::mv_type;
   using typename Container<MatrixType>::map_type;
@@ -175,7 +175,7 @@ private:
   using HostViewInverse = typename inverse_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,
-                  Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>::value, "Ifpack2::SparseContainer: Please use MatrixType = Tpetra::RowMatrix.");
+                  Tpetra::RowMatrix<SC, LO, GO, NO>>::value, "Ifpack2::SparseContainer: Please use MatrixType = Tpetra::RowMatrix.");
 
   /// \brief The (base class) type of the input matrix.
   ///
@@ -203,7 +203,7 @@ public:
   ///    whether elements of \c partitions[k] identify rows within blocks (true) or
   ///    whole blocks (false).
   SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                   const Teuchos::Array<Teuchos::Array<LO> >& partitions,
                    const Teuchos::RCP<const import_type>& importer,
                    bool pointIndexed);
 
@@ -238,8 +238,8 @@ public:
          HostView Y,
          int blockIndex,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+         SC alpha = Teuchos::ScalarTraits<SC>::one(),
+         SC beta = Teuchos::ScalarTraits<SC>::zero()) const;
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
@@ -248,8 +248,8 @@ public:
                  HostView W,
                  int blockIndex,
                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+                 SC alpha = Teuchos::ScalarTraits<SC>::one(),
+                 SC beta = Teuchos::ScalarTraits<SC>::zero()) const;
 
   //@}
   //! \name Miscellaneous methods
