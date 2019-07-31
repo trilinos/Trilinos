@@ -53,10 +53,12 @@
 template <class Real>
 class PotentialFlow {
 private:
+  typedef Tpetra::Map<>::global_ordinal_type GO; 
+
   const ROL::Ptr<FE<Real>> feVel_, fePrs_, feThr_;
   const ROL::Ptr<Intrepid::FieldContainer<Real>> cellNodes_;
   const ROL::Ptr<Intrepid::FieldContainer<int>> cellDofs_;
-  const Teuchos::Array<int> cellIds_;
+  const Teuchos::Array<GO> cellIds_;
   const ROL::Ptr<FieldHelper<Real>> fieldHelper_;
   Real cx_, cy_, r_;
 
@@ -66,7 +68,7 @@ public:
                 const ROL::Ptr<FE<Real>> &feThr,
                 const ROL::Ptr<Intrepid::FieldContainer<Real>> &cellNodes,
                 const ROL::Ptr<Intrepid::FieldContainer<int>> &cellDofs,
-                const Teuchos::Array<int> &cellIds,
+                const Teuchos::Array<GO> &cellIds,
                 const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                 ROL::ParameterList &parlist)
     : feVel_(feVel), fePrs_(fePrs), feThr_(feThr),
