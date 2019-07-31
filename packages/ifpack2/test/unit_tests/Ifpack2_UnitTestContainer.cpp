@@ -311,7 +311,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   // DenseContainer only solves the global system exactly
   // if there is only one MPI process in the communicator.
   if (rowMap->getComm ()->getSize () == 1) {
-    localSuccess = (errNorm <= 1.0e2 * STS::eps ()) ? 1 : 0;
+    localSuccess = (errNorm <= magnitude_type(1.0e2) * STS::eps ()) ? 1 : 0;
     globalSuccess = 1;
     reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
                          localSuccess, outArg (globalSuccess));
@@ -323,7 +323,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
 
   out << "Computing results of apply() and weightedApply() "
       << "(they should be the same in this case)" << endl;
-  TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), 1.0e2*STS::eps () );
+  TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), magnitude_type(1.0e2) * STS::eps () );
 }
 
 // Unit test for BandedContainer.
@@ -473,7 +473,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   // DenseContainer only solves the global system exactly
   // if there is only one MPI process in the communicator.
   if (rowMap->getComm ()->getSize () == 1) {
-    localSuccess = (errNorm <= 1.0e2 * STS::eps ()) ? 1 : 0;
+    localSuccess = (errNorm <= magnitude_type(1.0e2) * STS::eps ()) ? 1 : 0;
     globalSuccess = 1;
     reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
                          localSuccess, outArg (globalSuccess));
@@ -485,7 +485,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
 
   out << "Computing results of apply() and weightedApply() "
       << "(they should be the same in this case)" << endl;
-  TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), 1.0e2*STS::eps () );
+  TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), magnitude_type(1.0e2) * STS::eps () );
 }
 
 // Define the set of unit tests to instantiate in this file.

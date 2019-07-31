@@ -125,12 +125,12 @@ computeBandwidth()
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
-      for(size_t j = 0; j < (size_t) blockRows.size(); j++)
+      for(size_t j = 0; j < size_t(blockRows.size()); j++)
       {
         LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(LO blockRow = 0; blockRow < (LO) blockRows.size(); blockRow++)
+      for(LO blockRow = 0; blockRow < LO(blockRows.size()); blockRow++)
       {
         //get a raw view of the whole block row
         const LO* indices;
@@ -172,13 +172,13 @@ computeBandwidth()
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
-      for(size_t j = 0; j < (size_t) blockRows.size(); j++)
+      for(size_t j = 0; j < size_t(blockRows.size()); j++)
       {
         //translateRowToCol will return the corresponding split column
         LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(LO blockRow = 0; blockRow < (LO) blockRows.size(); blockRow++)
+      for(LO blockRow = 0; blockRow < LO(blockRows.size()); blockRow++)
       {
         //get a view of the general row
         LO inputSplitRow = this->blockRows_[blockStart + blockRow];
@@ -279,12 +279,12 @@ void BandedContainer<MatrixType, LocalScalarType>::extract()
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
-      for(size_t j = 0; j < (size_t) blockRows.size(); j++)
+      for(size_t j = 0; j < size_t(blockRows.size()); j++)
       {
         LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(LO blockRow = 0; blockRow < (LO) blockRows.size(); blockRow++)
+      for(LO blockRow = 0; blockRow < LO(blockRows.size()); blockRow++)
       {
         //get a raw view of the whole block row
         const LO* indices;
@@ -331,13 +331,13 @@ void BandedContainer<MatrixType, LocalScalarType>::extract()
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
-      for(size_t j = 0; j < (size_t) blockRows.size(); j++)
+      for(size_t j = 0; j < size_t(blockRows.size()); j++)
       {
         //translateRowToCol will return the corresponding split column
         LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(size_t blockRow = 0; blockRow < (size_t) blockRows.size(); blockRow++)
+      for(size_t blockRow = 0; blockRow < size_t(blockRows.size()); blockRow++)
       {
         //get a view of the split row
         LO inputPointRow = this->blockRows_[blockStart + blockRow];
@@ -444,10 +444,10 @@ solveBlock(HostSubview X,
     << ").  Please report this bug to the Ifpack2 developers.");
   #endif
 
-  size_t numRows = (int) X.extent (0);
-  size_t numVecs = (int) X.extent (1);
+  size_t numRows = X.extent (0);
+  size_t numVecs = X.extent (1);
 
-  auto zero = Teuchos::ScalarTraits<SC>::zero ();
+  SC zero = Teuchos::ScalarTraits<SC>::zero ();
   if (alpha == zero) { // don't need to solve the linear system
     if (beta == zero) {
       // Use BLAS AXPY semantics for beta == 0: overwrite, clobbering

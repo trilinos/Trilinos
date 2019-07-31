@@ -239,7 +239,7 @@ apply (HostView X,
   }
   inverse_mv_type& X_local = invX[blockIndex];
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X_local.getLocalLength() != (size_t) numRows * this->scalarsPerRow_, std::logic_error,
+    X_local.getLocalLength() != size_t(numRows * this->scalarsPerRow_), std::logic_error,
     "Ifpack2::SparseContainer::apply: "
     "X_local has length " << X_local.getLocalLength() << ", which does "
     "not match numRows = " << numRows * this->scalarsPerRow_ << ".  Please report this bug to "
@@ -257,7 +257,7 @@ apply (HostView X,
 
   inverse_mv_type& Y_local = invY[blockIndex];
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Y_local.getLocalLength () != (size_t) numRows * this->scalarsPerRow_, std::logic_error,
+    Y_local.getLocalLength () != size_t(numRows * this->scalarsPerRow_), std::logic_error,
     "Ifpack2::SparseContainer::apply: "
     "Y_local has length " << Y_local.getLocalLength () << ", which does "
     "not match numRows = " << numRows * this->scalarsPerRow_ << ".  Please report this bug to "
@@ -379,7 +379,7 @@ weightedApply (HostView X,
 
   inverse_mv_type Y_local = invY[blockIndex];
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Y_local.getLocalLength() != (size_t) numRows, std::logic_error,
+    Y_local.getLocalLength() != size_t(numRows), std::logic_error,
     "Ifpack2::SparseContainer::weightedApply: "
     "Y_local has length " << X_local.getLocalLength() << ", which does "
     "not match numRows = " << numRows << ".  Please report this bug to "
@@ -398,7 +398,7 @@ weightedApply (HostView X,
 
   inverse_vector_type D_local(Inverses_[blockIndex]->getDomainMap());
   TEUCHOS_TEST_FOR_EXCEPTION(
-    D_local.getLocalLength() != (size_t) this->blockSizes_[blockIndex], std::logic_error,
+    D_local.getLocalLength() != size_t(this->blockSizes_[blockIndex]), std::logic_error,
     "Ifpack2::SparseContainer::weightedApply: "
     "D_local has length " << X_local.getLocalLength () << ", which does "
     "not match numRows = " << this->blockSizes_[blockIndex] << ".  Please report this bug to "

@@ -156,12 +156,12 @@ void TriDiContainer<MatrixType, LocalScalarType>::extract()
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
-      for(size_t j = 0; j < (size_t) blockRows.size(); j++)
+      for(size_t j = 0; j < size_t(blockRows.size()); j++)
       {
         LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(LO blockRow = 0; blockRow < (LO) blockRows.size(); blockRow++)
+      for(LO blockRow = 0; blockRow < LO(blockRows.size()); blockRow++)
       {
         //get a raw view of the whole block row
         const LO* indices;
@@ -208,13 +208,13 @@ void TriDiContainer<MatrixType, LocalScalarType>::extract()
       //Set the lookup table entries for the columns appearing in block i.
       //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
       //this is OK. The values updated here are only needed to process block i's entries.
-      for(size_t j = 0; j < (size_t) blockRows.size(); j++)
+      for(size_t j = 0; j < size_t(blockRows.size()); j++)
       {
         //translateRowToCol will return the corresponding split column
         LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
-      for(size_t blockRow = 0; blockRow < (size_t) blockRows.size(); blockRow++)
+      for(size_t blockRow = 0; blockRow < size_t(blockRows.size()); blockRow++)
       {
         //get a view of the split row
         LO inputPointRow = this->blockRows_[blockStart + blockRow];

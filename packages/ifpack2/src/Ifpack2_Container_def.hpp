@@ -314,13 +314,14 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
   {
     //Use the KokkosSparse internal matrix for low-overhead values/indices access
     //But, can only do this if the matrix is accessible directly from host, since it's not a DualView
+    crs_matrix_type::execution_space::fence();
     auto localA = this->inputCrsMatrix_->getLocalMatrix();
-    using size_type = typename decltype(localA)::size_type;
+    using size_type = typename crs_matrix_type::local_matrix_type::size_type;
     const auto& rowmap = localA.graph.row_map;
     const auto& entries = localA.graph.entries;
     const auto& values = localA.values;
     ArrayView<const LO> blockRows = this->getBlockRows(i);
-    for(size_t j = 0; j < (size_t) blockRows.size(); j++)
+    for(size_t j = 0; j < size_t(blockRows.size()); j++)
     {
       const LO row = blockRows[j];
       for(size_t m = 0; m < numVecs; m++)
@@ -347,7 +348,7 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     //Either a point-indexed block matrix, or a normal row matrix
     //that doesn't support getLocalMatrix
     ArrayView<const LO> blockRows = this->getBlockRows(i);
-    for(size_t j = 0; j < (size_t) blockRows.size(); j++)
+    for(size_t j = 0; j < size_t(blockRows.size()); j++)
     {
       const LO row = blockRows[j];
       auto rowView = getInputRowView(row);
@@ -775,7 +776,7 @@ weightedApply(HostView X,
       Y_localBlocks_.emplace_back(Y_local_, blockBounds, Kokkos::ALL());
     }
   }
-  if((int) weightedApplyScratch_.extent(0) != 3 * this->maxBlockSize_ ||
+  if(int(weightedApplyScratch_.extent(0)) != 3 * this->maxBlockSize_ ||
       weightedApplyScratch_.extent(1) != numVecs)
   {
     weightedApplyScratch_ = HostViewLocal("weightedApply scratch", 3 * this->maxBlockSize_, numVecs);
