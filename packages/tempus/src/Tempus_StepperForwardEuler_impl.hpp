@@ -56,6 +56,8 @@ void StepperForwardEuler<Scalar>::setObserver(
       Teuchos::rcp_dynamic_cast<StepperForwardEulerObserver<Scalar> >
         (this->stepperObserver_);
   }
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -68,6 +70,8 @@ void StepperForwardEuler<Scalar>::initialize()
 
   this->setParameterList(this->stepperPL_);
   this->setObserver();
+
+  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 template<class Scalar>
@@ -83,12 +87,17 @@ void StepperForwardEuler<Scalar>::setInitialConditions(
     this->setStepperXDot(initialState->getX()->clone_v());
 
   StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
 void StepperForwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
+    "Error - " << this->description() << " is not initialized!");
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperForwardEuler::takeStep()");
@@ -208,6 +217,8 @@ void StepperForwardEuler<Scalar>::setParameterList(
     std::logic_error,
        "Error - Stepper Type is not 'Forward Euler'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
+
+  this->isInitialized_ = false;
 }
 
 

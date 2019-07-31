@@ -69,7 +69,8 @@ void StepperOperatorSplit<Scalar>::setModel(
     *out << "Warning -- No ModelEvaluator to set for StepperOperatorSplit, "
          << "because it is a Stepper of Steppers.\n" << std::endl;
   }
-  return;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -82,7 +83,8 @@ void StepperOperatorSplit<Scalar>::setNonConstModel(
     *out << "Warning -- No ModelEvaluator to set for StepperOperatorSplit, "
          << "because it is a Stepper of Steppers.\n" << std::endl;
   }
-  return;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -113,7 +115,8 @@ void StepperOperatorSplit<Scalar>::setSolver(std::string /* solverName */)
   Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::setSolver()");
   *out << "Warning -- No solver to set for StepperOperatorSplit, "
        << "because it is a Stepper of Steppers.\n" << std::endl;
-  return;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -124,7 +127,8 @@ void StepperOperatorSplit<Scalar>::setSolver(
   Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::setSolver()");
   *out << "Warning -- No solver to set for StepperOperatorSplit "
        << "because it is a Stepper of Steppers.\n" << std::endl;
-  return;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -135,7 +139,8 @@ void StepperOperatorSplit<Scalar>::setSolver(
   Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::setSolver()");
   *out << "Warning -- No solver to set for StepperOperatorSplit "
        << "because it is a Stepper of Steppers.\n" << std::endl;
-  return;
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -152,6 +157,8 @@ void StepperOperatorSplit<Scalar>::setObserver(
     stepperOSObserver_ =
       Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs);
   }
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -209,6 +216,8 @@ void StepperOperatorSplit<Scalar>::createSubSteppers(
     }
     addStepper(subStepper, useFSAL);
   }
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -247,6 +256,13 @@ void StepperOperatorSplit<Scalar>::initialize()
     TEUCHOS_TEST_FOR_EXCEPTION(!isOneStepMethod(), std::logic_error,
     "Error - OperatorSplit only works for one-step methods!\n");
   }
+
+  typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::iterator
+    subStepperIter = subStepperList_.begin();
+  for (; subStepperIter < subStepperList_.end(); subStepperIter++)
+    (*subStepperIter)->initialize();
+
+  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 template<class Scalar>
@@ -257,12 +273,17 @@ void StepperOperatorSplit<Scalar>::setInitialConditions(
     subStepperIter = subStepperList_.begin();
   for (; subStepperIter < subStepperList_.end(); subStepperIter++)
     (*subStepperIter)->setInitialConditions(solutionHistory);
+
+  this->isInitialized_ = false;
 }
 
 template<class Scalar>
 void StepperOperatorSplit<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
+    "Error - " << this->description() << " is not initialized!");
+
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperOperatorSplit::takeStep()");
@@ -379,6 +400,7 @@ void StepperOperatorSplit<Scalar>::setParameterList(
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
 
   this->stepperPL_ = stepperPL;
+  this->isInitialized_ = false;
 }
 
 
