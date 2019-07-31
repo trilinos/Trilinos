@@ -104,17 +104,19 @@ namespace MueLuTests {
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, 0/*indexBase*/, comm);
     const size_t numMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
-    RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 1)); // Force underlying linear algebra library to allocate more
     // memory on the fly.  While not super efficient, this
     // ensures that no zeros are being stored.  Thus, from
     // Zoltan's perspective the matrix is imbalanced.
     // Create a vector with random integer entries in [1,maxEntriesPerRow].
     ST::seedrandom(666*comm->getRank());
+    LO maxNnzPerRow = 0;
     RCP<Xpetra::Vector<LO,LO,GO,NO> > entriesPerRow = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(map,false);
     Teuchos::ArrayRCP<LO> eprData = entriesPerRow->getDataNonConst(0);
     for (typename Teuchos::ArrayRCP<LO>::iterator i=eprData.begin(); i!=eprData.end(); ++i) {
-      *i = (LO)(std::floor(((Teuchos::ScalarTraits<double>::random()+1)*0.5*maxEntriesPerRow)+1));
+      *i = static_cast<LO>(std::floor(((Teuchos::ScalarTraits<double>::random()+1)*0.5*maxEntriesPerRow)+1));
+      if(maxNnzPerRow < *i) {maxNnzPerRow = *i;}
     }
+    RCP<Matrix> A = rcp(new CrsMatrixWrap(map, maxNnzPerRow)); // Force underlying linear algebra library to allocate more
 
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     fos->setOutputToRootOnly(-1);
