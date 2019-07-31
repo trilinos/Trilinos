@@ -113,6 +113,8 @@ STK_Interface::STK_Interface(unsigned dim)
    entity_rank_names.push_back("FAMILY_TREE");
 
    metaData_ = rcp(new stk::mesh::MetaData(dimension_,entity_rank_names));
+   
+   metaData_->enable_late_fields();
 
    initializeFromMetaData();
 }
@@ -145,7 +147,6 @@ void STK_Interface::addNodeset(const std::string & name)
 
 void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId)
 {
-   TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
                       "Unknown element block \"" << blockId << "\"");
    std::pair<std::string,std::string> key = std::make_pair(fieldName,blockId);
@@ -155,13 +156,16 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
       SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::NODE_RANK, fieldName);
       if(field==0)
          field = &metaData_->declare_field<SolutionFieldType>(stk::topology::NODE_RANK, fieldName);
+      if ( initialized_ )  {
+        stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol ); 
+      }
       fieldNameToSolution_[key] = field;
    }
 }
 
 void STK_Interface::addCellField(const std::string & fieldName,const std::string & blockId)
 {
-   TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
                       "Unknown element block \"" << blockId << "\"");
    std::pair<std::string,std::string> key = std::make_pair(fieldName,blockId);
@@ -171,6 +175,11 @@ void STK_Interface::addCellField(const std::string & fieldName,const std::string
       SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, fieldName);
       if(field==0)
          field = &metaData_->declare_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, fieldName);
+
+      if ( initialized_ )  {
+        stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol ); 
+      }
       fieldNameToCellField_[key] = field;
    }
 }
@@ -213,6 +222,10 @@ void STK_Interface::addMeshCoordFields(const std::string & blockId,
          SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::NODE_RANK, dispName);
          if(field==0) {
             field = &metaData_->declare_field<SolutionFieldType>(stk::topology::NODE_RANK, dispName);
+            if ( initialized_ )  {
+              stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
+              stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol ); 
+            }
          }
          fieldNameToSolution_[key] = field;
       }
