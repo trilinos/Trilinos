@@ -100,7 +100,7 @@ TRIBITS_ADD_TEST(
   NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
   ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=480 --num-elements-y=480 --kokkos"
   COMM mpi
-  NUM_MPI_PROCS 1 4 9 16 25 36
+  NUM_MPI_PROCS 1-36
   STANDARD_PASS_OUTPUT
   RUN_SERIAL
   CATEGORIES PERFORMANCE
