@@ -202,12 +202,6 @@ The following parameters are used in the block relaxation methods:
      enables the use of the tridiagonal container even if the matrix's
      bandwidth is greater than 3.
      Decoupling is the line smoothing behavior used in ML.}
-\ccc{block relaxation: dofs per node}
-    {int}
-    {1}
-    {How many matrix rows correspond to a mesh node. This is not required
-     if the problem uses a BlockCrsMatrix, since
-     the block size is included in the matrix.}
 \ccc{partitioner: type}
     {string}
     {``linear''}
@@ -247,7 +241,8 @@ The following parameters are used in the block relaxation methods:
 \ccc{partitioner: PDE equations}
     {int}
     {1}
-    {Number of equations per node. Only valid for ``line'' partition type.}
+    {Number of equations per node. Only used for ``line'' partitioning, and
+     decoupled BlockRelaxation.}
 \ccc{partitioner: coordinates}
     {Teuchos::RCP<multi\_vector>}
     {null}

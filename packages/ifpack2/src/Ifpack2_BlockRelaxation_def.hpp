@@ -128,26 +128,25 @@ getValidParameters () const
   validParams->set("relaxation: container", "TriDi");
   validParams->set("relaxation: backward mode",false);
   validParams->set("relaxation: type", "Jacobi");
-  validParams->set("relaxation: sweeps", (int)1);
+  validParams->set("relaxation: sweeps", 1);
   validParams->set("relaxation: damping factor", STS::one());
   validParams->set("relaxation: zero starting solution", true);
   validParams->set("block relaxation: decouple dofs", false);
-  validParams->set("block relaxation: dofs per node", 1);
   validParams->set("schwarz: compute condest", false); // mfh 24 Mar 2015: for backwards compatibility ONLY
   validParams->set("schwarz: combine mode", "ZERO"); // use string mode for this
   validParams->set("schwarz: use reordering", true);
   validParams->set("schwarz: filter singletons", false);
-  validParams->set("schwarz: overlap level", (int)0);
+  validParams->set("schwarz: overlap level", 0);
   validParams->set("partitioner: type", "greedy");
-  validParams->set("partitioner: local parts", (int)1);
-  validParams->set("partitioner: overlap", (int)0);
+  validParams->set("partitioner: local parts", 1);
+  validParams->set("partitioner: overlap", 0);
   Teuchos::Array<Teuchos::ArrayRCP<int>> tmp0;
   validParams->set("partitioner: parts", tmp0);
   validParams->set("partitioner: maintain sparsity", false);
-  validParams->set("fact: ilut level-of-fill", (double)1.0);
-  validParams->set("fact: absolute threshold", (double)0.0);
-  validParams->set("fact: relative threshold", (double)1.0);
-  validParams->set("fact: relax value", (double)0.0);
+  validParams->set("fact: ilut level-of-fill", 1.0);
+  validParams->set("fact: absolute threshold", 0.0);
+  validParams->set("fact: relative threshold", 1.0);
+  validParams->set("fact: relax value", 0.0);
 
   Teuchos::ParameterList dummyList;
   validParams->set("Amesos2",dummyList);
@@ -157,8 +156,8 @@ getValidParameters () const
   Teuchos::ArrayRCP<int> tmp;
   validParams->set("partitioner: map", tmp);
 
-  validParams->set("partitioner: line detection threshold",(double)0.0);
-  validParams->set("partitioner: PDE equations",(int)1);
+  validParams->set("partitioner: line detection threshold", 0.0);
+  validParams->set("partitioner: PDE equations", 1);
   Teuchos::RCP<Tpetra::MultiVector<double,
                                    typename MatrixType::local_ordinal_type,
                                    typename MatrixType::global_ordinal_type,
@@ -711,7 +710,7 @@ ExtractSubmatricesStructure ()
     //dofs [per node] is how many blocks each partition will be split into
     auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A_);
     local_ordinal_type dofs = hasBlockCrsMatrix_ ?
-      A_bcrs->getBlockSize() : List_.get<int>("block relaxation: dofs per node");
+      A_bcrs->getBlockSize() : List_.get<int>("partitioner: PDE equations");
     blockRows.resize(NumLocalBlocks_ * dofs);
     if(hasBlockCrsMatrix_)
     {

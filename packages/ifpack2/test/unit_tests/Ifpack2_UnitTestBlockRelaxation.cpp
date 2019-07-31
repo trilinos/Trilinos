@@ -1096,7 +1096,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestContainersDofsDeco
     params.set ("relaxation: sweeps", 10);
     params.set ("relaxation: container", contType);
     params.set ("block relaxation: decouple dofs", true);
-    params.set ("block relaxation: dofs per node", dofsPerNode);
+    params.set ("partitioner: PDE equations", dofsPerNode);
 
     try {
       prec->setParameters (params);

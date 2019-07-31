@@ -452,7 +452,6 @@ namespace MueLu {
       {
         actualDofsPerNode = A_->GetFixedBlockSize();
       }
-      myparamList.set("block relaxation: dofs per node", actualDofsPerNode);
 
       if (numLocalRows == Teuchos::as<size_t>(TVertLineIdSmoo.size())) {
         myparamList.set("partitioner: type","user");
