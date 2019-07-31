@@ -51,6 +51,8 @@
 
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_BlockedVector.hpp"
+#include "Xpetra_MapExtractor.hpp"
+
 
 namespace Xpetra {
 

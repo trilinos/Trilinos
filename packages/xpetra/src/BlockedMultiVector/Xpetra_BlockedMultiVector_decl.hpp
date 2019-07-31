@@ -55,13 +55,16 @@
 
 #include "Xpetra_BlockedMap.hpp"
 
-#include "Xpetra_MapExtractor.hpp"
 
 namespace Xpetra {
+
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     // forward declaration of Vector, needed to prevent circular inclusions
     template<class S, class LO, class GO, class N> class Vector;
+
+    // forward declaration of MapExtractor, we just need the class sig here.
+    template<class S, class LO, class GO, class N> class MapExtractor;
 #endif
 
 
