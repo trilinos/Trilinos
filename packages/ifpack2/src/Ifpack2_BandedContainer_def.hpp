@@ -91,6 +91,10 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 }
 
 template<class MatrixType, class LocalScalarType>
+BandedContainer<MatrixType, LocalScalarType>::
+~BandedContainer () {}
+
+template<class MatrixType, class LocalScalarType>
 void BandedContainer<MatrixType, LocalScalarType>::
 setParameters (const Teuchos::ParameterList& List)
 {

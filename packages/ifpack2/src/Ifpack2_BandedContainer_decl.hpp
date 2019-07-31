@@ -187,7 +187,7 @@ public:
                    bool pointIndexed);
 
   //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~BandedContainer () {}
+  virtual ~BandedContainer ();
 
   //@}
   //! \name Get and set methods

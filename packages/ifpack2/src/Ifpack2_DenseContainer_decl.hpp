@@ -186,7 +186,7 @@ public:
                   bool pointIndexed);
 
   //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~DenseContainer () {}
+  virtual ~DenseContainer ();
 
   //@}
   //! \name Get and set methods

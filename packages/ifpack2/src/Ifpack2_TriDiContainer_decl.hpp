@@ -185,7 +185,7 @@ public:
 
 
   //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~TriDiContainer () {}
+  virtual ~TriDiContainer ();
 
   //@}
   //! \name Get and set methods

@@ -222,7 +222,7 @@ public:
                    bool pointIndexed);
 
   //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~SparseContainer() {}
+  virtual ~SparseContainer();
 
   //@}
   //! \name Get and set methods

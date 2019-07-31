@@ -85,6 +85,11 @@ SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 
 //==============================================================================
 template<class MatrixType, class InverseType>
+SparseContainer<MatrixType, InverseType>::
+~SparseContainer() {}
+
+//==============================================================================
+template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::setParameters(const Teuchos::ParameterList& List)
 {
   List_ = List;

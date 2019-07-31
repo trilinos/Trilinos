@@ -106,6 +106,10 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 }
 
 template<class MatrixType, class LocalScalarType>
+DenseContainer<MatrixType, LocalScalarType>::
+~DenseContainer () {}
+
+template<class MatrixType, class LocalScalarType>
 void
 DenseContainer<MatrixType, LocalScalarType>::
 initialize ()

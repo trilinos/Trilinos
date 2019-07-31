@@ -118,6 +118,10 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 }
 
 template<class MatrixType, class LocalScalarType>
+TriDiContainer<MatrixType, LocalScalarType>::
+~TriDiContainer () {}
+
+template<class MatrixType, class LocalScalarType>
 void TriDiContainer<MatrixType, LocalScalarType>::initialize ()
 {
   for(int i = 0; i < this->numBlocks_; i++)
