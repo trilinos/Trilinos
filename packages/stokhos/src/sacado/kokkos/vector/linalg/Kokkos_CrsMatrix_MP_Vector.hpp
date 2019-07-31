@@ -57,6 +57,31 @@
 // Specializations of KokkosSparse::CrsMatrix for Sacado::MP::Vector scalar type
 //----------------------------------------------------------------------------
 
+namespace { // (anonymous)
+
+// Work-around for CWG 1558.  See
+// https://en.cppreference.com/w/cpp/types/void_t
+template<class... Ts> struct make_void { typedef void type; };
+template<class... Ts>
+using replace_me_with_void_t_in_cxx17 =
+  typename make_void<Ts...>::type;
+
+template<class T, class = replace_me_with_void_t_in_cxx17<> >
+struct const_type_impl {
+  using type = T;
+};
+
+template<class T>
+struct const_type_impl<T,
+  replace_me_with_void_t_in_cxx17<typename T::const_type> > {
+  using type = typename T::const_type;
+};
+
+template<class T>
+using const_type_t = typename const_type_impl<T>::type;
+
+} // namespace (anonymous)
+
 namespace Stokhos {
 
 namespace details {
@@ -402,6 +427,7 @@ spmv(
 {
   typedef Kokkos::View< OutputType, OutputP... > OutputVectorType;
   typedef Kokkos::View< InputType, InputP... > InputVectorType;
+  using input_vector_type = const_type_t<InputVectorType>;
   typedef typename InputVectorType::array_type::non_const_value_type value_type;
 
   if(mode[0]!='N') {
@@ -421,7 +447,7 @@ spmv(
       // y = A*x
       typedef Stokhos::details::MultiplyAssign UpdateType;
       typedef Stokhos::details::MPMultiply<MatrixType,
-        typename InputVectorType::const_type, OutputVectorType,
+        input_vector_type, OutputVectorType,
         UpdateType> multiply_type;
       multiply_type::apply( A, x, y, UpdateType() );
     }
@@ -429,7 +455,7 @@ spmv(
       // y = a*A*x
       typedef Stokhos::details::MultiplyScaledAssign<value_type> UpdateType;
       typedef Stokhos::details::MPMultiply<MatrixType,
-        typename InputVectorType::const_type, OutputVectorType,
+        input_vector_type, OutputVectorType,
         UpdateType> multiply_type;
       multiply_type::apply( A, x, y, UpdateType(aa) );
     }
@@ -439,7 +465,7 @@ spmv(
       // y += A*x
       typedef Stokhos::details::MultiplyUpdate UpdateType;
       typedef Stokhos::details::MPMultiply<MatrixType,
-        typename InputVectorType::const_type, OutputVectorType,
+        input_vector_type, OutputVectorType,
         UpdateType> multiply_type;
       multiply_type::apply( A, x, y, UpdateType() );
     }
@@ -447,7 +473,7 @@ spmv(
       // y += a*A*x
       typedef Stokhos::details::MultiplyScaledUpdate<value_type> UpdateType;
       typedef Stokhos::details::MPMultiply<MatrixType,
-        typename InputVectorType::const_type, OutputVectorType,
+        input_vector_type, OutputVectorType,
         UpdateType> multiply_type;
       multiply_type::apply( A, x, y, UpdateType(aa) );
     }
@@ -456,7 +482,7 @@ spmv(
     // y = a*A*x + b*y
     typedef Stokhos::details::MultiplyScaledUpdate2<value_type> UpdateType;
     typedef Stokhos::details::MPMultiply<MatrixType,
-      typename InputVectorType::const_type, OutputVectorType,
+      input_vector_type, OutputVectorType,
       UpdateType> multiply_type;
     multiply_type::apply( A, x, y, UpdateType(aa,bb) );
   }
@@ -494,6 +520,7 @@ spmv(
   else {
     typedef Kokkos::View< OutputType, OutputP... > OutputVectorType;
     typedef Kokkos::View< InputType, InputP... > InputVectorType;
+    using input_vector_type = const_type_t<InputVectorType>;
     typedef typename InputVectorType::array_type::non_const_value_type value_type;
 
     if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
@@ -508,7 +535,7 @@ spmv(
         // y = A*x
         typedef Stokhos::details::MultiplyAssign UpdateType;
         typedef Stokhos::details::MPMultiply<MatrixType,
-          typename InputVectorType::const_type, OutputVectorType,
+          input_vector_type, OutputVectorType,
           UpdateType> multiply_type;
         multiply_type::apply( A, x, y, UpdateType() );
       }
@@ -516,7 +543,7 @@ spmv(
         // y = a*A*x
         typedef Stokhos::details::MultiplyScaledAssign<value_type> UpdateType;
         typedef Stokhos::details::MPMultiply<MatrixType,
-          typename InputVectorType::const_type, OutputVectorType,
+          input_vector_type, OutputVectorType,
           UpdateType> multiply_type;
         multiply_type::apply( A, x, y, UpdateType(aa) );
       }
@@ -526,7 +553,7 @@ spmv(
         // y += A*x
         typedef Stokhos::details::MultiplyUpdate UpdateType;
         typedef Stokhos::details::MPMultiply<MatrixType,
-          typename InputVectorType::const_type, OutputVectorType,
+          input_vector_type, OutputVectorType,
           UpdateType> multiply_type;
         multiply_type::apply( A, x, y, UpdateType() );
       }
@@ -534,7 +561,7 @@ spmv(
         // y += a*A*x
         typedef Stokhos::details::MultiplyScaledUpdate<value_type> UpdateType;
         typedef Stokhos::details::MPMultiply<MatrixType,
-          typename InputVectorType::const_type, OutputVectorType,
+          input_vector_type, OutputVectorType,
           UpdateType> multiply_type;
         multiply_type::apply( A, x, y, UpdateType(aa) );
       }
@@ -543,7 +570,7 @@ spmv(
       // y = a*A*x + b*y
       typedef Stokhos::details::MultiplyScaledUpdate2<value_type> UpdateType;
       typedef Stokhos::details::MPMultiply<MatrixType,
-        typename InputVectorType::const_type, OutputVectorType,
+        input_vector_type, OutputVectorType,
         UpdateType> multiply_type;
       multiply_type::apply( A, x, y, UpdateType(aa,bb) );
     }
