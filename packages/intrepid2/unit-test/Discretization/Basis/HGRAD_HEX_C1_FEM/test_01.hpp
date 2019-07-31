@@ -119,8 +119,8 @@ namespace Intrepid2 {
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
       Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> hexBasis;
-      //typedef typename decltype(hexBasis)::outputViewType outputViewType;
-      //typedef typename decltype(hexBasis)::pointViewType  pointViewType;
+      //typedef typename decltype(hexBasis)::OutputViewType OutputViewType;
+      //typedef typename decltype(hexBasis)::PointViewType  PointViewType;
 
       *outStream
         << "\n"

@@ -55,14 +55,14 @@ namespace Intrepid2 {
   namespace Impl {
 
     template<EOperator opType>
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType,
              typename workViewType,
              typename vinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_QUAD_Cn_FEM::Serial<opType>::
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType  input,
                      workViewType   work,
                const vinvViewType   vinv,
@@ -285,7 +285,7 @@ namespace Intrepid2 {
     Basis_HGRAD_LINE_Cn_FEM<SpT,OT,PT> lineBasis( order, pointType );
     const auto cardLine = lineBasis.getCardinality();
     
-    this->vinv_ = Kokkos::DynRankView<typename scalarViewType::value_type,SpT>("Hgrad::Quad::Cn::vinv", cardLine, cardLine);         
+    this->vinv_ = Kokkos::DynRankView<typename ScalarViewType::value_type,SpT>("Hgrad::Quad::Cn::vinv", cardLine, cardLine);         
     lineBasis.getVandermondeInverse(this->vinv_);
 
     this->basisCardinality_  = cardLine*cardLine;
@@ -362,10 +362,10 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
-    Kokkos::DynRankView<typename scalarViewType::value_type,SpT>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,SpT>
       dofCoordsLine("dofCoordsLine", cardLine, 1);
 
     lineBasis.getDofCoords(dofCoordsLine);

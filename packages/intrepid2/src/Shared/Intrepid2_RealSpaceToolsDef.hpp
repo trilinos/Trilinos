@@ -221,14 +221,14 @@ namespace Intrepid2 {
     /**
       \brief Functor for extractScalarValues see Intrepid2::RealSpaceTools for more
     */ 
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType>
     struct F_extractScalarValues {
-      outputViewType _output;
+      OutputViewType _output;
       inputViewType  _input;
 
       KOKKOS_INLINE_FUNCTION
-      F_extractScalarValues( outputViewType output_,
+      F_extractScalarValues( OutputViewType output_,
                        inputViewType  input_ )
         : _output(output_), _input(input_) {}
 
@@ -255,9 +255,9 @@ namespace Intrepid2 {
   RealSpaceTools<SpT>::
   extractScalarValues(       Kokkos::DynRankView<outputValueType,outputProperties...>  output,
                        const Kokkos::DynRankView<inputValueType, inputProperties...>   input ) {
-    typedef          Kokkos::DynRankView<outputValueType,outputProperties...> outputViewType;
+    typedef          Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
     typedef          Kokkos::DynRankView<inputValueType,inputProperties...> inputViewType;
-    typedef          FunctorRealSpaceTools::F_extractScalarValues<outputViewType,inputViewType> FunctorType;
+    typedef          FunctorRealSpaceTools::F_extractScalarValues<OutputViewType,inputViewType> FunctorType;
     typedef typename ExecSpace<typename inputViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
     
     const auto loopSize = input.extent(0);
@@ -269,14 +269,14 @@ namespace Intrepid2 {
     /**
       \brief Functor for clone see Intrepid2::RealSpaceTools for more
     */ 
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType>
     struct F_clone {
-      outputViewType _output;
+      OutputViewType _output;
       inputViewType  _input;
 
       KOKKOS_INLINE_FUNCTION
-      F_clone( outputViewType output_,
+      F_clone( OutputViewType output_,
                inputViewType  input_ )
         : _output(output_), _input(input_) {}
 
@@ -348,9 +348,9 @@ namespace Intrepid2 {
       }
     }
 #endif
-    typedef          Kokkos::DynRankView<outputValueType,outputProperties...>     outputViewType;
+    typedef          Kokkos::DynRankView<outputValueType,outputProperties...>     OutputViewType;
     typedef          Kokkos::DynRankView<inputValueType,inputProperties...>       inputViewType;
-    typedef          FunctorRealSpaceTools::F_clone<outputViewType,inputViewType> FunctorType;
+    typedef          FunctorRealSpaceTools::F_clone<OutputViewType,inputViewType> FunctorType;
     typedef typename ExecSpace<typename inputViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     size_type loopSize = 1;

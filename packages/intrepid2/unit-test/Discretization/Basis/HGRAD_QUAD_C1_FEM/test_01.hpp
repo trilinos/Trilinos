@@ -120,8 +120,8 @@ namespace Intrepid2 {
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
       Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> quadBasis;
-      //typedef typename decltype(quadBasis)::outputViewType outputViewType;
-      //typedef typename decltype(quadBasis)::pointViewType  pointViewType;
+      //typedef typename decltype(quadBasis)::OutputViewType OutputViewType;
+      //typedef typename decltype(quadBasis)::PointViewType  PointViewType;
 
       *outStream
         << "\n"

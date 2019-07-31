@@ -97,10 +97,10 @@ namespace Intrepid2 {
       static constexpr double coords[2][3]{ {-1.0, 0.0, 0.0}, { 1.0, 0.0, 0.0} };
 
       // base topology has this check method
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         const double minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
         return (minus_one <= point(0) && point(0) <= plus_one);
@@ -121,10 +121,10 @@ namespace Intrepid2 {
                    numIntr = 1 };
       static constexpr double coords[3][3]{ {-1.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 0.0, 0.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -149,10 +149,10 @@ namespace Intrepid2 {
                    numIntr = 1 };
       static constexpr double coords[3][3]{ { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         const double distance = max( max( -point(0), -point(1) ), point(0) + point(1) - 1.0 );
         return distance < threshold;
@@ -173,10 +173,10 @@ namespace Intrepid2 {
                    numIntr = 1 };
       static constexpr double coords[4][3]{ { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 1.0/3.0, 1.0/3.0, 0.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -197,10 +197,10 @@ namespace Intrepid2 {
       static constexpr double coords[6][3]{ { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0},
                                 { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -225,10 +225,10 @@ namespace Intrepid2 {
                    numIntr = 1 };
       static constexpr double coords[4][3]{ {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         const double minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
         return ((minus_one <= point(0) && point(0) <= plus_one) &&
@@ -251,10 +251,10 @@ namespace Intrepid2 {
       static constexpr double coords[8][3]{ {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
                                 { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -275,10 +275,10 @@ namespace Intrepid2 {
       static constexpr double coords[9][3]{ {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
                                             { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0}, { 0.0, 0.0, 0.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -303,10 +303,10 @@ namespace Intrepid2 {
                    numIntr = 1 };
       static constexpr double coords[4][3]{ { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point,
+      checkPointInclusion(const PointViewType &point,
                           const double threshold) {
         const double distance = max( max(-point(0),-point(1)),
                                      max(-point(2), point(0) + point(1) + point(2) - 1) );
@@ -330,10 +330,10 @@ namespace Intrepid2 {
       static constexpr double coords[8][3]{ { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
                                 { 1/3, 0.0, 1/3}, { 1/3, 1/3, 1/3}, { 1/3, 1/3, 0.0}, { 0.0, 1/3, 1/3} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -354,10 +354,10 @@ namespace Intrepid2 {
       static constexpr double coords[10][3]{ { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
                                  { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}, { 0.0, 0.0, 0.5}, { 0.5, 0.0, 0.5}, { 0.0, 0.5, 0.5} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -378,10 +378,10 @@ namespace Intrepid2 {
       static constexpr double coords[11][3]{ { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
                                  { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}, { 0.0, 0.0, 0.5}, { 0.5, 0.0, 0.5}, { 0.0, 0.5, 0.5} };
       
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -407,10 +407,10 @@ namespace Intrepid2 {
       static constexpr double coords[8][3]{ {-1.0,-1.0,-1.0}, { 1.0,-1.0,-1.0}, { 1.0, 1.0,-1.0}, {-1.0, 1.0,-1.0},
                                 {-1.0,-1.0, 1.0}, { 1.0,-1.0, 1.0}, { 1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         const double minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
         return ((minus_one <= point(0) && point(0) <= plus_one) &&
@@ -437,10 +437,10 @@ namespace Intrepid2 {
                                  {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
                                  { 0.0,-1.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0}, {-1.0, 0.0, 1.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -467,10 +467,10 @@ namespace Intrepid2 {
                                  { 0.0, 0.0, 0.0},
                                  { 0.0, 0.0,-1.0}, { 0.0, 0.0, 1.0}, {-1.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, {0.0,-1.0, 0.0}, {0.0, 1.0, 0.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -495,10 +495,10 @@ namespace Intrepid2 {
                    numIntr = 1 };
       static constexpr double coords[5][3]{ {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}, { 0.0, 0.0, 1.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         const double minus_one = -1.0 - threshold, plus_one = 1.0 + threshold, minus_zero = -threshold;
         const double left  = minus_one + point(2);
@@ -525,10 +525,10 @@ namespace Intrepid2 {
                                  { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0},
                                  {-0.5,-0.5, 0.5}, { 0.5,-0.5, 0.5}, { 0.5, 0.5, 0.5}, {-0.5, 0.5, 0.5} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -550,10 +550,10 @@ namespace Intrepid2 {
                                  { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0},
                                  {-0.5,-0.5, 0.5}, { 0.5,-0.5, 0.5}, { 0.5, 0.5, 0.5}, {-0.5, 0.5, 0.5}, { 0.0, 0.0, 0.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -578,10 +578,10 @@ namespace Intrepid2 {
                    numIntr = 1 };
       static constexpr double coords[6][3]{ { 0.0, 0.0,-1.0}, { 1.0, 0.0,-1.0}, { 0.0, 1.0,-1.0}, { 0.0, 0.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         const double minus_one = -1.0 - threshold, plus_one = 1.0 + threshold;
         const double distance = max( max( -point(0), -point(1) ), point(0) + point(1) - 1 );
@@ -605,10 +605,10 @@ namespace Intrepid2 {
                                  { 0.5, 0.0,-1.0}, { 0.5, 0.5,-1.0}, { 0.0, 0.5,-1.0}, { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0},
                                  { 0.5, 0.0, 1.0}, { 0.5, 0.5, 1.0}, { 0.0, 0.5, 1.0} };
 
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }
@@ -632,10 +632,10 @@ namespace Intrepid2 {
                                  { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0} };
 
       
-      template<typename pointViewType>
+      template<typename PointViewType>
       KOKKOS_INLINE_FUNCTION
       static bool
-      checkPointInclusion(const pointViewType &point, 
+      checkPointInclusion(const PointViewType &point, 
                           const double threshold) {
         return base_cell_topology_type::checkPointInclusion(point, threshold);
       }

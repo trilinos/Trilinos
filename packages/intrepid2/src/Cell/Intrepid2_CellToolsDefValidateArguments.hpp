@@ -63,11 +63,11 @@ namespace Intrepid2 {
   //============================================================================================//
 
   template<typename jacobianViewType, 
-           typename pointViewType,
+           typename PointViewType,
            typename worksetCellViewType>
   void 
   CellTools_setJacobianArgs( const jacobianViewType     jacobian,
-                             const pointViewType        points,
+                             const PointViewType        points,
                              const worksetCellViewType  worksetCell,
                              const shards::CellTopology cellTopo ) {
     // Validate worksetCell array

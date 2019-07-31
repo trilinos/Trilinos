@@ -55,16 +55,16 @@ namespace Intrepid2 {
     /**
        \brief Functor for dotMultiply see Intrepid2::ArrayTools for more
     */
-    template < typename outputViewType, typename leftInputViewType, typename rightInputViewType >
+    template < typename OutputViewType, typename leftInputViewType, typename rightInputViewType >
     struct F_dotMultiply {
-      outputViewType _output;
+      OutputViewType _output;
       leftInputViewType _leftInput;
       rightInputViewType _rightInput;
       const bool _hasField;
-      typedef typename outputViewType::value_type value_type;
+      typedef typename OutputViewType::value_type value_type;
 
       KOKKOS_INLINE_FUNCTION
-      F_dotMultiply(outputViewType output_,
+      F_dotMultiply(OutputViewType output_,
               leftInputViewType leftInput_,
               rightInputViewType rightInput_,
               const bool hasField_)
@@ -124,10 +124,10 @@ namespace Intrepid2 {
                const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput, 
                const bool hasField ) {
 
-    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      outputViewType;
+    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      OutputViewType;
     typedef Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
     typedef Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
-    typedef FunctorArrayTools::F_dotMultiply<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
+    typedef FunctorArrayTools::F_dotMultiply<OutputViewType, leftInputViewType, rightInputViewType> FunctorType;
     typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
     const size_type loopSize = ( hasField ? output.extent(0)*output.extent(1)*output.extent(2) :

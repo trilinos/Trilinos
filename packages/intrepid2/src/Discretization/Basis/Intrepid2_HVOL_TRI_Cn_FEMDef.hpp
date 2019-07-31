@@ -56,14 +56,14 @@ namespace Intrepid2 {
 namespace Impl {
 
 template<EOperator opType>
-template<typename outputViewType,
+template<typename OutputViewType,
 typename inputViewType,
 typename workViewType,
 typename vinvViewType>
 KOKKOS_INLINE_FUNCTION
 void
 Basis_HVOL_TRI_Cn_FEM::Serial<opType>::
-getValues(       outputViewType output,
+getValues(       OutputViewType output,
     const inputViewType  input,
     workViewType   work,
     const vinvViewType   vinv ) {

@@ -319,28 +319,26 @@ namespace Intrepid2 {
     // receives input arguments
     /** \brief Dummy array to receive input arguments
     */
-    outputValueType getDummyOutputValue() { return outputValueType(); }
+    OutputValueType getDummyOutputValue() { return outputValueType(); }
 
     /** \brief Dummy array to receive input arguments
     */
-    pointValueType getDummyPointValue() { return pointValueType(); }
+    PointValueType getDummyPointValue() { return pointValueType(); }
 
     /** \brief View type for basis value output
     */
-    typedef Kokkos::DynRankView<outputValueType,Kokkos::LayoutStride,ExecSpaceType> outputViewType;
+    using OutputViewType = Kokkos::DynRankView<OutputValueType,Kokkos::LayoutStride,ExecSpaceType>;
+    INTREPID2_DEPRECATED_MESSAGE("use OutputViewType instead") using outputViewType INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE("use OutputViewType instead","OutputViewType") = OutputViewType;
 
     /** \brief View type for input points
     */
-    typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>  pointViewType;
+    using PointViewType = Kokkos::DynRankView<PointValueType,Kokkos::LayoutStride,ExecSpaceType>;
+    INTREPID2_DEPRECATED_MESSAGE("use PointViewType instead") using pointViewType INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE("use PointViewType instead","PointViewType") = PointViewType;
 
     /** \brief View type for scalars 
     */
-    typedef Kokkos::DynRankView<scalarType,Kokkos::LayoutStride,ExecSpaceType>      scalarViewType;
-    
-    // Upper-case versions of the types defined above (these are more consistent with modern C++ conventions)
-    using OutputViewType = outputViewType;
-    using PointViewType  = pointViewType;
-    using ScalarViewType = scalarViewType;
+    using ScalarViewType = Kokkos::DynRankView<scalarType,Kokkos::LayoutStride,ExecSpaceType>;
+    INTREPID2_DEPRECATED_MESSAGE("use ScalarViewType instead") using scalarViewType INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE("use ScalarViewType instead","ScalarViewType") = ScalarViewType;
     
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
@@ -362,8 +360,8 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getValues(       outputViewType /* outputValues */,
-               const pointViewType  /* inputPoints */,
+    getValues(       OutputViewType /* outputValues */,
+               const PointViewType  /* inputPoints */,
                const EOperator /* operatorType */ = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be over-riden accordingly by derived classes.");
@@ -390,9 +388,9 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getValues(        outputViewType /* outputValues */,
-                const pointViewType  /* inputPoints */,
-                const pointViewType  /* cellVertices */,
+    getValues(        OutputViewType /* outputValues */,
+                const PointViewType  /* inputPoints */,
+                const PointViewType  /* cellVertices */,
                 const EOperator /* operatorType */ = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getValues): this method (FVM) is not supported or should be over-riden accordingly by derived classes.");
@@ -404,7 +402,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoords( scalarViewType /* dofCoords */ ) const {
+    getDofCoords( ScalarViewType /* dofCoords */ ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
     }
@@ -419,7 +417,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoeffs( scalarViewType /* dofCoeffs */ ) const {
+    getDofCoeffs( ScalarViewType /* dofCoeffs */ ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getDofCoeffs): this method is not supported or should be over-riden accordingly by derived classes.");
     }
@@ -433,6 +431,8 @@ namespace Intrepid2 {
      */
     OrdinalTypeArray1DHost getFieldOrdinalsForDegree(OrdinalTypeArray1DHost &degrees) const
     {
+      INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
+                                   ">>> ERROR (Basis::getFieldOrdinalsForDegree): this method is not supported for non-hierarchical bases.");
       int degreeEntryLength     = fieldOrdinalPolynomialDegree_.extent_int(1);
       int requestedDegreeLength = degrees.extent_int(0);
       INTREPID2_TEST_FOR_EXCEPTION(degreeEntryLength != requestedDegreeLength, std::invalid_argument, "length of degrees does not match the entries in fieldOrdinalPolynomialDegree_");
@@ -466,6 +466,8 @@ namespace Intrepid2 {
      */
     Kokkos::vector<int> getFieldOrdinalsForDegree(Kokkos::vector<int> &degrees) const
     {
+      INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
+                                   ">>> ERROR (Basis::getFieldOrdinalsForDegree): this method is not supported for non-hierarchical bases.");
       OrdinalTypeArray1DHost degreesView("degrees",degrees.size());
       for (int d=0; d<degrees.size(); d++)
       {
@@ -488,6 +490,8 @@ namespace Intrepid2 {
      */
     OrdinalTypeArray1DHost getPolynomialDegreeOfField(int fieldOrdinal) const
     {
+      INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
+                                   ">>> ERROR (Basis::getPolynomialDegreeOfField): this method is not supported for non-hierarchical bases.");
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinal < 0, std::invalid_argument, "field ordinal must be non-negative");
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinal >= fieldOrdinalPolynomialDegree_.extent_int(0), std::invalid_argument, "field ordinal out of bounds");
       
@@ -503,6 +507,8 @@ namespace Intrepid2 {
      */
     Kokkos::vector<int> getPolynomialDegreeOfFieldAsVector(int fieldOrdinal) const
     {
+      INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
+                                   ">>> ERROR (Basis::getPolynomialDegreeOfFieldAsVector): this method is not supported for non-hierarchical bases.");
       auto polynomialDegreeView = getPolynomialDegreeOfField(fieldOrdinal);
       Kokkos::vector<int> polynomialDegree(polynomialDegreeView.extent_int(0));
       
@@ -517,6 +523,8 @@ namespace Intrepid2 {
      */
     int getPolynomialDegreeLength() const
     {
+      INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
+                                   ">>> ERROR (Basis::getPolynomialDegreeLength): this method is not supported for non-hierarchical bases.");
       return fieldOrdinalPolynomialDegree_.extent_int(1);
     }
     

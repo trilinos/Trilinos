@@ -56,20 +56,20 @@ namespace Intrepid2 {
   namespace Impl {
 
     template<EOperator opType>
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_PYR_C1_FEM::Serial<opType>::
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType input ) {
       const auto eps = epsilon();
 
       static_assert(std::is_same<
-                    typename outputViewType::value_type,
+                    typename OutputViewType::value_type,
                     typename inputViewType::value_type>::value,"Input/output view has different value types");
 
-      typedef typename outputViewType::value_type value_type;
+      typedef typename OutputViewType::value_type value_type;
 
       const value_type x = input(0);
       const value_type y = input(1);
@@ -293,7 +293,7 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     dofCoords(0,0) = -1.0;  dofCoords(0,1) = -1.0;  dofCoords(0,2) =  0.0;

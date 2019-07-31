@@ -60,11 +60,11 @@ namespace Intrepid2 {
     namespace Serial {
       
       // compute determinant for rank 2 array
-      template<typename outputViewType,
+      template<typename OutputViewType,
                typename inputViewType>
       KOKKOS_FORCEINLINE_FUNCTION
       void
-      clone( /**/  outputViewType output,
+      clone( /**/  OutputViewType output,
              const inputViewType  input ) {
         const ordinal_type iend = output.extent(0);
         const ordinal_type jend = output.extent(1);

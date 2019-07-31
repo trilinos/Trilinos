@@ -121,8 +121,8 @@ namespace Intrepid2 {
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
       Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> lineBasis;
-      //typedef typename decltype(lineBasis)::outputViewType outputViewType;
-      //typedef typename decltype(lineBasis)::pointViewType  pointViewType;
+      //typedef typename decltype(lineBasis)::OutputViewType OutputViewType;
+      //typedef typename decltype(lineBasis)::PointViewType  PointViewType;
 
       *outStream
         << "\n"

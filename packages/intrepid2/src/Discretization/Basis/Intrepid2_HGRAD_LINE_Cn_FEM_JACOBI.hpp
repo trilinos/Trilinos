@@ -141,11 +141,11 @@ namespace Intrepid2 {
       */
       template<EOperator opType>
       struct Serial {
-        template<typename outputViewType,
+        template<typename OutputViewType,
                  typename inputViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        getValues(       outputViewType output,
+        getValues(       OutputViewType output,
                    const inputViewType  input,
                    const ordinal_type   order,
                    const double         alpha,
@@ -246,15 +246,19 @@ namespace Intrepid2 {
                                     const double alpha = 0, 
                                     const double beta = 0 );  
 
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
+    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
+    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
+    
+    INTREPID2_DEPRECATED_MESSAGE("use OutputViewType instead") using outputViewType INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE("use OutputViewType instead","OutputViewType") = OutputViewType;
+    INTREPID2_DEPRECATED_MESSAGE("use PointViewType instead") using pointViewType INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE("use PointViewType instead","PointViewType") = PointViewType;
    
     using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
  
     virtual
     void
-    getValues(       outputViewType outputValues,
-               const pointViewType  inputPoints,
+    getValues(       OutputViewType outputValues,
+               const PointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       Intrepid2::getValues_HGRAD_Args(outputValues,

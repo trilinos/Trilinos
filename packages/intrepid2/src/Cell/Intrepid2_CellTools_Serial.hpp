@@ -458,12 +458,12 @@ namespace Intrepid2 {
         // input: 
         //   vals  (N)   - hgrad basis values evaluated at a single point (C1/C2 element only)
         //   nodes (N,D) - cell element-to-node connectivity
-        template<typename pointViewType,
+        template<typename PointViewType,
                  typename basisValViewType,
                  typename nodeViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        mapToPhysicalFrame(const pointViewType    &point,    // D  
+        mapToPhysicalFrame(const PointViewType    &point,    // D  
                            const basisValViewType &vals,     // N  
                            const nodeViewType     &nodes) {  // N,D 
           const auto N = vals.extent(0);

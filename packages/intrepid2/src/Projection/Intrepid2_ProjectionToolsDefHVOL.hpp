@@ -61,16 +61,16 @@ template<typename SpT>
 template<typename BasisType,
 typename ortValueType,       class ...ortProperties>
 void
-ProjectionTools<SpT>::getHVolEvaluationPoints(typename BasisType::scalarViewType evaluationPoints,
+ProjectionTools<SpT>::getHVolEvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  /*orts*/,
     const BasisType* cellBasis,
     ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct,
     const EvalPointsType evalPointType) {
   typedef typename BasisType::scalarType scalarType;
-  typedef Kokkos::DynRankView<scalarType,SpT> scalarViewType;
+  typedef Kokkos::DynRankView<scalarType,SpT> ScalarViewType;
   ordinal_type dim = cellBasis->getBaseCellTopology().getDimension();
 
-  scalarViewType cubPoints;
+  ScalarViewType cubPoints;
   if(evalPointType == TARGET) {
     cubPoints = projStruct->getTargetEvalPoints(dim, 0);
   } else {
@@ -88,28 +88,28 @@ typename ortValueType,class ...ortProperties>
 void
 ProjectionTools<SpT>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
     const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
-    const typename BasisType::scalarViewType evaluationPoints,
+    const typename BasisType::ScalarViewType evaluationPoints,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
     const BasisType* cellBasis,
     ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct){
 
   typedef typename Kokkos::Impl::is_space<SpT>::host_mirror_space::execution_space host_space_type;
   typedef typename BasisType::scalarType scalarType;
-  typedef Kokkos::DynRankView<scalarType,SpT> scalarViewType;
+  typedef Kokkos::DynRankView<scalarType,SpT> ScalarViewType;
   ordinal_type dim = cellBasis->getBaseCellTopology().getDimension();
 
   ordinal_type basisCardinality = cellBasis->getCardinality();
 
   ordinal_type numCubPoints = projStruct->getNumBasisEvalPoints(dim, 0);
   ordinal_type numTargetCubPoints = projStruct->getNumTargetEvalPoints(dim, 0);
-  scalarViewType cubPoints = projStruct->getBasisEvalPoints(dim, 0);
-  scalarViewType cubWeights = projStruct->getBasisEvalWeights(dim, 0);
-  scalarViewType cubTargetWeights = projStruct->getTargetEvalWeights(dim, 0);
+  ScalarViewType cubPoints = projStruct->getBasisEvalPoints(dim, 0);
+  ScalarViewType cubWeights = projStruct->getBasisEvalWeights(dim, 0);
+  ScalarViewType cubTargetWeights = projStruct->getTargetEvalWeights(dim, 0);
 
   ordinal_type numCells = targetAtEvalPoints.extent(0);
 
-  scalarViewType basisAtCubPoints("basisAtcubPoints", basisCardinality, numCubPoints);
-  scalarViewType basisAtcubTargetPoints("basisAtcubTargetPoints", basisCardinality, numTargetCubPoints);
+  ScalarViewType basisAtCubPoints("basisAtcubPoints", basisCardinality, numCubPoints);
+  ScalarViewType basisAtcubTargetPoints("basisAtcubTargetPoints", basisCardinality, numTargetCubPoints);
 
   cellBasis->getValues(basisAtCubPoints, cubPoints);
   if(evaluationPoints.rank()==3)
@@ -118,13 +118,13 @@ ProjectionTools<SpT>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
     cellBasis->getValues(basisAtcubTargetPoints, evaluationPoints);
 
 
-  scalarViewType weightedBasisAtcubTargetPoints_("weightedBasisAtcubTargetPoints_",numCells, basisCardinality, numTargetCubPoints);
-  scalarViewType cubWeights_(cubWeights.data(),1,numCubPoints);
-  scalarViewType evaluationWeights_(cubTargetWeights.data(),1,numTargetCubPoints);
-  scalarViewType basisAtcubTargetPoints_(basisAtcubTargetPoints.data(),1, basisCardinality, numTargetCubPoints);
-  scalarViewType basisAtCubPoints_(basisAtCubPoints.data(),1, basisCardinality, numCubPoints);
-  scalarViewType weightedBasisAtCubPoints("weightedBasisAtCubPoints",1,basisCardinality, numCubPoints);
-  scalarViewType weightedBasisAtcubTargetPoints("weightedBasisAtcubTargetPoints",1, basisCardinality, numTargetCubPoints);
+  ScalarViewType weightedBasisAtcubTargetPoints_("weightedBasisAtcubTargetPoints_",numCells, basisCardinality, numTargetCubPoints);
+  ScalarViewType cubWeights_(cubWeights.data(),1,numCubPoints);
+  ScalarViewType evaluationWeights_(cubTargetWeights.data(),1,numTargetCubPoints);
+  ScalarViewType basisAtcubTargetPoints_(basisAtcubTargetPoints.data(),1, basisCardinality, numTargetCubPoints);
+  ScalarViewType basisAtCubPoints_(basisAtCubPoints.data(),1, basisCardinality, numCubPoints);
+  ScalarViewType weightedBasisAtCubPoints("weightedBasisAtCubPoints",1,basisCardinality, numCubPoints);
+  ScalarViewType weightedBasisAtcubTargetPoints("weightedBasisAtcubTargetPoints",1, basisCardinality, numTargetCubPoints);
   ArrayTools<SpT>::scalarMultiplyDataField( weightedBasisAtCubPoints, cubWeights_, basisAtCubPoints_, false);
   ArrayTools<SpT>::scalarMultiplyDataField( weightedBasisAtcubTargetPoints, evaluationWeights_, basisAtcubTargetPoints, false);
   RealSpaceTools<SpT>::clone(weightedBasisAtcubTargetPoints_,Kokkos::subview(weightedBasisAtcubTargetPoints,0,Kokkos::ALL(), Kokkos::ALL()));

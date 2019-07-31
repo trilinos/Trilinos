@@ -64,19 +64,19 @@ namespace Intrepid2 {
 
   namespace Impl {
 
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename subcellBasisType,
              typename cellBasisType>
     inline
     void
     OrientationTools::
-    getCoeffMatrix_HGRAD(outputViewType &output,
+    getCoeffMatrix_HGRAD(OutputViewType &output,
                          const subcellBasisType subcellBasis,
                          const cellBasisType cellBasis,
                          const ordinal_type subcellId,
                          const ordinal_type subcellOrt) {
-      typedef typename outputViewType::execution_space space_type;
-      typedef typename outputViewType::value_type value_type;
+      typedef typename OutputViewType::execution_space space_type;
+      typedef typename OutputViewType::value_type value_type;
 
       // with shards, everything should be computed on host space
       typedef typename

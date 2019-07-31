@@ -123,8 +123,8 @@ namespace Intrepid2 {
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
       Basis_HGRAD_TRI_C2_FEM<DeviceSpaceType,outputValueType,pointValueType> triBasis;
-      //typedef typename decltype(triBasis)::outputViewType outputViewType;
-      //typedef typename decltype(triBasis)::pointViewType  pointViewType;
+      //typedef typename decltype(triBasis)::OutputViewType OutputViewType;
+      //typedef typename decltype(triBasis)::PointViewType  PointViewType;
 
       *outStream
         << "\n"

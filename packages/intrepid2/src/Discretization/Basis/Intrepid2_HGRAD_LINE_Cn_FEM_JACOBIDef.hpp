@@ -58,12 +58,12 @@ namespace Intrepid2 {
     // output (N,P,D)
     // input  (P,D) - assumes that it has a set of points to amortize the function call cost for jacobi polynomial.
     template<EOperator opType>
-    template<typename outputViewType,
+    template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial<opType>::
-    getValues(       outputViewType output,
+    getValues(       OutputViewType output,
                const inputViewType  input,
                const ordinal_type   order,
                const double         alpha,

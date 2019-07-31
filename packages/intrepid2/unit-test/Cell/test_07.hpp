@@ -105,16 +105,16 @@ namespace Intrepid2 {
     }                                                                   \
       
     template<typename cellTopologyTagType,
-             typename outputViewType,
+             typename OutputViewType,
              typename inputViewType>
     struct F_checkPointInclusion {
       double _offset;
-      outputViewType _output;
+      OutputViewType _output;
       inputViewType _input;
 
       KOKKOS_INLINE_FUNCTION
       F_checkPointInclusion(const double offset_, 
-                            outputViewType output_,
+                            OutputViewType output_,
                             inputViewType input_)
         : _offset(offset_), 
           _output(output_), 

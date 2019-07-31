@@ -140,7 +140,7 @@ namespace Intrepid2{
     Kokkos::DynRankView<pointValueType, ExecSpaceType> sidePoints_;
 
   public:
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
+    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::PointViewType  PointViewType;
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
     using Cubature<ExecSpaceType,pointValueType,weightValueType>::getCubature;
@@ -154,9 +154,9 @@ namespace Intrepid2{
     */
     virtual
     void
-    getCubature( pointViewType  cubPoints,
+    getCubature( PointViewType  cubPoints,
                  weightViewType cubWeights,
-                 pointViewType  cellCoords) const;
+                 PointViewType  cellCoords) const;
 
     /** \brief Returns the number of cubature points.
      */

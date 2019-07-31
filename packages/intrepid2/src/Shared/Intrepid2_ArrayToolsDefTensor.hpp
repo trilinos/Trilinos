@@ -55,15 +55,15 @@ namespace Intrepid2 {
     /**
        \brief Functor for crossProduct see Intrepid2::ArrayTools for more
     */
-    template < typename outputViewType, typename leftInputViewType, typename rightInputViewType >
+    template < typename OutputViewType, typename leftInputViewType, typename rightInputViewType >
     struct F_crossProduct{
-      outputViewType _output;
+      OutputViewType _output;
       const leftInputViewType _leftInput;
       const rightInputViewType _rightInput;
       const bool _hasField, _isCrossProd3D;
 
       KOKKOS_INLINE_FUNCTION
-      F_crossProduct(outputViewType output_,
+      F_crossProduct(OutputViewType output_,
               leftInputViewType leftInput_,
               rightInputViewType rightInput_,
               const bool hasField_,
@@ -122,10 +122,10 @@ namespace Intrepid2 {
                 const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                 const bool hasField ) {
 
-    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      outputViewType;
+    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      OutputViewType;
     typedef const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
     typedef const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
-    typedef FunctorArrayTools::F_crossProduct<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
+    typedef FunctorArrayTools::F_crossProduct<OutputViewType, leftInputViewType, rightInputViewType> FunctorType;
     typedef typename ExecSpace< typename rightInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
     const size_type loopSize = ( hasField ? output.extent(0)*output.extent(1)*output.extent(2) :
@@ -382,15 +382,15 @@ namespace Intrepid2 {
     /**
        \brief Functor for outerProduct see Intrepid2::ArrayTools for more
     */
-    template < typename outputViewType, typename leftInputViewType, typename rightInputViewType >
+    template < typename OutputViewType, typename leftInputViewType, typename rightInputViewType >
     struct F_outerProduct {
-      outputViewType _output;
+      OutputViewType _output;
       const leftInputViewType _leftInput;
       const rightInputViewType _rightInput;
       const bool _hasField;
 
       KOKKOS_INLINE_FUNCTION
-      F_outerProduct(outputViewType output_,
+      F_outerProduct(OutputViewType output_,
               leftInputViewType leftInput_,
               rightInputViewType rightInput_,
               const bool hasField_)
@@ -445,10 +445,10 @@ namespace Intrepid2 {
                 const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                 const bool hasField ) {
 
-    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      outputViewType;
+    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      OutputViewType;
     typedef const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
     typedef const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
-    typedef FunctorArrayTools::F_outerProduct<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
+    typedef FunctorArrayTools::F_outerProduct<OutputViewType, leftInputViewType, rightInputViewType> FunctorType;
     typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
     const size_type loopSize = ( hasField ? output.extent(0)*output.extent(1)*output.extent(2) :
@@ -673,18 +673,18 @@ namespace Intrepid2 {
     /**
        \brief Functor for matvecProduct see Intrepid2::ArrayTools for more
     */
-    template < typename outputViewType, 
+    template < typename OutputViewType, 
                typename leftInputViewType, 
                typename rightInputViewType>
     struct F_matvecProduct {
-      /**/  outputViewType     _output;
+      /**/  OutputViewType     _output;
       const leftInputViewType  _leftInput;
       const rightInputViewType _rightInput;
 
       const bool _isTranspose;
       
       KOKKOS_INLINE_FUNCTION
-      F_matvecProduct(outputViewType     output_,
+      F_matvecProduct(OutputViewType     output_,
                       leftInputViewType  leftInput_,
                       rightInputViewType rightInput_,
                       const bool isTranspose_)
@@ -789,10 +789,10 @@ namespace Intrepid2 {
                  const bool hasField,
                  const bool isTranspose ) {
 
-    typedef       Kokkos::DynRankView<outputValueType,    outputProperties...>      outputViewType;
+    typedef       Kokkos::DynRankView<outputValueType,    outputProperties...>      OutputViewType;
     typedef const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
     typedef const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
-    typedef FunctorArrayTools::F_matvecProduct<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
+    typedef FunctorArrayTools::F_matvecProduct<OutputViewType, leftInputViewType, rightInputViewType> FunctorType;
     typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
     if (hasField) {
@@ -1122,16 +1122,16 @@ namespace Intrepid2 {
     /**
        \brief Functor for matmatProduct see Intrepid2::ArrayTools for more
     */
-    template < typename outputViewType, typename leftInputViewType, typename rightInputViewType >
+    template < typename OutputViewType, typename leftInputViewType, typename rightInputViewType >
     struct F_matmatProduct{
-      outputViewType _output;
+      OutputViewType _output;
       leftInputViewType _leftInput;
       rightInputViewType _rightInput;
       const bool _hasField, _isTranspose;
       typedef typename leftInputViewType::value_type value_type; 
 
       KOKKOS_INLINE_FUNCTION
-      F_matmatProduct(outputViewType output_,
+      F_matmatProduct(OutputViewType output_,
               leftInputViewType leftInput_,
               rightInputViewType rightInput_,
               const bool hasField_,
@@ -1225,10 +1225,10 @@ namespace Intrepid2 {
                  const bool hasField,
                  const bool isTranspose ) {
 
-    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      outputViewType;
+    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      OutputViewType;
     typedef const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
     typedef const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
-    typedef FunctorArrayTools::F_matmatProduct<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
+    typedef FunctorArrayTools::F_matmatProduct<OutputViewType, leftInputViewType, rightInputViewType> FunctorType;
     typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
     const size_type loopSize = ( hasField ? output.extent(0)*output.extent(1)*output.extent(2) :

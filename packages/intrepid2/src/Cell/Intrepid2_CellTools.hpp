@@ -1509,11 +1509,11 @@ namespace Intrepid2 {
       \param  cellTopo          [in]  - cell topology with a reference cell required
   */
   template<typename jacobianViewType,
-           typename pointViewType,
+           typename PointViewType,
            typename worksetCellViewType>
   static void
   CellTools_setJacobianArgs( const jacobianViewType     jacobian,
-                             const pointViewType        points,
+                             const PointViewType        points,
                              const worksetCellViewType  worksetCell,
                              const shards::CellTopology cellTopo );
 

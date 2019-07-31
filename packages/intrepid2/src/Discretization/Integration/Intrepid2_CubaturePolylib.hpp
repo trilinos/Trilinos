@@ -76,7 +76,7 @@ namespace Intrepid2 {
   class CubaturePolylib
     : public CubatureDirect<ExecSpaceType,pointValueType,weightValueType> {
   public:
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType; 
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::PointViewType  PointViewType; 
     typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
     CubaturePolylib( const ordinal_type degree,
