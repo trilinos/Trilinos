@@ -222,10 +222,6 @@ void STK_Interface::addMeshCoordFields(const std::string & blockId,
          SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::NODE_RANK, dispName);
          if(field==0) {
             field = &metaData_->declare_field<SolutionFieldType>(stk::topology::NODE_RANK, dispName);
-            if ( initialized_ )  {
-              stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
-              stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol ); 
-            }
          }
          fieldNameToSolution_[key] = field;
       }
