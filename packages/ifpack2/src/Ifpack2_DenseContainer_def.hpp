@@ -90,23 +90,6 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 
 template<class MatrixType, class LocalScalarType>
 DenseContainer<MatrixType, LocalScalarType>::
-DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                Teuchos::ArrayView<const local_ordinal_type> blockRows,
-                bool pointIndexed) :
-  ContainerImpl<MatrixType, LocalScalarType>(matrix, blockRows, pointIndexed)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    !matrix->hasColMap(), std::invalid_argument, "Ifpack2::DenseContainer: "
-    "The constructor's input matrix must have a column Map.");
-  diagBlocks_.emplace_back(this->blockSizes_[0] * this->scalarsPerRow_,
-                           this->blockSizes_[0] * this->scalarsPerRow_);
-  ipiv_.resize(this->blockRows_.size() * this->scalarsPerRow_);
-  // FIXME (mfh 25 Aug 2013) What if the matrix's row Map has a
-  // different index base than zero?
-}
-
-template<class MatrixType, class LocalScalarType>
-DenseContainer<MatrixType, LocalScalarType>::
 ~DenseContainer () {}
 
 template<class MatrixType, class LocalScalarType>

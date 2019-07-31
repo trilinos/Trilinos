@@ -77,21 +77,6 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 
 template<class MatrixType, class LocalScalarType>
 BandedContainer<MatrixType, LocalScalarType>::
-BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 Teuchos::ArrayView<const local_ordinal_type> blockRows,
-                 bool pointIndexed) :
-  ContainerImpl<MatrixType, LocalScalarType>(matrix, blockRows, pointIndexed),
-  ipiv_(this->blockSizes_[0] * this->scalarsPerRow_),
-  kl_(1, -1),
-  ku_(1, -1),
-  scalarOffsets_(1, 0)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(!matrix->hasColMap(), std::invalid_argument, "Ifpack2::BandedContainer: "
-    "The constructor's input matrix must have a column Map.");
-}
-
-template<class MatrixType, class LocalScalarType>
-BandedContainer<MatrixType, LocalScalarType>::
 ~BandedContainer () {}
 
 template<class MatrixType, class LocalScalarType>

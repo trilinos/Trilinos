@@ -123,14 +123,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
   // ====================================== //
 
   // Set IDs to grab the whole matrix
-  Teuchos::Array<typename CRS::local_ordinal_type> blockRows (num_rows_per_proc);
+  Teuchos::Array<Teuchos::Array<typename CRS::local_ordinal_type>> blockRows(1);
+  blockRows[0].resize(num_rows_per_proc);
   for (size_t i = 0; i < num_rows_per_proc; ++i) {
-    blockRows[i] = i;
+    blockRows[0][i] = i;
   }
 
   out << "SparseContainer constructor" << endl;
 
-  Ifpack2::SparseContainer<ROW, ILUTlo> MyContainer (crsmatrix, blockRows(), false);
+  Ifpack2::SparseContainer<ROW, ILUTlo> MyContainer (crsmatrix, blockRows, Teuchos::null, false);
 
   out << "Setting SparseContainer parameters" << endl;
 
@@ -231,9 +232,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   vec_type d (rowMap);
 
   // Set indices to grab the whole matrix
-  Array<LocalOrdinal> blockRows (numRowsPerProc);
+  Array<Array<LocalOrdinal>> blockRows(1);
+  blockRows[0].resize(numRowsPerProc);
   for (size_t i = 0; i < numRowsPerProc; ++i) {
-    blockRows[i] = i;
+    blockRows[0][i] = i;
   }
 
   // For all the DenseContainer operations, we take special care to
@@ -248,7 +250,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   out << "DenseContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    MyContainer = Teuchos::rcp (new container_type (A, blockRows(), false));
+    MyContainer = Teuchos::rcp (new container_type (A, blockRows, Teuchos::null, false));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
@@ -379,9 +381,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   vec_type d (rowMap);
 
   // Set indices to grab the whole matrix
-  Array<LocalOrdinal> blockRows (numRowsPerProc);
+  Array<Array<LocalOrdinal>> blockRows(1);
+  blockRows[0].resize(numRowsPerProc);
   for (size_t i = 0; i < numRowsPerProc; ++i) {
-    blockRows[i] = i;
+    blockRows[0][i] = i;
   }
 
   // For all the BandedContainer operations, we take special care to
@@ -396,7 +399,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   out << "BandedContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    MyContainer = Teuchos::rcp (new container_type (A, blockRows(), false));
+    MyContainer = Teuchos::rcp (new container_type (A, blockRows, Teuchos::null, false));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;

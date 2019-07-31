@@ -98,25 +98,6 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   }
 }
 
-//constructor for a single block (used in testing)
-template<class MatrixType, class LocalScalarType>
-TriDiContainer<MatrixType, LocalScalarType>::
-TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                Teuchos::ArrayView<const local_ordinal_type> blockRows,
-                bool pointIndexed) :
-  ContainerImpl<MatrixType, LocalScalarType> (matrix, blockRows, pointIndexed),
-  ipiv_(blockRows.size() * this->scalarsPerRow_)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    !matrix->hasColMap(), std::invalid_argument, "Ifpack2::TriDiContainer: "
-    "The constructor's input matrix must have a column Map.");
-  // FIXME (mfh 25 Aug 2013) What if the matrix's row Map has a
-  // different index base than zero?
-
-  //for single block, let the SerialTriDiMat own the scalar memory, as there would be no speed gain
-  diagBlocks_.emplace_back(this->blockSizes_[0] * this->scalarsPerRow_, this->blockSizes_[0] * this->scalarsPerRow_, true);
-}
-
 template<class MatrixType, class LocalScalarType>
 TriDiContainer<MatrixType, LocalScalarType>::
 ~TriDiContainer () {}

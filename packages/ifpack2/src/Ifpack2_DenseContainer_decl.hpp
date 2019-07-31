@@ -171,20 +171,6 @@ public:
                   const Teuchos::RCP<const import_type>& importer,
                   bool pointIndexed);
 
-  /// \brief Constructor for single block (used in unit tests)
-  ///
-  /// \param matrix [in] The original input matrix.  This Container
-  ///   will construct a local diagonal block from the rows given by
-  ///   <tt>blockRows</tt>.
-  /// \param blockRows [in] The set of (local) rows assigned to this
-  ///   container.  <tt>blockRows[i] == j</tt>, where i (from 0 to
-  ///   <tt>getNumRows() - 1</tt>) indicates the Container's row, and
-  ///   j indicates the local row in the calling process.  Subclasses
-  ///   must always pass along these indices to the base class.
-  DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  Teuchos::ArrayView<const local_ordinal_type> blockRows,
-                  bool pointIndexed);
-
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~DenseContainer ();
 

@@ -148,20 +148,6 @@ public:
              const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
              bool pointIndexed);
 
-  /// \brief Constructor for single block (used in unit tests)
-  ///
-  /// \param matrix [in] The original input matrix.  This Container
-  ///   will construct local diagonal blocks from it according to
-  ///   <tt>blockRows</tt>.
-  /// \param blockRows [in] The set of (local) rows assigned to this
-  ///   container.  <tt>blockRows[i] == j</tt>, where i (from 0 to
-  ///   <tt>getNumRows() - 1</tt>) indicates the Container's row, and
-  ///   j indicates the local row in the calling process.  Subclasses
-  ///   must always pass along these indices to the base class.
-  Container (const Teuchos::RCP<const row_matrix_type>& matrix,
-             Teuchos::ArrayView<const local_ordinal_type> blockRows,
-             bool pointIndexed);
-
   //! Destructor.
   virtual ~Container();
 
@@ -408,10 +394,6 @@ public:
 
   ContainerImpl (const Teuchos::RCP<const row_matrix_type>& matrix,
                  const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                 bool pointIndexed);
-
-  ContainerImpl (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 Teuchos::ArrayView<const local_ordinal_type> blockRows,
                  bool pointIndexed);
 
   //! Destructor.

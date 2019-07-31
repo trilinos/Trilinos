@@ -72,20 +72,6 @@ SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 //==============================================================================
 template<class MatrixType, class InverseType>
 SparseContainer<MatrixType, InverseType>::
-SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 Teuchos::ArrayView<const local_ordinal_type> blockRows,
-                 bool pointIndexed) :
-  ContainerImpl<MatrixType, InverseScalar> (matrix, blockRows, pointIndexed),
-#ifdef HAVE_MPI
-  localComm_ (Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_SELF)))
-#else
-  localComm_ (Teuchos::rcp(new Teuchos::SerialComm<int>()))
-#endif // HAVE_MPI
-{}
-
-//==============================================================================
-template<class MatrixType, class InverseType>
-SparseContainer<MatrixType, InverseType>::
 ~SparseContainer() {}
 
 //==============================================================================

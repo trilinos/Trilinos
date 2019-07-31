@@ -111,59 +111,6 @@ Container<MatrixType>::Container(
 }
 
 template<class MatrixType>
-Container<MatrixType>::Container(
-    const Teuchos::RCP<const row_matrix_type>& matrix,
-    Teuchos::ArrayView<const local_ordinal_type> blockRows,
-    bool pointIndexed) :
-  inputMatrix_ (matrix),
-  inputCrsMatrix_ (Teuchos::rcp_dynamic_cast<const crs_matrix_type>(inputMatrix_)),
-  inputBlockMatrix_ (Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(inputMatrix_)),
-  numBlocks_ (1),
-  blockRows_ (blockRows),
-  blockSizes_ (1, blockRows.size()),
-  blockOffsets_ (1, 0),
-  pointIndexed_(pointIndexed),
-  IsInitialized_(false),
-  IsComputed_(false)
-{
-  NumLocalRows_ = inputMatrix_->getNodeNumRows();
-  NumGlobalRows_ = inputMatrix_->getGlobalNumRows();
-  NumGlobalNonzeros_ = inputMatrix_->getGlobalNumEntries();
-  IsParallel_ = inputMatrix_->getRowMap()->getComm()->getSize() > 1;
-  hasBlockCrs_ = !inputBlockMatrix_.is_null();
-  if(hasBlockCrs_)
-    bcrsBlockSize_ = inputBlockMatrix_->getBlockSize();
-  else
-    bcrsBlockSize_ = 1;
-  if(hasBlockCrs_ && !pointIndexed_)
-    scalarsPerRow_ = bcrsBlockSize_;
-  else
-    scalarsPerRow_ = 1;
-  maxBlockSize_ = blockSizes_[0] * scalarsPerRow_;
-  //Sanity check the rows in the block
-  #ifdef HAVE_IFPACK2_DEBUG
-  // Check whether the input set of local row indices is correct.
-  const map_type& rowMap = *inputMatrix_->getRowMap();
-  for(size_t i = 0; i < blockRows_.size(); i++)
-  {
-    local_ordinal_type row = blockRows_[i];
-    if(pointIndexed_)
-    {
-      row /= bcrsBlockSize_;
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      !rowMap.isNodeLocalElement(row),
-      std::invalid_argument, "Ifpack2::Container: "
-      "On process " << rowMap.getComm()->getRank() << " of "
-      << rowMap.getComm()->getSize() << ", in the given set of local row "
-      "indices blockRows = " << Teuchos::toString(blockRows_) << ", the following "
-      "entries is not valid local row index on the calling process: "
-      << row << ".");
-  }
-  #endif
-}
-
-template<class MatrixType>
 Container<MatrixType>::
 ~Container() {}
 
@@ -257,7 +204,6 @@ template <class MatrixType>
 void Container<MatrixType>::DoJacobi(HostView X, HostView Y, scalar_type dampingFactor) const
 {
   const scalar_type one = STS::one();
-  // Note: Flop counts copied naively from Ifpack.
   // use blockRows_ and blockSizes_
   size_t numVecs = X.extent(1);
   // Non-overlapping Jacobi
@@ -438,7 +384,6 @@ DoGaussSeidel(HostView X, HostView Y, HostView Y2, scalar_type dampingFactor) co
   using Teuchos::rcpFromRef;
   //This function just extracts the diagonal if it hasn't already.
   getMatDiag();
-  // Note: Flop counts copied naively from Ifpack.
   auto numVecs = X.extent(1);
   // X = RHS, Y = initial guess
   HostView Resid("", X.extent(0), X.extent(1));
@@ -519,13 +464,6 @@ ContainerImpl(
       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
       bool pointIndexed)
   : Container<MatrixType>(matrix, partitions, pointIndexed) {}
-
-template<class MatrixType, class LocalScalarType>
-ContainerImpl<MatrixType, LocalScalarType>::
-ContainerImpl(const Teuchos::RCP<const row_matrix_type>& matrix,
-              Teuchos::ArrayView<const local_ordinal_type> blockRows,
-              bool pointIndexed)
-  : Container<MatrixType>(matrix, blockRows, pointIndexed) {}
 
 template<class MatrixType, class LocalScalarType>
 ContainerImpl<MatrixType, LocalScalarType>::
