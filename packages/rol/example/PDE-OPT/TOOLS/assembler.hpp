@@ -166,8 +166,8 @@ private:
 
   // Set in SetParallelStructure.
   int numCells_;
-  Teuchos::Array<int> myCellIds_;
-  Teuchos::Array<int> cellOffsets_;
+  Teuchos::Array<GO> myCellIds_;
+  Teuchos::Array<GO> cellOffsets_;
   ROL::Ptr<const Tpetra::Map<>> myOverlapStateMap_;
   ROL::Ptr<const Tpetra::Map<>> myUniqueStateMap_;
   ROL::Ptr<const Tpetra::Map<>> myOverlapControlMap_;
@@ -663,7 +663,7 @@ public:
   /* Accessor routines.                                                      */
   /***************************************************************************/
   const ROL::Ptr<DofManager<Real>> getDofManager(void) const;
-  Teuchos::Array<int> getCellIds(void) const;
+  Teuchos::Array<GO> getCellIds(void) const;
   /***************************************************************************/
   /* End of accessor routines.                                               */
   /***************************************************************************/

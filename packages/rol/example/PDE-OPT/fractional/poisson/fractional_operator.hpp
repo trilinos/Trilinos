@@ -53,6 +53,8 @@ extern template class Assembler<double>;
 template <class Real>
 class FractionalOperator : public ROL::LinearOperator<Real> {
 private:
+  typedef Tpetra::Map<>::global_ordinal_type GO;  
+
   ROL::Ptr<Tpetra::CrsMatrix<> > Klocal_, Mlocal_;
   ROL::Ptr<Tpetra::CrsMatrix<> > Kcylinder_, Mcylinder_;
   ROL::Ptr<Tpetra::CrsMatrix<> > KcylinderT_, McylinderT_;
@@ -117,7 +119,7 @@ public:
 
     if ( !transpose_ ) {
       size_t numRowEntries(0);
-      Teuchos::Array<int> indices;
+      Teuchos::Array<GO> indices;
       Teuchos::Array<Real> values;
       Teuchos::Array<size_t> col(1), row(1);
       for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
@@ -159,6 +161,8 @@ private: // Vector accessor functions
 template <class Real>
 class FractionalPreconditioner : public ROL::LinearOperator<Real> {
 private:
+  typedef Tpetra::Map<>::global_ordinal_type GO;  
+
   ROL::Ptr<Tpetra::CrsMatrix<> > Klocal_, Mlocal_;
   ROL::Ptr<Tpetra::CrsMatrix<> > Kcylinder_, Mcylinder_;
   mutable ROL::Ptr<Tpetra::CrsMatrix<> > M_;
@@ -220,7 +224,7 @@ public:
 
     size_t numRowEntries(0);
     Real massVal(0), stiffVal(0);
-    Teuchos::Array<int> indices;
+    Teuchos::Array<GO> indices;
     Teuchos::Array<Real> values;
     Teuchos::Array<size_t> row(1);
     for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
@@ -257,7 +261,7 @@ public:
 
     size_t numRowEntries(0);
     Real massVal(0), stiffVal(0);
-    Teuchos::Array<int> indices;
+    Teuchos::Array<GO> indices;
     Teuchos::Array<Real> values;
     Teuchos::Array<size_t> row(1);
     for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
