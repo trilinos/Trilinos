@@ -1010,10 +1010,18 @@ size() const
 
 }
 
+template <class MatrixType>
+std::ostream& operator<<(std::ostream& os, const Ifpack2::Container<MatrixType>& obj)
+{
+  return obj.print(os);
+}
+
 #define IFPACK2_CONTAINER_INSTANT(S,LO,GO,N) \
   template class Ifpack2::Container<Tpetra::RowMatrix<S, LO, GO, N>>; \
   template class Ifpack2::ContainerImpl<Tpetra::RowMatrix<S, LO, GO, N>, S>; \
-  template class Ifpack2::Details::StridedRowView<S, LO, GO, N>;
+  template class Ifpack2::Details::StridedRowView<S, LO, GO, N>; \
+  template std::ostream& operator<< <Tpetra::RowMatrix<S, LO, GO, N>>( \
+      std::ostream& os, const Ifpack2::Container<Tpetra::RowMatrix<S, LO, GO, N>>& obj);
 
 #endif
 

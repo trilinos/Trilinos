@@ -541,13 +541,6 @@ protected:
   mutable std::vector<HostSubview> Y_localBlocks_;
 };
 
-//! Print information about the given Container to the output stream \c os.
-template <class MatrixType>
-std::ostream& operator<<(std::ostream& os, const Ifpack2::Container<MatrixType>& obj)
-{
-  return obj.print(os);
-}
-
 namespace Details {
   /// \brief Structure for read-only views of general matrix rows
   ///
@@ -582,6 +575,10 @@ namespace Details {
 } // namespace Details
 
 } // namespace Ifpack2
+
+//! Print information about the given Container to the output stream \c os.
+template <class MatrixType>
+std::ostream& operator<<(std::ostream& os, const Ifpack2::Container<MatrixType>& obj);
 
 namespace Teuchos {
 
