@@ -318,7 +318,7 @@ solveBlock(HostSubview& X,
     // If beta is nonzero or Y is not constant stride, we have to use
     // a temporary output multivector.  It gets a (deep) copy of X,
     // since GETRS overwrites its (multi)vector input with its output.
-    local_impl_scalar_type* yTemp = new local_impl_scalar_type[numVecs * numRows];
+    std::vector<local_impl_scalar_type> yTemp(numVecs * numRows);
     for(size_t j = 0; j < numVecs; j++)
     {
       for(size_t i = 0; i < numRows; i++)
@@ -335,7 +335,7 @@ solveBlock(HostSubview& X,
                   diagBlocks_[blockIndex].values (),
                   diagBlocks_[blockIndex].stride (),
                   blockIpiv,
-                  yTemp,
+                  yTemp.data(),
                   numRows,
                   &INFO);
 
@@ -356,8 +356,6 @@ solveBlock(HostSubview& X,
           Y(i, j) = yTemp[j * numRows + i];
       }
     }
-
-    delete[] yTemp;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       INFO != 0, std::runtime_error, "Ifpack2::DenseContainer::solveBlock: "

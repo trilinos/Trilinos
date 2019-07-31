@@ -333,7 +333,7 @@ solveBlock(HostSubview& X,
     // a temporary output multivector.  It gets a copy of X, since
     // GETRS overwrites its (multi)vector input with its output.
     
-    local_impl_scalar_type* yTemp = new local_impl_scalar_type[numVecs * numRows];
+    std::vector<local_impl_scalar_type> yTemp(numVecs * numRows);
     for(size_t j = 0; j < numVecs; j++)
     {
       for(size_t i = 0; i < numRows; i++)
@@ -352,7 +352,7 @@ solveBlock(HostSubview& X,
                   diagBlocks_[blockIndex].DU(),
                   diagBlocks_[blockIndex].DU2(),
                   blockIpiv,
-                  yTemp,
+                  yTemp.data(),
                   numRows,
                   &INFO);
 
@@ -373,8 +373,6 @@ solveBlock(HostSubview& X,
           Y(i, j) = yTemp[j * numRows + i];
       }
     }
-
-    delete[] yTemp;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       INFO != 0, std::runtime_error, "Ifpack2::TriDiContainer::solveBlock: "
