@@ -98,6 +98,9 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() = 0;
 
+    /// True if stepper is initialized.
+    virtual bool isInitialized() { return isInitialized_; }
+
     /// Set initial conditions, make them consistent, and set stepper memory.
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
@@ -180,6 +183,12 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> defaultSolverParameters() const;
   //@}
 
+
+protected:
+  bool isInitialized_ = false;
+
 };
+
 } // namespace Tempus
+
 #endif // Tempus_Stepper_decl_hpp
