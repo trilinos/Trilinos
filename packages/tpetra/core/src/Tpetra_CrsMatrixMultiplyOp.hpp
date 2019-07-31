@@ -769,7 +769,6 @@ namespace Tpetra {
       }
       // otherwise, multiply into Y
       else {
-        auto X_lcl = X->getLocalViewDevice ();
         // can't multiply in-situ; can't multiply into non-strided multivector
         if (! Y_in.isConstantStride () || X.getRawPtr () == &Y_in) {
           // generate a strided copy of Y
