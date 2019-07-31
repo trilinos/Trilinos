@@ -114,8 +114,6 @@ STK_Interface::STK_Interface(unsigned dim)
 
    metaData_ = rcp(new stk::mesh::MetaData(dimension_,entity_rank_names));
    
-   metaData_->enable_late_fields();
-
    initializeFromMetaData();
 }
 
@@ -157,6 +155,7 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
       if(field==0)
          field = &metaData_->declare_field<SolutionFieldType>(stk::topology::NODE_RANK, fieldName);
       if ( initialized_ )  {
+        metaData_->enable_late_fields();
         stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
         stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol ); 
       }
@@ -177,6 +176,7 @@ void STK_Interface::addCellField(const std::string & fieldName,const std::string
          field = &metaData_->declare_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, fieldName);
 
       if ( initialized_ )  {
+        metaData_->enable_late_fields();
         stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
         stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol ); 
       }
