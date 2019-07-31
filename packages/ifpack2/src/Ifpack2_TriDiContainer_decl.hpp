@@ -240,6 +240,9 @@ private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   TriDiContainer (const TriDiContainer<MatrixType, LocalScalarType>& rhs);
 
+  //! Populate the diagonal blocks
+  void extract();
+
   /// \brief Factor the extracted submatrix.
   ///
   /// Call this after calling extract().

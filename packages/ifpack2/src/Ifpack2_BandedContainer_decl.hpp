@@ -49,7 +49,6 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialBandDenseMatrix.hpp"
 
 namespace Ifpack2 {
@@ -243,6 +242,9 @@ public:
 private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   BandedContainer (const BandedContainer<MatrixType, LocalScalarType>& rhs);
+
+  //! Populate the diagonal blocks
+  void extract();
 
   /// \brief Factor the extracted submatrix.
   ///

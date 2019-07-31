@@ -132,7 +132,9 @@ namespace Ifpack2 {
 /// that they are the same.
 template<typename MatrixType, typename InverseType>
 class SparseContainer
-: public ContainerImpl<MatrixType, typename InverseType::scalar_type> {
+: public ContainerImpl<MatrixType, typename InverseType::scalar_type>
+{
+
   //! @name Internal type aliases (private)
   //@{
 private:
@@ -238,10 +240,6 @@ public:
 
   //! Initialize and compute all blocks.
   virtual void compute ();
-  
-  //! Populate the diagonal block CrsMatrices
-  //! (SparseContainer can't use Container::extract(), at least not efficiently)
-  void extractSparse();
 
   //! Free all per-block resources: <tt>Inverses_</tt>, and <tt>diagBlocks_</tt>. 
   //! Called by \c BlockRelaxation when the input matrix is changed. Also calls

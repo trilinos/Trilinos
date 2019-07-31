@@ -65,12 +65,6 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   ContainerImpl<MatrixType, LocalScalarType> (matrix, partitions, pointIndexed),
   scalarOffsets_ (this->numBlocks_)
 {
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ptr;
-  using Teuchos::toString;
   TEUCHOS_TEST_FOR_EXCEPTION(
     !matrix->hasColMap(), std::invalid_argument, "Ifpack2::DenseContainer: "
     "The constructor's input matrix must have a column Map.");
@@ -101,11 +95,6 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                 bool pointIndexed) :
   ContainerImpl<MatrixType, LocalScalarType>(matrix, blockRows, pointIndexed)
 {
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::toString;
   TEUCHOS_TEST_FOR_EXCEPTION(
     !matrix->hasColMap(), std::invalid_argument, "Ifpack2::DenseContainer: "
     "The constructor's input matrix must have a column Map.");
@@ -148,12 +137,114 @@ compute ()
     this->initialize();
   }
 
-  // Extract the submatrix.
-  this->extract (diagBlocks_);
-  // factor the submatrices
-  factor ();
+  extract (); // Extract the submatrices
+  factor ();  // Factor them
   this->IsComputed_ = true;
 }
+
+template<class MatrixType, class LocalScalarType>
+void DenseContainer<MatrixType, LocalScalarType>::extract()
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  const auto INVALID = Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
+  //To extract diagonal blocks, need to translate local rows to local columns.
+  //Strategy: make a lookup table that translates local cols in the matrix to offsets in blockRows_:
+  //blockOffsets_[b] <= offset < blockOffsets_[b+1]: tests whether the column is in block b.
+  //offset - blockOffsets_[b]: gives the column within block b.
+  //
+  //This provides the block and col within a block in O(1).
+  if(this->scalarsPerRow_ > 1)
+  {
+    Array<local_ordinal_type> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
+    for(int i = 0; i < this->numBlocks_; i++)
+    {
+      //Get the interval where block i is defined in blockRows_
+      local_ordinal_type blockStart = this->blockOffsets_[i];
+      local_ordinal_type blockEnd = blockStart + this->blockSizes_[i];
+      ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
+      //Set the lookup table entries for the columns appearing in block i.
+      //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
+      //this is OK. The values updated here are only needed to process block i's entries.
+      for(size_t j = 0; j < (size_t) blockRows.size(); j++)
+      {
+        local_ordinal_type localCol = this->translateRowToCol(blockRows[j]);
+        colToBlockOffset[localCol] = blockStart + j;
+      }
+      for(local_ordinal_type blockRow = 0; blockRow < (local_ordinal_type) blockRows.size(); blockRow++)
+      {
+        //get a raw view of the whole block row
+        const local_ordinal_type* indices;
+        scalar_type* values;
+        local_ordinal_type numEntries;
+        local_ordinal_type inputRow = this->blockRows_[blockStart + blockRow];
+        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
+        for(local_ordinal_type k = 0; k < numEntries; k++)
+        {
+          local_ordinal_type colOffset = colToBlockOffset[indices[k]];
+          if(blockStart <= colOffset && colOffset < blockEnd)
+          {
+            //This entry does appear in the diagonal block.
+            //(br, bc) identifies the scalar's position in the BlockCrs block.
+            //Convert this to (r, c) which is its position in the container block.
+            local_ordinal_type blockCol = colOffset - blockStart;
+            for(local_ordinal_type bc = 0; bc < this->bcrsBlockSize_; bc++)
+            {
+              for(local_ordinal_type br = 0; br < this->bcrsBlockSize_; br++)
+              {
+                local_ordinal_type r = this->bcrsBlockSize_ * blockRow + br;
+                local_ordinal_type c = this->bcrsBlockSize_ * blockCol + bc;
+                auto val = values[k * (this->bcrsBlockSize_ * this->bcrsBlockSize_) + (br + this->bcrsBlockSize_ * bc)];
+                if(val != 0)
+                  diagBlocks_[i](r, c) = val;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    //get the mapping from point-indexed matrix columns to offsets in blockRows_
+    //(this includes regular CrsMatrix columns, in which case bcrsBlockSize_ == 1)
+    Array<local_ordinal_type> colToBlockOffset(this->inputMatrix_->getNodeNumCols() * this->bcrsBlockSize_, INVALID);
+    for(int i = 0; i < this->numBlocks_; i++)
+    {
+      //Get the interval where block i is defined in blockRows_
+      local_ordinal_type blockStart = this->blockOffsets_[i];
+      local_ordinal_type blockEnd = blockStart + this->blockSizes_[i];
+      ArrayView<const local_ordinal_type> blockRows = this->getBlockRows(i);
+      //Set the lookup table entries for the columns appearing in block i.
+      //If OverlapLevel_ > 0, then this may overwrite values for previous blocks, but
+      //this is OK. The values updated here are only needed to process block i's entries.
+      for(size_t j = 0; j < (size_t) blockRows.size(); j++)
+      {
+        //translateRowToCol will return the corresponding split column
+        local_ordinal_type localCol = this->translateRowToCol(blockRows[j]);
+        colToBlockOffset[localCol] = blockStart + j;
+      }
+      for(size_t blockRow = 0; blockRow < (size_t) blockRows.size(); blockRow++)
+      {
+        //get a view of the split row
+        local_ordinal_type inputPointRow = this->blockRows_[blockStart + blockRow];
+        auto rowView = this->getInputRowView(inputPointRow);
+        for(size_t k = 0; k < rowView.size(); k++)
+        {
+          local_ordinal_type colOffset = colToBlockOffset[rowView.ind(k)];
+          if(blockStart <= colOffset && colOffset < blockEnd)
+          {
+            local_ordinal_type blockCol = colOffset - blockStart;
+            auto val = rowView.val(k);
+            if(val != 0)
+              diagBlocks_[i](blockRow, blockCol) = rowView.val(k);
+          }
+        }
+      }
+    }
+  }
+}
+
 
 template<class MatrixType, class LocalScalarType>
 void
@@ -198,13 +289,6 @@ solveBlock(HostSubview& X,
            local_scalar_type alpha,
            local_scalar_type beta) const
 {
-  using Teuchos::ArrayRCP;
-  using Teuchos::Ptr;
-  using Teuchos::ptr;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcpFromRef;
-
   #ifdef HAVE_IFPACK2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     X.extent (0) != Y.extent (0),

@@ -94,7 +94,6 @@ void SparseContainer<MatrixType,InverseType>::setParameters(const Teuchos::Param
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::initialize ()
 {
-  using Teuchos::RCP;
   // We assume that if you called this method, you intend to recompute
   // everything.  Thus, we release references to all the internal
   // objects.  We do this first to save memory.  (In an RCP
@@ -120,7 +119,7 @@ void SparseContainer<MatrixType,InverseType>::compute ()
   }
 
   // Extract the submatrices.
-  this->extractSparse();
+  this->extract();
 
   // The inverse operator already has a pointer to the submatrix.  Now
   // that the submatrix is filled in, we can initialize and compute
@@ -184,8 +183,6 @@ apply (HostView X,
 {
   using Teuchos::ArrayView;
   using Teuchos::as;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   // The InverseType template parameter might have different template
   // parameters (Scalar, LO, GO, and/or Node) than MatrixType.  For
@@ -305,12 +302,8 @@ weightedApply (HostView X,
                scalar_type alpha,
                scalar_type beta) const
 {
-  using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::Range1D;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_const_cast;
   using std::cerr;
   using std::endl;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -507,7 +500,7 @@ void SparseContainer<MatrixType,InverseType>::describe(Teuchos::FancyOStream &os
 //==============================================================================
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::
-extractSparse ()
+extract ()
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
