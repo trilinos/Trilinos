@@ -64,24 +64,29 @@ namespace Xpetra {
   template<class EpetraGlobalOrdinal, class Node>
   class EpetraOperator : public Operator<double, int, EpetraGlobalOrdinal,Node>
   {
-    typedef double                                                      Scalar;
-    typedef int                                                         LocalOrdinal;
-    typedef EpetraGlobalOrdinal                                         GlobalOrdinal;
+    typedef double                Scalar;
+    typedef int                   LocalOrdinal;
+    typedef EpetraGlobalOrdinal   GlobalOrdinal;
 
   public:
     //@{
 
+
     //! The Map associated with the domain of this operator, which must be compatible with X.getMap().
-    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
+    virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const 
+    {
       XPETRA_MONITOR("EpetraOperator::getDomainMap()");
       return toXpetra<GlobalOrdinal,Node>(op_->OperatorDomainMap());
     }
 
+
     //! The Map associated with the range of this operator, which must be compatible with Y.getMap().
-    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
+    virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const 
+    {
       XPETRA_MONITOR("EpetraOperator::getRangeMap()");
       return toXpetra<GlobalOrdinal,Node>(op_->OperatorRangeMap());
     }
+
 
     //! \brief Computes the operator-multivector application.
     /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
@@ -94,7 +99,8 @@ namespace Xpetra {
            MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const {
+           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const 
+    {
       XPETRA_MONITOR("EpetraOperator::apply");
 
       XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT<GlobalOrdinal XPETRA_COMMA Node>, X, eX, "Xpetra::EpetraOperator->apply(): cannot cast input to Xpetra::EpetraMultiVectorT");
@@ -117,8 +123,10 @@ namespace Xpetra {
       XPETRA_ERR_CHECK(eY.getEpetra_MultiVector()->Update(alpha, *tmp, beta));
     }
 
+
     /// \brief Whether this operator supports applying the transpose or conjugate transpose.
-    virtual bool hasTransposeApply() const {
+    virtual bool hasTransposeApply() const 
+    {
       // We do not currently use transpose, try setting it
       int err = op_->SetUseTranspose(true);
       op_->SetUseTranspose(false);
@@ -134,7 +142,8 @@ namespace Xpetra {
     std::string description() const { XPETRA_MONITOR("EpetraOperator::description"); return "Epetra_Operator"; }
 
     //! Print the object with the given verbosity level to a FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const 
+    {
       XPETRA_MONITOR("EpetraOperator::describe");
       out << "Epetra_Operator" << std::endl;
     }
