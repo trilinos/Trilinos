@@ -172,6 +172,8 @@ public:
                   const Teuchos::RCP<const import_type>& importer,
                   bool pointIndexed);
 
+  DenseContainer (const DenseContainer<MatrixType, LocalScalarType>& rhs) = delete;
+
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~DenseContainer ();
 
@@ -219,10 +221,6 @@ public:
   static std::string getName();
 
 private:
-
-  //! Copy constructor: Declared but not implemented, to forbid copy construction.
-  DenseContainer (const DenseContainer<MatrixType, LocalScalarType>& rhs);
-
   //! Populate the diagonal blocks
   void extract();
 

@@ -170,6 +170,8 @@ public:
                   const Teuchos::RCP<const import_type>& importer,
                   bool pointIndexed);
 
+  TriDiContainer (const TriDiContainer<MatrixType, LocalScalarType>& rhs) = delete;
+
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~TriDiContainer ();
 
@@ -223,9 +225,6 @@ public:
   /// \brief Get the name of this container type for Details::constructContainer()
   static std::string getName();
 private:
-  //! Copy constructor: Declared but not implemented, to forbid copy construction.
-  TriDiContainer (const TriDiContainer<MatrixType, LocalScalarType>& rhs);
-
   //! Populate the diagonal blocks
   void extract();
 

@@ -43,7 +43,6 @@
 #ifndef IFPACK2_TRIDICONTAINER_DEF_HPP
 #define IFPACK2_TRIDICONTAINER_DEF_HPP
 
-#include "Ifpack2_TriDiContainer_decl.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #ifdef HAVE_MPI

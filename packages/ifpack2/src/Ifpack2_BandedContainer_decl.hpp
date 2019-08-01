@@ -172,6 +172,8 @@ public:
                    const Teuchos::RCP<const import_type>&,
                    bool pointIndexed);
 
+  BandedContainer (const BandedContainer<MatrixType, LSC>& rhs) = delete;
+
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~BandedContainer ();
 
@@ -226,8 +228,6 @@ public:
   static std::string getName();
 
 private:
-  //! Copy constructor: Declared but not implemented, to forbid copy construction.
-  BandedContainer (const BandedContainer<MatrixType, LSC>& rhs);
 
   //! Populate the diagonal blocks
   void extract();

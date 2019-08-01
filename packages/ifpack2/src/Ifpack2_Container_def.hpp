@@ -43,7 +43,6 @@
 #ifndef IFPACK2_CONTAINER_DEF_HPP
 #define IFPACK2_CONTAINER_DEF_HPP
 
-#include "Ifpack2_Container_decl.hpp"
 #include <Ifpack2_Details_MultiVectorLocalGatherScatter.hpp>
 #include <Teuchos_Time.hpp>
 

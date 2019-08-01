@@ -64,7 +64,7 @@ namespace Teuchos {
 namespace Ifpack2 {
 
 /// \class Container
-/// \brief Interface for creating and solving a local linear problem.
+/// \brief Interface for creating and solving a set of local linear problems.
 /// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// This class is mainly useful for the implementation of
@@ -80,32 +80,33 @@ namespace Ifpack2 {
 /// - the kind of data structure used to store the local matrix, and
 /// - how to solve a linear system with the local matrix.
 ///
-/// For example, the SparseContainer subclass uses a sparse matrix (in
-/// particular, Tpetra::CrsMatrix) to store each diagonal block, and
+/// For example, the SparseContainer subclass uses sparse matrices
+/// (Tpetra::CrsMatrix) to store each diagonal block, and
 /// can use any given Ifpack2 Preconditioner subclass to solve linear
 /// systems.
 ///
-/// A Container can create, populate, and solve a local linear
-/// system. The local linear system matrix, B, is a submatrix of the
-/// local components of a distributed matrix, A. The idea of Container
-/// is to specify the rows of A that are contained in B, then extract
+/// A Container can create, populate, and solve local linear
+/// systems. A local linear system matrix, B, is a submatrix of the
+/// local components of the distributed matrix, A. The idea of Container
+/// is to specify the rows of A that are contained in each B, then extract
 /// B from A, and compute all it is necessary to solve a linear system
 /// in B.  Then, set the initial guess (if necessary) and right-hand
-/// side for B, and solve the linear system in B.
+/// sides for B, and solve the linear systems in B.
 ///
 /// If you are writing a class (comparable to BlockRelaxation) that
 /// uses Container, you should use it in the following way:
 /// <ol>
 /// <li> Create a Container object, specifying the global matrix A and
-///      the indices of the local rows of A that are contained in B.
+///      the indices of the local rows of A that are contained in each B.
 ///      The latter indices come from a Partitioner object.</li>
 /// <li> Optionally, set linear solve parameters using setParameters().</li>
 /// <li> Initialize the container by calling initialize().</li>
 /// <li> Prepare the linear system solver using compute().</li>
-/// <li> Solve the linear system using apply().</li>
+/// <li> Solve a linear system using apply() for each
+///      block index (from 0 to numBlocks_) as needed.</li>
 /// </ol>
-/// For an example of Steps 1-5 above, see the implementation of
-/// BlockRelaxation::ExtractSubmatrices() in
+/// For an example of Steps 1-5 above, see
+/// ExtractSubmatrices() and ApplyInverseGS() in
 /// Ifpack2_BlockRelaxation_def.hpp.
 template<class MatrixType>
 class Container : public Teuchos::Describable
