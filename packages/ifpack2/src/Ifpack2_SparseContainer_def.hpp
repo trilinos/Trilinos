@@ -271,7 +271,7 @@ apply (HostView X,
   // Apply the local operator:
   // Y_local := beta*Y_local + alpha*M^{-1}*X_local
   this->solveBlockMV(X_local, Y_local, blockIndex, mode,
-      as<InverseScalar>(alpha), as<InverseScalar>(beta));
+      InverseScalar(alpha), InverseScalar(beta));
 
 
   // Scatter the permuted subset output vector Y_local back into the
@@ -297,7 +297,7 @@ weightedApply (HostView X,
   using Teuchos::Range1D;
   using std::cerr;
   using std::endl;
-  typedef Teuchos::ScalarTraits<SC> STS;
+  typedef Teuchos::ScalarTraits<InverseScalar> STS;
 
   // The InverseType template parameter might have different template
   // parameters (Scalar, LO, GO, and/or Node) than MatrixType.  For
@@ -413,7 +413,7 @@ weightedApply (HostView X,
   // temporary storage for M^{-1}*X_scaled, so Y_temp must be
   // different than Y_local.
   inverse_mv_type* Y_temp;
-  if (beta == STS::zero ()) {
+  if (InverseScalar(beta) == STS::zero ()) {
     Y_temp = &Y_local;
   } else {
     Y_temp = new inverse_mv_type(Inverses_[blockIndex]->getRangeMap(), numVecs);

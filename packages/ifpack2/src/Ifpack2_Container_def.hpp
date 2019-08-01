@@ -203,6 +203,7 @@ void Container<MatrixType>::DoGSBlock(HostView X, HostView Y, HostView Y2, HostV
 template <class MatrixType>
 void Container<MatrixType>::DoJacobi(HostView X, HostView Y, SC dampingFactor) const
 {
+  using STS = Teuchos::ScalarTraits<SC>;
   const SC one = STS::one();
   // use blockRows_ and blockSizes_
   size_t numVecs = X.extent(1);
@@ -234,6 +235,7 @@ void Container<MatrixType>::DoJacobi(HostView X, HostView Y, SC dampingFactor) c
 template <class MatrixType>
 void Container<MatrixType>::DoOverlappingJacobi(HostView X, HostView Y, HostView W, SC dampingFactor) const
 {
+  using STS = Teuchos::ScalarTraits<SC>;
   // Overlapping Jacobi
   for(LO i = 0; i < numBlocks_; i++)
   {
@@ -253,6 +255,7 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     SC dampingFactor, LO i) const
 {
   using Teuchos::ArrayView;
+  using STS = Teuchos::ScalarTraits<SC>;
   size_t numVecs = X.extent(1);
   const SC one = STS::one();
   if(this->blockSizes_[i] == 0)

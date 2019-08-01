@@ -123,7 +123,6 @@ public:
   using mv_type = Tpetra::MultiVector<SC, LO, GO, NO>;
   using vector_type = Tpetra::Vector<SC, LO, GO, NO>;
   using map_type = Tpetra::Map<LO, GO, NO>;
-  using STS = Teuchos::ScalarTraits<SC>;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NO>;
   using block_crs_matrix_type = Tpetra::BlockCrsMatrix<SC, LO, GO, NO>;
   using row_matrix_type = Tpetra::RowMatrix<SC, LO, GO, NO>;
@@ -356,7 +355,6 @@ protected:
   using typename Container<MatrixType>::mv_type;
   using typename Container<MatrixType>::vector_type;
   using typename Container<MatrixType>::map_type;
-  using typename Container<MatrixType>::STS;
   using typename Container<MatrixType>::ISC;
   using local_mv_type = Tpetra::MultiVector<local_scalar_type, LO, GO, NO>;
 

@@ -447,7 +447,7 @@ solveBlock(HostSubview X,
   size_t numRows = X.extent (0);
   size_t numVecs = X.extent (1);
 
-  SC zero = Teuchos::ScalarTraits<SC>::zero ();
+  LSC zero = Teuchos::ScalarTraits<LSC>::zero ();
   if (alpha == zero) { // don't need to solve the linear system
     if (beta == zero) {
       // Use BLAS AXPY semantics for beta == 0: overwrite, clobbering
@@ -493,7 +493,7 @@ solveBlock(HostSubview X,
         numRows,
         &INFO);
 
-    if (beta != STS::zero ()) {
+    if (beta != zero) {
       for(size_t j = 0; j < numVecs; j++)
       {
         for(size_t i = 0; i < numRows; i++)

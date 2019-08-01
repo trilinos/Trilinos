@@ -126,8 +126,6 @@ private:
   //! The Node type of the input (global) matrix.
   using typename Container<MatrixType>::NO;
 
-  using typename Container<MatrixType>::STS;
-
   using Container<MatrixType>::mv_type;
   using Container<MatrixType>::map_type;
   using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;

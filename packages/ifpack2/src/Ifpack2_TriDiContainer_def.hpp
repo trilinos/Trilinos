@@ -284,8 +284,7 @@ solveBlock(HostSubview X,
            LSC alpha,
            LSC beta) const
 {
-  typedef Teuchos::ScalarTraits<LSC> STS;
-  auto zero = STS::zero();
+  LSC zero = Teuchos::ScalarTraits<LSC>::zero();
   size_t numVecs = X.extent(1);
   size_t numRows = X.extent(0);
 
@@ -356,7 +355,7 @@ solveBlock(HostSubview X,
                   numRows,
                   &INFO);
 
-    if (beta != STS::zero ()) {
+    if (beta != zero) {
       for(size_t j = 0; j < numVecs; j++)
       {
         for(size_t i = 0; i < numRows; i++)
