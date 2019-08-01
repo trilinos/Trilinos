@@ -131,7 +131,7 @@ getValidParameters () const
   validParams->set("relaxation: sweeps", 1);
   validParams->set("relaxation: damping factor", STS::one());
   validParams->set("relaxation: zero starting solution", true);
-  validParams->set("block relaxation: decouple dofs", true);
+  validParams->set("block relaxation: decouple dofs", false);
   validParams->set("schwarz: compute condest", false); // mfh 24 Mar 2015: for backwards compatibility ONLY
   validParams->set("schwarz: combine mode", "ZERO"); // use string mode for this
   validParams->set("schwarz: use reordering", true);
@@ -305,7 +305,7 @@ setParameters (const Teuchos::ParameterList& List)
     NumLocalBlocks_ = A_->getNodeNumRows() / (-NumLocalBlocks_);
   }
 
-  decouple_ = true;
+  decouple_ = false;
   if(List.isParameter("block relaxation: decouple dofs"))
     decouple_ = List.get<bool>("block relaxation: decouple dofs");
 

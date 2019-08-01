@@ -1309,7 +1309,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   Teuchos::ParameterList params;
   params.set("relaxation: container", "Dense");
   params.set("relaxation: type", "Symmetric Gauss-Seidel");
-  params.set ("partitioner: local parts", (LocalOrdinal)bcrsmatrix->getNodeNumRows());
+  params.set("partitioner: local parts", (LocalOrdinal)bcrsmatrix->getNodeNumRows());
   prec.setParameters(params);
 
   prec.initialize();

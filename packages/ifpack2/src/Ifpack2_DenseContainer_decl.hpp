@@ -131,10 +131,11 @@ private:
   using typename Container<MatrixType>::vector_type;
   using typename Container<MatrixType>::import_type;
 
+  using typename Container<MatrixType>::ISC;
   using typename ContainerImpl<MatrixType, LocalScalarType>::LISC;
   using typename Container<MatrixType>::HostView;
-  using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
-  using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubview;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::HostViewLocal;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubviewLocal;
 
   static_assert(std::is_same<MatrixType, Tpetra::RowMatrix<SC, LO, GO, NO>>::value,
                 "Ifpack2::DenseContainer: Please use MatrixType = Tpetra::RowMatrix.");
@@ -239,8 +240,8 @@ private:
   /// \param X [in] Subset permutation of the input X of apply().
   /// \param Y [in] Subset permutation of the input/output Y of apply().
   void
-  solveBlock(HostSubview X,
-             HostSubview Y,
+  solveBlock(HostSubviewLocal X,
+             HostSubviewLocal Y,
              int blockIndex,
              Teuchos::ETransp mode,
              const LSC alpha,
@@ -248,15 +249,6 @@ private:
 
   //! The local diagonal blocks, which compute() extracts.
   std::vector<Teuchos::SerialDenseMatrix<int, LSC>> diagBlocks_;
-
-  mutable HostViewLocal X_local;
-  mutable HostViewLocal Y_local;
-
-  //! Temporary X vectors used in apply() (one per block)
-  mutable std::vector<HostSubview> X_localBlocks;
-
-  //! Temporary Y vector used in apply() (one per block)
-  mutable std::vector<HostSubview> Y_localBlocks;
 
   //! Permutation array from LAPACK (GETRF).
   mutable Teuchos::Array<int> ipiv_;

@@ -503,9 +503,8 @@ extract ()
   //offset - blockOffsets_[b]: gives the column within block b.
   //
   //This provides the block and col within a block in O(1).
-  Array<InverseScalar> valuesToInsert;
-  Array<InverseGlobalOrdinal> indicesToInsert;
-
+  Teuchos::Array<InverseGlobalOrdinal> indicesToInsert;
+  Teuchos::Array<InverseScalar> valuesToInsert;
   if(this->scalarsPerRow_ > 1)
   {
     Array<LO> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
@@ -555,8 +554,6 @@ extract ()
       diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts, Tpetra::StaticProfile));
       Inverses_[i] = rcp(new InverseType(diagBlocks_[i]));
       //insert the actual entries, one row at a time
-      Teuchos::Array<InverseGlobalOrdinal> indicesToInsert;
-      Teuchos::Array<InverseScalar> valuesToInsert;
       for(LO blockRow = 0; blockRow < blockSize; blockRow++)
       {
         //get a raw view of the whole block row

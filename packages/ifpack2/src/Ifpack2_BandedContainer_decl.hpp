@@ -115,7 +115,6 @@ private:
   //! The second template parameter of this class.
   using LSC = LocalScalarType;
   //! The internal representation of LocalScalarType in Kokkos::View
-  using LISC = typename Kokkos::Details::ArithTraits<LSC>::val_type;
 
   //! The type of entries in the input (global) matrix.
   using typename Container<MatrixType>::SC;
@@ -126,6 +125,9 @@ private:
   //! The Node type of the input (global) matrix.
   using typename Container<MatrixType>::NO;
 
+  using typename Container<MatrixType>::ISC;
+  using typename ContainerImpl<MatrixType, LSC>::LISC;
+
   using Container<MatrixType>::mv_type;
   using Container<MatrixType>::map_type;
   using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;
@@ -133,7 +135,7 @@ private:
   using typename Container<MatrixType>::import_type;
 
   using typename Container<MatrixType>::HostView;
-  using typename ContainerImpl<MatrixType, LSC>::HostSubview;
+  using typename ContainerImpl<MatrixType, LSC>::HostSubviewLocal;
   using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,
@@ -244,8 +246,8 @@ private:
   /// \param X [in] Subset permutation of the input X of apply().
   /// \param Y [in] Subset permutation of the input/output Y of apply().
   void
-  solveBlock(HostSubview X,
-             HostSubview Y,
+  solveBlock(HostSubviewLocal X,
+             HostSubviewLocal Y,
              int blockIndex,
              Teuchos::ETransp mode,
              const LSC alpha,

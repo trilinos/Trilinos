@@ -260,6 +260,8 @@ void BandedContainer<MatrixType, LocalScalarType>::extract()
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
+  using STS = Teuchos::ScalarTraits<SC>;
+  SC zero = STS::zero();
   const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   //To extract diagonal blocks, need to translate local rows to local columns.
   //Strategy: make a lookup table that translates local cols in the matrix to offsets in blockRows_:
@@ -308,7 +310,7 @@ void BandedContainer<MatrixType, LocalScalarType>::extract()
                 LO r = this->bcrsBlockSize_ * blockRow + br;
                 LO c = this->bcrsBlockSize_ * blockCol + bc;
                 auto val = values[k * (this->bcrsBlockSize_ * this->bcrsBlockSize_) + (br + this->bcrsBlockSize_ * bc)];
-                if(val != 0)
+                if(val != zero)
                   diagBlocks_[i](r, c) = val;
               }
             }
@@ -349,7 +351,7 @@ void BandedContainer<MatrixType, LocalScalarType>::extract()
           {
             LO blockCol = colOffset - blockStart;
             auto val = rowView.val(k);
-            if(val != 0)
+            if(val != zero)
               diagBlocks_[i](blockRow, blockCol) = rowView.val(k);
           }
         }
@@ -414,8 +416,8 @@ factor ()
 template<class MatrixType, class LocalScalarType>
 void
 BandedContainer<MatrixType, LocalScalarType>::
-solveBlock(HostSubview X,
-           HostSubview Y,
+solveBlock(HostSubviewLocal X,
+           HostSubviewLocal Y,
            int blockIndex,
            Teuchos::ETransp mode,
            const LSC alpha,
@@ -468,7 +470,7 @@ solveBlock(HostSubview X,
     // If beta is nonzero or Y is not constant stride, we have to use
     // a temporary output multivector.  It gets a copy of X, since
     // GBTRS overwrites its (multi)vector input with its output.
-    std::vector<LISC> yTemp(numVecs * numRows);
+    std::vector<LSC> yTemp(numVecs * numRows);
     for(size_t j = 0; j < numVecs; j++)
     {
       for(size_t i = 0; i < numRows; i++)
@@ -498,8 +500,8 @@ solveBlock(HostSubview X,
       {
         for(size_t i = 0; i < numRows; i++)
         {
-          Y(i, j) *= beta;
-          Y(i, j) += alpha * yTemp[j * numRows + i];
+          Y(i, j) *= ISC(beta);
+          Y(i, j) += ISC(alpha * yTemp[j * numRows + i]);
         }
       }
     }
@@ -507,7 +509,7 @@ solveBlock(HostSubview X,
       for(size_t j = 0; j < numVecs; j++)
       {
         for(size_t i = 0; i < numRows; i++)
-          Y(i, j) = yTemp[j * numRows + i];
+          Y(i, j) = ISC(yTemp[j * numRows + i]);
       }
     }
 

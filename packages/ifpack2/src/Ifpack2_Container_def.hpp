@@ -203,8 +203,8 @@ void Container<MatrixType>::DoGSBlock(HostView X, HostView Y, HostView Y2, HostV
 template <class MatrixType>
 void Container<MatrixType>::DoJacobi(HostView X, HostView Y, SC dampingFactor) const
 {
-  using STS = Teuchos::ScalarTraits<SC>;
-  const SC one = STS::one();
+  using STS = Teuchos::ScalarTraits<ISC>;
+  const ISC one = STS::one();
   // use blockRows_ and blockSizes_
   size_t numVecs = X.extent(1);
   // Non-overlapping Jacobi
@@ -255,9 +255,9 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     SC dampingFactor, LO i) const
 {
   using Teuchos::ArrayView;
-  using STS = Teuchos::ScalarTraits<SC>;
+  using STS = Teuchos::ScalarTraits<ISC>;
   size_t numVecs = X.extent(1);
-  const SC one = STS::one();
+  const ISC one = STS::one();
   if(this->blockSizes_[i] == 0)
     return; // Skip empty partitions
   if(this->hasBlockCrs_ && !this->pointIndexed_)
@@ -317,7 +317,7 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
   {
     //Use the KokkosSparse internal matrix for low-overhead values/indices access
     //But, can only do this if the matrix is accessible directly from host, since it's not a DualView
-    crs_matrix_type::execution_space::fence();
+    ContainerImpl<MatrixType, LocalScalarType>::crs_matrix_type::execution_space::fence();
     auto localA = this->inputCrsMatrix_->getLocalMatrix();
     using size_type = typename crs_matrix_type::local_matrix_type::size_type;
     const auto& rowmap = localA.graph.row_map;
@@ -329,7 +329,7 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
       const LO row = blockRows[j];
       for(size_t m = 0; m < numVecs; m++)
       {
-        SC r = X(row, m);
+        ISC r = X(row, m);
         for(size_type k = rowmap(row); k < rowmap(row + 1); k++)
         {
           const LO col = entries(k);
@@ -517,8 +517,8 @@ getName()
 
 template<class MatrixType, class LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::
-solveBlock(HostSubview X,
-           HostSubview Y,
+solveBlock(HostSubviewLocal X,
+           HostSubviewLocal Y,
            int blockIndex,
            Teuchos::ETransp mode,
            const LSC alpha,
@@ -810,14 +810,14 @@ weightedApply(HostView X,
   auto maxBS = this->maxBlockSize_;
   auto bs = this->blockSizes_[blockIndex] * this->scalarsPerRow_;
 
-  HostSubview D_local(weightedApplyScratch_, std::make_pair(0, bs), std::make_pair(0, 1));
+  HostSubviewLocal D_local(weightedApplyScratch_, std::make_pair(0, bs), std::make_pair(0, 1));
   mvgs.gatherViewToView (D_local, D, blockRows);
-  HostSubview X_scaled(weightedApplyScratch_, std::make_pair(maxBS, maxBS + bs), Kokkos::ALL());
+  HostSubviewLocal X_scaled(weightedApplyScratch_, std::make_pair(maxBS, maxBS + bs), Kokkos::ALL());
   for(size_t j = 0; j < numVecs; j++)
     for(size_t i = 0; i < numRows; i++)
       X_scaled(i, j) = X_localBlocks_[blockIndex](i, j) * D_local(i, 0);
 
-  HostSubview Y_temp(weightedApplyScratch_, std::make_pair(maxBS * 2, maxBS * 2 + bs), Kokkos::ALL());
+  HostSubviewLocal Y_temp(weightedApplyScratch_, std::make_pair(maxBS * 2, maxBS * 2 + bs), Kokkos::ALL());
   // Apply the local operator: Y_temp := M^{-1} * X_scaled
   this->solveBlock (X_scaled, Y_temp, blockIndex, mode, STS::one(), STS::zero());
   // Y_local := beta * Y_local + alpha * diag(D_local) * Y_temp.

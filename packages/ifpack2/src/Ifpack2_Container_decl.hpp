@@ -110,7 +110,7 @@ namespace Ifpack2 {
 template<class MatrixType>
 class Container : public Teuchos::Describable
 {
-public:
+protected:
   using scalar_type = typename MatrixType::scalar_type;
   using local_ordinal_type = typename MatrixType::local_ordinal_type;
   using global_ordinal_type = typename MatrixType::global_ordinal_type;
@@ -137,6 +137,7 @@ public:
   //! type of the vector arguments of DoJacobi, DoGaussSeidel, and DoSGS.
   using HostView = typename mv_type::dual_view_type::t_host;
 
+public:
   /// \brief Constructor.
   ///
   /// \param matrix [in] The original input matrix.  This Container
@@ -356,15 +357,15 @@ protected:
   using typename Container<MatrixType>::vector_type;
   using typename Container<MatrixType>::map_type;
   using typename Container<MatrixType>::ISC;
-  using local_mv_type = Tpetra::MultiVector<local_scalar_type, LO, GO, NO>;
-
   //! The internal representation of LocalScalarType in Kokkos::View
-  using LISC = typename Kokkos::Details::ArithTraits<local_scalar_type>::val_type;
   using LSC = LocalScalarType;
+  using LISC = typename Kokkos::Details::ArithTraits<LSC>::val_type;
 
-  using HostView = typename mv_type::dual_view_type::t_host;
+  using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;
+
+  using typename Container<MatrixType>::HostView;
   using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
-  using HostSubview = Kokkos::View<LISC**, Kokkos::LayoutStride, Kokkos::HostSpace>;
+  using HostSubviewLocal = Kokkos::View<LISC**, Kokkos::LayoutStride, typename HostViewLocal::memory_space>;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value,
                 "Ifpack2::Container: Please use MatrixType = Tpetra::RowMatrix.");
@@ -491,8 +492,8 @@ protected:
   //! The Dense, Banded and TriDi containers all implement this and it is used in ContainerImpl::apply().
   //! The Sparse and BlockTriDi containers have their own implementation of apply() and do not use solveBlock.
   virtual void
-  solveBlock(HostSubview X,
-             HostSubview Y,
+  solveBlock(HostSubviewLocal X,
+             HostSubviewLocal Y,
              int blockIndex,
              Teuchos::ETransp mode,
              const LSC alpha,
@@ -515,10 +516,10 @@ protected:
   mutable HostViewLocal weightedApplyScratch_;
 
   //! Views for holding pieces of X corresponding to each block
-  mutable std::vector<HostSubview> X_localBlocks_;
+  mutable std::vector<HostSubviewLocal> X_localBlocks_;
 
   //! Views for holding pieces of Y corresponding to each block
-  mutable std::vector<HostSubview> Y_localBlocks_;
+  mutable std::vector<HostSubviewLocal> Y_localBlocks_;
 };
 
 namespace Details {
