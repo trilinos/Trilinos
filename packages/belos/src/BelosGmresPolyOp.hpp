@@ -749,11 +749,12 @@ namespace Belos {
     }
    
     // Compute product of factors (pof) to determine added roots: 
-    std::vector<MagnitudeType> pof (dim_,1.0);
+    const MagnitudeType one(1.0);
+    std::vector<MagnitudeType> pof (dim_,one);
     for(int j=0; j<dim_; ++j) {
       for(int i=0; i<dim_; ++i) {
         if(i!=j) {
-          pof[j] = std::abs(pof[j]*(1.0-(cmplxHRitz[j]/cmplxHRitz[i])));
+          pof[j] = std::abs(pof[j]*(one-(cmplxHRitz[j]/cmplxHRitz[i])));
         }
       }
     }
@@ -762,7 +763,7 @@ namespace Belos {
     std::vector<int> extra (dim_);
     int totalExtra = 0;
     for(int i=0; i<dim_; ++i){
-      extra[i] = ceil((log10(pof[i])-4.0)/14.0);
+      extra[i] = ceil((log10(pof[i])-MagnitudeType(4.0))/MagnitudeType(14.0));
       if(extra[i] > 0){
         totalExtra += extra[i];
       }
@@ -783,7 +784,7 @@ namespace Belos {
         for(int j=0; j< extra[i]; ++j){
           theta_(count,0) = theta_(i,0);
           theta_(count,1) = theta_(i,1);
-          thetaPert(count,0) = theta_(i,0)+(j+MCT::one())*5e-8;
+          thetaPert(count,0) = theta_(i,0)+(j+MCT::one())*MagnitudeType(5e-8);
           thetaPert(count,1) = theta_(i,1);
           ++count;
         }
