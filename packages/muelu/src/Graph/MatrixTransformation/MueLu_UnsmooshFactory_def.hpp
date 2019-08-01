@@ -199,7 +199,7 @@ namespace MueLu {
     // generate coarse domain map
     // So far no support for gid offset or strided maps. This information
     // could be gathered easily from the unamalgamated fine level operator A.
-    std::vector<size_t> stridingInfo(1,maxDofPerNode);
+    std::vector<size_t> stridingInfo(1, maxDofPerNode);
 
     GlobalOrdinal nCoarseDofs = amalgP->getDomainMap()->getNodeNumElements() * maxDofPerNode;
     GlobalOrdinal indexBase   = amalgP->getDomainMap()->getIndexBase();
@@ -222,18 +222,21 @@ namespace MueLu {
       }
     }
     Teuchos::RCP<Map> coarseColMap = MapFactory::Build(amalgP->getDomainMap()->lib(),
-        Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-        unsmooshColMapGIDs(), //View,
-        indexBase,
-        amalgP->getDomainMap()->getComm());
+                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                       unsmooshColMapGIDs(), //View,
+                                                       indexBase,
+                                                       amalgP->getDomainMap()->getComm());
 
     // Assemble unamalgamated P
-    Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(),coarseColMap, 3);
-    for (decltype(rowCount) i = 0; i < rowCount; i++) {
-      unamalgPCrs->insertLocalValues(i, newPCols.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]),
-          newPVals.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]));
+    Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(),
+                                                                  coarseColMap,
+                                                                  maxDofPerNode*amalgP->getNodeMaxNumRowEntries());
+    for (size_t i = 0; i < rowCount; i++) {
+      unamalgPCrs->insertLocalValues(i,
+                                     newPCols.view(newPRowPtr[i], newPRowPtr[i+1] - newPRowPtr[i]),
+                                     newPVals.view(newPRowPtr[i], newPRowPtr[i+1] - newPRowPtr[i]));
     }
-    unamalgPCrs->fillComplete(coarseDomainMap,unamalgA->getRowMap());
+    unamalgPCrs->fillComplete(coarseDomainMap, unamalgA->getRowMap());
 
     Teuchos::RCP<Matrix> unamalgP = Teuchos::rcp(new CrsMatrixWrap(unamalgPCrs));
 
