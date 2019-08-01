@@ -12,14 +12,12 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 # B) Set up package-specific options
 #
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    FEI_EPETRA
-    HAVE_FEI_EPETRA
-    "FEI support for Epetra"
-    ${${PACKAGE_NAME}_ENABLE_Epetra}
-  )
+ASSERT_DEFINED(Trilinos_ENABLE_Epetra)
+IF (NOT ${Trilinos_ENABLE_Epetra})
+  MESSAGE(FATAL_ERROR "FEI requires Epetra be enabled")
 ENDIF()
+SET(FEI_EPETRA ON CACHE BOOL "FEI support for Epetra")
+GLOBAL_SET(HAVE_FEI_EPETRA ON)
 
 IF (${PACKAGE_NAME}_ENABLE_AztecOO)
   TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -46,15 +44,6 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos)
       "FEI support for Amesos"
       ${${PACKAGE_NAME}_ENABLE_Amesos}
     )
-ENDIF()
-
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    FEI_TPETRA
-    HAVE_FEI_TPETRA
-    "FEI support for Tpetra"
-    ${${PACKAGE_NAME}_ENABLE_Tpetra}
-  )
 ENDIF()
 
 #
