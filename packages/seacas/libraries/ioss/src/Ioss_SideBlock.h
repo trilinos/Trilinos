@@ -37,10 +37,11 @@
 #include <Ioss_EntityBlock.h> // for EntityBlock
 #include <Ioss_EntityType.h>  // for EntityType, etc
 #include <Ioss_Property.h>    // for Property
-#include <cstddef>            // for size_t
-#include <cstdint>            // for int64_t
-#include <string>             // for string
-#include <vector>             // for vector
+#include <Ioss_SideSet.h>
+#include <cstddef> // for size_t
+#include <cstdint> // for int64_t
+#include <string>  // for string
+#include <vector>  // for vector
 namespace Ioss {
   class DatabaseIO;
 } // namespace Ioss
@@ -49,9 +50,6 @@ namespace Ioss {
 } // namespace Ioss
 namespace Ioss {
   class Field;
-} // namespace Ioss
-namespace Ioss {
-  class SideSet;
 } // namespace Ioss
 
 namespace Ioss {
@@ -71,7 +69,8 @@ namespace Ioss {
     std::string contains_string() const override { return "Element/Side pair"; }
     EntityType  type() const override { return SIDEBLOCK; }
 
-    const SideSet *owner() const { return owner_; }
+    const SideSet *             owner() const { return owner_; }
+    const Ioss::GroupingEntity *contained_in() const override { return owner_; }
 
     void block_membership(std::vector<std::string> &block_members) override;
 
