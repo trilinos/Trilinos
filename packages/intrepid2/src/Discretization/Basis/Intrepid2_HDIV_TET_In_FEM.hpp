@@ -212,9 +212,9 @@ class Basis_HDIV_TET_In_FEM
   using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
   using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
   
-  INTREPID2_DEPRECATED_MESSAGE("use OutputViewType instead") using outputViewType INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE("use OutputViewType instead","OutputViewType") = OutputViewType;
-  INTREPID2_DEPRECATED_MESSAGE("use PointViewType instead") using pointViewType INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE("use PointViewType instead","PointViewType") = PointViewType;
-  INTREPID2_DEPRECATED_MESSAGE("use ScalarViewType instead") using scalarViewType INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE("use ScalarViewType instead","ScalarViewType") = ScalarViewType;
+  using outputViewType INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OutputViewType instead","OutputViewType") = OutputViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OutputViewType instead");
+  using pointViewType INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use PointViewType instead","PointViewType") = PointViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use PointViewType instead");
+  using scalarViewType INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use ScalarViewType instead","ScalarViewType") = ScalarViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use ScalarViewType instead");
 
   typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
 

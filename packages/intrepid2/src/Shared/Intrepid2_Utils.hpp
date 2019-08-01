@@ -109,33 +109,18 @@ namespace Intrepid2 {
 #endif
   
 // adapted from Kokkos_Macros.hpp
-#if (defined(KOKKOS_ENABLE_CXX14) || defined(KOKKOS_ENABLE_CXX17) || defined(KOKKOS_ENABLE_CXX20))
-  #define INTREPID2_DEPRECATED [[deprecated]]
-  #define INTREPID2_DEPRECATED_MESSAGE(msg) [[deprecated(msg)]]
-  #define INTREPID2_DEPRECATED_TRAILING_ATTRIBUTE
-  #define INTREPID2_DEPRECATED_MESSAGE_TRAILING_ATTRIBUTE(msg)
-  #define INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE(msg,fixit)
-#else
-  #if defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-    #define INTREPID2_DEPRECATED
-    #define INTREPID2_DEPRECATED_MESSAGE(msg)
-    #define INTREPID2_DEPRECATED_TRAILING_ATTRIBUTE              __attribute__((deprecated))
-    #define INTREPID2_DEPRECATED_MESSAGE_TRAILING_ATTRIBUTE(msg) __attribute__((deprecated(msg)))
-    #if defined(KOKKOS_COMPILER_CLANG)
-      #define INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE(msg,fixit) __attribute__((deprecated(msg,fixit)))
-      // see https://clang.llvm.org/docs/AttributeReference.html#deprecated
-    #else // GNU
-      // GNU doesn't support the replacement argument, so we drop that
-      #define INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE(msg,fixit) __attribute__((deprecated(msg)))
-      // see https://gcc.gnu.org/onlinedocs/gcc-4.9.0/gcc/Function-Attributes.html
-    #endif
-  #else
-    #define INTREPID2_DEPRECATED
-    #define INTREPID2_DEPRECATED_MESSAGE(msg)
-    #define INTREPID2_DEPRECATED_TRAILING_ATTRIBUTE
-    #define INTREPID2_DEPRECATED_MESSAGE_TRAILING_ATTRIBUTE(msg)
-    #define INTREPID2_DEPRECATED_MESSAGE_REPLACEMENT_TRAILING_ATTRIBUTE(msg,fixit)
+#if defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
+  #if defined(KOKKOS_COMPILER_CLANG)
+    #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit) __attribute__((deprecated(msg,fixit)))
+    #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
+  #else // GNU
+    #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
+    #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg) __attribute__((deprecated(msg)))
+    // see https://gcc.gnu.org/onlinedocs/gcc-4.9.0/gcc/Function-Attributes.html
   #endif
+#else
+  #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
+  #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg) __attribute__((deprecated(msg)))
 #endif
   /**
    \brief scalar type traits
