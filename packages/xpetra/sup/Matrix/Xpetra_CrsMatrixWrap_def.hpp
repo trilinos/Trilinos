@@ -247,6 +247,11 @@ namespace Xpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const {
+    return matrixData_->getNumEntriesInGlobalRow(globalRow);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalMaxNumRowEntries() const {
     return matrixData_->getGlobalMaxNumRowEntries();
   }
