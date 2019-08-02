@@ -224,16 +224,16 @@ std::vector<std::vector<Scalar> > generate_fem1d_element_values() {
 }
 
 template<class Scalar, class Node>
-Kokkos::View<Scalar*[2], Kokkos::LayoutLeft, typename Node::device_type > generate_fem1d_element_values_kokkos() {
-  Kokkos::View<Scalar*[2], Kokkos::LayoutLeft, typename Node::device_type > mat;
+Kokkos::View<Scalar[2][2], Kokkos::LayoutLeft, typename Node::device_type > generate_fem1d_element_values_kokkos() {
+  Kokkos::View<Scalar[2][2], Kokkos::LayoutLeft, typename Node::device_type> mat ("fem1d_element_values");
 
-  Kokkos::resize(mat, 2);
-  //plz don't abuse UVM
-  mat(0,0) =  1;
-  mat(0,1) = -1;
-  mat(1,0) = -1;
-  mat(1,1) =  1;
+  auto mat_h = Kokkos::create_mirror_view(mat);
+  mat_h(0,0) =  1.0;
+  mat_h(0,1) = -1.0;
+  mat_h(1,0) = -1.0;
+  mat_h(1,1) =  1.0;
 
+  Kokkos::deep_copy(mat, mat_h);
   return mat;
 }
 
