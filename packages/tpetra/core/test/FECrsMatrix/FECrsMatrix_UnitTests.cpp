@@ -142,7 +142,7 @@ public:
   std::vector<std::vector<GO> > element2node;
 
   // NOTE: This is hardwired for 1D bar elements
-  Kokkos::View<GO*[2], Kokkos::LayoutLeft, typename Node::device_type > k_element2node;
+  Kokkos::View<GO*[2], typename Node::device_type > k_element2node;
 
   void print(int rank, std::ostream & out) {
     using std::endl;
@@ -352,7 +352,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
 
   Kokkos::parallel_for("assemble_1d",
 		       range_type (0,k_e2n.extent(0)), 
-		       KOKKOS_LAMBDA(const size_t& i) {
+		       KOKKOS_LAMBDA(const size_t i) {
     size_t extent = k_e2n.extent(1);
     for(size_t j=0; j < extent; j++) {
       LO lid_j = localMap.getLocalElement(k_e2n(i, j));
@@ -493,7 +493,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
 
   Kokkos::parallel_for("assemble_1d_local_index", 
 		       range_type (0, k_e2n.extent(0)),
-		       KOKKOS_LAMBDA(const size_t& i) {
+		       KOKKOS_LAMBDA(const size_t i) {
     for(size_t j=0; j<k_e2n.extent(1); j++) {
       LO lid_j = localMap.getLocalElement(k_e2n(i, j));
       for(size_t k=0; k<k_e2n.extent(1); k++) {
