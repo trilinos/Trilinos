@@ -49,14 +49,19 @@
 
 #include "Xpetra_BlockedMultiVector_decl.hpp"
 
+#include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_BlockedVector.hpp"
+#include "Xpetra_MapExtractor.hpp"
+
+
 namespace Xpetra {
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-BlockedMultiVector(const Teuchos::RCP<const BlockedMap>& map,
-                   size_t                                NumVectors,
-                   bool                                  zeroOut)
+BlockedMultiVector(const Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node>>& map,
+                   size_t                                                                         NumVectors,
+                   bool                                                                           zeroOut)
     : map_(map)
 {
     numVectors_ = NumVectors;
