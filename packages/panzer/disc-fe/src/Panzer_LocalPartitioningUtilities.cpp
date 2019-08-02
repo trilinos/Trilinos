@@ -322,71 +322,48 @@ splitMeshInfo(const panzer::LocalMeshInfoBase & mesh_info,
               const int splitting_size,
               std::vector<panzer::LocalMeshPartition> & partitions)
 {
+
   using LO = panzer::LocalOrdinal;
 
   // Make sure the splitting size makes sense
-  TEUCHOS_ASSERT(splitting_size != 0);
+  TEUCHOS_ASSERT((splitting_size > 0) or (splitting_size == WorksetSizeType::ALL_ELEMENTS));
 
-  // This is not a partitioning scheme.
-  // This just breaks the mesh_info into equally sized chunks and ignores connectivity
-  // This means that the cells in the partition probably won't be nearby each other - leads to an excess of ghost cells
+  // Default partition size
+  const LO base_partition_size = std::min(mesh_info.num_owned_cells, (splitting_size > 0) ? splitting_size : mesh_info.num_owned_cells);
 
-  const LO num_owned_cells = mesh_info.num_owned_cells;
+  // Cells to partition
+  std::vector<LO> partition_cells;
+  partition_cells.resize(base_partition_size);
 
-  if(splitting_size < 0){
+  // Create the partitions
+  LO cell_count = 0;
+  while(cell_count < mesh_info.num_owned_cells){
 
-    // Just one chunk
-    std::vector<LO> partition_cells;
-    partition_cells.reserve(mesh_info.num_owned_cells);
-    for(LO i=0;i<mesh_info.num_owned_cells;++i){
-      partition_cells.push_back(i);
-    }
+    LO partition_size = base_partition_size;
+    if(cell_count + partition_size > mesh_info.num_owned_cells)
+      partition_size = mesh_info.num_owned_cells - cell_count;
 
-    // It seems this can happen
-    if(partition_cells.size() > 0){
-      partitions.push_back(panzer::LocalMeshPartition());
-      setupSubLocalMeshInfo(mesh_info,partition_cells,partitions.back());
-    }
+    // Error check for a null partition - this should never happen by design
+    TEUCHOS_ASSERT(partition_size != 0);
 
-  } else {
+    // In the final partition, we need to reduce the size of partition_cells
+    if(partition_size != base_partition_size)
+      partition_cells.resize(partition_size);
 
-    std::vector<LO> partition_cells;
-    partition_cells.reserve(splitting_size);
+    // Set the partition indexes - not really a partition, just a chunk of cells
+    for(LO i=0; i<partition_size; ++i)
+      partition_cells[i] = cell_count+i;
 
-    // There should be at least one partition
-    const LO num_partitions = mesh_info.num_owned_cells / splitting_size + ((mesh_info.num_owned_cells % splitting_size == 0) ? 0 : 1);
+    // Create an empty partition
+    partitions.push_back(panzer::LocalMeshPartition());
 
-    LO partition_start_index = 0;
-    for(LO partition=0;partition<num_partitions;++partition){
+    // Fill the empty partition
+    partitioning_utilities::setupSubLocalMeshInfo(mesh_info,partition_cells,partitions.back());
 
-      // Make sure end of partition maxes out at num_owned_cells
-      const LO partition_end_index = std::min(partition_start_index + splitting_size, num_owned_cells);
-
-      partition_cells.resize(partition_end_index - partition_start_index,-1);
-      for(int i=partition_start_index;i<partition_end_index;++i){
-        partition_cells[i] = i;
-      }
-
-      // It seems this can happen
-      if(partition_cells.size() > 0){
-        partitions.push_back(panzer::LocalMeshPartition());
-        setupSubLocalMeshInfo(mesh_info,partition_cells,partitions.back());
-      }
-
-      partition_start_index = partition_end_index;
-    }
-
+    // Update the cell count
+    cell_count += partition_size;
   }
 
-}
-
-void
-partitionMeshInfo(const panzer::LocalMeshInfoBase & /* mesh_info */,
-                 const size_t /* requested_partition_size */,
-                 std::vector<panzer::LocalMeshPartition> & /* partitions */)
-{
-  // Not yet sure how to do this
-  TEUCHOS_ASSERT(false);
 }
 
 }
@@ -444,9 +421,6 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo & mesh_info,
       panzer::partitioning_utilities::splitMeshInfo(block_info, -1, partitions);
     } else {
       // We need to partition local mesh
-
-      // TODO: This needs to be used, but first needs to be written
-      //panzer::partitioning_utilities::partitionMeshInfo<LO,GO>(block_info, description.getWorksetSize(), partitions);
 
       // FIXME: Until the above function is fixed, we will use this hack - this will lead to horrible partitions
       panzer::partitioning_utilities::splitMeshInfo(block_info, description.getWorksetSize(), partitions);
