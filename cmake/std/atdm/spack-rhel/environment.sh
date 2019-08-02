@@ -20,8 +20,6 @@ function load_spack_tpl_modules() {
   export LAPACK_ROOT=$NETLIB_LAPACK_ROOT
 
   module load spack-binutils/2.31.1-${compiler_dash_version}
-  module load spack-gettext/0.19.8.1-${compiler_dash_version} # for binutils
-  module load spack-libiconv/1.15-${compiler_dash_version} # for gettext 
   module load spack-boost/1.59.0-${compiler_dash_version}
   module load spack-superlu/4.3-${compiler_dash_version}
   module load spack-zlib/1.2.11-${compiler_dash_version}
@@ -72,9 +70,9 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 # NOTE: Use as many build processes and there are cores by default.
 
 module purge
-module load spack-cmake/3.13.4-gcc-7.2.0  # ToDo: Remove compiler from name of these!
-module load spack-git/2.20.1-gcc-7.2.0
-module load spack-ninja-fortran/1.7.2.gaad58-gcc-7.2.0
+module load spack-git/2.20.1
+module load spack-cmake/3.13.4
+module load spack-ninja-fortran/1.7.2.gaad58
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
@@ -141,7 +139,7 @@ export HWLOC_LIBS=-lhwloc
 export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib64;-llapack"
 export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib64;-lblas"
 
-export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a;-ldl"
+export ATDM_CONFIG_HDF5_LIBS="${HDF5_ROOT}/lib/libhdf5_hl.so;${HDF5_ROOT}/lib/libhdf5.so;${ZLIB_ROOT}/lib/libz.so;-ldl"
 #echo ATDM_CONFIG_HDF5_LIBS=$ATDM_CONFIG_HDF5_LIBS
 
 export PNETCDF_ROOT=${PARALLEL_NETCDF_ROOT}
@@ -149,16 +147,16 @@ export PNETCDF_ROOT=${PARALLEL_NETCDF_ROOT}
 export ATDM_CONFIG_METIS_LIBS="${METIS_ROOT}/lib/libmetis.so"
 export ATDM_CONFIG_PARMETIS_LIBS="${METIS_ROOT}/lib/libmetis.so;${PARMETIS_ROOT}/lib/libparmetis.so"
 #export ATDM_CONFIG_PNETCDF_LIBS=
-export ATDM_CONFIG_CGNS_LIBS="${CGNS_ROOT}/lib/libcgns.a;-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+export ATDM_CONFIG_CGNS_LIBS="${CGNS_ROOT}/lib/libcgns.so;${ATDM_CONFIG_HDF5_LIBS}"
 
 #export METIS_LIBRARY_DIRS=${METIS_ROOT}/lib
 #export METIS_INCLUDE_DIRS=${METIS_ROOT}/include
 
-export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.${ATDM_CONFIG_TPL_LIB_EXT};${BOOST_ROOT}/lib/libboost_system.${ATDM_CONFIG_TPL_LIB_EXT};${NETCDF_ROOT}/lib/libnetcdf.a;${PARALLEL_NETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.${ATDM_CONFIG_TPL_LIB_EXT};${BOOST_ROOT}/lib/libboost_system.${ATDM_CONFIG_TPL_LIB_EXT};${NETCDF_ROOT}/lib/libnetcdf.a;${PARALLEL_NETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 # NOTE: SEMS does not provide the correct *.so files for NetCDF so we can't
 # use them in a shared lib build :-(
 
-export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.so;${BINUTILS_ROOT}/lib64/libiberty.a;${GETTEXT_ROOT}/lib/libintl.a;${LIBICONV_ROOT}/lib/libiconv.so"
+export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.so;${BINUTILS_ROOT}/lib64/libiberty.a;${GETTEXT_ROOT}/lib/libintl.so;${LIBICONV_ROOT}/lib/libiconv.so"
 # NOTE: Above, we have to explicitly set the libs to use libbdf.so instead of
 # libbdf.a because the former works and the latter does not and TriBITS is set
 # up to only find static libs by default!
