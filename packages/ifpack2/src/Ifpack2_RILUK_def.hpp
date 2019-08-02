@@ -391,6 +391,8 @@ void RILUK<MatrixType>::initialize ()
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcp_implicit_cast;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
   typedef Tpetra::CrsGraph<local_ordinal_type,
                            global_ordinal_type,
                            node_type> crs_graph_type;
@@ -437,23 +439,27 @@ void RILUK<MatrixType>::initialize ()
       RCP<const crs_matrix_type> A_local_crs =
         rcp_dynamic_cast<const crs_matrix_type> (A_local_);
       if (A_local_crs.is_null ()) {
-        // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
-        // number of elements in each row of A_local, so that we can
-        // create A_local_crs_nc using static profile.  The code below is
-        // correct but potentially slow.
+        local_ordinal_type numRows = A_local_->getNodeNumRows();
+        Array<size_t> entriesPerRow(numRows);
+        for(local_ordinal_type i = 0; i < numRows; i++)
+        {
+          entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
+        }
         RCP<crs_matrix_type> A_local_crs_nc =
           rcp (new crs_matrix_type (A_local_->getRowMap (),
-                                    A_local_->getColMap (), 0));
-        // FIXME (mfh 24 Jan 2014) This Import approach will only work
-        // if A_ has a one-to-one row Map.  This is generally the case
-        // with matrices given to Ifpack2.
-        //
-        // Source and destination Maps are the same in this case.
-        // That way, the Import just implements a copy.
-        typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
-          node_type> import_type;
-        import_type import (A_local_->getRowMap (), A_local_->getRowMap ());
-        A_local_crs_nc->doImport (*A_local_, import, Tpetra::REPLACE);
+                                    A_local_->getColMap (),
+                                    entriesPerRow()));
+        // copy entries into A_local_crs
+        Teuchos::Array<local_ordinal_type> indices(A_local_->getNodeMaxNumRowEntries());
+        Teuchos::Array<scalar_type> values(A_local_->getNodeMaxNumRowEntries());
+        for(local_ordinal_type i = 0; i < numRows; i++)
+        {
+          size_t numEntries = 0;
+          A_local_->getLocalRowCopy(i, indices(), values(), numEntries);
+          ArrayView<const local_ordinal_type> indicesInsert(indices.data(), numEntries);
+          ArrayView<const scalar_type> valuesInsert(values.data(), numEntries);
+          A_local_crs_nc->insertLocalValues(i, indicesInsert, valuesInsert);
+        }
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
