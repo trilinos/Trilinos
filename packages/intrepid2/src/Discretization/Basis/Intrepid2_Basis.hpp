@@ -109,8 +109,7 @@ namespace Intrepid2 {
     /**  \brief View type for ordinal
     */
     using OrdinalViewType = Kokkos::View<ordinal_type,ExecSpaceType>;
-    using ordinal_view_type __attribute__((deprecated("use OrdinalViewType instead","OrdinalViewType"))) = OrdinalViewType;
-//    using ordinal_view_type INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalViewType instead","OrdinalViewType") = OrdinalViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalViewType instead");
+    using ordinal_view_type INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT("use OrdinalViewType instead","OrdinalViewType") = OrdinalViewType INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE("use OrdinalViewType instead");
 
     /**  \brief View for basis type
     */
