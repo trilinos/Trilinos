@@ -266,28 +266,30 @@ void StepperImplicit<Scalar>::setSolver(
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
-  std::string solverName = stepperPL_->get<std::string>("Solver Name");
-  if (is_null(solverPL)) {
-    if ( stepperPL_->isSublist(solverName) )
-      solverPL = Teuchos::sublist(stepperPL_, solverName, true);
-    else
-      solverPL = this->defaultSolverParameters();
+  if (solver_.is_null()) {
+    std::string solverName = stepperPL_->get<std::string>("Solver Name");
+    if (is_null(solverPL)) {
+      if ( stepperPL_->isSublist(solverName) )
+	solverPL = Teuchos::sublist(stepperPL_, solverName, true);
+      else
+	solverPL = this->defaultSolverParameters();
+    }
+    
+    solverName = solverPL->name();
+    stepperPL_->set("Solver Name", solverName);
+    stepperPL_->set(solverName, *solverPL);      // Add sublist
+    RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
+    
+    solver_ = rcp(new Thyra::NOXNonlinearSolver());
+    solver_->setParameterList(noxPL);
+    
+    TEUCHOS_TEST_FOR_EXCEPTION(wrapperModel_ == Teuchos::null, std::logic_error,
+			       "Error - StepperImplicit<Scalar>::setSolver() wrapperModel_ is unset!\n"
+			       << "  Should call setModel(...) first.\n");
+    solver_->setModel(wrapperModel_);
+
+    this->isInitialized_ = false;    
   }
-
-  solverName = solverPL->name();
-  stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, *solverPL);      // Add sublist
-  RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-
-  solver_ = rcp(new Thyra::NOXNonlinearSolver());
-  solver_->setParameterList(noxPL);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(wrapperModel_ == Teuchos::null, std::logic_error,
-       "Error - StepperImplicit<Scalar>::setSolver() wrapperModel_ is unset!\n"
-    << "  Should call setModel(...) first.\n");
-  solver_->setModel(wrapperModel_);
-
-  this->isInitialized_ = false;
 }
 
 
@@ -300,9 +302,7 @@ template<class Scalar>
 void StepperImplicit<Scalar>::setSolver(
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
 {
-  Teuchos::RCP<Teuchos::ParameterList> solverPL =
-    solver->getNonconstParameterList();
-  this->setSolver(solverPL);
+  solver_ = solver;
 }
 
 template<class Scalar>
