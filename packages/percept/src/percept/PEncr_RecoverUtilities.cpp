@@ -7,7 +7,8 @@
 // license that can be found in the LICENSE file.
 
 #include <percept/PEncr_RecoverUtilities.hpp>
-#include <stk_util/util/Fortran.hpp>
+//#include <stk_util/util/Fortran.hpp>
+#include <Teuchos_config.h>
 
   namespace percept {
 
@@ -20,7 +21,7 @@
     // LAPACK routine,
     // Computes the minimum-norm solution to a linear least
     // squares problem using a complete orthogonal factorization.
-    extern "C" void SIERRAFORTRAN(dgelsy)(
+    extern "C" void F77_FUNC(dgelsy,DGELSY)(
                                           const P_int*  M,
                                           const P_int*  N,
                                           const P_int*  NRHS,
@@ -431,7 +432,7 @@
       P_int rank = 0;
       P_int ierr = -1;
 
-      SIERRAFORTRAN(dgelsy)(
+      F77_FUNC(dgelsy,DGELSY)(
                             &M, &N, &NRHS,
                             NULL, &M,
                             NULL, &LDB,
@@ -450,7 +451,7 @@
       my_work.resize( lwork );
 
       // Compute the solution to the linear least squares problem.
-      SIERRAFORTRAN(dgelsy) (
+      F77_FUNC(dgelsy,DGELSY) (
                              &M, &N, &NRHS,
                              &basis_samp[0], &M,
                              &func_samp[0], &LDB,
