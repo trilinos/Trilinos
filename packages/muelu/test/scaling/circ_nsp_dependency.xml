@@ -13,7 +13,7 @@
     <!-- -->
     <!-- Non-permuted factories -->
     <!-- -->
-    
+
     <ParameterList name="myNspFact">
       <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
       <!--<Paramter name="Nullspace" type="string" value="myRebalanceProlongatorFact"/>-->
@@ -22,9 +22,8 @@
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
-      <!--
-      <Parameter name="aggregation: drop tol"               type="double" value="0.1"/>
-      -->
+      <!-- for aggregation dropping -->
+      <!-- <Parameter name="aggregation: drop tol"               type="double" value="0.1"/> -->
     </ParameterList>
 
     <ParameterList name="CoupledAggregationFact">
@@ -55,7 +54,7 @@
       <Parameter name="Aggregates"                          type="string" value="UncoupledAggregationFact"/>
       <Parameter name="Nullspace"                           type="string" value="myNspFact"/>
     </ParameterList>
-    
+
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
       <Parameter name="Aggregates"                          type="string" value="UncoupledAggregationFact"/>
@@ -74,16 +73,16 @@
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
     </ParameterList>
 
-    <!-- <ParameterList name="myTransferCoordinatesFact">
+    <ParameterList name="myTransferCoordinatesFact">
       <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
-    </ParameterList> -->
+    </ParameterList>
 
     <ParameterList name="myRAPFact">
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
       <ParameterList name="TransferFactories">
-	<!-- <Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/> -->
+	<Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/>
         <!-- <Parameter name="Visualization"                     type="string" value="myAggExportFact"/> -->
       </ParameterList>
     </ParameterList>
@@ -141,7 +140,7 @@
       <Parameter name="Nullspace" type="string" value="myRebalanceProlongatorFact"/>
     </ParameterList>
 
-    
+
     <ParameterList name="myRebalanceRestrictionFact">
       <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"                                type="string" value="Restriction"/>
@@ -226,6 +225,8 @@
       <Parameter name="A"                                   type="string"   value="myRebalanceAFact"/>
       <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
+      <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="Coordinates"                         type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
