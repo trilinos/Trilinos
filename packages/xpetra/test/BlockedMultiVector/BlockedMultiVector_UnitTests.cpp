@@ -63,6 +63,7 @@
 #include <Xpetra_BlockedMultiVector.hpp>
 #include <Xpetra_ReorderedBlockedMultiVector.hpp>
 #include <Xpetra_Exceptions.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include <set>
 

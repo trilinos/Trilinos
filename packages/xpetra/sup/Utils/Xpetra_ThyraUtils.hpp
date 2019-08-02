@@ -70,6 +70,7 @@
 #include "Xpetra_MapExtractor.hpp"
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 
 #include <Thyra_VectorSpaceBase.hpp>
 #include <Thyra_SpmdVectorSpaceBase.hpp>
