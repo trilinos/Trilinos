@@ -134,6 +134,8 @@ namespace Ioss {
     SMART_ASSERT(m_njGlobal >= m_nj)(m_njGlobal)(m_nj);
     SMART_ASSERT(m_nkGlobal >= m_nk)(m_nkGlobal)(m_nk);
 
+    m_nodeBlock.property_add(Property("IOSS_INTERNAL_CONTAINED_IN", this, false));
+
     properties.add(Property("component_degree", index_dim));
     properties.add(Property("node_count", node_count));
     properties.add(Property("cell_count", cell_count));

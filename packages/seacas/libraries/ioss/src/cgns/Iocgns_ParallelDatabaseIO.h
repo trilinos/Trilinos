@@ -156,6 +156,9 @@ namespace Iocgns {
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
 
+    int64_t get_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                      void *data, size_t data_size) const;
+
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
@@ -182,6 +185,9 @@ namespace Iocgns {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
+
+    int64_t put_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                      void *data, size_t data_size) const;
 
     // ID Mapping functions.
     const Ioss::Map &get_map(entity_type type) const;

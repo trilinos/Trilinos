@@ -63,6 +63,19 @@ namespace Ioss {
     std::string contains_string() const override { return "Node"; }
     EntityType  type() const override { return NODEBLOCK; }
 
+    bool is_nonglobal_nodeblock() const { return properties.exists("IOSS_INTERNAL_CONTAINED_IN"); }
+
+    virtual const GroupingEntity *contained_in() const override
+    {
+      if (properties.exists("IOSS_INTERNAL_CONTAINED_IN")) {
+        auto ge = properties.get("IOSS_INTERNAL_CONTAINED_IN").get_pointer();
+        return static_cast<const GroupingEntity *>(ge);
+      }
+      else {
+        return GroupingEntity::contained_in();
+      }
+    }
+
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
     // An example would be 'element_block_count' for a region.
