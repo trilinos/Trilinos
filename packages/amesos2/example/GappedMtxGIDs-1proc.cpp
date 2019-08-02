@@ -395,7 +395,7 @@ readCrsMatrixFromFile (const std::string& matrixFilename,
      "Failed to open file \"" << matrixFilename << "\" on Process 0.");
 
   using Teuchos::RCP;
-  RCP<MAT> A (new MAT (rowMap, 0));
+  RCP<MAT> A (new MAT (rowMap, 2));
 
   if (myRank == 0) 
   {
