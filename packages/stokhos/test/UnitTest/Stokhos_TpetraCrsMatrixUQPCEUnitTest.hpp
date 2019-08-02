@@ -2276,4 +2276,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 #define CRSMATRIX_UQ_PCE_TESTS_N(N)                                     \
   typedef Stokhos::DeviceForNode2<N>::type Device;                      \
   typedef Stokhos::DynamicStorage<int,double,Device::execution_space> DS; \
-  CRSMATRIX_UQ_PCE_TESTS_SLGN(DS, int, int, N)
+  using default_local_ordinal_type = Tpetra::Map<>::local_ordinal_type; \
+  using default_global_ordinal_type = Tpetra::Map<>::global_ordinal_type; \
+  CRSMATRIX_UQ_PCE_TESTS_SLGN(DS, default_local_ordinal_type, default_global_ordinal_type, N)

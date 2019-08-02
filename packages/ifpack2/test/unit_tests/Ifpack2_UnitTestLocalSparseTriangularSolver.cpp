@@ -52,6 +52,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
+#include "KokkosSparse_trsv.hpp"
 
 namespace { // (anonymous)
 

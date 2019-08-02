@@ -77,7 +77,7 @@ class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                          MatrixDevice,
                                          MatrixMemory,
                                          MatrixSize>,
-                Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
+                Kokkos::View< const Sacado::UQ::PCE<InputStorage>*,
                               InputP... >,
                 Kokkos::View< Sacado::UQ::PCE<OutputStorage>*,
                               OutputP... >
@@ -98,7 +98,7 @@ public:
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename Kokkos::CijkType<matrix_values_type>::type tensor_type;
   typedef typename tensor_type::size_type size_type;
-  typedef Kokkos::View< InputVectorValue*,
+  typedef Kokkos::View< const InputVectorValue*,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         OutputP... > output_vector_type;
@@ -161,7 +161,7 @@ public:
     else
       for ( size_type j = 0 ; j < m_tensor.dimension() ; ++j )
         y[j] = m_b * y[j] ;
-    //loop over cols of A 
+    //loop over cols of A
     for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
       const input_scalar * const x  = & m_x( 0 , m_A_graph.entries(iEntry) );
       const matrix_scalar * const A = & m_A_values( iEntry , 0 );
@@ -474,7 +474,7 @@ class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                          MatrixDevice,
                                          MatrixMemory,
                                          MatrixSize>,
-                Kokkos::View< Sacado::UQ::PCE<InputStorage>**,
+                Kokkos::View< const Sacado::UQ::PCE<InputStorage>**,
                               InputP... >,
                 Kokkos::View< Sacado::UQ::PCE<OutputStorage>**,
                               OutputP... >
@@ -495,7 +495,7 @@ public:
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename Kokkos::CijkType<matrix_values_type>::type tensor_type;
   typedef typename tensor_type::size_type size_type;
-  typedef Kokkos::View< InputVectorValue**,
+  typedef Kokkos::View< const InputVectorValue**,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue**,
                         OutputP... > output_vector_type;
@@ -899,7 +899,7 @@ class MeanMultiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                          MatrixDevice,
                                          MatrixMemory,
                                          MatrixSize>,
-                Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
+                Kokkos::View< const Sacado::UQ::PCE<InputStorage>*,
                               InputP... >,
                 Kokkos::View< Sacado::UQ::PCE<OutputStorage>*,
                               OutputP... >
@@ -917,7 +917,7 @@ public:
                                    MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename MatrixValue::ordinal_type size_type;
-  typedef Kokkos::View< InputVectorValue*,
+  typedef Kokkos::View< const InputVectorValue*,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         OutputP... > output_vector_type;
@@ -1168,7 +1168,7 @@ class MeanMultiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                          MatrixDevice,
                                          MatrixMemory,
                                          MatrixSize>,
-                    Kokkos::View< Sacado::UQ::PCE<InputStorage>**,
+                    Kokkos::View< const Sacado::UQ::PCE<InputStorage>**,
                                   InputP... >,
                     Kokkos::View< Sacado::UQ::PCE<OutputStorage>**,
                                   OutputP... >
@@ -1184,7 +1184,7 @@ public:
                                    MatrixDevice,
                                    MatrixMemory,
                                    MatrixSize> matrix_type;
-  typedef Kokkos::View< InputVectorValue**,
+  typedef Kokkos::View< const InputVectorValue**,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue**,
                         OutputP... > output_vector_type;
@@ -1200,11 +1200,11 @@ public:
                      const input_scalar & a = input_scalar(1) ,
                      const output_scalar & b = output_scalar(0) )
   {
-    typedef Kokkos::View< InputVectorValue*,
+    typedef Kokkos::View< const InputVectorValue*,
       InputP... > input_vector_1d_type;
     typedef Kokkos::View< OutputVectorValue*,
       OutputP... > output_vector_1d_type;
-    typedef MeanMultiply<matrix_type,input_vector_1d_type,
+    typedef MeanMultiply<matrix_type, input_vector_1d_type,
       output_vector_1d_type> MeanMultiply1D;
     const size_type num_col = x.extent(1);
     for (size_type i=0; i<num_col; ++i) {
@@ -1243,9 +1243,9 @@ spmv(
 {
   typedef Kokkos::View< OutputType, OutputP... > OutputVectorType;
   typedef Kokkos::View< InputType, InputP... > InputVectorType;
-  typedef Stokhos::Multiply<MatrixType,InputVectorType,
+  typedef Stokhos::Multiply<MatrixType, typename InputVectorType::const_type,
                             OutputVectorType> multiply_type;
-  typedef Stokhos::MeanMultiply<MatrixType,InputVectorType,
+  typedef Stokhos::MeanMultiply<MatrixType, typename InputVectorType::const_type,
                                 OutputVectorType> mean_multiply_type;
 
   if(mode[0]!='N') {
@@ -1300,22 +1300,26 @@ spmv(
   else {
     typedef Kokkos::View< OutputType, OutputP... > OutputVectorType;
     typedef Kokkos::View< InputType, InputP... > InputVectorType;
-    typedef Stokhos::Multiply<MatrixType,InputVectorType,
+
+    typedef Stokhos::Multiply<MatrixType, typename InputVectorType::const_type,
                               OutputVectorType> multiply_type;
-    typedef Stokhos::MeanMultiply<MatrixType,InputVectorType,
+    typedef Stokhos::MeanMultiply<MatrixType, typename InputVectorType::const_type,
                                   OutputVectorType> mean_multiply_type;
 
     if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
       Kokkos::Impl::raise_error(
         "Stokhos spmv not implemented for non-constant a or b");
     }
+
+    typename InputVectorType::const_type x_const = x;
+
     if (dimension_scalar(A.values) == 1 && dimension_scalar(x) != 1) {
-      mean_multiply_type::apply( A, x, y,
+      mean_multiply_type::apply( A, x_const, y,
                                  Sacado::Value<AlphaType>::eval(a),
                                  Sacado::Value<BetaType>::eval(b));
      }
     else
-      multiply_type::apply( A, x, y,
+      multiply_type::apply( A, x_const, y,
                             Sacado::Value<AlphaType>::eval(a),
                             Sacado::Value<BetaType>::eval(b));
   }
