@@ -109,14 +109,22 @@ namespace Intrepid2 {
 #endif
   
 // adapted from Kokkos_Macros.hpp
+// adapted from Kokkos_Macros.hpp
 #if defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
   #if defined(KOKKOS_COMPILER_CLANG)
     #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit) __attribute__((deprecated(msg,fixit)))
     #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
   #else // GNU
-    #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
-    #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg) __attribute__((deprecated(msg)))
-    // see https://gcc.gnu.org/onlinedocs/gcc-4.9.0/gcc/Function-Attributes.html
+    #if not defined(KOKKOS_ENABLE_CUDA)
+      #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
+      #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg) __attribute__((deprecated(msg)))
+      // see https://gcc.gnu.org/onlinedocs/gcc-4.9.0/gcc/Function-Attributes.html
+    #else
+      // for unknown reasons, the CUDA compilers seem to have trouble with this gcc feature
+      // we therefore disable typedef deprecation warnings on CUDA
+      #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
+      #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg) __attribute__((deprecated(msg)))
+    #endif
   #endif
 #else
   #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
