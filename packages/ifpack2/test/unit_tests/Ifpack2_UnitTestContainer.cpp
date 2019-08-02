@@ -123,14 +123,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
   // ====================================== //
 
   // Set IDs to grab the whole matrix
-  Teuchos::Array<typename CRS::local_ordinal_type> localRows (num_rows_per_proc);
+  Teuchos::Array<Teuchos::Array<typename CRS::local_ordinal_type>> blockRows(1);
+  blockRows[0].resize(num_rows_per_proc);
   for (size_t i = 0; i < num_rows_per_proc; ++i) {
-    localRows[i] = i;
+    blockRows[0][i] = i;
   }
 
   out << "SparseContainer constructor" << endl;
 
-  Ifpack2::SparseContainer<ROW, ILUTlo> MyContainer (crsmatrix, localRows);
+  Ifpack2::SparseContainer<ROW, ILUTlo> MyContainer (crsmatrix, blockRows, Teuchos::null, false);
 
   out << "Setting SparseContainer parameters" << endl;
 
@@ -231,9 +232,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   vec_type d (rowMap);
 
   // Set indices to grab the whole matrix
-  Array<LocalOrdinal> localRows (numRowsPerProc);
+  Array<Array<LocalOrdinal>> blockRows(1);
+  blockRows[0].resize(numRowsPerProc);
   for (size_t i = 0; i < numRowsPerProc; ++i) {
-    localRows[i] = i;
+    blockRows[0][i] = i;
   }
 
   // For all the DenseContainer operations, we take special care to
@@ -248,7 +250,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   out << "DenseContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    MyContainer = Teuchos::rcp (new container_type (A, localRows));
+    MyContainer = Teuchos::rcp (new container_type (A, blockRows, Teuchos::null, false));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
@@ -309,7 +311,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   // DenseContainer only solves the global system exactly
   // if there is only one MPI process in the communicator.
   if (rowMap->getComm ()->getSize () == 1) {
-    localSuccess = (errNorm <= 1.0e2 * STS::eps ()) ? 1 : 0;
+    localSuccess = (errNorm <= magnitude_type(1.0e2) * STS::eps ()) ? 1 : 0;
     globalSuccess = 1;
     reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
                          localSuccess, outArg (globalSuccess));
@@ -321,7 +323,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
 
   out << "Computing results of apply() and weightedApply() "
       << "(they should be the same in this case)" << endl;
-  TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), 1.0e2*STS::eps () );
+  TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), magnitude_type(1.0e2) * STS::eps () );
 }
 
 // Unit test for BandedContainer.
@@ -379,9 +381,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   vec_type d (rowMap);
 
   // Set indices to grab the whole matrix
-  Array<LocalOrdinal> localRows (numRowsPerProc);
+  Array<Array<LocalOrdinal>> blockRows(1);
+  blockRows[0].resize(numRowsPerProc);
   for (size_t i = 0; i < numRowsPerProc; ++i) {
-    localRows[i] = i;
+    blockRows[0][i] = i;
   }
 
   // For all the BandedContainer operations, we take special care to
@@ -396,9 +399,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   out << "BandedContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    const Teuchos::ParameterList params = Teuchos::ParameterList();
-    MyContainer = Teuchos::rcp (new container_type (A, localRows));
-    MyContainer->setParameters(params);
+    MyContainer = Teuchos::rcp (new container_type (A, blockRows, Teuchos::null, false));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
@@ -408,7 +409,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
                        localSuccess, outArg (globalSuccess));
   TEST_EQUALITY_CONST( globalSuccess, 1 );
 
-  out << "DenseContainer::setParameters" << endl;
+  out << "BandedContainer::setParameters" << endl;
   try {
     const Teuchos::ParameterList params = Teuchos::ParameterList();
     MyContainer->setParameters(params);
@@ -421,7 +422,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
                        localSuccess, outArg (globalSuccess));
   TEST_EQUALITY_CONST( globalSuccess, 1 );
 
-  out << "DenseContainer::initialize" << endl;
+  out << "BandedContainer::initialize" << endl;
   try {
     MyContainer->initialize ();
     localSuccess = 1;
@@ -433,7 +434,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
                        localSuccess, outArg (globalSuccess));
   TEST_EQUALITY_CONST( globalSuccess, 1 );
 
-  out << "DenseContainer::compute" << endl;
+  out << "BandedContainer::compute" << endl;
   try {
     MyContainer->compute ();
     localSuccess = 1;
@@ -448,7 +449,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   // Apply the DenseContainer to solve the linear system Ax=b for x.
   vec_type x (rowMap);
   x.putScalar (0.0);
-  out << "DenseContainer::apply" << endl;
+  out << "BandedContainer::apply" << endl;
   try {
     MyContainer->applyMV(b, x);
     localSuccess = 1;
@@ -472,21 +473,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   // DenseContainer only solves the global system exactly
   // if there is only one MPI process in the communicator.
   if (rowMap->getComm ()->getSize () == 1) {
-    localSuccess = (errNorm <= 1.0e2 * STS::eps ()) ? 1 : 0;
+    localSuccess = (errNorm <= magnitude_type(1.0e2) * STS::eps ()) ? 1 : 0;
     globalSuccess = 1;
     reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
                          localSuccess, outArg (globalSuccess));
   }
 
-  // FIXME: why is this not working?? It seems that the gather call from X to X_local is failing (maybe due to problems with localRows?)
-  // TODO second call to apply not working due to problems with local rows???
-  //out << "DenseContainer::weightedApply" << endl;
-  //d.putScalar (1.0);
-  //MyContainer->weightedApply (b, y, d);
-  //
-  //out << "Computing results of apply() and weightedApply() "
-  //    << "(they should be the same in this case)" << endl;
-  //TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), 1.0e2*STS::eps () );
+  out << "DenseContainer::weightedApply" << endl;
+  d.putScalar (1.0);
+  MyContainer->weightedApplyMV(b, y, d);
+
+  out << "Computing results of apply() and weightedApply() "
+      << "(they should be the same in this case)" << endl;
+  TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), magnitude_type(1.0e2) * STS::eps () );
 }
 
 // Define the set of unit tests to instantiate in this file.
