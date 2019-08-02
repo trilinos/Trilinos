@@ -70,7 +70,7 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 
 int main(int argc, char *argv[])
 {
-	using namespace std;
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
     using namespace FROSch;
@@ -128,12 +128,12 @@ int main(int argc, char *argv[])
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
 
         ParameterList GaleriList;
-        GaleriList.set("nx", int(N*M));
-        GaleriList.set("ny", int(N*M));
-        GaleriList.set("nz", int(N*M));
-        GaleriList.set("mx", int(N));
-        GaleriList.set("my", int(N));
-        GaleriList.set("mz", int(N));
+        GaleriList.set("nx", GlobalOrdinal(N*M));
+        GaleriList.set("ny", GlobalOrdinal(N*M));
+        GaleriList.set("nz", GlobalOrdinal(N*M));
+        GaleriList.set("mx", GlobalOrdinal(N));
+        GaleriList.set("my", GlobalOrdinal(N));
+        GaleriList.set("mz", GlobalOrdinal(N));
 
         RCP<const Map<LO,GO,NO> > UniqueMap;
         RCP<MultiVector<SC,LO,GO,NO> > Coordinates;
