@@ -128,8 +128,8 @@ private:
   using typename Container<MatrixType>::ISC;
   using typename ContainerImpl<MatrixType, LSC>::LISC;
 
-  using Container<MatrixType>::mv_type;
-  using Container<MatrixType>::map_type;
+  using typename Container<MatrixType>::mv_type;
+  using typename Container<MatrixType>::map_type;
   using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;
   using typename Container<MatrixType>::vector_type;
   using typename Container<MatrixType>::import_type;
