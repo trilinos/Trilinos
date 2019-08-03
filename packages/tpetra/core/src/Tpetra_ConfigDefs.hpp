@@ -219,12 +219,6 @@ namespace TpetraExamples {
 }
 
 namespace Tpetra {
-  //! Namespace for %Tpetra Reduction/Tranformation Interface
-  namespace RTI {
-  }
-}
-
-namespace Tpetra {
   //! Namespace for external %Tpetra functionality
   namespace Ext {
   }
