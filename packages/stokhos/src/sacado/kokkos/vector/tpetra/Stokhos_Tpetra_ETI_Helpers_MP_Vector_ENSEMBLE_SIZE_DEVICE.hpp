@@ -91,7 +91,9 @@
 #endif
 
 #define INSTANTIATE_TPETRA_MP_VECTOR_WRAPPER_NODES(INSTMACRO)           \
-  INSTANTIATE_MP_VECTOR_S(INSTMACRO, int, int, Kokkos_Compat_Kokkos@DEVICE@WrapperNode)
+  using default_local_ordinal_type = Tpetra::Map<>::local_ordinal_type; \
+  using default_global_ordinal_type = Tpetra::Map<>::global_ordinal_type; \
+  INSTANTIATE_MP_VECTOR_S(INSTMACRO, default_local_ordinal_type, default_global_ordinal_type, Kokkos_Compat_Kokkos@DEVICE@WrapperNode)
 
 #define INSTANTIATE_TPETRA_MP_VECTOR_WRAPPER_NODES_SD(INSTMACRO)           \
   INSTANTIATE_MP_VECTOR_S_SD(INSTMACRO, Kokkos_Compat_Kokkos@DEVICE@WrapperNode)

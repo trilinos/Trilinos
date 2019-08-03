@@ -293,6 +293,9 @@ namespace Xpetra {
     size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("TpetraCrsMatrix::getNumEntriesInLocalRow"); return mtx_->getNumEntriesInLocalRow(localRow); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("TpetraCrsMatrix::getNumEntriesInGlobalRow"); return mtx_->getNumEntriesInGlobalRow(globalRow); }
+
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalMaxNumRowEntries"); return mtx_->getGlobalMaxNumRowEntries(); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -231,17 +231,30 @@ namespace FROSch {
             //------------------------------------------------------------------------------------------------------------------------
             // Matrix to the new communicator
             if (OnCoarseSolveComm_) {
-                CoarseMatrix_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,k0->getGlobalMaxNumRowEntries());
+                LO numRows = tmpCoarseMatrix->getNodeNumRows();
+                Teuchos::ArrayRCP<size_t> elemsPerRow(numRows);
                 ConstGOVecView indices;
                 ConstSCVecView values;
-                for (UN i=0; i<tmpCoarseMatrix->getNodeNumRows(); i++) {
-                    tmpCoarseMatrix->getGlobalRowView(CoarseSolveMap_->getGlobalElement(i),indices,values);
+                for (LO i = 0; i < numRows; i++) {
+                  GO globalRow = CoarseSolveMap_->getGlobalElement(i);
+                  size_t numEntries = tmpCoarseMatrix->getNumEntriesInGlobalRow(globalRow);
+                  if(numEntries == 0)
+                  {
+                    //Always add the diagonal for empty rows
+                    numEntries = 1;
+                  }
+                  elemsPerRow[i] = numEntries;
+                }
+                CoarseMatrix_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_, elemsPerRow, Xpetra::StaticProfile);
+                for (LO i = 0; i < numRows; i++) {
+                    GO globalRow = CoarseSolveMap_->getGlobalElement(i);
+                    tmpCoarseMatrix->getGlobalRowView(globalRow,indices,values);
                     if (indices.size()>0) {
-                        CoarseMatrix_->insertGlobalValues(CoarseSolveMap_->getGlobalElement(i),indices,values);
+                        CoarseMatrix_->insertGlobalValues(globalRow,indices,values);
                     } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
-                        GOVec indices(1,CoarseSolveMap_->getGlobalElement(i));
+                        GOVec indices(1,globalRow);
                         SCVec values(1,1.0);
-                        CoarseMatrix_->insertGlobalValues(CoarseSolveMap_->getGlobalElement(i),indices(),values());
+                        CoarseMatrix_->insertGlobalValues(globalRow,indices(),values());
                     }
                     
                 }

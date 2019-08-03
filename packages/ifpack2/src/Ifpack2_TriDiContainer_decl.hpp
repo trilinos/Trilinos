@@ -46,8 +46,6 @@
 /// \brief Ifpack2::TriDiContainer class declaration
 
 #include "Ifpack2_Container.hpp"
-#include "Ifpack2_Details_MultiVectorLocalGatherScatter.hpp"
-#include "Ifpack2_Details_LapackSupportsScalar.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
@@ -102,13 +100,11 @@ namespace Ifpack2 {
 /// to do so will need to modify the extract() method, so that it
 /// translates explicitly between local row and column indices,
 /// instead of just assuming that they are the same.
-template<class MatrixType, class LocalScalarType,
-  bool lapackSupportsScalar = ::Ifpack2::Details::LapackSupportsScalar<LocalScalarType>::value>
-    class TriDiContainer;
 
 template<class MatrixType, class LocalScalarType>
-class TriDiContainer<MatrixType, LocalScalarType, true> :
-    public Container<MatrixType> {
+class TriDiContainer
+: public ContainerImpl<MatrixType, LocalScalarType>
+{
   //! @name Internal typedefs (private)
   //@{
 private:
@@ -117,30 +113,32 @@ private:
   /// This must be a Tpetra::RowMatrix specialization.  It may have
   /// entirely different template parameters (e.g., \c scalar_type)
   /// than \c InverseType.
-  typedef MatrixType matrix_type;
+  using matrix_type = MatrixType;
   //! The second template parameter of this class.
-  typedef LocalScalarType local_scalar_type;
 
   //! The type of entries in the input (global) matrix.
-  typedef typename Container<MatrixType>::scalar_type scalar_type;
+  using typename Container<MatrixType>::SC;
   //! The type of local indices in the input (global) matrix.
-  typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
+  using typename Container<MatrixType>::LO;
   //! The type of global indices in the input (global) matrix.
-  typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
+  using typename Container<MatrixType>::GO;
   //! The Node type of the input (global) matrix.
-  typedef typename Container<MatrixType>::node_type node_type;
+  using typename Container<MatrixType>::NO;
+  using LSC = LocalScalarType;
 
-  typedef typename Container<MatrixType>::mv_type mv_type;
-  typedef typename Container<MatrixType>::map_type map_type;
-  typedef typename Container<MatrixType>::vector_type vector_type;
-  typedef typename Container<MatrixType>::partitioner_type partitioner_type;
-  typedef typename Container<MatrixType>::import_type import_type;
+  using typename Container<MatrixType>::mv_type;
+  using typename Container<MatrixType>::map_type;
+  using typename Container<MatrixType>::vector_type;
+  using typename Container<MatrixType>::import_type;
 
-  typedef typename Container<MatrixType>::HostView HostView;
-  typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
-  typedef typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace> HostViewLocal;
+  using typename Container<MatrixType>::ISC;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::LISC;
+  using typename Container<MatrixType>::HostView;
+  using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;
+  using HostViewLocal = typename Kokkos::View<LSC**, Kokkos::HostSpace>;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubviewLocal;
 
-  static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>::value,
+  static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<SC, LO, GO, NO>>::value,
                  "Ifpack2::TriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
 
   /// \brief The (base class) type of the input matrix.
@@ -151,7 +149,7 @@ private:
   /// general as possible, so we always accept the matrix as a
   /// Tpetra::RowMatrix.  This typedef is the appropriate
   /// specialization of Tpetra::RowMatrix.
-  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
+  using typename Container<MatrixType>::row_matrix_type;
   //@}
 public:
   //! \name Constructor and destructor
@@ -159,25 +157,20 @@ public:
 
   /// \brief Constructor.
   ///
-  /// \brief matrix [in] The original input matrix.  This Container
-  ///   will construct a local diagonal block from the rows given by
-  ///   <tt>localRows</tt>.
-  ///
-  /// \param localRows [in] The set of (local) rows assigned to this
-  ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
-  ///   <tt>getNumRows() - 1</tt>) indicates the SparseContainer's
-  ///   row, and j indicates the local row in the calling process.
-  ///   <tt>localRows.size()</tt> gives the number of rows in the
-  ///   local matrix on each process.  This may be different on
-  ///   different processes.
+  /// \param matrix [in] The original input matrix.  This Container
+  ///   will construct local diagonal blocks from its rows according to
+  ///   <tt>partitions</tt>.
+  /// \param partitioner [in] The Partitioner object that assigns
+  ///   local rows of the input matrix to blocks.
+  /// \param pointIndexed [in] If the input matrix is a \c Tpetra::BlockCrsMatrix,
+  ///    whether elements of \c partitions[k] identify rows within blocks (true) or
+  ///    whole blocks (false).
   TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                  const Teuchos::Array<Teuchos::Array<LO> >& partitions,
                   const Teuchos::RCP<const import_type>& importer,
-                  int OverlapLevel,
-                  scalar_type DampingFactor);
+                  bool pointIndexed);
 
-  TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  const Teuchos::Array<local_ordinal_type>& localRows);
+  TriDiContainer (const TriDiContainer<MatrixType, LocalScalarType>& rhs) = delete;
 
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~TriDiContainer ();
@@ -185,15 +178,6 @@ public:
   //@}
   //! \name Get and set methods
   //@{
-
-  //! Whether the container has been successfully initialized.
-  virtual bool isInitialized() const;
-
-  //! Whether the container has been successfully computed.
-  virtual bool isComputed() const;
-
-  //! Set all necessary parameters.
-  virtual void setParameters(const Teuchos::ParameterList& List);
 
   //@}
   //! \name Mathematical functions
@@ -207,34 +191,12 @@ public:
 
   void clearBlocks();
 
-  //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
-  virtual void
-  apply (HostView& X,
-         HostView& Y,
-         int blockIndex,
-         int stride,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
-
-  void applyImpl (HostViewLocal& X,
-                  HostViewLocal& Y,
+  void solveBlock(HostSubviewLocal X,
+                  HostSubviewLocal Y,
                   int blockIndex,
-                  int stride,
                   Teuchos::ETransp mode,
-                  local_scalar_type alpha,
-                  local_scalar_type beta) const;
-
-  //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
-  virtual void
-  weightedApply (HostView& X,
-                 HostView& Y,
-                 HostView& W,
-                 int blockIndex,
-                 int stride,
-                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+                  LSC alpha,
+                  LSC beta) const;
 
   //@}
   //! \name Miscellaneous methods
@@ -263,11 +225,8 @@ public:
   /// \brief Get the name of this container type for Details::constructContainer()
   static std::string getName();
 private:
-  //! Copy constructor: Declared but not implemented, to forbid copy construction.
-  TriDiContainer (const TriDiContainer<MatrixType, LocalScalarType>& rhs);
-
-  //! Extract the submatrix identified by the local indices set by the constructor.
-  void extract ();
+  //! Populate the diagonal blocks
+  void extract();
 
   /// \brief Factor the extracted submatrix.
   ///
@@ -275,223 +234,18 @@ private:
   void factor ();
 
   //! The local diagonal blocks, which compute() extracts.
-  std::vector<Teuchos::SerialTriDiMatrix<int, local_scalar_type>> diagBlocks_;
-
-  //! Temporary X vector used in apply().
-  mutable std::vector<HostViewLocal> X_local;
-
-  //! Temporary Y vector used in apply().
-  mutable std::vector<HostViewLocal> Y_local;
+  std::vector<Teuchos::SerialTriDiMatrix<int, LSC>> diagBlocks_;
 
   //! Permutation array from LAPACK (GETRF).
-  Teuchos::Array<int> ipiv_;
-
-  //! If \c true, the container has been successfully initialized.
-  bool IsInitialized_;
-
-  //! If \c true, the container has been successfully computed.
-  bool IsComputed_;
+  mutable Teuchos::Array<int> ipiv_;
 
   //! Scalar data for all blocks
-  local_scalar_type* scalars_;
+  Teuchos::Array<LSC> scalars_;
 
   //! Offsets in scalars_ array for all blocks
   Teuchos::Array<int> scalarOffsets_;
 };
 
-template<class MatrixType, class LocalScalarType>
-class TriDiContainer<MatrixType, LocalScalarType, false> :
-    public Container<MatrixType> {
-  //! @name Internal typedefs (private)
-  //@{
-private:
-  /// \brief The first template parameter of this class.
-  ///
-  /// This must be a Tpetra::RowMatrix specialization.  It may have
-  /// entirely different template parameters (e.g., \c scalar_type)
-  /// than \c InverseType.
-  typedef MatrixType matrix_type;
-  //! The second template parameter of this class.
-  typedef LocalScalarType local_scalar_type;
-
-  //! The type of entries in the input (global) matrix.
-  typedef typename Container<MatrixType>::scalar_type scalar_type;
-  //! The type of local indices in the input (global) matrix.
-  typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
-  //! The type of global indices in the input (global) matrix.
-  typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
-  //! The Node type of the input (global) matrix.
-  typedef typename Container<MatrixType>::node_type node_type;
-
-  typedef typename Container<MatrixType>::mv_type mv_type;
-  typedef typename Container<MatrixType>::map_type map_type;
-  typedef typename Container<MatrixType>::vector_type vector_type;
-  typedef typename Container<MatrixType>::partitioner_type partitioner_type;
-  typedef typename Container<MatrixType>::import_type import_type;
-
-  typedef typename Container<MatrixType>::HostView HostView;
-  typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
-  typedef typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace> HostViewLocal;
-
-  static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>::value,
-                 "Ifpack2::TriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
-
-  /// \brief The (base class) type of the input matrix.
-  ///
-  /// The input matrix to the constructor may be either a
-  /// Tpetra::RowMatrix specialization or a Tpetra::CrsMatrix
-  /// specialization.  However, we want to make the constructor as
-  /// general as possible, so we always accept the matrix as a
-  /// Tpetra::RowMatrix.  This typedef is the appropriate
-  /// specialization of Tpetra::RowMatrix.
-  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
-  //@}
-public:
-  //! \name Constructor and destructor
-  //@{
-
-  /// \brief Constructor.
-  ///
-  /// \brief matrix [in] The original input matrix.  This Container
-  ///   will construct a local diagonal block from the rows given by
-  ///   <tt>localRows</tt>.
-  ///
-  /// \param localRows [in] The set of (local) rows assigned to this
-  ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
-  ///   <tt>getNumRows() - 1</tt>) indicates the SparseContainer's
-  ///   row, and j indicates the local row in the calling process.
-  ///   <tt>localRows.size()</tt> gives the number of rows in the
-  ///   local matrix on each process.  This may be different on
-  ///   different processes.
-  TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                  const Teuchos::RCP<const import_type>& importer,
-                  int OverlapLevel,
-                  scalar_type DampingFactor);
-
-  TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  const Teuchos::Array<local_ordinal_type>& localRows);
-
-  //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~TriDiContainer ();
-
-  //@}
-  //! \name Get and set methods
-  //@{
-
-  //! Whether the container has been successfully initialized.
-  virtual bool isInitialized() const;
-
-  //! Whether the container has been successfully computed.
-  virtual bool isComputed() const;
-
-  //! Set all necessary parameters.
-  virtual void setParameters(const Teuchos::ParameterList& List);
-
-  //@}
-  //! \name Mathematical functions
-  //@{
-
-  //! Do all set-up operations that only require matrix structure.
-  virtual void initialize ();
-
-  //! Extract the local diagonal block and prepare the solver.
-  virtual void compute ();
-
-  void clearBlocks();
-
-  //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
-  virtual void
-  apply (HostView& X,
-         HostView& Y,
-         int blockIndex,
-         int stride,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
-
-  void applyImpl (HostViewLocal& X,
-                  HostViewLocal& Y,
-                  int blockIndex,
-                  int stride,
-                  Teuchos::ETransp mode,
-                  local_scalar_type alpha,
-                  local_scalar_type beta) const;
-
-  //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
-  virtual void
-  weightedApply (HostView& X,
-                 HostView& Y,
-                 HostView& W,
-                 int blockIndex,
-                 int stride,
-                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
-
-  //@}
-  //! \name Miscellaneous methods
-  //@{
-
-  /// \brief Print information about this object to the given output stream.
-  ///
-  /// operator<< uses this method.
-  virtual std::ostream& print (std::ostream& os) const;
-
-  //@}
-  //! @name Implementation of Teuchos::Describable
-  //@{
-
-  //! A one-line description of this object.
-  virtual std::string description () const;
-
-  //! Print the object with some verbosity level to the given FancyOStream.
-  virtual void
-  describe (Teuchos::FancyOStream &out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
-
-  //@}
-
-  /// \brief Get the name of this container type for Details::constructContainer()
-  static std::string getName();
-private:
-  //! Copy constructor: Declared but not implemented, to forbid copy construction.
-  TriDiContainer (const TriDiContainer<MatrixType, LocalScalarType>& rhs);
-
-  //! Extract the submatrix identified by the local indices set by the constructor.
-  void extract ();
-
-  /// \brief Factor the extracted submatrix.
-  ///
-  /// Call this after calling extract().
-  void factor ();
-
-  //! The local diagonal blocks, which compute() extracts.
-  std::vector<Teuchos::SerialTriDiMatrix<int, local_scalar_type>> diagBlocks_;
-
-  //! Temporary X vector used in apply().
-  mutable std::vector<HostViewLocal> X_local;
-
-  //! Temporary Y vector used in apply().
-  mutable std::vector<HostViewLocal> Y_local;
-
-  //! Permutation array from LAPACK (GETRF).
-  Teuchos::Array<int> ipiv_;
-
-  //! If \c true, the container has been successfully initialized.
-  bool IsInitialized_;
-
-  //! If \c true, the container has been successfully computed.
-  bool IsComputed_;
-
-  //! Scalar data for all blocks
-  local_scalar_type* scalars_;
-
-  //! Offsets in scalars_ array for all blocks
-  Teuchos::Array<int> scalarOffsets_;
-};
-
-}// namespace Ifpack2
+} // namespace Ifpack2
 
 #endif // IFPACK2_TRIDICONTAINER_DECL_HPP

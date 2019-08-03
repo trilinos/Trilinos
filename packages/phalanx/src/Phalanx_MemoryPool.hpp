@@ -91,7 +91,7 @@ namespace PHX {
     /// Assigns memory to a view, allocates new memory if needed.
     template<class View>
     void bindViewMemory(const PHX::FieldTag& tag, View& view) {
-      const size_t bytes = view.span();
+      //const size_t bytes = view.span();
 
       // Find an unused memory allocation.
 

@@ -1,9 +1,8 @@
 // @HEADER
-//
 // ***********************************************************************
 //
-//             Xpetra: A linear algebra interface package
-//                  Copyright 2012 Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,17 +34,23 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// ************************************************************************
 // @HEADER
-#ifndef XPETRA_MAPEXTRACTOR_HPP_
-#define XPETRA_MAPEXTRACTOR_HPP_
 
-#include <Xpetra_MapExtractor_decl.hpp>
+#ifndef TPETRA_LOCALOPERATOR_FWD_HPP
+#define TPETRA_LOCALOPERATOR_FWD_HPP
 
-#endif /* XPETRA_MAPEXTRACTOR_HPP_ */
+#include "Tpetra_Details_DefaultTypes.hpp"
+
+/// \file Tpetra_LocalOperator_fwd.hpp
+/// \brief Forward declaration of Tpetra::LocalOperator
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Tpetra {
+template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+         class Device = ::Tpetra::Details::DefaultTypes::node_type::device_type>
+class LocalOperator;
+} // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+#endif // TPETRA_LOCALOPERATOR_FWD_HPP
