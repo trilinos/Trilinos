@@ -308,7 +308,7 @@ graph_idInput_t * create_adapter<graph_idInput_t>(RCP<const Comm<int> > comm,
   Teuchos::RCP<const map_t> map = rcp(new map_t(gNvtx, indexList, 0, comm));
 
   // Make some stuff in the graph
-  size_t maxRowLen = 1;
+  size_t maxRowLen = 2;
   Teuchos::RCP<matrix_t> matrix = rcp(new matrix_t(map, maxRowLen));
 
   // I picked this graph as a simple test case.
