@@ -2806,9 +2806,15 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   // make domain map
   RCP<const map_t> domainMap = rcp(new map_t(global_nodes,0,this->tcomm_));
 
-  // make the element-node adjacency matrix
-  Teuchos::RCP<tcrsMatrix_t> C = rcp(new tcrsMatrix_t(rowMap,0));
+  // Get max number of nodes per element
+  int blks = this->pamgen_mesh->num_elem_blk;
+  int max_nodes_per_el = 0;
+  for(int i = 0; i < blks; i++)
+    if (this->pamgen_mesh->nodes_per_element[i] > max_nodes_per_el)
+      max_nodes_per_el = this->pamgen_mesh->nodes_per_element[i];
 
+  // make the element-node adjacency matrix
+  Teuchos::RCP<tcrsMatrix_t> C = rcp(new tcrsMatrix_t(rowMap,max_nodes_per_el));
 
   Array<zgno_t> g_el_ids(local_els);
   for (size_t k = 0; k < local_els; ++k) {
@@ -2819,8 +2825,6 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   for (size_t k = 0; k < local_nodes; ++k) {
     g_node_ids[k] = pamgen_mesh->global_node_numbers[k]-1;
   }
-
-  int blks = this->pamgen_mesh->num_elem_blk;
 
   zlno_t el_no = 0;
   zscalar_t one = static_cast<zscalar_t>(1);
@@ -2854,10 +2858,10 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   RCP<tcrsMatrix_t> A = rcp(new tcrsMatrix_t(rowMap,0));
   Tpetra::MatrixMatrix::Multiply(*C, false, *C, true, *A);
 
-  // remove entris not adjacent
+  // remove entries not adjacent
   // make graph
 //  if(rank == 0) std::cout << "Writing M_... " << std::endl;
-  this->M_ = rcp(new tcrsMatrix_t(rowMap,0));
+  this->M_ = rcp(new tcrsMatrix_t(rowMap, A->getGlobalMaxNumRowEntries()));
 
 //  if(rank == 0) std::cout << "\nSetting graph of connectivity..." << std::endl;
   Teuchos::ArrayView<const zgno_t> rowMapElementList =

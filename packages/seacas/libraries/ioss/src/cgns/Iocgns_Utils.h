@@ -88,7 +88,7 @@ namespace Iocgns {
 
     static void update_db_zone_property(int cgns_file_ptr, const Ioss::Region *region,
                                         int myProcessor, bool is_parallel, bool is_parallel_io);
-    static int  get_db_zone(const Ioss::EntityBlock *block);
+    static int  get_db_zone(const Ioss::GroupingEntity *entity);
     static void set_field_index(const Ioss::Field &field, size_t index, CG_GridLocation_t location);
     static bool is_cell_field(const Ioss::Field &field);
 

@@ -145,17 +145,6 @@ ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_ML)
 # mfh 01 Jan 2017: 
 # Fix for https://github.com/trilinos/Trilinos/issues/935
 ASSERT_DEFINED (${PROJECT_NAME}_ENABLE_Epetra)
-IF (${PACKAGE_NAME}_ENABLE_ML AND ${PROJECT_NAME}_ENABLE_Epetra)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    BlockRelaxationPerformance
-    SOURCES
-      Ifpack2_UnitTestBlockRelaxationPerf.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS ""
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    )
-ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SolverFactory

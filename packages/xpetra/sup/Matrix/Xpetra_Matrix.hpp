@@ -358,6 +358,10 @@ namespace Xpetra {
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const =0;
 
+    //! Returns the current number of entries in the specified global row.
+    /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row is not owned by this process. */
+    virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const =0;
+
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
     /** Undefined if isFillActive().
      */

@@ -123,7 +123,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(ContainerFactory, TestTypesAndInput, SC, LO, G
   typedef Ifpack2::Container<row_matrix_type> container_type;
   {
     out << "Try creating a DenseContainer" << endl;
-    auto c = Ifpack2::ContainerFactory<row_matrix_type>::build ("Dense", A, lclRows, import, 0, ONE);
+    auto c = Ifpack2::ContainerFactory<row_matrix_type>::build ("Dense", A, lclRows, import, false);
     static_assert (std::is_same<decltype (c), RCP<container_type> >::value,
                    "The return type of createContainer must be RCP<Container<row_matrix_type> >.");
 
@@ -132,13 +132,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(ContainerFactory, TestTypesAndInput, SC, LO, G
   }
   {
     out << "Try creating a TriDiContainer" << endl;
-    auto c = Ifpack2::ContainerFactory<row_matrix_type>::build ("TriDi", A, lclRows, import, 0, ONE);
+    auto c = Ifpack2::ContainerFactory<row_matrix_type>::build ("TriDi", A, lclRows, import, false);
     auto c_tridi = Teuchos::rcp_dynamic_cast<Ifpack2::TriDiContainer<row_matrix_type, SC> > (c);
     TEUCHOS_ASSERT( ! c_tridi.is_null () );
   }
   {
     out << "Try creating a BandedContainer" << endl;
-    auto c = Ifpack2::ContainerFactory<row_matrix_type>::build ("Banded", A, lclRows, import, 0, ONE);
+    auto c = Ifpack2::ContainerFactory<row_matrix_type>::build ("Banded", A, lclRows, import, false);
     auto c_band = Teuchos::rcp_dynamic_cast<Ifpack2::BandedContainer<row_matrix_type, SC> > (c);
     TEUCHOS_ASSERT( ! c_band.is_null () );
   }

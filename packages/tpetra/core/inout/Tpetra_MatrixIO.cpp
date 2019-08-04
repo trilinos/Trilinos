@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -52,6 +52,7 @@
 #include <exception>
 #include <string>
 #include <cctype>
+#include <fstream>
 
 bool Tpetra::Utils::parseIfmt(Teuchos::ArrayRCP<char> fmt, int &perline, int &width) {
   TEUCHOS_TEST_FOR_EXCEPT(fmt.size() != 0 && fmt[fmt.size()-1] != '\0');
@@ -69,8 +70,8 @@ bool Tpetra::Utils::parseRfmt(Teuchos::ArrayRCP<char> fmt, int &perline, int &wi
   std::transform(fmt.begin(), fmt.end(), fmt, static_cast < int(*)(int) > (std::toupper));
   // find the first left paren '(' and the last right paren ')'
   Teuchos::ArrayRCP<char>::iterator firstLeftParen = std::find( fmt.begin(),  fmt.end(), '(');
-  Teuchos::ArrayRCP<char>::iterator lastRightParen = std::find(std::reverse_iterator<Teuchos::ArrayRCP<char>::iterator>(fmt.end()), 
-                                                               std::reverse_iterator<Teuchos::ArrayRCP<char>::iterator>(fmt.begin()), 
+  Teuchos::ArrayRCP<char>::iterator lastRightParen = std::find(std::reverse_iterator<Teuchos::ArrayRCP<char>::iterator>(fmt.end()),
+                                                               std::reverse_iterator<Teuchos::ArrayRCP<char>::iterator>(fmt.begin()),
                                                                ')').base()-1;
   // select the substring between the parens, including them
   // if neither was found, set the string to empty
@@ -93,14 +94,14 @@ bool Tpetra::Utils::parseRfmt(Teuchos::ArrayRCP<char> fmt, int &perline, int &wi
     if (valformat == 'E' || valformat == 'D' || valformat == 'F') {
       error = false;
     }
-  } 
+  }
   return error;
 }
 
 
-void Tpetra::Utils::readHBHeader(std::ifstream &fin, Teuchos::ArrayRCP<char> &Title, Teuchos::ArrayRCP<char> &Key, Teuchos::ArrayRCP<char> &Type, 
+void Tpetra::Utils::readHBHeader(std::ifstream &fin, Teuchos::ArrayRCP<char> &Title, Teuchos::ArrayRCP<char> &Key, Teuchos::ArrayRCP<char> &Type,
                            int &Nrow, int &Ncol, int &Nnzero, int &Nrhs,
-                           Teuchos::ArrayRCP<char> &Ptrfmt, Teuchos::ArrayRCP<char> &Indfmt, Teuchos::ArrayRCP<char> &Valfmt, Teuchos::ArrayRCP<char> &Rhsfmt, 
+                           Teuchos::ArrayRCP<char> &Ptrfmt, Teuchos::ArrayRCP<char> &Indfmt, Teuchos::ArrayRCP<char> &Valfmt, Teuchos::ArrayRCP<char> &Rhsfmt,
                            int &Ptrcrd, int &Indcrd, int &Valcrd, int &Rhscrd, Teuchos::ArrayRCP<char> &Rhstype) {
   int Totcrd, Neltvl, Nrhsix;
   const int MAXLINE = 81;
@@ -141,7 +142,7 @@ void Tpetra::Utils::readHBHeader(std::ifstream &fin, Teuchos::ArrayRCP<char> &Ti
     TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%16c%16c%20c",Ptrfmt.getRawPtr(),Indfmt.getRawPtr(),Valfmt.getRawPtr()) != 3,                        std::runtime_error, errStr << "error reading formats (line 4)");
   }
   /*  (Optional) Fifth line: */
-  if (Rhscrd != 0 ) { 
+  if (Rhscrd != 0 ) {
     Rhstype.resize(3 + 1,'\0');
     fin.getline(line,MAXLINE);
     TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
@@ -152,17 +153,17 @@ void Tpetra::Utils::readHBHeader(std::ifstream &fin, Teuchos::ArrayRCP<char> &Ti
 
 void Tpetra::Utils::readHBInfo(const std::string &filename, int &M, int &N, int &nz, Teuchos::ArrayRCP<char> &Type, int &Nrhs) {
   std::ifstream fin;
-  int Ptrcrd, Indcrd, Valcrd, Rhscrd; 
+  int Ptrcrd, Indcrd, Valcrd, Rhscrd;
   Teuchos::ArrayRCP<char> Title, Key, Rhstype, Ptrfmt, Indfmt, Valfmt, Rhsfmt;
   try {
     fin.open(filename.c_str(),std::ifstream::in);
     Tpetra::Utils::readHBHeader(fin, Title, Key, Type, M, N, nz, Nrhs,
-                                Ptrfmt, Indfmt, Valfmt, Rhsfmt, 
+                                Ptrfmt, Indfmt, Valfmt, Rhsfmt,
                                 Ptrcrd, Indcrd, Valcrd, Rhscrd, Rhstype);
     fin.close();
   }
   catch (std::exception &e) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
         "Tpetra::Utils::readHBInfo() of filename \"" << filename << "\" caught exception: " << std::endl
         << e.what() << std::endl);
   }
@@ -181,7 +182,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
     // nitty gritty
     int ptrsPerLine, ptrWidth, indsPerLine, indWidth, valsPerLine, valWidth, valPrec;
     char valFlag;
-    // 
+    //
     fin.open(filename.c_str(),std::ifstream::in);
     {
       // we don't care about RHS-related stuff, so declare those vars in an expiring scope
@@ -189,7 +190,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
       Teuchos::ArrayRCP<char> Rhstype, Rhsfmt;
       Teuchos::ArrayRCP<char> TypeArray;
       Tpetra::Utils::readHBHeader(fin, Title, Key, TypeArray, numRows, numCols, numNZ, Nrhs,
-                                  Ptrfmt, Indfmt, Valfmt, Rhsfmt, 
+                                  Ptrfmt, Indfmt, Valfmt, Rhsfmt,
                                   ptrCrd, indCrd, valCrd, rhsCrd, Rhstype);
       if (TypeArray.size() > 0) {
         type.resize(TypeArray.size()-1);
@@ -215,13 +216,13 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
     // if the file is empty, do not touch these ARCPs
     colPtrs = Teuchos::arcp<int>(numCols+1);
     if (numNZ > 0) {
-      rowInds = Teuchos::arcp<int>(numNZ);  
+      rowInds = Teuchos::arcp<int>(numNZ);
       if (readPatternOnly == false) {
         if (readComplex) {
-          vals = Teuchos::arcp<double>(2*numNZ); 
+          vals = Teuchos::arcp<double>(2*numNZ);
         }
         else {
-          vals = Teuchos::arcp<double>(numNZ); 
+          vals = Teuchos::arcp<double>(numNZ);
         }
       }
     }
@@ -313,7 +314,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
     fin.close();
   }
   catch (std::exception &e) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
         "Tpetra::Utils::readHBInfo() of filename \"" << filename << "\" caught exception: " << std::endl
         << e.what() << std::endl);
   }

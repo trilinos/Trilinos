@@ -82,6 +82,31 @@ void multiply(const MatrixType& A,
   multiply_type::apply( A, x, y );
 }
 
+namespace { // (anonymous)
+
+// Work-around for CWG 1558.  See
+// https://en.cppreference.com/w/cpp/types/void_t
+template<class... Ts> struct make_void { typedef void type; };
+template<class... Ts>
+using replace_me_with_void_t_in_cxx17 =
+  typename make_void<Ts...>::type;
+
+template<class T, class = replace_me_with_void_t_in_cxx17<> >
+struct const_type_impl {
+  using type = T;
+};
+
+template<class T>
+struct const_type_impl<T,
+  replace_me_with_void_t_in_cxx17<typename T::const_type> > {
+  using type = typename T::const_type;
+};
+
+template<class T>
+using const_type_t = typename const_type_impl<T>::type;
+
+} // namespace (anonymous)
+
 template <typename MatrixType,
           typename InputVectorType,
           typename OutputVectorType>
@@ -89,7 +114,12 @@ void multiply(const MatrixType& A,
               const InputVectorType& x,
               OutputVectorType& y,
               DefaultMultiply tag) {
-  typedef Multiply<MatrixType,InputVectorType,OutputVectorType> multiply_type;
+  // mfh 29 Jul 2019: Not sure why, but std::vector claims to be a
+  // Kokkos::View using Kokkos::is_view.  This is why I check instead
+  // whether the class has a const_type typedef.
+  using input_vector_type = const_type_t<InputVectorType>;
+  using multiply_type =
+    Multiply<MatrixType, input_vector_type, OutputVectorType>;
   multiply_type::apply( A, x, y );
 }
 

@@ -59,9 +59,10 @@ namespace {
   void info_sidesets(Ioss::Region &region, const Info::Interface &interface);
   void info_coordinate_frames(Ioss::Region &region);
 
-  void info_aliases(Ioss::Region &region, Ioss::GroupingEntity *ige, bool nl_pre, bool nl_post);
+  void info_aliases(const Ioss::Region &region, const Ioss::GroupingEntity *ige, bool nl_pre,
+                    bool nl_post);
 
-  void info_fields(Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
+  void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
                    const std::string &header);
 
   void file_info(const Info::Interface &interface);
@@ -84,7 +85,7 @@ namespace {
     }
   }
 
-  std::string name(Ioss::GroupingEntity *entity)
+  std::string name(const Ioss::GroupingEntity *entity)
   {
     return entity->type_string() + " '" + entity->name() + "'";
   }
@@ -182,37 +183,46 @@ namespace {
     Ioss::io_info_file_info(interface, region);
   }
 
+  void info_nodeblock(Ioss::Region &region, const Ioss::NodeBlock &nb,
+                      const Info::Interface &interface, const std::string &prefix = "")
+  {
+    int64_t num_nodes  = nb.entity_count();
+    int64_t num_attrib = nb.get_property("attribute_count").get_int();
+    fmt::print("\n{}{} {:14n} nodes, {:3d} attributes.\n", prefix, name(&nb), num_nodes,
+               num_attrib);
+    if (interface.check_node_status()) {
+      std::vector<char>    node_status;
+      std::vector<int64_t> ids;
+      nb.get_field_data("node_connectivity_status", node_status);
+      nb.get_field_data("ids", ids);
+      bool header = false;
+      for (size_t j = 0; j < node_status.size(); j++) {
+        if (node_status[j] == 0) {
+          if (!header) {
+            header = true;
+            fmt::print("\t{}Unconnected nodes: {}", prefix, ids[j]);
+          }
+          else {
+            fmt::print(", {}", ids[j]);
+          }
+        }
+      }
+      if (header) {
+        fmt::print("\n");
+      }
+    }
+    if (!nb.is_nonglobal_nodeblock()) {
+      info_aliases(region, &nb, false, true);
+    }
+    info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ");
+    info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient: ");
+  }
+
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interface)
   {
     const Ioss::NodeBlockContainer &nbs = region.get_node_blocks();
     for (auto nb : nbs) {
-      int64_t num_nodes  = nb->entity_count();
-      int64_t num_attrib = nb->get_property("attribute_count").get_int();
-      fmt::print("\n{} {:14n} nodes, {:3d} attributes.\n", name(nb), num_nodes, num_attrib);
-      if (interface.check_node_status()) {
-        std::vector<char>    node_status;
-        std::vector<int64_t> ids;
-        nb->get_field_data("node_connectivity_status", node_status);
-        nb->get_field_data("ids", ids);
-        bool header = false;
-        for (size_t j = 0; j < node_status.size(); j++) {
-          if (node_status[j] == 0) {
-            if (!header) {
-              header = true;
-              fmt::print("\tUnconnected nodes: {}", ids[j]);
-            }
-            else {
-              fmt::print(", {}", ids[j]);
-            }
-          }
-        }
-        if (header) {
-          fmt::print("\n");
-        }
-      }
-      info_aliases(region, nb, false, true);
-      info_fields(nb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
-      info_fields(nb, Ioss::Field::TRANSIENT, "\tTransient: ");
+      info_nodeblock(region, *nb, interface, "");
     }
   }
 
@@ -250,8 +260,8 @@ namespace {
         fmt::print("{:14n} cells, {:14n} nodes ", num_cell, num_node);
 
         info_aliases(region, sb, true, false);
-
         info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
+        info_nodeblock(region, sb->get_node_block(), interface, "\t");
         fmt::print("\n");
 
         if (!sb->m_zoneConnectivity.empty()) {
@@ -472,7 +482,8 @@ namespace {
     }
   }
 
-  void info_aliases(Ioss::Region &region, Ioss::GroupingEntity *ige, bool nl_pre, bool nl_post)
+  void info_aliases(const Ioss::Region &region, const Ioss::GroupingEntity *ige, bool nl_pre,
+                    bool nl_post)
   {
     std::vector<std::string> aliases;
     if (region.get_aliases(ige->name(), aliases) > 0) {
@@ -494,7 +505,8 @@ namespace {
     }
   }
 
-  void info_fields(Ioss::GroupingEntity *ige, Ioss::Field::RoleType role, const std::string &header)
+  void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
+                   const std::string &header)
   {
     Ioss::NameList fields;
     ige->field_describe(role, &fields);

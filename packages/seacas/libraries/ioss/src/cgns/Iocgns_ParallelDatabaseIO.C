@@ -182,15 +182,16 @@ namespace Iocgns {
     dbState         = Ioss::STATE_UNKNOWN;
 
 #if !defined(CGNS_SANDIA_PARALLEL_MODS)
-    fmt::print("WARNING: The CGNS library being used in this executable does *NOT* have the "
-               "CGNS-sandia.patch applied.\n"
-               "         This can result in hangs in parallel exeuctions or, with older versions,\n"
-	       "         very slow execution at large processor counts and can possibly create\n"
-               "         CGNS files which are not readable by applications linked with older HDF5 "
-               "libraries.\n"
-	       "         Note that in some cases, an older version of the patch has been applied\n"
-	       "         which does not define the symbol currently being used to detect the patch.\n"
-               "         Contact gdsjaar@sandia.gov for additional info.\n");
+    fmt::print(
+        "WARNING: The CGNS library being used in this executable does *NOT* have the "
+        "CGNS-sandia.patch applied.\n"
+        "         This can result in hangs in parallel exeuctions or, with older versions,\n"
+        "         very slow execution at large processor counts and can possibly create\n"
+        "         CGNS files which are not readable by applications linked with older HDF5 "
+        "libraries.\n"
+        "         Note that in some cases, an older version of the patch has been applied\n"
+        "         which does not define the symbol currently being used to detect the patch.\n"
+        "         Contact gdsjaar@sandia.gov for additional info.\n");
 #endif
 
 #if IOSS_DEBUG_OUTPUT
@@ -1072,6 +1073,17 @@ namespace Iocgns {
                                                  const Ioss::Field &field, void *data,
                                                  size_t data_size) const
   {
+    // A CGNS DatabaseIO object can have two "types" of NodeBlocks:
+    // * The normal "all nodes in the model" NodeBlock as used by Exodus
+    // * A "nodes in a zone" NodeBlock which contains the subset of nodes
+    //   "owned" by a specific StructuredBlock or ElementBlock zone.
+    //
+    // Question: How to determine if the NodeBlock is the "global" Nodeblock
+    // or a "sub" NodeBlock: Use the "is_nonglobal_nodeblock()" function.
+    if (nb->is_nonglobal_nodeblock()) {
+      return get_field_internal_sub_nb(nb, field, data, data_size);
+    }
+
     size_t num_to_get = field.verify(data_size);
 
     Ioss::Field::RoleType role = field.get_role();
@@ -1187,6 +1199,74 @@ namespace Iocgns {
     else {
       num_to_get = Ioss::Utils::field_warning(nb, field, "input");
     }
+    return num_to_get;
+  }
+
+  int64_t ParallelDatabaseIO::get_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                                void *data, size_t data_size) const
+  {
+    // Reads field data on a NodeBlock which is a "sub" NodeBlock -- contains the nodes for a
+    // StructuredBlock instead of for the entire model.
+    // Currently only TRANSIENT fields are input this way.  No valid reason, but that is the current
+    // use case.
+
+    // Get the StructuredBlock that this NodeBlock is contained in:
+    const Ioss::GroupingEntity *sb         = nb->contained_in();
+    int                         base       = 1;
+    int                         zone       = Iocgns::Utils::get_db_zone(sb);
+    cgsize_t                    num_to_get = field.verify(data_size);
+
+    Ioss::Field::RoleType role = field.get_role();
+    if (role == Ioss::Field::TRANSIENT) {
+      // Locate the FlowSolution node corresponding to the correct state/step/time
+      // TODO: do this at read_meta_data() and store...
+      int step = get_region()->get_current_state();
+
+      int solution_index =
+          Utils::find_solution_index(get_file_pointer(), base, zone, step, CG_Vertex);
+
+      double * rdata                  = static_cast<double *>(data);
+      assert(num_to_get == sb->get_property("node_count").get_int());
+      cgsize_t rmin[3] = {0, 0, 0};
+      cgsize_t rmax[3] = {0, 0, 0};
+      if (num_to_get > 0) {
+        rmin[0] = sb->get_property("offset_i").get_int() + 1;
+        rmin[1] = sb->get_property("offset_j").get_int() + 1;
+        rmin[2] = sb->get_property("offset_k").get_int() + 1;
+
+        rmax[0] = rmin[0] + sb->get_property("ni").get_int();
+        rmax[1] = rmin[1] + sb->get_property("nj").get_int();
+        rmax[2] = rmin[2] + sb->get_property("nk").get_int();
+
+	assert(num_to_get ==
+	       (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
+      }
+
+
+      auto     var_type               = field.transformed_storage();
+      int      comp_count             = var_type->component_count();
+      char     field_suffix_separator = get_field_separator();
+
+      if (comp_count == 1) {
+        CGCHECKM(cg_field_read(get_file_pointer(), base, zone, solution_index,
+                               field.get_name().c_str(), CG_RealDouble, rmin, rmax,
+                               rdata));
+      }
+      else {
+        std::vector<double> cgns_data(num_to_get);
+        for (int i = 0; i < comp_count; i++) {
+          std::string var_name =
+              var_type->label_name(field.get_name(), i + 1, field_suffix_separator);
+
+          CGCHECKM(cg_field_read(get_file_pointer(), base, zone, solution_index, var_name.c_str(),
+                                 CG_RealDouble, rmin, rmax, cgns_data.data()));
+          for (cgsize_t j = 0; j < num_to_get; j++) {
+            rdata[comp_count * j + i] = cgns_data[j];
+          }
+        }
+      }
+    }
+    // Ignoring all other field role types...
     return num_to_get;
   }
 
@@ -1583,6 +1663,17 @@ namespace Iocgns {
                                                  const Ioss::Field &field, void *data,
                                                  size_t data_size) const
   {
+    // A CGNS DatabaseIO object can have two "types" of NodeBlocks:
+    // * The normal "all nodes in the model" NodeBlock as used by Exodus
+    // * A "nodes in a zone" NodeBlock which contains the subset of nodes
+    //   "owned" by a specific StructuredBlock or ElementBlock zone.
+    //
+    // Question: How to determine if the NodeBlock is the "global" Nodeblock
+    // or a "sub" NodeBlock: Use the "is_nonglobal_nodeblock()" function.
+    if (nb->is_nonglobal_nodeblock()) {
+      return put_field_internal_sub_nb(nb, field, data, data_size);
+    }
+
     Ioss::Field::RoleType role       = field.get_role();
     cgsize_t              base       = 1;
     size_t                num_to_get = field.verify(data_size);
@@ -1769,8 +1860,76 @@ namespace Iocgns {
       }
     }
     else {
-      num_to_get = Ioss::Utils::field_warning(nb, field, "input");
+      num_to_get = Ioss::Utils::field_warning(nb, field, "output");
     }
+    return num_to_get;
+  }
+
+  int64_t ParallelDatabaseIO::put_field_internal_sub_nb(const Ioss::NodeBlock *nb, const Ioss::Field &field,
+                                                void *data, size_t data_size) const
+  {
+    // Outputs field data on a NodeBlock which is a "sub" NodeBlock -- contains the nodes for a
+    // StructuredBlock instead of for the entire model.
+    // Currently only TRANSIENT fields are output this way.  No valid reason, but that is the
+    // current use case.
+
+    // Get the StructuredBlock that this NodeBlock is contained in:
+    const Ioss::GroupingEntity *sb         = nb->contained_in();
+    int                         zone       = Iocgns::Utils::get_db_zone(sb);
+    cgsize_t                    num_to_get = field.verify(data_size);
+
+    Ioss::Field::RoleType role = field.get_role();
+    if (role == Ioss::Field::TRANSIENT) {
+      int     base                   = 1;
+      double *rdata                  = static_cast<double *>(data);
+      int     cgns_field             = 0;
+      auto    var_type               = field.transformed_storage();
+      int     comp_count             = var_type->component_count();
+      char    field_suffix_separator = get_field_separator();
+
+      cgsize_t rmin[3] = {0, 0, 0};
+      cgsize_t rmax[3] = {0, 0, 0};
+
+      assert(num_to_get == sb->get_property("node_count").get_int());
+      if (num_to_get > 0) {
+        rmin[0] = sb->get_property("offset_i").get_int() + 1;
+        rmin[1] = sb->get_property("offset_j").get_int() + 1;
+        rmin[2] = sb->get_property("offset_k").get_int() + 1;
+
+        rmax[0] = rmin[0] + sb->get_property("ni").get_int();
+        rmax[1] = rmin[1] + sb->get_property("nj").get_int();
+        rmax[2] = rmin[2] + sb->get_property("nk").get_int();
+      }
+
+      if (comp_count == 1) {
+        CGCHECKM(cgp_field_write(get_file_pointer(), base, zone, m_currentVertexSolutionIndex,
+				 CG_RealDouble, field.get_name().c_str(), &cgns_field));
+        Utils::set_field_index(field, cgns_field, CG_Vertex);
+
+        CGCHECKM(cgp_field_write_data(get_file_pointer(), base, zone, m_currentVertexSolutionIndex,
+				      cgns_field, rmin, rmax, rdata));
+      }
+      else {
+        std::vector<double> cgns_data(num_to_get);
+        for (int i = 0; i < comp_count; i++) {
+          for (cgsize_t j = 0; j < num_to_get; j++) {
+            cgns_data[j] = rdata[comp_count * j + i];
+          }
+          std::string var_name =
+              var_type->label_name(field.get_name(), i + 1, field_suffix_separator);
+
+          CGCHECKM(cgp_field_write(get_file_pointer(), base, zone, m_currentVertexSolutionIndex,
+				   CG_RealDouble, var_name.c_str(), &cgns_field));
+          if (i == 0) {
+            Utils::set_field_index(field, cgns_field, CG_Vertex);
+          }
+
+          CGCHECKM(cgp_field_write_data(get_file_pointer(), base, zone, m_currentVertexSolutionIndex,
+					cgns_field, rmin, rmax, cgns_data.data()));
+        }
+      }
+    }
+    // Ignoring all other field role types...
     return num_to_get;
   }
 

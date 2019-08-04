@@ -47,6 +47,7 @@
 #define XPETRA_MULTIVECTORFACTORY_DEF_HPP
 
 #include "Xpetra_MultiVectorFactory_decl.hpp"
+
 #include "Xpetra_BlockedMultiVector.hpp"
 
 
