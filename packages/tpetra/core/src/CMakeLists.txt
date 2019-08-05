@@ -153,23 +153,29 @@ ENDFUNCTION(TPETRA_SC_MACRO_EXPR)
 #   macro expression) gets substituted for the value of this
 #   function's SC_MACRO_EXPR input argument.
 #
-# CLASS_NAME [in] Name of the Tpetra class (without namespace
-#   qualifiers; must live in the Tpetra namespace)
+# CLASS_NAME [in] Name of the Tpetra class (without the Tpetra
+#   namespace qualifier; must live in the Tpetra namespace),
+#   suitably mangled for use in a file name.
 #
-# CLASS_MACRO_NAME [in] Name of the Tpetra class, suitably mangled for
-#   use in a macro name.
+# CLASS_MACRO_NAME [in] Name of the Tpetra class, suitably mangled
+#   for use in a macro name.
 #
 # SC_MANGLED_NAME [in] Name of the Scalar (SC) type, mangled for use
 #   as a macro argument (e.g., spaces and colons removed).  In the
 #   arguments that follow, LO stands for LocalOrdinal, GO for
 #   GlobalOrdinal, and NT for Node.
 #
-# SC_MACRO_EXPR [in] Expression that asks Tpetra whether the given
-#   Scalar (SC) type is supported.
+# SC_MACRO_EXPR [in] Expression that asks Tpetra
+#   whether the given Scalar (SC) type is supported.
 #
-# LO_MACRO_NAME [in] Name of the LocalOrdinal (LO) type, mangled for
-#   use as a macro argument.  In the arguments that follow, LO stands
-#   for LocalOrdinal, GO for GlobalOrdinal, and NT for Node.
+# LO_MACRO_NAME [in] Name of the LocalOrdinal (LO) type,
+#   mangled for use as a macro argument.
+#
+# GO_MACRO_NAME [in] Name of the GlobalOrdinal (GO) type,
+#   mangled for use as a macro argument.
+#
+# NT_MACRO_NAME [in] Name of the Node (NT) type,
+#   mangled for use as a macro argument.
 #
 FUNCTION(TPETRA_PROCESS_ONE_SLGN_TEMPLATE OUTPUT_FILE TEMPLATE_FILE
   CLASS_NAME CLASS_MACRO_NAME SC_MANGLED_NAME LO_MANGLED_NAME
@@ -584,6 +590,20 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Generate ETI .cpp files for Tpetra::replaceDiagonalCrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "replaceDiagonalCrsMatrix" "REPLACEDIAGONALCRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Details::localDeepCopy*RowMatrix.
+  # Do so for the same set of Scalar types as CrsMatrix (see above),
+  # because this function is an implementation detail of CrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES
+    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+    "Details_localDeepCopyRowMatrix"
+    "DETAILS_LOCALDEEPCOPYROWMATRIX"
+    "${CrsMatrix_ETI_SCALARS}"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+    TRUE)
+  LIST(APPEND SOURCES ${LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::LocalCrsMatrixOperator.
   TPETRA_PROCESS_ALL_SN_TEMPLATES(LOCALCRSMATRIXOPERATOR_OUTPUT_FILES
