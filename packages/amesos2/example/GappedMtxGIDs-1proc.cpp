@@ -395,7 +395,8 @@ readCrsMatrixFromFile (const std::string& matrixFilename,
      "Failed to open file \"" << matrixFilename << "\" on Process 0.");
 
   using Teuchos::RCP;
-  RCP<MAT> A (new MAT (rowMap, 0));
+  //maxNumElementsPerRow as defined by the .mm files that go with this example
+  RCP<MAT> A (new MAT (rowMap, 2));
 
   if (myRank == 0) 
   {
