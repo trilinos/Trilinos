@@ -1642,11 +1642,19 @@ namespace Ioex {
     // finished. Hopefully the netcdf no-fsync fix along with this fix
     // results in negligible impact on runtime with more syncs.
 
+    // Need to be able to handle a flushInterval == 1 to force flush
+    // every time step even in a serial run.
+    // The default setting for flushInterval is 1, but in the past, 
+    // it was not checked for serial runs.  Now, set the default to -1
+    // and if that is the value and serial, then do the time-based
+    // check; otherwise, use flushInterval setting...
+    
     bool do_flush = true;
-    if (flushInterval != 1) {
-      if (flushInterval == 0 || state % flushInterval != 0) {
-        do_flush = false;
-      }
+    if (flushInterval == 1) {
+      do_flush = true;
+    }
+    else if (flushInterval == 0) {
+      do_flush = false;
     }
     else if (dbUsage == Ioss::WRITE_HISTORY || !isParallel) {
       assert(myProcessor == 0);
@@ -1659,6 +1667,13 @@ namespace Ioex {
         do_flush = false;
       }
     }
+    
+    if (!do_flush && flushInterval > 0) {
+      if (state % flushInterval == 0) {
+        do_flush = true;
+      }
+    }
+
     if (do_flush) {
       flush_database__();
     }
