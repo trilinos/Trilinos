@@ -135,8 +135,6 @@ StepperNewmarkImplicitDForm<Scalar>::setModel(
   this->wrapperModel_ = wrapperModel;
   inArgs_ = this->wrapperModel_->getNominalValues();
   outArgs_ = this->wrapperModel_->createOutArgs();
-
-  this->isInitialized_ = false;
 }
 
 template <class Scalar>
@@ -153,8 +151,6 @@ StepperNewmarkImplicitDForm<Scalar>::initialize()
 #endif
   this->setParameterList(this->stepperPL_);
   this->setSolver();
-
-  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 template <class Scalar>
@@ -164,9 +160,6 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-    "Error - " << this->description() << " is not initialized!");
-
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperNewmarkImplicitDForm::takeStep()");
@@ -436,8 +429,6 @@ StepperNewmarkImplicitDForm<Scalar>::setParameterList(
              "default values of Beta = "
           << beta_ << " and Gamma = " << gamma_ << ".\n";
   }
-
-  this->isInitialized_ = false;
 }
 
 template <class Scalar>

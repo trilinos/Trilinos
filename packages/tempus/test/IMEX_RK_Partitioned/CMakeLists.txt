@@ -37,7 +37,7 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   IMEX_RK_Partitioned_Combined_FSA
-  NAME "IMEX_RK_Partitioned_Combined_FSA_General_Partitioned_IMEX_RK"
+  NAME "IMEX_RK_Partitioned_Combined_FSA_General_Partioned_IMEX_RK"
   ARGS "--method=\"General Partitioned IMEX RK\""
   NUM_MPI_PROCS 1
   )
@@ -71,7 +71,7 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   IMEX_RK_Partitioned_Staggered_FSA
-  NAME "IMEX_RK_Partitioned_Staggered_FSA_General_Partitioned_IMEX_RK"
+  NAME "IMEX_RK_Partitioned_Staggered_FSA_General_Partioned_IMEX_RK"
   ARGS "--method=\"General Partitioned IMEX RK\""
   NUM_MPI_PROCS 1
   )

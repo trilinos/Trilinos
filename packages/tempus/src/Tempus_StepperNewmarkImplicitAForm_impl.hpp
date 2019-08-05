@@ -133,8 +133,6 @@ void StepperNewmarkImplicitAForm<Scalar>::setModel(
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                               "Newmark Implicit a-Form"));
   this->wrapperModel_ = wrapperModel;
-
-  this->isInitialized_ = false;
 }
 
 
@@ -151,8 +149,6 @@ void StepperNewmarkImplicitAForm<Scalar>::initialize()
 #endif
   this->setParameterList(this->stepperPL_);
   this->setSolver();
-
-  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 
@@ -294,11 +290,11 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
     appInArgs.set_t        (initialState->getTime()    );
 
     this->wrapperModel_->getAppModel()->evalModel(appInArgs, appOutArgs);
-
+ 
     Scalar reldiff = Thyra::norm(*f);
-    Scalar normx = Thyra::norm(*x);
+    Scalar normx = Thyra::norm(*x); 
     Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
-    if (normx > eps*reldiff) reldiff /= normx;
+    if (normx > eps*reldiff) reldiff /= normx; 
 
     if (reldiff > eps) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -321,8 +317,6 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
          << "part of the Newmark Implicit A-Form.  The default is to "
          << "set useFSAL=true, and useFSAL=false will be ignored." << std::endl;
   }
-
-  this->isInitialized_ = false;
 }
 
 
@@ -333,9 +327,6 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-    "Error - " << this->description() << " is not initialized!");
-
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperNewmarkImplicitAForm::takeStep()");
@@ -533,8 +524,6 @@ void StepperNewmarkImplicitAForm<Scalar>::setParameterList(
           << "default values of Beta = "
           << beta_ << " and Gamma = " << gamma_ << ".\n";
   }
-
-  this->isInitialized_ = false;
 }
 
 

@@ -141,11 +141,6 @@ public:
     /// Add solution state to history
     void addState(const Teuchos::RCP<SolutionState<Scalar> >& state);
 
-    void initialize();
-
-    /// True if stepper is initialized.
-    virtual bool isInitialized() { return isInitialized_; }
-
     /// Add a working solution state to history
     void addWorkingState(const Teuchos::RCP<SolutionState<Scalar> >& state,
                          const bool updateTime = true);
@@ -330,8 +325,6 @@ protected:
   int                                       storageLimit_;
 
   Teuchos::RCP<SolutionState<Scalar> > workingState_; ///< The state being worked on
-
-  bool                                      isInitialized_;
 };
 
 /// Nonmember constructor
