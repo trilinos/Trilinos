@@ -202,13 +202,13 @@ void StepperExplicitRK<Scalar>::setTableau(
        "Error - StepperExplicitRK received an implicit Butcher Tableau!\n" <<
        "        Tableau = " << ERK_ButcherTableau_->description() << "\n");
 
-  this->isInitialized_ = false;
 }
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
+
   if (stepperObserver_ == Teuchos::null) {
     stepperObserver_ = Teuchos::rcp(new StepperObserverComposite<Scalar>);
   }
@@ -238,7 +238,6 @@ void StepperExplicitRK<Scalar>::setObserver(
     }
   }
 
-  this->isInitialized_ = false;
 }
 
 
@@ -274,8 +273,6 @@ void StepperExplicitRK<Scalar>::initialize()
      abs_u = Thyra::createMember(this->appModel_->get_f_space());
      sc = Thyra::createMember(this->appModel_->get_f_space());
   }
-
-  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 
@@ -292,8 +289,6 @@ void StepperExplicitRK<Scalar>::setInitialConditions(
     this->setStepperXDot(stageXDot_.back());
 
   StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
-
-  this->isInitialized_ = false;
 }
 
 
@@ -301,9 +296,6 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-    "Error - " << this->description() << " is not initialized!");
-
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExplicitRK::takeStep()");
@@ -464,8 +456,6 @@ void StepperExplicitRK<Scalar>::setParameterList(
   }
   // Can not validate because of optional Parameters.
   this->stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters(),0);
-
-  this->isInitialized_ = false;
 }
 
 

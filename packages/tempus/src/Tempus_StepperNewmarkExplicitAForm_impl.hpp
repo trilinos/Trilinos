@@ -91,8 +91,6 @@ void StepperNewmarkExplicitAForm<Scalar>::initialize()
     "StepperNewmarkExplicitAForm::initialize()\n");
 
   this->setParameterList(this->stepperPL_);
-
-  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 template<class Scalar>
@@ -199,10 +197,10 @@ void StepperNewmarkExplicitAForm<Scalar>::setInitialConditions(
     this->evaluateExplicitODE(f, x, xDot, initialState->getTime());
     Thyra::Vp_StV(f.ptr(), Scalar(-1.0), *(xDotDot));
     Scalar reldiff = Thyra::norm(*f);
-    Scalar normxDotDot = Thyra::norm(*xDotDot);
-    //The following logic is to prevent FPEs
+    Scalar normxDotDot = Thyra::norm(*xDotDot); 
+    //The following logic is to prevent FPEs  
     Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
-    if (normxDotDot > eps*reldiff) reldiff /= normxDotDot;
+    if (normxDotDot > eps*reldiff) reldiff /= normxDotDot;  
 
     if (reldiff > eps) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -217,8 +215,6 @@ void StepperNewmarkExplicitAForm<Scalar>::setInitialConditions(
          << "                             eps = " << eps     << std::endl;
     }
   }
-
-  this->isInitialized_ = false;
 }
 
 
@@ -226,9 +222,6 @@ template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-    "Error - " << this->description() << " is not initialized!");
-
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperNewmarkExplicitAForm::takeStep()");
@@ -359,7 +352,6 @@ void StepperNewmarkExplicitAForm<Scalar>::setParameterList(
     "Error in 'Newmark Explicit a-Form' stepper: invalid value of Gamma = "
      << gamma_ << ".  Please select 0 <= Gamma <= 1. \n");
 
-  this->isInitialized_ = false;
 }
 
 

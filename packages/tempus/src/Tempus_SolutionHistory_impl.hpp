@@ -70,8 +70,6 @@ SolutionHistory<Scalar>::SolutionHistory(
     Teuchos::OSTab ostab(out,1,"SolutionHistory::SolutionHistory");
     *out << this->description() << std::endl;
   }
-
-  this->isInitialized_ = false;
 }
 
 
@@ -129,16 +127,6 @@ void SolutionHistory<Scalar>::addState(
 
   return;
 }
-
-template<class Scalar>
-void SolutionHistory<Scalar>::initialize()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(getNumStates() <= 0, std::logic_error,
-    "Error - SolutionHistory does not have any states!\n");
-
-  isInitialized_ = true;   // Only place where it should be set to true.
-}
-
 
 template<class Scalar>
 void SolutionHistory<Scalar>::addWorkingState(

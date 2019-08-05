@@ -202,35 +202,17 @@ void StepperIMEX_RK<Scalar>::setTableaus(
     order_ = 3;
 
   } else if (stepperType == "General IMEX RK") {
-    if (pList != Teuchos::null) {
-      Teuchos::RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
-        new Teuchos::ParameterList(pList->sublist("IMEX-RK Explicit Stepper")));
+    Teuchos::RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
+      new Teuchos::ParameterList(pList->sublist("IMEX-RK Explicit Stepper")));
 
-      Teuchos::RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
-        new Teuchos::ParameterList(pList->sublist("IMEX-RK Implicit Stepper")));
+    Teuchos::RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
+      new Teuchos::ParameterList(pList->sublist("IMEX-RK Implicit Stepper")));
 
-      // TODO: should probably check the order of the tableau match
-      this->setExplicitTableau("General ERK",  explicitPL);
-      this->setImplicitTableau("General DIRK", implicitPL);
-      description_ = stepperType;
-      order_ = pList->get<int>("overall order", 0);
-    } else {
-      typedef Teuchos::ScalarTraits<Scalar> ST;
-      // Explicit Tableau
-      this->setExplicitTableau("RK Explicit Trapezoidal", Teuchos::null);
-
-      // Implicit Tableau
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      pl->set<std::string>("Stepper Type", "SDIRK 2 Stage 3rd order");
-      pl->set("Solver Name", "");
-      const Scalar one = ST::one();
-      Scalar gamma = one - one/ST::squareroot(2*one);
-      pl->set<double>("gamma",gamma);
-      this->setImplicitTableau("SDIRK 2 Stage 3rd order", pl);
-
-      description_ = stepperType;
-      order_ = 2;
-    }
+    // TODO: should probably check the order of the tableau match
+    this->setExplicitTableau("General ERK",  explicitPL);
+    this->setImplicitTableau("General DIRK", implicitPL);
+    description_ = stepperType;
+    order_ = pList->get<int>("overall order", 0);
 
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
@@ -257,8 +239,6 @@ void StepperIMEX_RK<Scalar>::setTableaus(
     << "    number of stages = " << explicitTableau_->numStages() << "\n"
     << "  Implicit tableau = " << implicitTableau_->description() << "\n"
     << "    number of stages = " << implicitTableau_->numStages() << "\n");
-
-  this->isInitialized_ = false;
 }
 
 
@@ -282,8 +262,6 @@ void StepperIMEX_RK<Scalar>::setExplicitTableau(
     "Error - Received an implicit Tableau for setExplicitTableau()!\n" <<
     "        Tableau = " << explicitTableau->description() << "\n");
   explicitTableau_ = explicitTableau;
-
-  this->isInitialized_ = false;
 }
 
 
@@ -307,8 +285,6 @@ void StepperIMEX_RK<Scalar>::setImplicitTableau(
     "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n" <<
     "        Tableau = " << implicitTableau->description() << "\n");
   implicitTableau_ = implicitTableau;
-
-  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -330,8 +306,6 @@ void StepperIMEX_RK<Scalar>::setModel(
     "  Likely have given the wrong ModelEvaluator to this Stepper.\n");
 
   setModelPair(modelPairIMEX);
-
-  this->isInitialized_ = false;
 }
 
 
@@ -361,8 +335,6 @@ void StepperIMEX_RK<Scalar>::setModelPair(
     "  Implicit vector dim = " << impXDim << "\n");
 
   this->wrapperModel_ = wrapperModelPairIMEX;
-
-  this->isInitialized_ = false;
 }
 
 /** \brief Create WrapperModelPairIMEX from explicit/implicit ModelEvaluators.
@@ -380,8 +352,6 @@ void StepperIMEX_RK<Scalar>::setModelPair(
   this->wrapperModel_ = Teuchos::rcp(
     new WrapperModelEvaluatorPairIMEX_Basic<Scalar>(
                                               explicitModel, implicitModel));
-
-  this->isInitialized_ = false;
 }
 
 
@@ -404,8 +374,6 @@ void StepperIMEX_RK<Scalar>::setObserver(
       Teuchos::rcp_dynamic_cast<StepperIMEX_RKObserver<Scalar> >
         (this->stepperObserver_);
   }
-
-  this->isInitialized_ = false;
 }
 
 
@@ -441,8 +409,6 @@ void StepperIMEX_RK<Scalar>::initialize()
 
   xTilde_ = Thyra::createMember(this->wrapperModel_->get_x_space());
   assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-
-  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 
@@ -490,8 +456,6 @@ void StepperIMEX_RK<Scalar>::setInitialConditions(
   TEUCHOS_TEST_FOR_EXCEPTION( this->getUseFSAL(), std::logic_error,
     "Error - The First-Step-As-Last (FSAL) principle is not "
          << "available for IMEX-RK.  Set useFSAL=false.\n");
-
-  this->isInitialized_ = false;
 }
 
 
@@ -566,9 +530,6 @@ template<class Scalar>
 void StepperIMEX_RK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-    "Error - " << this->description() << " is not initialized!");
-
   using Teuchos::RCP;
   using Teuchos::SerialDenseMatrix;
   using Teuchos::SerialDenseVector;
@@ -733,8 +694,6 @@ void StepperIMEX_RK<Scalar>::setParameterList(
   }
   // Can not validate because of optional Parameters.
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
-
-  this->isInitialized_ = false;
 }
 
 
