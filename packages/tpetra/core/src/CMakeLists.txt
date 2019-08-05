@@ -605,6 +605,20 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     TRUE)
   LIST(APPEND SOURCES ${LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for the RowMatrix -> CrsMatrix overload of
+  # Tpetra::createDeepCopy.  Do this only for non-integer Scalar
+  # types, since we really only need this function for linear solvers.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES
+    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+    "createDeepCopy_CrsMatrix"
+    "CREATEDEEPCOPY_CRSMATRIX"
+    "${TpetraCore_ETI_SCALARS_NO_ORDS}"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+    FALSE)
+  LIST(APPEND SOURCES ${CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES})
+
   # Generate ETI .cpp files for Tpetra::LocalCrsMatrixOperator.
   TPETRA_PROCESS_ALL_SN_TEMPLATES(LOCALCRSMATRIXOPERATOR_OUTPUT_FILES
     "Tpetra_ETI_SC_NT.tmpl" "LocalCrsMatrixOperator"
