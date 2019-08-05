@@ -77,7 +77,13 @@ void tGraphLaplacian_tpetra::initializeTest()
 Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > stencil(const Teuchos::Comm<int> & comm)
 {
    Teuchos::RCP<Tpetra::Map<LO,GO,NT> > map = rcp(new Tpetra::Map<LO,GO,NT>(5,0,rcpFromRef(comm)));
-   Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = rcp(new Tpetra::CrsMatrix<ST,LO,GO,NT>(map,0));
+   Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = rcp(new Tpetra::CrsMatrix<ST,LO,GO,NT>(map,6));
+   // KDD 8/2019:  The value 6 above is needed because this test inserts 
+   // three indices twice into row 4 of the matrix.
+   // Tpetra is robust enough to correctly handle the double insertion. 
+   // But if this double insertion is, in fact, an error, the 6 can probably
+   // be changed to 3.  Note that this test doesn't insert any nonzeros into
+   // row 0 of the matrix.
 
    // arrays for indicies and values
    GO indicies[3];
