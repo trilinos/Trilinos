@@ -37,32 +37,70 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
-#define TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
+#ifndef TPETRA_DETAILS_LOCALROWOFFSETS_DEF_HPP
+#define TPETRA_DETAILS_LOCALROWOFFSETS_DEF_HPP
 
-/// \file Tpetra_Details_localDeepCopyRowMatrix_decl.hpp
-/// \brief Declaration of function for making a deep copy of a
-///   Tpetra::RowMatrix's local matrix.
+/// \file Tpetra_Details_localRowOffsets_def.hpp
+/// \brief Definition of function for getting local row offsets from a
+///   Tpetra::RowGraph.
 
-#include "Tpetra_RowMatrix_fwd.hpp"
-#include "KokkosSparse_CrsMatrix.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "Tpetra_RowGraph.hpp"
+#include "Tpetra_Details_computeOffsets.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace Tpetra {
 namespace Details {
 
-//! Deep copy of A's local sparse matrix.
-template <class SC, class LO, class GO, class NT>
-KokkosSparse::CrsMatrix<
-  typename Kokkos::ArithTraits<SC>::val_type,
-    LO,
-    typename NT::execution_space,
-    void>
-localDeepCopyLocallyIndexedRowMatrix
-  (const RowMatrix<SC, LO, GO, NT>& A,
-   const char label[]);
+template <class LO, class GO, class NT>
+LocalRowOffsetsResult<NT>
+localRowOffsets (const RowGraph<LO, GO, NT>& G)
+{
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
+  using result_type = LocalRowOffsetsResult<NT>;
+  using offsets_type = typename result_type::offsets_type;
+  using offset_type = typename result_type::offset_type;
+
+  const LO lclNumRows (G.getNodeNumRows ());
+  offsets_type entPerRow;
+  if (lclNumRows != 0) {
+    entPerRow =
+      offsets_type (view_alloc ("entPerRow", WithoutInitializing),
+                    lclNumRows);
+  }
+  using host = Kokkos::DefaultHostExecutionSpace;
+  auto entPerRow_h = Kokkos::create_mirror_view (host (), entPerRow);
+  size_t maxNumEnt = 0;
+  for (LO i = 0; i < lclNumRows; ++i) {
+    const size_t lclNumEnt = G.getNumEntriesInLocalRow (i);
+    entPerRow_h[i] = offset_type (lclNumEnt);
+    maxNumEnt = maxNumEnt > lclNumEnt ? lclNumEnt : maxNumEnt;
+  }
+  Kokkos::deep_copy (entPerRow, entPerRow_h);
+
+  offsets_type ptr;
+  offset_type nnz = 0;
+  if (lclNumRows != 0) {
+    ptr = offsets_type (view_alloc ("ptr", WithoutInitializing),
+                        lclNumRows + 1);
+    using ::Tpetra::Details::computeOffsetsFromCounts;
+    nnz = computeOffsetsFromCounts (ptr, entPerRow);
+  }
+  return {ptr, nnz, maxNumEnt};
+}
 
 } // namespace Details
 } // namespace Tpetra
 
-#endif // TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
+//
+// Explicit instantiation macros
+//
+// Must be expanded from within the Tpetra namespace!
+//
+#define TPETRA_DETAILS_LOCALROWOFFSETS_INSTANT(LO, GO, NT) \
+namespace Details { \
+  template LocalRowOffsetsResult<NT> \
+  localRowOffsets (const RowGraph<LO, GO, NT>& A); \
+}
+
+#endif // TPETRA_DETAILS_LOCALROWOFFSETS_DEF_HPP

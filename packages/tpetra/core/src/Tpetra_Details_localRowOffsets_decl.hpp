@@ -37,32 +37,44 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
-#define TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
+#ifndef TPETRA_DETAILS_LOCALROWOFFSETS_DECL_HPP
+#define TPETRA_DETAILS_LOCALROWOFFSETS_DECL_HPP
 
-/// \file Tpetra_Details_localDeepCopyRowMatrix_decl.hpp
-/// \brief Declaration of function for making a deep copy of a
-///   Tpetra::RowMatrix's local matrix.
+/// \file Tpetra_Details_localRowOffsets_decl.hpp
+/// \brief Declaration of function for getting local row offsets from
+///   a Tpetra::RowGraph.
 
-#include "Tpetra_RowMatrix_fwd.hpp"
+#include "Tpetra_RowGraph_fwd.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "Kokkos_ArithTraits.hpp"
 
 namespace Tpetra {
 namespace Details {
 
-//! Deep copy of A's local sparse matrix.
-template <class SC, class LO, class GO, class NT>
-KokkosSparse::CrsMatrix<
-  typename Kokkos::ArithTraits<SC>::val_type,
-    LO,
-    typename NT::execution_space,
-    void>
-localDeepCopyLocallyIndexedRowMatrix
-  (const RowMatrix<SC, LO, GO, NT>& A,
-   const char label[]);
+//! Result returned by localRowOffsets (see below).
+template <class NT>
+struct LocalRowOffsetsResult {
+private:
+  using local_graph_type =
+    typename KokkosSparse::CrsMatrix<
+      double, int, typename NT::execution_space, void>::
+        staticcrsgraph_type;
+public:
+  using offsets_type =
+    typename local_graph_type::row_map_type::non_const_type;
+  using offset_type = typename offsets_type::non_const_value_type;
+
+  offsets_type ptr; //!< Local row offsets (Kokkos::View)
+  offset_type nnz;  //!< Local number of graph / matrix entries
+  size_t maxNumEnt; //!< Max number of entries over all local rows
+};
+
+/// \brief Get local row offsets ("ptr", in compressed sparse row
+///   terms) for the given graph.
+template <class LO, class GO, class NT>
+LocalRowOffsetsResult<NT>
+localRowOffsets (const RowGraph<LO, GO, NT>& G);
 
 } // namespace Details
 } // namespace Tpetra
 
-#endif // TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
+#endif // TPETRA_DETAILS_LOCALROWOFFSETS_DECL_HPP
