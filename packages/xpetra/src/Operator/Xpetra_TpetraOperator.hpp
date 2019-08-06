@@ -60,10 +60,10 @@
 
 namespace Xpetra {
  
-  template <class Scalar        = Operator<>::scalar_type,
-            class LocalOrdinal  = typename Operator<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node          = typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraOperator : public Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node > {
   public:
     //@{

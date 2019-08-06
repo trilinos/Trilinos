@@ -104,9 +104,9 @@ namespace MueLu {
     | CrsGraph     | StructuredAggregationFactory_kokkos   | CrsGraph of the prolongator
 */
 
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class StructuredAggregationFactory_kokkos : public SingleLevelFactoryBase {
 #undef MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"

@@ -65,6 +65,10 @@
 // Misc
 #include <Teuchos_ParameterList.hpp>
 
+// Default S,L,G,N types, for use as default template arguments
+// Available as MueLu::DefaultScalar, MueLu::DefaultLocalOrdinal, etc.
+#include <MueLu_Details_DefaultTypes.hpp>
+
 // Special macro for exception testing
 // MUELU_TEST_FOR_EXCEPTION is only active if MueLu is configured with MueLu_ENABLE_DEBUG:BOOL=ON
 // If you want an exception test both in the release and debug version of MueLu you still can use directly

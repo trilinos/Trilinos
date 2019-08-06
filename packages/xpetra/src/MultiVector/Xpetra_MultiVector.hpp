@@ -69,10 +69,10 @@ namespace Xpetra {
   template<class S, class LO, class GO, class N> class Vector;
 #endif
 
-  template <class Scalar = double,
-            class LocalOrdinal = Map<>::local_ordinal_type,
-            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class MultiVector
     : public DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {

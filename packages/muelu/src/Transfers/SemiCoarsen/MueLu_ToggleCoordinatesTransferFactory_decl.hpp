@@ -58,7 +58,10 @@ namespace MueLu {
   @brief Class for transferring coordinates from a finer level to a coarser one
 
 */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template <class Scalar = DefaultScalar,
+          class LocalOrdinal = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node = DefaultNode>
   class ToggleCoordinatesTransferFactory : public TwoLevelFactoryBase {
 #undef MUELU_TOGGLECOORDINATESTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

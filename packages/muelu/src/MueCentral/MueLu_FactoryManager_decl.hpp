@@ -99,7 +99,10 @@ namespace MueLu {
     the Get call. If "no", then the FactoryManager will <b>throw an exception indicating that it does not know how to generate A</b>.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Scalar = DefaultScalar,
+           class LocalOrdinal = DefaultLocalOrdinal,
+           class GlobalOrdinal = DefaultGlobalOrdinal,
+           class Node = DefaultNode>
   class FactoryManager : public FactoryManagerBase {
 #undef MUELU_FACTORYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"

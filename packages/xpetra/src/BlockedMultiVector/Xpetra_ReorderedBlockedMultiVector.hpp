@@ -69,7 +69,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class ReorderedBlockedMultiVector :
     public BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
