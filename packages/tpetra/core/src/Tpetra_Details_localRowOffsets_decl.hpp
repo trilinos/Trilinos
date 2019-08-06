@@ -44,8 +44,10 @@
 /// \brief Declaration of function for getting local row offsets from
 ///   a Tpetra::RowGraph.
 
+#include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_RowGraph_fwd.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include <utility> // pair
 
 namespace Tpetra {
 namespace Details {
@@ -67,6 +69,22 @@ public:
   offset_type nnz;  //!< Local number of graph / matrix entries
   size_t maxNumEnt; //!< Max number of entries over all local rows
 };
+
+namespace Impl {
+
+template <class LO, class GO, class NT>
+std::pair<typename LocalRowOffsetsResult<NT>::offsets_type, size_t>
+localRowCounts (const RowGraph<LO, GO, NT>& G);
+
+template <class LO, class GO, class NT>
+LocalRowOffsetsResult<NT>
+localRowOffsetsFromRowGraph (const RowGraph<LO, GO, NT>& G);
+
+template <class LO, class GO, class NT>
+LocalRowOffsetsResult<NT>
+localRowOffsetsFromFillCompleteCrsGraph (const CrsGraph<LO, GO, NT>& G);
+
+} // namespace Impl
 
 /// \brief Get local row offsets ("ptr", in compressed sparse row
 ///   terms) for the given graph.

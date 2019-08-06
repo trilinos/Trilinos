@@ -44,19 +44,20 @@
 /// \brief Definition of function for getting local row offsets from a
 ///   Tpetra::RowGraph.
 
+#include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
+#include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace Tpetra {
 namespace Details {
+namespace Impl {
 
 template <class LO, class GO, class NT>
-LocalRowOffsetsResult<NT>
-localRowOffsets (const RowGraph<LO, GO, NT>& G)
+std::pair<typename LocalRowOffsetsResult<NT>::offsets_type, size_t>
+localRowCounts (const RowGraph<LO, GO, NT>& G)
 {
-  using Kokkos::view_alloc;
-  using Kokkos::WithoutInitializing;
   using result_type = LocalRowOffsetsResult<NT>;
   using offsets_type = typename result_type::offsets_type;
   using offset_type = typename result_type::offset_type;
@@ -64,6 +65,8 @@ localRowOffsets (const RowGraph<LO, GO, NT>& G)
   const LO lclNumRows (G.getNodeNumRows ());
   offsets_type entPerRow;
   if (lclNumRows != 0) {
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
     entPerRow =
       offsets_type (view_alloc ("entPerRow", WithoutInitializing),
                     lclNumRows);
@@ -77,16 +80,74 @@ localRowOffsets (const RowGraph<LO, GO, NT>& G)
     maxNumEnt = maxNumEnt > lclNumEnt ? lclNumEnt : maxNumEnt;
   }
   Kokkos::deep_copy (entPerRow, entPerRow_h);
+  return {entPerRow, maxNumEnt};
+}
 
+template <class LO, class GO, class NT>
+LocalRowOffsetsResult<NT>
+localRowOffsetsFromRowGraph (const RowGraph<LO, GO, NT>& G)
+{
+  using result_type = LocalRowOffsetsResult<NT>;
+  using offsets_type = typename result_type::offsets_type;
+  using offset_type = typename result_type::offset_type;
+
+  offsets_type entPerRow;
+  size_t maxNumEnt = 0;
+  {
+    auto result = localRowCounts (G);
+    entPerRow = result.first;
+    maxNumEnt = result.second;
+  }
+
+  const LO lclNumRows (G.getNodeNumRows ());
   offsets_type ptr;
   offset_type nnz = 0;
   if (lclNumRows != 0) {
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
     ptr = offsets_type (view_alloc ("ptr", WithoutInitializing),
                         lclNumRows + 1);
     using ::Tpetra::Details::computeOffsetsFromCounts;
     nnz = computeOffsetsFromCounts (ptr, entPerRow);
   }
   return {ptr, nnz, maxNumEnt};
+}
+
+template <class LO, class GO, class NT>
+LocalRowOffsetsResult<NT>
+localRowOffsetsFromFillCompleteCrsGraph (const CrsGraph<LO, GO, NT>& G)
+{
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
+  using result_type = LocalRowOffsetsResult<NT>;
+  using offsets_type = typename result_type::offsets_type;
+  using offset_type = typename result_type::offset_type;
+
+  auto G_lcl = G.getLocalGraph ();
+  offsets_type ptr (view_alloc ("ptr", WithoutInitializing),
+                    G_lcl.row_map.extent (0));
+  Kokkos::deep_copy (ptr, G_lcl.row_map);
+
+  const offset_type nnz = G.getNodeNumEntries ();
+  const size_t maxNumEnt = G.getNodeMaxNumRowEntries ();
+  return {ptr, nnz, maxNumEnt};
+}
+
+} // namespace Impl
+
+template <class LO, class GO, class NT>
+LocalRowOffsetsResult<NT>
+localRowOffsets (const RowGraph<LO, GO, NT>& G)
+{
+  if (G.isFillComplete ()) {
+    using crs_graph_type = CrsGraph<LO, GO, NT>;
+    const crs_graph_type* G_crs =
+      dynamic_cast<const crs_graph_type*> (&G);
+    if (G_crs != nullptr) {
+      return Impl::localRowOffsetsFromFillCompleteCrsGraph (*G_crs);
+    }
+  }
+  return Impl::localRowOffsetsFromRowGraph (G);
 }
 
 } // namespace Details
@@ -99,8 +160,21 @@ localRowOffsets (const RowGraph<LO, GO, NT>& G)
 //
 #define TPETRA_DETAILS_LOCALROWOFFSETS_INSTANT(LO, GO, NT) \
 namespace Details { \
-  template LocalRowOffsetsResult<NT> \
-  localRowOffsets (const RowGraph<LO, GO, NT>& A); \
+namespace Impl { \
+  \
+template std::pair<LocalRowOffsetsResult<NT>::offsets_type, size_t> \
+localRowCounts (const RowGraph<LO, GO, NT>& G); \
+  \
+template LocalRowOffsetsResult<NT> \
+localRowOffsetsFromRowGraph (const RowGraph<LO, GO, NT>& G); \
+  \
+template LocalRowOffsetsResult<NT> \
+localRowOffsetsFromFillCompleteCrsGraph (const CrsGraph<LO, GO, NT>& G); \
+  \
+} \
+  \
+template LocalRowOffsetsResult<NT> \
+localRowOffsets (const RowGraph<LO, GO, NT>& A); \
 }
 
 #endif // TPETRA_DETAILS_LOCALROWOFFSETS_DEF_HPP
