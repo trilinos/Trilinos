@@ -41,8 +41,8 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
     const bool hasColMap =
       A.hasColMap () && ! A.getColMap ().is_null ();
 
-    crs_matrix_type A_copy = hasColMap ?    
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE    
+    crs_matrix_type A_copy = hasColMap ?
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       crs_matrix_type (A.getRowMap (), A.getColMap (),
                        entPerRow_av,
                        Tpetra::StaticProfile) :
@@ -89,10 +89,11 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
     return A_copy;
   }
   else { // locally indexed or empty
-    auto A_lcl = Details::localDeepCopyLocallyIndexedRowMatrix (A, "A");
-    using Teuchos::RCP;
-    RCP<const Export<LO, GO, NT>> exp;
-    RCP<const Import<LO, GO, NT>> imp;
+    using Details::localDeepCopyLocallyIndexedRowMatrix;
+    auto A_lcl = localDeepCopyLocallyIndexedRowMatrix (A, "A");
+
+    Teuchos::RCP<const Export<LO, GO, NT>> exp;
+    Teuchos::RCP<const Import<LO, GO, NT>> imp;
     auto G = A.getGraph ();
     if (! G.is_null ()) {
       imp = G->getImporter ();
