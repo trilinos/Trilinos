@@ -11,6 +11,43 @@
 
 namespace Tpetra {
 
+namespace { // (anonymous)
+
+template<class SC, class LO, class GO, class NT>
+typename CrsMatrix<SC, LO, GO, NT>::local_matrix_type
+localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
+{
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
+  using crs_matrix_type = CrsMatrix<SC, LO, GO, NT>;
+  using local_matrix_type =
+    typename crs_matrix_type::local_matrix_type;
+  local_matrix_type A_lcl = A.getLocalMatrix ();
+
+  using local_graph_type = typename crs_matrix_type::local_graph_type;
+  using inds_type = typename local_graph_type::entries_type;
+  inds_type ind (view_alloc ("ind", WithoutInitializing),
+                 A_lcl.graph.entries.extent (0));
+  Kokkos::deep_copy (ind, A_lcl.graph.entries);
+
+  using offsets_type =
+    typename local_graph_type::row_map_type::non_const_type;
+  offsets_type ptr (view_alloc ("ptr", WithoutInitializing),
+                    A_lcl.graph.row_map.extent (0));
+  Kokkos::deep_copy (ptr, A_lcl.graph.row_map);
+
+  using values_type = typename local_matrix_type::values_type;
+  values_type val (view_alloc ("val", WithoutInitializing),
+                   A_lcl.values.extent (0));
+  Kokkos::deep_copy (val, A_lcl.values);
+
+  local_graph_type lclGraph (ind, ptr);
+  const size_t numCols = A.getColMap ()->getNodeNumElements ();
+  return local_matrix_type (A.getObjectLabel (), numCols, val, lclGraph);
+}
+
+} // namespace // (anonymous)
+
 template<class SC, class LO, class GO, class NT>
 CrsMatrix<SC, LO, GO, NT>
 createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
@@ -21,8 +58,15 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
   const crs_matrix_type* A_crs =
     dynamic_cast<const crs_matrix_type*> (&A);
 
-  if (A_crs != nullptr) {
-    return crs_matrix_type (*A_crs, Teuchos::Copy);
+  if (A_crs != nullptr && A_crs->isFillComplete ()) {
+    auto A_lcl = localDeepCopyFillCompleteCrsMatrix (*A_crs);
+    auto G = A_crs->getCrsGraph ();
+    return crs_matrix_type (A_lcl, A_crs->getRowMap (),
+                            A_crs->getColMap (),
+                            A_crs->getDomainMap (),
+                            A_crs->getRangeMap (),
+                            G->getImporter (),
+                            G->getExporter ());
   }
   else if (A.isGloballyIndexed ()) {
     const LO lclNumRows (A.getNodeNumRows ());

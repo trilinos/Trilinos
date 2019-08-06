@@ -475,16 +475,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, createDeepCopy, SC, LO, GO, NT )
   using std::endl;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
   using map_type = Tpetra::Map<LO, GO, NT>;
-  constexpr bool testCrsNotFillComplete = false;
+  constexpr bool testCrsNotFillComplete = true;
   constexpr bool debug = true;
-
 
   RCP<Teuchos::FancyOStream> fancyOutPtr = debug ?
     Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
     Teuchos::rcpFromRef (out);
   Teuchos::FancyOStream& myOut = *fancyOutPtr;
 
-  myOut << "Test Tpetra::createDeepCopy(RowMatrix->CrsMatrix)" << endl;
+  myOut << "Test Tpetra::createDeepCopy(RowMatrix)->CrsMatrix" << endl;
   Teuchos::OSTab tab0 (myOut);
 
   auto comm = Tpetra::getDefaultComm ();
