@@ -50,6 +50,7 @@
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_ExportFactory_fwd.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
 
 #include <FROSch_EntitySet_def.hpp>
 #include <FROSch_InterfaceEntity_decl.hpp>
@@ -76,6 +77,9 @@ namespace FROSch {
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
+        
+        typedef Xpetra::CrsGraph<LO,GO,NO> Graph;
+        typedef Teuchos::RCP<Graph> GraphPtr;
         
         typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
         typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
