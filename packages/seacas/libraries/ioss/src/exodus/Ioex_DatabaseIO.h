@@ -319,7 +319,7 @@ namespace Ioex {
     mutable std::map<std::string, Ioss::Int64Vector> activeNodeSetNodesIndex;
 
     time_t timeLastFlush{0};
-    int    flushInterval{1};
+    int    flushInterval{-1};
 
     mutable bool fileExists{false}; // False if file has never been opened/created
     mutable bool minimizeOpenFiles{false};
