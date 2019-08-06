@@ -45,7 +45,26 @@ class Test_header(unittest.TestCase):
 
 class Test_EchoJenkinsVars(unittest.TestCase):
     '''Test that the Jenkins environment is echoed properly'''
+
+
+    def setUp(self):
+        self.m_environ = mock.patch.dict(os.environ, {'JOB_BASE_NAME':'TEST_JOB_BASE_NAME',
+                                         'JOB_NAME':'TEST_JOB_NAME',
+                                         'WORKSPACE':os.path.join(os.sep,
+                                                                  'dev',
+                                                                  'null',
+                                                                  'TEST_WORKSPACE'),
+                                         'NODE_NAME':'TEST_NODE_NAME'},
+                            clear=True)
+
+
     def test_echoJenkinsVars(self):
+        with self.m_environ:
+            env_string_io = StringIO()
+            for key in os.environ:
+                print(key + ' = ' + os.environ[key],
+                      file=env_string_io)
+
         expected_string = '''
 ================================================================================
 Jenkins Environment Variables:
@@ -56,41 +75,13 @@ Environment:
 
   pwd = {cwd}
 
-JOB_BASE_NAME = TEST_JOB_BASE_NAME
-JOB_NAME = TEST_JOB_NAME
-WORKSPACE = /dev/null/TEST_WORKSPACE
-NODE_NAME = TEST_NODE_NAME
-
+{environ}
 ================================================================================
-'''.format(cwd=os.getcwd())
-        if sys.version_info.major is not 3:
-            expected_string = '''
-================================================================================
-Jenkins Environment Variables:
-- WORKSPACE    : /dev/null/TEST_WORKSPACE
-
-================================================================================
-Environment:
-
-  pwd = {cwd}
-
-JOB_BASE_NAME = TEST_JOB_BASE_NAME
-JOB_NAME = TEST_JOB_NAME
-NODE_NAME = TEST_NODE_NAME
-WORKSPACE = /dev/null/TEST_WORKSPACE
-
-================================================================================
-'''.format(cwd=os.getcwd())
+'''.format(cwd=os.getcwd(),
+           environ=env_string_io.getvalue())
 
         with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout, \
-            mock.patch.dict(os.environ, {'JOB_BASE_NAME':'TEST_JOB_BASE_NAME',
-                                         'JOB_NAME':'TEST_JOB_NAME',
-                                         'WORKSPACE':os.path.join(os.sep,
-                                                                  'dev',
-                                                                  'null',
-                                                                  'TEST_WORKSPACE'),
-                                         'NODE_NAME':'TEST_NODE_NAME'},
-                            clear=True):
+            self.m_environ:
             PullRequestLinuxDriverMerge.echoJenkinsVars(os.path.join(os.sep,
                                                                      'dev',
                                                                      'null',
