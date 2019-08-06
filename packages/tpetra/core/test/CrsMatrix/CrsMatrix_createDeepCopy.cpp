@@ -47,6 +47,7 @@
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_createDeepCopy_CrsMatrix.hpp"
+#include "Tpetra_Util.hpp"
 
 namespace { // (anonymous)
 
@@ -465,6 +466,185 @@ private:
   bool supportsRowViews_ = false;
 };
 
+template<class SC, class LO, class GO, class NT>
+bool
+crsMatrixInstancesEqual (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
+                         const Tpetra::CrsMatrix<SC, LO, GO, NT>& B)
+{
+  using Teuchos::outArg;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+
+  const Teuchos::Comm<int>& comm = * (A.getMap ()->getComm ());
+  int lclSuccess = 1;
+  int gblSuccess = 0;
+
+  if (A.getRowMap ().is_null () && ! B.getRowMap ().is_null ()) {
+    lclSuccess = 0;
+  }
+  else if (! A.getRowMap ().is_null () && B.getRowMap ().is_null ()) {
+    lclSuccess = 0;
+  }
+  else if (A.getColMap ().is_null () && ! B.getColMap ().is_null ()) {
+    lclSuccess = 0;
+  }
+  else if (! A.getColMap ().is_null () && B.getColMap ().is_null ()) {
+    lclSuccess = 0;
+  }
+  else if (A.isLocallyIndexed () && ! B.isLocallyIndexed ()) {
+    lclSuccess = 0;
+  }
+  else if (A.isGloballyIndexed () && ! B.isGloballyIndexed ()) {
+    lclSuccess = 0;
+  }
+  else if (! A.isLocallyIndexed () && ! A.isGloballyIndexed () &&
+           (B.isLocallyIndexed () || B.isGloballyIndexed ())) {
+    lclSuccess = 0;
+  }
+
+  reduceAll (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess != 1) {
+    return false;
+  }
+
+  if (! A.getRowMap ().is_null () &&
+      ! A.getRowMap ()->isSameAs (* (B.getRowMap ()))) {
+    lclSuccess = 0;
+  }
+  if (! A.getColMap ().is_null () &&
+      ! A.getColMap ()->isSameAs (* (B.getColMap ()))) {
+    lclSuccess = 0;
+  }
+  if (! A.getDomainMap ().is_null () &&
+      ! B.getDomainMap ().is_null () &&
+      ! A.getDomainMap ()->isSameAs (* (B.getDomainMap ()))) {
+    lclSuccess = 0;
+  }
+  if (! A.getRangeMap ().is_null () &&
+      ! A.getRangeMap ().is_null () &&
+      ! A.getRangeMap ()->isSameAs (* (B.getRangeMap ()))) {
+    lclSuccess = 0;
+  }
+
+  reduceAll (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess != 1) {
+    return false;
+  }
+
+  const auto& rowMap = * (A.getRowMap ());
+  const LO lclNumRows = A.getNodeNumRows ();
+
+  Teuchos::Array<SC> A_valsBuf;
+  Teuchos::Array<SC> B_valsBuf;
+
+  if (A.isLocallyIndexed ()) {
+    Teuchos::Array<LO> A_lclColIndsBuf;
+    Teuchos::Array<LO> B_lclColIndsBuf;
+
+    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+      size_t A_numEnt = 0;
+      size_t B_numEnt = 0;
+
+      const size_t A_numEnt2 = A.getNumEntriesInLocalRow (lclRow);
+      if (A_numEnt2 > size_t (A_valsBuf.size ())) {
+        A_valsBuf.resize (A_numEnt2);
+      }
+      if (A_numEnt2 > size_t (A_lclColIndsBuf.size ())) {
+        A_lclColIndsBuf.resize (A_numEnt2);
+      }
+      A.getLocalRowCopy (lclRow, A_lclColIndsBuf (), A_valsBuf (), A_numEnt);
+
+      const size_t B_numEnt2 = B.getNumEntriesInLocalRow (lclRow);
+      if (B_numEnt2 > size_t (B_valsBuf.size ())) {
+        B_valsBuf.resize (B_numEnt2);
+      }
+      if (B_numEnt2 > size_t (B_lclColIndsBuf.size ())) {
+        B_lclColIndsBuf.resize (B_numEnt2);
+      }
+      B.getLocalRowCopy (lclRow, B_lclColIndsBuf (), B_valsBuf (), B_numEnt);
+
+      if (A_numEnt != B_numEnt) {
+        lclSuccess = 0;
+        break;
+      }
+
+      Teuchos::ArrayView<LO> A_lclColInds = A_lclColIndsBuf.view (0, A_numEnt);
+      Teuchos::ArrayView<SC> A_vals = A_valsBuf.view (0, A_numEnt);
+      Tpetra::sort2 (A_lclColInds.begin (), A_lclColInds.end (), A_vals.begin ());
+
+      Teuchos::ArrayView<LO> B_lclColInds = B_lclColIndsBuf.view (0, B_numEnt);
+      Teuchos::ArrayView<SC> B_vals = B_valsBuf.view (0, B_numEnt);
+      Tpetra::sort2 (B_lclColInds.begin (), B_lclColInds.end (), B_vals.begin ());
+
+      if (! std::equal (A_lclColInds.begin (), A_lclColInds.end (),
+                        B_lclColInds.begin ())) {
+        lclSuccess = 0;
+        break;
+      }
+      if (! std::equal (A_vals.begin (), A_vals.end (),
+                        B_vals.begin ())) {
+        lclSuccess = 0;
+        break;
+      }
+    }
+  }
+  else if (A.isGloballyIndexed ()) {
+    Teuchos::Array<GO> A_gblColIndsBuf;
+    Teuchos::Array<GO> B_gblColIndsBuf;
+
+    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+      const GO gblRow = rowMap.getGlobalElement (lclRow);
+      size_t A_numEnt = 0;
+      size_t B_numEnt = 0;
+
+      const size_t A_numEnt2 = A.getNumEntriesInGlobalRow (gblRow);
+      if (A_numEnt2 > size_t (A_valsBuf.size ())) {
+        A_valsBuf.resize (A_numEnt2);
+      }
+      if (A_numEnt2 > size_t (A_gblColIndsBuf.size ())) {
+        A_gblColIndsBuf.resize (A_numEnt2);
+      }
+      A.getGlobalRowCopy (gblRow, A_gblColIndsBuf (), A_valsBuf (), A_numEnt);
+
+      const size_t B_numEnt2 = B.getNumEntriesInGlobalRow (gblRow);
+      if (B_numEnt2 > size_t (B_valsBuf.size ())) {
+        B_valsBuf.resize (B_numEnt2);
+      }
+      if (B_numEnt2 > size_t (B_gblColIndsBuf.size ())) {
+        B_gblColIndsBuf.resize (B_numEnt2);
+      }
+      B.getGlobalRowCopy (gblRow, B_gblColIndsBuf (), B_valsBuf (), B_numEnt);
+
+      if (A_numEnt != B_numEnt) {
+        lclSuccess = 0;
+        break;
+      }
+
+      Teuchos::ArrayView<GO> A_gblColInds = A_gblColIndsBuf.view (0, A_numEnt);
+      Teuchos::ArrayView<SC> A_vals = A_valsBuf.view (0, A_numEnt);
+      Tpetra::sort2 (A_gblColInds.begin (), A_gblColInds.end (), A_vals.begin ());
+
+      Teuchos::ArrayView<GO> B_gblColInds = B_gblColIndsBuf.view (0, B_numEnt);
+      Teuchos::ArrayView<SC> B_vals = B_valsBuf.view (0, B_numEnt);
+      Tpetra::sort2 (B_gblColInds.begin (), B_gblColInds.end (), B_vals.begin ());
+
+      if (! std::equal (A_gblColInds.begin (), A_gblColInds.end (),
+                        B_gblColInds.begin ())) {
+        gblSuccess = 0;
+        break;
+      }
+      if (! std::equal (A_vals.begin (), A_vals.end (),
+                        B_vals.begin ())) {
+        gblSuccess = 0;
+        break;
+      }
+    }
+  }
+
+  reduceAll (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  return gblSuccess == 1;
+}
+
 //
 // UNIT TESTS
 //
@@ -516,6 +696,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, createDeepCopy, SC, LO, GO, NT )
         "fillComplete" << endl;
       Teuchos::OSTab tab2 (myOut);
       crs_matrix_type A_copy = Tpetra::createDeepCopy (*A);
+      TEST_ASSERT( crsMatrixInstancesEqual (*A, A_copy) );
     }
     for (bool hasRowViews : {false, true}) {
       myOut << "Test createDeepCopy with CrsMatrix not yet "
@@ -524,6 +705,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, createDeepCopy, SC, LO, GO, NT )
       Teuchos::OSTab tab2 (myOut);
       MyRowMatrix<SC, LO, GO, NT> A_my (A, hasRowViews);
       crs_matrix_type A_copy = Tpetra::createDeepCopy (A_my);
+      TEST_ASSERT( crsMatrixInstancesEqual (*A, A_copy) );
     }
 
     RCP<const map_type> domainMap = rowMap;
@@ -535,6 +717,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, createDeepCopy, SC, LO, GO, NT )
       Teuchos::OSTab tab2 (myOut);
 
       crs_matrix_type A_copy = Tpetra::createDeepCopy (*A);
+      TEST_ASSERT( crsMatrixInstancesEqual (*A, A_copy) );
     }
     for (bool hasRowViews : {false, true}) {
       myOut << "Test createDeepCopy with fillComplete "
@@ -544,6 +727,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, createDeepCopy, SC, LO, GO, NT )
 
       MyRowMatrix<SC, LO, GO, NT> A_my (A, hasRowViews);
       crs_matrix_type A_copy = Tpetra::createDeepCopy (A_my);
+      TEST_ASSERT( crsMatrixInstancesEqual (*A, A_copy) );
     }
   }
 
@@ -570,10 +754,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, createDeepCopy, SC, LO, GO, NT )
 
     if (testCrsNotFillComplete) {
       crs_matrix_type A_copy = Tpetra::createDeepCopy (*A);
+      TEST_ASSERT( crsMatrixInstancesEqual (*A, A_copy) );
     }
     for (bool hasRowViews : {false, true}) {
       MyRowMatrix<SC, LO, GO, NT> A_my (A, hasRowViews);
       crs_matrix_type A_copy = Tpetra::createDeepCopy (A_my);
+      TEST_ASSERT( crsMatrixInstancesEqual (*A, A_copy) );
     }
 
     RCP<const map_type> domainMap = rowMap;
@@ -582,10 +768,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, createDeepCopy, SC, LO, GO, NT )
 
     {
       crs_matrix_type A_copy = Tpetra::createDeepCopy (*A);
+      TEST_ASSERT( crsMatrixInstancesEqual (*A, A_copy) );
     }
     for (bool hasRowViews : {false, true}) {
       MyRowMatrix<SC, LO, GO, NT> A_my (A, hasRowViews);
       crs_matrix_type A_copy = Tpetra::createDeepCopy (A_my);
+      TEST_ASSERT( crsMatrixInstancesEqual (*A, A_copy) );
     }
   }
 }
