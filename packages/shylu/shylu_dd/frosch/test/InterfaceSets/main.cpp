@@ -215,28 +215,44 @@ int main(int argc, char *argv[])
         NumEntitiesGlobal[0] = vertices->getEntityMap()->getMaxAllGlobalIndex();
         if (vertices->getEntityMap()->lib()==Xpetra::UseEpetra || vertices->getEntityMap()->getGlobalNumElements()>0) {
             NumEntitiesGlobal[0] += 1;
+        } else {
+            NumEntitiesGlobal[0] = -1;
         }
 
         NumEntitiesGlobal[1] = shortEdges->getEntityMap()->getMaxAllGlobalIndex();
         if (shortEdges->getEntityMap()->lib()==Xpetra::UseEpetra || shortEdges->getEntityMap()->getGlobalNumElements()>0) {
             NumEntitiesGlobal[1] += 1;
+        } else {
+            NumEntitiesGlobal[1] = -1;
         }
 
         NumEntitiesGlobal[2] = straightEdges->getEntityMap()->getMaxAllGlobalIndex();
         if (straightEdges->getEntityMap()->lib()==Xpetra::UseEpetra || straightEdges->getEntityMap()->getGlobalNumElements()>0) {
             NumEntitiesGlobal[2] += 1;
+        } else {
+            NumEntitiesGlobal[2] = -1;
         }
 
         NumEntitiesGlobal[3] = edges->getEntityMap()->getMaxAllGlobalIndex();
         if (edges->getEntityMap()->lib()==Xpetra::UseEpetra || edges->getEntityMap()->getGlobalNumElements()>0) {
             NumEntitiesGlobal[3] += 1;
+        } else {
+            NumEntitiesGlobal[3] = -1;
         }
 
         NumEntitiesGlobal[4] = faces->getEntityMap()->getMaxAllGlobalIndex();
         if (faces->getEntityMap()->lib()==Xpetra::UseEpetra || faces->getEntityMap()->getGlobalNumElements()>0) {
             NumEntitiesGlobal[4] += 1;
+        } else {
+            NumEntitiesGlobal[4] = -1;
         }
-
+        
+        for (UN i=0; i<NumEntitiesGlobal.size(); i++) {
+            if (NumEntitiesGlobal[i]<0) {
+                NumEntitiesGlobal[i] = 0;
+            }
+        }
+        
         if (Comm->getRank()==0) {
 
             cout << "\n\

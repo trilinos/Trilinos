@@ -214,8 +214,6 @@ namespace FROSch {
                             LO index = tmpCoarseNode->getCoarseNodeID();
                             // Offspring: loop over nodes
                             for (UN l=0; l<tmpEntity->getNumNodes(); l++) {
-                                tmpEntity->getDistanceToCoarseNode(l,m);
-                                tmpEntity->getDistanceToCoarseNode(l,numCoarseNodes);
                                 SC value = tmpEntity->getDistanceToCoarseNode(l,m)/tmpEntity->getDistanceToCoarseNode(l,numCoarseNodes);
                                 translations[k]->replaceLocalValue(tmpEntity->getGammaDofID(l,k),index,value);
                             }
@@ -284,11 +282,11 @@ namespace FROSch {
                         LO index = tmpCoarseNode->getCoarseNodeID();
                         // Offspring: loop over nodes
                         for (UN l=0; l<tmpEntity->getNumNodes(); l++) {
-                            SC value = tmpCoarseNode->getDistanceToCoarseNode(l,m)/tmpCoarseNode->getDistanceToCoarseNode(l,numCoarseNodes);
+                            SC value = tmpEntity->getDistanceToCoarseNode(l,m)/tmpEntity->getDistanceToCoarseNode(l,numCoarseNodes);
                             
                             // Rotations
-                            x = nodeList->getData(0)[tmpEntity->getLocalNodeID(j)];
-                            y = nodeList->getData(1)[tmpEntity->getLocalNodeID(j)];
+                            x = nodeList->getData(0)[tmpEntity->getLocalNodeID(l)];
+                            y = nodeList->getData(1)[tmpEntity->getLocalNodeID(l)];
                             
                             // Rotation 1
                             rx = y;
@@ -297,7 +295,7 @@ namespace FROSch {
                             rotations[0]->replaceLocalValue(tmpEntity->getGammaDofID(l,0),index,value*rx);
                             rotations[0]->replaceLocalValue(tmpEntity->getGammaDofID(l,1),index,value*ry);
                             if (dimension == 3) {
-                                z = nodeList->getData(2)[tmpEntity->getLocalNodeID(j)];
+                                z = nodeList->getData(2)[tmpEntity->getLocalNodeID(l)];
                                 
                                 rotations[0]->replaceLocalValue(tmpEntity->getGammaDofID(l,2),index,value*rz);
                                 
@@ -323,8 +321,8 @@ namespace FROSch {
                     // Coarse node: loop over nodes
                     for (UN l=0; l<entitySetVector[i]->getEntity(j)->getNumNodes(); l++) {
                         // Rotations
-                        x = nodeList->getData(0)[tmpEntity->getLocalNodeID(j)];
-                        y = nodeList->getData(1)[tmpEntity->getLocalNodeID(j)];
+                        x = nodeList->getData(0)[tmpEntity->getLocalNodeID(l)];
+                        y = nodeList->getData(1)[tmpEntity->getLocalNodeID(l)];
                         
                         // Rotation 1
                         rx = y;
@@ -333,7 +331,7 @@ namespace FROSch {
                         rotations[0]->replaceLocalValue(tmpEntity->getGammaDofID(l,0),coarseNodeID,rx);
                         rotations[0]->replaceLocalValue(tmpEntity->getGammaDofID(l,1),coarseNodeID,ry);
                         if (dimension == 3) {
-                            z = nodeList->getData(2)[tmpEntity->getLocalNodeID(j)];
+                            z = nodeList->getData(2)[tmpEntity->getLocalNodeID(l)];
                             
                             rotations[0]->replaceLocalValue(tmpEntity->getGammaDofID(l,2),coarseNodeID,rz);
                             

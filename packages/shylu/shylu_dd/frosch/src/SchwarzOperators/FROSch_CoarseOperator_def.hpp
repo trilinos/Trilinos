@@ -119,7 +119,7 @@ namespace FROSch {
             *xTmp = x;
             
             if (!usePreconditionerOnly && mode == Teuchos::NO_TRANS) {
-                this->K_->apply(x,*xTmp,mode,1.0,0.0);
+                this->K_->apply(x,*xTmp,mode,Teuchos::ScalarTraits<SC>::one(),Teuchos::ScalarTraits<SC>::zero());
             }
             
             MultiVectorPtr xCoarseSolve = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],x.getNumVectors());
@@ -128,7 +128,7 @@ namespace FROSch {
             applyCoarseSolve(*xCoarseSolve,*yCoarseSolve,mode);
             applyPhi(*yCoarseSolve,*xTmp);
             if (!usePreconditionerOnly && mode != Teuchos::NO_TRANS) {
-                this->K_->apply(*xTmp,*xTmp,mode,1.0,0.0);
+                this->K_->apply(*xTmp,*xTmp,mode,Teuchos::ScalarTraits<SC>::one(),Teuchos::ScalarTraits<SC>::zero());
             }
             y.update(alpha,*xTmp,beta);
         } else {
@@ -136,7 +136,7 @@ namespace FROSch {
                 if (this->Verbose_) std::cout << "WARNING: CoarseOperator has not been computed yet => It will just act as the identity...\n";
                 i++;
             }
-            y.update(1.0,x,0.0);
+            y.update(Teuchos::ScalarTraits<SC>::one(),x,Teuchos::ScalarTraits<SC>::zero());
         }
     }
     
@@ -253,7 +253,7 @@ namespace FROSch {
                         CoarseMatrix_->insertGlobalValues(globalRow,indices,values);
                     } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
                         GOVec indices(1,globalRow);
-                        SCVec values(1,1.0);
+                        SCVec values(1,Teuchos::ScalarTraits<SC>::one());
                         CoarseMatrix_->insertGlobalValues(globalRow,indices(),values());
                     }
                     
@@ -289,7 +289,7 @@ namespace FROSch {
                         CoarseMatrix_->insertGlobalValues(CoarseSolveMap_->getGlobalElement(i),indicesGlob(),values);
                     } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
                         GOVec indices(1,CoarseSolveMap_->getGlobalElement(i));
-                        SCVec values(1,1.0);
+                        SCVec values(1,Teuchos::ScalarTraits<SC>::one());
                         CoarseMatrix_->insertGlobalValues(CoarseSolveMap_->getGlobalElement(i),indices(),values());
                     }
                     

@@ -88,7 +88,7 @@ namespace FROSch {
         *xTmp = x;
         
         if (!usePreconditionerOnly && mode == Teuchos::NO_TRANS) {
-            this->K_->apply(x,*xTmp,mode,1.0,0.0);
+            this->K_->apply(x,*xTmp,mode,Teuchos::ScalarTraits<SC>::one(),Teuchos::ScalarTraits<SC>::zero());
         }
 
         MultiVectorPtr xOverlap;
@@ -123,10 +123,10 @@ namespace FROSch {
             
             xOverlap->replaceMap(OverlappingMatrix_->getRangeMap());
         }
-        SubdomainSolver_->apply(*xOverlap,*yOverlap,mode,1.0,0.0);
+        SubdomainSolver_->apply(*xOverlap,*yOverlap,mode,Teuchos::ScalarTraits<SC>::one(),Teuchos::ScalarTraits<SC>::zero());
         yOverlap->replaceMap(OverlappingMap_);
 
-        xTmp->putScalar(0.0);
+        xTmp->putScalar(Teuchos::ScalarTraits<SC>::zero());
         if (Combine_ == Restricted){
             GO globID = 0;
             LO localID = 0;
@@ -152,7 +152,7 @@ namespace FROSch {
         }
         
         if (!usePreconditionerOnly && mode != Teuchos::NO_TRANS) {
-            this->K_->apply(*xTmp,*xTmp,mode,1.0,0.0);
+            this->K_->apply(*xTmp,*xTmp,mode,Teuchos::ScalarTraits<SC>::one(),Teuchos::ScalarTraits<SC>::zero());
         }
         y.update(alpha,*xTmp,beta);
     }
@@ -166,7 +166,7 @@ namespace FROSch {
             Multiplicity_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(this->getRangeMap(),1);
             MultiVectorPtr multiplicityRepeated;
             multiplicityRepeated = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,1);
-            multiplicityRepeated->putScalar(1.);
+            multiplicityRepeated->putScalar(Teuchos::ScalarTraits<SC>::one());
             ExporterPtr multiplicityExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(multiplicityRepeated->getMap(),this->getRangeMap());
             Multiplicity_->doExport(*multiplicityRepeated,*multiplicityExporter,Xpetra::ADD);
         }
