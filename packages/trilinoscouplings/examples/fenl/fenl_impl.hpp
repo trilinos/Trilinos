@@ -129,10 +129,12 @@ public:
   typedef Kokkos::View<     Scalar** , Kokkos::LayoutLeft, Device >  LocalMultiVectorType ;
   typedef Kokkos::DualView< Scalar** , Kokkos::LayoutLeft, Device >  LocalDualVectorType;
 
-  typedef Tpetra::Map<int, int, NodeType>              MapType;
-  typedef Tpetra::Vector<Scalar,int,int,NodeType>      GlobalVectorType;
-  typedef Tpetra::MultiVector<Scalar,int,int,NodeType> GlobalMultiVectorType;
-  typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType>   GlobalMatrixType;
+  typedef Tpetra::Map<>::local_ordinal_type LocalOrdinalType;
+  typedef Tpetra::Map<>::global_ordinal_type GlobalOrdinalType;
+  typedef Tpetra::Map<LocalOrdinalType,GlobalOrdinalType,NodeType> MapType;
+  typedef Tpetra::Vector<Scalar,LocalOrdinalType,GlobalOrdinalType,NodeType> GlobalVectorType;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinalType,GlobalOrdinalType,NodeType> GlobalMultiVectorType;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinalType,GlobalOrdinalType,NodeType> GlobalMatrixType;
   typedef typename GlobalMatrixType::local_matrix_type LocalMatrixType;
   typedef typename LocalMatrixType::StaticCrsGraphType LocalGraphType;
 
@@ -156,7 +158,7 @@ public:
 
 private:
 
-  typedef Kokkos::View<int*,Device> lid_to_gid_type;
+  typedef Kokkos::View<GlobalOrdinalType*,Device> lid_to_gid_type;
 
   rcpMapType create_row_map()
   {
@@ -412,7 +414,7 @@ public:
       //   Teuchos::fancyOStream(Teuchos::rcp(&std::cout,false));
       // out->setShowProcRank(true);
 
-      Teuchos::RCP< Tpetra::Operator<Scalar,int,int,NodeType> > precOp;
+      Teuchos::RCP< Tpetra::Operator<Scalar,LocalOrdinalType,GlobalOrdinalType,NodeType> > precOp;
       for ( perf.newton_iter_count = 0 ;
             perf.newton_iter_count < newton_iteration_limit ;
             ++perf.newton_iter_count ) {

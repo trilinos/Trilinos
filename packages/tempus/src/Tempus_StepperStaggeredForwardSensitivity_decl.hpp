@@ -100,9 +100,6 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
-    /// True if stepper is initialized.
-    virtual bool isInitialized();
-
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}

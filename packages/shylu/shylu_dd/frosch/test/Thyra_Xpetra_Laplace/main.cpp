@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
         return(EXIT_SUCCESS);
     }
     
-    int N;
+    int N = 0;
     int color=1;
     if (Dimension == 2) {
         N = (int) (pow(CommWorld->getSize(),1/2.) + 100*numeric_limits<double>::epsilon()); // 1/H
@@ -178,12 +178,12 @@ int main(int argc, char *argv[])
             dofsPerNodeVector[block] = (UN) max(int(DofsPerNode-block),1);
             
             ParameterList GaleriList;
-            GaleriList.set("nx", int(N*(M+block)));
-            GaleriList.set("ny", int(N*(M+block)));
-            GaleriList.set("nz", int(N*(M+block)));
-            GaleriList.set("mx", int(N));
-            GaleriList.set("my", int(N));
-            GaleriList.set("mz", int(N));
+            GaleriList.set("nx", GlobalOrdinal(N*(M+block)));
+            GaleriList.set("ny", GlobalOrdinal(N*(M+block)));
+            GaleriList.set("nz", GlobalOrdinal(N*(M+block)));
+            GaleriList.set("mx", GlobalOrdinal(N));
+            GaleriList.set("my", GlobalOrdinal(N));
+            GaleriList.set("mz", GlobalOrdinal(N));
             
             RCP<const Map<LO,GO,NO> > UniqueMapTmp;
             RCP<MultiVector<SC,LO,GO,NO> > CoordinatesTmp;

@@ -29,8 +29,6 @@ void StepperImplicit<Scalar>::setModel(
   this->validImplicitODE_DAE(appModel);
   wrapperModel_ =
     Teuchos::rcp(new WrapperModelEvaluatorBasic<Scalar>(appModel));
-
-  this->isInitialized_ = false;
 }
 
 
@@ -231,8 +229,6 @@ void StepperImplicit<Scalar>::setInitialConditions(
          << "                    eps = " << eps             << std::endl;
     }
   }
-
-  this->isInitialized_ = false;
 }
 
 
@@ -248,8 +244,6 @@ void StepperImplicit<Scalar>::setSolver(std::string solverName)
   Teuchos::RCP<Teuchos::ParameterList> solverPL =
     Teuchos::sublist(stepperPL_, solverName, true);
   this->setSolver(solverPL);
-
-  this->isInitialized_ = false;
 }
 
 
@@ -286,8 +280,6 @@ void StepperImplicit<Scalar>::setSolver(
        "Error - StepperImplicit<Scalar>::setSolver() wrapperModel_ is unset!\n"
     << "  Should call setModel(...) first.\n");
   solver_->setModel(wrapperModel_);
-
-  this->isInitialized_ = false;
 }
 
 

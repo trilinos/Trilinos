@@ -52,10 +52,13 @@
 
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
-#include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_UseDefaultTypes.hpp>
+
+#ifdef HAVE_XPETRA_EPETRA
+#include <Xpetra_EpetraCrsMatrix.hpp>
+#endif
 
 #include "FROSch_Tools_def.hpp"
 
