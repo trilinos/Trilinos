@@ -437,7 +437,10 @@ class Test_GetCDashTrack(unittest.TestCase):
 
     def test_default(self):
         expected_output = 'PULLREQUEST_CDASH_TRACK isn\'t set, using default value\n'
-        with self.IOredirect as m_output:
+        with self.IOredirect as m_output, \
+            mock.patch.dict(os.environ,
+                            {'NOT_PULLREQUEST_CDASH_TRACK': self.test_track},
+                            clear=True):
             self.assertEqual('Pull Request',
                              PullRequestLinuxDriverTest.getCDashTrack())
         self.assertEqual(expected_output, m_output.getvalue())
