@@ -32,7 +32,7 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
     for (LO i = 0; i < lclNumRows; ++i) {
       const size_t lclNumEnt = A.getNumEntriesInLocalRow (i);
       entPerRow[i] = lclNumEnt;
-      maxNumEnt = maxNumEnt > lclNumEnt ? lclNumEnt : maxNumEnt;
+      maxNumEnt = maxNumEnt < lclNumEnt ? lclNumEnt : maxNumEnt;
     }
 
     Teuchos::ArrayView<const size_t> entPerRow_av
@@ -75,6 +75,8 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
         numEnt = static_cast<size_t> (inputInds_av.size ());
       }
       else {
+        const size_t lclNumEnt = A.getNumEntriesInLocalRow (lclRow);
+        TEUCHOS_ASSERT(lclNumEnt <= maxNumEnt);
         A.getGlobalRowCopy (gblRow, inputIndsBuf (),
                             inputValsBuf (), numEnt);
         inputInds_av = inputIndsBuf.view (0, numEnt);

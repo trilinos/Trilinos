@@ -73,11 +73,16 @@ localRowCounts (const RowGraph<LO, GO, NT>& G)
   }
   using host = Kokkos::DefaultHostExecutionSpace;
   auto entPerRow_h = Kokkos::create_mirror_view (host (), entPerRow);
+
+  // Don't trust G.getNodeMaxNumRowEntries() unless G is fillComplete.
+  // Even then, I would rather this method didn't exist (since it adds
+  // state and imposes overhead on fillComplete), and it's easy to
+  // compute ourselves here.
   size_t maxNumEnt = 0;
   for (LO i = 0; i < lclNumRows; ++i) {
     const size_t lclNumEnt = G.getNumEntriesInLocalRow (i);
     entPerRow_h[i] = offset_type (lclNumEnt);
-    maxNumEnt = maxNumEnt > lclNumEnt ? lclNumEnt : maxNumEnt;
+    maxNumEnt = maxNumEnt < lclNumEnt ? lclNumEnt : maxNumEnt;
   }
   Kokkos::deep_copy (entPerRow, entPerRow_h);
   return {entPerRow, maxNumEnt};
