@@ -79,8 +79,6 @@ setModel(
     sensitivityStepper_ = sf->createStepper(stepperPL_, fsa_model_);
   else
     sensitivityStepper_->setModel(fsa_model_);
-
-  this->isInitialized_ = false;
 }
 
 
@@ -99,8 +97,6 @@ setSolver(std::string solverName)
 {
   stateStepper_->setSolver(solverName);
   sensitivityStepper_->setSolver(solverName);
-
-  this->isInitialized_ = false;
 }
 
 template<class Scalar>
@@ -119,8 +115,6 @@ setSolver(
 {
   stateStepper_->setSolver(solverPL);
   sensitivityStepper_->setSolver(solverPL);
-
-  this->isInitialized_ = false;
 }
 
 
@@ -131,8 +125,6 @@ setSolver(
 {
   stateStepper_->setSolver(solver);
   sensitivityStepper_->setSolver(solver);
-
-  this->isInitialized_ = false;
 }
 
 
@@ -141,28 +133,14 @@ void StepperStaggeredForwardSensitivity<Scalar>::
 initialize()
 {
   this->setSolver();
-
-  stateStepper_->initialize();
-  sensitivityStepper_->initialize();
-
-  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
-template<class Scalar>
-bool StepperStaggeredForwardSensitivity<Scalar>::isInitialized()
-{
-  return (this->isInitialized_ && stateStepper_->isInitialized()
-                               && sensitivityStepper_->isInitialized());
-}
 
 template<class Scalar>
 void StepperStaggeredForwardSensitivity<Scalar>::
 takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-    "Error - " << this->description() << " is not initialized!");
-
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -352,8 +330,6 @@ setParameterList(
   }
   // Can not validate because of optional Parameters (e.g., Solver Name).
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
-
-  this->isInitialized_ = false;
 }
 
 
@@ -416,8 +392,6 @@ setParams(
 
   // Can not validate because of optional Parameters (e.g., Solver Name).
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
-
-  this->isInitialized_ = false;
 }
 
 

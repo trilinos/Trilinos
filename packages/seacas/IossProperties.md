@@ -70,7 +70,7 @@ PARALLEL\_IO\_MODE | netcdf4, hdf5, pnetcdf | mpiio and mpiposix are deprecated 
 ## Properties for the heartbeat output
  Property              | Value  | Description
 -----------------------|--------|-----------------------------------------------------------
-  FLUSH\_INTERVAL       | int   | Minimum time interval between flushing heartbeat data to disk.  Default is 10 seconds
+  FLUSH\_INTERVAL       | int   | For heartbeat, the minimum time interval in seconds between flushing heartbeat data to disk.  Default is 10 seconds
   FLUSH\_INTERVAL       | int   | For non-heartbeat, the number of output steps between flushing data to disk; if 0, then no flush
   TIME\_STAMP\_FORMAT    | \[%H:%M:%S] | Format used to format time stamp.  See strftime man page
   SHOW\_TIME\_STAMP      | on/off | Should the output lines be preceded by the timestamp

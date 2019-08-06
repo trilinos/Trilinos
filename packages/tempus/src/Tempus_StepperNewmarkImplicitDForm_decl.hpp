@@ -68,8 +68,7 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
 
   /// Set the initial conditions and make them consistent.
   virtual void setInitialConditions (
-    const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */)
-  {this->isInitialized_ = false;}
+    const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}
 
   /// Take the specified timestep, dt, and return true if successful.
   virtual void
