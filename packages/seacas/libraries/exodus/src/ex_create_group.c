@@ -37,7 +37,7 @@
 #include "exodusII_int.h" // for EX_FATAL
 
 /*!
-  \ingroup Utilities
+  \ingroup ModelDescription
   \undoc
 */
 
@@ -49,7 +49,7 @@ int ex_create_group(int parent_id, const char *group_name)
   int status;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(parent_id, __func__);
+  ex__check_valid_file_id(parent_id, __func__);
 
   if ((status = nc_redef(parent_id)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", parent_id);
@@ -64,7 +64,7 @@ int ex_create_group(int parent_id, const char *group_name)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = ex_leavedef(parent_id, __func__)) != NC_NOERR) {
+  if ((status = ex__leavedef(parent_id, __func__)) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(exoid);
