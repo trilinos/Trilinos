@@ -50,6 +50,7 @@
 
 #include "Xpetra_BlockedMultiVector.hpp"
 
+#include "Xpetra_BlockedMap.hpp"
 
 namespace Xpetra {
 
@@ -64,8 +65,8 @@ Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& 
 {
     XPETRA_MONITOR("MultiVectorFactory::Build");
 
-    RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap =
-        Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
+    RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap =
+        Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
 
     if(!bmap.is_null())
     {
@@ -87,7 +88,7 @@ Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
+Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
       const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar>>& ArrayOfPtrs,
       size_t                                                            NumVectors)
 {

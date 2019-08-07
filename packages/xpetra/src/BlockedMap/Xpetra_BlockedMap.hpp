@@ -57,7 +57,7 @@ namespace Xpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
-//  template<class S, class LO, class GO, class N> class Vector;
+  //template<class S, class LO, class GO, class N> class Vector;
   template<class LO, class GO, class N> class MapFactory;
 #endif
 
