@@ -61,7 +61,10 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVector MultiVector;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr; 
+        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
+        
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtr SchwarzOperatorPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtrVec SchwarzOperatorPtrVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SchwarzOperatorPtrVecPtr SchwarzOperatorPtrVecPtr;
@@ -72,9 +75,12 @@ namespace FROSch {
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
-        MultiplicativeOperator(CrsMatrixPtr k, ParameterListPtr parameterList);
+        MultiplicativeOperator(ConstCrsMatrixPtr k,
+                               ParameterListPtr parameterList);
         
-        MultiplicativeOperator(CrsMatrixPtr k, SchwarzOperatorPtrVecPtr operators, ParameterListPtr parameterList);
+        MultiplicativeOperator(ConstCrsMatrixPtr k,
+                               SchwarzOperatorPtrVecPtr operators,
+                               ParameterListPtr parameterList);
         
         ~MultiplicativeOperator();
         

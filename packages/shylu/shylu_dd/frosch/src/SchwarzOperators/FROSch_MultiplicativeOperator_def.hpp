@@ -47,7 +47,8 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(CrsMatrixPtr k, ParameterListPtr parameterList) :
+    MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(ConstCrsMatrixPtr k,
+                                                                ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k, parameterList),
     OperatorVector_ (0),
     EnableOperators_ (0)
@@ -56,7 +57,9 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(CrsMatrixPtr k, SchwarzOperatorPtrVecPtr operators, ParameterListPtr parameterList) :
+    MultiplicativeOperator<SC,LO,GO,NO>::MultiplicativeOperator(ConstCrsMatrixPtr k,
+                                                                SchwarzOperatorPtrVecPtr operators,
+                                                                ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k, parameterList),
     OperatorVector_ (0),
     EnableOperators_ (0)
@@ -111,7 +114,7 @@ namespace FROSch {
         
         this->OperatorVector_[1]->apply(*xTmp,*xTmp,true);
 
-        yTmp->update(1.0,*xTmp,-1.0);
+        yTmp->update(Teuchos::ScalarTraits<SC>::one(),*xTmp,-Teuchos::ScalarTraits<SC>::one());
         y.update(alpha,*yTmp,beta);
         
         

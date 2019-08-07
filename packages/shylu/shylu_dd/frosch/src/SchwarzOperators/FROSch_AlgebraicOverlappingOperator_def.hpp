@@ -47,7 +47,7 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    AlgebraicOverlappingOperator<SC,LO,GO,NO>::AlgebraicOverlappingOperator(CrsMatrixPtr k,
+    AlgebraicOverlappingOperator<SC,LO,GO,NO>::AlgebraicOverlappingOperator(ConstCrsMatrixPtr k,
                                                                             ParameterListPtr parameterList) :
     OverlappingOperator<SC,LO,GO,NO> (k,parameterList)
     {
@@ -95,12 +95,18 @@ namespace FROSch {
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
                                                                             MapPtr repeatedMap)
     {
-        //if (this->Verbose_) std::cout << "WARNING: Can we just copy the pointers like that without changing the matrix...?\n";
-
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
-        for (int i=0; i<overlap; i++) {
-            ExtendOverlapByOneLayer(this->OverlappingMatrix_,this->OverlappingMap_);
+        
+        if (this->ParameterList_->get("Only Communicate Graph to Add Layers",false)) {
+            ConstGraphPtr overlappingGraph = this->OverlappingMatrix_->getCrsGraph();
+            for (int i=0; i<overlap; i++) {
+                ExtendOverlapByOneLayer(overlappingGraph,this->OverlappingMap_,overlappingGraph,this->OverlappingMap_);
+            }
+        } else {
+            for (int i=0; i<overlap; i++) {
+                ExtendOverlapByOneLayer(this->OverlappingMatrix_,this->OverlappingMap_,this->OverlappingMatrix_,this->OverlappingMap_);
+            }
         }
 
         return 0;

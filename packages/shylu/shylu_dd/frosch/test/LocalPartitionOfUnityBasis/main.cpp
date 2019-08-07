@@ -121,40 +121,40 @@ int main(int argc, char *argv[])
     ArrayRCP<RCP<MultiVector<SC,LO,GO,NO> > > partitionOfUnity(2);
 
     RCP<MultiVector<SC,LO,GO,NO> > tmpVec = MultiVectorFactory<SC,LO,GO,NO>::Build(dofsMap,2);
-    tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[0]),0,1.0);
-    tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[0]),0,1.0);
-    tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[0]),0,1.0);
+    tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[0]),0,Teuchos::ScalarTraits<SC>::one());
+    tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[0]),0,Teuchos::ScalarTraits<SC>::one());
+    tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[0]),0,Teuchos::ScalarTraits<SC>::one());
 
-    tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[8]),1,1.0);
-    tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[8]),1,1.0);
-    tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[8]),1,1.0);
+    tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[8]),1,Teuchos::ScalarTraits<SC>::one());
+    tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[8]),1,Teuchos::ScalarTraits<SC>::one());
+    tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[8]),1,Teuchos::ScalarTraits<SC>::one());
     partitionOfUnity[0] = tmpVec;
 
     tmpVec = MultiVectorFactory<SC,LO,GO,NO>::Build(dofsMap,1);
     for (UN i=1; i<8; i++) {
-        tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),0,1.0);
-        tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),0,1.0);
-        tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),0,1.0);
+        tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),0,Teuchos::ScalarTraits<SC>::one());
+        tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),0,Teuchos::ScalarTraits<SC>::one());
+        tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),0,Teuchos::ScalarTraits<SC>::one());
     }
     partitionOfUnity[1] = tmpVec;
 
     RCP<MultiVector<SC,LO,GO,NO> > nullspace = MultiVectorFactory<SC,LO,GO,NO>::Build(dofsMap,6);
     for (UN i=0; i<9; i++) {
-        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),0,1.0);
-        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),1,1.0);
-        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),2,1.0);
+        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),0,Teuchos::ScalarTraits<SC>::one());
+        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),1,Teuchos::ScalarTraits<SC>::one());
+        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),2,Teuchos::ScalarTraits<SC>::one());
 
-        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),3,double(i));
-        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),3,-double(i));
-        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),3,0.0);
+        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),3,Teuchos::ScalarTraits<SC>::one()*double(i));
+        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),3,-Teuchos::ScalarTraits<SC>::one()*double(i));
+        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),3,Teuchos::ScalarTraits<SC>::zero());
 
-        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),4,-double(i));
-        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),4,0.0);
-        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),4,double(i));
+        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),4,-Teuchos::ScalarTraits<SC>::one()*double(i));
+        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),4,Teuchos::ScalarTraits<SC>::zero());
+        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),4,Teuchos::ScalarTraits<SC>::one()*double(i));
 
-        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),5,0.0);
-        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),5,double(i));
-        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),5,-double(i));
+        nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),5,Teuchos::ScalarTraits<SC>::zero());
+        nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),5,Teuchos::ScalarTraits<SC>::one()*double(i));
+        nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),5,-Teuchos::ScalarTraits<SC>::one()*double(i));
     }
 
 

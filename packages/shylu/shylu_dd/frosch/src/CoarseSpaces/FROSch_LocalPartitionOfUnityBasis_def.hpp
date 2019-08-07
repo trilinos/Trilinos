@@ -98,7 +98,7 @@ namespace FROSch {
                 tmpBasis[i] = MultiVectorPtrVecPtr(PartitionOfUnity_[i]->getNumVectors());
                 for (UN j=0; j<PartitionOfUnity_[i]->getNumVectors(); j++) {
                     MultiVectorPtr tmpBasisJ = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(NullspaceBasis_->getMap(),NullspaceBasis_->getNumVectors());
-                    tmpBasisJ->elementWiseMultiply(1.0,*PartitionOfUnity_[i]->getVector(j),*NullspaceBasis_,1.0);
+                    tmpBasisJ->elementWiseMultiply(Teuchos::ScalarTraits<SC>::one(),*PartitionOfUnity_[i]->getVector(j),*NullspaceBasis_,Teuchos::ScalarTraits<SC>::one());
                     if (ParameterList_->get("Orthogonalize",true)) {
                         tmpBasis[i][j] = ModifiedGramSchmidt(tmpBasisJ.getConst());
                     } else {
@@ -142,7 +142,7 @@ namespace FROSch {
                     for (UN j=0; j<maxNV[i]; j++) {
                         //MultiVectorPtrVecPtr tmpBasis2(PartitionOfUnity_[i]->getNumVectors());
                         MultiVectorPtr entityBasis = Xpetra::MultiVectorFactory<SC,LO,GO,NO >::Build(PartitionOfUnity_[i]->getMap(),PartitionOfUnity_[i]->getNumVectors());
-                        entityBasis->scale(0.0);
+                        entityBasis->scale(Teuchos::ScalarTraits<SC>::zero());
                         for (UN k=0; k<PartitionOfUnity_[i]->getNumVectors(); k++) {
                             if (j<tmpBasis[i][k]->getNumVectors()) {
                                 entityBasis->getDataNonConst(k).deepCopy(tmpBasis[i][k]->getData(j)()); // Here, we copy data. Do we need to do this?

@@ -58,6 +58,7 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
 
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
         
@@ -74,7 +75,7 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         
         
-        TwoLevelPreconditioner(CrsMatrixPtr k,
+        TwoLevelPreconditioner(ConstCrsMatrixPtr k,
                                ParameterListPtr parameterList);
 
         int initialize(bool useDefaultParameters = true);
@@ -108,7 +109,7 @@ namespace FROSch {
         
         std::string description() const;
 
-        int resetMatrix(CrsMatrixPtr &k);
+        int resetMatrix(ConstCrsMatrixPtr &k);
         
     protected:
         

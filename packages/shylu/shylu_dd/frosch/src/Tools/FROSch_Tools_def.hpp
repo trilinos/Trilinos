@@ -89,29 +89,28 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > matrix)
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix)
     {
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > uniqueMap = Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getRowMap(),1);
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > overlappingMap = uniqueMap;
-        ExtendOverlapByOneLayer<SC,LO,GO,NO>(matrix,overlappingMap);
+        Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > overlappingMap = uniqueMap.getConst();
+        ExtendOverlapByOneLayer<SC,LO,GO,NO>(matrix,overlappingMap,matrix,overlappingMap);
         
-        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > tmpMatrix = matrix;
-        matrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,2*tmpMatrix->getGlobalMaxNumRowEntries());
+        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > tmpMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,matrix->getGlobalMaxNumRowEntries());
 #ifdef Tpetra_issue_1752
         // AH 10/10/2017: Can we get away with using just one importer/exporter after the Tpetra issue is fixed?
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
         Teuchos::RCP<Xpetra::Export<LO,GO,NO> > gather = Xpetra::ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
         
-        matrix->doImport(*tmpMatrix,*scatter,Xpetra::ADD);
+        tmpMatrix->doImport(*matrix,*scatter,Xpetra::ADD);
 #else
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter;
         Teuchos::RCP<Xpetra::Export<LO,GO,NO> > gather = Xpetra::ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
         
-        if (matrix->getRowMap()->lib()==Xpetra::UseEpetra) {
+        if (tmpMatrix->getRowMap()->lib()==Xpetra::UseEpetra) {
             scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
-            matrix->doImport(*tmpMatrix,*scatter,Xpetra::ADD);
+            tmpMatrix->doImport(*matrix,*scatter,Xpetra::ADD);
         } else {
-            matrix->doImport(*tmpMatrix,*gather,Xpetra::ADD);
+            tmpMatrix->doImport(*matrix,*gather,Xpetra::ADD);
         }
 #endif
         
@@ -126,7 +125,7 @@ namespace FROSch {
             if (uniqueMap->getLocalElement(globalRow)<0) {
                 Teuchos::ArrayView<const GO> indices;
                 Teuchos::ArrayView<const SC> values;
-                matrix->getGlobalRowView(globalRow,indices,values);
+                tmpMatrix->getGlobalRowView(globalRow,indices,values);
                 
                 LO j=0;
                 while (j<indices.size() && overlappingMap->getLocalElement(indices[j])>=0) {
@@ -187,7 +186,7 @@ namespace FROSch {
             }
         }
         sortunique(repeatedIndices);
-        return Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,repeatedIndices(),0,matrix->getRowMap()->getComm());
+        return Xpetra::MapFactory<LO,GO,NO>::Build(tmpMatrix->getRowMap()->lib(),-1,repeatedIndices(),0,matrix->getRowMap()->getComm());
     }
     
     /*
@@ -276,6 +275,8 @@ namespace FROSch {
         return Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,repeatedIndices(),0,matrix->getRowMap()->getComm());
     }
     */
+    
+/*
     template <class SC,class LO,class GO,class NO>
     int ExtendOverlapByOneLayer(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &overlappingMatrix,
                                 Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &overlappingMap)
@@ -301,15 +302,39 @@ namespace FROSch {
         
         return 0;
     }
-    
-//    template <class SC,class LO,class GO,class NO>
-//    int ExtendOverlapByOneLayerBlock(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &overlappingMatrix,
-//                                     Teuchos::ArrayRCP<<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &overlappingMapBlocks){
-//    
-//        
-//        return 0;
-//    }
+ */
 
+    template <class SC,class LO,class GO,class NO>
+    int ExtendOverlapByOneLayer(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > inputMatrix,
+                                Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > inputMap,
+                                Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &outputMatrix,
+                                Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &outputMap)
+    {
+        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > tmpMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(inputMap,inputMatrix->getGlobalMaxNumRowEntries());
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(inputMatrix->getRowMap(),inputMap);
+        tmpMatrix->doImport(*inputMatrix,*scatter,Xpetra::ADD);
+        tmpMatrix->fillComplete(inputMatrix->getDomainMap(),inputMatrix->getRangeMap());
+        
+        outputMatrix = tmpMatrix.getConst();
+        outputMap = outputMatrix->getColMap();
+        return 0;
+    }
+    
+    template <class LO,class GO,class NO>
+    int ExtendOverlapByOneLayer(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > inputGraph,
+                                Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > inputMap,
+                                Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > &outputGraph,
+                                Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &outputMap)
+    {
+        Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > tmpGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(inputMap,inputGraph->getGlobalMaxNumRowEntries());
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(inputGraph->getRowMap(),inputMap);
+        tmpGraph->doImport(*inputGraph,*scatter,Xpetra::ADD);
+        tmpGraph->fillComplete(inputGraph->getDomainMap(),inputGraph->getRangeMap());
+        
+        outputGraph = tmpGraph.getConst();
+        outputMap = outputGraph->getColMap();
+        return 0;
+    }
     
     template <class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > AssembleMaps(Teuchos::ArrayView<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVector,
@@ -532,7 +557,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    Teuchos::ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix,
+    Teuchos::ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &matrix,
                                                      Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &repeatedMap)
     {
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > repeatedMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap,2*matrix->getGlobalMaxNumRowEntries());
@@ -634,16 +659,16 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > resultMultiVector;
         if (numVec>0) {
             unsigned itmp = 0;
-            SC en = 0.0;
-            SC de = 0.0;
-            SC norm = 0.0;
+            SC en = Teuchos::ScalarTraits<SC>::zero();
+            SC de = Teuchos::ScalarTraits<SC>::zero();
+            SC norm = Teuchos::ScalarTraits<SC>::zero();
             Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpMultiVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(multiVector->getMap(),numVec);
             for (unsigned i=0; i<numVec; i++) {
-                tmpMultiVector->getVectorNonConst(i-itmp)->update(1.0,*multiVector->getVector(i),0.0);
+                tmpMultiVector->getVectorNonConst(i-itmp)->update(Teuchos::ScalarTraits<SC>::one(),*multiVector->getVector(i),Teuchos::ScalarTraits<SC>::zero());
                 for (unsigned j=0; j<i-itmp; j++) {
                     en = tmpMultiVector->getVector(i-itmp)->dot(*tmpMultiVector->getVector(j));
                     de = tmpMultiVector->getVector(j)->dot(*tmpMultiVector->getVector(j));
-                    tmpMultiVector->getVectorNonConst(i-itmp)->update(-en/de,*tmpMultiVector->getVector(j),1.0);
+                    tmpMultiVector->getVectorNonConst(i-itmp)->update(-en/de,*tmpMultiVector->getVector(j),Teuchos::ScalarTraits<SC>::one());
                 }
                 norm = tmpMultiVector->getVector(i-itmp)->norm2();
                 if (norm<1.0e-10) {
@@ -655,7 +680,7 @@ namespace FROSch {
             }
             resultMultiVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(multiVector->getMap(),numVec);
             for (unsigned i=0; i<numVec-itmp; i++) {
-                resultMultiVector->getVectorNonConst(i)->update(1.0,*tmpMultiVector->getVector(i),0.0);
+                resultMultiVector->getVectorNonConst(i)->update(Teuchos::ScalarTraits<SC>::one(),*tmpMultiVector->getVector(i),Teuchos::ScalarTraits<SC>::zero());
             }
         }
         zero = arrayZero();
@@ -680,7 +705,7 @@ namespace FROSch {
             nullSpaceBasis = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,dofsPerNode);
             for (unsigned i=0; i<dofsPerNode; i++) {
                 for (unsigned j=0; j<dofsMaps[i]->getNodeNumElements(); j++) {
-                    nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = 1.0;
+                    nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = Teuchos::ScalarTraits<SC>::one();
                 }
             }
         } else if (nullSpaceType==1) { // linear elasticity
@@ -693,7 +718,7 @@ namespace FROSch {
                 // translations
                 for (unsigned i=0; i<2; i++) {
                     for (unsigned j=0; j<dofsMaps[i]->getNodeNumElements(); j++) {
-                        nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = 1.0;
+                        nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = Teuchos::ScalarTraits<SC>::one();
                     }
                 }
                 // rotation
@@ -706,20 +731,20 @@ namespace FROSch {
                 // translations
                 for (unsigned i=0; i<3; i++) {
                     for (unsigned j=0; j<dofsMaps[i]->getNodeNumElements(); j++) {
-                        nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = 1.0;
+                        nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = Teuchos::ScalarTraits<SC>::one();
                     }
                 }
                 // rotations
                 for (unsigned j=0; j<dofsMaps[0]->getNodeNumElements(); j++) {
                     nullSpaceBasis->getDataNonConst(3)[repeatedMap->getLocalElement(dofsMaps[0]->getGlobalElement(j))] = nodeList->getData(1)[j];
                     nullSpaceBasis->getDataNonConst(3)[repeatedMap->getLocalElement(dofsMaps[1]->getGlobalElement(j))] = -nodeList->getData(0)[j];
-                    nullSpaceBasis->getDataNonConst(3)[repeatedMap->getLocalElement(dofsMaps[2]->getGlobalElement(j))] = 0.0;
+                    nullSpaceBasis->getDataNonConst(3)[repeatedMap->getLocalElement(dofsMaps[2]->getGlobalElement(j))] = Teuchos::ScalarTraits<SC>::zero();
                     
                     nullSpaceBasis->getDataNonConst(4)[repeatedMap->getLocalElement(dofsMaps[0]->getGlobalElement(j))] = -nodeList->getData(2)[j];
-                    nullSpaceBasis->getDataNonConst(4)[repeatedMap->getLocalElement(dofsMaps[1]->getGlobalElement(j))] = 0.0;
+                    nullSpaceBasis->getDataNonConst(4)[repeatedMap->getLocalElement(dofsMaps[1]->getGlobalElement(j))] = Teuchos::ScalarTraits<SC>::zero();
                     nullSpaceBasis->getDataNonConst(4)[repeatedMap->getLocalElement(dofsMaps[2]->getGlobalElement(j))] = nodeList->getData(0)[j];
                     
-                    nullSpaceBasis->getDataNonConst(5)[repeatedMap->getLocalElement(dofsMaps[0]->getGlobalElement(j))] = 0.0;
+                    nullSpaceBasis->getDataNonConst(5)[repeatedMap->getLocalElement(dofsMaps[0]->getGlobalElement(j))] = Teuchos::ScalarTraits<SC>::zero();
                     nullSpaceBasis->getDataNonConst(5)[repeatedMap->getLocalElement(dofsMaps[1]->getGlobalElement(j))] = nodeList->getData(2)[j];
                     nullSpaceBasis->getDataNonConst(5)[repeatedMap->getLocalElement(dofsMaps[2]->getGlobalElement(j))] = -nodeList->getData(1)[j];
                 }

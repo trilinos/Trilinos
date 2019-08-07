@@ -60,6 +60,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
@@ -86,7 +87,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
         
         
-        RGDSWCoarseOperator(CrsMatrixPtr k,
+        RGDSWCoarseOperator(ConstCrsMatrixPtr k,
                             ParameterListPtr parameterList);
         
         virtual int resetCoarseSpaceBlock(UN blockId,

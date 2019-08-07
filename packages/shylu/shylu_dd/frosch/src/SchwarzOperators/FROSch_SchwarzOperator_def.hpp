@@ -60,7 +60,7 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    SchwarzOperator<SC,LO,GO,NO>::SchwarzOperator(CrsMatrixPtr k,
+    SchwarzOperator<SC,LO,GO,NO>::SchwarzOperator(ConstCrsMatrixPtr k,
                                                   ParameterListPtr parameterList) :
     MpiComm_ (k->getRangeMap()->getComm()),
     SerialComm_ (),
@@ -115,7 +115,7 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    int SchwarzOperator<SC,LO,GO,NO>::resetMatrix(SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr &k) {
+    int SchwarzOperator<SC,LO,GO,NO>::resetMatrix(ConstCrsMatrixPtr &k) {
     // Maybe set IsComputed_ = false ? -> Go through code to be saver/cleaner
     // This function must be actively called by the user, and is only for recycling purposes.
     // The preconditioner is still computed and this point or the preconditioner was never computed and can now be computed with the matrix k now.

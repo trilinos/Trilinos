@@ -47,6 +47,7 @@
 #include <ShyLU_DDFROSch_config.h>
 
 #include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>
@@ -71,15 +72,25 @@ namespace FROSch {
                                                                                   Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > subMaps);
 
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > matrix);
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > matrix);
     
+    /*
     template <class SC,class LO,class GO,class NO>
     int ExtendOverlapByOneLayer(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &overlappingMatrix,
                                 Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &overlappingMap);
-
-//    template <class SC,class LO,class GO,class NO>
-//    int ExtendOverlapByOneLayerBlock(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &overlappingMatrix,
-//                                     Teuchos::ArrayRCP<<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &overlappingMapBlocks);
+     */
+    
+    template <class SC,class LO,class GO,class NO>
+    int ExtendOverlapByOneLayer(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > inputMatrix,
+                                Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > inputMap,
+                                Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &outputMatrix,
+                                Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &outputMap);
+    
+    template <class LO,class GO,class NO>
+    int ExtendOverlapByOneLayer(Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > inputGraph,
+                                Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > inputMap,
+                                Teuchos::RCP<const Xpetra::CrsGraph<LO,GO,NO> > &outputGraph,
+                                Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &outputMap);
     
     template <class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > AssembleMaps(Teuchos::ArrayView<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVector,
@@ -119,7 +130,8 @@ namespace FROSch {
                                                                           Teuchos::ArrayRCP<GO> maxSubGIDVec);
     
     template <class SC,class LO,class GO,class NO>
-    Teuchos::ArrayRCP<GO> FindOneEntryOnly(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix);
+    Teuchos::ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > &matrix,
+                                                     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &repeatedMap);
     
     template <class SC,class LO>
     bool ismultiple(Teuchos::ArrayView<SC> A,

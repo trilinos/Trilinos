@@ -77,6 +77,7 @@ namespace FROSch {
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
+        typedef Teuchos::RCP<const CrsMatrix> ConstCrsMatrixPtr;
         
         typedef Xpetra::CrsGraph<LO,GO,NO> Graph;
         typedef Teuchos::RCP<Graph> GraphPtr;
@@ -119,7 +120,7 @@ namespace FROSch {
         
         int removeDirichletNodes(GOVecView dirichletBoundaryDofs);
         
-        int divideUnconnectedEntities(CrsMatrixPtr matrix);
+        int divideUnconnectedEntities(ConstCrsMatrixPtr matrix);
         
         int flagEntities(MultiVectorPtr nodeList = Teuchos::null);
         

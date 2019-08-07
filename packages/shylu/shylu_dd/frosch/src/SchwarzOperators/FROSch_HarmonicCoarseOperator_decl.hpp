@@ -61,6 +61,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr2D MapPtrVecPtr2D;
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
@@ -87,7 +88,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D GOVec2D;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
         
-        HarmonicCoarseOperator(CrsMatrixPtr k,
+        HarmonicCoarseOperator(ConstCrsMatrixPtr k,
                                ParameterListPtr parameterList);
         
         virtual int initialize() = 0;

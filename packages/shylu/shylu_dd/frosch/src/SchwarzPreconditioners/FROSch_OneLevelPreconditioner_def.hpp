@@ -47,8 +47,8 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    OneLevelPreconditioner<SC,LO,GO,NO>::OneLevelPreconditioner(CrsMatrixPtr k,
-                                                                            ParameterListPtr parameterList) :
+    OneLevelPreconditioner<SC,LO,GO,NO>::OneLevelPreconditioner(ConstCrsMatrixPtr k,
+                                                                ParameterListPtr parameterList) :
     SchwarzPreconditioner<SC,LO,GO,NO> (parameterList,k->getRangeMap()->getComm()),
     K_ (k),
     SumOperator_ (new SumOperator<SC,LO,GO,NO>(k->getRangeMap()->getComm())),
@@ -164,7 +164,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int OneLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
+    int OneLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstCrsMatrixPtr &k)
     {
         K_ = k;
         OverlappingOperator_->resetMatrix(K_);

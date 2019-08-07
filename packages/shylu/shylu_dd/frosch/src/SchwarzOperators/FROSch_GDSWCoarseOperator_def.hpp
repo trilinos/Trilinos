@@ -47,7 +47,7 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    GDSWCoarseOperator<SC,LO,GO,NO>::GDSWCoarseOperator(CrsMatrixPtr k,
+    GDSWCoarseOperator<SC,LO,GO,NO>::GDSWCoarseOperator(ConstCrsMatrixPtr k,
                                                         ParameterListPtr parameterList) :
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
     DDInterface_ ()

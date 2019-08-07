@@ -56,31 +56,32 @@ namespace FROSch {
         
     public:
         
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::CommPtr CommPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::CommPtr CommPtr;
 
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::Map Map;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::Map Map;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtr MapPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
         
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::CrsMatrix CrsMatrix;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::CrsMatrix CrsMatrix;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
         
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVector MultiVector;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMultiVectorPtr ConstMultiVectorPtr;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMultiVectorPtrVecPtr ConstMultiVectorPtrVecPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVector MultiVector;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMultiVectorPtr ConstMultiVectorPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMultiVectorPtrVecPtr ConstMultiVectorPtrVecPtr;
 
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr DDInterfacePtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr DDInterfacePtr;
         
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
         
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::UN UN;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::UN UN;
 
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::GOVec GOVec;
-        typedef typename GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::GOVecView GOVecView;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::GOVec GOVec;
+        typedef typename InterfacePartitionOfUnity<SC,LO,GO,NO>::GOVecView GOVecView;
         
         
         GDSWInterfacePartitionOfUnity(CommPtr mpiComm,
@@ -96,7 +97,7 @@ namespace FROSch {
         virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs,
                                          MultiVectorPtr nodeList);
         
-        virtual int sortInterface(CrsMatrixPtr matrix,
+        virtual int sortInterface(ConstCrsMatrixPtr matrix,
                                   MultiVectorPtr nodeList);
         
         virtual int computePartitionOfUnity();

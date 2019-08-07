@@ -58,6 +58,7 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVector MultiVector;
         
@@ -67,7 +68,7 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingOperatorPtr AlgebraicOverlappingOperatorPtr;
         
         
-        AlgebraicOverlappingPreconditioner(CrsMatrixPtr k,
+        AlgebraicOverlappingPreconditioner(ConstCrsMatrixPtr k,
                                            ParameterListPtr parameterList);
         
         virtual int initialize(bool useDefaultParameters = true);
@@ -95,7 +96,7 @@ namespace FROSch {
         
     protected:
         
-        CrsMatrixPtr K_;
+        ConstCrsMatrixPtr K_;
         
         SumOperatorPtr SumOperator_;
         AlgebraicOverlappingOperatorPtr FirstLevelOperator_;

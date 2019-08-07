@@ -47,7 +47,7 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-     IPOUHarmonicCoarseOperator<SC,LO,GO,NO>:: IPOUHarmonicCoarseOperator(CrsMatrixPtr k,
+     IPOUHarmonicCoarseOperator<SC,LO,GO,NO>:: IPOUHarmonicCoarseOperator(ConstCrsMatrixPtr k,
                                                                           ParameterListPtr parameterList) :
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),    
     InterfacePartitionOfUnity_ (),

@@ -47,7 +47,7 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    GDSWPreconditioner<SC,LO,GO,NO>::GDSWPreconditioner(CrsMatrixPtr k,
+    GDSWPreconditioner<SC,LO,GO,NO>::GDSWPreconditioner(ConstCrsMatrixPtr k,
                                                         ParameterListPtr parameterList) :
     AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> (k,parameterList),
     CoarseLevelOperator_ (new GDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"GDSWOperator")))

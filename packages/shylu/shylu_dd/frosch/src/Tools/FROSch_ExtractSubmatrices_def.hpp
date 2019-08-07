@@ -46,8 +46,8 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
-                                                                           Teuchos::RCP<Xpetra::Map<LO,GO,NO> > map)
+    Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
+                                                                                 Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map)
     {
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > subdomainMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(map,2*globalMatrix->getGlobalMaxNumRowEntries());
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
@@ -77,13 +77,13 @@ namespace FROSch {
             }
         }
         localSubdomainMatrix->fillComplete();        
-        return localSubdomainMatrix;
+        return localSubdomainMatrix.getConst();
     }
     
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
-                                                                           Teuchos::RCP<Xpetra::Map<LO,GO,NO> > map,
-                                                                           SC value)
+    Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > globalMatrix,
+                                                                                 Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map,
+                                                                                 SC value)
     {
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > subdomainMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(map,2*globalMatrix->getGlobalMaxNumRowEntries());
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
@@ -113,7 +113,7 @@ namespace FROSch {
             }
         }
         localSubdomainMatrix->fillComplete();
-        return localSubdomainMatrix;
+        return localSubdomainMatrix.getConst();
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -151,7 +151,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int BuildSubmatrices(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > k,
+    int BuildSubmatrices(Teuchos::RCP<const Xpetra::Matrix<SC,LO,GO,NO> > k,
                          Teuchos::ArrayView<GO> indI,
                          Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kII,
                          Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kIJ,

@@ -300,8 +300,8 @@ int main(int argc, char *argv[])
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
         
-        xSolution->putScalar(0.0);
-        xRightHandSide->putScalar(1.0);
+        xSolution->putScalar(Teuchos::ScalarTraits<SC>::zero());
+        xRightHandSide->putScalar(Teuchos::ScalarTraits<SC>::one());
         
         CrsMatrixWrap<SC,LO,GO,NO>& crsWrapK = dynamic_cast<CrsMatrixWrap<SC,LO,GO,NO>&>(*KMonolithic);
         RCP<const LinearOpBase<SC> > K_thyra = ThyraUtils<SC,LO,GO,NO>::toThyra(crsWrapK.getCrsMatrix());

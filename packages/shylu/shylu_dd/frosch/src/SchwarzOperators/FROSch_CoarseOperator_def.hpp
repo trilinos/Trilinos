@@ -46,7 +46,7 @@
 namespace FROSch {
     
     template<class SC,class LO,class GO,class NO>
-    CoarseOperator<SC,LO,GO,NO>::CoarseOperator(CrsMatrixPtr k,
+    CoarseOperator<SC,LO,GO,NO>::CoarseOperator(ConstCrsMatrixPtr k,
                                                 ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k,parameterList),
     CoarseSolveComm_ (),

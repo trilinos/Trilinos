@@ -203,7 +203,7 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    int EntitySet<SC,LO,GO,NO>::divideUnconnectedEntities(CrsMatrixPtr matrix,
+    int EntitySet<SC,LO,GO,NO>::divideUnconnectedEntities(ConstCrsMatrixPtr matrix,
                                                           int pID)
     {
         UN before = getNumEntities();

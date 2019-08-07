@@ -312,7 +312,7 @@ namespace FROSch {
                 case ConstantDistanceFunction:
                     for (UN i=0; i<NodeVector_.size(); i++) {
                         for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
-                            DistancesVector_[i][j] = 1.0;
+                            DistancesVector_[i][j] = Teuchos::ScalarTraits<SC>::one();
                         }
                     }
                     break;
@@ -329,7 +329,7 @@ namespace FROSch {
                             for (UN k=0; k<NodeVector_.size(); k++) {
                                 // Coordinates of the nodes of the entity
                                 SCVecPtr E(dimension);
-                                SC distance = 0.0;
+                                SC distance = Teuchos::ScalarTraits<SC>::zero();
                                 // Compute quadratic distance
                                 for (UN l=0; l<dimension; l++) {
                                     distance += (nodeList->getData(l)[this->getLocalNodeID(k)]-CN[l]) * (nodeList->getData(l)[this->getLocalNodeID(k)]-CN[l]);
@@ -342,7 +342,7 @@ namespace FROSch {
                     }
                     for (UN i=0; i<NodeVector_.size(); i++) {
                         for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
-                            DistancesVector_[i][j] = 1.0/DistancesVector_[i][j];
+                            DistancesVector_[i][j] = Teuchos::ScalarTraits<SC>::one()/DistancesVector_[i][j];
                         }
                     }
                     break;
@@ -352,7 +352,7 @@ namespace FROSch {
             
             // In the last "row", we store the sum of the distances for all coarse nodes
             for (UN i=0; i<NodeVector_.size(); i++) {
-                DistancesVector_[i][CoarseNodes_->getNumEntities()] = 0.0;
+                DistancesVector_[i][CoarseNodes_->getNumEntities()] = Teuchos::ScalarTraits<SC>::zero();
                 for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
                     DistancesVector_[i][CoarseNodes_->getNumEntities()] += DistancesVector_[i][j];
                 }
@@ -362,7 +362,8 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename InterfaceEntity<SC,LO,GO,NO>::InterfaceEntityPtr InterfaceEntity<SC,LO,GO,NO>::divideEntity(CrsMatrixPtr matrix,int pID)
+    typename InterfaceEntity<SC,LO,GO,NO>::InterfaceEntityPtr InterfaceEntity<SC,LO,GO,NO>::divideEntity(ConstCrsMatrixPtr matrix,
+                                                                                                         int pID)
     {
         InterfaceEntityPtr entity(new InterfaceEntity<SC,LO,GO,NO>(Type_,DofsPerNode_,Multiplicity_,&(SubdomainsVector_[0])));
         
@@ -377,7 +378,7 @@ namespace FROSch {
             BuildSubmatrices(matrix,mapVector(),localMatrix,mat1,mat2,mat3);
             
             VectorPtr iterationVector = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(localMatrix->getRowMap());
-            iterationVector->getDataNonConst(0)[0] = 1.0;
+            iterationVector->getDataNonConst(0)[0] = Teuchos::ScalarTraits<SC>::one();
             for (UN i=0; i<getNumNodes()-1; i++) {
                 localMatrix->apply(*iterationVector,*iterationVector);
             }

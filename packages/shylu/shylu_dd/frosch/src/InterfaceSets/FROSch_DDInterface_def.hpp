@@ -165,7 +165,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::divideUnconnectedEntities(CrsMatrixPtr matrix)
+    int DDInterface<SC,LO,GO,NO>::divideUnconnectedEntities(ConstCrsMatrixPtr matrix)
     {
 #ifdef INTERFACE_OUTPUT
         GOVecPtr indicesGammaDofs(DofsPerNode_*Interface_->getEntity(0)->getNumNodes());
@@ -175,7 +175,7 @@ namespace FROSch {
             }
         }
         MapPtr map = Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,indicesGammaDofs(),0,MpiComm_);
-        matrix = FROSch::ExtractLocalSubdomainMatrix(matrix,map,1.0);
+        matrix = FROSch::ExtractLocalSubdomainMatrix(matrix.getConst(),map.getConst(),Teuchos::ScalarTraits<SC>::one());
         LO numSeparateEdges = Edges_->divideUnconnectedEntities(matrix);
         LO numSeparateFaces = Faces_->divideUnconnectedEntities(matrix);
         
@@ -196,7 +196,7 @@ namespace FROSch {
             }
         }
         MapPtr map = Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,indicesGammaDofs(),0,MpiComm_);
-        matrix = FROSch::ExtractLocalSubdomainMatrix(matrix,map,1.0);
+        matrix = FROSch::ExtractLocalSubdomainMatrix(matrix.getConst(),map.getConst(),Teuchos::ScalarTraits<SC>::one());
         Edges_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
         Faces_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
 #endif
@@ -574,7 +574,7 @@ namespace FROSch {
     int DDInterface<SC,LO,GO,NO>::communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
                                                              GOVecVec &componentsSubdomainsUnique)
     {
-        GraphPtr commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10); // We assume that any node is part of no more than 10 subdomains
+        GraphPtr commGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(NodesMap_,10); // AH 08/07/2019: Can we put 1 instead of 10 here?
         GraphPtr commGraphTmp = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(UniqueNodesMap_,10); // We assume that any node is part of no more than 10 subdomains
 #ifdef Tpetra_issue_1752
         // AH 10/10/2017: Can we get away with using just one importer/exporter after the Tpetra issue is fixed?
@@ -590,7 +590,9 @@ namespace FROSch {
         }
         MapPtr rangeMap = Xpetra::MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
 
-        commGraph->fillComplete(NodesMap_,rangeMap);
+        //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); commGraph->describe(*fancy,Teuchos::VERB_EXTREME); //!!!!!!!!!!!!!!!!!!!!
+        commGraph->fillComplete(NodesMap_,rangeMap); // AH 08/07/2019: Can we remove some fillComplete?
+        //commGraph->describe(*fancy,Teuchos::VERB_EXTREME); //!!!!!!!!!!!!!!!!!!!!
 
         commGraphTmp->doExport(*commGraph,*commExporter,Xpetra::INSERT);
 

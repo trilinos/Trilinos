@@ -64,6 +64,7 @@ namespace FROSch {
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
+        typedef Teuchos::RCP<const CrsMatrix> ConstCrsMatrixPtr;
         
         typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
         typedef Teuchos::RCP<const MultiVector> ConstMultiVectorPtr;
@@ -99,7 +100,7 @@ namespace FROSch {
         virtual int removeDirichletNodes(GOVecView dirichletBoundaryDofs = Teuchos::null,
                                          MultiVectorPtr nodeList = Teuchos::null) = 0;
         
-        virtual int sortInterface(CrsMatrixPtr matrix,
+        virtual int sortInterface(ConstCrsMatrixPtr matrix,
                                   MultiVectorPtr nodeList = Teuchos::null) = 0;
         
         virtual int computePartitionOfUnity() = 0;

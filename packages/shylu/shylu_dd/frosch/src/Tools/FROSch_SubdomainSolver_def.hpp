@@ -47,7 +47,7 @@
 namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
-    SubdomainSolver<SC,LO,GO,NO>::SubdomainSolver(CrsMatrixPtr k,
+    SubdomainSolver<SC,LO,GO,NO>::SubdomainSolver(ConstCrsMatrixPtr k,
                                                   ParameterListPtr parameterList,
                                                   GOVecPtr blockCoarseSize) :
     K_ (k),
@@ -74,9 +74,10 @@ namespace FROSch {
 
           FROSCH_ASSERT(K_->getRowMap()->lib()==Xpetra::UseEpetra,"UnderlyingLib!=Xpetra::UseEpetra");
             // AH 10/18/2017: Dies könnten wir nach initialize() verschieben, oder?
-            Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
-            Xpetra::EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<Xpetra::EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
+            const Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
+            const Xpetra::EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const Xpetra::EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
             EpetraCrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
+            TEUCHOS_TEST_FOR_EXCEPT(epetraMat.is_null());
 
             EpetraMultiVectorPtr xTmp;
             EpetraMultiVectorPtr bTmp;
@@ -94,9 +95,10 @@ namespace FROSch {
         } else if (!ParameterList_->get("SolverType","Amesos").compare("Amesos2")) {
             if (K_->getRowMap()->lib()==Xpetra::UseEpetra) {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
-                Xpetra::EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<Xpetra::EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
+                const Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
+                const Xpetra::EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const Xpetra::EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
                 EpetraCrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
+                TEUCHOS_TEST_FOR_EXCEPT(epetraMat.is_null());
 
                 EpetraMultiVectorPtr xTmp;
                 EpetraMultiVectorPtr bTmp;
@@ -109,9 +111,10 @@ namespace FROSch {
                 ThrowErrorMissingPackage("FROSch::SubdomainSolver", "Epetra");
 #endif
             } else if (K_->getRowMap()->lib()==Xpetra::UseTpetra) {
-                Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
-                Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
-                TpetraCrsMatrixPtr tpetraMat = xTpetraMat.getTpetra_CrsMatrixNonConst();
+                const Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
+                const Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
+                ConstTpetraCrsMatrixPtr tpetraMat = xTpetraMat.getTpetra_CrsMatrix();
+                TEUCHOS_TEST_FOR_EXCEPT(tpetraMat.is_null());
 
                 TpetraMultiVectorPtr xTmp;
                 TpetraMultiVectorPtr bTmp;
@@ -159,8 +162,8 @@ namespace FROSch {
             Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > xSolution;// = FROSch::ConvertToXpetra<SC, LO, GO, NO>(Xpetra::UseTpetra,*this->solution_,TeuchosComm);
             Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > xRightHandSide;// = FROSch::ConvertToXpetra<SC, LO, GO, NO>(Xpetra::UseTpetra,*residualVec_,TeuchosComm);//hier residualVec. Bei linProb rhs_
 
-            Teuchos::RCP<Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > OpK = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(K_));
-
+            Teuchos::RCP<const Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > OpK = Teuchos::rcp_dynamic_cast<const Belos::XpetraOp<SC,LO,GO,NO> >(K_);
+            TEUCHOS_TEST_FOR_EXCEPT(OpK.is_null());
 
             BelosLinearProblem_.reset(new Belos::LinearProblem<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > >(OpK,xSolution,xRightHandSide));
 

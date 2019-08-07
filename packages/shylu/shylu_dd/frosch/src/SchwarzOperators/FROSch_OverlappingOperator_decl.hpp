@@ -57,8 +57,10 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVector MultiVector;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
@@ -76,7 +78,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
         
 
-        OverlappingOperator(CrsMatrixPtr k,
+        OverlappingOperator(ConstCrsMatrixPtr k,
                             ParameterListPtr parameterList);
         
         ~OverlappingOperator();
@@ -100,9 +102,9 @@ namespace FROSch {
         
         virtual int computeOverlappingOperator();
         
-        CrsMatrixPtr OverlappingMatrix_;
+        ConstCrsMatrixPtr OverlappingMatrix_;
         
-        MapPtr OverlappingMap_;            
+        ConstMapPtr OverlappingMap_;            
         
         ImporterPtr Scatter_;
         

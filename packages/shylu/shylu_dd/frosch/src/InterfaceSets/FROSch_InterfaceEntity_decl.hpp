@@ -89,6 +89,7 @@ namespace FROSch {
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
+        typedef Teuchos::RCP<const CrsMatrix> ConstCrsMatrixPtr;
         
         typedef Xpetra::Vector<SC,LO,GO,NO> Vector;
         typedef Teuchos::RCP<Vector> VectorPtr;
@@ -172,7 +173,8 @@ namespace FROSch {
                                           MultiVectorPtr &nodeList = Teuchos::null,
                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
         
-        InterfaceEntityPtr divideEntity(CrsMatrixPtr matrix, int pID);
+        InterfaceEntityPtr divideEntity(ConstCrsMatrixPtr matrix,
+                                        int pID);
         
         /////////////////
         // Get Methods //

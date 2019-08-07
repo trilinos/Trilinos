@@ -47,7 +47,7 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    RGDSWCoarseOperator<SC,LO,GO,NO>::RGDSWCoarseOperator(CrsMatrixPtr k,
+    RGDSWCoarseOperator<SC,LO,GO,NO>::RGDSWCoarseOperator(ConstCrsMatrixPtr k,
                                                           ParameterListPtr parameterList) :
     GDSWCoarseOperator<SC,LO,GO,NO> (k,parameterList)
     {
@@ -221,7 +221,7 @@ namespace FROSch {
                     } else {
                         // Coarse node: loop over nodes
                         for (UN l=0; l<entitySetVector[i]->getEntity(j)->getNumNodes(); l++) {
-                            translations[k]->replaceLocalValue(tmpEntity->getGammaDofID(l,k),coarseNodeID,1.0);
+                            translations[k]->replaceLocalValue(tmpEntity->getGammaDofID(l,k),coarseNodeID,Teuchos::ScalarTraits<SC>::one());
                         }
                     }
                 }

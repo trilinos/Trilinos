@@ -87,6 +87,11 @@ namespace FROSch {
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
+        typedef Teuchos::RCP<const CrsMatrix> ConstCrsMatrixPtr;
+        
+        typedef Xpetra::CrsGraph<LO,GO,NO> Graph;
+        typedef Teuchos::RCP<Graph> GraphPtr;
+        typedef Teuchos::RCP<const Graph> ConstGraphPtr;
         
         typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
         typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
@@ -151,7 +156,7 @@ namespace FROSch {
         
         SchwarzOperator(CommPtr comm);
         
-        SchwarzOperator(CrsMatrixPtr k,
+        SchwarzOperator(ConstCrsMatrixPtr k,
                         ParameterListPtr parameterList);
         
         virtual ~SchwarzOperator();
@@ -187,14 +192,14 @@ namespace FROSch {
         
         bool isComputed() const;
         
-        int resetMatrix(CrsMatrixPtr &k);
+        int resetMatrix(ConstCrsMatrixPtr &k);
         
     protected:
         
         CommPtr MpiComm_;
         CommPtr SerialComm_;
         
-        CrsMatrixPtr K_;
+        ConstCrsMatrixPtr K_;
         
         ParameterListPtr ParameterList_;
         

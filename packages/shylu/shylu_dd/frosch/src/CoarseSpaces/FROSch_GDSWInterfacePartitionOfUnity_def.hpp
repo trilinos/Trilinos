@@ -141,7 +141,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(CrsMatrixPtr matrix,
+    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(ConstCrsMatrixPtr matrix,
                                                                   MultiVectorPtr nodeList)
     {
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
@@ -264,7 +264,7 @@ namespace FROSch {
             for (UN i=0; i<Vertices_->getNumEntities(); i++) {
                 for (UN j=0; j<Vertices_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(Vertices_->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                        tmpVector->replaceLocalValue(Vertices_->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
                     }
                 }
             }
@@ -278,7 +278,7 @@ namespace FROSch {
             for (UN i=0; i<ShortEdges_->getNumEntities(); i++) {
                 for (UN j=0; j<ShortEdges_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(ShortEdges_->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                        tmpVector->replaceLocalValue(ShortEdges_->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
                     }
                 }
             }
@@ -292,7 +292,7 @@ namespace FROSch {
             for (UN i=0; i<StraightEdges_->getNumEntities(); i++) {
                 for (UN j=0; j<StraightEdges_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(StraightEdges_->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                        tmpVector->replaceLocalValue(StraightEdges_->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
                     }
                 }
             }
@@ -305,7 +305,7 @@ namespace FROSch {
             for (UN i=0; i<Edges_->getNumEntities(); i++) {
                 for (UN j=0; j<Edges_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(Edges_->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                        tmpVector->replaceLocalValue(Edges_->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
                     }
                 }
             }
@@ -319,7 +319,7 @@ namespace FROSch {
             for (UN i=0; i<Faces_->getNumEntities(); i++) {
                 for (UN j=0; j<Faces_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
-                        tmpVector->replaceLocalValue(Faces_->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                        tmpVector->replaceLocalValue(Faces_->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
                     }
                 }
             }

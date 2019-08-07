@@ -47,7 +47,7 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    OverlappingOperator<SC,LO,GO,NO>::OverlappingOperator(CrsMatrixPtr k,
+    OverlappingOperator<SC,LO,GO,NO>::OverlappingOperator(ConstCrsMatrixPtr k,
                                                           ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k,parameterList),
     OverlappingMatrix_ (),
@@ -178,11 +178,11 @@ namespace FROSch {
     int OverlappingOperator<SC,LO,GO,NO>::computeOverlappingOperator()
     {
 
-        if (this->IsComputed_) {// already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
+        if (this->IsComputed_) { // already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
             OverlappingMatrix_ = this->K_;
         }
         
-        OverlappingMatrix_ = ExtractLocalSubdomainMatrix(OverlappingMatrix_,OverlappingMap_);
+        OverlappingMatrix_ = ExtractLocalSubdomainMatrix(OverlappingMatrix_.getConst(),OverlappingMap_);
         
         SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
         SubdomainSolver_->initialize();

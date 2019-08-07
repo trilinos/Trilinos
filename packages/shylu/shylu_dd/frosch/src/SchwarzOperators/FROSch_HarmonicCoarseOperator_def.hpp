@@ -47,7 +47,7 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    HarmonicCoarseOperator<SC,LO,GO,NO>::HarmonicCoarseOperator(CrsMatrixPtr k,
+    HarmonicCoarseOperator<SC,LO,GO,NO>::HarmonicCoarseOperator(ConstCrsMatrixPtr k,
                                                                 ParameterListPtr parameterList) :
     CoarseOperator<SC,LO,GO,NO> (k,parameterList),
     ExtensionSolver_ (),
@@ -68,7 +68,7 @@ namespace FROSch {
         MapPtr repeatedMap = assembleSubdomainMap();
         
         // Build local saddle point problem
-        CrsMatrixPtr repeatedMatrix = FROSch::ExtractLocalSubdomainMatrix(this->K_,repeatedMap); // AH 12/11/2018: Should this be in initalize?
+        ConstCrsMatrixPtr repeatedMatrix = ExtractLocalSubdomainMatrix(this->K_.getConst(),repeatedMap.getConst()); // AH 12/11/2018: Should this be in initalize?
 
         // Extract submatrices
         GOVec indicesGammaDofsAll(0);
@@ -90,7 +90,7 @@ namespace FROSch {
         CrsMatrixPtr kGammaI;
         CrsMatrixPtr kGammaGamma;
 
-        FROSch::BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
+        BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
 
         // Assemble coarse map
         MapPtr coarseMap = assembleCoarseMap(); // AH 12/11/2018: Should this be in initalize?
@@ -182,7 +182,7 @@ namespace FROSch {
             GammaDofs_[blockId]->push_back(i);
 
             if (useForCoarseSpace) {
-                mVPhiGamma->replaceLocalValue(i,i,1.0);
+                mVPhiGamma->replaceLocalValue(i,i,Teuchos::ScalarTraits<SC>::one());
             }
         }
 
@@ -287,7 +287,7 @@ namespace FROSch {
         for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
             for (UN i=0; i<entitySet->getNumEntities(); i++) {
                 for (UN j=0; j<entitySet->getEntity(i)->getNumNodes(); j++) {
-                    translations[k]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,k),i,1.0);
+                    translations[k]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,k),i,Teuchos::ScalarTraits<SC>::one());
                 }
             }
         }
@@ -406,7 +406,7 @@ namespace FROSch {
         // Hier Multiplikation kIGamma*PhiGamma
         kIGamma->apply(*mVPhiGamma,*mVtmp);
         
-        mVtmp->scale(-1.0);
+        mVtmp->scale(-Teuchos::ScalarTraits<SC>::one());
         
         // Jetzt der solver für kII
         ExtensionSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(kII,sublist(this->ParameterList_,"ExtensionSolver")));

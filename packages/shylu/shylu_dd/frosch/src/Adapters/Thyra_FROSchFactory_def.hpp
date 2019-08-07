@@ -108,18 +108,17 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra != bIsTpetra) && bIsBlocked == true);
         
         // Retrieve Matrix
-        RCP<Matrix<SC,LO,GO,NO> > A = Teuchos::null;
         RCP<const CrsMatrix<SC,LO,GO,NO> > xpetraFwdCrsMat = ThyraUtils<SC,LO,GO,NO>::toXpetra(fwdOp);
         TEUCHOS_TEST_FOR_EXCEPT(is_null(xpetraFwdCrsMat));
         
-        // FROSCH needs a non-const object as input
+        // AH 08/07/2019: Going from const to non-const to const. One should be able to improve this.
         RCP<CrsMatrix<SC,LO,GO,NO> > xpetraFwdCrsMatNonConst = rcp_const_cast<CrsMatrix<SC,LO,GO,NO> >(xpetraFwdCrsMat);
         TEUCHOS_TEST_FOR_EXCEPT(is_null(xpetraFwdCrsMatNonConst));
         
-        // wrap the forward operator as an Matrix that FROSch can work with
-        A = rcp(new CrsMatrixWrap<SC,LO,GO,NO>(xpetraFwdCrsMatNonConst));
+        RCP<Matrix<SC,LO,GO,NO> > ANonConst = rcp(new CrsMatrixWrap<SC,LO,GO,NO>(xpetraFwdCrsMatNonConst));
+        TEUCHOS_TEST_FOR_EXCEPT(is_null(ANonConst));
         
-        TEUCHOS_TEST_FOR_EXCEPT(is_null(A));
+        RCP<const Matrix<SC,LO,GO,NO> > A = ANonConst.getConst();
         
         // Retrieve concrete preconditioner object
         const Ptr<DefaultPreconditioner<SC> > defaultPrec = ptr(dynamic_cast<DefaultPreconditioner<SC> *>(prec));

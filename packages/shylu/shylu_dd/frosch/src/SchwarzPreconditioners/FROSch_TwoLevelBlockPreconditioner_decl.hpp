@@ -58,7 +58,9 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr2D MapPtrVecPtr2D;
+        
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
 
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
         typedef typename Teuchos::ArrayRCP<MultiVectorPtr>                  MultiVectorPtrVecPtr;
@@ -82,7 +84,7 @@ namespace FROSch {
         typedef typename Teuchos::ArrayRCP<DofOrdering> DofOrderingVecPtr;
         
         
-        TwoLevelBlockPreconditioner(CrsMatrixPtr k,
+        TwoLevelBlockPreconditioner(ConstCrsMatrixPtr k,
                                     ParameterListPtr parameterList);
         
         int initialize(UN dimension,
@@ -102,7 +104,7 @@ namespace FROSch {
         
         std::string description() const;
         
-        int resetMatrix(CrsMatrixPtr &k);
+        int resetMatrix(ConstCrsMatrixPtr &k);
         
         int preApplyCoarse(MultiVectorPtr &x,MultiVectorPtr &y);
         

@@ -59,11 +59,14 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
+        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstGraphPtr ConstGraphPtr;                
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
         
-        AlgebraicOverlappingOperator(CrsMatrixPtr k,
+        AlgebraicOverlappingOperator(ConstCrsMatrixPtr k,
                                      ParameterListPtr parameterList);
         
         virtual int initialize()
@@ -82,7 +85,7 @@ namespace FROSch {
         
         std::string description() const;
         
-    private:
+    protected:
         
         int setUpAlgebraicOverlappingOperator();
         

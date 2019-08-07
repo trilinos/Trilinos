@@ -64,6 +64,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr2D MapPtrVecPtr2D;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstCrsMatrixPtr ConstCrsMatrixPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
@@ -102,7 +103,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::BoolVecPtr BoolVecPtr;
         
         
-         IPOUHarmonicCoarseOperator(CrsMatrixPtr k,
+         IPOUHarmonicCoarseOperator(ConstCrsMatrixPtr k,
                                     ParameterListPtr parameterList);
         
         virtual int initialize()
@@ -162,7 +163,7 @@ namespace FROSch {
         
         
         /*
-         Todo: Das müssen Vektoren werden!
+         Todo: This should be vectors!
          vvvvvvvvvv
          */        
         InterfacePartitionOfUnityPtr InterfacePartitionOfUnity_;

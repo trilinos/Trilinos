@@ -48,8 +48,8 @@ using namespace Teuchos;
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    TwoLevelBlockPreconditioner<SC,LO,GO,NO>::TwoLevelBlockPreconditioner(CrsMatrixPtr k,
-                                                                ParameterListPtr parameterList) :
+    TwoLevelBlockPreconditioner<SC,LO,GO,NO>::TwoLevelBlockPreconditioner(ConstCrsMatrixPtr k,
+                                                                          ParameterListPtr parameterList) :
     OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList),
     CoarseOperator_ ()
     {
@@ -236,7 +236,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
+    int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstCrsMatrixPtr &k)
     {
         this->K_ = k;
         this->OverlappingOperator_->resetMatrix(this->K_);

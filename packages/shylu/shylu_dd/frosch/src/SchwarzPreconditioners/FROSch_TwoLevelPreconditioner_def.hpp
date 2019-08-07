@@ -47,7 +47,7 @@
 namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
-    TwoLevelPreconditioner<SC,LO,GO,NO>::TwoLevelPreconditioner(CrsMatrixPtr k,
+    TwoLevelPreconditioner<SC,LO,GO,NO>::TwoLevelPreconditioner(ConstCrsMatrixPtr k,
                                                                 ParameterListPtr parameterList) :
     OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList),
     CoarseOperator_ ()
@@ -217,7 +217,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    int TwoLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
+    int TwoLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstCrsMatrixPtr &k)
     {
         this->K_ = k;
         this->OverlappingOperator_->resetMatrix(this->K_);
