@@ -58,7 +58,7 @@
 #include "Xpetra_EpetraIntMultiVector.hpp"
 #endif
 
-#include "Xpetra_BlockedMap.hpp"
+// #include "Xpetra_BlockedMap.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
@@ -79,11 +79,11 @@ class MultiVectorFactory
 
     //! Constructor specifying the number of non-zeros for all rows.
     static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-    Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map, size_t NumVectors, bool zeroOut = true);
+    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map, size_t NumVectors, bool zeroOut = true);
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
     static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-    Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
+    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
           const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar>>& ArrayOfPtrs,
           size_t                                                            NumVectors);
 };
