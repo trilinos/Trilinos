@@ -53,17 +53,17 @@ except ImportError:
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Parse the repo and build information')
-    parser.add_argument('sourceBranch',
-                        help='Branch with the new changes',
-                        action='store')
     parser.add_argument('sourceRepo',
                         help='Repo with the new changes',
                         action='store')
-    parser.add_argument('targetBranch',
-                        help='Branch to merge to',
+    parser.add_argument('sourceBranch',
+                        help='Branch with the new changes',
                         action='store')
     parser.add_argument('targetRepo',
                         help='Repo to merge into',
+                        action='store')
+    parser.add_argument('targetBranch',
+                        help='Branch to merge to',
                         action='store')
     parser.add_argument('job_base_name',
                         help='The jenkins job base name')
@@ -92,20 +92,23 @@ def print_input_variables(arguments):
         "\n==========================================================================================",
         file=sys.stdout)
     print("Parameters:", file=sys.stdout)
-    print("- TRILINOS_SOURCE_BRANCH: {source_branch}".format(
-        source_branch=arguments.sourceBranch),
-          file=sys.stdout)
-    print("- TRILINOS_SOURCE_REPO  : {source_repo}\n".format(
+    print("- TRILINOS_SOURCE_REPO  : {source_repo}".format(
         source_repo=arguments.sourceRepo),
           file=sys.stdout)
-    print("- TRILINOS_TARGET_BRANCH: {target_branch}".format(
-        target_branch=arguments.targetBranch),
+    print("- TRILINOS_SOURCE_BRANCH: {source_branch}\n".format(
+        source_branch=arguments.sourceBranch),
           file=sys.stdout)
-    print("- TRILINOS_TARGET_REPO  : {target_repo}\n".format(
+    print("- TRILINOS_TARGET_REPO  : {target_repo}".format(
         target_repo=arguments.targetRepo),
+          file=sys.stdout)
+    print("- TRILINOS_TARGET_BRANCH: {target_branch}\n".format(
+        target_branch=arguments.targetBranch),
           file=sys.stdout)
     print("- PULLREQUESTNUM        : {num}".format(
         num=arguments.github_pr_number),
+          file=sys.stdout)
+    print("- BUILD_NUMBER          : {num}".format(
+        num=arguments.job_number),
           file=sys.stdout)
     print(
         "\n==========================================================================================",
@@ -201,7 +204,7 @@ def setBuildEnviron(arguments):
                  'Trilinos_pullrequest_cuda_9.2':
                      ['git/2.10.1',
                      'devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88',
-                     'openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0']}
+                      ('openblas/0.2.20/gcc/7.2.0', 'netlib/3.8.0/gcc/7.2.0')]}
 
     environMap = {'Trilinos_pullrequest_gcc_4.8.4':
                       {'OMP_NUM_THREADS': '2'},
@@ -255,7 +258,11 @@ def setBuildEnviron(arguments):
     if 'sems-env' == moduleList[0]:
         module('use', '/projects/sems/modulefiles/projects')
     for mod in moduleList:
-        module('load', mod)
+        if isinstance(mod, str):
+            module('load', mod)
+        else:
+            unl_mod, load_mod = mod
+            module('swap', unl_mod, load_mod)
 
     os.environ.update(l_environMap)
     confirmGitVersion()
@@ -300,6 +307,7 @@ def compute_n():
         parallel_level = environment_weight
     return parallel_level
 
+
 config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4TestingSettings.cmake',
               'Trilinos_pullrequest_intel_17.0.1': 'PullRequestLinuxIntelTestingSettings.cmake',
               'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
@@ -307,6 +315,7 @@ config_map = {'Trilinos_pullrequest_gcc_4.8.4': 'PullRequestLinuxGCC4.8.4Testing
               'Trilinos_pullrequest_cuda_9.2': 'PullRequestLinuxCuda9.2TestingSettings.cmake',
               'Trilinos_pullrequest_python_2': 'PullRequestLinuxPython2.cmake',
               'Trilinos_pullrequest_python_3': 'PullRequestLinuxPython3.cmake'}
+
 
 def run():
     return_value = True

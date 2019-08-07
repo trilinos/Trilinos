@@ -85,10 +85,10 @@ class Test_run(unittest.TestCase):
     def test_verifyTargetBranch_fails_with_master_target_non_mm_source(self):
         """Check to see that git is in path"""
         l_argv = mock.patch.object(sys, 'argv', ['programName',
-                                   self.source_branch,
                                    self.source_url,
-                                   'master',
+                                   self.source_branch,
                                    self.target_url,
+                                   'master',
                                    self.job_base_name,
                                    self.github_pr_number,
                                    self.jenkins_build_number,
@@ -116,10 +116,10 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
     def test_verifyTargetBranch_passes_with_master_target_mm_source(self):
         """Check to see that git is in path"""
         l_argv = mock.patch.object(sys, 'argv', ['programName',
-                                   'master_merge_20200130_120155',
                                    self.source_url,
-                                   'master',
+                                   'master_merge_20200130_120155',
                                    self.target_url,
+                                   'master',
                                    self.job_base_name,
                                    self.github_pr_number,
                                    self.jenkins_build_number,
@@ -137,13 +137,14 @@ Jenkins Input Variables:
 
 ==========================================================================================
 Parameters:
-- TRILINOS_SOURCE_BRANCH: master_merge_20200130_120155
 - TRILINOS_SOURCE_REPO  : /dev/null/source/Trilinos.git
+- TRILINOS_SOURCE_BRANCH: master_merge_20200130_120155
 
-- TRILINOS_TARGET_BRANCH: master
 - TRILINOS_TARGET_REPO  : /dev/null/target/Trilinos.git
+- TRILINOS_TARGET_BRANCH: master
 
 - PULLREQUESTNUM        : 8888
+- BUILD_NUMBER          : 7777
 
 ==========================================================================================
 Environment:
@@ -176,10 +177,10 @@ Set CWD = /dev/null/workspace/TFW_testing_single_configure_prototype
     def test_verifyTargetBranch_passes_with_develop_target(self):
         """Check to see that git is in path"""
         l_argv = mock.patch.object(sys, 'argv', ['programName',
-                                   self.source_branch,
                                    self.source_url,
-                                   'develop',
+                                   self.source_branch,
                                    self.target_url,
+                                   'develop',
                                    self.job_base_name,
                                    self.github_pr_number,
                                    self.jenkins_build_number,
@@ -198,13 +199,14 @@ Jenkins Input Variables:
 
 ==========================================================================================
 Parameters:
-- TRILINOS_SOURCE_BRANCH: incoming_branch
 - TRILINOS_SOURCE_REPO  : /dev/null/source/Trilinos.git
+- TRILINOS_SOURCE_BRANCH: incoming_branch
 
-- TRILINOS_TARGET_BRANCH: develop
 - TRILINOS_TARGET_REPO  : /dev/null/target/Trilinos.git
+- TRILINOS_TARGET_BRANCH: develop
 
 - PULLREQUESTNUM        : 8888
+- BUILD_NUMBER          : 7777
 
 ==========================================================================================
 Environment:
@@ -422,7 +424,7 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_cuda_9.2'
         expected_list = [mock.call('load', 'git/2.10.1'),
                          mock.call('load', 'devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88'),
-                         mock.call('load', 'openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0'),]
+                         mock.call('swap', 'openblas/0.2.20/gcc/7.2.0', 'netlib/3.8.0/gcc/7.2.0'),]
 
         self.buildEnv_passes(PR_name, expected_list)
 

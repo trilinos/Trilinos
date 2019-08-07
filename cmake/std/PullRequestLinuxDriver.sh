@@ -21,14 +21,20 @@ no_proxy='localhost,localnets,.sandia.gov,127.0.0.1,169.254.0.0/16,forge.sandia.
 
 # Call the script to handle merging the incoming branch into
 # the current trilinos/develop branch for testing.
-${SCRIPTPATH}/PullRequestLinuxDriver-Merge.py ${TRILINOS_SOURCE_REPO:?} \
+${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${TRILINOS_SOURCE_REPO:?} \
                                               ${TRILINOS_SOURCE_BRANCH:?} \
                                               ${TRILINOS_TARGET_REPO:?} \
                                               ${TRILINOS_TARGET_BRANCH:?} \
                                               ${TRILINOS_SOURCE_SHA:?} \
-                                              ${BUILD_NUMBER} \
                                               ${WORKSPACE:?}
 
 # Call the script to handle driving the testing
-${SCRIPTPATH}/PullRequestLinuxDriver-Test.sh
+${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${TRILINOS_SOURCE_REPO:?} \
+                                            ${TRILINOS_SOURCE_BRANCH:?} \
+                                            ${TRILINOS_TARGET_REPO:?} \
+                                            ${TRILINOS_TARGET_BRANCH:?} \
+                                            ${JOB_BASE_NAME:?} \
+                                            ${PULLREQUESTNUM:?} \
+                                            ${BUILD_NUMBER:?} \
+                                            ${WORKSPACE:?}
 
