@@ -66,8 +66,6 @@ void StepperTrapezoidal<Scalar>::setObserver(
       Teuchos::rcp_dynamic_cast<StepperTrapezoidalObserver<Scalar> >
         (this->stepperObserver_);
   }
-
-  this->isInitialized_ = false;
 }
 
 
@@ -82,8 +80,6 @@ void StepperTrapezoidal<Scalar>::initialize()
   this->setParameterList(this->stepperPL_);
   this->setSolver();
   this->setObserver();
-
-  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 
@@ -111,8 +107,6 @@ void StepperTrapezoidal<Scalar>::setInitialConditions (
 //    - Use evaluateExplicitODE to get xDot_{n-1} if the application
 //      provides it.  Explicit evaluations are cheaper but requires the
 //      application to implement xDot = f(x,t).
-
-  this->isInitialized_ = false;
 }
 
 
@@ -120,9 +114,6 @@ template<class Scalar>
 void StepperTrapezoidal<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-    "Error - " << this->description() << " is not initialized!");
-
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperTrapezoidal::takeStep()");
@@ -247,8 +238,6 @@ void StepperTrapezoidal<Scalar>::setParameterList(
     << "  Stepper Type = "<<stepperPL->get<std::string>("Stepper Type")<<"\n");
 
   this->stepperPL_ = stepperPL;
-
-  this->isInitialized_ = false;
 }
 
 

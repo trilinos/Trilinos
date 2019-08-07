@@ -174,8 +174,6 @@ void StepperHHTAlpha<Scalar>::setModel(
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                                       "HHT-Alpha"));
   this->wrapperModel_ = wrapperModel;
-
-  this->isInitialized_ = false;
 }
 
 
@@ -192,8 +190,6 @@ void StepperHHTAlpha<Scalar>::initialize()
 #endif
   this->setParameterList(this->stepperPL_);
   this->setSolver();
-
-  this->isInitialized_ = true;   // Only place where it should be set to true.
 }
 
 
@@ -204,9 +200,6 @@ void StepperHHTAlpha<Scalar>::takeStep(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-    "Error - " << this->description() << " is not initialized!");
-
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperHHTAlpha::takeStep()");
@@ -466,8 +459,6 @@ void StepperHHTAlpha<Scalar>::setParameterList(
          << "using default values of Beta = "
          << beta_ << " and Gamma = " << gamma_ << ".\n\n";
   }
-
-  this->isInitialized_ = false;
 }
 
 
