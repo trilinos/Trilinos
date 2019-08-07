@@ -62,11 +62,13 @@
 namespace panzer_stk {
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
-  : fileName_(""), restartIndex_(0), userMeshScaling_(false), meshScaleFactor_(0.0)
+  : fileName_(""), restartIndex_(0), isExodus_(true), userMeshScaling_(false), meshScaleFactor_(0.0)
 { }
 
-STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,int restartIndex)
-  : fileName_(fileName), restartIndex_(restartIndex), userMeshScaling_(false), meshScaleFactor_(0.0)
+STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,
+                                                 const int restartIndex,
+                                                 const bool isExodus)
+  : fileName_(fileName), restartIndex_(restartIndex), isExodus_(isExodus), userMeshScaling_(false), meshScaleFactor_(0.0)
 { }
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const
@@ -103,7 +105,10 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    // read in meta data
    stk::io::StkMeshIoBroker* meshData = new stk::io::StkMeshIoBroker(parallelMach);
    meshData->property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
-   meshData->add_mesh_database(fileName_, "exodusII", stk::io::READ_MESH);
+   if (isExodus_)
+     meshData->add_mesh_database(fileName_, "exodusII", stk::io::READ_MESH);
+   else
+     meshData->add_mesh_database(fileName_, "pamgen", stk::io::READ_MESH);
    meshData->create_input_mesh();
    RCP<stk::mesh::MetaData> metaData = meshData->meta_data_rcp();
 
@@ -234,6 +239,9 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    if(!paramList->isParameter("Restart Index")) 
      paramList->set<int>("Restart Index", -1);
 
+   if(!paramList->isParameter("File Type"))
+     paramList->set("File Type", "Exodus");
+
    if(!paramList->isSublist("Periodic BCs"))
      paramList->sublist("Periodic BCs");
 
@@ -248,6 +256,11 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    fileName_ = paramList->get<std::string>("File Name");
 
    restartIndex_ = paramList->get<int>("Restart Index");
+
+   {
+     const auto fileType = paramList->get<std::string>("File Type");
+     isExodus_ = fileType == "Exodus" ? true : false;
+   }
 
    // get any mesh scale factor
    if (paramList->isParameter("Scale Factor"))
@@ -272,6 +285,13 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
       
       validParams->set<int>("Restart Index",-1,"Index of solution to read in", 
 			    Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_INT,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));
+
+      Teuchos::setStringToIntegralParameter<int>("File Type",
+                                                 "Exodus",
+                                                 "Choose input file type - either \"Exodus\" or \"Pamgen\"",
+                                                 Teuchos::tuple<std::string>("Exodus","Pamgen"),
+                                                 validParams.get()
+                                                 );
 
       validParams->set<double>("Scale Factor", 1.0, "Scale factor to apply to mesh after read",
                                Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_DOUBLE,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));

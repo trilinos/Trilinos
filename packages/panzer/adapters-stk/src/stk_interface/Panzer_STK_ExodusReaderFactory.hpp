@@ -71,7 +71,14 @@ public:
 
    STK_ExodusReaderFactory();
 
-   STK_ExodusReaderFactory(const std::string & fileName,int restartIndex=0);
+
+  /** \brief Ctor
+   *
+   * \param[in] fileName Name of the input file.
+   * \param[in] restartIndex Index used for restarts.
+   * \param[in] isExodus If true, the input file is in exodus format. If false, it assumes Pamgen format.
+   */
+  STK_ExodusReaderFactory(const std::string & fileName, const int restartIndex=0, const bool isExodus = true);
 
    /** Construct a STK_Inteface object described
      * by this factory.
@@ -111,6 +118,7 @@ protected:
 
    std::string fileName_;
    int restartIndex_;
+   bool isExodus_;
 
 private:
 
