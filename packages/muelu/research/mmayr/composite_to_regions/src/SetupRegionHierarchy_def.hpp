@@ -1317,10 +1317,8 @@ void createRegionHierarchy(const int maxRegPerProc,
                            Array<RCP<Teuchos::ParameterList> >& smootherParams
                            )
 {
-#include "Xpetra_UseShortNames.hpp"
+#include "MueLu_UseShortNames.hpp"
 
-  using Hierarchy = MueLu::Hierarchy<SC, LO, GO, NO>;
-  using Utilities = MueLu::Utilities<SC, LO, GO, NO>;
   using DirectCoarseSolver = Amesos2::Solver<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >;
 
   std::cout << mapComp->getComm()->getRank() << " | Setting up MueLu hierarchies ..." << std::endl;
