@@ -831,10 +831,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test PgPFactory (reuse row based omegas for restriction operator)" << std::endl;
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
+    using magnitude_type        = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+    using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+    using RealValuedMultiVector = typename Xpetra::MultiVector<real_type,LO,GO,NO>;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -884,7 +883,7 @@ namespace MueLuTests {
 
     RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
     RCP<PgPFactory>        Pfact = rcp( new PgPFactory());
-    RCP<Factory>          Rfact = rcp( new TransPFactory() );
+    RCP<Factory>           Rfact = rcp( new TransPFactory() );
     RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
     H->SetMaxCoarseSize(1);
 

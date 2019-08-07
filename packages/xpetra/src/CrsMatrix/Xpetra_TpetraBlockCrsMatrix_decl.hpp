@@ -262,6 +262,9 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
 
+    //! Returns the current number of entries in the (locally owned) global row.
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
+
     //! Returns the maximum number of entries across all rows/columns on all nodes.
     size_t getGlobalMaxNumRowEntries() const;
 

@@ -255,6 +255,135 @@ FUNCTION(TPETRA_PROCESS_ALL_SLGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE CLASS_NAME
 ENDFUNCTION(TPETRA_PROCESS_ALL_SLGN_TEMPLATES)
 
 
+# Function to generate one .cpp file for the given (Scalar, Node)
+# template parameter combination, for run-time registration of a
+# Tpetra class over those template parameters.  This is meant to be
+# called by TPETRA_PROCESS_ALL_SN_TEMPLATES.  This function takes the
+# names already mangled, to avoid unnecessary string processing
+# overhead.
+#
+# OUTPUT_FILE [out] Name of the generated .cpp file.
+#
+# TEMPLATE_FILE [in] Name of the input .tmpl "template" file.  This
+#   function does string substitution in that file, using the input
+#   arguments of this function.  For example, @SC_MACRO_EXPR@ (Scalar
+#   macro expression) gets substituted for the value of this
+#   function's SC_MACRO_EXPR input argument.
+#
+# CLASS_NAME [in] Name of the Tpetra class (without namespace
+#   qualifiers; must live in the Tpetra namespace)
+#
+# CLASS_MACRO_NAME [in] Name of the Tpetra class, suitably mangled for
+#   use in a macro name.
+#
+# SC_MANGLED_NAME [in] Name of the Scalar (SC) type, mangled for use
+#   as a macro argument (e.g., spaces and colons removed).  In the
+#   arguments that follow, LO stands for LocalOrdinal, GO for
+#   GlobalOrdinal, and NT for Node.
+#
+# SC_MACRO_EXPR [in] Expression that asks Tpetra whether the given
+#   Scalar (SC) type is supported.
+#
+FUNCTION(TPETRA_PROCESS_ONE_SN_TEMPLATE OUTPUT_FILE TEMPLATE_FILE
+  CLASS_NAME CLASS_MACRO_NAME SC_MANGLED_NAME 
+  GO_MANGLED_NAME NT_MANGLED_NAME SC_MACRO_EXPR
+  GO_MACRO_EXPR GO_MACRO_NAME NT_MACRO_NAME)
+
+  STRING(REPLACE "ETI_SC_NT.tmpl" "${CLASS_NAME}_${SC_MACRO_NAME}_${NT_MACRO_NAME}.cpp" OUT_FILE "${TEMPLATE_FILE}")
+  CONFIGURE_FILE("${TEMPLATE_FILE}" "${OUT_FILE}")
+
+  SET(${OUTPUT_FILE} ${OUT_FILE} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ONE_SN_TEMPLATE)
+
+# Function to generate .cpp files for ETI of a Tpetra class, over all
+# enabled Scalar and Node template parameters.  We generate one .cpp
+# file for each (Scalar, Node) type combination over which Tpetra does
+# ETI.
+#
+# OUTPUT_FILES [out] List of the generated .cpp files.
+#
+# TEMPLATE_FILE [in] Name of the input .tmpl "template" file.  This
+#   function does string substitution in that file, using the input
+#   arguments of this function.  For example, @SC_MACRO_EXPR@ (Scalar
+#   macro expression) gets substituted for the value of this
+#   function's SC_MACRO_EXPR input argument.
+#
+# CLASS_NAME [in] Name of the Tpetra class (without namespace
+#   qualifiers; must live in the Tpetra namespace)
+#
+# CLASS_MACRO_NAME [in] Name of the Tpetra class, suitably mangled for
+#   use in a macro name.
+#
+# SCALAR_TYPES [in] All Scalar types over which to do ETI for the given
+#   class.  This may include Scalar = GlobalOrdinal and/or Scalar =
+#   int, if appropriate for that class.
+#
+# NODE_TYPES [in] All Node types over which to do ETI for the given
+#   class.
+#
+# INSTANTIATE_SCALAR_ORDINAL_TYPES [in] Whether to instantiate for
+#   Scalar=GlobalOrdinal types.
+#
+# MUST_HAVE_SCALAR_INT [in] (Boolean) Whether the class must be
+#   instantiated with Scalar = int, even if int is not in the set of
+#   GlobalOrdinal types.
+FUNCTION(TPETRA_PROCESS_ALL_SN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE 
+  CLASS_NAME CLASS_MACRO_NAME SCALAR_TYPES GLOBALORDINAL_TYPES
+  NODE_TYPES INSTANTIATE_SCALAR_ORDINAL_TYPES MUST_HAVE_SCALAR_INT)
+
+  SET(OUT_FILES "")
+  FOREACH(NT ${NODE_TYPES})
+    TPETRA_MANGLE_TEMPLATE_PARAMETER(NT_MANGLED "${NT}")
+    TPETRA_NODE_MACRO_NAME(NT_MACRO_NAME "${NT}")
+
+    FOREACH(GO ${GLOBALORDINAL_TYPES})
+      TPETRA_MANGLE_TEMPLATE_PARAMETER(GO_MANGLED "${GO}")
+      TPETRA_SLG_MACRO_NAME(GO_MACRO_NAME "${GO}")
+
+      FOREACH(SC ${SCALAR_TYPES})
+        TPETRA_MANGLE_TEMPLATE_PARAMETER(SC_MANGLED "${SC}")
+        TPETRA_SLG_MACRO_NAME(SC_MACRO_NAME "${SC}")
+        TPETRA_SC_MACRO_EXPR(SC_MACRO_EXPR "${SC}" "${GO}" "${SC_MACRO_NAME}")
+ 
+        #MESSAGE(STATUS ">> SC = ${SC}, SC_MACRO_EXPR = ${SC_MACRO_EXPR}")
+
+        # If SC is NOT a GlobalOrdinal type of some kind (not
+        # necessarily the current GO), or if it is "int", process
+        # it.  Otherwise, then we only have to process it if it
+        # equals the current GO.
+        TPETRA_SC_IS_GO(IS_GO "${SC}")
+        STRING(COMPARE EQUAL "${SC}" "${GO}" IS_CURRENT_GO)
+        STRING(COMPARE EQUAL "${SC}" "int" IS_INT)
+
+        IF ((MUST_HAVE_SCALAR_INT AND IS_INT) OR 
+            (NOT IS_GO OR (IS_CURRENT_GO AND INSTANTIATE_SCALAR_ORDINAL_TYPES)))
+
+          IF(IS_CURRENT_GO AND INSTANTIATE_SCALAR_ORDINAL_TYPES)
+            # mfh 24 Jul 2019: This is a bit of a hack, because I'm
+            # assuming that LO=int.  We've never done ETI for any
+            # other LO types, though.
+            SET(GO_MACRO_EXPR "&& defined(HAVE_TPETRA_INST_INT_${GO_MACRO_NAME})")
+          ELSE()
+            SET(GO_MACRO_EXPR "")
+          ENDIF()
+
+          #MESSAGE(STATUS ">> SC = ${SC}, GO = ${GO}, GO_MACRO_EXPR = ${GO_MACRO_EXPR}")
+
+          TPETRA_PROCESS_ONE_SN_TEMPLATE(OUT_FILE "${TEMPLATE_FILE}"
+            "${CLASS_NAME}" "${CLASS_MACRO_NAME}" "${SC_MANGLED}" 
+            "${GO_MANGLED}" "${NT_MANGLED}" "${SC_MACRO_EXPR}" 
+            "${GO_MACRO_EXPR}" "${GO_MACRO_NAME}" "${NT_MACRO_NAME}")
+          LIST(APPEND OUT_FILES ${OUT_FILE})
+        ENDIF()
+      ENDFOREACH() # SC
+    ENDFOREACH() # GO
+  ENDFOREACH() # NT
+
+  # This is the standard CMake idiom for setting an output variable so
+  # that the caller can see the result.
+  SET(${OUTPUT_FILES} ${OUT_FILES} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ALL_SN_TEMPLATES)
+
 #
 # A) Package-specific configuration options
 #
@@ -388,6 +517,13 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Generate ETI .cpp files for Tpetra::replaceDiagonalCrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "replaceDiagonalCrsMatrix" "REPLACEDIAGONALCRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::LocalCrsMatrixOperator.
+  TPETRA_PROCESS_ALL_SN_TEMPLATES(LOCALCRSMATRIXOPERATOR_OUTPUT_FILES
+    "Tpetra_ETI_SC_NT.tmpl" "LocalCrsMatrixOperator"
+    "LOCALCRSMATRIXOPERATOR" "${CrsMatrix_ETI_SCALARS}"
+    "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE TRUE)
+  LIST(APPEND SOURCES ${LOCALCRSMATRIXOPERATOR_OUTPUT_FILES})
 
   #MESSAGE(STATUS "SOURCES = ${SOURCES}")
 ENDIF()

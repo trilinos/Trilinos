@@ -91,7 +91,9 @@
   INSTANTIATE_UQ_PCE_S_SD(INSTMACRO, N)
 
 #define INSTANTIATE_TPETRA_UQ_PCE_N(INSTMACRO, N)  \
-  INSTANTIATE_UQ_PCE_S(INSTMACRO, int, int, N)
+  using default_local_ordinal_type = Tpetra::Map<>::local_ordinal_type; \
+  using default_global_ordinal_type = Tpetra::Map<>::global_ordinal_type; \
+  INSTANTIATE_UQ_PCE_S(INSTMACRO, default_local_ordinal_type, default_global_ordinal_type, N)
 
 #define INSTANTIATE_TPETRA_UQ_PCE_N_SD(INSTMACRO, N)  \
   INSTANTIATE_UQ_PCE_S_SD(INSTMACRO, N)

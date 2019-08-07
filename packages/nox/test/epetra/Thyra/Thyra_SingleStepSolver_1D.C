@@ -300,6 +300,7 @@ TEUCHOS_UNIT_TEST(SingleStepSolver, reuseJacobian)
                                        Teuchos::null,
                                        Teuchos::null,
                                        Teuchos::null,
+                                       Teuchos::null,
                                        false,
                                        false,
                                        jacobianIsEvaluated));

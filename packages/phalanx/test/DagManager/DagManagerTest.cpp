@@ -47,7 +47,6 @@
 #include "Phalanx_DAG_Manager.hpp"
 #include "Phalanx_Evaluator_AliasField.hpp"
 #include "Phalanx_TypeStrings.hpp"
-#include "Phalanx_DimTag.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"

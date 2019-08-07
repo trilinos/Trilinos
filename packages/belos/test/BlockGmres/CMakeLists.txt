@@ -40,6 +40,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       COMM serial mpi
       ARGS
         "--verbose --filename=mhd1280b.cua --max-degree=10"
+        "--verbose --filename=mhd1280b.cua --max-degree=10 --poly-type=Roots"
       STANDARD_PASS_OUTPUT 
       XHOST KALLIKRATES
       )

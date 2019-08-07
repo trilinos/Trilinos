@@ -49,8 +49,8 @@
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
-//MD 08/2017 Note: I commented out below, as this file is totally 
-//removed from KokkosKernels. It does not look like the 
+//MD 08/2017 Note: I commented out below, as this file is totally
+//removed from KokkosKernels. It does not look like the
 //included file is used anywhere in the file.
 //#include "Kokkos_MV.hpp" // for some utilities
 
@@ -99,7 +99,7 @@ class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                    Kokkos::Cuda,
                                    MatrixMemory,
                                    MatrixSize>,
-                Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
+                Kokkos::View< const Sacado::UQ::PCE<InputStorage>*,
                               InputP... >,
                 Kokkos::View< Sacado::UQ::PCE<OutputStorage>*,
                               OutputP... >
@@ -121,7 +121,7 @@ public:
                              MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename Kokkos::CijkType<matrix_values_type>::type tensor_type;
-  typedef Kokkos::View< InputVectorValue*,
+  typedef Kokkos::View< const InputVectorValue*,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         OutputP... > output_vector_type;
@@ -468,7 +468,7 @@ class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                    Kokkos::Cuda,
                                    MatrixMemory,
                                    MatrixSize>,
-                Kokkos::View< Sacado::UQ::PCE<InputStorage>**,
+                Kokkos::View< const Sacado::UQ::PCE<InputStorage>**,
                               InputP... >,
                 Kokkos::View< Sacado::UQ::PCE<OutputStorage>**,
                               OutputP... >
@@ -488,7 +488,7 @@ public:
                              MatrixDevice,
                              MatrixMemory,
                              MatrixSize> matrix_type;
-  typedef Kokkos::View< InputVectorValue**,
+  typedef Kokkos::View< const InputVectorValue**,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue**,
                         OutputP... > output_vector_type;
@@ -503,7 +503,7 @@ public:
                      const input_scalar & a = input_scalar(1) ,
                      const output_scalar & b = output_scalar(0) )
   {
-    typedef Kokkos::View< InputVectorValue*, InputP... > input_vector_type_1D;
+    typedef Kokkos::View< const InputVectorValue*, InputP... > input_vector_type_1D;
     typedef Kokkos::View< OutputVectorValue*, OutputP... > output_vector_type_1D;
     typedef Multiply< matrix_type, input_vector_type_1D,
       output_vector_type_1D > multiply_type_1D;
@@ -545,7 +545,7 @@ class MeanMultiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                        Kokkos::Cuda,
                                        MatrixMemory,
                                        MatrixSize >,
-                    Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
+                    Kokkos::View< const Sacado::UQ::PCE<InputStorage>*,
                                   InputP... >,
                     Kokkos::View< Sacado::UQ::PCE<OutputStorage>*,
                                   OutputP... >,
@@ -565,7 +565,7 @@ public:
                              MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename MatrixValue::ordinal_type size_type;
-  typedef Kokkos::View< InputVectorValue*,
+  typedef Kokkos::View< const InputVectorValue*,
                         InputP... > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         OutputP... > output_vector_type;

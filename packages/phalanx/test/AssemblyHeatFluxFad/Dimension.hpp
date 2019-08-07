@@ -45,7 +45,7 @@
 #ifndef PHX_DIMENSION_HPP
 #define PHX_DIMENSION_HPP
 
-#include "Phalanx_DimTag.hpp"
+#include "Phalanx_ExtentTraits.hpp"
 
 PHX_EXTENT(Dim)
 PHX_EXTENT(QuadPoint)

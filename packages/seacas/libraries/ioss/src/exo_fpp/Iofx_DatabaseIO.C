@@ -4340,10 +4340,9 @@ void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Io
           ex_put_var(get_file_pointer(), step, EX_NODE_BLOCK, var_index, 0, num_out, TOPTR(temp));
       if (ierr < 0) {
         std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "ERROR: Problem outputting nodal variable '{}' with index = {} to file '{}'\n",
-                   var_name, var_index, decoded_filename());
-        IOSS_ERROR(errmsg);
+        fmt::print(errmsg, "Problem outputting nodal variable '{}' with index = {}\n", var_name,
+                   var_index);
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__, errmsg.str());
       }
     }
   }

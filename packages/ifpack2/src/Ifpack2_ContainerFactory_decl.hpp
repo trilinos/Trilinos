@@ -73,14 +73,13 @@ struct ContainerFactoryEntryBase
 {
   virtual Teuchos::RCP<Ifpack2::Container<MatrixType>> build(
       const Teuchos::RCP<const MatrixType>& A,
-      const Teuchos::Array<Teuchos::Array<typename MatrixType::local_ordinal_type>>& localRows,
+      const Teuchos::Array<Teuchos::Array<typename MatrixType::local_ordinal_type>>& partitions,
       const Teuchos::RCP<const Tpetra::Import<
         typename MatrixType::local_ordinal_type,
         typename MatrixType::global_ordinal_type,
         typename MatrixType::node_type>> importer,
-      int OverlapLevel,
-      typename MatrixType::scalar_type DampingFactor) = 0;
-  virtual ~ContainerFactoryEntryBase<MatrixType>() {}
+      bool pointIndexed) = 0;
+  virtual ~ContainerFactoryEntryBase() {}
 };
 
 template<typename MatrixType, typename ContainerType>
@@ -88,17 +87,16 @@ struct ContainerFactoryEntry : public ContainerFactoryEntryBase<MatrixType>
 {
   Teuchos::RCP<Ifpack2::Container<MatrixType>> build(
       const Teuchos::RCP<const MatrixType>& A,
-      const Teuchos::Array<Teuchos::Array<typename MatrixType::local_ordinal_type>>& localRows,
+      const Teuchos::Array<Teuchos::Array<typename MatrixType::local_ordinal_type>>& partitions,
       const Teuchos::RCP<const Tpetra::Import<
         typename MatrixType::local_ordinal_type,
         typename MatrixType::global_ordinal_type,
         typename MatrixType::node_type>> importer,
-      int OverlapLevel,
-      typename MatrixType::scalar_type DampingFactor)
+      bool pointIndexed)
   {
-    return Teuchos::rcp(new ContainerType(A, localRows, importer, OverlapLevel, DampingFactor));
+    return Teuchos::rcp(new ContainerType(A, partitions, importer, pointIndexed));
   }
-  ~ContainerFactoryEntry<MatrixType, ContainerType>() {}
+  ~ContainerFactoryEntry() {}
 };
 
 } // namespace Details
@@ -148,14 +146,12 @@ struct ContainerFactory
   /*!
     \param containerType The key for looking up the Container specialization. If this key hasn't been registered, an exception is thrown.
     \param A The problem matrix.
-    \param localRows The rows that correspond to each block. The outer list contains blocks, and the inner list contains rows. In BlockRelaxation, this is retrieved from a Partitioner.
+    \param partitions The rows that correspond to each block. The outer list contains blocks, and the inner list contains rows. In BlockRelaxation, this is retrieved from a Partitioner.
     \param importer The importer that is used to import off-process rows (used by overlapping BlockRelaxation).
-    \param OverlapLevel In BlockRelaxation the overlap level is retrieved from the parameter list.
-    \param DampingFactor In BlockRelaxation the damping factor is retrieved from the parameter list.
+    \param pointIndexed If A is a BlockCrsMatrix, whether partitions contains the indices of individual DOFs instead of nodes/blocks.
     */
   static Teuchos::RCP<BaseContainer> build(std::string containerType, const Teuchos::RCP<const MatrixType>& A,
-      const Teuchos::Array<Teuchos::Array<local_ordinal_type>>& localRows, const Teuchos::RCP<const import_type> importer,
-      int OverlapLevel, scalar_type DampingFactor);
+      const Teuchos::Array<Teuchos::Array<local_ordinal_type>>& partitions, const Teuchos::RCP<const import_type> importer, bool pointIndexed);
 
   //! Registers a specialization of Ifpack2::Container by binding a key (string) to it.
   /*!

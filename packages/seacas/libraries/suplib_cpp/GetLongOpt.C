@@ -245,9 +245,9 @@ int GetLongOption::parse(char *const str, char *const p)
 
 /* ----------------------------------------------------------------
 GetLongOption::setcell returns
-   -1	if there was an error
-    0	if the nexttoken was not consumed
-    1	if the nexttoken was consumed
+   -1   if there was an error
+    0   if the nexttoken was not consumed
+    1   if the nexttoken was consumed
 ------------------------------------------------------------------- */
 
 int GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)

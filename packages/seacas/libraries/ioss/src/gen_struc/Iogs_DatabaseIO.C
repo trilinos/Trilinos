@@ -155,11 +155,16 @@ namespace Iogs {
     }
     else {
       std::ostringstream errmsg;
-      errmsg << "Generated mesh option is only valid for input mesh.";
+      errmsg << "ERROR: Structured Generated mesh option is only valid for input mesh.";
       IOSS_ERROR(errmsg);
     }
     if (props.exists("USE_CONSTANT_DF")) {
       m_useVariableDf = false;
+    }
+    if (util().parallel_size() > 1) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Structured Generated mesh option is not valid for parallel yet.";
+      IOSS_ERROR(errmsg);
     }
   }
 
@@ -336,7 +341,7 @@ namespace Iogs {
     size_t  entity_count = ef_blk->entity_count();
     if (num_to_get != entity_count) {
       std::ostringstream errmsg;
-      errmsg << "Partial field input not implemented for side blocks";
+      errmsg << "ERROR: Partial field input not implemented for side blocks";
       IOSS_ERROR(errmsg);
     }
 

@@ -185,7 +185,7 @@ void run_TimeStamp_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,
       throw std::logic_error(ss.str());
     }
 
-    if(coarseStamps.size()!=local_Nt*2) {
+    if(static_cast<long long>(coarseStamps.size())!=local_Nt*2) {
       ss << "Incorrect number of coarse stamps on rank " << myRank << std::endl;
       throw std::logic_error(ss.str());
     }
@@ -214,10 +214,6 @@ void run_VectorExportToCoarse_test(MPI_Comm comm, const ROL::Ptr<std::ostream> &
   MPI_Comm_rank(comm, &myRank);
 
   *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
-
-  double totaltime = 1.75; // we will do 1.75 periods, this way the final result is non-trivial
-  auto  Nt  = numRanks*local_Nt; // use a power of two
-  double dt = totaltime/Nt;
 
   int spatialProcs = 1;
   ROL::Ptr<ROL::PinTCommunicators> fineComm = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spatialProcs);
@@ -346,10 +342,6 @@ void run_VectorExportToFine_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & o
   MPI_Comm_rank(comm, &myRank);
 
   *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
-
-  double totaltime = 1.75; // we will do 1.75 periods, this way the final result is non-trivial
-  auto  Nt  = numRanks*local_Nt; // use a power of two
-  double dt = totaltime/Nt;
 
   int spatialProcs = 1;
   ROL::Ptr<ROL::PinTCommunicators> fineComm = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spatialProcs);

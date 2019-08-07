@@ -299,9 +299,9 @@ int symmlq(long int *n, double *b, double *r1, double *r2, double *v, double *w,
   /*                        If istop .ge. 5, the final x may not be an */
   /*                        acceptable solution. */
 
-  /* 		9	 The norm of the iterate is > than normxlim. */
-  /* 			 Termination enforced on presumption that inverse */
-  /* 			 iteration is being performed -rwl. */
+  /*            9        The norm of the iterate is > than normxlim. */
+  /*                     Termination enforced on presumption that inverse */
+  /*                     iteration is being performed -rwl. */
 
   /*     itn     output     The number of iterations performed. */
 
@@ -322,19 +322,19 @@ int symmlq(long int *n, double *b, double *r1, double *r2, double *v, double *w,
   /*                        This is sqrt( x'Mx ).  If precon is false, */
   /*                        ynorm is an estimate of norm(x). */
 
-  /*     A	      input      A pointer variable to the matrix data. Passed */
+  /*     A            input      A pointer variable to the matrix data. Passed */
 
-  /* 	                 in to use in revised call to aprod and msolve */
-  /* 			 added 14 Dec 92 by rwl. */
+  /*                     in to use in revised call to aprod and msolve */
+  /*                     added 14 Dec 92 by rwl. */
 
   /*    macheps  output     Used to return the calculated machine precision.
    */
   /*                        Added 10 Feb 93 by rwl. */
 
-  /*   normxlim input	Used as possible termination criterion. 10 Feb 93 rwl.
+  /*   normxlim input   Used as possible termination criterion. 10 Feb 93 rwl.
    */
 
-  /*   itnmin input	Used to enforce a minimum number of itns. 10 Feb 93 rwl.
+  /*   itnmin input     Used to enforce a minimum number of itns. 10 Feb 93 rwl.
    */
 
   /*     To change precision */
@@ -441,7 +441,7 @@ int symmlq(long int *n, double *b, double *r1, double *r2, double *v, double *w,
   /*                  not clear yet how to describe it. */
   /*   14 Dec 1992:  Modified by Robert Leland, Sandia National Laboratories
    */
-  /* 		   to integrate with a C application code. The matrix */
+  /*               to integrate with a C application code. The matrix */
   /*                  data is now passed by reference through symmlq to */
   /*                  aprod and msolve. These are now just Fortran wrappers
    */
@@ -450,23 +450,23 @@ int symmlq(long int *n, double *b, double *r1, double *r2, double *v, double *w,
    */
   /*    10 Feb 1993:  Modified by Robert Leland to return calculate machine
    */
-  /* 		   precision and terminate if the norm of the iterate gets */
-  /* 		   above the limit normxlim. Relevant for inverse iteration. */
-  /* 		   Also incorporated itnmin to enforce minimum number itns. */
+  /*               precision and terminate if the norm of the iterate gets */
+  /*               above the limit normxlim. Relevant for inverse iteration. */
+  /*               Also incorporated itnmin to enforce minimum number itns. */
   /*    17 Aug 1993:  Observed that the Fortran i/o in this routine won't */
 
-  /* 		   work because there is no main fortran program to open */
+  /*               work because there is no main fortran program to open */
   /*                 the standard i/o files. So for this (and other reasons)
    */
   /*                  converted the Fortran to C, necessitating inclusion of
    */
   /*                  the file f2c.h. To avoid a problem with maintaining */
 
-  /* 		   Symmlq, I commented out the i/o within it and instead */
-  /* 		   report its performance based only on the return value */
-  /* 	   	   of various parameters. That means we can modifiy the */
-  /* 		   Fortran source, run f2c and recompile without losing or */
-  /* 		   re-writing any functionality. */
+  /*               Symmlq, I commented out the i/o within it and instead */
+  /*               report its performance based only on the return value */
+  /*               of various parameters. That means we can modifiy the */
+  /*               Fortran source, run f2c and recompile without losing or */
+  /*               re-writing any functionality. */
 
   /*     Michael A. Saunders                    na.saunders@na-net.ornl.gov
    */

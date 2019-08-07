@@ -52,19 +52,22 @@
 namespace Xpetra {
 
   template<class GlobalOrdinal, class Node>
-  const Epetra_Map & toEpetra(const Map<int,GlobalOrdinal, Node> &map) {
+  const Epetra_Map & toEpetra(const Map<int,GlobalOrdinal, Node> &map) 
+  {
     const EpetraMapT<GlobalOrdinal, Node> & epetraMap = dynamic_cast<const EpetraMapT<GlobalOrdinal, Node> &>(*map.getMap());
     return epetraMap.getEpetra_Map();
   }
 
   template<class GlobalOrdinal, class Node>
-  const Epetra_Map & toEpetra(const RCP< const Map<int,GlobalOrdinal,Node> > &map) {
+  const Epetra_Map & toEpetra(const RCP< const Map<int,GlobalOrdinal,Node> > &map) 
+  {
     XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map->getMap(), epetraMap, "toEpetra");
     return epetraMap->getEpetra_Map();
   }
 
   template<class GlobalOrdinal, class Node>
-  const RCP< const Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &map) {
+  const RCP< const Xpetra::Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &map) 
+  {
     RCP<const Epetra_BlockMap> m = rcp(new Epetra_BlockMap(map));
     return rcp( new EpetraMapT<GlobalOrdinal, Node>(m) );
   }

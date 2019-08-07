@@ -123,7 +123,6 @@ public: // ParabolicModel methods
 
   ParabolicModel(ROL::ParameterList &pl) {
     const Real one(1);
-    uint nt   = pl.get("Temporal Discretization", 100);
     type_     = pl.get("Reaction Type",             1);
     eps1_     = pl.get("Diffusion Scale",         1.0);
     eps2_     = pl.get("Reaction Scale",          1.0);

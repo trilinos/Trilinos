@@ -40,10 +40,10 @@
  *
  * entry conditions -
  *   input parameters:
- *	int	exoid			nemesis file id
+ *      int     exoid                   nemesis file id
  *
  * exit conditions -
- *	int*	node_map		node numbering map array
+ *      int*    node_map                node numbering map array
  *
  * revision history -
  *

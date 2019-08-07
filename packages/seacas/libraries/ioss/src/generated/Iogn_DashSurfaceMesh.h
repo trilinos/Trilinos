@@ -33,9 +33,9 @@
 #ifndef IOSS_Iogn_DashSurfaceMesh_h
 #define IOSS_Iogn_DashSurfaceMesh_h
 
+#include <Ioss_Beam2.h>
 #include <Ioss_Hex8.h>
 #include <Ioss_Shell4.h>
-#include <Ioss_Beam2.h>
 #include <cstddef>                        // for size_t
 #include <cstdint>                        // for int64_t
 #include <exception>                      // for exception

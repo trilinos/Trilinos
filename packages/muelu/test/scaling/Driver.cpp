@@ -237,7 +237,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   int         numVectors        = 1;                  clp.setOption("multivector",           &numVectors,        "number of rhs to solve simultaneously");
   bool        scaleResidualHist = true;               clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
-  bool        solvePreconditioned = true;             clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+  bool        solvePreconditioned = true;             clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");  
+  bool        useStackedTimer   = false;              clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
+
 #ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                    clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
@@ -331,7 +333,11 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
 
   comm->barrier();
-  Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+  if(useStackedTimer)
+    stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
 
@@ -406,6 +412,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
       solveType = dsolveType;
       tol       = dtol;
 
+
       if (isDriver) {
         if (runList.isParameter("filename")) {
           // Redirect all output into a filename We have to redirect all output,
@@ -427,9 +434,6 @@ MueLu::MueLu_AMGX_initialize_plugins();
       RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       Teuchos::FancyOStream& out2 = *fancy2;
       out2.setOutputToRootOnly(0);
-
-
-
       out2 << galeriStream.str();
 
       // =========================================================================
@@ -508,11 +512,18 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
         const std::string filter = "";
 
-        std::ios_base::fmtflags ff(out2.flags());
-        if (timingsFormat == "table-fixed") out2 << std::fixed;
-        else                                out2 << std::scientific;
-        TimeMonitor::report(comm.ptr(), out, filter, reportParams);
-        out2 << std::setiosflags(ff);
+        if (useStackedTimer) {
+          Teuchos::StackedTimer::OutputOptions options;
+          options.output_fraction = options.output_histogram = options.output_minmax = true;
+          stacked_timer->report(out2, comm, options);
+        }
+        else {
+          std::ios_base::fmtflags ff(out2.flags());
+          if (timingsFormat == "table-fixed") out2 << std::fixed;
+          else                                out2 << std::scientific;
+          TimeMonitor::report(comm.ptr(), out, filter, reportParams);
+          out2 << std::setiosflags(ff);
+        }
       }
 
       TimeMonitor::clearCounters();
@@ -543,8 +554,8 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
 #ifdef HAVE_MUELU_AMGX
 // Finalize AMGX
-//MueLu::MueLu_AMGX_finalize();
-//MueLu::MueLu_AMGX_finalize_plugins();
+MueLu::MueLu_AMGX_finalize_plugins();
+MueLu::MueLu_AMGX_finalize();
 #endif
 
   return EXIT_SUCCESS;

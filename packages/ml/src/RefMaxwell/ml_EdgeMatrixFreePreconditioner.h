@@ -141,9 +141,6 @@ namespace ML_Epetra
     //! Sets up the Chebyshev smoother
     int SetupSmoother();
 
-    //! Build the edge nullspace
-    Epetra_MultiVector * BuildNullspace();
-
     //! Build the edge-to-vector-node prolongator described in Bochev, Hu, Siefert and Tuminaro (2006).
     int BuildProlongator(const Epetra_MultiVector & nullspace);
 

@@ -137,9 +137,6 @@ public:
     // Assemble global graph structure.
     ROL::Ptr<Tpetra::CrsGraph<> > sysGraph = ROL::makePtr<Tpetra::CrsGraph<>>(sysMap, totalNumEntries);
 
-    // Prepare temporary data structures.
-    GO gid = 0;
-
     // Create transposes of matrices A and B.
     Tpetra::RowMatrixTransposer<> transposerA(A);
     Tpetra::RowMatrixTransposer<> transposerB(B);

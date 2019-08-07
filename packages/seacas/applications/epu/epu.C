@@ -55,6 +55,8 @@
 #include <vector>
 
 #include "copy_string_cpp.h"
+// Enable SMART_ASSERT even in Release mode...
+#define SMART_ASSERT_DEBUG_MODE 1
 #include "smart_assert.h"
 
 #include <exodusII.h>
@@ -172,7 +174,7 @@ namespace {
     SMART_ASSERT(vec.capacity() == 0);
   }
 
-  ex_entity_type exodus_object_type(Excn::ObjectType &epu_type)
+  ex_entity_type exodus_object_type(const Excn::ObjectType &epu_type)
   {
     switch (epu_type) {
     case Excn::EBLK: return EX_ELEM_BLOCK;
@@ -2565,6 +2567,7 @@ namespace {
 
             // The node ids are in local space -- map to global; bring df along (if any).
             for (size_t iset = 0; iset < size; iset++) {
+              SMART_ASSERT(ns_nodes[iset] > 0)(p)(ns)(iset)(ns_nodes[iset]);
               size_t global_node         = local_node_to_global[p][ns_nodes[iset] - 1] + 1;
               glob_ns_nodes[global_node] = 1;
               glob_ns_df[global_node]    = ns_df[iset];
@@ -2625,8 +2628,8 @@ namespace {
               nset.nodeOrderMap[i] = global_pos - 1;
             }
 #if 0
-	    if (debug_level & 32)
-	      nset.dump_order();
+            if (debug_level & 32)
+              nset.dump_order();
 #endif
           }
         }
@@ -2835,7 +2838,9 @@ namespace {
 
           // The element ids are in local space -- map to global
           for (size_t i = 0; i < size; i++) {
-            size_t local_elem             = glob_ssets[ss].elems[off + i];
+            size_t local_elem = glob_ssets[ss].elems[off + i];
+            SMART_ASSERT(local_elem > 0)(p)(ss)(i)(local_elem);
+            SMART_ASSERT(glob_ssets[ss].sides[off + i] > 0 && glob_ssets[ss].sides[off + i] <= 6);
             size_t global_elem            = local_element_to_global[p][local_elem - 1];
             glob_ssets[ss].elems[off + i] = global_elem + 1;
           }

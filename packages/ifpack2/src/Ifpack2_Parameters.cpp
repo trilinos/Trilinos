@@ -144,6 +144,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   Teuchos::Array<Teuchos::ArrayRCP<int>> tmp0;
   params.set("partitioner: parts", tmp0);
   params.set("partitioner: maintain sparsity", false);
+  params.set("block relaxation: decouple dofs", false);
 
   // Ifpack2_METISPartitioner.hpp
   // ap 25 May 2016: all METIS for backwards compatibility ONLY

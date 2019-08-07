@@ -75,6 +75,7 @@ Group(const NOX::Thyra::Vector& initial_guess,
       const Teuchos::RCP< const ::Thyra::ModelEvaluator<double> >& model,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector,
+      const Teuchos::RCP<::Thyra::VectorBase<double> >& inv_right_weight_vector,
       const bool rightScalingFirst):
   model_(model),
   rightScalingFirst_(rightScalingFirst),
@@ -97,8 +98,12 @@ Group(const NOX::Thyra::Vector& initial_guess,
 
   if (nonnull(right_weight_vector)) {
     right_weight_vec_ = right_weight_vector;
-    inv_right_weight_vec_ = right_weight_vec_->clone_v();
-    ::Thyra::reciprocal(*right_weight_vec_, inv_right_weight_vec_.ptr());
+    if (nonnull(inv_right_weight_vector)) {
+      inv_right_weight_vec_ = inv_right_weight_vector;
+    } else {
+      inv_right_weight_vec_ = right_weight_vec_->clone_v();
+      ::Thyra::reciprocal(*right_weight_vec_, inv_right_weight_vec_.ptr());
+    }
     scaled_x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
   }
   else
@@ -145,6 +150,7 @@ Group(const NOX::Thyra::Vector& initial_guess,
       const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& prec_factory,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector,
+      const Teuchos::RCP<::Thyra::VectorBase<double> >& inv_right_weight_vector,
       const bool rightScalingFirst,
       const bool updatePreconditioner,
       const bool jacobianIsEvaluated):
@@ -176,8 +182,12 @@ Group(const NOX::Thyra::Vector& initial_guess,
 
   if (nonnull(right_weight_vector)) {
     right_weight_vec_ = right_weight_vector;
-    inv_right_weight_vec_ = right_weight_vec_->clone_v();
-    ::Thyra::reciprocal(*right_weight_vec_, inv_right_weight_vec_.ptr());
+    if (nonnull(inv_right_weight_vector)) {
+      inv_right_weight_vec_ = inv_right_weight_vector;
+    } else {
+      inv_right_weight_vec_ = right_weight_vec_->clone_v();
+      ::Thyra::reciprocal(*right_weight_vec_, inv_right_weight_vec_.ptr());
+    }
     scaled_x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
   }
   else

@@ -19,14 +19,16 @@
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #endif
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix, MatVec, Scalar, LocalOrdinal, GlobalOrdinal, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
+  Tpetra_CrsMatrix, MatVec, Scalar, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayView;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
+  using LocalOrdinal = Tpetra::Map<>::local_ordinal_type;
+  using GlobalOrdinal = Tpetra::Map<>::global_ordinal_type;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
@@ -112,8 +114,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 //
 // Test Belos GMRES solve for a simple banded upper-triangular matrix
 //
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix, BelosGMRES, Scalar, LocalOrdinal, GlobalOrdinal, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
+  Tpetra_CrsMatrix, BelosGMRES, Scalar, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -121,6 +123,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
+  using LocalOrdinal = Tpetra::Map<>::local_ordinal_type;
+  using GlobalOrdinal = Tpetra::Map<>::global_ordinal_type;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
@@ -229,18 +233,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #else
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix, BelosGMRES, Scalar, LocalOrdinal, GlobalOrdinal, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
+  Tpetra_CrsMatrix, BelosGMRES, Scalar, Node )
 {}
 
 #endif
 
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+using Node = Tpetra::Map<>::node_type;
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(
-  Tpetra_CrsMatrix, MatVec, double, int, int, Node )
-TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(
-  Tpetra_CrsMatrix, BelosGMRES, double, int, int, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(
+  Tpetra_CrsMatrix, MatVec, double, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(
+  Tpetra_CrsMatrix, BelosGMRES, double, Node )
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

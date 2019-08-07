@@ -800,6 +800,7 @@ IF (Stokhos_ENABLE_Sacado)
         TripleMatrixMultiply
         )
       SET(TPETRA_SD_ETI_CLASSES
+        LocalCrsMatrixOperator
         )
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)

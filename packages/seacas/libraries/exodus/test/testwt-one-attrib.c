@@ -232,7 +232,7 @@ int main(int argc, char **argv)
     k = 0;
     for (i=0; i < num_elem_in_block[0]; i++) {
       for (j = 0; j < num_attr[0]; j++) {
-	attrib[k++] = 10*(i+1) + j+1;
+        attrib[k++] = 10*(i+1) + j+1;
       }
     }
   }

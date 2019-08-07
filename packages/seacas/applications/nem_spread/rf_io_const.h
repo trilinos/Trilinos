@@ -86,7 +86,7 @@ template <typename T> struct Restart_Description
 };
 
 /*****************************************************************************/
-/*	EXTERN STATEMENTS for GLOBALS USED IN I/O ROUTINES		     */
+/*      EXTERN STATEMENTS for GLOBALS USED IN I/O ROUTINES                   */
 /*****************************************************************************/
 
 /**Extern statements for parameters in rf_io.h */
@@ -105,10 +105,10 @@ extern std::string Exo_Res_File;
 extern int Debug_Flag; /* Flag to specify debug info is to be printed out.
                           The value of this flag determines the level of
                           diagnostic info which is printed to stdout
-                          Debug_Flag == 0 	No output
+                          Debug_Flag == 0       No output
                                         .
                                         .
-                                        9	maximum output             */
+                                        9       maximum output             */
 extern int Gen_Flag;   /* Flag used by nem_join to determine if the user
                           wants to use an existing genesis file rather
                           than generating one from the parallel files */
