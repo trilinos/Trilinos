@@ -70,7 +70,7 @@ compute or I/O word size). Multiple files may be ``open'' simultaneously.
 number. Possible causes of errors include:
   -  The specified file does not exist.
   -  The mode specified is something other than the predefined constant
-\fparam{EX_READ} or \fparam{EX_WRITE}.
+\fparam{#EX_READ} or \fparam{#EX_WRITE}.
   -  Database version is earlier than 2.0.
 
 \param path The file name of the exodus file. This can be given as either an
@@ -125,8 +125,6 @@ exoid = ex_open ("test.exo",     \co{filename path}
 ~~~
  */
 
-static int warning_output = 0;
-
 /* NOTE: Do *not* call `ex_open_int()` directly.  The public API
  *       function name is `ex_open()` which is a wrapper that calls
  *       `ex_open_int` with an additional argument to make sure
@@ -152,19 +150,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
   /* set error handling mode to no messages, non-fatal errors */
   ex_opts(exoptval); /* call required to set ncopts first time through */
 
-  if (run_version != EX_API_VERS_NODOT && warning_output == 0) {
-    int run_version_major = run_version / 100;
-    int run_version_minor = run_version % 100;
-    int lib_version_major = EX_API_VERS_NODOT / 100;
-    int lib_version_minor = EX_API_VERS_NODOT % 100;
-    fprintf(stderr,
-            "EXODUS: Warning: This code was compiled with exodus "
-            "version %d.%02d,\n          but was linked with exodus "
-            "library version %d.%02d\n          This is probably an "
-            "error in the build process of this code.\n",
-            run_version_major, run_version_minor, lib_version_major, lib_version_minor);
-    warning_output = 1;
-  }
+  ex__check_version(run_version);
 
   if ((mode & EX_READ) && (mode & EX_WRITE)) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Cannot specify both EX_READ and EX_WRITE");
@@ -202,7 +188,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
          we have the define that shows it is enabled, then assume other error...
       */
       int type = 0;
-      ex_check_file_type(path, &type);
+      ex__check_file_type(path, &type);
 
       if (type == 5) {
 #if NC_HAS_HDF5
@@ -317,7 +303,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
        * add it now. */
       if (stat_dim != NC_NOERR) {
         /* Not found; set to default value of 32+1. */
-        int max_name = ex_default_max_name_length < 32 ? 32 : ex_default_max_name_length;
+        int max_name = ex__default_max_name_length < 32 ? 32 : ex__default_max_name_length;
         if ((status = nc_def_dim(exoid, DIM_STR_NAME, max_name + 1, &dim_str_name)) != NC_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to define string name dimension in file id %d named %s", exoid,
@@ -326,7 +312,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
           EX_FUNC_LEAVE(EX_FATAL);
         }
       }
-      if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
+      if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -382,7 +368,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
      not know that file was closed and possibly new file opened for
      this exoid
   */
-  if (ex_find_file_item(exoid) != NULL) {
+  if (ex__find_file_item(exoid) != NULL) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: There is an existing file already using the file "
              "id %d which was also assigned to file %s.\n\tWas "
@@ -395,7 +381,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
   }
 
   /* initialize floating point and integer size conversion. */
-  if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 0, 0, 0) != EX_NOERR) {
+  if (ex__conv_init(exoid, comp_ws, io_ws, file_wordsize, int64_status, 0, 0, 0) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to initialize conversion routines in file id %d named %s", exoid, path);
     ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
