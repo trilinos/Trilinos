@@ -784,7 +784,6 @@ IF (Stokhos_ENABLE_Sacado)
         RowMatrixTransposer
         DistObject
         CrsMatrix
-        CrsGraph
         FECrsMatrix
         FEMultiVector
         BlockVector
