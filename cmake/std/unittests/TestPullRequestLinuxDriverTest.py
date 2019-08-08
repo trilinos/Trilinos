@@ -242,9 +242,9 @@ Set CWD = /dev/null/workspace/TFW_testing_single_configure_prototype
                                         '-Ddashboard_track=testTrack',
                                         '-DPARALLEL_LEVEL=20',
                                         '-Dbuild_dir=/dev/null/workspace/pull_request_test',
-                                        '-Dconfigure_script=/dev/null/workspace/cmake/std/dummyConfig.cmake',
+                                        '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
                                         '-Dpackage_enables=../packageEnables.cmake',
-                                        '-Dsubprojects_file=../ TFW_single_configure_support_scripts',
+                                        '-Dsubprojects_file=../TFW_single_configure_support_scripts',
                                         'package_subproject_list.cmake'])
 
 

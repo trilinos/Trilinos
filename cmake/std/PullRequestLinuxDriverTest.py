@@ -366,11 +366,14 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
                            '-Ddashboard_track={}'.format(CDash_Track),
                            '-DPARALLEL_LEVEL={}'.format(parallel_level),
                            '-Dbuild_dir={}/pull_request_test'.format(arguments.workspaceDir),
-                           '-Dconfigure_script={workspace}/cmake/std/{CONFIG_SCRIPT}'.format(
-                                workspace=arguments.workspaceDir,
-                                CONFIG_SCRIPT=config_script),
+                           '-Dconfigure_script=' +
+                               os.path.join(arguments.workspaceDir,
+                                            'Trilinos',
+                                            'cmake',
+                                            'std',
+                                            config_script),
                            '-Dpackage_enables=../packageEnables.cmake',
-                           '-Dsubprojects_file=../ TFW_single_configure_support_scripts',
+                           '-Dsubprojects_file=../TFW_single_configure_support_scripts',
                            'package_subproject_list.cmake'])
 
     return return_value
