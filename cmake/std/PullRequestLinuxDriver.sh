@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 # set -x  # echo commands
 
+#    make  sure we have a newer version of git
+cuda_regex=".*(_cuda_).*"
+ride_regex=".*(ride).*"
+if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
+    if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
+        echo -e "Job is CUDA"
+        module load git/2.10.1
+    else
+        echo -e "ERROR: Unable to find matching environment for CUDA job not on Ride."
+        exit -1
+    fi
+else
+    source /projects/sems/modulefiles/utils/sems-modules-init.sh
+    module load sems-git/2.10.1
+fi
+
 # Identify the path to this script
 SCRIPTPATH="$(cd "$(dirname "$0")" ; pwd -P)"
 echo -e "SCRIPTPATH: ${SCRIPTPATH}"
