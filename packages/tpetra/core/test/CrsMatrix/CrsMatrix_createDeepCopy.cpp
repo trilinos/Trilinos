@@ -168,7 +168,8 @@ public:
   }
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const override {
+  Tpetra::global_size_t TPETRA_DEPRECATED
+  getGlobalNumDiags () const override {
     return G_->getGlobalNumDiags ();
   }
 
@@ -346,7 +347,8 @@ public:
   }
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const override {
+  Tpetra::global_size_t TPETRA_DEPRECATED
+  getGlobalNumDiags () const override {
     return A_->getGlobalNumDiags ();
   }
 
