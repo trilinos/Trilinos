@@ -165,10 +165,12 @@ def setBuildEnviron(arguments):
                       'atdm-ninja_fortran/1.7.2'],
                  'Trilinos_pullrequest_python_2':
                      ['git/2.10.1',
-                     'sierra-python/2.7.15'],
+                      'sierra-python/2.7.15',
+                      'sems-cmake/3.10.3',],
                 'Trilinos_pullrequest_python_3':
                      ['git/2.10.1',
-                     'sierra-python/3.6.3'],
+                      'sierra-python/3.6.3',
+                      'sems-cmake/3.10.3',],
                  'Trilinos_pullrequest_gcc_7.2.0':
                      ['sems-env',
                      'git/2.10.1',
@@ -185,7 +187,7 @@ def setBuildEnviron(arguments):
                      'sems-cmake/3.10.3',
                      'atdm-env',
                      'atdm-ninja_fortran/1.7.2'],
-                 'Trilinos_pullrequest_intel_17.0.1.0':
+                 'Trilinos_pullrequest_intel_17.0.1':
                      ['sems-env',
                      'git/2.10.1',
                      'sems-gcc/4.9.3',
@@ -215,7 +217,7 @@ def setBuildEnviron(arguments):
                  'Trilinos_pullrequest_gcc_7.2.0':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
                        'OMP_NUM_THREADS': '2'},
-                 'Trilinos_pullrequest_intel_17.0.1.0':
+                 'Trilinos_pullrequest_intel_17.0.1':
                       {'SEMS_FORCE_LOCAL_COMPILER_VERSION': '4.9.3',
                        'OMP_NUM_THREADS': '2'},
                  'Trilinos_pullrequest_cuda_9.2':
@@ -373,7 +375,7 @@ ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS
                                             'std',
                                             config_script),
                            '-Dpackage_enables=../packageEnables.cmake',
-                           '-Dsubprojects_file=../TFW_single_configure_support_scripts',
+                           '-Dsubprojects_file=../TFW_single_configure_support_scripts/'+
                            'package_subproject_list.cmake'])
 
     return return_value

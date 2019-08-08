@@ -129,7 +129,8 @@ def run():
         return_value = False
     if return_value:
         os.chdir(os.path.join(arguments.workspaceDir, 'Trilinos'))
-        print("Set CWD = {}".format(os.path.join(arguments.workspaceDir,
+        print("Set CWD = {dirName}".format(dirName=os.path.join(
+                                                 arguments.workspaceDir,
                                                  'Trilinos')),
               file=sys.stdout)
         write_header()

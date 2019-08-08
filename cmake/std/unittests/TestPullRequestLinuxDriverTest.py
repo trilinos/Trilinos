@@ -244,8 +244,7 @@ Set CWD = /dev/null/workspace/TFW_testing_single_configure_prototype
                                         '-Dbuild_dir=/dev/null/workspace/pull_request_test',
                                         '-Dconfigure_script=/dev/null/workspace/Trilinos/cmake/std/dummyConfig.cmake',
                                         '-Dpackage_enables=../packageEnables.cmake',
-                                        '-Dsubprojects_file=../TFW_single_configure_support_scripts',
-                                        'package_subproject_list.cmake'])
+                                        '-Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake'])
 
 
 class Test_setEnviron(unittest.TestCase):
@@ -315,6 +314,7 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_python_2'
         expected_list = [mock.call('load', 'git/2.10.1'),
                          mock.call('load', 'sierra-python/2.7.15'),
+                         mock.call('load', 'sems-cmake/3.10.3'),
                          ]
         self.buildEnv_passes(PR_name, expected_list)
 
@@ -324,6 +324,7 @@ class Test_setEnviron(unittest.TestCase):
         PR_name = 'Trilinos_pullrequest_python_3'
         expected_list = [mock.call('load', 'git/2.10.1'),
                          mock.call('load', 'sierra-python/3.6.3'),
+                         mock.call('load', 'sems-cmake/3.10.3'),
                          ]
         self.buildEnv_passes(PR_name, expected_list)
 
@@ -397,7 +398,7 @@ class Test_setEnviron(unittest.TestCase):
 
     def test_buildEnv_passes_with_intel_1701(self):
         """Find the function"""
-        PR_name = 'Trilinos_pullrequest_intel_17.0.1.0'
+        PR_name = 'Trilinos_pullrequest_intel_17.0.1'
         expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
                          mock.call('load', 'sems-env'),
                          mock.call('load', 'git/2.10.1'),
