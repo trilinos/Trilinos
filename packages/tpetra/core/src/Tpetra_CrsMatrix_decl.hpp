@@ -506,6 +506,24 @@ namespace Tpetra {
     //! @name Constructors and destructor
     //@{
 
+    //! Copy constructor.
+    CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal,
+                               GlobalOrdinal, Node>&) = default;
+
+    //! Move constructor.
+    CrsMatrix (CrsMatrix<Scalar, LocalOrdinal,
+                         GlobalOrdinal, Node>&&) = default;
+
+    //! Copy assignment.
+    CrsMatrix&
+    operator= (const CrsMatrix<Scalar, LocalOrdinal,
+                               GlobalOrdinal, Node>&) = default;
+
+    //! Move assignment.
+    CrsMatrix&
+    operator= (CrsMatrix<Scalar, LocalOrdinal,
+                         GlobalOrdinal, Node>&&) = default;
+
     /// \brief Constructor specifying fixed number of entries for each row.
     ///
     /// \param rowMap [in] Distribution of rows of the matrix.
@@ -819,6 +837,17 @@ namespace Tpetra {
     CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                const Teuchos::DataAccess copyOrView);
 
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=default</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
+    virtual ~CrsMatrix () = default;
+
     // This friend declaration makes the clone() method work.
     template <class S2, class LO2, class GO2, class N2>
     friend class CrsMatrix;
@@ -1067,57 +1096,6 @@ namespace Tpetra {
       return clonedMatrix;
     }
 #endif
-
-    /// \brief Copy constructor (forbidden).
-    ///
-    /// \note There's no obvious reason why copy construction should
-    ///   ever have been forbidden, but it was historically, so I'm
-    ///   continuing the tradition for now.  Tpetra developers should
-    ///   feel free to change this, as long as they change the other
-    ///   three (move constructor, copy assignment, and move
-    ///   assignment) consistently.
-    CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
-
-    /// \brief Move constructor (forbidden).
-    ///
-    /// \note This is deleted for consistency with copy construction,
-    ///   which is also deleted.  Tpetra developers should feel free
-    ///   to change this, as long as they change the other three (copy
-    ///   constructor, copy assignment, and move assignment)
-    ///   consistently.
-    CrsMatrix (CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
-
-    /// \brief Copy assignment (forbidden).
-    ///
-    /// \note There's no obvious reason why copy assignment should
-    ///   ever have been forbidden, but it was historically, so I'm
-    ///   continuing the tradition for now.  Tpetra developers should
-    ///   feel free to change this, as long as they change the other
-    ///   three (copy constructor, move constructor, and move
-    ///   assignment) consistently.
-    CrsMatrix&
-    operator= (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
-
-    /// \brief Move assignment (forbidden).
-    ///
-    /// \note This is deleted for consistency with copy assignment,
-    ///   which is also deleted.  Tpetra developers should feel free
-    ///   to change this, as long as they change the other three (copy
-    ///   constructor, move constructor, and copy assignment)
-    ///   consistently.
-    CrsMatrix&
-    operator= (CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
-
-    /// \brief Destructor (virtual for memory safety of derived classes).
-    ///
-    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
-    ///   ("If you define or <tt>=delete</tt> any default operation,
-    ///   define or <tt>=delete</tt> them all"), in particular the
-    ///   AbstractBase example, for why this destructor declaration
-    ///   implies that we need the above four <tt>=delete</tt> (or
-    ///   <tt>=default</tt>) declarations for copy construction, move
-    ///   construction, copy assignment, and move assignment.
-    virtual ~CrsMatrix () = default;
 
   public:
     //@}
