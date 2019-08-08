@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # set -x  # echo commands
 
-#    make  sure we have a newer version of git
+#    make  sure we have a newer version of git/python
 cuda_regex=".*(_cuda_).*"
 ride_regex=".*(ride).*"
 if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
@@ -15,6 +15,7 @@ if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
 else
     source /projects/sems/modulefiles/utils/sems-modules-init.sh
     module load sems-git/2.10.1
+    module load sems-python/2.7.9
 fi
 
 # Identify the path to this script

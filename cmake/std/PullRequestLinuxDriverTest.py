@@ -166,11 +166,15 @@ def setBuildEnviron(arguments):
                  'Trilinos_pullrequest_python_2':
                      ['git/2.10.1',
                       'sierra-python/2.7.15',
-                      'sems-cmake/3.10.3',],
+                      'sems-cmake/3.10.3',
+                      'atdm-env',
+                      'atdm-ninja_fortran/1.7.2'],
                 'Trilinos_pullrequest_python_3':
                      ['git/2.10.1',
                       'sierra-python/3.6.3',
-                      'sems-cmake/3.10.3',],
+                      'sems-cmake/3.10.3',
+                      'atdm-env',
+                      'atdm-ninja_fortran/1.7.2'],
                  'Trilinos_pullrequest_gcc_7.2.0':
                      ['sems-env',
                      'git/2.10.1',
@@ -228,8 +232,8 @@ def setBuildEnviron(arguments):
                                     'kokkos',
                                     'bin',
                                     'nvcc_wrapper'),
-                       'OMPI_CC': '',
-                       'OMPI_FC': '',
+                       'OMPI_CC': os.environ['CC'],
+                       'OMPI_FC': os.environ['FC'],
                        'CUDA_LAUNCH_BLOCKING': '1',
                        'CUDA_MANAGED_FORCE_DEVICE_ALLOC': '1',
                        'PATH': os.path.join(os.path.sep,

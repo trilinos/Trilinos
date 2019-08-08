@@ -268,7 +268,10 @@ class Test_setEnviron(unittest.TestCase):
                                                      'JOB_NAME': 'TEST_JOB_NAME',
                                                      'WORKSPACE': self.jenkins_workspace,
                                                      'NODE_NAME': 'TEST_NODE_NAME',
-                                                     'PATH': '/fake/path'},
+                                                     'PATH': '/fake/path',
+                                                     'CC': '/fake/gcc/path/bin/gcc',
+                                                     'FC': '/fake/gcc/path/bin/gfortran',
+                                                      },
                                          clear=True)
         self.arguments = Namespace()
         setattr(self.arguments, 'sourceBranch', self.source_branch)
@@ -295,7 +298,7 @@ class Test_setEnviron(unittest.TestCase):
                     PullRequestLinuxDriverTest.setBuildEnviron(self.arguments)
 
 
-    def buildEnv_passes(self, PR_name, expected_list, test_ENV='PATH'):
+    def buildEnv_passes(self, PR_name, expected_list, test_ENV={}):
         setattr(self.arguments,
                 'job_base_name',
                 PR_name)
@@ -305,7 +308,13 @@ class Test_setEnviron(unittest.TestCase):
              self.m_environ, \
              mock.patch('PullRequestLinuxDriverTest.module') as m_mod:
             PullRequestLinuxDriverTest.setBuildEnviron(self.arguments)
-            self.assertNotEqual(os.environ[test_ENV], '')
+            for key, value in test_ENV.items():
+                if isinstance(value, str):
+                    self.assertEqual(os.environ[key], value)
+                else:
+                    for l_str in value:
+                        self.assertNotEqual(os.environ[key].find(l_str), -1)
+
         m_mod.assert_has_calls(expected_list, any_order=True)
 
 
@@ -315,6 +324,8 @@ class Test_setEnviron(unittest.TestCase):
         expected_list = [mock.call('load', 'git/2.10.1'),
                          mock.call('load', 'sierra-python/2.7.15'),
                          mock.call('load', 'sems-cmake/3.10.3'),
+                         mock.call('load', 'atdm-env'),
+                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
         self.buildEnv_passes(PR_name, expected_list)
 
@@ -325,6 +336,8 @@ class Test_setEnviron(unittest.TestCase):
         expected_list = [mock.call('load', 'git/2.10.1'),
                          mock.call('load', 'sierra-python/3.6.3'),
                          mock.call('load', 'sems-cmake/3.10.3'),
+                         mock.call('load', 'atdm-env'),
+                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
         self.buildEnv_passes(PR_name, expected_list)
 
@@ -349,7 +362,8 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'atdm-env'),
                          mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
-        self.buildEnv_passes(PR_name, expected_list, test_ENV='OMP_NUM_THREADS')
+        self.buildEnv_passes(PR_name, expected_list,
+                             test_ENV={'OMP_NUM_THREADS': '2'})
 
 
     def test_buildEnv_passes_with_gcc_493_Serial(self):
@@ -370,7 +384,8 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'atdm-env'),
                          mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
-        self.buildEnv_passes(PR_name, expected_list, test_ENV='OMP_NUM_THREADS')
+        self.buildEnv_passes(PR_name, expected_list,
+                             test_ENV={'OMP_NUM_THREADS': '2'})
 
 
     def test_buildEnv_passes_with_gcc_720(self):
@@ -393,7 +408,8 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'atdm-env'),
                          mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
-        self.buildEnv_passes(PR_name, expected_list, test_ENV='OMP_NUM_THREADS')
+        self.buildEnv_passes(PR_name, expected_list,
+                             test_ENV={'OMP_NUM_THREADS': '2'})
 
 
     def test_buildEnv_passes_with_intel_1701(self):
@@ -417,7 +433,8 @@ class Test_setEnviron(unittest.TestCase):
                          mock.call('load', 'atdm-ninja_fortran/1.7.2'),
                          ]
 
-        self.buildEnv_passes(PR_name, expected_list, test_ENV='OMP_NUM_THREADS')
+        self.buildEnv_passes(PR_name, expected_list,
+                             test_ENV={'OMP_NUM_THREADS': '2'})
 
 
     def test_buildEnv_passes_with_cuda_92(self):
@@ -426,8 +443,35 @@ class Test_setEnviron(unittest.TestCase):
         expected_list = [mock.call('load', 'git/2.10.1'),
                          mock.call('load', 'devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88'),
                          mock.call('swap', 'openblas/0.2.20/gcc/7.2.0', 'netlib/3.8.0/gcc/7.2.0'),]
+        expected_env = {'OMPI_CXX':
+                       os.path.join(self.jenkins_workspace,
+                                    'Trilinos',
+                                    'packages',
+                                    'kokkos',
+                                    'bin',
+                                    'nvcc_wrapper'),
+                       'OMPI_CC': '/fake/gcc/path/bin/gcc',
+                       'OMPI_FC': '/fake/gcc/path/bin/gfortran',
+                       'CUDA_LAUNCH_BLOCKING': '1',
+                       'CUDA_MANAGED_FORCE_DEVICE_ALLOC': '1',
+                       'PATH': [os.path.join(os.path.sep,
+                                            'ascldap',
+                                            'users',
+                                            'rabartl',
+                                            'install',
+                                            'white-ride',
+                                            'cmake-3.11.2',
+                                            'bin'),
+                               os.path.join(os.path.sep,
+                                            'ascldap',
+                                            'users',
+                                            'rabartl',
+                                            'install',
+                                            'white-ride',
+                                            'ninja-1.8.2',
+                                            'bin')]}
 
-        self.buildEnv_passes(PR_name, expected_list)
+        self.buildEnv_passes(PR_name, expected_list, test_ENV=expected_env)
 
 
 class Test_GetCDashTrack(unittest.TestCase):
