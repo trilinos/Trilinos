@@ -52,8 +52,6 @@ template<class SC, class LO, class GO, class NT>
 CrsMatrix<SC, LO, GO, NT>
 createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
 {
-  const char tfecfFuncName[] =
-    "Tpetra::createDeepCopy(RowMatrix)->CrsMatrix: ";
   using crs_matrix_type = CrsMatrix<SC, LO, GO, NT>;
   const crs_matrix_type* A_crs =
     dynamic_cast<const crs_matrix_type*> (&A);
