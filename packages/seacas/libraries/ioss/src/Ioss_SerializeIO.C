@@ -76,10 +76,12 @@ namespace Ioss {
       }
     }
 
-    if (s_groupFactor > 0) {
+    if (m_activeFallThru) {
+    }
+    else if (s_groupFactor > 0) {
 #ifdef SEACAS_HAVE_MPI
       do {
-	MPI_Barrier(util.communicator());
+        MPI_Barrier(util.communicator());
       } while (++s_owner != s_groupRank);
 #endif
       m_databaseIO->openDatabase();
@@ -100,15 +102,15 @@ namespace Ioss {
         ;
       }
       else if (s_groupFactor > 0) {
-	m_databaseIO->closeDatabase();
+        m_databaseIO->closeDatabase();
 #ifdef SEACAS_HAVE_MPI
-	s_owner                        = s_groupRank;
-	const Ioss::ParallelUtils util = m_databaseIO->util();
-	do {
-	  MPI_Barrier(util.communicator());
-	} while (++s_owner != s_groupSize);
+        s_owner                        = s_groupRank;
+        const Ioss::ParallelUtils util = m_databaseIO->util();
+        do {
+          MPI_Barrier(util.communicator());
+        } while (++s_owner != s_groupSize);
 #endif
-	s_owner = -1;
+        s_owner = -1;
       }
       else {
         s_owner = -1;
